@@ -83,23 +83,6 @@ gboolean LRU_add(cache_t *cache, request_t *req) {
   return retval;
 }
 
-gboolean LRU_add_only(cache_t *cache, request_t *req) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
-  gboolean retval;
-  if (LRU_check(cache, req)) {
-    _LRU_update(cache, req);
-    retval = TRUE;
-  } else {
-    _LRU_insert(cache, req);
-    while ((long) g_hash_table_size(LRU_params->hashtable) > cache->core->size)
-      _LRU_evict(cache, req);
-    retval = FALSE;
-  }
-
-  cache->core->ts += 1;
-  return retval;
-}
-
 
 void LRU_destroy(cache_t *cache) {
   struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
@@ -146,18 +129,18 @@ cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->cache_params = g_new0(struct LRU_params, 1);
   struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
 
-  cache->core->cache_init = LRU_init;
-  cache->core->destroy = LRU_destroy;
-  cache->core->destroy_unique = LRU_destroy_unique;
-  cache->core->add = LRU_add;
-  cache->core->check = LRU_check;
-  cache->core->_insert = _LRU_insert;
-  cache->core->_update = _LRU_update;
-  cache->core->_evict = _LRU_evict;
-  cache->core->evict_with_return = _LRU_evict_with_return;
-  cache->core->get_current_size = LRU_get_size;
-  cache->core->remove_obj = LRU_remove_obj;
-  cache->core->cache_init_params = NULL;
+//  cache->core->cache_init = LRU_init;
+//  cache->core->destroy = LRU_destroy;
+//  cache->core->destroy_unique = LRU_destroy_unique;
+//  cache->core->add = LRU_add;
+//  cache->core->check = LRU_check;
+//  cache->core->_insert = _LRU_insert;
+//  cache->core->_update = _LRU_update;
+//  cache->core->_evict = _LRU_evict;
+//  cache->core->evict_with_return = _LRU_evict_with_return;
+//  cache->core->get_current_size = LRU_get_size;
+//  cache->core->remove_obj = LRU_remove_obj;
+//  cache->core->cache_init_params = NULL;
 //  cache->core->add_only = LRU_add_only;
 //  cache->core->add_withsize = LRU_add_withsize;
 
@@ -187,7 +170,7 @@ void LRU_remove_obj(cache_t *cache, void *data_to_remove) {
   g_hash_table_remove(LRU_params->hashtable, data_to_remove);
 }
 
-guint64 LRU_get_size(cache_t *cache) {
+guint64 LRU_get_current_size(cache_t *cache) {
   struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
   return (guint64) g_hash_table_size(LRU_params->hashtable);
 }

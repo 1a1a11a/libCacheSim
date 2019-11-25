@@ -34,7 +34,7 @@
 
 
 reader_t *setup_vscsi_reader() {
-  reader_t *reader_vscsi = setup_reader("../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader_vscsi = setup_reader("../../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
   return reader_vscsi;
 }
 
@@ -44,7 +44,7 @@ reader_t *setup_binary_reader() {
   init_params_bin->size_pos = 2;
   init_params_bin->obj_id_pos = 6;
   init_params_bin->real_time_pos = 7;
-  reader_t *reader_bin_l = setup_reader("../data/trace.vscsi", BIN_TRACE, OBJ_ID_NUM, init_params_bin);
+  reader_t *reader_bin_l = setup_reader("../../data/trace.vscsi", BIN_TRACE, OBJ_ID_NUM, init_params_bin);
   g_free(init_params_bin);
   return reader_bin_l;
 }
@@ -56,7 +56,7 @@ reader_t *setup_csv_reader_obj_str() {
   init_params_csv->label_column = 5;
   init_params_csv->size_column = 4;
   init_params_csv->has_header = TRUE;
-  reader_t *reader_csv_c = setup_reader("../data/trace.csv", CSV_TRACE, OBJ_ID_STR, init_params_csv);
+  reader_t *reader_csv_c = setup_reader("../../data/trace.csv", CSV_TRACE, OBJ_ID_STR, init_params_csv);
   g_free(init_params_csv);
   return reader_csv_c;
 }
@@ -68,17 +68,17 @@ reader_t *setup_csv_reader_obj_num() {
   init_params_csv->label_column = 5;
   init_params_csv->size_column = 4;
   init_params_csv->has_header = TRUE;
-  reader_t *reader_csv_l = setup_reader("../data/trace.csv", CSV_TRACE, OBJ_ID_NUM, init_params_csv);
+  reader_t *reader_csv_l = setup_reader("../../data/trace.csv", CSV_TRACE, OBJ_ID_NUM, init_params_csv);
   g_free(init_params_csv);
   return reader_csv_l;
 }
 
 reader_t *setup_plaintxt_reader_num() {
-  return setup_reader("../data/trace.txt", PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
+  return setup_reader("../../data/trace.txt", PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
 }
 
 reader_t *setup_plaintxt_reader_str() {
-  return setup_reader("../data/trace.txt", PLAIN_TXT_TRACE, OBJ_ID_STR, NULL);
+  return setup_reader("../../data/trace.txt", PLAIN_TXT_TRACE, OBJ_ID_STR, NULL);
 }
 
 

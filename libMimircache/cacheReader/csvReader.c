@@ -150,11 +150,8 @@ void csv_read_one_element(reader_t *const reader, request_t *const c) {
   gboolean end = find_line_ending(reader, &line_end, &line_len);
   line_len++;    // because line_len does not include LFCR
 
-  if ((long) csv_parse(params->csv_parser,
-                       reader->base->mapped_file + reader->base->mmap_offset,
-                       line_len, csv_cb1, csv_cb2, reader) != line_len) WARNING("in parsing csv file: %s\n",
-                                                                                csv_strerror(
-                                                                                  csv_error(params->csv_parser)));
+  if ((size_t) csv_parse(params->csv_parser, reader->base->mapped_file + reader->base->mmap_offset, line_len, csv_cb1, csv_cb2, reader) != line_len)
+    WARNING("in parsing csv file: %s\n", csv_strerror(csv_error(params->csv_parser)));
 
   reader->base->mmap_offset = (char *) line_end - reader->base->mapped_file;
 

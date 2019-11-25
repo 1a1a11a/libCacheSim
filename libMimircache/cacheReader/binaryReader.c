@@ -56,7 +56,7 @@ int binaryReader_setup(const char *const filename,
   }
 
   guint count = 0, last_count_sum = 0;
-  guint count_sum = 0;
+  gint count_sum = 0;
   guint size = 0;
 
   while (*fmt_str) {

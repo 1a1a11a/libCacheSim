@@ -268,7 +268,7 @@ gboolean PG_add(cache_t *PG, request_t *req) {
     retval = TRUE;
   } else {
     _PG_insert(PG, req);
-    while (PG_get_size(PG) > PG->core->size)
+    while ((long)PG_get_size(PG) > PG->core->size)
       _PG_evict(PG, req);
     retval = FALSE;
   }
@@ -292,7 +292,7 @@ gboolean PG_add(cache_t *PG, request_t *req) {
       node = node->next;
     }
 
-    while (PG_get_size(PG) > PG->core->size)
+    while ((long)PG_get_size(PG) > PG->core->size)
       _PG_evict(PG, req);
     g_list_free(prefetch_list);
   }
@@ -307,7 +307,7 @@ gboolean PG_add_only(cache_t *PG, request_t *req) {
     retval = TRUE;
   } else {
     _PG_insert(PG, req);
-    while (PG_get_size(PG) > PG->core->size)
+    while ((long)PG_get_size(PG) > PG->core->size)
       _PG_evict(PG, req);
     retval = FALSE;
   }

@@ -36,7 +36,7 @@ struct cache_core {
   guint64 ts;
 
   long size;
-  guint64 used_size;
+  long used_size;
   char obj_id_type;     // l, c
   long long hit_count;
   long long miss_count;
@@ -102,19 +102,19 @@ extern cache_t *cache_init(char* cache_name, long long size, obj_id_t obj_id_typ
 extern void cache_destroy(cache_t *cache);
 extern void cache_destroy_unique(cache_t *cache);
 
-static inline void* _get_cache_func_ptr(char* cache_alg_name, char* func_name){
-  char full_func_name[256];
-  sprintf(full_func_name, "%s_%s", cache_alg_name, func_name);
-  void* func_ptr = dlsym(NULL, full_func_name);
+static inline void* _get_cache_func_ptr(char* func_name){
+  void *handle = dlopen(NULL, RTLD_GLOBAL);
+  void* func_ptr = dlsym(handle, func_name);
+  return func_ptr;
 
-  char *error;
-  if ((error = dlerror()) != NULL) {
-    WARNING("error loading %s %s\n", full_func_name, error);
-    return NULL;
-  } else {
-    DEBUG("internal cache loaded %s\n", full_func_name);
-    return func_ptr;
-  }
+//  char *error;
+//  if ((error = dlerror()) != NULL) {
+//    WARNING("error loading %s %s\n", full_func_name, error);
+//    return NULL;
+//  } else {
+//    DEBUG("internal cache loaded %s\n", full_func_name);
+//    return func_ptr;
+//  }
 }
 
 

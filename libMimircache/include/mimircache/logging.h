@@ -18,11 +18,13 @@
 #define MAGENTA "\x1B[35m"
 #define CYAN    "\x1B[36m"
 
-#define DEBUG_LEVEL   1
-#define VERBOSE_LEVEL 2
-#define INFO_LEVEL    3
-#define WARNING_LEVEL 4
-#define SEVERE_LEVEL  5
+#define DEBUG3_LEVEL 4
+#define DEBUG2_LEVEL 5
+#define DEBUG_LEVEL   6
+//#define VERBOSE_LEVEL 2
+#define INFO_LEVEL    7
+#define WARNING_LEVEL 8
+#define SEVERE_LEVEL  9
 
 #ifndef LOGLEVEL
 //#define LOGLEVEL DEBUG_LEVEL
@@ -43,10 +45,16 @@ void print_stack_trace(void);
     log_lock(0); \
 }
 
-#if LOGLEVEL <= VERBOSE_LEVEL
-    #define VERBOSE(FMT, ...) LOGGING(VERBOSE_LEVEL, FMT, ##__VA_ARGS__)
+#if LOGLEVEL <= DEBUG3_LEVEL
+#define DEBUG3(FMT, ...) LOGGING(DEBUG3_LEVEL, FMT, ##__VA_ARGS__)
 #else
-    #define VERBOSE(FMT, ...)
+#define DEBUG3(FMT, ...)
+#endif
+
+#if LOGLEVEL <= DEBUG2_LEVEL
+    #define DEBUG2(FMT, ...) LOGGING(DEBUG2_LEVEL, FMT, ##__VA_ARGS__)
+#else
+    #define DEBUG2(FMT, ...)
 #endif
 
 #if LOGLEVEL <= DEBUG_LEVEL

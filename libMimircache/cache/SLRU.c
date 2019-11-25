@@ -42,7 +42,7 @@ void _SLRU_update(cache_t *cache, request_t *cp) {
         SLRU_params->current_sizes[i]--;
         _LRU_insert(SLRU_params->LRUs[i + 1], cp);
         SLRU_params->current_sizes[i + 1]++;
-        if (LRU_get_size(SLRU_params->LRUs[i + 1]) >
+        if ((long) LRU_get_current_size(SLRU_params->LRUs[i + 1]) >
             SLRU_params->LRUs[i + 1]->core->size) {
           gpointer old_itemp = cp->obj_id_ptr;
           gpointer evicted =
@@ -71,7 +71,7 @@ void _SLRU_evict(cache_t *SLRU, request_t *cp) {
 
   _LRU_evict(SLRU_params->LRUs[0], cp);
 #ifdef SANITY_CHECK
-  if (LRU_get_size(SLRU_params->LRUs[0]) != SLRU_params->LRUs[0]->core->size) {
+  if ((long)LRU_get_size(SLRU_params->LRUs[0]) != SLRU_params->LRUs[0]->core->size) {
     fprintf(stderr,
             "ERROR: SLRU_evict, after eviction, LRU0 size %lu, "
             "full size %ld\n",
@@ -98,7 +98,7 @@ gboolean SLRU_add(cache_t *cache, request_t *cp) {
     retval = TRUE;
   } else {
     _SLRU_insert(cache, cp);
-    if (LRU_get_size(SLRU_params->LRUs[0]) > SLRU_params->LRUs[0]->core->size)
+    if (LRU_get_current_size(SLRU_params->LRUs[0]) > SLRU_params->LRUs[0]->core->size)
       _SLRU_evict(cache, cp);
     retval = FALSE;
   }

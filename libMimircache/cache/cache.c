@@ -47,27 +47,76 @@ void cache_destroy_unique(cache_t *cache) {
 
 cache_t *cache_init(char *cache_name, long long cache_size, obj_id_t obj_id_type) {
   cache_t *cache = g_new0(cache_t, 1);
-  strcpy(cache->core->cache_name, cache_name);
   cache->core = g_new0(struct cache_core, 1);
+  strcpy(cache->core->cache_name, cache_name);
   cache->core->size = cache_size;
   cache->core->cache_init_params = NULL;
   cache->core->obj_id_type = obj_id_type;
 
+  void *handle = dlopen(NULL, RTLD_GLOBAL);
+  char func_name[128];
 
-  cache_t* (*cache_init)(guint64, obj_id_t, void*) = _get_cache_func_ptr(cache_name, "init");
-  void (*destroy)(cache_t*) = _get_cache_func_ptr(cache_name, "destroy");
-  void (*destroy_unique)(cache_t*) = _get_cache_func_ptr(cache_name, "destroy_unique");
-  gboolean (*add)(cache_t*, request_t*) = _get_cache_func_ptr(cache_name, "add");
-  gboolean (*check)(cache_t*, request_t*) = _get_cache_func_ptr(cache_name, "check");
-  void *(*get_cached_data)(cache_t*, request_t*) = _get_cache_func_ptr(cache_name, "get_cached_data");
-  void (*update_cached_data)(cache_t*, request_t*, void *) = _get_cache_func_ptr(cache_name, "update_cached_data");
-  void (*_insert)(cache_t*, request_t*) = _get_cache_func_ptr(cache_name, "_insert");
-  void (*_update)(cache_t*, request_t*) = _get_cache_func_ptr(cache_name, "_update");
-  void (*_evict)(cache_t*, request_t*) = _get_cache_func_ptr(cache_name, "_evict");
-  gpointer (*evict_with_return)(cache_t*, request_t*) = _get_cache_func_ptr(cache_name, "evict_with_return");
-  guint64 (*get_current_size)(cache_t*) = _get_cache_func_ptr(cache_name, "get_current_size");
-  GHashTable *(*get_objmap)(cache_t*) = _get_cache_func_ptr(cache_name, "get_objmap");
-  void (*remove_obj)(cache_t*, void *) = _get_cache_func_ptr(cache_name, "remove_obj");
+
+  sprintf(func_name, "%s_init", cache_name);
+  cache_t* (*cache_init)(guint64, obj_id_t, void*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_destroy", cache_name);
+  void (*destroy)(cache_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_destroy_unique", cache_name);
+  void (*destroy_unique)(cache_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_add", cache_name);
+  gboolean (*add)(cache_t*, request_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_check", cache_name);
+  gboolean (*check)(cache_t*, request_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_get_cached_data", cache_name);
+  void *(*get_cached_data)(cache_t*, request_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_update_cached_data", cache_name);
+  void (*update_cached_data)(cache_t*, request_t*, void *) = dlsym(handle, func_name);
+
+  sprintf(func_name, "_%s_insert", cache_name);
+  void (*_insert)(cache_t*, request_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "_%s_update", cache_name);
+  void (*_update)(cache_t*, request_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "_%s_evict", cache_name);
+  void (*_evict)(cache_t*, request_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_evict_with_return", cache_name);
+  gpointer (*evict_with_return)(cache_t*, request_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_get_current_size", cache_name);
+  guint64 (*get_current_size)(cache_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_get_objmap", cache_name);
+  GHashTable *(*get_objmap)(cache_t*) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_remove_obj", cache_name);
+  void (*remove_obj)(cache_t*, void *) = dlsym(handle, func_name);
+
+
+  if (cache_init == NULL)
+    WARNING("cannot find cache_init for %s\n", cache_name);
+  if (destroy == NULL)
+    WARNING("cannot find function destroy for %s\n", cache_name);
+  if (add == NULL)
+    WARNING("cannot find function add for %s\n", cache_name);
+  if (check == NULL)
+    WARNING("cannot find function check for %s\n", cache_name);
+  if (_insert == NULL)
+    WARNING("cannot find function _insert for %s\n", cache_name);
+  if (_update == NULL)
+    WARNING("cannot find function _update for %s\n", cache_name);
+  if (_evict == NULL)
+    WARNING("cannot find function _evict for %s\n", cache_name);
+  if (get_current_size == NULL)
+    WARNING("cannot find function get_current_size for %s\n", cache_name);
+
 
   cache->core->cache_init = cache_init;
   cache->core->destroy = destroy;

@@ -16,8 +16,11 @@ int log_header(int level, const char *file, int line)
     }
 
     switch(level) {
-        case VERBOSE_LEVEL:
-            printf("%s[VERBOSE] ", BLUE);
+        case DEBUG3_LEVEL:
+            printf("%s[DEBUG3] ", BLUE);
+            break;
+        case DEBUG2_LEVEL:
+            printf("%s[DEBUG2] ", BLUE);
             break;
         case DEBUG_LEVEL:
             printf("%s[DEBUG]   ", BLUE);

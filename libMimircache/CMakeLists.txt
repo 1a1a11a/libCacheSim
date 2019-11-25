@@ -23,8 +23,8 @@ endif ()
 
 
 # add_compile_options(-std=c++11)
-SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGLEVEL=1")
-SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -ggdb -Wno-unused -DLOGLEVEL=3")
+SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGLEVEL=6")
+SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -ggdb -Wno-unused -DLOGLEVEL=5")
 #SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGGING_DEBUG")
 #SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -DLOGGING_INFO")
 message(STATUS "FLAG" ${CMAKE_C_FLAGS_DEBUG})
@@ -88,10 +88,10 @@ add_executable(profilerTest ../test/test_profiler.c)
 target_link_libraries(profilerTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 enable_testing()
-add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY ../data/)
-add_test(NAME distUtils COMMAND lruProfilerTest WORKING_DIRECTORY ../data/)
-add_test(NAME lruProfilerTest COMMAND lruProfilerTest WORKING_DIRECTORY ../data/)
-add_test(NAME profilerTest COMMAND lruProfilerTest WORKING_DIRECTORY ../data/)
+add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY .)
+add_test(NAME distUtils COMMAND lruProfilerTest WORKING_DIRECTORY .)
+add_test(NAME lruProfilerTest COMMAND lruProfilerTest WORKING_DIRECTORY .)
+add_test(NAME profilerTest COMMAND lruProfilerTest WORKING_DIRECTORY .)
 
 
 # Example Usages

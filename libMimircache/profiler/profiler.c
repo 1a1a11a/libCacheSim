@@ -117,6 +117,7 @@ profiler_res_t **run_trace(reader_t *reader_in,
   }
 
   // wait for all simulations to finish
+  sleep(2);
   INFO("%s starts computation, please wait\n", __func__);
   sleep(20);
   while (progress < (guint64) num_of_caches - 1) {

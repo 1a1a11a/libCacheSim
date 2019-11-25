@@ -19,36 +19,39 @@ extern "C"
 #endif
 
 
-struct LRU_params{
-    GHashTable *hashtable;
-    GQueue *list;
-    gint64 ts;              // this only works when add is called
+struct LRU_params {
+  GHashTable *hashtable;
+  GQueue *list;
+  gint64 ts;              // this only works when add is called
 };
 
-typedef struct LRU_params LRU_params_t; 
+typedef struct LRU_params LRU_params_t;
 
 
+extern gboolean LRU_check(cache_t *cache, request_t *req);
+
+extern gboolean LRU_add(cache_t *cache, request_t *req);
+
+extern void _LRU_insert(cache_t *LRU, request_t *req);
+
+extern void _LRU_update(cache_t *LRU, request_t *req);
+
+extern void _LRU_evict(cache_t *LRU, request_t *req);
+
+extern void *_LRU_evict_with_return(cache_t *LRU, request_t *req);
 
 
-extern gboolean LRU_check(cache_t* cache, request_t* req);
-extern gboolean LRU_add(cache_t* cache, request_t* req);
+extern void LRU_destroy(cache_t *cache);
+
+extern void LRU_destroy_unique(cache_t *cache);
 
 
-extern void     _LRU_insert(cache_t* LRU, request_t* req);
-extern void     _LRU_update(cache_t* LRU, request_t* req);
-extern void     _LRU_evict(cache_t* LRU, request_t* req);
-extern void*    _LRU_evict_with_return(cache_t* LRU, request_t* req);
+cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params);
 
 
-extern void     LRU_destroy(cache_t* cache);
-extern void     LRU_destroy_unique(cache_t* cache);
+extern void LRU_remove_obj(cache_t *cache, void *data_to_remove);
 
-
-cache_t*   LRU_init(guint64 size, obj_id_t obj_id_type, void* params);
-
-
-extern void     LRU_remove_obj(cache_t* cache, void* data_to_remove);
-extern guint64 LRU_get_size(cache_t* cache);
+extern guint64 LRU_get_current_size(cache_t *cache);
 
 
 #ifdef __cplusplus
@@ -56,4 +59,4 @@ extern guint64 LRU_get_size(cache_t* cache);
 #endif
 
 
-#endif	/* LRU_H */
+#endif  /* LRU_H */
