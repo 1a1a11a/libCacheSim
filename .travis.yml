@@ -1,0 +1,81 @@
+language: c
+
+
+env:
+  global:
+    # Ubuntu version
+    - LINUX_DIST=trusty
+    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
+    # Global build options and C++ flags
+#    - C_FLAGS="-Wall -pedantic -Werror -Wno-variadic-macros -Wno-long-long -Wno-shadow"
+    # Misc
+    - RUN_TESTS=true
+    - COVERAGE=false
+
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: true
+      compiler: gcc
+      addons:
+        apt:
+          packages: &precise_latest_boost_packages
+            - gcc-4.8
+            - g++-4.8
+            #- gcov-4.9
+            - clang-3.7
+            - valgrind
+            # Misc
+            - python-yaml
+            - lcov
+#            - libopencv-dev
+          sources: &precise_latest_boost_sources
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+
+before_install:
+  # Combine global build options with OS/compiler-dependent options
+  - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
+  - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
+  - export CXX_FLAGS=${C_FLAGS}" "${ENV_C_FLAGS}
+
+  # Use sed to replace the SSH URL with the public URL, then initialize submodules
+  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+  #    - git submodule update --init --recursive
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libglib2.0-dev python3-pip python3-matplotlib
+  - sudo pip install codecov
+
+install:
+#  - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
+  - echo ${PATH}
+  - echo ${CXX}
+  - ${CXX} --version
+  - ${CXX} -v
+
+  # Download and install recent cmake
+  - |
+    if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+      CMAKE_URL="http://www.cmake.org/files/v3.5/cmake-3.5.1-Linux-x86_64.tar.gz"
+      mkdir -p ${DEPS_DIR}/cmake
+      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
+      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+    fi
+
+script:
+  ############################################################################
+  # Build main and tests
+  ############################################################################
+  - mkdir -p build
+  - cd build
+  - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ..
+  - make -j
+#  - make project1_coverage
+  - ctest
+
+
+#after_success:
+#  - codecov -t c376990f-2ad6-4f7b-bbdb-5378a52e295c -X gcov
+

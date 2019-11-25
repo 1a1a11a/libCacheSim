@@ -1,0 +1,9 @@
+The CMimircache project benefits from the efforts of a number of people:
+
+  * Juncheng Yang (Emory University) designed and wrote most of the framework,
+  * Ymir Vigfusson (Emory University/Reykjavik University) is the faculty
+    sponsor of the project, 
+
+The PARDA design is credited to Qingpeng Niu et al. Citation: PARDA: A Fast Parallel Reuse Distance Analysis Algorithm. Qingpeng Niu, James Dinan, Qingda Lu and P.  Sadayappan.  IEEE IPDPS (IPDPS'12), May 2012, Shanghai, China.
+
+Now CMimircache is part of PyMimircache, which provides an easier interface to use, any change to CMimircache also needs change to the PyMimircache package to guarantee consistent results. 

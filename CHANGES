@@ -1,0 +1,5 @@
+Jan. 12, 2018
+Separation of PyMimircache and CMimircache, now CMimircache is an independent module, which can be used directly, this has the following benefits: 
+1. allows people who only want C/C++ mimircache module to use CMimircache. 
+2. the debug of CMimircache becomes easier. 
+3. simplifies the dependency on CMimircache from other components. 
