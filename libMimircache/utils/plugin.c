@@ -3,7 +3,7 @@
 //
 
 
-#include "../../CMimircache/include/mimircache/plugin.h"
+#include "../../libMimircache/include/mimircache/plugin.h"
 
 cache_t *create_cache_external(const char *cache_alg_name, uint64_t size, obj_id_t obj_id_type, void *params) {
   void *handle;

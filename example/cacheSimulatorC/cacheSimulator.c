@@ -3,8 +3,8 @@
 //
 
 #include "cacheSimulator.h"
-// gcc cacheSimulator.c -I ../CMimircache/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -l:libmimircache.so
-// gcc cacheSimulator.c -I ../CMimircache/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -lmimircache
+// gcc cacheSimulator.c -I ../libMimircache/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -l:libmimircache.so
+// gcc cacheSimulator.c -I ../libMimircache/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -lmimircache
 
 int main(int argc, char **argv){
   reader_t* reader;

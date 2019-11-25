@@ -3,7 +3,7 @@
 //
 //
 //  LRUSize.c
-//  CMimircache
+//  libMimircache
 //
 //  Created by Juncheng on 12/4/18.
 //  Copyright © 2018 Juncheng. All rights reserved.

@@ -2,8 +2,8 @@
 // Created by Juncheng Yang on 11/15/19.
 //
 
-#ifndef CMIMIRCACHE_CACHESIMULATOR_H
-#define CMIMIRCACHE_CACHESIMULATOR_H
+#ifndef libMimircache_CACHESIMULATOR_H
+#define libMimircache_CACHESIMULATOR_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,4 +22,4 @@ extern "C" {
 
 
 
-#endif //CMIMIRCACHE_CACHESIMULATOR_H
+#endif //libMimircache_CACHESIMULATOR_H
