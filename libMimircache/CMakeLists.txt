@@ -68,11 +68,11 @@ install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 
-file(GLOB py_SRC_FILES ${PROJECT_SOURCE_DIR}/../../pyBindings/*.c)
-add_library(Py${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${py_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${mimircache_VERSION_MAJOR}.${mimircache_VERSION_MINOR}.${mimircache_VERSION_REVISION})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+# file(GLOB py_SRC_FILES ${PROJECT_SOURCE_DIR}/../../pyBindings/*.c)
+# add_library(Py${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${py_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+# set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${mimircache_VERSION_MAJOR}.${mimircache_VERSION_MINOR}.${mimircache_VERSION_REVISION})
+# set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
+# target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 
 add_executable(readerTest ../test/test_reader.c)
