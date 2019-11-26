@@ -69,7 +69,7 @@ reader_t *setup_reader(const char *const file_loc,
           "please use a shorter name\n", MAX_FILE_PATH_LEN);
     exit(1);
   } else {
-    strcpy(reader->base->file_loc, file_loc);
+    strcpy(reader->base->trace_path, file_loc);
   }
 
 
@@ -400,7 +400,7 @@ reader_t *clone_reader(reader_t *const reader_in) {
    * note that 20191120, the reader cloned by this function does not preserve
    * the mmap_offset in the file as original reader */
 
-  reader_t *const reader = setup_reader(reader_in->base->file_loc,
+  reader_t *const reader = setup_reader(reader_in->base->trace_path,
                                         reader_in->base->trace_type,
                                         reader_in->base->obj_id_type,
                                         reader_in->base->init_params);

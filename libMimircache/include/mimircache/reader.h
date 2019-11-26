@@ -61,7 +61,7 @@ typedef struct reader_base {
 //  int disk_sector_size;
 
   FILE *file;
-  char file_loc[MAX_FILE_PATH_LEN];
+  char trace_path[MAX_FILE_PATH_LEN];
   //    char rd_file_loc[MAX_FILE_PATH_LEN];    /* the file that stores reuse
   //    distance of the data,
   //                                             * format: gint64 per entry */
