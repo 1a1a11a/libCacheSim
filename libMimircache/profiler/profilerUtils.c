@@ -112,9 +112,9 @@ GArray *get_bp_rtime(reader_t *reader,
   }
   if (reader->base->trace_type == CSV_TRACE) {
     csv_params_t *params = reader->reader_params;
-    if (params->real_time_column == -1 || params->real_time_column == 0) {
+    if (params->real_time_field == -1 || params->real_time_field == 0) {
       ERROR("get_bp_rtime needs you to provide "
-            "real_time_column parameter for csv reader\n");
+            "real_time_field parameter for csv reader\n");
       exit(1);
     }
   }

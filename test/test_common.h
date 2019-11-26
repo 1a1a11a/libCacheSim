@@ -52,9 +52,9 @@ reader_t *setup_binary_reader() {
 reader_t *setup_csv_reader_obj_str() {
   csvReader_init_params *init_params_csv = g_new0(csvReader_init_params, 1);
   init_params_csv->delimiter = ',';
-  init_params_csv->real_time_column = 2;
-  init_params_csv->label_column = 5;
-  init_params_csv->size_column = 4;
+  init_params_csv->real_time_field = 2;
+  init_params_csv->obj_id_field = 5;
+  init_params_csv->size_field = 4;
   init_params_csv->has_header = TRUE;
   reader_t *reader_csv_c = setup_reader("../../data/trace.csv", CSV_TRACE, OBJ_ID_STR, init_params_csv);
   g_free(init_params_csv);
@@ -64,9 +64,9 @@ reader_t *setup_csv_reader_obj_str() {
 reader_t *setup_csv_reader_obj_num() {
   csvReader_init_params *init_params_csv = g_new0(csvReader_init_params, 1);
   init_params_csv->delimiter = ',';
-  init_params_csv->real_time_column = 2;
-  init_params_csv->label_column = 5;
-  init_params_csv->size_column = 4;
+  init_params_csv->real_time_field = 2;
+  init_params_csv->obj_id_field = 5;
+  init_params_csv->size_field = 4;
   init_params_csv->has_header = TRUE;
   reader_t *reader_csv_l = setup_reader("../../data/trace.csv", CSV_TRACE, OBJ_ID_NUM, init_params_csv);
   g_free(init_params_csv);

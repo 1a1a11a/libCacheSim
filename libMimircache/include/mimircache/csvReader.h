@@ -19,13 +19,13 @@ extern "C"
 
 
 typedef struct{
-    gint label_column;
-    gint op_column;
-    gint real_time_column;
-    gint size_column;
+    gint obj_id_field;
+    gint op_field;
+    gint real_time_field;
+    gint size_field;
     gboolean has_header;
     unsigned char delimiter;
-    gint traceID_column;
+    gint traceID_field;
 }csvReader_init_params; 
 
 
@@ -34,12 +34,12 @@ typedef struct{
     unsigned char delim;
     struct csv_parser *csv_parser;
     
-    gint real_time_column;          /* column number begins from 1 */
-    gint label_column;
-    gint op_column;
-    gint size_column;
-    gint traceID_column;
-    gint current_column_counter;
+    gint real_time_field;          /* column number begins from 1 */
+    gint obj_id_field;
+    gint op_field;
+    gint size_field;
+    gint traceID_field;
+    gint current_field_counter;
     
     void* req_pointer;
     gboolean already_got_req;
