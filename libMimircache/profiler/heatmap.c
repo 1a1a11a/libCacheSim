@@ -28,7 +28,7 @@ draw_dict *heatmap_computation(reader_t *reader,
 draw_dict *hm_hr_st_et(reader_t *reader,
                        cache_t *cache,
                        gboolean interval_hit_ratio_b,
-                       double decay_coefficient_lf,
+                       double ewma_coefficient_lf,
                        int num_of_threads);
 
 /*-----------------------------------------------------------------------------
@@ -79,18 +79,6 @@ draw_dict *heatmap(reader_t *reader,
     abort();
   }
 
-
-  // check cache is LRU or not
-  if (cache == NULL || strcmp(cache->core->cache_name, "LRU") == 0) {
-    if (plot_type != future_rd_distribution &&
-        plot_type != dist_distribution &&
-        plot_type != rt_distribution &&
-        plot_type != effective_size) {
-      if (reader->sdata->reuse_dist_type != REUSE_DIST) {
-        _get_reuse_dist_seq(reader);
-      }
-    }
-  }
   return heatmap_computation(reader, cache, time_mode,
                              plot_type, hm_comp_params, num_of_threads);
 
@@ -138,60 +126,31 @@ draw_dict *heatmap_computation(reader_t *reader,
                                heatmap_type_e plot_type,
                                hm_comp_params_t *hm_comp_params,
                                int num_of_threads) {
+  gint64 *dist;
   if (plot_type == hr_st_et) {
     WARNING("this has been changed not sure it is correct or not\n");
-    if (reader->sdata->reuse_dist_type != LAST_DIST) {
-      g_free(reader->sdata->reuse_dist);
-      reader->sdata->reuse_dist = NULL;
-      reader->sdata->reuse_dist = get_last_access_dist(reader);
-    }
+    dist = get_last_access_dist(reader);
     return hm_hr_st_et(reader, cache,
                        hm_comp_params->interval_hit_ratio_b,
                        hm_comp_params->ewma_coefficient_lf,
                        num_of_threads);
   } else if (plot_type == rd_distribution) {
-    return heatmap_rd_distribution(reader, time_mode, num_of_threads, 0);
+    dist = get_reuse_dist(reader);
+    return heatmap_dist_distribution(reader, dist, num_of_threads, 0);
   } else if (plot_type == rd_distribution_CDF) {
-    return heatmap_rd_distribution(reader, time_mode, num_of_threads, 1);
+    dist = get_reuse_dist(reader);
+    return heatmap_dist_distribution(reader, dist, num_of_threads, 1);
   } else if (plot_type == future_rd_distribution) {
-    if (reader->sdata->reuse_dist_type != FUTURE_RD) {
-      g_free(reader->sdata->reuse_dist);
-      reader->sdata->reuse_dist = NULL;
-      reader->sdata->reuse_dist = get_future_reuse_dist(reader);
-    }
-
-    draw_dict *dd = heatmap_rd_distribution(reader, time_mode, num_of_threads, 0);
-
-    reader->sdata->max_reuse_dist = 0;
-    g_free(reader->sdata->reuse_dist);
-    reader->sdata->reuse_dist = NULL;
-
+    dist = get_future_reuse_dist(reader);
+    draw_dict *dd = heatmap_dist_distribution(reader, dist, num_of_threads, 0);
     return dd;
-  } else if (plot_type == dist_distribution) {
-    if (reader->sdata->reuse_dist_type != LAST_DIST) {
-      g_free(reader->sdata->reuse_dist);
-      reader->sdata->reuse_dist = NULL;
-      reader->sdata->reuse_dist = get_last_access_dist(reader);
-    }
-
-    draw_dict *dd = heatmap_rd_distribution(reader, time_mode, num_of_threads, 0);
-    reader->sdata->max_reuse_dist = 0;
-    g_free(reader->sdata->reuse_dist);
-    reader->sdata->reuse_dist = NULL;
-
+    } else if (plot_type == dist_distribution) {
+    dist = get_last_access_dist(reader);
+    draw_dict *dd = heatmap_dist_distribution(reader, dist, num_of_threads, 0);
     return dd;
   } else if (plot_type == rt_distribution) {        // real time distribution, time msut be integer
-    if (reader->sdata->reuse_dist_type != REUSE_TIME) {
-      g_free(reader->sdata->reuse_dist);
-      reader->sdata->reuse_dist = NULL;
-      reader->sdata->reuse_dist = get_reuse_time(reader);
-    }
-
-    draw_dict *dd = heatmap_rd_distribution(reader, time_mode, num_of_threads, 0);
-    reader->sdata->max_reuse_dist = 0;
-    g_free(reader->sdata->reuse_dist);
-    reader->sdata->reuse_dist = NULL;
-
+    dist = get_reuse_time(reader);
+    draw_dict *dd = heatmap_dist_distribution(reader, dist, num_of_threads, 0);
     return dd;
   } else {
     ERROR("unknown plot obj_id_type %d\n", plot_type);
@@ -232,6 +191,8 @@ draw_dict *hm_hr_st_et(reader_t *reader,
   params->interval_hit_ratio_b = interval_hit_ratio_b;
   params->ewma_coefficient_lf = ewma_coefficient_lf;
   params->progress = &progress;
+  params->reuse_dist = get_reuse_dist(reader);
+  params->last_access_dist = get_last_access_dist(reader);
   g_mutex_init(&(params->mtx));
 
 
@@ -271,33 +232,38 @@ draw_dict *hm_hr_st_et(reader_t *reader,
 }
 
 
-draw_dict *heatmap_rd_distribution(reader_t *reader, char mode, int num_of_threads, int CDF) {
+draw_dict *heatmap_dist_distribution(reader_t *reader, const gint64* dist, int num_of_threads, int CDF) {
   /* Do NOT call this function directly,
    * call top level heatmap, which setups some data for this function */
 
   /* this one, the result is in the log form */
 
-  guint i;
+  guint64 i;
   guint64 progress = 0;
 
   GArray *break_points;
   break_points = reader->sdata->break_points->array;
 
   // this is used to make sure length of x and y are approximate same, not different by too much
-  if (reader->sdata->max_reuse_dist == 0 || break_points->len == 0) {
-    ERROR("did you call top level function? max reuse distance %ld, bp len %u\n",
-          (long) reader->sdata->max_reuse_dist, break_points->len);
-    exit(1);
+//  if (reader->sdata->max_reuse_dist == 0 || break_points->len == 0) {
+//    ERROR("did you call top level function? max reuse distance %ld, bp len %u\n",
+//          (long) reader->sdata->max_reuse_dist, break_points->len);
+//    exit(1);
+//  }
+
+  gint64 max_dist = -1;
+  for (i=0; i<get_num_of_req(reader); i++){
+    if (dist[i] > max_dist)
+      max_dist = dist[i];
   }
-  double log_base = get_log_base((unsigned long) reader->sdata->max_reuse_dist, break_points->len);
-  reader->udata->log_base = log_base;
+  double log_base = get_log_base((guint64) max_dist, break_points->len);
 
   // create draw_dict storage
   draw_dict *dd = g_new(draw_dict, 1);
   dd->xlength = break_points->len - 1;
 
   // the last one is used for store cold miss; REUSE_DIST=0 and REUSE_DIST=1 are combined at first bin (index=0)
-  dd->ylength = (guint64) ceil(log((double) reader->sdata->max_reuse_dist) / log(log_base));
+  dd->ylength = (guint64) ceil(log((double) max_dist) / log(log_base));
   dd->matrix = g_new(double*, break_points->len);
   for (i = 0; i < dd->xlength; i++)
     dd->matrix[i] = g_new0(double, dd->ylength);
@@ -309,7 +275,9 @@ draw_dict *heatmap_rd_distribution(reader_t *reader, char mode, int num_of_threa
   params->break_points = break_points;
   params->dd = dd;
   params->progress = &progress;
-  params->log_base = log_base;
+  params->reuse_dist = (gint64 *) dist;
+  dd->log_base = log_base;
+
   g_mutex_init(&(params->mtx));
 
 

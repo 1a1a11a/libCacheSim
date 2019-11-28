@@ -98,7 +98,7 @@ gboolean SLRU_add(cache_t *cache, request_t *cp) {
     retval = TRUE;
   } else {
     _SLRU_insert(cache, cp);
-    if (LRU_get_current_size(SLRU_params->LRUs[0]) > SLRU_params->LRUs[0]->core->size)
+    if ((long) LRU_get_current_size(SLRU_params->LRUs[0]) > SLRU_params->LRUs[0]->core->size)
       _SLRU_evict(cache, cp);
     retval = FALSE;
   }

@@ -7,10 +7,10 @@
 
 gint64 *_get_reuse_dist_seq(reader_t *reader) {
   // check whether the reuse LAST_DIST computation has been finished
-  if (reader->sdata->reuse_dist &&
-      reader->sdata->reuse_dist_type == REUSE_DIST) {
-    return reader->sdata->reuse_dist;
-  }
+//  if (reader->sdata->reuse_dist &&
+//      reader->sdata->reuse_dist_type == REUSE_DIST) {
+//    return reader->sdata->reuse_dist;
+//  }
 
   guint64 ts = 0;
   gint64 max_rd = 0;
@@ -46,9 +46,9 @@ gint64 *_get_reuse_dist_seq(reader_t *reader) {
   }
 
 
-  reader->sdata->reuse_dist = reuse_dist_array;
-  reader->sdata->max_reuse_dist = max_rd;
-  reader->sdata->reuse_dist_type = REUSE_DIST;
+//  reader->sdata->reuse_dist = reuse_dist_array;
+//  reader->sdata->max_reuse_dist = max_rd;
+//  reader->sdata->reuse_dist_type = REUSE_DIST;
 
 
   // clean up
@@ -66,24 +66,16 @@ gint64 *get_reuse_dist(reader_t *reader) {
 
 /* TODO: need to rewrite this function for the same reason as get_next_access_dist */
 gint64 *get_future_reuse_dist(reader_t *reader) {
-  /*  this function finds har far in the future, a given obj_id will be requested again,
-   *  if it won't be requested again, then -1.
-   *  ATTENTION: the reuse distance of the last element is at last,
-   *  meaning the sequence is NOT reversed.
 
-   *  It is the user's responsibility to release the memory of hit count array
-   *  returned by this function.
-   */
-
-//  WARNING("%s has some overhead, need a rewrite\n", __func__);
+//  WARNING("%s has some overhead because of reading backwards, need a rewrite\n", __func__);
 
   // check whether the reuse LAST_DIST computation has been finished or not
-  if (reader->sdata->reuse_dist &&
-      reader->sdata->reuse_dist_type == FUTURE_RD) {
-    return reader->sdata->reuse_dist;
-  }
+//  if (reader->sdata->reuse_dist &&
+//      reader->sdata->reuse_dist_type == FUTURE_RD) {
+//    return reader->sdata->reuse_dist;
+//  }
 
-  guint64 ts = 0;
+  gint64 ts = 0;
   gint64 max_rd = 0;
   gint64 reuse_dist;
   get_num_of_req(reader);
@@ -130,13 +122,13 @@ gint64 *get_future_reuse_dist(reader_t *reader) {
   }
 
   // save to reader
-  if (reader->sdata->reuse_dist != NULL) {
-    g_free(reader->sdata->reuse_dist);
-    reader->sdata->reuse_dist = NULL;
-  }
-  reader->sdata->reuse_dist = reuse_dist_array;
-  reader->sdata->max_reuse_dist = max_rd;
-  reader->sdata->reuse_dist_type = FUTURE_RD;
+//  if (reader->sdata->reuse_dist != NULL) {
+//    g_free(reader->sdata->reuse_dist);
+//    reader->sdata->reuse_dist = NULL;
+//  }
+//  reader->sdata->reuse_dist = reuse_dist_array;
+//  reader->sdata->max_reuse_dist = max_rd;
+//  reader->sdata->reuse_dist_type = FUTURE_RD;
 
   // clean up
   free_request(req);
@@ -174,10 +166,10 @@ gint64 *get_reuse_time(reader_t *reader) {
    */
 
   // check whether REUSE_TIME computation has been done before
-  if (reader->sdata->reuse_dist &&
-      reader->sdata->reuse_dist_type == REUSE_TIME) {
-    return reader->sdata->reuse_dist;
-  }
+//  if (reader->sdata->reuse_dist &&
+//      reader->sdata->reuse_dist_type == REUSE_TIME) {
+//    return reader->sdata->reuse_dist;
+//  }
 
   guint64 ts = 0;
   gint64 max_rt = 0, rt = 0;
@@ -230,13 +222,13 @@ gint64 *get_reuse_time(reader_t *reader) {
     ts++;
   }
 
-  if (reader->sdata->reuse_dist != NULL) {
-    g_free(reader->sdata->reuse_dist);
-    reader->sdata->reuse_dist = NULL;
-  }
-  reader->sdata->reuse_dist = dist_array;
-  reader->sdata->max_reuse_dist = max_rt;
-  reader->sdata->reuse_dist_type = REUSE_TIME;
+//  if (reader->sdata->reuse_dist != NULL) {
+//    g_free(reader->sdata->reuse_dist);
+//    reader->sdata->reuse_dist = NULL;
+//  }
+//  reader->sdata->reuse_dist = dist_array;
+//  reader->sdata->max_reuse_dist = max_rt;
+//  reader->sdata->reuse_dist_type = REUSE_TIME;
 
   // clean up
   free_request(req);
@@ -286,24 +278,24 @@ gint64 *load_reuse_dist(reader_t *const reader,
       max_rd = reuse_dist_array[i];
 
   // save to reader
-  if (reader->sdata->reuse_dist != NULL) {
-    g_free(reader->sdata->reuse_dist);
-    reader->sdata->reuse_dist = NULL;
-  }
-  reader->sdata->reuse_dist = reuse_dist_array;
-  reader->sdata->max_reuse_dist = max_rd;
-  reader->sdata->reuse_dist_type = dist_type;
+//  if (reader->sdata->reuse_dist != NULL) {
+//    g_free(reader->sdata->reuse_dist);
+//    reader->sdata->reuse_dist = NULL;
+//  }
+//  reader->sdata->reuse_dist = reuse_dist_array;
+//  reader->sdata->max_reuse_dist = max_rd;
+//  reader->sdata->reuse_dist_type = dist_type;
   return reuse_dist_array;
 }
 
 
 gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, request_t *)) {
   // check whether computation has been done before
-  dist_t dist_type = funcPtr == read_one_req ? LAST_DIST : NEXT_DIST;
-  if (reader->sdata->reuse_dist) {
-    if (funcPtr == read_one_req && reader->sdata->reuse_dist_type == dist_type)
-      return reader->sdata->reuse_dist;
-  }
+//  dist_t dist_type = funcPtr == read_one_req ? LAST_DIST : NEXT_DIST;
+//  if (reader->sdata->reuse_dist) {
+//    if (funcPtr == read_one_req && reader->sdata->reuse_dist_type == dist_type)
+//      return reader->sdata->reuse_dist;
+//  }
 
   guint64 n_req = get_num_of_req(reader);
   request_t *req = new_request(reader->base->obj_id_type);
@@ -323,7 +315,7 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
     abort();
   }
 
-  guint64 ts = 0;
+  gint64 ts = 0;
   gint64 dist, max_dist = 0;
   gboolean is_csv_with_header = FALSE;
   if (reader->base->trace_type == CSV_TRACE) {
@@ -369,13 +361,13 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
   }
 
 
-  if (reader->sdata->reuse_dist != NULL) {
-    g_free(reader->sdata->reuse_dist);
-    reader->sdata->reuse_dist = NULL;
-  }
-  reader->sdata->reuse_dist = dist_array;
-  reader->sdata->max_reuse_dist = max_dist;
-  reader->sdata->reuse_dist_type = dist_type;
+//  if (reader->sdata->reuse_dist != NULL) {
+//    g_free(reader->sdata->reuse_dist);
+//    reader->sdata->reuse_dist = NULL;
+//  }
+//  reader->sdata->reuse_dist = dist_array;
+//  reader->sdata->max_reuse_dist = max_dist;
+//  reader->sdata->reuse_dist_type = dist_type;
 
   // clean up
   free_request(req);

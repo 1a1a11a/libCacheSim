@@ -25,34 +25,34 @@ extern "C"
 #include "distUtils.h"
 
 
-guint64 *get_hit_count_seq(reader_t *reader,
-                           gint64 size);
+guint64 *get_lru_hit_count_seq(reader_t *reader,
+                               gint64 size);
 
-double *get_hit_ratio_seq(reader_t *reader,
-                          gint64 size);
+double *get_lru_hit_ratio_seq(reader_t *reader,
+                              gint64 size);
 
-guint64 *get_miss_count_seq(reader_t *reader,
-                           gint64 size);
+guint64 *get_lru_miss_count_seq(reader_t *reader,
+                                gint64 size);
 
-double *get_miss_ratio_seq(reader_t *reader,
-                          gint64 size);
+double *get_lru_miss_ratio_seq(reader_t *reader,
+                               gint64 size);
 
 
-guint64 *get_hit_count_seq_shards(reader_t *reader,
-                                  gint64 size,
-                                  double sample_ratio);
+guint64 *get_lru_hit_count_seq_shards(reader_t *reader,
+                                      gint64 size,
+                                      double sample_ratio);
 
-double *get_hit_ratio_seq_shards(reader_t *reader,
-                                 gint64 size,
-                                 double sample_ratio);
+double *get_lru_hit_ratio_seq_shards(reader_t *reader,
+                                     gint64 size,
+                                     double sample_ratio);
 
-guint64 *get_hit_count_phase(reader_t *reader,
-                             gint64 current_phase,
-                             gint64 num_phases);
+guint64 *get_lru_hit_count_phase(reader_t *reader,
+                                 gint64 current_phase,
+                                 gint64 num_phases);
 
-double *get_hit_ratio_phase(reader_t *reader,
-                            gint64 current_phase,
-                            gint64 num_phases);
+double *get_lru_hit_ratio_phase(reader_t *reader,
+                                gint64 current_phase,
+                                gint64 num_phases);
 
 
 #ifdef __cplusplus

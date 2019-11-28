@@ -32,8 +32,8 @@ void hm_LRU_hr_st_et_thread(gpointer data, gpointer user_data) {
   draw_dict *dd = params->dd;
   guint64 cache_size = (guint64) params->cache->core->size;
   // distance to last access
-  gint64 *last_access = reader_thread->sdata->last_access;
-  gint64 *reuse_dist = reader_thread->sdata->reuse_dist;
+  gint64 *last_access = params->last_access_dist;
+  gint64 *reuse_dist = params->reuse_dist;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
   guint64 real_start = g_array_index(break_points, guint64, order);
@@ -104,7 +104,7 @@ void hm_LRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
     for (i = 0; i < break_points->len - 1; i++)
       dd->matrix[i][order] = 0;
   } else {
-    gint64 *reuse_dist = reader_thread->sdata->reuse_dist;
+    gint64 *reuse_dist = params->reuse_dist;
     double ewma_coefficient_lf = params->ewma_coefficient_lf;
 
 
@@ -154,8 +154,8 @@ void hm_LRU_hr_st_size_thread(gpointer data, gpointer user_data) {
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
   guint64 cache_size = (guint64) params->cache->core->size;
-  gint64 *last_access = reader_thread->sdata->last_access;
-  gint64 *reuse_dist = reader_thread->sdata->reuse_dist;
+  gint64 *last_access = params->last_access_dist;
+  gint64 *reuse_dist = params->reuse_dist;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
   guint64 real_start = g_array_index(break_points, guint64, order);
@@ -195,8 +195,8 @@ void hm_rd_distribution_thread(gpointer data, gpointer user_data) {
   GArray *break_points = params->break_points;
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
-  gint64 *reuse_dist = params->reader->sdata->reuse_dist;
-  double log_base = params->log_base;
+  gint64 *reuse_dist = params->reuse_dist;
+  double log_base = dd->log_base;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
   double *array = dd->matrix[order];
@@ -223,8 +223,8 @@ void hm_rd_distribution_CDF_thread(gpointer data, gpointer user_data) {
   GArray *break_points = params->break_points;
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
-  gint64 *reuse_dist = params->reader->sdata->reuse_dist;
-  double log_base = params->log_base;
+  gint64 *reuse_dist = params->reuse_dist;
+  double log_base = dd->log_base;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
   double *array = dd->matrix[order];

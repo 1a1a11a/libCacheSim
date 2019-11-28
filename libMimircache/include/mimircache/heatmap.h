@@ -50,7 +50,7 @@ extern "C"
         guint64 xlength;
         guint64 ylength;
         double** matrix;
-
+        double log_base;
     }draw_dict;
 
 
@@ -61,12 +61,15 @@ extern "C"
         guint64 cache_size;
         gint64 bin_size;
 
+      gint64 *last_access_dist;
+      gint64 *reuse_dist;
+//      gint64 *dist;
+
         gboolean interval_hit_ratio_b;
         double ewma_coefficient_lf;
 
         gboolean use_percent; 
         
-        gint64 *reuse_dist;
         gint64 *future_reuse_dist;
         
         GArray* break_points;
@@ -75,7 +78,7 @@ extern "C"
         GMutex mtx;
 
         // used in rd_distribution
-        double log_base;
+//        double log_base;
     }mt_params_hm_t;
 
 
@@ -118,10 +121,10 @@ extern "C"
                                     hm_comp_params_t* hm_comp_params,
                                     int num_of_threads);
 
-    draw_dict* heatmap_rd_distribution(reader_t* reader,
-                                       char time_mode,
-                                       int num_of_threads,
-                                       int CDF);
+    draw_dict* heatmap_dist_distribution(reader_t* reader,
+                                         const gint64 *dist,
+                                         int num_of_threads,
+                                         int CDF);
 
 
 

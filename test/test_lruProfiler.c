@@ -19,21 +19,21 @@ void test_lruprofiler_basic(gconstpointer user_data) {
 //  guint64 hc_true[N_TEST] = {0, 2685, 662, 561, 758, 238};
   guint64 hc_true[N_TEST] = {0, 2685, 3347, 3908, 4666, 4904};
 
-  hr = get_hit_ratio_seq(reader, 20);
+  hr = get_lru_hit_ratio_seq(reader, 20);
   for (i=0; i<N_TEST; i++) {
     g_assert_cmpfloat(fabs(hr[i]-hr_true[i]), <=, 0.0001);
   }
 //  printf("last hr %lf\n", hr[22]);
   g_assert_cmpfloat(fabs(hr[20]-hr_last_size20_true), <=, 0.0001);
 
-  hr = get_hit_ratio_seq(reader, -1);
+  hr = get_lru_hit_ratio_seq(reader, -1);
   for (i=0; i<N_TEST; i++) {
     g_assert_cmpfloat(fabs(hr[i]-hr_true[i]), <=, 0.0001);
   }
   g_assert_cmpfloat(fabs(hr[get_num_of_req(reader)-1]-hr_last_true), <=, 0.0001);
 
 
-  hc = get_hit_count_seq(reader, -1);
+  hc = get_lru_hit_count_seq(reader, -1);
   for (i=0; i<N_TEST; i++) {
     g_assert_cmpuint(hc[i], ==, hc_true[i]);
   }

@@ -47,15 +47,15 @@ reader_t *setup_reader(const char *const file_loc,
   reader_t *const reader = g_new0(reader_t, 1);
   reader->base = g_new0(reader_base_t, 1);
   reader->sdata = g_new0(reader_data_share_t, 1);
-  reader->udata = g_new0(reader_data_unique_t, 1);
+//  reader->udata = g_new0(reader_data_unique_t, 1);
 
   reader->sdata->break_points = NULL;
-  reader->sdata->last_access = NULL;
-  reader->sdata->reuse_dist = NULL;
-  reader->sdata->max_reuse_dist = 0;
+//  reader->sdata->last_access = NULL;
+//  reader->sdata->reuse_dist = NULL;
+//  reader->sdata->max_reuse_dist = 0;
 
-  reader->udata->hit_ratio = NULL;
-  reader->udata->hit_ratio_shards = NULL;
+//  reader->udata->hit_ratio = NULL;
+//  reader->udata->hit_ratio_shards = NULL;
 
   reader->base->n_total_req = -1;
   reader->base->obj_id_type = obj_id_type;
@@ -457,28 +457,28 @@ int close_reader(reader_t *const reader) {
     g_free(reader->reader_params);
 
   if (reader->sdata) {
-    if (reader->sdata->last_access) {
-      g_free(reader->sdata->last_access);
-    }
+//    if (reader->sdata->last_access) {
+//      g_free(reader->sdata->last_access);
+//    }
 
-    if (reader->sdata->reuse_dist) {
-      g_free(reader->sdata->reuse_dist);
-    }
+//    if (reader->sdata->reuse_dist) {
+//      g_free(reader->sdata->reuse_dist);
+//    }
 
     if (reader->sdata->break_points) {
       g_array_free(reader->sdata->break_points->array, TRUE);
       g_free(reader->sdata->break_points);
     }
   }
-  if (reader->udata) {
-    if (reader->udata->hit_ratio)
-      g_free(reader->udata->hit_ratio);
-    if (reader->udata->hit_ratio_shards)
-      g_free(reader->udata->hit_ratio_shards);
-  }
+//  if (reader->udata) {
+//    if (reader->udata->hit_ratio)
+//      g_free(reader->udata->hit_ratio);
+//    if (reader->udata->hit_ratio_shards)
+//      g_free(reader->udata->hit_ratio_shards);
+//  }
 
   g_free(reader->base);
-  g_free(reader->udata);
+//  g_free(reader->udata);
   g_free(reader->sdata);
   g_free(reader);
   return 0;
@@ -516,16 +516,16 @@ int close_reader_unique(reader_t *const reader) {
   if (reader->reader_params)
     g_free(reader->reader_params);
 
-  if (reader->udata) {
-    if (reader->udata->hit_ratio)
-      g_free(reader->udata->hit_ratio);
-    if (reader->udata->hit_ratio_shards)
-      g_free(reader->udata->hit_ratio_shards);
-  }
+//  if (reader->udata) {
+//    if (reader->udata->hit_ratio)
+//      g_free(reader->udata->hit_ratio);
+//    if (reader->udata->hit_ratio_shards)
+//      g_free(reader->udata->hit_ratio_shards);
+//  }
 
   g_free(reader->base);
   g_free(reader->sdata);
-  g_free(reader->udata);
+//  g_free(reader->udata);
 
   g_free(reader);
   return 0;

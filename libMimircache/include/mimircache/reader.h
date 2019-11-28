@@ -90,24 +90,24 @@ typedef struct reader_base {
 
 typedef struct reader_data_unique {
 
-  double *hit_ratio;
-  double *hit_ratio_shards;
-  double log_base;
+//  double *hit_ratio;
+//  double *hit_ratio_shards;
+//  double log_base;
 
 } reader_data_unique_t;
 
 typedef struct reader_data_share {
   break_point_t *break_points;
-  gint64 *reuse_dist;
-  dist_t reuse_dist_type;
-  gint64 max_reuse_dist;
-  gint64 *last_access;
+//  gint64 *reuse_dist;
+//  dist_t reuse_dist_type;
+//  gint64 max_reuse_dist;
+//  gint64 *last_access;
 
 } reader_data_share_t;
 
 typedef struct reader {
   struct reader_base *base;
-  struct reader_data_unique *udata;
+//  struct reader_data_unique *udata;
   struct reader_data_share *sdata;
   void *reader_params;
 } reader_t;

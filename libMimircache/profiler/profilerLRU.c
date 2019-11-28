@@ -18,24 +18,24 @@ extern "C"
 
 
 
-guint64 *get_miss_count_seq(reader_t *reader,
-                            gint64 size){
-  guint64* hc = get_hit_count_seq(reader, size);
+guint64 *get_lru_miss_count_seq(reader_t *reader,
+                                gint64 size){
+  guint64* hc = get_lru_hit_count_seq(reader, size);
   guint64 req_cnt = get_num_of_req(reader);
   if (size == -1)
     size = req_cnt;
-  for (guint64 i=0; i<size+1; i++){
+  for (gint64 i=0; i<size+1; i++){
     hc[i] = req_cnt - hc[1];
   }
   return hc;
 }
 
-double *get_miss_ratio_seq(reader_t *reader,
-                           gint64 size){
-  double* hr = get_hit_ratio_seq(reader, size);
+double *get_lru_miss_ratio_seq(reader_t *reader,
+                               gint64 size){
+  double* hr = get_lru_hit_ratio_seq(reader, size);
   if (size == -1)
     size = get_num_of_req(reader);
-  for (guint64 i=0; i<size+1; i++){
+  for (gint64 i=0; i<size+1; i++){
     hr[i] = 1 - hr[1];
   }
   return hr;
@@ -49,8 +49,8 @@ double *get_miss_ratio_seq(reader_t *reader,
  * @param size: the max profiling size, if -1, then the maximum possible size
  */
 
-guint64 *get_hit_count_seq(reader_t *reader,
-                           gint64 size) {
+guint64 *get_lru_hit_count_seq(reader_t *reader,
+                               gint64 size) {
   /* get the hit count, if size==-1, then do all the counting, otherwise,
    * treat the ones with reuse distance larger than size as out of range,
    * and put it in the second to the last bucket of hit_count_array
@@ -113,7 +113,7 @@ guint64 *get_hit_count_seq(reader_t *reader,
   // clear the last two counter as this will be deprecated soon to provide similar API as run_trace
   hit_count_array[size + 1] = 0;
   hit_count_array[size + 2] = 0;
-  for (size_t i = 1; i < size + 1; i++) {
+  for (gint64 i = 1; i < size + 1; i++) {
     hit_count_array[i] = hit_count_array[i] + hit_count_array[i - 1];
   }
 
@@ -126,10 +126,10 @@ guint64 *get_hit_count_seq(reader_t *reader,
 }
 
 
-guint64 *get_hit_count_seq_shards(reader_t *reader,
-                                  gint64 size,
-                                  double sample_ratio) {
-  /* same as get_hit_count_seq, but using shards generated data,
+guint64 *get_lru_hit_count_seq_shards(reader_t *reader,
+                                      gint64 size,
+                                      double sample_ratio) {
+  /* same as get_lru_hit_count_seq, but using shards generated data,
    * get the hit count, if size==-1, then do all the counting, otherwise,
    * treat the ones with reuse distance larger than size as out of range,
    * and put it in the second to the last bucket of hit_count_array
@@ -226,9 +226,9 @@ guint64 *get_hit_count_seq_shards(reader_t *reader,
 }
 
 
-double *get_hit_ratio_seq_shards(reader_t *reader,
-                                 gint64 size,
-                                 double sample_ratio) {
+double *get_lru_hit_ratio_seq_shards(reader_t *reader,
+                                     gint64 size,
+                                     double sample_ratio) {
 
   if (reader->base->n_total_req == -1)
     reader->base->n_total_req = get_num_of_req(reader);
@@ -238,11 +238,11 @@ double *get_hit_ratio_seq_shards(reader_t *reader,
 
   assert(size == reader->base->n_total_req);
 
-  if (reader->udata->hit_ratio_shards && size == reader->base->n_total_req)
-    return reader->udata->hit_ratio_shards;
+//  if (reader->udata->hit_ratio_shards && size == reader->base->n_total_req)
+//    return reader->udata->hit_ratio_shards;
 
 
-  guint64 *hit_count_array = get_hit_count_seq_shards(reader, size, sample_ratio);
+  guint64 *hit_count_array = get_lru_hit_count_seq_shards(reader, size, sample_ratio);
   assert(hit_count_array != NULL);
   double total_num = (double) (reader->base->n_total_req * sample_ratio);
   double *hit_ratio_array = g_new0(double, size + 3);
@@ -261,13 +261,13 @@ double *get_hit_ratio_seq_shards(reader_t *reader,
 
   g_free(hit_count_array);
 
-  if (size == reader->base->n_total_req)
-    reader->udata->hit_ratio_shards = hit_ratio_array;
+//  if (size == reader->base->n_total_req)
+//    reader->udata->hit_ratio_shards = hit_ratio_array;
 
   return hit_ratio_array;
 }
 
-guint64 *get_hit_count_phase(reader_t *reader, gint64 current_phase, gint64 num_phases) {
+guint64 *get_lru_hit_count_phase(reader_t *reader, gint64 current_phase, gint64 num_phases) {
 
   guint64 ts = 0;
   gint64 reuse_dist;
@@ -332,7 +332,7 @@ guint64 *get_hit_count_phase(reader_t *reader, gint64 current_phase, gint64 num_
   return hit_count_array;
 }
 
-double *get_hit_ratio_phase(reader_t *reader, gint64 current_phase, gint64 num_phases) {
+double *get_lru_hit_ratio_phase(reader_t *reader, gint64 current_phase, gint64 num_phases) {
 
   if (reader->base->n_total_req == -1)
     reader->base->n_total_req = get_num_of_req(reader);
@@ -341,12 +341,11 @@ double *get_hit_ratio_phase(reader_t *reader, gint64 current_phase, gint64 num_p
   double request_per_phase = floor((double) total_request / num_phases);
   gint64 size = (gint64) request_per_phase;
 
-  guint64 *hit_count_array = get_hit_count_phase(reader, current_phase, num_phases);
+  guint64 *hit_count_array = get_lru_hit_count_phase(reader, current_phase, num_phases);
   double *hit_ratio_array = g_new(double, size + 3);
   hit_ratio_array[0] = (double)(hit_count_array[0]) / (double) request_per_phase;
 
-  int i = 0;
-  for (i = 1; i < size + 1; i++) {
+  for (gint64 i = 1; i < size + 1; i++) {
     hit_ratio_array[i] = hit_count_array[i] / request_per_phase + hit_ratio_array[i - 1];
   }
 
@@ -360,18 +359,15 @@ double *get_hit_ratio_phase(reader_t *reader, gint64 current_phase, gint64 num_p
   return hit_ratio_array;
 }
 
-double *get_hit_ratio_seq(reader_t *reader, gint64 size) {
-  size_t i = 0;
+double *get_lru_hit_ratio_seq(reader_t *reader, gint64 size) {
+  gint64 i = 0;
   if (reader->base->n_total_req == -1)
     reader->base->n_total_req = get_num_of_req(reader);
 
   if (size == -1)
     size = reader->base->n_total_req;
 
-  if (reader->udata->hit_ratio && size == reader->base->n_total_req)
-    return reader->udata->hit_ratio;
-
-  guint64 *hit_count_array = get_hit_count_seq(reader, size);
+  guint64 *hit_count_array = get_lru_hit_count_seq(reader, size);
   double total_num = (double) (reader->base->n_total_req);
 
   double *hit_ratio_array = g_new(double, size + 3);
@@ -387,9 +383,6 @@ double *get_hit_ratio_seq(reader_t *reader, gint64 size) {
 //  hit_ratio_array[size + 2] = hit_count_array[size + 2] / n_total_req;
 
   g_free(hit_count_array);
-  if (size == reader->base->n_total_req)
-    reader->udata->hit_ratio = hit_ratio_array;
-
   return hit_ratio_array;
 }
 

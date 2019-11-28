@@ -7,7 +7,7 @@
 
 void test_profiler_basic(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
-  guint64 *hc_lruprofiler = get_hit_count_seq(reader, -1);
+  guint64 *hc_lruprofiler = get_lru_hit_count_seq(reader, -1);
 
   cache_t *cache = create_cache_internal("LRU", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);

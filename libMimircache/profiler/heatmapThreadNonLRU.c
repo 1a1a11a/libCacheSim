@@ -11,7 +11,7 @@
 #include "pqueue.h"
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -197,7 +197,7 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
 
   guint64 current_effective_size = 0;
   gint64 last_ts = 0;
-  guint64 cur_ts = 0;
+  gint64 cur_ts = 0;
   gpointer item;
   GHashTable *last_access_time_ght;
 
@@ -290,7 +290,7 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
   guint64 sum_effective_size = 0;
   for (i = 0; i < break_points->len - 1; i++) {
     sum_effective_size = 0;
-    for (j = g_array_index(break_points, guint64, i); j < g_array_index(break_points, guint64, i + 1); j++) {
+    for (j = (gint64) g_array_index(break_points, guint64, i); j < (gint64) g_array_index(break_points, guint64, i + 1); j++) {
       sum_effective_size += effective_cache_size[j];
     }
     dd->matrix[i][order - 1] = (double) (sum_effective_size) /
@@ -299,7 +299,7 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
     if (dd->matrix[i][order - 1] / cache_size > 1) {
       ERROR("cache size %lu, %lu th bp, effective size %lf\n",
             (unsigned long) cache_size, (unsigned long) i, dd->matrix[i][order - 1]);
-      for (j = g_array_index(break_points, guint64, i); j < g_array_index(break_points, guint64, i + 1); j++)
+      for (j = (gint64) g_array_index(break_points, guint64, i); j < (gint64) g_array_index(break_points, guint64, i + 1); j++)
         printf("effective size at %lu (%lu-%lu): %lu\n", (unsigned long) j,
                (unsigned long) g_array_index(break_points, guint64, i),
                (unsigned long) g_array_index(break_points, guint64, i + 1),
@@ -324,6 +324,6 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
 }
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif
