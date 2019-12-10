@@ -81,17 +81,17 @@ target_link_libraries(readerTest cache cacheReader profiler dataStructure utils 
 add_executable(distUtilsTest ../test/test_distUtils.c)
 target_link_libraries(distUtilsTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(lruProfilerTest ../test/test_lruProfiler.c)
-target_link_libraries(lruProfilerTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(profilerLRUTest ../test/test_profilerLRU.c)
+target_link_libraries(profilerLRUTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerTest ../test/test_profiler.c)
 target_link_libraries(profilerTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 enable_testing()
 add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY .)
-add_test(NAME distUtils COMMAND lruProfilerTest WORKING_DIRECTORY .)
-add_test(NAME lruProfilerTest COMMAND lruProfilerTest WORKING_DIRECTORY .)
-add_test(NAME profilerTest COMMAND lruProfilerTest WORKING_DIRECTORY .)
+add_test(NAME distUtils COMMAND distUtils WORKING_DIRECTORY .)
+add_test(NAME profilerLRUTest COMMAND profilerLRUTest WORKING_DIRECTORY .)
+add_test(NAME profilerTest COMMAND profilerTest WORKING_DIRECTORY .)
 
 
 # Example Usages

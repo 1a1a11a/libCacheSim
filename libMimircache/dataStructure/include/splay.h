@@ -10,21 +10,20 @@
 #define splay_h
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
 #define node_value(x) (((x)==NULL) ? 0 : ((x)->value))
 #define key_cmp(i,j) ((i)-(j))
 
 typedef long long key_type;
-
 
 
 typedef struct sTree{
@@ -34,18 +33,12 @@ typedef struct sTree{
 }sTree;
 
 
-
-
-
 void static inline free_node(sTree* t){
     free(t);
 }
 void static inline assign_key(sTree* t, key_type k){
     t->key=k;
 }
-
-
-
 
 
 sTree * splay (key_type i, sTree *t);

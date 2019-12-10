@@ -46,7 +46,6 @@
  Addison-Wesley, 1993, pp 367-375.
  */
 
-#include "splay.h"
 
 
 #ifdef __cplusplus
@@ -54,6 +53,7 @@ extern "C"
 {
 #endif
 
+#include "splay.h"
 
 sTree * splay (key_type i, sTree * t) {
     /* Simple top down splay, not requiring i to be in the sTree t.  */

@@ -223,6 +223,39 @@ static inline sTree *get_reuse_dist_add_req(request_t *req,
 }
 
 
+static inline sTree *get_byte_reuse_dist_add_req(request_t *req,
+                                            sTree *splay_tree,
+                                            GHashTable *hash_table,
+                                            guint64 ts,
+                                            gint64 *byte_reuse_dist) {
+  gpointer gp = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+
+  sTree *newtree;
+  if (gp == NULL) {
+    // first time access
+    *byte_reuse_dist = -1;
+    newtree = insert(ts, splay_tree);
+  } else {
+    // not first time access
+    gint64 old_ts = (gint64) GPOINTER_TO_SIZE(gp);
+    newtree = splay(old_ts, splay_tree);
+    *byte_reuse_dist = node_value(newtree->right);
+    newtree = splay_delete(old_ts, newtree);
+    newtree = insert(ts, newtree);
+
+  }
+
+  if (req->obj_id_type == OBJ_ID_STR)
+    g_hash_table_insert(hash_table, g_strdup((gchar *) (req->obj_id_ptr)), GSIZE_TO_POINTER((gsize) ts));
+  else if (req->obj_id_type == OBJ_ID_NUM) {
+    g_hash_table_insert(hash_table, req->obj_id_ptr, (gpointer) GSIZE_TO_POINTER((gsize) ts));
+  } else {
+    ERROR("unknown request obj_id_type: %c\n", req->obj_id_type);
+    abort();
+  }
+  return newtree;
+}
+
 /*-----------------------------------------------------------------------------
  *
  * get_reuse_dist_add_req_shards--
