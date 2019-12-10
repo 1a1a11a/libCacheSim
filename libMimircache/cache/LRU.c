@@ -70,15 +70,14 @@ gboolean LRU_add(cache_t *cache, request_t *req) {
   gboolean retval;
   if (LRU_check(cache, req)) {
     _LRU_update(cache, req);
-    LRU_params->ts++;
     retval = TRUE;
   } else {
     _LRU_insert(cache, req);
     if ((long) g_hash_table_size(LRU_params->hashtable) > cache->core->size)
       _LRU_evict(cache, req);
-    LRU_params->ts++;
     retval = FALSE;
   }
+  LRU_params->ts++;
   cache->core->ts += 1;
   return retval;
 }

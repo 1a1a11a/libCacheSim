@@ -45,12 +45,12 @@ message(STATUS "glib found? " ${GLib_FOUND} ", LIBS = " ${LIBS} ", header = " ${
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cache/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cacheReader/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceReader/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiler/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils/include)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cacheReader)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
@@ -58,7 +58,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 #message(STATUS "all sources " ${ALL_SRC_FILES})
 
-#add_library(${PROJECT_NAME} SHARED cache cacheReader run_trace dataStructure utils ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+#add_library(${PROJECT_NAME} SHARED cache traceReader run_trace dataStructure utils ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${mimircache_VERSION_MAJOR}.${mimircache_VERSION_MINOR}.${mimircache_VERSION_REVISION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
@@ -76,16 +76,16 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 
 add_executable(readerTest ../test/test_reader.c)
-target_link_libraries(readerTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(readerTest cache traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(distUtilsTest ../test/test_distUtils.c)
-target_link_libraries(distUtilsTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(distUtilsTest cache traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerLRUTest ../test/test_profilerLRU.c)
-target_link_libraries(profilerLRUTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerLRUTest cache traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerTest ../test/test_profiler.c)
-target_link_libraries(profilerTest cache cacheReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerTest cache traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 enable_testing()
 add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY .)
