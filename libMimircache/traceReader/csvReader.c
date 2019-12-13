@@ -39,7 +39,8 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     params->already_got_req = TRUE;
   } else if (params->current_field_counter == params->real_time_field) {
     // why this is not a problem because s should not be null terminated
-    req->real_time = (guint64) atoll((char *) s);
+    req->real_time = (guint64) strtof((char *) s, NULL);
+//    req->real_time = (guint64) atoll((char *) s);
   } else if (params->current_field_counter == params->op_field) {
     fprintf(stderr, "currently operation column is not supported\n");
   } else if (params->current_field_counter == params->size_field) {
