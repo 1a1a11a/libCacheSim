@@ -115,7 +115,7 @@ void LRU_destroy_unique(cache_t *cache) {
  *      size:       cache size
  *      obj_id_type:  the obj_id_type of data, currently support l for long or c
  *for string block_size: the basic unit size of block, used for profiling with
- *size if not run_trace with size, this is 0 params:     params used for
+ *size if not evaluate with size, this is 0 params:     params used for
  *initialization, NULL for LRU
  *
  * Return:

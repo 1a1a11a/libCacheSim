@@ -58,7 +58,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 #message(STATUS "all sources " ${ALL_SRC_FILES})
 
-#add_library(${PROJECT_NAME} SHARED cache traceReader run_trace dataStructure utils ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+#add_library(${PROJECT_NAME} SHARED cache traceReader profiler dataStructure utils ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${mimircache_VERSION_MAJOR}.${mimircache_VERSION_MINOR}.${mimircache_VERSION_REVISION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)

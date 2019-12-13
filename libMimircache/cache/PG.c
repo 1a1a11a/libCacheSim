@@ -11,7 +11,7 @@
 #include "LRU.h"
 #include "Optimal.h"
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -448,6 +448,6 @@ guint64 PG_get_size(cache_t *cache) {
   return (guint64) PG_params->cache->core->get_current_size(PG_params->cache);
 }
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

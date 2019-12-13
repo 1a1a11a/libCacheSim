@@ -11,7 +11,7 @@
 #include "murmur3.h"
 #include "splay.h"
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -168,7 +168,7 @@ guint64* get_lru_hit_count_seq_shards(reader_t *reader, gint64 size, double samp
     abort();
   }
 
-  // TODO: when it is not run_trace with size, just use reuse distance for calculation,
+  // TODO: when it is not evaluate with size, just use reuse distance for calculation,
   // because reuse distance might be loaded without re-computation
 
   // create splay tree
@@ -254,6 +254,6 @@ double* get_lru_hit_ratio_seq_shards(reader_t *reader,
 
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

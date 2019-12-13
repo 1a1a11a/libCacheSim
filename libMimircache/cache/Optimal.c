@@ -8,7 +8,7 @@
 
 #include "Optimal.h"
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -244,6 +244,6 @@ cache_t *Optimal_init(guint64 size, obj_id_t obj_id_type, void *params) {
   return cache;
 }
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

@@ -15,7 +15,7 @@
 #include "LRU_K.h"
 #include "LRU.h"
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -319,6 +319,6 @@ process_one_element_eviction_reuse_dist(request_t *req, sTree *splay_tree, GHash
 }
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

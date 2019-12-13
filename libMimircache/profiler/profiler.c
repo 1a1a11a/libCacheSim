@@ -12,13 +12,13 @@
 #include "../include/mimircache/plugin.h"
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
 
 
-static void profiler_thread(gpointer data, gpointer user_data) {
+static void _evaluate_thread(gpointer data, gpointer user_data) {
   prof_mt_params_t *params = (prof_mt_params_t *) user_data;
 
   int idx = GPOINTER_TO_UINT(data);
@@ -70,10 +70,10 @@ static void profiler_thread(gpointer data, gpointer user_data) {
   cache->core->destroy_unique(cache);
 }
 
-profiler_res_t **run_trace(reader_t *reader_in,
-                           cache_t *cache_in,
-                           int num_of_threads,
-                           guint64 bin_size) {
+profiler_res_t **evaluate(reader_t *reader_in,
+                          cache_t *cache_in,
+                          int num_of_threads,
+                          guint64 bin_size) {
 
   guint64 i, progress = 0;
   guint64 num_of_caches = (guint64) ceil((double) cache_in->core->size / bin_size) + 1;
@@ -105,9 +105,9 @@ profiler_res_t **run_trace(reader_t *reader_in,
 
   // build the thread pool
   GThreadPool *gthread_pool;
-  gthread_pool = g_thread_pool_new((GFunc) profiler_thread,
+  gthread_pool = g_thread_pool_new((GFunc) _evaluate_thread,
                                    (gpointer) params, num_of_threads, TRUE, NULL);
-  if (gthread_pool == NULL) ERROR("cannot create thread pool in profiler::run_trace\n");
+  if (gthread_pool == NULL) ERROR("cannot create thread pool in profiler::evaluate\n");
 
 
   // start computation
@@ -136,9 +136,8 @@ profiler_res_t **run_trace(reader_t *reader_in,
 }
 
 
-void traverse_trace(reader_t *reader, cache_t *cache) {
+void run_trace(reader_t *reader, cache_t *cache) {
 
-  // req struct creation and initialization
   request_t *req = new_request(cache->core->obj_id_type);
   gboolean (*add)(cache_t*, request_t *);
   add = cache->core->add;
@@ -155,6 +154,6 @@ void traverse_trace(reader_t *reader, cache_t *cache) {
 }
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

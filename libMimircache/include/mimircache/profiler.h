@@ -66,7 +66,7 @@ typedef struct profiler_multithreading_params {
  * @param bin_size
  * @return an array of profiler_res_t*, each element of the array is the result of one simulation
  */
-profiler_res_t **run_trace(reader_t *reader_in, struct cache *cache_in, int num_of_threads, guint64 bin_size);
+profiler_res_t **evaluate(reader_t *reader_in, struct cache *cache_in, int num_of_threads, guint64 bin_size);
 
 
 

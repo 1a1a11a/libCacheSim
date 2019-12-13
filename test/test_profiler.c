@@ -11,7 +11,7 @@ void test_profiler_basic(gconstpointer user_data) {
 
   cache_t *cache = create_cache_internal("LRU", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t **res = run_trace(reader, cache, 4, (int) BIN_SIZE);
+  profiler_res_t **res = evaluate(reader, cache, 4, (int) BIN_SIZE);
   for (int i = 0; i < CACHE_SIZE / BIN_SIZE + 1; i++) {
     g_assert_cmpuint(hc_lruprofiler[BIN_SIZE * i], ==, res[i]->req_cnt - res[i]->miss_cnt);
     g_free(res[i]);
@@ -24,7 +24,7 @@ void test_profiler_more1(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache_internal("LRU", CACHE_SIZE, reader->base->obj_id_type, NULL);
 
-  profiler_res_t **res = run_trace(reader, cache, 4, (int) BIN_SIZE);
+  profiler_res_t **res = evaluate(reader, cache, 4, (int) BIN_SIZE);
   for (int i = 0; i < CACHE_SIZE / BIN_SIZE + 1; i++) {
 //    printf("%d %d\n", i, res[i]->)
 //    g_assert_cmpuint(hc_lruprofiler[BIN_SIZE*i], ==, res[i]->hit_count);

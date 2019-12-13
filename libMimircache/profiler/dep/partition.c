@@ -10,7 +10,7 @@
 #include "partition.h"
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -339,6 +339,6 @@ return_res_t **profiler_partition(reader_t *reader_in, cache_t *cache_in, int nu
 }
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

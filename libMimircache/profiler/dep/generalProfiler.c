@@ -21,7 +21,7 @@
 //#include "PG.h"
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -609,6 +609,6 @@ static void traverse_trace(reader_t *reader, cache_t *cache) {
 //}
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

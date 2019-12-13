@@ -303,6 +303,6 @@ GHashTable *LRUSize_get_objmap(cache_t *cache) {
   return LRUSize_params->hashtable;
 }
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C" {
 #endif

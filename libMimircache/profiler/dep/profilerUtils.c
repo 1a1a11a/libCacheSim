@@ -14,7 +14,7 @@
 #include "../include/mimircache/profilerUtils.h"
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -363,6 +363,6 @@ extern "C"
     }
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif

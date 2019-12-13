@@ -98,7 +98,7 @@ lib_libMimircache_cacheReader = static_library('cacheReader',
                                                                   ]
                                              )
 
-lib_libMimircache_profiler    = static_library('run_trace',
+lib_libMimircache_profiler    = static_library('profiler',
                                              sources: src_libMimircache_profiler,
                                              dependencies: [glib_dep, thread_dep, m_dep],
                                              include_directories: [inc_libMimircache,

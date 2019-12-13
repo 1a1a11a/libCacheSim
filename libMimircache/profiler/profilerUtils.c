@@ -14,7 +14,7 @@
 #include "../include/mimircache/profilerUtils.h"
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 extern "C"
 {
 #endif
@@ -128,8 +128,7 @@ GArray *get_bp_rtime(reader_t *reader,
   }
 
 
-  if (reader->base->n_total_req == -1)
-    get_num_of_req(reader);
+  get_num_of_req(reader);
 
 
   if (reader->sdata->break_points) {
@@ -202,6 +201,6 @@ GArray *get_bp_rtime(reader_t *reader,
 }
 
 
-#ifdef __reqlusplus
+#ifdef __cplusplus
 }
 #endif
