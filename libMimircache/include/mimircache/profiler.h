@@ -42,7 +42,7 @@ typedef enum {
   P_EVICTION_AGE,
   P_HIT_RESULT,
   P_EVICTION,
-} profiler_t;
+} profiler_type_t;
 
 typedef struct profiler_multithreading_params {
   reader_t *reader;
@@ -56,8 +56,8 @@ typedef struct profiler_multithreading_params {
 
 
 /**
- * this funciton performs cache_size/bin_size simulations to obtain miss ratio,
- * the size of simulations are from 0, bin_size, bin_size*2 ... cache_size,
+ * this function performs cache_size/bin_size simulations to obtain miss ratio,
+ * the size of simulations are from 0, bin_size, bin_size*2 ... bin_size*n,
  * it returns an array of profiler_res_t*, each element of the array is the result of one simulation
  * the user is responsible for g_free the memory of returned results
  * @param reader_in

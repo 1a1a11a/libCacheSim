@@ -11,3 +11,4 @@ test.c
 makefile
 mimircache.c
 example/_build
+.idea

@@ -9,18 +9,18 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include "../libMimircache/include/mimircache.h"
-#include "../libMimircache/cache/include/FIFO.h"
-#include "../libMimircache/cache/include/LRU.h"
-#include "../libMimircache/cache/include/LRUSize.h"
-#include "../libMimircache/cache/include/LRU_K.h"
-#include "../libMimircache/cache/include/SLRU.h"
-#include "../libMimircache/cache/include/LFU.h"
-#include "../libMimircache/cache/include/LFUFast.h"
-#include "../libMimircache/cache/include/ARC.h"
-#include "../libMimircache/cache/include/Optimal.h"
-#include "../libMimircache/cache/include/AMP.h"
-#include "../libMimircache/cache/include/Mithril.h"
-#include "../libMimircache/cache/include/PG.h"
+#include "../libMimircache/cacheAlg/include/FIFO.h"
+#include "../libMimircache/cacheAlg/include/LRU.h"
+#include "../libMimircache/cacheAlg/include/LRUSize.h"
+#include "../libMimircache/cacheAlg/include/LRU_K.h"
+#include "../libMimircache/cacheAlg/include/SLRU.h"
+#include "../libMimircache/cacheAlg/include/LFU.h"
+#include "../libMimircache/cacheAlg/include/LFUFast.h"
+#include "../libMimircache/cacheAlg/include/ARC.h"
+#include "../libMimircache/cacheAlg/include/Optimal.h"
+#include "../libMimircache/cacheAlg/include/AMP.h"
+#include "../libMimircache/cacheAlg/include/Mithril.h"
+#include "../libMimircache/cacheAlg/include/PG.h"
 
 
 #define BLOCK_UNIT_SIZE 0    // 16 * 1024

@@ -36,7 +36,7 @@
 #define PREFETCH_TABLE_SHARD_SIZE 2000
 
 
-/* recording table size, unit: percentage of cache size */
+/* recording table size, unit: percentage of cacheAlg size */
 #define RECORDING_TABLE_MAXIMAL 0.02
 
 
@@ -165,7 +165,7 @@ typedef enum _recording_loc {
 
 /* the data for Mithril initialization */
 typedef struct {
-  /* obj_id_type of cache, LRU, FIFO, Optimal, AMP */
+  /* obj_id_type of cacheAlg, LRU, FIFO, Optimal, AMP */
   char *cache_type;
 
   /** when we say two obj/blocks are associated,
@@ -193,7 +193,7 @@ typedef struct {
   rec_trigger_e rec_trigger;
 
   /** size of block
-   *  this should be equal to block_unit_size in cache->core
+   *  this should be equal to block_unit_size in cacheAlg->core
    **/
   guint64 block_size;
 
@@ -293,7 +293,7 @@ typedef struct {
 
 
 typedef struct {
-  /* the underlying cache, like LRU, LFU, AMP */
+  /* the underlying cacheAlg, like LRU, LFU, AMP */
   cache_t *cache;
 
   /* see Mithril_init_params_t */
@@ -367,9 +367,9 @@ typedef struct {
 
 
 /**
- check whether an block/obj is in the cache
+ check whether an block/obj is in the cacheAlg
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  @param req the request
  @return TRUE/FASLE
  */
@@ -378,12 +378,12 @@ extern gboolean Mithril_check(cache_t *Mithril,
 
 
 /**
- add a request to cache, if it is in the cache, update it
- if not, insert into cache, this is the upper level API
- return TRUE if request is in the cache
+ add a request to cacheAlg, if it is in the cacheAlg, update it
+ if not, insert into cacheAlg, this is the upper level API
+ return TRUE if request is in the cacheAlg
  return FALSE otherwise
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  @param cp the request containing the request
  @return TRUE/FALSE
  */
@@ -392,10 +392,10 @@ extern gboolean Mithril_add(cache_t *Mithril,
 
 
 /**
- update the obj/block in the cache,
- it is used internally during a cache hit
+ update the obj/block in the cacheAlg,
+ it is used internally during a cacheAlg hit
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  @param cp the request containing the request
  */
 extern void _Mithril_update(cache_t *Mithril,
@@ -403,10 +403,10 @@ extern void _Mithril_update(cache_t *Mithril,
 
 
 /**
- insert the obj/block into cache
- it is used internally during a cache miss
+ insert the obj/block into cacheAlg
+ it is used internally during a cacheAlg miss
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  @param cp the request containing the request
  */
 extern void _Mithril_insert(cache_t *Mithril,
@@ -414,11 +414,11 @@ extern void _Mithril_insert(cache_t *Mithril,
 
 
 /**
- evict one obj/block from cache
- it is used internally when cache is full
+ evict one obj/block from cacheAlg
+ it is used internally when cacheAlg is full
  and a new obj/block needs to be inserted
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  @param cp the request containing the request
  */
 extern void _Mithril_evict(cache_t *Mithril,
@@ -426,21 +426,21 @@ extern void _Mithril_evict(cache_t *Mithril,
 
 
 /**
- the free function for cache struct
+ the free function for cacheAlg struct
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  */
 extern void Mithril_destroy(cache_t *Mithril);
 
 
 /**
  The difference of this and Mithril_destroy is that
- Mithril_destroy_uniq only destroy uniq struct related to current cache,
+ Mithril_destroy_uniq only destroy uniq struct related to current cacheAlg,
  while some shared data are not affected,
  this is going to changed in the future version as shared data will be
  moved to reader
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  */
 extern void Mithril_destroy_unique(cache_t *Mithril);
 
@@ -448,7 +448,7 @@ extern void Mithril_destroy_unique(cache_t *Mithril);
 /**
  the mining funciton, it is called when mining table is ready
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  */
 extern void _Mithril_mining(cache_t *Mithril);
 
@@ -456,7 +456,7 @@ extern void _Mithril_mining(cache_t *Mithril);
  the aging function, to avoid some blocks stay too lonng,
  not used in this version.
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  */
 extern void _Mithril_aging(cache_t *Mithril);
 
@@ -464,7 +464,7 @@ extern void _Mithril_aging(cache_t *Mithril);
 /**
  add two associated block into prefetch table
 
- @param Mithril the cache struct
+ @param Mithril the cacheAlg struct
  @param gp1 pointer to the first block
  @param gp2 pointer to the second block
  */
@@ -476,11 +476,11 @@ extern void Mithril_add_to_prefetch_table(cache_t *Mithril,
 /**
  initialization of Mithril
 
- @param size size of cache, (unit: unit_size)
+ @param size size of cacheAlg, (unit: unit_size)
  @param data_type type of data: "l", "c"
  @param block_size unit size
  @param params Mithril_init_params_t
- @return the Mithril cache struct
+ @return the Mithril cacheAlg struct
  */
 cache_t *Mithril_init(guint64 size,
                       obj_id_t obj_id_type,
@@ -493,9 +493,9 @@ extern void prefetch_array_node_destroyer(gpointer data);
 
 
 /**
- get current cache size usage
+ get current cacheAlg size usage
 
- @param cache cache struct
+ @param cache cacheAlg struct
  @return current size
  */
 extern guint64 Mithril_get_size(cache_t *cache);

@@ -3,15 +3,25 @@
 //
 
 #include "../include/mimircache/distUtils.h"
+#include "../include/mimircache/profilerUtils.h"
+#include "include/distUtils.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <assert.h>
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+/***********************************************************
+* sequential version of get_reuse_dist
+* @param reader
+* @return
+*/
 gint64 *_get_reuse_dist_seq(reader_t *reader) {
-  // check whether the reuse LAST_DIST computation has been finished
-//  if (reader->sdata->reuse_dist &&
-//      reader->sdata->reuse_dist_type == REUSE_DIST) {
-//    return reader->sdata->reuse_dist;
-//  }
-
   guint64 ts = 0;
   gint64 max_rd = 0;
   gint64 rd = 0;
@@ -21,15 +31,16 @@ gint64 *_get_reuse_dist_seq(reader_t *reader) {
   gint64 *reuse_dist_array = g_new(gint64, reader->base->n_total_req);
 
   // create hashtable
-  GHashTable *hash_table;
-  if (reader->base->obj_id_type == OBJ_ID_NUM) {
-    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  } else if (reader->base->obj_id_type == OBJ_ID_STR) {
-    hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, (GDestroyNotify) g_free, NULL);
-  } else {
-    ERROR("does not recognize reader data obj_id_type %c\n", reader->base->obj_id_type);
-    abort();
-  }
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+      (GDestroyNotify)g_free, NULL);
+//  if (reader->base->obj_id_type == OBJ_ID_NUM) {
+//    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+//  } else if (reader->base->obj_id_type == OBJ_ID_STR) {
+//    hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, (GDestroyNotify) g_free, NULL);
+//  } else {
+//    ERROR("does not recognize reader data obj_id_type %c\n", reader->base->obj_id_type);
+//    abort();
+//  }
 
   // create splay tree
   sTree *splay_tree = NULL;
@@ -44,12 +55,6 @@ gint64 *_get_reuse_dist_seq(reader_t *reader) {
     read_one_req(reader, req);
     ts++;
   }
-
-
-//  reader->sdata->reuse_dist = reuse_dist_array;
-//  reader->sdata->max_reuse_dist = max_rd;
-//  reader->sdata->reuse_dist_type = REUSE_DIST;
-
 
   // clean up
   free_request(req);
@@ -67,14 +72,6 @@ gint64 *get_reuse_dist(reader_t *reader) {
 /* TODO: need to rewrite this function for the same reason as get_next_access_dist */
 gint64 *get_future_reuse_dist(reader_t *reader) {
 
-//  WARNING("%s has some overhead because of reading backwards, need a rewrite\n", __func__);
-
-  // check whether the reuse LAST_DIST computation has been finished or not
-//  if (reader->sdata->reuse_dist &&
-//      reader->sdata->reuse_dist_type == FUTURE_RD) {
-//    return reader->sdata->reuse_dist;
-//  }
-
   gint64 ts = 0;
   gint64 max_rd = 0;
   gint64 reuse_dist;
@@ -84,17 +81,8 @@ gint64 *get_future_reuse_dist(reader_t *reader) {
   gint64 *reuse_dist_array = g_new(gint64, reader->base->n_total_req);
 
   // create hashtable
-  GHashTable *hash_table;
-  if (reader->base->obj_id_type == OBJ_ID_NUM) {
-    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  } else if (reader->base->obj_id_type == OBJ_ID_STR) {
-    hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
-                                           (GDestroyNotify) g_free, \
-                                           NULL);
-  } else {
-    ERROR("does not recognize reader data obj_id_type %c\n", reader->base->obj_id_type);
-    abort();
-  }
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+      (GDestroyNotify) g_free, NULL);
 
   // create splay tree
   sTree *splay_tree = NULL;
@@ -121,15 +109,6 @@ gint64 *get_future_reuse_dist(reader_t *reader) {
     ts++;
   }
 
-  // save to reader
-//  if (reader->sdata->reuse_dist != NULL) {
-//    g_free(reader->sdata->reuse_dist);
-//    reader->sdata->reuse_dist = NULL;
-//  }
-//  reader->sdata->reuse_dist = reuse_dist_array;
-//  reader->sdata->max_reuse_dist = max_rd;
-//  reader->sdata->reuse_dist_type = FUTURE_RD;
-
   // clean up
   free_request(req);
   g_hash_table_destroy(hash_table);
@@ -139,181 +118,15 @@ gint64 *get_future_reuse_dist(reader_t *reader) {
 }
 
 
-/*-----------------------------------------------------------------------------
- *
- * get_reuse_time --
- *      compute reuse time (wall clock time) since last request,
- *      then save reader->sdata->REUSE_DIST
- *
- *      Notice that this is not reuse distance,
- *      even though it is stored in reuse distance array
- *      And also the time is converted to integer, so floating point timestmap
- *      loses its accuracy
- *
- * Input:
- *      reader:         the reader for data
- *
- * Return:
- *      a pointer to the reuse time array
- *
- *-----------------------------------------------------------------------------
- */
-gint64 *get_reuse_time(reader_t *reader) {
-  /*
-   * TODO: might be better to split return result, in case the hit rate array is too large
-   * Is there a better way to do this? this will cause huge amount memory
-   * It is the user's responsibility to release the memory of hit count array returned by this function
-   */
-
-  // check whether REUSE_TIME computation has been done before
-//  if (reader->sdata->reuse_dist &&
-//      reader->sdata->reuse_dist_type == REUSE_TIME) {
-//    return reader->sdata->reuse_dist;
-//  }
-
-  guint64 ts = 0;
-  gint64 max_rt = 0, rt = 0;
-  gpointer value;
-  get_num_of_req(reader);
-
-  gint64 *dist_array = g_new(gint64, reader->base->n_total_req);
-  request_t *req = new_request(reader->base->obj_id_type);
-
-  // create hashtable
-  GHashTable *hash_table;
-  if (reader->base->obj_id_type == OBJ_ID_NUM) {
-    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  } else if (reader->base->obj_id_type == OBJ_ID_STR) {
-    hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, (GDestroyNotify) g_free, NULL);
-  } else {
-    ERROR("does not recognize reader data obj_id_type %c\n", reader->base->obj_id_type);
-    abort();
-  }
-
-  read_one_req(reader, req);
-  if (req->real_time == -1) {
-    ERROR("given reader does not have real time column\n");
-    abort();
-  }
-
-  while (req->valid) {
-    value = g_hash_table_lookup(hash_table, req->obj_id_ptr);
-    if (value != NULL) {
-      rt = (gint64) req->real_time - GPOINTER_TO_SIZE (value);
-    } else
-      rt = -1;
-
-    dist_array[ts] = rt;
-    if (rt > (gint64) max_rt) {
-      max_rt = rt;
-    }
-
-    // insert into hashtable
-    if (req->obj_id_type == OBJ_ID_STR)
-      g_hash_table_insert(hash_table, g_strdup((gchar *) (req->obj_id_ptr)),
-                          GSIZE_TO_POINTER((gsize) (req->real_time)));
-
-    else if (req->obj_id_type == OBJ_ID_NUM) {
-      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_ptr),
-                          GSIZE_TO_POINTER((gsize) (req->real_time)));
-    }
-
-    read_one_req(reader, req);
-    ts++;
-  }
-
-//  if (reader->sdata->reuse_dist != NULL) {
-//    g_free(reader->sdata->reuse_dist);
-//    reader->sdata->reuse_dist = NULL;
-//  }
-//  reader->sdata->reuse_dist = dist_array;
-//  reader->sdata->max_reuse_dist = max_rt;
-//  reader->sdata->reuse_dist_type = REUSE_TIME;
-
-  // clean up
-  free_request(req);
-  g_hash_table_destroy(hash_table);
-  reset_reader(reader);
-  return dist_array;
-}
-
-
-gint64 *cal_save_reuse_dist(reader_t *const reader,
-                            const char *const save_file_loc,
-                            const dist_t dist_type) {
-
-  gint64 *rd = NULL;
-
-  if (dist_type == REUSE_DIST)
-    rd = _get_reuse_dist_seq(reader);
-  else if (dist_type == FUTURE_RD)
-    rd = get_future_reuse_dist(reader);
-  else {
-    ERROR("cannot recognize dist_type %d\n", dist_type);
-    abort();
-  }
-
-  // in multi-threading, this might be a problem
-  FILE *file = fopen(save_file_loc, "wb");
-  fwrite(rd, sizeof(gint64), reader->base->n_total_req, file);
-  fclose(file);
-  return rd;
-}
-
-
-gint64 *load_reuse_dist(reader_t *const reader,
-                        const char *const load_file_loc,
-                        const dist_t dist_type) {
-
-  get_num_of_req(reader);
-
-  gint64 *reuse_dist_array = g_new(gint64, reader->base->n_total_req);
-  FILE *file = fopen(load_file_loc, "rb");
-  fread(reuse_dist_array, sizeof(gint64), reader->base->n_total_req, file);
-  fclose(file);
-
-  gint64 i, max_rd = -1;
-  for (i = 0; i < reader->base->n_total_req; i++)
-    if (reuse_dist_array[i] > max_rd)
-      max_rd = reuse_dist_array[i];
-
-  // save to reader
-//  if (reader->sdata->reuse_dist != NULL) {
-//    g_free(reader->sdata->reuse_dist);
-//    reader->sdata->reuse_dist = NULL;
-//  }
-//  reader->sdata->reuse_dist = reuse_dist_array;
-//  reader->sdata->max_reuse_dist = max_rd;
-//  reader->sdata->reuse_dist_type = dist_type;
-  return reuse_dist_array;
-}
-
-
 gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, request_t *)) {
-  // check whether computation has been done before
-//  dist_t dist_type = funcPtr == read_one_req ? LAST_DIST : NEXT_DIST;
-//  if (reader->sdata->reuse_dist) {
-//    if (funcPtr == read_one_req && reader->sdata->reuse_dist_type == dist_type)
-//      return reader->sdata->reuse_dist;
-//  }
-
   guint64 n_req = get_num_of_req(reader);
   request_t *req = new_request(reader->base->obj_id_type);
   gint64 *dist_array = g_new(gint64, n_req);
 
 
   // create hashtable
-  GHashTable *hash_table;
-  if (req->obj_id_type == OBJ_ID_NUM) {
-    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  } else if (req->obj_id_type == OBJ_ID_STR) {
-    hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, \
-                                               (GDestroyNotify) g_free, \
-                                               NULL);
-  } else {
-    ERROR("unknown obj_id_type: %c\n", req->obj_id_type);
-    abort();
-  }
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+                                             (GDestroyNotify) g_free, NULL);
 
   gint64 ts = 0;
   gint64 dist, max_dist = 0;
@@ -344,12 +157,11 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
       dist_array[ts] = dist;
     } else if (funcPtr == read_one_req_above) {
       if ((gint64) (n_req - 1 - ts) < 0) {
-        if ((gint64) n_req - 1 - ts == -1 && is_csv_with_header){
+        if ((gint64) n_req - 1 - ts == -1 && is_csv_with_header) {
           funcPtr(reader, req);
           ts++;
           continue;
-        }
-        else {
+        } else {
           ERROR("index error in _get_last_access_dist_seq when get next access dist\n");
           abort();
         }
@@ -395,3 +207,95 @@ gint64 *get_next_access_dist(reader_t *reader) {
 }
 
 
+gint64 *get_reuse_time(reader_t *reader) {
+  guint64 ts = 0;
+  gint64 max_rt = 0, rt = 0;
+  gpointer value;
+  get_num_of_req(reader);
+
+  gint64 *dist_array = g_new(gint64, reader->base->n_total_req);
+  request_t *req = new_request(reader->base->obj_id_type);
+
+  // create hashtable
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+                                             (GDestroyNotify)g_free, NULL);
+
+  read_one_req(reader, req);
+  if (req->real_time == -1) {
+    ERROR("given reader does not have real time column\n");
+    abort();
+  }
+
+  while (req->valid) {
+    value = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+    if (value != NULL) {
+      rt = (gint64) req->real_time - GPOINTER_TO_SIZE (value);
+    } else
+      rt = -1;
+
+    dist_array[ts] = rt;
+    if (rt > (gint64) max_rt) {
+      max_rt = rt;
+    }
+
+    // insert into hashtable
+    if (req->obj_id_type == OBJ_ID_STR)
+      g_hash_table_insert(hash_table, g_strdup((gchar *) (req->obj_id_ptr)),
+                          GSIZE_TO_POINTER((gsize) (req->real_time)));
+
+    else if (req->obj_id_type == OBJ_ID_NUM) {
+      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_ptr),
+                          GSIZE_TO_POINTER((gsize) (req->real_time)));
+    }
+
+    read_one_req(reader, req);
+    ts++;
+  }
+
+  // clean up
+  free_request(req);
+  g_hash_table_destroy(hash_table);
+  reset_reader(reader);
+  return dist_array;
+}
+
+
+void save_dist(reader_t *const reader, gint64 *dist_array, const char *const path, dist_t dist_type) {
+
+  // in multi-threading, this might be a problem
+  char *file_path = (char*)malloc(strlen(path)+8);
+  sprintf(file_path, "%s.%d", path, dist_type);
+  FILE *file = fopen(file_path, "wb");
+  fwrite(dist_array, sizeof(gint64), reader->base->n_total_req, file);
+  fclose(file);
+  free(file_path);
+}
+
+
+gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_type) {
+
+  char *file_path = (char*)malloc(strlen(path)+8);
+  sprintf(file_path, "%s.%d", path, dist_type);
+  FILE *file = fopen(path, "rb");
+
+  int fd = fileno(file); //if you have a stream (e.g. from fopen), not a file descriptor.
+  struct stat buf;
+  fstat(fd, &buf);
+  off_t size = buf.st_size;
+
+  get_num_of_req(reader);
+  assert(size == sizeof(gint64)*reader->base->n_total_req);
+
+  gint64 *dist_array = g_new(gint64, reader->base->n_total_req);
+  fread(dist_array, sizeof(gint64), reader->base->n_total_req, file);
+  fclose(file);
+
+  return dist_array;
+}
+
+
+
+
+#ifdef __cplusplus
+}
+#endif

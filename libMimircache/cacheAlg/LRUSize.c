@@ -23,7 +23,7 @@ void _LRUSize_insert(cache_t *cache, request_t *req) {
   cache_obj->extra_data = req->extra_data_ptr;
   cache_obj->obj_id = req->obj_id_ptr;
 #ifdef TRACK_ACCESS_TIME
-  //    cache_obj->access_time = cache->core->ts;
+  //    cache_obj->access_time = cacheAlg->core->ts;
       cache_obj->access_time = LRUSize_params->logical_ts;
 #endif
   cache->core->used_size += req->size;
@@ -49,7 +49,7 @@ void _LRUSize_update(cache_t *cache, request_t *req) {
 
   cache_obj_t *cache_obj = node->data;
   if (cache->core->used_size < cache_obj->size) {
-    ERROR("occupied cache size %llu smaller than object size %llu\n",
+    ERROR("occupied cacheAlg size %llu smaller than object size %llu\n",
           (unsigned long long) cache->core->used_size,
           (unsigned long long) cache_obj->size);
     abort();
@@ -60,7 +60,7 @@ void _LRUSize_update(cache_t *cache, request_t *req) {
   // we shouldn't update extra_data_ptr here, otherwise, the old extra_data_ptr will be (memory) leaked
   // cache_obj->extra_data_ptr = req->extra_data_ptr;
 #ifdef TRACK_ACCESS_TIME
-  //  cache_obj->access_time = cache->core->ts;
+  //  cache_obj->access_time = cacheAlg->core->ts;
     cache_obj->access_time = LRUSize_params->logical_ts;
 #endif
   g_queue_unlink(LRUSize_params->list, node);
@@ -91,7 +91,7 @@ void _LRUSize_evict(cache_t *cache, request_t *req) {
     (cache_obj_t *) g_queue_pop_head(LRUSize_params->list);
 
   if (cache->core->used_size < cache_obj->size) {
-    ERROR("occupied cache size %llu smaller than object size %llu\n",
+    ERROR("occupied cacheAlg size %llu smaller than object size %llu\n",
           (unsigned long long) cache->core->used_size,
           (unsigned long long) cache_obj->size);
     abort();
@@ -142,7 +142,7 @@ gpointer _LRUSize_evict_with_return(cache_t *cache, request_t *req) {
 
   cache_obj_t *cache_obj = g_queue_pop_head(LRUSize_params->list);
   if (cache->core->used_size < cache_obj->size) {
-    ERROR("occupied cache size %llu smaller than object size %llu\n",
+    ERROR("occupied cacheAlg size %llu smaller than object size %llu\n",
           (unsigned long long) cache->core->used_size,
           (unsigned long long) cache_obj->size);
     abort();
@@ -189,7 +189,7 @@ gboolean LRUSize_add(cache_t *cache, request_t *req) {
     while (cache->core->used_size > cache->core->size)
       _LRUSize_evict(cache, req);
   } else {
-    WARNING("obj size %ld larger than cache size %ld\n", (long) (req->size), cache->core->size);
+    WARNING("obj size %ld larger than cacheAlg size %ld\n", (long) (req->size), cache->core->size);
   }
 
 
@@ -206,14 +206,14 @@ void LRUSize_destroy(cache_t *cache) {
   g_hash_table_destroy(LRUSize_params->hashtable);
 //  g_queue_free_full(LRUSize_params->list, g_free);
   g_queue_free_full(LRUSize_params->list, cacheobj_destroyer);
-  //    cache_destroy(cache);
+  //    cache_destroy(cacheAlg);
 }
 
 void LRUSize_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -278,11 +278,11 @@ void LRUSize_remove_obj(cache_t *cache, void *data_to_remove) {
     (GList *) g_hash_table_lookup(LRUSize_params->hashtable, data_to_remove);
   if (!node) {
     fprintf(stderr,
-            "LRUSize_remove_obj: data to remove is not in the cache\n");
+            "LRUSize_remove_obj: data to remove is not in the cacheAlg\n");
     abort();
   }
   if (cache->core->used_size < ((cache_obj_t *) (node->data))->size) {
-    ERROR("occupied cache size %llu smaller than object size %llu\n",
+    ERROR("occupied cacheAlg size %llu smaller than object size %llu\n",
           (unsigned long long) cache->core->used_size,
           (unsigned long long) ((cache_obj_t *) (node->data))->size);
     abort();

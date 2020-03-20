@@ -21,16 +21,16 @@ extern "C"
 #endif
 
 
-// by default, the ghost list size is 10 times the orginal cache size
+// by default, the ghost list size is 10 times the orginal cacheAlg size
 
 typedef struct ARC_params {
   cache_t *LRU1;         // normal LRU segment
   cache_t *LRU1g;        // ghost list for normal LRU segment
   cache_t *LRU2;         // normal LRU segement for items accessed more than once
   cache_t *LRU2g;        // ghost list for normal LFU segment
-  gint32 ghost_list_factor;  // size(ghost_list)/size(cache),
+  gint32 ghost_list_factor;  // size(ghost_list)/size(cacheAlg),
   // by default, the ghost list size is
-  // 10 times the orginal cache size
+  // 10 times the orginal cacheAlg size
   gint64 size1;             // size for segment 1
   gint64 size2;             // size for segment 2
 } ARC_params_t;

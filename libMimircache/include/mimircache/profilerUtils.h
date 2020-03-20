@@ -22,22 +22,27 @@ extern "C"
 {
 #endif
 
-double get_log_base(guint64 max, guint64 expect_result);
+//double get_log_base(guint64 max, guint64 expect_result);
+//
+//
+//GArray *get_bp_vtime(reader_t *reader,
+//                     gint64 time_interval,
+//                     gint64 num_of_pixels);
+//
+//
+//GArray *get_bp_rtime(reader_t *reader,
+//                     gint64 time_interval,
+//                     gint64 num_of_pixels);
 
+GHashTable *create_hash_table(reader_t *reader,
+                              GDestroyNotify key_destroy_func_num,
+                              GDestroyNotify value_destroy_func_num,
+                              GDestroyNotify key_destroy_func_str,
+                              GDestroyNotify value_destroy_func_str);
 
-GArray *get_bp_vtime(reader_t *reader,
-                     gint64 time_interval,
-                     gint64 num_of_pixels);
-
-
-GArray *get_bp_rtime(reader_t *reader,
-                     gint64 time_interval,
-                     gint64 num_of_pixels);
-
-
-#ifdef __cplusplus
-}
-#endif
-
-
+//#ifdef __cplusplus
+//}
+//#endif
+//
+//
 #endif

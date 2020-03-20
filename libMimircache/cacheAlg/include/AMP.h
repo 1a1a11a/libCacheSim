@@ -26,8 +26,8 @@ extern "C"
 #endif
 
 
-//#define AMP_prev(cache, x) (AMP_lookup((cache), ((struct AMP_page*)x)->block_numer - 1))
-//#define AMP_last(cache, x) (AMP_lookup((cache), ((struct AMP_page*)x)->last_block_numer))
+//#define AMP_prev(cacheAlg, x) (AMP_lookup((cacheAlg), ((struct AMP_page*)x)->block_numer - 1))
+//#define AMP_last(cacheAlg, x) (AMP_lookup((cacheAlg), ((struct AMP_page*)x)->last_block_numer))
 //#define AMP_isLast(x) (((struct AMP_page*)x)->block_number == ((struct AMP_page*)x)->last_block_number) 
 
 #define AMP_getPage(x) ((struct AMP_Page*) g_hashtable_lookup())

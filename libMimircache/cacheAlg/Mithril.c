@@ -74,7 +74,7 @@ void verify_prefetched_hashtable(gpointer key, gpointer value,
   GHashTable *h =
       ((struct LRU_params *)(Mithril_params->cache->cache_params))->hashtable;
   if (!g_hash_table_contains(h, key)) {
-    ERROR("prefetched %ld not in cache %d\n", *(long *)key,
+    ERROR("prefetched %ld not in cacheAlg %d\n", *(long *)key,
           GPOINTER_TO_INT(value));
     abort();
   }
@@ -991,8 +991,8 @@ void Mithril_destroy(cache_t *cache) {
 void Mithril_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -1052,8 +1052,8 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_evict = _Mithril_evict;
   cache->core->get_current_size = Mithril_get_size;
   cache->core->cache_init_params = params;
-//  cache->core->add_only = Mithril_add_only;
-//  cache->core->add_withsize = Mithril_add_withsize;
+//  cacheAlg->core->add_only = Mithril_add_only;
+//  cacheAlg->core->add_withsize = Mithril_add_withsize;
 
   Mithril_init_params_t *init_params = (Mithril_init_params_t *)params;
 
@@ -1096,7 +1096,7 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
   Mithril_params->ptable_array[0] = g_new0(
       gint64, PREFETCH_TABLE_SHARD_SIZE * (Mithril_params->pf_list_size + 1));
 
-  /* now adjust the cache size by deducting current meta data size
+  /* now adjust the cacheAlg size by deducting current meta data size
    8 is the size of storage for block, 4 is the size of storage for index to
    array */
   Mithril_params->cur_metadata_size =
@@ -1153,7 +1153,7 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
     Mithril_params->cache = NULL;
     ;
   } else {
-    fprintf(stderr, "can't recognize cache obj_id_type: %s\n",
+    fprintf(stderr, "can't recognize cacheAlg obj_id_type: %s\n",
             init_params->cache_type);
     Mithril_params->cache = LRU_init(size, obj_id_type, NULL);
   }
@@ -1352,7 +1352,7 @@ void Mithril_add_to_prefetch_table(cache_t *Mithril, gpointer gp1,
       }
     } else {
       for (i = 1; i < Mithril_params->pf_list_size + 1; i++) {
-        // if this element is already in the cache, then don't need prefetch
+        // if this element is already in the cacheAlg, then don't need prefetch
         // again
         if (strcmp((char *)(Mithril_params->ptable_array[dim1][dim2]), gp1) !=
             0) {

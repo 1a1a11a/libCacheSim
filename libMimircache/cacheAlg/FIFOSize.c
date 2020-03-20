@@ -61,7 +61,7 @@ void _FIFOSize_evict(cache_t *cache, request_t *req) {
       (cache_obj_t *)g_queue_pop_head(FIFOSize_params->list);
 
   if (cache->core->used_size < cache_obj->size) {
-    ERROR("occupied cache size %llu smaller than object size %llu\n",
+    ERROR("occupied cacheAlg size %llu smaller than object size %llu\n",
           (unsigned long long)cache->core->used_size,
           (unsigned long long)cache_obj->size);
     abort();
@@ -82,7 +82,7 @@ gpointer _FIFOSize_evict_with_return(cache_t *cache, request_t *req) {
 
   cache_obj_t *cache_obj = g_queue_pop_head(FIFOSize_params->list);
   if (cache->core->used_size < cache_obj->size) {
-    ERROR("occupied cache size %llu smaller than object size %llu\n",
+    ERROR("occupied cacheAlg size %llu smaller than object size %llu\n",
           (unsigned long long)cache->core->used_size,
           (unsigned long long)cache_obj->size);
     abort();
@@ -137,8 +137,8 @@ void FIFOSize_destroy(cache_t *cache) {
 void FIFOSize_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -163,7 +163,7 @@ cache_t *FIFOSize_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->evict_with_return = _FIFOSize_evict_with_return;
   cache->core->get_current_size = FIFOSize_get_size;
   cache->core->get_objmap = FIFOSize_get_objmap;
-//  cache->core->remove_obj = FIFOSize_remove_obj;
+//  cacheAlg->core->remove_obj = FIFOSize_remove_obj;
   cache->core->cache_init_params = NULL;
 
   if (obj_id_type == OBJ_ID_NUM) {
@@ -188,11 +188,11 @@ void FIFOSize_remove(cache_t *cache, void *data_to_remove) {
       (GList *)g_hash_table_lookup(FIFOSize_params->hashtable, data_to_remove);
   if (!node) {
     fprintf(stderr,
-            "FIFOSize_remove: data to remove is not in the cache\n");
+            "FIFOSize_remove: data to remove is not in the cacheAlg\n");
     abort();
   }
   if (cache->core->used_size < ((cache_obj_t *)(node->data))->size) {
-    ERROR("occupied cache size %llu smaller than object size %llu\n",
+    ERROR("occupied cacheAlg size %llu smaller than object size %llu\n",
           (unsigned long long)cache->core->used_size,
           (unsigned long long)((cache_obj_t *)(node->data))->size);
     abort();

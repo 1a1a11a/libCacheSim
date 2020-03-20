@@ -18,7 +18,7 @@ void _ARC_insert(cache_t *cache, request_t *cp) {
 
 #ifdef SANITY_CHECK
   if (ARC_params->LRU1->core->check(ARC_params->LRU1, cp)) {
-    fprintf(stderr, "ERROR: in ARC insert, inserted item is in cache\n");
+    fprintf(stderr, "ERROR: in ARC insert, inserted item is in cacheAlg\n");
     exit(1);
   }
 #endif
@@ -48,7 +48,7 @@ void _ARC_update(cache_t *cache, request_t *cp) {
 #ifdef SANITY_CHECK
     if (!ARC_params->LRU2->core->check(ARC_params->LRU2, cp)) {
       fprintf(stderr, "ERROR: in ARC insert, update element in LRU2, but"
-                      " item is not in cache\n");
+                      " item is not in cacheAlg\n");
       exit(1);
     }
 #endif
@@ -172,20 +172,20 @@ gboolean ARC_add(cache_t *cache, request_t *cp) {
       _ARC_evict(cache, cp);
     retval = FALSE;
 #ifdef SANITY_CHECK
-    if ((ARC_params->size1 + ARC_params->size2 > cache->core->size) ||
+    if ((ARC_params->size1 + ARC_params->size2 > cacheAlg->core->size) ||
         (ARC_params->LRU1->core->get_current_size(ARC_params->LRU1) +
          ARC_params->LRU2->core->get_current_size(ARC_params->LRU2)) >
-            cache->core->size) {
+            cacheAlg->core->size) {
       fprintf(stderr,
               "ERROR: in ARC add, after inserting, "
               "sum of two LRUs sizes: %lu, ARC size1+size2=%lu, "
-              "but cache size=%ld\n",
+              "but cacheAlg size=%ld\n",
               (unsigned long)(ARC_params->LRU1->core->get_current_size(
                                   ARC_params->LRU1) +
                               ARC_params->LRU2->core->get_current_size(
                                   ARC_params->LRU2)),
               (unsigned long)(ARC_params->size1 + ARC_params->size2),
-              cache->core->size);
+              cacheAlg->core->size);
       exit(1);
     }
 #endif
@@ -207,8 +207,8 @@ void ARC_destroy(cache_t *cache) {
 void ARC_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -238,7 +238,7 @@ cache_t *ARC_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->evict_with_return = _ARC_evict_with_return;
   cache->core->get_current_size = ARC_get_size;
   cache->core->cache_init_params = params;
-//  cache->core->add_only = ARC_add;
+//  cacheAlg->core->add_only = ARC_add;
 
   ARC_params->ghost_list_factor = init_params->ghost_list_factor;
 

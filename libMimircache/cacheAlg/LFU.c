@@ -11,7 +11,7 @@
  * but this approach saves some memory compared to the other approach,
  * which uses a hashmap and linkedlist and gives O(1) at each request
  *
- * this LFU clear the frequency of an obj_id after evicting from cache
+ * this LFU clear the frequency of an obj_id after evicting from cacheAlg
  * when there are more than one items with the smallest freq, the behavior is
  * LRU, but can be tuned to MRU, Random or unstable-pq-decided
  */
@@ -143,8 +143,8 @@ void LFU_destroy(cache_t *cache) {
 void LFU_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in LFU, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -161,7 +161,7 @@ cache_t *LFU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->destroy_unique = LFU_destroy_unique;
   cache->core->add = LFU_add;
   cache->core->check = LFU_check;
-//  cache->core->add_only = LFU_add;
+//  cacheAlg->core->add_only = LFU_add;
 
   cache->core->_insert = _LFU_insert;
   cache->core->_update = _LFU_update;
@@ -169,8 +169,8 @@ cache_t *LFU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->evict_with_return = _LFU_evict_with_return;
   cache->core->get_current_size = LFU_get_size;
   cache->core->cache_init_params = NULL;
-//  cache->core->add_only = LFU_add_only;
-//  cache->core->add_withsize = LFU_add_with_size;
+//  cacheAlg->core->add_only = LFU_add_only;
+//  cacheAlg->core->add_withsize = LFU_add_with_size;
 
   if (obj_id_type == OBJ_ID_NUM) {
     LFU_params->hashtable = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,

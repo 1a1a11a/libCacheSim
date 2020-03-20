@@ -77,8 +77,8 @@ void FIFO_destroy(cache_t *cache) {
 void FIFO_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */

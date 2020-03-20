@@ -154,8 +154,8 @@ void Optimal_destroy(cache_t *cache) {
 void Optimal_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -185,8 +185,8 @@ cache_t *Optimal_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_evict = _Optimal_evict;
   cache->core->evict_with_return = _Optimal_evict_with_return;
   cache->core->get_current_size = Optimal_get_size;
-//  cache->core->add_only = Optimal_add_only;
-//  cache->core->add_withsize = Optimal_add_withsize;
+//  cacheAlg->core->add_only = Optimal_add_only;
+//  cacheAlg->core->add_withsize = Optimal_add_withsize;
 
   Optimal_params->ts = ((struct Optimal_init_params *) params)->ts;
 

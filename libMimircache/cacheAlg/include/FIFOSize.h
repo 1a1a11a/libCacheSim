@@ -39,7 +39,7 @@ extern void FIFOSize_destroy(cache_t *cache);
 extern void FIFOSize_destroy_unique(cache_t *cache);
 cache_t *FIFOSize_init(guint64 size, obj_id_t obj_id_type, void *params);
 
-//extern void FIFOSize_remove_obj(cache_t *cache, void *data_to_remove);
+//extern void FIFOSize_remove_obj(cache_t *cacheAlg, void *data_to_remove);
 
 extern guint64 FIFOSize_get_size(cache_t *cache);
 extern GHashTable *FIFOSize_get_objmap(cache_t *cache);

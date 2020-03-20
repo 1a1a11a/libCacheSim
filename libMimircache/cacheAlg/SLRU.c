@@ -119,8 +119,8 @@ void SLRU_destroy(cache_t *cache) {
 void SLRU_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -151,7 +151,7 @@ cache_t *SLRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->evict_with_return = _SLRU_evict_with_return;
   cache->core->get_current_size = SLRU_get_size;
   cache->core->cache_init_params = params;
-//  cache->core->add_only = SLRU_add;
+//  cacheAlg->core->add_only = SLRU_add;
 
   SLRU_params->N_segments = init_params->N_segments;
   SLRU_params->current_sizes = g_new0(uint64_t, SLRU_params->N_segments);

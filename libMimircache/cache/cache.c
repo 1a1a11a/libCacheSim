@@ -7,7 +7,8 @@
 //
 
 
-#include "../../include/mimircache/cache.h"
+#include "../include/mimircache/cache.h"
+#include "../include/mimircache/cacheOp.h"
 
 
 #ifdef __cplusplus

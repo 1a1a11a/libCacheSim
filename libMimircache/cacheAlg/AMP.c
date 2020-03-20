@@ -404,11 +404,11 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
   struct AMP_params *AMP_params = (struct AMP_params *)(cache->cache_params);
   gint64 block;
 
-//  if (cp->disk_sector_size != 0 && cache->core->block_size != 0) {
+//  if (cp->disk_sector_size != 0 && cacheAlg->core->block_size != 0) {
 //    *(gint64 *)(cp->obj_id_ptr) =
 //        (gint64)(*(gint64 *)(cp->obj_id_ptr) * cp->disk_sector_size /
-//                 cache->core->block_size);
-//    n = (int)ceil((double)cp->size / cache->core->block_size);
+//                 cacheAlg->core->block_size);
+//    n = (int)ceil((double)cp->size / cacheAlg->core->block_size);
 //    if (n < 1) // some traces have size zero for some requests
 //      n = 1;
 //  }
@@ -431,11 +431,11 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
     page->accessed = 1;
 
     // new for withsize, keep reading the remaining pages
-//    if (cp->disk_sector_size != 0 && cache->core->block_size != 0) {
+//    if (cp->disk_sector_size != 0 && cacheAlg->core->block_size != 0) {
 //      gint64 old_block = (*(gint64 *)(cp->obj_id_ptr));
 //      for (i = 0; i < n - 1; i++) {
 //        (*(gint64 *)(cp->obj_id_ptr))++;
-//        AMP_add_only(cache, cp);
+//        AMP_add_only(cacheAlg, cp);
 //      }
 //      (*(gint64 *)(cp->obj_id_ptr)) = old_block;
 //    }
@@ -468,7 +468,7 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
 
     return TRUE;
   }
-  // cache miss, load from disk
+  // cacheAlg miss, load from disk
   else {
     if (page != NULL)
       ERROR("check non-exist, page is not NULL\n");
@@ -480,10 +480,10 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
 
     // new for withsize, keep reading the remaining pages
     /*
-    if (cp->disk_sector_size != 0 && cache->core->block_size != 0) {
+    if (cp->disk_sector_size != 0 && cacheAlg->core->block_size != 0) {
       gint64 last_block = (*(gint64 *)(cp->obj_id_ptr)) + n - 1;
       // update new last_block_number
-      AMP_lookup(cache, block)->last_block_number = last_block;
+      AMP_lookup(cacheAlg, block)->last_block_number = last_block;
 
       for (i = 0; i < n - 1; i++) {
         (*(gint64 *)(cp->obj_id_ptr))++;
@@ -496,8 +496,8 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
         //                    cp->obj_id_ptr);
         //                }
 
-        AMP_add_only(cache, cp);
-        AMP_lookup(cache, (*(gint64 *)(cp->obj_id_ptr)))->last_block_number =
+        AMP_add_only(cacheAlg, cp);
+        AMP_lookup(cacheAlg, (*(gint64 *)(cp->obj_id_ptr)))->last_block_number =
             last_block;
       }
       *(gint64 *)(cp->obj_id_ptr) -= (n - 1);
@@ -506,19 +506,19 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
       if (*(gint64 *)(cp->obj_id_ptr) != block)
         ERROR("current block %ld, original %ld, n %d\n",
               *(gint64 *)(cp->obj_id_ptr), block, n);
-      if (AMP_lookup(cache, block) == NULL)
-        ERROR("requested block is not in cache after inserting, n %d, cache "
+      if (AMP_lookup(cacheAlg, block) == NULL)
+        ERROR("requested block is not in cacheAlg after inserting, n %d, cacheAlg "
               "size %ld\n",
-              n, cache->core->size);
+              n, cacheAlg->core->size);
 #endif
 
       // if n==1, then page_last is the same only page
-      struct AMP_page *page_last = AMP_lookup(cache, last_block);
+      struct AMP_page *page_last = AMP_lookup(cacheAlg, last_block);
       page_last->p = (page_prev ? page_prev->p : 0) + AMP_params->read_size;
       if (page_last->p > (int)(AMP_params->APT)) {
         page_last->g = (int)(AMP_params->APT / 2);
         struct AMP_page *tag_page = AMP_lookup(
-            cache, page_last->block_number - (int)(AMP_params->APT / 2));
+            cacheAlg, page_last->block_number - (int)(AMP_params->APT / 2));
         if (tag_page) {
           tag_page->tag = TRUE;
           tag_page->last_block_number = last_block;
@@ -544,12 +544,12 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
       if (check) {
         // new 170505, for calculating precision
         //                if (cp->disk_sector_size != 0 &&
-        //                cache->core->block_size != 0){
+        //                cacheAlg->core->block_size != 0){
         //                    block = (*(gint64*)(cp->obj_id_ptr)) + n -1;
         //                    length -= (long)(n - 1);
         //                }
         //                if (length > 0)
-        //                    createPages_no_eviction(cache, block + 1, length);
+        //                    createPages_no_eviction(cacheAlg, block + 1, length);
         // end
         createPages_no_eviction(cache, block + 1, length);
       }
@@ -602,8 +602,8 @@ void AMP_destroy(cache_t *cache) {
 void AMP_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -632,8 +632,8 @@ cache_t *AMP_init(guint64 size, obj_id_t obj_id_type, void *params) {
 
   cache->core->get_current_size = AMP_get_size;
   cache->core->cache_init_params = params;
-//  cache->core->add_only = AMP_add_only;
-//  cache->core->add_withsize = AMP_add_withsize;
+//  cacheAlg->core->add_only = AMP_add_only;
+//  cacheAlg->core->add_withsize = AMP_add_withsize;
 
   AMP_params->K = init_params->K;
   AMP_params->APT = init_params->APT;

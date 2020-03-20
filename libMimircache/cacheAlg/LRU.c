@@ -97,8 +97,8 @@ void LRU_destroy(cache_t *cache) {
 void LRU_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -109,17 +109,17 @@ void LRU_destroy_unique(cache_t *cache) {
 /*-----------------------------------------------------------------------------
  *
  * LRU_init --
- *      initialize a LRU cache
+ *      initialize a LRU cacheAlg
  *
  * Input:
- *      size:       cache size
+ *      size:       cacheAlg size
  *      obj_id_type:  the obj_id_type of data, currently support l for long or c
  *for string block_size: the basic unit size of block, used for profiling with
  *size if not evaluate with size, this is 0 params:     params used for
  *initialization, NULL for LRU
  *
  * Return:
- *      a LRU cache struct
+ *      a LRU cacheAlg struct
  *
  *-----------------------------------------------------------------------------
  */
@@ -128,20 +128,20 @@ cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->cache_params = g_new0(struct LRU_params, 1);
   struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
 
-//  cache->core->cache_init = LRU_init;
-//  cache->core->destroy = LRU_destroy;
-//  cache->core->destroy_unique = LRU_destroy_unique;
-//  cache->core->add = LRU_add;
-//  cache->core->check = LRU_check;
-//  cache->core->_insert = _LRU_insert;
-//  cache->core->_update = _LRU_update;
-//  cache->core->_evict = _LRU_evict;
-//  cache->core->evict_with_return = _LRU_evict_with_return;
-//  cache->core->get_current_size = LRU_get_size;
-//  cache->core->remove_obj = LRU_remove_obj;
-//  cache->core->cache_init_params = NULL;
-//  cache->core->add_only = LRU_add_only;
-//  cache->core->add_withsize = LRU_add_withsize;
+//  cacheAlg->core->cache_init = LRU_init;
+//  cacheAlg->core->destroy = LRU_destroy;
+//  cacheAlg->core->destroy_unique = LRU_destroy_unique;
+//  cacheAlg->core->add = LRU_add;
+//  cacheAlg->core->check = LRU_check;
+//  cacheAlg->core->_insert = _LRU_insert;
+//  cacheAlg->core->_update = _LRU_update;
+//  cacheAlg->core->_evict = _LRU_evict;
+//  cacheAlg->core->evict_with_return = _LRU_evict_with_return;
+//  cacheAlg->core->get_current_size = LRU_get_size;
+//  cacheAlg->core->remove_obj = LRU_remove_obj;
+//  cacheAlg->core->cache_init_params = NULL;
+//  cacheAlg->core->add_only = LRU_add_only;
+//  cacheAlg->core->add_withsize = LRU_add_withsize;
 
   if (obj_id_type == OBJ_ID_NUM) {
     LRU_params->hashtable = g_hash_table_new_full(
@@ -162,7 +162,7 @@ void LRU_remove_obj(cache_t *cache, void *data_to_remove) {
 
   gpointer data = g_hash_table_lookup(LRU_params->hashtable, data_to_remove);
   if (!data) {
-    fprintf(stderr, "LRU_remove_obj: data to remove is not in the cache\n");
+    fprintf(stderr, "LRU_remove_obj: data to remove is not in the cacheAlg\n");
     exit(1);
   }
   g_queue_delete_link(LRU_params->list, (GList *) data);

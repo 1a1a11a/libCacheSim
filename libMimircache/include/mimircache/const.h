@@ -17,20 +17,21 @@
 extern "C" {
 #endif
 
-
-#define MAX_OBJ_ID_LEN 1024
-#define MAX_FILE_PATH_LEN 1024
-
-//#define BINARY_FMT_MAX_LEN 32
-#define MAX_LINE_LEN 1024 * 1024
-
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE             /* for sched in utils.h */
 #endif
 
 #undef __DEBUG__
 #undef _DEBUG
+
+
+
+
+#define MAX_OBJ_ID_LEN 1024
+#define MAX_FILE_PATH_LEN 1024
+
+//#define BINARY_FMT_MAX_LEN 32
+#define MAX_LINE_LEN 1024 * 1024
 
 
 typedef enum {

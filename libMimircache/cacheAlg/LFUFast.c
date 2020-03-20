@@ -11,7 +11,7 @@
  * the drawback of this implementation is the memory usage, because two pointers
  * are associated with each obj_id
  *
- * this LFUFast clear the frequenct of an obj_id after evicting from cache
+ * this LFUFast clear the frequenct of an obj_id after evicting from cacheAlg
  * this LFUFast is LFU_LRU, which choose LRU end when more than one items have
  * the same smallest freq
  */
@@ -239,8 +239,8 @@ void LFUFast_destroy(cache_t *cache) {
 void LFUFast_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in LFUFast, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -264,8 +264,8 @@ cache_t *LFUFast_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->evict_with_return = _LFUFast_evict_with_return;
   cache->core->get_current_size = LFUFast_get_size;
   cache->core->cache_init_params = NULL;
-//  cache->core->add_only = LFUFast_add;
-//  cache->core->add_withsize = LFUFast_add_withsize;
+//  cacheAlg->core->add_only = LFUFast_add;
+//  cacheAlg->core->add_withsize = LFUFast_add_withsize;
 
   if (obj_id_type == OBJ_ID_NUM) {
     LFUFast_params->hashtable = g_hash_table_new_full(

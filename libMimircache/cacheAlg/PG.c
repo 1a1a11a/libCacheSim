@@ -315,23 +315,23 @@ gboolean PG_add_only(cache_t *PG, request_t *req) {
   return retval;
 }
 
-//gboolean PG_add_withsize(cache_t *cache, request_t *req) {
+//gboolean PG_add_withsize(cache_t *cacheAlg, request_t *req) {
 //  int i;
 //  gboolean ret_val;
 //
 //  *(gint64 *)(req->obj_id_ptr) =
 //      (gint64)(*(gint64 *)(req->obj_id_ptr) * req->disk_sector_size /
-//               cache->core->block_size);
-//  ret_val = PG_add(cache, req);
+//               cacheAlg->core->block_size);
+//  ret_val = PG_add(cacheAlg, req);
 //
-//  int n = (int)ceil((double)req->size / cache->core->block_size);
+//  int n = (int)ceil((double)req->size / cacheAlg->core->block_size);
 //
 //  for (i = 0; i < n - 1; i++) {
 //    (*(guint64 *)(req->obj_id_ptr))++;
-//    PG_add_only(cache, req);
+//    PG_add_only(cacheAlg, req);
 //  }
 //  *(gint64 *)(req->obj_id_ptr) -= (n - 1);
-//  cache->core->ts += 1;
+//  cacheAlg->core->ts += 1;
 //  return ret_val;
 //}
 
@@ -353,8 +353,8 @@ void PG_destroy(cache_t *PG) {
 void PG_destroy_unique(cache_t *PG) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Optimal, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -391,8 +391,8 @@ cache_t *PG_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _PG_update;
   cache->core->_evict = _PG_evict;
   cache->core->evict_with_return = _PG_evict_with_return;
-//  cache->core->add_only = PG_add_only;
-//  cache->core->add_withsize = PG_add_withsize;
+//  cacheAlg->core->add_only = PG_add_only;
+//  cacheAlg->core->add_withsize = PG_add_withsize;
 
   cache->core->get_current_size = PG_get_size;
   cache->core->cache_init_params = params;
@@ -414,7 +414,7 @@ cache_t *PG_init(guint64 size, obj_id_t obj_id_type, void *params) {
     Optimal_init_params->reader = NULL;
     PG_params->cache = NULL;
   } else {
-    fprintf(stderr, "can't recognize cache obj_id_type: %s\n",
+    fprintf(stderr, "can't recognize cacheAlg obj_id_type: %s\n",
             init_params->cache_type);
     PG_params->cache = LRU_init(size, obj_id_type, NULL);
   }

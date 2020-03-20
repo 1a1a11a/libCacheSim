@@ -2,7 +2,7 @@
 //  Random.c
 //  mimircache
 //
-//  Random cache replacement policy
+//  Random cacheAlg replacement policy
 //
 //  Created by Juncheng on 8/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -75,8 +75,8 @@ void Random_destroy(cache_t *cache) {
 void Random_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in Random, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -93,7 +93,7 @@ cache_t *Random_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->destroy_unique = Random_destroy_unique;
   cache->core->add = Random_add;
   cache->core->check = Random_check;
-//  cache->core->add_only = Random_add;
+//  cacheAlg->core->add_only = Random_add;
 
   if (obj_id_type == OBJ_ID_NUM) {
     Random_params->hashtable = g_hash_table_new_full(

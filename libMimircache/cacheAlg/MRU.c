@@ -2,7 +2,7 @@
 //  MRU.c
 //  mimircache
 //
-//  MRU cache replacement policy
+//  MRU cacheAlg replacement policy
 //
 //  Created by Juncheng on 8/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -59,8 +59,8 @@ void MRU_destroy(cache_t *cache) {
 void MRU_destroy_unique(cache_t *cache) {
   /* the difference between destroy_unique and destroy
    is that the former one only free the resources that are
-   unique to the cache, freeing these resources won't affect
-   other caches copied from original cache
+   unique to the cacheAlg, freeing these resources won't affect
+   other caches copied from original cacheAlg
    in MRU, next_access should not be freed in destroy_unique,
    because it is shared between different caches copied from the original one.
    */
@@ -77,7 +77,7 @@ cache_t *MRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->destroy_unique = MRU_destroy_unique;
   cache->core->add = MRU_add;
   cache->core->check = MRU_check;
-//  cache->core->add_only = MRU_add;
+//  cacheAlg->core->add_only = MRU_add;
 
   if (obj_id_type == OBJ_ID_NUM) {
     MRU_params->hashtable = g_hash_table_new_full(
