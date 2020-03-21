@@ -1,6 +1,6 @@
 //
 //  Optimal.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -116,7 +116,7 @@ gboolean Optimal_add(cache_t *cache, request_t *req) {
   }
   while ((long) g_hash_table_size(Optimal_params->hashtable) > cache->core->size)
     _Optimal_evict(cache, req);
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
@@ -135,7 +135,7 @@ gboolean Optimal_add_only(cache_t *cache, request_t *req) {
       _Optimal_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
@@ -184,7 +184,7 @@ cache_t *Optimal_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _Optimal_update;
   cache->core->_evict = _Optimal_evict;
   cache->core->evict_with_return = _Optimal_evict_with_return;
-  cache->core->get_current_size = Optimal_get_size;
+  cache->core->get_used_size = Optimal_get_size;
 //  cacheAlg->core->add_only = Optimal_add_only;
 //  cacheAlg->core->add_withsize = Optimal_add_withsize;
 

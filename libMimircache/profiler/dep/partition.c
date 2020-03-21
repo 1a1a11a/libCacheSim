@@ -1,6 +1,6 @@
 //
 //  partition.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 11/19/16.
 //  Copyright © 2016 Juncheng. All rights reserved.

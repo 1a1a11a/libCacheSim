@@ -1,18 +1,17 @@
 //
 //  reader.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 5/25/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
 
-#include "../../include/mimircache/reader.h"
-#include "../../include/mimircache/vscsiReader.h"
-#include "../../include/mimircache/binaryReader.h"
-#include "../../include/mimircache/csvReader.h"
-#include "../../include/mimircache/logging.h"
 #include "libcsv.h"
+#include "include/csvReader.h"
+#include "include/binaryReader.h"
+#include "include/vscsiReader.h"
+
 
 /* when obj_id/LBA is number, we plus one to it, to avoid cases of block 0 */
 
@@ -485,7 +484,7 @@ int close_reader(reader_t *const reader) {
 }
 
 
-int close_reader_unique(reader_t *const reader) {
+int close_cloned_reader(reader_t *const reader) {
   /* close the file in the reader or unmmap the memory in the file
    then free the memory of reader object
    Return value: Upon successful completion 0 is returned.

@@ -1,13 +1,12 @@
 //
 //  binaryReader.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 2/28/17.
 //  Copyright © 2017 Juncheng. All rights reserved.
 //
 
-#include "../../include/mimircache/binaryReader.h"
-#include "../../include/mimircache/logging.h"
+#include "include/binaryReader.h"
 
 #ifdef __cplusplus
 extern "C"

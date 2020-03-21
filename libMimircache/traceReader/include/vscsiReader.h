@@ -1,6 +1,6 @@
 //
 //  vscsiReader.h
-//  mimircache
+//  libMimircache
 //
 //  Created by CloudPhysics
 //  Modified by Juncheng on 5/25/16.
@@ -11,20 +11,21 @@
 #ifndef VSCSI_READER_H
 #define VSCSI_READER_H
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <inttypes.h>
-#include "reader.h"
-#include "logging.h"
 
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+#include <stdint.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <inttypes.h>
+#include "../../include/mimircache.h"
+#include "readerInternal.h"
 
 
 #define MAX_TEST 2

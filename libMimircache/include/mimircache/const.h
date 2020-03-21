@@ -1,6 +1,6 @@
 //
 //  const.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -30,8 +30,9 @@ extern "C" {
 #define MAX_OBJ_ID_LEN 1024
 #define MAX_FILE_PATH_LEN 1024
 
-//#define BINARY_FMT_MAX_LEN 32
 #define MAX_LINE_LEN 1024 * 1024
+
+#define MAX_BIN_FMT_STR_LEN 128
 
 
 typedef enum {

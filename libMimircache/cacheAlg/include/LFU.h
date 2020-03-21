@@ -1,6 +1,6 @@
 //
 //  LFU.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -24,7 +24,7 @@ extern "C"
 struct LFU_params{
     GHashTable *hashtable;
     pqueue_t *pq;
-//    gint64 ts;
+//    gint64 req_cnt;
 };
 typedef struct LFU_params LFU_params_t;
 

@@ -9,11 +9,14 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "LRUSize.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#include "LRUSize.h"
+#include "../../include/mimircache/cacheOp.h"
 
 
 void _LRUSize_insert(cache_t *cache, request_t *req) {
@@ -23,8 +26,7 @@ void _LRUSize_insert(cache_t *cache, request_t *req) {
   cache_obj->extra_data = req->extra_data_ptr;
   cache_obj->obj_id = req->obj_id_ptr;
 #ifdef TRACK_ACCESS_TIME
-  //    cache_obj->access_time = cacheAlg->core->ts;
-      cache_obj->access_time = LRUSize_params->logical_ts;
+    cache_obj->access_time = LRUSize_params->logical_ts;
 #endif
   cache->core->used_size += req->size;
 
@@ -60,7 +62,7 @@ void _LRUSize_update(cache_t *cache, request_t *req) {
   // we shouldn't update extra_data_ptr here, otherwise, the old extra_data_ptr will be (memory) leaked
   // cache_obj->extra_data_ptr = req->extra_data_ptr;
 #ifdef TRACK_ACCESS_TIME
-  //  cache_obj->access_time = cacheAlg->core->ts;
+  //  cache_obj->access_time = cacheAlg->core->req_cnt;
     cache_obj->access_time = LRUSize_params->logical_ts;
 #endif
   g_queue_unlink(LRUSize_params->list, node);
@@ -193,8 +195,8 @@ gboolean LRUSize_add(cache_t *cache, request_t *req) {
   }
 
 
-  LRUSize_params->logical_ts++;
-  cache->core->ts += 1;
+//  LRUSize_params->logical_ts++;
+  cache->core->req_cnt += 1;
 
   return exist;
 }
@@ -239,7 +241,7 @@ cache_t *LRUSize_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _LRUSize_update;
   cache->core->_evict = _LRUSize_evict;
   cache->core->evict_with_return = _LRUSize_evict_with_return;
-  cache->core->get_current_size = LRUSize_get_size;
+  cache->core->get_used_size = LRUSize_get_used_size;
   cache->core->get_objmap = LRUSize_get_objmap;
   cache->core->remove_obj = LRUSize_remove_obj;
   cache->core->cache_init_params = NULL;
@@ -293,7 +295,7 @@ void LRUSize_remove_obj(cache_t *cache, void *data_to_remove) {
   g_hash_table_remove(LRUSize_params->hashtable, data_to_remove);
 }
 
-guint64 LRUSize_get_size(cache_t *cache) {
+guint64 LRUSize_get_used_size(cache_t *cache) {
   return (guint64) cache->core->used_size;
 }
 

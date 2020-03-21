@@ -9,11 +9,14 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "FIFOSize.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "FIFOSize.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 void _FIFOSize_insert(cache_t *cache, request_t *req) {
   struct FIFOSize_params *FIFOSize_params =
@@ -120,7 +123,7 @@ gboolean FIFOSize_add(cache_t *cache, request_t *req) {
     _FIFOSize_evict(cache, req);
 
   FIFOSize_params->ts++;
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return exist;
 }
 
@@ -161,7 +164,7 @@ cache_t *FIFOSize_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _FIFOSize_update;
   cache->core->_evict = _FIFOSize_evict;
   cache->core->evict_with_return = _FIFOSize_evict_with_return;
-  cache->core->get_current_size = FIFOSize_get_size;
+  cache->core->get_used_size = FIFOSize_get_used_size;
   cache->core->get_objmap = FIFOSize_get_objmap;
 //  cacheAlg->core->remove_obj = FIFOSize_remove_obj;
   cache->core->cache_init_params = NULL;
@@ -203,7 +206,7 @@ void FIFOSize_remove(cache_t *cache, void *data_to_remove) {
   g_hash_table_remove(FIFOSize_params->hashtable, data_to_remove);
 }
 
-guint64 FIFOSize_get_size(cache_t *cache) {
+guint64 FIFOSize_get_used_size(cache_t *cache) {
   return (guint64)cache->core->used_size;
 }
 

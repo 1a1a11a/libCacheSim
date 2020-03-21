@@ -1,6 +1,6 @@
 //
 //  LFUFast.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -202,7 +202,7 @@ gboolean LFUFast_add(cache_t *cache, request_t *req) {
       _LFUFast_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
@@ -216,7 +216,7 @@ gboolean LFUFast_add_withsize(cache_t *cache, request_t *req) {
   ret_val = LFUFast_add(cache, req);
 
   *(gint64 *) (req->obj_id_ptr) = original_lbn;
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return ret_val;
 }
 
@@ -262,7 +262,7 @@ cache_t *LFUFast_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _LFUFast_update;
   cache->core->_evict = _LFUFast_evict;
   cache->core->evict_with_return = _LFUFast_evict_with_return;
-  cache->core->get_current_size = LFUFast_get_size;
+  cache->core->get_used_size = LFUFast_get_size;
   cache->core->cache_init_params = NULL;
 //  cacheAlg->core->add_only = LFUFast_add;
 //  cacheAlg->core->add_withsize = LFUFast_add_withsize;

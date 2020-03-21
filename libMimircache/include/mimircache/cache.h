@@ -1,6 +1,6 @@
 //
 //  cache.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -29,17 +29,15 @@ extern "C" {
 #include "cacheObj.h"
 
 
+
 struct cache_core {
-//  cache_type type;      // need to deprecate this for allowing unknown cache replacement algorithm
   char cache_name[32];
-  // virtual timestamp (added on 06/02/2019)
-  guint64 ts;
+  guint64 req_cnt;           // virtual timestamp (added on 06/02/2019)
+  guint64 miss_cnt;
 
   long size;
   long used_size;
-  char obj_id_type;     // l, c
-  long long hit_count;
-  long long miss_count;
+  char obj_id_type;
   void *cache_init_params;
 //  gboolean use_block_size;
 //  guint64 block_size;
@@ -66,7 +64,7 @@ struct cache_core {
 
   gpointer (*evict_with_return)(struct cache *, request_t *);
 
-  guint64 (*get_current_size)(struct cache *);         // get current size of used cache
+  guint64 (*get_used_size)(struct cache *);         // get current size of used cache
 
   GHashTable *(*get_objmap)(struct cache *);     // get the hash map
 
@@ -96,26 +94,6 @@ typedef struct cache {
   struct cache_core *core;
   void *cache_params;
 } cache_t;
-
-
-extern cache_t *cache_init(char* cache_name, long long size, obj_id_t obj_id_type);
-extern void cache_destroy(cache_t *cache);
-extern void cache_destroy_unique(cache_t *cache);
-
-static inline void* _get_cache_func_ptr(char* func_name){
-  void *handle = dlopen(NULL, RTLD_GLOBAL);
-  void* func_ptr = dlsym(handle, func_name);
-  return func_ptr;
-
-//  char *error;
-//  if ((error = dlerror()) != NULL) {
-//    WARNING("error loading %s %s\n", full_func_name, error);
-//    return NULL;
-//  } else {
-//    DEBUG("internal cache loaded %s\n", full_func_name);
-//    return func_ptr;
-//  }
-}
 
 
 

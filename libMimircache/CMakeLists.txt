@@ -90,6 +90,7 @@ target_link_libraries(profilerLRUTest cache cacheAlg traceReader profiler dataSt
 add_executable(profilerTest ../test/test_profiler.c)
 target_link_libraries(profilerTest cache cacheAlg traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
+
 enable_testing()
 add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY .)
 add_test(NAME distUtils COMMAND distUtils WORKING_DIRECTORY .)

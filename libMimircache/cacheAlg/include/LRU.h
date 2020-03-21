@@ -1,6 +1,6 @@
 //
 //  LRU.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -19,14 +19,14 @@ extern "C"
 #endif
 
 
-struct LRU_params {
+typedef struct LRU_params {
   GHashTable *hashtable;
   GQueue *list;
   gint64 ts;              // this only works when add is called
-};
+} LRU_params_t;
 
-typedef struct LRU_params LRU_params_t;
 
+cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params);
 
 extern gboolean LRU_check(cache_t *cache, request_t *req);
 
@@ -46,12 +46,9 @@ extern void LRU_destroy(cache_t *cache);
 extern void LRU_destroy_unique(cache_t *cache);
 
 
-cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params);
-
-
 extern void LRU_remove_obj(cache_t *cache, void *data_to_remove);
 
-extern guint64 LRU_get_current_size(cache_t *cache);
+extern guint64 LRU_get_used_size(cache_t *cache);
 
 
 #ifdef __cplusplus

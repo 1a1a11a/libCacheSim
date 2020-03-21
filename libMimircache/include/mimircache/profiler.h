@@ -9,20 +9,20 @@
 #ifndef profiler_h
 #define profiler_h
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <glib.h>
-#include <string.h>
-#include "reader.h"
-#include "cache.h"
-#include "const.h"
-
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <math.h>
+//#include <glib.h>
+//#include <string.h>
+#include "reader.h"
+#include "cache.h"
+//#include "const.h"
+
 
 
 typedef struct {
@@ -42,18 +42,7 @@ typedef enum {
   P_EVICTION_AGE,
   P_HIT_RESULT,
   P_EVICTION,
-} profiler_type_t;
-
-typedef struct profiler_multithreading_params {
-  reader_t *reader;
-  struct cache *cache;
-  profiler_res_t **result;
-  guint bin_size;
-  GMutex mtx;             // prevent simultaneous write to progress
-  guint64 *progress;
-  gpointer other_data;
-} prof_mt_params_t;
-
+} profiler_t;
 
 /**
  * this function performs cache_size/bin_size simulations to obtain miss ratio,
@@ -66,7 +55,7 @@ typedef struct profiler_multithreading_params {
  * @param bin_size
  * @return an array of profiler_res_t*, each element of the array is the result of one simulation
  */
-profiler_res_t **evaluate(reader_t *reader_in, struct cache *cache_in, int num_of_threads, guint64 bin_size);
+profiler_res_t *get_miss_ratio_curve(reader_t *reader_in, cache_t *cache_in, int num_of_threads, guint64 bin_size);
 
 
 

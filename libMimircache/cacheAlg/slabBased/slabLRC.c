@@ -135,7 +135,7 @@ cache_t *slabLRC_init(guint64 size, obj_id_t obj_id_type, void *params) {
 //  cacheAlg->core->_update = _slabLRC_update;
 //  cacheAlg->core->_evict = _slabLRC_evict;
 //  cacheAlg->core->evict_with_return = _slabLRC_evict_with_return;
-//  cacheAlg->core->get_current_size = slabLRC_get_size;
+//  cacheAlg->core->get_used_size = slabLRC_get_size;
 //  cacheAlg->core->remove_obj = slabLRC_remove_obj;
 //  cacheAlg->core->cache_init_params = NULL;
 //  cacheAlg->core->add_only = slabLRC_add_only;

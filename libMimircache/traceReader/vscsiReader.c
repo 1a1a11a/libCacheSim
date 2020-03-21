@@ -1,15 +1,13 @@
 //
 //  vscsiReader.c
-//  mimircache
+//  libMimircache
 //
 //  Created by CloudPhysics
 //  Modified by Juncheng on 5/25/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../../include/mimircache/vscsiReader.h"
-#include "../../include/mimircache/reader.h"
-#include "../../include/mimircache/logging.h"
+#include "include/vscsiReader.h"
 
 
 #ifdef __cplusplus

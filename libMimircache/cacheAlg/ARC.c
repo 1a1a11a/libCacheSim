@@ -1,16 +1,19 @@
 //
 //  ARC.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 2/12/17.
 //  Copyright © 2017 Juncheng. All rights reserved.
 //
 
-#include "ARC.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "ARC.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 void _ARC_insert(cache_t *cache, request_t *cp) {
   /* first time add, then it should be add to LRU1 */
@@ -173,16 +176,16 @@ gboolean ARC_add(cache_t *cache, request_t *cp) {
     retval = FALSE;
 #ifdef SANITY_CHECK
     if ((ARC_params->size1 + ARC_params->size2 > cacheAlg->core->size) ||
-        (ARC_params->LRU1->core->get_current_size(ARC_params->LRU1) +
-         ARC_params->LRU2->core->get_current_size(ARC_params->LRU2)) >
+        (ARC_params->LRU1->core->get_used_size(ARC_params->LRU1) +
+         ARC_params->LRU2->core->get_used_size(ARC_params->LRU2)) >
             cacheAlg->core->size) {
       fprintf(stderr,
               "ERROR: in ARC add, after inserting, "
               "sum of two LRUs sizes: %lu, ARC size1+size2=%lu, "
               "but cacheAlg size=%ld\n",
-              (unsigned long)(ARC_params->LRU1->core->get_current_size(
+              (unsigned long)(ARC_params->LRU1->core->get_used_size(
                                   ARC_params->LRU1) +
-                              ARC_params->LRU2->core->get_current_size(
+                              ARC_params->LRU2->core->get_used_size(
                                   ARC_params->LRU2)),
               (unsigned long)(ARC_params->size1 + ARC_params->size2),
               cacheAlg->core->size);
@@ -191,7 +194,7 @@ gboolean ARC_add(cache_t *cache, request_t *cp) {
 #endif
   }
 
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
@@ -236,7 +239,7 @@ cache_t *ARC_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _ARC_update;
   cache->core->_evict = _ARC_evict;
   cache->core->evict_with_return = _ARC_evict_with_return;
-  cache->core->get_current_size = ARC_get_size;
+  cache->core->get_used_size = ARC_get_size;
   cache->core->cache_init_params = params;
 //  cacheAlg->core->add_only = ARC_add;
 

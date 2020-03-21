@@ -8,7 +8,9 @@
 
 #include "../include/mimircache/profilerLRU.h"
 #include "splay.h"
-#include "include/distUtils.h"
+#include "distUtilsInternal.h"
+#include "utilsInternal.h"
+
 
 #ifdef __cplusplus
 extern "C"

@@ -1,6 +1,6 @@
 //
 //  heatmap.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 5/24/16.
 //  Copyright © 2016 Juncheng. All rights reserved.

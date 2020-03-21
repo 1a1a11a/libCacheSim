@@ -1,6 +1,6 @@
 //
 //  myLRU.cpp
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 11/16/19.
 //  Copyright © 2016 Juncheng. All rights reserved.

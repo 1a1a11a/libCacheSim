@@ -34,11 +34,7 @@ extern "C"
 //                     gint64 time_interval,
 //                     gint64 num_of_pixels);
 
-GHashTable *create_hash_table(reader_t *reader,
-                              GDestroyNotify key_destroy_func_num,
-                              GDestroyNotify value_destroy_func_num,
-                              GDestroyNotify key_destroy_func_str,
-                              GDestroyNotify value_destroy_func_str);
+
 
 //#ifdef __cplusplus
 //}

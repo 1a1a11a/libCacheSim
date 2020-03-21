@@ -2,7 +2,7 @@
 
 //
 //  LRU_K.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.

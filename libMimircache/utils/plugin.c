@@ -8,7 +8,6 @@
 cache_t *create_cache_external(const char *cache_alg_name, uint64_t size, obj_id_t obj_id_type, void *params) {
   void *handle;
   char *error;
-//  cache_t *(*cache_init)(guint64, char, guint64, void *);
   cache_t *(*cache_init)(guint64, obj_id_t, void *);
 
   char shared_lib_path[256];
@@ -49,7 +48,7 @@ cache_t *create_cache_internal(const char *cache_alg_name, uint64_t size, obj_id
   *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
 
   if ((dlerror()) != NULL) {
-//    WARNING("cannot load internal cache %s because cannot find %s\n", cache_alg_name, cache_init_func_name);
+    WARNING("cannot load internal cache %s because cannot find %s\n", cache_alg_name, cache_init_func_name);
     return NULL;
   } else {
     DEBUG3("internal cache %s loaded\n", cache_alg_name);
@@ -65,7 +64,7 @@ cache_t *create_cache(const char *cache_alg_name, uint64_t size, obj_id_t obj_id
     cache = create_cache_external(cache_alg_name, size, obj_id_type, params);
   }
   if (cache == NULL) {
-    WARNING("failed to create cache %s\n", cache_alg_name);
+    ERROR("failed to create cache %s\n", cache_alg_name);
     abort();
   }
   return cache;

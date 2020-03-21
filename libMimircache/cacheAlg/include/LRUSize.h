@@ -1,6 +1,6 @@
 //
-//  LRUSize.h
-//  mimircache
+//  LRU.h
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -10,19 +10,18 @@
 #define LRU_SIZE_H
 
 
-#include "../../include/mimircache/cache.h"
-
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
+#include "../../include/mimircache/cache.h"
+
 
 typedef struct LRUSize_params{
     GHashTable *hashtable;
     GQueue *list;
-    gint64 logical_ts;              // this only works when add is called
+//    gint64 logical_ts;              // this only works when add is called
 
 #ifdef TRACK_EVICTION_AGE
   GHashTable *last_access_rtime_map;
@@ -57,7 +56,7 @@ cache_t*   LRUSize_init(guint64 size, obj_id_t obj_id_type, void* params);
 
 
 extern void     LRUSize_remove_obj(cache_t* cache, void* data_to_remove);
-extern guint64   LRUSize_get_size(cache_t* cache);
+extern guint64   LRUSize_get_used_size(cache_t* cache);
 extern GHashTable* LRUSize_get_objmap();
 
 

@@ -1,6 +1,6 @@
 //
 //  FIFO.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -16,6 +16,8 @@ extern "C"
 
 
 #include "../../include/mimircache/cache.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 /* need add support for p and c obj_id_type of data 
  
@@ -46,7 +48,7 @@ extern void FIFO_destroy(cache_t *cache);
 
 extern void FIFO_destroy_unique(cache_t *cache);
 
-extern guint64 FIFO_get_size(cache_t *cache);
+extern guint64 FIFO_get_used_size(cache_t *cache);
 
 
 cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params);

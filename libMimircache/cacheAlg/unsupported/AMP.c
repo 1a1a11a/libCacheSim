@@ -1,6 +1,6 @@
 //
 //  AMP.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -630,7 +630,7 @@ cache_t *AMP_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_evict = _AMP_evict;
   cache->core->evict_with_return = _AMP_evict_with_return;
 
-  cache->core->get_current_size = AMP_get_size;
+  cache->core->get_used_size = AMP_get_size;
   cache->core->cache_init_params = params;
 //  cacheAlg->core->add_only = AMP_add_only;
 //  cacheAlg->core->add_withsize = AMP_add_withsize;

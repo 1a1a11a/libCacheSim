@@ -1,6 +1,6 @@
 //
 //  MRU.c
-//  mimircache
+//  libMimircache
 //
 //  MRU cacheAlg replacement policy
 //
@@ -45,7 +45,7 @@ gboolean MRU_add(cache_t *cache, request_t *req) {
       _MRU_insert(cache, req);
     retval = FALSE;
   }
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 

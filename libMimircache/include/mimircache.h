@@ -13,16 +13,11 @@ extern "C" {
 #include "mimircache/cache.h"
 #include "mimircache/request.h"
 #include "mimircache/reader.h"
-#include "mimircache/csvReader.h"
-#include "mimircache/binaryReader.h"
-#include "mimircache/vscsiReader.h"
-
 #include "mimircache/plugin.h"
 #include "mimircache/profilerLRU.h"
 #include "mimircache/profiler.h"
 #include "mimircache/profilerUtils.h"
 #include "mimircache/heatmap.h"
-
 #include "mimircache/logging.h"
 
 

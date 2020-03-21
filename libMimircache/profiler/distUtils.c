@@ -4,11 +4,11 @@
 
 #include "../include/mimircache/distUtils.h"
 #include "../include/mimircache/profilerUtils.h"
-#include "include/distUtils.h"
+#include "distUtilsInternal.h"
+#include "utilsInternal.h"
 
-#include <sys/types.h>
+
 #include <sys/stat.h>
-#include <unistd.h>
 #include <assert.h>
 
 #ifdef __cplusplus

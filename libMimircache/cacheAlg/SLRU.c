@@ -1,12 +1,14 @@
 //
 //  SLRU.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 2/12/17.
 //  Copyright © 2017 Juncheng. All rights reserved.
 //
 
 #include "SLRU.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +44,7 @@ void _SLRU_update(cache_t *cache, request_t *cp) {
         SLRU_params->current_sizes[i]--;
         _LRU_insert(SLRU_params->LRUs[i + 1], cp);
         SLRU_params->current_sizes[i + 1]++;
-        if ((long) LRU_get_current_size(SLRU_params->LRUs[i + 1]) >
+        if ((long) LRU_get_used_size(SLRU_params->LRUs[i + 1]) >
             SLRU_params->LRUs[i + 1]->core->size) {
           gpointer old_itemp = cp->obj_id_ptr;
           gpointer evicted =
@@ -98,11 +100,11 @@ gboolean SLRU_add(cache_t *cache, request_t *cp) {
     retval = TRUE;
   } else {
     _SLRU_insert(cache, cp);
-    if ((long) LRU_get_current_size(SLRU_params->LRUs[0]) > SLRU_params->LRUs[0]->core->size)
+    if ((long) LRU_get_used_size(SLRU_params->LRUs[0]) > SLRU_params->LRUs[0]->core->size)
       _SLRU_evict(cache, cp);
     retval = FALSE;
   }
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
@@ -149,7 +151,7 @@ cache_t *SLRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _SLRU_update;
   cache->core->_evict = _SLRU_evict;
   cache->core->evict_with_return = _SLRU_evict_with_return;
-  cache->core->get_current_size = SLRU_get_size;
+  cache->core->get_used_size = SLRU_get_size;
   cache->core->cache_init_params = params;
 //  cacheAlg->core->add_only = SLRU_add;
 

@@ -1,19 +1,24 @@
 //
 //  LRU.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
+//  major-rewrite Mar 2020
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
-
-#include "LRU.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+#include "LRU.h"
+#include "../../include/mimircache/cacheOp.h"
+#include "../../utils/include/utilsInternal.h"
+
+
 void _LRU_insert(cache_t *LRU, request_t *req) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (LRU->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (LRU->cache_params);
 
   gpointer key = req->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
@@ -28,12 +33,12 @@ void _LRU_insert(cache_t *LRU, request_t *req) {
 }
 
 gboolean LRU_check(cache_t *cache, request_t *req) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   return g_hash_table_contains(LRU_params->hashtable, req->obj_id_ptr);
 }
 
 void _LRU_update(cache_t *cache, request_t *req) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   GList *node =
     (GList *) g_hash_table_lookup(LRU_params->hashtable, req->obj_id_ptr);
   g_queue_unlink(LRU_params->list, node);
@@ -41,7 +46,7 @@ void _LRU_update(cache_t *cache, request_t *req) {
 }
 
 void _LRU_evict(cache_t *LRU, request_t *req) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (LRU->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (LRU->cache_params);
   gpointer data = g_queue_pop_head(LRU_params->list);
   g_hash_table_remove(LRU_params->hashtable, (gconstpointer) data);
 
@@ -52,7 +57,7 @@ gpointer _LRU_evict_with_return(cache_t *LRU, request_t *req) {
    * needs to free the memory of returned data
    */
 
-  struct LRU_params *LRU_params = (struct LRU_params *) (LRU->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (LRU->cache_params);
 
   gpointer data = g_queue_pop_head(LRU_params->list);
 
@@ -66,7 +71,7 @@ gpointer _LRU_evict_with_return(cache_t *LRU, request_t *req) {
 }
 
 gboolean LRU_add(cache_t *cache, request_t *req) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   gboolean retval;
   if (LRU_check(cache, req)) {
     _LRU_update(cache, req);
@@ -78,13 +83,13 @@ gboolean LRU_add(cache_t *cache, request_t *req) {
     retval = FALSE;
   }
   LRU_params->ts++;
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
 
 void LRU_destroy(cache_t *cache) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
 
   //    g_queue_free(LRU_params->list);                 // Jason: should call
   //    g_queue_free_full to free the memory of node content
@@ -106,59 +111,21 @@ void LRU_destroy_unique(cache_t *cache) {
   LRU_destroy(cache);
 }
 
-/*-----------------------------------------------------------------------------
- *
- * LRU_init --
- *      initialize a LRU cacheAlg
- *
- * Input:
- *      size:       cacheAlg size
- *      obj_id_type:  the obj_id_type of data, currently support l for long or c
- *for string block_size: the basic unit size of block, used for profiling with
- *size if not evaluate with size, this is 0 params:     params used for
- *initialization, NULL for LRU
- *
- * Return:
- *      a LRU cacheAlg struct
- *
- *-----------------------------------------------------------------------------
- */
+
 cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache_t *cache = cache_init("LRU", size, obj_id_type);
-  cache->cache_params = g_new0(struct LRU_params, 1);
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
+  cache->cache_params = g_new0(LRU_params_t, 1);
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
 
-//  cacheAlg->core->cache_init = LRU_init;
-//  cacheAlg->core->destroy = LRU_destroy;
-//  cacheAlg->core->destroy_unique = LRU_destroy_unique;
-//  cacheAlg->core->add = LRU_add;
-//  cacheAlg->core->check = LRU_check;
-//  cacheAlg->core->_insert = _LRU_insert;
-//  cacheAlg->core->_update = _LRU_update;
-//  cacheAlg->core->_evict = _LRU_evict;
-//  cacheAlg->core->evict_with_return = _LRU_evict_with_return;
-//  cacheAlg->core->get_current_size = LRU_get_size;
-//  cacheAlg->core->remove_obj = LRU_remove_obj;
-//  cacheAlg->core->cache_init_params = NULL;
-//  cacheAlg->core->add_only = LRU_add_only;
-//  cacheAlg->core->add_withsize = LRU_add_withsize;
-
-  if (obj_id_type == OBJ_ID_NUM) {
-    LRU_params->hashtable = g_hash_table_new_full(
-      g_direct_hash, g_direct_equal, NULL, NULL);
-  } else if (obj_id_type == OBJ_ID_STR) {
-    LRU_params->hashtable = g_hash_table_new_full(
-      g_str_hash, g_str_equal, g_free, NULL);
-  } else {
-    ERROR("does not support given obj_id type: %c\n", obj_id_type);
-  }
+  LRU_params->hashtable = create_hash_table_with_obj_id_type(obj_id_type, NULL,
+      NULL, g_free, NULL);
   LRU_params->list = g_queue_new();
 
   return cache;
 }
 
 void LRU_remove_obj(cache_t *cache, void *data_to_remove) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
 
   gpointer data = g_hash_table_lookup(LRU_params->hashtable, data_to_remove);
   if (!data) {
@@ -169,8 +136,8 @@ void LRU_remove_obj(cache_t *cache, void *data_to_remove) {
   g_hash_table_remove(LRU_params->hashtable, data_to_remove);
 }
 
-guint64 LRU_get_current_size(cache_t *cache) {
-  struct LRU_params *LRU_params = (struct LRU_params *) (cache->cache_params);
+guint64 LRU_get_used_size(cache_t *cache) {
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   return (guint64) g_hash_table_size(LRU_params->hashtable);
 }
 

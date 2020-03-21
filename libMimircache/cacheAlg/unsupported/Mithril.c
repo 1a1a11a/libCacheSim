@@ -655,7 +655,7 @@ static inline void _Mithril_prefetch(cache_t *Mithril, request_t *cp) {
         continue;
       }
       Mithril_params->cache->core->_insert(Mithril_params->cache, cp);
-      while ((long)Mithril_params->cache->core->get_current_size(Mithril_params->cache) >
+      while ((long)Mithril_params->cache->core->get_used_size(Mithril_params->cache) >
              (long)Mithril_params->cache->core->size)
         // use this because we need to record stat when evicting
         _Mithril_evict(Mithril, cp);
@@ -689,7 +689,7 @@ static inline void _Mithril_prefetch(cache_t *Mithril, request_t *cp) {
 
     // use this, not add because we need to record stat when evicting
     Mithril_params->cache->core->_insert(Mithril_params->cache, cp);
-    while ((long)Mithril_params->cache->core->get_current_size(
+    while ((long)Mithril_params->cache->core->get_used_size(
                Mithril_params->cache) > Mithril_params->cache->core->size)
       _Mithril_evict(Mithril, cp);
 
@@ -787,7 +787,7 @@ gboolean Mithril_add(cache_t *Mithril, request_t *cp) {
     retval = Mithril_check(Mithril, cp);
     AMP_add_no_eviction(Mithril_params->cache, cp);
     _Mithril_prefetch(Mithril, cp);
-    while ((long)Mithril_params->cache->core->get_current_size(
+    while ((long)Mithril_params->cache->core->get_used_size(
                Mithril_params->cache) > Mithril->core->size)
       _Mithril_evict(Mithril, cp);
 
@@ -799,7 +799,7 @@ gboolean Mithril_add(cache_t *Mithril, request_t *cp) {
     } else {
       _Mithril_insert(Mithril, cp);
       _Mithril_prefetch(Mithril, cp);
-      while ((long)Mithril_params->cache->core->get_current_size(
+      while ((long)Mithril_params->cache->core->get_used_size(
                  Mithril_params->cache) > Mithril->core->size)
         _Mithril_evict(Mithril, cp);
       retval = FALSE;
@@ -861,7 +861,7 @@ gboolean Mithril_add_only(cache_t *Mithril, request_t *cp) {
   if (strcmp(Mithril_params->cache->core->cache_name, "AMP")) {
     retval = Mithril_check_only(Mithril, cp);
     AMP_add_only_no_eviction(Mithril_params->cache, cp);
-    while ((long)Mithril_params->cache->core->get_current_size(
+    while ((long)Mithril_params->cache->core->get_used_size(
                Mithril_params->cache) > Mithril->core->size)
       _Mithril_evict_only(Mithril, cp);
   } else {
@@ -871,7 +871,7 @@ gboolean Mithril_add_only(cache_t *Mithril, request_t *cp) {
       retval = TRUE;
     } else {
       _Mithril_insert(Mithril, cp); // insert is same
-      while ((long)Mithril_params->cache->core->get_current_size(
+      while ((long)Mithril_params->cache->core->get_used_size(
                  Mithril_params->cache) > Mithril->core->size)
         _Mithril_evict_only(Mithril, cp);
       retval = FALSE;
@@ -1050,7 +1050,7 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->check = Mithril_check;
   cache->core->_insert = _Mithril_insert;
   cache->core->_evict = _Mithril_evict;
-  cache->core->get_current_size = Mithril_get_size;
+  cache->core->get_used_size = Mithril_get_size;
   cache->core->cache_init_params = params;
 //  cacheAlg->core->add_only = Mithril_add_only;
 //  cacheAlg->core->add_withsize = Mithril_add_withsize;
@@ -1479,7 +1479,7 @@ void _Mithril_aging(cache_t *Mithril) { ; }
 
 guint64 Mithril_get_size(cache_t *cache) {
   Mithril_params_t *Mithril_params = (Mithril_params_t *)(cache->cache_params);
-  return (guint64)Mithril_params->cache->core->get_current_size(
+  return (guint64)Mithril_params->cache->core->get_used_size(
       Mithril_params->cache);
 }
 

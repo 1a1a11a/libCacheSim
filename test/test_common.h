@@ -10,6 +10,7 @@
 #include <glib/gi18n.h>
 #include "../libMimircache/include/mimircache.h"
 #include "../libMimircache/cacheAlg/include/FIFO.h"
+#include "../libMimircache/cacheAlg/include/FIFOSize.h"
 #include "../libMimircache/cacheAlg/include/LRU.h"
 #include "../libMimircache/cacheAlg/include/LRUSize.h"
 #include "../libMimircache/cacheAlg/include/LRU_K.h"
@@ -18,9 +19,6 @@
 #include "../libMimircache/cacheAlg/include/LFUFast.h"
 #include "../libMimircache/cacheAlg/include/ARC.h"
 #include "../libMimircache/cacheAlg/include/Optimal.h"
-#include "../libMimircache/cacheAlg/include/AMP.h"
-#include "../libMimircache/cacheAlg/include/Mithril.h"
-#include "../libMimircache/cacheAlg/include/PG.h"
 
 
 #define BLOCK_UNIT_SIZE 0    // 16 * 1024
@@ -31,6 +29,8 @@
 
 #define CACHE_SIZE 200
 #define BIN_SIZE 50
+//#define CACHE_SIZE 10
+//#define BIN_SIZE 2
 
 
 reader_t *setup_vscsi_reader() {
@@ -92,8 +92,12 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
   void *init_params_g;
   if (strcmp(alg_name, "LRU") == 0)
     cache = LRU_init(cache_size, reader->base->obj_id_type, NULL);
+  else if (strcmp(alg_name, "LRUSize") == 0)
+    cache = LRUSize_init(cache_size, reader->base->obj_id_type, NULL);
   else if (strcmp(alg_name, "FIFO") == 0)
     cache = FIFO_init(cache_size, reader->base->obj_id_type, NULL);
+  else if (strcmp(alg_name, "FIFOSize") == 0)
+    cache = FIFOSize_init(cache_size, reader->base->obj_id_type, NULL);
   else if (strcmp(alg_name, "LRU_K") == 0)
     cache = LRU_K_init(cache_size, reader->base->obj_id_type, NULL);
   else if (strcmp(alg_name, "LFU") == 0)
@@ -116,41 +120,41 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
     init_params->reader = reader;
     init_params->ts = 0;
     cache = Optimal_init(cache_size, reader->base->obj_id_type, (void *) init_params);
-  } else if (strcmp(alg_name, "PG") == 0) {
-    PG_init_params_t *init_params = g_new0(PG_init_params_t, 1);
-    init_params_g = init_params;
-    init_params->prefetch_threshold = 0.3;
-    init_params->lookahead = 1;
-    init_params->cache_type = "LRU";
-    init_params->max_meta_data = 0.1;
-    init_params->block_size = 64 * 1024;
-    cache = PG_init(cache_size, reader->base->obj_id_type, (void *) init_params);
-  } else if (strcmp(alg_name, "AMP") == 0) {
-    struct AMP_init_params *AMP_init_params = g_new0(struct AMP_init_params, 1);
-    init_params_g = AMP_init_params;
-    AMP_init_params->APT = 4;
-    AMP_init_params->K = 1;
-    AMP_init_params->p_threshold = 256;
-    AMP_init_params->read_size = 8;
-    cache = AMP_init(cache_size, reader->base->obj_id_type, AMP_init_params);
-  } else if (strcmp(alg_name, "Mithril") == 0) {
-    Mithril_init_params_t *init_params = g_new0(Mithril_init_params_t, 1);
-    init_params_g = init_params;
-    init_params->cache_type = "LRU";
-    init_params->confidence = 0;
-    init_params->lookahead_range = 20;
-    init_params->max_support = 12;
-    init_params->min_support = 3;
-    init_params->pf_list_size = 2;
-    init_params->max_metadata_size = 0.1;
-    init_params->block_size = BLOCK_UNIT_SIZE;
-    init_params->sequential_type = 0;
-    init_params->sequential_K = 0;
-//        init_params->recording_loc = miss;
-    init_params->AMP_pthreshold = 256;
-    init_params->cycle_time = 2;
-    init_params->rec_trigger = each_req;
-    cache = Mithril_init(cache_size, reader->base->obj_id_type, init_params);
+//  } else if (strcmp(alg_name, "PG") == 0) {
+//    PG_init_params_t *init_params = g_new0(PG_init_params_t, 1);
+//    init_params_g = init_params;
+//    init_params->prefetch_threshold = 0.3;
+//    init_params->lookahead = 1;
+//    init_params->cache_type = "LRU";
+//    init_params->max_meta_data = 0.1;
+//    init_params->block_size = 64 * 1024;
+//    cache = PG_init(cache_size, reader->base->obj_id_type, (void *) init_params);
+//  } else if (strcmp(alg_name, "AMP") == 0) {
+//    struct AMP_init_params *AMP_init_params = g_new0(struct AMP_init_params, 1);
+//    init_params_g = AMP_init_params;
+//    AMP_init_params->APT = 4;
+//    AMP_init_params->K = 1;
+//    AMP_init_params->p_threshold = 256;
+//    AMP_init_params->read_size = 8;
+//    cache = AMP_init(cache_size, reader->base->obj_id_type, AMP_init_params);
+//  } else if (strcmp(alg_name, "Mithril") == 0) {
+//    Mithril_init_params_t *init_params = g_new0(Mithril_init_params_t, 1);
+//    init_params_g = init_params;
+//    init_params->cache_type = "LRU";
+//    init_params->confidence = 0;
+//    init_params->lookahead_range = 20;
+//    init_params->max_support = 12;
+//    init_params->min_support = 3;
+//    init_params->pf_list_size = 2;
+//    init_params->max_metadata_size = 0.1;
+//    init_params->block_size = BLOCK_UNIT_SIZE;
+//    init_params->sequential_type = 0;
+//    init_params->sequential_K = 0;
+////        init_params->recording_loc = miss;
+//    init_params->AMP_pthreshold = 256;
+//    init_params->cycle_time = 2;
+//    init_params->rec_trigger = each_req;
+//    cache = Mithril_init(cache_size, reader->base->obj_id_type, init_params);
   } else {
     printf("cannot recognize algorithm\n");
     exit(1);

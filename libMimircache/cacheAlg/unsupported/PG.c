@@ -1,6 +1,6 @@
 //
 //  PG.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 11/20/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -394,7 +394,7 @@ cache_t *PG_init(guint64 size, obj_id_t obj_id_type, void *params) {
 //  cacheAlg->core->add_only = PG_add_only;
 //  cacheAlg->core->add_withsize = PG_add_withsize;
 
-  cache->core->get_current_size = PG_get_size;
+  cache->core->get_used_size = PG_get_size;
   cache->core->cache_init_params = params;
 
   PG_params->lookahead = init_params->lookahead;
@@ -445,7 +445,7 @@ cache_t *PG_init(guint64 size, obj_id_t obj_id_type, void *params) {
 
 guint64 PG_get_size(cache_t *cache) {
   PG_params_t *PG_params = (PG_params_t *) (cache->cache_params);
-  return (guint64) PG_params->cache->core->get_current_size(PG_params->cache);
+  return (guint64) PG_params->cache->core->get_used_size(PG_params->cache);
 }
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 //
 //  SLRU.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 2/12/17.
 //  Copyright © 2017 Juncheng. All rights reserved.

@@ -112,6 +112,36 @@ typedef struct reader {
   void *reader_params;
 } reader_t;
 
+
+typedef struct {
+  gint obj_id_pos;                     // ordering begins with 0
+  gint op_pos;
+  gint real_time_pos;
+  gint size_pos;
+  gint unused_pos1;
+  gint unused_pos2;
+  char fmt[MAX_BIN_FMT_STR_LEN];
+} binary_init_params_t;
+
+typedef struct{
+  gint obj_id_field;
+  gint op_field;
+  gint real_time_field;
+  gint size_field;
+  gboolean has_header;
+  unsigned char delimiter;
+  gint traceID_field;
+}csvReader_init_params;
+
+
+
+
+
+
+
+
+
+
 reader_t *setup_reader(const char *file_loc, const trace_type_t trace_type,
                        const obj_id_t obj_id_type,
                        const void *const setup_params);
@@ -144,7 +174,7 @@ void reset_reader(reader_t *const reader);
 
 int close_reader(reader_t *const reader);
 
-int close_reader_unique(reader_t *const reader);
+int close_cloned_reader(reader_t *const reader);
 
 reader_t *clone_reader(reader_t *const reader);
 

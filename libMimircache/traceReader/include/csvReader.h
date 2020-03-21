@@ -1,6 +1,6 @@
 //
 //  csvReader.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 5/25/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -9,24 +9,14 @@
 #ifndef csvReader_h
 #define csvReader_h
 
-#include "reader.h"
-#include "logging.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-
-typedef struct{
-    gint obj_id_field;
-    gint op_field;
-    gint real_time_field;
-    gint size_field;
-    gboolean has_header;
-    unsigned char delimiter;
-    gint traceID_field;
-}csvReader_init_params; 
+#include "../../include/mimircache.h"
+#include "readerInternal.h"
 
 
 typedef struct{

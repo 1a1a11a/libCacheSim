@@ -1,6 +1,6 @@
 //
 //  LFU.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -61,7 +61,7 @@ void _LFU_insert(cache_t *LFU, request_t *req) {
    * frequency cleared after eviction
    */
   node->pri.pri1 = 1;
-  node->pri.pri2 = LFU->core->ts;
+  node->pri.pri2 = LFU->core->req_cnt;
 
   pqueue_insert(LFU_params->pq, (void *) node);
   g_hash_table_insert(LFU_params->hashtable, (gpointer) key, (gpointer) node);
@@ -79,7 +79,7 @@ void _LFU_update(cache_t *cache, request_t *req) {
     LFU_params->hashtable, (gconstpointer) (req->obj_id_ptr));
   pqueue_pri_t pri;
   pri.pri1 = node->pri.pri1 + 1;
-  pri.pri2 = cache->core->ts;
+  pri.pri2 = cache->core->req_cnt;
   pqueue_change_priority(LFU_params->pq, pri, (void *) node);
 }
 
@@ -113,7 +113,7 @@ gboolean LFU_add(cache_t *cache, request_t *req) {
       _LFU_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
@@ -128,7 +128,7 @@ gboolean LFU_add_with_size(cache_t *cache, request_t *req) {
   ret_val = LFU_add(cache, req);
 
   *(gint64 *) (req->obj_id_ptr) = original_lbn;
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return ret_val;
 }
 
@@ -167,7 +167,7 @@ cache_t *LFU_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_update = _LFU_update;
   cache->core->_evict = _LFU_evict;
   cache->core->evict_with_return = _LFU_evict_with_return;
-  cache->core->get_current_size = LFU_get_size;
+  cache->core->get_used_size = LFU_get_size;
   cache->core->cache_init_params = NULL;
 //  cacheAlg->core->add_only = LFU_add_only;
 //  cacheAlg->core->add_withsize = LFU_add_with_size;

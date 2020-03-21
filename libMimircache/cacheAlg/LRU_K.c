@@ -1,6 +1,6 @@
 //
 //  LRU_K.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -164,7 +164,7 @@ gboolean LRU_K_add(cache_t *cache, request_t *req) {
     retval = FALSE;
   }
 
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 

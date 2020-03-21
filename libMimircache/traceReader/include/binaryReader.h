@@ -1,6 +1,6 @@
 //
 //  binaryReader.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 2/28/17.
 //  Copyright © 2017 Juncheng. All rights reserved.
@@ -11,25 +11,16 @@
 #ifndef _BINARY_READER_
 #define _BINARY_READER_
 
-#include "reader.h"
-#include "logging.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#define MAX_BIN_FMT_STR_LEN 128
 
-typedef struct {
-  gint obj_id_pos;                     // ordering begins with 0
-  gint op_pos;
-  gint real_time_pos;
-  gint size_pos;
-  gint unused_pos1;
-  gint unused_pos2;
-  char fmt[MAX_BIN_FMT_STR_LEN];
-} binary_init_params_t;
+#include "../../include/mimircache.h"
+#include "readerInternal.h"
+
 
 typedef struct {
   gint obj_id_pos;                  // the beginning bytes in the struct

@@ -1,6 +1,6 @@
 //
 //  FIFO.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -61,7 +61,7 @@ gboolean FIFO_add(cache_t *cache, request_t *req) {
       _FIFO_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 
@@ -100,7 +100,7 @@ cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->core->_insert = _FIFO_insert;
   cache->core->_update = _FIFO_update;
   cache->core->evict_with_return = _FIFO_evict_with_return;
-  cache->core->get_current_size = FIFO_get_size;
+  cache->core->get_used_size = FIFO_get_used_size;
 
   cache->core->cache_init_params = NULL;
 
@@ -118,7 +118,7 @@ cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params) {
   return cache;
 }
 
-guint64 FIFO_get_size(cache_t *cache) {
+guint64 FIFO_get_used_size(cache_t *cache) {
   struct FIFO_params *FIFO_params = (struct FIFO_params *)(cache->cache_params);
   return (guint64)g_hash_table_size(FIFO_params->hashtable);
 }

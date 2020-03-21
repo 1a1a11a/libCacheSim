@@ -1,6 +1,6 @@
 //
 //  Random.c
-//  mimircache
+//  libMimircache
 //
 //  Random cacheAlg replacement policy
 //
@@ -59,7 +59,7 @@ gboolean Random_add(cache_t *cache, request_t *req) {
     _Random_insert(cache, req);
     retval = FALSE;
   }
-  cache->core->ts += 1;
+  cache->core->req_cnt += 1;
   return retval;
 }
 

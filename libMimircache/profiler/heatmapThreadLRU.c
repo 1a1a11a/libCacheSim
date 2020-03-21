@@ -1,6 +1,6 @@
 //
 //  heatmap_thread.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 5/24/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -76,7 +76,7 @@ void hm_LRU_hr_st_et_thread(gpointer data, gpointer user_data) {
   g_mutex_lock(&(params->mtx));
   (*progress)++;
   g_mutex_unlock(&(params->mtx));
-  close_reader_unique(reader_thread);
+  close_cloned_reader(reader_thread);
 }
 
 
@@ -135,7 +135,7 @@ void hm_LRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
   g_mutex_lock(&(params->mtx));
   (*progress)++;
   g_mutex_unlock(&(params->mtx));
-  close_reader_unique(reader_thread);
+  close_cloned_reader(reader_thread);
 }
 
 
@@ -184,7 +184,7 @@ void hm_LRU_hr_st_size_thread(gpointer data, gpointer user_data) {
   g_mutex_lock(&(params->mtx));
   (*progress)++;
   g_mutex_unlock(&(params->mtx));
-  close_reader_unique(reader_thread);
+  close_cloned_reader(reader_thread);
 }
 
 
@@ -360,8 +360,8 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
      *  in other words, this item should not be added to cache
      *  so need to find out when this item was added and reduced the size of all time after it
      */
-    while ((long) cache->core->get_current_size(cache) > cache->core->size) {
-      DEBUG("ts %ld size %ld %ld\n", (long) cur_ts, (long) cache->core->get_current_size(cache),
+    while ((long) cache->core->get_used_size(cache) > cache->core->size) {
+      DEBUG("ts %ld size %ld %ld\n", (long) cur_ts, (long) cache->core->get_used_size(cache),
             (long) (cache->core->size));
       item = cache->core->evict_with_return(cache, req);
       last_ts = GPOINTER_TO_UINT(g_hash_table_lookup(last_access_time_ght, item)) - 1;
@@ -375,7 +375,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
         current_effective_size -= 1;
         DEBUG("ts %ld last access %ld, size %ld %ld, reduce one %ld\n",
               (long) cur_ts, (long) future_reuse_dist[last_ts],
-              (long) cache->core->get_current_size(cache),
+              (long) cache->core->get_used_size(cache),
               (long) (gint64) cache_size, (long) current_effective_size);
       }
       g_free(item);
@@ -449,7 +449,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
   (*progress)++;
   g_mutex_unlock(&(params->mtx));
   g_hash_table_destroy(last_access_time_ght);
-  close_reader_unique(reader_thread);
+  close_cloned_reader(reader_thread);
 }
 
 

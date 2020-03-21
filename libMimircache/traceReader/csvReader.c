@@ -1,17 +1,17 @@
 //
 //  csvReader.c
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 5/25/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../../include/mimircache/csvReader.h"
-#include "../../include/mimircache/logging.h"
-#include "libcsv.h"
+#include "include/csvReader.h"
+#include "include/libcsv.h"
 
 
 #ifdef __cplusplus
+
 extern "C"
 {
 #endif

@@ -1,6 +1,6 @@
 //
 //  FIFOSize.h
-//  mimircache
+//  libMimircache
 //
 //  Created by Juncheng on 5/08/19.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -38,10 +38,11 @@ extern void *_FIFOSize_evict_with_return(cache_t *FIFOSize, request_t *req);
 extern void FIFOSize_destroy(cache_t *cache);
 extern void FIFOSize_destroy_unique(cache_t *cache);
 cache_t *FIFOSize_init(guint64 size, obj_id_t obj_id_type, void *params);
+cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params);
 
 //extern void FIFOSize_remove_obj(cache_t *cacheAlg, void *data_to_remove);
 
-extern guint64 FIFOSize_get_size(cache_t *cache);
+extern guint64 FIFOSize_get_used_size(cache_t *cache);
 extern GHashTable *FIFOSize_get_objmap(cache_t *cache);
 
 
