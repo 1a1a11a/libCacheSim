@@ -14,14 +14,11 @@ extern "C"
 {
 #endif
 
-//#include <stdio.h>
-//#include <stdlib.h>
-//#include <math.h>
-//#include <glib.h>
-//#include <string.h>
+
 #include "reader.h"
 #include "cache.h"
-//#include "const.h"
+#include "profilerStruct.h"
+
 
 
 
@@ -35,6 +32,7 @@ typedef struct {
   gint64 cache_size;
   gpointer other_data;
 } profiler_res_t;
+
 
 
 typedef enum {

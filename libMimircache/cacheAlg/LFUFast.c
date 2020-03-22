@@ -16,11 +16,14 @@
  * the same smallest freq
  */
 
-#include "LFUFast.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "LFUFast.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 /********************************** LFUFast ************************************/
 gboolean _LFUFast_verify(cache_t *LFUFast) {
@@ -233,39 +236,25 @@ void LFUFast_destroy(cache_t *cache) {
   g_queue_free_full(LFUFast_params->main_list, free_main_list_node_data);
   g_hash_table_destroy(LFUFast_params->hashtable);
 
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void LFUFast_destroy_unique(cache_t *cache) {
-  /* the difference between destroy_unique and destroy
+  /* the difference between destroy_cloned_cache and destroy
    is that the former one only free the resources that are
    unique to the cacheAlg, freeing these resources won't affect
    other caches copied from original cacheAlg
-   in LFUFast, next_access should not be freed in destroy_unique,
+   in LFUFast, next_access should not be freed in destroy_cloned_cache,
    because it is shared between different caches copied from the original one.
    */
   LFUFast_destroy(cache);
 }
 
 cache_t *LFUFast_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("LFUFast", size, obj_id_type);
+  cache_t *cache = cache_struct_init("LFUFast", size, obj_id_type);
   LFUFast_params_t *LFUFast_params = g_new0(LFUFast_params_t, 1);
   cache->cache_params = (void *) LFUFast_params;
 
-  cache->core->cache_init = LFUFast_init;
-  cache->core->destroy = LFUFast_destroy;
-  cache->core->destroy_unique = LFUFast_destroy_unique;
-  cache->core->add = LFUFast_add;
-  cache->core->check = LFUFast_check;
-
-  cache->core->_insert = _LFUFast_insert;
-  cache->core->_update = _LFUFast_update;
-  cache->core->_evict = _LFUFast_evict;
-  cache->core->evict_with_return = _LFUFast_evict_with_return;
-  cache->core->get_used_size = LFUFast_get_size;
-  cache->core->cache_init_params = NULL;
-//  cacheAlg->core->add_only = LFUFast_add;
-//  cacheAlg->core->add_withsize = LFUFast_add_withsize;
 
   if (obj_id_type == OBJ_ID_NUM) {
     LFUFast_params->hashtable = g_hash_table_new_full(

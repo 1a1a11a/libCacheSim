@@ -10,14 +10,14 @@
 
 
 
-#include "../libMimircache/include/mimircache/heatmap.h"
+#include "../../libMimircache/include/mimircache/heatmap.h"
 #include "utils.h"
 
-#include "../libMimircache/include/mimircache/reader.h"
+#include "../../libMimircache/include/mimircache/reader.h"
 #include "../libMimircache/include/mimircache/csvReader.h"
 
-#include "LRU.h"
-#include "FIFO.h"
+#include "../libMimircache/cacheAlg/dep/LRU.h"
+#include "../libMimircache/cacheAlg/dep/FIFO.h"
 
 #include <glib.h>
 

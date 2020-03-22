@@ -18,8 +18,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include "../../include/mimircache/cache.h"
-#include "LRU.h"
-#include "FIFO.h"
+#include "../dep/LRU.h"
+#include "../dep/FIFO.h"
 #include "LFUFast.h"
 #include "Optimal.h"
 #include "AMP.h"

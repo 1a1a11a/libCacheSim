@@ -2,12 +2,16 @@
 //  FIFO.h
 //  libMimircache
 //
-//  Created by Juncheng on 6/2/16.
+//  Created by Juncheng on 5/08/19.
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#ifndef FIFO_H
-#define FIFO_H
+#ifndef FIFO_SIZE_H
+#define FIFO_SIZE_H
+
+
+#include "../../include/mimircache/cache.h"
+
 
 #ifdef __cplusplus
 extern "C"
@@ -15,25 +19,19 @@ extern "C"
 #endif
 
 
-#include "../../include/mimircache/cache.h"
-#include "../../include/mimircache/cacheOp.h"
-
-
-/* need add support for p and c obj_id_type of data 
- 
- */
-
-
-
-struct FIFO_params {
+typedef struct FIFO_params {
   GHashTable *hashtable;
   GQueue *list;
-};
+} FIFO_params_t;
 
+
+extern cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params);
+
+extern void FIFO_free(cache_t *cache);
 
 extern gboolean FIFO_check(cache_t *cache, request_t *req);
 
-extern gboolean FIFO_add(cache_t *cache, request_t *req);
+extern gboolean FIFO_get(cache_t *cache, request_t *req);
 
 extern void _FIFO_insert(cache_t *FIFO, request_t *req);
 
@@ -43,15 +41,7 @@ extern void _FIFO_evict(cache_t *FIFO, request_t *req);
 
 extern void *_FIFO_evict_with_return(cache_t *FIFO, request_t *req);
 
-
-extern void FIFO_destroy(cache_t *cache);
-
-extern void FIFO_destroy_unique(cache_t *cache);
-
-extern guint64 FIFO_get_used_size(cache_t *cache);
-
-
-cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params);
+extern void FIFO_remove_obj(cache_t *cacheAlg, void *obj_id_ptr);
 
 
 #ifdef __cplusplus
@@ -59,4 +49,4 @@ cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params);
 #endif
 
 
-#endif  /* FIFO_H */
+#endif  /* FIFO_SIZE_H */

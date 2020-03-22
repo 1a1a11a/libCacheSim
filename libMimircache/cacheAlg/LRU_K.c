@@ -6,7 +6,6 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "LRU_K.h"
 
 /* need to add support for p and c obj_id_type of data
    need to control the size of ghost_hashtable
@@ -19,6 +18,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+#include "LRU_K.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 void gqueue_destroyer(gpointer data) {
   g_queue_free_full(data, g_free);
@@ -176,38 +180,32 @@ void LRU_K_destroy(cache_t *cache) {
   g_hash_table_destroy(LRU_K_params->ghost_hashtable);
   pqueue_free(LRU_K_params->pq);
 
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
-void LRU_K_destroy_unique(cache_t *cache) {
-  /* the difference between destroy_unique and destroy
-   is that the former one only free the resources that are
-   unique to the cacheAlg, freeing these resources won't affect
-   other caches copied from original cacheAlg
-   in Optimal, next_access should not be freed in destroy_unique,
-   because it is shared between different caches copied from the original one.
-   */
-  struct LRU_K_params *LRU_K_params =
-      (struct LRU_K_params *)(cache->cache_params);
-
-  g_hash_table_destroy(LRU_K_params->cache_hashtable);
-  g_hash_table_destroy(LRU_K_params->ghost_hashtable);
-  pqueue_free(LRU_K_params->pq);
-  cache_destroy_unique(cache);
-}
+//void LRU_K_destroy_unique(cache_t *cache) {
+//  /* the difference between destroy_cloned_cache and destroy
+//   is that the former one only free the resources that are
+//   unique to the cacheAlg, freeing these resources won't affect
+//   other caches copied from original cacheAlg
+//   in Optimal, next_access should not be freed in destroy_cloned_cache,
+//   because it is shared between different caches copied from the original one.
+//   */
+//  struct LRU_K_params *LRU_K_params =
+//      (struct LRU_K_params *)(cache->cache_params);
+//
+//  g_hash_table_destroy(LRU_K_params->cache_hashtable);
+//  g_hash_table_destroy(LRU_K_params->ghost_hashtable);
+//  pqueue_free(LRU_K_params->pq);
+//  cache_destroy_unique(cache);
+//}
 
 cache_t *LRU_K_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("LRUK", size, obj_id_type);
+  cache_t *cache = cache_struct_init("LRUK", size, obj_id_type);
   cache->cache_params = g_new0(struct LRU_K_params, 1);
   struct LRU_K_params *LRU_K_params =
       (struct LRU_K_params *)(cache->cache_params);
 
-  cache->core->cache_init = LRU_K_init;
-  cache->core->destroy = LRU_K_destroy;
-  cache->core->destroy_unique = LRU_K_destroy_unique;
-  cache->core->add = LRU_K_add;
-  cache->core->check = LRU_K_check;
-//  cacheAlg->core->add_only = LRU_K_add;
   cache->core->cache_init_params = params;
 
   LRU_K_params->ts = 0;

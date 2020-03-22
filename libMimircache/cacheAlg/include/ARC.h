@@ -12,7 +12,9 @@
 
 #include "../../include/mimircache/cache.h"
 #include "LRU.h"
-#include "LFU.h"
+//#include "LFU.h"
+#include "../../utils/include/utilsInternal.h"
+
 
 
 #ifdef __cplusplus

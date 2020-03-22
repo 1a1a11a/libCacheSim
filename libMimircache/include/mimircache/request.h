@@ -13,23 +13,23 @@
 
 /* need to optimize this for CPU cacheline */
 typedef struct request {
+//  gint64 ts;
+  gint64 real_time;
+  /* pointer to obj_id */
   gpointer obj_id_ptr;
   /* obj_id_type of content can be either size_t(OBJ_ID_NUM) or char*(OBJ_ID_STR)*/
   obj_id_t obj_id_type;
 
-//  gint64 ts;
-  gint64 size;
-  gint64 real_time;
+  gint32 size;
+  gint64 ttl;
   // used to check whether current request is a valid request
   gboolean valid;
 
   gint64 op;
-  gint64 extra_data1;
-  gint64 extra_data2;
-
+  gint64 extra_data;
   void* extra_data_ptr;
-//  char obj_id[MAX_OBJ_ID_LEN];
 
+  //  char obj_id[MAX_OBJ_ID_LEN];
 //  size_t block_unit_size;
 //  size_t disk_sector_size;
 
@@ -37,8 +37,7 @@ typedef struct request {
   /* id of cache server, used in akamaiSimulator */
   unsigned long cache_server_id;
   unsigned char traceID; /* this is for mixed trace */
-//  void *content;         /* the content of page/request */
-//  guint size_of_content; /* the size of mem area content points to */
+
 } request_t;
 
 
@@ -52,9 +51,8 @@ static inline request_t* new_request(obj_id_t obj_id_type){
     req->obj_id_ptr = g_new0(char, MAX_OBJ_ID_LEN);
   else
     req->obj_id_ptr = NULL;
-  req->real_time = -1;
-  req->extra_data1 = -1;
-  req->extra_data2 = -1;
+  req->real_time = 0;
+  req->extra_data = 0;
   req->extra_data_ptr = NULL;
   return req;
 }

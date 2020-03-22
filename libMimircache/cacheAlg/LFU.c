@@ -16,11 +16,14 @@
  * LRU, but can be tuned to MRU, Random or unstable-pq-decided
  */
 
-#include "LFU.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "LFU.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 /********************* priority queue structs and def ***********************/
 static inline int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) {
@@ -137,40 +140,27 @@ void LFU_destroy(cache_t *cache) {
 
   g_hash_table_destroy(LFU_params->hashtable);
   pqueue_free(LFU_params->pq);
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void LFU_destroy_unique(cache_t *cache) {
-  /* the difference between destroy_unique and destroy
+  /* the difference between destroy_cloned_cache and destroy
    is that the former one only free the resources that are
    unique to the cacheAlg, freeing these resources won't affect
    other caches copied from original cacheAlg
-   in LFU, next_access should not be freed in destroy_unique,
+   in LFU, next_access should not be freed in destroy_cloned_cache,
    because it is shared between different caches copied from the original one.
    */
   LFU_destroy(cache);
 }
 
 cache_t *LFU_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("LFU", size, obj_id_type);
+  cache_t *cache = cache_struct_init("LFU", size, obj_id_type);
   LFU_params_t *LFU_params = g_new0(LFU_params_t, 1);
   cache->cache_params = (void *) LFU_params;
 
-  cache->core->cache_init = LFU_init;
-  cache->core->destroy = LFU_destroy;
-  cache->core->destroy_unique = LFU_destroy_unique;
-  cache->core->add = LFU_add;
-  cache->core->check = LFU_check;
 //  cacheAlg->core->add_only = LFU_add;
 
-  cache->core->_insert = _LFU_insert;
-  cache->core->_update = _LFU_update;
-  cache->core->_evict = _LFU_evict;
-  cache->core->evict_with_return = _LFU_evict_with_return;
-  cache->core->get_used_size = LFU_get_size;
-  cache->core->cache_init_params = NULL;
-//  cacheAlg->core->add_only = LFU_add_only;
-//  cacheAlg->core->add_withsize = LFU_add_with_size;
 
   if (obj_id_type == OBJ_ID_NUM) {
     LFU_params->hashtable = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,

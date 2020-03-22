@@ -10,10 +10,10 @@
 
 
 #include "../../include/mimircache/reader.h"
-#include "FIFO.h"
+#include "../../cacheAlg/dep/FIFO.h"
 #include "Optimal.h"
 #include "LRU_K.h"
-#include "LRU.h"
+#include "../../cacheAlg/dep/LRU.h"
 
 #ifdef __cplusplus
 extern "C"

@@ -40,7 +40,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   guint64 req_cnt = 0, miss_cnt = 0;
   guint64 req_byte = 0, miss_byte = 0;
   gboolean (*add)(cache_t *, request_t *);
-  add = local_cache->core->add;
+  add = local_cache->core->get;
 
   read_one_req(cloned_reader, req);
 
@@ -69,7 +69,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   // clean up
   free_request(req);
   close_cloned_reader(cloned_reader);
-  local_cache->core->destroy_unique(local_cache);
+  local_cache->core->cache_free(local_cache);
 }
 
 profiler_res_t *get_miss_ratio_curve(reader_t *reader_in, cache_t *cache_in, int num_of_threads, guint64 bin_size) {

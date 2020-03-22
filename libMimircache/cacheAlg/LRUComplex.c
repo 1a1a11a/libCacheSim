@@ -15,21 +15,21 @@ void _LRUComplex_insert(cache_t *cache, request_t *req) {
   LRUComplex_params_t *LRUComplex_params = (struct LRUComplex_params *) (cache->cache_params);
   cache_obj_t *cache_obj = g_new(cache_obj_t, 1);
   cache_obj->size = req->size;
-  cache_obj->extra_data = req->extra_data_ptr;
-  cache_obj->obj_id = req->obj_id_ptr;
+  cache_obj->extra_data_ptr = req->extra_data_ptr;
+  cache_obj->obj_id_ptr = req->obj_id_ptr;
 #ifdef TRACK_ACCESS_TIME
   cache_obj->access_time = LRUComplex_params->logical_ts;
 #endif
   cache->core->used_size += req->size;
 
   if (req->obj_id_type == OBJ_ID_STR) {
-    cache_obj->obj_id = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));
+    cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));
   }
 
   GList *node = g_list_alloc();
   node->data = cache_obj;
   g_queue_push_tail_link(LRUComplex_params->list, node);
-  g_hash_table_insert(LRUComplex_params->hashtable, cache_obj->obj_id, (gpointer) node);
+  g_hash_table_insert(LRUComplex_params->hashtable, cache_obj->obj_id_ptr, (gpointer) node);
 }
 
 gboolean LRUComplex_check(cache_t *cache, request_t *req) {
@@ -61,21 +61,6 @@ void _LRUComplex_update(cache_t *cache, request_t *req) {
   g_queue_push_tail_link(LRUComplex_params->list, node);
 }
 
-void LRUComplex_update_cached_data(cache_t *cache, request_t *req, void *extra_data) {
-  LRUComplex_params_t *LRUComplex_params = (struct LRUComplex_params *) (cache->cache_params);
-  GList *node = (GList *) g_hash_table_lookup(LRUComplex_params->hashtable, req->obj_id_ptr);
-  cache_obj_t *cache_obj = node->data;
-  if (cache_obj->extra_data != NULL)
-    g_free(cache_obj->extra_data);
-  cache_obj->extra_data = extra_data;
-}
-
-void *LRUComplex_get_cached_data(cache_t *cache, request_t *req) {
-  LRUComplex_params_t *LRUComplex_params = (struct LRUComplex_params *) (cache->cache_params);
-  GList *node = (GList *) g_hash_table_lookup(LRUComplex_params->hashtable, req->obj_id_ptr);
-  cache_obj_t *cache_obj = node->data;
-  return cache_obj->extra_data;
-}
 
 void _LRUComplex_evict(cache_t *cache, request_t *req) {
   LRUComplex_params_t *LRUComplex_params =
@@ -119,10 +104,10 @@ void _LRUComplex_evict(cache_t *cache, request_t *req) {
 #endif
 
   cache->core->used_size -= cache_obj->size;
-  g_hash_table_remove(LRUComplex_params->hashtable, (gconstpointer) cache_obj->obj_id);
-  cacheobj_destroyer(cache_obj);
+  g_hash_table_remove(LRUComplex_params->hashtable, (gconstpointer) cache_obj->obj_id_ptr);
+  destroy_cache_obj(cache_obj);
   if (cache_obj->extra_data)
-    g_free(cache_obj->extra_data);
+    g_free(cache_obj->extra_data_ptr);
   g_free(cache_obj);
 }
 
@@ -144,15 +129,15 @@ gpointer _LRUComplex_evict_with_return(cache_t *cache, request_t *req) {
 
   cache->core->used_size -= cache_obj->size;
 
-  gpointer evicted_key = cache_obj->obj_id;
+  gpointer evicted_key = cache_obj->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
-    evicted_key = (gpointer) g_strdup((gchar *) (cache_obj->obj_id));
+    evicted_key = (gpointer) g_strdup((gchar *) (cache_obj->obj_id_ptr));
   }
 
   g_hash_table_remove(LRUComplex_params->hashtable,
-                      (gconstpointer) (cache_obj->obj_id));
+                      (gconstpointer) (cache_obj->obj_id_ptr));
   if (cache_obj->extra_data)
-    g_free(cache_obj->extra_data);
+    g_free(cache_obj->extra_data_ptr);
   g_free(cache_obj);
   return evicted_key;
 }
@@ -199,8 +184,8 @@ void LRUComplex_destroy(cache_t *cache) {
 
   g_hash_table_destroy(LRUComplex_params->hashtable);
 //  g_queue_free_full(LRUComplex_params->list, g_free);
-  g_queue_free_full(LRUComplex_params->list, cacheobj_destroyer);
-  //    cache_destroy(cacheAlg);
+  g_queue_free_full(LRUComplex_params->list, cache_obj_destroyer);
+  //    cache_struct_free(cacheAlg);
 }
 
 void LRUComplex_destroy_unique(cache_t *cache) {
@@ -216,27 +201,10 @@ void LRUComplex_destroy_unique(cache_t *cache) {
 }
 
 cache_t *LRUComplex_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("LRUComplex", size, obj_id_type);
+  cache_t *cache = cache_struct_init("LRUComplex", size, obj_id_type);
   cache->cache_params = g_new0(struct LRUComplex_params, 1);
   LRUComplex_params_t *LRUComplex_params =
       (struct LRUComplex_params *) (cache->cache_params);
-
-  cache->core->cache_init = LRUComplex_init;
-  cache->core->destroy = LRUComplex_destroy;
-  cache->core->destroy_unique = LRUComplex_destroy_unique;
-  cache->core->add = LRUComplex_add;
-  cache->core->check = LRUComplex_check;
-  cache->core->get_cached_data = LRUComplex_get_cached_data;
-  cache->core->update_cached_data = LRUComplex_update_cached_data;
-
-  cache->core->_insert = _LRUComplex_insert;
-  cache->core->_update = _LRUComplex_update;
-  cache->core->_evict = _LRUComplex_evict;
-  cache->core->evict_with_return = _LRUComplex_evict_with_return;
-  cache->core->get_used_size = LRUComplex_get_used_size;
-  cache->core->get_objmap = LRUComplex_get_objmap;
-  cache->core->remove_obj = LRUComplex_remove_obj;
-  cache->core->cache_init_params = NULL;
 
   if (obj_id_type == OBJ_ID_NUM) {
     LRUComplex_params->hashtable = g_hash_table_new_full(

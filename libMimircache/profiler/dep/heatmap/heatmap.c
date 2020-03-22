@@ -6,7 +6,7 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../include/mimircache/heatmap.h"
+#include "mimircache/heatmap.h"
 #include "Optimal.h"
 #include "FIFO.h"
 

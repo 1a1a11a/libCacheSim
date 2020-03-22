@@ -33,14 +33,6 @@ gint64 *_get_reuse_dist_seq(reader_t *reader) {
   // create hashtable
   GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
       (GDestroyNotify)g_free, NULL);
-//  if (reader->base->obj_id_type == OBJ_ID_NUM) {
-//    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-//  } else if (reader->base->obj_id_type == OBJ_ID_STR) {
-//    hash_table = g_hash_table_new_full(g_str_hash, g_str_equal, (GDestroyNotify) g_free, NULL);
-//  } else {
-//    ERROR("does not recognize reader data obj_id_type %c\n", reader->base->obj_id_type);
-//    abort();
-//  }
 
   // create splay tree
   sTree *splay_tree = NULL;

@@ -15,10 +15,11 @@ extern "C"
 
 
 #include "../include/mimircache/cache.h"
-#include "../include/mimircache/cacheOp.h"
+//#include "../include/mimircache/cacheOp.h"
 
 
-void cache_destroy(cache_t *cache) {
+
+void cache_struct_free(cache_t *cache) {
   if (cache->cache_params) {
     g_free(cache->cache_params);
     cache->cache_params = NULL;
@@ -37,17 +38,8 @@ void cache_destroy(cache_t *cache) {
   g_free(cache);
 }
 
-void cache_destroy_unique(cache_t *cache) {
-  if (cache->cache_params) {
-    g_free(cache->cache_params);
-    cache->cache_params = NULL;
-  }
-  g_free(cache->core);
-  g_free(cache);
-}
 
-
-cache_t *cache_init(char *cache_name, long long cache_size, obj_id_t obj_id_type) {
+cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_t obj_id_type) {
   cache_t *cache = g_new0(cache_t, 1);
   cache->core = g_new0(struct cache_core, 1);
   strcpy(cache->core->cache_name, cache_name);
@@ -62,14 +54,14 @@ cache_t *cache_init(char *cache_name, long long cache_size, obj_id_t obj_id_type
   sprintf(func_name, "%s_init", cache_name);
   cache_t *(*cache_init)(guint64, obj_id_t, void *) = dlsym(handle, func_name);
 
-  sprintf(func_name, "%s_destroy", cache_name);
-  void (*destroy)(cache_t *) = dlsym(handle, func_name);
+  sprintf(func_name, "%s_free", cache_name);
+  void (*cache_free)(cache_t *) = dlsym(handle, func_name);
 
-  sprintf(func_name, "%s_destroy_unique", cache_name);
-  void (*destroy_unique)(cache_t *) = dlsym(handle, func_name);
+//  sprintf(func_name, "%s_destroy_cloned_cache", cache_name);
+//  void (*destroy_cloned_cache)(cache_t *) = dlsym(handle, func_name);
 
-  sprintf(func_name, "%s_add", cache_name);
-  gboolean (*add)(cache_t *, request_t *) = dlsym(handle, func_name);
+  sprintf(func_name, "%s_get", cache_name);
+  gboolean (*get)(cache_t *, request_t *) = dlsym(handle, func_name);
 
   sprintf(func_name, "%s_check", cache_name);
   gboolean (*check)(cache_t *, request_t *) = dlsym(handle, func_name);
@@ -88,14 +80,11 @@ cache_t *cache_init(char *cache_name, long long cache_size, obj_id_t obj_id_type
 
 
   /* non essential functions, can be NULL */
-  sprintf(func_name, "%s_get_cached_data", cache_name);
-  void *(*get_cached_data)(cache_t *, request_t *) = dlsym(handle, func_name);
+  sprintf(func_name, "%s_get_cached_obj", cache_name);
+  cache_obj_t* (*get_cached_obj)(cache_t *, request_t *) = dlsym(handle, func_name);
 
-  sprintf(func_name, "%s_update_cached_data", cache_name);
-  void (*update_cached_data)(cache_t *, request_t *, void *) = dlsym(handle, func_name);
-
-  sprintf(func_name, "%s_get_used_size", cache_name);
-  guint64 (*get_used_size)(cache_t *) = dlsym(handle, func_name);
+//  sprintf(func_name, "%s_update_cached_data", cache_name);
+//  void (*update_cached_data)(cache_t *, request_t *, void *) = dlsym(handle, func_name);
 
   sprintf(func_name, "%s_get_objmap", cache_name);
   GHashTable *(*get_objmap)(cache_t *) = dlsym(handle, func_name);
@@ -108,12 +97,12 @@ cache_t *cache_init(char *cache_name, long long cache_size, obj_id_t obj_id_type
     ERROR("cannot find cache_init for %s\n", cache_name);
     abort();
   }
-  if (destroy == NULL) {
-    ERROR("cannot find function destroy for %s\n", cache_name);
+  if (cache_free == NULL) {
+    ERROR("cannot find function cache_free for %s\n", cache_name);
     abort();
   }
-  if (add == NULL) {
-    ERROR("cannot find function add for %s\n", cache_name);
+  if (get == NULL) {
+    ERROR("cannot find function get for %s\n", cache_name);
     abort();
   }
   if (check == NULL) {
@@ -132,55 +121,46 @@ cache_t *cache_init(char *cache_name, long long cache_size, obj_id_t obj_id_type
     ERROR("cannot find function _evict for %s\n", cache_name);
     abort();
   }
-  if (get_used_size == NULL) {
-    ERROR("cannot find function get_used_size for %s\n", cache_name);
-    abort();
-  }
 
   cache->core->cache_init = cache_init;
-  cache->core->destroy = destroy;
-  cache->core->destroy_unique = destroy_unique;
-  cache->core->add = add;
+  cache->core->cache_free = cache_free;
+  cache->core->get = get;
   cache->core->check = check;
   cache->core->_insert = _insert;
   cache->core->_update = _update;
   cache->core->_evict = _evict;
   cache->core->evict_with_return = evict_with_return;
-  cache->core->get_used_size = get_used_size;
   cache->core->get_objmap = get_objmap;
   cache->core->remove_obj = remove_obj;
-  cache->core->get_cached_data = get_cached_data;
-  cache->core->update_cached_data = update_cached_data;
-
-
+  cache->core->get_cached_obj = get_cached_obj;
   return cache;
 }
 
-profiler_res_t *run_trace(cache_t *cache, reader_t *reader) {
-  request_t *req = new_request(cache->core->obj_id_type);
-  profiler_res_t *ret = g_new0(profiler_res_t, 1);
-  ret->cache_size = cache->core->size;
-  gboolean (*cache_get)(cache_t *, request_t *) = cache->core->add;
-
-  read_one_req(reader, req);
-  while (req->valid) {
-    if (!cache_get(cache, req)) {
-      ret->miss_cnt += 1;
-      ret->miss_byte += req->size;
-    }
-    ret->req_cnt += 1;
-    ret->req_byte += req->size;
-
-    read_one_req(reader, req);
-  }
-  ret->byte_miss_ratio = (double) ret->miss_byte / (double) ret->req_byte;
-  ret->obj_miss_ratio = (double) ret->miss_cnt / (double) ret->req_cnt;
-
-  // clean up
-  free_request(req);
-  reset_reader(reader);
-  return ret;
-}
+//profiler_res_t *run_trace(cache_t *cache, reader_t *reader) {
+//  request_t *req = new_request(cache->core->obj_id_type);
+//  profiler_res_t *ret = g_new0(profiler_res_t, 1);
+//  ret->cache_size = cache->core->size;
+//  gboolean (*cache_get)(cache_t *, request_t *) = cache->core->get;
+//
+//  read_one_req(reader, req);
+//  while (req->valid) {
+//    if (!cache_get(cache, req)) {
+//      ret->miss_cnt += 1;
+//      ret->miss_byte += req->size;
+//    }
+//    ret->req_cnt += 1;
+//    ret->req_byte += req->size;
+//
+//    read_one_req(reader, req);
+//  }
+//  ret->byte_miss_ratio = (double) ret->miss_byte / (double) ret->req_byte;
+//  ret->obj_miss_ratio = (double) ret->miss_cnt / (double) ret->req_cnt;
+//
+//  // clean up
+//  free_request(req);
+//  reset_reader(reader);
+//  return ret;
+//}
 
 
 #ifdef __cplusplus

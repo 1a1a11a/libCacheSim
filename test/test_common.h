@@ -9,10 +9,9 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include "../libMimircache/include/mimircache.h"
-#include "../libMimircache/cacheAlg/include/FIFO.h"
-#include "../libMimircache/cacheAlg/include/FIFOSize.h"
 #include "../libMimircache/cacheAlg/include/LRU.h"
-#include "../libMimircache/cacheAlg/include/LRUSize.h"
+#include "../libMimircache/cacheAlg/include/FIFO.h"
+#include "../libMimircache/cacheAlg/include/Random.h"
 #include "../libMimircache/cacheAlg/include/LRU_K.h"
 #include "../libMimircache/cacheAlg/include/SLRU.h"
 #include "../libMimircache/cacheAlg/include/LFU.h"
@@ -27,8 +26,8 @@
 #define N_TEST_REQ 6
 #define N_TEST 6
 
-#define CACHE_SIZE 200
-#define BIN_SIZE 50
+#define CACHE_SIZE (GB)
+#define BIN_SIZE (128*MB)
 //#define CACHE_SIZE 10
 //#define BIN_SIZE 2
 
@@ -92,12 +91,10 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
   void *init_params_g;
   if (strcmp(alg_name, "LRU") == 0)
     cache = LRU_init(cache_size, reader->base->obj_id_type, NULL);
-  else if (strcmp(alg_name, "LRUSize") == 0)
-    cache = LRUSize_init(cache_size, reader->base->obj_id_type, NULL);
   else if (strcmp(alg_name, "FIFO") == 0)
     cache = FIFO_init(cache_size, reader->base->obj_id_type, NULL);
-  else if (strcmp(alg_name, "FIFOSize") == 0)
-    cache = FIFOSize_init(cache_size, reader->base->obj_id_type, NULL);
+  else if (strcmp(alg_name, "Random") == 0)
+    cache = Random_init(cache_size, reader->base->obj_id_type, NULL);
   else if (strcmp(alg_name, "LRU_K") == 0)
     cache = LRU_K_init(cache_size, reader->base->obj_id_type, NULL);
   else if (strcmp(alg_name, "LFU") == 0)

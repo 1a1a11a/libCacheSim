@@ -13,6 +13,7 @@
 #include "../../include/mimircache/cache.h"
 #include "pqueue.h"
 #include "../../include/mimircache/distUtils.h"
+#include "utilsInternal.h"
 
 
 #ifdef __cplusplus

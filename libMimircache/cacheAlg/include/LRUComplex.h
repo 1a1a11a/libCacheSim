@@ -11,6 +11,7 @@ extern "C"
 #endif
 
 #include "../../include/mimircache/cache.h"
+#include "utilsInternal.h"
 
 
 typedef struct LRUComplex_params{

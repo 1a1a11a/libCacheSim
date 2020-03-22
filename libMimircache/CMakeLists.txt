@@ -78,17 +78,20 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 # target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 
-add_executable(readerTest ../test/test_reader.c)
-target_link_libraries(readerTest cache cacheAlg traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(readerTest ../test/test_traceReader.c)
+target_link_libraries(readerTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(distUtilsTest ../test/test_distUtils.c)
-target_link_libraries(distUtilsTest cache cacheAlg traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(distUtilsTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerLRUTest ../test/test_profilerLRU.c)
-target_link_libraries(profilerLRUTest cache cacheAlg traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerLRUTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerTest ../test/test_profiler.c)
-target_link_libraries(profilerTest cache cacheAlg traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+
+add_executable(cacheAlgTest ../test/test_cacheAlg.c)
+target_link_libraries(cacheAlgTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 
 enable_testing()
@@ -96,6 +99,7 @@ add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY .)
 add_test(NAME distUtils COMMAND distUtils WORKING_DIRECTORY .)
 add_test(NAME profilerLRUTest COMMAND profilerLRUTest WORKING_DIRECTORY .)
 add_test(NAME profilerTest COMMAND profilerTest WORKING_DIRECTORY .)
+add_test(NAME cacheAlgTest COMMAND cacheAlgTest WORKING_DIRECTORY .)
 
 
 # Example Usages

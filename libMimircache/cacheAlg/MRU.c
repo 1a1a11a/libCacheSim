@@ -8,11 +8,15 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "MRU.h"
 
 #ifdef _cplusplus
 extern "C" {
 #endif
+
+
+#include "MRU.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 void _MRU_insert(cache_t *MRU, request_t *req) {
   struct MRU_params *MRU_params = (struct MRU_params *) (MRU->cache_params);
@@ -53,31 +57,25 @@ void MRU_destroy(cache_t *cache) {
   struct MRU_params *MRU_params = (struct MRU_params *) (cache->cache_params);
 
   g_hash_table_destroy(MRU_params->hashtable);
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void MRU_destroy_unique(cache_t *cache) {
-  /* the difference between destroy_unique and destroy
+  /* the difference between destroy_cloned_cache and destroy
    is that the former one only free the resources that are
    unique to the cacheAlg, freeing these resources won't affect
    other caches copied from original cacheAlg
-   in MRU, next_access should not be freed in destroy_unique,
+   in MRU, next_access should not be freed in destroy_cloned_cache,
    because it is shared between different caches copied from the original one.
    */
   MRU_destroy(cache);
 }
 
 cache_t *MRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("MRU", size, obj_id_type);
+  cache_t *cache = cache_struct_init("MRU", size, obj_id_type);
   struct MRU_params *MRU_params = g_new0(struct MRU_params, 1);
   cache->cache_params = (void *) MRU_params;
 
-  cache->core->cache_init = MRU_init;
-  cache->core->destroy = MRU_destroy;
-  cache->core->destroy_unique = MRU_destroy_unique;
-  cache->core->add = MRU_add;
-  cache->core->check = MRU_check;
-//  cacheAlg->core->add_only = MRU_add;
 
   if (obj_id_type == OBJ_ID_NUM) {
     MRU_params->hashtable = g_hash_table_new_full(

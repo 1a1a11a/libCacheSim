@@ -7,8 +7,8 @@
 //
 
 #include "PG.h"
-#include "FIFO.h"
-#include "LRU.h"
+#include "../dep/FIFO.h"
+#include "../dep/LRU.h"
 #include "Optimal.h"
 
 #ifdef __cplusplus

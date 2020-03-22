@@ -12,6 +12,7 @@
 
 #include "../../include/mimircache/cache.h"
 #include "LRU.h"
+#include "utilsInternal.h"
 
 
 #ifdef __cplusplus

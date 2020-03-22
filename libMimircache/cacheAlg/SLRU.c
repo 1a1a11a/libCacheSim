@@ -44,7 +44,7 @@ void _SLRU_update(cache_t *cache, request_t *cp) {
         SLRU_params->current_sizes[i]--;
         _LRU_insert(SLRU_params->LRUs[i + 1], cp);
         SLRU_params->current_sizes[i + 1]++;
-        if ((long) LRU_get_used_size(SLRU_params->LRUs[i + 1]) >
+        if ((long) SLRU_params->LRUs[i + 1]->core->used_size  >
             SLRU_params->LRUs[i + 1]->core->size) {
           gpointer old_itemp = cp->obj_id_ptr;
           gpointer evicted =
@@ -100,7 +100,7 @@ gboolean SLRU_add(cache_t *cache, request_t *cp) {
     retval = TRUE;
   } else {
     _SLRU_insert(cache, cp);
-    if ((long) LRU_get_used_size(SLRU_params->LRUs[0]) > SLRU_params->LRUs[0]->core->size)
+    if ((long) SLRU_params->LRUs[0]->core->used_size > SLRU_params->LRUs[0]->core->size)
       _SLRU_evict(cache, cp);
     retval = FALSE;
   }
@@ -112,48 +112,37 @@ void SLRU_destroy(cache_t *cache) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   int i;
   for (i = 0; i < SLRU_params->N_segments; i++)
-    LRU_destroy(SLRU_params->LRUs[i]);
+    LRU_free(SLRU_params->LRUs[i]);
   g_free(SLRU_params->LRUs);
   g_free(SLRU_params->current_sizes);
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void SLRU_destroy_unique(cache_t *cache) {
-  /* the difference between destroy_unique and destroy
+  /* the difference between destroy_cloned_cache and destroy
    is that the former one only free the resources that are
    unique to the cacheAlg, freeing these resources won't affect
    other caches copied from original cacheAlg
-   in Optimal, next_access should not be freed in destroy_unique,
+   in Optimal, next_access should not be freed in destroy_cloned_cache,
    because it is shared between different caches copied from the original one.
    */
 
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   int i;
   for (i = 0; i < SLRU_params->N_segments; i++)
-    LRU_destroy(SLRU_params->LRUs[i]);
+    LRU_free(SLRU_params->LRUs[i]);
   g_free(SLRU_params->LRUs);
   g_free(SLRU_params->current_sizes);
-  cache_destroy_unique(cache);
+  cache_struct_free(cache);
 }
 
 cache_t *SLRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("SLRU", size, obj_id_type);
+  cache_t *cache = cache_struct_init("SLRU", size, obj_id_type);
   cache->cache_params = g_new0(struct SLRU_params, 1);
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   SLRU_init_params_t *init_params = (SLRU_init_params_t *) params;
 
-  cache->core->cache_init = SLRU_init;
-  cache->core->destroy = SLRU_destroy;
-  cache->core->destroy_unique = SLRU_destroy_unique;
-  cache->core->add = SLRU_add;
-  cache->core->check = SLRU_check;
-  cache->core->_insert = _SLRU_insert;
-  cache->core->_update = _SLRU_update;
-  cache->core->_evict = _SLRU_evict;
-  cache->core->evict_with_return = _SLRU_evict_with_return;
-  cache->core->get_used_size = SLRU_get_size;
   cache->core->cache_init_params = params;
-//  cacheAlg->core->add_only = SLRU_add;
 
   SLRU_params->N_segments = init_params->N_segments;
   SLRU_params->current_sizes = g_new0(uint64_t, SLRU_params->N_segments);

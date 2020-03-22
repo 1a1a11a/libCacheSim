@@ -6,7 +6,7 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../include/mimircache/heatmap.h"
+#include "mimircache/heatmap.h"
 #include "Optimal.h"
 #include "pqueue.h"
 
@@ -60,7 +60,7 @@ void hm_nonLRU_hr_st_et_thread(gpointer data, gpointer user_data) {
     miss_count_interval = 0;
     for (j = 0; j < g_array_index(break_points, guint64, i + 1) - g_array_index(break_points, guint64, i); j++) {
       read_one_req(reader_thread, req);
-      if (cache->core->add(cache, req))
+      if (cache->core->get(cache, req))
         hit_count_interval++;
       else
         miss_count_interval++;
@@ -89,7 +89,7 @@ void hm_nonLRU_hr_st_et_thread(gpointer data, gpointer user_data) {
 
 
   close_cloned_reader(reader_thread);
-  cache->core->destroy_unique(cache);
+  cache->core->destroy_cloned_cache(cache);
 }
 
 
@@ -133,7 +133,7 @@ void hm_nonLRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
       miss_count_interval = 0;
       for (j = 0; j < g_array_index(break_points, guint64, i + 1) - g_array_index(break_points, guint64, i); j++) {
         read_one_req(reader_thread, req);
-        if (cache->core->add(cache, req))
+        if (cache->core->get(cache, req))
           hit_count_interval++;
         else
           miss_count_interval++;
@@ -158,7 +158,7 @@ void hm_nonLRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
 
   close_cloned_reader(reader_thread);
   if (cache != NULL)
-    cache->core->destroy_unique(cache);
+    cache->core->destroy_cloned_cache(cache);
 }
 
 
@@ -249,7 +249,7 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
      *  in other words, this item should not be added to cache
      *  so need to find out when this item was added and reduced the size of all time after it
      */
-    while ((long) cache->core->get_used_size(cache) > cache->core->size) {
+    while ((long) cache->core->used_size > cache->core->size) {
       item = cache->core->evict_with_return(cache, req);
       last_ts = GPOINTER_TO_UINT(g_hash_table_lookup(last_access_time_ght, item)) - 1;
       if (last_ts < 0) {
@@ -320,7 +320,7 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
   g_hash_table_destroy(last_access_time_ght);
 
   close_cloned_reader(reader_thread);
-  cache->core->destroy_unique(cache);
+  cache->core->destroy_cloned_cache(cache);
 }
 
 

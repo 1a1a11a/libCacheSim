@@ -134,12 +134,7 @@ static inline int binary_read(reader_t *reader, request_t *req) {
 
   if (params->unused_type1) {
     binary_extract(record, params->unused_pos1, params->unused_len1,
-                   params->unused_type1, &(req->extra_data1));
-  }
-
-  if (params->unused_type2) {
-    binary_extract(record, params->unused_pos2, params->unused_len2,
-                   params->unused_type2, &(req->extra_data2));
+                   params->unused_type1, &(req->extra_data));
   }
 
   (reader->base->mmap_offset) += reader->base->item_size;

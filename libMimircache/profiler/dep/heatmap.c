@@ -8,7 +8,7 @@
 
 #include "../include/mimircache/heatmap.h"
 #include "Optimal.h"
-#include "FIFO.h"
+#include "../../cacheAlg/dep/FIFO.h"
 
 
 #ifdef __cplusplus

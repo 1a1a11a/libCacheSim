@@ -43,6 +43,17 @@ typedef enum {
 typedef enum { OBJ_ID_NUM = 'l', OBJ_ID_STR = 'c' } obj_id_t;
 
 
+#define KB 1024L
+#define MB 1048576L
+#define GB 1073741824L
+#define TB 1099511627776L
+
+#define KiB 1000L
+#define MiB 1000000L
+#define GiB 1000000000L
+#define TiB 1000000000000L
+
+
 //#define DEFAULT_SECTOR_SIZE                             512
 
 

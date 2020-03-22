@@ -6,11 +6,14 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "Optimal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "Optimal.h"
+#include "../../include/mimircache/cacheOp.h"
+
 
 /******************* priority queue structs and def **********************/
 
@@ -148,15 +151,15 @@ void Optimal_destroy(cache_t *cache) {
   ((struct Optimal_init_params *) (cache->core->cache_init_params))
     ->next_access = NULL;
 
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void Optimal_destroy_unique(cache_t *cache) {
-  /* the difference between destroy_unique and destroy
+  /* the difference between destroy_cloned_cache and destroy
    is that the former one only free the resources that are
    unique to the cacheAlg, freeing these resources won't affect
    other caches copied from original cacheAlg
-   in Optimal, next_access should not be freed in destroy_unique,
+   in Optimal, next_access should not be freed in destroy_cloned_cache,
    because it is shared between different caches copied from the original one.
    */
 
@@ -169,24 +172,11 @@ void Optimal_destroy_unique(cache_t *cache) {
 }
 
 cache_t *Optimal_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("Optimal", size, obj_id_type);
+  cache_t *cache = cache_struct_init("Optimal", size, obj_id_type);
 
   Optimal_params_t *Optimal_params = g_new0(Optimal_params_t, 1);
   cache->cache_params = (void *) Optimal_params;
 
-  cache->core->cache_init = Optimal_init;
-  cache->core->destroy = Optimal_destroy;
-  cache->core->destroy_unique = Optimal_destroy_unique;
-  cache->core->add = Optimal_add;
-  cache->core->check = Optimal_check;
-
-  cache->core->_insert = _Optimal_insert;
-  cache->core->_update = _Optimal_update;
-  cache->core->_evict = _Optimal_evict;
-  cache->core->evict_with_return = _Optimal_evict_with_return;
-  cache->core->get_used_size = Optimal_get_size;
-//  cacheAlg->core->add_only = Optimal_add_only;
-//  cacheAlg->core->add_withsize = Optimal_add_withsize;
 
   Optimal_params->ts = ((struct Optimal_init_params *) params)->ts;
 

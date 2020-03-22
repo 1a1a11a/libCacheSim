@@ -23,6 +23,7 @@ extern "C"
 
 #include "../../include/mimircache/cache.h"
 #include "pqueue.h" 
+#include "utilsInternal.h"
 
 
 

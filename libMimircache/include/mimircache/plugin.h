@@ -19,7 +19,7 @@
  * @param params the parameter pass to cache initialization
  * @return cache handler
  */
-cache_t* create_cache(const char *cache_alg_name, uint64_t size, obj_id_t obj_id_type, void* params);
+cache_t* create_cache(const char *cache_alg_name, guint64 size, obj_id_t obj_id_type, void* params);
 
 /**
  * create a cache handler, using the cache replacement algorithm is baked into mimircache
@@ -29,7 +29,7 @@ cache_t* create_cache(const char *cache_alg_name, uint64_t size, obj_id_t obj_id
  * @param params the parameter pass to cache initialization
  * @return cache handler
  */
-cache_t* create_cache_internal(const char *cache_alg_name, uint64_t size, obj_id_t obj_id_type, void* params);
+cache_t* create_cache_internal(const char *cache_alg_name, guint64 size, obj_id_t obj_id_type, void* params);
 
 
 /**
@@ -42,7 +42,7 @@ cache_t* create_cache_internal(const char *cache_alg_name, uint64_t size, obj_id
  * @param params the parameter pass to cache initialization
  * @return cache handler
  */
-cache_t* create_cache_external(const char *cache_alg_name, uint64_t size, obj_id_t obj_id_type, void* params);
+cache_t* create_cache_external(const char *cache_alg_name, guint64 size, obj_id_t obj_id_type, void* params);
 
 
 #endif //MIMIRCACHE_PLUGIN_H

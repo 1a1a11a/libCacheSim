@@ -9,8 +9,8 @@
 #ifndef MRU_h
 #define MRU_h
 
-#include <stdio.h>
 #include "../../include/mimircache/cache.h"
+#include "utilsInternal.h"
 
 
 #ifdef __cplusplus
