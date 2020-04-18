@@ -29,6 +29,10 @@ extern "C"
 
 
 double *get_lru_obj_miss_ratio(reader_t* reader, gint64 size);
+static double *get_lru_obj_miss_ratio_curve(reader_t* reader, gint64 size){
+  return get_lru_obj_miss_ratio(reader, size);
+}
+
 
 /* not possible because it requires huge array for storing reuse_hit_cnt
  * it is possible to implement this in O(NlogN) however, we need to modify splay tree

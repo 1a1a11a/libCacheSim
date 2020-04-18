@@ -9,18 +9,20 @@
 #ifndef profilerUtils_h
 #define profilerUtils_h
 
-#include "glib.h"
-#include "reader.h"
-#include "utils.h"
-#include "utils.h"
-#include "const.h"
-#include "request.h"
 
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+
+#include "glib.h"
+#include "reader.h"
+#include "utils.h"
+#include "utils.h"
+#include "const.h"
+#include "request.h"
 
 //double get_log_base(guint64 max, guint64 expect_result);
 //
