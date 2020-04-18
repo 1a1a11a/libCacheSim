@@ -394,7 +394,7 @@ guint64 get_num_of_req(reader_t *const reader) {
 }
 
 
-reader_t *clone_reader(reader_t *const reader_in) {
+reader_t *clone_reader(const reader_t *const reader_in) {
   /* this function clone the given reader to give an exactly same reader,
    * note that 20191120, the reader cloned by this function does not preserve
    * the mmap_offset in the file as original reader */

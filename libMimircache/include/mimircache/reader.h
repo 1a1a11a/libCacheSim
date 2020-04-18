@@ -43,7 +43,7 @@ extern "C" {
 
 // trace type
 typedef enum {
-  CSV_TRACE = 'c', BIN_TRACE = 'b', VSCSI_TRACE = 'v', PLAIN_TXT_TRACE = 'p'
+  CSV_TRACE = 'c', BIN_TRACE = 'b', PLAIN_TXT_TRACE = 'p', VSCSI_TRACE = 'v', TWR_TRACE = 't',
 } trace_type_t;
 
 
@@ -176,7 +176,7 @@ int close_reader(reader_t *const reader);
 
 int close_cloned_reader(reader_t *const reader);
 
-reader_t *clone_reader(reader_t *const reader);
+reader_t *clone_reader(const reader_t *const reader);
 
 // Jason: what is this for? using it for Optimal alg is not good
 void set_no_eof(reader_t *const reader);

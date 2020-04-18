@@ -14,12 +14,12 @@ void test_profiler_trace_no_size(gconstpointer user_data) {
   guint64 bin_size = BIN_SIZE/MB;
 
   guint64 req_cnt_true = 113872;
-  guint64 miss_cnt_true[] = {0, 99411, 96397, 95652, 95370, 95182, 94997, 94891, 94816};
+  guint64 miss_cnt_true[] = {99411, 96397, 95652, 95370, 95182, 94997, 94891, 94816};
 
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("LRU", cache_size, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve(reader, cache, 4, bin_size);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, bin_size, 4);
 
 //  guint64* mc = _get_lru_miss_cnt_seq(reader, get_num_of_req(reader));
 //  for (int i=0; i<cache_size/bin_size+1; i++){
@@ -27,12 +27,8 @@ void test_profiler_trace_no_size(gconstpointer user_data) {
 //        res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte, mc[bin_size*i]);
 //  }
 
-
-  g_assert_cmpuint(res[0].cache_size, ==, 0);
-  g_assert_cmpuint(res[0].req_cnt, ==, 0);
-  g_assert_cmpuint(res[0].miss_cnt, ==, 0);
-
-  for (int i = 1; i < cache_size / bin_size + 1; i++) {
+  for (int i = 0; i < cache_size / bin_size; i++) {
+    g_assert_cmpuint(res[i].cache_size, ==, bin_size*(i+1));
     g_assert_cmpuint(req_cnt_true, ==, res[i].req_cnt);
     g_assert_cmpuint(miss_cnt_true[i], ==, res[i].miss_cnt);
     g_assert_cmpuint(req_cnt_true, ==, res[i].req_byte);
@@ -49,35 +45,39 @@ void test_profiler_trace_no_size(gconstpointer user_data) {
  */
 void test_profiler_trace(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true =4205978112;
-  guint64 miss_cnt_true[] = {0, 93161, 87795, 82945, 81433, 72250, 72083, 71969, 71716};
-  guint64 miss_byte_true[] = {0, 4036642816, 3838236160, 3664065536, 3611544064,
+  guint64 miss_cnt_true[] = {93161, 87795, 82945, 81433, 72250, 72083, 71969, 71716};
+  guint64 miss_byte_true[] = {4036642816, 3838236160, 3664065536, 3611544064,
                               3081624576, 3079594496, 3075357184, 3060711936};
 
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("LRU", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve(reader, cache, 4, BIN_SIZE);
 
-//  guint64* mc = _get_lru_miss_cnt_seq(reader, get_num_of_req(reader));
-//  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
-//    printf("%lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-//    res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
-//  }
 
-  g_assert_cmpuint(res[0].cache_size, ==, 0);
-  g_assert_cmpuint(res[0].req_cnt, ==, 0);
-  g_assert_cmpuint(res[0].miss_cnt, ==, 0);
-  g_assert_cmpuint(res[0].req_byte, ==, 0);
-  g_assert_cmpuint(res[0].miss_byte, ==, 0);
-
-  for (int i = 1; i < CACHE_SIZE / BIN_SIZE + 1; i++) {
-    g_assert_cmpuint(req_cnt_true, ==, res[i].req_cnt);
-    g_assert_cmpuint(miss_cnt_true[i], ==, res[i].miss_cnt);
-    g_assert_cmpuint(req_byte_true, ==, res[i].req_byte);
-    g_assert_cmpuint(miss_byte_true[i], ==, res[i].miss_byte);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  for (int i = 0; i < CACHE_SIZE / BIN_SIZE; i++) {
+    g_assert_cmpuint(res[i].cache_size, ==, BIN_SIZE*(i+1));
+    g_assert_cmpuint(res[i].req_cnt,  ==, req_cnt_true);
+    g_assert_cmpuint(res[i].miss_cnt, ==, miss_cnt_true[i]);
+    g_assert_cmpuint(res[i].req_byte, ==, req_byte_true);
+    g_assert_cmpuint(res[i].miss_byte, ==, miss_byte_true[i]);
   }
-  cache->core->cache_free(cache);
   g_free(res);
+
+
+  guint64 cache_sizes[] = {BIN_SIZE, BIN_SIZE*2, BIN_SIZE*4, BIN_SIZE*7};
+  res = get_miss_ratio_curve(reader, cache, 4, cache_sizes, 4);
+  g_assert_cmpuint(res[0].cache_size, ==, BIN_SIZE);
+  g_assert_cmpuint(res[1].req_byte, ==, req_byte_true);
+  g_assert_cmpuint(res[3].req_cnt, ==, req_cnt_true);
+
+
+  g_assert_cmpuint(res[0].miss_byte, ==, miss_byte_true[0]);
+  g_assert_cmpuint(res[2].miss_cnt, ==, miss_cnt_true[3]);
+  g_assert_cmpuint(res[3].miss_byte, ==, miss_byte_true[6]);
+  g_free(res);
+
+  cache->core->cache_free(cache);
 }
 
 

@@ -14,6 +14,8 @@ extern "C" {
 #include <assert.h>
 #include "cache.h"
 #include "profilerStruct.h"
+#include "profiler.h"
+
 
 /* cache_destroy and cache_destroy_cloned_cache are for cache users,
  * while cache_struct_init and cache_struct_free, cloned_cache_struct_destroy are for eviction alg writer,

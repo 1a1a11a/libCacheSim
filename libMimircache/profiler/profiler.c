@@ -23,18 +23,18 @@ extern "C"
 
 static void _get_mrc_thread(gpointer data, gpointer user_data) {
   prof_mt_params_t *params = (prof_mt_params_t *) user_data;
-  int idx = GPOINTER_TO_UINT(data);
+  int idx = GPOINTER_TO_UINT(data)-1;
 
-//  cache_t *cache = params->cache->core->cache_init(bin_size * idx,
+//  cache_t *cache = params->cache->core->cacheit(bin_size * idx,
 //                                                   params->cache->core->obj_id_type,
 //                                                   params->cache->core->block_size,
-//                                                   params->cache->core->cache_init_params);
+//                                                   params->cache->core->cacheit_params);
 
-  cache_t *local_cache = create_cache(params->cache->core->cache_name, params->bin_size * idx,
-                                      params->cache->core->obj_id_type, params->cache->core->cache_init_params);
   profiler_res_t *result = params->result;
   reader_t *cloned_reader = clone_reader(params->reader);
   request_t *req = new_request(params->cache->core->obj_id_type);
+  cache_t *local_cache = create_cache(params->cache->core->cache_name, result[idx].cache_size,
+                                      params->cache->core->obj_id_type, params->cache->core->cache_init_params);
 
 
   guint64 req_cnt = 0, miss_cnt = 0;
@@ -72,36 +72,40 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   local_cache->core->cache_free(local_cache);
 }
 
-profiler_res_t *get_miss_ratio_curve(reader_t *reader_in, cache_t *cache_in, int num_of_threads, guint64 bin_size) {
+profiler_res_t *
+get_miss_ratio_curve_with_step_size(reader_t *const reader, const cache_t *const cache,
+                                    const guint64 step_size, const gint num_of_threads) {
 
-  guint64 i, progress = 0;
-  guint64 num_of_caches = (guint64) ceil((double) cache_in->core->size / bin_size) + 1;
-
-  get_num_of_req(reader_in);
-
-  // allocate memory for result 
-//  profiler_res_t **result = g_new(profiler_res_t*, num_of_caches);
-//  for (i = 0; i < num_of_caches; i++) {
-//    result[i] = g_new0(profiler_res_t, 1);
-//    // create caches of varying sizes
-//    result[i]->cache_size = bin_size * i;
-//  }
-
-  profiler_res_t *result = g_new0(profiler_res_t, num_of_caches);
-  for (i = 0; i < num_of_caches; i++) {
-    result[i].cache_size = bin_size * i;
+  int num_of_sizes = (int) ceil((double) cache->core->size / step_size) ;
+  get_num_of_req(reader);
+  guint64 *cache_sizes = g_new0(guint64, num_of_sizes);
+  for (int i = 0; i < num_of_sizes; i++) {
+    cache_sizes[i] = step_size * (i+1);
   }
 
-  // size 0 always has miss ratio 1
-  result[0].obj_miss_ratio = 1;
-  result[0].byte_miss_ratio = 1;
+  profiler_res_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, num_of_threads);
+  g_free(cache_sizes);
+  return res;
+}
+
+
+profiler_res_t *get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
+                                     const gint num_of_sizes, const guint64 *const cache_sizes,
+                                     const gint num_of_threads) {
+
+  guint64 i, progress = 0;
+  get_num_of_req(reader);
+
+  profiler_res_t *result = g_new0(profiler_res_t, num_of_sizes);
+  for (i = 0; i < num_of_sizes; i++) {
+    result[i].cache_size = cache_sizes[i];
+  }
 
   // build parameters and send to thread pool
   prof_mt_params_t *params = g_new0(prof_mt_params_t, 1);
-  params->reader = reader_in;
-  params->cache = cache_in;
+  params->reader = reader;
+  params->cache = cache;
   params->result = result;
-  params->bin_size = (guint) bin_size;
   params->progress = &progress;
   g_mutex_init(&(params->mtx));
 
@@ -112,7 +116,7 @@ profiler_res_t *get_miss_ratio_curve(reader_t *reader_in, cache_t *cache_in, int
   check_null(gthread_pool, "cannot create thread pool in profiler::evaluate\n");
 
   // start computation
-  for (i = 1; i < num_of_caches; i++) {
+  for (i = 1; i < num_of_sizes+1; i++) {
     check_false(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
@@ -120,8 +124,8 @@ profiler_res_t *get_miss_ratio_curve(reader_t *reader_in, cache_t *cache_in, int
   // wait for all simulations to finish
   sleep(2);
   INFO("%s starts computation, please wait\n", __func__);
-  while (progress < (guint64) num_of_caches - 1) {
-    print_progress((double) progress / (double) (num_of_caches - 1) * 100);
+  while (progress < (guint64) num_of_sizes - 1) {
+    print_progress((double) progress / (double) (num_of_sizes - 1) * 100);
   }
 
   // clean up
@@ -131,9 +135,6 @@ profiler_res_t *get_miss_ratio_curve(reader_t *reader_in, cache_t *cache_in, int
   // user is responsible for g_free result
   return result;
 }
-
-
-
 
 
 #ifdef __cplusplus
