@@ -29,7 +29,7 @@ typedef struct SLRU_params {
 
 
 typedef struct SLRU_init_params {
-  int N_segments;
+  int n_seg;
 } SLRU_init_params_t;
 
 

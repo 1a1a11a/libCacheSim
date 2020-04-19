@@ -18,11 +18,6 @@ int binaryReader_setup(const char *const filename,
                        reader_t *const reader,
                        const reader_init_param_t *const init_params) {
 
-  /* passed in init_params needs to be saved within reader,
-   * to faciliate clone and free */
-  reader->base->init_params = g_new(reader_init_param_t, 1);
-  memcpy(reader->base->init_params, init_params, sizeof(reader_init_param_t));
-
   reader->base->trace_type = BIN_TRACE;
   reader->base->item_size = 0;
 

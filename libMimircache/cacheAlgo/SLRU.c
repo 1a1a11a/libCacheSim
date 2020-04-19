@@ -144,7 +144,7 @@ cache_t *SLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
 
   cache->core->cache_init_params = params;
 
-  SLRU_params->n_seg = init_params->N_segments;
+  SLRU_params->n_seg = init_params->n_seg;
   SLRU_params->current_sizes = g_new0(uint64_t, SLRU_params->n_seg);
   SLRU_params->LRUs = g_new(cache_t *, SLRU_params->n_seg);
   int i;

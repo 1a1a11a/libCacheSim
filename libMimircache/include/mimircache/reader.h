@@ -82,7 +82,7 @@ typedef struct reader_base {
   //                                             * format: gint64 per entry */
   //    char frd_file_loc[MAX_FILE_PATH_LEN];
   size_t file_size;
-  reader_init_param_t *init_params;
+  reader_init_param_t init_params;
 
   char *mapped_file; /* mmap the file, this should not change during runtime
                       * mmap_offset in the file is changed using mmap_offset */

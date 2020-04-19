@@ -54,8 +54,9 @@ reader_t *setup_reader(const char *const trace_path,
   reader->base->n_total_req = -1;
   reader->base->obj_id_type = obj_id_type;
   reader->base->trace_type = trace_type;
-  reader->base->init_params = NULL;
   reader->base->mmap_offset = 0;
+  if (reader_init_param != NULL)
+    memcpy(&reader->base->init_params, reader_init_param, sizeof(reader_init_param_t));
 
 
   if (strlen(trace_path) > MAX_FILE_PATH_LEN - 1) {
@@ -78,7 +79,7 @@ reader_t *setup_reader(const char *const trace_path,
     exit(1);
   }
 
-  if ((reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0)) == MAP_FAILED) {
+  if ((reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0)) == MAP_FAILED) {
     close(fd);
     reader->base->mapped_file = NULL;
     ERROR("Unable to allocate %llu bytes of memory, %s\n", (unsigned long long) st.st_size,
@@ -393,8 +394,9 @@ reader_t *clone_reader(const reader_t *const reader_in) {
   reader_t *const reader = setup_reader(reader_in->base->trace_path,
                                         reader_in->base->trace_type,
                                         reader_in->base->obj_id_type,
-                                        reader_in->base->init_params);
+                                        &reader_in->base->init_params);
   memcpy(reader->sdata, reader_in->sdata, sizeof(reader_data_share_t));
+  // Jason since we mmap the file in MAP_SHARED, multiple mmap will not be a problem
 
   // this is not ideal, but we don't want to multiple mapped files
   // Jason: why?
@@ -440,8 +442,8 @@ int close_reader(reader_t *const reader) {
   }
 
   munmap(reader->base->mapped_file, reader->base->file_size);
-  if (reader->base->init_params)
-    g_free(reader->base->init_params);
+//  if (reader->base->init_params)
+//    g_free(reader->base->init_params);
 
   if (reader->reader_params)
     g_free(reader->reader_params);
@@ -500,8 +502,8 @@ int close_cloned_reader(reader_t *const reader) {
                    reader->base->trace_type);
   }
 
-  if (reader->base->init_params)
-    g_free(reader->base->init_params);
+//  if (reader->base->init_params)
+//    g_free(reader->base->init_params);
 
   if (reader->reader_params)
     g_free(reader->reader_params);

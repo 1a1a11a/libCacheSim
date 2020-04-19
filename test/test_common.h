@@ -109,7 +109,7 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
   } else if (strcmp(alg_name, "SLRU") == 0) {
     SLRU_init_params_t *init_params = g_new0(SLRU_init_params_t, 1);
     init_params_g = init_params;
-    init_params->N_segments = 2;
+    init_params->n_seg = 2;
     cache = SLRU_init(cache_size, reader->base->obj_id_type, init_params);
   } else if (strcmp(alg_name, "Optimal") == 0) {
     struct Optimal_init_params *init_params = g_new0(struct Optimal_init_params, 1);

@@ -22,7 +22,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
 
   reader_t *reader = (reader_t *) data;
   csv_params_t *params = reader->reader_params;
-  reader_init_param_t *init_params = reader->base->init_params;
+  reader_init_param_t *init_params = &reader->base->init_params;
   request_t *req = params->req_pointer;
 
   if (params->current_field_counter == init_params->obj_id_field) {
@@ -73,10 +73,6 @@ void csv_setup_reader(const char *const file_loc,
   unsigned char options = CSV_APPEND_NULL;
   reader->reader_params = g_new0(csv_params_t, 1);
   csv_params_t *params = reader->reader_params;
-
-  /* passed in init_params needs to be saved within reader, to faciliate clone and free */
-  reader->base->init_params = g_new(reader_init_param_t, 1);
-  memcpy(reader->base->init_params, init_params, sizeof(reader_init_param_t));
 
   params->csv_parser = g_new(struct csv_parser, 1);
   if (csv_init(params->csv_parser, options) != 0) {
