@@ -13,7 +13,6 @@ extern "C" {
 
 #include <assert.h>
 #include "cache.h"
-#include "profilerStruct.h"
 #include "profiler.h"
 
 

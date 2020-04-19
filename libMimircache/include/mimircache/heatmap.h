@@ -62,7 +62,7 @@ extern "C"
         gint64 bin_size;
 
       gint64 *last_access_dist;
-      gint64 *reuse_dist;
+      gint64 *stack_dist;
 //      gint64 *dist;
 
         gboolean interval_hit_ratio_b;
@@ -70,7 +70,7 @@ extern "C"
 
         gboolean use_percent; 
         
-        gint64 *future_reuse_dist;
+        gint64 *future_stack_dist;
         
         GArray* break_points;
         draw_dict* dd;

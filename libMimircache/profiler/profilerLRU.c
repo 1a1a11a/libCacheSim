@@ -17,7 +17,9 @@ extern "C"
 {
 #endif
 
+/* I think this set of utilities are not used and will be deprecated in next version */
 
+  
 guint64 *_get_lru_hit_cnt_seq(reader_t *reader, gint64 size);
 
 double *get_lru_obj_miss_ratio(reader_t *reader, gint64 size) {
@@ -60,7 +62,7 @@ guint64 *_get_lru_miss_cnt_seq(reader_t *reader, gint64 size){
 guint64 *_get_lru_hit_cnt_seq(reader_t *reader, gint64 size) {
 
   guint64 ts = 0;
-  gint64 reuse_dist;
+  gint64 stack_dist;
   guint64 *hit_count_array = g_new0(guint64, size + 1);
   request_t *req = new_request(reader->base->obj_id_type);
 
@@ -71,14 +73,14 @@ guint64 *_get_lru_hit_cnt_seq(reader_t *reader, gint64 size) {
 
   read_one_req(reader, req);
   while (req->valid) {
-    splay_tree = get_reuse_dist_add_req(req, splay_tree, hash_table, ts, &reuse_dist);
-    if (reuse_dist == -1)
+    splay_tree = get_stack_dist_add_req(req, splay_tree, hash_table, ts, &stack_dist);
+    if (stack_dist == -1)
       // cold miss
       ;
     else {
-      if (reuse_dist + 1 <= size)
-        /* + 1 here because reuse reuse_dist is 0 for consecutive accesses */
-        hit_count_array[reuse_dist + 1] += 1;
+      if (stack_dist + 1 <= size)
+        /* + 1 here because reuse stack_dist is 0 for consecutive accesses */
+        hit_count_array[stack_dist + 1] += 1;
     }
     read_one_req(reader, req);
     ts++;

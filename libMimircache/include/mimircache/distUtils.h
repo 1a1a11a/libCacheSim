@@ -25,7 +25,7 @@ extern "C"
  * @param reader
  * @return
  */
-gint64 *get_reuse_dist(reader_t *reader);
+gint64 *get_stack_dist(reader_t *reader);
 
 /***********************************************************
  * get the future reuse distance (stack distance) since now,
@@ -34,7 +34,7 @@ gint64 *get_reuse_dist(reader_t *reader);
  * @param reader
  * @return
  */
-gint64 *get_future_reuse_dist(reader_t *reader);
+gint64 *get_future_stack_dist(reader_t *reader);
 
 
 /***********************************************************

@@ -103,8 +103,8 @@ draw_dict* heatmap(reader_t* reader,
                 plot_type != dist_distribution &&
                 plot_type != rt_distribution &&
                 plot_type != effective_size) {
-            if (reader->sdata->reuse_dist_type != REUSE_DIST) {
-              _get_reuse_dist_seq(reader);
+            if (reader->sdata->stack_dist_type != STACK_DIST) {
+              _get_stack_dist_seq(reader);
             }
         }
     }
@@ -228,45 +228,45 @@ draw_dict* heatmap_computation(reader_t* reader,
         return heatmap_rd_distribution(reader, time_mode, num_of_threads, 1);
     }
     else if (plot_type == future_rd_distribution) {
-        if (reader->sdata->reuse_dist_type != FUTURE_RD) {
-            g_free(reader->sdata->reuse_dist);
-            reader->sdata->reuse_dist = NULL;
-            reader->sdata->reuse_dist = get_future_reuse_dist(reader);
+        if (reader->sdata->stack_dist_type != FUTURE_RD) {
+            g_free(reader->sdata->stack_dist);
+            reader->sdata->stack_dist = NULL;
+            reader->sdata->stack_dist = get_future_stack_dist(reader);
         }
 
         draw_dict* dd = heatmap_rd_distribution(reader, time_mode, num_of_threads, 0);
 
-        reader->sdata->max_reuse_dist = 0;
-        g_free(reader->sdata->reuse_dist);
-        reader->sdata->reuse_dist = NULL;
+        reader->sdata->max_stack_dist = 0;
+        g_free(reader->sdata->stack_dist);
+        reader->sdata->stack_dist = NULL;
 
         return dd;
     }
     else if (plot_type == dist_distribution) {
-        if (reader->sdata->reuse_dist_type != LAST_DIST) {
-            g_free(reader->sdata->reuse_dist);
-            reader->sdata->reuse_dist = NULL;
-            reader->sdata->reuse_dist = get_dist_to_last_access(reader);
+        if (reader->sdata->stack_dist_type != LAST_DIST) {
+            g_free(reader->sdata->stack_dist);
+            reader->sdata->stack_dist = NULL;
+            reader->sdata->stack_dist = get_dist_to_last_access(reader);
         }
 
         draw_dict* dd = heatmap_rd_distribution(reader, time_mode, num_of_threads, 0);
-        reader->sdata->max_reuse_dist = 0;
-        g_free(reader->sdata->reuse_dist);
-        reader->sdata->reuse_dist = NULL;
+        reader->sdata->max_stack_dist = 0;
+        g_free(reader->sdata->stack_dist);
+        reader->sdata->stack_dist = NULL;
 
         return dd;
     }
     else if (plot_type == rt_distribution) {        // real time distribution, time msut be integer
-        if (reader->sdata->reuse_dist_type != REUSE_TIME) {
-            g_free(reader->sdata->reuse_dist);
-            reader->sdata->reuse_dist = NULL;
-            reader->sdata->reuse_dist = get_reuse_time(reader);
+        if (reader->sdata->stack_dist_type != REUSE_TIME) {
+            g_free(reader->sdata->stack_dist);
+            reader->sdata->stack_dist = NULL;
+            reader->sdata->stack_dist = get_reuse_time(reader);
         }
 
         draw_dict* dd = heatmap_rd_distribution(reader, time_mode, num_of_threads, 0);
-        reader->sdata->max_reuse_dist = 0;
-        g_free(reader->sdata->reuse_dist);
-        reader->sdata->reuse_dist = NULL;
+        reader->sdata->max_stack_dist = 0;
+        g_free(reader->sdata->stack_dist);
+        reader->sdata->stack_dist = NULL;
 
         return dd;
     }
@@ -365,20 +365,20 @@ draw_dict* heatmap_rd_distribution(reader_t* reader, char mode, int num_of_threa
     break_points = reader->sdata->break_points->array;
 
     // this is used to make sure length of x and y are approximate same, not different by too much
-    if (reader->sdata->max_reuse_dist == 0 || break_points->len == 0) {
+    if (reader->sdata->max_stack_dist == 0 || break_points->len == 0) {
         ERROR("did you call top level function? max reuse distance %ld, bp len %u\n",
-              (long) reader->sdata->max_reuse_dist, break_points->len);
+              (long) reader->sdata->max_stack_dist, break_points->len);
         exit(1);
     }
-    double log_base = get_log_base((unsigned long) reader->sdata->max_reuse_dist, break_points->len);
+    double log_base = get_log_base((unsigned long) reader->sdata->max_stack_dist, break_points->len);
     reader->udata->log_base = log_base;
 
     // create draw_dict storage
     draw_dict* dd = g_new(draw_dict, 1);
     dd->xlength = break_points->len - 1;
 
-    // the last one is used for store cold miss; REUSE_DIST=0 and REUSE_DIST=1 are combined at first bin (index=0)
-    dd->ylength = (guint64) ceil(log((double)reader->sdata->max_reuse_dist) / log(log_base));
+    // the last one is used for store cold miss; STACK_DIST=0 and STACK_DIST=1 are combined at first bin (index=0)
+    dd->ylength = (guint64) ceil(log((double)reader->sdata->max_stack_dist) / log(log_base));
     dd->matrix = g_new(double*, break_points->len);
     for (i = 0; i < dd->xlength; i++)
         dd->matrix[i] = g_new0(double, dd->ylength);
@@ -553,38 +553,38 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
     GThreadPool *gthread_pool;
 
     if (strcmp(cache->core->cache_name, "LRU") == 0) {
-        gint64 *reuse_dist = g_new(gint64, reader->base->n_total_req);
-        gint64 *future_reuse_dist = g_new(gint64, reader->base->n_total_req);
+        gint64 *stack_dist = g_new(gint64, reader->base->n_total_req);
+        gint64 *future_stack_dist = g_new(gint64, reader->base->n_total_req);
 
-        if (reader->sdata->reuse_dist_type == UNKNOWN_DIST) {
-            reader->sdata->reuse_dist = get_future_reuse_dist(reader);
-            memcpy(future_reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->n_total_req);
-            g_free(reader->sdata->reuse_dist);
-            reader->sdata->reuse_dist = NULL;
-            reader->sdata->reuse_dist = _get_reuse_dist_seq(reader);
-            memcpy(reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->n_total_req);
+        if (reader->sdata->stack_dist_type == UNKNOWN_DIST) {
+            reader->sdata->stack_dist = get_future_stack_dist(reader);
+            memcpy(future_stack_dist, reader->sdata->stack_dist, sizeof(gint64) * reader->base->n_total_req);
+            g_free(reader->sdata->stack_dist);
+            reader->sdata->stack_dist = NULL;
+            reader->sdata->stack_dist = _get_stack_dist_seq(reader);
+            memcpy(stack_dist, reader->sdata->stack_dist, sizeof(gint64) * reader->base->n_total_req);
         }
-        else if (reader->sdata->reuse_dist_type == REUSE_DIST) {
-            memcpy(reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->n_total_req);
-            g_free(reader->sdata->reuse_dist);
-            reader->sdata->reuse_dist = NULL;
-            reader->sdata->reuse_dist = get_future_reuse_dist(reader);
-            memcpy(future_reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->n_total_req);
+        else if (reader->sdata->stack_dist_type == STACK_DIST) {
+            memcpy(stack_dist, reader->sdata->stack_dist, sizeof(gint64) * reader->base->n_total_req);
+            g_free(reader->sdata->stack_dist);
+            reader->sdata->stack_dist = NULL;
+            reader->sdata->stack_dist = get_future_stack_dist(reader);
+            memcpy(future_stack_dist, reader->sdata->stack_dist, sizeof(gint64) * reader->base->n_total_req);
         }
-        else if (reader->sdata->reuse_dist_type == FUTURE_RD) {
-            memcpy(future_reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->n_total_req);
-            g_free(reader->sdata->reuse_dist);
-            reader->sdata->reuse_dist = NULL;
-            reader->sdata->reuse_dist = _get_reuse_dist_seq(reader);
-            memcpy(reuse_dist, reader->sdata->reuse_dist, sizeof(gint64) * reader->base->n_total_req);
+        else if (reader->sdata->stack_dist_type == FUTURE_RD) {
+            memcpy(future_stack_dist, reader->sdata->stack_dist, sizeof(gint64) * reader->base->n_total_req);
+            g_free(reader->sdata->stack_dist);
+            reader->sdata->stack_dist = NULL;
+            reader->sdata->stack_dist = _get_stack_dist_seq(reader);
+            memcpy(stack_dist, reader->sdata->stack_dist, sizeof(gint64) * reader->base->n_total_req);
         }
         else {
-            ERROR("unknown reuse distance obj_id_type %d\n", reader->sdata->reuse_dist_type);
+            ERROR("unknown reuse distance obj_id_type %d\n", reader->sdata->stack_dist_type);
             abort();
         }
 
-        params->reuse_dist = reuse_dist;
-        params->future_reuse_dist = future_reuse_dist;
+        params->stack_dist = stack_dist;
+        params->future_stack_dist = future_stack_dist;
 
         gthread_pool = g_thread_pool_new ( (GFunc) hm_LRU_effective_size_thread,
                                            (gpointer)params, num_of_threads, TRUE, NULL);
@@ -617,10 +617,10 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
 
 
     if (strcmp(cache->core->cache_name, "LRU") == 0) {
-        if (reader->sdata->reuse_dist_type == FUTURE_RD) {
-            g_free(reader->sdata->reuse_dist);
-            reader->sdata->reuse_dist = NULL;
-//                reader->sdata->REUSE_DIST = _get_reuse_dist_seq(reader);
+        if (reader->sdata->stack_dist_type == FUTURE_RD) {
+            g_free(reader->sdata->stack_dist);
+            reader->sdata->stack_dist = NULL;
+//                reader->sdata->STACK_DIST = _get_stack_dist_seq(reader);
         }
     }
 
@@ -655,8 +655,8 @@ draw_dict* differential_heatmap(reader_t* reader,
         if (plot_type != future_rd_distribution &&
                 plot_type != dist_distribution &&
                 plot_type != rt_distribution) {
-            if (reader->sdata->reuse_dist_type != REUSE_DIST) {
-              _get_reuse_dist_seq(reader);
+            if (reader->sdata->stack_dist_type != STACK_DIST) {
+              _get_stack_dist_seq(reader);
             }
         }
     }

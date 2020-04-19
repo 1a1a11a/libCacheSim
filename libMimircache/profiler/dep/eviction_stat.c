@@ -21,14 +21,14 @@ extern "C"
 #endif
 
 
-static gint64 *get_eviction_reuse_dist(reader_t *reader, cache_t *optimal);
+static gint64 *get_eviction_stack_dist(reader_t *reader, cache_t *optimal);
 
 static gint64 *get_eviction_freq(reader_t *reader, cache_t *optimal, gboolean accumulative);
 
 //static gdouble* get_eviction_relative_freq(READER* reader, cache_t* optimal);
 static inline sTree *
-process_one_element_eviction_reuse_dist(request_t *req, sTree *splay_tree, GHashTable *hash_table, guint64 ts,
-                                        gint64 *reuse_dist, gpointer evicted);
+process_one_element_eviction_stack_dist(request_t *req, sTree *splay_tree, GHashTable *hash_table, guint64 ts,
+                                        gint64 *stack_dist, gpointer evicted);
 
 
 static void traverse_trace(reader_t *reader, cache_t *cache) {
@@ -78,8 +78,8 @@ gint64 *eviction_stat(reader_t *reader_in, cache_t *cache, evict_stat_type stat_
   // done get eviction list
 
 
-  if (stat_type == evict_reuse_dist) {
-    return get_eviction_reuse_dist(reader_in, cache);
+  if (stat_type == evict_stack_dist) {
+    return get_eviction_stack_dist(reader_in, cache);
   } else if (stat_type == evict_freq) {
     return get_eviction_freq(reader_in, cache, FALSE);
   } else if (stat_type == evict_freq_accumulatve) {
@@ -195,7 +195,7 @@ gint64 *get_eviction_freq(reader_t *reader, cache_t *optimal, gboolean accumulat
 }
 
 
-static gint64 *get_eviction_reuse_dist(reader_t *reader, cache_t *optimal) {
+static gint64 *get_eviction_stack_dist(reader_t *reader, cache_t *optimal) {
   /*
    * TODO: might be better to split return result, in case the hit rate array is too large
    * Is there a better way to do this? this will cause huge amount memory
@@ -203,11 +203,11 @@ static gint64 *get_eviction_reuse_dist(reader_t *reader, cache_t *optimal) {
    */
 
   guint64 ts = 0;
-  gint64 reuse_dist;
+  gint64 stack_dist;
 
   gpointer eviction_array = optimal->core->eviction_array;
 
-  gint64 *reuse_dist_array = g_new0(gint64, reader->base->total_num);
+  gint64 *stack_dist_array = g_new0(gint64, reader->base->total_num);
 
 
   // create request struct and initializa
@@ -238,17 +238,17 @@ static gint64 *get_eviction_reuse_dist(reader_t *reader, cache_t *optimal) {
 
   if (req->obj_id_type == OBJ_ID_NUM) {
     while (req->valid) {
-      splay_tree = process_one_element_eviction_reuse_dist(req, splay_tree, hash_table, ts, &reuse_dist,
+      splay_tree = process_one_element_eviction_stack_dist(req, splay_tree, hash_table, ts, &stack_dist,
                                                            (gpointer) ((guint64 *) eviction_array + ts));
-      reuse_dist_array[ts] = reuse_dist;
+      stack_dist_array[ts] = stack_dist;
       read_one_element(reader, req);
       ts++;
     }
   } else {
     while (req->valid) {
-      splay_tree = process_one_element_eviction_reuse_dist(req, splay_tree, hash_table, ts, &reuse_dist,
+      splay_tree = process_one_element_eviction_stack_dist(req, splay_tree, hash_table, ts, &stack_dist,
                                                            (gpointer) (((gchar **) eviction_array)[ts]));
-      reuse_dist_array[ts] = reuse_dist;
+      stack_dist_array[ts] = stack_dist;
       read_one_element(reader, req);
       ts++;
     }
@@ -260,13 +260,13 @@ static gint64 *get_eviction_reuse_dist(reader_t *reader, cache_t *optimal) {
   g_hash_table_destroy(hash_table);
   free_sTree(splay_tree);
   reset_reader(reader);
-  return reuse_dist_array;
+  return stack_dist_array;
 }
 
 
 static inline sTree *
-process_one_element_eviction_reuse_dist(request_t *req, sTree *splay_tree, GHashTable *hash_table, guint64 ts,
-                                        gint64 *reuse_dist, gpointer evicted) {
+process_one_element_eviction_stack_dist(request_t *req, sTree *splay_tree, GHashTable *hash_table, guint64 ts,
+                                        gint64 *stack_dist, gpointer evicted) {
   gpointer gp;
 
   gp = g_hash_table_lookup(hash_table, req->label_ptr);
@@ -304,15 +304,15 @@ process_one_element_eviction_reuse_dist(request_t *req, sTree *splay_tree, GHash
   if (evicted) {
     if (req->obj_id_type == OBJ_ID_NUM)
       if (*(guint64 *) evicted == 0) {
-        *reuse_dist = -1;
+        *stack_dist = -1;
         return newtree;
       }
     gp = g_hash_table_lookup(hash_table, evicted);
     guint64 old_ts = *(guint64 *) gp;
     newtree = splay(old_ts, newtree);
-    *reuse_dist = node_value(newtree->right);
+    *stack_dist = node_value(newtree->right);
   } else
-    *reuse_dist = -1;
+    *stack_dist = -1;
 
 
   return newtree;

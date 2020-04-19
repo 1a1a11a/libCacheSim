@@ -36,7 +36,7 @@ extern "C" {
 
 
 typedef enum {
-  UNKNOWN_DIST = 0, REUSE_DIST = 1, FUTURE_RD = 2, LAST_DIST = 3, NEXT_DIST=4, REUSE_TIME = 5,
+  UNKNOWN_DIST = 0, STACK_DIST = 1, FUTURE_RD = 2, LAST_DIST = 3, NEXT_DIST=4, REUSE_TIME = 5,
 } dist_t;
 
 // obj_id type

@@ -17,18 +17,18 @@ extern "C"
 #endif
 
 /***********************************************************
-* sequential version of get_reuse_dist
+* sequential version of get_stack_dist
 * @param reader
 * @return
 */
-gint64 *_get_reuse_dist_seq(reader_t *reader) {
+gint64 *_get_stack_dist_seq(reader_t *reader) {
   guint64 ts = 0;
   gint64 max_rd = 0;
   gint64 rd = 0;
   get_num_of_req(reader);
   request_t *req = new_request(reader->base->obj_id_type);
 
-  gint64 *reuse_dist_array = g_new(gint64, reader->base->n_total_req);
+  gint64 *stack_dist_array = g_new(gint64, reader->base->n_total_req);
 
   // create hashtable
   GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
@@ -39,8 +39,8 @@ gint64 *_get_reuse_dist_seq(reader_t *reader) {
 
   read_one_req(reader, req);
   while (req->valid) {
-    splay_tree = get_reuse_dist_add_req(req, splay_tree, hash_table, ts, &rd);
-    reuse_dist_array[ts] = rd;
+    splay_tree = get_stack_dist_add_req(req, splay_tree, hash_table, ts, &rd);
+    stack_dist_array[ts] = rd;
     if (rd > (gint64) max_rd) {
       max_rd = rd;
     }
@@ -53,24 +53,24 @@ gint64 *_get_reuse_dist_seq(reader_t *reader) {
   g_hash_table_destroy(hash_table);
   free_sTree(splay_tree);
   reset_reader(reader);
-  return reuse_dist_array;
+  return stack_dist_array;
 }
 
 
-gint64 *get_reuse_dist(reader_t *reader) {
-  return _get_reuse_dist_seq(reader);
+gint64 *get_stack_dist(reader_t *reader) {
+  return _get_stack_dist_seq(reader);
 }
 
 /* TODO: need to rewrite this function for the same reason as get_next_access_dist */
-gint64 *get_future_reuse_dist(reader_t *reader) {
+gint64 *get_future_stack_dist(reader_t *reader) {
 
   gint64 ts = 0;
   gint64 max_rd = 0;
-  gint64 reuse_dist;
+  gint64 stack_dist;
   get_num_of_req(reader);
   request_t *req = new_request(reader->base->obj_id_type);
 
-  gint64 *reuse_dist_array = g_new(gint64, reader->base->n_total_req);
+  gint64 *stack_dist_array = g_new(gint64, reader->base->n_total_req);
 
   // create hashtable
   GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
@@ -87,14 +87,14 @@ gint64 *get_future_reuse_dist(reader_t *reader) {
     if (ts == reader->base->n_total_req)
       break;
 
-    splay_tree = get_reuse_dist_add_req(req, splay_tree, hash_table, ts, &reuse_dist);
+    splay_tree = get_stack_dist_add_req(req, splay_tree, hash_table, ts, &stack_dist);
     if (reader->base->n_total_req - 1 - (long) ts < 0) {
       ERROR("array index %ld out of range\n", (long) (reader->base->n_total_req - 1 - ts));
       exit(1);
     }
-    reuse_dist_array[reader->base->n_total_req - 1 - ts] = reuse_dist;
-    if (reuse_dist > (gint64) max_rd)
-      max_rd = reuse_dist;
+    stack_dist_array[reader->base->n_total_req - 1 - ts] = stack_dist;
+    if (stack_dist > (gint64) max_rd)
+      max_rd = stack_dist;
     if (ts >= reader->base->n_total_req)
       break;
     read_one_req_above(reader, req);
@@ -106,7 +106,7 @@ gint64 *get_future_reuse_dist(reader_t *reader) {
   g_hash_table_destroy(hash_table);
   free_sTree(splay_tree);
   reset_reader(reader);
-  return reuse_dist_array;
+  return stack_dist_array;
 }
 
 
@@ -165,13 +165,13 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
   }
 
 
-//  if (reader->sdata->reuse_dist != NULL) {
-//    g_free(reader->sdata->reuse_dist);
-//    reader->sdata->reuse_dist = NULL;
+//  if (reader->sdata->stack_dist != NULL) {
+//    g_free(reader->sdata->stack_dist);
+//    reader->sdata->stack_dist = NULL;
 //  }
-//  reader->sdata->reuse_dist = dist_array;
-//  reader->sdata->max_reuse_dist = max_dist;
-//  reader->sdata->reuse_dist_type = dist_type;
+//  reader->sdata->stack_dist = dist_array;
+//  reader->sdata->max_stack_dist = max_dist;
+//  reader->sdata->stack_dist_type = dist_type;
 
   // clean up
   free_request(req);

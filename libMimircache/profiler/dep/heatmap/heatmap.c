@@ -135,13 +135,13 @@ draw_dict *heatmap_computation(reader_t *reader,
                        hm_comp_params->ewma_coefficient_lf,
                        num_of_threads);
   } else if (plot_type == rd_distribution) {
-    dist = get_reuse_dist(reader);
+    dist = get_stack_dist(reader);
     return heatmap_dist_distribution(reader, dist, num_of_threads, 0);
   } else if (plot_type == rd_distribution_CDF) {
-    dist = get_reuse_dist(reader);
+    dist = get_stack_dist(reader);
     return heatmap_dist_distribution(reader, dist, num_of_threads, 1);
   } else if (plot_type == future_rd_distribution) {
-    dist = get_future_reuse_dist(reader);
+    dist = get_future_stack_dist(reader);
     draw_dict *dd = heatmap_dist_distribution(reader, dist, num_of_threads, 0);
     return dd;
     } else if (plot_type == dist_distribution) {
@@ -191,7 +191,7 @@ draw_dict *hm_hr_st_et(reader_t *reader,
   params->interval_hit_ratio_b = interval_hit_ratio_b;
   params->ewma_coefficient_lf = ewma_coefficient_lf;
   params->progress = &progress;
-  params->reuse_dist = get_reuse_dist(reader);
+  params->stack_dist = get_stack_dist(reader);
   params->last_access_dist = get_last_access_dist(reader);
   g_mutex_init(&(params->mtx));
 
@@ -245,9 +245,9 @@ draw_dict *heatmap_dist_distribution(reader_t *reader, const gint64* dist, int n
   break_points = reader->sdata->break_points->array;
 
   // this is used to make sure length of x and y are approximate same, not different by too much
-//  if (reader->sdata->max_reuse_dist == 0 || break_points->len == 0) {
+//  if (reader->sdata->max_stack_dist == 0 || break_points->len == 0) {
 //    ERROR("did you call top level function? max reuse distance %ld, bp len %u\n",
-//          (long) reader->sdata->max_reuse_dist, break_points->len);
+//          (long) reader->sdata->max_stack_dist, break_points->len);
 //    exit(1);
 //  }
 
@@ -262,7 +262,7 @@ draw_dict *heatmap_dist_distribution(reader_t *reader, const gint64* dist, int n
   draw_dict *dd = g_new(draw_dict, 1);
   dd->xlength = break_points->len - 1;
 
-  // the last one is used for store cold miss; REUSE_DIST=0 and REUSE_DIST=1 are combined at first bin (index=0)
+  // the last one is used for store cold miss; STACK_DIST=0 and STACK_DIST=1 are combined at first bin (index=0)
   dd->ylength = (guint64) ceil(log((double) max_dist) / log(log_base));
   dd->matrix = g_new(double*, break_points->len);
   for (i = 0; i < dd->xlength; i++)
@@ -275,7 +275,7 @@ draw_dict *heatmap_dist_distribution(reader_t *reader, const gint64* dist, int n
   params->break_points = break_points;
   params->dd = dd;
   params->progress = &progress;
-  params->reuse_dist = (gint64 *) dist;
+  params->stack_dist = (gint64 *) dist;
   dd->log_base = log_base;
 
   g_mutex_init(&(params->mtx));

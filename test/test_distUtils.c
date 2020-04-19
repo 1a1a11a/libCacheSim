@@ -16,12 +16,12 @@ void test_distUtils_basic(gconstpointer user_data){
   reader_t* reader = (reader_t*) user_data;
   long i, j;
 
-  dist = get_reuse_dist(reader);
+  dist = get_stack_dist(reader);
   for (i=(long) get_num_of_req(reader)-1,j=0; j<N_TEST; i--,j++) {
     g_assert_cmpuint(dist[i], ==, rd_true[j]);
   }
 
-  dist = get_future_reuse_dist(reader);
+  dist = get_future_stack_dist(reader);
   for (i=6, j=0; j<N_TEST; i++,j++) {
     g_assert_cmpuint(dist[i], ==, frd_true[j]);
   }
@@ -41,15 +41,15 @@ void test_distUtils_basic(gconstpointer user_data){
 void test_distUtils_more1(gconstpointer user_data) {
   gint64 rd_true[N_TEST] = {-1, -1, -1, 7, -1, 86};
   reader_t* reader = (reader_t*) user_data;
-  gint64* rd = get_reuse_dist(reader);
+  gint64* rd = get_stack_dist(reader);
   long i, j;
   for (i=(long) get_num_of_req(reader)-1,j=0; j<N_TEST; i--,j++) {
     g_assert_cmpuint(rd[i], ==, rd_true[j]);
   }
 
-  save_dist(reader, rd, "rd.save", REUSE_DIST);
+  save_dist(reader, rd, "rd.save", STACK_DIST);
   g_free(rd);
-  rd = load_dist(reader, "rd.save", REUSE_DIST);
+  rd = load_dist(reader, "rd.save", STACK_DIST);
   for (i=(long) get_num_of_req(reader)-1,j=0; j<N_TEST; i--,j++) {
     g_assert_cmpuint(rd[i], ==, rd_true[j]);
   }

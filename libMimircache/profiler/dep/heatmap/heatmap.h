@@ -65,8 +65,8 @@ extern "C"
 
         gboolean use_percent; 
         
-        gint64 *reuse_dist;
-        gint64 *future_reuse_dist;
+        gint64 *stack_dist;
+        gint64 *future_stack_dist;
         
         GArray* break_points;
         draw_dict* dd;

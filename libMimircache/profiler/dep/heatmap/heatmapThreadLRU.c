@@ -32,7 +32,7 @@ void hm_LRU_hr_st_et_thread(gpointer data, gpointer user_data) {
   guint64 cache_size = (guint64) params->cache->core->size;
   // distance to last access
   gint64 *last_access = params->last_access_dist;
-  gint64 *reuse_dist = params->reuse_dist;
+  gint64 *stack_dist = params->stack_dist;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
   guint64 real_start = g_array_index(break_points, guint64, order);
@@ -49,9 +49,9 @@ void hm_LRU_hr_st_et_thread(gpointer data, gpointer user_data) {
     hit_count_interval = 0;
     miss_count_interval = 0;
     for (j = g_array_index(break_points, guint64, i); j < g_array_index(break_points, guint64, i + 1); j++) {
-      if (reuse_dist[j] == -1) {
+      if (stack_dist[j] == -1) {
         miss_count_interval++;
-      } else if (last_access[j] - (long long) (j - real_start) <= 0 && reuse_dist[j] < (long long) cache_size)
+      } else if (last_access[j] - (long long) (j - real_start) <= 0 && stack_dist[j] < (long long) cache_size)
         hit_count_interval++;
       else
         miss_count_interval++;
@@ -103,7 +103,7 @@ void hm_LRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
     for (i = 0; i < break_points->len - 1; i++)
       dd->matrix[i][order] = 0;
   } else {
-    gint64 *reuse_dist = params->reuse_dist;
+    gint64 *stack_dist = params->stack_dist;
     double ewma_coefficient_lf = params->ewma_coefficient_lf;
 
 
@@ -111,9 +111,9 @@ void hm_LRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
       hit_count_interval = 0;
       miss_count_interval = 0;
       for (j = g_array_index(break_points, guint64, i); j < g_array_index(break_points, guint64, i + 1); j++) {
-        if (reuse_dist[j] == -1) {
+        if (stack_dist[j] == -1) {
           miss_count_interval++;
-        } else if (reuse_dist[j] < (long long) cache_size)
+        } else if (stack_dist[j] < (long long) cache_size)
           hit_count_interval++;
         else
           miss_count_interval++;
@@ -154,7 +154,7 @@ void hm_LRU_hr_st_size_thread(gpointer data, gpointer user_data) {
   draw_dict *dd = params->dd;
   guint64 cache_size = (guint64) params->cache->core->size;
   gint64 *last_access = params->last_access_dist;
-  gint64 *reuse_dist = params->reuse_dist;
+  gint64 *stack_dist = params->stack_dist;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
   guint64 real_start = g_array_index(break_points, guint64, order);
@@ -169,9 +169,9 @@ void hm_LRU_hr_st_size_thread(gpointer data, gpointer user_data) {
   for (i = order; i < break_points->len - 1; i++) {
 
     for (j = g_array_index(break_points, guint64, i); j < g_array_index(break_points, guint64, i + 1); j++) {
-      if (reuse_dist[j] == -1)
+      if (stack_dist[j] == -1)
         miss_count++;
-      else if (last_access[j] - (long long) (j - real_start) <= 0 && reuse_dist[j] < (long long) cache_size)
+      else if (last_access[j] - (long long) (j - real_start) <= 0 && stack_dist[j] < (long long) cache_size)
         hit_count++;
       else
         miss_count++;
@@ -194,7 +194,7 @@ void hm_rd_distribution_thread(gpointer data, gpointer user_data) {
   GArray *break_points = params->break_points;
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
-  gint64 *reuse_dist = params->reuse_dist;
+  gint64 *stack_dist = params->stack_dist;
   double log_base = dd->log_base;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
@@ -202,10 +202,10 @@ void hm_rd_distribution_thread(gpointer data, gpointer user_data) {
 
   if (order != break_points->len - 1) {
     for (j = g_array_index(break_points, guint64, order); j < g_array_index(break_points, guint64, order + 1); j++) {
-      if (reuse_dist[j] == 0 || reuse_dist[j] == 1)
+      if (stack_dist[j] == 0 || stack_dist[j] == 1)
         array[0] += 1;
       else
-        array[(long) (log(reuse_dist[j]) / (log(log_base)))] += 1;
+        array[(long) (log(stack_dist[j]) / (log(log_base)))] += 1;
     }
   }
 
@@ -222,7 +222,7 @@ void hm_rd_distribution_CDF_thread(gpointer data, gpointer user_data) {
   GArray *break_points = params->break_points;
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
-  gint64 *reuse_dist = params->reuse_dist;
+  gint64 *stack_dist = params->stack_dist;
   double log_base = dd->log_base;
 
   size_t order = GPOINTER_TO_SIZE(data) - 1;
@@ -231,10 +231,10 @@ void hm_rd_distribution_CDF_thread(gpointer data, gpointer user_data) {
 
   if (order != break_points->len - 1) {
     for (j = g_array_index(break_points, guint64, order); j < g_array_index(break_points, guint64, order + 1); j++) {
-      if (reuse_dist[j] == 0 || reuse_dist[j] == 1)
+      if (stack_dist[j] == 0 || stack_dist[j] == 1)
         array[0] += 1;
       else
-        array[(long) (log(reuse_dist[j]) / (log(log_base)))] += 1;
+        array[(long) (log(stack_dist[j]) / (log(log_base)))] += 1;
     }
   }
 
@@ -270,8 +270,8 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
   draw_dict *dd = params->dd;
 
 
-  gint64 *reuse_dist = params->reuse_dist;
-  gint64 *future_reuse_dist = params->future_reuse_dist;
+  gint64 *stack_dist = params->stack_dist;
+  gint64 *future_stack_dist = params->future_stack_dist;
   cache_t *cache = params->cache->core->cache_init(cache_size,
                                                    params->cache->core->obj_id_type,
                                                    params->cache->core->cache_init_params);
@@ -328,7 +328,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
     }
 
 
-    if ((reuse_dist[cur_ts] == -1 || reuse_dist[cur_ts] >= (gint64) cache_size)) {
+    if ((stack_dist[cur_ts] == -1 || stack_dist[cur_ts] >= (gint64) cache_size)) {
       if (!increase_b) {
         ERROR("increase disagree\n");
         abort();
@@ -342,9 +342,9 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
       }
     }
 
-    if (future_reuse_dist[cur_ts] == -1 || future_reuse_dist[cur_ts] >= (gint64) cache_size) {
+    if (future_stack_dist[cur_ts] == -1 || future_stack_dist[cur_ts] >= (gint64) cache_size) {
       current_effective_size -= 1;
-      DEBUG("ts %ld reduce one due to %ld %ld\n", (long) cur_ts, (long) future_reuse_dist[cur_ts],
+      DEBUG("ts %ld reduce one due to %ld %ld\n", (long) cur_ts, (long) future_stack_dist[cur_ts],
             (long) current_effective_size);
     }
 
@@ -370,10 +370,10 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
       }
       DEBUG("ts %ld evict %s last access time %ld\n", (long) cur_ts, (char *) item, (long) last_ts);
 
-      if (future_reuse_dist[last_ts] != -1 && future_reuse_dist[last_ts] < (gint64) cache_size) {
+      if (future_stack_dist[last_ts] != -1 && future_stack_dist[last_ts] < (gint64) cache_size) {
         current_effective_size -= 1;
         DEBUG("ts %ld last access %ld, size %ld %ld, reduce one %ld\n",
-              (long) cur_ts, (long) future_reuse_dist[last_ts],
+              (long) cur_ts, (long) future_stack_dist[last_ts],
               (long) cache->core->used_size,
               (long) (gint64) cache_size, (long) current_effective_size);
       }
@@ -396,7 +396,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
 
 
 //        for (i=0; i<(guint64)(reader_thread->base->n_total_req); i++){
-//            if (!(REUSE_DIST[i] >= 0 && REUSE_DIST[i] < (gint64) cache_size)) {
+//            if (!(STACK_DIST[i] >= 0 && STACK_DIST[i] < (gint64) cache_size)) {
 //                current_effective_size += 1;
 //                in_use_cache_size += 1;
 //            }
@@ -405,7 +405,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
 //                current_effective_size --;
 //            }
 //
-//            if (future_reuse_dist[i] == -1 || future_reuse_dist[i] >= (gint64) cache_size)
+//            if (future_stack_dist[i] == -1 || future_stack_dist[i] >= (gint64) cache_size)
 //                current_effective_size -= 1;
 //
 //            if (current_effective_size > cache_size){

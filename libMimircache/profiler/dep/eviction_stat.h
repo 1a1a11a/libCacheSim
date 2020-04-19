@@ -28,7 +28,7 @@ extern "C"
 
 
 typedef enum{
-    evict_reuse_dist,
+    evict_stack_dist,
     evict_freq,
     evict_freq_accumulatve,
 
