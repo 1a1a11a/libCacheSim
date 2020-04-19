@@ -17,7 +17,6 @@ extern "C"
 
 #include "reader.h"
 #include "cache.h"
-#include "profilerStruct.h"
 
 
 typedef struct {
@@ -51,6 +50,7 @@ typedef enum {
  * @param cache
  * @param num_of_sizes
  * @param cache_sizes
+ * @param warmup_perc
  * @param num_of_threads
  * @return
  */
@@ -59,6 +59,7 @@ get_miss_ratio_curve(reader_t *const reader,
                      const cache_t *const cache,
                      const gint num_of_sizes,
                      const guint64 *const cache_sizes,
+                     const double warmup_perc,
                      const gint num_of_threads);
 
 
@@ -69,8 +70,9 @@ get_miss_ratio_curve(reader_t *const reader,
  * the user is responsible for g_free the memory of returned results
  * @param reader_in
  * @param cache_in
- * @param num_of_threads
  * @param step_size
+ * @param warmup_perc
+ * @param num_of_threads
  * @return an array of profiler_res_t*, each element of the array is the result of one simulation
  */
 
@@ -78,6 +80,7 @@ profiler_res_t *
 get_miss_ratio_curve_with_step_size(reader_t *const reader_in,
                                     const cache_t *const cache_in,
                                     const guint64 step_size,
+                                    const double warmup_perc,
                                     const gint num_of_threads);
 
 

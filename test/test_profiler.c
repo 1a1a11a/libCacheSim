@@ -11,7 +11,7 @@
  */
 void test_profiler_trace_no_size(gconstpointer user_data) {
   guint64 cache_size = CACHE_SIZE/MB;
-  guint64 bin_size = BIN_SIZE/MB;
+  guint64 step_size = STEP_SIZE/MB;
 
   guint64 req_cnt_true = 113872;
   guint64 miss_cnt_true[] = {99411, 96397, 95652, 95370, 95182, 94997, 94891, 94816};
@@ -19,16 +19,16 @@ void test_profiler_trace_no_size(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("LRU", cache_size, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, bin_size, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, step_size, 0, 4);
 
 //  guint64* mc = _get_lru_miss_cnt_seq(reader, get_num_of_req(reader));
-//  for (int i=0; i<cache_size/bin_size+1; i++){
+//  for (int i=0; i<cache_size/step_size+1; i++){
 //    printf("%lld req %lld miss %lld req_byte %lld miss_byte %lld - LRU %lld\n",
-//        res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte, mc[bin_size*i]);
+//        res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte, mc[step_size*i]);
 //  }
 
-  for (int i = 0; i < cache_size / bin_size; i++) {
-    g_assert_cmpuint(res[i].cache_size, ==, bin_size*(i+1));
+  for (int i = 0; i < cache_size / step_size; i++) {
+    g_assert_cmpuint(res[i].cache_size, ==, step_size*(i+1));
     g_assert_cmpuint(req_cnt_true, ==, res[i].req_cnt);
     g_assert_cmpuint(miss_cnt_true[i], ==, res[i].miss_cnt);
     g_assert_cmpuint(req_cnt_true, ==, res[i].req_byte);
@@ -54,9 +54,9 @@ void test_profiler_trace(gconstpointer user_data) {
   g_assert_true(cache != NULL);
 
 
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
-  for (int i = 0; i < CACHE_SIZE / BIN_SIZE; i++) {
-    g_assert_cmpuint(res[i].cache_size, ==, BIN_SIZE*(i+1));
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  for (int i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
+    g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE*(i+1));
     g_assert_cmpuint(res[i].req_cnt,  ==, req_cnt_true);
     g_assert_cmpuint(res[i].miss_cnt, ==, miss_cnt_true[i]);
     g_assert_cmpuint(res[i].req_byte, ==, req_byte_true);
@@ -65,9 +65,9 @@ void test_profiler_trace(gconstpointer user_data) {
   g_free(res);
 
 
-  guint64 cache_sizes[] = {BIN_SIZE, BIN_SIZE*2, BIN_SIZE*4, BIN_SIZE*7};
-  res = get_miss_ratio_curve(reader, cache, 4, cache_sizes, 4);
-  g_assert_cmpuint(res[0].cache_size, ==, BIN_SIZE);
+  guint64 cache_sizes[] = {STEP_SIZE, STEP_SIZE*2, STEP_SIZE*4, STEP_SIZE*7};
+  res = get_miss_ratio_curve(reader, cache, 4, cache_sizes, 0, 4);
+  g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
   g_assert_cmpuint(res[1].req_byte, ==, req_byte_true);
   g_assert_cmpuint(res[3].req_cnt, ==, req_cnt_true);
 

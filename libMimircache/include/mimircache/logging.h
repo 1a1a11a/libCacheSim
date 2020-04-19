@@ -95,4 +95,27 @@ static inline void log_lock(int lock)
   }
 }
 
+
+/**
+ * convert size to an appropriate string with unit, for example 1048576 will be 1MB
+ * @param size
+ * @param str a 8 byte char array
+ */
+static inline void convert_size_to_str(long long size, char *str){
+
+  if (size >= 1024L*1024*1024*1024) {
+    sprintf(str, "%.0lfTB", (double)size/(1024L*1024*1024*1024));
+  } else if (size >= 1024L*1024*1024) {
+    sprintf(str, "%.0lf GB", (double)size/(1024L*1024*1024));
+  } else if (size >= 1024L*1024) {
+    sprintf(str, "%.0lf MB", (double)size/(1024L*1024));
+  } else if (size >= 1024L) {
+    sprintf(str, "%.0lf KB", (double)size/(1024L));
+  } else {
+    sprintf(str, "%lld", size);
+  }
+}
+
+
+
 #endif
