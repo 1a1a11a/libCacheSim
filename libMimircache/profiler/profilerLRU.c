@@ -56,7 +56,7 @@ guint64 *_get_lru_miss_cnt_seq(reader_t *reader, gint64 size){
  * non-parallel version
  *
  * @param reader: reader for reading data
- * @param size: the max cacheAlg size, if -1, then it uses the maximum size
+ * @param size: the max cacheAlgo size, if -1, then it uses the maximum size
  */
 
 guint64 *_get_lru_hit_cnt_seq(reader_t *reader, gint64 size) {

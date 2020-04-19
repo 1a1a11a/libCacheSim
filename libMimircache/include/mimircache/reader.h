@@ -47,9 +47,9 @@ typedef enum {
 } trace_type_t;
 
 typedef struct {
-  char trace_path[MAX_FILE_PATH_LEN];
-  trace_type_t trace_type;
-  obj_id_t obj_id_type;
+//  char trace_path[MAX_FILE_PATH_LEN];
+//  trace_type_t trace_type;
+//  obj_id_t obj_id_type;
   int real_time_field;
   int obj_id_field;
   int obj_size_field;

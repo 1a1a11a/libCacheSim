@@ -9,15 +9,15 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include "../libMimircache/include/mimircache.h"
-#include "../libMimircache/cacheAlg/include/LRU.h"
-#include "../libMimircache/cacheAlg/include/FIFO.h"
-#include "../libMimircache/cacheAlg/include/Random.h"
-#include "../libMimircache/cacheAlg/include/LRU_K.h"
-#include "../libMimircache/cacheAlg/include/SLRU.h"
-#include "../libMimircache/cacheAlg/include/LFU.h"
-#include "../libMimircache/cacheAlg/include/LFUFast.h"
-#include "../libMimircache/cacheAlg/include/ARC.h"
-#include "../libMimircache/cacheAlg/include/Optimal.h"
+#include "../libMimircache/cacheAlgo/include/LRU.h"
+#include "../libMimircache/cacheAlgo/include/FIFO.h"
+#include "../libMimircache/cacheAlgo/include/Random.h"
+#include "../libMimircache/cacheAlgo/include/LRU_K.h"
+#include "../libMimircache/cacheAlgo/include/SLRU.h"
+#include "../libMimircache/cacheAlgo/include/LFU.h"
+#include "../libMimircache/cacheAlgo/include/LFUFast.h"
+#include "../libMimircache/cacheAlgo/include/ARC.h"
+#include "../libMimircache/cacheAlgo/include/Optimal.h"
 
 
 #define BLOCK_UNIT_SIZE 0    // 16 * 1024

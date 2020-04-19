@@ -31,7 +31,7 @@ extern "C"
 #endif
 
 
-reader_t *setup_reader(const char *const file_loc,
+reader_t *setup_reader(const char *const trace_path,
                        const trace_type_t trace_type,
                        const obj_id_t obj_id_type,
                        const reader_init_param_t *const reader_init_param) {
@@ -58,24 +58,23 @@ reader_t *setup_reader(const char *const file_loc,
   reader->base->mmap_offset = 0;
 
 
-  if (strlen(file_loc) > MAX_FILE_PATH_LEN - 1) {
-    ERROR("file name/path is too long(>%d), "
-          "please use a shorter name\n", MAX_FILE_PATH_LEN);
+  if (strlen(trace_path) > MAX_FILE_PATH_LEN - 1) {
+    ERROR("file name/path is too long(>%d), please use a shorter name\n", MAX_FILE_PATH_LEN);
     exit(1);
   } else {
-    strcpy(reader->base->trace_path, file_loc);
+    strcpy(reader->base->trace_path, trace_path);
   }
 
 
   // set up mmap region
-  if ((fd = open(file_loc, O_RDONLY)) < 0) {
-    ERROR("Unable to open '%s', %s\n", file_loc, strerror(errno));
+  if ((fd = open(trace_path, O_RDONLY)) < 0) {
+    ERROR("Unable to open '%s', %s\n", trace_path, strerror(errno));
     exit(1);
   }
 
   if ((fstat(fd, &st)) < 0) {
     close(fd);
-    ERROR("Unable to fstat '%s', %s\n", file_loc, strerror(errno));
+    ERROR("Unable to fstat '%s', %s\n", trace_path, strerror(errno));
     exit(1);
   }
 
@@ -91,20 +90,20 @@ reader_t *setup_reader(const char *const file_loc,
 
   switch (trace_type) {
     case CSV_TRACE:
-      csv_setup_reader(file_loc, reader, reader_init_param);
+      csv_setup_reader(trace_path, reader, reader_init_param);
       break;
     case PLAIN_TXT_TRACE:
-      reader->base->file = fopen(file_loc, "r");
+      reader->base->file = fopen(trace_path, "r");
       if (reader->base->file == 0) {
-        ERROR("open trace file %s failed: %s\n", file_loc, strerror(errno));
+        ERROR("open trace file %s failed: %s\n", trace_path, strerror(errno));
         exit(1);
       }
       break;
     case VSCSI_TRACE:
-      vscsi_setup(file_loc, reader);
+      vscsi_setup(trace_path, reader);
       break;
     case BIN_TRACE:
-      binaryReader_setup(file_loc, reader, reader_init_param);
+      binaryReader_setup(trace_path, reader, reader_init_param);
       break;
     default: ERROR("cannot recognize reader trace type, given reader trace type: %c\n",
                    reader->base->trace_type);

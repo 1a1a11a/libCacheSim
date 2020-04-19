@@ -45,14 +45,14 @@ message(STATUS "glib found? " ${GLib_FOUND} ", LIBS = " ${LIBS} ", header = " ${
 message("CMAKE_CURRENT_SOURCE_DIR is " ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlg/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cache/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceReader/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiler/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils/include)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlg)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
@@ -61,7 +61,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 #message(STATUS "all sources " ${ALL_SRC_FILES})
 
-#add_library(${PROJECT_NAME} SHARED cacheAlg traceReader profiler dataStructure utils ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+#add_library(${PROJECT_NAME} SHARED cacheAlgo traceReader profiler dataStructure utils ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${libmimircache_VERSION_MAJOR}.${libmimircache_VERSION_MINOR}.${libmimircache_VERSION_REVISION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
@@ -79,19 +79,19 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 
 add_executable(readerTest ../test/test_traceReader.c)
-target_link_libraries(readerTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(readerTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(distUtilsTest ../test/test_distUtils.c)
-target_link_libraries(distUtilsTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(distUtilsTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerLRUTest ../test/test_profilerLRU.c)
-target_link_libraries(profilerLRUTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerLRUTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerTest ../test/test_profiler.c)
-target_link_libraries(profilerTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(cacheAlgTest ../test/test_cacheAlg.c)
-target_link_libraries(cacheAlgTest cacheAlg traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(cacheAlgoTest ../test/test_cacheAlgo.c)
+target_link_libraries(cacheAlgoTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 
 enable_testing()
@@ -99,7 +99,7 @@ add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY .)
 add_test(NAME distUtils COMMAND distUtils WORKING_DIRECTORY .)
 add_test(NAME profilerLRUTest COMMAND profilerLRUTest WORKING_DIRECTORY .)
 add_test(NAME profilerTest COMMAND profilerTest WORKING_DIRECTORY .)
-add_test(NAME cacheAlgTest COMMAND cacheAlgTest WORKING_DIRECTORY .)
+add_test(NAME cacheAlgoTest COMMAND cacheAlgoTest WORKING_DIRECTORY .)
 
 
 # Example Usages
