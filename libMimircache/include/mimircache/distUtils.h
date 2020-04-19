@@ -19,18 +19,18 @@ extern "C"
 
 
 /***********************************************************
- * get the reuse distance (stack distance) since last access,
+ * get the stack distance (number of uniq objects) since last access,
  * it returns an array of n_req, where the nth element is the
- * reuse distance (number of unique obj) since last access for this obj
+ * stack distance (number of unique obj) since last access for this obj
  * @param reader
  * @return
  */
 gint64 *get_stack_dist(reader_t *reader);
 
 /***********************************************************
- * get the future reuse distance (stack distance) since now,
+ * get the future stack distance since now,
  * it returns an array of n_req, where the nth element is the
- * future reuse distance (number of unique obj) from now to next access for this obj
+ * future stack distance (number of unique obj) from now to next access for this obj
  * @param reader
  * @return
  */
@@ -68,13 +68,13 @@ gint64 *get_next_access_dist(reader_t *reader);
 
 /***********************************************************
  * NOT WORKING/IMPLETMENTED
- * get the reuse byte (reuse distance in bytes) since last access,
+ * get the stack byte (stack distance in bytes) since last access,
  * it returns an array of n_req, where the nth element is the
  * reuse byte (number of unique obj) since last access for this obj
  * @param reader
  * @return
  */
-gint64 *get_reuse_byte(reader_t *reader);
+gint64 *get_stack_byte(reader_t *reader);
 
 gint64 *get_last_access_byte(reader_t *reader);
 

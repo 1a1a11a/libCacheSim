@@ -21,7 +21,7 @@ void test_profiler_trace_no_size(gconstpointer user_data) {
   g_assert_true(cache != NULL);
   profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, step_size, 0, 4);
 
-//  guint64* mc = _get_lru_miss_cnt_seq(reader, get_num_of_req(reader));
+//  guint64* mc = _get_lru_miss_cnt(reader, get_num_of_req(reader));
 //  for (int i=0; i<cache_size/step_size+1; i++){
 //    printf("%lld req %lld miss %lld req_byte %lld miss_byte %lld - LRU %lld\n",
 //        res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte, mc[step_size*i]);

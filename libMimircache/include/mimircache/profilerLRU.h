@@ -29,9 +29,7 @@ extern "C"
 
 
 double *get_lru_obj_miss_ratio(reader_t* reader, gint64 size);
-static double *get_lru_obj_miss_ratio_curve(reader_t* reader, gint64 size){
-  return get_lru_obj_miss_ratio(reader, size);
-}
+double *get_lru_obj_miss_ratio_curve(reader_t* reader, gint64 size);
 
 
 /* not possible because it requires huge array for storing reuse_hit_cnt
@@ -42,8 +40,7 @@ static double *get_lru_obj_miss_ratio_curve(reader_t* reader, gint64 size){
 
 
 /* internal use, can be used externally, but not recommended */
-guint64 *_get_lru_miss_cnt_seq(reader_t *reader, gint64 size);
-double *_get_lru_obj_miss_ratio_seq(reader_t *reader, gint64 size);
+guint64 *_get_lru_miss_cnt(reader_t *reader, gint64 size);
 
 
 

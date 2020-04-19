@@ -20,18 +20,17 @@ extern "C"
 /* I think this set of utilities are not used and will be deprecated in next version */
 
   
-guint64 *_get_lru_hit_cnt_seq(reader_t *reader, gint64 size);
+guint64 *_get_lru_hit_cnt(reader_t *reader, gint64 size);
 
-double *get_lru_obj_miss_ratio(reader_t *reader, gint64 size) {
-  return _get_lru_obj_miss_ratio_seq(reader, size);
+double *get_lru_obj_miss_ratio_curve(reader_t* reader, gint64 size){
+  return get_lru_obj_miss_ratio(reader, size);
 }
 
-
-double *_get_lru_obj_miss_ratio_seq(reader_t *reader, gint64 size) {
+double *get_lru_obj_miss_ratio(reader_t *reader, gint64 size) {
   double n_req = (double) get_num_of_req(reader);
   double *miss_ratio_array = g_new(double, size + 1);
 
-  guint64 *miss_count_array = _get_lru_miss_cnt_seq(reader, size);
+  guint64 *miss_count_array = _get_lru_miss_cnt(reader, size);
   assert(miss_count_array[0] == get_num_of_req(reader));
 
   for (gint64 i = 0; i < size + 1; i++) {
@@ -41,9 +40,9 @@ double *_get_lru_obj_miss_ratio_seq(reader_t *reader, gint64 size) {
   return miss_ratio_array;
 }
 
-guint64 *_get_lru_miss_cnt_seq(reader_t *reader, gint64 size){
+guint64 *_get_lru_miss_cnt(reader_t *reader, gint64 size){
   guint64 n_req = get_num_of_req(reader);
-  guint64* miss_cnt = _get_lru_hit_cnt_seq(reader, size);
+  guint64* miss_cnt = _get_lru_hit_cnt(reader, size);
   for (gint64 i = 0; i < size + 1; i++) {
     miss_cnt[i] = n_req - miss_cnt[i];
   }
@@ -59,7 +58,7 @@ guint64 *_get_lru_miss_cnt_seq(reader_t *reader, gint64 size){
  * @param size: the max cacheAlgo size, if -1, then it uses the maximum size
  */
 
-guint64 *_get_lru_hit_cnt_seq(reader_t *reader, gint64 size) {
+guint64 *_get_lru_hit_cnt(reader_t *reader, gint64 size) {
 
   guint64 ts = 0;
   gint64 stack_dist;
