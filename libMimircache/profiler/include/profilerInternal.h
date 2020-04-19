@@ -22,7 +22,7 @@ typedef struct profiler_multithreading_params {
   profiler_res_t *result;
 //  guint64 bin_size;
   GMutex mtx;             // prevent simultaneous write to progress
-  guint64 *progress;
+  gint *progress;
   gpointer other_data;
 } prof_mt_params_t;
 

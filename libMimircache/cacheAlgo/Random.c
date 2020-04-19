@@ -17,7 +17,7 @@ extern "C" {
 #include "../../include/mimircache/cacheOp.h"
 
 
-cache_t *Random_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *Random_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("Random", size, obj_id_type);
   Random_params_t *Random_params = g_new0(Random_params_t, 1);
   cache->cache_params = (void *)Random_params;

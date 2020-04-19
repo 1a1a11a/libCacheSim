@@ -49,7 +49,7 @@ typedef enum {
 typedef struct {
 //  char trace_path[MAX_FILE_PATH_LEN];
 //  trace_type_t trace_type;
-//  obj_id_t obj_id_type;
+//  obj_id_type_t obj_id_type;
   int real_time_field;
   int obj_id_field;
   int obj_size_field;
@@ -67,7 +67,7 @@ struct reader;
 typedef struct reader_base {
 
   trace_type_t trace_type; /* possible types see trace_type_t  */
-  obj_id_t obj_id_type; /* possible types see obj_id_t in request.h */
+  obj_id_type_t obj_id_type; /* possible types see obj_id_type_t in request.h */
 
 //  int block_unit_size; /* used when consider variable request size
 //                        * it is size of basic unit of a big request,
@@ -161,7 +161,7 @@ typedef struct reader {
  */
 reader_t *setup_reader(const char *trace_path,
                        const trace_type_t trace_type,
-                       const obj_id_t obj_id_type,
+                       const obj_id_type_t obj_id_type,
                        const reader_init_param_t *const reader_init_param);
 
 
@@ -190,7 +190,7 @@ void read_one_req_above(reader_t *const reader, request_t *c);
 //guint64 read_one_request_size(reader_t *const reader);
 
 // deprecated
-//void reader_set_read_pos(reader_t *const reader, double pos);
+void reader_set_read_pos(reader_t *const reader, double pos);
 
 guint64 get_num_of_req(reader_t *const reader);
 

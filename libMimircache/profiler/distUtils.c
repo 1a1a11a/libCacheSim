@@ -273,10 +273,9 @@ gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_ty
   int fd = fileno(file); //if you have a stream (e.g. from fopen), not a file descriptor.
   struct stat buf;
   fstat(fd, &buf);
-  off_t size = buf.st_size;
 
   get_num_of_req(reader);
-  assert(size == sizeof(gint64)*reader->base->n_total_req);
+  assert(buf.st_size == sizeof(gint64)*reader->base->n_total_req);
 
   gint64 *dist_array = g_new(gint64, reader->base->n_total_req);
   fread(dist_array, sizeof(gint64), reader->base->n_total_req, file);

@@ -171,7 +171,7 @@ void Optimal_destroy_unique(cache_t *cache) {
   g_free(cache);
 }
 
-cache_t *Optimal_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *Optimal_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("Optimal", size, obj_id_type);
 
   Optimal_params_t *Optimal_params = g_new0(Optimal_params_t, 1);

@@ -224,7 +224,7 @@ void ARC_destroy(cache_t *cache) {
 //  cache_destroy_cloned_cache(cache);
 //}
 
-cache_t *ARC_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *ARC_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("ARC", size, obj_id_type);
   cache->cache_params = g_new0(struct ARC_params, 1);
   ARC_params_t *ARC_params = (ARC_params_t *) (cache->cache_params);

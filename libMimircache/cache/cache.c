@@ -39,7 +39,7 @@ void cache_struct_free(cache_t *cache) {
 }
 
 
-cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_t obj_id_type) {
+cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_type_t obj_id_type) {
   cache_t *cache = g_new0(cache_t, 1);
   cache->core = g_new0(struct cache_core, 1);
   strcpy(cache->core->cache_name, cache_name);
@@ -52,7 +52,7 @@ cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_t obj_
 
 
   sprintf(func_name, "%s_init", cache_name);
-  cache_t *(*cache_init)(guint64, obj_id_t, void *) = dlsym(handle, func_name);
+  cache_t *(*cache_init)(guint64, obj_id_type_t, void *) = dlsym(handle, func_name);
 
   sprintf(func_name, "%s_free", cache_name);
   void (*cache_free)(cache_t *) = dlsym(handle, func_name);

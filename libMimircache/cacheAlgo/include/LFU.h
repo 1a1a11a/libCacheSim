@@ -46,7 +46,7 @@ extern void*    _LFU_evict_with_return(cache_t* cache, request_t* req);
 extern void     LFU_destroy(cache_t* cache);
 extern void     LFU_destroy_unique(cache_t* cache);
 
-cache_t*   LFU_init(guint64 size, obj_id_t obj_id_type, void* params);
+cache_t*   LFU_init(guint64 size, obj_id_type_t obj_id_type, void* params);
 
 
 extern void     LFU_remove_obj(cache_t* cache, void* data_to_remove);

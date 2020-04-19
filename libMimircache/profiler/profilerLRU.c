@@ -34,7 +34,7 @@ double *_get_lru_obj_miss_ratio_seq(reader_t *reader, gint64 size) {
   guint64 *miss_count_array = _get_lru_miss_cnt_seq(reader, size);
   assert(miss_count_array[0] == get_num_of_req(reader));
 
-  for (guint64 i = 0; i < size + 1; i++) {
+  for (gint64 i = 0; i < size + 1; i++) {
     miss_ratio_array[i] = miss_count_array[i] / n_req;
   }
   g_free(miss_count_array);

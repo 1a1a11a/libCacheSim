@@ -39,7 +39,7 @@ struct cache_core {
   char obj_id_type;
   void *cache_init_params;
 
-  struct cache *(*cache_init)(guint64, obj_id_t, void *);
+  struct cache *(*cache_init)(guint64, obj_id_type_t, void *);
 
   void (*cache_free)(struct cache *);
 
@@ -74,7 +74,7 @@ typedef struct cache {
 } cache_t;
 
 
-extern cache_t *cache_struct_init(char *cache_name, long long size, obj_id_t obj_id_type);
+extern cache_t *cache_struct_init(char *cache_name, long long size, obj_id_type_t obj_id_type);
 extern void cache_struct_free(cache_t *cache);
 
 

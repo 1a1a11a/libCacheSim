@@ -24,7 +24,7 @@ gboolean SLRU_check(cache_t *cache, request_t *cp) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   gboolean retVal = FALSE;
   int i;
-  for (i = 0; i < SLRU_params->N_segments; i++)
+  for (i = 0; i < SLRU_params->n_seg; i++)
     retVal = retVal || LRU_check(SLRU_params->LRUs[i], cp);
   return retVal;
 }
@@ -32,14 +32,14 @@ gboolean SLRU_check(cache_t *cache, request_t *cp) {
 void _SLRU_update(cache_t *cache, request_t *cp) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   int i;
-  for (i = 0; i < SLRU_params->N_segments; i++) {
+  for (i = 0; i < SLRU_params->n_seg; i++) {
     if (LRU_check(SLRU_params->LRUs[i], cp)) {
       /* move to upper LRU
        * first remove from current LRU
        * then add to upper LRU,
        * if upper LRU is full, evict one, insert into current LRU
        */
-      if (i != SLRU_params->N_segments - 1) {
+      if (i != SLRU_params->n_seg - 1) {
         LRU_remove_obj(SLRU_params->LRUs[i], cp->obj_id_ptr);
         SLRU_params->current_sizes[i]--;
         _LRU_insert(SLRU_params->LRUs[i + 1], cp);
@@ -111,7 +111,7 @@ gboolean SLRU_add(cache_t *cache, request_t *cp) {
 void SLRU_destroy(cache_t *cache) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   int i;
-  for (i = 0; i < SLRU_params->N_segments; i++)
+  for (i = 0; i < SLRU_params->n_seg; i++)
     LRU_free(SLRU_params->LRUs[i]);
   g_free(SLRU_params->LRUs);
   g_free(SLRU_params->current_sizes);
@@ -129,14 +129,14 @@ void SLRU_destroy_unique(cache_t *cache) {
 
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   int i;
-  for (i = 0; i < SLRU_params->N_segments; i++)
+  for (i = 0; i < SLRU_params->n_seg; i++)
     LRU_free(SLRU_params->LRUs[i]);
   g_free(SLRU_params->LRUs);
   g_free(SLRU_params->current_sizes);
   cache_struct_free(cache);
 }
 
-cache_t *SLRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *SLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("SLRU", size, obj_id_type);
   cache->cache_params = g_new0(struct SLRU_params, 1);
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
@@ -144,13 +144,13 @@ cache_t *SLRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
 
   cache->core->cache_init_params = params;
 
-  SLRU_params->N_segments = init_params->N_segments;
-  SLRU_params->current_sizes = g_new0(uint64_t, SLRU_params->N_segments);
-  SLRU_params->LRUs = g_new(cache_t *, SLRU_params->N_segments);
+  SLRU_params->n_seg = init_params->N_segments;
+  SLRU_params->current_sizes = g_new0(uint64_t, SLRU_params->n_seg);
+  SLRU_params->LRUs = g_new(cache_t *, SLRU_params->n_seg);
   int i;
-  for (i = 0; i < SLRU_params->N_segments; i++) {
+  for (i = 0; i < SLRU_params->n_seg; i++) {
     SLRU_params->LRUs[i] =
-      LRU_init(size / SLRU_params->N_segments, obj_id_type, NULL);
+      LRU_init(size / SLRU_params->n_seg, obj_id_type, NULL);
   }
 
   return cache;
@@ -160,7 +160,7 @@ guint64 SLRU_get_size(cache_t *cache) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   int i;
   guint64 size = 0;
-  for (i = 0; i < SLRU_params->N_segments; i++)
+  for (i = 0; i < SLRU_params->n_seg; i++)
     size += SLRU_params->current_sizes[i];
   return size;
 }

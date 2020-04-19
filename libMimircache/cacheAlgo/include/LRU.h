@@ -24,7 +24,7 @@ typedef struct LRU_params {
 //    gint64 logical_ts;              // this only works when add is called
 } LRU_params_t;
 
-cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params);
+cache_t *LRU_init(guint64 size, obj_id_type_t obj_id_type, void *params);
 
 extern void LRU_free(cache_t *cache);
 

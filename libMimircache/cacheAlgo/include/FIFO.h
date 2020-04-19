@@ -25,7 +25,7 @@ typedef struct FIFO_params {
 } FIFO_params_t;
 
 
-extern cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params);
+extern cache_t *FIFO_init(guint64 size, obj_id_type_t obj_id_type, void *params);
 
 extern void FIFO_free(cache_t *cache);
 

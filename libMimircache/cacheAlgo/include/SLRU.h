@@ -23,7 +23,7 @@ extern "C"
 
 typedef struct SLRU_params {
   cache_t **LRUs;
-  int N_segments;
+  int n_seg;
   uint64_t *current_sizes;
 } SLRU_params_t;
 
@@ -52,7 +52,7 @@ extern void SLRU_destroy(cache_t *cache);
 extern void SLRU_destroy_unique(cache_t *cache);
 
 
-cache_t *SLRU_init(guint64 size, obj_id_t obj_id_type, void *params);
+cache_t *SLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params);
 
 
 extern void SLRU_remove_obj(cache_t *cache, void *data_to_remove);

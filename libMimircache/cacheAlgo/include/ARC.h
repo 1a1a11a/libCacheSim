@@ -62,7 +62,7 @@ extern void ARC_destroy(cache_t *cache);
 extern void ARC_destroy_unique(cache_t *cache);
 
 
-cache_t *ARC_init(guint64 size, obj_id_t obj_id_type, void *params);
+cache_t *ARC_init(guint64 size, obj_id_type_t obj_id_type, void *params);
 
 
 extern void ARC_remove_obj(cache_t *cache, void *data_to_remove);

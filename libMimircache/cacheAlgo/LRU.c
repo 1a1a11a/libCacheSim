@@ -17,10 +17,10 @@ extern "C" {
 
 #include <assert.h>
 #include "LRU.h"
-#include "../utils/include/utilsInternal.h" 
+#include "../utils/include/utilsInternal.h"
 
 
-cache_t *LRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *LRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("LRU", size, obj_id_type);
   cache->cache_params = g_new0(LRU_params_t, 1);
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);

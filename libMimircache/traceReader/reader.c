@@ -33,7 +33,7 @@ extern "C"
 
 reader_t *setup_reader(const char *const trace_path,
                        const trace_type_t trace_type,
-                       const obj_id_t obj_id_type,
+                       const obj_id_type_t obj_id_type,
                        const reader_init_param_t *const reader_init_param) {
 
   int fd;
@@ -332,7 +332,7 @@ void reset_reader(reader_t *const reader) {
 void reader_set_read_pos(reader_t *const reader, const double pos) {
   /* jump to given postion, like 1/3, or 1/2 and so on
    * reference number will NOT change in the function! .
-   * due to above property, this function is deemed as deprecated.
+   * due to above property, this function is dangerous to use.
    */
   reader->base->mmap_offset = (long) (reader->base->file_size * pos);
   if (reader->base->trace_type == CSV_TRACE || reader->base->trace_type == PLAIN_TXT_TRACE) {

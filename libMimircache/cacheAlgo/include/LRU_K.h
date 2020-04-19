@@ -57,7 +57,7 @@ extern  void LRU_K_destroy(cache_t* cache);
 extern  void LRU_K_destroy_unique(cache_t* cache);
 
 
-cache_t* LRU_K_init(guint64 size, obj_id_t obj_id_type, void* params);
+cache_t* LRU_K_init(guint64 size, obj_id_type_t obj_id_type, void* params);
 
 
 #ifdef __cplusplus

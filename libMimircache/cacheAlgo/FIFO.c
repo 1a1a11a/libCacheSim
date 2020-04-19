@@ -19,7 +19,7 @@ extern "C" {
 #include "cacheAlgUtils.h"
 #include "../../utils/include/utilsInternal.h"
 
-cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *FIFO_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("FIFO", size, obj_id_type);
   cache->cache_params = g_new0(FIFO_params_t, 1);
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
@@ -80,7 +80,7 @@ void _FIFO_update(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
   GList *node = (GList *) g_hash_table_lookup(FIFO_params->hashtable, req->obj_id_ptr);
   cache_obj_t *cache_obj = node->data;
-  if (cache_obj->size != req->size && n_warning % 20000 == 0) {
+  if (cache_obj->size != (guint32) req->size && n_warning % 20000 == 0) {
     WARNING("detecting obj size change cache_obj size %u - req size %u (warning %llu)\n", cache_obj->size, req->size,
         (long long unsigned) n_warning);
     n_warning += 1;

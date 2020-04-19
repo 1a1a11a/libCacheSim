@@ -18,7 +18,7 @@ typedef struct request {
   /* pointer to obj_id */
   gpointer obj_id_ptr;
   /* obj_id_type of content can be either size_t(OBJ_ID_NUM) or char*(OBJ_ID_STR)*/
-  obj_id_t obj_id_type;
+  obj_id_type_t obj_id_type;
 
   gint32 size;
   gint64 ttl;
@@ -41,7 +41,7 @@ typedef struct request {
 } request_t;
 
 
-static inline request_t* new_request(obj_id_t obj_id_type){
+static inline request_t* new_request(obj_id_type_t obj_id_type){
   request_t* req = g_new0(request_t, 1);
   req->size = 1;
   req->op = -1;

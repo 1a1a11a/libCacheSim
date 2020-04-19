@@ -5,10 +5,10 @@
 
 #include "../../libMimircache/include/mimircache/plugin.h"
 
-cache_t *create_cache_external(const char *cache_alg_name, guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *create_cache_external(const char *cache_alg_name, guint64 size, obj_id_type_t obj_id_type, void *params) {
   void *handle;
   char *error;
-  cache_t *(*cache_init)(guint64, obj_id_t, void *);
+  cache_t *(*cache_init)(guint64, obj_id_type_t, void *);
 
   char shared_lib_path[256];
   char cache_init_func_name[256];
@@ -38,8 +38,8 @@ cache_t *create_cache_external(const char *cache_alg_name, guint64 size, obj_id_
 }
 
 
-cache_t *create_cache_internal(const char *cache_alg_name, guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *(*cache_init)(guint64, obj_id_t, void *);
+cache_t *create_cache_internal(const char *cache_alg_name, guint64 size, obj_id_type_t obj_id_type, void *params) {
+  cache_t *(*cache_init)(guint64, obj_id_type_t, void *);
 
   char cache_init_func_name[256];
   void *handle = dlopen(NULL, RTLD_GLOBAL);
@@ -58,7 +58,7 @@ cache_t *create_cache_internal(const char *cache_alg_name, guint64 size, obj_id_
 }
 
 
-cache_t *create_cache(const char *cache_alg_name, guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *create_cache(const char *cache_alg_name, guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = create_cache_internal(cache_alg_name, size, obj_id_type, params);
   if (cache == NULL) {
     cache = create_cache_external(cache_alg_name, size, obj_id_type, params);

@@ -56,7 +56,7 @@ extern void*    _LFUFast_evict_with_return(cache_t* cache, request_t* cp);
 extern void     LFUFast_destroy(cache_t* cache);
 extern void     LFUFast_destroy_unique(cache_t* cache);
 
-cache_t*   LFUFast_init(guint64 size, obj_id_t obj_id_type, void* params);
+cache_t*   LFUFast_init(guint64 size, obj_id_type_t obj_id_type, void* params);
 
 
 extern void     LFUFast_remove_obj(cache_t* cache, void* data_to_remove);

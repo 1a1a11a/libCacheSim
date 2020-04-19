@@ -200,7 +200,7 @@ void LRUComplex_destroy_unique(cache_t *cache) {
   LRUComplex_destroy(cache);
 }
 
-cache_t *LRUComplex_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *LRUComplex_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("LRUComplex", size, obj_id_type);
   cache->cache_params = g_new0(struct LRUComplex_params, 1);
   LRUComplex_params_t *LRUComplex_params =

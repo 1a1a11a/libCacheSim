@@ -154,7 +154,7 @@ void LFU_destroy_unique(cache_t *cache) {
   LFU_destroy(cache);
 }
 
-cache_t *LFU_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *LFU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("LFU", size, obj_id_type);
   LFU_params_t *LFU_params = g_new0(LFU_params_t, 1);
   cache->cache_params = (void *) LFU_params;

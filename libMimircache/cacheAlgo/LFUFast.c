@@ -250,7 +250,7 @@ void LFUFast_destroy_unique(cache_t *cache) {
   LFUFast_destroy(cache);
 }
 
-cache_t *LFUFast_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *LFUFast_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("LFUFast", size, obj_id_type);
   LFUFast_params_t *LFUFast_params = g_new0(LFUFast_params_t, 1);
   cache->cache_params = (void *) LFUFast_params;

@@ -200,7 +200,7 @@ void LRU_K_destroy(cache_t *cache) {
 //  cache_destroy_unique(cache);
 //}
 
-cache_t *LRU_K_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *LRU_K_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("LRUK", size, obj_id_type);
   cache->cache_params = g_new0(struct LRU_K_params, 1);
   struct LRU_K_params *LRU_K_params =

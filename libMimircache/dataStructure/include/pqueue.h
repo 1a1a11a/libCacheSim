@@ -89,7 +89,7 @@ typedef struct pqueue_t
 typedef struct node_t
 {
     pqueue_pri_t pri;
-    obj_id_t obj_id_type;
+    obj_id_type_t obj_id_type;
     void* obj_id;
     size_t pos;
 } pq_node_t;

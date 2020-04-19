@@ -10,21 +10,25 @@ extern "C"
 {
 #endif
 
-#include "AMP.h"
 #include "ARC.h"
 #include "FIFO.h"
 #include "LFU.h"
 #include "LFUFast.h"
 #include "LRU.h"
 #include "LRU_K.h"
-#include "Mithril.h"
 #include "MRU.h"
 #include "Optimal.h"
-#include "PG.h"
 #include "Random.h"
-#include "slabLRU.h"
-#include "slabLRC.h"
 #include "SLRU.h"
+
+
+//#include "slabLRU.h"
+//#include "slabLRC.h"
+
+
+//#include "AMP.h"
+//#include "PG.h"
+//#include "Mithril.h"
 
 
 #ifdef __cplusplus

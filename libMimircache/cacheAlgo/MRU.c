@@ -71,7 +71,7 @@ void MRU_destroy_unique(cache_t *cache) {
   MRU_destroy(cache);
 }
 
-cache_t *MRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
+cache_t *MRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("MRU", size, obj_id_type);
   struct MRU_params *MRU_params = g_new0(struct MRU_params, 1);
   cache->cache_params = (void *) MRU_params;

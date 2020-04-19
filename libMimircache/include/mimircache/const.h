@@ -40,7 +40,7 @@ typedef enum {
 } dist_t;
 
 // obj_id type
-typedef enum { OBJ_ID_NUM = 'l', OBJ_ID_STR = 'c' } obj_id_t;
+typedef enum { OBJ_ID_NUM = 'l', OBJ_ID_STR = 'c' } obj_id_type_t;
 
 
 #define KB 1024L

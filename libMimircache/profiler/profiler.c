@@ -99,7 +99,7 @@ profiler_res_t *get_miss_ratio_curve(reader_t *const reader, const cache_t *cons
                                      const gint num_of_sizes, const guint64 *const cache_sizes,
                                      const double warmup_perc, const gint num_of_threads) {
 
-  guint64 i, progress = 0;
+  gint i, progress = 0;
   get_num_of_req(reader);
 
   profiler_res_t *result = g_new0(profiler_res_t, num_of_sizes);
