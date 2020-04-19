@@ -22,9 +22,10 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
 
   reader_t *reader = (reader_t *) data;
   csv_params_t *params = reader->reader_params;
+  reader_init_param_t *init_params = reader->base->init_params;
   request_t *req = params->req_pointer;
 
-  if (params->current_field_counter == params->obj_id_field) {
+  if (params->current_field_counter == init_params->obj_id_field) {
     // this field is the request obj_id
     if (reader->base->obj_id_type == OBJ_ID_NUM){
 //      printf("current str %s - len %lu - len %lu\n", s, strlen(s), len);
@@ -37,17 +38,15 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
       ((char *) (req->obj_id_ptr))[len] = 0;
     }
     params->already_got_req = TRUE;
-  } else if (params->current_field_counter == params->real_time_field) {
+  } else if (params->current_field_counter == init_params->real_time_field) {
     // why this is not a problem because s should not be null terminated
     // this does not work for mac
     //    req->real_time = (guint64) strtof((char *) s, NULL);
     req->real_time = (guint64) atoll((char *) s);
-  } else if (params->current_field_counter == params->op_field) {
+  } else if (params->current_field_counter == init_params->op_field) {
     fprintf(stderr, "currently operation column is not supported\n");
-  } else if (params->current_field_counter == params->size_field) {
+  } else if (params->current_field_counter == init_params->obj_size_field) {
     req->size = (guint64) atoll((char *) s);
-  } else if (params->current_field_counter == params->traceID_field) {
-    req->traceID = (unsigned char) *((char *) s);
   }
 
   params->current_field_counter++;
@@ -68,36 +67,16 @@ static inline void csv_cb2(int c, void *data) {
 }
 
 
-csvReader_init_params *new_csvReader_init_params(gint obj_id_field,
-                                                 gint op_field,
-                                                 gint real_time_field,
-                                                 gint size_field,
-                                                 gboolean has_header,
-                                                 unsigned char delimiter,
-                                                 gint traceID_field) {
-
-  csvReader_init_params *init_params = g_new0(csvReader_init_params, 1);
-  init_params->obj_id_field = obj_id_field;
-  init_params->op_field = op_field;
-  init_params->real_time_field = real_time_field;
-  init_params->size_field = size_field;
-  init_params->has_header = has_header;
-  init_params->delimiter = delimiter;
-  init_params->traceID_field = traceID_field;
-  return init_params;
-}
-
-
-void csv_setup_Reader(const char *const file_loc,
+void csv_setup_reader(const char *const file_loc,
                       reader_t *const reader,
-                      const csvReader_init_params *const init_params) {
+                      const reader_init_param_t *const init_params) {
   unsigned char options = CSV_APPEND_NULL;
   reader->reader_params = g_new0(csv_params_t, 1);
   csv_params_t *params = reader->reader_params;
 
   /* passed in init_params needs to be saved within reader, to faciliate clone and free */
-  reader->base->init_params = g_new(csvReader_init_params, 1);
-  memcpy(reader->base->init_params, init_params, sizeof(csvReader_init_params));
+  reader->base->init_params = g_new(reader_init_param_t, 1);
+  memcpy(reader->base->init_params, init_params, sizeof(reader_init_param_t));
 
   params->csv_parser = g_new(struct csv_parser, 1);
   if (csv_init(params->csv_parser, options) != 0) {
@@ -112,10 +91,10 @@ void csv_setup_Reader(const char *const file_loc,
   }
 
   params->current_field_counter = 1;
-  params->op_field = init_params->op_field;
-  params->real_time_field = init_params->real_time_field;
-  params->size_field = init_params->size_field;
-  params->obj_id_field = init_params->obj_id_field;
+//  params->op_field = init_params->op_field;
+//  params->real_time_field = init_params->real_time_field;
+//  params->size_field = init_params->size_field;
+//  params->obj_id_field = init_params->obj_id_field;
   params->already_got_req = FALSE;
   params->reader_end = FALSE;
 

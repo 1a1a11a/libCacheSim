@@ -23,27 +23,31 @@ extern "C"
 
 
 typedef struct {
-  gint obj_id_pos;                  // the beginning bytes in the struct
+  gint obj_id_field;                  // the beginning bytes in the struct
   guint obj_id_len;                  // the size of obj_id
   char obj_id_type;
 
-  gint op_pos;
+  gint op_field;
   guint op_len;
   char op_type;
 
-  gint real_time_pos;
+  gint real_time_field;
   guint real_time_len;
   char real_time_type;
 
-  gint size_pos;
-  guint size_len;
-  char size_type;
+  gint obj_size_field;
+  guint obj_size_len;
+  char obj_size_type;
 
-  gint unused_pos1;
+  gint ttl_field;
+  guint ttl_len;
+  char ttl_type;
+
+  gint unused_field1;
   guint unused_len1;
   char unused_type1;
 
-  gint unused_pos2;
+  gint unused_field2;
   guint unused_len2;
   char unused_type2;
 
@@ -51,11 +55,6 @@ typedef struct {
   guint num_of_fields;
 } binary_params_t;
 
-binary_init_params_t *new_binaryReader_init_params(gint label_pos,
-                                                   gint op_pos,
-                                                   gint real_time_pos,
-                                                   gint size_pos,
-                                                   const char *fmt);
 
 /* binary extract extracts the attribute from record, at given pos */
 static inline void binary_extract(char *record, int pos, int len,
@@ -74,30 +73,38 @@ static inline void binary_extract(char *record, int pos, int len,
 //            *(gint16*)written_to = *(gint16*)(record + pos);
       *(gint64 *) written_to = *(gint16 *) (record + pos);
       break;
-    case 'H':*(gint64 *) written_to = *(guint16 *) (record + pos);
+    case 'H':
+      *(gint64 *) written_to = *(guint16 *) (record + pos);
       break;
 
     case 'i':
-    case 'l':*(gint64 *) written_to = *(gint32 *) (record + pos);
+    case 'l':
+      *(gint64 *) written_to = *(gint32 *) (record + pos);
       break;
 
     case 'I':
-    case 'L':*(gint64 *) written_to = *(guint32 *) (record + pos);
+    case 'L':
+      *(gint64 *) written_to = *(guint32 *) (record + pos);
       break;
 
-    case 'q':*(gint64 *) written_to = *(gint64 *) (record + pos);
+    case 'q':
+      *(gint64 *) written_to = *(gint64 *) (record + pos);
       break;
-    case 'Q':*(gint64 *) written_to = *(guint64 *) (record + pos);
+    case 'Q':
+      *(gint64 *) written_to = *(guint64 *) (record + pos);
       break;
 
-    case 'f':*(float *) written_to = *(float *) (record + pos);
+    case 'f':
+      *(float *) written_to = *(float *) (record + pos);
       *(double *) written_to = *(float *) (record + pos);
       break;
 
-    case 'd':*(double *) written_to = *(double *) (record + pos);
+    case 'd':
+      *(double *) written_to = *(double *) (record + pos);
       break;
 
-    case 's':strncpy((char *) written_to, (char *) (record + pos), len);
+    case 's':
+      strncpy((char *) written_to, (char *) (record + pos), len);
       ((char *) written_to)[len] = 0;
       break;
 
@@ -116,25 +123,24 @@ static inline int binary_read(reader_t *reader, request_t *req) {
 
   char *record = (reader->base->mapped_file + reader->base->mmap_offset);
   if (params->obj_id_type) {
-    binary_extract(record, params->obj_id_pos, params->obj_id_len,
+    binary_extract(record, params->obj_id_field, params->obj_id_len,
                    params->obj_id_type, &(req->obj_id_ptr));
   }
   if (params->real_time_type) {
-    binary_extract(record, params->real_time_pos, params->real_time_len,
+    binary_extract(record, params->real_time_field, params->real_time_len,
                    params->real_time_type, &(req->real_time));
   }
-  if (params->size_type) {
-    binary_extract(record, params->size_pos, params->size_len,
-                   params->size_type, &(req->size));
+  if (params->obj_size_type) {
+    binary_extract(record, params->obj_size_field, params->obj_size_len,
+                   params->obj_size_type, &(req->size));
   }
   if (params->op_type) {
-        binary_extract(record, params->op_pos, params->op_len,
-                       params->op_type, &(req->op));
+    binary_extract(record, params->op_field, params->op_len,
+                   params->op_type, &(req->op));
   }
-
-  if (params->unused_type1) {
-    binary_extract(record, params->unused_pos1, params->unused_len1,
-                   params->unused_type1, &(req->extra_data));
+  if (params->ttl_type) {
+    binary_extract(record, params->ttl_field, params->ttl_len,
+                   params->ttl_type, &(req->ttl));
   }
 
   (reader->base->mmap_offset) += reader->base->item_size;
@@ -144,7 +150,7 @@ static inline int binary_read(reader_t *reader, request_t *req) {
 /* function to setup binary reader */
 int binaryReader_setup(const char *const filename,
                        reader_t *const reader,
-                       const binary_init_params_t *const params);
+                       const reader_init_param_t *const params);
 
 #ifdef __cplusplus
 }

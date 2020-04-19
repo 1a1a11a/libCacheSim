@@ -34,12 +34,7 @@ extern "C"
 reader_t *setup_reader(const char *const file_loc,
                        const trace_type_t trace_type,
                        const obj_id_t obj_id_type,
-                       const void *const setup_params) {
-  /* setup the reader struct for reading trace
-   trace_type: CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE
-   obj_id_type: OBJ_ID_NUM, OBJ_ID_STR
-   Return value: a pointer to READER struct, the returned reader
-   needs to be explicitly closed by calling close_reader */
+                       const reader_init_param_t *const reader_init_param) {
 
   int fd;
   struct stat st;
@@ -50,8 +45,8 @@ reader_t *setup_reader(const char *const file_loc,
 
   reader->sdata->break_points = NULL;
 //  reader->sdata->last_access = NULL;
-//  reader->sdata->reuse_dist = NULL;
-//  reader->sdata->max_reuse_dist = 0;
+//  reader->sdata->stack_dist = NULL;
+//  reader->sdata->max_stack_dist = 0;
 
 //  reader->udata->hit_ratio = NULL;
 //  reader->udata->hit_ratio_shards = NULL;
@@ -96,7 +91,7 @@ reader_t *setup_reader(const char *const file_loc,
 
   switch (trace_type) {
     case CSV_TRACE:
-      csv_setup_Reader(file_loc, reader, setup_params);
+      csv_setup_reader(file_loc, reader, reader_init_param);
       break;
     case PLAIN_TXT_TRACE:
       reader->base->file = fopen(file_loc, "r");
@@ -109,7 +104,7 @@ reader_t *setup_reader(const char *const file_loc,
       vscsi_setup(file_loc, reader);
       break;
     case BIN_TRACE:
-      binaryReader_setup(file_loc, reader, setup_params);
+      binaryReader_setup(file_loc, reader, reader_init_param);
       break;
     default: ERROR("cannot recognize reader trace type, given reader trace type: %c\n",
                    reader->base->trace_type);
@@ -122,9 +117,6 @@ reader_t *setup_reader(const char *const file_loc,
 }
 
 void read_one_req(reader_t *const reader, request_t *const req) {
-  /* read one request from reader,
-   and store it in the pre-allocated request_t req
-   */
 //    req->ts ++;
   char *line_end = NULL;
   size_t line_len;
@@ -460,8 +452,8 @@ int close_reader(reader_t *const reader) {
 //      g_free(reader->sdata->last_access);
 //    }
 
-//    if (reader->sdata->reuse_dist) {
-//      g_free(reader->sdata->reuse_dist);
+//    if (reader->sdata->stack_dist) {
+//      g_free(reader->sdata->stack_dist);
 //    }
 
     if (reader->sdata->break_points) {

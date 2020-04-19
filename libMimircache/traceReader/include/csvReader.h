@@ -24,11 +24,11 @@ typedef struct{
     unsigned char delim;
     struct csv_parser *csv_parser;
     
-    gint real_time_field;          /* column number begins from 1 */
-    gint obj_id_field;
-    gint op_field;
-    gint size_field;
-    gint traceID_field;
+//    gint real_time_field;          /* column number begins from 1 */
+//    gint obj_id_field;
+//    gint op_field;
+//    gint size_field;
+//    gint traceID_field;
     gint current_field_counter;
     
     void* req_pointer;
@@ -38,12 +38,9 @@ typedef struct{
 }csv_params_t;
 
 
-csvReader_init_params* new_csvReader_init_params(gint, gint, gint, gint,
-                                                 gboolean, unsigned char, gint);
-
-void csv_setup_Reader(const char *const file_loc,
+void csv_setup_reader(const char *const file_loc,
                       reader_t *const reader,
-                      const csvReader_init_params *const init_params);
+                      const reader_init_param_t *const init_params);
 
 void csv_read_one_element(reader_t *const,
                           request_t *const);

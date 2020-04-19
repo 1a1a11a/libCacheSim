@@ -27,7 +27,7 @@
 #define N_TEST 6
 
 #define CACHE_SIZE (GB)
-#define BIN_SIZE (128*MB)
+#define STEP_SIZE (128*MB)
 //#define CACHE_SIZE 10
 //#define BIN_SIZE 2
 
@@ -38,22 +38,22 @@ reader_t *setup_vscsi_reader() {
 }
 
 reader_t *setup_binary_reader() {
-  binary_init_params_t *init_params_bin = g_new0(binary_init_params_t, 1);
-  strcpy(init_params_bin->fmt, "<3I2H2Q");
-  init_params_bin->size_pos = 2;
-  init_params_bin->obj_id_pos = 6;
-  init_params_bin->real_time_pos = 7;
+  reader_init_param_t *init_params_bin = g_new0(reader_init_param_t, 1);
+  strcpy(init_params_bin->binary_fmt, "<3I2H2Q");
+  init_params_bin->obj_size_field = 2;
+  init_params_bin->obj_id_field = 6;
+  init_params_bin->real_time_field = 7;
   reader_t *reader_bin_l = setup_reader("../../data/trace.vscsi", BIN_TRACE, OBJ_ID_NUM, init_params_bin);
   g_free(init_params_bin);
   return reader_bin_l;
 }
 
 reader_t *setup_csv_reader_obj_str() {
-  csvReader_init_params *init_params_csv = g_new0(csvReader_init_params, 1);
+  reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
   init_params_csv->delimiter = ',';
   init_params_csv->real_time_field = 2;
   init_params_csv->obj_id_field = 5;
-  init_params_csv->size_field = 4;
+  init_params_csv->obj_size_field = 4;
   init_params_csv->has_header = TRUE;
   reader_t *reader_csv_c = setup_reader("../../data/trace.csv", CSV_TRACE, OBJ_ID_STR, init_params_csv);
   g_free(init_params_csv);
@@ -61,11 +61,11 @@ reader_t *setup_csv_reader_obj_str() {
 }
 
 reader_t *setup_csv_reader_obj_num() {
-  csvReader_init_params *init_params_csv = g_new0(csvReader_init_params, 1);
+  reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
   init_params_csv->delimiter = ',';
   init_params_csv->real_time_field = 2;
   init_params_csv->obj_id_field = 5;
-  init_params_csv->size_field = 4;
+  init_params_csv->obj_size_field = 4;
   init_params_csv->has_header = TRUE;
   reader_t *reader_csv_l = setup_reader("../../data/trace.csv", CSV_TRACE, OBJ_ID_NUM, init_params_csv);
   g_free(init_params_csv);

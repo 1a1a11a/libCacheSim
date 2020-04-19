@@ -13,42 +13,25 @@ extern "C"
 {
 #endif
 
-binary_init_params_t *new_binaryReader_init_params(gint obj_id_pos,
-                                                   gint op_pos,
-                                                   gint real_time_pos,
-                                                   gint size_pos,
-                                                   const char *fmt) {
-
-  binary_init_params_t *init_params = g_new0(binary_init_params_t, 1);
-  init_params->obj_id_pos = obj_id_pos;
-  init_params->op_pos = op_pos;
-  init_params->real_time_pos = real_time_pos;
-  init_params->size_pos = size_pos;
-  init_params->unused_pos1 = -1;
-  init_params->unused_pos2 = -1;
-  strcpy(init_params->fmt, fmt);
-  return init_params;
-}
 
 int binaryReader_setup(const char *const filename,
                        reader_t *const reader,
-                       const binary_init_params_t *const init_params) {
+                       const reader_init_param_t *const init_params) {
 
   /* passed in init_params needs to be saved within reader,
    * to faciliate clone and free */
-  reader->base->init_params = g_new(binary_init_params_t, 1);
-  memcpy(reader->base->init_params, init_params, sizeof(binary_init_params_t));
+  reader->base->init_params = g_new(reader_init_param_t, 1);
+  memcpy(reader->base->init_params, init_params, sizeof(reader_init_param_t));
 
   reader->base->trace_type = BIN_TRACE;
   reader->base->item_size = 0;
 
   reader->reader_params = g_new0(binary_params_t, 1);
   binary_params_t *params = (binary_params_t *) reader->reader_params;
-  strcpy(params->fmt, init_params->fmt);
 
 
   /* begin parsing input params and fmt */
-  const char *fmt_str = init_params->fmt;
+  const char *fmt_str = init_params->binary_fmt;
   // ignore the first few characters related to endien
   while (!((*fmt_str >= '0' && *fmt_str <= '9') || (*fmt_str >= 'a' && *fmt_str <= 'z') || (*fmt_str >= 'A' && *fmt_str <= 'Z'))) {
     fmt_str++;
@@ -106,48 +89,41 @@ int binaryReader_setup(const char *const filename,
         break;
     }
 
-    if (init_params->obj_id_pos != 0 && params->obj_id_len == 0 && init_params->obj_id_pos <= count_sum) {
-      params->obj_id_pos = (gint) reader->base->item_size +
-          size * (init_params->obj_id_pos - last_count_sum - 1);
+    if (init_params->obj_id_field != 0 && params->obj_id_len == 0 && init_params->obj_id_field <= count_sum) {
+      params->obj_id_field = (gint) reader->base->item_size +
+          size * (init_params->obj_id_field - last_count_sum - 1);
       params->obj_id_len = *fmt_str == 's' ? count : 1;
       params->obj_id_type = *fmt_str;
       // important! update data obj_id_type here
       reader->base->obj_id_type = *fmt_str == 's' ? OBJ_ID_STR : OBJ_ID_NUM;
     }
 
-    if (init_params->op_pos != 0 && params->op_len == 0 && init_params->op_pos <= count_sum) {
-      params->op_pos = (gint) reader->base->item_size +
-          size * (init_params->op_pos - last_count_sum - 1);
+    if (init_params->op_field != 0 && params->op_len == 0 && init_params->op_field <= count_sum) {
+      params->op_field = (gint) reader->base->item_size +
+          size * (init_params->op_field - last_count_sum - 1);
       params->op_len = *fmt_str == 's' ? count : 1;
       params->op_type = *fmt_str;
     }
 
-    if (init_params->real_time_pos != 0 && params->real_time_len == 0 && init_params->real_time_pos <= count_sum) {
-      params->real_time_pos = (gint) reader->base->item_size +
-          size * (init_params->real_time_pos - last_count_sum - 1);
+    if (init_params->real_time_field != 0 && params->real_time_len == 0 && init_params->real_time_field <= count_sum) {
+      params->real_time_field = (gint) reader->base->item_size +
+          size * (init_params->real_time_field - last_count_sum - 1);
       params->real_time_len = *fmt_str == 's' ? count : 1;
       params->real_time_type = *fmt_str;
     }
 
-    if (init_params->size_pos != 0 && params->size_len == 0 && init_params->size_pos <= count_sum) {
-      params->size_pos = (gint) reader->base->item_size +
-          size * (init_params->size_pos - last_count_sum - 1);
-      params->size_len = size;
-      params->size_type = *fmt_str;
+    if (init_params->obj_size_field != 0 && params->obj_size_len == 0 && init_params->obj_size_field <= count_sum) {
+      params->obj_size_field = (gint) reader->base->item_size +
+          size * (init_params->obj_size_field - last_count_sum - 1);
+      params->obj_size_len = size;
+      params->obj_size_type = *fmt_str;
     }
 
-    if (init_params->unused_pos1 != 0 && params->unused_len1 == 0 && init_params->unused_pos1 <= count_sum) {
-      params->unused_pos1 = (gint) reader->base->item_size +
-          size * (init_params->unused_pos1 - last_count_sum - 1);
-      params->unused_len1 = *fmt_str == 's' ? count : 1;
-      params->unused_type1 = *fmt_str;
-    }
-
-    if (init_params->unused_pos2 != 0 && params->unused_len2 == 0 && init_params->unused_pos2 <= count_sum) {
-      params->unused_pos2 = (gint) reader->base->item_size +
-          size * (init_params->unused_pos2 - last_count_sum - 1);
-      params->unused_len2 = *fmt_str == 's' ? count : 1;
-      params->unused_type2 = *fmt_str;
+    if (init_params->ttl_field != 0 && params->ttl_len == 0 && init_params->ttl_field <= count_sum) {
+      params->ttl_field = (gint) reader->base->item_size +
+                               size * (init_params->ttl_field - last_count_sum - 1);
+      params->ttl_len = size;
+      params->ttl_type = *fmt_str;
     }
 
     reader->base->item_size += count * size;
@@ -155,7 +131,7 @@ int binaryReader_setup(const char *const filename,
   }
 
   // ASSERTION
-  if (init_params->obj_id_pos == -1) {
+  if (init_params->obj_id_field == -1) {
     ERROR("obj_id position cannot be -1\n");
     exit(1);
   }

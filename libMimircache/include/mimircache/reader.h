@@ -46,6 +46,21 @@ typedef enum {
   CSV_TRACE = 'c', BIN_TRACE = 'b', PLAIN_TXT_TRACE = 'p', VSCSI_TRACE = 'v', TWR_TRACE = 't',
 } trace_type_t;
 
+typedef struct {
+  char trace_path[MAX_FILE_PATH_LEN];
+  trace_type_t trace_type;
+  obj_id_t obj_id_type;
+  int real_time_field;
+  int obj_id_field;
+  int obj_size_field;
+  int op_field;
+  int ttl_field;
+  // csv reader
+  gboolean has_header;
+  char delimiter;
+  // binary reader
+  char binary_fmt[MAX_BIN_FMT_STR_LEN];
+} reader_init_param_t;
 
 /* declare reader struct */
 struct reader;
@@ -67,7 +82,7 @@ typedef struct reader_base {
   //                                             * format: gint64 per entry */
   //    char frd_file_loc[MAX_FILE_PATH_LEN];
   size_t file_size;
-  void *init_params;
+  reader_init_param_t *init_params;
 
   char *mapped_file; /* mmap the file, this should not change during runtime
                       * mmap_offset in the file is changed using mmap_offset */
@@ -98,9 +113,9 @@ typedef struct reader_data_unique {
 
 typedef struct reader_data_share {
   break_point_t *break_points;
-//  gint64 *reuse_dist;
-//  dist_t reuse_dist_type;
-//  gint64 max_reuse_dist;
+//  gint64 *stack_dist;
+//  dist_t stack_dist_type;
+//  gint64 max_stack_dist;
 //  gint64 *last_access;
 
 } reader_data_share_t;
@@ -113,39 +128,48 @@ typedef struct reader {
 } reader_t;
 
 
-typedef struct {
-  gint obj_id_pos;                     // ordering begins with 0
-  gint op_pos;
-  gint real_time_pos;
-  gint size_pos;
-  gint unused_pos1;
-  gint unused_pos2;
-  char fmt[MAX_BIN_FMT_STR_LEN];
-} binary_init_params_t;
-
-typedef struct{
-  gint obj_id_field;
-  gint op_field;
-  gint real_time_field;
-  gint size_field;
-  gboolean has_header;
-  unsigned char delimiter;
-  gint traceID_field;
-}csvReader_init_params;
-
-
+//typedef struct {
+//  gint obj_id_pos;                     // ordering begins with 0
+//  gint op_pos;
+//  gint real_time_pos;
+//  gint size_pos;
+//  gint unused_pos1;
+//  gint unused_pos2;
+//  char fmt[MAX_BIN_FMT_STR_LEN];
+//} binary_init_params_t;
+//
+//typedef struct{
+//  gint obj_id_field;
+//  gint op_field;
+//  gint real_time_field;
+//  gint size_field;
+//  gboolean has_header;
+//  unsigned char delimiter;
+//  gint traceID_field;
+//}csvReader_init_params;
 
 
 
 
-
-
-
-
-reader_t *setup_reader(const char *file_loc, const trace_type_t trace_type,
+/**
+ * setup the reader struct for reading trace
+ * @param trace_path
+ * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE, TWR_TRACE
+ * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR
+ * @param setup_params
+ * @return a pointer to READER struct, the returned reader needs to be explicitly closed by calling close_reader
+ */
+reader_t *setup_reader(const char *trace_path,
+                       const trace_type_t trace_type,
                        const obj_id_t obj_id_type,
-                       const void *const setup_params);
+                       const reader_init_param_t *const reader_init_param);
 
+
+/**
+ * read one request from reader, and store it in the pre-allocated request_t req
+ * @param reader
+ * @param req
+ */
 void read_one_req(reader_t *const reader, request_t *const req);
 
 guint64 skip_N_elements(reader_t *const reader, const guint64 N);
@@ -157,16 +181,16 @@ int go_back_two_lines(reader_t *const reader);
 void read_one_req_above(reader_t *const reader, request_t *c);
 
 // deprecated
-int read_one_request_all_info(reader_t *const reader, void *storage);
+//int read_one_request_all_info(reader_t *const reader, void *storage);
 
-guint64 read_one_timestamp(reader_t *const reader);
+//guint64 read_one_timestamp(reader_t *const reader);
 
-void read_one_op(reader_t *const reader, void *op);
+//void read_one_op(reader_t *const reader, void *op);
 
-guint64 read_one_request_size(reader_t *const reader);
+//guint64 read_one_request_size(reader_t *const reader);
 
 // deprecated
-void reader_set_read_pos(reader_t *const reader, double pos);
+//void reader_set_read_pos(reader_t *const reader, double pos);
 
 guint64 get_num_of_req(reader_t *const reader);
 
@@ -186,15 +210,8 @@ gboolean find_line_ending(reader_t *const reader, char **line_end,
 
 static inline gsize str_to_gsize(const char *start, size_t len) {
   gsize n = 0;
-  while (len--){
-#ifdef DEBUG_MODE
-    if (*start < '0' || *start > '9'){
-      ERROR("cannot convert string to gsize, current char %c\n", *start);
-      abort();
-    }
-#endif
+  while (len--) {
     n = n * 10 + *start++ - '0';
-//    printf("ptr %p - len %lu - char %c - value %lu\n", start, len, *(start-1), n);
   }
   return n;
 }
