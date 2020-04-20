@@ -76,8 +76,6 @@ gint64 *get_next_access_dist(reader_t *reader);
  */
 gint64 *get_stack_byte(reader_t *reader);
 
-gint64 *get_last_access_byte(reader_t *reader);
-
 
 /***********************************************************
  *   save the distance array to file to avoid future computation

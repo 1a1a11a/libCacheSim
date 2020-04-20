@@ -16,8 +16,7 @@ extern "C" {
 
 #include <assert.h>
 #include "FIFO.h"
-#include "cacheAlgUtils.h"
-#include "../../utils/include/utilsInternal.h"
+#include "../utils/include/utilsInternal.h"
 
 cache_t *FIFO_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("FIFO", size, obj_id_type);

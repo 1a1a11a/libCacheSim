@@ -5,17 +5,11 @@
 #include "test_common.h"
 
 
-void _verify_profiler_results(const profiler_res_t *const res, const guint64 n_bins,
+void _verify_profiler_results(const profiler_res_t *const res, const guint64 num_of_sizes,
                               const guint64 req_cnt_true, const guint64 *const miss_cnt_true,
                               const guint64 req_byte_true, const guint64 *const miss_byte_true) {
 
-  g_assert_cmpuint(res[0].cache_size, ==, 0);
-  g_assert_cmpuint(res[0].req_cnt, ==, 0);
-  g_assert_cmpuint(res[0].miss_cnt, ==, 0);
-  g_assert_cmpuint(res[0].req_byte, ==, 0);
-  g_assert_cmpuint(res[0].miss_byte, ==, 0);
-
-  for (int i = 1; i < n_bins; i++) {
+  for (int i = 0; i < num_of_sizes; i++) {
     g_assert_cmpuint(req_cnt_true, ==, res[i].req_cnt);
     g_assert_cmpuint(miss_cnt_true[i], ==, res[i].miss_cnt);
     g_assert_cmpuint(req_byte_true, ==, res[i].req_byte);
@@ -25,15 +19,15 @@ void _verify_profiler_results(const profiler_res_t *const res, const guint64 n_b
 
 void test_FIFO(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
-  guint64 miss_cnt_true[] = {0, 93193, 87172, 84321, 83888, 72331, 72230, 72181, 72141};
-  guint64 miss_byte_true[] = {0, 4035451392, 3815613440, 3724681728, 3751948288, 3083697664, 3081942528, 3081872384, 3080036864};
+  guint64 miss_cnt_true[] = {93193, 87172, 84321, 83888, 72331, 72230, 72181, 72141};
+  guint64 miss_byte_true[] = {4035451392, 3815613440, 3724681728, 3751948288, 3083697664, 3081942528, 3081872384, 3080036864};
 
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("FIFO", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  _verify_profiler_results(res, CACHE_SIZE/BIN_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
   cache->core->cache_free(cache);
   g_free(res);
 }
@@ -46,14 +40,14 @@ void test_Optimal(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("FIFO", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
+  for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
            res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
   }
 
-  _verify_profiler_results(res, CACHE_SIZE/BIN_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
   cache->core->cache_free(cache);
   g_free(res);
 }
@@ -63,9 +57,9 @@ void test_Random(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("Random", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
+  for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("Random cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
            res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
   }
@@ -83,14 +77,14 @@ void test_LFU(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("FIFO", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
+  for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
     res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
   }
 
-  _verify_profiler_results(res, CACHE_SIZE/BIN_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
   cache->core->cache_free(cache);
   g_free(res);
 }
@@ -104,14 +98,14 @@ void test_MRU(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("FIFO", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
+  for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
            res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
   }
 
-  _verify_profiler_results(res, CACHE_SIZE/BIN_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
   cache->core->cache_free(cache);
   g_free(res);
 }
@@ -124,14 +118,14 @@ void test_LRU_K(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("FIFO", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
+  for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
            res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
   }
 
-  _verify_profiler_results(res, CACHE_SIZE/BIN_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
   cache->core->cache_free(cache);
   g_free(res);
 }
@@ -144,14 +138,14 @@ void test_ARC(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("FIFO", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
+  for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
            res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
   }
 
-  _verify_profiler_results(res, CACHE_SIZE/BIN_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
   cache->core->cache_free(cache);
   g_free(res);
 }
@@ -165,14 +159,14 @@ void test_SLRU(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   cache_t *cache = create_cache("FIFO", CACHE_SIZE, reader->base->obj_id_type, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, BIN_SIZE, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
-  for (int i=0; i<CACHE_SIZE/BIN_SIZE+1; i++){
+  for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
            res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
   }
 
-  _verify_profiler_results(res, CACHE_SIZE/BIN_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
   cache->core->cache_free(cache);
   g_free(res);
 }
