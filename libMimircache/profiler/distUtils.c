@@ -2,14 +2,13 @@
 // Created by Juncheng Yang on 11/24/19.
 //
 
-#include "../include/mimircache/distUtils.h"
-#include "../include/mimircache/profilerUtils.h"
-#include "distUtilsInternal.h"
-#include "utilsInternal.h"
-
-
 #include <sys/stat.h>
 #include <assert.h>
+
+#include "../include/mimircache/distUtils.h"
+#include "distUtilsInternal.h"
+#include "utilsInternal.h"
+#include "splay.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -110,7 +109,7 @@ gint64 *get_future_stack_dist(reader_t *reader) {
 }
 
 
-gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, request_t *)) {
+gint64 *_get_last_access_dist(reader_t *reader, void (*funcPtr)(reader_t *, request_t *)) {
   guint64 n_req = get_num_of_req(reader);
   request_t *req = new_request(reader->base->obj_id_type);
   gint64 *dist_array = g_new(gint64, n_req);
@@ -122,12 +121,6 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
 
   gint64 ts = 0;
   gint64 dist, max_dist = 0;
-  gboolean is_csv_with_header = FALSE;
-  if (reader->base->trace_type == CSV_TRACE) {
-    csv_params_t *params = reader->reader_params;
-    if (params->has_header)
-      is_csv_with_header = TRUE;
-  }
 
   if (funcPtr == read_one_req) {
     read_one_req(reader, req);
@@ -149,12 +142,12 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
       dist_array[ts] = dist;
     } else if (funcPtr == read_one_req_above) {
       if ((gint64) (n_req - 1 - ts) < 0) {
-        if ((gint64) n_req - 1 - ts == -1 && is_csv_with_header) {
+        if (reader->base->trace_type == CSV_TRACE) {
           funcPtr(reader, req);
           ts++;
           continue;
         } else {
-          ERROR("index error in _get_last_access_dist_seq when get next access dist\n");
+          ERROR("index error in _get_last_access_dist when get next access dist\n");
           abort();
         }
       }
@@ -163,15 +156,6 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
     funcPtr(reader, req);
     ts++;
   }
-
-
-//  if (reader->sdata->stack_dist != NULL) {
-//    g_free(reader->sdata->stack_dist);
-//    reader->sdata->stack_dist = NULL;
-//  }
-//  reader->sdata->stack_dist = dist_array;
-//  reader->sdata->max_stack_dist = max_dist;
-//  reader->sdata->stack_dist_type = dist_type;
 
   // clean up
   free_request(req);
@@ -182,7 +166,7 @@ gint64 *_get_last_access_dist_seq(reader_t *reader, void (*funcPtr)(reader_t *, 
 
 
 gint64 *get_last_access_dist(reader_t *reader) {
-  return _get_last_access_dist_seq(reader, read_one_req);
+  return _get_last_access_dist(reader, read_one_req);
 }
 
 
@@ -195,7 +179,7 @@ gint64 *get_last_access_dist(reader_t *reader) {
  */
 gint64 *get_next_access_dist(reader_t *reader) {
 //  WARNING("%s has some overhead, need a rewrite\n", __func__);
-  return _get_last_access_dist_seq(reader, read_one_req_above);
+  return _get_last_access_dist(reader, read_one_req_above);
 }
 
 

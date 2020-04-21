@@ -53,10 +53,10 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
 
   while (req->valid) {
     req_cnt++;
-    req_byte += req->size;
+    req_byte += req->obj_size;
     if (!add(local_cache, req)) {
       miss_cnt++;
-      miss_byte += req->size;
+      miss_byte += req->obj_size;
     }
     read_one_req(cloned_reader, req);
   }

@@ -14,19 +14,18 @@ extern "C"
 #endif
 
 
-int binaryReader_setup(const char *const filename,
-                       reader_t *const reader,
-                       const reader_init_param_t *const init_params) {
+int binaryReader_setup(reader_t *const reader) {
 
   reader->base->trace_type = BIN_TRACE;
   reader->base->item_size = 0;
 
   reader->reader_params = g_new0(binary_params_t, 1);
+  reader_init_param_t *init_params = &reader->base->init_params;
   binary_params_t *params = (binary_params_t *) reader->reader_params;
 
 
   /* begin parsing input params and fmt */
-  const char *fmt_str = init_params->binary_fmt;
+  const char *fmt_str = reader->base->init_params.binary_fmt;
   // ignore the first few characters related to endien
   while (!((*fmt_str >= '0' && *fmt_str <= '9') || (*fmt_str >= 'a' && *fmt_str <= 'z') || (*fmt_str >= 'A' && *fmt_str <= 'Z'))) {
     fmt_str++;

@@ -132,7 +132,7 @@ static inline int binary_read(reader_t *reader, request_t *req) {
   }
   if (params->obj_size_type) {
     binary_extract(record, params->obj_size_field, params->obj_size_len,
-                   params->obj_size_type, &(req->size));
+                   params->obj_size_type, &(req->obj_size));
   }
   if (params->op_type) {
     binary_extract(record, params->op_field, params->op_len,
@@ -148,9 +148,7 @@ static inline int binary_read(reader_t *reader, request_t *req) {
 }
 
 /* function to setup binary reader */
-int binaryReader_setup(const char *const filename,
-                       reader_t *const reader,
-                       const reader_init_param_t *const params);
+int binaryReader_setup(reader_t *const reader);
 
 #ifdef __cplusplus
 }

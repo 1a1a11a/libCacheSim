@@ -16,8 +16,7 @@ extern "C"
 #endif
 
 
-int vscsi_setup(const char *const filename,
-                reader_t *const reader){
+int vscsi_setup(reader_t *const reader){
     
     vscsi_params_t* params = g_new0(vscsi_params_t, 1);
     

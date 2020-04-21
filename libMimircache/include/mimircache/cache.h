@@ -24,7 +24,7 @@ extern "C" {
 #include "const.h"
 #include "macro.h"
 #include "logging.h"
-#include "utils.h"
+
 #include "request.h"
 #include "cacheObj.h"
 
@@ -60,9 +60,6 @@ struct cache_core {
   void (*remove_obj)(struct cache *, void *);
 
   cache_obj_t *(*get_cached_obj)(struct cache *, request_t *);
-
-  break_point_t *bp;           // break points, same as the one in reader, just one more pointer
-  guint64 bp_pos;              // the current location in bp->array
 
 };
 

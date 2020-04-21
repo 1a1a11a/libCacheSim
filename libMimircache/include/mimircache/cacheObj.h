@@ -20,7 +20,7 @@ typedef struct {
 
 static inline cache_obj_t* create_cache_obj_from_req(request_t* req){
   cache_obj_t *cache_obj = g_new0(cache_obj_t, 1);
-  cache_obj->size = req->size;
+  cache_obj->size = req->obj_size;
   cache_obj->extra_data = req->extra_data;
   cache_obj->extra_data_ptr = req->extra_data_ptr;
   cache_obj->obj_id_ptr = req->obj_id_ptr;
@@ -31,7 +31,7 @@ static inline cache_obj_t* create_cache_obj_from_req(request_t* req){
 }
 
 static inline void update_cache_obj(cache_obj_t* cache_obj, request_t* req){
-  cache_obj->size = req->size;
+  cache_obj->size = req->obj_size;
   cache_obj->extra_data = req->extra_data;
   if (cache_obj->extra_data_ptr){
     g_free(cache_obj->extra_data_ptr);

@@ -16,8 +16,6 @@ extern "C" {
 #include "mimircache/plugin.h"
 #include "mimircache/profilerLRU.h"
 #include "mimircache/profiler.h"
-#include "mimircache/profilerUtils.h"
-#include "mimircache/heatmap.h"
 #include "mimircache/logging.h"
 
 

@@ -11,7 +11,6 @@
 
 
 #include "../../libMimircache/include/mimircache/heatmap.h"
-#include "utils.h"
 
 #include "../../libMimircache/include/mimircache/reader.h"
 #include "../libMimircache/include/mimircache/csvReader.h"

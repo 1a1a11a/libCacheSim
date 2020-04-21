@@ -16,15 +16,15 @@ namespace std {
   public:
     // we assume all pointer is at least 64-bit
     void *obj_id;
-    obj_id_t obj_id_type;
+    obj_id_type_t obj_id_type;
     uint32_t size;
     void *extra_data;
 
-    CacheObj(request *req) : size(req->size), obj_id_type(req->obj_id_type), extra_data(req->extra_data) {
+    CacheObj(request *req) : size(req->obj_size), obj_id_type(req->obj_id_type), extra_data(req->extra_data_ptr) {
       if (req->obj_id_type == OBJ_ID_NUM) {
         this->obj_id = req->obj_id_ptr;
       } else if (req->obj_id_type == OBJ_ID_STR) {
-        this->obj_id = static_cast<void *> (new std::string(static_cast<char*>(req->obj_id)));
+        this->obj_id = static_cast<void *> (new std::string(static_cast<char*>(req->obj_id_ptr)));
       } else {
         std::cerr << "CacheObj initialization: unknown obj_id_type " << req->obj_id_type << " in request" << std::endl;
         abort();

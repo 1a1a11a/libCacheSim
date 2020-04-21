@@ -15,7 +15,6 @@
 #include <glib.h>
 #include <string.h>
 #include <stdint.h>
-#include "utils.h"
 #include "../../include/mimircache/cache.h"
 #include "../../include/mimircache/reader.h"
 #include "../../include/mimircache/const.h"

@@ -38,9 +38,7 @@ typedef struct{
 }csv_params_t;
 
 
-void csv_setup_reader(const char *const file_loc,
-                      reader_t *const reader,
-                      const reader_init_param_t *const init_params);
+void csv_setup_reader(reader_t *const reader);
 
 void csv_read_one_element(reader_t *const,
                           request_t *const);

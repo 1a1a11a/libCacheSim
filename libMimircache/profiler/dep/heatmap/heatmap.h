@@ -14,10 +14,9 @@
 #include <glib.h>
 #include <unistd.h>
 #include "reader.h"
-#include "utils.h"
 #include "cache.h"
 #include "profilerLRU.h"
-#include "utils.h"
+
 #include "const.h"
 #include "request.h"
 #include <math.h>

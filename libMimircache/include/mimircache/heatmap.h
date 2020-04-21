@@ -15,13 +15,10 @@
 #include <unistd.h>
 #include <math.h>
 #include "reader.h"
-#include "utils.h"
 #include "cache.h"
 #include "profilerLRU.h"
-#include "utils.h"
 #include "const.h"
 #include "request.h"
-#include "profilerUtils.h"
 
 
 #ifdef __cplusplus

@@ -44,7 +44,7 @@ void test_Optimal(gconstpointer user_data) {
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
+           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
@@ -61,7 +61,7 @@ void test_Random(gconstpointer user_data) {
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("Random cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
+           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
 
   cache->core->cache_free(cache);
@@ -81,7 +81,7 @@ void test_LFU(gconstpointer user_data) {
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-    res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
+           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
@@ -102,7 +102,7 @@ void test_MRU(gconstpointer user_data) {
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
+           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
@@ -122,7 +122,7 @@ void test_LRU_K(gconstpointer user_data) {
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
+           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
@@ -142,7 +142,7 @@ void test_ARC(gconstpointer user_data) {
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
+           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
@@ -163,7 +163,7 @@ void test_SLRU(gconstpointer user_data) {
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE+1; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
-           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_byte, res[i].miss_byte);
+           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE+1, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);

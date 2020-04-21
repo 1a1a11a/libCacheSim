@@ -14,7 +14,6 @@
 #include <math.h>
 #include <glib.h>
 #include "../../include/mimircache/reader.h"
-#include "utils.h"
 #include "../../include/mimircache/cache.h"
 #include "../../include/mimircache/const.h"
 #include "splay.h"

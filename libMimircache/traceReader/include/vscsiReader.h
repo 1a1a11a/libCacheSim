@@ -118,7 +118,7 @@ static inline int vscsi_read_ver1(reader_t* reader, request_t* c){
     trace_v1_record_t *record = (trace_v1_record_t *)(reader->base->mapped_file
                                                       + reader->base->mmap_offset);
     c->real_time = record->ts;
-    c->size = record->len;
+    c->obj_size = record->len;
     c->op = record->cmd;
     c->obj_id_ptr = GSIZE_TO_POINTER(record->lbn);
     (reader->base->mmap_offset) += reader->base->item_size;
@@ -130,7 +130,7 @@ static inline int vscsi_read_ver2(reader_t* reader, request_t* c){
     trace_v2_record_t *record = (trace_v2_record_t *)(reader->base->mapped_file
                                                       + reader->base->mmap_offset);
     c->real_time = record->ts;
-    c->size = record->len;
+    c->obj_size = record->len;
     c->op = record->cmd;
     *((guint64*)(c->obj_id_ptr)) = record->lbn;
     (reader->base->mmap_offset) += reader->base->item_size;
@@ -164,7 +164,7 @@ static inline int vscsi_read(reader_t* reader, request_t* c){
 }
 
 
-int vscsi_setup(const char *const filename, reader_t *const reader);
+int vscsi_setup(reader_t *const reader);
 vscsi_version_t test_vscsi_version(void *trace);
 
 

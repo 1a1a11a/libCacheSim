@@ -13,10 +13,11 @@ extern "C"
 
 #include "../../include/mimircache.h"
 #include "utilsInternal.h"
+#include "splay.h"
 
 
 /***********************************************************
- * this function is called by _get_last_access_dist_seq,
+ * this function is called by _get_last_access_dist,
  * it insert current request and return distance to its last request
  * @param req           request_t contains current request
  * @param hash_table    the hashtable for remembering last access

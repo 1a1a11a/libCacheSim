@@ -46,7 +46,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   } else if (params->current_field_counter == init_params->op_field) {
     fprintf(stderr, "currently operation column is not supported\n");
   } else if (params->current_field_counter == init_params->obj_size_field) {
-    req->size = (guint64) atoll((char *) s);
+    req->obj_size = (guint64) atoll((char *) s);
   }
 
   params->current_field_counter++;
@@ -67,12 +67,11 @@ static inline void csv_cb2(int c, void *data) {
 }
 
 
-void csv_setup_reader(const char *const file_loc,
-                      reader_t *const reader,
-                      const reader_init_param_t *const init_params) {
+void csv_setup_reader(reader_t *const reader) {
   unsigned char options = CSV_APPEND_NULL;
   reader->reader_params = g_new0(csv_params_t, 1);
   csv_params_t *params = reader->reader_params;
+  reader_init_param_t *init_params = &reader->base->init_params;
 
   params->csv_parser = g_new(struct csv_parser, 1);
   if (csv_init(params->csv_parser, options) != 0) {
@@ -80,17 +79,14 @@ void csv_setup_reader(const char *const file_loc,
     exit(1);
   }
 
-  reader->base->file = fopen(file_loc, "rb");
+
+  reader->base->file = fopen(reader->base->trace_path, "rb");
   if (reader->base->file == 0) {
-    ERROR("Failed to open %s: %s\n", file_loc, strerror(errno));
+    ERROR("Failed to open %s: %s\n", reader->base->trace_path, strerror(errno));
     exit(1);
   }
 
   params->current_field_counter = 1;
-//  params->op_field = init_params->op_field;
-//  params->real_time_field = init_params->real_time_field;
-//  params->size_field = init_params->size_field;
-//  params->obj_id_field = init_params->obj_id_field;
   params->already_got_req = FALSE;
   params->reader_end = FALSE;
 
