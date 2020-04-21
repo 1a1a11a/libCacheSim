@@ -13,6 +13,11 @@ extern "C" {
 #include <stdlib.h>
 #include <dlfcn.h>
 #include "mimircache.h"
+#include "mimircache/cache.h"
+#include "mimircache/reader.h"
+// #include "../../libMimircache/include/mimircache.h"
+// #include "../../libMimircache/include/mimircache/cache.h"
+// #include "../../libMimircache/include/mimircache/reader.h"
 
 
 #ifdef __cplusplus

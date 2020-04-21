@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (mimircacheExampleC)
+project (mimircacheExample)
 set(CMAKE_BUILD_TYPE Debug)
 
 message("****************** this example only works after mimircache has been installed ******************")
@@ -18,6 +18,18 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_FLAGS_DEBUG " -L/usr/local/lib -lglib-2.0 -lintl -Wno-unused-command-line-argument")
 endif()
 
+find_library(libMC libMimircache)
+find_path(libMCInclude libMimircache)
+message(STATUS "libMC" ${libMC} ${libMCInclude})
+
+#find_package (libMimircache)
+#if (LIBMIMIRCACHE_FOUND)
+#    message(STATUS "libMC" ${LIBMIMIRCACHE_INCLUDE_DIRS} ${LIBMIMIRCACHE_LIBRARIES})
+#    include_directories(${LIBMIMIRCACHE_INCLUDE_DIRS})
+#    target_link_libraries (helloworld ${LIBMIMIRCACHE_LIBRARIES})
+#endif (LIBMIMIRCACHE_FOUND)
+
+
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # find libglib2.0-dev
@@ -31,7 +43,7 @@ message(STATUS "glib found? " ${GLib_FOUND} ", GLIB = " ${GLib_LIBRARY} ", heade
 file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.c)
 message(STATUS "all sources " ${ALL_SRC})
 add_executable(cacheSimulator ${ALL_SRC})
-target_link_libraries(cacheSimulator mimircache m ${GLib_LIBRARY} -lpthread -ldl)
+target_link_libraries(cacheSimulator libmimircache m ${GLib_LIBRARY} -lpthread -ldl)
 
 
 ################ this mode compiles the external cache replacement algorithm as shared library ################
