@@ -82,7 +82,6 @@ gboolean slabObjLRU_add(cache_t *cache, request_t *req) {
     slabObjLRU_params->ts++;
     retval = FALSE;
   }
-  cache->core->ts += 1;
   return retval;
 }
 
@@ -95,7 +94,7 @@ void slabObjLRU_destroy(cache_t *cache) {
   // 0921
   g_queue_free(slabObjLRU_params->list);
   g_hash_table_destroy(slabObjLRU_params->hashtable);
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void slabObjLRU_destroy_unique(cache_t *cache) {
@@ -127,8 +126,8 @@ void slabObjLRU_destroy_unique(cache_t *cache) {
  *
  *-----------------------------------------------------------------------------
  */
-cache_t *slabObjLRU_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("slabObjLRU", size, obj_id_type);
+cache_t *slabObjLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
+  cache_t *cache = cache_struct_init("slabObjLRU", size, obj_id_type);
   cache->cache_params = g_new0(struct slabObjLRU_params, 1);
   struct slabObjLRU_params *slabObjLRU_params = (struct slabObjLRU_params *) (cache->cache_params);
 

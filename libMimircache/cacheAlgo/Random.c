@@ -61,7 +61,7 @@ gboolean Random_get(cache_t *cache, request_t *req) {
 void _Random_insert(cache_t *cache, request_t *req) {
   Random_params_t *Random_params = (Random_params_t *)(cache->cache_params);
 
-  cache->core->used_size += req->size;
+  cache->core->used_size += req->obj_size;
   cache_obj_t *cache_obj = create_cache_obj_from_req(req);
 
   g_ptr_array_add(Random_params->array, cache_obj->obj_id_ptr);
@@ -78,7 +78,7 @@ void _Random_update(cache_t *cache, request_t *req) {
   Random_params_t *Random_params = (Random_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = g_hash_table_lookup(Random_params->hashtable, req->obj_id_ptr);
   cache->core->used_size -= cache_obj->size;
-  cache->core->used_size += req->size;
+  cache->core->used_size += req->obj_size;
   update_cache_obj(cache_obj, req);
 }
 

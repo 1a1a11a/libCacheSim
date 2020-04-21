@@ -1,5 +1,7 @@
 //
-// Created by Juncheng Yang on 11/22/19.
+// evict the least recent created slab
+//
+// Created by Juncheng Yang on 04/22/20.
 //
 
 #include "slabLRC.h"
@@ -70,13 +72,12 @@ gboolean slabLRC_add(cache_t *cache, request_t *req) {
     slabLRC_params->ts++;
     retval = TRUE;
   } else {
-    _slabLRC_insert(cache, req);
+    _slabLRC_insert(cache, req); 
     if ((long) g_hash_table_size(slabLRC_params->hashtable) > cache->core->size)
       _slabLRC_evict(cache, req);
     slabLRC_params->ts++;
     retval = FALSE;
   }
-  cache->core->ts += 1;
   return retval;
 }
 
@@ -89,7 +90,7 @@ void slabLRC_destroy(cache_t *cache) {
   // 0921
   g_queue_free(slabLRC_params->list);
   g_hash_table_destroy(slabLRC_params->hashtable);
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void slabLRC_destroy_unique(cache_t *cache) {
@@ -121,8 +122,8 @@ void slabLRC_destroy_unique(cache_t *cache) {
  *
  *-----------------------------------------------------------------------------
  */
-cache_t *slabLRC_init(guint64 size, obj_id_t obj_id_type, void *params) {
-  cache_t *cache = cache_init("slabLRC", size, obj_id_type);
+cache_t *slabLRC_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
+  cache_t *cache = cache_struct_init("slabLRC", size, obj_id_type);
   cache->cache_params = g_new0(struct slabLRC_params, 1);
   struct slabLRC_params *slabLRC_params = (struct slabLRC_params *) (cache->cache_params);
 

@@ -38,23 +38,21 @@ set(LIBS ${LIBS} ${GLib_LIBRARY})
 message(STATUS "glib found? " ${GLib_FOUND} ", LIBS = " ${LIBS} ", header = " ${GLib_INCLUDE_DIRS})
 
 
-#aux_source_directory(../example dirmimircache)
-#message(STATUS "mimircache sources = " ${dirmimircache})
-
-
 message("CMAKE_CURRENT_SOURCE_DIR is " ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cache/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceReader/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/readerUtils/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiler/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils/include)
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/readerUtils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 

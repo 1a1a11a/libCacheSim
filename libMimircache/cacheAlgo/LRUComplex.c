@@ -14,13 +14,13 @@ extern "C" {
 void _LRUComplex_insert(cache_t *cache, request_t *req) {
   LRUComplex_params_t *LRUComplex_params = (struct LRUComplex_params *) (cache->cache_params);
   cache_obj_t *cache_obj = g_new(cache_obj_t, 1);
-  cache_obj->size = req->size;
+  cache_obj->size = req->obj_size;
   cache_obj->extra_data_ptr = req->extra_data_ptr;
   cache_obj->obj_id_ptr = req->obj_id_ptr;
 #ifdef TRACK_ACCESS_TIME
   cache_obj->access_time = LRUComplex_params->logical_ts;
 #endif
-  cache->core->used_size += req->size;
+  cache->core->used_size += req->obj_size;
 
   if (req->obj_id_type == OBJ_ID_STR) {
     cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));
@@ -49,8 +49,8 @@ void _LRUComplex_update(cache_t *cache, request_t *req) {
     abort();
   }
   cache->core->used_size -= cache_obj->size;
-  cache->core->used_size += req->size;
-  cache_obj->size = req->size;
+  cache->core->used_size += req->obj_size;
+  cache_obj->size = req->obj_size;
   // we shouldn't update extra_data_ptr here, otherwise, the old extra_data_ptr will be (memory) leaked
   // cache_obj->extra_data_ptr = req->extra_data_ptr;
 #ifdef TRACK_ACCESS_TIME
@@ -144,7 +144,7 @@ gpointer _LRUComplex_evict_with_return(cache_t *cache, request_t *req) {
 
 gboolean LRUComplex_add(cache_t *cache, request_t *req) {
   LRUComplex_params_t *LRUComplex_params = (struct LRUComplex_params *) (cache->cache_params);
-  if (req->size == 0) {
+  if (req->obj_size == 0) {
     ERROR("LRUComplex get size zero for request\n");
     abort();
   }
@@ -159,7 +159,7 @@ gboolean LRUComplex_add(cache_t *cache, request_t *req) {
 
 
   gboolean exist = LRUComplex_check(cache, req);
-  if (req->size <= cache->core->size) {
+  if (req->obj_size <= cache->core->size) {
     if (exist)
       _LRUComplex_update(cache, req);
     else
@@ -168,7 +168,7 @@ gboolean LRUComplex_add(cache_t *cache, request_t *req) {
     while (cache->core->used_size > cache->core->size)
       _LRUComplex_evict(cache, req);
   } else {
-    WARNING("obj size %ld larger than cacheAlgo size %ld\n", (long) (req->size), cache->core->size);
+    WARNING("obj size %ld larger than cacheAlgo size %ld\n", (long) (req->obj_size), cache->core->size);
   }
 
 

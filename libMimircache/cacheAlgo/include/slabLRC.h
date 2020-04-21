@@ -1,5 +1,7 @@
 //
-// Created by Juncheng Yang on 11/22/19.
+// evict the least recent created slab
+//
+// Created by Juncheng Yang on 04/22/20.
 //
 
 #ifndef MIMIRCACHE_SLABLRC_H
@@ -63,7 +65,7 @@ extern void slabLRC_destroy(cache_t *cache);
 extern void slabLRC_destroy_unique(cache_t *cache);
 
 
-cache_t *slabLRC_init(guint64 size, obj_id_t obj_id_type, void *params);
+cache_t *slabLRC_init(guint64 size, obj_id_type_t obj_id_type, void *params);
 
 
 extern void slabLRC_remove_obj(cache_t *cache, void *data_to_remove);

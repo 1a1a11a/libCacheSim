@@ -43,7 +43,7 @@ gboolean LRU_check(cache_t *cache, request_t *req) {
 
 gboolean LRU_get(cache_t *cache, request_t *req) {
   gboolean found_in_cache = LRU_check(cache, req);
-  if (req->size <= cache->core->size) {
+  if (req->obj_size <= cache->core->size) {
     if (found_in_cache)
       _LRU_update(cache, req);
     else
@@ -53,7 +53,7 @@ gboolean LRU_get(cache_t *cache, request_t *req) {
       _LRU_evict(cache, req);
   } else {
     WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long)cache->core->req_cnt,
-        (long) req->size, (long) cache->core->size);
+            (long) req->obj_size, (long) cache->core->size);
   }
   cache->core->req_cnt += 1;
   return found_in_cache;
@@ -61,7 +61,7 @@ gboolean LRU_get(cache_t *cache, request_t *req) {
 
 void _LRU_insert(cache_t *cache, request_t *req) {
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
-  cache->core->used_size += req->size;
+  cache->core->used_size += req->obj_size;
   cache_obj_t* cache_obj = create_cache_obj_from_req(req);
 
   GList *node = g_list_alloc();
@@ -77,7 +77,7 @@ void _LRU_update(cache_t *cache, request_t *req) {
   cache_obj_t *cache_obj = node->data;
   assert(cache->core->used_size >= cache_obj->size);
   cache->core->used_size -= cache_obj->size;
-  cache->core->used_size += req->size;
+  cache->core->used_size += req->obj_size;
   update_cache_obj(cache_obj, req);
   g_queue_unlink(LRU_params->list, node);
   g_queue_push_tail_link(LRU_params->list, node);

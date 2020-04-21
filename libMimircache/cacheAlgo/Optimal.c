@@ -208,7 +208,7 @@ cache_t *Optimal_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
           g_array_append_val(array, dist[i]);
     }
 
-//    GSList *list = _get_last_access_dist_seq(reader, read_one_req_above);
+//    GSList *list = _get_last_access_dist(reader, read_one_req_above);
 //    if (list == NULL) {
 //      ERROR("error getting last access distance in Optimal_init\n");
 //      exit(1);

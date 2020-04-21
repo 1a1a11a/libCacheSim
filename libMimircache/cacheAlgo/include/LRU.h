@@ -37,7 +37,6 @@ extern cache_obj_t *LRU_get_cached_obj(cache_t *cache, request_t *req);
 extern void LRU_remove_obj(cache_t *cache, void *data_to_remove);
 
 
-
 extern void _LRU_insert(cache_t *LRU, request_t *req);
 
 extern void _LRU_update(cache_t *LRU, request_t *req);
