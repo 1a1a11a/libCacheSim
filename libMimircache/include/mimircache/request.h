@@ -65,7 +65,7 @@ static inline request_t *clone_request(request_t *req) {
   memcpy(req_new, req, sizeof(request_t));
   if (req->obj_id_type == OBJ_ID_STR) {
     req_new->obj_id_ptr = g_new0(char, MAX_OBJ_ID_LEN);
-    strcpy(req_new->obj_id_ptr, req->obj_id_ptr);
+    strcpy((char*) req_new->obj_id_ptr, (char*) req->obj_id_ptr);
   }
   return req_new;
 }

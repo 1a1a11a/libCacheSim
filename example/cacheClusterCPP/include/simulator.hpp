@@ -41,7 +41,6 @@ extern "C" {
 #include "cacheHeader.h"
 #include "csvReader.h"
 #include "reader.h"
-#include "utils.h"
 
 #ifdef __cplusplus
 }

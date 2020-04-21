@@ -142,7 +142,7 @@ void test_twr(gconstpointer user_data) {
     printf("req %d: real time %lu, obj_id %llu, obj_size %ld, ttl %ld, op %d\n", i, (unsigned long) req->real_time,
            (unsigned long long) req->obj_id_ptr, (long) req->obj_size, (long) req->ttl, req->op);
   }
-  printf("%llu req %llu obj\n", n_req, n_obj);
+  printf("%llu req %llu obj\n", (unsigned long long) n_req, (unsigned long long) n_obj);
 }
 
 

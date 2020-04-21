@@ -11,15 +11,11 @@
 #include "cache.h"
 #include "reader.h"
 
-/**
- * create a cache handler, using the cache replacement algorithm is baked into mimircache
- * @param cache_alg_name name of the cache replacement algorithm (case senstive)
- * @param size cache size in unit of byte
- * @param data_type the type of object id in the trace, can be either OBJ_ID_NUM or OBJ_ID_STR
- * @param params the parameter pass to cache initialization
- * @return cache handler
- */
-cache_t* create_cache(const char *cache_alg_name, guint64 size, obj_id_type_t obj_id_type, void* params);
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
 /**
  * create a cache handler, using the cache replacement algorithm is baked into mimircache
@@ -29,7 +25,18 @@ cache_t* create_cache(const char *cache_alg_name, guint64 size, obj_id_type_t ob
  * @param params the parameter pass to cache initialization
  * @return cache handler
  */
-cache_t* create_cache_internal(const char *cache_alg_name, guint64 size, obj_id_type_t obj_id_type, void* params);
+cache_t *create_cache(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params);
+
+/**
+ * create a cache handler, using the cache replacement algorithm is baked into mimircache
+ * @param cache_alg_name name of the cache replacement algorithm (case senstive)
+ * @param size cache size in unit of byte
+ * @param data_type the type of object id in the trace, can be either OBJ_ID_NUM or OBJ_ID_STR
+ * @param params the parameter pass to cache initialization
+ * @return cache handler
+ */
+cache_t *
+create_cache_internal(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params);
 
 
 /**
@@ -42,7 +49,12 @@ cache_t* create_cache_internal(const char *cache_alg_name, guint64 size, obj_id_
  * @param params the parameter pass to cache initialization
  * @return cache handler
  */
-cache_t* create_cache_external(const char *cache_alg_name, guint64 size, obj_id_type_t obj_id_type, void* params);
+cache_t *
+create_cache_external(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif //MIMIRCACHE_PLUGIN_H
