@@ -1,0 +1,23 @@
+L1:
+  size: 8GB
+  path:
+    - /home/jason/data/CDN/akamai4Emory/bin/nyc_1731.bin
+    - /home/jason/data/CDN/akamai4Emory/bin/nyc_189.bin
+    - /home/jason/data/CDN/akamai4Emory/bin/nyc_1966.bin
+    - /home/jason/data/CDN/akamai4Emory/bin/nyc_66.bin
+    - /home/jason/data/CDN/akamai4Emory/bin/nyc_85.bin
+
+L2:
+  size:
+    - 2GB
+    - 4GB
+    - 8GB
+    - 16GB
+    - 32GB
+    - 64GB
+    - 128GB
+    - 256GB
+    - 512GB
+    - 1024GB
+
+output: result
