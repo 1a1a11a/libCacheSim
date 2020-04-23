@@ -24,6 +24,7 @@ typedef struct {
   gint slabclass_id;
   guint32 n_total_items;
   guint32 n_stored_items;
+  GList *q_node;          // the node in global slab queue, used for slabLRU
   gpointer *slab_items;
 } slab_t;
 
@@ -31,6 +32,8 @@ typedef struct {
   guint32 chunk_size;
   guint32 n_stored_items;
   GQueue *free_slab_q;
+  GQueue *obj_q;      // used only for obj eviction algo
+  guint32 last_access_time;     // used for slab automove
 } slabclass_t;
 
 typedef struct {
@@ -38,7 +41,7 @@ typedef struct {
   slabclass_t slabclasses[N_SLABCLASS];
   guint64 n_total_slabs;
   guint64 n_allocated_slabs;
-  GQueue *queue;    /* slab queue for slabLRC and slabLRU, item queue for obj LRU */
+  GQueue *slab_q;    /* slab queue for slabLRC and slabLRU */
   int8_t per_obj_metadata_size; // memcached on 64-bit system has 48/56 byte metadata (no cas/cas)
 } slab_params_t;
 
@@ -54,6 +57,8 @@ static slab_t *allocate_slab(slab_params_t *slab_params, gint id);
 
 static void _slab_destroyer(gpointer data) {
   slab_t *slab = (slab_t *) data;
+//  for (int i=0; i<slab->n_stored_items; i++)
+//    cache_obj_destroyer(slab->slab_items[i]);
   g_free(slab->slab_items);
   g_free(data);
 }
@@ -62,6 +67,7 @@ static inline void init_slabclass(slab_params_t *slab_params, gint id) {
   slab_params->slabclasses[id].chunk_size = SLABCLASS_SIZES[id];
   slab_params->slabclasses[id].n_stored_items = 0;
   slab_params->slabclasses[id].free_slab_q = g_queue_new();
+  slab_params->slabclasses[id].obj_q = g_queue_new();
   allocate_slab(slab_params, id);
 }
 
@@ -80,19 +86,42 @@ static inline slab_t *allocate_slab(slab_params_t *slab_params, gint id) {
   new_slab->n_total_items = slab_params->slab_size / chunk_size;
   new_slab->slab_items = g_new0(gpointer, new_slab->n_total_items);
   slabclass_t *slabclass = &slab_params->slabclasses[id];
-  g_queue_push_tail(slab_params->queue, new_slab);
+
+  // store the slab in global slab queue for slab eviction
+  GList *q_node = g_list_alloc();
+  q_node->data = new_slab;
+  new_slab->q_node = q_node;
+  g_queue_push_tail_link(slab_params->slab_q, q_node);
+
+//  g_queue_push_tail(slab_params->queue, new_slab);
+
+  // store the slab in slabclass free queue
   g_queue_push_tail(slabclass->free_slab_q, new_slab);
+
   slab_params->n_allocated_slabs += 1;
   DEBUG3("allocate slab %d total %u items - current slab queue length %u\n", id, new_slab->n_total_items,
-         g_queue_get_length(slab_params->queue));
+         g_queue_get_length(slab_params->slab_q));
   return new_slab;
 }
 
-static inline void add_to_slabclass(cache_t *cache, request_t *req, slab_cache_obj_t *cache_obj,
+/**
+ * add an object into slab, if there is no available space, evict before inserting it
+ *
+ * return slab_id
+ * @param cache
+ * @param req
+ * @param cache_obj
+ * @param slab_params
+ * @param evict_func
+ * @param slab_move_func
+ * @return
+ */
+static inline gint add_to_slabclass(cache_t *cache, request_t *req, slab_cache_obj_t *cache_obj,
                                     slab_params_t *slab_params,
                                     evict_func_ptr_t evict_func, slab_move_func_ptr_t slab_move_func) {
   gint slab_id = find_slabclass_id(req->obj_size);
   slabclass_t *slabclass = &slab_params->slabclasses[slab_id];
+  slabclass->last_access_time = req->real_time;
   slab_t *slab = NULL;
 
   if (g_queue_peek_head(slabclass->free_slab_q) != NULL) {
@@ -123,8 +152,9 @@ static inline void add_to_slabclass(cache_t *cache, request_t *req, slab_cache_o
     if (slab_move_func != NULL) {
       slab_move_func(cache, req);
     }
-    add_to_slabclass(cache, req, cache_obj, slab_params, evict_func, slab_move_func);
+    return add_to_slabclass(cache, req, cache_obj, slab_params, evict_func, slab_move_func);
   }
+  return slab_id;
 }
 
 

@@ -63,7 +63,7 @@ void _LRU_insert(cache_t *cache, request_t *req) {
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   cache->core->used_size += req->obj_size;
   cache_obj_t* cache_obj = create_cache_obj_from_req(req);
-
+  // TODO: use SList should be more memory efficient than queue which uses doubly-linklist under the hood
   GList *node = g_list_alloc();
   node->data = cache_obj;
   g_queue_push_tail_link(LRU_params->list, node);

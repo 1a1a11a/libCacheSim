@@ -22,8 +22,9 @@ extern "C"
 #include "SLRU.h"
 
 
-//#include "slabLRU.h"
+#include "slabLRU.h"
 #include "slabLRC.h"
+#include "slabObjLRU.h"
 
 
 //#include "AMP.h"

@@ -9,16 +9,19 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include "../libMimircache/include/mimircache.h"
-#include "../libMimircache/cacheAlgo/include/LRU.h"
-#include "../libMimircache/cacheAlgo/include/FIFO.h"
-#include "../libMimircache/cacheAlgo/include/Random.h"
-#include "../libMimircache/cacheAlgo/include/LRU_K.h"
-#include "../libMimircache/cacheAlgo/include/SLRU.h"
-#include "../libMimircache/cacheAlgo/include/LFU.h"
-#include "../libMimircache/cacheAlgo/include/LFUFast.h"
-#include "../libMimircache/cacheAlgo/include/ARC.h"
-#include "../libMimircache/cacheAlgo/include/Optimal.h"
-#include "../libMimircache/cacheAlgo/include/slabLRC.h"
+//#include "../libMimircache/cacheAlgo/include/LRU.h"
+//#include "../libMimircache/cacheAlgo/include/FIFO.h"
+//#include "../libMimircache/cacheAlgo/include/Random.h"
+//#include "../libMimircache/cacheAlgo/include/LRU_K.h"
+//#include "../libMimircache/cacheAlgo/include/SLRU.h"
+//#include "../libMimircache/cacheAlgo/include/LFU.h"
+//#include "../libMimircache/cacheAlgo/include/LFUFast.h"
+//#include "../libMimircache/cacheAlgo/include/ARC.h"
+//#include "../libMimircache/cacheAlgo/include/Optimal.h"
+//#include "../libMimircache/cacheAlgo/include/slabLRC.h"
+//#include "../libMimircache/cacheAlgo/include/slabLRU.h"
+
+#include "../libMimircache/cacheAlgo/include/cacheAlgoHeaders.h"
 
 
 #define BLOCK_UNIT_SIZE 0    // 16 * 1024
@@ -118,8 +121,12 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
     init_params->reader = reader;
     init_params->ts = 0;
     cache = Optimal_init(cache_size, reader->base->obj_id_type, (void *) init_params);
-  } else if (strcmp(alg_name, "LRU") == 0) {
+  } else if (strcmp(alg_name, "slabLRC") == 0) {
     cache = slabLRC_init(cache_size, reader->base->obj_id_type, NULL);
+  } else if (strcmp(alg_name, "slabLRU") == 0) {
+    cache = slabLRU_init(cache_size, reader->base->obj_id_type, NULL);
+  } else if (strcmp(alg_name, "slabObjLRU") == 0) {
+    cache = slabObjLRU_init(cache_size, reader->base->obj_id_type, NULL);
 
 //  } else if (strcmp(alg_name, "PG") == 0) {
 //    PG_init_params_t *init_params = g_new0(PG_init_params_t, 1);

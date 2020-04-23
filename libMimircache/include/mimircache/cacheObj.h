@@ -48,6 +48,13 @@ static inline void cache_obj_destroyer(gpointer data) {
   g_free(data);
 }
 
+static inline void cache_obj_destroyer_obj_id_str(gpointer data) {
+  cache_obj_t *cache_obj = (cache_obj_t*) data;
+  g_free(cache_obj->obj_id_ptr);
+  g_free(data);
+}
+
+
 static inline void destroy_cache_obj(gpointer data){
   cache_obj_destroyer(data);
 }
@@ -67,7 +74,10 @@ typedef struct {
 static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
   slab_cache_obj_t *cache_obj = g_new0(slab_cache_obj_t, 1);
   cache_obj->obj_size = req->obj_size;
-  cache_obj->ttl = req->real_time + req->ttl;
+  if (req->ttl != 0)
+    cache_obj->ttl = req->real_time + req->ttl;
+  else
+    cache_obj->ttl = G_MAXINT32;
   cache_obj->obj_id_ptr = req->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));
@@ -75,7 +85,10 @@ static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
   return cache_obj;
 }
 
-
+static inline void slab_cache_obj_destroyer(gpointer data){
+//  slab_cache_obj_t *cache_obj = (slab_cache_obj_t*) data;
+  g_free(data);
+}
 
 
 
