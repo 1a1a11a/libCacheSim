@@ -75,8 +75,8 @@ void _LRU_update(cache_t *cache, request_t *req) {
   GList *node = (GList *) g_hash_table_lookup(LRU_params->hashtable, req->obj_id_ptr);
 
   cache_obj_t *cache_obj = node->data;
-  assert(cache->core->used_size >= cache_obj->size);
-  cache->core->used_size -= cache_obj->size;
+  assert(cache->core->used_size >= cache_obj->obj_size);
+  cache->core->used_size -= cache_obj->obj_size;
   cache->core->used_size += req->obj_size;
   update_cache_obj(cache_obj, req);
   g_queue_unlink(LRU_params->list, node);
@@ -94,8 +94,8 @@ void _LRU_evict(cache_t *cache, request_t *req) {
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(LRU_params->list);
 
-  assert(cache->core->used_size >= cache_obj->size);
-  cache->core->used_size -= cache_obj->size;
+  assert(cache->core->used_size >= cache_obj->obj_size);
+  cache->core->used_size -= cache_obj->obj_size;
   g_hash_table_remove(LRU_params->hashtable, (gconstpointer) cache_obj->obj_id_ptr);
   destroy_cache_obj(cache_obj);
 }
@@ -103,8 +103,8 @@ void _LRU_evict(cache_t *cache, request_t *req) {
 gpointer _LRU_evict_with_return(cache_t *cache, request_t *req) {
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = g_queue_pop_head(LRU_params->list);
-  assert(cache->core->used_size >= cache_obj->size);
-  cache->core->used_size -= cache_obj->size;
+  assert(cache->core->used_size >= cache_obj->obj_size);
+  cache->core->used_size -= cache_obj->obj_size;
   gpointer evicted_key = cache_obj->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     evicted_key = (gpointer) g_strdup((gchar *) (cache_obj->obj_id_ptr));
@@ -124,18 +124,18 @@ void LRU_remove_obj(cache_t *cache, gpointer obj_id_ptr) {
     abort();
   }
   cache_obj_t* cache_obj = (cache_obj_t *) (node->data);
-  assert(cache->core->used_size >= cache_obj->size);
-  cache->core->used_size -= ((cache_obj_t *) (node->data))->size;
+  assert(cache->core->used_size >= cache_obj->obj_size);
+  cache->core->used_size -= ((cache_obj_t *) (node->data))->obj_size;
   g_queue_delete_link(LRU_params->list, (GList *) node);
   g_hash_table_remove(LRU_params->hashtable, obj_id_ptr);
   destroy_cache_obj(cache_obj);
 }
 
 
-//GHashTable *LRU_get_objmap(cache_t *cache) {
-//  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
-//  return LRU_params->hashtable;
-//}
+GHashTable *LRU_get_objmap(cache_t *cache) {
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
+  return LRU_params->hashtable;
+}
 
 #ifdef __cplusplus
 extern "C" {

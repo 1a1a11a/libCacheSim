@@ -79,12 +79,12 @@ void _FIFO_update(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
   GList *node = (GList *) g_hash_table_lookup(FIFO_params->hashtable, req->obj_id_ptr);
   cache_obj_t *cache_obj = node->data;
-  if (cache_obj->size != (guint32) req->obj_size && n_warning % 20000 == 0) {
-    WARNING("detecting obj size change cache_obj size %u - req size %u (warning %llu)\n", cache_obj->size, req->obj_size,
-        (long long unsigned) n_warning);
+  if (cache_obj->obj_size != (guint32) req->obj_size && n_warning % 20000 == 0) {
+    WARNING("detecting obj size change cache_obj size %u - req size %u (warning %llu)\n", cache_obj->obj_size, req->obj_size,
+            (long long unsigned) n_warning);
     n_warning += 1;
   }
-  cache->core->used_size -= cache_obj->size;
+  cache->core->used_size -= cache_obj->obj_size;
   cache->core->used_size += req->obj_size;
   update_cache_obj(cache_obj, req);
 }
@@ -92,8 +92,8 @@ void _FIFO_update(cache_t *cache, request_t *req) {
 void _FIFO_evict(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(FIFO_params->list);
-  assert (cache->core->used_size >= cache_obj->size);
-  cache->core->used_size -= cache_obj->size;
+  assert (cache->core->used_size >= cache_obj->obj_size);
+  cache->core->used_size -= cache_obj->obj_size;
   g_hash_table_remove(FIFO_params->hashtable, (gconstpointer) cache_obj->obj_id_ptr);
   destroy_cache_obj(cache_obj);
 }
@@ -101,8 +101,8 @@ void _FIFO_evict(cache_t *cache, request_t *req) {
 gpointer _FIFO_evict_with_return(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = g_queue_pop_head(FIFO_params->list);
-  assert (cache->core->used_size >= cache_obj->size);
-  cache->core->used_size -= cache_obj->size;
+  assert (cache->core->used_size >= cache_obj->obj_size);
+  cache->core->used_size -= cache_obj->obj_size;
   gpointer evicted_key = cache_obj->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     evicted_key = (gpointer) g_strdup((gchar *) (cache_obj->obj_id_ptr));
@@ -122,8 +122,8 @@ void FIFO_remove_obj(cache_t *cache, void *obj_id_ptr) {
     abort();
   }
   cache_obj_t *cache_obj = (cache_obj_t *) (node->data);
-  assert (cache->core->used_size >= cache_obj->size);
-  cache->core->used_size -= cache_obj->size;
+  assert (cache->core->used_size >= cache_obj->obj_size);
+  cache->core->used_size -= cache_obj->obj_size;
   g_queue_delete_link(FIFO_params->list, (GList *) node);
   g_hash_table_remove(FIFO_params->hashtable, obj_id_ptr);
   destroy_cache_obj(cache_obj);

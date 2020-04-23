@@ -15,8 +15,6 @@ extern "C"
 
 
 #include "../include/mimircache/cache.h"
-//#include "../include/mimircache/cacheOp.h"
-
 
 
 void cache_struct_free(cache_t *cache) {
@@ -24,15 +22,6 @@ void cache_struct_free(cache_t *cache) {
     g_free(cache->cache_params);
     cache->cache_params = NULL;
   }
-
-  /* cache->core->cache_init_params is on the stack default,
-   if it is on the heap, needs to be freed manually
-   */
-//    if (cache->core->cache_init_params){
-//        g_free(cache->core->cache_init_params);
-//        cache->core->cache_init_params = NULL;
-//    }
-
   g_free(cache->core);
   cache->core = NULL;
   g_free(cache);
@@ -81,7 +70,7 @@ cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_type_t
 
   /* non essential functions, can be NULL */
   sprintf(func_name, "%s_get_cached_obj", cache_name);
-  cache_obj_t* (*get_cached_obj)(cache_t *, request_t *) = dlsym(handle, func_name);
+  cache_obj_t *(*get_cached_obj)(cache_t *, request_t *) = dlsym(handle, func_name);
 
 //  sprintf(func_name, "%s_update_cached_data", cache_name);
 //  void (*update_cached_data)(cache_t *, request_t *, void *) = dlsym(handle, func_name);

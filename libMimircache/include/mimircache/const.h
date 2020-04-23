@@ -21,10 +21,11 @@ extern "C" {
 #define _GNU_SOURCE             /* for sched in utils.h */
 #endif
 
-#undef __DEBUG__
-#undef _DEBUG
+//#undef __DEBUG__
+//#undef _DEBUG
 
 
+#define SUPPORT_TTL
 
 
 #define MAX_OBJ_ID_LEN 1024

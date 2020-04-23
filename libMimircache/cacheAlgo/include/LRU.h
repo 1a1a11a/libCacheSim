@@ -21,7 +21,6 @@ extern "C"
 typedef struct LRU_params {
   GHashTable *hashtable;
   GQueue *list;
-//    gint64 logical_ts;              // this only works when add is called
 } LRU_params_t;
 
 cache_t *LRU_init(guint64 size, obj_id_type_t obj_id_type, void *params);

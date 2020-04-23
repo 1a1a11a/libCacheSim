@@ -23,7 +23,7 @@ extern "C"
 
 
 //#include "slabLRU.h"
-//#include "slabLRC.h"
+#include "slabLRC.h"
 
 
 //#include "AMP.h"

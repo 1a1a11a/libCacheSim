@@ -14,9 +14,9 @@ extern "C"
 #include "../../include/mimircache/cache.h"
 
 
-GHashTable *create_hash_table_cache_alg();
+//GHashTable *create_hash_table_cache_alg();
 
-void queue_node_destroyer(gpointer data);
+//void queue_node_destroyer(gpointer data);
 
 
 #ifdef __cplusplus

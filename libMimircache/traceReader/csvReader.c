@@ -26,7 +26,6 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   request_t *req = params->req_pointer;
 
   if (params->current_field_counter == init_params->obj_id_field) {
-    // this field is the request obj_id
     if (reader->base->obj_id_type == OBJ_ID_NUM){
 //      printf("current str %s - len %lu - len %lu\n", s, strlen(s), len);
         // len is not correct for the last request for some reason
@@ -34,6 +33,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     } else {
       if (len >= MAX_OBJ_ID_LEN)
         len = MAX_OBJ_ID_LEN - 1;
+      // TODO: I think we do not need to copy the string, we can just have a ptr to the string
       strncpy((char *) (req->obj_id_ptr), (char *) s, len);
       ((char *) (req->obj_id_ptr))[len] = 0;
     }
