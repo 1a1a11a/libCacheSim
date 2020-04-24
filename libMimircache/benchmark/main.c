@@ -15,11 +15,17 @@ int main(int argc, char* argv[]){
   cache_t* slabLRU = slabLRU_init(cache_size, OBJ_ID_NUM, NULL);
   cache_t* slabObjLRU = slabObjLRU_init(cache_size, OBJ_ID_NUM, NULL);
 
-  measure_qps(lru, 0.95);
-  measure_qps(fifo, 0.95);
-  measure_qps(slabLRC, 0.95);
-  measure_qps(slabLRU, 0.95);
-  measure_qps(slabObjLRU, 0.95);
+  measure_qps_write(lru, 0.95);
+  measure_qps_write(fifo, 0.95);
+  measure_qps_write(slabLRC, 0.95);
+  measure_qps_write(slabLRU, 0.95);
+  measure_qps_write(slabObjLRU, 0.95);
+
+  measure_qps_read(lru, 0.95);
+  measure_qps_read(fifo, 0.95);
+  measure_qps_read(slabLRC, 0.95);
+  measure_qps_read(slabLRU, 0.95);
+  measure_qps_read(slabObjLRU, 0.95);
 
   return 0;
 }
