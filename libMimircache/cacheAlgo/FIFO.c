@@ -42,9 +42,12 @@ gboolean FIFO_get(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
   gboolean found_in_cache = FIFO_check(cache, req);
 
-  if (found_in_cache)
-    _FIFO_update(cache, req);
-  else
+//  if (found_in_cache)
+//    _FIFO_update(cache, req);
+//  else
+//    _FIFO_insert(cache, req);
+
+  if (!found_in_cache)
     _FIFO_insert(cache, req);
 
   while (cache->core->used_size > cache->core->size)

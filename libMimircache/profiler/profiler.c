@@ -133,8 +133,8 @@ profiler_res_t *get_miss_ratio_curve(reader_t *const reader, const cache_t *cons
   convert_size_to_str(cache_sizes[0], start_cache_size);
   convert_size_to_str(cache_sizes[num_of_sizes-1], end_cache_size);
 
-  INFO("%s starts computation, num_warmup_req %lld, start cache size %s, end cache size %s, %d sizes, please wait\n",
-      __func__, (long long) (params->n_warmup_req), start_cache_size, end_cache_size, num_of_sizes);
+  INFO("%s starts computation %s, num_warmup_req %lld, start cache size %s, end cache size %s, %d sizes, please wait\n",
+      __func__, cache->core->cache_name, (long long) (params->n_warmup_req), start_cache_size, end_cache_size, num_of_sizes);
 
   // wait for all simulations to finish
   while (progress < (guint64) num_of_sizes - 1) {

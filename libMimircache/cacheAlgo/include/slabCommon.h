@@ -14,11 +14,11 @@
 #include "../../cache/include/cacheUtils.h"
 
 
-#define N_SLABCLASS 48
+#define N_SLABCLASS 42
 static guint32 SLABCLASS_SIZES[] = {96, 120, 152, 192, 240, 304, 384, 480, 600, 752, 944, 1184, 1480, 1856, 2320, 2904,
                                     3632, 4544, 5680, 7104, 8880, 11104, 13880, 17352, 21696, 27120, 33904, 42384,
                                     52984, 66232, 82792, 103496, 129376, 161720, 202152, 252696, 315872, 394840, 524288,
-                                    655360, 819200, 1024000, 1280000, 1600000, 2000000, 2500000, 3125000, 3906250};
+                                    655360, 819200, 1024000}; //, 1280000, 1600000, 2000000, 2500000, 3125000, 3906250};
 
 typedef struct {
   gint slabclass_id;
@@ -99,8 +99,8 @@ static inline slab_t *allocate_slab(slab_params_t *slab_params, gint id) {
   g_queue_push_tail(slabclass->free_slab_q, new_slab);
 
   slab_params->n_allocated_slabs += 1;
-  DEBUG3("allocate slab %d total %u items - current slab queue length %u\n", id, new_slab->n_total_items,
-         g_queue_get_length(slab_params->slab_q));
+//  DEBUG("allocate slab %d %p total %u items - current slab queue length %u\n", id, new_slab, new_slab->n_total_items,
+//         g_queue_get_length(slab_params->slab_q));
   return new_slab;
 }
 
@@ -127,9 +127,11 @@ static inline gint add_to_slabclass(cache_t *cache, request_t *req, slab_cache_o
   if (g_queue_peek_head(slabclass->free_slab_q) != NULL) {
     // we still have free space for items, no new slab is needed
     slab = (slab_t *) g_queue_peek_head(slabclass->free_slab_q);
+//    DEBUG("find free slab %p, items %p\n", slab, slab->slab_items);
   } else if (slab_params->n_allocated_slabs < slab_params->n_total_slabs) {
     // all slabs are full, but we still have free space to allocate new slabs
     slab = allocate_slab(slab_params, slab_id);
+//    DEBUG("allocate new slab %p, items %p\n", slab, slab->slab_items);
   }
 
   // store obj
@@ -144,9 +146,9 @@ static inline gint add_to_slabclass(cache_t *cache, request_t *req, slab_cache_o
     }
   } else {
 //    DEBUG("%u/%u slabs\n", (unsigned) slab_params->n_allocated_slabs, (unsigned) slab_params->n_total_slabs);
-    DEBUG3("add req %lld: slabclass %d, chunk size %lu - %lu total items - %lu stored items\n",
-           (gint64) req->obj_id_ptr, slab_id, (unsigned long) slabclass->chunk_size,
-           (unsigned long) slabclass->n_stored_items, (unsigned long) slabclass->n_stored_items);
+//    DEBUG("add req %lld: slabclass %d, chunk size %lu - %lu total items - %lu stored items\n",
+//           (gint64) req->obj_id_ptr, slab_id, (unsigned long) slabclass->chunk_size,
+//           (unsigned long) slabclass->n_stored_items, (unsigned long) slabclass->n_stored_items);
     // we do not have free space, so we need to evict item/slab
     evict_func(cache, req);
     if (slab_move_func != NULL) {
@@ -176,7 +178,8 @@ static inline gint find_slabclass_id(guint32 obj_size) {
   }
 
   if (imin > imax) { /* size too big for any slab */
-    return -1;
+    ERROR("size %u too large to fit in slab\n", obj_size);
+    abort();
   }
 
   return id;
