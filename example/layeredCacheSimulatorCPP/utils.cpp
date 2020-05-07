@@ -44,6 +44,7 @@ uint64_t TraceUtils::merge_l1_trace(vector<string>& l1_trace_path_vec, string& l
   priority_queue <req_t, vector<req_t>, decltype(comparer)> pq(comparer);
   req_t req;
   uint32_t n_finished = 0;
+  int n_read_field;
 
   for (int i=0; i<l1_ifile_vec.size(); i++){
     fscanf(l1_ifile_vec.at(i), "%u,%u,%u", &req.ts, &req.obj_id, &req.sz);
@@ -60,11 +61,16 @@ uint64_t TraceUtils::merge_l1_trace(vector<string>& l1_trace_path_vec, string& l
     pq.pop();
     n_req += 1;
     l2_ofs.write((char*)(&req), 12);
+//    std::cout << "write " << req.obj_id << "\n";
     if (feof(l1_ifile_vec.at(req.trace_id))){
       n_finished += 1;
     } else {
-      fscanf(l1_ifile_vec.at(req.trace_id), "%u,%u,%u", &req.ts, &req.obj_id, &req.sz);
-      pq.push(req);
+      n_read_field = fscanf(l1_ifile_vec.at(req.trace_id), "%u,%u,%u", &req.ts, &req.obj_id, &req.sz);
+      if (n_read_field == 3){
+        pq.push(req);
+      } else {
+        n_finished += 1;
+      }
     }
   }
 
