@@ -25,11 +25,6 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   prof_mt_params_t *params = (prof_mt_params_t *) user_data;
   int idx = GPOINTER_TO_UINT(data)-1;
 
-//  cache_t *cache = params->cache->core->cacheit(bin_size * idx,
-//                                                   params->cache->core->obj_id_type,
-//                                                   params->cache->core->block_size,
-//                                                   params->cache->core->cacheit_params);
-
   profiler_res_t *result = params->result;
   reader_t *cloned_reader = clone_reader(params->reader);
   request_t *req = new_request(params->cache->core->obj_id_type);
@@ -43,6 +38,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   add = local_cache->core->get;
 
   read_one_req(cloned_reader, req);
+//  printf("read %lu, time %lu size %lu valid %d\n", (unsigned  long) req->obj_id_ptr, req->real_time, req->obj_size, req->valid);
   if (params->n_warmup_req > 0){
     guint64 n_warmup = 0;
     while (req->valid && n_warmup < params->n_warmup_req) {
@@ -75,7 +71,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
 
   // clean up
   free_request(req);
-  close_cloned_reader(cloned_reader);
+  close_reader(cloned_reader);
   local_cache->core->cache_free(local_cache);
 }
 
@@ -101,6 +97,7 @@ profiler_res_t *get_miss_ratio_curve(reader_t *const reader, const cache_t *cons
 
   gint i, progress = 0;
   get_num_of_req(reader);
+//  printf("version %d.%d.%d %d\n", glib_major_version, glib_minor_version, glib_micro_version, glib_binary_age);
 
   profiler_res_t *result = g_new0(profiler_res_t, num_of_sizes);
   for (i = 0; i < num_of_sizes; i++) {
@@ -133,8 +130,8 @@ profiler_res_t *get_miss_ratio_curve(reader_t *const reader, const cache_t *cons
   convert_size_to_str(cache_sizes[0], start_cache_size);
   convert_size_to_str(cache_sizes[num_of_sizes-1], end_cache_size);
 
-  INFO("%s starts computation %s, num_warmup_req %lld, start cache size %s, end cache size %s, %d sizes, please wait\n",
-      __func__, cache->core->cache_name, (long long) (params->n_warmup_req), start_cache_size, end_cache_size, num_of_sizes);
+  INFO("%s starts computation %s, num_warmup_req %lld, start cache size %s, end cache size %s, %d sizes, %d threads, please wait\n",
+      __func__, cache->core->cache_name, (long long) (params->n_warmup_req), start_cache_size, end_cache_size, num_of_sizes, num_of_threads);
 
   // wait for all simulations to finish
   while (progress < (guint64) num_of_sizes - 1) {

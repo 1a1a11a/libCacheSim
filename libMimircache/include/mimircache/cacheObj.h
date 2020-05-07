@@ -16,6 +16,11 @@ typedef struct {
 #endif
 } cache_obj_t;
 
+typedef struct {
+  gpointer obj_id_ptr;
+  guint32 obj_size;
+  gint32 ttl;
+} ttl_cache_obj_t;
 
 typedef struct {
   gpointer obj_id_ptr;

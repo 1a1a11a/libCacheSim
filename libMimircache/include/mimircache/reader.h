@@ -94,6 +94,7 @@ typedef struct reader_base {
 typedef struct reader {
   struct reader_base *base;
   void *reader_params;
+  gboolean cloned;    // True if this is a cloned reader, else false
 } reader_t;
 
 
@@ -134,8 +135,6 @@ guint64 get_num_of_req(reader_t *const reader);
 void reset_reader(reader_t *const reader);
 
 int close_reader(reader_t *const reader);
-
-int close_cloned_reader(reader_t *const reader);
 
 reader_t *clone_reader(const reader_t *const reader);
 

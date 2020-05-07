@@ -32,7 +32,6 @@ extern "C" {
 struct cache_core {
   char cache_name[32];
   guint64 req_cnt;
-  guint64 miss_cnt;
 
   long size;
   long used_size;

@@ -6,24 +6,12 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-
+//#define _GNU_SOURCE
 #include "libcsv.h"
 #include "include/csvReader.h"
 #include "include/binaryReader.h"
 #include "include/vscsiReader.h"
 #include "customizedReader/twrBinReader.h"
-
-
-/* when obj_id/LBA is number, we plus one to it, to avoid cases of block 0 */
-
-/* special case in ascii reader
- * multiple blank line in the middle
- * each line has only one character
- * multiple or non blank line at the end of file
- * csv header when go back one line
- * ending in go back one line
- */
-
 
 
 #ifdef __cplusplus
@@ -46,6 +34,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->base->trace_type = trace_type;
   reader->base->n_total_req = 0;
   reader->base->mmap_offset = 0;
+  reader->cloned = FALSE;
   if (reader_init_param != NULL)
     memcpy(&reader->base->init_params, reader_init_param, sizeof(reader_init_param_t));
 
@@ -69,7 +58,16 @@ reader_t *setup_reader(const char *const trace_path,
   }
   reader->base->file_size = st.st_size;
 
-  if ((reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0)) == MAP_FAILED) {
+  reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+//#ifdef __linux__
+//  reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ,  MAP_NORESERVE|MAP_POPULATE|MAP_PRIVATE, fd, 0);
+//#elif __APPLE__
+//  reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+//#else
+//  reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+//#endif
+
+  if ((reader->base->mapped_file) == MAP_FAILED) {
     close(fd);
     reader->base->mapped_file = NULL;
     ERROR("Unable to allocate %llu bytes of memory, %s\n", (unsigned long long) st.st_size,
@@ -95,6 +93,7 @@ reader_t *setup_reader(const char *const trace_path,
       binaryReader_setup(reader);
       break;
     case TWR_TRACE:
+//      reader->base->file = fopen(reader->base->trace_path, "rb");
       twrReader_setup(reader);
       break;
     default: ERROR("cannot recognize trace type: %c\n", reader->base->trace_type);
@@ -392,6 +391,10 @@ reader_t *clone_reader(const reader_t *const reader_in) {
                                         reader_in->base->obj_id_type,
                                         &reader_in->base->init_params);
   reader->base->n_total_req = reader_in->base->n_total_req;
+
+  munmap(reader->base->mapped_file, reader->base->file_size);
+  reader->base->mapped_file = reader_in->base->mapped_file;
+  reader->cloned = TRUE;
   return reader;
 }
 
@@ -422,7 +425,8 @@ int close_reader(reader_t *const reader) {
       ERROR("cannot recognize reader obj_id_type, given reader obj_id_type: %c\n", reader->base->trace_type);
   }
 
-  munmap(reader->base->mapped_file, reader->base->file_size);
+  if (!reader->cloned)
+    munmap(reader->base->mapped_file, reader->base->file_size);
   if (reader->reader_params)
     g_free(reader->reader_params);
   g_free(reader->base);
@@ -430,78 +434,6 @@ int close_reader(reader_t *const reader) {
   return 0;
 }
 
-
-int close_cloned_reader(reader_t *const reader) {
-  /* close the file in the reader or unmmap the memory in the file
-   then free the memory of reader object
-   Return value: Upon successful completion 0 is returned.
-   Otherwise, EOF is returned and the global variable errno is set to
-   indicate the error.  In either case no further
-   access to the stream is possible.*/
-
-  switch (reader->base->trace_type) {
-    case CSV_TRACE:;
-      csv_params_t *params = reader->reader_params;
-      fclose(reader->base->file);
-      csv_free(params->csv_parser);
-      g_free(params->csv_parser);
-      break;
-    case PLAIN_TXT_TRACE:
-      fclose(reader->base->file);
-      break;
-    case TWR_TRACE:
-    case BIN_TRACE:
-    case VSCSI_TRACE:
-      break;
-    default:
-      ERROR("cannot recognize reader obj_id_type, given reader obj_id_type: %c\n", reader->base->trace_type);
-  }
-
-  if (reader->reader_params)
-    g_free(reader->reader_params);
-
-  g_free(reader->base);
-  g_free(reader);
-  return 0;
-}
-
-
-
-// not supported
-
-//int read_one_request_all_info(reader_t *const reader, void *storage) {
-//  /* read one request from reader,
-//   and store it in the pre-allocated memory pointed at storage.
-//   return 1 when finished or error, otherwise, return 0.
-//   */
-//  switch (reader->base->trace_type) {
-//    case CSV_TRACE:
-//      printf("currently c reader is not supported yet\n");
-//      exit(1);
-//      break;
-//    case PLAIN_TXT_TRACE:
-//      if (fscanf(reader->base->file, "%s", (char *) storage) == EOF)
-//        return 1;
-//      else {
-//        if (strlen((char *) storage) == 2 && ((char *) storage)[1] == '\0'
-//            && (((char *) storage)[0] == FILE_LF || ((char *) storage)[0] == FILE_CR))
-//          return read_one_request_all_info(reader, storage);
-//        return 0;
-//      }
-//      break;
-//    case TWR_TRACE:
-//    case BIN_TRACE:
-//    case VSCSI_TRACE:
-//      printf("currently v/b reader is not supported yet\n");
-//      exit(1);
-//      break;
-//    default: ERROR("cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-//                   reader->base->trace_type);
-//      exit(1);
-//      break;
-//  }
-//  return 0;
-//}
 
 void set_no_eof(reader_t *const reader) {
   // remove eof flag for reader

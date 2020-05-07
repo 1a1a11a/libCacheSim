@@ -19,7 +19,6 @@ extern "C"
 
 /* need to optimize this for CPU cacheline */
 typedef struct request {
-//  gint64 ts;
   gint64 real_time;  // vscsi uses millisec timestamp
   /* pointer to obj_id if obj_id is str otherwise we use this as 64-bit int */
   gpointer obj_id_ptr;
@@ -30,15 +29,18 @@ typedef struct request {
   gint32 ttl;
   // used to indicate whether current request is a valid request and end of trace
   gint32 op;
-  gboolean valid;
 
-  gint64 extra_data;
-  void *extra_data_ptr;
+  gboolean valid;
+  /* leave one byte field at the end to reduce padding */
+
 
   // not used
+//  gint64 extra_data;
+//  void *extra_data_ptr;
+
   /* id of cache server, used in akamaiSimulator */
-  unsigned long cache_server_id;
-  unsigned char traceID; /* this is for mixed trace */
+//  unsigned long cache_server_id;
+//  unsigned char traceID; /* this is for mixed trace */
 
 } request_t;
 
@@ -54,8 +56,8 @@ static inline request_t *new_request(obj_id_type_t obj_id_type) {
   else
     req->obj_id_ptr = NULL;
   req->real_time = 0;
-  req->extra_data = 0;
-  req->extra_data_ptr = NULL;
+//  req->extra_data = 0;
+//  req->extra_data_ptr = NULL;
   return req;
 }
 
@@ -72,8 +74,8 @@ static inline request_t *clone_request(request_t *req) {
 
 
 static inline void free_request(request_t *req) {
-  if (req->extra_data_ptr)
-    g_free(req->extra_data_ptr);
+//  if (req->extra_data_ptr)
+//    g_free(req->extra_data_ptr);
   if (req->obj_id_type == OBJ_ID_STR)
     g_free(req->obj_id_ptr);
   g_free(req);

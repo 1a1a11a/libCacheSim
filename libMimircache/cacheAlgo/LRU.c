@@ -14,11 +14,9 @@
 extern "C" {
 #endif
 
-
 #include <assert.h>
 #include "LRU.h"
 #include "../utils/include/utilsInternal.h"
-
 
 cache_t *LRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("LRU", size, obj_id_type);
@@ -52,7 +50,7 @@ gboolean LRU_get(cache_t *cache, request_t *req) {
     while (cache->core->used_size > cache->core->size)
       _LRU_evict(cache, req);
   } else {
-    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long)cache->core->req_cnt,
+    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->core->req_cnt,
             (long) req->obj_size, (long) cache->core->size);
   }
   cache->core->req_cnt += 1;
@@ -62,7 +60,7 @@ gboolean LRU_get(cache_t *cache, request_t *req) {
 void _LRU_insert(cache_t *cache, request_t *req) {
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   cache->core->used_size += req->obj_size;
-  cache_obj_t* cache_obj = create_cache_obj_from_req(req);
+  cache_obj_t *cache_obj = create_cache_obj_from_req(req);
   // TODO: use SList should be more memory efficient than queue which uses doubly-linklist under the hood
   GList *node = g_list_alloc();
   node->data = cache_obj;
@@ -93,7 +91,6 @@ cache_obj_t *LRU_get_cached_obj(cache_t *cache, request_t *req) {
 void _LRU_evict(cache_t *cache, request_t *req) {
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(LRU_params->list);
-
   assert(cache->core->used_size >= cache_obj->obj_size);
   cache->core->used_size -= cache_obj->obj_size;
   g_hash_table_remove(LRU_params->hashtable, (gconstpointer) cache_obj->obj_id_ptr);
@@ -123,7 +120,7 @@ void LRU_remove_obj(cache_t *cache, gpointer obj_id_ptr) {
     ERROR("obj to remove is not in the cache\n");
     abort();
   }
-  cache_obj_t* cache_obj = (cache_obj_t *) (node->data);
+  cache_obj_t *cache_obj = (cache_obj_t *) (node->data);
   assert(cache->core->used_size >= cache_obj->obj_size);
   cache->core->used_size -= ((cache_obj_t *) (node->data))->obj_size;
   g_queue_delete_link(LRU_params->list, (GList *) node);

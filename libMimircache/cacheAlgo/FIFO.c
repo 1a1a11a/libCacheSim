@@ -22,13 +22,10 @@ cache_t *FIFO_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   cache_t *cache = cache_struct_init("FIFO", size, obj_id_type);
   cache->cache_params = g_new0(FIFO_params_t, 1);
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-
   FIFO_params->hashtable = create_hash_table_with_obj_id_type(obj_id_type, NULL, NULL, g_free, NULL);
   FIFO_params->list = g_queue_new();
-
   return cache;
 }
-
 
 void FIFO_free(cache_t *cache) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
@@ -37,33 +34,26 @@ void FIFO_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-
-gboolean FIFO_get(cache_t *cache, request_t *req) {
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  gboolean found_in_cache = FIFO_check(cache, req);
-
-//  if (found_in_cache)
-//    _FIFO_update(cache, req);
-//  else
-//    _FIFO_insert(cache, req);
-
-  if (!found_in_cache)
-    _FIFO_insert(cache, req);
-
-  while (cache->core->used_size > cache->core->size)
-    _FIFO_evict(cache, req);
-
-  cache->core->req_cnt += 1;
-  return found_in_cache;
-}
-
-
 gboolean FIFO_check(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
   return g_hash_table_contains(FIFO_params->hashtable, req->obj_id_ptr);
 }
 
+gboolean FIFO_get(cache_t *cache, request_t *req) {
+  gboolean found_in_cache = FIFO_check(cache, req);
+  if (req->obj_size <= cache->core->size) {
+    if (!found_in_cache)
+      _FIFO_insert(cache, req);
 
+    while (cache->core->used_size > cache->core->size)
+      _FIFO_evict(cache, req);
+  } else {
+    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->core->req_cnt,
+            (long) req->obj_size, (long) cache->core->size);
+  }
+  cache->core->req_cnt += 1;
+  return found_in_cache;
+}
 
 void _FIFO_insert(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
@@ -73,8 +63,7 @@ void _FIFO_insert(cache_t *cache, request_t *req) {
   GList *node = g_list_alloc();
   node->data = cache_obj;
   g_queue_push_tail_link(FIFO_params->list, node);
-  g_hash_table_insert(FIFO_params->hashtable, cache_obj->obj_id_ptr,
-                      (gpointer) node);
+  g_hash_table_insert(FIFO_params->hashtable, cache_obj->obj_id_ptr, (gpointer) node);
 }
 
 void _FIFO_update(cache_t *cache, request_t *req) {

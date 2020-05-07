@@ -23,8 +23,9 @@ endif ()
 
 
 # add_compile_options(-std=c++11)
-SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGLEVEL=6")
-SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -ggdb -Wno-unused -DLOGLEVEL=5")
+SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -std=c99 ${CMAKE_ENABLE_C99} -DLOGLEVEL=6")
+SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -Wno-unused -std=c99 ${CMAKE_ENABLE_C99} -DLOGLEVEL=5")
+
 #SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGGING_DEBUG")
 #SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -DLOGGING_INFO")
 message(STATUS "FLAG" ${CMAKE_C_FLAGS_DEBUG})
@@ -47,6 +48,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceReader/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/readerUtils/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiler/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
@@ -55,6 +57,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/readerUtils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
 
 file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 #message(STATUS "all sources " ${ALL_SRC_FILES})
@@ -75,6 +78,8 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 # set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 # target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
+add_executable(benchmarkRun benchmark/main.c)
+target_link_libraries(benchmarkRun benchmark cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(readerTest ../test/test_traceReader.c)
 target_link_libraries(readerTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
@@ -90,6 +95,10 @@ target_link_libraries(profilerTest cacheAlgo traceReader profiler dataStructure 
 
 add_executable(cacheAlgoTest ../test/test_cacheAlgo.c)
 target_link_libraries(cacheAlgoTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+
+add_executable(debugRun ../test/debug.c)
+target_link_libraries(debugRun cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+set_property(TARGET debugRun PROPERTY C_STANDARD 11)
 
 
 enable_testing()
