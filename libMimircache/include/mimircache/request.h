@@ -82,7 +82,7 @@ static inline request_t *clone_request(request_t *req) {
   // preserve the pointer before being overwritten by memcpy
   gpointer obj_id_ptr = req_new->obj_id_ptr;
   memcpy(req_new, req, sizeof(request_t));
-  req_new->obj_id_ptr = req->obj_id_ptr;
+  req_new->obj_id_ptr = obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     strcpy((char *) req_new->obj_id_ptr, (char *) req->obj_id_ptr);
   }
