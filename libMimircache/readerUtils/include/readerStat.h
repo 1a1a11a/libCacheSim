@@ -11,7 +11,7 @@ extern "C"
 {
 #endif
 
-#include "../include/mimircache/reader.h"
+#include "../../include/mimircache/reader.h"
 #include "utilsInternal.h"
 
 

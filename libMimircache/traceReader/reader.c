@@ -453,10 +453,23 @@ void set_no_eof(reader_t *const reader) {
   }
 }
 
+
+/**
+ *  find the closest end of line, store in line_end
+ *  line_end should point to the first character of next line (character that is not current line),
+ *  in other words, the character after all LFCR
+ *  line_len is the length of current line, does not include CRLF, nor \0
+ *  return TRUE, if end of file
+ *  return FALSE else *
+ * @param reader
+ * @param line_end
+ * @param line_len
+ * @return
+ */
 gboolean find_line_ending(reader_t *const reader, char **line_end,
                           size_t *const line_len) {
   /**
-   *  find the closest line ending, save at line_end
+   *  find the closest line ending, save in line_end
    *  line_end should point to the character that is not current line,
    *  in other words, the character after all LFCR
    *  line_len is the length of current line, does not include CRLF, nor \0

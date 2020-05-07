@@ -15,6 +15,21 @@ extern "C"
 #include "const.h"
 
 
+typedef enum {
+  OP_GET = 1,
+  OP_GETS,
+  OP_SET,
+  OP_ADD,
+  OP_CAS,
+  OP_REPLACE,
+  OP_APPEND,
+  OP_PREPEND,
+  OP_DELETE,
+  OP_INCR,
+  OP_DECR
+} req_op_e;
+
+
 /******************************* request ******************************/
 
 /* need to optimize this for CPU cacheline */
@@ -64,14 +79,25 @@ static inline request_t *new_request(obj_id_type_t obj_id_type) {
 
 static inline request_t *clone_request(request_t *req) {
   request_t *req_new = g_new0(request_t, 1);
+  // preserve the pointer before being overwritten by memcpy
+  gpointer obj_id_ptr = req_new->obj_id_ptr;
   memcpy(req_new, req, sizeof(request_t));
+  req_new->obj_id_ptr = req->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
-    req_new->obj_id_ptr = g_new0(char, MAX_OBJ_ID_LEN);
-    strcpy((char*) req_new->obj_id_ptr, (char*) req->obj_id_ptr);
+    strcpy((char *) req_new->obj_id_ptr, (char *) req->obj_id_ptr);
   }
   return req_new;
 }
 
+static inline void copy_request(request_t *req_dest, request_t *req_src) {
+  // preserve the pointer before being overwritten by memcpy
+  gpointer obj_id_ptr = req_dest->obj_id_ptr;
+  memcpy(req_dest, req_src, sizeof(request_t));
+  req_dest->obj_id_ptr = obj_id_ptr;
+  if (req_src->obj_id_type == OBJ_ID_STR) {
+    strcpy((char *) req_dest->obj_id_ptr, (char *) req_src->obj_id_ptr);
+  }
+}
 
 static inline void free_request(request_t *req) {
 //  if (req->extra_data_ptr)
@@ -80,6 +106,19 @@ static inline void free_request(request_t *req) {
     g_free(req->obj_id_ptr);
   g_free(req);
 }
+
+static inline void print_request(request_t *req) {
+  if (req->obj_id_type == OBJ_ID_NUM) {
+    printf("req real_time %lu, id %llu, size %ld, ttl %ld, op %d, valid %d\n",
+           (unsigned long) req->real_time, (unsigned long long) req->obj_id_ptr,
+           (long) req->obj_size, (long) req->ttl, req->op, req->valid);
+  } else if (req->obj_id_type == OBJ_ID_STR) {
+    printf("req real_time %lu, id %s, size %ld, ttl %ld, op %d, valid %d\n",
+           (unsigned long) req->real_time, (char *) req->obj_id_ptr,
+           (long) req->obj_size, (long) req->ttl, req->op, req->valid);
+  }
+}
+
 
 #ifdef __cplusplus
 }

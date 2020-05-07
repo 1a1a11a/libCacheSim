@@ -2,6 +2,7 @@
 // Created by Juncheng Yang on 11/24/19.
 //
 
+#include <stdio.h>
 #include <sys/stat.h>
 #include <assert.h>
 
