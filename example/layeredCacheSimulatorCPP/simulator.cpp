@@ -13,7 +13,7 @@ using namespace std;
 
 
 double Simulator::gen_miss_trace(string algo, uint64_t cache_size, string trace_path, string miss_output_path) {
-  uint64_t n_req = 1, n_hit = 0;
+  uint64_t n_req = 0, n_hit = 0;
   std::ofstream miss_ofs(miss_output_path);
 
   reader_init_param_t reader_init_params = {.real_time_field=1, .obj_id_field=2, .obj_size_field=3};
@@ -36,6 +36,7 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size, string trace_
 
   miss_ofs.close();
   std::cout << trace_path << ", object miss ratio " << 1.0-(double) n_hit/n_req << std::endl;
+//  std::cout << trace_path << ", object hit " << n_hit << " req " << n_req << std::endl;
   return 1.0 - (double) n_hit/n_req;
 }
 
