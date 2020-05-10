@@ -201,11 +201,11 @@ gboolean LFUFast_add(cache_t *cache, request_t *req) {
     retval = TRUE;
   } else {
     _LFUFast_insert(cache, req);
-    if ((long) g_hash_table_size(LFUFast_params->hashtable) > cache->core->size)
+    if ((long) g_hash_table_size(LFUFast_params->hashtable) > cache->core.size)
       _LFUFast_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 
@@ -219,7 +219,7 @@ gboolean LFUFast_add_withsize(cache_t *cache, request_t *req) {
   ret_val = LFUFast_add(cache, req);
 
   *(gint64 *) (req->obj_id_ptr) = original_lbn;
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return ret_val;
 }
 

@@ -198,7 +198,7 @@ void cacheClusterThread::run() {
 
   // dump cache for offline analysis
   for (unsigned int i = 0; i < this->get_num_server(); i++) {
-    GHashTable *server_objmap = cache_servers.at(i)->cache->core->get_objmap(cache_servers.at(i)->cache);
+    GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
     g_hash_table_foreach(server_objmap, _objmap_aux, (gpointer) cluster_objmap);
   }
 

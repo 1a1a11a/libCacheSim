@@ -55,11 +55,11 @@ gboolean LRU_get(cache_t *cache, request_t *req) {
     _LRU_update(cache, req);
   } else {
     _LRU_insert(cache, req);
-    if ((long) g_hash_table_size(LRU_params->hashtable) > cache->core->size)
+    if ((long) g_hash_table_size(LRU_params->hashtable) > cache->core.size)
       _LRU_evict(cache, req);
   }
 //  LRU_params->ts++;
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return found_in_cache;
 }
 
@@ -83,7 +83,7 @@ void _LRU_insert(cache_t *cache, request_t *req) {
 
   g_queue_push_tail_link(LRU_params->list, node);
   g_hash_table_insert(LRU_params->hashtable, (gpointer) key, (gpointer) node);
-  cache->core->used_size += req->size;
+  cache->core.used_size += req->size;
 }
 
 

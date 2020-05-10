@@ -163,12 +163,12 @@ gboolean LRU_K_add(cache_t *cache, request_t *req) {
   } else {
     _LRU_K_insert(cache, req);
     if ((long)g_hash_table_size(LRU_K_params->cache_hashtable) >
-        cache->core->size)
+        cache->core.size)
       _LRU_K_evict(cache);
     retval = FALSE;
   }
 
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 
@@ -206,7 +206,7 @@ cache_t *LRU_K_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   struct LRU_K_params *LRU_K_params =
       (struct LRU_K_params *)(cache->cache_params);
 
-  cache->core->cache_init_params = params;
+  cache->core.cache_init_params = params;
 
   LRU_K_params->ts = 0;
   LRU_K_params->pq =

@@ -30,6 +30,8 @@ extern cache_t *FIFO_init(guint64 size, obj_id_type_t obj_id_type, void *params)
 extern void FIFO_free(cache_t *cache);
 
 extern gboolean FIFO_check(cache_t *cache, request_t *req);
+gboolean FIFO_check_with_ttl(cache_t *cache, request_t* req);
+
 
 extern gboolean FIFO_get(cache_t *cache, request_t *req);
 

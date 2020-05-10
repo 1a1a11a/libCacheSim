@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 2.8)
-project (mimircacheExampleC)
+project (cacheSimulatorCPP)
 set(CMAKE_BUILD_TYPE Debug)
 
-message("****************** this example only works after mimircache has been installed ******************")
+message("****************** this example only works after libmimircache has been installed ******************")
 
 
 ####
@@ -30,8 +30,8 @@ message(STATUS "glib found? " ${GLib_FOUND} ", GLIB = " ${GLib_LIBRARY} ", heade
 #message(STATUS "project_source dir = " ${PROJECT_SOURCE_DIR})
 file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
 message(STATUS "all sources " ${ALL_SRC})
-add_executable(cacheSimulator ${ALL_SRC})
-target_link_libraries(cacheSimulator mimircache m ${GLib_LIBRARY} -lpthread -ldl)
+add_executable(cacheSimulatorCPP ${ALL_SRC})
+target_link_libraries(cacheSimulatorCPP libmimircache m ${GLib_LIBRARY} -lm -lpthread -ldl)
 
 
 ################ this mode compiles the external cache replacement algorithm as shared library ################

@@ -90,8 +90,8 @@ class cacheServer {
     if (!available)
       return false;
 
-    bool hit = (bool) this->cache->core->add_element(this->cache, (request_t *) req);
-//    hit = (bool) (this->cache->core->check_element(this->cache, (request_t *) req));
+    bool hit = (bool) this->cache->core.add_element(this->cache, (request_t *) req);
+//    hit = (bool) (this->cache->core.check_element(this->cache, (request_t *) req));
 //    std::cout << "find " << *(guint64*) (req->label_ptr) << ": " << hit << std::endl;
     return hit;
   }
@@ -100,37 +100,37 @@ class cacheServer {
     if (!available)
       return false;
 
-    bool hit = (bool) (this->cache->core->check_element(this->cache, (request_t *) req));
+    bool hit = (bool) (this->cache->core.check_element(this->cache, (request_t *) req));
     return hit;
   }
 
   inline objType get_obj_type(const request_t* const req){
-    return (objType) ((cached_obj_data_t*)(this->cache->core->get_cached_data(this->cache, (request_t *) req)))->obj_type;
+    return (objType) ((cached_obj_data_t*)(this->cache->core.get_cached_data(this->cache, (request_t *) req)))->obj_type;
   }
 
   inline void set_obj_type(const request_t* const req, objType obj_type){
-    if (this->cache->core->get_cached_data(this->cache, (request_t *) req) == nullptr) {
+    if (this->cache->core.get_cached_data(this->cache, (request_t *) req) == nullptr) {
       cached_obj_data_t *cached_obj_data = g_new(cached_obj_data_t, 1);
       cached_obj_data->obj_type = obj_type;
-      this->cache->core->update_cached_data(this->cache, (request_t *) req, cached_obj_data);
+      this->cache->core.update_cached_data(this->cache, (request_t *) req, cached_obj_data);
     } else {
-      ((cached_obj_data_t*)(this->cache->core->get_cached_data(this->cache, (request_t *) req)))->obj_type = (unsigned int) obj_type;
+      ((cached_obj_data_t*)(this->cache->core.get_cached_data(this->cache, (request_t *) req)))->obj_type = (unsigned int) obj_type;
     }
   }
 
   inline unsigned int get_chunk_id(const request_t* const req) {
-//    std::cout << "cached data " << this->cache->core->get_cached_data(this->cache, (request_t *) req) << std::endl;
-    return ((cached_obj_data_t *) (this->cache->core->get_cached_data(this->cache, (request_t *) req)))->chunk_id;
+//    std::cout << "cached data " << this->cache->core.get_cached_data(this->cache, (request_t *) req) << std::endl;
+    return ((cached_obj_data_t *) (this->cache->core.get_cached_data(this->cache, (request_t *) req)))->chunk_id;
   }
 
   inline void set_chunk_id(const request_t* const req, unsigned int chunk_id) {
-    if (this->cache->core->get_cached_data(this->cache, (request_t *) req) == nullptr) {
+    if (this->cache->core.get_cached_data(this->cache, (request_t *) req) == nullptr) {
       cached_obj_data_t *cached_obj_data = g_new(cached_obj_data_t, 1);
       cached_obj_data->obj_type = chunk_obj;
       cached_obj_data->chunk_id = chunk_id;
-      this->cache->core->update_cached_data(this->cache, (request_t *) req, cached_obj_data);
+      this->cache->core.update_cached_data(this->cache, (request_t *) req, cached_obj_data);
     } else {
-      ((cached_obj_data_t *) (this->cache->core->get_cached_data(this->cache, (request_t *) req)))->chunk_id = chunk_id;
+      ((cached_obj_data_t *) (this->cache->core.get_cached_data(this->cache, (request_t *) req)))->chunk_id = chunk_id;
     }
   }
 
@@ -138,7 +138,7 @@ class cacheServer {
     cached_obj_data_t *cached_obj_data = g_new(cached_obj_data_t, 1);
     cached_obj_data->obj_type = obj_type;
     cached_obj_data->chunk_id = chunk_id;
-    this->cache->core->update_cached_data(this->cache, (request_t *) req, cached_obj_data);
+    this->cache->core.update_cached_data(this->cache, (request_t *) req, cached_obj_data);
   }
 
   inline bool set_unavailable(){ available = false; return available; }

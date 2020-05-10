@@ -198,7 +198,7 @@ draw_dict *hm_hr_st_et(reader_t *reader,
 
   // build the thread pool
   GThreadPool *gthread_pool;
-  if (strcmp(cache->core->cache_name, "LRU") == 0)
+  if (strcmp(cache->core.cache_name, "LRU") == 0)
     gthread_pool = g_thread_pool_new((GFunc) hm_LRU_hr_st_et_thread,
                                      (gpointer) params, num_of_threads, TRUE, NULL);
   else

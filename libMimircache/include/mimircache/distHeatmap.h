@@ -19,24 +19,35 @@ extern "C"
 
 
 
-/***********************************************************
- * get heatmap plot data for the stack distance (number of uniq objects) since last access,
- * it returns an array of n_req, where the nth element is the
- * stack distance (number of unique obj) since last access for this obj
+/**
+ * calculate the heatmap plot data of stack distance distribution
  * @param reader
+ * @param window
+ * @param log_base
  * @return
  */
 heatmap_plot_matrix_t *get_stack_dist_heatmap_matrix(reader_t *reader, gint32 window, double log_base);
 
 
-/***********************************************************
- * get heatmap plot data for the distance since last access,
- * it returns an array of n_req, where the nth element is the
- * distance (number of obj) since last access for this object
+/**
+ * calculate the heatmap plot data of distance from last access distribution
  * @param reader
+ * @param window
+ * @param log_base
  * @return
  */
 heatmap_plot_matrix_t *get_last_access_dist_heatmap_matrix(reader_t *reader, gint32 window, double log_base);
+
+
+
+/**
+ * get heatmap plot data for reues time distribution in each time window
+ * @param reader
+ * @param window
+ * @param log_base
+ * @return
+ */
+heatmap_plot_matrix_t * get_reuse_time_heatmap_matrix(reader_t *reader, gint32 window, double log_base);
 
 
 

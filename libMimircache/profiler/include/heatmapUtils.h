@@ -53,10 +53,10 @@ static inline void normalize_heatmap_matrix(heatmap_plot_matrix_t *hm_matrix) {
   gint64 sum = 0;
   for (gint32 i=0; i<hm_matrix->n_window; i++){
     sum = 0;
-    for (gint32 j=0; j<hm_matrix->n_pts-1; j++){
+    for (gint32 j=0; j<hm_matrix->n_pts; j++){
       sum += hm_matrix->matrix[i][j];
     }
-    for (gint32 j=0; j<hm_matrix->n_pts-1; j++){
+    for (gint32 j=0; j<hm_matrix->n_pts; j++){
       hm_matrix->matrix[i][j] /= sum;
     }
   }

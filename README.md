@@ -15,7 +15,7 @@ separate LRUProfiler and simulator
 rename cacheline
 allow a cache to run through a trace so that user can run multiple traces
 remove TRACK_ACCESS_TIME in LRUSize
-remove cache->core->ts
+remove cache->core.ts
 remove STACK_DIST and bp from reader (but then how do you pass to python)
 
 

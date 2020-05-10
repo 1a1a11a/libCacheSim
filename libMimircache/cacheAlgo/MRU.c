@@ -45,11 +45,11 @@ gboolean MRU_add(cache_t *cache, request_t *req) {
   if (MRU_check(cache, req)) {
     retval = TRUE;
   } else {
-    if ((long) g_hash_table_size(MRU_params->hashtable) < cache->core->size)
+    if ((long) g_hash_table_size(MRU_params->hashtable) < cache->core.size)
       _MRU_insert(cache, req);
     retval = FALSE;
   }
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 

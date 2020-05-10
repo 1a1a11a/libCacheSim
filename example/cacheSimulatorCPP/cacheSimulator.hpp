@@ -9,8 +9,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <dlfcn.h>
-#include "mimircache.h"
-//#include "../libMimircache/include/mimircache.h"
+//#include "mimircache.h"
+#include "../../libMimircache/include/mimircache.h"
 
 
 #include <string>

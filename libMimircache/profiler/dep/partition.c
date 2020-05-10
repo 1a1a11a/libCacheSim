@@ -53,19 +53,19 @@ partition_t *get_partition(reader_t *reader, struct cache *cache, uint8_t n_part
    which is either plainText or csv, and each label has the first letter indicating its source
    **/
 
-  partition_t *partitions = init_partition_t(n_partitions, cache->core->size);
+  partition_t *partitions = init_partition_t(n_partitions, cache->core.size);
 
   // create request struct and initialization
   request_t *req = new_req_struct(reader->base->label_type);
 
 
-  gboolean (*check_element)(struct cache *, request_t *) =   cache->core->check_element;
+  gboolean (*check_element)(struct cache *, request_t *) =   cache->core.check_element;
 
   // newly added 0912, may not work for all cache
-  void (*insert_element)(struct cache *, request_t *) =   cache->core->__insert_element;
-  void (*update_element)(struct cache *, request_t *) =   cache->core->__update_element;
-  gpointer (*evict_with_return)(struct cache *, request_t *) =   cache->core->__evict_with_return;
-  guint64 (*get_size)(struct cache *) =   cache->core->get_current_size;
+  void (*insert_element)(struct cache *, request_t *) =   cache->core.__insert_element;
+  void (*update_element)(struct cache *, request_t *) =   cache->core.__update_element;
+  gpointer (*evict_with_return)(struct cache *, request_t *) =   cache->core.__evict_with_return;
+  guint64 (*get_size)(struct cache *) =   cache->core.get_current_size;
 
 
   char *key;
@@ -75,11 +75,11 @@ partition_t *get_partition(reader_t *reader, struct cache *cache, uint8_t n_part
   uint64_t counter = 0;
 
   struct optimal_params *optimal_params = NULL;
-  if (cache->core->type == e_Optimal)
+  if (cache->core.type == e_Optimal)
     optimal_params = (struct optimal_params *) (cache->cache_params);
 
 
-  cache_size = cache->core->size;
+  cache_size = cache->core.size;
 
   read_one_element(reader, req);
   counter++;
@@ -115,7 +115,7 @@ partition_t *get_partition(reader_t *reader, struct cache *cache, uint8_t n_part
 
     read_one_element(reader, req);
     counter++;
-    if (cache->core->type == e_Optimal)
+    if (cache->core.type == e_Optimal)
       optimal_params->ts++;
   }
 
@@ -137,7 +137,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
 
 
   // create request struct and initialization
-  request_t *req = new_req_struct(params->cache->core->data_type);
+  request_t *req = new_req_struct(params->cache->core.data_type);
 
 
   /*************************** THIS IS NOT GENERAL (BEGIN) **********************/
@@ -152,14 +152,14 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
   partition_t *partition = get_partition(reader_thread, optimal, n_partition);
   for (i = 0; i < n_partition; i++) {
     partition->current_partition[i] = 0;
-    cache[i] = params->cache->core->cache_init(
+    cache[i] = params->cache->core.cache_init(
       (long) (g_array_index(partition->partition_history[i], double, 0) * bin_size * order),
-      params->cache->core->data_type,
-      params->cache->core->block_size,
-      params->cache->core->cache_init_params);
+      params->cache->core.data_type,
+      params->cache->core.block_size,
+      params->cache->core.cache_init_params);
   }
 
-  optimal->core->destroy(optimal);
+  optimal->core.destroy(optimal);
 
 
 
@@ -168,14 +168,14 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
 
   uint64_t hit_count = 0, miss_count = 0;
 
-  gboolean (*check_element)(struct cache *, request_t *) =   cache[0]->core->check_element;
+  gboolean (*check_element)(struct cache *, request_t *) =   cache[0]->core.check_element;
 
   // newly added 0912, may not work for all cache
-  void (*insert_element)(struct cache *, request_t *) =   cache[0]->core->__insert_element;
-  void (*update_element)(struct cache *, request_t *) =   cache[0]->core->__update_element;
-  void (*evict_element)(struct cache *, request_t *) =   cache[0]->core->__evict_element;
-//    gpointer  (*evict_with_return)(struct cache*, request_t*)  =   cache[0]->core->__evict_with_return;
-  guint64 (*get_size)(struct cache *) =   cache[0]->core->get_current_size;
+  void (*insert_element)(struct cache *, request_t *) =   cache[0]->core.__insert_element;
+  void (*update_element)(struct cache *, request_t *) =   cache[0]->core.__update_element;
+  void (*evict_element)(struct cache *, request_t *) =   cache[0]->core.__evict_element;
+//    gpointer  (*evict_with_return)(struct cache*, request_t*)  =   cache[0]->core.__evict_with_return;
+  guint64 (*get_size)(struct cache *) =   cache[0]->core.get_current_size;
 
   read_one_element(reader_thread, req);
 
@@ -201,7 +201,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
                  partition->partition_history[i]->len);
         else
           // the reason of 0.5 + is because default cast is to truncate
-          cache[i]->core->size = (long) (0.5 + bin_size * order *
+          cache[i]->core.size = (long) (0.5 + bin_size * order *
                                                g_array_index(partition->partition_history[i], double,
                                                              hit_count + miss_count - partition->jump_over_count));
     }
@@ -210,7 +210,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
     // evict after adjustment
     for (i = 0; i < n_partition; i++) {
       // can't use while here, because ?
-      while ((long) get_size(cache[i]) > cache[i]->core->size) {
+      while ((long) get_size(cache[i]) > cache[i]->core.size) {
         evict_element(cache[i], req);
         partition->current_partition[i]--;
       }
@@ -226,15 +226,15 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
 
     if (hit_count + miss_count == partition->jump_over_count){
         for(i=0; i<n_partition; i++)
-            if (get_current_size(cache[i]) != cache[i]->core->size &&
-                get_current_size(cache[i]) != cache[i]->core->size - 1){
+            if (get_current_size(cache[i]) != cache[i]->core.size &&
+                get_current_size(cache[i]) != cache[i]->core.size - 1){
                 // the second condition is possible because of the resize
                 fprintf(stderr, "Sanity check failed, cache size full, "
                         "but partition not consistent %d %d\n",
-                        get_current_size(cache[i]) != cache[i]->core->size,
-                        (long) partition->current_partition[i] != (long) cache[i]->core->size);
+                        get_current_size(cache[i]) != cache[i]->core.size,
+                        (long) partition->current_partition[i] != (long) cache[i]->core.size);
                 fprintf(stderr, "i %d, get size %lu, given size %ld, partition %lu\n",
-                        i, (unsigned long)get_current_size(cache[i]), cache[i]->core->size,
+                        i, (unsigned long)get_current_size(cache[i]), cache[i]->core.size,
                         (unsigned long)partition->current_partition[i]);
             }
     }
@@ -242,7 +242,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
 
 
     read_one_element(reader_thread, req);
-    if (cache[0]->core->type == e_Optimal)
+    if (cache[0]->core.type == e_Optimal)
       for (i = 0; i < n_partition; i++)
         ((struct optimal_params *) (cache[i]->cache_params))->ts++;
   }
@@ -263,7 +263,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
 
   close_reader_unique(reader_thread);
   for (i = 0; i < n_partition; i++)
-    cache[i]->core->destroy_unique(cache[i]);
+    cache[i]->core.destroy_unique(cache[i]);
   free_partition_t(partition);
 }
 
@@ -283,7 +283,7 @@ return_res_t **profiler_partition(reader_t *reader_in, cache_t *cache_in, int nu
   int num_of_threads = num_of_threads_in;
   int bin_size = bin_size_in;
 
-  long num_of_bins = ceil((double) cache_in->core->size / bin_size) + 1;
+  long num_of_bins = ceil((double) cache_in->core.size / bin_size) + 1;
 
 
   // create the result storage area and caches of varying sizes

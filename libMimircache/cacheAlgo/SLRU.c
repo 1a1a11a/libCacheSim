@@ -44,8 +44,8 @@ void _SLRU_update(cache_t *cache, request_t *cp) {
         SLRU_params->current_sizes[i]--;
         _LRU_insert(SLRU_params->LRUs[i + 1], cp);
         SLRU_params->current_sizes[i + 1]++;
-        if ((long) SLRU_params->LRUs[i + 1]->core->used_size  >
-            SLRU_params->LRUs[i + 1]->core->size) {
+        if ((long) SLRU_params->LRUs[i + 1]->core.used_size  >
+            SLRU_params->LRUs[i + 1]->core.size) {
           gpointer old_itemp = cp->obj_id_ptr;
           gpointer evicted =
             _LRU_evict_with_return(SLRU_params->LRUs[i + 1], cp);
@@ -73,12 +73,12 @@ void _SLRU_evict(cache_t *SLRU, request_t *cp) {
 
   _LRU_evict(SLRU_params->LRUs[0], cp);
 #ifdef SANITY_CHECK
-  if ((long)LRU_get_size(SLRU_params->LRUs[0]) != SLRU_params->LRUs[0]->core->size) {
+  if ((long)LRU_get_size(SLRU_params->LRUs[0]) != SLRU_params->LRUs[0]->core.size) {
     fprintf(stderr,
             "ERROR: SLRU_evict, after eviction, LRU0 size %lu, "
             "full size %ld\n",
             (unsigned long)LRU_get_size(SLRU_params->LRUs[0]),
-            SLRU_params->LRUs[0]->core->size);
+            SLRU_params->LRUs[0]->core.size);
     exit(1);
   }
 #endif
@@ -100,11 +100,11 @@ gboolean SLRU_add(cache_t *cache, request_t *cp) {
     retval = TRUE;
   } else {
     _SLRU_insert(cache, cp);
-    if ((long) SLRU_params->LRUs[0]->core->used_size > SLRU_params->LRUs[0]->core->size)
+    if ((long) SLRU_params->LRUs[0]->core.used_size > SLRU_params->LRUs[0]->core.size)
       _SLRU_evict(cache, cp);
     retval = FALSE;
   }
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 
@@ -142,7 +142,7 @@ cache_t *SLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->cache_params);
   SLRU_init_params_t *init_params = (SLRU_init_params_t *) params;
 
-  cache->core->cache_init_params = params;
+  cache->core.cache_init_params = params;
 
   SLRU_params->n_seg = init_params->n_seg;
   SLRU_params->current_sizes = g_new0(uint64_t, SLRU_params->n_seg);

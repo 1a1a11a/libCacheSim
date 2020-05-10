@@ -64,7 +64,7 @@ void _LFU_insert(cache_t *LFU, request_t *req) {
    * frequency cleared after eviction
    */
   node->pri.pri1 = 1;
-  node->pri.pri2 = LFU->core->req_cnt;
+  node->pri.pri2 = LFU->core.req_cnt;
 
   pqueue_insert(LFU_params->pq, (void *) node);
   g_hash_table_insert(LFU_params->hashtable, (gpointer) key, (gpointer) node);
@@ -82,7 +82,7 @@ void _LFU_update(cache_t *cache, request_t *req) {
     LFU_params->hashtable, (gconstpointer) (req->obj_id_ptr));
   pqueue_pri_t pri;
   pri.pri1 = node->pri.pri1 + 1;
-  pri.pri2 = cache->core->req_cnt;
+  pri.pri2 = cache->core.req_cnt;
   pqueue_change_priority(LFU_params->pq, pri, (void *) node);
 }
 
@@ -112,11 +112,11 @@ gboolean LFU_add(cache_t *cache, request_t *req) {
     retval = TRUE;
   } else {
     _LFU_insert(cache, req);
-    if ((long) g_hash_table_size(LFU_params->hashtable) > cache->core->size)
+    if ((long) g_hash_table_size(LFU_params->hashtable) > cache->core.size)
       _LFU_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 
@@ -131,7 +131,7 @@ gboolean LFU_add_with_size(cache_t *cache, request_t *req) {
   ret_val = LFU_add(cache, req);
 
   *(gint64 *) (req->obj_id_ptr) = original_lbn;
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return ret_val;
 }
 
@@ -159,7 +159,7 @@ cache_t *LFU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
   LFU_params_t *LFU_params = g_new0(LFU_params_t, 1);
   cache->cache_params = (void *) LFU_params;
 
-//  cacheAlgo->core->add_only = LFU_add;
+//  cacheAlgo->core.add_only = LFU_add;
 
 
   if (obj_id_type == OBJ_ID_NUM) {

@@ -105,7 +105,7 @@ void heatmapTest() {
 
 
     cache_destroy(lru);
-    fifo->core->destroy(fifo);
+    fifo->core.destroy(fifo);
     close_reader(reader);
 }
 

@@ -31,7 +31,7 @@ void read_last_req(reader_t* reader, request_t* req){
     fseek(reader->base->file, (long) reader->base->file_size - MAX_LINE_LEN*2, SEEK_SET);
     char *line_end;
     size_t line_len;
-    gboolean end = find_line_ending(reader, &line_end, &line_len);
+    find_line_ending(reader, &line_end, &line_len);
     reader->base->mmap_offset = (char *) line_end - reader->base->mapped_file;
   }
 

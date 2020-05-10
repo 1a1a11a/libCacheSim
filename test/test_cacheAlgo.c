@@ -28,7 +28,7 @@ void test_FIFO(gconstpointer user_data) {
   profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -48,7 +48,7 @@ void test_Optimal(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -64,7 +64,7 @@ void test_Random(gconstpointer user_data) {
 //           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
 //  }
 
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -85,7 +85,7 @@ void test_LFU(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -106,7 +106,7 @@ void test_MRU(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -126,7 +126,7 @@ void test_LRU_K(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -146,7 +146,7 @@ void test_ARC(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -167,7 +167,7 @@ void test_SLRU(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -187,7 +187,7 @@ void test_slabLRC(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -207,7 +207,7 @@ void test_slabLRU(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -227,7 +227,7 @@ void test_slabObjLRU(gconstpointer user_data) {
   }
 
   _verify_profiler_results(res, CACHE_SIZE/STEP_SIZE, req_cnt_true, miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 

@@ -79,28 +79,28 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 # target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 add_executable(benchmarkRun benchmark/main.c)
-target_link_libraries(benchmarkRun benchmark cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(benchmarkRun benchmark cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(readerTest ../test/test_traceReader.c)
-target_link_libraries(readerTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(readerTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(distUtilsTest ../test/test_distUtils.c)
-target_link_libraries(distUtilsTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(distUtilsTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerLRUTest ../test/test_profilerLRU.c)
-target_link_libraries(profilerLRUTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerLRUTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(profilerTest ../test/test_profiler.c)
-target_link_libraries(profilerTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(profilerTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(cacheAlgoTest ../test/test_cacheAlgo.c)
-target_link_libraries(cacheAlgoTest cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(cacheAlgoTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(heatmapTest ../test/test_heatmap.c)
 target_link_libraries(heatmapTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(debugRun ../test/debug.c)
-target_link_libraries(debugRun cacheAlgo traceReader profiler dataStructure utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(debugRun cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 set_property(TARGET debugRun PROPERTY C_STANDARD 11)
 
 

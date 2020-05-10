@@ -18,8 +18,8 @@
 #include <memory>
 #include <unordered_map>
 #include <list>
-#include "mimircache.h"
-//#include "../libMimircache/include/mimircache.h"
+//#include "mimircache.h"
+#include "../../libMimircache/include/mimircache.h"
 
 
 namespace std {
@@ -36,9 +36,9 @@ namespace std {
     unordered_map <CacheObj, ListIter> hashtable;
     list <CacheObj> lru_queue;
 
-    MyLRUCpp(size_t size): size(size), used_size(0), logical_time(0) {}
+    explicit MyLRUCpp(size_t size): size(size), used_size(0), logical_time(0) {}
 
-    ~MyLRUCpp() {};
+    ~MyLRUCpp() = default;;
 
     bool check(request_t *req);
 
@@ -59,7 +59,7 @@ namespace std {
   };
 }
 
-extern "C" cache_t *myLRU_init(guint64 size, obj_id_t obj_id_type, guint64 block_size, void *params);
+extern "C" cache_t *myLRU_init(guint64 size, obj_id_type_t obj_id_type, guint64 block_size, void *params);
 
 // I need to re-implement LRU completely in CPP then wrap with libmimircache API
 

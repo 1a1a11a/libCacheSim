@@ -117,9 +117,9 @@ gboolean Optimal_add(cache_t *cache, request_t *req) {
     _Optimal_insert(cache, req);
     retval = FALSE;
   }
-  while ((long) g_hash_table_size(Optimal_params->hashtable) > cache->core->size)
+  while ((long) g_hash_table_size(Optimal_params->hashtable) > cache->core.size)
     _Optimal_evict(cache, req);
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 
@@ -134,11 +134,11 @@ gboolean Optimal_add_only(cache_t *cache, request_t *req) {
     retval = TRUE;
   } else {
     _Optimal_insert(cache, req);
-    if ((long) g_hash_table_size(Optimal_params->hashtable) > cache->core->size)
+    if ((long) g_hash_table_size(Optimal_params->hashtable) > cache->core.size)
       _Optimal_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 
@@ -148,7 +148,7 @@ void Optimal_destroy(cache_t *cache) {
   g_hash_table_destroy(Optimal_params->hashtable);
   pqueue_free(Optimal_params->pq);
   g_array_free(Optimal_params->next_access, TRUE);
-  ((struct Optimal_init_params *) (cache->core->cache_init_params))
+  ((struct Optimal_init_params *) (cache->core.cache_init_params))
     ->next_access = NULL;
 
   cache_struct_free(cache);
@@ -167,7 +167,7 @@ void Optimal_destroy_unique(cache_t *cache) {
   g_hash_table_destroy(Optimal_params->hashtable);
   pqueue_free(Optimal_params->pq);
   g_free(cache->cache_params);
-  g_free(cache->core);
+//  g_free(cache->core);
   g_free(cache);
 }
 
@@ -229,7 +229,7 @@ cache_t *Optimal_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
     Optimal_params->next_access =
       ((struct Optimal_init_params *) params)->next_access;
 
-  cache->core->cache_init_params = params;
+  cache->core.cache_init_params = params;
 
   return cache;
 }

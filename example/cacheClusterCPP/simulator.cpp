@@ -79,8 +79,8 @@ void simulate(cache_cluster_arg_t *cc_arg) {
     if (cc_arg->cache_alg.find("size") != std::string::npos) {
       for (auto cache_server : cache_servers) {
         std::cout << "final server used size (GB): "
-                  << cache_server->cache->core->used_size/1000/1000/1000 << "/"
-                  << cache_server->cache->core->size/1000/1000/1000 << std::endl;
+                  << cache_server->cache->core.used_size/1000/1000/1000 << "/"
+                  << cache_server->cache->core.size/1000/1000/1000 << std::endl;
         delete cache_server;
       }
     }

@@ -54,7 +54,6 @@ gboolean slabObjLRU_check(cache_t *cache, request_t *req){
 }
 
 gboolean slabObjLRU_get(cache_t *cache, request_t *req){
-  slabObjLRU_params_t *FIFO_params = (slabObjLRU_params_t *) (cache->cache_params);
   gboolean found_in_cache = slabObjLRU_check(cache, req);
 
   /* no update, and eviction is done during insert */
@@ -63,14 +62,14 @@ gboolean slabObjLRU_get(cache_t *cache, request_t *req){
   else
     _slabObjLRU_update(cache, req);
 
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return found_in_cache;
 
 }
 
 void _slabObjLRU_insert(cache_t *cache, request_t *req){
   slabObjLRU_params_t *slabObjLRU_params = (slabObjLRU_params_t *) (cache->cache_params);
-  cache->core->used_size += req->obj_size;
+  cache->core.used_size += req->obj_size;
   slab_cache_obj_t* cache_obj = create_slab_cache_obj_from_req(req);
   gint slab_id = add_to_slabclass(cache, req, cache_obj, &slabObjLRU_params->slab_params, _slabObjLRU_evict, NULL);
   // update obj LRU queue
@@ -168,7 +167,7 @@ void slabObjLRU_remove_obj(cache_t *cache, void *obj_id_to_remove){
     abort();
   }
 
-  cache->core->used_size -= cache_obj->obj_size;
+  cache->core.used_size -= cache_obj->obj_size;
   slab_t *slab = cache_obj->slab;
   // move last item to this pos
   slab->slab_items[cache_obj->item_pos_in_slab] = slab->slab_items[slab->n_stored_items-1];

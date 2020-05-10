@@ -39,11 +39,11 @@ static void traverse_trace(reader_t *reader, cache_t *cache) {
   // create request struct and initialization
   request_t *req = new_req_struct(reader->base->label_type);
 
-  req->label_type = cache->core->data_type;
+  req->label_type = cache->core.data_type;
   req->block_unit_size = (size_t) reader->base->block_unit_size;
 
   gboolean (*add_element)(struct cache *, request_t *req);
-  add_element = cache->core->add_element;
+  add_element = cache->core.add_element;
 
   read_one_element(reader, req);
   while (req->valid) {
@@ -64,15 +64,15 @@ gint64 *eviction_stat(reader_t *reader_in, cache_t *cache, evict_stat_type stat_
    **/
 
   // get cache eviction list
-  cache->core->record_level = 1;
-  cache->core->eviction_array_len = reader_in->base->total_num;
+  cache->core.record_level = 1;
+  cache->core.eviction_array_len = reader_in->base->total_num;
   if (reader_in->base->total_num == -1)
     get_num_of_req(reader_in);
 
   if (reader_in->base->obj_id_type == OBJ_ID_NUM)
-    cache->core->eviction_array = g_new0(guint64, reader_in->base->total_num);
+    cache->core.eviction_array = g_new0(guint64, reader_in->base->total_num);
   else
-    cache->core->eviction_array = g_new0(gchar*, reader_in->base->total_num);
+    cache->core.eviction_array = g_new0(gchar*, reader_in->base->total_num);
 
   traverse_trace(reader_in, cache);
   // done get eviction list
@@ -114,7 +114,7 @@ gint64 *get_eviction_freq(reader_t *reader, cache_t *optimal, gboolean accumulat
 
   guint64 ts = 0;
 
-  gpointer eviction_array = optimal->core->eviction_array;
+  gpointer eviction_array = optimal->core.eviction_array;
 
   gint64 *freq_array = g_new0(gint64, reader->base->total_num);
 
@@ -205,7 +205,7 @@ static gint64 *get_eviction_stack_dist(reader_t *reader, cache_t *optimal) {
   guint64 ts = 0;
   gint64 stack_dist;
 
-  gpointer eviction_array = optimal->core->eviction_array;
+  gpointer eviction_array = optimal->core.eviction_array;
 
   gint64 *stack_dist_array = g_new0(gint64, reader->base->total_num);
 

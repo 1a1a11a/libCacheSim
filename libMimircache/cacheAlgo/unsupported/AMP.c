@@ -109,7 +109,7 @@ void createPages_no_eviction(cache_t *AMP, gint64 block_begin, gint length) {
 void createPages(cache_t *AMP, gint64 block_begin, gint length) {
   struct AMP_params *AMP_params = (struct AMP_params *)(AMP->cache_params);
   createPages_no_eviction(AMP, block_begin, length);
-  while ((long)g_hash_table_size(AMP_params->hashtable) > AMP->core->size)
+  while ((long)g_hash_table_size(AMP_params->hashtable) > AMP->core.size)
     _AMP_evict(AMP, NULL);
 }
 
@@ -395,7 +395,7 @@ gboolean AMP_add_only(cache_t *cache, request_t *cp) {
   gboolean ret_val;
   struct AMP_params *AMP_params = (struct AMP_params *)(cache->cache_params);
   ret_val = AMP_add_only_no_eviction(cache, cp);
-  while ((long)g_hash_table_size(AMP_params->hashtable) > cache->core->size)
+  while ((long)g_hash_table_size(AMP_params->hashtable) > cache->core.size)
     _AMP_evict(cache, cp); // not sure
   return ret_val;
 }
@@ -404,11 +404,11 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
   struct AMP_params *AMP_params = (struct AMP_params *)(cache->cache_params);
   gint64 block;
 
-//  if (cp->disk_sector_size != 0 && cacheAlgo->core->block_size != 0) {
+//  if (cp->disk_sector_size != 0 && cacheAlgo->core.block_size != 0) {
 //    *(gint64 *)(cp->obj_id_ptr) =
 //        (gint64)(*(gint64 *)(cp->obj_id_ptr) * cp->disk_sector_size /
-//                 cacheAlgo->core->block_size);
-//    n = (int)ceil((double)cp->size / cacheAlgo->core->block_size);
+//                 cacheAlgo->core.block_size);
+//    n = (int)ceil((double)cp->size / cacheAlgo->core.block_size);
 //    if (n < 1) // some traces have size zero for some requests
 //      n = 1;
 //  }
@@ -431,7 +431,7 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
     page->accessed = 1;
 
     // new for withsize, keep reading the remaining pages
-//    if (cp->disk_sector_size != 0 && cacheAlgo->core->block_size != 0) {
+//    if (cp->disk_sector_size != 0 && cacheAlgo->core.block_size != 0) {
 //      gint64 old_block = (*(gint64 *)(cp->obj_id_ptr));
 //      for (i = 0; i < n - 1; i++) {
 //        (*(gint64 *)(cp->obj_id_ptr))++;
@@ -480,7 +480,7 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
 
     // new for withsize, keep reading the remaining pages
     /*
-    if (cp->disk_sector_size != 0 && cacheAlgo->core->block_size != 0) {
+    if (cp->disk_sector_size != 0 && cacheAlgo->core.block_size != 0) {
       gint64 last_block = (*(gint64 *)(cp->obj_id_ptr)) + n - 1;
       // update new last_block_number
       AMP_lookup(cacheAlgo, block)->last_block_number = last_block;
@@ -509,7 +509,7 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
       if (AMP_lookup(cacheAlgo, block) == NULL)
         ERROR("requested block is not in cacheAlgo after inserting, n %d, cacheAlgo "
               "size %ld\n",
-              n, cacheAlgo->core->size);
+              n, cacheAlgo->core.size);
 #endif
 
       // if n==1, then page_last is the same only page
@@ -544,7 +544,7 @@ gboolean AMP_add_no_eviction_withsize(cache_t *cache, request_t *cp) {
       if (check) {
         // new 170505, for calculating precision
         //                if (cp->disk_sector_size != 0 &&
-        //                cacheAlgo->core->block_size != 0){
+        //                cacheAlgo->core.block_size != 0){
         //                    block = (*(gint64*)(cp->obj_id_ptr)) + n -1;
         //                    length -= (long)(n - 1);
         //                }
@@ -568,10 +568,10 @@ gboolean AMP_add_withsize(cache_t *cache, request_t *cp) {
   struct AMP_params *AMP_params = (struct AMP_params *)(cache->cache_params);
 
   gboolean ret_val = AMP_add_no_eviction_withsize(cache, cp);
-  while ((long)g_hash_table_size(AMP_params->hashtable) > cache->core->size)
+  while ((long)g_hash_table_size(AMP_params->hashtable) > cache->core.size)
     _AMP_evict(cache, cp);
 
-  cache->core->ts += 1;
+  cache->core.ts += 1;
   return ret_val;
 }
 
@@ -584,9 +584,9 @@ gboolean AMP_add(cache_t *cache, request_t *cp) {
 
   struct AMP_params *AMP_params = (struct AMP_params *)(cache->cache_params);
   gboolean result = AMP_add_no_eviction(cache, cp);
-  while ((long)g_hash_table_size(AMP_params->hashtable) > cache->core->size)
+  while ((long)g_hash_table_size(AMP_params->hashtable) > cache->core.size)
     _AMP_evict(cache, cp);
-  cache->core->ts += 1;
+  cache->core.ts += 1;
   return result;
 }
 
@@ -620,20 +620,20 @@ cache_t *AMP_init(guint64 size, obj_id_t obj_id_type, void *params) {
   struct AMP_params *AMP_params = (struct AMP_params *)(cache->cache_params);
   struct AMP_init_params *init_params = (struct AMP_init_params *)params;
 
-  cache->core->cache_init = AMP_init;
-  cache->core->destroy = AMP_destroy;
-  cache->core->destroy_unique = AMP_destroy_unique;
-  cache->core->add = AMP_add;
-  cache->core->check = AMP_check;
-  cache->core->_insert = _AMP_insert;
-  cache->core->_update = _AMP_update;
-  cache->core->_evict = _AMP_evict;
-  cache->core->evict_with_return = _AMP_evict_with_return;
+  cache->core.cache_init = AMP_init;
+  cache->core.destroy = AMP_destroy;
+  cache->core.destroy_unique = AMP_destroy_unique;
+  cache->core.add = AMP_add;
+  cache->core.check = AMP_check;
+  cache->core._insert = _AMP_insert;
+  cache->core._update = _AMP_update;
+  cache->core._evict = _AMP_evict;
+  cache->core.evict_with_return = _AMP_evict_with_return;
 
-  cache->core->get_used_size = AMP_get_size;
-  cache->core->cache_init_params = params;
-//  cacheAlgo->core->add_only = AMP_add_only;
-//  cacheAlgo->core->add_withsize = AMP_add_withsize;
+  cache->core.get_used_size = AMP_get_size;
+  cache->core.cache_init_params = params;
+//  cacheAlgo->core.add_only = AMP_add_only;
+//  cacheAlgo->core.add_withsize = AMP_add_withsize;
 
   AMP_params->K = init_params->K;
   AMP_params->APT = init_params->APT;

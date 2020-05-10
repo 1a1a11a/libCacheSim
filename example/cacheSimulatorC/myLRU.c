@@ -43,25 +43,25 @@ gboolean myLRU_check(cache_t *cache, request_t *req) {
 
 gboolean myLRU_get(cache_t *cache, request_t *req) {
   gboolean found_in_cache = myLRU_check(cache, req);
-  if (req->obj_size <= cache->core->size) {
+  if (req->obj_size <= cache->core.size) {
     if (found_in_cache)
       _myLRU_update(cache, req);
     else
       _myLRU_insert(cache, req);
 
-    while (cache->core->used_size > cache->core->size)
+    while (cache->core.used_size > cache->core.size)
       _myLRU_evict(cache, req);
   } else {
-    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long)cache->core->req_cnt,
-            (long) req->obj_size, (long) cache->core->size);
+    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long)cache->core.req_cnt,
+            (long) req->obj_size, (long) cache->core.size);
   }
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return found_in_cache;
 }
 
 void _myLRU_insert(cache_t *cache, request_t *req) {
   myLRU_params_t *myLRU_params = (myLRU_params_t *) (cache->cache_params);
-  cache->core->used_size += req->obj_size;
+  cache->core.used_size += req->obj_size;
   cache_obj_t* cache_obj = create_cache_obj_from_req(req);
 
   GList *node = g_list_alloc();
@@ -75,8 +75,8 @@ void _myLRU_update(cache_t *cache, request_t *req) {
   GList *node = (GList *) g_hash_table_lookup(myLRU_params->hashtable, req->obj_id_ptr);
 
   cache_obj_t *cache_obj = node->data;
-  cache->core->used_size -= cache_obj->size;
-  cache->core->used_size += req->obj_size;
+  cache->core.used_size -= cache_obj->size;
+  cache->core.used_size += req->obj_size;
   update_cache_obj(cache_obj, req);
   g_queue_unlink(myLRU_params->list, node);
   g_queue_push_tail_link(myLRU_params->list, node);
@@ -93,7 +93,7 @@ void _myLRU_evict(cache_t *cache, request_t *req) {
   myLRU_params_t *myLRU_params = (myLRU_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(myLRU_params->list);
 
-  cache->core->used_size -= cache_obj->size;
+  cache->core.used_size -= cache_obj->size;
   g_hash_table_remove(myLRU_params->hashtable, (gconstpointer) cache_obj->obj_id_ptr);
   destroy_cache_obj(cache_obj);
 }
@@ -101,7 +101,7 @@ void _myLRU_evict(cache_t *cache, request_t *req) {
 gpointer _myLRU_evict_with_return(cache_t *cache, request_t *req) {
   myLRU_params_t *myLRU_params = (myLRU_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = g_queue_pop_head(myLRU_params->list);
-  cache->core->used_size -= cache_obj->size;
+  cache->core.used_size -= cache_obj->size;
   gpointer evicted_key = cache_obj->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     evicted_key = (gpointer) g_strdup((gchar *) (cache_obj->obj_id_ptr));
@@ -121,7 +121,7 @@ void myLRU_remove_obj(cache_t *cache, gpointer obj_id_ptr) {
     abort();
   }
   cache_obj_t* cache_obj = (cache_obj_t *) (node->data);
-  cache->core->used_size -= ((cache_obj_t *) (node->data))->size;
+  cache->core.used_size -= ((cache_obj_t *) (node->data))->size;
   g_queue_delete_link(myLRU_params->list, (GList *) node);
   g_hash_table_remove(myLRU_params->hashtable, obj_id_ptr);
   destroy_cache_obj(cache_obj);

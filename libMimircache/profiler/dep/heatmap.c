@@ -98,7 +98,7 @@ draw_dict* heatmap(reader_t* reader,
 
 
     // check cache is LRU or not
-    if (cache == NULL || strcmp(cache->core->cache_name, "LRU") == 0) {
+    if (cache == NULL || strcmp(cache->core.cache_name, "LRU") == 0) {
         if (plot_type != future_rd_distribution &&
                 plot_type != dist_distribution &&
                 plot_type != rt_distribution &&
@@ -317,7 +317,7 @@ draw_dict* hm_hr_st_et(reader_t* reader,
 
     // build the thread pool
     GThreadPool * gthread_pool;
-    if (strcmp(cache->core->cache_name, "LRU") == 0)
+    if (strcmp(cache->core.cache_name, "LRU") == 0)
         gthread_pool = g_thread_pool_new ( (GFunc) hm_LRU_hr_st_et_thread,
                                            (gpointer)params, num_of_threads, TRUE, NULL);
     else
@@ -443,7 +443,7 @@ draw_dict* hm_hr_interval_size(reader_t* reader,
     GArray* break_points;
     break_points = reader->sdata->break_points->array;
 
-    gint num_of_bins = (int) ceil(cache->core->size / bin_size) + 1;
+    gint num_of_bins = (int) ceil(cache->core.size / bin_size) + 1;
 
     if (num_of_bins <= 1)
         // the first bin is size 0
@@ -474,7 +474,7 @@ draw_dict* hm_hr_interval_size(reader_t* reader,
 
     // build the thread pool
     GThreadPool * gthread_pool;
-    if (strcmp(cache->core->cache_name, "LRU") == 0)
+    if (strcmp(cache->core.cache_name, "LRU") == 0)
         gthread_pool = g_thread_pool_new ( (GFunc) hm_LRU_hr_interval_size_thread,
                                            (gpointer)params, num_of_threads, TRUE, NULL);
     else
@@ -521,7 +521,7 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
     GArray* break_points;
     break_points = reader->sdata->break_points->array;
 
-    gint num_of_bins = (int) ceil(cache->core->size / bin_size) + 1;
+    gint num_of_bins = (int) ceil(cache->core.size / bin_size) + 1;
 
     if (num_of_bins <= 1)
         num_of_bins = 2;
@@ -552,7 +552,7 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
     // build the thread pool
     GThreadPool *gthread_pool;
 
-    if (strcmp(cache->core->cache_name, "LRU") == 0) {
+    if (strcmp(cache->core.cache_name, "LRU") == 0) {
         gint64 *stack_dist = g_new(gint64, reader->base->n_total_req);
         gint64 *future_stack_dist = g_new(gint64, reader->base->n_total_req);
 
@@ -616,7 +616,7 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
     g_thread_pool_free (gthread_pool, FALSE, TRUE);
 
 
-    if (strcmp(cache->core->cache_name, "LRU") == 0) {
+    if (strcmp(cache->core.cache_name, "LRU") == 0) {
         if (reader->sdata->stack_dist_type == FUTURE_RD) {
             g_free(reader->sdata->stack_dist);
             reader->sdata->stack_dist = NULL;
@@ -650,8 +650,8 @@ draw_dict* differential_heatmap(reader_t* reader,
         exit(1);
     }
 
-    if (cache1 == NULL || strcmp(cache1->core->cache_name, "LRU") == 0 \
-            || cache2 == NULL || strcmp(cache2->core->cache_name, "LRU") == 0) {
+    if (cache1 == NULL || strcmp(cache1->core.cache_name, "LRU") == 0 \
+            || cache2 == NULL || strcmp(cache2->core.cache_name, "LRU") == 0) {
         if (plot_type != future_rd_distribution &&
                 plot_type != dist_distribution &&
                 plot_type != rt_distribution) {
@@ -677,7 +677,7 @@ draw_dict* differential_heatmap(reader_t* reader,
                                      num_of_threads);
 
     // check cache is LRU or not
-    //    if (cache1 == NULL || cache1->core->obj_id_type == e_LRU){
+    //    if (cache1 == NULL || cache1->core.obj_id_type == e_LRU){
     //        draw_dict1 = heatmap_LRU(reader,
     //                                 cache1,
     //                                 time_mode,
@@ -698,7 +698,7 @@ draw_dict* differential_heatmap(reader_t* reader,
     //                                    num_of_threads);
     //    }
     //
-    //    if (cache2 == NULL || cache2->core->obj_id_type == e_LRU){
+    //    if (cache2 == NULL || cache2->core.obj_id_type == e_LRU){
     //        draw_dict2 = heatmap_LRU(reader,
     //                                 cache2,
     //                                 time_mode,

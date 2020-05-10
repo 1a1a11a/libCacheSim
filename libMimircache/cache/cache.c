@@ -22,19 +22,19 @@ void cache_struct_free(cache_t *cache) {
     g_free(cache->cache_params);
     cache->cache_params = NULL;
   }
-  g_free(cache->core);
-  cache->core = NULL;
+//  g_free(cache->core);
+//  cache->core = NULL;
   g_free(cache);
 }
 
 
 cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_type_t obj_id_type) {
   cache_t *cache = g_new0(cache_t, 1);
-  cache->core = g_new0(struct cache_core, 1);
-  strcpy(cache->core->cache_name, cache_name);
-  cache->core->size = cache_size;
-  cache->core->cache_init_params = NULL;
-  cache->core->obj_id_type = obj_id_type;
+//  cache->core = g_new0(struct cache_core, 1);
+  strcpy(cache->core.cache_name, cache_name);
+  cache->core.size = cache_size;
+  cache->core.cache_init_params = NULL;
+  cache->core.obj_id_type = obj_id_type;
 
   void *handle = dlopen(NULL, RTLD_GLOBAL);
   char func_name[128];
@@ -111,25 +111,25 @@ cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_type_t
     abort();
   }
 
-  cache->core->cache_init = cache_init;
-  cache->core->cache_free = cache_free;
-  cache->core->get = get;
-  cache->core->check = check;
-  cache->core->_insert = _insert;
-  cache->core->_update = _update;
-  cache->core->_evict = _evict;
-  cache->core->evict_with_return = evict_with_return;
-  cache->core->get_objmap = get_objmap;
-  cache->core->remove_obj = remove_obj;
-  cache->core->get_cached_obj = get_cached_obj;
+  cache->core.cache_init = cache_init;
+  cache->core.cache_free = cache_free;
+  cache->core.get = get;
+  cache->core.check = check;
+  cache->core._insert = _insert;
+  cache->core._update = _update;
+  cache->core._evict = _evict;
+  cache->core.evict_with_return = evict_with_return;
+  cache->core.get_objmap = get_objmap;
+  cache->core.remove_obj = remove_obj;
+  cache->core.get_cached_obj = get_cached_obj;
   return cache;
 }
 
 //profiler_res_t *run_trace(cache_t *cache, reader_t *reader) {
-//  request_t *req = new_request(cache->core->obj_id_type);
+//  request_t *req = new_request(cache->core.obj_id_type);
 //  profiler_res_t *ret = g_new0(profiler_res_t, 1);
-//  ret->cache_size = cache->core->size;
-//  gboolean (*cache_get)(cache_t *, request_t *) = cache->core->get;
+//  ret->cache_size = cache->core.size;
+//  gboolean (*cache_get)(cache_t *, request_t *) = cache->core.get;
 //
 //  read_one_req(reader, req);
 //  while (req->valid) {

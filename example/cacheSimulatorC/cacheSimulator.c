@@ -18,10 +18,10 @@ int main(int argc, char **argv){
   }
 
   cache_t *lru = create_cache("LRU", 20, OBJ_ID_STR, NULL);
-  printf("%d\n", lru->core->get(lru, req));
+  printf("%d\n", lru->core.get(lru, req));
 
   cache_t *mylru = create_cache("myLRU", 20, OBJ_ID_STR, NULL);
-  printf("%d\n", mylru->core->get(mylru, req));
+  printf("%d\n", mylru->core.get(mylru, req));
 
   free_request(req);
   cache_struct_free(lru);

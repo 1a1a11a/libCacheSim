@@ -44,14 +44,14 @@ static inline void _PG_add_to_graph(cache_t *PG, request_t *req) {
   char req_lbl[MAX_OBJ_ID_LEN], current_req_lbl[MAX_OBJ_ID_LEN];
   graphNode_t *graphNode = NULL;
 
-  if (PG->core->obj_id_type == OBJ_ID_NUM) {
+  if (PG->core.obj_id_type == OBJ_ID_NUM) {
     current_block =
       get_Nth_past_request_l(PG_params, PG_params->past_request_pointer);
     if (current_block)
       graphNode =
         (graphNode_t *) g_hash_table_lookup(PG_params->graph, &current_block);
   }
-  if (PG->core->obj_id_type == OBJ_ID_STR) {
+  if (PG->core.obj_id_type == OBJ_ID_STR) {
     get_Nth_past_request_c(PG_params, PG_params->past_request_pointer,
                            current_req_lbl);
     if (current_req_lbl[0])
@@ -60,12 +60,12 @@ static inline void _PG_add_to_graph(cache_t *PG, request_t *req) {
   }
 
   // now update past requests
-  if (PG->core->obj_id_type == OBJ_ID_NUM) {
+  if (PG->core.obj_id_type == OBJ_ID_NUM) {
     set_Nth_past_request_l(PG_params, PG_params->past_request_pointer++,
                            *(guint64 *) (req->obj_id_ptr));
   }
 
-  if (PG->core->obj_id_type == OBJ_ID_STR) {
+  if (PG->core.obj_id_type == OBJ_ID_STR) {
     set_Nth_past_request_c(PG_params, PG_params->past_request_pointer++,
                            (req->obj_id_ptr));
   }
@@ -103,7 +103,7 @@ static inline void _PG_add_to_graph(cache_t *PG, request_t *req) {
 
   for (i = 0; i < PG_params->lookahead; i++) {
     graphNode->total_count++;
-    if (PG->core->obj_id_type == OBJ_ID_NUM) {
+    if (PG->core.obj_id_type == OBJ_ID_NUM) {
       block = get_Nth_past_request_l(PG_params, i);
       if (block == 0)
         break;
@@ -133,7 +133,7 @@ static inline void _PG_add_to_graph(cache_t *PG, request_t *req) {
           return;
       }
     }
-    if (PG->core->obj_id_type == OBJ_ID_STR) {
+    if (PG->core.obj_id_type == OBJ_ID_STR) {
       get_Nth_past_request_c(PG_params, i, req_lbl);
       if (req_lbl[0] == 0)
         break;
@@ -170,9 +170,9 @@ static inline void _PG_add_to_graph(cache_t *PG, request_t *req) {
       PG_params->meta_data_size / PG_params->block_size)
     PG_params->stop_recording = TRUE;
 
-  PG->core->size = PG_params->init_size -
+  PG->core.size = PG_params->init_size -
                    PG_params->meta_data_size / 1024 / PG_params->block_size;
-  PG_params->cache->core->size =
+  PG_params->cache->core.size =
     PG_params->init_size - PG_params->meta_data_size / PG_params->block_size;
 }
 
@@ -221,24 +221,24 @@ static inline GList *PG_get_prefetch(cache_t *PG, request_t *req) {
 
 void _PG_insert(cache_t *PG, request_t *req) {
   PG_params_t *PG_params = (PG_params_t *) (PG->cache_params);
-  PG_params->cache->core->_insert(PG_params->cache, req);
+  PG_params->cache->core._insert(PG_params->cache, req);
 }
 
 gboolean PG_check(cache_t *PG, request_t *req) {
   PG_params_t *PG_params = (PG_params_t *) (PG->cache_params);
-  return PG_params->cache->core->check(PG_params->cache, req);
+  return PG_params->cache->core.check(PG_params->cache, req);
 }
 
 void _PG_update(cache_t *PG, request_t *req) {
   PG_params_t *PG_params = (PG_params_t *) (PG->cache_params);
-  PG_params->cache->core->_update(PG_params->cache, req);
+  PG_params->cache->core._update(PG_params->cache, req);
 }
 
 void _PG_evict(cache_t *PG, request_t *req) {
   PG_params_t *PG_params = (PG_params_t *) (PG->cache_params);
   g_hash_table_remove(PG_params->prefetched, req->obj_id_ptr);
 
-  PG_params->cache->core->_evict(PG_params->cache, req);
+  PG_params->cache->core._evict(PG_params->cache, req);
 }
 
 gpointer _PG_evict_with_return(cache_t *PG, request_t *req) {
@@ -246,7 +246,7 @@ gpointer _PG_evict_with_return(cache_t *PG, request_t *req) {
    * of returned data **/
   PG_params_t *PG_params = (PG_params_t *) (PG->cache_params);
   g_hash_table_remove(PG_params->prefetched, req->obj_id_ptr);
-  return PG_params->cache->core->evict_with_return(PG_params->cache, req);
+  return PG_params->cache->core.evict_with_return(PG_params->cache, req);
 }
 
 gboolean PG_add(cache_t *PG, request_t *req) {
@@ -268,7 +268,7 @@ gboolean PG_add(cache_t *PG, request_t *req) {
     retval = TRUE;
   } else {
     _PG_insert(PG, req);
-    while ((long)PG_get_size(PG) > PG->core->size)
+    while ((long)PG_get_size(PG) > PG->core.size)
       _PG_evict(PG, req);
     retval = FALSE;
   }
@@ -280,7 +280,7 @@ gboolean PG_add(cache_t *PG, request_t *req) {
     while (node) {
       req->obj_id_ptr = node->data;
       if (!PG_check(PG, req)) {
-        PG_params->cache->core->_insert(PG_params->cache, req);
+        PG_params->cache->core._insert(PG_params->cache, req);
         PG_params->num_of_prefetch += 1;
 
         gpointer item_p = req->obj_id_ptr;
@@ -292,11 +292,11 @@ gboolean PG_add(cache_t *PG, request_t *req) {
       node = node->next;
     }
 
-    while ((long)PG_get_size(PG) > PG->core->size)
+    while ((long)PG_get_size(PG) > PG->core.size)
       _PG_evict(PG, req);
     g_list_free(prefetch_list);
   }
-  PG->core->ts += 1;
+  PG->core.ts += 1;
   return retval;
 }
 
@@ -307,11 +307,11 @@ gboolean PG_add_only(cache_t *PG, request_t *req) {
     retval = TRUE;
   } else {
     _PG_insert(PG, req);
-    while ((long)PG_get_size(PG) > PG->core->size)
+    while ((long)PG_get_size(PG) > PG->core.size)
       _PG_evict(PG, req);
     retval = FALSE;
   }
-  PG->core->ts += 1;
+  PG->core.ts += 1;
   return retval;
 }
 
@@ -321,27 +321,27 @@ gboolean PG_add_only(cache_t *PG, request_t *req) {
 //
 //  *(gint64 *)(req->obj_id_ptr) =
 //      (gint64)(*(gint64 *)(req->obj_id_ptr) * req->disk_sector_size /
-//               cacheAlgo->core->block_size);
+//               cacheAlgo->core.block_size);
 //  ret_val = PG_add(cacheAlgo, req);
 //
-//  int n = (int)ceil((double)req->size / cacheAlgo->core->block_size);
+//  int n = (int)ceil((double)req->size / cacheAlgo->core.block_size);
 //
 //  for (i = 0; i < n - 1; i++) {
 //    (*(guint64 *)(req->obj_id_ptr))++;
 //    PG_add_only(cacheAlgo, req);
 //  }
 //  *(gint64 *)(req->obj_id_ptr) -= (n - 1);
-//  cacheAlgo->core->ts += 1;
+//  cacheAlgo->core.ts += 1;
 //  return ret_val;
 //}
 
 void PG_destroy(cache_t *PG) {
   PG_params_t *PG_params = (PG_params_t *) (PG->cache_params);
-  PG_params->cache->core->destroy(PG_params->cache);
+  PG_params->cache->core.destroy(PG_params->cache);
   g_hash_table_destroy(PG_params->graph);
   g_hash_table_destroy(PG_params->prefetched);
 
-  if (PG->core->obj_id_type == OBJ_ID_STR) {
+  if (PG->core.obj_id_type == OBJ_ID_STR) {
     int i;
     for (i = 0; i < PG_params->lookahead; i++)
       g_free(((char **) (PG_params->past_requests))[i]);
@@ -360,11 +360,11 @@ void PG_destroy_unique(cache_t *PG) {
    */
 
   PG_params_t *PG_params = (PG_params_t *) (PG->cache_params);
-  PG_params->cache->core->destroy(PG_params->cache);
+  PG_params->cache->core.destroy(PG_params->cache);
   g_hash_table_destroy(PG_params->graph);
   g_hash_table_destroy(PG_params->prefetched);
 
-  if (PG->core->obj_id_type == OBJ_ID_STR) {
+  if (PG->core.obj_id_type == OBJ_ID_STR) {
     int i;
     for (i = 0; i < PG_params->lookahead; i++)
       g_free(((char **) (PG_params->past_requests))[i]);
@@ -382,20 +382,20 @@ cache_t *PG_init(guint64 size, obj_id_t obj_id_type, void *params) {
   PG_params_t *PG_params = (PG_params_t *) (cache->cache_params);
   PG_init_params_t *init_params = (PG_init_params_t *) params;
 
-  cache->core->cache_init = PG_init;
-  cache->core->destroy = PG_destroy;
-  cache->core->destroy_unique = PG_destroy_unique;
-  cache->core->add = PG_add;
-  cache->core->check = PG_check;
-  cache->core->_insert = _PG_insert;
-  cache->core->_update = _PG_update;
-  cache->core->_evict = _PG_evict;
-  cache->core->evict_with_return = _PG_evict_with_return;
-//  cacheAlgo->core->add_only = PG_add_only;
-//  cacheAlgo->core->add_withsize = PG_add_withsize;
+  cache->core.cache_init = PG_init;
+  cache->core.destroy = PG_destroy;
+  cache->core.destroy_unique = PG_destroy_unique;
+  cache->core.add = PG_add;
+  cache->core.check = PG_check;
+  cache->core._insert = _PG_insert;
+  cache->core._update = _PG_update;
+  cache->core._evict = _PG_evict;
+  cache->core.evict_with_return = _PG_evict_with_return;
+//  cacheAlgo->core.add_only = PG_add_only;
+//  cacheAlgo->core.add_withsize = PG_add_withsize;
 
-  cache->core->get_used_size = PG_get_size;
-  cache->core->cache_init_params = params;
+  cache->core.get_used_size = PG_get_size;
+  cache->core.cache_init_params = params;
 
   PG_params->lookahead = init_params->lookahead;
   PG_params->prefetch_threshold = init_params->prefetch_threshold;
@@ -445,7 +445,7 @@ cache_t *PG_init(guint64 size, obj_id_t obj_id_type, void *params) {
 
 guint64 PG_get_size(cache_t *cache) {
   PG_params_t *PG_params = (PG_params_t *) (cache->cache_params);
-  return (guint64) PG_params->cache->core->get_used_size(PG_params->cache);
+  return (guint64) PG_params->cache->core.get_used_size(PG_params->cache);
 }
 
 #ifdef __cplusplus

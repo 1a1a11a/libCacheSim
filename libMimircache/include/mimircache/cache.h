@@ -62,11 +62,19 @@ struct cache_core {
 
 };
 
+struct cache_stat {
+  gint64 req_cnt;
+  gint64 req_byte;
+  guint64 hit_cnt;
+  guint64 hit_byte;
+  guint64 hit_expired_cnt;
+  guint64 hit_expired_byte;
+};
+
 typedef struct cache {
-  struct cache_core *core;
+  struct cache_core core;
   void *cache_params;
-  /* shared_cache_params is shared between cloned caches, it should not be freed by cloned caches */
-  void *shared_cache_params;
+  struct cache_stat stat;
 } cache_t;
 
 

@@ -34,7 +34,7 @@ void test_profiler_trace_no_size(gconstpointer user_data) {
     g_assert_cmpuint(req_cnt_true, ==, res[i].req_byte);
     g_assert_cmpuint(miss_cnt_true[i], ==, res[i].miss_byte);
   }
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
   g_free(res);
 }
 
@@ -77,7 +77,7 @@ void test_profiler_trace(gconstpointer user_data) {
   g_assert_cmpuint(res[3].miss_byte, ==, miss_byte_true[6]);
   g_free(res);
 
-  cache->core->cache_free(cache);
+  cache->core.cache_free(cache);
 }
 
 

@@ -50,10 +50,10 @@ gboolean Random_get(cache_t *cache, request_t *req) {
     _Random_insert(cache, req);
   }
 
-  while (cache->core->used_size > cache->core->size)
+  while (cache->core.used_size > cache->core.size)
     _Random_evict(cache, req);
 
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return found_in_cache;
 }
 
@@ -61,7 +61,7 @@ gboolean Random_get(cache_t *cache, request_t *req) {
 void _Random_insert(cache_t *cache, request_t *req) {
   Random_params_t *Random_params = (Random_params_t *)(cache->cache_params);
 
-  cache->core->used_size += req->obj_size;
+  cache->core.used_size += req->obj_size;
   cache_obj_t *cache_obj = create_cache_obj_from_req(req);
 
   g_ptr_array_add(Random_params->array, cache_obj->obj_id_ptr);
@@ -77,8 +77,8 @@ gboolean Random_check(cache_t *cache, request_t *req) {
 void _Random_update(cache_t *cache, request_t *req) {
   Random_params_t *Random_params = (Random_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = g_hash_table_lookup(Random_params->hashtable, req->obj_id_ptr);
-  cache->core->used_size -= cache_obj->obj_size;
-  cache->core->used_size += req->obj_size;
+  cache->core.used_size -= cache_obj->obj_size;
+  cache->core.used_size += req->obj_size;
   update_cache_obj(cache_obj, req);
 }
 
@@ -92,7 +92,7 @@ void _Random_evict(cache_t *cache, request_t *req) {
   gpointer obj_id_ptr_evict = g_ptr_array_index(Random_params->array, pos);
 
   cache_obj_t *cache_obj = g_hash_table_lookup(Random_params->hashtable, obj_id_ptr_evict);
-  cache->core->used_size -= cache_obj->obj_size;
+  cache->core.used_size -= cache_obj->obj_size;
 
   g_hash_table_remove(Random_params->hashtable, obj_id_ptr_evict);
   g_ptr_array_remove_index_fast(Random_params->array, pos);

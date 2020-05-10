@@ -14,6 +14,10 @@
 #include "../../cache/include/cacheUtils.h"
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define N_SLABCLASS 42
 static guint32 SLABCLASS_SIZES[] = {96, 120, 152, 192, 240, 304, 384, 480, 600, 752, 944, 1184, 1480, 1856, 2320, 2904,
                                     3632, 4544, 5680, 7104, 8880, 11104, 13880, 17352, 21696, 27120, 33904, 42384,
@@ -22,6 +26,7 @@ static guint32 SLABCLASS_SIZES[] = {96, 120, 152, 192, 240, 304, 384, 480, 600, 
 
 typedef struct {
   gint64 slab_size;
+  gint8 per_obj_metadata_size;
 } slab_init_params;
 
 typedef struct {
@@ -46,7 +51,7 @@ typedef struct {
   guint64 n_total_slabs;
   guint64 n_allocated_slabs;
   GQueue *slab_q;    /* slab queue for slabLRC and slabLRU */
-  int8_t per_obj_metadata_size; // memcached on 64-bit system has 48/56 byte metadata (no cas/cas)
+  gint8 per_obj_metadata_size; // memcached on 64-bit system has 48/56 byte metadata (no cas/cas)
 } slab_params_t;
 
 
@@ -189,5 +194,8 @@ static inline gint find_slabclass_id(guint32 obj_size) {
   return id;
 }
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif //LIBMIMIRCACHE_SLABCOMMON_H

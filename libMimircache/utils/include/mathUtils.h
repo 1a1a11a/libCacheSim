@@ -10,6 +10,10 @@ extern "C"
 {
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+
+static guint64 rand_seed = 0;
 
 static inline void find_max_gint64(gint64 *array, gint64 n_elem, gint64* max_elem, gint64* max_elem_idx) {
   gint64 max = array[0], max_idx = 0;
@@ -23,6 +27,22 @@ static inline void find_max_gint64(gint64 *array, gint64 n_elem, gint64* max_ele
     *max_elem = max;
   if (max_elem_idx != NULL)
     *max_elem_idx = max_idx;
+}
+
+
+
+static inline void set_rand_seed(gint64 seed){
+  rand_seed = seed;
+}
+
+/**
+ * generate pseudo rand number, taken from LHD simulator
+ * random number generator from Knuth MMIX
+ * @return
+ */
+static inline guint64 next_rand(){
+  rand_seed = 6364136223846793005 * rand_seed + 1442695040888963407;
+  return rand_seed;
 }
 
 

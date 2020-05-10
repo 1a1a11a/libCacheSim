@@ -29,7 +29,7 @@ void hm_LRU_hr_st_et_thread(gpointer data, gpointer user_data) {
   GArray *break_points = params->break_points;
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
-  guint64 cache_size = (guint64) params->cache->core->size;
+  guint64 cache_size = (guint64) params->cache->core.size;
   // distance to last access
   gint64 *last_access = params->last_access_dist;
   gint64 *stack_dist = params->stack_dist;
@@ -152,7 +152,7 @@ void hm_LRU_hr_st_size_thread(gpointer data, gpointer user_data) {
   GArray *break_points = params->break_points;
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
-  guint64 cache_size = (guint64) params->cache->core->size;
+  guint64 cache_size = (guint64) params->cache->core.size;
   gint64 *last_access = params->last_access_dist;
   gint64 *stack_dist = params->stack_dist;
 
@@ -272,15 +272,15 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
 
   gint64 *stack_dist = params->stack_dist;
   gint64 *future_stack_dist = params->future_stack_dist;
-  cache_t *cache = params->cache->core->cache_init(cache_size,
-                                                   params->cache->core->obj_id_type,
-                                                   params->cache->core->cache_init_params);
+  cache_t *cache = params->cache->core.cache_init(cache_size,
+                                                   params->cache->core.obj_id_type,
+                                                   params->cache->core.cache_init_params);
 
   guint64 *effective_cache_size = malloc(sizeof(guint64) * reader_thread->base->n_total_req);
 
 
   // create request struct and initialization
-  request_t *req = new_request(cache->core->obj_id_type);
+  request_t *req = new_request(cache->core.obj_id_type);
 
 
   guint64 current_effective_size = 0;
@@ -317,13 +317,13 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
 
 
     // add to cache
-    if (cache->core->check(cache, req)) {
+    if (cache->core.check(cache, req)) {
       DEBUG("ts %ld, read %s hit\n", (long) cur_ts, (char *) (req->obj_id_ptr));
-      cache->core->_update(cache, req);
+      cache->core._update(cache, req);
       increase_b = FALSE;
     } else {
       DEBUG("ts %ld, read %s miss\n", (long) cur_ts, (char *) (req->obj_id_ptr));
-      cache->core->_insert(cache, req);
+      cache->core._insert(cache, req);
       increase_b = TRUE;
     }
 
@@ -359,10 +359,10 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
      *  in other words, this item should not be added to cache
      *  so need to find out when this item was added and reduced the size of all time after it
      */
-    while ((long) cache->core->used_size > cache->core->size) {
-      DEBUG("ts %ld size %ld %ld\n", (long) cur_ts, (long) cache->core->used_size,
-            (long) (cache->core->size));
-      item = cache->core->evict_with_return(cache, req);
+    while ((long) cache->core.used_size > cache->core.size) {
+      DEBUG("ts %ld size %ld %ld\n", (long) cur_ts, (long) cache->core.used_size,
+            (long) (cache->core.size));
+      item = cache->core.evict_with_return(cache, req);
       last_ts = GPOINTER_TO_UINT(g_hash_table_lookup(last_access_time_ght, item)) - 1;
       if (last_ts < 0) {
         ERROR("last access time < 0, value %ld\n", (long) last_ts);
@@ -374,7 +374,7 @@ void hm_LRU_effective_size_thread(gpointer data, gpointer user_data) {
         current_effective_size -= 1;
         DEBUG("ts %ld last access %ld, size %ld %ld, reduce one %ld\n",
               (long) cur_ts, (long) future_stack_dist[last_ts],
-              (long) cache->core->used_size,
+              (long) cache->core.used_size,
               (long) (gint64) cache_size, (long) current_effective_size);
       }
       g_free(item);

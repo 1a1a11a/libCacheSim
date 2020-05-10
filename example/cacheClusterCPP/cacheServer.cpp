@@ -72,12 +72,12 @@ cacheServer::cacheServer(const unsigned long server_id,
 cacheServer::cacheServer(const unsigned long server_id, cache_t *const cache,
                          std::string server_name,
                          const unsigned int EC_n, const unsigned int EC_k)
-    : server_stat(server_id, (unsigned long) cache->core->size) {
+    : server_stat(server_id, (unsigned long) cache->core.size) {
 
   this->server_id = server_id;
   this->server_name = std::move(server_name);
   this->cache = cache;
-  this->cache_size = (unsigned long) cache->core->size;
+  this->cache_size = (unsigned long) cache->core.size;
 
   this->EC_n = EC_n;
   this->EC_k = EC_k;
@@ -86,5 +86,5 @@ cacheServer::cacheServer(const unsigned long server_id, cache_t *const cache,
   srand((unsigned int) time(nullptr));
 }
 
-cacheServer::~cacheServer() { this->cache->core->destroy(this->cache); }
+cacheServer::~cacheServer() { this->cache->core.destroy(this->cache); }
 } // namespace CDNSimulator

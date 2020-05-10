@@ -59,11 +59,11 @@ gboolean FIFO_add(cache_t *cache, request_t *req) {
     retval = TRUE;
   } else {
     _FIFO_insert(cache, req);
-    if ((long)g_hash_table_size(FIFO_params->hashtable) > cache->core->size)
+    if ((long)g_hash_table_size(FIFO_params->hashtable) > cache->core.size)
       _FIFO_evict(cache, req);
     retval = FALSE;
   }
-  cache->core->req_cnt += 1;
+  cache->core.req_cnt += 1;
   return retval;
 }
 
@@ -93,18 +93,18 @@ cache_t *FIFO_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->cache_params = g_new0(struct FIFO_params, 1);
   struct FIFO_params *FIFO_params = (struct FIFO_params *)(cache->cache_params);
 
-  cache->core->cache_init = FIFO_init;
-  cache->core->destroy = FIFO_destroy;
-  cache->core->destroy_cloned_cache = FIFO_destroy_unique;
-  cache->core->get = FIFO_add;
-  cache->core->check = FIFO_check;
-  cache->core->_evict = _FIFO_evict;
-  cache->core->_insert = _FIFO_insert;
-  cache->core->_update = _FIFO_update;
-  cache->core->evict_with_return = _FIFO_evict_with_return;
-  cache->core->get_used_size = FIFO_get_used_size;
+  cache->core.cache_init = FIFO_init;
+  cache->core.destroy = FIFO_destroy;
+  cache->core.destroy_cloned_cache = FIFO_destroy_unique;
+  cache->core.get = FIFO_add;
+  cache->core.check = FIFO_check;
+  cache->core._evict = _FIFO_evict;
+  cache->core._insert = _FIFO_insert;
+  cache->core._update = _FIFO_update;
+  cache->core.evict_with_return = _FIFO_evict_with_return;
+  cache->core.get_used_size = FIFO_get_used_size;
 
-  cache->core->cache_init_params = NULL;
+  cache->core.cache_init_params = NULL;
 
   if (obj_id_type == OBJ_ID_NUM) {
     FIFO_params->hashtable = g_hash_table_new_full(

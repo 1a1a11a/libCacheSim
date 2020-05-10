@@ -33,31 +33,31 @@ static void profiler_thread(gpointer data, gpointer user_data) {
   int idx = GPOINTER_TO_UINT(data);
   guint bin_size = params->bin_size;
 
-  cache_t *cache = params->cache->core->cache_init(bin_size * idx,
-                                                   params->cache->core->obj_id_type,
-                                                   params->cache->core->block_size,
-                                                   params->cache->core->cache_init_params);
+  cache_t *cache = params->cache->core.cache_init(bin_size * idx,
+                                                   params->cache->core.obj_id_type,
+                                                   params->cache->core.block_size,
+                                                   params->cache->core.cache_init_params);
   profiler_res_t **result = params->result;
 
   reader_t *reader_thread = clone_reader(params->reader);
 
 
   // create request struct and initialization
-  request_t *req = new_req_struct(params->cache->core->obj_id_type);
+  request_t *req = new_req_struct(params->cache->core.obj_id_type);
   req->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
   req->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
   guint64 hit_count = 0, miss_count = 0;
   gboolean (*add_element)(struct cache *, request_t *req);
-  add_element = cache->core->add_element;
+  add_element = cache->core.add_element;
 
   read_one_element(reader_thread, req);
 
   // this must happen after read, otherwise req size and obj_id_type unknown
-  if (cache->core->use_block_size && req->obj_id_type == OBJ_ID_NUM &&
+  if (cache->core.use_block_size && req->obj_id_type == OBJ_ID_NUM &&
       req->disk_sector_size != 0) {    // && req->size != 0 is removed due to trace dirty
-    add_element = cache->core->add_element_withsize;
+    add_element = cache->core.add_element_withsize;
     if (add_element == NULL) {
       ERROR("using size with profiling, cannot find add_element_withsize\n");
       abort();
@@ -82,14 +82,14 @@ static void profiler_thread(gpointer data, gpointer user_data) {
   result[idx]->miss_ratio = 1 - result[idx]->hit_ratio;
 
 
-//    if (cache->core->type == e_Mithril) {
+//    if (cache->core.type == e_Mithril) {
 //        Mithril_params_t* Mithril_params = (Mithril_params_t*)(cache->cache_params);
 //        gint64 prefetch = Mithril_params->num_of_prefetch_Mithril;
 //        gint64 hit = Mithril_params->hit_on_prefetch_Mithril;
 //
 //        printf("\ncache size %ld, real size: %ld, hit rate %lf, total check %lu, "
 //               "Mithril prefetch %lu, hit %lu, accuracy: %lf, prefetch table size %u\n",
-//               cache->core->size, Mithril_params->cache->core->size,
+//               cache->core.size, Mithril_params->cache->core.size,
 //               (double)hit_count / (hit_count + miss_count),
 //               (unsigned long) ((Mithril_params_t*)(cache->cache_params))->num_of_check,
 //               (unsigned long) prefetch, (unsigned long) hit, (double)hit / prefetch,
@@ -99,36 +99,36 @@ static void profiler_thread(gpointer data, gpointer user_data) {
 //            gint64 prefetch2 = ((Mithril_params_t*)(cache->cache_params))->num_of_prefetch_sequential;
 //            gint64 hit2 = ((Mithril_params_t*)(cache->cache_params))->hit_on_prefetch_sequential;
 //            printf("sequential prefetching, prefetch %lu, hit %lu, accuracy %lf\n", (unsigned long) prefetch2, (unsigned long) hit2, (double)hit2 / prefetch2);
-//            printf("overall size %ld, hit rate %lf, efficiency %lf\n", Mithril_params->cache->core->size,
+//            printf("overall size %ld, hit rate %lf, efficiency %lf\n", Mithril_params->cache->core.size,
 //                   (double)hit_count / (hit_count + miss_count), (double)(hit + hit2) / (prefetch + prefetch2));
 //        }
 //
-//        if (Mithril_params->cache->core->type == e_AMP) {
+//        if (Mithril_params->cache->core.type == e_AMP) {
 //            gint64 prefetch2 = ((struct AMP_params*)(Mithril_params->cache->cache_params))->num_of_prefetch;
 //            gint64 hit2 = ((struct AMP_params*)(Mithril_params->cache->cache_params))->num_of_hit;
 //            printf("Mithril_AMP cache size %ld, prefetch %lu, hit %lu, accuracy: %lf, total prefetch %lu, hit %lu, accuracy: %lf\n",
-//                   Mithril_params->cache->core->size, (unsigned long) prefetch2, (unsigned long) hit2, (double)hit2 / prefetch2,
+//                   Mithril_params->cache->core.size, (unsigned long) prefetch2, (unsigned long) hit2, (double)hit2 / prefetch2,
 //                   (unsigned long) (prefetch + prefetch2), (unsigned long) (hit + hit2), (double)(hit + hit2) / (prefetch + prefetch2));
 //
 //        }
 //    }
 //
-//    if (cache->core->type == e_PG) {
+//    if (cache->core.type == e_PG) {
 //        PG_params_t *PG_params = (PG_params_t*)(cache->cache_params);
 //        printf("\n PG cache size %lu, real size %ld, hit rate %lf, prefetch %lu, "
 //               "hit %lu, precision %lf\n", (unsigned long)PG_params->init_size,
-//               PG_params->cache->core->size,
+//               PG_params->cache->core.size,
 //               (double)hit_count / (hit_count + miss_count),
 //               (unsigned long) PG_params->num_of_prefetch, (unsigned long) PG_params->num_of_hit,
 //               (double)(PG_params->num_of_hit) / (PG_params->num_of_prefetch));
 //    }
 //
-//    if (cache->core->type == e_AMP) {
+//    if (cache->core.type == e_AMP) {
 //        gint64 prefech = ((struct AMP_params*)(cache->cache_params))->num_of_prefetch;
 //        gint64 hit = ((struct AMP_params*)(cache->cache_params))->num_of_hit;
 //
 //        printf("\nAMP cache size %ld, hit rate %lf, prefetch %lu, hit %lu, accuracy: %lf\n\n",
-//               cache->core->size, (double)hit_count / (hit_count + miss_count),
+//               cache->core.size, (double)hit_count / (hit_count + miss_count),
 //               (unsigned long) prefech, (unsigned long) hit, (double)hit / prefech);
 //    }
 
@@ -140,7 +140,7 @@ static void profiler_thread(gpointer data, gpointer user_data) {
 
   free_request(req);
   close_reader_unique(reader_thread);
-  cache->core->destroy_unique(cache);
+  cache->core.destroy_unique(cache);
 }
 
 
@@ -150,10 +150,10 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
   int idx = GPOINTER_TO_UINT(data);
   guint bin_size = params->bin_size;
 
-  cache_t *cache = params->cache->core->cache_init(bin_size * idx,
-                                                   params->cache->core->obj_id_type,
-                                                   params->cache->core->block_size,
-                                                   params->cache->core->cache_init_params);
+  cache_t *cache = params->cache->core.cache_init(bin_size * idx,
+                                                   params->cache->core.obj_id_type,
+                                                   params->cache->core.block_size,
+                                                   params->cache->core.cache_init_params);
   profiler_res_t **result = params->result;
 
   reader_t *reader_thread = clone_reader(params->reader);
@@ -167,17 +167,17 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
   for (i = 0; i < reader_thread->base->total_num; i++)
     eviction_age[i] = -1;
 
-  if (cache->core->obj_id_type == OBJ_ID_NUM) {
+  if (cache->core.obj_id_type == OBJ_ID_NUM) {
     last_ref_ht = g_hash_table_new_full(g_int64_hash, g_int64_equal,
                                         g_free, NULL);
-  } else if (cache->core->obj_id_type == OBJ_ID_STR) {
+  } else if (cache->core.obj_id_type == OBJ_ID_STR) {
     last_ref_ht = g_hash_table_new_full(g_str_hash, g_str_equal,
                                         g_free, NULL);
   }
 
 
   // create request struct and initialization
-  request_t *req = new_req_struct(params->cache->core->obj_id_type);
+  request_t *req = new_req_struct(params->cache->core.obj_id_type);
   req->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
   req->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
@@ -191,19 +191,19 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
   guint64 (*get_size)(cache_t *);
   gpointer evicted_obj;
 
-  insert_element = cache->core->__insert_element;
-  update_element = cache->core->__update_element;
-  check_element = cache->core->check_element;
-  add_element = cache->core->add_element_only;
-  evict_element = cache->core->__evict_with_return;
-  get_size = cache->core->get_current_size;
+  insert_element = cache->core.__insert_element;
+  update_element = cache->core.__update_element;
+  check_element = cache->core.check_element;
+  add_element = cache->core.add_element_only;
+  evict_element = cache->core.__evict_with_return;
+  get_size = cache->core.get_current_size;
 
   read_one_element(reader_thread, req);
 
   // this must happen after read, otherwise req size and obj_id_type unknown
-  if (cache->core->use_block_size && req->obj_id_type == OBJ_ID_NUM &&
+  if (cache->core.use_block_size && req->obj_id_type == OBJ_ID_NUM &&
       req->disk_sector_size != 0) {    // && req->size != 0 is removed due to trace dirty
-    add_element = cache->core->add_element_only;
+    add_element = cache->core.add_element_only;
     if (add_element == NULL) {
       ERROR("using size with profiling, cannot find add_element_withsize\n");
       abort();
@@ -217,16 +217,16 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
      the default size for each block is 512 bytes */
 
     /* record last reference time */
-    if (cache->core->obj_id_type == OBJ_ID_NUM) {
+    if (cache->core.obj_id_type == OBJ_ID_NUM) {
       key = (gpointer) g_new(guint64, 1);
       *(guint64 *) key = *(guint64 *) (req->obj_id_ptr);
-    } else if (cache->core->obj_id_type == OBJ_ID_STR) {
+    } else if (cache->core.obj_id_type == OBJ_ID_STR) {
       key = (gpointer) g_strdup((gchar *) req->obj_id_ptr);
     }
     g_hash_table_replace(last_ref_ht, key, GSIZE_TO_POINTER(cur_ts));
 
 
-    if (cache->core->type == e_Optimal) {
+    if (cache->core.type == e_Optimal) {
       ERROR("not supported\n");
 //            optimal_params_t* optimal_params = (optimal_params_t*)(cache->cache_params);
 //            (optimal_params->ts) ++ ;
@@ -238,12 +238,12 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
     } else {
       miss_count++;
       insert_element(cache, req);
-      if (get_size(cache) > cache->core->size) {
+      if (get_size(cache) > cache->core.size) {
         evicted_obj = evict_element(cache, req);
         last_ref_ts = GPOINTER_TO_SIZE(g_hash_table_lookup(last_ref_ht, evicted_obj));
         eviction_age[last_ref_ts] = cur_ts - last_ref_ts;
         //                printf("set ts %ld req to %ld (%ld - %ld) cache size %ld\n", last_ref_ts, cur_ts-last_ref_ts, cur_ts, last_ref_ts,
-        //                       cache->core->get_current_size(cache));
+        //                       cache->core.get_current_size(cache));
         g_free(evicted_obj);
       }
     }
@@ -255,7 +255,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
   result[idx]->miss_count = (long long) miss_count;
   result[idx]->hit_ratio = (double) hit_count / (hit_count + miss_count);
   result[idx]->miss_ratio = 1 - result[idx]->hit_ratio;
-  result[idx]->cache_size = cache->core->size;
+  result[idx]->cache_size = cache->core.size;
   result[idx]->other_data = eviction_age;
 
 
@@ -265,7 +265,7 @@ static void get_eviction_age_thread(gpointer data, gpointer user_data) {
   g_mutex_unlock(&(params->mtx));
   free_request(req);
   close_reader_unique(reader_thread);
-  cache->core->destroy_unique(cache);
+  cache->core.destroy_unique(cache);
 }
 
 
@@ -275,10 +275,10 @@ static void get_hit_result_thread(gpointer data, gpointer user_data) {
   int idx = GPOINTER_TO_UINT(data);
   guint bin_size = params->bin_size;
 
-  cache_t *cache = params->cache->core->cache_init(bin_size * idx,
-                                                   params->cache->core->obj_id_type,
-                                                   params->cache->core->block_size,
-                                                   params->cache->core->cache_init_params);
+  cache_t *cache = params->cache->core.cache_init(bin_size * idx,
+                                                   params->cache->core.obj_id_type,
+                                                   params->cache->core.block_size,
+                                                   params->cache->core.cache_init_params);
   profiler_res_t **result = params->result;
 
   reader_t *reader_thread = clone_reader(params->reader);
@@ -286,21 +286,21 @@ static void get_hit_result_thread(gpointer data, gpointer user_data) {
 
 
   // create request struct and initialization
-  request_t* req = new_req_struct(params->cache->core->obj_id_type);
+  request_t* req = new_req_struct(params->cache->core.obj_id_type);
   req->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
   req->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
   guint64 hit_count = 0, miss_count = 0;
   gboolean (*add_element)(struct cache *, request_t *req);
-  add_element = cache->core->add_element;
+  add_element = cache->core.add_element;
 
   read_one_element(reader_thread, req);
 
   // this must happen after read, otherwise req size and obj_id_type unknown
-  if (cache->core->use_block_size && req->obj_id_type == OBJ_ID_NUM &&
+  if (cache->core.use_block_size && req->obj_id_type == OBJ_ID_NUM &&
       req->disk_sector_size != 0) {    // && req->size != 0 is removed due to trace dirty
-    add_element = cache->core->add_element_withsize;
+    add_element = cache->core.add_element_withsize;
     if (add_element == NULL) {
       ERROR("using size with profiling, cannot find add_element_withsize\n");
       abort();
@@ -340,7 +340,7 @@ static void get_hit_result_thread(gpointer data, gpointer user_data) {
 
   free_request(req);
   close_reader_unique(reader_thread);
-  cache->core->destroy_unique(cache);
+  cache->core.destroy_unique(cache);
 }
 
 
@@ -350,33 +350,33 @@ static void get_evictions_thread(gpointer data, gpointer user_data) {
   int idx = GPOINTER_TO_UINT(data);
   guint bin_size = params->bin_size;
 
-  cache_t *cache = params->cache->core->cache_init(bin_size * idx,
-                                                   params->cache->core->obj_id_type,
-                                                   params->cache->core->block_size,
-                                                   params->cache->core->cache_init_params);
+  cache_t *cache = params->cache->core.cache_init(bin_size * idx,
+                                                   params->cache->core.obj_id_type,
+                                                   params->cache->core.block_size,
+                                                   params->cache->core.cache_init_params);
   profiler_res_t **result = params->result;
 
   reader_t *reader_thread = clone_reader(params->reader);
-  cache->core->record_level = 1;
-  cache->core->eviction_array = g_new(gpointer, reader_thread->base->total_num);
+  cache->core.record_level = 1;
+  cache->core.eviction_array = g_new(gpointer, reader_thread->base->total_num);
 
 
   // create request struct and initialization
-  request_t* req = new_req_struct(params->cache->core->obj_id_type);
+  request_t* req = new_req_struct(params->cache->core.obj_id_type);
   req->block_unit_size = (size_t) reader_thread->base->block_unit_size;    // this is not used, block_size goes with cache
   req->disk_sector_size = (size_t) reader_thread->base->disk_sector_size;
 
 
   guint64 hit_count = 0, miss_count = 0;
   gboolean (*add_element)(struct cache *, request_t *req);
-  add_element = cache->core->add_element;
+  add_element = cache->core.add_element;
 
   read_one_element(reader_thread, req);
 
   // this must happen after read, otherwise req size and obj_id_type unknown
-  if (cache->core->use_block_size && req->obj_id_type == OBJ_ID_NUM &&
+  if (cache->core.use_block_size && req->obj_id_type == OBJ_ID_NUM &&
       req->disk_sector_size != 0) {    // && req->size != 0 is removed due to trace dirty
-    add_element = cache->core->add_element_withsize;
+    add_element = cache->core.add_element_withsize;
     if (add_element == NULL) {
       ERROR("using size with profiling, cannot find add_element_withsize\n");
       abort();
@@ -401,7 +401,7 @@ static void get_evictions_thread(gpointer data, gpointer user_data) {
   result[idx]->miss_count = (long long) miss_count;
   result[idx]->hit_ratio = (double) hit_count / (hit_count + miss_count);
   result[idx]->miss_ratio = 1 - result[idx]->hit_ratio;
-  result[idx]->other_data = cache->core->eviction_array;
+  result[idx]->other_data = cache->core.eviction_array;
 
 
   // clean up
@@ -411,7 +411,7 @@ static void get_evictions_thread(gpointer data, gpointer user_data) {
 
   free_request(req);
   close_reader_unique(reader_thread);
-  cache->core->destroy_unique(cache);
+  cache->core.destroy_unique(cache);
 }
 
 
@@ -427,17 +427,17 @@ profiler_res_t **profiler(reader_t *reader_in,
   // initialization
   int num_of_threads = num_of_threads_in;
   int bin_size = bin_size_in;
-  long num_of_bins = (long) ceil((double) cache_in->core->size / bin_size) + 1;
+  long num_of_bins = (long) ceil((double) cache_in->core.size / bin_size) + 1;
 
   if (reader_in->base->total_num == -1)
     get_num_of_req(reader_in);
 
   // check whether profiling considering size or not
-  if (cache_in->core->use_block_size && reader_in->base->obj_id_type == OBJ_ID_NUM
+  if (cache_in->core.use_block_size && reader_in->base->obj_id_type == OBJ_ID_NUM
       && reader_in->base->disk_sector_size != 0 &&
-      cache_in->core->block_size != 0) {    // && req->size != 0 is removed due to trace dirty
+      cache_in->core.block_size != 0) {    // && req->size != 0 is removed due to trace dirty
     INFO("use block size %lu, disk sector size %lu in profiling\n",
-         (unsigned long) cache_in->core->block_size,
+         (unsigned long) cache_in->core.block_size,
          (unsigned long) reader_in->base->disk_sector_size);
   }
 
@@ -517,11 +517,11 @@ profiler_res_t **profiler(reader_t *reader_in,
 static void traverse_trace(reader_t *reader, cache_t *cache) {
 
   // req struct creation and initialization
-  request_t* req = new_req_struct(cache->core->obj_id_type);
+  request_t* req = new_req_struct(cache->core.obj_id_type);
   req->block_unit_size = (size_t) reader->base->block_unit_size;
 
   gboolean (*add_element)(struct cache *, request_t *req);
-  add_element = cache->core->add_element;
+  add_element = cache->core.add_element;
 
   read_one_element(reader, req);
   while (req->valid) {
@@ -538,16 +538,16 @@ static void traverse_trace(reader_t *reader, cache_t *cache) {
 
 //static void get_evict_err(reader_t* reader, cache_t* cache){
 //
-//    cache->core->bp_pos = 1;
-//    cache->core->evict_err_array = g_new0(gdouble, reader->sdata->break_points->array->len-1);
+//    cache->core.bp_pos = 1;
+//    cache->core.evict_err_array = g_new0(gdouble, reader->sdata->break_points->array->len-1);
 //
 // req struct creation and initialization
-//request_t* req = new_req_struct(cache->core->obj_id_type);
-//    req->obj_id_type = cache->core->obj_id_type;
+//request_t* req = new_req_struct(cache->core.obj_id_type);
+//    req->obj_id_type = cache->core.obj_id_type;
 //    req->block_size = (size_t) reader->base->block_size;
 //
 //    gboolean (*add_element)(struct cache*, request_t* req);
-//    add_element = cache->core->add_element;
+//    add_element = cache->core.add_element;
 //
 //    read_one_element(reader, req);
 //    while (req->valid){
@@ -568,36 +568,36 @@ static void traverse_trace(reader_t *reader, cache_t *cache) {
 //gdouble* LRU_evict_err_statistics(reader_t* reader_in, cache_t* cache_in, guint64 time_interval){
 //
 //    gen_breakpoints_realtime(reader_in, time_interval, -1);
-//    cache_in->core->bp = reader_in->sdata->break_points;
-//    cache_in->core->record_level = 2;
+//    cache_in->core.bp = reader_in->sdata->break_points;
+//    cache_in->core.record_level = 2;
 //
 //
 //    struct optimal_init_params* init_params = g_new0(struct optimal_init_params, 1);
 //    init_params->reader = reader_in;
 //    init_params->ts = 0;
 //    cache_t* optimal;
-//    if (cache_in->core->obj_id_type == OBJ_ID_NUM)
-//        optimal = optimal_init(cache_in->core->size, OBJ_ID_NUM, 0, (void*)init_params);
+//    if (cache_in->core.obj_id_type == OBJ_ID_NUM)
+//        optimal = optimal_init(cache_in->core.size, OBJ_ID_NUM, 0, (void*)init_params);
 //    else{
 //        printf("other cache data obj_id_type not supported in LRU_evict_err_statistics in generalProfiler\n");
 //        exit(1);
 //    }
-//    optimal->core->record_level = 1;
-//    optimal->core->eviction_array_len = reader_in->base->total_num;
-//    optimal->core->bp = reader_in->sdata->break_points;
+//    optimal->core.record_level = 1;
+//    optimal->core.eviction_array_len = reader_in->base->total_num;
+//    optimal->core.bp = reader_in->sdata->break_points;
 //
 //    if (reader_in->base->total_num == -1)
 //        get_num_of_req(reader_in);
 //
 //    if (reader_in->base->obj_id_type == 'v')
-//        optimal->core->eviction_array = g_new0(guint64, reader_in->base->total_num);
+//        optimal->core.eviction_array = g_new0(guint64, reader_in->base->total_num);
 //    else
-//        optimal->core->eviction_array = g_new0(gchar*, reader_in->base->total_num);
+//        optimal->core.eviction_array = g_new0(gchar*, reader_in->base->total_num);
 //
 //    // get oracle
 //    traverse_trace(reader_in, optimal);
 //
-//    cache_in->core->oracle = optimal->core->eviction_array;
+//    cache_in->core.oracle = optimal->core.eviction_array;
 //
 //
 //    get_evict_err(reader_in, cache_in);
@@ -605,7 +605,7 @@ static void traverse_trace(reader_t *reader, cache_t *cache) {
 //    optimal_destroy(optimal);
 //
 //
-//    return cache_in->core->evict_err_array;
+//    return cache_in->core.evict_err_array;
 //}
 
 

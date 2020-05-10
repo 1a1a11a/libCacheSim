@@ -17,7 +17,7 @@ inline bool MyLRUCpp::check(request_t *req) {
 
 bool MyLRUCpp::add(request_t *req) {
   bool exist = check(req);
-  if (req->size <= size) {
+  if (req->obj_size <= size) {
     if (exist)
       update(req);
     else
@@ -25,7 +25,7 @@ bool MyLRUCpp::add(request_t *req) {
     while (used_size > size)
       evict(req);
   } else {
-      clog << "obj size " << req->size << " larger than cache size " << size << endl;
+      clog << "obj size " << req->obj_size << " larger than cache size " << size << endl;
   }
   logical_time++;
   return exist;
@@ -43,7 +43,7 @@ void MyLRUCpp::insert(request_t *req) {
 void MyLRUCpp::update(request_t *req) {
   CacheObj cache_obj(req);
   auto it = hashtable.find(cache_obj);
-  used_size = used_size - it->first.size + req->size;
+  used_size = used_size - it->first.size + req->obj_size;
   lru_queue.erase(it->second);
   hashtable.erase(cache_obj);
   lru_queue.emplace_front(cache_obj);
@@ -76,7 +76,7 @@ bool MyLRUCpp::remove(request_t *req) {
 void __myLRU_insert_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   myLRU->insert(req);
-  cache->core->used_size = myLRU->used_size;
+  cache->core.used_size = myLRU->used_size;
 }
 
 gboolean myLRU_check_element(cache_t *cache, request_t *req) {
@@ -87,13 +87,13 @@ gboolean myLRU_check_element(cache_t *cache, request_t *req) {
 void __myLRU_update_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   myLRU->update(req);
-  cache->core->used_size = myLRU->used_size;
+  cache->core.used_size = myLRU->used_size;
 }
 
 void __myLRU_evict_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   myLRU->evict(req);
-  cache->core->used_size = myLRU->used_size;
+  cache->core.used_size = myLRU->used_size;
 }
 
 gpointer __myLRU__evict_with_return(cache_t *cache, request_t *req) {
@@ -104,7 +104,7 @@ gpointer __myLRU__evict_with_return(cache_t *cache, request_t *req) {
   cerr << __func__ << " is not used in most of places, so we can skip the implementation until necessary" << endl;
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   CacheObj *cache_obj = myLRU->evict_with_return(req);
-  cache->core->used_size = myLRU->used_size;
+  cache->core.used_size = myLRU->used_size;
 
   if (req->obj_id_type == OBJ_ID_NUM) {
     uint64_t *evicted_key = g_new(uint64_t, 1);
@@ -118,7 +118,7 @@ gpointer __myLRU__evict_with_return(cache_t *cache, request_t *req) {
 gboolean myLRU_add_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   gboolean exist = static_cast<gboolean>(myLRU->add(req));
-  cache->core->used_size = myLRU->used_size;
+  cache->core.used_size = myLRU->used_size;
   return exist;
 }
 
@@ -126,7 +126,7 @@ gboolean myLRU_add_element(cache_t *cache, request_t *req) {
 void myLRU_destroy(cache_t *cache) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   delete myLRU;
-  cache_destroy(cache);
+  cache_struct_free(cache);
 }
 
 void myLRU_destroy_unique(cache_t *cache) {
@@ -149,23 +149,9 @@ uint64_t myLRU_get_size(cache_t *cache) {
 }
 
 
-cache_t *myLRU_init(uint64_t size, obj_id_t obj_id_type, uint64_t block_size, void *params) {
-  cache_t *cache = cache_init(size, obj_id_type, block_size);
+cache_t *myLRU_init(uint64_t size, obj_id_type_t obj_id_type, uint64_t block_size, void *params) {
+  cache_t *cache = cache_struct_init("myLRU", size, obj_id_type);
   cache->cache_params = static_cast<void *>(new MyLRUCpp(size));
-
-  cache->core->cache_init = myLRU_init;
-  cache->core->destroy = myLRU_destroy;
-  cache->core->destroy_unique = myLRU_destroy_unique;
-  cache->core->add_element = myLRU_add_element;
-  cache->core->check_element = myLRU_check_element;
-  cache->core->__insert_element = __myLRU_insert_element;
-  cache->core->__update_element = __myLRU_update_element;
-  cache->core->__evict_element = __myLRU_evict_element;
-  cache->core->__evict_with_return = __myLRU__evict_with_return;
-  cache->core->get_current_size = myLRU_get_size;
-  cache->core->remove_element = NULL;
-  cache->core->cache_init_params = params;
-
   return cache;
 }
 

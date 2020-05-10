@@ -30,9 +30,9 @@ void hm_nonLRU_hr_st_et_thread(gpointer data, gpointer user_data) {
   GArray *break_points = params->break_points;
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
-  struct cache *cache = params->cache->core->cache_init(params->cache->core->size,
-                                                        params->cache->core->obj_id_type,
-                                                        params->cache->core->cache_init_params);
+  struct cache *cache = params->cache->core.cache_init(params->cache->core.size,
+                                                        params->cache->core.obj_id_type,
+                                                        params->cache->core.cache_init_params);
 
   guint64 order = GPOINTER_TO_SIZE(data) - 1;
   int interval_hit_ratio_b = params->interval_hit_ratio_b;
@@ -43,7 +43,7 @@ void hm_nonLRU_hr_st_et_thread(gpointer data, gpointer user_data) {
 
 
   // req struct creation and initialization
-  request_t *req = new_request(cache->core->obj_id_type);
+  request_t *req = new_request(cache->core.obj_id_type);
 
   guint64 N = g_array_index(break_points, guint64, order);
   if (N != skip_N_elements(reader_thread, N)) {
@@ -52,7 +52,7 @@ void hm_nonLRU_hr_st_et_thread(gpointer data, gpointer user_data) {
   };
 
   // this is for synchronizing ts in cache, which is used as index for access next_access array
-  if (strcmp(cache->core->cache_name, "Optimal") == 0)
+  if (strcmp(cache->core.cache_name, "Optimal") == 0)
     ((struct Optimal_params *) (cache->cache_params))->ts = g_array_index(break_points, guint64, order);
 
   for (i = order; i < break_points->len - 1; i++) {
@@ -60,7 +60,7 @@ void hm_nonLRU_hr_st_et_thread(gpointer data, gpointer user_data) {
     miss_count_interval = 0;
     for (j = 0; j < g_array_index(break_points, guint64, i + 1) - g_array_index(break_points, guint64, i); j++) {
       read_one_req(reader_thread, req);
-      if (cache->core->get(cache, req))
+      if (cache->core.get(cache, req))
         hit_count_interval++;
       else
         miss_count_interval++;
@@ -89,7 +89,7 @@ void hm_nonLRU_hr_st_et_thread(gpointer data, gpointer user_data) {
 
 
   close_cloned_reader(reader_thread);
-  cache->core->destroy_cloned_cache(cache);
+  cache->core.destroy_cloned_cache(cache);
 }
 
 
@@ -117,15 +117,15 @@ void hm_nonLRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
       dd->matrix[i][order] = 0;
 
   } else {
-    cache = params->cache->core->cache_init(cache_size,
-                                            params->cache->core->obj_id_type,
-                                            params->cache->core->cache_init_params);
+    cache = params->cache->core.cache_init(cache_size,
+                                            params->cache->core.obj_id_type,
+                                            params->cache->core.cache_init_params);
 
     double ewma_coefficient_lf = params->ewma_coefficient_lf;
 
 
     // req struct creation and initialization
-    req = new_request(cache->core->obj_id_type);
+    req = new_request(cache->core.obj_id_type);
 
 
     for (i = 0; i < break_points->len - 1; i++) {
@@ -133,7 +133,7 @@ void hm_nonLRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
       miss_count_interval = 0;
       for (j = 0; j < g_array_index(break_points, guint64, i + 1) - g_array_index(break_points, guint64, i); j++) {
         read_one_req(reader_thread, req);
-        if (cache->core->get(cache, req))
+        if (cache->core.get(cache, req))
           hit_count_interval++;
         else
           miss_count_interval++;
@@ -158,7 +158,7 @@ void hm_nonLRU_hr_interval_size_thread(gpointer data, gpointer user_data) {
 
   close_cloned_reader(reader_thread);
   if (cache != NULL)
-    cache->core->destroy_cloned_cache(cache);
+    cache->core.destroy_cloned_cache(cache);
 }
 
 
@@ -181,15 +181,15 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
   guint64 *progress = params->progress;
   draw_dict *dd = params->dd;
 
-  cache_t *cache = params->cache->core->cache_init((unsigned long) cache_size,
-                                                   params->cache->core->obj_id_type,
-                                                   params->cache->core->cache_init_params);
+  cache_t *cache = params->cache->core.cache_init((unsigned long) cache_size,
+                                                   params->cache->core.obj_id_type,
+                                                   params->cache->core.cache_init_params);
 
   guint64 *effective_cache_size = malloc(sizeof(guint64) * reader_thread->base->n_total_req);
 
 
   // create request struct and initialization
-  request_t* req = new_request(cache->core->obj_id_type);
+  request_t* req = new_request(cache->core.obj_id_type);
 
 
   Optimal_params_t *opt_params = cache->cache_params;
@@ -226,20 +226,20 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
     g_hash_table_insert(last_access_time_ght, item, GSIZE_TO_POINTER(cur_ts + 1));
 
     // add to cache
-    if (cache->core->check(cache, req)) {
-      cache->core->_update(cache, req);
+    if (cache->core.check(cache, req)) {
+      cache->core._update(cache, req);
     } else {
       current_effective_size += 1;
-      cache->core->_insert(cache, req);
+      cache->core._insert(cache, req);
     }
 
     /** Optimal only
      *  find elements that will never be accessed
      */
-    if (strcmp(cache->core->cache_name, "Optimal")==0) {
+    if (strcmp(cache->core.cache_name, "Optimal")==0) {
       pq_node_t *node = pqueue_peek(opt_params->pq);
       if (node->pri.pri1 == G_MAXINT64) {
-        cache->core->_evict(cache, NULL);
+        cache->core._evict(cache, NULL);
         current_effective_size -= 1;
       }
     }
@@ -249,8 +249,8 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
      *  in other words, this item should not be added to cache
      *  so need to find out when this item was added and reduced the size of all time after it
      */
-    while ((long) cache->core->used_size > cache->core->size) {
-      item = cache->core->evict_with_return(cache, req);
+    while ((long) cache->core.used_size > cache->core.size) {
+      item = cache->core.evict_with_return(cache, req);
       last_ts = GPOINTER_TO_UINT(g_hash_table_lookup(last_access_time_ght, item)) - 1;
       if (last_ts < 0) {
         ERROR("last access time should be larger than 0, current %ld", (long) last_ts);
@@ -279,7 +279,7 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
     }
 
     cur_ts += 1;
-    if (strcmp(cache->core->cache_name, "Optimal")==0)
+    if (strcmp(cache->core.cache_name, "Optimal")==0)
       (opt_params->ts)++;
 
 
@@ -320,7 +320,7 @@ void hm_effective_size_thread(gpointer data, gpointer user_data) {
   g_hash_table_destroy(last_access_time_ght);
 
   close_cloned_reader(reader_thread);
-  cache->core->destroy_cloned_cache(cache);
+  cache->core.destroy_cloned_cache(cache);
 }
 
 
