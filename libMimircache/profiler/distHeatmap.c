@@ -29,6 +29,8 @@ heatmap_plot_matrix_t *get_stack_dist_heatmap_matrix(reader_t *reader, gint32 wi
     y_pos = (gint32) (ceil(log((double) stack_dist[i]+1) / div));
     hm_matrix->matrix[x_pos][y_pos] += 1;
   }
+
+  normalize_heatmap_matrix(hm_matrix);
   g_free(boundary);
   g_free(stack_dist);
   return hm_matrix;
@@ -56,6 +58,8 @@ heatmap_plot_matrix_t * get_last_access_dist_heatmap_matrix(reader_t *reader, gi
     y_pos = (gint32) (ceil(log((double) dist[i]+1) / div));
     hm_matrix->matrix[x_pos][y_pos] += 1;
   }
+
+  normalize_heatmap_matrix(hm_matrix);
   g_free(boundary);
   g_free(dist);
   return hm_matrix;
