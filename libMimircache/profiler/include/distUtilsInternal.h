@@ -33,7 +33,7 @@ static inline gint64 _get_last_dist_add_req(request_t *req, GHashTable *hash_tab
   } else {
     // it has been requested before
     gsize old_ts = GPOINTER_TO_SIZE(gp);
-    ret = (gint64) ts - (gint64) old_ts;
+    ret = (gint64) ts - (gint64) old_ts - 1;
   }
   if (req->obj_id_type == OBJ_ID_STR)
     g_hash_table_insert(hash_table, g_strdup((gchar * )(req->obj_id_ptr)), GSIZE_TO_POINTER((gsize) ts));

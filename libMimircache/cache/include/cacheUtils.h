@@ -21,7 +21,7 @@ typedef struct {
   guint64 n_exp_byte;
   guint64 n_total_obj;
   guint64 n_total_byte;
-  guint64 cur_time;
+  gint32 cur_time;
 } exp_info_t;
 
 
