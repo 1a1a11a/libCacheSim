@@ -41,14 +41,31 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   gboolean (*add)(cache_t *, request_t *);
   add = local_cache->core.get;
 
+  /* warm up using warmup_reader */
+  if (params->warmup_reader) {
+    guint64 n_warmup = 0;
+    reader_t *warmup_cloned_reader = NULL;
+    warmup_cloned_reader = clone_reader(params->warmup_reader);
+    read_one_req(warmup_cloned_reader, req);
+    while (req->valid) {
+      add(local_cache, req);
+      n_warmup += 1;
+      read_one_req(warmup_cloned_reader, req);
+    }
+    close_reader(warmup_cloned_reader);
+    INFO("cache %s (size %lld) finishes warm up with %llu requests\n", local_cache->core.cache_name, local_cache->core.size, n_warmup);
+  }
+
+  /* using warmup_perc of requests from reader to warm up */
   read_one_req(cloned_reader, req);
-//  printf("read %lu, time %lu size %lu valid %d\n", (unsigned  long) req->obj_id_ptr, req->real_time, req->obj_size, req->valid);
   if (params->n_warmup_req > 0){
     guint64 n_warmup = 0;
     while (req->valid && n_warmup < params->n_warmup_req) {
-      read_one_req(cloned_reader, req);
+      add(local_cache, req);
       n_warmup += 1;
+      read_one_req(cloned_reader, req);
     }
+    INFO("cache %s (size %lld) finishes warm up with %llu requests\n", local_cache->core.cache_name, local_cache->core.size, n_warmup);
   }
 
   while (req->valid) {
@@ -82,7 +99,8 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
 }
 
 profiler_res_t * get_miss_ratio_curve_with_step_size(reader_t *const reader, const cache_t *const cache,
-                                    const guint64 step_size, const double warmup_perc, const gint num_of_threads) {
+                                    const guint64 step_size, reader_t *const warmup_reader,
+                                    const double warmup_perc, const gint num_of_threads) {
 
   int num_of_sizes = (int) ceil((double) cache->core.size / step_size) ;
   get_num_of_req(reader);
@@ -91,7 +109,7 @@ profiler_res_t * get_miss_ratio_curve_with_step_size(reader_t *const reader, con
     cache_sizes[i] = step_size * (i+1);
   }
 
-  profiler_res_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, warmup_perc, num_of_threads);
+  profiler_res_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, warmup_reader, warmup_perc, num_of_threads);
   g_free(cache_sizes);
   return res;
 }
@@ -99,6 +117,7 @@ profiler_res_t * get_miss_ratio_curve_with_step_size(reader_t *const reader, con
 
 profiler_res_t *get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
                                      const gint num_of_sizes, const guint64 *const cache_sizes,
+                                     reader_t *const warmup_reader,
                                      const double warmup_perc, const gint num_of_threads) {
 
   gint i, progress = 0;
@@ -113,6 +132,7 @@ profiler_res_t *get_miss_ratio_curve(reader_t *const reader, const cache_t *cons
   // build parameters and send to thread pool
   prof_mt_params_t *params = g_new0(prof_mt_params_t, 1);
   params->reader = reader;
+  params->warmup_reader = warmup_reader;
   params->cache = (cache_t*) cache;
   params->n_warmup_req = (guint64)(reader->base->n_total_req * warmup_perc);
   params->result = result;

@@ -18,9 +18,9 @@ extern "C"
 typedef struct profiler_multithreading_params {
   reader_t *reader;
   cache_t *cache;
-  guint64 n_warmup_req;   // num of requests used for warming up cache
+  guint64 n_warmup_req;   // num of requests used for warming up cache if using requests from reader
+  reader_t *warmup_reader;
   profiler_res_t *result;
-//  guint64 bin_size;
   GMutex mtx;             // prevent simultaneous write to progress
   gint *progress;
   gpointer other_data;

@@ -50,6 +50,7 @@ typedef enum {
  * @param cache
  * @param num_of_sizes
  * @param cache_sizes
+ * @param warmup_reader
  * @param warmup_perc
  * @param num_of_threads
  * @return
@@ -59,6 +60,7 @@ get_miss_ratio_curve(reader_t *const reader,
                      const cache_t *const cache,
                      const gint num_of_sizes,
                      const guint64 *const cache_sizes,
+                     reader_t *const warmup_reader,
                      const double warmup_perc,
                      const gint num_of_threads);
 
@@ -80,6 +82,7 @@ profiler_res_t *
 get_miss_ratio_curve_with_step_size(reader_t *const reader_in,
                                     const cache_t *const cache_in,
                                     const guint64 step_size,
+                                    reader_t *const warmup_reader,
                                     const double warmup_perc,
                                     const gint num_of_threads);
 
