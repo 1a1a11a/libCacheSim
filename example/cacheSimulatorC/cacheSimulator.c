@@ -17,10 +17,11 @@ int main(int argc, char **argv){
     read_one_req(reader, req);
   }
 
-  cache_t *lru = create_cache("LRU", 20, OBJ_ID_STR, NULL);
+  common_cache_params_t cc_params = {.cache_size=20, .obj_id_type=OBJ_ID_STR, .support_ttl=FALSE};
+  cache_t *lru = create_cache("LRU", cc_params, NULL);
   printf("%d\n", lru->core.get(lru, req));
 
-  cache_t *mylru = create_cache("myLRU", 20, OBJ_ID_STR, NULL);
+  cache_t *mylru = create_cache("myLRU", cc_params, NULL);
   printf("%d\n", mylru->core.get(mylru, req));
 
   free_request(req);

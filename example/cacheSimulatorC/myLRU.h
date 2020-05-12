@@ -29,7 +29,7 @@ struct myLRU_params {
 typedef struct myLRU_params myLRU_params_t;
 
 
-cache_t *myLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params);
+cache_t *myLRU_init(common_cache_params_t ccache_params, void *cache_specific_init_params);
 
 extern void myLRU_free(cache_t *cache);
 

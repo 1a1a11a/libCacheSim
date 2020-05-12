@@ -19,7 +19,8 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size, string trace_
   reader_init_param_t reader_init_params = {.real_time_field=1, .obj_id_field=2, .obj_size_field=3};
   sprintf(reader_init_params.binary_fmt, "%s", "III");
   reader_t *reader = setup_reader(trace_path.c_str(), BIN_TRACE, OBJ_ID_NUM, &reader_init_params);
-  cache_t *cache = create_cache(algo.c_str(), cache_size, reader->base->obj_id_type, nullptr);
+  common_cache_params_t cc_params = {.cache_size=cache_size, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
+  cache_t *cache = create_cache(algo.c_str(), cc_params, nullptr);
   request_t *req = new_request(reader->base->obj_id_type);
 
   bool hit;
