@@ -19,6 +19,9 @@ extern "C"
 /***********************************************************
  * this function is called by _get_last_access_dist,
  * it insert current request and return distance to its last request
+ * note that the distance between req at t and at t+1 is 0,
+ * the calculated dist = cur_ts - last_ts - 1
+ *
  * @param req           request_t contains current request
  * @param hash_table    the hashtable for remembering last access
  * @param ts            current timestamp

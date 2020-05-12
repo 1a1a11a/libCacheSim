@@ -8,9 +8,9 @@
 
 void test_distUtils_basic(gconstpointer user_data){
   gint64 rd_true[N_TEST] = {-1, -1, -1, 7, -1, 86};
-  gint64 last_dist_true[N_TEST] = {-1, -1, -1, 8, -1, 138};
+  gint64 last_dist_true[N_TEST] = {-1, -1, -1, 7, -1, 137};
   gint64 frd_true[N_TEST] = {11, 37, 49, -1, 8, -1};
-  gint64 next_dist_true[N_TEST] = {12, 60, 80, -1, 9, -1};
+  gint64 next_dist_true[N_TEST] = {11, 59, 79, -1, 8, -1};
   gint64 *dist;
 
   reader_t* reader = (reader_t*) user_data;

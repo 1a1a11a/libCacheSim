@@ -254,6 +254,9 @@ gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_ty
   char *file_path = (char*)malloc(strlen(path)+8);
   sprintf(file_path, "%s.%d", path, dist_type);
   FILE *file = fopen(path, "rb");
+  if (file == NULL){
+    perror(file_path);
+  }
 
   int fd = fileno(file); //if you have a stream (e.g. from fopen), not a file descriptor.
   struct stat buf;
