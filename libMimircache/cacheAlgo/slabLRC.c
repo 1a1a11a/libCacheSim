@@ -13,18 +13,18 @@ extern "C" {
 #endif
 
 
-cache_t *slabLRC_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  if (size < MB * N_SLABCLASS){
-    ERROR("slab based algorithm needs size at least %d * %ld, but given %llu\n", N_SLABCLASS, MB, (unsigned long long) size);
+cache_t *slabLRC_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  if (ccache_params.cache_size < MB * N_SLABCLASS){
+    ERROR("slab based algorithm needs size at least %d * %ld, but given %llu\n", N_SLABCLASS, MB, (unsigned long long) ccache_params.cache_size);
     abort();
   }
-  cache_t *cache = cache_struct_init("slabLRC", size, obj_id_type);
+  cache_t *cache = cache_struct_init("slabLRC", ccache_params);
   cache->cache_params = g_new0(slabLRC_params_t, 1);
   slabLRC_params_t *slabLRC_params = (slabLRC_params_t *) (cache->cache_params);
-  slabLRC_params->hashtable = create_hash_table_with_obj_id_type(obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
+  slabLRC_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
   slabLRC_params->slab_params.slab_q = g_queue_new();
   slabLRC_params->slab_params.slab_size = MB;
-  slabLRC_params->slab_params.n_total_slabs = size / slabLRC_params->slab_params.slab_size;
+  slabLRC_params->slab_params.n_total_slabs = ccache_params.cache_size / slabLRC_params->slab_params.slab_size;
 //  DEBUG("cache size %lu - %d total slabs\n", size, slabLRC_params->slab_params.n_total_slabs);
   slabLRC_params->slab_params.per_obj_metadata_size = 0;
   for (int i=0; i<N_SLABCLASS; i++)

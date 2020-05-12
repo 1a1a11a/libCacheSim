@@ -71,22 +71,11 @@ void MRU_destroy_unique(cache_t *cache) {
   MRU_destroy(cache);
 }
 
-cache_t *MRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("MRU", size, obj_id_type);
+cache_t *MRU_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("MRU", ccache_params);
   struct MRU_params *MRU_params = g_new0(struct MRU_params, 1);
   cache->cache_params = (void *) MRU_params;
-
-
-  if (obj_id_type == OBJ_ID_NUM) {
-    MRU_params->hashtable = g_hash_table_new_full(
-      g_direct_hash, g_direct_equal, NULL, NULL);
-  } else if (obj_id_type == OBJ_ID_STR) {
-    MRU_params->hashtable = g_hash_table_new_full(
-      g_str_hash, g_str_equal, g_free, NULL);
-  } else {
-    ERROR("does not support given obj_id type: %c\n", obj_id_type);
-  }
-
+  MRU_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, NULL, g_free, NULL);
   return cache;
 }
 

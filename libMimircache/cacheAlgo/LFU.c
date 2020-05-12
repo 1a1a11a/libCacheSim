@@ -154,27 +154,27 @@ void LFU_destroy_unique(cache_t *cache) {
   LFU_destroy(cache);
 }
 
-cache_t *LFU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("LFU", size, obj_id_type);
+cache_t *LFU_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("LFU", ccache_params);
   LFU_params_t *LFU_params = g_new0(LFU_params_t, 1);
   cache->cache_params = (void *) LFU_params;
 
 //  cacheAlgo->core.add_only = LFU_add;
 
 
-  if (obj_id_type == OBJ_ID_NUM) {
+  if (ccache_params.obj_id_type == OBJ_ID_NUM) {
     LFU_params->hashtable = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
                                                   g_free);
-  } else if (obj_id_type == OBJ_ID_STR) {
+  } else if (ccache_params.obj_id_type == OBJ_ID_STR) {
     LFU_params->hashtable = g_hash_table_new_full(g_str_hash, g_str_equal,
                                                   g_free,
                                                   g_free);
   } else {
-    ERROR("does not support given obj_id type: %c\n", obj_id_type);
+    ERROR("does not support given obj_id type: %c\n", ccache_params.obj_id_type);
   }
 
   LFU_params->pq =
-    pqueue_init(size, cmp_pri, get_pri, set_pri, get_pos, set_pos);
+    pqueue_init(ccache_params.cache_size, cmp_pri, get_pri, set_pri, get_pos, set_pos);
 
   return cache;
 }

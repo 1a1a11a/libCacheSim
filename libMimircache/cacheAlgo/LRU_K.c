@@ -200,34 +200,34 @@ void LRU_K_destroy(cache_t *cache) {
 //  cache_destroy_unique(cache);
 //}
 
-cache_t *LRU_K_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("LRUK", size, obj_id_type);
+cache_t *LRU_K_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("LRUK", ccache_params);
   cache->cache_params = g_new0(struct LRU_K_params, 1);
   struct LRU_K_params *LRU_K_params =
       (struct LRU_K_params *)(cache->cache_params);
 
-  cache->core.cache_init_params = params;
+  cache->core.cache_specific_init_params = cache_specific_init_params;
 
   LRU_K_params->ts = 0;
   LRU_K_params->pq =
-      pqueue_init((size_t)size, cmp_pri, get_pri, set_pri, get_pos, set_pos);
+      pqueue_init((size_t)ccache_params.cache_size, cmp_pri, get_pri, set_pri, get_pos, set_pos);
 
   int K, maxK;
-  K = ((struct LRU_K_init_params *)params)
+  K = ((struct LRU_K_init_params *)cache_specific_init_params)
           ->K; // because in gqueue, sequence begins with 0
-  maxK = ((struct LRU_K_init_params *)params)->maxK;
+  maxK = ((struct LRU_K_init_params *)cache_specific_init_params)->maxK;
 
   LRU_K_params->K = K;
   LRU_K_params->maxK = maxK;
 
-  if (obj_id_type == OBJ_ID_NUM) {
+  if (ccache_params.obj_id_type == OBJ_ID_NUM) {
     // don't use pqueue_node_destroyer here, because the obj_id inside node is
     // going to be freed by ghost_hashtable key
     LRU_K_params->cache_hashtable = g_hash_table_new_full(
       g_direct_hash, g_direct_equal, NULL, g_free);
     LRU_K_params->ghost_hashtable =
         g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, gqueue_destroyer);
-  } else if (obj_id_type == OBJ_ID_STR) {
+  } else if (ccache_params.obj_id_type == OBJ_ID_STR) {
     // don't use pqueue_node_destroyer here, because the obj_id inside node is
     // going to be freed by ghost_hashtable key
     LRU_K_params->cache_hashtable = g_hash_table_new_full(
@@ -236,7 +236,7 @@ cache_t *LRU_K_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
         g_hash_table_new_full(g_str_hash, g_str_equal,
                               g_free, gqueue_destroyer);
   } else {
-    ERROR("does not support given obj_id type: %c\n", obj_id_type);
+    ERROR("does not support given obj_id type: %c\n", ccache_params.obj_id_type);
   }
 
   return cache;

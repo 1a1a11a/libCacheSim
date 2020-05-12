@@ -18,11 +18,11 @@ extern "C" {
 #include "LRU.h"
 #include "../utils/include/utilsInternal.h"
 
-cache_t *LRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("LRU", size, obj_id_type);
+cache_t *LRU_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("LRU", ccache_params);
   cache->cache_params = g_new0(LRU_params_t, 1);
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
-  LRU_params->hashtable = create_hash_table_with_obj_id_type(obj_id_type, NULL, NULL, g_free, NULL);
+  LRU_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, NULL, g_free, NULL);
   LRU_params->list = g_queue_new();
   return cache;
 }

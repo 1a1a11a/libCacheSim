@@ -28,8 +28,12 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   profiler_res_t *result = params->result;
   reader_t *cloned_reader = clone_reader(params->reader);
   request_t *req = new_request(params->cache->core.obj_id_type);
-  cache_t *local_cache = create_cache(params->cache->core.cache_name, result[idx].cache_size,
-                                      params->cache->core.obj_id_type, params->cache->core.cache_init_params);
+  cache_t * local_cache = create_cache_with_new_size(params->cache, result[idx].cache_size);
+
+//  common_cache_params_t cc_params = {.cache_size=result[idx].cache_size,
+//                                     .obj_id_type=params->cache->core.obj_id_type,
+//                                     .support_ttl=params->cache->core.support_ttl};
+//  cache_t *local_cache = create_cache(params->cache->core.cache_name, cc_params, params->cache->core.cache_specific_init_params);
 
 
   guint64 req_cnt = 0, miss_cnt = 0;
@@ -49,6 +53,8 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
 
   while (req->valid) {
     req_cnt++;
+//    if (req_cnt % 100000 == 0)
+//      INFO("%s size %lld: %lld req\n", local_cache->core.cache_name, (long long) local_cache->core.size, (long long) req_cnt);
     req_byte += req->obj_size;
     if (!add(local_cache, req)) {
       miss_cnt++;

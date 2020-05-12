@@ -17,12 +17,12 @@ extern "C" {
 #include "../../include/mimircache/cacheOp.h"
 
 
-cache_t *Random_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("Random", size, obj_id_type);
+cache_t *Random_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("Random", ccache_params);
   Random_params_t *Random_params = g_new0(Random_params_t, 1);
   cache->cache_params = (void *)Random_params;
 
-  Random_params->hashtable = create_hash_table_with_obj_id_type(obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
+  Random_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
 
 //  Random_params->array = g_array_sized_new(FALSE, FALSE, sizeof(gpointer), (guint)1000000);
   Random_params->array = g_ptr_array_new();

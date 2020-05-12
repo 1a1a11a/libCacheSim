@@ -25,7 +25,7 @@ typedef struct slabObjLRU_params {
 } slabObjLRU_params_t;
 
 
-cache_t *slabObjLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params);
+cache_t *slabObjLRU_init(common_cache_params_t ccache_params, void *cache_specific_init_params);
 
 void slabObjLRU_free(cache_t *cache);
 

@@ -250,20 +250,20 @@ void LFUFast_destroy_unique(cache_t *cache) {
   LFUFast_destroy(cache);
 }
 
-cache_t *LFUFast_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("LFUFast", size, obj_id_type);
+cache_t *LFUFast_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("LFUFast", ccache_params);
   LFUFast_params_t *LFUFast_params = g_new0(LFUFast_params_t, 1);
   cache->cache_params = (void *) LFUFast_params;
 
 
-  if (obj_id_type == OBJ_ID_NUM) {
+  if (ccache_params.obj_id_type == OBJ_ID_NUM) {
     LFUFast_params->hashtable = g_hash_table_new_full(
       g_direct_hash, g_direct_equal, NULL, NULL);
-  } else if (obj_id_type == OBJ_ID_STR) {
+  } else if (ccache_params.obj_id_type == OBJ_ID_STR) {
     LFUFast_params->hashtable = g_hash_table_new_full(
       g_str_hash, g_str_equal, g_free, NULL);
   } else {
-    ERROR("does not support given obj_id type: %c\n", obj_id_type);
+    ERROR("does not support given obj_id type: %c\n", ccache_params.obj_id_type);
   }
 
   LFUFast_params->min_freq = 0;

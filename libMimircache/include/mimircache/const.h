@@ -24,8 +24,11 @@ extern "C" {
 //#undef __DEBUG__
 //#undef _DEBUG
 
-
+// if TTL is not needed, disable this to reduce memory usage
 #define SUPPORT_TTL
+
+
+#define UNUSED(x) (void)(x)
 
 
 #define MAX_OBJ_ID_LEN 1024
@@ -34,6 +37,7 @@ extern "C" {
 #define MAX_LINE_LEN 1024 * 8
 
 #define MAX_BIN_FMT_STR_LEN 128
+
 
 
 typedef enum {
@@ -54,6 +58,17 @@ typedef enum { OBJ_ID_NUM = 'l', OBJ_ID_STR = 'c' } obj_id_type_t;
 #define GiB 1000000000L
 #define TiB 1000000000000L
 
+
+// this is correct, to change to this, need to update test
+//#define KiB 1024L
+//#define MiB 1048576L
+//#define GiB 1073741824L
+//#define TiB 1099511627776L
+//
+//#define KB 1000L
+//#define MB 1000000L
+//#define GB 1000000000L
+//#define TB 1000000000000L
 
 //#define DEFAULT_SECTOR_SIZE                             512
 

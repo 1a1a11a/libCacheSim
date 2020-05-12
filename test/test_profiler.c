@@ -4,7 +4,6 @@
 
 #include "test_common.h"
 
-
 /**
  * this one for testing with the plain trace reader, which currently does not have obj size information
  * @param user_data
@@ -17,7 +16,8 @@ void test_profiler_trace_no_size(gconstpointer user_data) {
   guint64 miss_cnt_true[] = {99411, 96397, 95652, 95370, 95182, 94997, 94891, 94816};
 
   reader_t *reader = (reader_t *) user_data;
-  cache_t *cache = create_cache("LRU", cache_size, reader->base->obj_id_type, NULL);
+  common_cache_params_t cc_params = {.cache_size=cache_size, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
+  cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
   profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, step_size, 0, 4);
 
@@ -50,7 +50,8 @@ void test_profiler_trace(gconstpointer user_data) {
                               3081624576, 3079594496, 3075357184, 3060711936};
 
   reader_t *reader = (reader_t *) user_data;
-  cache_t *cache = create_cache("LRU", CACHE_SIZE, reader->base->obj_id_type, NULL);
+  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
+  cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 
 

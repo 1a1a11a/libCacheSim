@@ -52,7 +52,7 @@ extern void SLRU_destroy(cache_t *cache);
 extern void SLRU_destroy_unique(cache_t *cache);
 
 
-cache_t *SLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params);
+cache_t *SLRU_init(common_cache_params_t ccache_params, void *cache_specific_init_params);
 
 
 extern void SLRU_remove_obj(cache_t *cache, void *data_to_remove);

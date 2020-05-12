@@ -90,43 +90,43 @@ void test_teardown(gpointer data) {
   close_reader(reader);
 }
 
-cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* reader, void *params) {
+cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params, reader_t* reader, void *params) {
   cache_t* cache;
   void *init_params_g;
   if (strcmp(alg_name, "LRU") == 0)
-    cache = LRU_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = LRU_init(cc_params, NULL);
   else if (strcmp(alg_name, "FIFO") == 0)
-    cache = FIFO_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = FIFO_init(cc_params, NULL);
   else if (strcmp(alg_name, "Random") == 0)
-    cache = Random_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = Random_init(cc_params, NULL);
   else if (strcmp(alg_name, "LRU_K") == 0)
-    cache = LRU_K_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = LRU_K_init(cc_params, NULL);
   else if (strcmp(alg_name, "LFU") == 0)
-    cache = LFU_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = LFU_init(cc_params, NULL);
   else if (strcmp(alg_name, "LFUFast") == 0)
-    cache = LFUFast_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = LFUFast_init(cc_params, NULL);
   else if (strcmp(alg_name, "ARC") == 0) {
     ARC_init_params_t *init_params = g_new0(ARC_init_params_t, 1);
     init_params_g = init_params;
     init_params->ghost_list_factor = 100;
-    cache = ARC_init(cache_size, reader->base->obj_id_type, init_params);
+    cache = ARC_init(cc_params, init_params);
   } else if (strcmp(alg_name, "SLRU") == 0) {
     SLRU_init_params_t *init_params = g_new0(SLRU_init_params_t, 1);
     init_params_g = init_params;
     init_params->n_seg = 2;
-    cache = SLRU_init(cache_size, reader->base->obj_id_type, init_params);
+    cache = SLRU_init(cc_params, init_params);
   } else if (strcmp(alg_name, "Optimal") == 0) {
     struct Optimal_init_params *init_params = g_new0(struct Optimal_init_params, 1);
     init_params_g = init_params;
     init_params->reader = reader;
     init_params->ts = 0;
-    cache = Optimal_init(cache_size, reader->base->obj_id_type, (void *) init_params);
+    cache = Optimal_init(cc_params, (void *) init_params);
   } else if (strcmp(alg_name, "slabLRC") == 0) {
-    cache = slabLRC_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = slabLRC_init(cc_params, NULL);
   } else if (strcmp(alg_name, "slabLRU") == 0) {
-    cache = slabLRU_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = slabLRU_init(cc_params, NULL);
   } else if (strcmp(alg_name, "slabObjLRU") == 0) {
-    cache = slabObjLRU_init(cache_size, reader->base->obj_id_type, NULL);
+    cache = slabObjLRU_init(cc_params, NULL);
 
 //  } else if (strcmp(alg_name, "PG") == 0) {
 //    PG_init_params_t *init_params = g_new0(PG_init_params_t, 1);
@@ -136,7 +136,7 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
 //    init_params->cache_type = "LRU";
 //    init_params->max_meta_data = 0.1;
 //    init_params->block_size = 64 * 1024;
-//    cache = PG_init(cache_size, reader->base->obj_id_type, (void *) init_params);
+//    cache = PG_init(cc_params, (void *) init_params);
 //  } else if (strcmp(alg_name, "AMP") == 0) {
 //    struct AMP_init_params *AMP_init_params = g_new0(struct AMP_init_params, 1);
 //    init_params_g = AMP_init_params;
@@ -144,7 +144,7 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
 //    AMP_init_params->K = 1;
 //    AMP_init_params->p_threshold = 256;
 //    AMP_init_params->read_size = 8;
-//    cache = AMP_init(cache_size, reader->base->obj_id_type, AMP_init_params);
+//    cache = AMP_init(cc_params, AMP_init_params);
 //  } else if (strcmp(alg_name, "Mithril") == 0) {
 //    Mithril_init_params_t *init_params = g_new0(Mithril_init_params_t, 1);
 //    init_params_g = init_params;
@@ -162,7 +162,7 @@ cache_t *create_test_cache(const char *alg_name, uint64_t cache_size, reader_t* 
 //    init_params->AMP_pthreshold = 256;
 //    init_params->cycle_time = 2;
 //    init_params->rec_trigger = each_req;
-//    cache = Mithril_init(cache_size, reader->base->obj_id_type, init_params);
+//    cache = Mithril_init(cc_params, init_params);
   } else {
     printf("cannot recognize algorithm\n");
     exit(1);

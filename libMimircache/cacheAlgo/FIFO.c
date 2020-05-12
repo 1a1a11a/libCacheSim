@@ -18,11 +18,11 @@ extern "C" {
 #include "FIFO.h"
 #include "../utils/include/utilsInternal.h"
 
-cache_t *FIFO_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("FIFO", size, obj_id_type);
+cache_t *FIFO_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("FIFO", ccache_params);
   cache->cache_params = g_new0(FIFO_params_t, 1);
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  FIFO_params->hashtable = create_hash_table_with_obj_id_type(obj_id_type, NULL, NULL, g_free, NULL);
+  FIFO_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, NULL, g_free, NULL);
   FIFO_params->list = g_queue_new();
   return cache;
 }
@@ -36,11 +36,10 @@ void FIFO_free(cache_t *cache) {
 
 gboolean FIFO_check(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-#ifdef SUPPORT_TTL
-  return FIFO_check_with_ttl(cache, req);
-#else
-  return g_hash_table_contains(FIFO_params->hashtable, req->obj_id_ptr);
-#endif
+  if (cache->core.support_ttl)
+    return FIFO_check_with_ttl(cache, req);
+  else
+    return g_hash_table_contains(FIFO_params->hashtable, req->obj_id_ptr);
 }
 
 gboolean FIFO_check_with_ttl(cache_t *cache, request_t* req){

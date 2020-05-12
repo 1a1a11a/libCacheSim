@@ -224,21 +224,24 @@ void ARC_destroy(cache_t *cache) {
 //  cache_destroy_cloned_cache(cache);
 //}
 
-cache_t *ARC_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("ARC", size, obj_id_type);
+cache_t *ARC_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("ARC", ccache_params);
   cache->cache_params = g_new0(struct ARC_params, 1);
   ARC_params_t *ARC_params = (ARC_params_t *) (cache->cache_params);
-  ARC_init_params_t *init_params = (ARC_init_params_t *) params;
+  ARC_init_params_t *init_params = (ARC_init_params_t *) cache_specific_init_params;
 
-  cache->core.cache_init_params = params;
+  cache->core.cache_specific_init_params = cache_specific_init_params;
 //  cacheAlgo->core.add_only = ARC_add;
 
   ARC_params->ghost_list_factor = init_params->ghost_list_factor;
 
-  ARC_params->LRU1 = LRU_init(size, obj_id_type, NULL);
-  ARC_params->LRU1g = LRU_init(size * ARC_params->ghost_list_factor, obj_id_type, NULL);
-  ARC_params->LRU2 = LRU_init(size, obj_id_type, NULL);
-  ARC_params->LRU2g = LRU_init(size * ARC_params->ghost_list_factor, obj_id_type, NULL);
+  // is this wrong? should size be size//2
+  ARC_params->LRU1 = LRU_init(ccache_params, NULL);
+  ARC_params->LRU2 = LRU_init(ccache_params, NULL);
+
+  ccache_params.cache_size *= ARC_params->ghost_list_factor;
+  ARC_params->LRU1g = LRU_init(ccache_params, NULL);
+  ARC_params->LRU2g = LRU_init(ccache_params, NULL);
 
   return cache;
 }

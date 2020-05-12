@@ -30,6 +30,11 @@ extern "C" {
 
 struct cache;
 
+typedef struct {
+  gint64 cache_size;
+  obj_id_type_t obj_id_type;
+  gboolean support_ttl;
+} common_cache_params_t;
 
 struct cache_core {
   guint64 req_cnt;
@@ -56,11 +61,11 @@ struct cache_core {
 
   void (*remove_obj)(struct cache *, void *);
 
-  struct cache *(*cache_init)(guint64, obj_id_type_t, void *);
+  struct cache *(*cache_init)(common_cache_params_t, void *);
 
   void (*cache_free)(struct cache *);
 
-  void *cache_init_params;
+  void *cache_specific_init_params;
   char cache_name[32];
 };
 
@@ -80,8 +85,9 @@ typedef struct cache {
 } cache_t;
 
 
-extern cache_t *cache_struct_init(char *cache_name, long long size, obj_id_type_t obj_id_type);
-extern void cache_struct_free(cache_t *cache);
+cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t);
+void cache_struct_free(cache_t *cache);
+cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size);
 
 
 

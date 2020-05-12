@@ -12,10 +12,10 @@ extern "C"
 
 
 cache_t *
-create_cache_external(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params) {
+create_cache_external(const char *const cache_alg_name, common_cache_params_t cc_params, void *cache_specific_params) {
   void *handle;
   char *error;
-  cache_t *(*cache_init)(guint64, obj_id_type_t, void *);
+  cache_t *(*cache_init)(common_cache_params_t, void *);
 
   char shared_lib_path[256];
   char cache_init_func_name[256];
@@ -37,7 +37,7 @@ create_cache_external(const char *const cache_alg_name, uint64_t size, obj_id_ty
   } else {
     INFO("external cache %s loaded\n", cache_alg_name);
   }
-  cache_t *cache = cache_init(size, obj_id_type, params);
+  cache_t *cache = cache_init(cc_params, cache_specific_params);
 
   // disable dlclose for now, we need a global pool of handles that we can track and close
 //  dlclose(handle);
@@ -46,8 +46,8 @@ create_cache_external(const char *const cache_alg_name, uint64_t size, obj_id_ty
 
 
 cache_t *
-create_cache_internal(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *(*cache_init)(guint64, obj_id_type_t, void *);
+create_cache_internal(const char *const cache_alg_name, common_cache_params_t cc_params, void *cache_specific_params) {
+  cache_t *(*cache_init)(common_cache_params_t, void *);
 
   char cache_init_func_name[256];
   void *handle = dlopen(NULL, RTLD_GLOBAL);
@@ -60,16 +60,16 @@ create_cache_internal(const char *const cache_alg_name, uint64_t size, obj_id_ty
     return NULL;
   } else {
     DEBUG3("internal cache %s loaded\n", cache_alg_name);
-    cache_t *cache = cache_init(size, obj_id_type, params);
+    cache_t *cache = cache_init(cc_params, cache_specific_params);
     return cache;
   }
 }
 
 
-cache_t *create_cache(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = create_cache_internal(cache_alg_name, size, obj_id_type, params);
+cache_t *create_cache(const char *const cache_alg_name, common_cache_params_t cc_params, void *cache_specific_params) {
+  cache_t *cache = create_cache_internal(cache_alg_name, cc_params, cache_specific_params);
   if (cache == NULL) {
-    cache = create_cache_external(cache_alg_name, size, obj_id_type, params);
+    cache = create_cache_external(cache_alg_name, cc_params, cache_specific_params);
   }
   if (cache == NULL) {
     ERROR("failed to create cache %s\n", cache_alg_name);

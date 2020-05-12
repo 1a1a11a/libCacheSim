@@ -28,20 +28,20 @@ void cache_struct_free(cache_t *cache) {
 }
 
 
-cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_type_t obj_id_type) {
+cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t params) {
   cache_t *cache = g_new0(cache_t, 1);
-//  cache->core = g_new0(struct cache_core, 1);
-  strcpy(cache->core.cache_name, cache_name);
-  cache->core.size = cache_size;
-  cache->core.cache_init_params = NULL;
-  cache->core.obj_id_type = obj_id_type;
+  strncpy(cache->core.cache_name, cache_name, 32);
+  cache->core.size = params.cache_size;
+  cache->core.cache_specific_init_params = NULL;
+  cache->core.obj_id_type = params.obj_id_type;
+  cache->core.support_ttl = params.support_ttl;
 
   void *handle = dlopen(NULL, RTLD_GLOBAL);
   char func_name[128];
 
 
   sprintf(func_name, "%s_init", cache_name);
-  cache_t *(*cache_init)(guint64, obj_id_type_t, void *) = dlsym(handle, func_name);
+  cache_t *(*cache_init)(common_cache_params_t, void *) = dlsym(handle, func_name);
 
   sprintf(func_name, "%s_free", cache_name);
   void (*cache_free)(cache_t *) = dlsym(handle, func_name);
@@ -125,31 +125,13 @@ cache_t *cache_struct_init(char *cache_name, long long cache_size, obj_id_type_t
   return cache;
 }
 
-//profiler_res_t *run_trace(cache_t *cache, reader_t *reader) {
-//  request_t *req = new_request(cache->core.obj_id_type);
-//  profiler_res_t *ret = g_new0(profiler_res_t, 1);
-//  ret->cache_size = cache->core.size;
-//  gboolean (*cache_get)(cache_t *, request_t *) = cache->core.get;
-//
-//  read_one_req(reader, req);
-//  while (req->valid) {
-//    if (!cache_get(cache, req)) {
-//      ret->miss_cnt += 1;
-//      ret->miss_byte += req->size;
-//    }
-//    ret->req_cnt += 1;
-//    ret->req_byte += req->size;
-//
-//    read_one_req(reader, req);
-//  }
-//  ret->byte_miss_ratio = (double) ret->miss_byte / (double) ret->req_byte;
-//  ret->obj_miss_ratio = (double) ret->miss_cnt / (double) ret->req_cnt;
-//
-//  // clean up
-//  free_request(req);
-//  reset_reader(reader);
-//  return ret;
-//}
+cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size) {
+  common_cache_params_t cc_params = {.cache_size=new_size,
+      .obj_id_type=old_cache->core.obj_id_type,
+      .support_ttl=old_cache->core.support_ttl};
+  cache_t *cache = old_cache->core.cache_init(cc_params, old_cache->core.cache_specific_init_params);
+  return cache;
+}
 
 
 #ifdef __cplusplus

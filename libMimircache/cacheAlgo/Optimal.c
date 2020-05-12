@@ -148,7 +148,7 @@ void Optimal_destroy(cache_t *cache) {
   g_hash_table_destroy(Optimal_params->hashtable);
   pqueue_free(Optimal_params->pq);
   g_array_free(Optimal_params->next_access, TRUE);
-  ((struct Optimal_init_params *) (cache->core.cache_init_params))
+  ((struct Optimal_init_params *) (cache->core.cache_specific_init_params))
     ->next_access = NULL;
 
   cache_struct_free(cache);
@@ -171,34 +171,22 @@ void Optimal_destroy_unique(cache_t *cache) {
   g_free(cache);
 }
 
-cache_t *Optimal_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("Optimal", size, obj_id_type);
+cache_t *Optimal_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("Optimal", ccache_params);
 
   Optimal_params_t *Optimal_params = g_new0(Optimal_params_t, 1);
   cache->cache_params = (void *) Optimal_params;
 
 
-  Optimal_params->ts = ((struct Optimal_init_params *) params)->ts;
+  Optimal_params->ts = ((struct Optimal_init_params *) cache_specific_init_params)->ts;
 
-  reader_t *reader = ((struct Optimal_init_params *) params)->reader;
+  reader_t *reader = ((struct Optimal_init_params *) cache_specific_init_params)->reader;
   Optimal_params->reader = reader;
 
-  if (obj_id_type == OBJ_ID_NUM) {
-    Optimal_params->hashtable = g_hash_table_new_full(
-      g_direct_hash, g_direct_equal, NULL,
-      g_free);
-  } else if (obj_id_type == OBJ_ID_STR) {
-    Optimal_params->hashtable = g_hash_table_new_full(
-      g_str_hash, g_str_equal, g_free,
-      g_free);
-  } else {
-    ERROR("does not support given obj_id type: %c\n", obj_id_type);
-  }
+  Optimal_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, g_free, g_free, g_free);
+  Optimal_params->pq = pqueue_init(ccache_params.cache_size, cmp_pri, get_pri, set_pri, get_pos, set_pos);
 
-  Optimal_params->pq =
-    pqueue_init(size, cmp_pri, get_pri, set_pri, get_pos, set_pos);
-
-  if (((struct Optimal_init_params *) params)->next_access == NULL) {
+  if (((struct Optimal_init_params *) cache_specific_init_params)->next_access == NULL) {
     get_num_of_req(reader);
     Optimal_params->next_access = g_array_sized_new(
       FALSE, FALSE, sizeof(gint), (guint) reader->base->n_total_req);
@@ -223,13 +211,13 @@ cache_t *Optimal_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
 //    }
 //    g_slist_free(list);
 
-    ((struct Optimal_init_params *) params)->next_access =
+    ((struct Optimal_init_params *) cache_specific_init_params)->next_access =
       Optimal_params->next_access;
   } else
     Optimal_params->next_access =
-      ((struct Optimal_init_params *) params)->next_access;
+      ((struct Optimal_init_params *) cache_specific_init_params)->next_access;
 
-  cache->core.cache_init_params = params;
+  cache->core.cache_specific_init_params = cache_specific_init_params;
 
   return cache;
 }

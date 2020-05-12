@@ -12,14 +12,14 @@ extern "C" {
 #endif
 
 
-cache_t *slabLRU_init(guint64 size, obj_id_type_t obj_id_type, void *params) {
-  cache_t *cache = cache_struct_init("slabLRU", size, obj_id_type);
+cache_t *slabLRU_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  cache_t *cache = cache_struct_init("slabLRU", ccache_params);
   cache->cache_params = g_new0(slabLRU_params_t, 1);
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *) (cache->cache_params);
-  slabLRU_params->hashtable = create_hash_table_with_obj_id_type(obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
+  slabLRU_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
   slabLRU_params->slab_params.slab_q = g_queue_new();
   slabLRU_params->slab_params.slab_size = MB;
-  slabLRU_params->slab_params.n_total_slabs = size / slabLRU_params->slab_params.slab_size;
+  slabLRU_params->slab_params.n_total_slabs = ccache_params.cache_size / slabLRU_params->slab_params.slab_size;
   slabLRU_params->slab_params.per_obj_metadata_size = 0;
   for (int i=0; i<N_SLABCLASS; i++)
     init_slabclass(&slabLRU_params->slab_params, i);

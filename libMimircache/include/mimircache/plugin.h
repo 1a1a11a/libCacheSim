@@ -20,23 +20,21 @@ extern "C"
 /**
  * create a cache handler, using the cache replacement algorithm is baked into mimircache
  * @param cache_alg_name name of the cache replacement algorithm (case senstive)
- * @param size cache size in unit of byte
- * @param data_type the type of object id in the trace, can be either OBJ_ID_NUM or OBJ_ID_STR
- * @param params the parameter pass to cache initialization
+ * @param cc_params general parameters that are used to initialize cache, such as cache_size, obj_id_type, support_ttl
+ * @param params a cache eviction algorithm specific params
  * @return cache handler
  */
-cache_t *create_cache(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params);
+cache_t *create_cache(const char *const cache_alg_name, common_cache_params_t cc_params, void *cache_specific_params);
 
 /**
  * create a cache handler, using the cache replacement algorithm is baked into mimircache
  * @param cache_alg_name name of the cache replacement algorithm (case senstive)
- * @param size cache size in unit of byte
- * @param data_type the type of object id in the trace, can be either OBJ_ID_NUM or OBJ_ID_STR
- * @param params the parameter pass to cache initialization
+ * @param cc_params general parameters that are used to initialize cache, such as cache_size, obj_id_type, support_ttl
+ * @param params a cache eviction algorithm specific params
  * @return cache handler
  */
 cache_t *
-create_cache_internal(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params);
+create_cache_internal(const char *const cache_alg_name, common_cache_params_t cc_params, void *cache_specific_params);
 
 
 /**
@@ -44,13 +42,12 @@ create_cache_internal(const char *const cache_alg_name, uint64_t size, obj_id_ty
  * algorithm is compiled into a shared library and stored in the working directory and the name is <alg>.so where alg is
  * the name of the cache replacement algorithm passed to this function
  * @param cache_alg_name name of the cache replacement algorithm (case senstive)
- * @param size cache size in unit of byte
- * @param data_type the type of object id in the trace, can be either OBJ_ID_NUM or OBJ_ID_STR
- * @param params the parameter pass to cache initialization
+ * @param cc_params general parameters that are used to initialize cache, such as cache_size, obj_id_type, support_ttl
+ * @param params a cache eviction algorithm specific params
  * @return cache handler
  */
 cache_t *
-create_cache_external(const char *const cache_alg_name, uint64_t size, obj_id_type_t obj_id_type, void *params);
+create_cache_external(const char *const cache_alg_name, common_cache_params_t cc_params, void *cache_specific_params);
 
 #ifdef __cplusplus
 }
