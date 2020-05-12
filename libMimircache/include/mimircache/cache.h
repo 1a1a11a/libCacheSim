@@ -28,19 +28,15 @@ extern "C" {
 #include "request.h"
 #include "cacheObj.h"
 
+struct cache;
+
 
 struct cache_core {
-  char cache_name[32];
   guint64 req_cnt;
-
-  long size;
-  long used_size;
-  char obj_id_type;
-  void *cache_init_params;
-
-  struct cache *(*cache_init)(guint64, obj_id_type_t, void *);
-
-  void (*cache_free)(struct cache *);
+  gint64 size;
+  gint64 used_size;
+  gboolean support_ttl;
+  obj_id_type_t obj_id_type;
 
   gboolean (*get)(struct cache *, request_t *);
 
@@ -56,10 +52,16 @@ struct cache_core {
 
   GHashTable *(*get_objmap)(struct cache *);     // get the hash map
 
-  void (*remove_obj)(struct cache *, void *);
-
   cache_obj_t *(*get_cached_obj)(struct cache *, request_t *);
 
+  void (*remove_obj)(struct cache *, void *);
+
+  struct cache *(*cache_init)(guint64, obj_id_type_t, void *);
+
+  void (*cache_free)(struct cache *);
+
+  void *cache_init_params;
+  char cache_name[32];
 };
 
 struct cache_stat {
