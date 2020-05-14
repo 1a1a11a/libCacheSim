@@ -28,9 +28,6 @@ extern "C" {
 #define SUPPORT_TTL
 
 
-#define UNUSED(x) (void)(x)
-
-
 #define MAX_OBJ_ID_LEN 1024
 #define MAX_FILE_PATH_LEN 1024
 
@@ -39,13 +36,6 @@ extern "C" {
 #define MAX_BIN_FMT_STR_LEN 128
 
 
-
-typedef enum {
-  UNKNOWN_DIST = 0, STACK_DIST = 1, FUTURE_RD = 2, LAST_DIST = 3, NEXT_DIST=4, REUSE_TIME = 5,
-} dist_t;
-
-// obj_id type
-typedef enum { OBJ_ID_NUM = 'l', OBJ_ID_STR = 'c' } obj_id_type_t;
 
 
 #define KB 1024L

@@ -22,8 +22,6 @@ void cache_struct_free(cache_t *cache) {
     g_free(cache->cache_params);
     cache->cache_params = NULL;
   }
-//  g_free(cache->core);
-//  cache->core = NULL;
   g_free(cache);
 }
 
@@ -45,9 +43,6 @@ cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t p
 
   sprintf(func_name, "%s_free", cache_name);
   void (*cache_free)(cache_t *) = dlsym(handle, func_name);
-
-//  sprintf(func_name, "%s_destroy_cloned_cache", cache_name);
-//  void (*destroy_cloned_cache)(cache_t *) = dlsym(handle, func_name);
 
   sprintf(func_name, "%s_get", cache_name);
   gboolean (*get)(cache_t *, request_t *) = dlsym(handle, func_name);
@@ -71,9 +66,6 @@ cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t p
   /* non essential functions, can be NULL */
   sprintf(func_name, "%s_get_cached_obj", cache_name);
   cache_obj_t *(*get_cached_obj)(cache_t *, request_t *) = dlsym(handle, func_name);
-
-//  sprintf(func_name, "%s_update_cached_data", cache_name);
-//  void (*update_cached_data)(cache_t *, request_t *, void *) = dlsym(handle, func_name);
 
   sprintf(func_name, "%s_get_objmap", cache_name);
   GHashTable *(*get_objmap)(cache_t *) = dlsym(handle, func_name);

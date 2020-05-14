@@ -25,6 +25,7 @@ typedef struct {
 } exp_info_t;
 
 
+#ifdef SUPPORT_TTL
 static inline void _count_exp(gpointer key,
                               gpointer value,
                               gpointer user_data) {
@@ -34,12 +35,12 @@ static inline void _count_exp(gpointer key,
   exp_info->n_total_byte += obj->obj_size;
   exp_info->n_total_obj += 1;
 
-  if (obj->ttl < exp_info->cur_time){
+  if (obj->exp_time < exp_info->cur_time){
     exp_info->n_exp_byte += obj->obj_size;
     exp_info->n_exp_obj += 1;
   }
 }
-
+#endif
 
 static inline exp_info_t scan_for_expired_obj(GHashTable *hashtable, guint64 cur_time) {
   exp_info_t exp_info;

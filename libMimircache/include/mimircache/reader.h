@@ -28,6 +28,7 @@ extern "C" {
 #include <unistd.h>
 
 #include "const.h"
+#include "enum.h"
 #include "request.h"
 #include "logging.h"
 
@@ -40,10 +41,7 @@ extern "C" {
 #define FILE_QUOTE 0x22
 
 
-// trace type
-typedef enum {
-  CSV_TRACE = 'c', BIN_TRACE = 'b', PLAIN_TXT_TRACE = 'p', VSCSI_TRACE = 'v', TWR_TRACE = 't',
-} trace_type_t;
+
 
 typedef struct {
   int real_time_field;

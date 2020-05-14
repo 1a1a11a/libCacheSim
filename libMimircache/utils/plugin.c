@@ -3,7 +3,7 @@
 //
 
 
-#include "../../libMimircache/include/mimircache/plugin.h"
+#include "../include/mimircache/plugin.h"
 
 #ifdef __cplusplus
 extern "C"

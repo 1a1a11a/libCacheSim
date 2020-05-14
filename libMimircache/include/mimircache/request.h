@@ -13,6 +13,8 @@ extern "C"
 #include <glib.h>
 #include <string.h>
 #include "const.h"
+#include "enum.h"
+
 
 
 typedef enum {

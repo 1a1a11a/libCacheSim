@@ -14,6 +14,10 @@ extern "C"
 #include "const.h"
 
 
+typedef enum {
+  UNKNOWN_DIST = 0, STACK_DIST = 1, FUTURE_RD = 2, LAST_DIST = 3, NEXT_DIST=4, REUSE_TIME = 5,
+} dist_t;
+
 
 /***********************************************************
  * get the stack distance (number of uniq objects) since last access,

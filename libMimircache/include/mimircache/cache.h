@@ -90,7 +90,6 @@ void cache_struct_free(cache_t *cache);
 cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size);
 
 
-
 #ifdef __cplusplus
 }
 #endif
