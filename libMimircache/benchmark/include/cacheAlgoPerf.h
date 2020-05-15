@@ -29,8 +29,8 @@ static inline double time_since(struct timeval t0) {
   return time_diff(t0, t1);
 }
 
-gint64 measure_qps_read(cache_t* cache, double expected_miss_ratio);
-gint64 measure_qps_write(cache_t* cache, double expected_miss_ratio);
+gint64 measure_qps_read(cache_t* cache);
+gint64 measure_qps_write(cache_t* cache);
 
 
 

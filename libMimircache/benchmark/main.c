@@ -3,30 +3,55 @@
 //
 
 #include "include/cacheAlgoPerf.h"
+#include "include/params.h"
 #include "../include/mimircache.h"
 #include "../cacheAlgo/include/cacheAlgoHeaders.h"
 
+
+void measure_all(common_cache_params_t cc_params);
+
 int main(int argc, char* argv[]){
 
-  uint64_t cache_size = 1024*1024*1024;
-  common_cache_params_t cc_params = {.cache_size=cache_size, .obj_id_type=OBJ_ID_NUM, .support_ttl=FALSE};
+  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=OBJ_ID_NUM, .support_ttl=FALSE};
+
+  if (argc < 2 || strcmp(argv[1], "all") == 0){
+    measure_all(cc_params);
+  } else {
+    cache_t *cache = create_cache(argv[1], cc_params, NULL);
+    measure_qps_write(cache);
+    measure_qps_read(cache);
+    cache->core.cache_free(cache);
+  }
+
+  return 0;
+}
+
+
+void measure_all(common_cache_params_t cc_params){
+
   cache_t* fifo = FIFO_init(cc_params, NULL);
   cache_t* lru = LRU_init(cc_params, NULL);
   cache_t* slabLRC = slabLRC_init(cc_params, NULL);
   cache_t* slabLRU = slabLRU_init(cc_params, NULL);
   cache_t* slabObjLRU = slabObjLRU_init(cc_params, NULL);
 
-  measure_qps_write(lru, 0.95);
-  measure_qps_write(fifo, 0.95);
-  measure_qps_write(slabLRC, 0.95);
-  measure_qps_write(slabLRU, 0.95);
-  measure_qps_write(slabObjLRU, 0.95);
+  measure_qps_write(lru);
+  measure_qps_read(lru);
+  LRU_free(lru);
 
-  measure_qps_read(lru, 0.95);
-  measure_qps_read(fifo, 0.95);
-  measure_qps_read(slabLRC, 0.95);
-  measure_qps_read(slabLRU, 0.95);
-  measure_qps_read(slabObjLRU, 0.95);
+  measure_qps_write(fifo);
+  measure_qps_read(fifo);
+  FIFO_free(fifo);
 
-  return 0;
+  measure_qps_write(slabLRC);
+  measure_qps_read(slabLRC);
+  slabLRC_free(slabLRC);
+
+  measure_qps_write(slabLRU);
+  measure_qps_read(slabLRU);
+  slabLRU_free(slabLRU);
+
+  measure_qps_write(slabObjLRU);
+  measure_qps_read(slabObjLRU);
+  slabObjLRU_free(slabObjLRU);
 }
