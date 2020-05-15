@@ -77,7 +77,7 @@ static inline void init_slabclass(slab_params_t *slab_params, gint id) {
   slab_params->slabclasses[id].n_stored_items = 0;
   slab_params->slabclasses[id].free_slab_q = g_queue_new();
   slab_params->slabclasses[id].obj_q = g_queue_new();
-  allocate_slab(slab_params, id);
+//  allocate_slab(slab_params, id);
 }
 
 
@@ -108,6 +108,8 @@ static inline slab_t *allocate_slab(slab_params_t *slab_params, gint id) {
   g_queue_push_tail(slabclass->free_slab_q, new_slab);
 
   slab_params->n_allocated_slabs += 1;
+//  DEBUG("slab size %ld chunk size %ld\n", slab_params->slab_size, chunk_size);
+//  DEBUG("allocate slab (slabclass %d) %ld/%ld - fit %ld objects\n", id, slab_params->n_allocated_slabs, slab_params->n_total_slabs, new_slab->n_total_items);
 //  DEBUG("allocate slab %d %p total %u items - current slab queue length %u\n", id, new_slab, new_slab->n_total_items,
 //         g_queue_get_length(slab_params->slab_q));
   return new_slab;
@@ -133,14 +135,14 @@ static inline gint add_to_slabclass(cache_t *cache, request_t *req, slab_cache_o
   slabclass->last_access_time = req->real_time;
   slab_t *slab = NULL;
 
-  if (g_queue_peek_head(slabclass->free_slab_q) != NULL) {
+  if ((slab = g_queue_peek_head(slabclass->free_slab_q)) != NULL) {
     // we still have free space for items, no new slab is needed
-    slab = (slab_t *) g_queue_peek_head(slabclass->free_slab_q);
-//    DEBUG("find free slab %p, items %p\n", slab, slab->slab_items);
+//    slab = (slab_t *) g_queue_peek_head(slabclass->free_slab_q);
+    DEBUG3("find free slab %p, items %p\n", slab, slab->slab_items);
   } else if (slab_params->n_allocated_slabs < slab_params->n_total_slabs) {
     // all slabs are full, but we still have free space to allocate new slabs
     slab = allocate_slab(slab_params, slab_id);
-//    DEBUG("allocate new slab %p, items %p\n", slab, slab->slab_items);
+    DEBUG3("allocate new slab %p, items %p\n", slab, slab->slab_items);
   }
 
   // store obj
