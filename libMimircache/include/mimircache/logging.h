@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <execinfo.h>
+#include "../config.h"
 
 
 #define NORMAL  "\x1B[0m"
@@ -26,11 +27,6 @@
 #define WARNING_LEVEL 8
 #define SEVERE_LEVEL  9
 
-#ifndef LOGLEVEL
-//#define LOGLEVEL DEBUG_LEVEL
-#define LOGLEVEL INFO_LEVEL
-#endif
-
 
 int log_header(int level, const char *file, int line);
 //void log_lock(int);
@@ -45,37 +41,37 @@ void print_stack_trace(void);
     log_lock(0); \
 }
 
-#if LOGLEVEL <= DEBUG3_LEVEL
+#if MIMIR_LOGLEVEL <= DEBUG3_LEVEL
 #define DEBUG3(FMT, ...) LOGGING(DEBUG3_LEVEL, FMT, ##__VA_ARGS__)
 #else
 #define DEBUG3(FMT, ...)
 #endif
 
-#if LOGLEVEL <= DEBUG2_LEVEL
+#if MIMIR_LOGLEVEL <= DEBUG2_LEVEL
     #define DEBUG2(FMT, ...) LOGGING(DEBUG2_LEVEL, FMT, ##__VA_ARGS__)
 #else
     #define DEBUG2(FMT, ...)
 #endif
 
-#if LOGLEVEL <= DEBUG_LEVEL
+#if MIMIR_LOGLEVEL <= DEBUG_LEVEL
     #define DEBUG(FMT, ...) LOGGING(DEBUG_LEVEL, FMT, ##__VA_ARGS__)
 #else
     #define DEBUG(FMT, ...)
 #endif
 
-#if LOGLEVEL <= INFO_LEVEL
+#if MIMIR_LOGLEVEL <= INFO_LEVEL
     #define INFO(FMT, ...) LOGGING(INFO_LEVEL, FMT, ##__VA_ARGS__)
 #else
     #define INFO(FMT, ...)
 #endif
 
-#if LOGLEVEL <= WARNING_LEVEL
+#if MIMIR_LOGLEVEL <= WARNING_LEVEL
     #define WARNING(FMT, ...) LOGGING(WARNING_LEVEL, FMT, ##__VA_ARGS__)
 #else
     #define WARNING(FMT, ...)
 #endif
 
-#if LOGLEVEL <= SEVERE_LEVEL
+#if MIMIR_LOGLEVEL <= SEVERE_LEVEL
     #define ERROR(FMT, ...) LOGGING(SEVERE_LEVEL, FMT, ##__VA_ARGS__)
 #else
     #define ERROR(FMT, ...)

@@ -27,8 +27,6 @@ extern "C" {
 
 #include "request.h"
 #include "cacheObj.h"
-#include "mem.h"
-
 #include "../config.h"
 
 
@@ -47,7 +45,6 @@ struct cache_core {
   gint64 used_size;
   gboolean support_ttl;
   obj_id_type_t obj_id_type;
-  mem_allocator_t mem_alloc;
 
   gboolean (*get)(struct cache *, request_t *);
 

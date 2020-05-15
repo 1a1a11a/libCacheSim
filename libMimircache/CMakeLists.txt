@@ -23,8 +23,8 @@ endif ()
 
 
 # add_compile_options(-std=c++11)
-SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -std=c99 ${CMAKE_ENABLE_C99} -DLOGLEVEL=6")
-SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -Wno-unused -std=c99 ${CMAKE_ENABLE_C99} -DLOGLEVEL=5")
+SET(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DLOGLEVEL=5")
+SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O2 -Wall -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DLOGLEVEL=6")
 
 #SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGGING_DEBUG")
 #SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -DLOGGING_INFO")
@@ -37,6 +37,11 @@ find_package(GLib "2.40" REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${GLib_LIBRARY})
 message(STATUS "glib found? " ${GLib_FOUND} ", LIBS = " ${LIBS} ", header = " ${GLib_INCLUDE_DIRS})
+
+find_package(Tcmalloc REQUIRED)
+include_directories(${Tcmalloc_INCLUDE_DIR})
+set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
+message(STATUS "Tcmalloc found? " ${Tcmalloc_FOUND} ", LIBS = " ${LIBS} ", header = " ${Tcmalloc_INCLUDE_DIRS})
 
 
 message("CMAKE_CURRENT_SOURCE_DIR is " ${CMAKE_CURRENT_SOURCE_DIR})

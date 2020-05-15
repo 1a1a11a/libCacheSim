@@ -6,12 +6,13 @@
 #include "include/params.h"
 #include "../include/mimircache.h"
 #include "../cacheAlgo/include/cacheAlgoHeaders.h"
+#include "../utils/include/mem.h"
 
 
 void measure_all(common_cache_params_t cc_params);
 
 int main(int argc, char* argv[]){
-
+//  init_all_global_mem_alloc();
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=OBJ_ID_NUM, .support_ttl=FALSE};
 
   if (argc < 2 || strcmp(argv[1], "all") == 0){
@@ -23,6 +24,7 @@ int main(int argc, char* argv[]){
     cache->core.cache_free(cache);
   }
 
+//  free_all_global_mem_alloc();
   return 0;
 }
 

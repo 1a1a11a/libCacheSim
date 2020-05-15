@@ -34,6 +34,9 @@ int log_header(int level, const char *file, int line)
         case SEVERE_LEVEL:
             printf("%s[ERROR] ", RED);
             break;
+      default:
+            printf("in logging should not be here\n");
+            break;
     }
 
     char buffer[30];
