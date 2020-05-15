@@ -14,22 +14,7 @@ extern "C"
 #include <string.h>
 #include "const.h"
 #include "enum.h"
-
-
-
-typedef enum {
-  OP_GET = 1,
-  OP_GETS,
-  OP_SET,
-  OP_ADD,
-  OP_CAS,
-  OP_REPLACE,
-  OP_APPEND,
-  OP_PREPEND,
-  OP_DELETE,
-  OP_INCR,
-  OP_DECR
-} req_op_e;
+#include "../config.h"
 
 
 /******************************* request ******************************/

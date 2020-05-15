@@ -16,7 +16,7 @@ extern "C"
 
 
 #include "../../include/mimircache/cache.h"
-#include "../../include/mimircache/cacheOp.h"
+
 
 
 /* need add support for p and c obj_id_type of data 

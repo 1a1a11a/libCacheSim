@@ -21,7 +21,7 @@ extern "C" {
 
 
 #include "LRU_K.h"
-#include "../../include/mimircache/cacheOp.h"
+
 
 
 void gqueue_destroyer(gpointer data) {

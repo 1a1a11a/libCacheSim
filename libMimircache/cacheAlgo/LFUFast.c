@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #include "LFUFast.h"
-#include "../../include/mimircache/cacheOp.h"
+
 
 
 /********************************** LFUFast ************************************/

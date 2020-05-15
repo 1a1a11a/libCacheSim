@@ -53,7 +53,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
       read_one_req(warmup_cloned_reader, req);
     }
     close_reader(warmup_cloned_reader);
-    INFO("cache %s (size %lld) finishes warm up with %llu requests\n", local_cache->core.cache_name, local_cache->core.size, n_warmup);
+    INFO("cache %s (size %lld) finishes warm up with %lld requests\n", local_cache->core.cache_name, (long long) local_cache->core.size, (long long) n_warmup);
   }
 
   /* using warmup_perc of requests from reader to warm up */
@@ -65,7 +65,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }
-    INFO("cache %s (size %lld) finishes warm up with %llu requests\n", local_cache->core.cache_name, local_cache->core.size, n_warmup);
+    INFO("cache %s (size %lld) finishes warm up with %lld requests\n", local_cache->core.cache_name, (long long) local_cache->core.size, (long long) n_warmup);
   }
 
   while (req->valid) {

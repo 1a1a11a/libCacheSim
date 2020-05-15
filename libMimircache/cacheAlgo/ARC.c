@@ -12,7 +12,6 @@ extern "C" {
 #endif
 
 #include "ARC.h"
-#include "../../include/mimircache/cacheOp.h"
 
 
 void _ARC_insert(cache_t *cache, request_t *cp) {

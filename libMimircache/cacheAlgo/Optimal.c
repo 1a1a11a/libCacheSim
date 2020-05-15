@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #include "Optimal.h"
-#include "../../include/mimircache/cacheOp.h"
+
 
 
 /******************* priority queue structs and def **********************/

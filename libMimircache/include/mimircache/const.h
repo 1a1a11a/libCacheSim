@@ -24,9 +24,6 @@ extern "C" {
 //#undef __DEBUG__
 //#undef _DEBUG
 
-// if TTL is not needed, disable this to reduce memory usage
-#define SUPPORT_TTL
-
 
 #define MAX_OBJ_ID_LEN 1024
 #define MAX_FILE_PATH_LEN 1024
@@ -61,6 +58,9 @@ extern "C" {
 //#define TB 1000000000000L
 
 //#define DEFAULT_SECTOR_SIZE                             512
+
+
+
 
 
 

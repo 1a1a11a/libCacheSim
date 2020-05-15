@@ -6,6 +6,8 @@
 #define MIMIRCACHE_CACHEOBJ_H
 
 #include "request.h"
+#include "../config.h"
+
 
 
 typedef struct {
@@ -72,7 +74,7 @@ static inline void destroy_cache_obj(gpointer data){
 typedef struct {
   gpointer obj_id_ptr;
   guint32 obj_size;
-  gint32 ttl;
+  gint32 exp_time;
   void *slab;
   gint32 item_pos_in_slab;
 } slab_cache_obj_t;
@@ -81,9 +83,9 @@ static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
   slab_cache_obj_t *cache_obj = g_new0(slab_cache_obj_t, 1);
   cache_obj->obj_size = req->obj_size;
   if (req->ttl != 0)
-    cache_obj->ttl = req->real_time + req->ttl;
+    cache_obj->exp_time = req->real_time + req->ttl;
   else
-    cache_obj->ttl = G_MAXINT32;
+    cache_obj->exp_time = G_MAXINT32;
   cache_obj->obj_id_ptr = req->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));

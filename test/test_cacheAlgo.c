@@ -27,7 +27,7 @@ void test_FIFO(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -49,7 +49,7 @@ void test_Optimal(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -67,7 +67,7 @@ void test_Random(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("Random", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("Random cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -88,7 +88,7 @@ void test_LFU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -110,7 +110,7 @@ void test_MRU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -131,7 +131,7 @@ void test_LRU_K(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -152,7 +152,7 @@ void test_ARC(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -174,7 +174,7 @@ void test_SLRU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n",
@@ -197,7 +197,7 @@ void test_slabLRC(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("slabLRC", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("%s cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n", __func__,
@@ -218,7 +218,7 @@ void test_slabLRU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("slabLRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("%s cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n", __func__,
@@ -241,7 +241,7 @@ void test_slabObjLRU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
   cache_t *cache = create_test_cache("slabObjLRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 1);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 1);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("%s cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n", __func__,

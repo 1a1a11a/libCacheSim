@@ -18,7 +18,7 @@ void test_heatmap_basic(gconstpointer user_data){
   reader_t* reader = (reader_t*) user_data;
   long i, j;
 
-  heatmap_plot_matrix_t* hm_matrix = get_stack_dist_heatmap_matrix(reader, 300*1000000, 1.2);
+  heatmap_plot_matrix_t* hm_matrix = get_reuse_time_heatmap_matrix(reader, 300*1000000, 1.2);
 //  print_heatmap_plot_matrix(hm_matrix);
   free_heatmap_plot_matrix(hm_matrix);
 }
@@ -33,7 +33,6 @@ int main(int argc, char *argv[]) {
   reader = setup_csv_reader_obj_num();
   g_test_add_data_func("/libmimircache/test_distUtils_basic_csv_num", reader, test_heatmap_basic);
 //  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_csv_num", reader, test_distUtils_more1, test_teardown);
-
   reader = setup_csv_reader_obj_str();
   g_test_add_data_func("/libmimircache/test_distUtils_basic_csv_str", reader, test_heatmap_basic);
 //  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_csv_str", reader, test_distUtils_more1, test_teardown);

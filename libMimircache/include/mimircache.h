@@ -18,6 +18,8 @@ extern "C" {
 #include "mimircache/profiler.h"
 #include "mimircache/logging.h"
 
+#include "config.h"
+
 
 #ifdef __cplusplus
 }

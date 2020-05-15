@@ -10,6 +10,8 @@ extern "C" {
 #endif
 
 #define SUPPORT_TTL
+#define USE_CUSTOME_MEM_ALLOCATOR
+
 //#undef SUPPORT_TTL
 
 

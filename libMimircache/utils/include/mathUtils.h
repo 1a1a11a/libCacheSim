@@ -15,6 +15,13 @@ extern "C"
 
 static guint64 rand_seed = 0;
 
+/**
+ * find the maximum value in an array
+ * @param array
+ * @param n_elem
+ * @param max_elem
+ * @param max_elem_idx
+ */
 static inline void find_max_gint64(gint64 *array, gint64 n_elem, gint64* max_elem, gint64* max_elem_idx) {
   gint64 max = array[0], max_idx = 0;
   for (gint64 i=0; i<n_elem; i++){

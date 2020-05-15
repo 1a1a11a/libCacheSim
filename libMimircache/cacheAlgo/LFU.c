@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #include "LFU.h"
-#include "../../include/mimircache/cacheOp.h"
+
 
 
 /********************* priority queue structs and def ***********************/

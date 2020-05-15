@@ -2,6 +2,13 @@
 // Created by Juncheng Yang on 11/24/19.
 //
 
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
 #include <stdio.h>
 #include <sys/stat.h>
 #include <assert.h>
@@ -11,10 +18,10 @@
 #include "utilsInternal.h"
 #include "splay.h"
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+
+/* https://stackoverflow.com/questions/46213840/get-rid-of-warning-implicit-declaration-of-function-fileno-in-flex */
+int fileno(FILE *stream);
+
 
 /***********************************************************
 * sequential version of get_stack_dist
