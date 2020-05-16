@@ -39,7 +39,9 @@ typedef struct {
 typedef struct {
   gpointer obj_id_ptr;
   guint32 obj_size;
+#ifdef SUPPORT_TTL
   gint32 exp_time;
+#endif
   void *slab;
   gint32 item_pos_in_slab;
 } slab_cache_obj_t;

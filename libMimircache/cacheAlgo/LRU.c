@@ -39,6 +39,7 @@ gboolean LRU_check(cache_t *cache, request_t *req) {
   return g_hash_table_contains(LRU_params->hashtable, req->obj_id_ptr);
 }
 
+
 gboolean LRU_get(cache_t *cache, request_t *req) {
   gboolean found_in_cache = LRU_check(cache, req);
   if (req->obj_size <= cache->core.size) {
@@ -74,9 +75,12 @@ void _LRU_update(cache_t *cache, request_t *req) {
 
   cache_obj_t *cache_obj = node->data;
   assert(cache->core.used_size >= cache_obj->obj_size);
-  cache->core.used_size -= cache_obj->obj_size;
-  cache->core.used_size += req->obj_size;
-  update_cache_obj(cache_obj, req);
+  // there is potential bug that if obj size is larger than cache size
+  if (cache_obj->obj_size != req->obj_size){
+    cache->core.used_size -= cache_obj->obj_size;
+    cache->core.used_size += req->obj_size;
+    cache_obj->obj_size = req->obj_size;
+  }
   g_queue_unlink(LRU_params->list, node);
   g_queue_push_tail_link(LRU_params->list, node);
 }
@@ -133,6 +137,61 @@ GHashTable *LRU_get_objmap(cache_t *cache) {
   LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
   return LRU_params->hashtable;
 }
+
+
+
+
+
+/**************************** TTL support **************************/
+cache_check_result_t LRU_check_and_update_with_ttl(cache_t *cache, request_t* req){
+  LRU_params_t *LRU_params = (LRU_params_t *) (cache->cache_params);
+  cache_check_result_t result = cache_miss_e;
+  GList *node = (GList *) g_hash_table_lookup(LRU_params->hashtable, req->obj_id_ptr);
+  if (node != NULL) {
+    cache_obj_t *cache_obj = node->data;
+    if (cache_obj->exp_time < req->real_time) {
+      /* obj is expired */
+      result = expired_e;
+      cache->stat.hit_expired_cnt += 1;
+      cache->stat.hit_expired_byte += cache_obj->obj_size;
+      cache_obj->exp_time = req->real_time + req->ttl;
+    } else {
+      result = cache_hit_e;
+    }
+  }
+  return result;
+}
+
+gboolean LRU_get_with_ttl(cache_t* cache, request_t *req){
+  gint64 old_ttl = req->ttl;
+  req->ttl == 0 && (req->ttl = cache->core.default_ttl);
+  if (old_ttl !=0 && req->ttl != old_ttl)
+    abort();
+
+  cache_check_result_t cache_check = LRU_check_and_update_with_ttl(cache, req);
+  gboolean found_in_cache = cache_check == cache_hit_e;
+
+  if (req->obj_size <= cache->core.size) {
+    if (cache_check == cache_miss_e){
+      _LRU_insert(cache, req);
+    } else{
+      _LRU_update(cache, req);
+    }
+
+    while (cache->core.used_size > cache->core.size)
+      _LRU_evict(cache, req);
+  } else {
+    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->core.req_cnt,
+            (long) req->obj_size, (long) cache->core.size);
+  }
+  cache->core.req_cnt += 1;
+  return found_in_cache;
+}
+
+
+
+
+
 
 #ifdef __cplusplus
 extern "C" {

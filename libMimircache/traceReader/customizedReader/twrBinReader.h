@@ -42,7 +42,6 @@ static inline int twr_read(reader_t *reader, request_t *req) {
   guint32 kv_size = *(guint32 *) record;
   record += 4;
   guint32 op_ttl = *(guint32 *) record;
-  record += 4;
 
   guint32 key_size = (kv_size >> 22) & (0x00000400 - 1);
   guint32 val_size = kv_size & (0x00400000 - 1);

@@ -66,6 +66,7 @@ gint64 measure_qps_read(cache_t *cache) {
     cache->core.get(cache, req);
     req->obj_id_ptr += MEM_ALIGN_STRIPE;
   }
+  printf("done warming up cache\n");
 
   req->obj_id_ptr = (gpointer) 0L;
   struct rusage r_usage_before, r_usage_after;
@@ -94,4 +95,12 @@ gint64 measure_qps_read(cache_t *cache) {
          elapsed_time, (double) n_req / elapsed_time / 1000);
   printf("**********************************************************\n\n");
   return (double) n_req / elapsed_time;
+}
+
+
+gint64 measure_qps_withtrace(cache_t* cache, reader_t* reader){
+
+
+
+  return 1;
 }

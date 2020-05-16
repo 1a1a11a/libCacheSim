@@ -11,7 +11,7 @@ extern "C"
 
 int log_header(int level, const char *file, int line)
 {
-    if(level < LOGLEVEL) {
+    if(level < MIMIR_LOGLEVEL) {
         return 0;
     }
 

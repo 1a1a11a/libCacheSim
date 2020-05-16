@@ -35,8 +35,9 @@ reader_t *setup_reader(const char *const trace_path,
   reader->base->n_total_req = 0;
   reader->base->mmap_offset = 0;
   reader->cloned = FALSE;
-  if (reader_init_param != NULL)
+  if (reader_init_param != NULL) {
     memcpy(&reader->base->init_params, reader_init_param, sizeof(reader_init_param_t));
+  }
 
   if (strlen(trace_path) > MAX_FILE_PATH_LEN - 1) {
     ERROR("file name/path is too long(>%d), please use a shorter name\n", MAX_FILE_PATH_LEN);

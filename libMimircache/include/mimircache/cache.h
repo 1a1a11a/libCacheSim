@@ -36,14 +36,15 @@ struct cache;
 typedef struct {
   gint64 cache_size;
   obj_id_type_t obj_id_type;
-  gboolean support_ttl;
+//  gboolean support_ttl;
+  gint64 default_ttl;
 } common_cache_params_t;
 
 struct cache_core {
   guint64 req_cnt;
   gint64 size;
   gint64 used_size;
-  gboolean support_ttl;
+  gint64 default_ttl;
   obj_id_type_t obj_id_type;
 
   gboolean (*get)(struct cache *, request_t *);

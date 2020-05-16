@@ -29,7 +29,7 @@ extern void LRU_free(cache_t *cache);
 
 extern gboolean LRU_check(cache_t *cache, request_t *req);
 
-extern gboolean LRU_add(cache_t *cache, request_t *req);
+extern gboolean LRU_get(cache_t *cache, request_t *req);
 
 extern cache_obj_t *LRU_get_cached_obj(cache_t *cache, request_t *req);
 
@@ -43,6 +43,9 @@ extern void _LRU_update(cache_t *LRU, request_t *req);
 extern void _LRU_evict(cache_t *LRU, request_t *req);
 
 extern void *_LRU_evict_with_return(cache_t *LRU, request_t *req);
+
+
+gboolean LRU_get_with_ttl(cache_t* cache, request_t *req);
 
 
 #ifdef __cplusplus

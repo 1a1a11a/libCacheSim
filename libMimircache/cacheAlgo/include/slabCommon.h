@@ -102,14 +102,13 @@ static inline slab_t *allocate_slab(slab_params_t *slab_params, gint id) {
   new_slab->q_node = q_node;
   g_queue_push_tail_link(slab_params->slab_q, q_node);
 
-//  g_queue_push_tail(slab_params->queue, new_slab);
-
   // store the slab in slabclass free queue
   g_queue_push_tail(slabclass->free_slab_q, new_slab);
 
   slab_params->n_allocated_slabs += 1;
 //  DEBUG("slab size %ld chunk size %ld\n", slab_params->slab_size, chunk_size);
-//  DEBUG("allocate slab (slabclass %d) %ld/%ld - fit %ld objects\n", id, slab_params->n_allocated_slabs, slab_params->n_total_slabs, new_slab->n_total_items);
+  DEBUG2("allocate slab (slabclass %d) allocated slab %ld/%ld - fit %ld objects\n", id, (long) slab_params->n_allocated_slabs,
+      (long) slab_params->n_total_slabs, (long) new_slab->n_total_items);
 //  DEBUG("allocate slab %d %p total %u items - current slab queue length %u\n", id, new_slab, new_slab->n_total_items,
 //         g_queue_get_length(slab_params->slab_q));
   return new_slab;

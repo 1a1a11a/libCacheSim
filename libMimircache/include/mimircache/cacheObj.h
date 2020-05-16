@@ -29,9 +29,8 @@ static inline cache_obj_t* create_cache_obj_from_req(request_t* req){
 #endif
 
   cache_obj->obj_size = req->obj_size;
-#ifdef SUPPORT_TTL
-  cache_obj->exp_time = req->real_time + req->ttl;
-#endif
+  if (req->ttl != 0)
+    cache_obj->exp_time = req->real_time + req->ttl;
   cache_obj->obj_id_ptr = req->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));
@@ -62,13 +61,13 @@ static inline void destroy_cache_obj(gpointer data){
 }
 
 
-static inline void update_cache_obj(cache_obj_t *cache_obj, request_t *req) {
-  cache_obj->obj_size = req->obj_size;
-#ifdef SUPPORT_TTL
-  if (req->ttl > 0) // get request do not have TTL, so TTL is not reset
-    cache_obj->exp_time = req->real_time + req->ttl;
-#endif
-}
+//static inline void update_cache_obj(cache_obj_t *cache_obj, request_t *req) {
+//  cache_obj->obj_size = req->obj_size;
+//#ifdef SUPPORT_TTL
+//  if (req->ttl > 0) // get request do not have TTL, so TTL is not reset
+//    cache_obj->exp_time = req->real_time + req->ttl;
+//#endif
+//}
 
 
 /**

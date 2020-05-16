@@ -32,7 +32,7 @@ cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t p
   cache->core.size = params.cache_size;
   cache->core.cache_specific_init_params = NULL;
   cache->core.obj_id_type = params.obj_id_type;
-  cache->core.support_ttl = params.support_ttl;
+  cache->core.default_ttl = params.default_ttl;
 
   void *handle = dlopen(NULL, RTLD_GLOBAL);
   char func_name[128];
@@ -46,6 +46,9 @@ cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t p
 
   sprintf(func_name, "%s_get", cache_name);
   gboolean (*get)(cache_t *, request_t *) = dlsym(handle, func_name);
+
+  sprintf(func_name, "%s_get_with_ttl", cache_name);
+  gboolean (*get_with_ttl)(cache_t *, request_t *) = dlsym(handle, func_name);
 
   sprintf(func_name, "%s_check", cache_name);
   gboolean (*check)(cache_t *, request_t *) = dlsym(handle, func_name);
@@ -105,7 +108,18 @@ cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t p
 
   cache->core.cache_init = cache_init;
   cache->core.cache_free = cache_free;
-  cache->core.get = get;
+
+  if (cache->core.default_ttl != 0){
+    if (get_with_ttl != NULL){
+      cache->core.get = get_with_ttl;
+    } else {
+      WARNING("TTL support is enabled, but cannot find %s_get_with_ttl\n", cache_name);
+      cache->core.get = get;
+    }
+  } else {
+    cache->core.get = get;
+  }
+
   cache->core.check = check;
   cache->core._insert = _insert;
   cache->core._update = _update;
@@ -120,7 +134,7 @@ cache_t *cache_struct_init(const char* const cache_name, common_cache_params_t p
 cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size) {
   common_cache_params_t cc_params = {.cache_size=new_size,
       .obj_id_type=old_cache->core.obj_id_type,
-      .support_ttl=old_cache->core.support_ttl};
+      .default_ttl=old_cache->core.default_ttl};
   cache_t *cache = old_cache->core.cache_init(cc_params, old_cache->core.cache_specific_init_params);
   return cache;
 }

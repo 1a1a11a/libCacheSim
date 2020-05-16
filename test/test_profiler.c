@@ -16,7 +16,7 @@ void test_profiler_no_size(gconstpointer user_data) {
   guint64 miss_cnt_true[] = {99411, 96397, 95652, 95370, 95182, 94997, 94891, 94816};
 
   reader_t *reader = (reader_t *) user_data;
-  common_cache_params_t cc_params = {.cache_size=cache_size, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
+  common_cache_params_t cc_params = {.cache_size=cache_size, .obj_id_type=reader->base->obj_id_type, .default_ttl=0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
   profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, step_size, NULL, 0, 4);
@@ -46,7 +46,7 @@ void test_profiler(gconstpointer user_data) {
                               3081624576, 3079594496, 3075357184, 3060711936};
 
   reader_t *reader = (reader_t *) user_data;
-  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
+  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .default_ttl=0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -87,7 +87,7 @@ void test_profiler_with_warmup1(gconstpointer user_data) {
   guint64 miss_byte_true[] = {4034876416, 3836416512, 3662237696, 3609691648, 3079616512, 3077579776, 3072181760, 3045314048};
 
   reader_t *reader = (reader_t *) user_data;
-  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
+  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .default_ttl=0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -116,7 +116,7 @@ void test_profiler_with_warmup2(gconstpointer user_data) {
   guint64 miss_byte_true[] = {3036331008, 2839408640, 2676338688, 2623825408, 2263264256, 2261316096, 2257078784, 2242433536};
 
   reader_t *reader = (reader_t *) user_data;
-  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
+  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .obj_id_type=reader->base->obj_id_type, .default_ttl=0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 

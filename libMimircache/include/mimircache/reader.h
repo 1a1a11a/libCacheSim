@@ -49,6 +49,7 @@ typedef struct {
   int obj_size_field;
   int op_field;
   int ttl_field;
+
   // csv reader
   gboolean has_header;
   char delimiter;

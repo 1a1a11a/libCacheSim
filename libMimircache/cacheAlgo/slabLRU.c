@@ -16,7 +16,7 @@ cache_t *slabLRU_init(common_cache_params_t ccache_params, void *cache_specific_
   cache_t *cache = cache_struct_init("slabLRU", ccache_params);
   cache->cache_params = g_new0(slabLRU_params_t, 1);
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *) (cache->cache_params);
-  slabLRU_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
+  slabLRU_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, slab_cache_obj_destroyer, g_free, slab_cache_obj_destroyer);
   slabLRU_params->slab_params.slab_q = g_queue_new();
   slabLRU_params->slab_params.slab_size = MB;
   slabLRU_params->slab_params.n_total_slabs = ccache_params.cache_size / slabLRU_params->slab_params.slab_size;
@@ -137,6 +137,40 @@ GHashTable *slabLRU_get_objmap(cache_t *cache){
 
 
 
+cache_check_result_t slabLRU_check_and_update_with_ttl(cache_t *cache, request_t* req){
+  slabLRU_params_t *params = (slabLRU_params_t *) (cache->cache_params);
+  cache_check_result_t result = cache_miss_e;
+  slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) g_hash_table_lookup(params->hashtable, req->obj_id_ptr);
+  if (cache_obj != NULL) {
+    if (cache_obj->exp_time < req->real_time) {
+      /* obj is expired */
+      result = expired_e;
+      cache->stat.hit_expired_cnt += 1;
+      cache->stat.hit_expired_byte += cache_obj->obj_size;
+      cache_obj->exp_time = req->real_time + req->ttl;
+    } else {
+      result = cache_hit_e;
+    }
+  }
+  return result;
+}
+
+gboolean slabLRU_get_with_ttl(cache_t *cache, request_t *req){
+  req->ttl == 0 && (req->ttl = cache->core.default_ttl);
+  cache_check_result_t result = slabLRU_check_and_update_with_ttl(cache, req);
+  gboolean found_in_cache = (result == cache_hit_e);
+
+  /* no update, and eviction is done during insert */
+  if (result == cache_miss_e){
+    _slabLRU_insert(cache, req);
+  } else {
+    _slabLRU_update(cache, req);
+  }
+
+  cache->core.req_cnt += 1;
+  return found_in_cache;
+
+}
 
 
 #ifdef __cplusplus

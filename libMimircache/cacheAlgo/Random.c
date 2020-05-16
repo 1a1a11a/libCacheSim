@@ -77,9 +77,11 @@ gboolean Random_check(cache_t *cache, request_t *req) {
 void _Random_update(cache_t *cache, request_t *req) {
   Random_params_t *Random_params = (Random_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = g_hash_table_lookup(Random_params->hashtable, req->obj_id_ptr);
-  cache->core.used_size -= cache_obj->obj_size;
-  cache->core.used_size += req->obj_size;
-  update_cache_obj(cache_obj, req);
+  if (cache_obj->obj_size != req->obj_size){
+    cache->core.used_size -= cache_obj->obj_size;
+    cache->core.used_size += req->obj_size;
+    cache_obj->obj_size = req->obj_size;
+  }
 }
 
 void _Random_evict(cache_t *cache, request_t *req) {

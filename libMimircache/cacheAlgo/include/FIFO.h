@@ -14,7 +14,7 @@
 
 
 #ifdef __cplusplus
-extern "C"
+"C"
 {
 #endif
 
@@ -25,25 +25,26 @@ typedef struct FIFO_params {
 } FIFO_params_t;
 
 
-extern cache_t *FIFO_init(common_cache_params_t ccache_params, void *cache_specific_params);
+cache_t *FIFO_init(common_cache_params_t ccache_params, void *cache_specific_params);
 
-extern void FIFO_free(cache_t *cache);
+void FIFO_free(cache_t *cache);
 
-extern gboolean FIFO_check(cache_t *cache, request_t *req);
-gboolean FIFO_check_with_ttl(cache_t *cache, request_t* req);
+gboolean FIFO_check(cache_t *cache, request_t *req);
+
+gboolean FIFO_get(cache_t *cache, request_t *req);
+
+void _FIFO_insert(cache_t *FIFO, request_t *req);
+
+void _FIFO_update(cache_t *FIFO, request_t *req);
+
+void _FIFO_evict(cache_t *FIFO, request_t *req);
+
+void *_FIFO_evict_with_return(cache_t *FIFO, request_t *req);
+
+void FIFO_remove_obj(cache_t *cacheAlg, void *obj_id_ptr);
 
 
-extern gboolean FIFO_get(cache_t *cache, request_t *req);
-
-extern void _FIFO_insert(cache_t *FIFO, request_t *req);
-
-extern void _FIFO_update(cache_t *FIFO, request_t *req);
-
-extern void _FIFO_evict(cache_t *FIFO, request_t *req);
-
-extern void *_FIFO_evict_with_return(cache_t *FIFO, request_t *req);
-
-extern void FIFO_remove_obj(cache_t *cacheAlg, void *obj_id_ptr);
+gboolean FIFO_get_with_ttl(cache_t *cache, request_t *req);
 
 
 #ifdef __cplusplus
