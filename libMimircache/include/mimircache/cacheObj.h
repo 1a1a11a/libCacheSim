@@ -9,7 +9,6 @@
 #include "request.h"
 #include "struct.h"
 #include "mem.h"
-#include <stdatomic.h>
 #include <gmodule.h>
 
 
@@ -23,7 +22,7 @@ static inline cache_obj_t* create_cache_obj_from_req(request_t* req){
 #ifdef USE_CUSTOME_MEM_ALLOCATOR
   cache_obj_t *cache_obj = new_cache_obj();
 #elif defined(USE_GLIB_SLICE_ALLOCATOR)
-  cache_obj_t* cache_obj = g_slice_new(cache_obj_t);
+  cache_obj_t* cache_obj = g_slice_new0(cache_obj_t);
 #else
   cache_obj_t *cache_obj = g_new0(cache_obj_t, 1);
 #endif
@@ -79,7 +78,7 @@ static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
 #ifdef USE_CUSTOME_MEM_ALLOCATOR
   slab_cache_obj_t *cache_obj = new_cache_obj();
 #elif defined(USE_GLIB_SLICE_ALLOCATOR)
-  slab_cache_obj_t* cache_obj = g_slice_new(slab_cache_obj_t);
+  slab_cache_obj_t* cache_obj = g_slice_new0(slab_cache_obj_t);
 #else
   slab_cache_obj_t *cache_obj = g_new0(slab_cache_obj_t, 1);
 #endif

@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #ifndef MIMIR_LOGLEVEL
-#define MIMIR_LOGLEVEL 5
+#define MIMIR_LOGLEVEL 7
 #endif
 
 #define SUPPORT_TTL
