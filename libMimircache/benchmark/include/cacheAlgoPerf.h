@@ -31,6 +31,7 @@ static inline double time_since(struct timeval t0) {
 
 gint64 measure_qps_read(cache_t* cache);
 gint64 measure_qps_write(cache_t* cache);
+gint64 measure_qps_withtrace(cache_t* cache, reader_t* reader);
 
 
 

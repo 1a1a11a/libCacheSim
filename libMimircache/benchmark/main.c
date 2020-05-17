@@ -17,11 +17,15 @@ int main(int argc, char* argv[]){
 
   if (argc < 2 || strcmp(argv[1], "all") == 0){
     measure_all(cc_params);
-  } else {
+  } else if (argc == 2) {
     cache_t *cache = create_cache(argv[1], cc_params, NULL);
     measure_qps_write(cache);
     measure_qps_read(cache);
     cache->core.cache_free(cache);
+  } else if (argc == 3 || argc == 4) {
+    cache_t *cache = create_cache(argv[1], cc_params, NULL);
+    reader_t *reader = setup_reader(argv[2], argv[3][0], OBJ_ID_NUM, NULL);
+    measure_qps_withtrace(cache, reader);
   }
 
 //  free_all_global_mem_alloc();

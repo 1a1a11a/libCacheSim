@@ -99,8 +99,31 @@ gint64 measure_qps_read(cache_t *cache) {
 
 
 gint64 measure_qps_withtrace(cache_t* cache, reader_t* reader){
+  request_t *req = new_request(OBJ_ID_NUM);
 
+  struct timeval t0;
+  guint64 n_hit = 0, n_req = 0;
 
+  req->obj_id_ptr = (gpointer) 0L;
+  struct rusage r_usage_before, r_usage_after;
+  getrusage(RUSAGE_SELF, &r_usage_before);
 
-  return 1;
+  gettimeofday(&t0, 0);
+  read_one_req(reader, req);
+  while (req->valid) {
+      if (cache->core.get(cache, req))
+        n_hit += 1;
+      n_req += 1;
+    read_one_req(reader, req);
+  }
+  double elapsed_time = time_since(t0);
+
+  getrusage(RUSAGE_SELF, &r_usage_after);
+  print_rusage_diff(r_usage_before, r_usage_after);
+
+  printf("read %s %llu req, %llu hit in %.2lf sec (%.2lf KQPS)\n", cache->core.cache_name, (unsigned long long) n_req,
+         (unsigned long long) n_hit,
+         elapsed_time, (double) n_req / elapsed_time / 1000);
+  printf("**********************************************************\n\n");
+  return (double) n_req / elapsed_time;
 }
