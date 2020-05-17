@@ -25,8 +25,15 @@ cache_t *slabLRC_init(common_cache_params_t ccache_params, void *cache_specific_
   slabLRC_params->slab_params.slab_q = g_queue_new();
   slabLRC_params->slab_params.slab_size = MB;
   slabLRC_params->slab_params.n_total_slabs = ccache_params.cache_size / slabLRC_params->slab_params.slab_size;
-//  DEBUG("cache size %lu - %d total slabs\n", size, slabLRC_params->slab_params.n_total_slabs);
   slabLRC_params->slab_params.per_obj_metadata_size = 0;
+
+  if (cache_specific_init_params != NULL){
+    slab_init_params_t *init_params = cache_specific_init_params;
+    cache->core.cache_specific_init_params = cache_specific_init_params;
+    slabLRC_params->slab_params.slab_size = init_params->slab_size;
+    slabLRC_params->slab_params.per_obj_metadata_size = init_params->per_obj_metadata_size;
+  }
+
   for (int i=0; i<N_SLABCLASS; i++)
     init_slabclass(&slabLRC_params->slab_params, i);
 

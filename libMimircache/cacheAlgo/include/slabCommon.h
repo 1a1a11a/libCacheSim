@@ -18,16 +18,22 @@
 extern "C" {
 #endif
 
-#define N_SLABCLASS 42
+#define N_SLABCLASS 48
 static guint32 SLABCLASS_SIZES[] = {96, 120, 152, 192, 240, 304, 384, 480, 600, 752, 944, 1184, 1480, 1856, 2320, 2904,
                                     3632, 4544, 5680, 7104, 8880, 11104, 13880, 17352, 21696, 27120, 33904, 42384,
                                     52984, 66232, 82792, 103496, 129376, 161720, 202152, 252696, 315872, 394840, 524288,
-                                    655360, 819200, 1048576}; //, 1280000, 1600000, 2000000, 2500000, 3125000, 3906250};
+                                    655360, 819200, 1048576, 1280000, 1600000, 2097152, 2500000, 3125000, 3906250};
+typedef enum {
+  no_automove = 0,
+  recency_t = 1,
+  eviction_rate_t,
+}slab_automove_t;
 
 typedef struct {
   gint64 slab_size;
   gint8 per_obj_metadata_size;
-} slab_init_params;
+  slab_automove_t slab_move_strategy;
+} slab_init_params_t;
 
 typedef struct {
   gint slabclass_id;
