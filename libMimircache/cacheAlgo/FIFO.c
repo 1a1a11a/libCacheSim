@@ -36,16 +36,12 @@ void FIFO_free(cache_t *cache) {
 
 gboolean FIFO_check(cache_t *cache, request_t *req) {
   FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  if (g_hash_table_contains(FIFO_params->hashtable, req->obj_id_ptr))
-    return cache_hit_e;
-  else
-    return cache_miss_e;
+   return g_hash_table_contains(FIFO_params->hashtable, req->obj_id_ptr);
 }
 
 
 gboolean FIFO_get(cache_t *cache, request_t *req) {
-  cache_check_result_t cache_check = FIFO_check(cache, req);
-  gboolean found_in_cache = cache_check == cache_hit_e;
+  gboolean found_in_cache = FIFO_check(cache, req);
 
   if (req->obj_size <= cache->core.size) {
     if (!found_in_cache)

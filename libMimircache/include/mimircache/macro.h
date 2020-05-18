@@ -21,7 +21,12 @@ extern "C" {
 #define MEMCMP(A, o, B) (memcmp((A), (B)) o 0)
 
 #define BIT(x) (1 << (x))
-  
+
+#define FILL(instance, field, value)    \
+do {                                    \
+    instance.field = value;             \
+    instance.has_##field = 1;           \
+} while(0)
 
 
 #ifdef __cplusplus

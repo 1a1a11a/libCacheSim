@@ -55,6 +55,8 @@ static inline int twr_read(reader_t *reader, request_t *req) {
   req->ttl = ttl;
 
   reader->base->mmap_offset += 20;
+  if (req->obj_size == 0)
+    return twr_read(reader, req);
   return 0;
 }
 

@@ -42,6 +42,9 @@ typedef struct {
 #ifdef SUPPORT_TTL
   gint32 exp_time;
 #endif
+#ifdef SUPPORT_SLAB_AUTOMOVE
+  gint32 access_time;
+#endif
   void *slab;
   gint32 item_pos_in_slab;
 } slab_cache_obj_t;
