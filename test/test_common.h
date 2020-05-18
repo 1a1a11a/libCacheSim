@@ -121,6 +121,8 @@ cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params
     init_params->reader = reader;
     init_params->ts = 0;
     cache = Optimal_init(cc_params, (void *) init_params);
+  } else if (strcmp(alg_name, "TTL_FIFO") == 0){
+    cache = TTL_FIFO_init(cc_params, NULL);
   } else if (strcmp(alg_name, "slabLRC") == 0) {
     cache = slabLRC_init(cc_params, NULL);
   } else if (strcmp(alg_name, "slabLRU") == 0) {

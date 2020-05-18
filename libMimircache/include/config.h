@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #define SUPPORT_TTL
+#define SUPPORT_SLAB_AUTOMOVE
 //#define USE_CUSTOME_MEM_ALLOCATOR
 #define USE_GLIB_SLICE_ALLOCATOR
 

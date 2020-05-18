@@ -87,6 +87,9 @@ static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
     cache_obj->exp_time = req->real_time + req->ttl;
   else
     cache_obj->exp_time = G_MAXINT32;
+#ifdef SUPPORT_SLAB_AUTOMOVE
+  cache_obj->access_time = req->real_time;
+#endif
   cache_obj->obj_id_ptr = req->obj_id_ptr;
   if (req->obj_id_type == OBJ_ID_STR) {
     cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));

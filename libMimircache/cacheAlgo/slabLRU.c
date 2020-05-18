@@ -17,7 +17,7 @@ cache_t *slabLRU_init(common_cache_params_t ccache_params, void *cache_specific_
   cache->cache_params = g_new0(slabLRU_params_t, 1);
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *) (cache->cache_params);
   slabLRU_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, slab_cache_obj_destroyer, g_free, slab_cache_obj_destroyer);
-  slabLRU_params->slab_params.slab_q = g_queue_new();
+  slabLRU_params->slab_params.global_slab_q = g_queue_new();
   slabLRU_params->slab_params.slab_size = MB;
   slabLRU_params->slab_params.n_total_slabs = ccache_params.cache_size / slabLRU_params->slab_params.slab_size;
   slabLRU_params->slab_params.per_obj_metadata_size = 0;
@@ -38,7 +38,7 @@ cache_t *slabLRU_init(common_cache_params_t ccache_params, void *cache_specific_
 void slabLRU_free(cache_t *cache){
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *) (cache->cache_params);
   slab_params_t *slab_params = &slabLRU_params->slab_params;
-  g_queue_free_full(slab_params->slab_q, _slab_destroyer);
+  g_queue_free_full(slab_params->global_slab_q, _slab_destroyer);
   for (int i=0; i < N_SLABCLASS; i++){
     slabclass_t *slabclass = &slab_params->slabclasses[i];
     g_queue_free(slabclass->free_slab_q);
@@ -80,8 +80,8 @@ void _slabLRU_update(cache_t *cache, request_t *req){
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *) (cache->cache_params);
   slab_cache_obj_t *cache_obj = g_hash_table_lookup(slabLRU_params->hashtable, req->obj_id_ptr);
   slab_t *slab = (slab_t*) cache_obj->slab;
-  g_queue_unlink(slabLRU_params->slab_params.slab_q, slab->q_node);
-  g_queue_push_tail_link(slabLRU_params->slab_params.slab_q, slab->q_node);
+  g_queue_unlink(slabLRU_params->slab_params.global_slab_q, slab->q_node);
+  g_queue_push_tail_link(slabLRU_params->slab_params.global_slab_q, slab->q_node);
 }
 
 
@@ -89,7 +89,7 @@ void _slabLRU_evict(cache_t *cache, request_t *req){
   // evict the most recent accessed slab
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *) (cache->cache_params);
   slabLRU_params->slab_params.n_allocated_slabs -= 1;
-  slab_t *slab_to_evict = g_queue_pop_head(slabLRU_params->slab_params.slab_q);
+  slab_t *slab_to_evict = g_queue_pop_head(slabLRU_params->slab_params.global_slab_q);
   slabclass_t *slabclass = &slabLRU_params->slab_params.slabclasses[slab_to_evict->slabclass_id];
 
   // if current queue is in the free_slab, remove it

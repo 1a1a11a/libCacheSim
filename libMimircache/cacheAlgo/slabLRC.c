@@ -22,7 +22,7 @@ cache_t *slabLRC_init(common_cache_params_t ccache_params, void *cache_specific_
   cache->cache_params = g_new0(slabLRC_params_t, 1);
   slabLRC_params_t *slabLRC_params = (slabLRC_params_t *) (cache->cache_params);
   slabLRC_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, slab_cache_obj_destroyer, g_free, slab_cache_obj_destroyer);
-  slabLRC_params->slab_params.slab_q = g_queue_new();
+  slabLRC_params->slab_params.global_slab_q = g_queue_new();
   slabLRC_params->slab_params.slab_size = MB;
   slabLRC_params->slab_params.n_total_slabs = ccache_params.cache_size / slabLRC_params->slab_params.slab_size;
   slabLRC_params->slab_params.per_obj_metadata_size = 0;
@@ -43,7 +43,7 @@ cache_t *slabLRC_init(common_cache_params_t ccache_params, void *cache_specific_
 void slabLRC_free(cache_t *cache){
   slabLRC_params_t *slabLRC_params = (slabLRC_params_t *) (cache->cache_params);
   slab_params_t *slab_params = &slabLRC_params->slab_params;
-  g_queue_free_full(slab_params->slab_q, _slab_destroyer);
+  g_queue_free_full(slab_params->global_slab_q, _slab_destroyer);
   for (int i=0; i < N_SLABCLASS; i++){
     slabclass_t *slabclass = &slab_params->slabclasses[i];
     g_queue_free(slabclass->free_slab_q);
@@ -87,7 +87,7 @@ void _slabLRC_evict(cache_t *cache, request_t *req){
   // evict the most recent created
   slabLRC_params_t *slabLRC_params = (slabLRC_params_t *) (cache->cache_params);
   slabLRC_params->slab_params.n_allocated_slabs -= 1;
-  slab_t *slab_to_evict = g_queue_pop_head(slabLRC_params->slab_params.slab_q);
+  slab_t *slab_to_evict = g_queue_pop_head(slabLRC_params->slab_params.global_slab_q);
   slabclass_t *slabclass = &slabLRC_params->slab_params.slabclasses[slab_to_evict->slabclass_id];
   DEBUG3("evict slab id %d store %u - total %u items\n", slab_to_evict->slabclass_id, (unsigned)slab_to_evict->n_stored_items, (unsigned)slab_to_evict->n_total_items);
 

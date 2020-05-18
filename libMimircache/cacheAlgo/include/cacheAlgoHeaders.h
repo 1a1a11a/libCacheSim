@@ -20,6 +20,7 @@ extern "C"
 #include "Optimal.h"
 #include "Random.h"
 #include "SLRU.h"
+#include "TTL_FIFO.h"
 
 
 #include "slabLRU.h"
