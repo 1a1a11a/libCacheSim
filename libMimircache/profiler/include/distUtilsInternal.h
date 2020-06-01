@@ -52,6 +52,39 @@ static inline gint64 _get_last_dist_add_req(request_t *req, GHashTable *hash_tab
 
 
 /***********************************************************
+ * this function is called by _get_first_access_dist,
+ * it inserts current request and return distance to its first request
+ * note that the distance between req at t and at t+1 is 0,
+ * the calculated dist = cur_ts - last_ts - 1
+ *
+ * @param req           request_t contains current request
+ * @param hash_table    the hashtable for remembering last access
+ * @param ts            current timestamp
+ * @return              distance to last access
+ */
+static inline gint64 _get_first_dist_add_req(request_t *req, GHashTable *hash_table, guint64 ts) {
+  gpointer gp = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+  gint64 ret = -1;
+  if (gp == NULL) {
+    // it has not been requested before
+    if (req->obj_id_type == OBJ_ID_STR)
+      g_hash_table_insert(hash_table, g_strdup((gchar * )(req->obj_id_ptr)), GSIZE_TO_POINTER((gsize) ts));
+    else if (req->obj_id_type == OBJ_ID_NUM) {
+      g_hash_table_insert(hash_table, req->obj_id_ptr, GSIZE_TO_POINTER((gsize) ts));
+    } else {
+      ERROR("unknown obj_id_type: %c\n", req->obj_id_type);
+      exit(1);
+    }
+  } else {
+    // it has been requested before
+    gsize old_ts = GPOINTER_TO_SIZE(gp);
+    ret = (gint64) ts - (gint64) old_ts - 1;
+  }
+
+  return ret;
+}
+
+/***********************************************************
  * this function is used for computing reuse distance for each request
  * it maintains a hashmap and a splay tree,
  * time complexity is O(log(N)), N is the number of unique elements

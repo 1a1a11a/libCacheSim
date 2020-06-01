@@ -50,7 +50,7 @@ gint64 *get_reuse_time(reader_t *reader);
 /***********************************************************
  * get the distance since last access,
  * it returns an array of n_req, where the nth element is the
- * distance (number of obj) since last access for this object
+ * distance (number of request) since last access for this object
  * @param reader
  * @return
  */
@@ -59,7 +59,7 @@ gint64 *get_last_access_dist(reader_t *reader);
 /***********************************************************
  * get the dist to next access,
  * it returns an array of n_req, where the nth element is the
- * distance (number of obj) since now to next access for this obj
+ * distance (number of request) since now to next access for this obj
  * note: it is better to rewrite this function to not use read_one_req_above, which has high overhead
  * @param reader
  * @return
@@ -76,6 +76,17 @@ gint64 *get_next_access_dist(reader_t *reader);
  * @return
  */
 gint64 *get_stack_byte(reader_t *reader);
+
+
+
+/***********************************************************
+ * get the distance since first access,
+ * it returns an array of n_req, where the nth element is the
+ * distance (number of request) since the first access for this object
+ * @param reader
+ * @return
+ */
+gint64 *get_first_access_dist(reader_t *reader);
 
 
 /***********************************************************
@@ -101,8 +112,41 @@ void save_dist(reader_t *const reader, gint64 *dist_array, const char *const pat
 gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_type);
 
 
+
+
+
+/***********************************************************
+ * get the resue time since last access,
+ * it returns an array of n_req, where the nth element is the
+ * time since last access for this obj
+ * @param reader
+ * @return
+ */
+gint64 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
+
+/***********************************************************
+ * get the distance since last access,
+ * it returns an array of n_req, where the nth element is the
+ * distance (number of obj) since last access for this object
+ * @param reader
+ * @return
+ */
+gint64 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
+
+
+/***********************************************************
+ * get the distance since last access,
+ * it returns an array of n_req, where the nth element is the
+ * distance (number of obj) since last access for this object
+ * @param reader
+ * @return
+ */
+gint64 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
+
+
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif //MIMIRCACHE_DISTUTILS_H

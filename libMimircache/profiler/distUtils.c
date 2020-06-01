@@ -12,11 +12,13 @@ extern "C"
 #include <stdio.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <math.h>
 
 #include "../include/mimircache/distUtils.h"
 #include "distUtilsInternal.h"
 #include "utilsInternal.h"
 #include "splay.h"
+#include "../utils/include/mathUtils.h"
 
 
 /* https://stackoverflow.com/questions/46213840/get-rid-of-warning-implicit-declaration-of-function-fileno-in-flex */
@@ -178,6 +180,40 @@ gint64 *get_last_access_dist(reader_t *reader) {
 }
 
 
+gint64 *get_first_access_dist(reader_t *reader) {
+  guint64 n_req = get_num_of_req(reader);
+  request_t *req = new_request(reader->base->obj_id_type);
+  gint64 *dist_array = g_new(gint64, n_req);
+
+
+  // create hashtable
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+                                             (GDestroyNotify) g_free, NULL);
+
+  gint64 ts = 0;
+  gint64 dist, max_dist = 0;
+  read_one_req(reader, req);
+
+  while (req->valid) {
+    dist = _get_first_dist_add_req(req, hash_table, ts);
+    if (dist > max_dist)
+      max_dist = dist;
+    dist_array[ts] = dist;
+    read_one_req(reader, req);
+    ts++;
+  }
+
+  // clean up
+  free_request(req);
+  g_hash_table_destroy(hash_table);
+  reset_reader(reader);
+  return dist_array;
+}
+
+
+
+
+
 // TODO: rewrite this
 /**
  * get the dist to next access
@@ -280,7 +316,42 @@ gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_ty
 }
 
 
+gint64 *_cnt_dist(gint64* dist, gint64 n_req, double log_base, gint64* n_dist_cnt){
+  gint64 max_dist, max_dist_idx;
+  find_max_gint64(dist, n_req, &max_dist, &max_dist_idx);
+  double log_base_div = log(log_base);
+  *n_dist_cnt = (gint64)(log(max_dist)/log_base_div)+1;
+  gint64 *dist_cnt = g_new0(gint64, *n_dist_cnt);
+  for (gint64 i=0; i<n_req; i++){
+    if (dist[i] != -1){
+      dist_cnt[(gint64)(log(dist[i])/log_base_div)] += 1;
+    }
+  }
+//  printf("%ld %ld\n", dist_cnt[20], dist_cnt[*n_dist_cnt-1]);
+  return dist_cnt;
+}
 
+
+gint64 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt){
+  gint64* dist = get_reuse_time(reader);
+  gint64* dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
+  g_free(dist);
+  return dist_cnt;
+}
+
+gint64 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt) {
+  gint64* dist = get_last_access_dist(reader);
+  gint64* dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
+  g_free(dist);
+  return dist_cnt;
+}
+
+gint64 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt) {
+  gint64* dist = get_first_access_dist(reader);
+  gint64* dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
+  g_free(dist);
+  return dist_cnt;
+}
 
 #ifdef __cplusplus
 }
