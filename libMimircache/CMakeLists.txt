@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(libmimircache C)
+#project(libmimircache C)
+project(libmimircache)
 set(PROJECT_WEB "http://mimircache.info")
 set(libmimircache_VERSION_MAJOR 0)
 set(libmimircache_VERSION_MINOR 1)
@@ -82,6 +83,10 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 # set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${mimircache_VERSION_MAJOR}.${mimircache_VERSION_MINOR}.${mimircache_VERSION_REVISION})
 # set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 # target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+#add_executable(libcuckooExample dataStructure/libcuckoo0/c_hash.c)
+#target_link_libraries(libcuckooExample libcuckoo -lpthread -ldl)
+
 
 add_executable(benchmarkRun benchmark/main.c)
 target_link_libraries(benchmarkRun benchmark cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
