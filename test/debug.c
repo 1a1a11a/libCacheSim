@@ -9,8 +9,9 @@
 
 
 void f1(int argc, char* argv[]) {
-  int n_threads = 4;
+  int n_threads = 1;
   char *trace_path = "/Users/junchengy/twr.sbin";
+//  char *trace_path = "/home/jason//data/twr/warmupEvalSplit/simclusters_v2_entity_cluster_scores_cache.0.eval.sbin";
   if (argc >= 2)
     trace_path = argv[1];
   if (argc >= 3)
@@ -24,12 +25,14 @@ void f1(int argc, char* argv[]) {
 
 //  reader_t* reader = setup_reader("/Users/junchengy/test", PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
   common_cache_params_t cc_params = {.cache_size=1024*1024*1024, .obj_id_type=reader->base->obj_id_type, .default_ttl=2};
-//  cache_t *cache = create_cache("FIFO", cc_params, NULL);
-  cache_t *cache = create_cache("slabLRC", cc_params, NULL);
+  slab_init_params_t slab_init_params = {.slab_size=1024*1024, .per_obj_metadata_size=0, .slab_move_strategy=recency_t};
+  cache_t *cache = create_cache("TTL_FIFO", cc_params, NULL);
+//  cache_t *cache = create_cache("slabObjLRU", cc_params, NULL);
+//  cache_t *cache = create_cache("slabObjLRU", cc_params, &slab_init_params);
 //  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, 0, 4);
-  gint num_of_sizes = 8;
-  guint64 cache_sizes[] = {2*MB, 8*MB, 16*MB, 32*MB, 64*MB, 128*MB, 8*GB, 16*GB};
-//  guint64 cache_sizes[] = {16*MB, 32*MB, 64*MB, 128*MB, 8*GB, 16*GB};
+  gint num_of_sizes = 6;
+//  guint64 cache_sizes[] = {2*MB, 8*MB, 16*MB, 32*MB, 64*MB, 128*MB, 8*GB, 16*GB};
+  guint64 cache_sizes[] = {16*MB, 64*MB, 256*MB, 1*GB, 4*GB, 16*GB};
 //  guint64 cache_sizes[] = {1*GB, 4*GB, 8*GB, 16*GB};
   profiler_res_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, NULL, 0, n_threads);
 
@@ -48,7 +51,29 @@ void f2(int argc, char* argv[]){
 }
 
 
+
+typedef struct _stritem {
+    int32_t       expire_at;         /* expiry time in secs */
+    int32_t       create_at;         /* time when this item was last linked */
+    uint32_t          is_linked:1;          /* item in hash */
+    uint32_t          in_freeq:1;           /* item in free queue */
+    uint32_t          is_raligned:1;       /* item data (payload) is right-aligned */
+    uint32_t          vlen:29;
+    uint32_t          offset;                  /* offset of item in slab */
+    uint8_t           id;                         /* slab class id */
+    uint8_t           klen;                     /* key length */
+    uint8_t           olen;                     /* optional length (right after cas) */
+    uint8_t           padding;               /* keep end 64-bit aligned */
+    char              end[1];                   /* item data */
+} item;
+
+void f3(){
+  printf("size %lu\n", sizeof(item));
+}
+
+
 int main(int argc, char* argv[]){
-  f1(argc, argv);
+//  f1(argc, argv);
+  f3();
   return 0;
 }

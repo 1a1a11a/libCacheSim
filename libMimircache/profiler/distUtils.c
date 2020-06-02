@@ -41,7 +41,7 @@ gint64 *_get_stack_dist_seq(reader_t *reader) {
 
   // create hashtable
   GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
-      (GDestroyNotify)g_free, NULL);
+                                             (GDestroyNotify) g_free, NULL);
 
   // create splay tree
   sTree *splay_tree = NULL;
@@ -83,7 +83,7 @@ gint64 *get_future_stack_dist(reader_t *reader) {
 
   // create hashtable
   GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
-      (GDestroyNotify) g_free, NULL);
+                                             (GDestroyNotify) g_free, NULL);
 
   // create splay tree
   sTree *splay_tree = NULL;
@@ -238,7 +238,7 @@ gint64 *get_reuse_time(reader_t *reader) {
 
   // create hashtable
   GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
-                                             (GDestroyNotify)g_free, NULL);
+                                             (GDestroyNotify) g_free, NULL);
 
   read_one_req(reader, req);
   if (req->real_time == -1) {
@@ -283,7 +283,7 @@ gint64 *get_reuse_time(reader_t *reader) {
 void save_dist(reader_t *const reader, gint64 *dist_array, const char *const path, dist_t dist_type) {
 
   // in multi-threading, this might be a problem
-  char *file_path = (char*)malloc(strlen(path)+8);
+  char *file_path = (char *) malloc(strlen(path) + 8);
   sprintf(file_path, "%s.%d", path, dist_type);
   FILE *file = fopen(file_path, "wb");
   fwrite(dist_array, sizeof(gint64), reader->base->n_total_req, file);
@@ -294,10 +294,10 @@ void save_dist(reader_t *const reader, gint64 *dist_array, const char *const pat
 
 gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_type) {
 
-  char *file_path = (char*)malloc(strlen(path)+8);
+  char *file_path = (char *) malloc(strlen(path) + 8);
   sprintf(file_path, "%s.%d", path, dist_type);
   FILE *file = fopen(path, "rb");
-  if (file == NULL){
+  if (file == NULL) {
     perror(file_path);
   }
 
@@ -306,7 +306,7 @@ gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_ty
   fstat(fd, &buf);
 
   get_num_of_req(reader);
-  assert(buf.st_size == sizeof(gint64)*reader->base->n_total_req);
+  assert(buf.st_size == sizeof(gint64) * reader->base->n_total_req);
 
   gint64 *dist_array = g_new(gint64, reader->base->n_total_req);
   fread(dist_array, sizeof(gint64), reader->base->n_total_req, file);
@@ -316,15 +316,15 @@ gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_ty
 }
 
 
-gint64 *_cnt_dist(gint64* dist, gint64 n_req, double log_base, gint64* n_dist_cnt){
+gint32 *_cnt_dist(gint64 *dist, gint64 n_req, double log_base, gint64 *n_dist_cnt) {
   gint64 max_dist, max_dist_idx;
   find_max_gint64(dist, n_req, &max_dist, &max_dist_idx);
   double log_base_div = log(log_base);
-  *n_dist_cnt = (gint64)(log(max_dist)/log_base_div)+1;
-  gint64 *dist_cnt = g_new0(gint64, *n_dist_cnt);
-  for (gint64 i=0; i<n_req; i++){
-    if (dist[i] != -1){
-      dist_cnt[(gint64)(log(dist[i])/log_base_div)] += 1;
+  *n_dist_cnt = (gint64) (log(max_dist) / log_base_div) + 1;
+  gint32 *dist_cnt = g_new0(gint32, *n_dist_cnt);
+  for (gint64 i = 0; i < n_req; i++) {
+    if (dist[i] != -1) {
+      dist_cnt[(gint) (log(dist[i]) / log_base_div)] += 1;
     }
   }
 //  printf("%ld %ld\n", dist_cnt[20], dist_cnt[*n_dist_cnt-1]);
@@ -332,26 +332,180 @@ gint64 *_cnt_dist(gint64* dist, gint64 n_req, double log_base, gint64* n_dist_cn
 }
 
 
-gint64 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt){
-  gint64* dist = get_reuse_time(reader);
-  gint64* dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
+gint32 *get_reuse_time_cnt_in_bins0(reader_t *reader, double log_base, gint64 *n_dist_cnt) {
+  gint64 *dist = get_reuse_time(reader);
+  gint32 *dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
   g_free(dist);
   return dist_cnt;
 }
 
-gint64 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt) {
-  gint64* dist = get_last_access_dist(reader);
-  gint64* dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
+gint32 *get_last_access_dist_cnt_in_bins0(reader_t *reader, double log_base, gint64 *n_dist_cnt) {
+  gint64 *dist = get_last_access_dist(reader);
+  gint32 *dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
   g_free(dist);
   return dist_cnt;
 }
 
-gint64 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt) {
-  gint64* dist = get_first_access_dist(reader);
-  gint64* dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
+gint32 *get_first_access_dist_cnt_in_bins0(reader_t *reader, double log_base, gint64 *n_dist_cnt) {
+  gint64 *dist = get_first_access_dist(reader);
+  gint32 *dist_cnt = _cnt_dist(dist, reader->base->n_total_req, log_base, n_dist_cnt);
   g_free(dist);
   return dist_cnt;
 }
+
+
+gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base, gint64 *n_dist_cnt) {
+
+  gint64 rt = 0;
+  gpointer value;
+  gint32 pos = 0;
+
+  // make sure large enough
+  gint32 dist_cnt_array_size = (gint32) (log(1e16) / log(log_base));
+  gint32 *dist_cnt_array = g_new0(gint32, dist_cnt_array_size);
+
+  request_t *req = new_request(reader->base->obj_id_type);
+
+  // create hashtable
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+                                             (GDestroyNotify) g_free, NULL);
+
+  read_one_req(reader, req);
+
+  while (req->valid) {
+    value = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+    if (value != NULL) {
+      rt = (gint64) req->real_time - GPOINTER_TO_SIZE (value);
+      pos = (gint32) (log((double) rt + 1) / log(log_base));
+      dist_cnt_array[pos]++;
+
+      if (pos > *n_dist_cnt) {
+        *n_dist_cnt = pos;
+      }
+    }
+
+    // insert into hashtable
+    if (req->obj_id_type == OBJ_ID_STR)
+      g_hash_table_insert(hash_table, g_strdup((gchar *) (req->obj_id_ptr)),
+                          GSIZE_TO_POINTER((gsize) (req->real_time)));
+
+    else if (req->obj_id_type == OBJ_ID_NUM) {
+      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_ptr),
+                          GSIZE_TO_POINTER((gsize) (req->real_time)));
+    }
+
+    read_one_req(reader, req);
+  }
+
+  // clean up
+  free_request(req);
+  g_hash_table_destroy(hash_table);
+  reset_reader(reader);
+  return dist_cnt_array;
+}
+
+
+gint32 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64 *n_dist_cnt) {
+
+  gint64 cur_ts = 0, last_access_dist = 0;
+  gpointer value;
+  gint32 pos = 0;
+
+  // make sure large enough
+  gint32 dist_cnt_array_size = (gint32) (log(1e16) / log(log_base));
+  gint32 *dist_cnt_array = g_new0(gint32, dist_cnt_array_size);
+
+  request_t *req = new_request(reader->base->obj_id_type);
+
+  // create hashtable
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+                                             (GDestroyNotify) g_free, NULL);
+
+  read_one_req(reader, req);
+
+  while (req->valid) {
+    value = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+    if (value != NULL) {
+      last_access_dist = (gint64) cur_ts - GPOINTER_TO_SIZE (value);
+      pos = (gint32) (log((double) last_access_dist + 1) / log(log_base));
+      dist_cnt_array[pos]++;
+
+      if (pos > *n_dist_cnt) {
+        *n_dist_cnt = pos;
+      }
+    }
+
+    // insert into hashtable
+    if (req->obj_id_type == OBJ_ID_STR)
+      g_hash_table_insert(hash_table, g_strdup((gchar *) (req->obj_id_ptr)),
+                          GSIZE_TO_POINTER((gsize) (req->real_time)));
+
+    else if (req->obj_id_type == OBJ_ID_NUM) {
+      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_ptr),
+                          GSIZE_TO_POINTER((gsize) (req->real_time)));
+    }
+
+    read_one_req(reader, req);
+    cur_ts += 1;
+  }
+
+  // clean up
+  free_request(req);
+  g_hash_table_destroy(hash_table);
+  reset_reader(reader);
+  return dist_cnt_array;
+}
+
+gint32 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64 *n_dist_cnt) {
+
+  gint64 cur_ts = 0, first_access_dist;
+  gpointer value;
+  gint32 pos = 0;
+
+  // make sure large enough
+  gint32 dist_cnt_array_size = (gint32) (log(1e16) / log(log_base));
+  gint32 *dist_cnt_array = g_new0(gint32, dist_cnt_array_size);
+
+  request_t *req = new_request(reader->base->obj_id_type);
+
+  // create hashtable
+  GHashTable *hash_table = create_hash_table(reader, NULL, NULL,
+                                             (GDestroyNotify) g_free, NULL);
+
+  read_one_req(reader, req);
+
+  while (req->valid) {
+    value = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+    if (value != NULL) {
+      first_access_dist = (gint64) cur_ts - GPOINTER_TO_SIZE (value);
+      pos = (gint32) (log((double) first_access_dist + 1) / log(log_base));
+      dist_cnt_array[pos]++;
+      if (pos > *n_dist_cnt) {
+        *n_dist_cnt = pos;
+      }
+    } else {
+      // insert into hashtable
+      if (req->obj_id_type == OBJ_ID_STR)
+        g_hash_table_insert(hash_table, g_strdup((gchar *) (req->obj_id_ptr)),
+                            GSIZE_TO_POINTER((gsize) (req->real_time)));
+
+      else if (req->obj_id_type == OBJ_ID_NUM) {
+        g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_ptr),
+                            GSIZE_TO_POINTER((gsize) (req->real_time)));
+      }
+    }
+
+    cur_ts += 1;
+    read_one_req(reader, req);
+  }
+
+  // clean up
+  free_request(req);
+  g_hash_table_destroy(hash_table);
+  reset_reader(reader);
+  return dist_cnt_array;
+}
+
 
 #ifdef __cplusplus
 }

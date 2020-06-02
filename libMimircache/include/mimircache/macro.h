@@ -29,6 +29,13 @@ do {                                    \
 } while(0)
 
 
+
+#define PASTE2(a, b) a##b
+#define PASTE(a, b) PASTE2(a, b)
+//#define CUCKOO(a) PASTE(CUCKOO_TABLE_NAME, a)
+  
+
+
 #ifdef __cplusplus
 }
 #endif

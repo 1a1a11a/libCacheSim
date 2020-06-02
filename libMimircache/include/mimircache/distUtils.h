@@ -122,7 +122,7 @@ gint64 *load_dist(reader_t *const reader, const char *const path, dist_t dist_ty
  * @param reader
  * @return
  */
-gint64 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
+gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
 
 /***********************************************************
  * get the distance since last access,
@@ -131,7 +131,7 @@ gint64 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base, gint64* n_
  * @param reader
  * @return
  */
-gint64 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
+gint32 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
 
 
 /***********************************************************
@@ -141,7 +141,7 @@ gint64 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint
  * @param reader
  * @return
  */
-gint64 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
+gint32 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base, gint64* n_dist_cnt);
 
 
 #ifdef __cplusplus

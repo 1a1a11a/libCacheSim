@@ -19,6 +19,11 @@ extern "C" {
 #include "TTL_FIFO.h"
 #include "../utils/include/utilsInternal.h"
 
+
+static inline int _get_idx(gint32 ts){
+  return ts>MAX_TTL?MAX_TTL-1:ts;
+}
+
 cache_t *TTL_FIFO_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
   cache_t *cache = cache_struct_init("TTL_FIFO", ccache_params);
   cache->cache_params = g_new0(TTL_FIFO_params_t, 1);
@@ -61,7 +66,7 @@ void _TTL_FIFO_insert(cache_t *cache, request_t *req) {
 
   cache->core.used_size += req->obj_size;
   cache_obj_t *cache_obj = create_cache_obj_from_req(req);
-  gint32 idx = req->real_time+req->ttl - TTL_FIFO_params->start_ts;
+  gint32 idx = _get_idx(req->real_time+req->ttl - TTL_FIFO_params->start_ts);
   if (idx < TTL_FIFO_params->cur_ttl_evict_pos)
     TTL_FIFO_params->cur_ttl_evict_pos = idx;
 
@@ -117,9 +122,9 @@ cache_check_result_t TTL_FIFO_check_and_update_with_ttl(cache_t *cache, request_
       result = expired_e;
       cache->stat.hit_expired_cnt += 1;
       cache->stat.hit_expired_byte += cache_obj->obj_size;
-      gint32 old_idx = cache_obj->exp_time-TTL_FIFO_params->start_ts;
+      gint32 old_idx = _get_idx(cache_obj->exp_time-TTL_FIFO_params->start_ts);
       cache_obj->exp_time = req->real_time + req->ttl;
-      gint32 new_idx = cache_obj->exp_time-TTL_FIFO_params->start_ts;
+      gint32 new_idx = _get_idx(cache_obj->exp_time-TTL_FIFO_params->start_ts);
       g_queue_unlink(TTL_FIFO_params->exp_time_array[old_idx], (GList *) node);
       g_queue_push_tail_link(TTL_FIFO_params->exp_time_array[new_idx], (GList *) node);
     } else {
