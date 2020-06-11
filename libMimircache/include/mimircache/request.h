@@ -47,9 +47,15 @@ static inline void free_request(request_t *req) {
 }
 
 static inline void print_request(request_t *req) {
+#ifdef SUPPORT_TTL
   printf("req real_time %lu, id %llu, size %ld, ttl %ld, op %d, valid %d\n",
          (unsigned long) req->real_time, (unsigned long long) req->obj_id_int,
          (long) req->obj_size, (long) req->ttl, req->op, req->valid);
+#else
+  printf("req real_time %lu, id %llu, size %ld, op %d, valid %d\n",
+         (unsigned long) req->real_time, (unsigned long long) req->obj_id_int,
+         (long) req->obj_size, req->op, req->valid);
+#endif
 }
 
 

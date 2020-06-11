@@ -15,6 +15,12 @@ extern "C" {
 #include "mimircache/const.h"
 
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE             /* for sched in utils.h */
+#endif
+
+
+
 #ifndef MIMIR_LOGLEVEL
 #define MIMIR_LOGLEVEL INFO_LEVEL
 #endif
@@ -24,30 +30,40 @@ extern "C" {
 #endif
 
 #ifndef HASH_TYPE
+//#define HASH_TYPE IDENTITY
 #define HASH_TYPE MURMUR3
+//#define HASH_TYPE WYHASH
+//#define HASH_TYPE XXHASH3
 #endif
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE             /* for sched in utils.h */
-#endif
-
 
 #ifndef HASHTABLE_TYPE
 #define HASHTABLE_TYPE CHAINED_HASHTABLE
 #endif
 
+#ifndef HASHTABLE_VER
 #define HASHTABLE_VER 1
+#endif
+
+#ifndef HASH_POWER_DEFAULT
+#define HASH_POWER_DEFAULT 24
+#endif
+
+#ifndef CHAINED_HASHTABLE_EXPAND_THRESHOLD
+#define CHAINED_HASHTABLE_EXPAND_THRESHOLD 1
+#endif
+
+#define USE_HUGEPAGE
+
 
 #define SUPPORT_TTL
 #define SUPPORT_SLAB_AUTOMOVE
 
 
-#define HASH_POWER_DEFAULT 20
-#define CHAINED_HASHTABLE_EXPAND_THRESHOLD 1
 
 
-//#undef SUPPORT_TTL
-//#undef USE_CUSTOME_MEM_ALLOCATOR
+#include <stdint.h>
+typedef uint64_t obj_id_t;
+
 
 
 #ifdef __cplusplus

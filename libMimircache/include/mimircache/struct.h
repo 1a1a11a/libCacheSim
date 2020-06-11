@@ -27,6 +27,7 @@ extern "C" {
  *
  */
 // ######################################## cache obj #####################################
+
 typedef struct {
   void* obj_id_ptr;
   uint32_t obj_size;
@@ -37,13 +38,13 @@ typedef struct {
 
 struct cache_obj;
 typedef struct cache_obj{
-  uint64_t obj_id_int;
   struct cache_obj* hash_next;
   struct cache_obj* list_next;
   union{
     struct cache_obj* list_prev;
     void* extra_metadata;
   };
+  obj_id_t obj_id_int;
   uint32_t obj_size;
 #ifdef SUPPORT_TTL
   int32_t exp_time;

@@ -29,6 +29,11 @@ extern "C" {
 #define my_malloc_n(type, n) (type*) calloc(sizeof(type), n)
 #define my_free(size, addr) free(addr)
 
+#elif HEAP_ALLOCATOR == HEAP_ALLOCATOR_ALIGNED_MALLOC
+#include <stdlib.h>
+#define my_malloc(type) (type*) aligned_alloc(MEM_ALIGN_SIZE, sizeof(type));
+#define my_malloc_n(type, n) (type*) aligned_alloc(MEM_ALIGN_SIZE, sizeof(type)*n)
+#define my_free(size, addr) free(addr)
 #endif
 
 #ifdef __cplusplus

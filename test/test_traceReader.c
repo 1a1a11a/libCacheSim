@@ -141,8 +141,8 @@ void test_twr(gconstpointer user_data) {
   request_t *req = new_request();
   for (int i = 0; i < N_TEST_REQ; i++) {
     read_one_req(reader, req);
-    printf("req %d: real time %lu, obj_id %llu, obj_size %ld, ttl %ld, op %d\n", i, (unsigned long) req->real_time,
-           (unsigned long long) req->obj_id_int, (long) req->obj_size, (long) req->ttl, req->op);
+//    printf("req %d: real time %lu, obj_id %llu, obj_size %ld, ttl %ld, op %d\n", i, (unsigned long) req->real_time,
+//           (unsigned long long) req->obj_id_int, (long) req->obj_size, (long) req->ttl, req->op);
   }
   printf("%llu req %llu obj\n", (unsigned long long) n_req, (unsigned long long) n_obj);
 }

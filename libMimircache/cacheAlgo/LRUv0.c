@@ -37,8 +37,11 @@ void LRUv0_free(cache_t *cache) {
 cache_check_result_t LRUv0_check(cache_t *cache, request_t *req, bool update_cache) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->cache_params);
   GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable, GSIZE_TO_POINTER(req->obj_id_int));
+  if (node == NULL)
+    return cache_miss_e;
+
   if (!update_cache)
-    return node == NULL;
+    return cache_hit_e;
 
   cache_obj_t *cache_obj = node->data;
   if (likely(update_cache)) {

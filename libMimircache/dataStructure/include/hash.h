@@ -12,6 +12,7 @@ extern "C"
 
 #include "murmur3.h"
 #include "../../include/config.h"
+#include "../../include/mimircache/struct.h"
 
 
 typedef enum{
@@ -26,33 +27,33 @@ typedef enum{
 }hash_seeds;
 
 
-#if HASH_TYPE == XXHASH
-#error xxhash here
-#include "xxhash.h"
-#endif
-
-
-//static inline void get_hash_value_str_64(const void *key, int len, uint64 *out){
-//#if HASH_TYPE == MURMUR3
-//  MurmurHash3_x64_64(key, len, HASH_SEED0, out);
-//#elif HASH_TYPE == XXHASH
-//  XXHash3_x64_64(key, len, HASH_SEED0, out);
-//#else
-//  #error "unknown"
-//#endif
-//}
-
-//static inline void get_hash_value_int_64(const int64_t key, uint64 *out){
-//  return get_hash_value_str_64((char*) &key, 8, out);
-//}
-
 #if HASH_TYPE == MURMUR3
-#define get_hash_value_int_64(key) (MurmurHash3_x64_64(key, 8, HASH_SEED0))
+#pragma message "use MURMUR3"
+#define get_hash_value_int_64(key) (MurmurHash3_x64_64(key, sizeof(obj_id_t), HASH_SEED0))
 #elif HASH_TYPE == XXHASH
-#define get_hash_value_int_64(key) (XXHash3_x64_64(key, 8, HASH_SEED0));
+#pragma message "XXHASH"
+#define XXH_INLINE_ALL
+#include "xxhash.h"
+#define get_hash_value_int_64(key) (XXH64((void*)(key), sizeof(obj_id_t), HASH_SEED0))
+#elif HASH_TYPE == XXHASH3
+#pragma message "XXHASH3"
+#define XXH_INLINE_ALL
+//#define XXH_CPU_LITTLE_ENDIAN 1
+//#define XXH_FORCE_ALIGN_CHECK 1
+#include "xxhash.h"
+#include "xxh3.h"
+#define get_hash_value_int_64(key) (uint64_t) (XXH3_64bits((void*)(key), sizeof(obj_id_t)))
+#elif HASH_TYPE == WYHASH
+#include "wyhash.h"
+#define get_hash_value_int_64(key) (uint64_t) (wyhash64(*(obj_id_t*)key, HASH_SEED0))
+#elif HASH_TYPE == IDENTITY
+#define get_hash_value_int_64(key) (*key)
 #else
-  #error "unknown"
+  #error "unknown hash"
 #endif
+
+//(size_t) XXH64(src, srcSize, 0)
+//(size_t) XXH3_64bits(src, srcSize)
 
 
 #ifdef __cplusplus

@@ -53,8 +53,10 @@ static inline int twr_read(reader_t *reader, request_t *req) {
 
   req->obj_size = key_size + val_size;
   req->op = op;
+#ifdef SUPPORT_TTL
   req->ttl = ttl;
-
+#endif
+  
   reader->base->mmap_offset += 20;
   if (req->obj_size == 0)
     return twr_read(reader, req);

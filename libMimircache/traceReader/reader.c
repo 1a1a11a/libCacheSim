@@ -60,6 +60,10 @@ reader_t *setup_reader(const char *const trace_path,
   reader->base->file_size = st.st_size;
 
   reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+#ifdef USE_HUGEPAGE
+  madvise(reader->base->mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
+#endif
+
 //#ifdef __linux__
 //  reader->base->mapped_file = mmap(NULL, st.st_size, PROT_READ,  MAP_NORESERVE|MAP_POPULATE|MAP_PRIVATE, fd, 0);
 //#elif __APPLE__

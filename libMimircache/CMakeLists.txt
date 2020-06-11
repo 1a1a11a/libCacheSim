@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 2.8)
-#set(CMAKE_C_COMPILER "gcc")
-
-#project(libmimircache C)
+project(libmimircache C)
 project(libmimircache)
 set(PROJECT_WEB "http://mimircache.info")
 set(libmimircache_VERSION_MAJOR 0)
 set(libmimircache_VERSION_MINOR 1)
 set(libmimircache_VERSION_REVISION 0)
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
 
 # clear an error when using cmake in macOS
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -24,28 +23,52 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif ()
 
 
-# add_compile_options(-std=c++11)
+#set(CMAKE_C_COMPILER "gcc-10")
+
 SET(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=6")
-SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O2 -Wall -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=7")
+SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=7")
 
 #SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGGING_DEBUG")
 #SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -DLOGGING_INFO")
-message(STATUS "FLAG" ${CMAKE_C_FLAGS_DEBUG})
+#message(STATUS "FLAG" ${CMAKE_C_FLAGS_DEBUG})
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-find_package(GLib "2.40" REQUIRED)
+
+find_package(GLib REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${GLib_LIBRARY})
-message(STATUS "glib found? " ${GLib_FOUND} ", LIBS = " ${LIBS} ", header = " ${GLib_INCLUDE_DIRS})
+message(STATUS "glib found? " ${GLib_FOUND} " LIBS = " ${LIBS} ", header = " ${GLib_INCLUDE_DIRS})
+if(NOT GLib_FOUND)
+    message(FATAL_ERROR "-- #### ERROR ####: Glib library not found")
+endif()
+
 
 find_package(Tcmalloc REQUIRED)
 include_directories(${Tcmalloc_INCLUDE_DIR})
 set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
-message(STATUS "Tcmalloc found? " ${Tcmalloc_FOUND} ", LIBS = " ${LIBS} ", header = " ${Tcmalloc_INCLUDE_DIRS})
+message(STATUS "Tcmalloc found? " ${Tcmalloc_FOUND} " LIBS = " ${Tcmalloc_LIBRARIES} ", header = " ${Tcmalloc_INCLUDE_DIRS})
+if(NOT Tcmalloc_FOUND)
+    message("-- #### WARNING ####: tcmalloc not found, use default malloc")
+endif()
+
+#find_package(xxHash)
+#include_directories(${xxHash_INCLUDE_DIR})
+#set(LIBS ${LIBS} ${xxHash_LIBRARIES})
+#message(STATUS "xxHash found? " ${xxHash_FOUND} " LIBS = " ${xxHash_LIBRARIES} ", header = " ${xxHash_INCLUDE_DIRS})
+#if(NOT xxHash_INCLUDE_DIR)
+#    message(STATUS "#### WARNING ####: xxhash library not found, use murmur3")
+#    add_compile_definitions(HASH_TYPE=0xb10)
+#else()
+##    add_compile_definitions(HASH_TYPE=0xb10)
+#    add_compile_definitions(HASH_TYPE=0xb21)
+#endif()
 
 
-message("CMAKE_CURRENT_SOURCE_DIR is " ${CMAKE_CURRENT_SOURCE_DIR})
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
+message(STATUS "CMAKE_C_COMPILER = " ${CMAKE_C_COMPILER})
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/headers)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cache/include)
@@ -68,13 +91,13 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
 file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 #message(STATUS "all sources " ${ALL_SRC_FILES})
 
-#add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-#set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${libmimircache_VERSION_MAJOR}.${libmimircache_VERSION_MINOR}.${libmimircache_VERSION_REVISION})
-#set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
-#target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${libmimircache_VERSION_MAJOR}.${libmimircache_VERSION_MINOR}.${libmimircache_VERSION_REVISION})
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
+target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-#install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
-#install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 
 # file(GLOB py_SRC_FILES ${PROJECT_SOURCE_DIR}/../../pyBindings/*.c)
@@ -87,6 +110,7 @@ file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 #target_link_libraries(libcuckooExample libcuckoo -lpthread -ldl)
 
 
+#target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
 add_executable(binBenchmark benchmark/main.c)
 target_link_libraries(binBenchmark benchmark cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
@@ -108,9 +132,9 @@ target_link_libraries(testCacheAlgo cacheAlgo traceReader profiler dataStructure
 add_executable(testHeatmap ../test/test_heatmap.c)
 target_link_libraries(testHeatmap cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(binDebug ../test/debug.c)
-target_link_libraries(binDebug cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
-set_property(TARGET binDebug PROPERTY C_STANDARD 11)
+#add_executable(binDebug ../test/debug.c)
+#target_link_libraries(binDebug cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+#set_property(TARGET binDebug PROPERTY C_STANDARD 11)
 
 enable_testing()
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
@@ -118,6 +142,18 @@ add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
 add_test(NAME testProfiler COMMAND testProfiler WORKING_DIRECTORY .)
 add_test(NAME testCacheAlgo COMMAND testCacheAlgo WORKING_DIRECTORY .)
+
+
+
+# performance related
+# change optimization to O3 (O2 is 100% faster than O0, O3 is 5% faster than O2)
+
+
+# enable transparent hugepage (30% improvement 5.05s to 3.65s)
+#echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
+#echo always | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
+
+
 
 
 # Example Usages

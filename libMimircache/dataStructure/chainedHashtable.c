@@ -8,7 +8,6 @@ extern "C"
 {
 #endif
 
-
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -22,6 +21,9 @@ extern "C"
 #include "../include/mimircache/logging.h"
 #include "../include/mimircache/cacheObj.h"
 #include "../utils/include/mathUtils.h"
+#ifdef USE_HUGEPAGE
+#include <sys/mman.h>
+#endif
 
 
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)
@@ -92,6 +94,9 @@ hashtable_t *create_chained_hashtable(const uint16_t hash_power) {
   memset(hashtable, 0, sizeof(hashtable_t));
   hashtable->hash_power = hash_power;
   hashtable->table = my_malloc_n(cache_obj_t, hashsize(hashtable->hash_power));
+#ifdef USE_HUGEPAGE
+  madvise(hashtable->table, sizeof(cache_obj_t)*hashsize(hashtable->hash_power), MADV_HUGEPAGE);
+#endif
   if (hashtable->table == NULL) {
     ERROR("unable to allocate hash table (size %llu)\n",
           (unsigned long long) sizeof(cache_obj_t) * hashsize(hashtable->hash_power));
@@ -112,13 +117,18 @@ cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, request_t *req) {
     return NULL;
   }
 
+  int depth = 0;
   while (cache_obj) {
+    depth += 1;
     if (cache_obj->obj_id_int == req->obj_id_int) {
       ret = cache_obj;
       break;
     }
     cache_obj = cache_obj->hash_next;
   }
+//  if (depth > 6){
+//    printf("depth %d size %d %d\n", depth, hashtable->n_cur_item, hashsize(hashtable->hash_power));
+//  }
   return ret;
 }
 
@@ -226,6 +236,9 @@ void _chained_hashtable_expand(hashtable_t *hashtable) {
   cache_obj_t *old_table = hashtable->table;
   hashtable->table = my_malloc_n(cache_obj_t, hashsize(++hashtable->hash_power));
   memset(hashtable->table, 0, hashsize(hashtable->hash_power) * sizeof(cache_obj_t));
+#ifdef USE_HUGEPAGE
+  madvise(hashtable->table, sizeof(cache_obj_t)*hashsize(hashtable->hash_power), MADV_HUGEPAGE);
+#endif
   CHECK_NULL(hashtable->table, "unable to grow hashtable to size %llu\n", hashsizeULL(hashtable->hash_power));
 
   // move from old table into new hash table

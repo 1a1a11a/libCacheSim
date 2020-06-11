@@ -19,6 +19,9 @@ extern "C"
 #include "../include/mimircache/logging.h"
 #include "../include/mimircache/macro.h"
 #include "../utils/include/mathUtils.h"
+#ifdef USE_HUGEPAGE
+#include <sys/mman.h>
+#endif
 
 
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)
@@ -58,6 +61,9 @@ static inline void foreach_free_obj(cache_obj_t* cache_obj, void* user_data){
 hashtable_t *create_chained_hashtable_v2(const uint16_t hash_power) {
   hashtable_t *hashtable = my_malloc(hashtable_t);
   hashtable->ptr_table = my_malloc_n(cache_obj_t*, hashsize(hash_power));
+#ifdef USE_HUGEPAGE
+  madvise(hashtable->table, sizeof(cache_obj_t*)*hashsize(hashtable->hash_power), MADV_HUGEPAGE);
+#endif
   memset(hashtable->ptr_table, 0, hashsize(hash_power) * sizeof(cache_obj_t *));
   hashtable->hash_power = hash_power;
   hashtable->n_cur_item = 0;
@@ -136,6 +142,9 @@ void free_chained_hashtable_v2(hashtable_t *hashtable) {
 void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
   cache_obj_t **old_table = hashtable->ptr_table;
   hashtable->ptr_table = my_malloc_n(cache_obj_t*, hashsize(++hashtable->hash_power));
+#ifdef USE_HUGEPAGE
+  madvise(hashtable->table, sizeof(cache_obj_t*)*hashsize(hashtable->hash_power), MADV_HUGEPAGE);
+#endif
   memset(hashtable->ptr_table, 0, hashsize(hashtable->hash_power) * sizeof(cache_obj_t*));
   CHECK_NULL(hashtable->ptr_table, "unable to grow hashtable to size %llu\n",
              hashsizeULL(hashtable->hash_power));

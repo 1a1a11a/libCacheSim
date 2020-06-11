@@ -18,18 +18,23 @@ extern "C" {
 #endif
 
 
-#define HEAP_ALLOCATOR_G_NEW 0xa1
-#define HEAP_ALLOCATOR_G_SLICE_NEW 0xa2
-#define HEAP_ALLOCATOR_MALLOC 0xa3
+#define HEAP_ALLOCATOR_G_NEW 0xa10
+#define HEAP_ALLOCATOR_G_SLICE_NEW 0xa20
+#define HEAP_ALLOCATOR_MALLOC 0xa30
+#define HEAP_ALLOCATOR_ALIGNED_MALLOC 0xa40
 
-#define MURMUR3 0xb1
-#define XXHASH 0xb2
+#define MURMUR3 0xb10
+#define XXHASH 0xb20
+#define XXHASH3 0xb21
+#define WYHASH 0xb31   // not significantly faster than MURMUR3
+#define IDENTITY 1
+
 
 #define CHAINED_HASHTABLE 0xc1
 #define CUCKOO_HASHTABLE 0xc2
 
 
-
+#define MEM_ALIGN_SIZE 128
 
 #define MAX_OBJ_ID_LEN 1024
 #define MAX_FILE_PATH_LEN 1024

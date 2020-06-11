@@ -32,7 +32,7 @@ else ()
 endif ()
 
 if (Tcmalloc_FOUND)
-    message(STATUS "Found Tcmalloc: ${Tcmalloc_LIBRARY}")
+#    message(STATUS "Found Tcmalloc: ${Tcmalloc_LIBRARY}")
 else ()
     message(STATUS "Not Found Tcmalloc: ${Tcmalloc_LIBRARY}")
     if (Tcmalloc_FIND_REQUIRED)
