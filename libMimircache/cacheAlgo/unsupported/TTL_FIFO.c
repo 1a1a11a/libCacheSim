@@ -65,7 +65,7 @@ void _TTL_FIFO_insert(cache_t *cache, request_t *req) {
     TTL_FIFO_params->start_ts = req->real_time;
 
   cache->core.used_size += req->obj_size;
-  cache_obj_t *cache_obj = create_cache_obj_from_req(req);
+  cache_obj_t *cache_obj = create_cache_obj_from_request(req);
   gint32 idx = _get_idx(req->real_time+req->ttl - TTL_FIFO_params->start_ts);
   if (idx < TTL_FIFO_params->cur_ttl_evict_pos)
     TTL_FIFO_params->cur_ttl_evict_pos = idx;
@@ -120,8 +120,6 @@ cache_check_result_t TTL_FIFO_check_and_update_with_ttl(cache_t *cache, request_
     if (cache_obj->exp_time < req->real_time) {
       /* obj is expired */
       result = expired_e;
-      cache->stat.hit_expired_cnt += 1;
-      cache->stat.hit_expired_byte += cache_obj->obj_size;
       gint32 old_idx = _get_idx(cache_obj->exp_time-TTL_FIFO_params->start_ts);
       cache_obj->exp_time = req->real_time + req->ttl;
       gint32 new_idx = _get_idx(cache_obj->exp_time-TTL_FIFO_params->start_ts);

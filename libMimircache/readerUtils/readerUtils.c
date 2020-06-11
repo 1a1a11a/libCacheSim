@@ -22,7 +22,7 @@ void read_first_req(reader_t* reader, request_t* req){
 
 
 void read_last_req(reader_t* reader, request_t* req){
-  request_t *temp_req = new_request(reader->base->obj_id_type);
+  request_t *temp_req = new_request();
   reset_reader(reader);
   reader->base->mmap_offset = reader->base->file_size - reader->base->item_size;
 
@@ -49,7 +49,7 @@ void read_last_req(reader_t* reader, request_t* req){
 
 gint64 *get_window_boundary(reader_t *reader, guint32 window, gint32* n_window) {
   gint64 start_ts, end_ts, prev_ts, n_req = 0;
-  request_t* req = new_request(reader->base->obj_id_type);
+  request_t* req = new_request();
   read_first_req(reader, req);
   start_ts = req->real_time;
   read_last_req(reader, req);

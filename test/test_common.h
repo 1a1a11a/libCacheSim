@@ -9,18 +9,6 @@
 #include <glib.h>
 #include <glib/gi18n.h>
 #include "../libMimircache/include/mimircache.h"
-//#include "../libMimircache/cacheAlgo/include/LRU.h"
-//#include "../libMimircache/cacheAlgo/include/FIFO.h"
-//#include "../libMimircache/cacheAlgo/include/Random.h"
-//#include "../libMimircache/cacheAlgo/include/LRU_K.h"
-//#include "../libMimircache/cacheAlgo/include/SLRU.h"
-//#include "../libMimircache/cacheAlgo/include/LFU.h"
-//#include "../libMimircache/cacheAlgo/include/LFUFast.h"
-//#include "../libMimircache/cacheAlgo/include/ARC.h"
-//#include "../libMimircache/cacheAlgo/include/Optimal.h"
-//#include "../libMimircache/cacheAlgo/include/slabLRC.h"
-//#include "../libMimircache/cacheAlgo/include/slabLRU.h"
-
 #include "../libMimircache/cacheAlgo/include/cacheAlgoHeaders.h"
 
 
@@ -30,11 +18,13 @@
 #define N_TEST_REQ 6
 #define N_TEST 6
 
-#define CACHE_SIZE (GB)
-#define STEP_SIZE (128*MB)
-//#define CACHE_SIZE 10
-//#define BIN_SIZE 2
+#define CACHE_SIZE_UNIT (MiB)
+//#define CACHE_SIZE_UNIT (GiB)
+#define CACHE_SIZE (1024 * CACHE_SIZE_UNIT)
+#define STEP_SIZE (128 * CACHE_SIZE_UNIT)
 
+
+#define NUM_OF_THREADS 1
 
 reader_t *setup_vscsi_reader() {
   reader_t *reader_vscsi = setup_reader("../../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
@@ -97,39 +87,41 @@ cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params
     cache = LRU_init(cc_params, NULL);
   else if (strcmp(alg_name, "FIFO") == 0)
     cache = FIFO_init(cc_params, NULL);
+  else if (strcmp(alg_name, "LRUv0") == 0)
+    cache = LRUv0_init(cc_params, NULL);
   else if (strcmp(alg_name, "Random") == 0)
     cache = Random_init(cc_params, NULL);
-  else if (strcmp(alg_name, "LRU_K") == 0)
-    cache = LRU_K_init(cc_params, NULL);
-  else if (strcmp(alg_name, "LFU") == 0)
-    cache = LFU_init(cc_params, NULL);
-  else if (strcmp(alg_name, "LFUFast") == 0)
-    cache = LFUFast_init(cc_params, NULL);
-  else if (strcmp(alg_name, "ARC") == 0) {
-    ARC_init_params_t *init_params = g_new0(ARC_init_params_t, 1);
-    init_params_g = init_params;
-    init_params->ghost_list_factor = 100;
-    cache = ARC_init(cc_params, init_params);
-  } else if (strcmp(alg_name, "SLRU") == 0) {
-    SLRU_init_params_t *init_params = g_new0(SLRU_init_params_t, 1);
-    init_params_g = init_params;
-    init_params->n_seg = 2;
-    cache = SLRU_init(cc_params, init_params);
-  } else if (strcmp(alg_name, "Optimal") == 0) {
-    struct Optimal_init_params *init_params = g_new0(struct Optimal_init_params, 1);
-    init_params_g = init_params;
-    init_params->reader = reader;
-    init_params->ts = 0;
-    cache = Optimal_init(cc_params, (void *) init_params);
-  } else if (strcmp(alg_name, "TTL_FIFO") == 0){
-    cache = TTL_FIFO_init(cc_params, NULL);
-  } else if (strcmp(alg_name, "slabLRC") == 0) {
-    cache = slabLRC_init(cc_params, NULL);
-  } else if (strcmp(alg_name, "slabLRU") == 0) {
-    cache = slabLRU_init(cc_params, NULL);
-  } else if (strcmp(alg_name, "slabObjLRU") == 0) {
-    cache = slabObjLRU_init(cc_params, NULL);
-
+//  else if (strcmp(alg_name, "LRU_K") == 0)
+//    cache = LRU_K_init(cc_params, NULL);
+//  else if (strcmp(alg_name, "LFU") == 0)
+//    cache = LFU_init(cc_params, NULL);
+//  else if (strcmp(alg_name, "LFUFast") == 0)
+//    cache = LFUFast_init(cc_params, NULL);
+//  else if (strcmp(alg_name, "ARC") == 0) {
+//    ARC_init_params_t *init_params = g_new0(ARC_init_params_t, 1);
+//    init_params_g = init_params;
+//    init_params->ghost_list_factor = 100;
+//    cache = ARC_init(cc_params, init_params);
+//  } else if (strcmp(alg_name, "SLRU") == 0) {
+//    SLRU_init_params_t *init_params = g_new0(SLRU_init_params_t, 1);
+//    init_params_g = init_params;
+//    init_params->n_seg = 2;
+//    cache = SLRU_init(cc_params, init_params);
+//  } else if (strcmp(alg_name, "Optimal") == 0) {
+//    struct Optimal_init_params *init_params = g_new0(struct Optimal_init_params, 1);
+//    init_params_g = init_params;
+//    init_params->reader = reader;
+//    init_params->ts = 0;
+//    cache = Optimal_init(cc_params, (void *) init_params);
+//  } else if (strcmp(alg_name, "TTL_FIFO") == 0){
+//    cache = TTL_FIFO_init(cc_params, NULL);
+//  } else if (strcmp(alg_name, "slabLRC") == 0) {
+//    cache = slabLRC_init(cc_params, NULL);
+//  } else if (strcmp(alg_name, "slabLRU") == 0) {
+//    cache = slabLRU_init(cc_params, NULL);
+//  } else if (strcmp(alg_name, "slabObjLRU") == 0) {
+//    cache = slabObjLRU_init(cc_params, NULL);
+//
 //  } else if (strcmp(alg_name, "PG") == 0) {
 //    PG_init_params_t *init_params = g_new0(PG_init_params_t, 1);
 //    init_params_g = init_params;
@@ -165,7 +157,8 @@ cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params
 //    init_params->cycle_time = 2;
 //    init_params->rec_trigger = each_req;
 //    cache = Mithril_init(cc_params, init_params);
-  } else {
+//  }
+  else {
     printf("cannot recognize algorithm\n");
     exit(1);
   }

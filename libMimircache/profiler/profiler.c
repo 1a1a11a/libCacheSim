@@ -19,6 +19,9 @@ extern "C"
 #include "../include/mimircache/plugin.h"
 #include "include/profilerInternal.h"
 #include "../utils/include/utilsInternal.h"
+#include "../cache/include/cacheUtils.h"
+#include <assert.h>
+
 
 
 static void _get_mrc_thread(gpointer data, gpointer user_data) {
@@ -27,19 +30,11 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
 
   profiler_res_t *result = params->result;
   reader_t *cloned_reader = clone_reader(params->reader);
-  request_t *req = new_request(params->cache->core.obj_id_type);
+  request_t *req = new_request();
   cache_t * local_cache = create_cache_with_new_size(params->cache, result[idx].cache_size);
-
-//  common_cache_params_t cc_params = {.cache_size=result[idx].cache_size,
-//                                     .obj_id_type=params->cache->core.obj_id_type,
-//                                     .support_ttl=params->cache->core.support_ttl};
-//  cache_t *local_cache = create_cache(params->cache->core.cache_name, cc_params, params->cache->core.cache_specific_init_params);
-
 
   guint64 req_cnt = 0, miss_cnt = 0;
   guint64 req_byte = 0, miss_byte = 0;
-  gboolean (*add)(cache_t *, request_t *);
-  add = local_cache->core.get;
 
   /* warm up using warmup_reader */
   if (params->warmup_reader) {
@@ -48,12 +43,13 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
     warmup_cloned_reader = clone_reader(params->warmup_reader);
     read_one_req(warmup_cloned_reader, req);
     while (req->valid) {
-      add(local_cache, req);
+      local_cache->core.get(local_cache, req);
       n_warmup += 1;
       read_one_req(warmup_cloned_reader, req);
     }
     close_reader(warmup_cloned_reader);
-    INFO("cache %s (size %lld) finishes warm up with %lld requests\n", local_cache->core.cache_name, (long long) local_cache->core.size, (long long) n_warmup);
+    INFO("cache %s (size %lld) finishes warm up with %lld requests\n", local_cache->core.cache_name,
+        (long long) local_cache->core.cache_size, (long long) n_warmup);
   }
 
   /* using warmup_perc of requests from reader to warm up */
@@ -61,11 +57,12 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   if (params->n_warmup_req > 0){
     guint64 n_warmup = 0;
     while (req->valid && n_warmup < params->n_warmup_req) {
-      add(local_cache, req);
+      local_cache->core.get(local_cache, req);
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }
-    INFO("cache %s (size %lld) finishes warm up with %lld requests\n", local_cache->core.cache_name, (long long) local_cache->core.size, (long long) n_warmup);
+    INFO("cache %s (size %lld) finishes warm up with %lld requests\n", local_cache->core.cache_name,
+        (long long) local_cache->core.cache_size, (long long) n_warmup);
   }
 
   while (req->valid) {
@@ -73,19 +70,26 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
 //    if (req_cnt % 100000 == 0)
 //      INFO("%s size %lld: %lld req\n", local_cache->core.cache_name, (long long) local_cache->core.size, (long long) req_cnt);
     req_byte += req->obj_size;
-    if (!add(local_cache, req)) {
+    if (local_cache->core.get(local_cache, req) != cache_hit_e) {
       miss_cnt++;
       miss_byte += req->obj_size;
     }
     read_one_req(cloned_reader, req);
   }
 
+  if (local_cache->core.default_ttl != 0){
+    result[idx].cache_state.cur_time = req->real_time;
+    result[idx].cache_state.cache_size = local_cache->core.cache_size;
+    get_cache_state(local_cache, &result[idx].cache_state);
+//    printf("%lld %lld %lld %lld\n", (long long) local_cache->core.cache_size, (long long) local_cache->core.used_size,
+//        (long long) result[idx].cache_state.used_size, (long long) result[idx].cache_state.n_obj);
+    assert(result[idx].cache_state.used_size == local_cache->core.used_size);
+  }
+
   result[idx].miss_byte = miss_byte;
   result[idx].miss_cnt = miss_cnt;
   result[idx].req_cnt = req_cnt;
   result[idx].req_byte = req_byte;
-  result[idx].obj_miss_ratio = (double) miss_cnt / (double) req_cnt;
-  result[idx].byte_miss_ratio = (double) miss_byte / (double) req_byte;
 
   // report progress
   g_mutex_lock(&(params->mtx));
@@ -102,7 +106,7 @@ profiler_res_t * get_miss_ratio_curve_with_step_size(reader_t *const reader, con
                                     const guint64 step_size, reader_t *const warmup_reader,
                                     const double warmup_perc, const gint num_of_threads) {
 
-  int num_of_sizes = (int) ceil((double) cache->core.size / step_size) ;
+  int num_of_sizes = (int) ceil((double) cache->core.cache_size / step_size) ;
   get_num_of_req(reader);
   guint64 *cache_sizes = g_new0(guint64, num_of_sizes);
   for (int i = 0; i < num_of_sizes; i++) {

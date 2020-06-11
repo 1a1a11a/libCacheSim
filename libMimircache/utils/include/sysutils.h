@@ -9,6 +9,7 @@
 #ifndef UTILS_h
 #define UTILS_h
 
+#include "../../include/config.h"
 #include "../../include/mimircache/const.h"
 #include "../../include/mimircache/logging.h"
 
@@ -26,7 +27,7 @@
 
 int set_thread_affinity(pthread_t tid);
 
-guint get_n_cores(void);
+int get_n_cores(void);
 
 
 

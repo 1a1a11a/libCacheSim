@@ -24,7 +24,7 @@ extern "C"
 
 typedef struct {
   gint obj_id_field;                  // the beginning bytes in the struct
-  guint obj_id_len;                  // the size of obj_id
+  guint obj_id_len;                   // the size of obj_id
   char obj_id_type;
 
   gint op_field;
@@ -124,7 +124,7 @@ static inline int binary_read(reader_t *reader, request_t *req) {
   char *record = (reader->base->mapped_file + reader->base->mmap_offset);
   if (params->obj_id_type) {
     binary_extract(record, params->obj_id_field, params->obj_id_len,
-                   params->obj_id_type, &(req->obj_id_ptr));
+                   params->obj_id_type, &(req->obj_id_int));
   }
   if (params->real_time_type) {
     binary_extract(record, params->real_time_field, params->real_time_len,

@@ -3,7 +3,7 @@
 //
 
 
-#include "include/mem.h"
+#include "dep/mem.h.dep"
 #include <string.h>
 
 #ifdef __cplusplus

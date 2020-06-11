@@ -15,107 +15,44 @@ extern "C" {
 
 #include "Random.h"
 
+#include "../utils/include/mathUtils.h"
 
 
 cache_t *Random_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
   cache_t *cache = cache_struct_init("Random", ccache_params);
-  Random_params_t *Random_params = g_new0(Random_params_t, 1);
-  cache->cache_params = (void *)Random_params;
-
-  Random_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, cache_obj_destroyer, g_free, cache_obj_destroyer);
-
-//  Random_params->array = g_array_sized_new(FALSE, FALSE, sizeof(gpointer), (guint)1000000);
-  Random_params->array = g_ptr_array_new();
-
-  time_t t;
-  srand((unsigned)time(&t));
+  srand((unsigned) time(NULL));
+  set_rand_seed(time(NULL));
   return cache;
 }
 
 
 void Random_free(cache_t *cache) {
-  Random_params_t *Random_params = (Random_params_t *)(cache->cache_params);
-
-  g_hash_table_destroy(Random_params->hashtable);
-  g_ptr_array_free(Random_params->array, TRUE);
+//  g_free(cache->cache_params);
   cache_struct_free(cache);
 }
 
 
-gboolean Random_get(cache_t *cache, request_t *req) {
-  gboolean found_in_cache = Random_check(cache, req);
-  if (found_in_cache) {
-    _Random_update(cache, req);
-  } else {
-    _Random_insert(cache, req);
-  }
+cache_check_result_t Random_check(cache_t *cache, request_t *req, bool update_cache) {
+  return cache_check(cache, req, update_cache, NULL);
+}
 
-  while (cache->core.used_size > cache->core.size)
-    _Random_evict(cache, req);
 
-  cache->core.req_cnt += 1;
-  return found_in_cache;
+cache_check_result_t Random_get(cache_t *cache, request_t *req) {
+  return cache_get(cache, req);
 }
 
 
 void _Random_insert(cache_t *cache, request_t *req) {
-  Random_params_t *Random_params = (Random_params_t *)(cache->cache_params);
-
   cache->core.used_size += req->obj_size;
-  cache_obj_t *cache_obj = create_cache_obj_from_req(req);
-
-  g_ptr_array_add(Random_params->array, cache_obj->obj_id_ptr);
-  g_hash_table_insert(Random_params->hashtable, cache_obj->obj_id_ptr, cache_obj);
-
-}
-
-gboolean Random_check(cache_t *cache, request_t *req) {
-  Random_params_t *Random_params = (Random_params_t *)(cache->cache_params);
-  return g_hash_table_contains(Random_params->hashtable, (gconstpointer)(req->obj_id_ptr));
-}
-
-void _Random_update(cache_t *cache, request_t *req) {
-  Random_params_t *Random_params = (Random_params_t *) (cache->cache_params);
-  cache_obj_t *cache_obj = g_hash_table_lookup(Random_params->hashtable, req->obj_id_ptr);
-  if (cache_obj->obj_size != req->obj_size){
-    cache->core.used_size -= cache_obj->obj_size;
-    cache->core.used_size += req->obj_size;
-    cache_obj->obj_size = req->obj_size;
-  }
-}
-
-void _Random_evict(cache_t *cache, request_t *req) {
-  Random_params_t *Random_params = (Random_params_t *)(cache->cache_params);
-  guint64 pos = rand();
-  if (RAND_MAX < Random_params->array->len)
-    pos = pos * rand();
-  pos = pos % Random_params->array->len;
-
-  gpointer obj_id_ptr_evict = g_ptr_array_index(Random_params->array, pos);
-
-  cache_obj_t *cache_obj = g_hash_table_lookup(Random_params->hashtable, obj_id_ptr_evict);
-  cache->core.used_size -= cache_obj->obj_size;
-
-  g_hash_table_remove(Random_params->hashtable, obj_id_ptr_evict);
-  g_ptr_array_remove_index_fast(Random_params->array, pos);
+  hashtable_insert(cache->core.hashtable_new, req);
 }
 
 
-gpointer _Random_evict_with_return(cache_t *cache, request_t *req) {
-  /* the line below is to ensure that the randomized index can be large
- * enough, because RAND_MAX is only guaranteed to be 32767 */
-  Random_params_t *Random_params = (Random_params_t *)(cache->cache_params);
-  guint64 pos = (rand() * rand() * rand()) % (Random_params->array->len);
-
-  gpointer obj_id_ptr_evict = g_ptr_array_index(Random_params->array, pos);
-  if (req->obj_id_type == OBJ_ID_STR) {
-    obj_id_ptr_evict = (gpointer) g_strdup((gchar *) obj_id_ptr_evict);
-  }
-
-  g_hash_table_remove(Random_params->hashtable, obj_id_ptr_evict);
-  g_ptr_array_remove_index_fast(Random_params->array, pos);
-
-  return obj_id_ptr_evict;
+void _Random_evict(cache_t *cache, request_t *req, cache_obj_t* evicted_obj) {
+  cache_obj_t *obj_to_evict = hashtable_rand_obj(cache->core.hashtable_new);
+  if (evicted_obj != NULL)
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  hashtable_delete(cache->core.hashtable_new, obj_to_evict);
 }
 
 

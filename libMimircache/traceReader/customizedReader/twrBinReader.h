@@ -37,7 +37,8 @@ static inline int twr_read(reader_t *reader, request_t *req) {
   req->real_time = *(guint32 *) record;
   record += 4;
   // for memory alignment, increase speed by 10x
-  req->obj_id_ptr = (gpointer) ((*(guint64 *) record)*G_MEM_ALIGN*2);
+//  req->obj_id_ptr = (gpointer) ((*(guint64 *) record)*G_MEM_ALIGN);
+  req->obj_id_int = *(guint64 *) record;
 //  req->obj_id_ptr = (gpointer) (rand() % 1000000L);
   record += 8;
   guint32 kv_size = *(guint32 *) record;

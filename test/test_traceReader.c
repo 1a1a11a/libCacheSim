@@ -16,24 +16,26 @@ void mytest2() {
 // TRUE DATA
 size_t trace_length = 113872;
 size_t trace_start_req_d[N_TEST_REQ] = {42932745, 42932746, 42932747, 40409911, 31954535, 6238199,};
+//size_t trace_start_req_s[N_TEST_REQ] = {1, 2, 3, 4, 5, 6,};
 char *trace_start_req_s[N_TEST_REQ] = {"42932745", "42932746", "42932747", "40409911", "31954535", "6238199",};
 size_t trace_start_req_time[N_TEST_REQ] = {5633898368802, 5633898611441, 5633898745540, 5633898967708, 5633899967748,
                                            5633899967980};
 size_t trace_start_req_size[N_TEST_REQ] = {512, 512, 512, 6656, 6144, 57344};
 size_t trace_end_req_d = 42936150;
+//size_t trace_end_req_s = 1;
 char *trace_end_req_s = "42936150";
 
 
 void verify_req(reader_t *reader, request_t *req, int req_idx) {
 //  printf("%lu - %lu\n", GPOINTER_TO_SIZE (req->obj_id_ptr), trace_start_req_d[req_idx]);
   if (reader->base->obj_id_type == OBJ_ID_NUM)
-    g_assert_true(GPOINTER_TO_SIZE(req->obj_id_ptr) == trace_start_req_d[req_idx]);
+    g_assert_true(req->obj_id_int == trace_start_req_d[req_idx]);
   else if (reader->base->obj_id_type == OBJ_ID_STR)
-    g_assert_cmpstr(req->obj_id_ptr, ==, trace_start_req_s[req_idx]);
+    g_assert_cmpstr(g_quark_to_string(req->obj_id_int), ==, trace_start_req_s[req_idx]);
 
   if (reader->base->trace_type == CSV_TRACE || reader->base->trace_type == BIN_TRACE ||
       reader->base->trace_type == VSCSI_TRACE) {
-    g_assert_true(req->real_time == trace_start_req_time[req_idx]);
+    g_assert_true(req->real_time == trace_start_req_time[req_idx] || req->real_time == trace_start_req_time[req_idx]/1000000);
     g_assert_true(req->obj_size == trace_start_req_size[req_idx]);
   }
 }
@@ -41,7 +43,7 @@ void verify_req(reader_t *reader, request_t *req, int req_idx) {
 void test_reader_basic(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   gint i;
-  request_t *req = new_request(reader->base->obj_id_type);
+  request_t *req = new_request();
   // check length
   g_assert_true(get_num_of_req(reader) == trace_length);
 
@@ -59,13 +61,13 @@ void test_reader_basic(gconstpointer user_data) {
   }
 
   size_t last_read_num = 0;
-  gchar *last_read_str = NULL;
+  const gchar *last_read_str = NULL;
   // check reading full data
   while (req->valid) {
     if (reader->base->obj_id_type == OBJ_ID_NUM)
-      last_read_num = GPOINTER_TO_SIZE (req->obj_id_ptr);
+      last_read_num = req->obj_id_int;
     else if (reader->base->obj_id_type == OBJ_ID_STR)
-      last_read_str = g_strdup(req->obj_id_ptr);
+      last_read_str = g_quark_to_string(req->obj_id_int);
     else
       g_assert_not_reached();
 
@@ -85,20 +87,20 @@ void test_reader_basic(gconstpointer user_data) {
 void test_reader_more1(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   int i;
-  request_t *req = new_request(reader->base->obj_id_type);
+  request_t *req = new_request();
 
   // check skip_N_elements
   g_assert_true(skip_N_elements(reader, 4) == 4);
   for (i = 4; i < N_TEST_REQ; i++) {
     read_one_req(reader, req);
     if (reader->base->obj_id_type == OBJ_ID_NUM)
-      g_assert_true(GPOINTER_TO_SIZE(req->obj_id_ptr) == trace_start_req_d[i]);
+      g_assert_true(GPOINTER_TO_SIZE(req->obj_id_int) == trace_start_req_d[i]);
     else if (reader->base->obj_id_type == OBJ_ID_STR)
-      g_assert_cmpstr(req->obj_id_ptr, ==, trace_start_req_s[i]);
+      g_assert_cmpstr(g_quark_to_string(req->obj_id_int), ==, trace_start_req_s[i]);
 
     if (reader->base->trace_type == CSV_TRACE || reader->base->trace_type == BIN_TRACE ||
         reader->base->trace_type == VSCSI_TRACE) {
-      g_assert_true(req->real_time == trace_start_req_time[i]);
+      g_assert_true(req->real_time == trace_start_req_time[i] || req->real_time == trace_start_req_time[i]/1000000);
       g_assert_true(req->obj_size == trace_start_req_size[i]);
     }
   }
@@ -136,11 +138,11 @@ void test_twr(gconstpointer user_data) {
   reader_t *reader = setup_reader("/Users/junchengy/twr.sbin", TWR_TRACE, OBJ_ID_NUM, NULL);
   gint64 n_req = get_num_of_req(reader);
   gint64 n_obj = 0;
-  request_t *req = new_request(reader->base->obj_id_type);
+  request_t *req = new_request();
   for (int i = 0; i < N_TEST_REQ; i++) {
     read_one_req(reader, req);
     printf("req %d: real time %lu, obj_id %llu, obj_size %ld, ttl %ld, op %d\n", i, (unsigned long) req->real_time,
-           (unsigned long long) req->obj_id_ptr, (long) req->obj_size, (long) req->ttl, req->op);
+           (unsigned long long) req->obj_id_int, (long) req->obj_size, (long) req->ttl, req->op);
   }
   printf("%llu req %llu obj\n", (unsigned long long) n_req, (unsigned long long) n_obj);
 }

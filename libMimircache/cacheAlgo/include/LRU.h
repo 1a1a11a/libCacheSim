@@ -18,34 +18,31 @@ extern "C"
 #include "../../include/mimircache/cache.h"
 
 
-typedef struct LRU_params {
-  GHashTable *hashtable;
-  GQueue *list;
-} LRU_params_t;
+//typedef struct LRU_params {
+//  cache_obj_t* lru_head;
+//  cache_obj_t* lru_tail;
+//} LRU_params_t;
 
 cache_t *LRU_init(common_cache_params_t ccache_params, void *cache_specific_params);
 
-extern void LRU_free(cache_t *cache);
+void LRU_free(cache_t *cache);
 
-extern gboolean LRU_check(cache_t *cache, request_t *req);
+cache_check_result_t LRU_check(cache_t *cache, request_t *req, bool update);
 
-extern gboolean LRU_get(cache_t *cache, request_t *req);
+cache_check_result_t LRU_get(cache_t *cache, request_t *req);
 
-extern cache_obj_t *LRU_get_cached_obj(cache_t *cache, request_t *req);
+void LRU_remove_obj(cache_t *cache, request_t *req);
 
-extern void LRU_remove_obj(cache_t *cache, void *data_to_remove);
+void _LRU_insert(cache_t *LRU, request_t *req);
 
-
-extern void _LRU_insert(cache_t *LRU, request_t *req);
-
-extern void _LRU_update(cache_t *LRU, request_t *req);
-
-extern void _LRU_evict(cache_t *LRU, request_t *req);
-
-extern void *_LRU_evict_with_return(cache_t *LRU, request_t *req);
+void _LRU_evict(cache_t *LRU, request_t *req, cache_obj_t* cache_obj);
 
 
-gboolean LRU_get_with_ttl(cache_t* cache, request_t *req);
+//cache_check_result_t LRU_get_with_ttl(cache_t* cache, request_t *req);
+//
+//cache_check_result_t LRU_check_with_ttl(cache_t* cache, request_t *req, bool update);
+//
+
 
 
 #ifdef __cplusplus

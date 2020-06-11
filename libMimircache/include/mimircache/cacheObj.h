@@ -8,66 +8,119 @@
 #include "../config.h"
 #include "request.h"
 #include "struct.h"
-#include "mem.h"
 #include <gmodule.h>
 
 
-#ifdef USE_CUSTOME_MEM_ALLOCATOR
-extern mem_allocator_t global_mem_alloc[N_MEM_ALLOCATOR];
-extern gboolean global_mem_alloc_is_initialized;
-#endif
+#define print_cache_obj_num(cache_obj) \
+    printf("cache_obj id %llu, size %llu, exp_time %llu\n", (unsigned long long) (cache_obj)->obj_id_int, \
+           (unsigned long long) (cache_obj)->obj_size, (unsigned long long) (cache_obj)->exp_time)
+
+#define print_cache_obj(cache_obj) print_cache_obj_num(cache_obj)
 
 
-static inline cache_obj_t* create_cache_obj_from_req(request_t* req){
-#ifdef USE_CUSTOME_MEM_ALLOCATOR
-  cache_obj_t *cache_obj = new_cache_obj();
-#elif defined(USE_GLIB_SLICE_ALLOCATOR)
-  cache_obj_t* cache_obj = g_slice_new0(cache_obj_t);
-#else
-  cache_obj_t *cache_obj = g_new0(cache_obj_t, 1);
-#endif
+/* the user needs to make sure that make sure cache_obj is not head */
+static inline cache_obj_t* prev_obj_in_slist(cache_obj_t* head, cache_obj_t *cache_obj){
+  while (head != NULL && head->list_next != cache_obj)
+    head = head->list_next;
+  return head;
+}
 
+//static inline bool remove_obj_from_slist(cache_obj_t** head, cache_obj_t* cache_obj){
+//  if (cache_obj == *head){
+//    *head = cache_obj->list_next;
+//    return true;
+//  }
+//
+//  cache_obj_t* prev_obj = prev_obj_in_slist(*head, cache_obj);
+//  if (prev_obj == NULL)
+//    return false;
+//  prev_obj->list_next = cache_obj->list_next;
+//  return true;
+//}
+
+static inline void remove_obj_from_list(cache_obj_t** head, cache_obj_t **tail, cache_obj_t* cache_obj){
+//  if (){}
+  if (cache_obj == *head){
+    *head = cache_obj->list_next;
+    cache_obj->list_next->list_prev = NULL;
+    return;
+  }
+  if (cache_obj == *tail){
+    *tail = cache_obj->list_prev;
+    cache_obj->list_prev->list_next = NULL;
+    return;
+  }
+
+  cache_obj->list_prev->list_next = cache_obj->list_next;
+  cache_obj->list_next->list_prev = cache_obj->list_prev;
+  cache_obj->list_prev = NULL;
+  cache_obj->list_next = NULL;
+  return;
+}
+
+static inline void move_obj_to_tail(cache_obj_t** head, cache_obj_t **tail, cache_obj_t* cache_obj){
+//  if (){}
+  if (cache_obj == *head){
+    // change head
+    *head = cache_obj->list_next;
+    cache_obj->list_next->list_prev = NULL;
+
+    // move to tail
+    (*tail)->list_next = cache_obj;
+    cache_obj->list_next = NULL;
+    cache_obj->list_prev = *tail;
+    *tail = cache_obj;
+    return;
+  }
+  if (cache_obj == *tail){
+    return;
+  }
+
+  // bridge prev and next
+  cache_obj->list_prev->list_next = cache_obj->list_next;
+  cache_obj->list_next->list_prev = cache_obj->list_prev;
+
+  // handle current tail
+  (*tail)->list_next = cache_obj;
+
+  // handle this moving object
+  cache_obj->list_next = NULL;
+  cache_obj->list_prev = *tail;
+
+  // handle tail
+  *tail = cache_obj;
+  return;
+}
+
+
+static inline void copy_request_to_cache_obj(cache_obj_t* cache_obj, request_t* req) {
   cache_obj->obj_size = req->obj_size;
   if (req->ttl != 0)
     cache_obj->exp_time = req->real_time + req->ttl;
-  cache_obj->obj_id_ptr = req->obj_id_ptr;
-  if (req->obj_id_type == OBJ_ID_STR) {
-    cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));
-  }
+  cache_obj->obj_id_int = req->obj_id_int;
+}
+
+
+static inline cache_obj_t* create_cache_obj_from_request(request_t* req){
+  cache_obj_t* cache_obj = my_malloc(cache_obj_t);
+  memset(cache_obj, 0, sizeof(cache_obj_t));
+  if (req != NULL)
+    copy_request_to_cache_obj(cache_obj, req);
   return cache_obj;
 }
 
-
-static inline void cache_obj_destroyer(gpointer data) {
-#ifdef USE_CUSTOME_MEM_ALLOCATOR
-  free_cache_obj((cache_obj_t*) data);
-#elif defined(USE_GLIB_SLICE_ALLOCATOR)
-  g_slice_free(cache_obj_t, data);
-#else
-  g_free(data);
-#endif
-}
-
-static inline void cache_obj_destroyer_obj_id_str(gpointer data) {
-  cache_obj_t *cache_obj = (cache_obj_t*) data;
-  g_free(cache_obj->obj_id_ptr);
-  cache_obj_destroyer(data);
-}
-
-
-static inline void destroy_cache_obj(gpointer data){
-  cache_obj_destroyer(data);
-}
-
-
-//static inline void update_cache_obj(cache_obj_t *cache_obj, request_t *req) {
-//  cache_obj->obj_size = req->obj_size;
-//#ifdef SUPPORT_TTL
-//  if (req->ttl > 0) // get request do not have TTL, so TTL is not reset
-//    cache_obj->exp_time = req->real_time + req->ttl;
+//static inline void cache_obj_destroyer(gpointer data) {
+//#if defined(USE_GLIB_SLICE_ALLOCATOR)
+//  g_slice_free(cache_obj_t, data);
+//#else
+//  g_free(data);
 //#endif
 //}
 
+
+static inline void free_cache_obj(cache_obj_t *cache_obj){
+  my_free(sizeof(cache_obj_t), cache_obj);
+}
 
 /**
  * slab based algorithm related
@@ -90,10 +143,7 @@ static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
 #ifdef SUPPORT_SLAB_AUTOMOVE
   cache_obj->access_time = req->real_time;
 #endif
-  cache_obj->obj_id_ptr = req->obj_id_ptr;
-  if (req->obj_id_type == OBJ_ID_STR) {
-    cache_obj->obj_id_ptr = (gpointer) g_strdup((gchar *) (req->obj_id_ptr));
-  }
+  cache_obj->obj_id_int = req->obj_id_int;
   return cache_obj;
 }
 

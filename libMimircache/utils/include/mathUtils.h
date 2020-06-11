@@ -12,33 +12,36 @@ extern "C"
 
 #include <stdio.h>
 #include <stdlib.h>
-
-static guint64 rand_seed = 0;
-
-/**
- * find the maximum value in an array
- * @param array
- * @param n_elem
- * @param max_elem
- * @param max_elem_idx
- */
-static inline void find_max_gint64(gint64 *array, gint64 n_elem, gint64* max_elem, gint64* max_elem_idx) {
-  gint64 max = array[0], max_idx = 0;
-  for (gint64 i=0; i<n_elem; i++){
-    if (array[i] > max) {
-      max = array[i];
-      max_idx = i;
-    }
-  }
-  if (max_elem != NULL)
-    *max_elem = max;
-  if (max_elem_idx != NULL)
-    *max_elem_idx = max_idx;
-}
+#include <stdint.h>
+#include <stdbool.h>
 
 
+static uint64_t rand_seed = 0;
 
-static inline void set_rand_seed(gint64 seed){
+////**
+// * find the maximum value in an array
+// * @param array
+// * @param n_elem
+// * @param max_elem
+// * @param max_elem_idx
+// */
+//static inline void find_max_int64_t(int64_t *array, int64_t n_elem, int64_t* max_elem, int64_t* max_elem_idx) {
+//  int64_t max = array[0], max_idx = 0;
+//  for (int64_t i=0; i<n_elem; i++){
+//    if (array[i] > max) {
+//      max = array[i];
+//      max_idx = i;
+//    }
+//  }
+//  if (max_elem != NULL)
+//    *max_elem = max;
+//  if (max_elem_idx != NULL)
+//    *max_elem_idx = max_idx;
+//}
+
+
+
+static inline void set_rand_seed(int64_t seed){
   rand_seed = seed;
 }
 
@@ -47,7 +50,7 @@ static inline void set_rand_seed(gint64 seed){
  * random number generator from Knuth MMIX
  * @return
  */
-static inline guint64 next_rand(){
+static inline uint64_t next_rand(){
   rand_seed = 6364136223846793005 * rand_seed + 1442695040888963407;
   return rand_seed;
 }

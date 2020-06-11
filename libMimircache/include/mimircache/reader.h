@@ -16,16 +16,18 @@ extern "C" {
 
 #include <errno.h>
 #include <fcntl.h>
-#include <glib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <glib.h>
+#include <gmodule.h>
 
 #include "const.h"
 #include "enum.h"
@@ -56,6 +58,7 @@ typedef struct {
   // binary reader
   char binary_fmt[MAX_BIN_FMT_STR_LEN];
 } reader_init_param_t;
+
 
 /* declare reader struct */
 struct reader;
@@ -143,13 +146,14 @@ void set_no_eof(reader_t *const reader);
 gboolean find_line_ending(reader_t *const reader, char **line_end,
                           size_t *const line_len);
 
-static inline gsize str_to_gsize(const char *start, size_t len) {
-  gsize n = 0;
+static inline uint64_t str_to_u64(const char *start, size_t len) {
+  uint64_t n = 0;
   while (len--) {
     n = n * 10 + *start++ - '0';
   }
   return n;
 }
+
 
 
 #ifdef __cplusplus

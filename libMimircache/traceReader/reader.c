@@ -106,6 +106,7 @@ reader_t *setup_reader(const char *const trace_path,
 }
 
 void read_one_req(reader_t *const reader, request_t *const req) {
+  static char obj_id_str[MAX_OBJ_ID_LEN];
   req->valid = TRUE;
   char *line_end = NULL;
   size_t line_len;
@@ -120,11 +121,16 @@ void read_one_req(reader_t *const reader, request_t *const req) {
       }
       find_line_ending(reader, &line_end, &line_len);
       if (reader->base->obj_id_type == OBJ_ID_NUM) {
-        req->obj_id_ptr = GSIZE_TO_POINTER(str_to_gsize(
-            (char *) (reader->base->mapped_file + reader->base->mmap_offset), line_len));
+        req->obj_id_int = str_to_u64((char *) (reader->base->mapped_file + reader->base->mmap_offset), line_len);
       } else {
-        memcpy(req->obj_id_ptr, reader->base->mapped_file + reader->base->mmap_offset, line_len);
-        ((char *) (req->obj_id_ptr))[line_len] = 0;
+        if (line_len >= MAX_OBJ_ID_LEN) {
+          line_len = MAX_OBJ_ID_LEN - 1;
+          ERROR("plainReader obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n", line_len, MAX_OBJ_ID_LEN);
+          abort();
+        }
+        memcpy(obj_id_str, reader->base->mapped_file + reader->base->mmap_offset, line_len);
+        obj_id_str[line_len] = 0;
+        req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);
       }
       reader->base->mmap_offset = (char *) line_end - reader->base->mapped_file;
       break;

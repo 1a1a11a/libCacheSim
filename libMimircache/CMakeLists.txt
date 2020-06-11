@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
+#set(CMAKE_C_COMPILER "gcc")
 
 #project(libmimircache C)
 project(libmimircache)
@@ -33,7 +34,6 @@ message(STATUS "FLAG" ${CMAKE_C_FLAGS_DEBUG})
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-# find libglib2.0-dev
 find_package(GLib "2.40" REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${GLib_LIBRARY})
@@ -57,7 +57,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
+#add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/readerUtils)
@@ -68,14 +68,13 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
 file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 #message(STATUS "all sources " ${ALL_SRC_FILES})
 
-#add_library(${PROJECT_NAME} SHARED cacheAlgo traceReader profiler dataStructure utils ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${libmimircache_VERSION_MAJOR}.${libmimircache_VERSION_MINOR}.${libmimircache_VERSION_REVISION})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
-target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+#add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+#set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${libmimircache_VERSION_MAJOR}.${libmimircache_VERSION_MINOR}.${libmimircache_VERSION_REVISION})
+#set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
+#target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
+#install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
+#install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 
 # file(GLOB py_SRC_FILES ${PROJECT_SOURCE_DIR}/../../pyBindings/*.c)
@@ -88,38 +87,37 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 #target_link_libraries(libcuckooExample libcuckoo -lpthread -ldl)
 
 
-add_executable(benchmarkRun benchmark/main.c)
-target_link_libraries(benchmarkRun benchmark cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(binBenchmark benchmark/main.c)
+target_link_libraries(binBenchmark benchmark cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(readerTest ../test/test_traceReader.c)
-target_link_libraries(readerTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(testReader ../test/test_traceReader.c)
+target_link_libraries(testReader cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(distUtilsTest ../test/test_distUtils.c)
-target_link_libraries(distUtilsTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(testDistUtils ../test/test_distUtils.c)
+target_link_libraries(testDistUtils cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(profilerLRUTest ../test/test_profilerLRU.c)
-target_link_libraries(profilerLRUTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(testProfilerLRU ../test/test_profilerLRU.c)
+target_link_libraries(testProfilerLRU cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(profilerTest ../test/test_profiler.c)
-target_link_libraries(profilerTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(testProfiler ../test/test_profiler.c)
+target_link_libraries(testProfiler cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(cacheAlgoTest ../test/test_cacheAlgo.c)
-target_link_libraries(cacheAlgoTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(testCacheAlgo ../test/test_cacheAlgo.c)
+target_link_libraries(testCacheAlgo cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(heatmapTest ../test/test_heatmap.c)
-target_link_libraries(heatmapTest cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+add_executable(testHeatmap ../test/test_heatmap.c)
+target_link_libraries(testHeatmap cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(debugRun ../test/debug.c)
-target_link_libraries(debugRun cacheAlgo traceReader profiler dataStructure readerUtils utils cache m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
-set_property(TARGET debugRun PROPERTY C_STANDARD 11)
-
+add_executable(binDebug ../test/debug.c)
+target_link_libraries(binDebug cacheAlgo traceReader profiler dataStructure readerUtils utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+set_property(TARGET binDebug PROPERTY C_STANDARD 11)
 
 enable_testing()
-add_test(NAME readerTest COMMAND readerTest WORKING_DIRECTORY .)
-add_test(NAME distUtils COMMAND distUtils WORKING_DIRECTORY .)
-add_test(NAME profilerLRUTest COMMAND profilerLRUTest WORKING_DIRECTORY .)
-add_test(NAME profilerTest COMMAND profilerTest WORKING_DIRECTORY .)
-add_test(NAME cacheAlgoTest COMMAND cacheAlgoTest WORKING_DIRECTORY .)
+add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
+add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
+add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
+add_test(NAME testProfiler COMMAND testProfiler WORKING_DIRECTORY .)
+add_test(NAME testCacheAlgo COMMAND testCacheAlgo WORKING_DIRECTORY .)
 
 
 # Example Usages

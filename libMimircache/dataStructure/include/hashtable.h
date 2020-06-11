@@ -12,42 +12,51 @@ extern "C"
 
 #include "../../include/mimircache/cacheObj.h"
 #include "../../include/mimircache/request.h"
+#include "../../include/config.h"
+#include "hashtableStruct.h"
+
+#include "../../utils/include/mathUtils.h"
 
 
-typedef uint32_t (*key_to_hv_func_ptr)(void* ptr);
-typedef bool (*key_cmp_func_ptr)(void*, void*);
-
-typedef struct {
-  void *table;
-  uint64_t max_item;
-  uint64_t n_cur_item;    // current occupied size
-  // used to calculate the hash value of object
-  key_to_hv_func_ptr key_to_hv;
-  key_cmp_func_ptr key_cmp;
-
-} hashtable_t;
-
-hashtable_t *create_hashtable(uint64_t hashtable_size);
-
-void *find_in_hashtable(hashtable_t *ht, uint64_t hv);
-
-void add_to_hashtable(hashtable_t *ht, uint64_t hv, void *ptr);
+//#if HASHTABLE_TYPE == CHAINED_HASHTABLE
+//#include "chainedHashTable.h"
+//#elif HASHTABLE_TYPE == CUCKCOO_HASHTABLE
+//#include "cuckooHashTable.h"
+//#else
+//#include "chainedHashTable.h"
+//#endif
 
 
+#if HASHTABLE_TYPE == CHAINED_HASHTABLE
+#if HASHTABLE_VER == 1
+#include "chainedHashTable.h"
+#define create_hashtable(hash_power) create_chained_hashtable(hash_power)
+#define hashtable_find(hashtable, req) chained_hashtable_find(hashtable, req)
+#define hashtable_insert(hashtable, req) chained_hashtable_insert(hashtable, req)
+#define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete(hashtable, cache_obj)
+#define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj(hashtable)
+#define hashtable_foreach(hashtable, iter_func, user_data) chained_hashtable_foreach(hashtable, iter_func, user_data)
+#define free_hashtable(hashtable) free_chained_hashtable(hashtable)
+#define hashtable_add_ptr_to_monitoring(hashtable, ptr) chained_hashtable_add_ptr_to_monitoring(hashtable, ptr)
 
+#elif HASHTABLE_VER == 2
+#include "chainedHashTableV2.h"
+#define create_hashtable(hash_power) create_chained_hashtable_v2(hash_power)
+#define hashtable_find(hashtable, req) chained_hashtable_find_v2(hashtable, req)
+#define hashtable_insert(hashtable, req) chained_hashtable_insert_v2(hashtable, req)
+#define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete_v2(hashtable, cache_obj)
+#define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj_v2(hashtable)
+#define hashtable_foreach(hashtable, iter_func, user_data) chained_hashtable_foreach_v2(hashtable, iter_func, user_data)
+#define free_hashtable(hashtable) free_chained_hashtable_v2(hashtable)
+#define hashtable_add_ptr_to_monitoring(hashtable, ptr)
+#endif
 
-
-
-
-
-
-
-/* function made for simulator */
-cache_obj_t *find_cache_obj_in_hashtable(hashtable_t *ht, request_t *req);
-
-void add_cache_obj_to_hashtable(hashtable_t *ht, cache_obj_t *cache_obj);
-
-
+#elif HASHTABLE_TYPE == CUCKCOO_HASHTABLE
+#include "cuckooHashTable.h"
+#error not implemented
+#else
+#error not implemented
+#endif
 
 #ifdef __cplusplus
 }

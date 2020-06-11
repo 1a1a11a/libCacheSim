@@ -10,23 +10,24 @@ extern "C"
 {
 #endif
 
-#include "ARC.h"
+//#include "ARC.h"
 #include "FIFO.h"
-#include "LFU.h"
-#include "LFUFast.h"
+//#include "LFU.h"
+//#include "LFUFast.h"
 #include "LRU.h"
-#include "LRU_K.h"
+#include "LRUv0.h"
+//#include "LRU_K.h"
 #include "MRU.h"
-#include "Optimal.h"
+//#include "Optimal.h"
 #include "Random.h"
-#include "SLRU.h"
-#include "TTL_FIFO.h"
+//#include "SLRU.h"
+//#include "TTL_FIFO.h"
 
 
-#include "slabLRU.h"
-#include "slabLRC.h"
-#include "slabObjLRU.h"
-#include "slabCommon.h"
+//#include "slabLRU.h"
+//#include "slabLRC.h"
+//#include "slabObjLRU.h"
+//#include "slabCommon.h"
 
 
 //#include "AMP.h"

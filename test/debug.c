@@ -3,11 +3,39 @@
 //
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <time.h>
+#include <unistd.h>
+#include <glib.h>
+#include <gmodule.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <assert.h>
 
-#include "test_common.h"
-#include "../libMimircache/include/mimircache/distHeatmap.h"
+//#include "test_common.h"
+//#include "../libMimircache/include/mimircache/distHeatmap.h"
+
+#define TIMEVAL_TO_USEC(tv) ((long long) (tv.tv_sec*1000000+tv.tv_usec))
+#define TIMEVAL_TO_SEC(tv) ((double) (tv.tv_sec+tv.tv_usec/1000000.0))
+#define my_malloc(type) (type*) malloc(sizeof(type))
+#define my_malloc0(type) malloc(sizeof(type))
 
 
+void print_rusage_diff(struct rusage r1, struct rusage r2) {
+  printf("******  CPU user time %.2lf s, sys time %.2lf s\n",
+         (TIMEVAL_TO_SEC(r2.ru_utime) - TIMEVAL_TO_SEC(r1.ru_utime)),
+         (TIMEVAL_TO_SEC(r2.ru_stime) - TIMEVAL_TO_SEC(r1.ru_stime)));
+
+  printf(
+      "******  Mem RSS %.2lf MB, soft page fault %ld - hard page fault %ld, voluntary context switches %ld - involuntary %ld\n",
+      (double) (r2.ru_maxrss - r1.ru_maxrss) / (1024.0),
+      (r2.ru_minflt - r1.ru_minflt), (r2.ru_majflt - r1.ru_majflt),
+      (r2.ru_nvcsw - r1.ru_nvcsw), (r2.ru_nivcsw - r1.ru_nivcsw));
+}
+
+/*
 void f1(int argc, char* argv[]) {
   int n_threads = 1;
   char *trace_path = "/Users/junchengy/twr.sbin";
@@ -24,7 +52,7 @@ void f1(int argc, char* argv[]) {
 //  reader_t *reader = setup_reader("/Users/junchengy/akamai.bin", BIN_TRACE, OBJ_ID_NUM, &init_params);
 
 //  reader_t* reader = setup_reader("/Users/junchengy/test", PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
-  common_cache_params_t cc_params = {.cache_size=1024*1024*1024, .obj_id_type=reader->base->obj_id_type, .default_ttl=2};
+  common_cache_params_t cc_params = {.cache_size=1024*1024*1024, .default_ttl=2};
   slab_init_params_t slab_init_params = {.slab_size=1024*1024, .per_obj_metadata_size=0, .slab_move_strategy=recency_t};
   cache_t *cache = create_cache("TTL_FIFO", cc_params, NULL);
 //  cache_t *cache = create_cache("slabObjLRU", cc_params, NULL);
@@ -49,31 +77,16 @@ void f2(int argc, char* argv[]){
   reader_t *reader = setup_reader(argv[1], TWR_TRACE, OBJ_ID_NUM, NULL);
   get_last_access_dist_heatmap_matrix(reader, 300, 1.2);
 }
+*/
 
 
-
-typedef struct _stritem {
-    int32_t       expire_at;         /* expiry time in secs */
-    int32_t       create_at;         /* time when this item was last linked */
-    uint32_t          is_linked:1;          /* item in hash */
-    uint32_t          in_freeq:1;           /* item in free queue */
-    uint32_t          is_raligned:1;       /* item data (payload) is right-aligned */
-    uint32_t          vlen:29;
-    uint32_t          offset;                  /* offset of item in slab */
-    uint8_t           id;                         /* slab class id */
-    uint8_t           klen;                     /* key length */
-    uint8_t           olen;                     /* optional length (right after cas) */
-    uint8_t           padding;               /* keep end 64-bit aligned */
-    char              end[1];                   /* item data */
+typedef struct {
+  uint64_t t[8];
 } item;
 
-void f3(){
-  printf("size %lu\n", sizeof(item));
-}
 
-
-int main(int argc, char* argv[]){
+int main(int argc, char *argv[]) {
 //  f1(argc, argv);
-  f3();
+//  f3(atoi(argv[1]), atoi(argv[2]));
   return 0;
 }

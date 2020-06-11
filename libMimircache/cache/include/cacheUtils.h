@@ -16,38 +16,22 @@ extern "C"
 
 
 /****************** find obj expiration related info ******************/
-typedef struct {
-  guint64 n_exp_obj;
-  guint64 n_exp_byte;
-  guint64 n_total_obj;
-  guint64 n_total_byte;
-  gint32 cur_time;
-} exp_info_t;
-
-
-#ifdef SUPPORT_TTL
-static inline void _count_exp(gpointer key,
-                              gpointer value,
-                              gpointer user_data) {
-  exp_info_t *exp_info = (exp_info_t*) user_data;
-  slab_cache_obj_t *obj = (slab_cache_obj_t*) value;
-
-  exp_info->n_total_byte += obj->obj_size;
-  exp_info->n_total_obj += 1;
-
-  if (obj->exp_time < exp_info->cur_time){
-    exp_info->n_exp_byte += obj->obj_size;
-    exp_info->n_exp_obj += 1;
+static inline void get_cache_state_ht_iter(cache_obj_t *cache_obj, gpointer user_data){
+  cache_state_t *cache_state = user_data;
+  cache_state->n_obj += 1;
+  cache_state->used_size += cache_obj->obj_size;
+  if (cache_obj->exp_time < cache_state->cur_time){
+    cache_state->n_expired_obj += 1;
+    cache_state->n_expired_byte += cache_obj->obj_size;
   }
 }
-#endif
 
-static inline exp_info_t scan_for_expired_obj(GHashTable *hashtable, guint64 cur_time) {
-  exp_info_t exp_info;
-  exp_info.cur_time = cur_time;
-  g_hash_table_foreach(hashtable, _count_exp, &exp_info);
-  return exp_info;
+static inline void get_cache_state(cache_t *cache, cache_state_t* cache_state){
+//  g_hash_table_foreach(cache->core.hashtable, get_cache_state_ht_iter, cache_state);
+  hashtable_foreach(cache->core.hashtable_new, get_cache_state_ht_iter, cache_state);
 }
+
+
 
 
 #ifdef __cplusplus

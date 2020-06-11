@@ -35,7 +35,7 @@ int set_thread_affinity(pthread_t tid){
 }
 
 
-guint get_n_cores(void){
+int get_n_cores(void){
 #ifdef __linux__
     
     INFO("This system has %d processors configured and "

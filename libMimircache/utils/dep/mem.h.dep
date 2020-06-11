@@ -2,8 +2,8 @@
 // Created by Juncheng Yang on 5/13/20.
 //
 
-#ifndef LIBMIMIRCACHE_MEM_H
-#define LIBMIMIRCACHE_MEM_H
+#ifndef LIBMIMIRCACHE_MEM_H_DEP
+#define LIBMIMIRCACHE_MEM_H_DEP
 
 /** one problem with this memory allocator is once memory is allocated, it won't be able to take back
  * this probably won't be a problem in our use case
@@ -20,8 +20,8 @@ extern "C"
 
 #include <pthread.h>
 #include <sys/mman.h>
-#include "../../include/mimircache/struct.h"
-#include "../../include/mimircache/logging.h"
+#include "mimircache/struct.h"
+#include "mimircache/logging.h"
 
 
 #define N_OBJ_MEM_ARENA (1024*1024L)
@@ -70,4 +70,4 @@ void free_all_global_mem_alloc();
 }
 #endif
 
-#endif //LIBMIMIRCACHE_MEM_H
+#endif //LIBMIMIRCACHE_MEM_H_DEP

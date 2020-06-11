@@ -28,7 +28,7 @@ extern "C"
  * @return              distance to last access
  */
 static inline gint64 _get_last_dist_add_req(request_t *req, GHashTable *hash_table, guint64 ts) {
-  gpointer gp = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int));
   gint64 ret = -1;
   if (gp == NULL) {
     // it has not been requested before
@@ -38,15 +38,7 @@ static inline gint64 _get_last_dist_add_req(request_t *req, GHashTable *hash_tab
     gsize old_ts = GPOINTER_TO_SIZE(gp);
     ret = (gint64) ts - (gint64) old_ts - 1;
   }
-  if (req->obj_id_type == OBJ_ID_STR)
-    g_hash_table_insert(hash_table, g_strdup((gchar * )(req->obj_id_ptr)), GSIZE_TO_POINTER((gsize) ts));
-  else if (req->obj_id_type == OBJ_ID_NUM) {
-    g_hash_table_insert(hash_table, req->obj_id_ptr, GSIZE_TO_POINTER((gsize) ts));
-  } else {
-    ERROR("unknown obj_id_type: %c\n", req->obj_id_type);
-    exit(1);
-  }
-
+  g_hash_table_insert(hash_table, GSIZE_TO_POINTER(req->obj_id_int), GSIZE_TO_POINTER((gsize) ts));
   return ret;
 }
 
@@ -63,18 +55,11 @@ static inline gint64 _get_last_dist_add_req(request_t *req, GHashTable *hash_tab
  * @return              distance to last access
  */
 static inline gint64 _get_first_dist_add_req(request_t *req, GHashTable *hash_table, guint64 ts) {
-  gpointer gp = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int));
   gint64 ret = -1;
   if (gp == NULL) {
     // it has not been requested before
-    if (req->obj_id_type == OBJ_ID_STR)
-      g_hash_table_insert(hash_table, g_strdup((gchar * )(req->obj_id_ptr)), GSIZE_TO_POINTER((gsize) ts));
-    else if (req->obj_id_type == OBJ_ID_NUM) {
-      g_hash_table_insert(hash_table, req->obj_id_ptr, GSIZE_TO_POINTER((gsize) ts));
-    } else {
-      ERROR("unknown obj_id_type: %c\n", req->obj_id_type);
-      exit(1);
-    }
+    g_hash_table_insert(hash_table, GSIZE_TO_POINTER(req->obj_id_int), GSIZE_TO_POINTER((gsize) ts));
   } else {
     // it has been requested before
     gsize old_ts = GPOINTER_TO_SIZE(gp);
@@ -101,7 +86,8 @@ static inline sTree *get_stack_dist_add_req(request_t *req,
                                             GHashTable *hash_table,
                                             guint64 ts,
                                             gint64 *stack_dist) {
-  gpointer gp = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int));
 
   sTree *newtree;
   if (gp == NULL) {
@@ -115,17 +101,9 @@ static inline sTree *get_stack_dist_add_req(request_t *req,
     *stack_dist = node_value(newtree->right);
     newtree = splay_delete(old_ts, newtree);
     newtree = insert(ts, newtree);
-
   }
 
-  if (req->obj_id_type == OBJ_ID_STR)
-    g_hash_table_insert(hash_table, g_strdup((gchar * )(req->obj_id_ptr)), GSIZE_TO_POINTER((gsize) ts));
-  else if (req->obj_id_type == OBJ_ID_NUM) {
-    g_hash_table_insert(hash_table, req->obj_id_ptr, (gpointer) GSIZE_TO_POINTER((gsize) ts));
-  } else {
-    ERROR("unknown request obj_id_type: %c\n", req->obj_id_type);
-    abort();
-  }
+  g_hash_table_insert(hash_table, GSIZE_TO_POINTER(req->obj_id_int), (gpointer) GSIZE_TO_POINTER((gsize) ts));
   return newtree;
 }
 
@@ -148,7 +126,7 @@ static inline sTree *get_byte_stack_dist_add_req(request_t *req,
                                                  GHashTable *hash_table,
                                                  guint64 ts,
                                                  gint64 *byte_stack_dist) {
-  gpointer gp = g_hash_table_lookup(hash_table, req->obj_id_ptr);
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int));
 
   sTree *newtree;
   if (gp == NULL) {
@@ -165,14 +143,7 @@ static inline sTree *get_byte_stack_dist_add_req(request_t *req,
 
   }
 
-  if (req->obj_id_type == OBJ_ID_STR)
-    g_hash_table_insert(hash_table, g_strdup((gchar * )(req->obj_id_ptr)), GSIZE_TO_POINTER((gsize) ts));
-  else if (req->obj_id_type == OBJ_ID_NUM) {
-    g_hash_table_insert(hash_table, req->obj_id_ptr, (gpointer) GSIZE_TO_POINTER((gsize) ts));
-  } else {
-    ERROR("unknown request obj_id_type: %c\n", req->obj_id_type);
-    abort();
-  }
+  g_hash_table_insert(hash_table,GSIZE_TO_POINTER(req->obj_id_int), (gpointer) GSIZE_TO_POINTER((gsize) ts));
   return newtree;
 }
 

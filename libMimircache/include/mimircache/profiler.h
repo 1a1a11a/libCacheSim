@@ -24,9 +24,10 @@ typedef struct {
   guint64 req_byte;
   guint64 miss_cnt;
   guint64 miss_byte;
-  double obj_miss_ratio;
-  double byte_miss_ratio;
+//  double obj_miss_ratio;
+//  double byte_miss_ratio;
   gint64 cache_size;
+  cache_state_t cache_state;
   gpointer other_data;
 } profiler_res_t;
 

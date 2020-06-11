@@ -17,178 +17,96 @@ extern "C" {
 #include <assert.h>
 #include "FIFO.h"
 #include "../utils/include/utilsInternal.h"
+#include "../include/mimircache/macro.h"
+
 
 cache_t *FIFO_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
   cache_t *cache = cache_struct_init("FIFO", ccache_params);
-  cache->cache_params = g_new0(FIFO_params_t, 1);
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  FIFO_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, NULL, g_free, NULL);
-  FIFO_params->list = g_queue_new();
   return cache;
 }
 
 void FIFO_free(cache_t *cache) {
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  g_hash_table_destroy(FIFO_params->hashtable);
-  g_queue_free_full(FIFO_params->list, cache_obj_destroyer);
   cache_struct_free(cache);
 }
 
-gboolean FIFO_check(cache_t *cache, request_t *req) {
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-   return g_hash_table_contains(FIFO_params->hashtable, req->obj_id_ptr);
+
+cache_check_result_t FIFO_check(cache_t *cache, request_t *req, bool update_cache) {
+  return cache_check(cache, req, update_cache, NULL);
 }
 
-
-gboolean FIFO_get(cache_t *cache, request_t *req) {
-  gboolean found_in_cache = FIFO_check(cache, req);
-
-  if (req->obj_size <= cache->core.size) {
-    if (!found_in_cache)
-      _FIFO_insert(cache, req);
-
-    while (cache->core.used_size > cache->core.size)
-      _FIFO_evict(cache, req);
-  } else {
-    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->core.req_cnt,
-            (long) req->obj_size, (long) cache->core.size);
-  }
-  cache->core.req_cnt += 1;
-  return found_in_cache;
+cache_check_result_t FIFO_get(cache_t *cache, request_t *req) {
+  return cache_get(cache, req);
 }
 
 void _FIFO_insert(cache_t *cache, request_t *req) {
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
   cache->core.used_size += req->obj_size;
-  cache_obj_t *cache_obj = create_cache_obj_from_req(req);
-
-  GList *node = g_list_alloc();
-  node->data = cache_obj;
-  g_queue_push_tail_link(FIFO_params->list, node);
-  g_hash_table_insert(FIFO_params->hashtable, cache_obj->obj_id_ptr, (gpointer) node);
-}
-
-void _FIFO_update(cache_t *cache, request_t *req) {
-  static guint64 n_warning = 0;
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  GList *node = (GList *) g_hash_table_lookup(FIFO_params->hashtable, req->obj_id_ptr);
-  cache_obj_t *cache_obj = node->data;
-  if (cache_obj->obj_size != req->obj_size){
-    if (n_warning % 20000 == 0) {
-      WARNING("detecting obj size change cache_obj size %u - req size %u (warning %llu)\n", cache_obj->obj_size, req->obj_size,
-              (long long unsigned) n_warning);
-      n_warning += 1;
-    }
-    cache->core.used_size -= cache_obj->obj_size;
-    cache->core.used_size += req->obj_size;
-    cache_obj->obj_size = req->obj_size;
-  }
-}
-
-void _FIFO_evict(cache_t *cache, request_t *req) {
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(FIFO_params->list);
-  assert (cache->core.used_size >= cache_obj->obj_size);
-  cache->core.used_size -= cache_obj->obj_size;
-  g_hash_table_remove(FIFO_params->hashtable, (gconstpointer) cache_obj->obj_id_ptr);
-  destroy_cache_obj(cache_obj);
-}
-
-gpointer _FIFO_evict_with_return(cache_t *cache, request_t *req) {
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  cache_obj_t *cache_obj = g_queue_pop_head(FIFO_params->list);
-  assert (cache->core.used_size >= cache_obj->obj_size);
-  cache->core.used_size -= cache_obj->obj_size;
-  gpointer evicted_key = cache_obj->obj_id_ptr;
-  if (req->obj_id_type == OBJ_ID_STR) {
-    evicted_key = (gpointer) g_strdup((gchar *) (cache_obj->obj_id_ptr));
-  }
-
-  g_hash_table_remove(FIFO_params->hashtable, (gconstpointer) (cache_obj->obj_id_ptr));
-  destroy_cache_obj(cache_obj);
-  return evicted_key;
-}
-
-void FIFO_remove_obj(cache_t *cache, void *obj_id_ptr) {
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-
-  GList *node = (GList *) g_hash_table_lookup(FIFO_params->hashtable, obj_id_ptr);
-  if (!node) {
-    ERROR("obj to remove is not in the cacheAlgo\n");
-    abort();
-  }
-  cache_obj_t *cache_obj = (cache_obj_t *) (node->data);
-  assert (cache->core.used_size >= cache_obj->obj_size);
-  cache->core.used_size -= cache_obj->obj_size;
-  g_queue_delete_link(FIFO_params->list, (GList *) node);
-  g_hash_table_remove(FIFO_params->hashtable, obj_id_ptr);
-  destroy_cache_obj(cache_obj);
-}
-
-
-/************************************* TTL ***************************************/
-cache_check_result_t FIFO_check_with_ttl(cache_t *cache, request_t* req){
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  GList *node = (GList *) g_hash_table_lookup(FIFO_params->hashtable, req->obj_id_ptr);
-  if (node == NULL){
-    return cache_miss_e;
-  }
-  cache_obj_t *cache_obj = node->data;
-  if (cache_obj->exp_time < req->real_time){
-    /* obj is expired */
-    cache->stat.hit_expired_cnt += 1;
-    cache->stat.hit_expired_byte += cache_obj->obj_size;
-    assert (cache->core.used_size >= cache_obj->obj_size);
-    cache->core.used_size -= cache_obj->obj_size;
-    g_queue_delete_link(FIFO_params->list, (GList *) node);
-    g_hash_table_remove(FIFO_params->hashtable, cache_obj->obj_id_ptr);
-    destroy_cache_obj(cache_obj);
-    return cache_miss_e;
-  }
-  return cache_hit_e;
-}
-
-
-cache_check_result_t FIFO_check_and_update_with_ttl(cache_t *cache, request_t* req){
-  FIFO_params_t *FIFO_params = (FIFO_params_t *) (cache->cache_params);
-  cache_check_result_t result = cache_miss_e;
-  GList *node = (GList *) g_hash_table_lookup(FIFO_params->hashtable, req->obj_id_ptr);
-  if (node != NULL) {
-    cache_obj_t *cache_obj = node->data;
-    if (cache_obj->exp_time < req->real_time) {
-      /* obj is expired */
-      result = expired_e;
-      cache->stat.hit_expired_cnt += 1;
-      cache->stat.hit_expired_byte += cache_obj->obj_size;
-      cache_obj->exp_time = req->real_time + req->ttl;
-    } else {
-      result = cache_hit_e;
-    }
-  }
-  return result;
-}
-
-gboolean FIFO_get_with_ttl(cache_t* cache, request_t *req){
-  req->ttl == 0 && (req->ttl = cache->core.default_ttl);
-  cache_check_result_t cache_check = FIFO_check_and_update_with_ttl(cache, req);
-  gboolean found_in_cache = cache_check == cache_hit_e;
-
-  if (req->obj_size <= cache->core.size) {
-    if (cache_check == cache_miss_e){
-      _FIFO_insert(cache, req);
-    }
-
-    while (cache->core.used_size > cache->core.size)
-      _FIFO_evict(cache, req);
+  cache_obj_t *cache_obj = hashtable_insert(cache->core.hashtable_new, req);
+  if (unlikely(cache->core.list_head == NULL)) {
+    // an empty list, this is the first insert
+    cache->core.list_head = cache_obj;
   } else {
-    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->core.req_cnt,
-            (long) req->obj_size, (long) cache->core.size);
+    cache->core.list_tail->list_next = cache_obj;
+    cache_obj->list_prev = cache->core.list_tail;
   }
-  cache->core.req_cnt += 1;
-  return found_in_cache;
+  cache->core.list_tail = cache_obj;
 }
+
+void _FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+  // currently not handle the case when all objects are evicted
+  cache_obj_t *obj_to_evict = cache->core.list_head;
+  if (evicted_obj != NULL) {
+    // return evicted object to caller
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  }
+  cache->core.list_head = cache->core.list_head->list_next;
+  assert (cache->core.used_size >= obj_to_evict->obj_size);
+  cache->core.used_size -= obj_to_evict->obj_size;
+  hashtable_delete(cache->core.hashtable_new, obj_to_evict);
+  /** obj_to_evict is not freed or returned to hashtable, if you have extra-metadata allocated with obj_to_evict,
+   * you need to free them now, otherwise, there will be memory leakage **/
+}
+
+
+void FIFO_remove_obj(cache_t *cache, request_t *req) {
+  cache_obj_t *cache_obj = hashtable_find(cache->core.hashtable_new, req);
+  if (cache_obj == NULL) {
+    WARNING("obj is not in the cache\n");
+    return;
+  }
+  remove_obj_from_list(&cache->core.list_head, &cache->core.list_tail, cache_obj);
+  hashtable_delete(cache->core.hashtable_new, cache_obj);
+
+  assert (cache->core.used_size >= cache_obj->obj_size);
+  cache->core.used_size -= cache_obj->obj_size;
+}
+
+
+///************************************* TTL ***************************************/
+//cache_check_result_t FIFO_check_with_ttl(cache_t *cache, request_t *req, bool update_cache) {
+//  return cache_check(cache, req, update_cache, NULL);
+//}
+//
+//
+//cache_check_result_t FIFO_get_with_ttl(cache_t *cache, request_t *req) {
+//  if (req->ttl == 0) req->ttl = cache->core.default_ttl;
+//  cache_check_result_t cache_check = FIFO_check_with_ttl(cache, req, true);
+//
+//  if (req->obj_size <= cache->core.cache_size) {
+//    if (cache_check == cache_miss_e) {
+//      _FIFO_insert(cache, req);
+//    }
+//
+//    while (cache->core.used_size > cache->core.cache_size)
+//      _FIFO_evict(cache, req, NULL);
+//  } else {
+//    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->core.req_cnt,
+//            (long) req->obj_size, (long) cache->core.cache_size);
+//  }
+//  cache->core.req_cnt += 1;
+//  return cache_check;
+//}
 
 
 #ifdef __cplusplus
-extern "C" {
+}
 #endif

@@ -19,6 +19,7 @@ extern "C"
 
 static inline void csv_cb1(void *s, size_t len, void *data) {
   /* call back for csv field end */
+  static char obj_id_str[MAX_OBJ_ID_LEN];
 
   reader_t *reader = (reader_t *) data;
   csv_params_t *params = reader->reader_params;
@@ -26,16 +27,18 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   request_t *req = params->req_pointer;
 
   if (params->current_field_counter == init_params->obj_id_field) {
-    if (reader->base->obj_id_type == OBJ_ID_NUM){
-//      printf("current str %s - len %lu - len %lu\n", s, strlen(s), len);
-        // len is not correct for the last request for some reason
-        req->obj_id_ptr = GSIZE_TO_POINTER(str_to_gsize((char*)s, strlen(s)));
+    if (reader->base->obj_id_type == OBJ_ID_NUM) {
+      // len is not correct for the last request for some reason
+      req->obj_id_int = str_to_u64((char *) s, len);
     } else {
-      if (len >= MAX_OBJ_ID_LEN)
+      if (len >= MAX_OBJ_ID_LEN) {
         len = MAX_OBJ_ID_LEN - 1;
-      // TODO: I think we do not need to copy the string, we can just have a ptr to the string
-      strncpy((char *) (req->obj_id_ptr), (char *) s, len);
-      ((char *) (req->obj_id_ptr))[len] = 0;
+        ERROR("csvReader obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n", len, MAX_OBJ_ID_LEN);
+        abort();
+      }
+      memcpy(obj_id_str, (char *) s, len);
+      obj_id_str[len] = 0;
+      req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);
     }
     params->already_got_req = TRUE;
   } else if (params->current_field_counter == init_params->real_time_field) {
@@ -123,8 +126,9 @@ void csv_read_one_element(reader_t *const reader, request_t *const c) {
   gboolean end = find_line_ending(reader, &line_end, &line_len);
   line_len++;    // because line_len does not include LFCR
 
-  if ((size_t) csv_parse(params->csv_parser, reader->base->mapped_file + reader->base->mmap_offset, line_len, csv_cb1, csv_cb2, reader) != line_len)
-    WARNING("in parsing csv file: %s\n", csv_strerror(csv_error(params->csv_parser)));
+  if ((size_t) csv_parse(params->csv_parser, reader->base->mapped_file + reader->base->mmap_offset, line_len, csv_cb1,
+                         csv_cb2, reader) != line_len) WARNING("in parsing csv file: %s\n",
+                                                               csv_strerror(csv_error(params->csv_parser)));
 
   reader->base->mmap_offset = (char *) line_end - reader->base->mapped_file;
 

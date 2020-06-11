@@ -1,0 +1,106 @@
+
+
+compared to malloc, g_malloc is 10% slower, g_new is 2x slower, g_new0 is similar to g_new (like 10% slower)
+
+
+####################### workload: Single size allocation #########################
+g_slice_alloc alloc size 4, expected RSS 400 MiB
+******  CPU user time 1.79 s, sys time 0.52 s
+******  Mem RSS 2768.95 MB, soft page fault 708933 - hard page fault 0, voluntary context switches 0 - involuntary 88
+g_slice_alloc alloc size 8, expected RSS 800 MiB
+******  CPU user time 1.83 s, sys time 0.49 s
+******  Mem RSS 2768.96 MB, soft page fault 708932 - hard page fault 0, voluntary context switches 0 - involuntary 108
+g_slice_alloc alloc size 16, expected RSS 1600 MiB
+******  CPU user time 1.81 s, sys time 0.50 s
+******  Mem RSS 2768.95 MB, soft page fault 708935 - hard page fault 0, voluntary context switches 0 - involuntary 96
+g_slice_alloc alloc size 32, expected RSS 3200 MiB
+******  CPU user time 2.02 s, sys time 0.77 s
+******  Mem RSS 4456.88 MB, soft page fault 1141049 - hard page fault 0, voluntary context switches 0 - involuntary 116
+g_slice_alloc alloc size 64, expected RSS 6400 MiB
+******  CPU user time 2.34 s, sys time 1.32 s
+******  Mem RSS 7626.48 MB, soft page fault 1952437 - hard page fault 0, voluntary context switches 0 - involuntary 5
+g_slice_alloc alloc size 128, expected RSS 12800 MiB
+******  CPU user time 3.14 s, sys time 2.40 s
+******  Mem RSS 14453.16 MB, soft page fault 3700068 - hard page fault 0, voluntary context switches 0 - involuntary 240
+g_slice_alloc alloc size 256, expected RSS 25600 MiB
+******  CPU user time 4.09 s, sys time 5.04 s
+******  Mem RSS 28106.50 MB, soft page fault 7195330 - hard page fault 0, voluntary context switches 0 - involuntary 363
+
+
+############## default malloc
+malloc alloc size 4, expected RSS 400 MiB
+******  CPU user time 2.08 s, sys time 0.77 s
+******  Mem RSS 3999.57 MB, soft page fault 1024005 - hard page fault 0, voluntary context switches 0 - involuntary 4
+malloc alloc size 8, expected RSS 800 MiB
+******  CPU user time 2.12 s, sys time 0.73 s
+******  Mem RSS 3999.56 MB, soft page fault 1024005 - hard page fault 0, voluntary context switches 0 - involuntary 115
+malloc alloc size 16, expected RSS 1600 MiB
+******  CPU user time 2.21 s, sys time 0.68 s
+******  Mem RSS 3999.57 MB, soft page fault 1024006 - hard page fault 0, voluntary context switches 0 - involuntary 3
+malloc alloc size 32, expected RSS 3200 MiB
+******  CPU user time 2.36 s, sys time 0.94 s
+******  Mem RSS 5599.61 MB, soft page fault 1433604 - hard page fault 0, voluntary context switches 0 - involuntary 162
+malloc alloc size 64, expected RSS 6400 MiB
+******  CPU user time 2.54 s, sys time 1.57 s
+******  Mem RSS 8799.54 MB, soft page fault 2252804 - hard page fault 0, voluntary context switches 0 - involuntary 5
+malloc alloc size 128, expected RSS 12800 MiB
+******  CPU user time 3.92 s, sys time 2.85 s
+******  Mem RSS 15199.71 MB, soft page fault 3891205 - hard page fault 0, voluntary context switches 0 - involuntary 314
+malloc alloc size 256, expected RSS 25600 MiB
+******  CPU user time 6.37 s, sys time 5.40 s
+******  Mem RSS 27999.70 MB, soft page fault 7168004 - hard page fault 0, voluntary context switches 1 - involuntary 14
+
+################ tcmalloc
+malloc alloc size 4, expected RSS 400 MiB
+******  CPU user time 1.56 s, sys time 0.31 s
+******  Mem RSS 1605.62 MB, soft page fault 410855 - hard page fault 0, voluntary context switches 0 - involuntary 91
+malloc alloc size 8, expected RSS 800 MiB
+******  CPU user time 1.61 s, sys time 0.23 s
+******  Mem RSS 1605.62 MB, soft page fault 410855 - hard page fault 0, voluntary context switches 0 - involuntary 3
+malloc alloc size 16, expected RSS 1600 MiB
+******  CPU user time 1.61 s, sys time 0.46 s
+******  Mem RSS 2412.47 MB, soft page fault 617420 - hard page fault 0, voluntary context switches 0 - involuntary 99
+malloc alloc size 32, expected RSS 3200 MiB
+******  CPU user time 1.83 s, sys time 0.70 s
+******  Mem RSS 4022.28 MB, soft page fault 1029523 - hard page fault 0, voluntary context switches 0 - involuntary 107
+malloc alloc size 64, expected RSS 6400 MiB
+******  CPU user time 2.24 s, sys time 1.25 s
+******  Mem RSS 7245.79 MB, soft page fault 1854755 - hard page fault 0, voluntary context switches 0 - involuntary 189
+malloc alloc size 128, expected RSS 12800 MiB
+******  CPU user time 3.18 s, sys time 2.27 s
+******  Mem RSS 13690.93 MB, soft page fault 3504706 - hard page fault 0, voluntary context switches 0 - involuntary 214
+malloc alloc size 256, expected RSS 25600 MiB
+******  CPU user time 4.68 s, sys time 4.52 s
+******  Mem RSS 26583.32 MB, soft page fault 6805120 - hard page fault 0, voluntary context switches 0 - involuntary 378
+
+################ jemalloc
+malloc alloc size 4, expected RSS 400 MiB
+******  CPU user time 2.19 s, sys time 0.24 s
+******  Mem RSS 1627.56 MB, soft page fault 422807 - hard page fault 0, voluntary context switches 0 - involuntary 123
+malloc alloc size 8, expected RSS 800 MiB
+******  CPU user time 2.08 s, sys time 0.34 s
+******  Mem RSS 1627.58 MB, soft page fault 422806 - hard page fault 0, voluntary context switches 0 - involuntary 3
+malloc alloc size 16, expected RSS 1600 MiB
+******  CPU user time 2.41 s, sys time 0.37 s
+******  Mem RSS 2454.10 MB, soft page fault 640808 - hard page fault 0, voluntary context switches 0 - involuntary 132
+malloc alloc size 32, expected RSS 3200 MiB
+******  CPU user time 2.61 s, sys time 0.82 s
+******  Mem RSS 4107.21 MB, soft page fault 1076808 - hard page fault 0, voluntary context switches 0 - involuntary 6
+malloc alloc size 64, expected RSS 6400 MiB
+******  CPU user time 3.32 s, sys time 1.49 s
+******  Mem RSS 7413.42 MB, soft page fault 1948810 - hard page fault 0, voluntary context switches 0 - involuntary 246
+malloc alloc size 128, expected RSS 12800 MiB
+******  CPU user time 4.88 s, sys time 2.64 s
+******  Mem RSS 14026.05 MB, soft page fault 3692819 - hard page fault 0, voluntary context switches 0 - involuntary 10
+malloc alloc size 256, expected RSS 25600 MiB
+******  CPU user time 8.08 s, sys time 5.06 s
+******  Mem RSS 27250.97 MB, soft page fault 7180834 - hard page fault 0, voluntary context switches 0 - involuntary 554
+
+
+################ hoard
+
+
+
+
+####################### workload: Single size allocation #########################
+
