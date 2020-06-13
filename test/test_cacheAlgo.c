@@ -122,7 +122,7 @@ void test_LRU_K(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_bytes %lld miss_bytes %lld\n",
@@ -143,7 +143,7 @@ void test_ARC(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_bytes %lld miss_bytes %lld\n",
@@ -165,7 +165,7 @@ void test_SLRU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("cache size %lld req %lld miss %lld req_bytes %lld miss_bytes %lld\n",
@@ -192,7 +192,7 @@ void test_slabLRC(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   cache_t *cache = create_test_cache("slabLRC", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("%s cache size %lld req %lld miss %lld req_bytes %lld miss_bytes %lld\n", __func__,
@@ -216,7 +216,7 @@ void test_slabLRU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   cache_t *cache = create_test_cache("slabLRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 4);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("%s cache size %lld req %lld miss %lld req_bytes %lld miss_bytes %lld\n", __func__,
@@ -242,7 +242,7 @@ void test_slabObjLRU(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   cache_t *cache = create_test_cache("slabObjLRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 1);
+  profiler_res_t *res = get_miss_ratio_curve_with_step_size(reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   for (int i=0; i<CACHE_SIZE/STEP_SIZE; i++){
     printf("%s cache size %lld req %lld miss %lld req_bytes %lld miss_bytes %lld\n", __func__,
@@ -264,12 +264,13 @@ int main(int argc, char *argv[]) {
   reader_t *reader;
 
   reader = setup_csv_reader_obj_num();
-  g_test_add_data_func("/libmimircache/test_cacheAlgo_FIFO", reader, test_FIFO);
+//  reader = setup_vscsi_reader();
+//  g_test_add_data_func("/libmimircache/test_cacheAlgo_FIFO", reader, test_FIFO);
 //  g_test_add_data_func("/libmimircache/test_cacheAlgo_MRU", reader, test_MRU);
 //  g_test_add_data_func("/libmimircache/test_cacheAlgo_Random", reader, test_Random);
 //  g_test_add_data_func("/libmimircache/test_cacheAlgo_SlabLRC", reader, test_slabLRC);
 //  g_test_add_data_func("/libmimircache/test_cacheAlgo_SlabLRU", reader, test_slabLRU);
-//  g_test_add_data_func("/libmimircache/test_cacheAlgo_SlabObjLRU", reader, test_slabObjLRU);
+  g_test_add_data_func("/libmimircache/test_cacheAlgo_SlabObjLRU", reader, test_slabObjLRU);
 
 
   g_test_add_data_func_full("/libmimircache/empty", reader, empty_test, test_teardown);

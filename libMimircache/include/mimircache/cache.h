@@ -40,19 +40,25 @@ typedef struct {
   int hash_power;
 } common_cache_params_t;
 
-typedef cache_t* (*cache_init_func_ptr)(common_cache_params_t, void *);
-typedef void (*cache_free_func_ptr)(cache_t*);
-typedef cache_check_result_t (*cache_get_func_ptr)(cache_t*, request_t *);
-typedef cache_check_result_t (*cache_check_func_ptr)(cache_t*, request_t *, bool);
-typedef void (*_cache_insert_func_ptr)(cache_t*, request_t *);
-typedef void (*_cache_evict_func_ptr)(cache_t*, request_t *, cache_obj_t *);
-typedef void (*cache_remove_obj_func_ptr)(cache_t*, void *);
+typedef cache_t *(*cache_init_func_ptr)(common_cache_params_t, void *);
+
+typedef void (*cache_free_func_ptr)(cache_t *);
+
+typedef cache_check_result_t (*cache_get_func_ptr)(cache_t *, request_t *);
+
+typedef cache_check_result_t (*cache_check_func_ptr)(cache_t *, request_t *, bool);
+
+typedef void (*_cache_insert_func_ptr)(cache_t *, request_t *);
+
+typedef void (*_cache_evict_func_ptr)(cache_t *, request_t *, cache_obj_t *);
+
+typedef void (*cache_remove_obj_func_ptr)(cache_t *, void *);
 
 
 struct cache_core {
   hashtable_t *hashtable_new;
-  cache_obj_t* list_head;     // for LRU and FIFO
-  cache_obj_t* list_tail;     // for LRU and FIFO
+  cache_obj_t *list_head;     // for LRU and FIFO
+  cache_obj_t *list_tail;     // for LRU and FIFO
 
   cache_get_func_ptr get;
   cache_check_func_ptr check;
@@ -87,7 +93,8 @@ struct cache {
 };
 
 
-static inline void *_get_func_handle(char *func_name, const char *const cache_name, bool must_have, bool internal_func) {
+static inline void *
+_get_func_handle(char *func_name, const char *const cache_name, bool must_have, bool internal_func) {
   static void *handle = NULL;
   if (handle == NULL)
     handle = dlopen(NULL, RTLD_GLOBAL);
@@ -100,7 +107,7 @@ static inline void *_get_func_handle(char *func_name, const char *const cache_na
 
   void *func_ptr = dlsym(handle, full_func_name);
 
-  if (must_have && func_ptr == NULL){
+  if (must_have && func_ptr == NULL) {
     ERROR("unable to find %s error %s\n", full_func_name, dlerror());
     abort();
   }
@@ -132,13 +139,13 @@ static inline cache_t *cache_struct_init(const char *const cache_name, common_ca
   return cache;
 }
 
-static inline void cache_struct_free(cache_t *cache){
+static inline void cache_struct_free(cache_t *cache) {
   free_hashtable(cache->core.hashtable_new);
   my_free(sizeof(cache_t), cache);
 }
 
 
-static inline cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size){
+static inline cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size) {
   common_cache_params_t cc_params = {.cache_size=new_size, .default_ttl=old_cache->core.default_ttl};
   cache_t *cache = old_cache->core.cache_init(cc_params, old_cache->core.cache_specific_init_params);
   return cache;
@@ -160,7 +167,8 @@ static inline cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new
 //  return cache_hit_e;
 //}
 
-static inline cache_check_result_t cache_check(cache_t *cache, request_t *req, bool update_cache, cache_obj_t **cache_obj_ret) {
+static inline cache_check_result_t
+cache_check(cache_t *cache, request_t *req, bool update_cache, cache_obj_t **cache_obj_ret) {
   cache_obj_t *cache_obj = hashtable_find(cache->core.hashtable_new, req);
   if (cache_obj_ret != NULL) *cache_obj_ret = cache_obj;
   if (cache_obj == NULL) {
@@ -173,7 +181,7 @@ static inline cache_check_result_t cache_check(cache_t *cache, request_t *req, b
     if (cache_obj->exp_time < req->real_time) {
       ret = expired_e;
       if (likely(update_cache))
-        cache_obj->exp_time = req->real_time + (req->ttl != 0?req->ttl:cache->core.default_ttl);
+        cache_obj->exp_time = req->real_time + (req->ttl != 0 ? req->ttl : cache->core.default_ttl);
     }
   }
 #endif
@@ -207,7 +215,12 @@ static inline cache_check_result_t cache_get(cache_t *cache, request_t *req) {
 }
 
 /** update LRU list, used by all cache replacement algorithms that need to use LRU list **/
-static inline cache_obj_t *cache_insert_LRU(cache_t* cache, request_t* req){
+static inline cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
+#ifdef SUPPORT_TTL
+  if (cache->core.default_ttl != 0 && req->ttl == 0) {
+    req->ttl = cache->core.default_ttl;
+  }
+#endif
   cache->core.used_size += req->obj_size;
   cache_obj_t *cache_obj = hashtable_insert(cache->core.hashtable_new, req);
   if (unlikely(cache->core.list_head == NULL)) {

@@ -25,19 +25,6 @@ static inline cache_obj_t* prev_obj_in_slist(cache_obj_t* head, cache_obj_t *cac
   return head;
 }
 
-//static inline bool remove_obj_from_slist(cache_obj_t** head, cache_obj_t* cache_obj){
-//  if (cache_obj == *head){
-//    *head = cache_obj->list_next;
-//    return true;
-//  }
-//
-//  cache_obj_t* prev_obj = prev_obj_in_slist(*head, cache_obj);
-//  if (prev_obj == NULL)
-//    return false;
-//  prev_obj->list_next = cache_obj->list_next;
-//  return true;
-//}
-
 static inline void remove_obj_from_list(cache_obj_t** head, cache_obj_t **tail, cache_obj_t* cache_obj){
 //  if (){}
   if (cache_obj == *head){
@@ -117,14 +104,6 @@ static inline cache_obj_t* create_cache_obj_from_request(request_t* req){
   return cache_obj;
 }
 
-//static inline void cache_obj_destroyer(gpointer data) {
-//#if defined(USE_GLIB_SLICE_ALLOCATOR)
-//  g_slice_free(cache_obj_t, data);
-//#else
-//  g_free(data);
-//#endif
-//}
-
 
 static inline void free_cache_obj(cache_obj_t *cache_obj){
   my_free(sizeof(cache_obj_t), cache_obj);
@@ -136,13 +115,7 @@ static inline void free_cache_obj(cache_obj_t *cache_obj){
 
 
 static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
-#ifdef USE_CUSTOME_MEM_ALLOCATOR
-  slab_cache_obj_t *cache_obj = new_cache_obj();
-#elif defined(USE_GLIB_SLICE_ALLOCATOR)
-  slab_cache_obj_t* cache_obj = g_slice_new0(slab_cache_obj_t);
-#else
-  slab_cache_obj_t *cache_obj = g_new0(slab_cache_obj_t, 1);
-#endif
+  slab_cache_obj_t *cache_obj = my_malloc(slab_cache_obj_t);
   cache_obj->obj_size = req->obj_size;
 #ifdef SUPPORT_TTL
   if (req->ttl != 0)
@@ -158,16 +131,9 @@ static inline slab_cache_obj_t* create_slab_cache_obj_from_req(request_t* req){
 }
 
 
-static inline void slab_cache_obj_destroyer(gpointer data){
+static inline void free_slab_cache_obj(gpointer data){
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t*) data;
-
-#ifdef USE_CUSTOME_MEM_ALLOCATOR
-  free_cache_obj(cache_obj);
-#elif defined(USE_GLIB_SLICE_ALLOCATOR)
-  g_slice_free(slab_cache_obj_t, cache_obj);
-#else
-  g_free(data);
-#endif
+  my_free(sizeof(slab_cache_obj_t), cache_obj);
 }
 
 

@@ -103,6 +103,8 @@ int binaryReader_setup(reader_t *const reader) {
       params->real_time_field = (gint) reader->base->item_size +
           size * (init_params->real_time_field - last_count_sum - 1);
       params->real_time_len = *fmt_str == 's' ? count : 1;
+      if (params->real_time_len > 4)
+        WARNING("only support timestamp in uint32_t\n");
       params->real_time_type = *fmt_str;
     }
 

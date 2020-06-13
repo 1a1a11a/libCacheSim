@@ -42,10 +42,11 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     }
     params->already_got_req = TRUE;
   } else if (params->current_field_counter == init_params->real_time_field) {
-    // why this is not a problem because s should not be null terminated
-    // this does not work for mac
+    // this does not work for mac, because s is not null terminated
     //    req->real_time = (guint64) strtof((char *) s, NULL);
-    req->real_time = (guint64) atoll((char *) s);
+    // we only support 32-bit ts
+    assert((uint64_t)atoll((char *) s) < UINT32_MAX);
+    req->real_time = atol((char *) s);
   } else if (params->current_field_counter == init_params->op_field) {
     fprintf(stderr, "currently operation column is not supported\n");
   } else if (params->current_field_counter == init_params->obj_size_field) {
