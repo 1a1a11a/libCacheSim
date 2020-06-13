@@ -22,6 +22,8 @@
 //#define CACHE_SIZE_UNIT (GiB)
 #define CACHE_SIZE (1024 * CACHE_SIZE_UNIT)
 #define STEP_SIZE (128 * CACHE_SIZE_UNIT)
+//#define CACHE_SIZE (1 * CACHE_SIZE_UNIT)
+//#define STEP_SIZE (1 * CACHE_SIZE_UNIT)
 
 
 #define NUM_OF_THREADS 1
@@ -117,12 +119,13 @@ cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params
 //    cache = Optimal_init(cc_params, (void *) init_params);
 //  } else if (strcmp(alg_name, "TTL_FIFO") == 0){
 //    cache = TTL_FIFO_init(cc_params, NULL);
-//  } else if (strcmp(alg_name, "slabLRC") == 0) {
-//    cache = slabLRC_init(cc_params, NULL);
-//  } else if (strcmp(alg_name, "slabLRU") == 0) {
-//    cache = slabLRU_init(cc_params, NULL);
-//  } else if (strcmp(alg_name, "slabObjLRU") == 0) {
-//    cache = slabObjLRU_init(cc_params, NULL);
+//  }
+  else if (strcmp(alg_name, "slabLRC") == 0) {
+    cache = slabLRC_init(cc_params, NULL);
+  } else if (strcmp(alg_name, "slabLRU") == 0) {
+    cache = slabLRU_init(cc_params, NULL);
+  } else if (strcmp(alg_name, "slabObjLRU") == 0) {
+    cache = slabObjLRU_init(cc_params, NULL);
 //
 //  } else if (strcmp(alg_name, "PG") == 0) {
 //    PG_init_params_t *init_params = g_new0(PG_init_params_t, 1);
@@ -159,8 +162,7 @@ cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params
 //    init_params->cycle_time = 2;
 //    init_params->rec_trigger = each_req;
 //    cache = Mithril_init(cc_params, init_params);
-//  }
-  else {
+  } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);
   }

@@ -24,10 +24,10 @@ extern "C"
 //#include "TTL_FIFO.h"
 
 
-//#include "slabLRU.h"
-//#include "slabLRC.h"
-//#include "slabObjLRU.h"
-//#include "slabCommon.h"
+#include "slabLRU.h"
+#include "slabLRC.h"
+#include "slabObjLRU.h"
+#include "slabCommon.h"
 
 
 //#include "AMP.h"
