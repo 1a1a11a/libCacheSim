@@ -27,16 +27,21 @@ typedef void (*free_func)(void *);
 typedef void (*workload_func)(allocator, const char *);
 
 #define N (1024L * 1024 * 100)
+#define ALIGN_SIZE 64
 static int alloc_size = 0;
 static int alloc_type = 0;
 static int workload_idx = 0;
 static void *it[N];
 
 
+
 static inline void g_slice_free2(void *mem) {
   g_slice_free1(alloc_size, mem);
 }
 
+static inline void* aligned_alloc2(size_t size){
+  return aligned_alloc(ALIGN_SIZE, size);
+}
 
 void print_rusage_diff(struct rusage r1, struct rusage r2) {
   printf("******  CPU user time %.2lf s, sys time %.2lf s\n",
@@ -73,7 +78,7 @@ void workload1(allocator alloc, const char *allocator_name) {
 
 void eval_alloc_perf() {
   const char *allocator_names[] = {"malloc", "g_malloc", "g_slice_alloc", "my_malloc"};
-  const allocator allocators[] = {malloc, g_malloc, g_slice_alloc, malloc};
+  const allocator allocators[] = {malloc, g_malloc, g_slice_alloc, aligned_alloc2};
   const free_func free_funcs[] = {free, g_free, g_slice_free2, free};
   const workload_func workloads[] = {workload0, workload1};
 

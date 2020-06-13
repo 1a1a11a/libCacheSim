@@ -28,15 +28,12 @@ typedef enum{
 
 
 #if HASH_TYPE == MURMUR3
-#pragma message "use MURMUR3"
 #define get_hash_value_int_64(key) (MurmurHash3_x64_64(key, sizeof(obj_id_t), HASH_SEED0))
 #elif HASH_TYPE == XXHASH
-#pragma message "XXHASH"
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 #define get_hash_value_int_64(key) (XXH64((void*)(key), sizeof(obj_id_t), HASH_SEED0))
 #elif HASH_TYPE == XXHASH3
-#pragma message "XXHASH3"
 #define XXH_INLINE_ALL
 //#define XXH_CPU_LITTLE_ENDIAN 1
 //#define XXH_FORCE_ALIGN_CHECK 1

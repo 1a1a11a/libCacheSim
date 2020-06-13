@@ -72,11 +72,11 @@ struct cache_core {
 };
 
 typedef struct {
-  uint64_t n_obj;
-  uint64_t used_size;
+  uint64_t stored_obj_cnt;
+  uint64_t used_bytes;
   uint64_t cache_size;
-  uint64_t n_expired_obj;
-  uint64_t n_expired_byte;
+  uint64_t expired_obj_cnt;
+  uint64_t expired_bytes;
   uint64_t cur_time;
 } cache_state_t;
 

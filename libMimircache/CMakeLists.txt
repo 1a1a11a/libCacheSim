@@ -1,38 +1,30 @@
 cmake_minimum_required(VERSION 2.8)
 project(libmimircache C)
-project(libmimircache)
 set(PROJECT_WEB "http://mimircache.info")
 set(libmimircache_VERSION_MAJOR 0)
 set(libmimircache_VERSION_MINOR 1)
 set(libmimircache_VERSION_REVISION 0)
-#set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
 
 # clear an error when using cmake in macOS
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(CMAKE_BUILD_TYPE Debug)
     set(CMAKE_MACOSX_RPATH 1)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
     LINK_DIRECTORIES(/usr/local/lib)
     # a temporary fix for mac
-    SET(CMAKE_C_FLAGS_DEBUG " -L/usr/local/lib -lglib-2.0 -lintl -I/usr/local/Cellar/gettext/0.20.1/include/")
-    SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wno-unused-command-line-argument")
+    SET(CMAKE_C_FLAGS_DEBUG " -Wno-unused-command-line-argument -L/usr/local/lib -lglib-2.0 -lintl -I/usr/local/Cellar/gettext/0.20.1/include/")
+    SET(CMAKE_C_FLAGS_RELEASE "-Wno-unused-command-line-argument -L/usr/local/lib -lglib-2.0 -lintl -I/usr/local/Cellar/gettext/0.20.1/include/")
     SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -I/usr/local/Cellar/python/3.7.5/Frameworks/Python.framework/Versions/3.7/include/python3.7m/")
     SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -I/Users/jason/Library/Python/3.7/lib/python/site-packages/numpy/core/include/")
-
-    SET(CMAKE_C_FLAGS_RELEASE " -L/usr/local/lib -lglib-2.0 -lintl -Wno-unused-command-line-argument -I/usr/local/Cellar/gettext/0.20.1/include/")
 endif ()
 
 
 #set(CMAKE_C_COMPILER "gcc-10")
+#set(CMAKE_C_COMPILER "clang")
 
 SET(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=6")
 SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=7")
-
-#SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb -Wno-unused -DLOGGING_DEBUG")
-#SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall -DLOGGING_INFO")
-#message(STATUS "FLAG" ${CMAKE_C_FLAGS_DEBUG})
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
@@ -46,11 +38,14 @@ endif()
 
 
 find_package(Tcmalloc REQUIRED)
-include_directories(${Tcmalloc_INCLUDE_DIR})
-set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
 message(STATUS "Tcmalloc found? " ${Tcmalloc_FOUND} " LIBS = " ${Tcmalloc_LIBRARIES} ", header = " ${Tcmalloc_INCLUDE_DIRS})
 if(NOT Tcmalloc_FOUND)
     message("-- #### WARNING ####: tcmalloc not found, use default malloc")
+else()
+    include_directories(${Tcmalloc_INCLUDE_DIR})
+    set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
+    set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 endif()
 
 #find_package(xxHash)
@@ -65,7 +60,7 @@ endif()
 #    add_compile_definitions(HASH_TYPE=0xb21)
 #endif()
 
-
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "CMAKE_C_COMPILER = " ${CMAKE_C_COMPILER})
 
@@ -88,9 +83,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
 
-file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
-#message(STATUS "all sources " ${ALL_SRC_FILES})
-
 add_library(${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${libmimircache_VERSION_MAJOR}.${libmimircache_VERSION_MINOR}.${libmimircache_VERSION_REVISION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
@@ -100,14 +92,12 @@ install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ DESTINATION include)
 
 
+file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 # file(GLOB py_SRC_FILES ${PROJECT_SOURCE_DIR}/../../pyBindings/*.c)
 # add_library(Py${PROJECT_NAME} SHARED ${ALL_SRC_FILES} ${py_SRC_FILES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 # set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${mimircache_VERSION_MAJOR}.${mimircache_VERSION_MINOR}.${mimircache_VERSION_REVISION})
 # set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 # target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
-#add_executable(libcuckooExample dataStructure/libcuckoo0/c_hash.c)
-#target_link_libraries(libcuckooExample libcuckoo -lpthread -ldl)
 
 
 #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
@@ -152,6 +142,40 @@ add_test(NAME testCacheAlgo COMMAND testCacheAlgo WORKING_DIRECTORY .)
 # enable transparent hugepage (30% improvement 5.05s to 3.65s)
 #echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 #echo always | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
+
+# add pg profiler support in compilation
+# cmake -DCMAKE_CXX_FLAGS=-pg -DCMAKE_EXE_LINKER_FLAGS=-pg -DCMAKE_SHARED_LINKER_FLAGS=-pg ..
+
+# add heap profiler
+    # LD_PRELOAD=/home/jason/software/source/gperftools-2.7/.libs/libtcmalloc.so HEAPPROFILE=heap ./binBenchmark LRU
+    # pprof --pdf ./binBenchmark heap.0001.heap > a.pdf
+
+# profiling
+    # perf event counter intel   https://download.01.org/perfmon/index/
+    #
+    # perf stat -e dTLB-loads,dTLB-load-misses,dTLB-stores,dTLB-store-misses -a -I 1000
+    #   https://alexandrnikitin.github.io/blog/transparent-hugepages-measuring-the-performance-impact/
+    #
+    # perf stat -e task-clock,cycles,instructions,cache-references,cache-misses
+
+# performance results
+# memory align 60s -> 10.8s
+# change to tcmalloc 10.8s -> 10.6s
+# hashtable re-impl 10s->6s 1966 MB->1400MB
+# huge page 6s->3.6s
+# various other such as likely() and unlikely()
+
+
+
+#########
+# two mistakes I have made in benchmarking the lib,
+# 1. this is actually not a mistake in benchmark, rather than a mistake in design, I used pointer to store integer obj_id,
+# which has severe performance issue when the obj_id % MEM_ALIGN != 0, although the memory location is not used.
+# 2. to correct this error, I start obj_id with MEM_ALIGN and add MEM_ALIGN in each step, then the performance is amazing,
+# then when I compare this with trace replay, the trace replay is much worse, after investigation, I realize, since I add
+# MEM_ALIGN each time, CPU is able to prefetch, which boosts the performance by more than 2-4x.
+
+
 
 
 

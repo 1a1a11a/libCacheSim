@@ -59,7 +59,13 @@ static inline void remove_obj_from_list(cache_obj_t** head, cache_obj_t **tail, 
 }
 
 static inline void move_obj_to_tail(cache_obj_t** head, cache_obj_t **tail, cache_obj_t* cache_obj){
-//  if (){}
+  if (*head == *tail){
+    // the list only has one element
+    assert(cache_obj == *head);
+    assert(cache_obj->list_next == NULL);
+    assert(cache_obj->list_prev == NULL);
+    return;
+  }
   if (cache_obj == *head){
     // change head
     *head = cache_obj->list_next;

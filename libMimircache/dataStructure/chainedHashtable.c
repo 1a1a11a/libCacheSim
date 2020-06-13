@@ -21,9 +21,6 @@ extern "C"
 #include "../include/mimircache/logging.h"
 #include "../include/mimircache/cacheObj.h"
 #include "../utils/include/mathUtils.h"
-#ifdef USE_HUGEPAGE
-#include <sys/mman.h>
-#endif
 
 
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)

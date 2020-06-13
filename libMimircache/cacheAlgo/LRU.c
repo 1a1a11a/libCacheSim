@@ -78,15 +78,10 @@ void _LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache->core.list_head->list_prev = NULL;
   DEBUG_ASSERT(cache->core.used_size >= obj_to_evict->obj_size);
   cache->core.used_size -= obj_to_evict->obj_size;
-//  if (cache->core.req_cnt == 8827)
-//    printf("here");
   hashtable_delete(cache->core.hashtable_new, obj_to_evict);
 //  DEBUG_ASSERT(cache->core.list_head != cache->core.list_head->list_next);
   /** obj_to_evict is not freed or returned to hashtable, if you have extra_metadata allocated with obj_to_evict,
    * you need to free them now, otherwise, there will be memory leakage **/
-//  check_chained_hashtable_integrity2(cache->core.hashtable_new, cache->core.list_head);
-//  printf("%ld check passed2, req size %ld, cache size used bytes %ld\n", cache->core.req_cnt, req->obj_size,
-//         cache->core.used_size);
 }
 
 

@@ -82,14 +82,14 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
     result[idx].cache_state.cache_size = local_cache->core.cache_size;
     get_cache_state(local_cache, &result[idx].cache_state);
 //    printf("%lld %lld %lld %lld\n", (long long) local_cache->core.cache_size, (long long) local_cache->core.used_size,
-//        (long long) result[idx].cache_state.used_size, (long long) result[idx].cache_state.n_obj);
-    assert(result[idx].cache_state.used_size == local_cache->core.used_size);
+//        (long long) result[idx].cache_state.used_size, (long long) result[idx].cache_state.n_stored_obj);
+    assert(result[idx].cache_state.used_bytes == local_cache->core.used_size);
   }
 
-  result[idx].miss_byte = miss_byte;
+  result[idx].miss_bytes = miss_byte;
   result[idx].miss_cnt = miss_cnt;
   result[idx].req_cnt = req_cnt;
-  result[idx].req_byte = req_byte;
+  result[idx].req_bytes = req_byte;
 
   // report progress
   g_mutex_lock(&(params->mtx));

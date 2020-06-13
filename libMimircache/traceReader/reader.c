@@ -6,7 +6,7 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-//#define _GNU_SOURCE
+
 #include "libcsv.h"
 #include "include/csvReader.h"
 #include "include/binaryReader.h"

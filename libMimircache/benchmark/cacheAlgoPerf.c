@@ -30,7 +30,7 @@ gint64 measure_qps_write(cache_t *cache) {
   guint64 n_obj = 0;
   while (time_since(t0) < MAX_RUNTIME && n_obj < cache->core.cache_size/OBJ_SIZE ) {
     for (int i = 0; i < 20 * 1000; i++) {
-      if (cache->core.get(cache, req))
+      if (cache->core.get(cache, req) == cache_hit_e)
         n_hit += 1;
       n_req += 1;
       req->obj_id_int += MEM_ALIGN_STRIPE;
@@ -45,8 +45,8 @@ gint64 measure_qps_write(cache_t *cache) {
 
 
 
-  printf("write %s %llu req, %llu hit in %.2lf sec (%.2lf KQPS)\n", cache->core.cache_name, (unsigned long long) n_req,
-         (unsigned long long) n_hit, elapsed_time, (double) n_req / elapsed_time / 1000);
+  printf("write %s %llu req/%llu obj, %llu hit in %.2lf sec (%.2lf KQPS)\n", cache->core.cache_name, (unsigned long long) n_req,
+         (unsigned long long) n_obj, (unsigned long long) n_hit, elapsed_time, (double) n_req / elapsed_time / 1000);
   printf("**********************************************************\n\n");
   return (double) n_req / elapsed_time;
 }
@@ -74,10 +74,11 @@ gint64 measure_qps_read(cache_t *cache) {
 
   gettimeofday(&t0, 0);
   while (time_since(t0) < MAX_RUNTIME) {
-    gint64 start = next_rand()%(cache->core.cache_size/OBJ_SIZE - 2*1000) * MEM_ALIGN_STRIPE;
+    uint64_t start = next_rand()%(cache->core.cache_size/OBJ_SIZE - 2*1000) * MEM_ALIGN_STRIPE;
+//    uint64_t start = MEM_ALIGN_STRIPE;
     req->obj_id_int = start;
     for (int i = 0; i < 2 * 1000; i++) {
-      if (cache->core.get(cache, req))
+      if (cache->core.get(cache, req) == cache_hit_e)
         n_hit += 1;
       n_req += 1;
       req->obj_id_int += MEM_ALIGN_STRIPE;
@@ -111,7 +112,7 @@ gint64 measure_qps_withtrace(cache_t* cache, reader_t* reader){
   gettimeofday(&t0, 0);
   read_one_req(reader, req);
   while (req->valid) {
-      if (cache->core.get(cache, req))
+      if (cache->core.get(cache, req) == cache_hit_e)
         n_hit += 1;
       n_req += 1;
     read_one_req(reader, req);

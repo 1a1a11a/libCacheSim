@@ -34,22 +34,22 @@ static inline int twr_read(reader_t *reader, request_t *req) {
   }
 
   char *record = (reader->base->mapped_file + reader->base->mmap_offset);
-  req->real_time = *(guint32 *) record;
+  req->real_time = *(uint32_t *) record;
   record += 4;
   // for memory alignment, increase speed by 10x
 //  req->obj_id_ptr = (gpointer) ((*(guint64 *) record)*G_MEM_ALIGN);
-  req->obj_id_int = *(guint64 *) record;
+  req->obj_id_int = *(uint64_t *) record;
 //  req->obj_id_ptr = (gpointer) (rand() % 1000000L);
   record += 8;
-  guint32 kv_size = *(guint32 *) record;
+  uint32_t kv_size = *(uint32_t *) record;
   record += 4;
-  guint32 op_ttl = *(guint32 *) record;
+  uint32_t op_ttl = *(uint32_t *) record;
 
-  guint32 key_size = (kv_size >> 22) & (0x00000400 - 1);
-  guint32 val_size = kv_size & (0x00400000 - 1);
+  uint32_t key_size = (kv_size >> 22) & (0x00000400 - 1);
+  uint32_t val_size = kv_size & (0x00400000 - 1);
 
-  guint32 op = (op_ttl >> 24) & (0x00000100 - 1);
-  guint32 ttl = op_ttl & (0x01000000 - 1);
+  uint32_t op = (op_ttl >> 24) & (0x00000100 - 1);
+  uint32_t ttl = op_ttl & (0x01000000 - 1);
 
   req->obj_size = key_size + val_size;
   req->op = op;

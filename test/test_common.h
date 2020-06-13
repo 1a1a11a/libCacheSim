@@ -159,7 +159,7 @@ cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params
 //    cache = Mithril_init(cc_params, init_params);
 //  }
   else {
-    printf("cannot recognize algorithm\n");
+    printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);
   }
   return cache;
