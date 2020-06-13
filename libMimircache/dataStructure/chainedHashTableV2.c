@@ -115,8 +115,10 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable, cache_obj_t *cache_obj)
 
 
 cache_obj_t *chained_hashtable_rand_obj_v2(hashtable_t *hashtable) {
-  uint64_t pos = next_rand() % hashsize(hashtable->hash_power);
-  return hashtable->ptr_table[pos];
+  uint64_t pos = next_rand() & hashmask(hashtable->hash_power);
+  while (&hashtable->table[pos] == NULL)
+    pos = next_rand() & hashmask(hashtable->hash_power);
+  return &hashtable->table[pos];
 }
 
 void chained_hashtable_foreach_v2(hashtable_t *hashtable, hashtable_iter iter_func, void *user_data) {

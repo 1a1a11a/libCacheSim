@@ -91,6 +91,8 @@ cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params
     cache = LRUv0_init(cc_params, NULL);
   else if (strcmp(alg_name, "Random") == 0)
     cache = Random_init(cc_params, NULL);
+  else if (strcmp(alg_name, "MRU") == 0)
+    cache = MRU_init(cc_params, NULL);
 //  else if (strcmp(alg_name, "LRU_K") == 0)
 //    cache = LRU_K_init(cc_params, NULL);
 //  else if (strcmp(alg_name, "LFU") == 0)

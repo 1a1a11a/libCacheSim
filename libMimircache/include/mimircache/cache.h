@@ -36,8 +36,8 @@ typedef struct cache cache_t;
 
 typedef struct {
   gint64 cache_size;
-//  obj_id_type_t obj_id_type;
   gint64 default_ttl;
+  int hash_power;
 } common_cache_params_t;
 
 typedef cache_t* (*cache_init_func_ptr)(common_cache_params_t, void *);
@@ -114,7 +114,10 @@ static inline cache_t *cache_struct_init(const char *const cache_name, common_ca
   cache->core.cache_size = params.cache_size;
   cache->core.cache_specific_init_params = NULL;
   cache->core.default_ttl = params.default_ttl;
-  cache->core.hashtable_new = create_hashtable(HASH_POWER_DEFAULT);
+  int hash_power = HASH_POWER_DEFAULT;
+  if (params.hash_power > 0 && params.hash_power < 40)
+    hash_power = params.hash_power;
+  cache->core.hashtable_new = create_hashtable(hash_power);
   hashtable_add_ptr_to_monitoring(cache->core.hashtable_new, &cache->core.list_head);
   hashtable_add_ptr_to_monitoring(cache->core.hashtable_new, &cache->core.list_tail);
 
@@ -201,6 +204,22 @@ static inline cache_check_result_t cache_get(cache_t *cache, request_t *req) {
   }
   cache->core.req_cnt += 1;
   return cache_check;
+}
+
+/** update LRU list, used by all cache replacement algorithms that need to use LRU list **/
+static inline cache_obj_t *cache_insert_LRU(cache_t* cache, request_t* req){
+  cache->core.used_size += req->obj_size;
+  cache_obj_t *cache_obj = hashtable_insert(cache->core.hashtable_new, req);
+  if (unlikely(cache->core.list_head == NULL)) {
+    // an empty list, this is the first insert
+    cache->core.list_head = cache_obj;
+    cache->core.list_tail = cache_obj;
+  } else {
+    cache->core.list_tail->list_next = cache_obj;
+    cache_obj->list_prev = cache->core.list_tail;
+  }
+  cache->core.list_tail = cache_obj;
+  return cache_obj;
 }
 
 

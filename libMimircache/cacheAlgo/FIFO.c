@@ -39,16 +39,7 @@ cache_check_result_t FIFO_get(cache_t *cache, request_t *req) {
 }
 
 void _FIFO_insert(cache_t *cache, request_t *req) {
-  cache->core.used_size += req->obj_size;
-  cache_obj_t *cache_obj = hashtable_insert(cache->core.hashtable_new, req);
-  if (unlikely(cache->core.list_head == NULL)) {
-    // an empty list, this is the first insert
-    cache->core.list_head = cache_obj;
-  } else {
-    cache->core.list_tail->list_next = cache_obj;
-    cache_obj->list_prev = cache->core.list_tail;
-  }
-  cache->core.list_tail = cache_obj;
+  cache_insert_LRU(cache, req);
 }
 
 void _FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
@@ -64,12 +55,9 @@ void _FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   DEBUG_ASSERT(cache->core.used_size >= obj_to_evict->obj_size);
   cache->core.used_size -= obj_to_evict->obj_size;
   hashtable_delete(cache->core.hashtable_new, obj_to_evict);
-//  DEBUG_ASSERT(cache->core.list_head != cache->core.list_head->list_next);
+  DEBUG_ASSERT(cache->core.list_head != cache->core.list_head->list_next);
   /** obj_to_evict is not freed or returned to hashtable, if you have extra_metadata allocated with obj_to_evict,
    * you need to free them now, otherwise, there will be memory leakage **/
-//  check_chained_hashtable_integrity2(cache->core.hashtable_new, cache->core.list_head);
-//  printf("%ld check passed2, req size %ld, cache size used bytes %ld\n", cache->core.req_cnt, req->obj_size,
-//         cache->core.used_size);
 }
 
 

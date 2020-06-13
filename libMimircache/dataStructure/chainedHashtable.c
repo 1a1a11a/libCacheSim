@@ -189,7 +189,10 @@ void chained_hashtable_delete(hashtable_t *hashtable, cache_obj_t *cache_obj) {
 
 
 cache_obj_t *chained_hashtable_rand_obj(hashtable_t *hashtable) {
-  uint64_t pos = next_rand() % hashsize(hashtable->hash_power);
+  uint64_t pos = next_rand() & hashmask(hashtable->hash_power);
+  while (OBJ_EMPTY(&hashtable->table[pos])){
+    pos = (pos + 1) & hashmask(hashtable->hash_power);
+  }
   return &hashtable->table[pos];
 }
 

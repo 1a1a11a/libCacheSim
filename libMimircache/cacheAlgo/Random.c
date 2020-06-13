@@ -19,6 +19,9 @@ extern "C" {
 
 
 cache_t *Random_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+  if (ccache_params.hash_power == HASH_POWER_DEFAULT){
+    INFO("Please set hash_power parameter for Random to operate efficiently\n");
+  }
   cache_t *cache = cache_struct_init("Random", ccache_params);
   srand((unsigned) time(NULL));
   set_rand_seed(time(NULL));
@@ -27,7 +30,6 @@ cache_t *Random_init(common_cache_params_t ccache_params, void *cache_specific_i
 
 
 void Random_free(cache_t *cache) {
-//  g_free(cache->cache_params);
   cache_struct_free(cache);
 }
 
@@ -49,9 +51,13 @@ void _Random_insert(cache_t *cache, request_t *req) {
 
 
 void _Random_evict(cache_t *cache, request_t *req, cache_obj_t* evicted_obj) {
+//  DEBUG("req %d %ld/%ld\n", cache->core.req_cnt, cache->core.used_size, cache->core.cache_size);
   cache_obj_t *obj_to_evict = hashtable_rand_obj(cache->core.hashtable_new);
+  DEBUG_ASSERT(obj_to_evict->obj_size != 0);
   if (evicted_obj != NULL)
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  cache->core.used_size -= obj_to_evict->obj_size;
+  DEBUG_ASSERT(obj_to_evict->obj_size != 0);
   hashtable_delete(cache->core.hashtable_new, obj_to_evict);
 }
 

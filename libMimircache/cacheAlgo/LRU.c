@@ -52,17 +52,7 @@ cache_check_result_t LRU_get(cache_t *cache, request_t *req) {
 }
 
 void _LRU_insert(cache_t *cache, request_t *req) {
-  cache->core.used_size += req->obj_size;
-  cache_obj_t *cache_obj = hashtable_insert(cache->core.hashtable_new, req);
-  if (unlikely(cache->core.list_head == NULL)) {
-    // an empty list, this is the first insert
-    cache->core.list_head = cache_obj;
-    cache->core.list_tail = cache_obj;
-  } else {
-    cache->core.list_tail->list_next = cache_obj;
-    cache_obj->list_prev = cache->core.list_tail;
-  }
-  cache->core.list_tail = cache_obj;
+  cache_insert_LRU(cache, req);
 }
 
 
