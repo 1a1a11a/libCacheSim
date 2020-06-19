@@ -41,7 +41,6 @@ void _check_slab_id_valid_aux(gpointer data, gpointer user_data){
 }
 
 void _check_slab_id_valid(cache_t* cache){
-  printf("req %llu check\n", cache->core.req_cnt);
   slabObjLRU_params_t *slabObjLRU_params = (slabObjLRU_params_t *) (cache->cache_params);
   for (int i=0; i<N_SLABCLASS; i++){
     g_queue_foreach(slabObjLRU_params->slab_params.slabclasses[i].slab_q, _check_slab_id_valid_aux, GINT_TO_POINTER(i));

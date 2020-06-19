@@ -18,11 +18,31 @@ extern "C" {
 #define ARRAY_LENGTH(A) (sizeof(A) / sizeof(A[0]))
 
 
+#ifdef _MSC_VER
+    #define forceinline __forceinline
+#elif defined(__GNUC__)
+    #define forceinline inline __attribute__((__always_inline__))
+#elif defined(__CLANG__)
+    #if __has_attribute(__always_inline__)
+        #define forceinline inline __attribute__((__always_inline__))
+    #else
+        #define forceinline inline
+    #endif
+#else
+    #define forceinline inline
+#endif
+
+
+#ifndef __GNUC__
+#  define  __attribute__(x)  /*NOTHING*/
+#endif
 
 
 #define BIT(x) (1 << (x))
 #define GETNAME(var)  #var
 #define OFFSETOF(type, element) ((size_t)&(((type *)0)->element))
+#define OFFSETOF2(t, d) __builtin_offsetof(t, d)
+
 #define PASTE(a, b) a##b
 
 #define U(x) ((unsigned)(x))
@@ -50,11 +70,18 @@ extern "C" {
 #define ABS(a)     (((a) < 0) ? -(a) : (a))
 
 
-#define MAX2(a, b) ((a)>(b)?(a):(b))
-#define MIN2(a, b) ((a)<(b)?(a):(b))
+#define MAX2(a, b) MAX(a, b)
+#define MIN2(a, b) MIN(a, b)
 
 #define MAX3(a, b, c) ((a)>(b)?((a)>(c)?(a):(c)):((b)>(c)?(b):(c)))
 #define MIN3(a, b, c) ((a)<(b)?((a)<(c)?(a):(c)):((b)<(c)?(b):(c)))
+
+
+#define SWAP(a, b) do {\
+    __typeof__(a) _tmp = (a);\
+    (a) = (b);\
+    (b) = _tmp;\
+} while (0)
 
 
 #define CHECK_CONDITION(a, op, b, FMT, ...)  do { if((a) op (b)) {    \
@@ -64,10 +91,11 @@ extern "C" {
     }} while (0)
 
 
-#define CHECK_NULL(x, FMT, ...)  CHECK_CONDITION(x, ==, NULL, FMT, ##__VA_ARGS__)
-#define ASSERT_EQUAL(a, b, FMT, ...)  CHECK_CONDITION(a, ==, b, FMT, ##__VA_ARGS__)
-#define ASSERT_TRUE(x, FMT, ...) CHECK_CONDITION(a, ==, true, FMT, ##__VA_ARGS__)
-#define ASSERT_ZERO(x, FMT, ...) CHECK_CONDITION(a, ==, 0, FMT, ##__VA_ARGS__)
+#define ASSERT_NON_NULL(x, FMT, ...)  CHECK_CONDITION(x, ==, NULL, FMT, ##__VA_ARGS__) 
+
+#define ASSERT_EQUAL(a, b, FMT, ...)  CHECK_CONDITION(a, !=, b, FMT, ##__VA_ARGS__)
+#define ASSERT_TRUE(x, FMT, ...) CHECK_CONDITION(a, !=, true, FMT, ##__VA_ARGS__)
+#define ASSERT_ZERO(x, FMT, ...) CHECK_CONDITION(a, !=, 0, FMT, ##__VA_ARGS__)
 #define DEBUG_ASSERT(x) do{ if (MIMIR_LOGLEVEL<INFO_LEVEL) assert(x); } while (0)
 
 

@@ -239,7 +239,7 @@ void _chained_hashtable_expand(hashtable_t *hashtable) {
 #ifdef USE_HUGEPAGE
   madvise(hashtable->table, sizeof(cache_obj_t)*hashsize(hashtable->hash_power), MADV_HUGEPAGE);
 #endif
-  CHECK_NULL(hashtable->table, "unable to grow hashtable to size %llu\n", hashsizeULL(hashtable->hash_power));
+  ASSERT_NON_NULL(hashtable->table, "unable to grow hashtable to size %llu\n", hashsizeULL(hashtable->hash_power));
 
   // move from old table into new hash table
   cache_obj_t *cur_obj, *next_obj;

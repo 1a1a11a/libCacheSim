@@ -1,13 +1,23 @@
 cmake_minimum_required(VERSION 2.8)
 project(libmimircache C)
 set(PROJECT_WEB "http://mimircache.info")
-set(libmimircache_VERSION_MAJOR 0)
-set(libmimircache_VERSION_MINOR 1)
-set(libmimircache_VERSION_REVISION 0)
-set(CMAKE_BUILD_TYPE Release)
 
-# clear an error when using cmake in macOS
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+set(${PROJECT_NAME}_VERSION_MAJOR 0)
+set(${PROJECT_NAME}_VERSION_MINOR 1)
+set(${PROJECT_NAME}_VERSION_REVISION 0)
+set(${PROJECT_NAME}_VERSION
+    ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}.${${PROJECT_NAME}_VERSION_REVISION}
+    )
+set(${PROJECT_NAME}_RELEASE_VERSION
+   ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+   )
+
+
+macro(set_platform system_name)
+    if(${system_name} MATCHES "Darwin")
+        set(OS_PLATFORM "OS_DARWIN")
+        add_definitions(-DOS_DARWIN)
+
     set(CMAKE_BUILD_TYPE Debug)
     set(CMAKE_MACOSX_RPATH 1)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
@@ -17,13 +27,56 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_FLAGS_RELEASE "-Wno-unused-command-line-argument -L/usr/local/lib -lglib-2.0 -lintl -I/usr/local/Cellar/gettext/0.20.1/include/")
     SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -I/usr/local/Cellar/python/3.7.5/Frameworks/Python.framework/Versions/3.7/include/python3.7m/")
     SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -I/Users/jason/Library/Python/3.7/lib/python/site-packages/numpy/core/include/")
-endif ()
+
+    elseif(${system_name} MATCHES "Linux")
+        set(OS_PLATFORM "OS_LINUX")
+        add_definitions(-DOS_LINUX)
+    else()
+        set(OS_PLATFORM "OS_UNSUPPORTED")
+	message(FATAL_ERROR "unsupported operating system")
+    endif()
+endmacro(set_platform)
+
+set_platform(${CMAKE_SYSTEM_NAME})
 
 
-#set(CMAKE_C_COMPILER "gcc-10")
-#set(CMAKE_C_COMPILER "clang")
 
-SET(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   $ENV{CFLAGS} -O0 -Wall -g -ggdb -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=6")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+
+option(SUPPORT_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
+
+
+# configure_file(
+#   "${PROJECT_SOURCE_DIR}/include/config.h.in"
+#   "${PROJECT_BINARY_DIR}/include/config.h"
+# )
+
+# set compiler flags
+# string concat is easier in 3.0, but older versions don't have the concat subcommand
+# so we are using list as input until we move to new version
+# add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64)
+
+# if(CMAKE_BUILD_TYPE MATCHES Debug)
+#     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+# else()
+#     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2")
+# endif()
+
+# set(CFLAGS_LIST
+#     "-std=c11 "
+#     "-ggdb3 "
+#     "-Wall -Wshadow -Winline "
+#     "-Wstrict-prototypes -Wmissing-prototypes "
+#     "-Wmissing-declarations -Wredundant-decls "
+#     "-Wunused-function -Wunused-value -Wunused-variable "
+#     "-fno-strict-aliasing ")
+
+
+
+SET(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   $ENV{CFLAGS} -O0 -Wall -g -ggdb3 -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=6")
 SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} $ENV{CFLAGS} -O3 -Wall -Wno-unused -std=gnu99 ${CMAKE_ENABLE_C99} -DMIMIR_LOGLEVEL=7")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -32,21 +85,21 @@ find_package(GLib REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${GLib_LIBRARY})
 message(STATUS "glib found? " ${GLib_FOUND} " LIBS = " ${LIBS} ", header = " ${GLib_INCLUDE_DIRS})
-if(NOT GLib_FOUND)
-    message(FATAL_ERROR "-- #### ERROR ####: Glib library not found")
-endif()
+# if(NOT GLib_FOUND)
+#     message(FATAL_ERROR "-- #### ERROR ####: Glib library not found")
+# endif()
 
 
 find_package(Tcmalloc REQUIRED)
 message(STATUS "Tcmalloc found? " ${Tcmalloc_FOUND} " LIBS = " ${Tcmalloc_LIBRARIES} ", header = " ${Tcmalloc_INCLUDE_DIRS})
-if(NOT Tcmalloc_FOUND)
-    message("-- #### WARNING ####: tcmalloc not found, use default malloc")
-else()
-    include_directories(${Tcmalloc_INCLUDE_DIR})
+# if(NOT Tcmalloc_FOUND)
+#     message("-- #### WARNING ####: tcmalloc not found, use default malloc")
+# else()
+#    include_directories(${Tcmalloc_INCLUDE_DIR})
     set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
     set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
     set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-endif()
+# endif()
 
 #find_package(xxHash)
 #include_directories(${xxHash_INCLUDE_DIR})
@@ -59,6 +112,7 @@ endif()
 ##    add_compile_definitions(HASH_TYPE=0xb10)
 #    add_compile_definitions(HASH_TYPE=0xb21)
 #endif()
+
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR = " ${CMAKE_CURRENT_SOURCE_DIR})
@@ -98,6 +152,50 @@ file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/*/*.c)
 # set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${mimircache_VERSION_MAJOR}.${mimircache_VERSION_MINOR}.${mimircache_VERSION_REVISION})
 # set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 # target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/include)
+
+
+message(STATUS "<<++=====------------------\\/------------------=====++>>")
+message(STATUS "<<++             libmimircache summary               ++>>")
+message(STATUS "<<++=====------------------/\\------------------=====++>>")
+message(STATUS "=============CMake related=============")
+message(STATUS "CMAKE_BUILD_TYPE: " ${CMAKE_BUILD_TYPE})
+message(STATUS "PLATFORM: " ${OS_PLATFORM})
+message(STATUS "CPPFLAGS: " ${CMAKE_CPP_FLAGS})
+message(STATUS "CFLAGS: " ${CMAKE_C_FLAGS})
+message(STATUS "=======================================")
+
+# message(STATUS "=======Status of system features=======")
+# message(STATUS "HAVE_BACKTRACE: " ${HAVE_BACKTRACE})
+# message(STATUS "=======================================")
+
+message(STATUS "======Status of optional features======")
+message(STATUS "HAVE_RUST: " ${HAVE_RUST})
+# message(STATUS "HAVE_ITT_INSTRUMENTATION: " ${HAVE_ITT_INSTRUMENTATION})
+# message(STATUS "HAVE_TEST: " ${HAVE_TEST})
+message(STATUS "=======================================")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
@@ -140,7 +238,7 @@ add_test(NAME testCacheAlgo COMMAND testCacheAlgo WORKING_DIRECTORY .)
 
 
 # enable transparent hugepage (30% improvement 5.05s to 3.65s)
-#echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
+# echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 #echo always | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
 
 # add pg profiler support in compilation
