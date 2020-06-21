@@ -1,6 +1,6 @@
 //
 //  myLRU.cpp
-//  libMimircache
+//  libCacheSim
 //
 //  Created by Juncheng on 11/16/19.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -76,7 +76,7 @@ bool MyLRUCpp::remove(request_t *req) {
 void __myLRU_insert_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   myLRU->insert(req);
-  cache->core.used_size = myLRU->used_size;
+  cache->used_size = myLRU->used_size;
 }
 
 gboolean myLRU_check_element(cache_t *cache, request_t *req) {
@@ -87,13 +87,13 @@ gboolean myLRU_check_element(cache_t *cache, request_t *req) {
 void __myLRU_update_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   myLRU->update(req);
-  cache->core.used_size = myLRU->used_size;
+  cache->used_size = myLRU->used_size;
 }
 
 void __myLRU_evict_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   myLRU->evict(req);
-  cache->core.used_size = myLRU->used_size;
+  cache->used_size = myLRU->used_size;
 }
 
 gpointer __myLRU__evict_with_return(cache_t *cache, request_t *req) {
@@ -104,7 +104,7 @@ gpointer __myLRU__evict_with_return(cache_t *cache, request_t *req) {
   cerr << __func__ << " is not used in most of places, so we can skip the implementation until necessary" << endl;
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   CacheObj *cache_obj = myLRU->evict_with_return(req);
-  cache->core.used_size = myLRU->used_size;
+  cache->used_size = myLRU->used_size;
 
   if (req->obj_id_type == OBJ_ID_NUM) {
     uint64_t *evicted_key = g_new(uint64_t, 1);
@@ -118,7 +118,7 @@ gpointer __myLRU__evict_with_return(cache_t *cache, request_t *req) {
 gboolean myLRU_add_element(cache_t *cache, request_t *req) {
   MyLRUCpp *myLRU = static_cast<MyLRUCpp *>(cache->cache_params);
   gboolean exist = static_cast<gboolean>(myLRU->add(req));
-  cache->core.used_size = myLRU->used_size;
+  cache->used_size = myLRU->used_size;
   return exist;
 }
 

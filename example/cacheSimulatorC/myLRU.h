@@ -1,6 +1,6 @@
 //
 //  myLRU.h
-//  libMimircache
+//  libCacheSim
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -10,8 +10,8 @@
 #define myLRU_h
 
 
-#include "mimircache.h"
-// #include "../../libMimircache/include/mimircache.h"
+#include "libCacheSim.h"
+// #include "../../libCacheSim/include/libCacheSim.h"
 
 
 #ifdef __cplusplus

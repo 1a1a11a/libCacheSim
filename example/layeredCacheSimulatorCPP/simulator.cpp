@@ -3,10 +3,10 @@
 //
 
 #include "simulator.hpp"
-#include "mimircache/profiler.h"
-#include "mimircache/cache.h"
-#include "mimircache/plugin.h"
-#include "mimircache/reader.h"
+#include "libCacheSim/profiler.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/plugin.h"
+#include "libCacheSim/reader.h"
 
 
 using namespace std;
@@ -27,7 +27,7 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size, string trace_
   read_one_req(reader, req);
   while (req->valid) {
     n_req += 1;
-    hit = cache->core.get(cache, req);
+    hit = cache->get(cache, req);
     if (!hit)
       miss_ofs << req->real_time << "," << (uint64_t) req->obj_id_ptr << "," << req->obj_size << std::endl;
     else

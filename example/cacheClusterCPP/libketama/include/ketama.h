@@ -2,7 +2,7 @@
 * Copyright (c) 2017, Emory University, All rights reserved. 
 * Juncheng Yang <jason.yang.china@outlook.com> 
 *
-* Modify for mimircache based on original version 
+* Modify for libCacheSim based on original version
 * also add const modifier for compiler optimizations 
 *
 */

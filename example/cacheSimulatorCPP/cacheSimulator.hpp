@@ -2,18 +2,18 @@
 // Created by Juncheng Yang on 11/15/19.
 //
 
-#ifndef libMimircache_CACHESIMULATOR_HPP
-#define libMimircache_CACHESIMULATOR_HPP
+#ifndef libCacheSim_CACHESIMULATOR_HPP
+#define libCacheSim_CACHESIMULATOR_HPP
 
 
 #include <cstdio>
 #include <cstdlib>
 #include <dlfcn.h>
-//#include "mimircache.h"
-#include "../../libMimircache/include/mimircache.h"
+//#include "libCacheSim.h"
+#include "../../libCacheSim/include/libCacheSim.h"
 
 
 #include <string>
 
 
-#endif //libMimircache_CACHESIMULATOR_H
+#endif //libCacheSim_CACHESIMULATOR_H

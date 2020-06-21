@@ -10,13 +10,13 @@
 
 
 
-#include "../../libMimircache/include/mimircache/heatmap.h"
+#include "../../libCacheSim/include/libCacheSim/experimental/heatmap.h"
 
-#include "../../libMimircache/include/mimircache/reader.h"
-#include "../libMimircache/include/mimircache/csvReader.h"
+#include "../../libCacheSim/include/libCacheSim/reader.h"
+#include "../libCacheSim/include/libCacheSim/csvReader.h"
 
-#include "../libMimircache/cacheAlg/dep/LRU.h"
-#include "../libMimircache/cacheAlg/dep/FIFO.h"
+#include "../libCacheSim/cacheAlg/dep/LRU.h"
+#include "../libCacheSim/cacheAlg/dep/FIFO.h"
 
 #include <glib.h>
 
@@ -105,7 +105,7 @@ void heatmapTest() {
 
 
     cache_destroy(lru);
-    fifo->core.destroy(fifo);
+    fifo->destroy(fifo);
     close_reader(reader);
 }
 

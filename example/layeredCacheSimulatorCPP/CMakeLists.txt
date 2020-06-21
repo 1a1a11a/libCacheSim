@@ -4,7 +4,7 @@ set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-message("****************** this example only works after libmimircache has been installed ******************")
+message("****************** this example only works after libCacheSim has been installed ******************")
 
 
 ####
@@ -40,7 +40,7 @@ message(STATUS ${YAML_CPP_INCLUDE_DIR} ";" ${YAML_CPP_LIBRARIES})
 file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
 message(STATUS "all sources " ${ALL_SRC})
 add_executable(layeredCacheSimulatorCPP ${ALL_SRC})
-target_link_libraries(layeredCacheSimulatorCPP yaml-cpp libmimircache m ${GLib_LIBRARY} pthread dl)
+target_link_libraries(layeredCacheSimulatorCPP yaml-cpp libCacheSim m ${GLib_LIBRARY} pthread dl)
 
 
 ################ this mode compiles the external cache replacement algorithm as shared library ################
@@ -49,5 +49,5 @@ target_link_libraries(layeredCacheSimulatorCPP yaml-cpp libmimircache m ${GLib_L
 #set_target_properties(myLRU PROPERTIES LINKER_LANGUAGE C)
 
 #add_executable(cacheSimulator ${PROJECT_SOURCE_DIR}/cacheSimulator.cpp)
-#target_link_libraries(cacheSimulator mimircache m ${GLib_LIBRARY} -lpthread -ldl)
+#target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY} -lpthread -ldl)
 

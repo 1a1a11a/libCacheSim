@@ -370,14 +370,14 @@ namespace CDNSimulator {
 
   void cacheCluster::get_all_cluster_stored_obj() {
     for (size_t i = 0; i < this->get_num_server(); i++) {
-      GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
+      GHashTable *server_objmap = cache_servers.at(i)->cache->get_objmap(cache_servers.at(i)->cache);
       g_hash_table_foreach(server_objmap, _objmap_aux_cpp, (gpointer) &(this->cluster_objmap));
     }
   }
 
   void cacheCluster::get_all_server_stored_obj() {
     for (size_t i = 0; i < this->get_num_server(); i++) {
-      GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
+      GHashTable *server_objmap = cache_servers.at(i)->cache->get_objmap(cache_servers.at(i)->cache);
       g_hash_table_foreach(server_objmap, _objmap_aux_cpp, (gpointer) &(this->per_server_objmap[i]));
     }
   }
@@ -392,7 +392,7 @@ namespace CDNSimulator {
       uint64_t *n_server_obj, uint64_t *n_server_byte, uint64_t *n_cluster_obj, uint64_t *n_cluster_byte) {
     /* first create a giant map to store all the cached objects in the cluster */
 
-    if (cache_servers.at(0)->cache->core.data_type != OBJ_ID_NUM) {
+    if (cache_servers.at(0)->cache->data_type != OBJ_ID_NUM) {
       ERROR("dataType is not support");
       abort();
     }
@@ -408,9 +408,9 @@ namespace CDNSimulator {
     GHashTable *cluster_objmap = g_hash_table_new_full(g_int64_hash, g_int64_equal, nullptr, nullptr);
 
     for (unsigned int i = 0; i < this->get_num_server(); i++) {
-      GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
+      GHashTable *server_objmap = cache_servers.at(i)->cache->get_objmap(cache_servers.at(i)->cache);
       n_total_stored_obj_servers += g_hash_table_size(server_objmap);
-      total_stored_size_servers += cache_servers.at(i)->cache->core.get_current_size(cache_servers.at(i)->cache);
+      total_stored_size_servers += cache_servers.at(i)->cache->get_current_size(cache_servers.at(i)->cache);
 
       g_hash_table_foreach(server_objmap, _objmap_aux, (gpointer) cluster_objmap);
     }
@@ -451,7 +451,7 @@ namespace CDNSimulator {
   void cacheCluster::find_rep_factor_vs_age(uint64_t max_age, uint16_t *n_req_age, uint16_t *n_rep_age) {
     /* first create a giant map to store all the cached objects in the cluster */
 
-    if (cache_servers.at(0)->cache->core.data_type != OBJ_ID_NUM) {
+    if (cache_servers.at(0)->cache->data_type != OBJ_ID_NUM) {
       ERROR("dataType is not supported");
       abort();
     }
@@ -464,16 +464,16 @@ namespace CDNSimulator {
     rep_factor_data.n_rep_age = n_rep_age;
 
     for (unsigned int i = 0; i < this->get_num_server(); i++) {
-      GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
+      GHashTable *server_objmap = cache_servers.at(i)->cache->get_objmap(cache_servers.at(i)->cache);
       g_hash_table_foreach(server_objmap, _objmap_aux, (gpointer) cluster_objmap);
     }
 
     for (unsigned int i = 0; i < this->get_num_server(); i++) {
-      GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
+      GHashTable *server_objmap = cache_servers.at(i)->cache->get_objmap(cache_servers.at(i)->cache);
 
-      rep_factor_data.current_time = cache_servers.at(i)->cache->core.ts;
-      rep_factor_data.prev_server = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at((i-1)%this->get_num_server())->cache);
-      rep_factor_data.next_server = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at((i+1)%this->get_num_server())->cache);
+      rep_factor_data.current_time = cache_servers.at(i)->cache->ts;
+      rep_factor_data.prev_server = cache_servers.at(i)->cache->get_objmap(cache_servers.at((i-1)%this->get_num_server())->cache);
+      rep_factor_data.next_server = cache_servers.at(i)->cache->get_objmap(cache_servers.at((i+1)%this->get_num_server())->cache);
 
       g_hash_table_foreach(server_objmap, _objmap_aux_age, (gpointer) &rep_factor_data);
     }
@@ -503,7 +503,7 @@ namespace CDNSimulator {
   void cacheCluster::find_rep_factor_vs_popularity(uint64_t max_popularity, uint16_t *n_req_popularity, uint16_t *n_rep_popularity) {
     /* first create a giant map to store all the cached objects in the cluster */
 
-    if (cache_servers.at(0)->cache->core.data_type != OBJ_ID_NUM) {
+    if (cache_servers.at(0)->cache->data_type != OBJ_ID_NUM) {
       ERROR("dataType is not supported");
       abort();
     }
@@ -516,16 +516,16 @@ namespace CDNSimulator {
     rep_factor_data.n_rep_popularity = n_rep_popularity;
 
     for (unsigned int i = 0; i < this->get_num_server(); i++) {
-      GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
+      GHashTable *server_objmap = cache_servers.at(i)->cache->get_objmap(cache_servers.at(i)->cache);
       g_hash_table_foreach(server_objmap, _objmap_aux, (gpointer) cluster_objmap);
     }
 
     for (unsigned int i = 0; i < this->get_num_server(); i++) {
-      GHashTable *server_objmap = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at(i)->cache);
+      GHashTable *server_objmap = cache_servers.at(i)->cache->get_objmap(cache_servers.at(i)->cache);
 
-      rep_factor_data.current_time = cache_servers.at(i)->cache->core.ts;
-      rep_factor_data.prev_server = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at((i+9)%this->get_num_server())->cache);
-      rep_factor_data.next_server = cache_servers.at(i)->cache->core.get_objmap(cache_servers.at((i+1)%this->get_num_server())->cache);
+      rep_factor_data.current_time = cache_servers.at(i)->cache->ts;
+      rep_factor_data.prev_server = cache_servers.at(i)->cache->get_objmap(cache_servers.at((i+9)%this->get_num_server())->cache);
+      rep_factor_data.next_server = cache_servers.at(i)->cache->get_objmap(cache_servers.at((i+1)%this->get_num_server())->cache);
 
       g_hash_table_foreach(server_objmap, _objmap_aux_popularity, (gpointer) &rep_factor_data);
     }

@@ -15,7 +15,7 @@
 #include <assert.h>
 
 //#include "test_common.h"
-//#include "../libMimircache/include/mimircache/distHeatmap.h"
+//#include "../libCacheSim/include/libCacheSim/distHeatmap.h"
 
 #define TIMEVAL_TO_USEC(tv) ((long long) (tv.tv_sec*1000000+tv.tv_usec))
 #define TIMEVAL_TO_SEC(tv) ((double) (tv.tv_sec+tv.tv_usec/1000000.0))
@@ -68,7 +68,7 @@ void f1(int argc, char* argv[]) {
     printf("%s cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n", __func__,
            (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_byte, (long long) res[i].miss_byte);
   }
-  cache->core.cache_free(cache);
+  cache->cache_free(cache);
   g_free(res);
   close_reader(reader);
 }

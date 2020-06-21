@@ -615,7 +615,7 @@ ketama_error() {
 
 /* weight should be an array of unsigned long, for example memory size */
 static int
-ketama_create_continuum_mimircache(const key_t key,
+ketama_create_continuum_libCacheSim(const key_t key,
                                    const unsigned int num_servers,
                                    const unsigned long *const weight) {
     if (shm_ids == NULL) {
@@ -773,7 +773,7 @@ ketama_build_hashring(ketama_continuum *const contptr,
         if (data == (void *) (-1) || (*contptr)->modtime != 0) {
             ketama_sem_lock(sem_set_id);
 
-            if (!ketama_create_continuum_mimircache(key, num_servers, weight)) {
+            if (!ketama_create_continuum_libCacheSim(key, num_servers, weight)) {
                 ketama_sem_unlock(sem_set_id);
                 return 0;
             }

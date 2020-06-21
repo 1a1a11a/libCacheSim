@@ -17,19 +17,19 @@ int main(int argc, char **argv){
 
   string cache_name = "LRU";
   cache_t *lru = create_cache(cache_name.c_str(), 20, OBJ_ID_STR, nullptr);
-  printf("%d\n", lru->core.get(lru, req));
-  printf("%d\n", lru->core.get(lru, req));
+  printf("%d\n", lru->get(lru, req));
+  printf("%d\n", lru->get(lru, req));
 
   cache_name = "myLRU";
   cache_t *mylru = create_cache(cache_name.c_str(), 20, OBJ_ID_STR, nullptr);
-  printf("%d\n", mylru->core.add_element(mylru, req));
-  printf("%d\n", mylru->core.add_element(mylru, req));
+  printf("%d\n", mylru->add_element(mylru, req));
+  printf("%d\n", mylru->add_element(mylru, req));
 
 //  cache_name = "myLRUCpp";
 //  cache_t *mylru2 = create_cache(cache_name.c_str(), 20, OBJ_ID_STR, NULL);
-//  printf("%d\n", mylru2->core.add_element(mylru2, req));
-////  printf("size %d\n", mylru2->core.get_current_size(mylru2));
-//  printf("%d\n", mylru2->core.add_element(mylru2, req));
+//  printf("%d\n", mylru2->add_element(mylru2, req));
+////  printf("size %d\n", mylru2->get_current_size(mylru2));
+//  printf("%d\n", mylru2->add_element(mylru2, req));
 
   destroy_req_struct(req);
 

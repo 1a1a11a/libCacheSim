@@ -1,6 +1,6 @@
 //
 //  myLRU.hpp
-//  libMimircache
+//  libCacheSim
 //
 //  Created by Juncheng on 6/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
@@ -18,8 +18,8 @@
 #include <memory>
 #include <unordered_map>
 #include <list>
-//#include "mimircache.h"
-#include "../../libMimircache/include/mimircache.h"
+//#include "libCacheSim.h"
+#include "../../libCacheSim/include/libCacheSim.h"
 
 
 namespace std {
@@ -61,7 +61,7 @@ namespace std {
 
 extern "C" cache_t *myLRU_init(guint64 size, obj_id_type_t obj_id_type, guint64 block_size, void *params);
 
-// I need to re-implement LRU completely in CPP then wrap with libmimircache API
+// I need to re-implement LRU completely in CPP then wrap with libCacheSim API
 
 
 

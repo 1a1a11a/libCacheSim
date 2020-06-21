@@ -1,0 +1,22 @@
+
+
+#define VERSION_MAJOR @libCacheSim_VERSION_MAJOR@
+#define VERSION_MINOR @libCacheSim_VERSION_MINOR@
+#define VERSION_PATCH @libCacheSim_VERSION_PATCH@
+
+#define VERSION_STRING "@libCacheSim_VERSION_MAJOR@.@libCacheSim_VERSION_MINOR@.@libCacheSim_VERSION_PATCH@"
+
+#define OS_PLATFORM @OS_PLATFORM@
+
+#cmakedefine HAVE_ASSERT_LOG
+
+#cmakedefine HAVE_ASSERT_PANIC
+
+#cmakedefine HAVE_BACKTRACE
+
+#cmakedefine HAVE_LOGGING
+
+#cmakedefine HAVE_STATS
+
+#cmakedefine HAVE_ITT_INSTRUMENTATION
+

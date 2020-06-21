@@ -1,14 +1,8 @@
 # 1a1a11a
-*INTERNAL*
 *deprecated*
 *.DS_Store*
 *.bak
 *.clean
 *.nogit*
-new*.*
-akamai.*
-test.c
-makefile
-mimircache.c
-example/_build
+_build
 .idea

@@ -1,0 +1,3 @@
+aux_source_directory(. DIR_LIB_SRCS)
+add_library (traceStat ${DIR_LIB_SRCS})
+

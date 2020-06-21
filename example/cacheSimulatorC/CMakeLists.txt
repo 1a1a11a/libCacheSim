@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 2.8)
-project (mimircacheExample)
+project (libCacheSimExample)
 set(CMAKE_BUILD_TYPE Debug)
 
-message("****************** this example only works after mimircache has been installed ******************")
+message("****************** this example only works after libCacheSim has been installed ******************")
 
 
 ####
@@ -18,16 +18,16 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     SET(CMAKE_C_FLAGS_DEBUG " -L/usr/local/lib -lglib-2.0 -lintl -Wno-unused-command-line-argument")
 endif()
 
-find_library(libMC libMimircache)
-find_path(libMCInclude libMimircache)
+find_library(libMC libCacheSim)
+find_path(libMCInclude libCacheSim)
 message(STATUS "libMC" ${libMC} ${libMCInclude})
 
-#find_package (libMimircache)
-#if (LIBMIMIRCACHE_FOUND)
-#    message(STATUS "libMC" ${LIBMIMIRCACHE_INCLUDE_DIRS} ${LIBMIMIRCACHE_LIBRARIES})
-#    include_directories(${LIBMIMIRCACHE_INCLUDE_DIRS})
-#    target_link_libraries (helloworld ${LIBMIMIRCACHE_LIBRARIES})
-#endif (LIBMIMIRCACHE_FOUND)
+#find_package (libCacheSim)
+#if (libCacheSim_FOUND)
+#    message(STATUS "libMC" ${libCacheSim_INCLUDE_DIRS} ${libCacheSim_LIBRARIES})
+#    include_directories(${libCacheSim_INCLUDE_DIRS})
+#    target_link_libraries (helloworld ${libCacheSim_LIBRARIES})
+#endif (libCacheSim_FOUND)
 
 
 
@@ -43,7 +43,7 @@ message(STATUS "glib found? " ${GLib_FOUND} ", GLIB = " ${GLib_LIBRARY} ", heade
 file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.c)
 message(STATUS "all sources " ${ALL_SRC})
 add_executable(cacheSimulator ${ALL_SRC})
-target_link_libraries(cacheSimulator libmimircache m ${GLib_LIBRARY} -lpthread -ldl)
+target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY} -lpthread -ldl)
 
 
 ################ this mode compiles the external cache replacement algorithm as shared library ################
@@ -52,5 +52,5 @@ target_link_libraries(cacheSimulator libmimircache m ${GLib_LIBRARY} -lpthread -
 #set_target_properties(myLRU PROPERTIES LINKER_LANGUAGE C)
 
 #add_executable(cacheSimulator ${PROJECT_SOURCE_DIR}/cacheSimulator.c)
-#target_link_libraries(cacheSimulator mimircache m ${GLib_LIBRARY} -lpthread -ldl)
+#target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY} -lpthread -ldl)
 

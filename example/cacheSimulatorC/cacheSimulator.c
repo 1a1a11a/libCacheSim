@@ -3,8 +3,8 @@
 //
 
 #include "cacheSimulator.h"
-// gcc cacheSimulator.c -I ../libMimircache/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -l:libmimircache.so
-// gcc cacheSimulator.c -I ../libMimircache/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -llibmimircache $(pkg-config --libs glib-2.0) -ldl -lm
+// gcc cacheSimulator.c -I ../libCacheSim/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -l:libCacheSim.so
+// gcc cacheSimulator.c -I ../libCacheSim/include/ $(pkg-config --cflags glib-2.0) -ldl -L. -llibCacheSim $(pkg-config --libs glib-2.0) -ldl -lm
 
 
 int main(int argc, char **argv){
@@ -19,10 +19,10 @@ int main(int argc, char **argv){
 
   common_cache_params_t cc_params = {.cache_size=20, .obj_id_type=OBJ_ID_STR, .support_ttl=FALSE};
   cache_t *lru = create_cache("LRU", cc_params, NULL);
-  printf("%d\n", lru->core.get(lru, req));
+  printf("%d\n", lru->get(lru, req));
 
   cache_t *mylru = create_cache("myLRU", cc_params, NULL);
-  printf("%d\n", mylru->core.get(mylru, req));
+  printf("%d\n", mylru->get(mylru, req));
 
   free_request(req);
   cache_struct_free(lru);

@@ -59,28 +59,28 @@ int main(int argc, char *argv[]) {
   reader_t *reader;
 
   reader = setup_plaintxt_reader_num();
-  g_test_add_data_func("/libmimircache/test_distUtils_basic_plain_num", reader, test_distUtils_basic);
-  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_plain_num", reader, test_distUtils_more1, test_teardown);
+  g_test_add_data_func("/libCacheSim/test_distUtils_basic_plain_num", reader, test_distUtils_basic);
+  g_test_add_data_func_full("/libCacheSim/test_distUtils_more1_plain_num", reader, test_distUtils_more1, test_teardown);
 
   reader = setup_plaintxt_reader_str();
-  g_test_add_data_func("/libmimircache/test_distUtils_basic_plain_str", reader, test_distUtils_basic);
-  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_plain_str", reader, test_distUtils_more1, test_teardown);
+  g_test_add_data_func("/libCacheSim/test_distUtils_basic_plain_str", reader, test_distUtils_basic);
+  g_test_add_data_func_full("/libCacheSim/test_distUtils_more1_plain_str", reader, test_distUtils_more1, test_teardown);
 
   reader = setup_csv_reader_obj_num();
-  g_test_add_data_func("/libmimircache/test_distUtils_basic_csv_num", reader, test_distUtils_basic);
-  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_csv_num", reader, test_distUtils_more1, test_teardown);
+  g_test_add_data_func("/libCacheSim/test_distUtils_basic_csv_num", reader, test_distUtils_basic);
+  g_test_add_data_func_full("/libCacheSim/test_distUtils_more1_csv_num", reader, test_distUtils_more1, test_teardown);
 
   reader = setup_csv_reader_obj_str();
-  g_test_add_data_func("/libmimircache/test_distUtils_basic_csv_str", reader, test_distUtils_basic);
-  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_csv_str", reader, test_distUtils_more1, test_teardown);
+  g_test_add_data_func("/libCacheSim/test_distUtils_basic_csv_str", reader, test_distUtils_basic);
+  g_test_add_data_func_full("/libCacheSim/test_distUtils_more1_csv_str", reader, test_distUtils_more1, test_teardown);
 
   reader = setup_binary_reader();
-  g_test_add_data_func("/libmimircache/test_distUtils_basic_binary", reader, test_distUtils_basic);
-  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_binary", reader, test_distUtils_more1, test_teardown);
+  g_test_add_data_func("/libCacheSim/test_distUtils_basic_binary", reader, test_distUtils_basic);
+  g_test_add_data_func_full("/libCacheSim/test_distUtils_more1_binary", reader, test_distUtils_more1, test_teardown);
 
   reader = setup_vscsi_reader();
-  g_test_add_data_func("/libmimircache/test_distUtils_basic_vscsi", reader, test_distUtils_basic);
-  g_test_add_data_func_full("/libmimircache/test_distUtils_more1_vscsi", reader, test_distUtils_more1, test_teardown);
+  g_test_add_data_func("/libCacheSim/test_distUtils_basic_vscsi", reader, test_distUtils_basic);
+  g_test_add_data_func_full("/libCacheSim/test_distUtils_more1_vscsi", reader, test_distUtils_more1, test_teardown);
 
   return g_test_run();
 }

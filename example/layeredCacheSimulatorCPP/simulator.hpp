@@ -2,8 +2,8 @@
 // Created by Juncheng Yang on 11/15/19.
 //
 
-#ifndef libMimircache_CACHESIMULATOR_HPP
-#define libMimircache_CACHESIMULATOR_HPP
+#ifndef libCacheSim_CACHESIMULATOR_HPP
+#define libCacheSim_CACHESIMULATOR_HPP
 
 
 #include <cstdio>
@@ -27,4 +27,4 @@ public:
 
 };
 
-#endif //libMimircache_CACHESIMULATOR_H
+#endif //libCacheSim_CACHESIMULATOR_H

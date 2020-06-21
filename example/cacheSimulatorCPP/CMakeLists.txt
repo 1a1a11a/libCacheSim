@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8)
 project (cacheSimulatorCPP)
 set(CMAKE_BUILD_TYPE Debug)
 
-message("****************** this example only works after libmimircache has been installed ******************")
+message("****************** this example only works after libCacheSim has been installed ******************")
 
 
 ####
@@ -31,7 +31,7 @@ message(STATUS "glib found? " ${GLib_FOUND} ", GLIB = " ${GLib_LIBRARY} ", heade
 file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
 message(STATUS "all sources " ${ALL_SRC})
 add_executable(cacheSimulatorCPP ${ALL_SRC})
-target_link_libraries(cacheSimulatorCPP libmimircache m ${GLib_LIBRARY} -lm -lpthread -ldl)
+target_link_libraries(cacheSimulatorCPP libCacheSim m ${GLib_LIBRARY} -lm -lpthread -ldl)
 
 
 ################ this mode compiles the external cache replacement algorithm as shared library ################
@@ -40,5 +40,5 @@ target_link_libraries(cacheSimulatorCPP libmimircache m ${GLib_LIBRARY} -lm -lpt
 #set_target_properties(myLRU PROPERTIES LINKER_LANGUAGE C)
 
 #add_executable(cacheSimulator ${PROJECT_SOURCE_DIR}/cacheSimulator.cpp)
-#target_link_libraries(cacheSimulator mimircache m ${GLib_LIBRARY} -lpthread -ldl)
+#target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY} -lpthread -ldl)
 

@@ -1,17 +1,15 @@
 language: c
 
-
 env:
   global:
     # Ubuntu version
-    - LINUX_DIST=trusty
-    - DEPS_DIR=${TRAVIS_BUILD_DIR}/deps
+#    - LINUX_DIST=trusty
     # Global build options and C++ flags
 #    - C_FLAGS="-Wall -pedantic -Werror -Wno-variadic-macros -Wno-long-long -Wno-shadow"
     # Misc
+    - MAKEFLAGS="-j 2"
     - RUN_TESTS=true
     - COVERAGE=false
-
 
 matrix:
   include:
@@ -22,54 +20,53 @@ matrix:
       addons:
         apt:
           packages: &precise_latest_boost_packages
-            - gcc-4.8
-            - g++-4.8
+            - gcc
+            - g++
             #- gcov-4.9
-            - clang-3.7
+            - clang
             - valgrind
             # Misc
             - python-yaml
             - lcov
-#            - libopencv-dev
-          sources: &precise_latest_boost_sources
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
+            - libglib2.0-dev
+            - libgoogle-perftools-dev
 
-before_install:
-  # Combine global build options with OS/compiler-dependent options
-  - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
-  - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
-  - export CXX_FLAGS=${C_FLAGS}" "${ENV_C_FLAGS}
 
-  # Use sed to replace the SSH URL with the public URL, then initialize submodules
-  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-  #    - git submodule update --init --recursive
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libglib2.0-dev python3-pip python3-matplotlib
-  - sudo pip install codecov
-
-install:
-#  - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
-  - echo ${PATH}
-  - echo ${CXX}
-  - ${CXX} --version
-  - ${CXX} -v
-
-  # Download and install recent cmake
-  - |
-    if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
-      CMAKE_URL="http://www.cmake.org/files/v3.5/cmake-3.5.1-Linux-x86_64.tar.gz"
-      mkdir -p ${DEPS_DIR}/cmake
-      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
-      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
-    fi
+#before_install:
+#  # Combine global build options with OS/compiler-dependent options
+#  - export CMAKE_OPTIONS=${CMAKE_OPTIONS}" "${ENV_CMAKE_OPTIONS}
+#  - export CXX_FLAGS=${CXX_FLAGS}" "${ENV_CXX_FLAGS}
+#  - export CXX_FLAGS=${C_FLAGS}" "${ENV_C_FLAGS}
+#
+#  # Use sed to replace the SSH URL with the public URL, then initialize submodules
+#  - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+#  #    - git submodule update --init --recursive
+#  - sudo apt-get -qq update
+#  - sudo apt-get install -y libglib2.0-dev python3-pip python3-matplotlib
+#  - sudo pip install codecov
+#
+#install:
+##  - if [ "$CXX" = "clang++" ] && [ "$TRAVIS_OS_NAME" = "linux" ]; then export CXX="clang++-3.7" CC="clang-3.7"; fi
+#  - echo ${PATH}
+#  - echo ${CXX}
+#  - ${CXX} --version
+#  - ${CXX} -v
+#
+#  # Download and install recent cmake
+#  - |
+#    if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+#      CMAKE_URL="http://www.cmake.org/files/v3.5/cmake-3.5.1-Linux-x86_64.tar.gz"
+#      mkdir -p ${DEPS_DIR}/cmake
+#      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${DEPS_DIR}/cmake
+#      export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+#    fi
 
 script:
   ############################################################################
   # Build main and tests
   ############################################################################
-  - mkdir -p build
-  - cd build
+  - mkdir -p _build
+  - cd _build
   - cmake ${CMAKE_OPTIONS} -DCMAKE_CXX_FLAGS=${CXX_FLAGS} -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTS=ON ..
   - make -j
 #  - make project1_coverage
@@ -79,3 +76,125 @@ script:
 #after_success:
 #  - codecov -t c376990f-2ad6-4f7b-bbdb-5378a52e295c -X gcov
 
+
+
+
+
+
+#language: python
+#
+## os:
+##  - linux
+##  - osx
+#
+##python:
+##  - "3.4"
+##  - "3.5"
+##  - "3.6"
+##  - "nightly"
+#
+#addons:
+#  apt:
+##    sources:
+##    - sourceline: 'deb http://us.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse'
+##    - sourceline: 'deb-src http://us.archive.ubuntu.com/ubuntu/ trusty main restricted universe multiverse'
+#    packages:
+#        libglib2.0-dev
+#        python3-pip
+#        python3-matplotlib
+#        python3-dev
+#        git
+#        gcc
+#        g++
+#
+#before_install:
+##  - sudo apt-get -qq update
+##  - sudo apt-get install -y libglib2.0-dev python3-pip python3-matplotlib python3-dev git gcc g++
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update                                       ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install glib python3 openssl readline        ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew outdated pyenv || brew upgrade pyenv         ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install pyenv-virtualenv                     ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export PATH="/Users/travis/.pyenv/shims:${PATH}"  ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pyenv-virtualenv venv; source venv/bin/activate   ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python --version                                  ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m pip install -U pip                      ; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python -m easy_install -U setuptools              ; fi
+#
+#
+## command to install dependencies
+#install:
+#  - pip3 install --upgrade pip setuptools wheel
+#  - pip3 install -r requirements.txt
+#  - python3 setup.py build_ext -i
+#  - which python3
+#  - python3 --version
+#
+#matrix:
+#  include:
+#    - os: linux
+#      python: 3.4
+#    - os: linux
+#      python: 3.5
+#    - os: linux
+#      python: 3.6
+#  allow_failures:
+#    - os: linux
+#      python: "nightly"
+##    - os: osx
+##      language: generic
+#
+#
+#
+## command to run tests
+#script: nosetests
+
+
+
+
+
+# command to install dependencies
+#install: "pip3 install -r requirements.txt; python3 setup.py build_ext -i"
+# command to run tests
+#script: nosetests
+
+
+
+
+
+
+
+
+
+
+
+
+
+## using anchor to import sources into linux builds
+#addons:
+#  apt: &apt
+#    sources:
+#      - ubuntu-toolchain-r-test
+
+# important for allowed-to-fail matching
+# see https://docs.travis-ci.com/user/customizing-the-build#Rows-that-are-Allowed-to-Fail
+
+# travis currently does not support directly setting gcc/clang with versions
+# (e.g. gcc-4.8) as value for the compiler key. So we will have to manually
+# request these packages and use environment varibles to create the matrix.
+#jobs:
+#  fast_finish: true
+#  include:
+#    - name: "gcc on Linux"
+#      compiler: gcc
+#
+#    - os: osx
+#      osx_image: xcode11.4
+#      compiler: clang
+#
+#  allow_failures:
+#    - os: osx
+#      osx_image: xcode11.4
+#      compiler: clang
+#
+#script:
+#  - ./ci/run.sh

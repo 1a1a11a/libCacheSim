@@ -1,0 +1,70 @@
+
+
+####################
+# include dir #
+####################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/hash)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cache/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceReader/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceStat/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiler/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
+
+
+####################
+# add library #
+####################
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceStat)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
+
+
+# performance related
+# change optimization to O3 (O2 is 100% faster than O0, O3 is 5% faster than O2)
+
+
+# enable transparent hugepage (30% improvement 5.05s to 3.65s)
+# echo always | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
+#echo always | sudo tee /sys/kernel/mm/transparent_hugepage/defrag
+
+# add pg profiler support in compilation
+# cmake -DCMAKE_CXX_FLAGS=-pg -DCMAKE_EXE_LINKER_FLAGS=-pg -DCMAKE_SHARED_LINKER_FLAGS=-pg ..
+
+# add heap profiler
+# LD_PRELOAD=/home/jason/software/source/gperftools-2.7/.libs/libtcmalloc.so HEAPPROFILE=heap ./binBenchmark LRU
+# pprof --pdf ./binBenchmark heap.0001.heap > a.pdf
+
+# profiling
+# perf event counter intel   https://download.01.org/perfmon/index/
+#
+# perf stat -e dTLB-loads,dTLB-load-misses,dTLB-stores,dTLB-store-misses -a -I 1000
+#   https://alexandrnikitin.github.io/blog/transparent-hugepages-measuring-the-performance-impact/
+#
+# perf stat -e task-clock,cycles,instructions,cache-references,cache-misses
+
+# performance results
+# memory align 60s -> 10.8s
+# change to tcmalloc 10.8s -> 10.6s
+# hashtable re-impl 10s->6s 1966 MB->1400MB
+# huge page 6s->3.6s
+# various other such as likely() and unlikely()
+
+
+#########
+# two mistakes I have made in benchmarking the lib,
+# 1. this is actually not a mistake in benchmark, rather than a mistake in design, I used pointer to store integer obj_id,
+# which has severe performance issue when the obj_id % MEM_ALIGN != 0, although the memory location is not used.
+# 2. to correct this error, I start obj_id with MEM_ALIGN and add MEM_ALIGN in each step, then the performance is amazing,
+# then when I compare this with trace replay, the trace replay is much worse, after investigation, I realize, since I add
+# MEM_ALIGN each time, CPU is able to prefetch, which boosts the performance by more than 2-4x.
+
+
