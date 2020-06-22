@@ -1,0 +1,16 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+includedir=${prefix}/include/
+libdir=${exec_prefix}/lib/
+
+Name: libCacheSim
+Description: A high performance library for building cache simulators
+Version: 0.1.0
+Requires:
+Libs: -L${libdir} -llibCacheSim
+Libs.private: -pthread
+Cflags: -I${includedir}
+
+
+
+

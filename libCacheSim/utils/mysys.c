@@ -6,7 +6,7 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "mysys.h"
+#include "include/mysys.h"
 
 int set_thread_affinity(pthread_t tid) {
 #ifdef __linux__

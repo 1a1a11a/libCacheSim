@@ -7,8 +7,7 @@
 
 
 #include "../libCacheSim/include/libCacheSim.h"
-#include "../libCacheSim/cacheAlgo/include/cacheAlgoHeaders.h"
-
+#include "../libCacheSim/include/libCacheSim/evictionAlgo.h"
 
 #include <unistd.h>
 #include <inttypes.h>

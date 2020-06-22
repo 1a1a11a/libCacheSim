@@ -1,13 +1,16 @@
 
 
+
+
 ####################
 # include dir #
 ####################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/hash)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure/hashtable)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cache/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/evictionAlgo/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceReader/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceStat/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiler/include)
@@ -19,13 +22,14 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
 # add library #
 ####################
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cache)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cacheAlgo)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/evictionAlgo)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dataStructure)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceStat)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
+
 
 
 # performance related

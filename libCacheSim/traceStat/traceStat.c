@@ -2,7 +2,7 @@
 // Created by Juncheng Yang on 4/20/20.
 //
 
-#include "traceStat.h"
+#include "include/traceStat.h"
 
 #ifdef __cplusplus
 extern "C"

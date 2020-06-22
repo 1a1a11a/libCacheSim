@@ -10,11 +10,12 @@
 extern "C" {
 #endif
 
-#include "libCacheSim/simulator.h"
+#include "../include/libCacheSim/simulator.h"
 #include "../cache/include/cacheUtils.h"
 #include "../include/libCacheSim/plugin.h"
-#include "myprint.h"
-#include "mystr.h"
+#include "../utils/include/myprint.h"
+#include "../utils/include/mystr.h"
+
 #include <assert.h>
 
 typedef struct simulator_multithreading_params {
@@ -30,7 +31,7 @@ typedef struct simulator_multithreading_params {
 } sim_mt_params_t;
 
 static void _get_mrc_thread(gpointer data, gpointer user_data) {
-  sim_mt_params_t *params = (sim_mt_params_t *)user_data;
+  sim_mt_params_t *params = (sim_mt_params_t *) user_data;
   int idx = GPOINTER_TO_UINT(data) - 1;
 
   sim_res_t *result = params->result;
@@ -54,8 +55,8 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
     }
     close_reader(warmup_cloned_reader);
     INFO("cache %s (size %lld) finishes warm up with %lld requests\n",
-         local_cache->cache_name, (long long)local_cache->cache_size,
-         (long long)n_warmup);
+         local_cache->cache_name, (long long) local_cache->cache_size,
+         (long long) n_warmup);
   }
 
   /* using warmup_perc of requests from reader to warm up */
@@ -68,8 +69,8 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
       read_one_req(cloned_reader, req);
     }
     INFO("cache %s (size %lld) finishes warm up with %lld requests\n",
-         local_cache->cache_name, (long long)local_cache->cache_size,
-         (long long)n_warmup);
+         local_cache->cache_name, (long long) local_cache->cache_size,
+         (long long) n_warmup);
   }
 
   while (req->valid) {
@@ -113,7 +114,7 @@ sim_res_t *get_miss_ratio_curve_with_step_size(reader_t *const reader,
                                                const double warmup_perc,
                                                const gint num_of_threads) {
 
-  int num_of_sizes = (int)ceil((double)cache->cache_size / step_size);
+  int num_of_sizes = (int) ceil((double) cache->cache_size / step_size);
   get_num_of_req(reader);
   uint64_t *cache_sizes = g_new0(uint64_t, num_of_sizes);
   for (int i = 0; i < num_of_sizes; i++) {
@@ -145,7 +146,7 @@ get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
   sim_mt_params_t *params = g_new0(sim_mt_params_t, 1);
   params->reader = reader;
   params->warmup_reader = warmup_reader;
-  params->cache = (cache_t *)cache;
+  params->cache = (cache_t *) cache;
   params->n_warmup_req = (uint64_t)(get_num_of_req(reader) * warmup_perc);
   params->result = result;
   params->progress = &progress;
@@ -153,7 +154,7 @@ get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
 
   // build the thread pool
   GThreadPool *gthread_pool = g_thread_pool_new(
-      (GFunc)_get_mrc_thread, (gpointer)params, num_of_threads, TRUE, NULL);
+      (GFunc) _get_mrc_thread, (gpointer) params, num_of_threads, TRUE, NULL);
   ASSERT_NOT_NULL(gthread_pool,
                   "cannot create thread pool in profiler::evaluate\n");
 
@@ -170,12 +171,12 @@ get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
 
   INFO("%s starts computation %s, num_warmup_req %lld, start cache size %s, "
        "end cache size %s, %d sizes, %d threads, please wait\n",
-       __func__, cache->cache_name, (long long)(params->n_warmup_req),
+       __func__, cache->cache_name, (long long) (params->n_warmup_req),
        start_cache_size, end_cache_size, num_of_sizes, num_of_threads);
 
   // wait for all simulations to finish
-  while (progress < (uint64_t)num_of_sizes - 1) {
-    print_progress((double)progress / (double)(num_of_sizes - 1) * 100);
+  while (progress < (uint64_t) num_of_sizes - 1) {
+    print_progress((double) progress / (double) (num_of_sizes - 1) * 100);
   }
 
   // clean up

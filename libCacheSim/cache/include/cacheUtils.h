@@ -9,8 +9,10 @@
 extern "C" {
 #endif
 
+#include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/cacheObj.h"
+
 #include <glib.h>
 
 /****************** find obj expiration related info ******************/

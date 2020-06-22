@@ -7,7 +7,7 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "vscsi.h"
+#include "include/vscsi.h"
 
 #ifdef __cplusplus
 extern "C"

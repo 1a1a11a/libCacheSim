@@ -7,18 +7,18 @@ extern "C" {
 #endif
 
 #include <assert.h>
-#include <mymath.h>
+#include <math.h>
 #include <stdio.h>
 #include <sys/stat.h>
 
 #include "../dataStructure/include/splay.h"
+#include "../include/libCacheSim/dist.h"
 #include "../utils/include/utilsInternal.h"
-#include "include/test_dist.h"
-#include "libCacheSim/dist.h"
+#include "include/distInternal.h"
 
 /* https://stackoverflow.com/questions/46213840/get-rid-of-warning-implicit-declaration-of-function-fileno-in-flex
  */
-int fileno(FILE *stream);
+//int fileno(FILE *stream);
 
 /***********************************************************
  * sequential version of get_stack_dist
@@ -291,11 +291,11 @@ gint64 *load_dist(reader_t *const reader, const char *const path,
   struct stat buf;
   fstat(fd, &buf);
 
-  get_num_of_req(reader);
   assert(buf.st_size == sizeof(gint64) * get_num_of_req(reader));
 
   gint64 *dist_array = g_new(gint64, get_num_of_req(reader));
-  fread(dist_array, sizeof(gint64), get_num_of_req(reader), file);
+  size_t n_read = fread(dist_array, sizeof(gint64), get_num_of_req(reader), file);
+  assert(n_read == get_num_of_req(reader)*sizeof(guint64));
   fclose(file);
 
   return dist_array;

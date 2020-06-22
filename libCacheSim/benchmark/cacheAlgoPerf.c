@@ -8,7 +8,7 @@
 #include "../include/libCacheSim/request.h"
 #include "include/params.h"
 #include "include/resourceMeasure.h"
-#include "mymath.h"
+#include "../utils/include/mymath.h"
 
 gint64 measure_qps_write(cache_t *cache) {
   srand(time(NULL));

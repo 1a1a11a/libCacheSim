@@ -53,6 +53,8 @@ extern "C" {
 #include <sys/mman.h>
 #ifdef MADV_HUGEPAGE
 #define USE_HUGEPAGE
+#else
+#undef USE_HUGEPAGE
 #endif
 
 #define SUPPORT_TTL

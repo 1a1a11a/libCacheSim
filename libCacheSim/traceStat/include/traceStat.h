@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 #include "../../include/libCacheSim/reader.h"
-#include "../utils/include/utilsInternal.h"
+#include "../../utils/include/utilsInternal.h"
 
 guint64 get_num_of_obj(reader_t *reader);
 

@@ -3,6 +3,7 @@
 //
 
 #include "../include/libCacheSim/cache.h"
+#include "../dataStructure/hashtable/hashtable.h"
 
 static void *_get_func_handle(char *func_name, const char *const cache_name,
                               bool must_have, bool internal_func) {

@@ -9,7 +9,7 @@
 #include "../include/libCacheSim/profilerLRU.h"
 #include "../dataStructure/include/splay.h"
 #include "../utils/include/utilsInternal.h"
-#include "include/test_dist.h"
+#include "include/distInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,7 +52,7 @@ guint64 *_get_lru_miss_cnt(reader_t *reader, gint64 size) {
  * non-parallel version
  *
  * @param reader: reader for reading data
- * @param size: the max cacheAlgo size, if -1, then it uses the maximum size
+ * @param size: the max evictionAlgo size, if -1, then it uses the maximum size
  */
 
 guint64 *_get_lru_hit_cnt(reader_t *reader, gint64 size) {

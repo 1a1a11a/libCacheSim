@@ -48,6 +48,13 @@ cmake ..
 make -j
 ```
 
+#### Linking with libCacheSim
+linking can be done in cmake or use pkg-config 
+
+#### Performance Optimizations 
+* hugepage - to turn on hugepage support, please do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
+
+
 ---
 ### Quickstart  
 See [example folder](example) for more examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
@@ -83,8 +90,12 @@ cache->cache_free(cache);
 
 
 ```
+save this to test.c and compile with 
+```
+gcc $(pkg-config --cflags --libs libCacheSim glib-2.0) -lm -ldl test.c -o test
+```
 
-
+if you get `error while loading shared libraries`, run `sudo ldconfig`
 
 
 
@@ -94,6 +105,10 @@ cache->cache_free(cache);
 * see [API.md](API.md) for common APIs.  
 * see [http://mimircache.info](http://mimircache.info) for full doc. 
   
+  
+
+
+
 ---
 ### Update and Roadmap
 * June 2020: v0.1 finalized APIs, performance tuning, ready for internal use 

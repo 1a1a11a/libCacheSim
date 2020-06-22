@@ -8,8 +8,7 @@
 
 #include "libCacheSim/heatmap.h"
 #include "Optimal.h"
-#include "FIFO.h"
-
+#include "libCacheSim/evictionAlgo/FIFO.h"
 
 #ifdef __cplusplus
 extern "C"

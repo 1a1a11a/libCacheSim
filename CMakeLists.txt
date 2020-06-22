@@ -5,9 +5,9 @@ set(PROJECT_WEB "http://libCacheSim.info")
 
 set(${PROJECT_NAME}_VERSION_MAJOR 0)
 set(${PROJECT_NAME}_VERSION_MINOR 1)
-set(${PROJECT_NAME}_VERSION_REVISION 0)
+set(${PROJECT_NAME}_VERSION_PATCH 0)
 set(${PROJECT_NAME}_RELEASE_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR})
-set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}_VERSION_REVISION})
+set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}_VERSION_PATCH})
 
 
 ####################
@@ -45,7 +45,7 @@ endif ()
 ####################
 # define options #
 ####################
-option(SUPPORT_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
+option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 
 
@@ -56,7 +56,7 @@ option(ENABLE_TESTS "whether enable test" ON)
 
 
 ####################
-# define variables #
+# flags   #
 ####################
 set(CFLAGS "$ENV{CFLAGS} "
         "-std=gnu99 ${CMAKE_ENABLE_C99} "
@@ -94,18 +94,6 @@ find_package(Tcmalloc REQUIRED)
 set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 
-#find_package(xxHash)
-#include_directories(${xxHash_INCLUDE_DIR})
-#set(LIBS ${LIBS} ${xxHash_LIBRARIES})
-#message(STATUS "xxHash found? " ${xxHash_FOUND} " LIBS = " ${xxHash_LIBRARIES} ", header = " ${xxHash_INCLUDE_DIRS})
-#if(NOT xxHash_INCLUDE_DIR)
-#    message(STATUS "#### WARNING ####: xxhash library not found, use murmur3")
-#    add_compile_definitions(HASH_TYPE=0xb10)
-#else()
-##    add_compile_definitions(HASH_TYPE=0xb10)
-#    add_compile_definitions(HASH_TYPE=0xb21)
-#endif()
-
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")
 message(STATUS "<<++              libCacheSim summary             ++>>")
@@ -126,91 +114,53 @@ message(STATUS "LIBS              = ${LIBS}")
 message(STATUS "Installation path = ${CMAKE_INSTALL_PREFIX}")
 
 message(STATUS "========================================================")
-
-# message(STATUS "=======Status of system features=======")
-# message(STATUS "HAVE_BACKTRACE: " ${HAVE_BACKTRACE})
-# message(STATUS "=======================================")
-
 message(STATUS "============= Status of optional features ==============")
-# message(STATUS "HAVE_RUST: " ${HAVE_RUST})
-# message(STATUS "HAVE_TEST: " ${HAVE_TEST})
 message(STATUS "========================================================")
 
 
+set(CONF_INCLUDE_DIRS "include")
+set(CONF_LIB_DIRS "lib")
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
 
-configure_file(libCacheSim.pc.in libCacheSim.pc @ONLY)
-#set(ConfigPackageLocation "lib${LIB_SUFFIX}/cmake/${PROJECT_NAME}")
-#install(FILES ${PROJECT_NAME}Config.cmake ${PROJECT_NAME}ConfigVersion.cmake
-#        DESTINATION "${ConfigPackageLocation}"
-#        COMPONENT Devel
-#        )
 
 ####################
 # library install  #
 ####################
-file(GLOB ALL_SRC_FILES ${PROJECT_SOURCE_DIR}/libCacheSim/*/*.c)
-add_library(${PROJECT_NAME} SHARED ".")
-target_link_libraries(${PROJECT_NAME} cache cacheAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*/*.c)
+file(GLOB hashtable ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hashtable/*.c)
+file(GLOB hash ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hash/*.c)
+set(LIB_SOURCE ${LIB_SOURCE} ${hashtable} ${hash})
+add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE})
+
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
-#message(STATUS "PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}")
-#target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/libCacheSim/include)
 
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION include)
+#message(STATUS "------------------------- CMAKE_CURRENT_LIST_DIR    ${CMAKE_CURRENT_LIST_DIR}")
+#message(STATUS "------------------------- CMAKE_CURRENT_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}")
+#message(STATUS "------------------------- CMAKE_CURRENT_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR}")
 
-#install(TARGETS ${PROJECT_NAME}
-#        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_BINARY_DIR}/libCacheSim.pc DESTINATION lib/pkgconfig)
+configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake
+        @ONLY)
 
-#install(TARGETS ${PROJECT_NAME}
-#        # IMPORTANT: Add the mylib library to the "export-set"
-#        EXPORT ${PROJECT_NAME}
-#        LIBRARY DESTINATION "${INSTALL_LIB_DIR}"
-#        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}"
-#        COMPONENT dev)
+
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CONF_LIB_DIRS})
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION ${CONF_INCLUDE_DIRS})
+install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CONF_LIB_DIRS}/pkgconfig)
+install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
+
+message(STATUS "HERE ------------------------- ${CMAKE_INSTALL_PREFIX} ${CMAKE_ROOT}/Modules/")
+
 
 #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
 add_executable(binBenchmark libCacheSim/benchmark/main.c)
-target_link_libraries(binBenchmark benchmark cache cacheAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(binBenchmark benchmark cache cacheAlgo traceReader profiler dataStructure traceStat utils m
+        ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 #add_executable(binDebug ../test/debug.c)
-#target_link_libraries(binDebug cache cacheAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+#target_link_libraries(binDebug cache evictionAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 #set_property(TARGET binDebug PROPERTY C_STANDARD 11)
-
-
-## Add all targets to the build-tree export set
-#export(TARGETS libCacheSim
-#        FILE "${PROJECT_BINARY_DIR}/libCacheSim.cmake")
-#
-## Export the package for use from the build-tree
-## (this registers the build-tree with a global CMake-registry)
-#export(PACKAGE libCacheSim)
-
-## Create the FooBarConfig.cmake and FooBarConfigVersion files
-#file(RELATIVE_PATH REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
-#        "${INSTALL_INCLUDE_DIR}")
-## ... for the build tree
-#set(CONF_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}")
-#configure_file(libCacheSim.cmake.in
-#        "${PROJECT_BINARY_DIR}/libCacheSim.cmake" @ONLY)
-## ... for the install tree
-#set(CONF_INCLUDE_DIRS "\${FOOBAR_CMAKE_DIR}/${REL_INCLUDE_DIR}")
-#configure_file(libCacheSim.cmake.in
-#        "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/libCacheSim.cmake" @ONLY)
-#
-#
-## Install the FooBarConfig.cmake and FooBarConfigVersion.cmake
-#install(FILES
-#        "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/libCacheSim.cmake"
-#        DESTINATION "${INSTALL_CMAKE_DIR}" COMPONENT dev)
-#
-## Install the export set for use with the install-tree
-#install(EXPORT libCacheSim DESTINATION
-#        "${INSTALL_CMAKE_DIR}" COMPONENT dev)
 
 
 if (ENABLE_TESTS)
@@ -221,8 +171,6 @@ if (ENABLE_TESTS)
 else ()
     message(STATUS "Building without test")
 endif ()
-
-
 
 
 # Example Usages:

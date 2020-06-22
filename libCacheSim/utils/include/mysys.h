@@ -14,7 +14,7 @@
 #include "../../include/libCacheSim/logging.h"
 
 #include <glib.h>
-#include <mymath.h>
+#include <math.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>

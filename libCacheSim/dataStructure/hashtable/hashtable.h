@@ -10,12 +10,12 @@ extern "C"
 {
 #endif
 
+#include "hashtableStruct.h"
 #include "../../include/libCacheSim/cacheObj.h"
 #include "../../include/libCacheSim/request.h"
 #include "../../include/config.h"
-#include "hashtableStruct.h"
-
 #include "../../utils/include/mymath.h"
+
 
 //#if HASHTABLE_TYPE == CHAINED_HASHTABLE
 //#include "chainedHashTable.h"
@@ -31,6 +31,7 @@ extern "C"
 #include "chainedHashTable.h"
 #define create_hashtable(hash_power) create_chained_hashtable(hash_power)
 #define hashtable_find(hashtable, req) chained_hashtable_find(hashtable, req)
+#define hashtable_find_obj(hashtable, cache_obj) chained_hashtable_find_obj(hashtable, cache_obj)
 #define hashtable_insert(hashtable, req) chained_hashtable_insert(hashtable, req)
 #define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete(hashtable, cache_obj)
 #define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj(hashtable)
@@ -42,6 +43,7 @@ extern "C"
 #include "chainedHashTableV2.h"
 #define create_hashtable(hash_power) create_chained_hashtable_v2(hash_power)
 #define hashtable_find(hashtable, req) chained_hashtable_find_v2(hashtable, req)
+#define hashtable_find_obj(hashtable, req) chained_hashtable_find_obj_v2(hashtable, cache_obj)
 #define hashtable_insert(hashtable, req) chained_hashtable_insert_v2(hashtable, req)
 #define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete_v2(hashtable, cache_obj)
 #define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj_v2(hashtable)

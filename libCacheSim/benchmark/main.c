@@ -2,11 +2,10 @@
 // Created by Juncheng Yang on 4/23/20.
 //
 
+#include "../include/libCacheSim.h"
+#include "../include/libCacheSim/evictionAlgo.h"
 #include "include/cacheAlgoPerf.h"
 #include "include/params.h"
-#include "../include/libCacheSim.h"
-#include "../cacheAlgo/include/cacheAlgoHeaders.h"
-
 
 void measure_all(common_cache_params_t cc_params);
 

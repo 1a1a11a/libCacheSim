@@ -6,7 +6,7 @@
 //  Copyright © 2017 Juncheng. All rights reserved.
 //
 
-#include "binary.h"
+#include "include/binary.h"
 
 #ifdef __cplusplus
 extern "C"

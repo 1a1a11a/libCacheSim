@@ -12,7 +12,7 @@ extern "C"
 #endif
 
 #include <stdbool.h>
-#include "../../include/libCacheSim/struct.h"
+#include "libCacheSim/struct.h"
 
 
 #define hashsize(n) ((uint64_t)1<<(uint16_t)(n))
@@ -20,14 +20,10 @@ extern "C"
 #define hashmask(n) (hashsize(n)-1)
 
 
-typedef uint64_t (*key_to_hv_func_ptr)(void *ptr);
-
-typedef bool (*key_cmp_func_ptr)(void *, void *);
-
 typedef void (*hashtable_iter)(cache_obj_t* cache_obj, void* user_data);
 
 
-typedef struct {
+typedef struct hashtable {
   union{
     cache_obj_t *table;
     cache_obj_t **table_twodim;

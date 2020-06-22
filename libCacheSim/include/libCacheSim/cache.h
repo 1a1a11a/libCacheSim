@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-#include "../../dataStructure/hashtable/hashtable.h"
 #include "../config.h"
 #include "cacheObj.h"
 #include "const.h"
@@ -52,7 +51,7 @@ typedef void (*cache_insert_func_ptr)(cache_t *, request_t *);
 
 typedef void (*cache_evict_func_ptr)(cache_t *, request_t *, cache_obj_t *);
 
-typedef void (*cache_remove_obj_func_ptr)(cache_t *, request_t *);
+typedef void (*cache_remove_obj_func_ptr)(cache_t *, cache_obj_t *);
 
 typedef struct {
   uint64_t stored_obj_cnt;
@@ -63,8 +62,9 @@ typedef struct {
   uint64_t cur_time;
 } cache_state_t;
 
+struct hashtable;
 struct cache {
-  hashtable_t *hashtable;
+  struct hashtable *hashtable;
   cache_obj_t *list_head; // for LRU and FIFO
   cache_obj_t *list_tail; // for LRU and FIFO
 

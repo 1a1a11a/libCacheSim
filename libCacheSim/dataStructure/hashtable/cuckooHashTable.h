@@ -27,7 +27,7 @@
 
 #include "hashtable.h"
 
-#include "../../include/libCacheSim/logging.h"
+#include "libCacheSim/logging.h"
 
 
 typedef uint32_t KeyType;

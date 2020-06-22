@@ -2,9 +2,9 @@
 // Created by Juncheng Yang on 5/7/20.
 //
 
-#include "readerUtils.h"
+#include "include/readerUtils.h"
 #include "include/readerInternal.h"
-#include "libCacheSim/reader.h"
+#include "../include/libCacheSim/reader.h"
 
 #include <math.h>
 

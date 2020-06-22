@@ -2,10 +2,10 @@
 // Created by Juncheng Yang on 5/7/20.
 //
 
-#include "libCacheSim/experimental/distHeatmap.h"
+#include "../include/libCacheSim/experimental/distHeatmap.h"
 #include "../include/libCacheSim/macro.h"
-#include "libCacheSim/dist.h"
-#include "readerUtils.h"
+#include "../include/libCacheSim/dist.h"
+#include "../traceReader/include/readerUtils.h"
 
 #include <math.h>
 
