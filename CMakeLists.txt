@@ -90,10 +90,13 @@ find_package(GLib REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${GLib_LIBRARY})
 
-find_package(Tcmalloc REQUIRED)
-set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-
+find_package(Tcmalloc)
+if (${Tcmalloc_LIBRARIES})
+    set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+else()
+    message(STATUS "!!! cannot find tcmalloc")
+endif()
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")
 message(STATUS "<<++              libCacheSim summary             ++>>")

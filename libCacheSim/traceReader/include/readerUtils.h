@@ -10,8 +10,8 @@ extern "C"
 {
 #endif
 
-#include "libCacheSim/reader.h"
-#include "libCacheSim/request.h"
+#include "../../include/libCacheSim/reader.h"
+#include "../../include/libCacheSim/request.h"
 
 void read_first_req(reader_t *reader, request_t *req);
 

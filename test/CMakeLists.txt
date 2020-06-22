@@ -4,7 +4,7 @@
 add_executable(testReader ../test/test_traceReader.c)
 target_link_libraries(testReader cache cacheAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
-add_executable(testDistUtils distInternal.c)
+add_executable(testDistUtils test_dist.c)
 target_link_libraries(testDistUtils cache cacheAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 
 add_executable(testProfilerLRU ../test/test_profilerLRU.c)

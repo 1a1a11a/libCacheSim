@@ -1,5 +1,0 @@
-Jan. 12, 2018
-Separation of PyMimircache and libMimircache, now libMimircache is an independent module, which can be used directly, this has the following benefits:
-1. allows people who only want C/C++ mimircache module to use libMimircache.
-2. the debug of libMimircache becomes easier.
-3. simplifies the dependency on libMimircache from other components.

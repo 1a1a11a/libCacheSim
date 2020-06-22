@@ -295,7 +295,7 @@ gint64 *load_dist(reader_t *const reader, const char *const path,
 
   gint64 *dist_array = g_new(gint64, get_num_of_req(reader));
   size_t n_read = fread(dist_array, sizeof(gint64), get_num_of_req(reader), file);
-  assert(n_read == get_num_of_req(reader)*sizeof(guint64));
+  assert(n_read == get_num_of_req(reader));
   fclose(file);
 
   return dist_array;

@@ -12,7 +12,7 @@ extern "C"
 #endif
 
 #include <stdbool.h>
-#include "libCacheSim/struct.h"
+#include "../../include/libCacheSim/struct.h"
 
 
 #define hashsize(n) ((uint64_t)1<<(uint16_t)(n))

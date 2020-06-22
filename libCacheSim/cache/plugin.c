@@ -2,7 +2,7 @@
 // Created by Juncheng Yang on 11/17/19.
 //
 
-#include "libCacheSim/plugin.h"
+#include "../include/libCacheSim/plugin.h"
 
 #ifdef __cplusplus
 extern "C" {
