@@ -57,20 +57,15 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
 
   char cache_init_func_name[256];
   void *handle = dlopen(NULL, RTLD_GLOBAL);
-  err = dlerror();
-  if (err != NULL || handle == NULL) {
-    WARNING("cannot open handle %p: %s\n", handle, err);
-    return NULL;
-  }
+  /* should not check err here, otherwise ubuntu will report err even though
+   * everything is OK */
 
   sprintf(cache_init_func_name, "%s_init", cache_alg_name);
 //  *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
   cache_init = dlsym(handle, cache_init_func_name);
   err = dlerror();
-  printf("%p %p\n", handle, cache_init);
 
-  if (err != NULL || cache_init == NULL) {
-    cache_t *cache = LRU_init(cc_params, NULL);
+  if (cache_init == NULL) {
     WARNING("cannot load internal cache %s: error %s\n", cache_alg_name, err);
     return NULL;
   }

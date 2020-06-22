@@ -13,30 +13,26 @@ set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}
 ####################
 # detect platform #
 ####################
-macro(set_platform system_name)
-    if (${system_name} MATCHES "Darwin")
-        set(OS_PLATFORM "OS_DARWIN")
-        add_definitions(-DOS_DARWIN)
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    add_definitions(-DOS_DARWIN)
 
-        set(CMAKE_BUILD_TYPE Debug)
-        set(CMAKE_MACOSX_RPATH 1)
-        # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-        LINK_DIRECTORIES(/usr/local/lib)
-        # a temporary fix for mac
-        SET(CMAKE_C_FLAGS "-Wno-unused-command-line-argument -lintl -L/usr/local/lib -lglib-2.0 -lintl -I/usr/local/Cellar/gettext/0.20.1/include/")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/usr/local/Cellar/python/3.7.5/Frameworks/Python.framework/Versions/3.7/include/python3.7m/")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/Users/jason/Library/Python/3.7/lib/python/site-packages/numpy/core/include/")
+    set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_MACOSX_RPATH 1)
+    # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
+    LINK_DIRECTORIES(/usr/local/lib)
+    # a temporary fix for mac
+    #    SET(CMAKE_C_FLAGS "-lglib-2.0")
+    #    SET(CMAKE_C_FLAGS "-Wno-unused-command-line-argument -lintl -lglib-2.0 ")
+    #    SET(CMAKE_C_FLAGS "-L/usr/local/lib -I/usr/local/Cellar/gettext/0.20.1/include/")
+    #    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/usr/local/Cellar/python/3.7.5/Frameworks/Python.framework/Versions/3.7/include/python3.7m/")
+    #    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/Users/jason/Library/Python/3.7/lib/python/site-packages/numpy/core/include/")
 
-    elseif (${system_name} MATCHES "Linux")
-        set(OS_PLATFORM "OS_LINUX")
-        add_definitions(-DOS_LINUX)
-    else ()
-        set(OS_PLATFORM "OS_UNSUPPORTED")
-        message(FATAL_ERROR "unsupported operating system")
-    endif ()
-endmacro(set_platform)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    add_definitions(-DOS_LINUX)
+else ()
+    message(FATAL_ERROR "unsupported operating system ${CMAKE_SYSTEM_NAME}")
+endif ()
 
-set_platform(${CMAKE_SYSTEM_NAME})
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif ()
@@ -89,14 +85,23 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 find_package(GLib REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 set(LIBS ${LIBS} ${GLib_LIBRARY})
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    pkg_check_modules(GLib2 REQUIRED Glib-2.0)
+    include_directories(${GLib2_INCLUDE_DIRS})
+    #    add_compile_options("${LDFLAGS}")
+    link_libraries(${GLib2_LDFLAGS})
+endif()
 
 find_package(Tcmalloc)
-if (${Tcmalloc_LIBRARIES})
+if ("${Tcmalloc_LIBRARIES}" STREQUAL "")
+    message(STATUS "!!! cannot find tcmalloc")
+else ()
     set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-else()
-    message(STATUS "!!! cannot find tcmalloc")
-endif()
+endif ()
+
+link_libraries("-lpthread -ldl -lm")
+
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")
 message(STATUS "<<++              libCacheSim summary             ++>>")
@@ -153,13 +158,11 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION ${CONF_
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CONF_LIB_DIRS}/pkgconfig)
 install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
 
-message(STATUS "HERE ------------------------- ${CMAKE_INSTALL_PREFIX} ${CMAKE_ROOT}/Modules/")
-
 
 #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
 add_executable(binBenchmark libCacheSim/benchmark/main.c)
-target_link_libraries(binBenchmark benchmark cache evictionAlgo traceReader profiler dataStructure traceStat utils m
-        ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+target_link_libraries(binBenchmark benchmark cache evictionAlgo traceReader profiler dataStructure traceStat utils
+        ${LIBS})
 
 #add_executable(binDebug ../test/debug.c)
 #target_link_libraries(binDebug cache evictionAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)

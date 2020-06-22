@@ -10,11 +10,14 @@ static void *_get_func_handle(char *func_name, const char *const cache_name,
   static void *handle = NULL;
   if (handle == NULL){
     handle = dlopen(NULL, RTLD_GLOBAL);
+    /* should not check err here, otherwise ubuntu will report err even though
+     * everything is OK
     char *err = dlerror();
     if (err != NULL){
       ERROR("error dlopen main program %s\n", err);
       abort();
     }
+     */
   }
 
   char full_func_name[128];
