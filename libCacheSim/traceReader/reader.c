@@ -36,6 +36,8 @@ reader_t *setup_reader(const char *const trace_path,
   reader->obj_id_type = obj_id_type;
   reader->trace_type = trace_type;
   reader->n_total_req = 0;
+  reader->n_uniq_obj = 0;
+  reader->n_read_req = 0;
   reader->mmap_offset = 0;
   reader->cloned = false;
   if (reader_init_param != NULL) {
@@ -113,7 +115,7 @@ reader_t *setup_reader(const char *const trace_path,
 }
 
 int read_one_req(reader_t *const reader, request_t *const req) {
-  static char obj_id_str[MAX_OBJ_ID_LEN];
+  reader->n_read_req += 1;
   req->valid = true;
   char *line_end = NULL;
   size_t line_len;
@@ -124,6 +126,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         req->valid = false;
         return 1;
       }
+      char obj_id_str[MAX_OBJ_ID_LEN];
       find_line_ending(reader, &line_end, &line_len);
       if (reader->obj_id_type == OBJ_ID_NUM) {
         req->obj_id_int = str_to_obj_id(

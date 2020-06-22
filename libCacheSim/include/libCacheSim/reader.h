@@ -67,6 +67,7 @@ typedef struct reader {
                      * it is the size of last record, it does not
                      * include LFCR or \0 */
 
+  uint64_t n_read_req;
   uint64_t n_total_req; /* number of requests in the trace */
   uint64_t n_uniq_obj;  /* number of objects in the trace */
 

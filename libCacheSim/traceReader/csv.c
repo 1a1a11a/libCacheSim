@@ -18,7 +18,6 @@ extern "C" {
 
 static inline void csv_cb1(void *s, size_t len, void *data) {
   /* call back for csv field end */
-  static char obj_id_str[MAX_OBJ_ID_LEN];
 
   reader_t *reader = (reader_t *) data;
   csv_params_t *params = reader->reader_params;
@@ -36,6 +35,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
               MAX_OBJ_ID_LEN);
         abort();
       }
+      char obj_id_str[MAX_OBJ_ID_LEN];
       memcpy(obj_id_str, (char *) s, len);
       obj_id_str[len] = 0;
       req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);

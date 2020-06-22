@@ -29,7 +29,7 @@ typedef enum {
 } obj_id_type_e;
 
 typedef enum {
-  OP_GET = 1,
+  OP_GET = 0,
   OP_GETS,
   OP_SET,
   OP_ADD,
@@ -48,9 +48,9 @@ typedef enum {
   OP_INVALID,
 } req_op_e;
 
-static char *OP_STR[OP_INVALID] = {
-    "get",    "gets", "set",  "add",  "cas",   "replace", "append", "prepend",
-    "delete", "incr", "decr", "read", "write", "update",  "invalid"};
+static char *OP_STR[OP_INVALID+1] = {
+    "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
+    "delete", "incr", "decr", "read", "write", "update", "invalid"};
 
 /* this is inconsistent enum ! */
 typedef enum {
