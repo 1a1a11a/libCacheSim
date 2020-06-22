@@ -1,7 +1,7 @@
 ## libCacheSim - a library for cache simulation, profiling, and analysis 
 
 
-[![Build Status](https://travis-ci.com/1a1a11a/libCacheSim.svg?token=yJEqB6qLmWucGFp9zK4U&branch=master)
+![Build Status](https://travis-ci.com/1a1a11a/libCacheSim.svg?token=yJEqB6qLmWucGFp9zK4U&branch=master)
 [![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
 [![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim)
 ![visitors](https://visitor-badge.glitch.me/badge?page_id=1a1a11a.libCacheSim)
@@ -91,7 +91,7 @@ cache->cache_free(cache);
 
 
 ```
-save this to test.c and compile with 
+save this to `test.c` and compile with 
 ```
 gcc $(pkg-config --cflags --libs libCacheSim glib-2.0) -lm -ldl test.c -o test
 ```
@@ -102,7 +102,7 @@ if you get `error while loading shared libraries`, run `sudo ldconfig`
 
 ---
 ### Documentation 
-* see [quick start](quikstart.md) for a quick start. 
+* see [quick start](quickstart.md) for a quickstart tutorial. 
 * see [API.md](API.md) for common APIs.  
 * see [http://mimircache.info](http://mimircache.info) for full doc. 
   
@@ -118,11 +118,12 @@ if you get `error while loading shared libraries`, run `sudo ldconfig`
   
 ---  
 ### Contributions 
+```
 We gladly welcome pull requests.
 Before making any changes, we recommend opening an issue and discussing your proposed changes.  
 This will let us give you advice on the proposed changes. If the changes are minor, then feel free to make them without discussion. 
 This project adheres to Google's coding style. By participating, you are expected to uphold this code. 
-
+```
 
 ---
 #### Reference

@@ -5,9 +5,6 @@
 #ifndef libCacheSim_PLUGIN_H
 #define libCacheSim_PLUGIN_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <dlfcn.h>
 #include "cache.h"
 #include "reader.h"
 

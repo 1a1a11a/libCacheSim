@@ -8,8 +8,14 @@
 static void *_get_func_handle(char *func_name, const char *const cache_name,
                               bool must_have, bool internal_func) {
   static void *handle = NULL;
-  if (handle == NULL)
+  if (handle == NULL){
     handle = dlopen(NULL, RTLD_GLOBAL);
+    char *err = dlerror();
+    if (err != NULL){
+      ERROR("error dlopen main program %s\n", err);
+      abort();
+    }
+  }
 
   char full_func_name[128];
   if (internal_func)

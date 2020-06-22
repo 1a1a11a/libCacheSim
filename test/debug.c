@@ -35,7 +35,7 @@ void print_rusage_diff(struct rusage r1, struct rusage r2) {
       (r2.ru_nvcsw - r1.ru_nvcsw), (r2.ru_nivcsw - r1.ru_nivcsw));
 }
 
-/*
+
 void f1(int argc, char* argv[]) {
   int n_threads = 1;
   char *trace_path = "/Users/junchengy/twr.sbin";
@@ -77,7 +77,7 @@ void f2(int argc, char* argv[]){
   reader_t *reader = setup_reader(argv[1], TWR_TRACE, OBJ_ID_NUM, NULL);
   get_last_access_dist_heatmap_matrix(reader, 300, 1.2);
 }
-*/
+
 
 
 typedef struct {

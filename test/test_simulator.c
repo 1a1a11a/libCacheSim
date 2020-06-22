@@ -17,11 +17,12 @@ void test_profiler_no_size(gconstpointer user_data) {
   uint64_t miss_cnt_true[] = {99411, 96397, 95652, 95370,
                               95182, 94997, 94891, 94816};
 
-  reader_t *reader = (reader_t *)user_data;
+  reader_t *reader = (reader_t *) user_data;
   common_cache_params_t cc_params = {.cache_size = cache_size,
-                                     .default_ttl = 0};
-  //  cache_t *cache = create_cache("LRU", cc_params, NULL);
-  cache_t *cache = create_cache("LRUv0", cc_params, NULL);
+      .default_ttl = 0};
+  cache_t *cache = create_cache("LRU", cc_params, NULL);
+//  cache_t *cache = create_cache("LRU", cc_params, NULL);
+//  cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
   sim_res_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, step_size, NULL, 0, NUM_OF_THREADS);
@@ -51,9 +52,9 @@ void test_profiler(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {4036642816, 3838236160, 3664065536, 3611544064,
                                3081624576, 3079594496, 3075357184, 3060711936};
 
-  reader_t *reader = (reader_t *)user_data;
+  reader_t *reader = (reader_t *) user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-                                     .default_ttl = 0};
+      .default_ttl = 0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -95,9 +96,9 @@ void test_profiler_with_warmup1(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {4034876416, 3836416512, 3662237696, 3609691648,
                                3079616512, 3077579776, 3072181760, 3045314048};
 
-  reader_t *reader = (reader_t *)user_data;
+  reader_t *reader = (reader_t *) user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-                                     .default_ttl = 0};
+      .default_ttl = 0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -129,9 +130,9 @@ void test_profiler_with_warmup2(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {3036331008, 2839408640, 2676338688, 2623825408,
                                2263264256, 2261316096, 2257078784, 2242433536};
 
-  reader_t *reader = (reader_t *)user_data;
+  reader_t *reader = (reader_t *) user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-                                     .default_ttl = 0};
+      .default_ttl = 0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -164,9 +165,9 @@ void test_profiler_with_ttl(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {4037085184, 3838877696, 3666520064, 3614002688,
                                3084368896, 3082371584, 3078228480, 3075253760};
 
-  reader_t *reader = (reader_t *)user_data;
+  reader_t *reader = (reader_t *) user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-                                     .default_ttl = 2400};
+      .default_ttl = 2400};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -201,7 +202,6 @@ int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
   reader_t *reader;
 
-  /*
   reader = setup_plaintxt_reader_num();
   g_test_add_data_func_full("/libCacheSim/profiler_no_size_plain_num", reader,
                             test_profiler_no_size, test_teardown);
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
   reader = setup_vscsi_reader();
   g_test_add_data_func_full("/libCacheSim/profiler_warmup2", reader,
                             test_profiler_with_warmup2, test_teardown);
-*/
+
   reader = setup_vscsi_reader();
   g_test_add_data_func_full("/libCacheSim/profiler_with_ttl", reader,
                             test_profiler_with_ttl, test_teardown);

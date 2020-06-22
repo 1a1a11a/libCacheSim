@@ -3,6 +3,12 @@
 //
 
 #include "../include/libCacheSim/plugin.h"
+#include "../include/libCacheSim/evictionAlgo.h"
+
+#include <dlfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +33,7 @@ cache_t *create_cache_external(const char *const cache_alg_name,
   }
   dlerror(); /* Clear any existing error */
 
-  *(void **)(&cache_init) = dlsym(handle, cache_init_func_name);
+  *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
 
   if ((error = dlerror()) != NULL) {
     fprintf(stderr, "%s\n", error);
@@ -46,33 +52,42 @@ cache_t *create_cache_external(const char *const cache_alg_name,
 cache_t *create_cache_internal(const char *const cache_alg_name,
                                common_cache_params_t cc_params,
                                void *cache_specific_params) {
-  cache_t *(*cache_init)(common_cache_params_t, void *);
+  cache_t *(*cache_init)(common_cache_params_t, void *) = NULL;
+  char *err = NULL;
 
   char cache_init_func_name[256];
   void *handle = dlopen(NULL, RTLD_GLOBAL);
+  err = dlerror();
+  if (err != NULL || handle == NULL) {
+    WARNING("cannot open handle %p: %s\n", handle, err);
+    return NULL;
+  }
 
   sprintf(cache_init_func_name, "%s_init", cache_alg_name);
-  *(void **)(&cache_init) = dlsym(handle, cache_init_func_name);
+//  *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
+  cache_init = dlsym(handle, cache_init_func_name);
+  err = dlerror();
+  printf("%p %p\n", handle, cache_init);
 
-  if ((dlerror()) != NULL) {
-    WARNING("cannot load internal cache %s because cannot find %s\n",
-            cache_alg_name, cache_init_func_name);
+  if (err != NULL || cache_init == NULL) {
+    cache_t *cache = LRU_init(cc_params, NULL);
+    WARNING("cannot load internal cache %s: error %s\n", cache_alg_name, err);
     return NULL;
-  } else {
-    VVERBOSE("internal cache %s loaded\n", cache_alg_name);
-    cache_t *cache = cache_init(cc_params, cache_specific_params);
-    return cache;
   }
+
+  VERBOSE("internal cache %s loaded\n", cache_alg_name);
+  cache_t *cache = cache_init(cc_params, cache_specific_params);
+  return cache;
+
 }
 
 cache_t *create_cache(const char *const cache_alg_name,
                       common_cache_params_t cc_params,
-                      void *cache_specific_params) {
+                      void *specific_params) {
   cache_t *cache =
-      create_cache_internal(cache_alg_name, cc_params, cache_specific_params);
+      create_cache_internal(cache_alg_name, cc_params, specific_params);
   if (cache == NULL) {
-    cache =
-        create_cache_external(cache_alg_name, cc_params, cache_specific_params);
+    cache = create_cache_external(cache_alg_name, cc_params, specific_params);
   }
   if (cache == NULL) {
     ERROR("failed to create cache %s\n", cache_alg_name);

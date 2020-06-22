@@ -1,6 +1,6 @@
 aux_source_directory(. DIR_LIB_SRCS)
-add_library (cacheAlgo ${DIR_LIB_SRCS})
-target_link_libraries(cacheAlgo cache)
+add_library (evictionAlgo ${DIR_LIB_SRCS})
+target_link_libraries(evictionAlgo cache)
 
 
 #file(GLOB src *.c)
