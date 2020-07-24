@@ -8,7 +8,7 @@
 #define libCacheSim_SLABLRC_H
 
 #ifdef __cplusplus
-"C" {
+extern "C" {
 #endif
 
 #include "../cache.h"

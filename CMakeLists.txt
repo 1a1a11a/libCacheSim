@@ -16,7 +16,9 @@ set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     add_definitions(-DOS_DARWIN)
 
-    set(CMAKE_BUILD_TYPE Debug)
+    if (NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE Debug)
+    endif()
     set(CMAKE_MACOSX_RPATH 1)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
     LINK_DIRECTORIES(/usr/local/lib)

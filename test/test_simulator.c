@@ -21,7 +21,6 @@ void test_profiler_no_size(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size = cache_size,
       .default_ttl = 0};
   cache_t *cache = create_cache("LRU", cc_params, NULL);
-//  cache_t *cache = create_cache("LRU", cc_params, NULL);
 //  cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
   sim_res_t *res = get_miss_ratio_curve_with_step_size(

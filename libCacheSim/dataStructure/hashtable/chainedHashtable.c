@@ -140,7 +140,38 @@ static inline cache_obj_t *chained_hashtable_find_obj_id(hashtable_t *hashtable,
 }
 
 cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, request_t *req) {
-  return chained_hashtable_find_obj_id(hashtable, req->obj_id_int);
+  cache_obj_t *cache_obj, *ret = NULL;
+  uint64_t hv;
+
+  if (req->hv == 0) {
+    hv = get_hash_value_int_64(&req->obj_id_int);
+    req->hv = hv;
+  } else {
+    hv = req->hv;
+  }
+
+  hv = hv & hashmask(hashtable->hash_power);
+  cache_obj = &hashtable->table[hv];
+  if (OBJ_EMPTY(cache_obj)) {
+    // the object does not exist
+    return NULL;
+  }
+
+  int depth = 0;
+  while (cache_obj) {
+    depth += 1;
+    if (cache_obj->obj_id_int == req->obj_id_int) {
+      ret = cache_obj;
+      break;
+    }
+    cache_obj = cache_obj->hash_next;
+  }
+
+//  if (depth > 8) {
+//    printf("pos %lld, depth %d\n", hv, depth);
+//  }
+
+  return ret;
 }
 
 cache_obj_t *chained_hashtable_find_obj(hashtable_t *hashtable,
@@ -256,6 +287,8 @@ void free_chained_hashtable(hashtable_t *hashtable) {
 
 /* grows the hashtable to the next power of 2. */
 void _chained_hashtable_expand(hashtable_t *hashtable) {
+  INFO("chained hash table expand to hash power %d\n", hashtable->hash_power+1);
+
   cache_obj_t *old_table = hashtable->table;
   hashtable->table =
       my_malloc_n(cache_obj_t, hashsize(++hashtable->hash_power));
@@ -288,8 +321,6 @@ void _chained_hashtable_expand(hashtable_t *hashtable) {
   VERBOSE("hashtable resized from %llu to %llu\n",
           hashsizeULL((uint16_t) (hashtable->hash_power - 1)),
           hashsizeULL(hashtable->hash_power));
-//  check_chained_hashtable_integrity(hashtable);
-//  check_chained_hashtable_integrity2(hashtable, *hashtable->monitored_ptrs[0]);
 }
 
 /**
@@ -318,6 +349,44 @@ void chained_hashtable_add_ptr_to_monitoring(hashtable_t *hashtable,
   }
   hashtable->monitored_ptrs[hashtable->n_monitored_ptrs++] = cache_obj;
 }
+
+void chained_hashtable_count_chain_length(hashtable_t *hashtable) {
+  int length_cnt[200];
+  int total_entry = 0;
+
+  for (int i=0; i<200; i++) {
+    length_cnt[i] = 0;
+  }
+
+  cache_obj_t *cur_obj;
+  int length = 0;
+
+  for (uint64_t i = 0; i < hashsize(hashtable->hash_power); i++) {
+    if (OBJ_EMPTY(&hashtable->table[i])){
+      length_cnt[length] += 1;
+      continue;
+    }
+
+    length += 1;
+    cur_obj = &hashtable->table[i];
+
+    while (cur_obj->hash_next) {
+      length += 1;
+      cur_obj = cur_obj->hash_next;
+    }
+
+    length_cnt[length] += 1;
+    total_entry += length;
+  }
+
+  printf("load %.4lf, hash chain length ", (double)total_entry/hashsize(hashtable->hash_power));
+  for (int i=0; i<200; i++) {
+    printf("%d: %d, ", i, length_cnt[i]);
+    if (i > 2 && length_cnt[i] == 0 && length_cnt[i-1] == 0)
+      break;
+  }
+}
+
 
 void chained_hashtable_remove_ptr_from_monitoring(hashtable_t *hashtable,
                                                   cache_obj_t *cache_obj) {

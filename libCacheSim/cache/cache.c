@@ -151,3 +151,9 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
   cache->list_tail = cache_obj;
   return cache_obj;
 }
+
+cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
+  return hashtable_find(cache->hashtable, req);
+}
+
+

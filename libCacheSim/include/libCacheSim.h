@@ -18,12 +18,13 @@ extern "C" {
 #include "libCacheSim/request.h"
 #include "libCacheSim/simulator.h"
 #include "libCacheSim/struct.h"
+#include "libCacheSim/cacheObj.h"
 
 #ifdef __cplusplus
 }
-#include "libCacheSim/cacheObj.hpp"
-#else
-#include "libCacheSim/cacheObj.h"
+//#include "libCacheSim/cacheObj.hpp"
+//#else
+//#include "libCacheSim/cacheObj.h"
 #endif
 
 #endif // libCacheSim_H

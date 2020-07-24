@@ -129,6 +129,22 @@ int binaryReader_setup(reader_t *const reader) {
       params->ttl_type = *fmt_str;
     }
 
+    if (init_params->extra_field1 != 0 && params->extra_len1 == 0
+        && init_params->extra_field1 <= count_sum) {
+      params->extra_field1 = (gint) reader->item_size +
+          size * (init_params->extra_field1 - last_count_sum - 1);
+      params->extra_len1 = size;
+      params->extra_type1 = *fmt_str;
+    }
+
+    if (init_params->extra_field2 != 0 && params->extra_len2 == 0
+        && init_params->extra_field2 <= count_sum) {
+      params->extra_field2 = (gint) reader->item_size +
+          size * (init_params->extra_field2 - last_count_sum - 1);
+      params->extra_len2 = size;
+      params->extra_type2 = *fmt_str;
+    }
+
     reader->item_size += count * size;
     fmt_str++;
   }
@@ -240,6 +256,15 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
                    params->ttl_type, &(req->ttl));
   }
 #endif
+  if (params->extra_type1) {
+    binary_extract(record, params->extra_field1, params->extra_len1,
+                   params->extra_type1, &(req->extra_field1));
+  }
+  if (params->extra_type2) {
+    binary_extract(record, params->extra_field2, params->extra_len2,
+                   params->extra_type2, &(req->extra_field2));
+  }
+
 
   (reader->mmap_offset) += reader->item_size;
   return 0;

@@ -116,6 +116,7 @@ reader_t *setup_reader(const char *const trace_path,
 
 int read_one_req(reader_t *const reader, request_t *const req) {
   reader->n_read_req += 1;
+  req->hv = 0;
   req->valid = true;
   char *line_end = NULL;
   size_t line_len;
