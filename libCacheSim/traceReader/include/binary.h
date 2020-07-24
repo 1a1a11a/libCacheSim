@@ -39,13 +39,13 @@ typedef struct {
   guint ttl_len;
   char ttl_type;
 
-  gint unused_field1;
-  guint unused_len1;
-  char unused_type1;
+  gint extra_field1;
+  guint extra_len1;
+  char extra_type1;
 
-  gint unused_field2;
-  guint unused_len2;
-  char unused_type2;
+  gint extra_field2;
+  guint extra_len2;
+  char extra_type2;
 
   char fmt[MAX_BIN_FMT_STR_LEN];
   guint num_of_fields;

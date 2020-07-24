@@ -48,11 +48,13 @@ typedef enum {
   OP_INVALID,
 } req_op_e;
 
+#pragma GCC diagnostic ignored "-Wwrite-strings"
 static char *OP_STR[OP_INVALID+1] = {
     "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
     "delete", "incr", "decr", "read", "write", "update", "invalid"};
+//#pragma GCC diagnostic pop
 
-/* this is inconsistent enum ! */
+
 typedef enum {
   cache_ck_hit = 0,
   cache_ck_miss = 1,

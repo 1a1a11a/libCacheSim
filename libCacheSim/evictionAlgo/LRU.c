@@ -76,6 +76,7 @@ void LRU_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache->occupied_size -= cache_obj->obj_size;
 }
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
