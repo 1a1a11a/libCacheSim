@@ -103,7 +103,7 @@ extern "C" {
  */
 #if (defined(XXH_INLINE_ALL) || defined(XXH_PRIVATE_API)) \
     && !defined(XXH_INLINE_ALL_31684351384)
-/* this section should be traversed only once */
+   /* this section should be traversed only once */
 #  define XXH_INLINE_ALL_31684351384
    /* give access to the advanced API, required to compile implementations */
 #  undef XXH_STATIC_LINKING_ONLY   /* avoid macro redef */
@@ -247,7 +247,7 @@ typedef enum { XXH_OK=0, XXH_ERROR } XXH_errorcode;
   && (defined (__cplusplus) \
   || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */) )
 #   include <stdint.h>
-typedef uint32_t XXH32_hash_t;
+    typedef uint32_t XXH32_hash_t;
 #else
 #   include <limits.h>
 #   if UINT_MAX == 0xFFFFFFFFUL
@@ -342,9 +342,9 @@ XXH_PUBLIC_API XXH32_hash_t XXH32_hashFromCanonical(const XXH32_canonical_t* src
   && (defined (__cplusplus) \
   || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */) )
 #   include <stdint.h>
-typedef uint64_t XXH64_hash_t;
+    typedef uint64_t XXH64_hash_t;
 #else
-/* the following type must have a width of 64-bit */
+    /* the following type must have a width of 64-bit */
     typedef unsigned long long XXH64_hash_t;
 #endif
 
@@ -374,7 +374,7 @@ XXH_PUBLIC_API XXH_errorcode XXH64_update (XXH64_state_t* statePtr, const void* 
 XXH_PUBLIC_API XXH64_hash_t  XXH64_digest (const XXH64_state_t* statePtr);
 
 /*******   Canonical representation   *******/
-typedef struct { unsigned char digest[8]; } XXH64_canonical_t;
+typedef struct { unsigned char digest[sizeof(XXH64_hash_t)]; } XXH64_canonical_t;
 XXH_PUBLIC_API void XXH64_canonicalFromHash(XXH64_canonical_t* dst, XXH64_hash_t hash);
 XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src);
 
@@ -477,15 +477,10 @@ struct XXH64_state_s {
  * ephemeral data (local sessions).
  *
  * Avoid storing values in long-term storage until the algorithm is finalized.
- *
- * Since v0.7.3, XXH3 has reached "release candidate" status, meaning that, if
- * everything remains fine, its current format will be "frozen" and become the
- * final one.
+ * XXH3's return values will be officially finalized upon reaching v0.8.0.
  *
  * After which, return values of XXH3 and XXH128 will no longer change in
  * future versions.
- *
- * XXH3's return values will be officially finalized upon reaching v0.8.0.
  *
  * The API supports one-shot hashing, streaming mode, and custom secrets.
  */
@@ -504,26 +499,14 @@ struct XXH64_state_s {
 #  define XXH3_64bits_reset_withSecret XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_reset_withSecret)
 #  define XXH3_64bits_update XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_update)
 #  define XXH3_64bits_digest XXH_NAME2(XXH_NAMESPACE, XXH3_64bits_digest)
+
+#  define XXH3_generateSecret XXH_NAME2(XXH_NAMESPACE, XXH3_generateSecret)
 #endif
 
 /* XXH3_64bits():
  * default 64-bit variant, using default secret and default seed of 0.
  * It's the fastest variant. */
 XXH_PUBLIC_API XXH64_hash_t XXH3_64bits(const void* data, size_t len);
-
-/*
- * XXH3_64bits_withSecret():
- * It's possible to provide any blob of bytes as a "secret" to generate the hash.
- * This makes it more difficult for an external actor to prepare an intentional
- * collision.
- * The secret *must* be large enough (>= XXH3_SECRET_SIZE_MIN).
- * It should consist of random bytes.
- * Avoid trivial sequences, such as repeating sequences and especially '\0',
- * as this can cancel out itself.
- * Failure to respect these conditions will result in a poor quality hash.
- */
-#define XXH3_SECRET_SIZE_MIN 136
-XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSecret(const void* data, size_t len, const void* secret, size_t secretSize);
 
 /*
  * XXH3_64bits_withSeed():
@@ -533,6 +516,22 @@ XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSecret(const void* data, size_t len,
  * Note: seed==0 produces the same results as XXH3_64bits().
  */
 XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSeed(const void* data, size_t len, XXH64_hash_t seed);
+
+/*
+ * XXH3_64bits_withSecret():
+ * It's possible to provide any blob of bytes as a "secret" to generate the hash.
+ * This makes it more difficult for an external actor to prepare an intentional collision.
+ * The main condition is that secretSize *must* be large enough (>= XXH3_SECRET_SIZE_MIN).
+ * However, the quality of the hash highly depends on the secret's entropy.
+ * Technically, the secret must look like a bunch of random bytes.
+ * Avoid "trivial" or structured data such as repeated sequences or a text document.
+ * Whenever unsure about the "randonmess" of the blob of bytes,
+ * consider relabelling it as a "custom seed" instead,
+ * and employ "XXH3_generateSecret()" (see below)
+ * to generate a high quality secret derived from this custom seed.
+ */
+#define XXH3_SECRET_SIZE_MIN 136
+XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSecret(const void* data, size_t len, const void* secret, size_t secretSize);
 
 
 /* streaming 64-bit */
@@ -558,8 +557,8 @@ XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSeed(const void* data, size_t len, X
 
 typedef struct XXH3_state_s XXH3_state_t;
 
-#define XXH3_SECRET_DEFAULT_SIZE 192   /* >= XXH3_SECRET_SIZE_MIN */
 #define XXH3_INTERNALBUFFER_SIZE 256
+#define XXH3_SECRET_DEFAULT_SIZE 192
 struct XXH3_state_s {
    XXH_ALIGN_MEMBER(64, XXH64_hash_t acc[8]);
   /* used to store a custom secret generated from a seed */
@@ -605,9 +604,12 @@ XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset(XXH3_state_t* statePtr);
 XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset_withSeed(XXH3_state_t* statePtr, XXH64_hash_t seed);
 /*
  * XXH3_64bits_reset_withSecret():
- * `secret` is referenced, and must outlive the hash streaming session, so
- * be careful when using stack arrays.
- * `secretSize` must be >= `XXH3_SECRET_SIZE_MIN`.
+ * `secret` is referenced, it _must outlive_ the hash streaming session.
+ * Similar to one-shot API, `secretSize` must be >= `XXH3_SECRET_SIZE_MIN`,
+ * and the quality of the hash depends on secret's entropy,
+ * meaning that the secret should look like a bunch of random bytes.
+ * When in doubt about the randomness of a candidate `secret`,
+ * consider employing `XXH3_generateSecret()` instead (see below).
  */
 XXH_PUBLIC_API XXH_errorcode XXH3_64bits_reset_withSecret(XXH3_state_t* statePtr, const void* secret, size_t secretSize);
 
@@ -667,19 +669,55 @@ XXH_PUBLIC_API int XXH128_isEqual(XXH128_hash_t h1, XXH128_hash_t h2);
  * This comparator is compatible with stdlib's `qsort()`/`bsearch()`.
  *
  * return: >0 if *h128_1  > *h128_2
- *         <0 if *h128_1  < *h128_2
  *         =0 if *h128_1 == *h128_2
+ *         <0 if *h128_1  < *h128_2
  */
 XXH_PUBLIC_API int XXH128_cmp(const void* h128_1, const void* h128_2);
 
 
 /*******   Canonical representation   *******/
-typedef struct { unsigned char digest[16]; } XXH128_canonical_t;
+typedef struct { unsigned char digest[sizeof(XXH128_hash_t)]; } XXH128_canonical_t;
 XXH_PUBLIC_API void XXH128_canonicalFromHash(XXH128_canonical_t* dst, XXH128_hash_t hash);
 XXH_PUBLIC_API XXH128_hash_t XXH128_hashFromCanonical(const XXH128_canonical_t* src);
 
 
+/* ===   Experimental API   === */
+/* Symbols defined below must be considered tied to a specific library version. */
+
+/*
+ * XXH3_generateSecret():
+ *
+ * Derive a high-entropy secret from any user-defined content, named customSeed.
+ * The generated secret can be used in combination with `*_withSecret()` functions.
+ * The `_withSecret()` variants are useful to provide a higher level of protection than 64-bit seed,
+ * as it becomes much more difficult for an external actor to guess how to impact the calculation logic.
+ *
+ * The function accepts as input a custom seed of any length and any content,
+ * and derives from it a high-entropy secret of length XXH3_SECRET_DEFAULT_SIZE
+ * into an already allocated buffer secretBuffer.
+ * The generated secret is _always_ XXH_SECRET_DEFAULT_SIZE bytes long.
+ *
+ * The generated secret can then be used with any `*_withSecret()` variant.
+ * Functions `XXH3_128bits_withSecret()`, `XXH3_64bits_withSecret()`,
+ * `XXH3_128bits_reset_withSecret()` and `XXH3_64bits_reset_withSecret()`
+ * are part of this list. They all accept a `secret` parameter
+ * which must be very long for implementation reasons (>= XXH3_SECRET_SIZE_MIN)
+ * _and_ feature very high entropy (consist of random-looking bytes).
+ * These conditions can be a high bar to meet, so
+ * this function can be used to generate a secret of proper quality.
+ *
+ * customSeed can be anything. It can have any size, even small ones,
+ * and its content can be anything, even stupidly "low entropy" source such as a bunch of zeroes.
+ * The resulting `secret` will nonetheless provide all expected qualities.
+ *
+ * Supplying NULL as the customSeed copies the default secret into `secretBuffer`.
+ * When customSeedSize > 0, supplying NULL as customSeed is undefined behavior.
+ */
+XXH_PUBLIC_API void XXH3_generateSecret(void* secretBuffer, const void* customSeed, size_t customSeedSize);
+
+
 #endif  /* XXH_NO_LONG_LONG */
+
 
 #if defined(XXH_INLINE_ALL) || defined(XXH_PRIVATE_API)
 #  define XXH_IMPLEMENTATION
@@ -868,26 +906,27 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size)
 #  pragma warning(disable : 4127) /* disable: C4127: conditional expression is constant */
 #endif
 
-#if XXH_NO_INLINE_HINTS /* disable inlining hints */
-#  define XXH_FORCE_INLINE static
-#  define XXH_NO_INLINE static
-#elif defined(_MSC_VER)    /* Visual Studio */
-#  define XXH_FORCE_INLINE static __forceinline
-#  define XXH_NO_INLINE static __declspec(noinline)
-#else
-#  if defined (__cplusplus) \
-    || defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L   /* C99 */
-#    ifdef __GNUC__
-#      define XXH_FORCE_INLINE static inline __attribute__((always_inline))
-#      define XXH_NO_INLINE static __attribute__((noinline))
-#    else
-#      define XXH_FORCE_INLINE static inline
-#      define XXH_NO_INLINE static
-#    endif
+#if XXH_NO_INLINE_HINTS  /* disable inlining hints */
+#  if defined(__GNUC__)
+#    define XXH_FORCE_INLINE static __attribute__((unused))
 #  else
 #    define XXH_FORCE_INLINE static
-#    define XXH_NO_INLINE static
-#  endif /* __STDC_VERSION__ */
+#  endif
+#  define XXH_NO_INLINE static
+/* enable inlining hints */
+#elif defined(_MSC_VER)  /* Visual Studio */
+#  define XXH_FORCE_INLINE static __forceinline
+#  define XXH_NO_INLINE static __declspec(noinline)
+#elif defined(__GNUC__)
+#  define XXH_FORCE_INLINE static __inline__ __attribute__((always_inline, unused))
+#  define XXH_NO_INLINE static __attribute__((noinline))
+#elif defined (__cplusplus) \
+  || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L))   /* C99 */
+#  define XXH_FORCE_INLINE static inline
+#  define XXH_NO_INLINE static
+#else
+#  define XXH_FORCE_INLINE static
+#  define XXH_NO_INLINE static
 #endif
 
 
@@ -2042,6 +2081,3 @@ XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src
 #if defined (__cplusplus)
 }
 #endif
-
-
-#endif //libCacheSim_XXHASH_H

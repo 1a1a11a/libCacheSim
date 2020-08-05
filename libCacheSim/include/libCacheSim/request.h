@@ -27,6 +27,7 @@ static inline request_t *new_request() {
   req->valid = true;
   req->obj_id_int = 0;
   req->real_time = 0;
+  req->hv = 0;
   return req;
 }
 

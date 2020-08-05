@@ -138,6 +138,12 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req);
  */
 cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req);
 
+
+void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+
+cache_obj_t *cache_get_obj(cache_t *cache, request_t *req);
+
+
 #ifdef __cplusplus
 }
 #endif

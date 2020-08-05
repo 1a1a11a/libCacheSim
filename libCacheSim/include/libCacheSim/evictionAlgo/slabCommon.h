@@ -158,7 +158,7 @@ static inline gint add_to_slabclass(cache_t *cache, request_t *req,
 
   //  printf("%u allocated %u total\n", (unsigned)
   //  slab_params->n_allocated_slabs, (unsigned) slab_params->n_total_slabs);
-  if ((slab = g_queue_peek_head(slabclass->free_slab_q)) != NULL) {
+  if ((slab = (slab_t*) g_queue_peek_head(slabclass->free_slab_q)) != NULL) {
     // we still have free space for items, no new slab is needed
     //    slab = (slab_t *) g_queue_peek_head(slabclass->free_slab_q);
     VVVERBOSE("find free slab %p, items %p\n", slab, slab->slab_items);

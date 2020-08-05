@@ -37,22 +37,7 @@ void FIFO_insert(cache_t *FIFO, request_t *req) {
 }
 
 void FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  // currently not handle the case when all objects are evicted
-  cache_obj_t *obj_to_evict = cache->list_head;
-  if (evicted_obj != NULL) {
-    // return evicted object to caller
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
-  }
-  DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
-  cache->list_head = cache->list_head->list_next;
-  cache->list_head->list_prev = NULL;
-  DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
-  cache->occupied_size -= obj_to_evict->obj_size;
-  hashtable_delete(cache->hashtable, obj_to_evict);
-  DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
-  /** obj_to_evict is not freed or returned to hashtable, if you have
-   * extra_metadata allocated with obj_to_evict, you need to free them now,
-   * otherwise, there will be memory leakage **/
+  cache_evict_LRU(cache, req, evicted_obj);
 }
 
 void FIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

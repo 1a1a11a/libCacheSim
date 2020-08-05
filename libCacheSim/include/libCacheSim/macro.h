@@ -94,11 +94,15 @@ extern "C" {
 #define ASSERT_TRUE(x, FMT, ...) \
   CHECK_CONDITION(x, !=, true, FMT, ##__VA_ARGS__)
 #define ASSERT_ZERO(x, FMT, ...) CHECK_CONDITION(a, !=, 0, FMT, ##__VA_ARGS__)
+
+#if LOGLEVEL < INFO_LEVEL
 #define DEBUG_ASSERT(x)        \
   do {                         \
-    if (LOGLEVEL < INFO_LEVEL) \
       assert(x);               \
   } while (0)
+#else
+#define DEBUG_ASSERT(x)
+#endif
 
 //#pragma message "current LOGLEVEL: " XSTR(LOGLEVEL)
 

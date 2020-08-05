@@ -50,6 +50,8 @@ void free_chained_hashtable(hashtable_t *hashtable);
 void chained_hashtable_add_ptr_to_monitoring(hashtable_t *hashtable,
                                              cache_obj_t **ptr);
 
+void chained_hashtable_count_chain_length(hashtable_t *hashtable);
+
 void check_chained_hashtable_integrity(hashtable_t *hashtable);
 
 void check_chained_hashtable_integrity2(hashtable_t *hashtable,

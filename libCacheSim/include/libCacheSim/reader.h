@@ -41,8 +41,11 @@ typedef struct {
   int op_field;
   int ttl_field;
 
+  int extra_field1;
+  int extra_field2;
+
   // csv reader
-  gboolean has_header;
+  bool has_header;
   char delimiter;
 
   // binary reader
@@ -137,6 +140,10 @@ static inline obj_id_type_e get_obj_id_type(const reader_t *const reader) {
  * return 0 on success and 1 if reach end of trace
  */
 int read_one_req(reader_t *const reader, request_t *const req);
+
+static inline int read_trace(reader_t *const reader, request_t *const req) {
+  return read_one_req(reader, req);
+}
 
 /**
  * reset reader, so we can read from the beginning

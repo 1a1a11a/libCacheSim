@@ -8,7 +8,7 @@
 static void *_get_func_handle(char *func_name, const char *const cache_name,
                               bool must_have, bool internal_func) {
   static void *handle = NULL;
-  if (handle == NULL){
+  if (handle == NULL) {
     handle = dlopen(NULL, RTLD_GLOBAL);
     /* should not check err here, otherwise ubuntu will report err even though
      * everything is OK
@@ -51,18 +51,21 @@ cache_t *cache_struct_init(const char *const cache_name,
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_tail);
 
   cache->cache_init =
-      (cache_init_func_ptr)_get_func_handle("init", cache_name, true, false);
+      (cache_init_func_ptr) _get_func_handle("init", cache_name, true, false);
   cache->cache_free =
-      (cache_free_func_ptr)_get_func_handle("free", cache_name, true, false);
+      (cache_free_func_ptr) _get_func_handle("free", cache_name, true, false);
   cache->get =
-      (cache_get_func_ptr)_get_func_handle("get", cache_name, true, false);
+      (cache_get_func_ptr) _get_func_handle("get", cache_name, true, false);
   cache->check =
-      (cache_check_func_ptr)_get_func_handle("check", cache_name, true, false);
+      (cache_check_func_ptr) _get_func_handle("check", cache_name, true, false);
   cache->insert =
-      (cache_insert_func_ptr)_get_func_handle("insert", cache_name, true, false);
+      (cache_insert_func_ptr) _get_func_handle("insert",
+                                               cache_name,
+                                               true,
+                                               false);
   cache->evict =
-      (cache_evict_func_ptr)_get_func_handle("evict", cache_name, true, false);
-  cache->remove_obj = (cache_remove_obj_func_ptr)_get_func_handle(
+      (cache_evict_func_ptr) _get_func_handle("evict", cache_name, true, false);
+  cache->remove_obj = (cache_remove_obj_func_ptr) _get_func_handle(
       "remove_obj", cache_name, false, false);
 
   return cache;
@@ -75,7 +78,7 @@ void cache_struct_free(cache_t *cache) {
 
 cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size) {
   common_cache_params_t cc_params = {.cache_size = new_size,
-                                     .default_ttl = old_cache->default_ttl};
+      .default_ttl = old_cache->default_ttl};
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   return cache;
 }
@@ -112,7 +115,7 @@ cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
 
 cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
   VVVERBOSE("req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
-            ", cache size %" PRIu64 "/%" PRIu64 "\n",
+                ", cache size %" PRIu64 "/%" PRIu64 "\n",
             cache->req_cnt, req->obj_id_int, req->obj_size,
             cache->occupied_size, cache->cache_size);
 
@@ -125,8 +128,8 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
       cache->evict(cache, req, NULL);
   } else {
     WARNING("req %lld: obj size %ld larger than cache size %ld\n",
-            (long long)cache->req_cnt, (long)req->obj_size,
-            (long)cache->cache_size);
+            (long long) cache->req_cnt, (long) req->obj_size,
+            (long) cache->cache_size);
   }
   cache->req_cnt += 1;
   return cache_check;
@@ -151,3 +154,28 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
   cache->list_tail = cache_obj;
   return cache_obj;
 }
+
+void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+  // currently not handle the case when all objects are evicted
+  cache_obj_t *obj_to_evict = cache->list_head;
+  if (evicted_obj != NULL) {
+    // return evicted object to caller
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  }
+  DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
+  cache->list_head = cache->list_head->list_next;
+  cache->list_head->list_prev = NULL;
+  DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
+  cache->occupied_size -= obj_to_evict->obj_size;
+  hashtable_delete(cache->hashtable, obj_to_evict);
+  DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
+/** obj_to_evict is not freed or returned to hashtable, if you have
+ * extra_metadata allocated with obj_to_evict, you need to free them now,
+ * otherwise, there will be memory leakage **/
+}
+
+cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
+  return hashtable_find(cache->hashtable, req);
+}
+
+

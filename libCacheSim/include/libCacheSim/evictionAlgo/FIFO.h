@@ -12,7 +12,7 @@
 #include "../cache.h"
 
 #ifdef __cplusplus
-"C"
+extern "C"
 {
 #endif
 
