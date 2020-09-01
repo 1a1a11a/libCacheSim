@@ -48,7 +48,13 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     assert(ts < UINT32_MAX);
     req->real_time = ts;
   } else if (params->current_field_counter == init_params->op_field) {
-    fprintf(stderr, "currently operation column is not supported\n");
+    if(strcmp(s,"w")){
+      req->op = OP_WRITE;
+    }else{
+      req->op = OP_READ;
+    }
+
+    // fprintf(stderr, "currently operation column is not supported\n");
   } else if (params->current_field_counter == init_params->obj_size_field) {
     req->obj_size = (guint64) atoll((char *) s);
   }
