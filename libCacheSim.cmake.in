@@ -9,5 +9,3 @@ set(libCacheSim_INCLUDE_DIR "@CMAKE_INSTALL_PREFIX@/@CONF_INCLUDE_DIRS@")
 
 # These are IMPORTED targets created by libCacheSim-targets.cmake
 set(libCacheSim_LIBRARIES "@CMAKE_INSTALL_PREFIX@/@CONF_LIB_DIRS@/lib@PROJECT_NAME@.so")
-
-

@@ -39,7 +39,7 @@ cache_t *cache_struct_init(const char *const cache_name,
                            common_cache_params_t params) {
   cache_t *cache = my_malloc(cache_t);
   memset(cache, 0, sizeof(cache_t));
-  strncpy(cache->cache_name, cache_name, 32);
+  strncpy(cache->cache_name, cache_name, 31);
   cache->cache_size = params.cache_size;
   cache->cache_params = NULL;
   cache->default_ttl = params.default_ttl;

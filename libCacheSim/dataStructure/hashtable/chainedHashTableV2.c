@@ -39,7 +39,7 @@ static inline cache_obj_t *_last_obj_in_bucket(hashtable_t *hashtable,
 static inline void add_to_bucket(hashtable_t *hashtable,
                                  cache_obj_t *cache_obj) {
   uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id_int)
-      & hashmask(hashtable->hash_power);
+      & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == NULL) {
     hashtable->ptr_table[hv] = cache_obj;
     return;
@@ -56,14 +56,14 @@ static inline void foreach_free_obj(cache_obj_t *cache_obj, void *user_data) {
 }
 
 /************************ hashtable func ************************/
-hashtable_t *create_chained_hashtable_v2(const uint16_t hash_power) {
+hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
   hashtable_t *hashtable = my_malloc(hashtable_t);
-  hashtable->ptr_table = my_malloc_n(cache_obj_t*, hashsize(hash_power));
+  hashtable->ptr_table = my_malloc_n(cache_obj_t*, hashsize(hashpower));
 #ifdef USE_HUGEPAGE
-  madvise(hashtable->table, sizeof(cache_obj_t*)*hashsize(hashtable->hash_power), MADV_HUGEPAGE);
+  madvise(hashtable->table, sizeof(cache_obj_t*)*hashsize(hashtable->hashpower), MADV_HUGEPAGE);
 #endif
-  memset(hashtable->ptr_table, 0, hashsize(hash_power) * sizeof(cache_obj_t *));
-  hashtable->hash_power = hash_power;
+  memset(hashtable->ptr_table, 0, hashsize(hashpower) * sizeof(cache_obj_t *));
+  hashtable->hashpower = hashpower;
   hashtable->n_cur_item = 0;
   return hashtable;
 }
@@ -72,7 +72,7 @@ static inline cache_obj_t *chained_hashtable_find_obj_id_v2(hashtable_t *hashtab
                                               obj_id_t obj_id) {
   cache_obj_t *cache_obj = NULL;
   uint64_t hv = get_hash_value_int_64(&obj_id);
-  hv = hv & hashmask(hashtable->hash_power);
+  hv = hv & hashmask(hashtable->hashpower);
   cache_obj = hashtable->ptr_table[hv];
 
   while (cache_obj) {
@@ -96,7 +96,7 @@ cache_obj_t *chained_hashtable_find_obj_v2(hashtable_t *hashtable,
 /* the user needs to make sure the added object is not in the hash table */
 cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable,
                                          request_t *req) {
-  if (hashtable->n_cur_item > (uint64_t) (hashsize(hashtable->hash_power)
+  if (hashtable->n_cur_item > (uint64_t) (hashsize(hashtable->hashpower)
       * CHAINED_HASHTABLE_EXPAND_THRESHOLD))
     _chained_hashtable_expand_v2(hashtable);
 
@@ -111,7 +111,7 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
                                  cache_obj_t *cache_obj) {
   hashtable->n_cur_item -= 1;
   uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id_int)
-      & hashmask(hashtable->hash_power);
+      & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == cache_obj) {
     hashtable->ptr_table[hv] = cache_obj->hash_next;
     return;
@@ -126,9 +126,9 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
 }
 
 cache_obj_t *chained_hashtable_rand_obj_v2(hashtable_t *hashtable) {
-  uint64_t pos = next_rand() & hashmask(hashtable->hash_power);
+  uint64_t pos = next_rand() & hashmask(hashtable->hashpower);
   while (&hashtable->table[pos] == NULL)
-    pos = next_rand() & hashmask(hashtable->hash_power);
+    pos = next_rand() & hashmask(hashtable->hashpower);
   return &hashtable->table[pos];
 }
 
@@ -136,7 +136,7 @@ void chained_hashtable_foreach_v2(hashtable_t *hashtable,
                                   hashtable_iter iter_func,
                                   void *user_data) {
   cache_obj_t *cur_obj, *next_obj;
-  for (uint64_t i = 0; i < hashsize(hashtable->hash_power); i++) {
+  for (uint64_t i = 0; i < hashsize(hashtable->hashpower); i++) {
     cur_obj = hashtable->ptr_table[i];
     while (cur_obj != NULL) {
       next_obj = cur_obj->hash_next;
@@ -148,7 +148,7 @@ void chained_hashtable_foreach_v2(hashtable_t *hashtable,
 
 void free_chained_hashtable_v2(hashtable_t *hashtable) {
   chained_hashtable_foreach_v2(hashtable, foreach_free_obj, NULL);
-  my_free(sizeof(cache_obj_t *) * hashsize(hashtable->hash_power),
+  my_free(sizeof(cache_obj_t *) * hashsize(hashtable->hashpower),
           hashtable->ptr_table);
   my_free(sizeof(hashtable_t), hashtable);
 }
@@ -157,23 +157,23 @@ void free_chained_hashtable_v2(hashtable_t *hashtable) {
 void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
   cache_obj_t **old_table = hashtable->ptr_table;
   hashtable->ptr_table =
-      my_malloc_n(cache_obj_t*, hashsize(++hashtable->hash_power));
+      my_malloc_n(cache_obj_t*, hashsize(++hashtable->hashpower));
 #ifdef USE_HUGEPAGE
-  madvise(hashtable->table, sizeof(cache_obj_t*)*hashsize(hashtable->hash_power), MADV_HUGEPAGE);
+  madvise(hashtable->table, sizeof(cache_obj_t*)*hashsize(hashtable->hashpower), MADV_HUGEPAGE);
 #endif
   memset(hashtable->ptr_table,
          0,
-         hashsize(hashtable->hash_power) * sizeof(cache_obj_t *));
+         hashsize(hashtable->hashpower) * sizeof(cache_obj_t *));
   ASSERT_NOT_NULL(hashtable->ptr_table,
                   "unable to grow hashtable to size %llu\n",
-                  hashsizeULL(hashtable->hash_power));
+                  hashsizeULL(hashtable->hashpower));
 
   VERBOSE("hashtable resized from %llu to %llu\n",
-          hashsizeULL((uint16_t) (hashtable->hash_power - 1)),
-          hashsizeULL(hashtable->hash_power));
+          hashsizeULL((uint16_t) (hashtable->hashpower - 1)),
+          hashsizeULL(hashtable->hashpower));
 
   cache_obj_t *cur_obj, *next_obj;
-  for (uint64_t i = 0; i < hashsize((uint16_t) (hashtable->hash_power - 1));
+  for (uint64_t i = 0; i < hashsize((uint16_t) (hashtable->hashpower - 1));
        i++) {
     cur_obj = old_table[i];
     while (cur_obj != NULL) {
@@ -183,17 +183,17 @@ void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
       cur_obj = next_obj;
     }
   }
-  my_free(sizeof(cache_obj_t) * hashsize(hashtable->hash_power), old_table);
+  my_free(sizeof(cache_obj_t) * hashsize(hashtable->hashpower), old_table);
 }
 
 void check_hashtable_integrity_v2(hashtable_t *hashtable) {
   cache_obj_t *cur_obj, *next_obj;
-  for (uint64_t i = 0; i < hashsize(hashtable->hash_power); i++) {
+  for (uint64_t i = 0; i < hashsize(hashtable->hashpower); i++) {
     cur_obj = hashtable->ptr_table[i];
     while (cur_obj != NULL) {
       next_obj = cur_obj->hash_next;
       assert(i == (get_hash_value_int_64(&cur_obj->obj_id_int)
-          & hashmask(hashtable->hash_power)));
+          & hashmask(hashtable->hashpower)));
       cur_obj = next_obj;
     }
   }
@@ -204,7 +204,7 @@ void check_hashtable_integrity2_v2(hashtable_t *hashtable, cache_obj_t *head) {
   uint64_t hv;
   while (cur_obj) {
     hv = get_hash_value_int_64(&cur_obj->obj_id_int)
-        & hashmask(hashtable->hash_power);
+        & hashmask(hashtable->hashpower);
     cur_obj_in_hashchain = hashtable->ptr_table[hv];
     while (cur_obj_in_hashchain && cur_obj != cur_obj_in_hashchain)
       cur_obj_in_hashchain = cur_obj_in_hashchain->hash_next;

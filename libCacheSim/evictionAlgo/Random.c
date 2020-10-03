@@ -19,7 +19,7 @@ extern "C" {
 cache_t *Random_init(common_cache_params_t ccache_params,
                      void *cache_specific_init_params) {
   if (ccache_params.hash_power == HASH_POWER_DEFAULT) {
-    INFO("Please set hash_power parameter for Random to operate efficiently\n");
+    INFO("Please set hashpower parameter for Random to operate efficiently\n");
   }
   cache_t *cache = cache_struct_init("Random", ccache_params);
   srand((unsigned) time(NULL));

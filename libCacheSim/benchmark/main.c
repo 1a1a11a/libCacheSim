@@ -11,7 +11,7 @@ void measure_all(common_cache_params_t cc_params);
 
 int main(int argc, char* argv[]){
 //  init_all_global_mem_alloc();
-common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
+  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   printf("cache size %llu\n", (unsigned long long) CACHE_SIZE);
 
   if (argc < 2 || strcmp(argv[1], "all") == 0){

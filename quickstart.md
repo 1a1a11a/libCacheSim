@@ -51,12 +51,12 @@ The common_cache_params is a common_cache_params_t struct, which contains the sh
 typedef struct {
   uint64_t cache_size;
   uint64_t default_ttl;
-  int hash_power;
+  int hashpower;
 } common_cache_params_t;
 ```
-hash_power (`1 << hash_power`) is the estimated size of hash table (the number of objects stored in the cache
+hashpower (`1 << hashpower`) is the estimated size of hash table (the number of objects stored in the cache
 ), default is 20, which means default hash table size is `1 << 20` (1048576) objects. Note that setting an appropriate 
-hash_power can reduce the number of times hash table expands, but only set it if you know what you doing, otherwise
+hashpower can reduce the number of times hash table expands, but only set it if you know what you doing, otherwise
 , leave it empty. 
 
 #### Profiler 

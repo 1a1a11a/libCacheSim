@@ -63,8 +63,8 @@ typedef struct {
   uint32_t obj_size;
   int32_t ttl;
   req_op_e op;
-  uint64_t extra_field1;
-  uint64_t extra_field2;
+  int64_t extra_field1;
+  int64_t extra_field2;
   bool valid;        /* indicate whether request is valid request
                       * it is invlalid if the trace reaches the end */
 } request_t;

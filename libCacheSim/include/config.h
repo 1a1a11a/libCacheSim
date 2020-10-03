@@ -28,17 +28,13 @@ extern "C" {
 
 #ifndef HASH_TYPE
 //#define HASH_TYPE IDENTITY
-#define HASH_TYPE MURMUR3
+//#define HASH_TYPE MURMUR3
 //#define HASH_TYPE WYHASH
-//#define HASH_TYPE XXHASH3
+#define HASH_TYPE XXHASH3
 #endif
 
 #ifndef HASHTABLE_TYPE
-#define HASHTABLE_TYPE CHAINED_HASHTABLE
-#endif
-
-#ifndef HASHTABLE_VER
-#define HASHTABLE_VER 1
+#define HASHTABLE_TYPE CHAINED_HASHTABLEV2
 #endif
 
 #ifndef HASH_POWER_DEFAULT
@@ -49,7 +45,7 @@ extern "C" {
 #define CHAINED_HASHTABLE_EXPAND_THRESHOLD 1
 #endif
 
-#
+
 #include <sys/mman.h>
 #ifdef MADV_HUGEPAGE
 #define USE_HUGEPAGE
