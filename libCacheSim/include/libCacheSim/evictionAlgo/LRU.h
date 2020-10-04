@@ -25,11 +25,11 @@ cache_ck_res_e LRU_check(cache_t *cache, request_t *req, bool update);
 
 cache_ck_res_e LRU_get(cache_t *cache, request_t *req);
 
-void LRU_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
+void LRU_remove(cache_t *cache, obj_id_t obj_id);
 
-void LRU_insert(cache_t *LRU, request_t *req);
+void LRU_insert(cache_t *cache, request_t *req);
 
-void LRU_evict(cache_t *LRU, request_t *req, cache_obj_t *cache_obj);
+void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 #ifdef __cplusplus
 }

@@ -27,7 +27,7 @@ gint64 measure_qps_write(cache_t *cache) {
 //  print_resource_usage();
 
   guint64 n_obj = 0;
-  while (time_since(t0) < MAX_RUNTIME && n_obj < cache->cache_size/OBJ_SIZE ) {
+  while (time_since(t0) < MAX_RUNTIME && n_obj < cache->cache_size/OBJ_SIZE) {
     for (int i = 0; i < 20 * 1000; i++) {
       if (cache->get(cache, req) == cache_ck_hit)
         n_hit += 1;

@@ -39,13 +39,13 @@ cache_t *cache_struct_init(const char *const cache_name,
                            common_cache_params_t params) {
   cache_t *cache = my_malloc(cache_t);
   memset(cache, 0, sizeof(cache_t));
-  strncpy(cache->cache_name, cache_name, 32);
+  strncpy(cache->cache_name, cache_name, 31);
   cache->cache_size = params.cache_size;
   cache->cache_params = NULL;
   cache->default_ttl = params.default_ttl;
   int hash_power = HASH_POWER_DEFAULT;
-  if (params.hash_power > 0 && params.hash_power < 40)
-    hash_power = params.hash_power;
+  if (params.hashpower > 0 && params.hashpower < 40)
+    hash_power = params.hashpower;
   cache->hashtable = create_hashtable(hash_power);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_head);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_tail);
@@ -59,14 +59,12 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->check =
       (cache_check_func_ptr) _get_func_handle("check", cache_name, true, false);
   cache->insert =
-      (cache_insert_func_ptr) _get_func_handle("insert",
-                                               cache_name,
-                                               true,
-                                               false);
+      (cache_insert_func_ptr) _get_func_handle("insert", cache_name, true, false);
   cache->evict =
       (cache_evict_func_ptr) _get_func_handle("evict", cache_name, true, false);
-  cache->remove_obj = (cache_remove_obj_func_ptr) _get_func_handle(
-      "remove_obj", cache_name, false, false);
+//  cache->remove_obj = (cache_remove_obj_func_ptr) _get_func_handle(
+//      "remove_obj", cache_name, false, false);
+  cache->remove = (cache_remove_func_ptr) _get_func_handle("remove", cache_name, false, false);
 
   return cache;
 }
@@ -78,7 +76,8 @@ void cache_struct_free(cache_t *cache) {
 
 cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size) {
   common_cache_params_t cc_params = {.cache_size = new_size,
-      .default_ttl = old_cache->default_ttl};
+                                     .hashpower = old_cache->hashtable->hashpower,
+                                     .default_ttl = old_cache->default_ttl};
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   return cache;
 }
@@ -115,7 +114,7 @@ cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
 
 cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
   VVVERBOSE("req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
-                ", cache size %" PRIu64 "/%" PRIu64 "\n",
+            ", cache size %" PRIu64 "/%" PRIu64 "\n",
             cache->req_cnt, req->obj_id_int, req->obj_size,
             cache->occupied_size, cache->cache_size);
 
@@ -169,7 +168,7 @@ void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache->occupied_size -= obj_to_evict->obj_size;
   hashtable_delete(cache->hashtable, obj_to_evict);
   DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
-/** obj_to_evict is not freed or returned to hashtable, if you have
+  /** obj_to_evict is not freed or returned to hashtable, if you have
  * extra_metadata allocated with obj_to_evict, you need to free them now,
  * otherwise, there will be memory leakage **/
 }
@@ -177,5 +176,3 @@ void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
   return hashtable_find(cache->hashtable, req);
 }
-
-

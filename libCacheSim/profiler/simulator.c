@@ -165,7 +165,7 @@ get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
   }
   sleep(2);
 
-  char start_cache_size[8], end_cache_size[8];
+  char start_cache_size[64], end_cache_size[64];
   convert_size_to_str(cache_sizes[0], start_cache_size);
   convert_size_to_str(cache_sizes[num_of_sizes - 1], end_cache_size);
 

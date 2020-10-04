@@ -49,14 +49,14 @@ static inline void _detect_data_path(char* data_path, char* data_name){
 }
 
 
-reader_t *setup_vscsi_reader() {
+static inline reader_t *setup_vscsi_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.vscsi");
   reader_t *reader_vscsi = setup_reader(data_path, VSCSI_TRACE, OBJ_ID_NUM, NULL);
   return reader_vscsi;
 }
 
-reader_t *setup_binary_reader() {
+static inline reader_t *setup_binary_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.vscsi");
   reader_init_param_t *init_params_bin = g_new0(reader_init_param_t, 1);
@@ -69,7 +69,7 @@ reader_t *setup_binary_reader() {
   return reader_bin_l;
 }
 
-reader_t *setup_csv_reader_obj_str() {
+static inline reader_t *setup_csv_reader_obj_str(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
@@ -83,7 +83,7 @@ reader_t *setup_csv_reader_obj_str() {
   return reader_csv_c;
 }
 
-reader_t *setup_csv_reader_obj_num() {
+static inline reader_t *setup_csv_reader_obj_num(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
@@ -97,28 +97,27 @@ reader_t *setup_csv_reader_obj_num() {
   return reader_csv_l;
 }
 
-reader_t *setup_plaintxt_reader_num() {
+static inline reader_t *setup_plaintxt_reader_num(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.txt");
   return setup_reader(data_path, PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
 }
 
-reader_t *setup_plaintxt_reader_str() {
+static inline reader_t *setup_plaintxt_reader_str(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.txt");
   return setup_reader(data_path, PLAIN_TXT_TRACE, OBJ_ID_STR, NULL);
 }
 
 
-void test_teardown(gpointer data) {
+static inline void test_teardown(gpointer data) {
   reader_t *reader = (reader_t *) data;
   close_reader(reader);
 }
 
-cache_t *create_test_cache(const char *alg_name,
+static inline cache_t *create_test_cache(const char *alg_name,
                            common_cache_params_t cc_params, reader_t* reader, void *params) {
   cache_t* cache;
-  void *init_params_g;
   if (strcmp(alg_name, "LRU") == 0)
     cache = LRU_init(cc_params, NULL);
   else if (strcmp(alg_name, "FIFO") == 0)
@@ -131,15 +130,16 @@ cache_t *create_test_cache(const char *alg_name,
     cache = MRU_init(cc_params, NULL);
 //  else if (strcmp(alg_name, "LRU_K") == 0)
 //    cache = LRU_K_init(cc_params, NULL);
-//  else if (strcmp(alg_name, "LFU") == 0)
-//    cache = LFU_init(cc_params, NULL);
+  else if (strcmp(alg_name, "LFU") == 0)
+    cache = LFU_init(cc_params, NULL);
+  else if (strcmp(alg_name, "LFUDA") == 0)
+    cache = LFUDA_init(cc_params, NULL);
 //  else if (strcmp(alg_name, "LFUFast") == 0)
 //    cache = LFUFast_init(cc_params, NULL);
-//  else if (strcmp(alg_name, "ARC") == 0) {
-//    ARC_init_params_t *init_params = g_new0(ARC_init_params_t, 1);
-//    init_params_g = init_params;
-//    init_params->ghost_list_factor = 100;
-//    cache = ARC_init(cc_params, init_params);
+  else if (strcmp(alg_name, "ARC") == 0) {
+    ARC_init_params_t *init_params = my_malloc_n(ARC_init_params_t, 1);
+    init_params->ghost_list_factor = 1;
+    cache = ARC_init(cc_params, init_params);
 //  } else if (strcmp(alg_name, "SLRU") == 0) {
 //    SLRU_init_params_t *init_params = g_new0(SLRU_init_params_t, 1);
 //    init_params_g = init_params;
@@ -153,8 +153,7 @@ cache_t *create_test_cache(const char *alg_name,
 //    cache = Optimal_init(cc_params, (void *) init_params);
 //  } else if (strcmp(alg_name, "TTL_FIFO") == 0){
 //    cache = TTL_FIFO_init(cc_params, NULL);
-//  }
-  else if (strcmp(alg_name, "slabLRC") == 0) {
+  } else if (strcmp(alg_name, "slabLRC") == 0) {
     cache = slabLRC_init(cc_params, NULL);
   } else if (strcmp(alg_name, "slabLRU") == 0) {
     cache = slabLRU_init(cc_params, NULL);

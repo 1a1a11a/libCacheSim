@@ -52,7 +52,7 @@ static inline void set_rand_seed(int64_t seed){
  */
 static inline uint64_t next_rand(){
   rand_seed = 6364136223846793005 * rand_seed + 1442695040888963407;
-  return rand_seed;
+  return rand_seed & 0xfffffffffffffffful;
 }
 
 

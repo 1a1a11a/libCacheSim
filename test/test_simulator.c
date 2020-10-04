@@ -9,7 +9,7 @@
  * size information
  * @param user_data
  */
-void test_profiler_no_size(gconstpointer user_data) {
+static void test_profiler_no_size(gconstpointer user_data) {
   uint64_t cache_size = CACHE_SIZE / CACHE_SIZE_UNIT;
   uint64_t step_size = STEP_SIZE / CACHE_SIZE_UNIT;
 
@@ -44,7 +44,7 @@ void test_profiler_no_size(gconstpointer user_data) {
  * information
  * @param user_data
  */
-void test_profiler(gconstpointer user_data) {
+static void test_profiler(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
   uint64_t miss_cnt_true[] = {93161, 87795, 82945, 81433,
                               72250, 72083, 71969, 71716};
@@ -88,7 +88,7 @@ void test_profiler(gconstpointer user_data) {
  * this one for testing warmup
  * @param user_data
  */
-void test_profiler_with_warmup1(gconstpointer user_data) {
+static void test_profiler_with_warmup1(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
   uint64_t miss_cnt_true[] = {93009, 87634, 82782, 81267,
                               72080, 71911, 71770, 71333};
@@ -122,7 +122,7 @@ void test_profiler_with_warmup1(gconstpointer user_data) {
   cache->cache_free(cache);
 }
 
-void test_profiler_with_warmup2(gconstpointer user_data) {
+static void test_profiler_with_warmup2(gconstpointer user_data) {
   uint64_t req_cnt_true = 91098, req_byte_true = 3180282368;
   uint64_t miss_cnt_true[] = {75028, 69711, 65084, 63574,
                               57253, 57101, 56987, 56734};
@@ -150,7 +150,7 @@ void test_profiler_with_warmup2(gconstpointer user_data) {
   cache->cache_free(cache);
 }
 
-void test_profiler_with_ttl(gconstpointer user_data) {
+static void test_profiler_with_ttl(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
   //  uint64_t miss_cnt_true[] = {97196, 96401, 94302, 93072,
   //                              92376, 92268, 92163, 91894};

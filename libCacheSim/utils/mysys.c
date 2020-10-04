@@ -43,7 +43,7 @@ int get_n_cores(void) {
   return 4;
 }
 
-void print_cwd() {
+void print_cwd(void) {
   char cwd[1024];
   if (getcwd(cwd, sizeof(cwd)) != NULL) {
     printf("Current working dir: %s\n", cwd);
@@ -52,7 +52,7 @@ void print_cwd() {
   }
 }
 
-void print_glib_ver() {
+void print_glib_ver(void) {
   printf("glib version %d.%d.%d %d\n", glib_major_version, glib_minor_version,
          glib_micro_version, glib_binary_age);
 }

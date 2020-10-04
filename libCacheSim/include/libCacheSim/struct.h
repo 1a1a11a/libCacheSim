@@ -31,6 +31,8 @@ typedef struct cache_obj {
   struct cache_obj *list_next;
   struct cache_obj *list_prev;
   union {
+    uint64_t freq;
+    double score;
     void *extra_metadata_ptr;
     uint64_t extra_metadata_u64;
     uint8_t extra_metadata_u8[8];
@@ -63,8 +65,8 @@ typedef struct {
   uint32_t obj_size;
   int32_t ttl;
   req_op_e op;
-  uint64_t extra_field1;
-  uint64_t extra_field2;
+  int64_t extra_field1;
+  int64_t extra_field2;
   bool valid;        /* indicate whether request is valid request
                       * it is invlalid if the trace reaches the end */
 } request_t;

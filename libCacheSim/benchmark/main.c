@@ -11,7 +11,7 @@ void measure_all(common_cache_params_t cc_params);
 
 int main(int argc, char* argv[]){
 //  init_all_global_mem_alloc();
-common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
+  common_cache_params_t cc_params = {.cache_size=CACHE_SIZE, .default_ttl=0};
   printf("cache size %llu\n", (unsigned long long) CACHE_SIZE);
 
   if (argc < 2 || strcmp(argv[1], "all") == 0){
@@ -36,7 +36,7 @@ void measure_all(common_cache_params_t cc_params){
 
   cache_t* fifo = FIFO_init(cc_params, NULL);
   cache_t* lru = LRU_init(cc_params, NULL);
-  cache_t* lruv0 = LRUv0_init(cc_params, NULL);
+//  cache_t* lruv0 = LRUv0_init(cc_params, NULL);
 //  cache_t* slabLRC = slabLRC_init(cc_params, NULL);
 //  cache_t* slabLRU = slabLRU_init(cc_params, NULL);
 //  cache_t* slabObjLRU = slabObjLRU_init(cc_params, NULL);

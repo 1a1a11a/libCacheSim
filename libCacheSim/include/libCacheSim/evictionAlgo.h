@@ -10,10 +10,10 @@ extern "C"
 {
 #endif
 
-//#include "ARC.h"
+#include "evictionAlgo/ARC.h"
 #include "evictionAlgo/FIFO.h"
-//#include "LFU.h"
-//#include "LFUFast.h"
+#include "evictionAlgo/LFU.h"
+#include "evictionAlgo/LFUDA.h"
 #include "evictionAlgo/LRU.h"
 #include "evictionAlgo/LRUv0.h"
 //#include "LRU_K.h"

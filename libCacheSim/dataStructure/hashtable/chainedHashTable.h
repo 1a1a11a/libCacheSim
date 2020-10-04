@@ -23,7 +23,9 @@ hashtable_t *create_chained_hashtable(const uint16_t hashpower_init);
 cache_obj_t *chained_hashtable_find_obj(hashtable_t *hashtable,
                                         cache_obj_t *cache_obj);
 
-cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, request_t *req);
+cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, obj_id_t obj_id);
+
+cache_obj_t *chained_hashtable_find_req(hashtable_t *hashtable, request_t *req);
 
 /* return an empty cache_obj_t */
 cache_obj_t *chained_hashtable_insert(hashtable_t *hashtable, request_t *req);

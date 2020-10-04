@@ -48,17 +48,23 @@ static inline void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail,
   //  if (){}
   if (cache_obj == *head) {
     *head = cache_obj->list_next;
-    cache_obj->list_next->list_prev = NULL;
-    return;
+    if (cache_obj->list_next != NULL)
+      cache_obj->list_next->list_prev = NULL;
+//    return;
   }
   if (cache_obj == *tail) {
     *tail = cache_obj->list_prev;
-    cache_obj->list_prev->list_next = NULL;
-    return;
+    if (cache_obj->list_prev != NULL)
+      cache_obj->list_prev->list_next = NULL;
+//    return;
   }
 
-  cache_obj->list_prev->list_next = cache_obj->list_next;
-  cache_obj->list_next->list_prev = cache_obj->list_prev;
+  if (cache_obj->list_prev != NULL)
+    cache_obj->list_prev->list_next = cache_obj->list_next;
+
+  if (cache_obj->list_next != NULL)
+    cache_obj->list_next->list_prev = cache_obj->list_prev;
+
   cache_obj->list_prev = NULL;
   cache_obj->list_next = NULL;
 }

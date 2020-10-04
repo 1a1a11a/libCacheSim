@@ -11,12 +11,12 @@ void test_profilerLRU_basic(gconstpointer user_data) {
   long i;
   double *mr;
 
-  double mr_last_size20_true = 1 - 0.072985, mr_last_true = 1 - 0.569921;
-  guint64 hc_true[N_TEST] = {0, 2685, 3347, 3908, 4666, 4904};
+  double mr_last_size20_true = 1 - 0.072985;
+//  double mr_last_true = 1 - 0.569921;
+//  guint64 hc_true[N_TEST] = {0, 2685, 3347, 3908, 4666, 4904};
 
-  double
-      omr_true[N_TEST] = {1, 0.976421, 0.970607, 0.965681, 0.959024, 0.956934};
-  double bmr_true[N_TEST] = {};
+  double omr_true[N_TEST] = {1, 0.976421, 0.970607, 0.965681, 0.959024, 0.956934};
+//  double bmr_true[N_TEST] = {};
 
   mr = get_lru_obj_miss_ratio(reader, get_num_of_req(reader));
   for (i = 0; i < N_TEST; i++) {

@@ -60,11 +60,13 @@ set(CFLAGS "$ENV{CFLAGS} "
         "-std=gnu99 ${CMAKE_ENABLE_C99} "
         "-Wall -Wshadow -Winline "
         "-Wno-unused "
-        #        "-Wstrict-prototypes -Wmissing-prototypes "
-        #        "-Wmissing-declarations "
+#                "-Wstrict-prototypes -Wmissing-prototypes "
+#                "-Wmissing-declarations "
         "-Wredundant-decls "
-        #        "-Wunused-function -Wunused-value -Wunused-variable "
-        #    -std=c11     "-fno-strict-aliasing "
+#                "-Wunused-value -Wunused-variable "
+#                "-Wunused-function "
+#            -std=c11
+#           "-fno-strict-aliasing "
         )
 
 

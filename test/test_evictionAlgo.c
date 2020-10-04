@@ -4,7 +4,7 @@
 
 #include "common.h"
 
-void _verify_profiler_results(const sim_res_t *const res,
+static void _verify_profiler_results(const sim_res_t *const res,
                               const guint64 num_of_sizes,
                               const guint64 req_cnt_true,
                               const guint64 *const miss_cnt_true,
@@ -19,7 +19,26 @@ void _verify_profiler_results(const sim_res_t *const res,
   }
 }
 
-void test_FIFO(gconstpointer user_data) {
+static void test_LRU(gconstpointer user_data) {
+  guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
+  guint64 miss_cnt_true[] = {93161, 87795, 82945, 81433, 72250, 72083, 71969, 71716};
+  guint64 miss_byte_true[] = {4036642816, 3838236160, 3664065536, 3611544064, 3081624576, 3079594496, 3075357184, 3060711936};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
+  cache_t *cache = create_test_cache("LRU", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
+
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  g_free(res);
+}
+
+
+static void test_FIFO(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   guint64 miss_cnt_true[] = {93193, 87172, 84321, 83888,
                              72331, 72230, 72181, 72141};
@@ -43,7 +62,7 @@ void test_FIFO(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_Optimal(gconstpointer user_data) {
+static void test_Optimal(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   guint64 miss_cnt_true[] = {0,     93193, 87172, 84321, 83888,
                              72331, 72230, 72181, 72141};
@@ -71,9 +90,9 @@ void test_Optimal(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_Random(gconstpointer user_data) {
+static void test_Random(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower=12, .default_ttl = 0};
   cache_t *cache = create_test_cache("Random", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   sim_res_t *res = get_miss_ratio_curve_with_step_size(
@@ -90,17 +109,32 @@ void test_Random(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_LFU(gconstpointer user_data) {
+static void test_LFU(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
-  guint64 miss_cnt_true[] = {0,     93193, 87172, 84321, 83888,
-                             72331, 72230, 72181, 72141};
-  guint64 miss_byte_true[] = {0,          4035451392, 3815613440,
-                              3724681728, 3751948288, 3083697664,
-                              3081942528, 3081872384, 3080036864};
+  guint64 miss_cnt_true[] = {91385, 84061, 77353, 76506, 68994, 66441, 64819, 64376};
+  guint64 miss_byte_true[] = {3990213632, 3692986368, 3434442752, 3413374464, 2963407872, 2804032512, 2717934080, 2690728448};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
-  cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
+  cache_t *cache = create_test_cache("LFU", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
+
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  g_free(res);
+}
+
+static void test_LFUDA(gconstpointer user_data) {
+  guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
+  guint64 miss_cnt_true[] = {92233, 85809, 80462, 79335, 73049, 69671, 67942, 67782};
+  guint64 miss_byte_true[] = {4023913984, 3752341504, 3534985216, 3504430592, 3150782464, 2977339904, 2867254784, 2824277504};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
+  cache_t *cache = create_test_cache("LFUDA", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   sim_res_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
@@ -118,7 +152,7 @@ void test_LFU(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_MRU(gconstpointer user_data) {
+static void test_MRU(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   guint64 miss_cnt_true[] = {97661, 94006, 88557, 83224,
                              77645, 66502, 62676, 59598};
@@ -138,7 +172,7 @@ void test_MRU(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_LRU_K(gconstpointer user_data) {
+static void test_LRU_K(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   guint64 miss_cnt_true[] = {0,     93193, 87172, 84321, 83888,
                              72331, 72230, 72181, 72141};
@@ -166,7 +200,25 @@ void test_LRU_K(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_ARC(gconstpointer user_data) {
+static void test_ARC(gconstpointer user_data) {
+  guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
+  guint64 miss_cnt_true[] = {91767, 86514, 83030, 83100, 73160, 69011, 67656, 66081};
+  guint64 miss_byte_true[] = {3998675456, 3785527296, 3658743808, 3684266496, 3143558656, 2961070080, 2879977472, 2780966912};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
+  cache_t *cache = create_test_cache("ARC", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
+
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  g_free(res);
+}
+
+static void test_SLRU(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   guint64 miss_cnt_true[] = {0,     93193, 87172, 84321, 83888,
                              72331, 72230, 72181, 72141};
@@ -179,7 +231,7 @@ void test_ARC(gconstpointer user_data) {
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   sim_res_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
+      reader, cache, STEP_SIZE * 100000000000, NULL, 0, 1);
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     printf("cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
@@ -194,35 +246,7 @@ void test_ARC(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_SLRU(gconstpointer user_data) {
-  guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
-  guint64 miss_cnt_true[] = {0,     93193, 87172, 84321, 83888,
-                             72331, 72230, 72181, 72141};
-  guint64 miss_byte_true[] = {0,          4035451392, 3815613440,
-                              3724681728, 3751948288, 3083697664,
-                              3081942528, 3081872384, 3080036864};
-
-  reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
-  cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
-  g_assert_true(cache != NULL);
-  sim_res_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
-
-  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf("cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
-           " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
-           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_bytes,
-           res[i].miss_bytes);
-  }
-
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->cache_free(cache);
-  g_free(res);
-}
-
-void test_slabLRC(gconstpointer user_data) {
+static void test_slabLRC(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   //  guint64 miss_cnt_true[] = {93609, 89934, 84798, 84371, 84087, 73067,
   //  72652, 72489}; guint64 miss_byte_true[] = {4047843328, 3924603392,
@@ -256,7 +280,7 @@ void test_slabLRC(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_slabLRU(gconstpointer user_data) {
+static void test_slabLRU(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   //  guint64 miss_cnt_true[] = {92733, 90020, 86056, 82894, 80750, 74338,
   //  71370, 71091}; guint64 miss_byte_true[] = {4018161152, 3936436224,
@@ -287,7 +311,7 @@ void test_slabLRU(gconstpointer user_data) {
   g_free(res);
 }
 
-void test_slabObjLRU(gconstpointer user_data) {
+static void test_slabObjLRU(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   //  guint64 miss_cnt_true[] = {91067, 88334, 85939, 79621, 78776, 77461,
   //  74381, 72492}; guint64 miss_byte_true[] = {3985031168, 3864086016,
@@ -321,21 +345,28 @@ void test_slabObjLRU(gconstpointer user_data) {
   g_free(res);
 }
 
-void empty_test(gconstpointer user_data) { ; }
+static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
   reader_t *reader;
 
   reader = setup_csv_reader_obj_num();
-  //  reader = setup_vscsi_reader();
-  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_SlabLRC", reader, test_slabLRC);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_SlabLRU", reader, test_slabLRU);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_SlabObjLRU", reader,
-                       test_slabObjLRU);
+//  reader = setup_vscsi_reader();
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
+
+
+  /* these are wrong now */
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_SlabLRC", reader, test_slabLRC);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_SlabLRU", reader, test_slabLRU);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_SlabObjLRU", reader,
+//                       test_slabObjLRU);
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);

@@ -26,11 +26,11 @@ typedef void (*hashtable_iter)(cache_obj_t* cache_obj, void* user_data);
 typedef struct hashtable {
   union{
     cache_obj_t *table;
-    cache_obj_t **table_twodim;
     cache_obj_t **ptr_table;
+    uint64_t *btable;
   };
   uint64_t n_cur_item;    // current occupied size
-  uint16_t hash_power;
+  uint16_t hashpower;
   union{
     // used for hashtable V1, these cache_obj pointers are used by external modules, so
     // if hashtable needs to move the obj, their pointer need to be updated as well
