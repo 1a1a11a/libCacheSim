@@ -19,7 +19,7 @@ extern "C"
 #define TIMEVAL_TO_USEC(tv) ((long long) (tv.tv_sec*1000000+tv.tv_usec))
 #define TIMEVAL_TO_SEC(tv) ((double) (tv.tv_sec+tv.tv_usec/1000000.0))
 
-int get_resouce_usage() {
+static inline int get_resouce_usage(void) {
   struct rusage r_usage;
   getrusage(RUSAGE_SELF, &r_usage);
 
@@ -28,7 +28,7 @@ int get_resouce_usage() {
   return 0;
 }
 
-int print_resource_usage(){
+static inline int print_resource_usage(void){
   struct rusage r_usage;
   getrusage(RUSAGE_SELF, &r_usage);
 
@@ -38,7 +38,7 @@ int print_resource_usage(){
   return 0;
 }
 
-void print_rusage_diff0(struct rusage r1, struct rusage r2){
+static inline void print_rusage_diff0(struct rusage r1, struct rusage r2){
   printf("******  CPU user time %.2lf s, sys time %.2lf s\n",
       (TIMEVAL_TO_SEC(r2.ru_utime)-TIMEVAL_TO_SEC(r1.ru_utime)),
       (TIMEVAL_TO_SEC(r2.ru_stime)-TIMEVAL_TO_SEC(r1.ru_stime)));
@@ -51,7 +51,7 @@ void print_rusage_diff0(struct rusage r1, struct rusage r2){
 }
 
 
-void print_rusage_diff(struct rusage r1, struct rusage r2){
+static inline void print_rusage_diff(struct rusage r1, struct rusage r2){
   printf("******  CPU user time %.2lf s, sys time %.2lf s\n",
          (TIMEVAL_TO_SEC(r2.ru_utime)-TIMEVAL_TO_SEC(r1.ru_utime)),
          (TIMEVAL_TO_SEC(r2.ru_stime)-TIMEVAL_TO_SEC(r1.ru_stime)));

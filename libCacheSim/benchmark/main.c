@@ -36,7 +36,7 @@ void measure_all(common_cache_params_t cc_params){
 
   cache_t* fifo = FIFO_init(cc_params, NULL);
   cache_t* lru = LRU_init(cc_params, NULL);
-  cache_t* lruv0 = LRUv0_init(cc_params, NULL);
+//  cache_t* lruv0 = LRUv0_init(cc_params, NULL);
 //  cache_t* slabLRC = slabLRC_init(cc_params, NULL);
 //  cache_t* slabLRU = slabLRU_init(cc_params, NULL);
 //  cache_t* slabObjLRU = slabObjLRU_init(cc_params, NULL);

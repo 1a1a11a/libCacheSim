@@ -20,6 +20,9 @@ target_link_libraries(testEvictionAlgo cache evictionAlgo traceReader profiler d
 add_executable(testHeatmap ../test/test_heatmap.c)
 target_link_libraries(testHeatmap cache evictionAlgo traceReader profiler dataStructure traceStat utils ${LIBS})
 
+add_executable(debug ../test/debug.c)
+target_link_libraries(debug cache evictionAlgo traceReader profiler dataStructure traceStat utils ${LIBS})
+
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
 add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)

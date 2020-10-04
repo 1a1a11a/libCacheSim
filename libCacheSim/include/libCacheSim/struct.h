@@ -31,6 +31,8 @@ typedef struct cache_obj {
   struct cache_obj *list_next;
   struct cache_obj *list_prev;
   union {
+    uint64_t freq;
+    double score;
     void *extra_metadata_ptr;
     uint64_t extra_metadata_u64;
     uint8_t extra_metadata_u8[8];

@@ -27,8 +27,9 @@ extern "C"
 
 #if HASHTABLE_TYPE == CHAINED_HASHTABLE
 #include "chainedHashTable.h"
-#define create_hashtable(hash_power) create_chained_hashtable(hash_power)
-#define hashtable_find(hashtable, req) chained_hashtable_find(hashtable, req)
+#define create_hashtable(hashpower) create_chained_hashtable(hashpower)
+#define hashtable_find(hashtable, obj_id) chained_hashtable_find(hashtable, obj_id)
+#define hashtable_find_req(hashtable, req) chained_hashtable_find(hashtable, req)
 #define hashtable_find_obj(hashtable, cache_obj) chained_hashtable_find_obj(hashtable, cache_obj)
 #define hashtable_insert(hashtable, req) chained_hashtable_insert(hashtable, req)
 #define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete(hashtable, cache_obj)
@@ -41,6 +42,7 @@ extern "C"
 #include "chainedHashTableV2.h"
 #define create_hashtable(hashpower) create_chained_hashtable_v2(hashpower)
 #define hashtable_find(hashtable, req) chained_hashtable_find_v2(hashtable, req)
+#define hashtable_find_obj_id(hashtable, obj_id) chained_hashtable_find_obj_id_v2(hashtable, obj_id)
 #define hashtable_find_obj(hashtable, cache_obj) chained_hashtable_find_obj_v2(hashtable, cache_obj)
 #define hashtable_insert(hashtable, req) chained_hashtable_insert_v2(hashtable, req)
 #define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete_v2(hashtable, cache_obj)

@@ -20,6 +20,10 @@
 
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)
 
+static void chained_hashtable_remove_ptr_from_monitoring(hashtable_t *hashtable,
+                                                         cache_obj_t *cache_obj);
+
+
 /************************ helper func ************************/
 static inline cache_obj_t *_last_obj_in_bucket(hashtable_t *hashtable,
                                                uint64_t hv) {
@@ -109,8 +113,7 @@ hashtable_t *create_chained_hashtable(const uint16_t hash_power) {
   return hashtable;
 }
 
-static inline cache_obj_t *chained_hashtable_find_obj_id(hashtable_t *hashtable,
-                                                         obj_id_t obj_id) {
+cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, obj_id_t obj_id) {
   cache_obj_t *cache_obj, *ret = NULL;
   uint64_t hv = get_hash_value_int_64(&obj_id);
   hv = hv & hashmask(hashtable->hashpower);
@@ -135,7 +138,7 @@ static inline cache_obj_t *chained_hashtable_find_obj_id(hashtable_t *hashtable,
   return ret;
 }
 
-cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, request_t *req) {
+cache_obj_t *chained_hashtable_find_req(hashtable_t *hashtable, request_t *req) {
   cache_obj_t *cache_obj, *ret = NULL;
   uint64_t hv;
 
@@ -172,7 +175,7 @@ cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, request_t *req) {
 
 cache_obj_t *chained_hashtable_find_obj(hashtable_t *hashtable,
                                         cache_obj_t *obj_to_find) {
-  return chained_hashtable_find_obj_id(hashtable, obj_to_find->obj_id_int);
+  return chained_hashtable_find(hashtable, obj_to_find->obj_id_int);
 }
 
 cache_obj_t *chained_hashtable_insert(hashtable_t *hashtable, request_t *req) {
@@ -332,8 +335,8 @@ void chained_hashtable_add_ptr_to_monitoring(hashtable_t *hashtable,
                                              cache_obj_t **cache_obj) {
   if (hashtable->n_monitored_ptrs == hashtable->n_allocated_ptrs) {
     cache_obj_t ***old_ptrs = hashtable->monitored_ptrs;
-    uint64_t
-        old_ptr_size = sizeof(cache_obj_t **) * hashtable->n_allocated_ptrs;
+//    uint64_t
+//        old_ptr_size = sizeof(cache_obj_t **) * hashtable->n_allocated_ptrs;
     hashtable->n_allocated_ptrs = MAX(8, hashtable->n_allocated_ptrs * 2);
     hashtable->monitored_ptrs =
         my_malloc_n(cache_obj_t**, hashtable->n_allocated_ptrs);
@@ -384,7 +387,7 @@ void chained_hashtable_count_chain_length(hashtable_t *hashtable) {
 }
 
 
-void chained_hashtable_remove_ptr_from_monitoring(hashtable_t *hashtable,
+static void chained_hashtable_remove_ptr_from_monitoring(hashtable_t *hashtable,
                                                   cache_obj_t *cache_obj) {
   ;
 }

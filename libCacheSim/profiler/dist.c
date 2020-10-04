@@ -20,12 +20,24 @@ extern "C" {
  */
 //int fileno(FILE *stream);
 
+gint32 *get_reuse_time_cnt_in_bins0(reader_t *reader, double log_base,
+                                    gint64 *n_dist_cnt);
+
+gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
+                                   gint64 *n_dist_cnt);
+
+gint32 *get_last_access_dist_cnt_in_bins0(reader_t *reader, double log_base,
+                                          gint64 *n_dist_cnt);
+
+gint32 *get_first_access_dist_cnt_in_bins0(reader_t *reader, double log_base,
+                                           gint64 *n_dist_cnt);
+
 /***********************************************************
  * sequential version of get_stack_dist
  * @param reader
  * @return
  */
-gint64 *_get_stack_dist_seq(reader_t *reader) {
+static gint64 *_get_stack_dist_seq(reader_t *reader) {
   guint64 ts = 0;
   gint64 max_rd = 0;
   gint64 rd = 0;
@@ -36,7 +48,7 @@ gint64 *_get_stack_dist_seq(reader_t *reader) {
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   // create splay tree
   sTree *splay_tree = NULL;
@@ -45,7 +57,7 @@ gint64 *_get_stack_dist_seq(reader_t *reader) {
   while (req->valid) {
     splay_tree = get_stack_dist_add_req(req, splay_tree, hash_table, ts, &rd);
     stack_dist_array[ts] = rd;
-    if (rd > (gint64)max_rd) {
+    if (rd > (gint64) max_rd) {
       max_rd = rd;
     }
     read_one_req(reader, req);
@@ -76,7 +88,7 @@ gint64 *get_future_stack_dist(reader_t *reader) {
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   // create splay tree
   sTree *splay_tree = NULL;
@@ -91,13 +103,13 @@ gint64 *get_future_stack_dist(reader_t *reader) {
 
     splay_tree =
         get_stack_dist_add_req(req, splay_tree, hash_table, ts, &stack_dist);
-    if (get_num_of_req(reader) - 1 - (long)ts < 0) {
+    if (get_num_of_req(reader) - 1 - (long) ts < 0) {
       ERROR("array index %ld out of range\n",
-            (long)(get_num_of_req(reader) - 1 - ts));
+            (long) (get_num_of_req(reader) - 1 - ts));
       exit(1);
     }
     stack_dist_array[get_num_of_req(reader) - 1 - ts] = stack_dist;
-    if (stack_dist > (gint64)max_rd)
+    if (stack_dist > (gint64) max_rd)
       max_rd = stack_dist;
     if (ts >= get_num_of_req(reader))
       break;
@@ -113,15 +125,15 @@ gint64 *get_future_stack_dist(reader_t *reader) {
   return stack_dist_array;
 }
 
-gint64 *_get_last_access_dist(reader_t *reader,
-                              int (*funcPtr)(reader_t *, request_t *)) {
+static gint64 *_get_last_access_dist(reader_t *reader,
+                                     int (*funcPtr)(reader_t *, request_t *)) {
   guint64 n_req = get_num_of_req(reader);
   request_t *req = new_request();
   gint64 *dist_array = g_new(gint64, n_req);
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   gint64 ts = 0;
   gint64 dist, max_dist = 0;
@@ -181,7 +193,7 @@ gint64 *get_first_access_dist(reader_t *reader) {
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   gint64 ts = 0;
   gint64 dist, max_dist = 0;
@@ -227,7 +239,7 @@ gint64 *get_reuse_time(reader_t *reader) {
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   read_one_req(reader, req);
   if (req->real_time == -1) {
@@ -239,17 +251,17 @@ gint64 *get_reuse_time(reader_t *reader) {
     value = GPOINTER_TO_SIZE(
         g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
     if (value != 0) {
-      rt = (gint64)req->real_time - GPOINTER_TO_SIZE(value);
+      rt = (gint64) req->real_time - GPOINTER_TO_SIZE(value);
     } else
       rt = -1;
 
     dist_array[ts] = rt;
-    if (rt > (gint64)max_rt) {
+    if (rt > (gint64) max_rt) {
       max_rt = rt;
     }
 
     // insert into hashtable
-    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize)req->obj_id_int),
+    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
                         GSIZE_TO_POINTER((gsize)(req->real_time)));
 
     read_one_req(reader, req);
@@ -267,7 +279,7 @@ void save_dist(reader_t *const reader, gint64 *dist_array,
                const char *const path, dist_t dist_type) {
 
   // in multi-threading, this might be a problem
-  char *file_path = (char *)malloc(strlen(path) + 8);
+  char *file_path = (char *) malloc(strlen(path) + 8);
   sprintf(file_path, "%s.%d", path, dist_type);
   FILE *file = fopen(file_path, "wb");
   fwrite(dist_array, sizeof(gint64), get_num_of_req(reader), file);
@@ -287,7 +299,7 @@ gint64 *load_dist(reader_t *const reader, const char *const path,
   }
 
   int fd = fileno(
-      file); // if you have a stream (e.g. from fopen), not a file descriptor.
+      file);// if you have a stream (e.g. from fopen), not a file descriptor.
   struct stat buf;
   fstat(fd, &buf);
 
@@ -301,8 +313,8 @@ gint64 *load_dist(reader_t *const reader, const char *const path,
   return dist_array;
 }
 
-gint32 *_cnt_dist(gint64 *dist, gint64 n_req, double log_base,
-                  gint64 *n_dist_cnt) {
+static gint32 *_cnt_dist(gint64 *dist, gint64 n_req, double log_base,
+                         gint64 *n_dist_cnt) {
   gint64 max_dist, max_dist_idx;
   find_max(dist, n_req, &max_dist, &max_dist_idx);
   double log_base_div = log(log_base);
@@ -359,7 +371,7 @@ gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   read_one_req(reader, req);
 
@@ -367,8 +379,8 @@ gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
     value = GPOINTER_TO_SIZE(
         g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
     if (value != 0) {
-      rt = (gint64)req->real_time - GPOINTER_TO_SIZE(value);
-      pos = (gint32)(log((double)rt + 1) / log(log_base));
+      rt = (gint64) req->real_time - GPOINTER_TO_SIZE(value);
+      pos = (gint32)(log((double) rt + 1) / log(log_base));
       dist_cnt_array[pos]++;
 
       if (pos > *n_dist_cnt) {
@@ -377,7 +389,7 @@ gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
     }
 
     // insert into hashtable
-    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize)req->obj_id_int),
+    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
                         GSIZE_TO_POINTER((gsize)(req->real_time)));
 
     read_one_req(reader, req);
@@ -405,7 +417,7 @@ gint32 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base,
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   read_one_req(reader, req);
 
@@ -413,8 +425,8 @@ gint32 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base,
     value = GPOINTER_TO_SIZE(
         g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
     if (value != 0) {
-      last_access_dist = (gint64)cur_ts - GPOINTER_TO_SIZE(value);
-      pos = (gint32)(log((double)last_access_dist + 1) / log(log_base));
+      last_access_dist = (gint64) cur_ts - GPOINTER_TO_SIZE(value);
+      pos = (gint32)(log((double) last_access_dist + 1) / log(log_base));
       dist_cnt_array[pos]++;
 
       if (pos > *n_dist_cnt) {
@@ -423,7 +435,7 @@ gint32 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base,
     }
 
     // insert into hashtable
-    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize)req->obj_id_int),
+    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
                         GSIZE_TO_POINTER((gsize)(req->real_time)));
 
     read_one_req(reader, req);
@@ -452,7 +464,7 @@ gint32 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base,
 
   // create hashtable
   GHashTable *hash_table =
-      create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
+      create_hash_table(reader, NULL, NULL, (GDestroyNotify) g_free, NULL);
 
   read_one_req(reader, req);
 
@@ -460,15 +472,15 @@ gint32 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base,
     value = GPOINTER_TO_SIZE(
         g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
     if (value != 0) {
-      first_access_dist = (gint64)cur_ts - GPOINTER_TO_SIZE(value);
-      pos = (gint32)(log((double)first_access_dist + 1) / log(log_base));
+      first_access_dist = (gint64) cur_ts - GPOINTER_TO_SIZE(value);
+      pos = (gint32)(log((double) first_access_dist + 1) / log(log_base));
       dist_cnt_array[pos]++;
       if (pos > *n_dist_cnt) {
         *n_dist_cnt = pos;
       }
     } else {
       // insert into hashtable
-      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize)req->obj_id_int),
+      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
                           GSIZE_TO_POINTER((gsize)(req->real_time)));
     }
 

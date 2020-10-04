@@ -11,7 +11,11 @@
 
 typedef gint64 *(*dist_func_ptr)(reader_t *);
 
-heatmap_plot_matrix_t *_get_dist_heatmap_matrix(reader_t *reader, gint32 window,
+static heatmap_plot_matrix_t *_get_dist_heatmap_matrix(reader_t *reader, gint32 window,
+                                                double log_base,
+                                                dist_func_ptr dist_func);
+
+static heatmap_plot_matrix_t *_get_dist_heatmap_matrix(reader_t *reader, gint32 window,
                                                 double log_base,
                                                 dist_func_ptr dist_func) {
   gint32 n_window, x_pos = 0, y_pos = 0;

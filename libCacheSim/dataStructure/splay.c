@@ -55,6 +55,9 @@ extern "C"
 
 #include "include/splay.h"
 
+
+static sTree * sedgewickized_splay (int i, sTree * t);
+
 sTree * splay (key_type i, sTree * t) {
     /* Simple top down splay, not requiring i to be in the sTree t.  */
     /* What it does is described above.                             */
@@ -127,7 +130,7 @@ sTree * splay (key_type i, sTree * t) {
 
 /* Here is how sedgewick would have written this.                    */
 /* It does the same thing.                                           */
-sTree * sedgewickized_splay (int i, sTree * t) {
+static sTree * sedgewickized_splay (int i, sTree * t) {
     sTree N, *l, *r, *y;
     if (t == NULL) return t;
     N.left = N.right = NULL;

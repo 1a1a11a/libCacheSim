@@ -6,18 +6,19 @@
 #define libCacheSim_CHAINEDHASHTABLEV2_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-#include <stdbool.h>
-#include <assert.h>
-#include "../../include/libCacheSim/struct.h"
-#include "../../include/libCacheSim/request.h"
 #include "../../include/libCacheSim/cacheObj.h"
+#include "../../include/libCacheSim/request.h"
+#include "../../include/libCacheSim/struct.h"
 #include "hashtableStruct.h"
+#include <assert.h>
+#include <stdbool.h>
 
 hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower_init);
+
+cache_obj_t *chained_hashtable_find_obj_id_v2(hashtable_t *hashtable, obj_id_t obj_id);
 
 cache_obj_t *chained_hashtable_find_v2(hashtable_t *hashtable, request_t *req);
 
@@ -47,4 +48,4 @@ void check_hashtable_integrity2_v2(hashtable_t *hashtable, cache_obj_t *head);
 }
 #endif
 
-#endif //libCacheSim_CHAINEDHASHTABLEV2_H
+#endif//libCacheSim_CHAINEDHASHTABLEV2_H

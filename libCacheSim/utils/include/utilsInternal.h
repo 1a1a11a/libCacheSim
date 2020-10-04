@@ -40,8 +40,7 @@ static inline GHashTable *create_hash_table_with_obj_id_type(
     GDestroyNotify value_destroy_func_str) {
   GHashTable *hash_table;
   if (obj_id_type == OBJ_ID_NUM) {
-    hash_table =
-        g_hash_table_new_full(g_direct_hash, g_direct_equal,
+    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal,
                               key_destroy_func_num, value_destroy_func_num);
   } else if (obj_id_type == OBJ_ID_STR) {
     hash_table = g_hash_table_new_full(

@@ -29,9 +29,9 @@ int set_thread_affinity(pthread_t tid);
 
 int get_n_cores(void);
 
-void print_cwd();
+void print_cwd(void);
 
-void print_glib_ver();
+void print_glib_ver(void);
 
 
 #endif /* UTILS_h */

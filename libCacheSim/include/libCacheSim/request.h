@@ -41,6 +41,19 @@ static inline void copy_request(request_t *req_dest, request_t *req_src) {
 }
 
 /**
+ * copy the cache_obj to req_dest
+ * @param req_dest
+ * @param cache_obj
+ */
+static inline void copy_cache_obj_to_request(request_t *req_dest,
+    cache_obj_t *cache_obj) {
+  req_dest->obj_id_int = cache_obj->obj_id_int;
+  req_dest->obj_size = cache_obj->obj_size;
+  req_dest->valid = true;
+}
+
+
+/**
  * clone the given request
  * @param req
  * @return

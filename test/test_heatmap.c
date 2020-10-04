@@ -8,15 +8,15 @@
 #include "../libCacheSim/include/libCacheSim/experimental/heatmap.h"
 
 
-void test_heatmap_basic(gconstpointer user_data){
-  gint64 rd_true[N_TEST] = {-1, -1, -1, 7, -1, 86};
-  gint64 last_dist_true[N_TEST] = {-1, -1, -1, 8, -1, 138};
-  gint64 frd_true[N_TEST] = {11, 37, 49, -1, 8, -1};
-  gint64 next_dist_true[N_TEST] = {12, 60, 80, -1, 9, -1};
-  gint64 *dist;
+static void test_heatmap_basic(gconstpointer user_data){
+//  gint64 rd_true[N_TEST] = {-1, -1, -1, 7, -1, 86};
+//  gint64 last_dist_true[N_TEST] = {-1, -1, -1, 8, -1, 138};
+//  gint64 frd_true[N_TEST] = {11, 37, 49, -1, 8, -1};
+//  gint64 next_dist_true[N_TEST] = {12, 60, 80, -1, 9, -1};
+//  gint64 *dist;
 
   reader_t* reader = (reader_t*) user_data;
-  long i, j;
+//  long i, j;
 
   heatmap_plot_matrix_t* hm_matrix = get_reuse_time_heatmap_matrix(reader, 300*1000000, 1.2);
 //  print_heatmap_plot_matrix(hm_matrix);
