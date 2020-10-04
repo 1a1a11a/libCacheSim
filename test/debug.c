@@ -86,7 +86,7 @@ static void f3(int argc, char* argv[]) {
 
   common_cache_params_t cc_params = {.cache_size=1024*1024*1024, .default_ttl=0};
 //  cache_t *cache = create_cache("LRU", cc_params, NULL);
-  cache_t *cache = create_test_cache("LFU", cc_params, reader, NULL);
+  cache_t *cache = create_test_cache("LFUDA", cc_params, reader, NULL);
 
   request_t *req = new_request();
   read_one_req(reader, req);

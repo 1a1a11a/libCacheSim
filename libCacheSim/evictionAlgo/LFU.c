@@ -28,20 +28,23 @@ static void free_list_node(void *list_node) {
 }
 
 static int _verify(cache_t *cache) {
-  LFU_params_t *LFU_params = (LFU_params_t *) (cache->cache_params);
+  LFU_params_t *LFUDA_params = (LFU_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj, *prev_obj;
   /* update min freq */
-  for (uint64_t freq = 1; freq <= LFU_params->max_freq; freq++) {
-    freq_node_t *freq_node = g_hash_table_lookup(LFU_params->freq_map, GSIZE_TO_POINTER(freq));
+  for (uint64_t freq = 1; freq <= LFUDA_params->max_freq; freq++) {
+    freq_node_t *freq_node = g_hash_table_lookup(LFUDA_params->freq_map, GSIZE_TO_POINTER(freq));
     if (freq_node != NULL) {
+      uint32_t n_obj = 0;
       cache_obj = freq_node->first_obj;
       prev_obj = NULL;
       while (cache_obj != NULL) {
+        n_obj ++;
         DEBUG_ASSERT(cache_obj->freq == freq);
         DEBUG_ASSERT(cache_obj->list_prev == prev_obj);
         prev_obj = cache_obj;
         cache_obj = cache_obj->list_next;
       }
+      DEBUG_ASSERT(freq_node->n_obj == n_obj);
     }
   }
   return 0;
@@ -96,6 +99,7 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
       new_node->first_obj = cache_obj;
       new_node->last_obj = NULL;
       g_hash_table_insert(LFU_params->freq_map, GSIZE_TO_POINTER(cache_obj->freq), new_node);
+//      INFO("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj, new_node->last_obj);
     } else {
       assert(new_node->freq == cache_obj->freq);
       new_node->n_obj += 1;
@@ -143,12 +147,14 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
       new_node->last_obj->list_next = cache_obj;
     }
     new_node->last_obj = cache_obj;
+    if (new_node->first_obj == NULL)
+      new_node->first_obj = cache_obj;
   }
   return ret;
 }
 
 cache_ck_res_e LFU_get(cache_t *cache, request_t *req) {
-//  DEBUG_ASSERT(_verify(cache) == 0);
+  DEBUG_ASSERT(_verify(cache) == 0);
   return cache_get(cache, req);
 }
 
@@ -194,6 +200,8 @@ void LFU_insert(cache_t *cache, request_t *req) {
     freq_one_node->first_obj = cache_obj;
   }
   freq_one_node->last_obj = cache_obj;
+  if (freq_one_node->first_obj == NULL)
+    freq_one_node->first_obj = cache_obj;
 }
 
 void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

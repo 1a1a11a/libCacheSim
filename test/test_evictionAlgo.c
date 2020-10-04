@@ -127,6 +127,31 @@ static void test_LFU(gconstpointer user_data) {
   g_free(res);
 }
 
+static void test_LFUDA(gconstpointer user_data) {
+  guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
+  guint64 miss_cnt_true[] = {92233, 85809, 80462, 79335, 73049, 69671, 67942, 67782};
+  guint64 miss_byte_true[] = {4023913984, 3752341504, 3534985216, 3504430592, 3150782464, 2977339904, 2867254784, 2824277504};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
+  cache_t *cache = create_test_cache("LFUDA", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
+
+  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
+    printf("cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
+           " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
+           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_bytes,
+           res[i].miss_bytes);
+  }
+
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  g_free(res);
+}
+
 static void test_MRU(gconstpointer user_data) {
   guint64 req_cnt_true = 113872, req_byte_true = 4205978112;
   guint64 miss_cnt_true[] = {97661, 94006, 88557, 83224,
@@ -327,13 +352,14 @@ int main(int argc, char *argv[]) {
   reader_t *reader;
 
   reader = setup_csv_reader_obj_num();
-  reader = setup_vscsi_reader();
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
+//  reader = setup_vscsi_reader();
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
 
   /* these are wrong now */

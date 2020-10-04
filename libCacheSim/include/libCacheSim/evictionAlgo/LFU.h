@@ -36,23 +36,6 @@ typedef struct LFU_params {
 } LFU_params_t;
 
 
-//// main list is a doubly linkedlist sort by frequency
-//typedef struct main_list_node_data{
-//    gint freq;
-//    GQueue *queue;   // linked to branch list
-//}main_list_node_data_t;
-
-
-//// branch list is the list of items with same freq, sorted in LFU
-//typedef struct branch_list_node_data{
-//    gpointer key;
-//    GList *main_list_node;
-//
-//}branch_list_node_data_t;
-
-
-#include "../cache.h"
-
 cache_t *LFU_init(common_cache_params_t ccache_params,
                   void *cache_specific_params);
 

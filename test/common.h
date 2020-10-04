@@ -133,7 +133,7 @@ static inline cache_t *create_test_cache(const char *alg_name,
   else if (strcmp(alg_name, "LFU") == 0)
     cache = LFU_init(cc_params, NULL);
   else if (strcmp(alg_name, "LFUDA") == 0)
-    cache = LFU_init(cc_params, NULL);
+    cache = LFUDA_init(cc_params, NULL);
 //  else if (strcmp(alg_name, "LFUFast") == 0)
 //    cache = LFUFast_init(cc_params, NULL);
   else if (strcmp(alg_name, "ARC") == 0) {
