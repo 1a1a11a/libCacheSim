@@ -124,6 +124,31 @@ extern "C" {
 #define THIS_IS_DEBUG3_FUNC
 #endif
 
+
+/*  count the number of one’s(set bits) in an integer */
+// _builtin_popcount(x) 
+// _builtin_popcountl(x) 
+// _builtin_popcountll(x) 
+
+/* check the parity of a number
+   returns true(1) if the number has odd parity  */
+// _builtin_parity(x) 
+
+
+/* count the number of leading zeros of the integer */
+// __builtin_clz(x) 
+
+/* count the number of trailing zeros, __builtin_ctz(16) == 4 */
+// __builtin_ctz(x)
+
+// #include <strings.h>
+// ffs, ffsl, ffsll - find first bit (least significant) set in a word 
+// int ffs(int i);
+// int ffsl(long int i);
+// int ffsll(long long int i);
+
+
+
 #define find_max(array, n_elem, max_elem_ptr, max_elem_idx_ptr) \
   do {                                                          \
     *max_elem_idx_ptr = 0;                                      \
