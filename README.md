@@ -94,7 +94,7 @@ cache->cache_free(cache);
 ```
 save this to `test.c` and compile with 
 ```
-gcc $(pkg-config --cflags --libs libCacheSim glib-2.0) -lm -ldl test.c -o test
+gcc $(pkg-config --cflags --libs libCacheSim glib-2.0) -lm -ldl test.c -o test.out
 ```
 
 if you get `error while loading shared libraries`, run `sudo ldconfig`
