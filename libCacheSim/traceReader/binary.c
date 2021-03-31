@@ -87,7 +87,7 @@ int binaryReader_setup(reader_t *const reader) {
 
     if (init_params->obj_id_field != 0 && params->obj_id_len == 0
         && init_params->obj_id_field <= count_sum) {
-      params->obj_id_field = (gint) reader->item_size +
+      params->obj_id_field = (int) reader->item_size +
           size * (init_params->obj_id_field - last_count_sum - 1);
       params->obj_id_len = *fmt_str == 's' ? count : 1;
       params->obj_id_type = *fmt_str;
@@ -97,7 +97,7 @@ int binaryReader_setup(reader_t *const reader) {
 
     if (init_params->op_field != 0 && params->op_len == 0
         && init_params->op_field <= count_sum) {
-      params->op_field = (gint) reader->item_size +
+      params->op_field = (int) reader->item_size +
           size * (init_params->op_field - last_count_sum - 1);
       params->op_len = *fmt_str == 's' ? count : 1;
       params->op_type = *fmt_str;
@@ -105,7 +105,7 @@ int binaryReader_setup(reader_t *const reader) {
 
     if (init_params->real_time_field != 0 && params->real_time_len == 0
         && init_params->real_time_field <= count_sum) {
-      params->real_time_field = (gint) reader->item_size +
+      params->real_time_field = (int) reader->item_size +
           size * (init_params->real_time_field - last_count_sum - 1);
       params->real_time_len = *fmt_str == 's' ? count : 1;
       if (params->real_time_len > 4)
@@ -115,35 +115,36 @@ int binaryReader_setup(reader_t *const reader) {
 
     if (init_params->obj_size_field != 0 && params->obj_size_len == 0
         && init_params->obj_size_field <= count_sum) {
-      params->obj_size_field = (gint) reader->item_size +
+      params->obj_size_field = (int) reader->item_size +
           size * (init_params->obj_size_field - last_count_sum - 1);
-      params->obj_size_len = size;
+      params->obj_size_len  = *fmt_str == 's' ? count : 1;
       params->obj_size_type = *fmt_str;
     }
 
     if (init_params->ttl_field != 0 && params->ttl_len == 0
         && init_params->ttl_field <= count_sum) {
-      params->ttl_field = (gint) reader->item_size +
+      params->ttl_field = (int) reader->item_size +
           size * (init_params->ttl_field - last_count_sum - 1);
-      params->ttl_len = size;
+      params->ttl_len  = *fmt_str == 's' ? count : 1;
       params->ttl_type = *fmt_str;
     }
 
     if (init_params->extra_field1 != 0 && params->extra_len1 == 0
         && init_params->extra_field1 <= count_sum) {
-      params->extra_field1 = (gint) reader->item_size +
+      params->extra_field1 = (int) reader->item_size +
           size * (init_params->extra_field1 - last_count_sum - 1);
-      params->extra_len1 = size;
+      params->extra_len1  = *fmt_str == 's' ? count : 1;
       params->extra_type1 = *fmt_str;
     }
 
     if (init_params->extra_field2 != 0 && params->extra_len2 == 0
         && init_params->extra_field2 <= count_sum) {
-      params->extra_field2 = (gint) reader->item_size +
+      params->extra_field2 = (int) reader->item_size +
           size * (init_params->extra_field2 - last_count_sum - 1);
-      params->extra_len2 = size;
+      params->extra_len2  = *fmt_str == 's' ? count : 1;
       params->extra_type2 = *fmt_str;
     }
+
 
     reader->item_size += count * size;
     fmt_str++;
