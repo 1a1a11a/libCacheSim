@@ -37,9 +37,9 @@ cache_ck_res_e Random_get(cache_t *cache, request_t *req) {
   return cache_get(cache, req);
 }
 
-void Random_insert(cache_t *Random, request_t *req) {
-  Random->occupied_size += req->obj_size;
-  hashtable_insert(Random->hashtable, req);
+void Random_insert(cache_t *cache, request_t *req) {
+  cache->occupied_size += req->obj_size + req->per_obj_overhead;
+  hashtable_insert(cache->hashtable, req);
 }
 
 void Random_evict(cache_t *Random, request_t *req, cache_obj_t *cache_obj) {

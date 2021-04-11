@@ -39,6 +39,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   request_t *req = new_request();
   cache_t *local_cache =
       create_cache_with_new_size(params->cache, result[idx].cache_size);
+  req->per_obj_overhead = local_cache->per_obj_overhead;
 
   uint64_t req_cnt = 0, miss_cnt = 0;
   uint64_t req_byte = 0, miss_byte = 0;

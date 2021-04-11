@@ -43,6 +43,8 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->cache_size = params.cache_size;
   cache->cache_params = NULL;
   cache->default_ttl = params.default_ttl;
+  cache->per_obj_overhead = params.per_obj_overhead;
+
   int hash_power = HASH_POWER_DEFAULT;
   if (params.hashpower > 0 && params.hashpower < 40)
     hash_power = params.hashpower;
@@ -77,7 +79,9 @@ void cache_struct_free(cache_t *cache) {
 cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size) {
   common_cache_params_t cc_params = {.cache_size = new_size,
                                      .hashpower = old_cache->hashtable->hashpower,
-                                     .default_ttl = old_cache->default_ttl};
+                                     .default_ttl = old_cache->default_ttl,
+                                     .per_obj_overhead = old_cache->per_obj_overhead};
+  assert(sizeof(cc_params) == 24);
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   return cache;
 }
@@ -103,7 +107,7 @@ cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
   }
 #endif
   if (likely(update_cache)) {
-    if (unlikely(cache_obj->obj_size != req->obj_size)) {
+    if (unlikely(cache_obj->obj_size != req->obj_size + cache->per_obj_overhead)) {
       cache->occupied_size -= cache_obj->obj_size;
       cache->occupied_size += req->obj_size;
       cache_obj->obj_size = req->obj_size;
@@ -140,7 +144,8 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
     req->ttl = cache->default_ttl;
   }
 #endif
-  cache->occupied_size += req->obj_size;
+  cache->occupied_size += req->obj_size + req->per_obj_overhead;
+  cache->n_obj += 1;
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
   if (unlikely(cache->list_head == NULL)) {
     // an empty list, this is the first insert
@@ -156,6 +161,7 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
 
 void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   // currently not handle the case when all objects are evicted
+
   cache_obj_t *obj_to_evict = cache->list_head;
   if (evicted_obj != NULL) {
     // return evicted object to caller
@@ -166,6 +172,8 @@ void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache->list_head->list_prev = NULL;
   DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
   cache->occupied_size -= obj_to_evict->obj_size;
+  cache->n_obj -= 1;
+
   hashtable_delete(cache->hashtable, obj_to_evict);
   DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
   /** obj_to_evict is not freed or returned to hashtable, if you have
@@ -175,4 +183,8 @@ void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
 cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
   return hashtable_find(cache->hashtable, req);
+}
+
+cache_obj_t *cache_get_obj_by_id(cache_t *cache, obj_id_t id) {
+  return hashtable_find_obj_id(cache->hashtable, id);
 }

@@ -15,7 +15,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceReader/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/traceStat/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/profiler/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/utils/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/benchmark/include)
 
 
 ####################
@@ -28,7 +27,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/traceStat)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/benchmark)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 
 

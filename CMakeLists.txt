@@ -104,7 +104,8 @@ else ()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 endif ()
 
-link_libraries("-lpthread -ldl -lm")
+link_libraries("-lpthread -ldl -lm ${LIBS}")
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")
@@ -130,9 +131,6 @@ message(STATUS "============= Status of optional features ==============")
 message(STATUS "========================================================")
 
 
-set(CONF_INCLUDE_DIRS "include")
-set(CONF_LIB_DIRS "lib")
-
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
 
 
@@ -143,30 +141,42 @@ file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*/*.c)
 file(GLOB hashtable ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hashtable/*.c)
 file(GLOB hash ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hash/*.c)
 set(LIB_SOURCE ${LIB_SOURCE} ${hashtable} ${hash})
-add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE})
 
+set (EXCLUDE_DIR "/bin/")
+foreach (TMP_PATH ${LIB_SOURCE})
+    string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
+    if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
+        list (REMOVE_ITEM LIB_SOURCE ${TMP_PATH})
+    endif ()
+endforeach(TMP_PATH)
+
+add_library(${PROJECT_NAME} ${LIB_SOURCE})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
-
-#message(STATUS "------------------------- CMAKE_CURRENT_LIST_DIR    ${CMAKE_CURRENT_LIST_DIR}")
-#message(STATUS "------------------------- CMAKE_CURRENT_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}")
-#message(STATUS "------------------------- CMAKE_CURRENT_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR}")
 
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake
         @ONLY)
 
 
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CONF_LIB_DIRS})
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION ${CONF_INCLUDE_DIRS})
+#install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CONF_LIB_DIRS})
+INSTALL(
+        TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        COMPONENT library
+)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION include)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CONF_LIB_DIRS}/pkgconfig)
 install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
 
 
+
+
 #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
-add_executable(binBenchmark libCacheSim/benchmark/main.c)
-target_link_libraries(binBenchmark benchmark cache evictionAlgo traceReader profiler dataStructure traceStat utils
-        ${LIBS})
+#add_executable(binBenchmark libCacheSim/benchmark/main.c)
+#target_link_libraries(binBenchmark benchmark cache evictionAlgo traceReader profiler dataStructure traceStat utils
+#        ${LIBS})
 
 #add_executable(binDebug ../test/debug.c)
 #target_link_libraries(binDebug cache evictionAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)

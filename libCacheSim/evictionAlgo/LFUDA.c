@@ -153,7 +153,7 @@ void LFUDA_insert(cache_t *cache, request_t *req) {
     req->ttl = cache->default_ttl;
   }
 #endif
-  cache->occupied_size += req->obj_size;
+  cache->occupied_size += req->obj_size + req->per_obj_overhead;
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
   cache_obj->freq = LFUDA_params->min_freq + 1;
   freq_node_t *new_node = g_hash_table_lookup(LFUDA_params->freq_map, GSIZE_TO_POINTER(cache_obj->freq));

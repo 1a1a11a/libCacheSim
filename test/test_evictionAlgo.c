@@ -71,8 +71,8 @@ static void test_Optimal(gconstpointer user_data) {
                               3081942528, 3081872384, 3080036864};
 
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .default_ttl = 0};
-  cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .per_obj_overhead = 0, .hashpower = 20, .default_ttl = 0};
+  cache_t *cache = create_test_cache("optimal", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   sim_res_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
@@ -231,7 +231,7 @@ static void test_SLRU(gconstpointer user_data) {
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   sim_res_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE * 100000000000, NULL, 0, 1);
+      reader, cache, STEP_SIZE, NULL, 0, 1);
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     printf("cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
@@ -359,7 +359,8 @@ int main(int argc, char *argv[]) {
 //  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
 //  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
 //  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
+//  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_optimal", reader, test_Optimal);
 
 
   /* these are wrong now */

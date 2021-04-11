@@ -186,7 +186,7 @@ void LFU_insert(cache_t *cache, request_t *req) {
   }
 #endif
   LFU_params->min_freq = 1;
-  cache->occupied_size += req->obj_size;
+  cache->occupied_size += req->obj_size + req->per_obj_overhead;
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
   cache_obj->freq = 1;
   freq_node_t *freq_one_node = LFU_params->freq_one_node;

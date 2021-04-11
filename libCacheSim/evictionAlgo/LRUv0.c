@@ -76,9 +76,10 @@ cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
   return cache_check;
 }
 
-void LRUv0_insert(cache_t *LRUv0, request_t *req) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (LRUv0->cache_params);
-  LRUv0->occupied_size += req->obj_size;
+void LRUv0_insert(cache_t *cache, request_t *req) {
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->cache_params);
+
+  cache->occupied_size += req->obj_size + req->per_obj_overhead;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
   // TODO: use SList should be more memory efficient than queue which uses
   // doubly-linklist under the hood
@@ -97,11 +98,11 @@ cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, request_t *req) {
   return cache_obj;
 }
 
-void LRUv0_evict(cache_t *LRUv0, request_t *req, cache_obj_t *evicted_obj) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (LRUv0->cache_params);
+void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(LRUv0_params->list);
-  assert(LRUv0->occupied_size >= cache_obj->obj_size);
-  LRUv0->occupied_size -= cache_obj->obj_size;
+  assert(cache->occupied_size >= cache_obj->obj_size);
+  cache->occupied_size -= cache_obj->obj_size;
   g_hash_table_remove(LRUv0_params->hashtable,
                       (gconstpointer) cache_obj->obj_id_int);
   free_cache_obj(cache_obj);

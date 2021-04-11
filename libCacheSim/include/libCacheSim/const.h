@@ -69,10 +69,10 @@ extern "C" {
 //#define TiB 1000000000000L
 
 // this is correct, to change to this, need to update test
-#define KiB 1024ULL
-#define MiB 1048576ULL
-#define GiB 1073741824ULL
-#define TiB 1099511627776ULL
+#define KiB 1024LL
+#define MiB 1048576LL
+#define GiB 1073741824LL
+#define TiB 1099511627776LL
 
 #define KB 1000L
 #define MB 1000000L

@@ -26,7 +26,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /**
  * @file  pqueue.h
  * @brief Priority Queue function declarations
@@ -34,70 +33,54 @@
  * @{
  */
 
-
 #ifndef PQUEUE_H
 #define PQUEUE_H
 
-
-
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "../../include/libCacheSim/request.h"
 
 /** priority data type */
-struct pqueue_pri{
-    unsigned long long pri1;
-    unsigned long long pri2;
+struct pqueue_pri {
+  int64_t pri1;
+  //    int64_t pri2;
 };
 typedef struct pqueue_pri pqueue_pri_t;
 //typedef unsigned long long pqueue_pri_t;
-
 
 /** callback functions to get/set/compare the priority of an element */
 typedef pqueue_pri_t (*pqueue_get_pri_f)(void *a);
 typedef void (*pqueue_set_pri_f)(void *a, pqueue_pri_t pri);
 typedef int (*pqueue_cmp_pri_f)(pqueue_pri_t next, pqueue_pri_t curr);
 
-
 /** callback functions to get/set the position of an element */
 typedef size_t (*pqueue_get_pos_f)(void *a);
 typedef void (*pqueue_set_pos_f)(void *a, size_t pos);
 
-
 /** debug callback function to print a entry */
 typedef void (*pqueue_print_entry_f)(FILE *out, void *a);
 
-
 /** the priority queue handle */
-typedef struct pqueue_t
-{
-    size_t size;                /**< number of elements in this queue */
-    size_t avail;               /**< slots available in this queue */
-    size_t step;                /**< growth stepping setting */
-    pqueue_cmp_pri_f cmppri;    /**< callback to compare nodes */
-    pqueue_get_pri_f getpri;    /**< callback to get priority of a node */
-    pqueue_set_pri_f setpri;    /**< callback to set priority of a node */
-    pqueue_get_pos_f getpos;    /**< callback to get position of a node */
-    pqueue_set_pos_f setpos;    /**< callback to set position of a node */
-    void **d;                   /**< The actualy queue in binary heap form */
+typedef struct pqueue_t {
+  size_t size;             /**< number of elements in this queue */
+  size_t avail;            /**< slots available in this queue */
+  size_t step;             /**< growth stepping setting */
+  pqueue_cmp_pri_f cmppri; /**< callback to compare nodes */
+  pqueue_get_pri_f getpri; /**< callback to get priority of a node */
+  pqueue_set_pri_f setpri; /**< callback to set priority of a node */
+  pqueue_get_pos_f getpos; /**< callback to get position of a node */
+  pqueue_set_pos_f setpos; /**< callback to set position of a node */
+  void **d;                /**< The actualy queue in binary heap form */
 } pqueue_t;
 
-
-typedef struct node_t
-{
-    pqueue_pri_t pri;
-    obj_id_type_e obj_id_type;
-    void* obj_id;
-    size_t pos;
+typedef struct node_t {
+  pqueue_pri_t pri;
+  //    obj_id_type_e obj_id_type;
+  obj_id_t obj_id;
+  size_t pos;
 } pq_node_t;
-
-
-
-
-
 
 /**
  * initialize the queue
@@ -122,20 +105,17 @@ pqueue_init(size_t n,
             pqueue_get_pos_f getpos,
             pqueue_set_pos_f setpos);
 
-
 /**
  * free all memory used by the queue
  * @param q the queue
  */
 void pqueue_free(pqueue_t *q);
 
-
 /**
  * return the size of the queue.
  * @param q the queue
  */
 size_t pqueue_size(pqueue_t *q);
-
 
 /**
  * insert an item into the queue.
@@ -145,18 +125,15 @@ size_t pqueue_size(pqueue_t *q);
  */
 int pqueue_insert(pqueue_t *q, void *d);
 
-
 /**
  * move an existing entry to a different priority
  * @param q the queue
  * @param new_pri the new priority
  * @param d the entry
  */
-void
-pqueue_change_priority(pqueue_t *q,
-                       pqueue_pri_t new_pri,
-                       void *d);
-
+void pqueue_change_priority(pqueue_t *q,
+                            pqueue_pri_t new_pri,
+                            void *d);
 
 /**
  * pop the highest-ranking item from the queue.
@@ -164,7 +141,6 @@ pqueue_change_priority(pqueue_t *q,
  * @return NULL on error, otherwise the entry
  */
 void *pqueue_pop(pqueue_t *q);
-
 
 /**
  * remove an item from the queue.
@@ -174,14 +150,12 @@ void *pqueue_pop(pqueue_t *q);
  */
 int pqueue_remove(pqueue_t *q, void *d);
 
-
 /**
  * access highest-ranking item without removing it.
  * @param q the queue
  * @return NULL on error, otherwise the entry
  */
 void *pqueue_peek(pqueue_t *q);
-
 
 /**
  * print the queue
@@ -191,11 +165,9 @@ void *pqueue_peek(pqueue_t *q);
  * @param out the output handle
  * @param print the callback function to print the entry
  */
-void
-pqueue_print(pqueue_t *q, 
-             FILE *out,
-             pqueue_print_entry_f print);
-
+void pqueue_print(pqueue_t *q,
+                  FILE *out,
+                  pqueue_print_entry_f print);
 
 /**
  * dump the queue and it's internal structure
@@ -205,11 +177,9 @@ pqueue_print(pqueue_t *q,
  * @param out the output handle
  * @param print callback function to print the entry
  */
-void
-pqueue_dump(pqueue_t *q, 
-             FILE *out,
-             pqueue_print_entry_f print);
-
+void pqueue_dump(pqueue_t *q,
+                 FILE *out,
+                 pqueue_print_entry_f print);
 
 /**
  * checks that the pq is in the right order, etc
@@ -219,11 +189,9 @@ pqueue_dump(pqueue_t *q,
  */
 int pqueue_is_valid(pqueue_t *q);
 
-
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* PQUEUE_H */
 /** @} */

@@ -23,8 +23,8 @@ extern "C" {
 gint32 *get_reuse_time_cnt_in_bins0(reader_t *reader, double log_base,
                                     gint64 *n_dist_cnt);
 
-gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
-                                   gint64 *n_dist_cnt);
+//gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
+//                                   gint64 *n_dist_cnt);
 
 gint32 *get_last_access_dist_cnt_in_bins0(reader_t *reader, double log_base,
                                           gint64 *n_dist_cnt);

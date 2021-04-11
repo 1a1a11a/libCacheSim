@@ -19,6 +19,7 @@ extern "C" {
 #include "libCacheSim/simulator.h"
 #include "libCacheSim/struct.h"
 #include "libCacheSim/cacheObj.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 }

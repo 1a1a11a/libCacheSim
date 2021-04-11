@@ -1,5 +1,5 @@
-aux_source_directory(. DIR_LIB_SRCS)
-add_library(cache ${DIR_LIB_SRCS})
+
+add_library(cache cache.c cache_obj.c plugin.c)
 target_link_libraries(cache dataStructure -ldl)
 
 

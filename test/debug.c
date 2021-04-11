@@ -102,7 +102,7 @@ static void f3(int argc, char* argv[]) {
 //    req->obj_size = 1;
   }
 
-  printf("%llu/%llu\n", miss_cnt, req_cnt);
+  printf("%" PRIu64 "/%"PRIu64"\n", miss_cnt, req_cnt);
   cache->cache_free(cache);
   close_reader(reader);
 }

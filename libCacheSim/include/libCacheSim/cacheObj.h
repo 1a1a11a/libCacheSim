@@ -122,7 +122,7 @@ static inline void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
  */
 static inline void copy_request_to_cache_obj(cache_obj_t *cache_obj,
                                              request_t *req) {
-  cache_obj->obj_size = req->obj_size;
+  cache_obj->obj_size = req->obj_size + req->per_obj_overhead;
 #ifdef SUPPORT_TTL
   if (req->ttl != 0)
     cache_obj->exp_time = req->real_time + req->ttl;
@@ -156,7 +156,7 @@ static inline void free_cache_obj(cache_obj_t *cache_obj) {
  */
 static inline slab_cache_obj_t *create_slab_cache_obj_from_req(request_t *req) {
   slab_cache_obj_t *cache_obj = my_malloc(slab_cache_obj_t);
-  cache_obj->obj_size = req->obj_size;
+  cache_obj->obj_size = req->obj_size + req->per_obj_overhead;
 #ifdef SUPPORT_TTL
   if (req->ttl != 0)
     cache_obj->exp_time = req->real_time + req->ttl;

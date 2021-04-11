@@ -34,14 +34,10 @@ static inline int twr_read_one_req(reader_t *reader, request_t *req) {
 
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  record += 4;
+  req->obj_id_int = *(uint64_t *) (record + 4);
 
-  req->obj_id_int = *(uint64_t *) record;
-  record += 8;
-
-  uint32_t kv_size = *(uint32_t *) record;
-  record += 4;
-  uint32_t op_ttl = *(uint32_t *) record;
+  uint32_t kv_size = *(uint32_t *) (record + 12);
+  uint32_t op_ttl = *(uint32_t *) (record + 16);
 
   uint32_t key_size = (kv_size >> 22) & (0x00000400 - 1);
   uint32_t val_size = kv_size & (0x00400000 - 1);
@@ -55,7 +51,7 @@ static inline int twr_read_one_req(reader_t *reader, request_t *req) {
   req->ttl = ttl;
 #endif
   
-  reader->mmap_offset += 20;
+  reader->mmap_offset += reader->item_size;
   if (req->obj_size == 0)
     return twr_read_one_req(reader, req);
   return 0;

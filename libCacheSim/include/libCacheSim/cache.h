@@ -34,9 +34,10 @@ struct cache;
 typedef struct cache cache_t;
 
 typedef struct {
-  gint64 cache_size;
-  gint64 default_ttl;
-  int hashpower;
+  uint64_t cache_size;
+  uint64_t default_ttl;
+  int32_t hashpower;
+  int32_t per_obj_overhead;
 } common_cache_params_t;
 
 typedef cache_t *(*cache_init_func_ptr)(common_cache_params_t, void *);
@@ -80,10 +81,14 @@ struct cache {
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
 
+  uint64_t n_obj;
+
   uint64_t req_cnt;
   uint64_t cache_size;
   uint64_t occupied_size;
   uint64_t default_ttl;
+
+  int16_t per_obj_overhead;
 
   void *init_params;
   char cache_name[32];
@@ -144,6 +149,8 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req);
 void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 cache_obj_t *cache_get_obj(cache_t *cache, request_t *req);
+
+cache_obj_t *cache_get_obj_by_id(cache_t *cache, obj_id_t id);
 
 
 #ifdef __cplusplus

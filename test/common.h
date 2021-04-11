@@ -26,9 +26,9 @@
 #define STEP_SIZE (128 * CACHE_SIZE_UNIT)
 
 
-#define NUM_OF_THREADS 4
+#define NUM_OF_THREADS 1
 
-static inline void _detect_data_path(char* data_path, char* data_name){
+static void _detect_data_path(char* data_path, char* data_name) {
   sprintf(data_path, "data/%s", data_name);
   if( access(data_path, F_OK ) != -1 )
     return;
@@ -49,14 +49,14 @@ static inline void _detect_data_path(char* data_path, char* data_name){
 }
 
 
-static inline reader_t *setup_vscsi_reader(void) {
+static reader_t *setup_vscsi_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.vscsi");
   reader_t *reader_vscsi = setup_reader(data_path, VSCSI_TRACE, OBJ_ID_NUM, NULL);
   return reader_vscsi;
 }
 
-static inline reader_t *setup_binary_reader(void) {
+static reader_t *setup_binary_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.vscsi");
   reader_init_param_t *init_params_bin = g_new0(reader_init_param_t, 1);
@@ -69,7 +69,7 @@ static inline reader_t *setup_binary_reader(void) {
   return reader_bin_l;
 }
 
-static inline reader_t *setup_csv_reader_obj_str(void) {
+static reader_t *setup_csv_reader_obj_str(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
@@ -83,7 +83,7 @@ static inline reader_t *setup_csv_reader_obj_str(void) {
   return reader_csv_c;
 }
 
-static inline reader_t *setup_csv_reader_obj_num(void) {
+static reader_t *setup_csv_reader_obj_num(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
@@ -97,31 +97,33 @@ static inline reader_t *setup_csv_reader_obj_num(void) {
   return reader_csv_l;
 }
 
-static inline reader_t *setup_plaintxt_reader_num(void) {
+static reader_t *setup_plaintxt_reader_num(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.txt");
   return setup_reader(data_path, PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
 }
 
-static inline reader_t *setup_plaintxt_reader_str(void) {
+static reader_t *setup_plaintxt_reader_str(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.txt");
   return setup_reader(data_path, PLAIN_TXT_TRACE, OBJ_ID_STR, NULL);
 }
 
 
-static inline void test_teardown(gpointer data) {
+static void test_teardown(gpointer data) {
   reader_t *reader = (reader_t *) data;
   close_reader(reader);
 }
 
-static inline cache_t *create_test_cache(const char *alg_name,
+static cache_t *create_test_cache(const char *alg_name,
                            common_cache_params_t cc_params, reader_t* reader, void *params) {
   cache_t* cache;
   if (strcmp(alg_name, "LRU") == 0)
     cache = LRU_init(cc_params, NULL);
   else if (strcmp(alg_name, "FIFO") == 0)
     cache = FIFO_init(cc_params, NULL);
+  else if (strcmp(alg_name, "optimal") == 0)
+    cache = optimal_init(cc_params, NULL);
   else if (strcmp(alg_name, "LRUv0") == 0)
     cache = LRUv0_init(cc_params, NULL);
   else if (strcmp(alg_name, "Random") == 0)

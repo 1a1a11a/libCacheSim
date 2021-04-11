@@ -17,8 +17,10 @@ typedef enum {
   VSCSI_TRACE = 'v',
   TWR_TRACE = 't',
 
+  ORACLE_TWR_TRACE,
+
   UNKNOWN_TRACE = 'u',
-} trace_type_e;
+} __attribute__((__packed__)) trace_type_e;
 
 // obj_id type
 typedef enum {
@@ -26,9 +28,9 @@ typedef enum {
   OBJ_ID_STR = 'c',
 
   UNKNOWN_OBJ_ID,
-} obj_id_type_e;
+} __attribute__((__packed__)) obj_id_type_e;
 
-typedef enum {
+enum op {
   OP_GET = 0,
   OP_GETS,
   OP_SET,
@@ -46,7 +48,8 @@ typedef enum {
   OP_UPDATE,
 
   OP_INVALID,
-} req_op_e;
+} __attribute__((__packed__));
+typedef enum op req_op_e;
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 static char *OP_STR[OP_INVALID+1] = {
@@ -61,7 +64,11 @@ typedef enum {
   cache_ck_expired = 2,
 
   cache_ck_invalid,
-} cache_ck_res_e;
+} __attribute__((__packed__)) cache_ck_res_e;
+
+static char *CACHE_CK_STATUS_STR[cache_ck_invalid + 1] = {
+    "hit", "miss", "expired", "invalid"
+};
 
 #ifdef __cplusplus
 }

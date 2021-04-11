@@ -16,12 +16,9 @@ extern "C"
 #include "evictionAlgo/LFUDA.h"
 #include "evictionAlgo/LRU.h"
 #include "evictionAlgo/LRUv0.h"
-//#include "LRU_K.h"
 #include "evictionAlgo/MRU.h"
-//#include "Optimal.h"
 #include "evictionAlgo/Random.h"
-//#include "SLRU.h"
-//#include "TTL_FIFO.h"
+#include "evictionAlgo/optimal.h"
 
 
 #include "evictionAlgo/slabLRU.h"

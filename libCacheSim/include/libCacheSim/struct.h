@@ -67,9 +67,22 @@ typedef struct {
   };
   uint32_t obj_size;
   int32_t ttl;
+  int16_t per_obj_overhead;
   req_op_e op;
-  int64_t extra_field1;
-  int64_t extra_field2;
+
+  union {
+    int64_t next_access_ts;
+    struct {
+      uint64_t key_size:16;
+      uint64_t val_size:48;
+    };
+    int64_t extra_field1;
+  };
+  union {
+    uint64_t n_req;
+    int64_t extra_field2;
+
+  };
   bool valid;        /* indicate whether request is valid request
                       * it is invlalid if the trace reaches the end */
 } request_t;
