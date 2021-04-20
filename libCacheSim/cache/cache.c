@@ -76,7 +76,7 @@ void cache_struct_free(cache_t *cache) {
   my_free(sizeof(cache_t), cache);
 }
 
-cache_t *create_cache_with_new_size(cache_t *old_cache, gint64 new_size) {
+cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size) {
   common_cache_params_t cc_params = {.cache_size = new_size,
                                      .hashpower = old_cache->hashtable->hashpower,
                                      .default_ttl = old_cache->default_ttl,
@@ -107,7 +107,7 @@ cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
   }
 #endif
   if (likely(update_cache)) {
-    if (unlikely(cache_obj->obj_size != req->obj_size + cache->per_obj_overhead)) {
+    if (unlikely(cache_obj->obj_size != req->obj_size)) {
       cache->occupied_size -= cache_obj->obj_size;
       cache->occupied_size += req->obj_size;
       cache_obj->obj_size = req->obj_size;
@@ -144,9 +144,10 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
     req->ttl = cache->default_ttl;
   }
 #endif
-  cache->occupied_size += req->obj_size + req->per_obj_overhead;
-  cache->n_obj += 1;
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
+  cache->occupied_size += cache_obj->obj_size + cache->per_obj_overhead;
+  cache->n_obj += 1;
+
   if (unlikely(cache->list_head == NULL)) {
     // an empty list, this is the first insert
     cache->list_head = cache_obj;
@@ -171,7 +172,7 @@ void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache->list_head = cache->list_head->list_next;
   cache->list_head->list_prev = NULL;
   DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
-  cache->occupied_size -= obj_to_evict->obj_size;
+  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
   cache->n_obj -= 1;
 
   hashtable_delete(cache->hashtable, obj_to_evict);

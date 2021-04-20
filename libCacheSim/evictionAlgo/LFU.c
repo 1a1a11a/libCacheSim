@@ -172,7 +172,7 @@ void LFU_remove(cache_t *cache, obj_id_t obj_id) {
 
   freq_node->n_obj--;
   remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, cache_obj);
-  cache->occupied_size -= cache_obj->obj_size;
+  cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
 
   hashtable_delete(cache->hashtable, cache_obj);
 }
@@ -186,7 +186,7 @@ void LFU_insert(cache_t *cache, request_t *req) {
   }
 #endif
   LFU_params->min_freq = 1;
-  cache->occupied_size += req->obj_size + req->per_obj_overhead;
+  cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
   cache_obj->freq = 1;
   freq_node_t *freq_one_node = LFU_params->freq_one_node;
@@ -218,7 +218,7 @@ void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   if (evicted_obj != NULL)
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
 
-  cache->occupied_size -= obj_to_evict->obj_size;
+  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
 
   if (obj_to_evict->list_next == NULL) {
     /* the only obj of curr freq */

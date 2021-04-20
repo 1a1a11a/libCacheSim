@@ -19,9 +19,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE Debug)
     endif()
-    set(CMAKE_MACOSX_RPATH 1)
+#    set(CMAKE_MACOSX_RPATH 1)
     # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-    LINK_DIRECTORIES(/usr/local/lib)
+#    LINK_DIRECTORIES(/usr/local/lib)
     # a temporary fix for mac
     #    SET(CMAKE_C_FLAGS "-lglib-2.0")
     #    SET(CMAKE_C_FLAGS "-Wno-unused-command-line-argument -lintl -lglib-2.0 ")

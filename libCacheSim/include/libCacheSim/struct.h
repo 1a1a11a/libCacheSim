@@ -67,7 +67,6 @@ typedef struct {
   };
   uint32_t obj_size;
   int32_t ttl;
-  int16_t per_obj_overhead;
   req_op_e op;
 
   union {

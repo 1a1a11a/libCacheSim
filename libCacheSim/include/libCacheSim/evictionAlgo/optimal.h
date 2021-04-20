@@ -17,7 +17,6 @@ extern "C"
 #include "../../../dataStructure/include/pqueue.h"
 
 typedef struct optimal_params {
-  int64_t *next_access_vtime;
   pqueue_t *pq;
 } optimal_params_t;
 

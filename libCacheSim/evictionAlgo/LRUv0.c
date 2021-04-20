@@ -79,7 +79,7 @@ cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
 void LRUv0_insert(cache_t *cache, request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->cache_params);
 
-  cache->occupied_size += req->obj_size + req->per_obj_overhead;
+  cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
   // TODO: use SList should be more memory efficient than queue which uses
   // doubly-linklist under the hood
@@ -102,7 +102,7 @@ void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->cache_params);
   cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(LRUv0_params->list);
   assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= cache_obj->obj_size;
+  cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
   g_hash_table_remove(LRUv0_params->hashtable,
                       (gconstpointer) cache_obj->obj_id_int);
   free_cache_obj(cache_obj);
@@ -118,8 +118,8 @@ void LRUv0_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
     abort();
   }
   cache_obj_t *cache_obj = (cache_obj_t *) (node->data);
-  assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= ((cache_obj_t *) (node->data))->obj_size;
+  assert(cache->occupied_size >= cache_obj->obj_size + cache->per_obj_overhead);
+  cache->occupied_size -= (((cache_obj_t *) (node->data))->obj_size + cache->per_obj_overhead);
   g_queue_delete_link(LRUv0_params->list, (GList *) node);
   g_hash_table_remove(LRUv0_params->hashtable, (gconstpointer) obj_to_remove->obj_id_int);
   free_cache_obj(cache_obj);

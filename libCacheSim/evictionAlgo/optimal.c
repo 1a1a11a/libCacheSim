@@ -234,7 +234,7 @@ void optimal_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj_to_remove) == obj_to_remove);
 
   DEBUG_ASSERT(cache->occupied_size >= obj_to_remove->obj_size);
-  cache->occupied_size -= obj_to_remove->obj_size;
+  cache->occupied_size -= (obj_to_remove->obj_size + cache->per_obj_overhead);
 
   if (obj_to_remove->extra_metadata_ptr != NULL) {
     /* if it is NULL, it means we have deleted the entry in pq before this */
@@ -261,7 +261,7 @@ void optimal_remove(cache_t *cache, obj_id_t obj_id) {
   remove_obj_from_list(&cache->list_head, &cache->list_tail, cache_obj);
 
   assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= cache_obj->obj_size;
+  cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
 
   hashtable_delete(cache->hashtable, cache_obj);
 }

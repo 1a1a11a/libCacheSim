@@ -38,20 +38,18 @@ cache_ck_res_e Random_get(cache_t *cache, request_t *req) {
 }
 
 void Random_insert(cache_t *cache, request_t *req) {
-  cache->occupied_size += req->obj_size + req->per_obj_overhead;
+  cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   hashtable_insert(cache->hashtable, req);
 }
 
-void Random_evict(cache_t *Random, request_t *req, cache_obj_t *cache_obj) {
-  //  DEBUG("req %d %ld/%ld\n", cache->req_cnt, cache->occupied_size,
-  //  cache->cache_size);
-  cache_obj_t *obj_to_evict = hashtable_rand_obj(Random->hashtable);
+void Random_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
+  cache_obj_t *obj_to_evict = hashtable_rand_obj(cache->hashtable);
   DEBUG_ASSERT(obj_to_evict->obj_size != 0);
   if (cache_obj != NULL)
     memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
-  Random->occupied_size -= obj_to_evict->obj_size;
+  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
   DEBUG_ASSERT(obj_to_evict->obj_size != 0);
-  hashtable_delete(Random->hashtable, obj_to_evict);
+  hashtable_delete(cache->hashtable, obj_to_evict);
 }
 
 #ifdef __cplusplus
