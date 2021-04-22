@@ -18,9 +18,9 @@ extern "C" {
 #define _GNU_SOURCE /* for sched in utils.h */
 #endif
 
-#ifndef LOGLEVEL
-#define LOGLEVEL INFO_LEVEL
-#endif
+//#ifndef LOGLEVEL
+//#define LOGLEVEL INFO_LEVEL
+//#endif
 
 #ifndef HEAP_ALLOCATOR
 #define HEAP_ALLOCATOR HEAP_ALLOCATOR_MALLOC
@@ -47,14 +47,12 @@ extern "C" {
 
 
 #include <sys/mman.h>
-#ifdef MADV_HUGEPAGE
-#define USE_HUGEPAGE
-#else
+#ifndef MADV_HUGEPAGE
 #undef USE_HUGEPAGE
 #endif
 
-#define SUPPORT_TTL
-#define SUPPORT_SLAB_AUTOMOVE
+//#define SUPPORT_TTL
+//#define SUPPORT_SLAB_AUTOMOVE
 
 #include <stdint.h>
 typedef uint64_t obj_id_t;

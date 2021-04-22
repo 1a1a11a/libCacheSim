@@ -1,6 +1,29 @@
-aux_source_directory(. DIR_LIB_SRCS)
-add_library (evictionAlgo ${DIR_LIB_SRCS})
-target_link_libraries(evictionAlgo cache)
+set(source
+        ARC.c
+        FIFO.c
+        LFU.c
+        LFUDA.c
+        LRU.c
+        LRUv0.c
+        MRU.c
+        optimal.c
+        Random.c
+
+        slabLRC.c
+        slabLRU.c
+        slabObjLRU.c
+        )
+
+if (ENABLE_LLSC)
+set(source ${source}
+        logStructure/LLSC.c
+        logStructure/learned.c
+        )
+endif()
+
+#include_directories(${LIGHTGBM_INCLUDE_DIR})
+add_library (evictionAlgo ${source})
+target_link_libraries(evictionAlgo cache ${LIGHTGBM_LIB})
 
 
 #file(GLOB src *.c)

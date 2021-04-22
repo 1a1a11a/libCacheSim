@@ -10,14 +10,14 @@ static void *_get_func_handle(char *func_name, const char *const cache_name,
   static void *handle = NULL;
   if (handle == NULL) {
     handle = dlopen(NULL, RTLD_GLOBAL);
-    /* should not check err here, otherwise ubuntu will report err even though
-     * everything is OK
-    char *err = dlerror();
-    if (err != NULL){
-      ERROR("error dlopen main program %s\n", err);
-      abort();
-    }
-     */
+//    /* should not check err here, otherwise ubuntu will report err even though
+//     * everything is OK
+//    char *err = dlerror();
+//    if (err != NULL){
+//      ERROR("error dlopen main program %s\n", err);
+//      abort();
+//    }
+//     */
   }
 
   char full_func_name[128];
@@ -96,7 +96,7 @@ cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
   }
 
   cache_ck_res_e ret = cache_ck_hit;
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0) {
     if (cache_obj->exp_time < req->real_time) {
       ret = cache_ck_expired;
@@ -139,7 +139,7 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
     req->ttl = cache->default_ttl;
   }

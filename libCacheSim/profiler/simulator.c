@@ -84,12 +84,18 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   }
 
   /* check cache_state */
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (local_cache->default_ttl != 0) {
     result[idx].cache_state.cur_time = req->real_time;
     result[idx].cache_state.cache_size = local_cache->cache_size;
+    result[idx].cache_state.expired_bytes = 0;
+    result[idx].cache_state.expired_obj_cnt = 0;
+    result[idx].cache_state.stored_obj_cnt = 0;
+    result[idx].cache_state.used_bytes = 0;
     get_cache_state(local_cache, &result[idx].cache_state);
     assert(result[idx].cache_state.used_bytes == local_cache->occupied_size);
   }
+#endif
 
   result[idx].miss_bytes = miss_byte;
   result[idx].miss_cnt = miss_cnt;

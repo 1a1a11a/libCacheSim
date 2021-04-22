@@ -29,6 +29,9 @@ cache_obj_t *chained_hashtable_find_obj_v2(hashtable_t *hashtable,
 cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable,
                                          request_t *req);
 
+cache_obj_t *chained_hashtable_insert_obj_v2(hashtable_t *hashtable,
+                                             cache_obj_t *cache_obj);
+
 void chained_hashtable_delete_v2(hashtable_t *hashtable,
                                  cache_obj_t *cache_obj);
 

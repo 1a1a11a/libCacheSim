@@ -28,31 +28,57 @@ extern "C" {
 struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
-  struct cache_obj *list_next;
-  struct cache_obj *list_prev;
   union {
-    uint64_t freq;
+    struct cache_obj *list_next;
+    void *list_next_void;
+  };
+  union{
+    struct cache_obj *list_prev;
+//    void *list_prev_void;
+    void *segment;
+  };
+  union {
+    obj_id_t obj_id_int;
+    obj_id_t obj_id;
+  };
+  uint32_t obj_size;
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+  uint32_t exp_time;
+#endif
+  union {
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+    struct {
+//      void *segment;
+      int32_t LLSC_freq;
+      int32_t last_access_rtime;
+//      int16_t ref_cnt;
+      int8_t in_cache;
+      int8_t last_history_idx;
+      int8_t last_history_idx_training;
+      int16_t idx_in_segment;
+    };
+#endif
+    int64_t freq;
     double score;
     void *extra_metadata_ptr;
     uint64_t extra_metadata_u64;
     uint8_t extra_metadata_u8[8];
   };
-  obj_id_t obj_id_int;
-  uint32_t obj_size;
-#ifdef SUPPORT_TTL
-  uint32_t exp_time;
-#endif
-} cache_obj_t;
+  union {
+    int64_t next_access_ts;
+    void *extra_metadata_ptr2;
+  };
+} __attribute__((packed)) cache_obj_t;
 
 typedef struct {
   obj_id_t obj_id_int;
   uint32_t obj_size;
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   uint32_t exp_time;
 #endif
-#ifdef SUPPORT_SLAB_AUTOMOVE
+//#ifdef SUPPORT_SLAB_AUTOMOVE
   uint32_t access_time;
-#endif
+//#endif
   void *slab;
   int32_t item_pos_in_slab;
 } slab_cache_obj_t;

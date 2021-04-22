@@ -6,13 +6,14 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "include/readerInternal.h"
-#include "include/libcsv.h"
+#include "customizedReader/oracleTwrBin.h"
+#include "customizedReader/oracleBin.h"
+#include "customizedReader/twrBin.h"
 #include "include/binary.h"
 #include "include/csv.h"
+#include "include/libcsv.h"
+#include "include/readerInternal.h"
 #include "include/vscsi.h"
-#include "customizedReader/twrBin.h"
-#include "customizedReader/oracleTwrBin.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +73,6 @@ reader_t *setup_reader(const char *const trace_path,
   madvise(reader->mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
 #endif
 
-
   if ((reader->mapped_file) == MAP_FAILED) {
     close(fd);
     reader->mapped_file = NULL;
@@ -82,17 +82,21 @@ reader_t *setup_reader(const char *const trace_path,
   }
 
   switch (trace_type) {
-    case CSV_TRACE:csv_setup_reader(reader);
+    case CSV_TRACE:
+      csv_setup_reader(reader);
       break;
-    case PLAIN_TXT_TRACE:reader->file = fopen(trace_path, "r");
+    case PLAIN_TXT_TRACE:
+      reader->file = fopen(trace_path, "r");
       if (reader->file == 0) {
         ERROR("open trace file %s failed: %s\n", trace_path, strerror(errno));
         exit(1);
       }
       break;
-    case VSCSI_TRACE:vscsi_setup(reader);
+    case VSCSI_TRACE:
+      vscsi_setup(reader);
       break;
-    case BIN_TRACE:binaryReader_setup(reader);
+    case BIN_TRACE:
+      binaryReader_setup(reader);
       break;
     case TWR_TRACE:
       twrReader_setup(reader);
@@ -100,7 +104,11 @@ reader_t *setup_reader(const char *const trace_path,
     case ORACLE_TWR_TRACE:
       oracleTwr_setup(reader);
       break;
-    default:ERROR("cannot recognize trace type: %c\n", reader->trace_type);
+    case ORACLE_BIN_TRACE:
+      oracleBin_setup(reader);
+      break;
+    default:
+      ERROR("cannot recognize trace type: %c\n", reader->trace_type);
       exit(1);
   }
   close(fd);
@@ -115,7 +123,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
   char *line_end = NULL;
   size_t line_len;
   switch (reader->trace_type) {
-    case CSV_TRACE:return csv_read_one_element(reader, req);
+    case CSV_TRACE: return csv_read_one_element(reader, req);
     case PLAIN_TXT_TRACE:
       if (reader->mmap_offset >= reader->file_size - 1) {
         req->valid = false;
@@ -143,7 +151,9 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     case BIN_TRACE: return binary_read_one_req(reader, req);
     case TWR_TRACE: return twr_read_one_req(reader, req);
     case ORACLE_TWR_TRACE: return oracleTwr_read_one_req(reader, req);
-    default:ERROR(
+    case ORACLE_BIN_TRACE: return oracleBin_read_one_req(reader, req);
+    default:
+      ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
           reader->trace_type);
       exit(1);
@@ -183,12 +193,11 @@ int go_back_one_line(reader_t *const reader) {
        *  or points to somewhere after the beginning of current line beginning
        *  find the first character of current line
        */
-      while ((char *) cp > reader->mapped_file && *cp != FILE_LF &&
-          *cp != FILE_CR) {
+      while ((char *) cp > reader->mapped_file && *cp != FILE_LF && *cp != FILE_CR) {
         cp--;
       }
       if ((void *) cp != reader->mapped_file)
-        cp++; // jump over LFCR
+        cp++;// jump over LFCR
 
       if ((char *) cp < reader->mapped_file) {
         ERROR("current pointer points before mapped file\n");
@@ -202,6 +211,7 @@ int go_back_one_line(reader_t *const reader) {
     case BIN_TRACE:
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_BIN_TRACE:
     case VSCSI_TRACE:
       if (reader->mmap_offset >= reader->item_size)
         reader->mmap_offset -= (reader->item_size);
@@ -209,7 +219,8 @@ int go_back_one_line(reader_t *const reader) {
         return -1;
       return 0;
 
-    default:ERROR(
+    default:
+      ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
           reader->trace_type);
       exit(1);
@@ -231,13 +242,15 @@ int go_back_two_lines(reader_t *const reader) {
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
     case BIN_TRACE:
+    case ORACLE_BIN_TRACE:
     case VSCSI_TRACE:
       if (reader->mmap_offset >= (reader->item_size * 2))
         reader->mmap_offset -= (reader->item_size) * 2;
       else
         return -1;
       return 0;
-    default:ERROR(
+    default:
+      ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
           reader->trace_type);
       exit(1);
@@ -270,7 +283,7 @@ uint64_t skip_n_req(reader_t *const reader, const uint64_t N) {
   uint64_t count = N;
 
   switch (reader->trace_type) {
-    case CSV_TRACE:csv_skip_N_elements(reader, N);
+    case CSV_TRACE: csv_skip_N_elements(reader, N);
     case PLAIN_TXT_TRACE:;
       char *line_end = NULL;
       uint64_t i;
@@ -293,20 +306,21 @@ uint64_t skip_n_req(reader_t *const reader, const uint64_t N) {
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
     case BIN_TRACE:
+    case ORACLE_BIN_TRACE:
     case VSCSI_TRACE:
       if (reader->mmap_offset + N * reader->item_size <= reader->file_size) {
         reader->mmap_offset = reader->mmap_offset + N * reader->item_size;
       } else {
-        count = (uint64_t) ((reader->file_size - reader->mmap_offset) /
-            reader->item_size);
+        count = (uint64_t)((reader->file_size - reader->mmap_offset) / reader->item_size);
         reader->mmap_offset = reader->file_size;
         WARNING("required to skip %lu requests, but only %lu requests left\n",
                 (unsigned long) N, (unsigned long) count);
       }
 
       break;
-    default:ERROR("cannot recognize reader trace type: %c\n",
-                  reader->trace_type);
+    default:
+      ERROR("cannot recognize reader trace type: %c\n",
+            reader->trace_type);
       exit(1);
       break;
   }
@@ -317,13 +331,15 @@ void reset_reader(reader_t *const reader) {
   /* rewind the reader back to beginning */
   reader->mmap_offset = 0;
   switch (reader->trace_type) {
-    case CSV_TRACE:csv_reset_reader(reader);
+    case CSV_TRACE: csv_reset_reader(reader);
     case PLAIN_TXT_TRACE:
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
     case BIN_TRACE:
-    case VSCSI_TRACE:break;
-    default:ERROR(
+    case ORACLE_BIN_TRACE:
+    case VSCSI_TRACE: break;
+    default:
+      ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
           reader->trace_type);
       exit(1);
@@ -359,8 +375,10 @@ uint64_t get_num_of_req(reader_t *const reader) {
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
     case BIN_TRACE:
-    case VSCSI_TRACE:return reader->n_total_req;
-    default:ERROR(
+    case ORACLE_BIN_TRACE:
+    case VSCSI_TRACE: return reader->n_total_req;
+    default:
+      ERROR(
           "cannot recognize reader trace type, given reader trace_type: %c\n",
           reader->trace_type);
       exit(1);
@@ -398,13 +416,16 @@ int close_reader(reader_t *const reader) {
       csv_free(params->csv_parser);
       g_free(params->csv_parser);
       break;
-    case PLAIN_TXT_TRACE:fclose(reader->file);
+    case PLAIN_TXT_TRACE:
+      fclose(reader->file);
       break;
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
     case BIN_TRACE:
-    case VSCSI_TRACE:break;
-    default:ERROR(
+    case ORACLE_BIN_TRACE:
+    case VSCSI_TRACE: break;
+    default:
+      ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
           reader->obj_id_type);
       abort();
@@ -421,14 +442,17 @@ int close_reader(reader_t *const reader) {
 void set_no_eof(reader_t *const reader) {
   // remove eof flag for reader
   switch (reader->trace_type) {
-    case CSV_TRACE:csv_set_no_eof(reader);
+    case CSV_TRACE:
+      csv_set_no_eof(reader);
       break;
     case PLAIN_TXT_TRACE:
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
     case BIN_TRACE:
-    case VSCSI_TRACE:break;
-    default:ERROR(
+    case ORACLE_BIN_TRACE:
+    case VSCSI_TRACE: break;
+    default:
+      ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
           reader->trace_type);
       exit(1);
@@ -455,7 +479,6 @@ void reader_set_read_pos(reader_t *const reader, const double pos) {
       reader->mmap_offset--;
   }
 }
-
 
 /**
  *  find the closest end of line, store in line_end
@@ -514,19 +537,14 @@ bool find_line_ending(reader_t *const reader, char **line_end,
   *line_len =
       *line_end - ((char *) (reader->mapped_file) + reader->mmap_offset);
 
-  while ((long) (*line_end - (char *) (reader->mapped_file)) <
-      (long) (reader->file_size) - 1 &&
-      (*(*line_end + 1) == CSV_CR || *(*line_end + 1) == CSV_LF ||
-          *(*line_end + 1) == CSV_TAB || *(*line_end + 1) == CSV_SPACE)) {
+  while ((long) (*line_end - (char *) (reader->mapped_file)) < (long) (reader->file_size) - 1 && (*(*line_end + 1) == CSV_CR || *(*line_end + 1) == CSV_LF || *(*line_end + 1) == CSV_TAB || *(*line_end + 1) == CSV_SPACE)) {
     (*line_end)++;
-    if ((long) (*line_end - (char *) (reader->mapped_file)) ==
-        (long) (reader->file_size) - 1) {
+    if ((long) (*line_end - (char *) (reader->mapped_file)) == (long) (reader->file_size) - 1) {
       reader->item_size = *line_len;
       return true;
     }
   }
-  if ((long) (*line_end - (char *) (reader->mapped_file)) ==
-      (long) (reader->file_size) - 1) {
+  if ((long) (*line_end - (char *) (reader->mapped_file)) == (long) (reader->file_size) - 1) {
     reader->item_size = *line_len;
     return true;
   }

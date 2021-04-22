@@ -32,6 +32,7 @@ extern "C"
 #define hashtable_find_req(hashtable, req) chained_hashtable_find(hashtable, req)
 #define hashtable_find_obj(hashtable, cache_obj) chained_hashtable_find_obj(hashtable, cache_obj)
 #define hashtable_insert(hashtable, req) chained_hashtable_insert(hashtable, req)
+#define hashtable_insert_obj(hashtable, cache_obj) assert(0);
 #define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete(hashtable, cache_obj)
 #define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj(hashtable)
 #define hashtable_foreach(hashtable, iter_func, user_data) chained_hashtable_foreach(hashtable, iter_func, user_data)
@@ -45,6 +46,7 @@ extern "C"
 #define hashtable_find_obj_id(hashtable, obj_id) chained_hashtable_find_obj_id_v2(hashtable, obj_id)
 #define hashtable_find_obj(hashtable, cache_obj) chained_hashtable_find_obj_v2(hashtable, cache_obj)
 #define hashtable_insert(hashtable, req) chained_hashtable_insert_v2(hashtable, req)
+#define hashtable_insert_obj(hashtable, cache_obj) chained_hashtable_insert_obj_v2(hashtable, cache_obj)
 #define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete_v2(hashtable, cache_obj)
 #define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj_v2(hashtable)
 #define hashtable_foreach(hashtable, iter_func, user_data) chained_hashtable_foreach_v2(hashtable, iter_func, user_data)

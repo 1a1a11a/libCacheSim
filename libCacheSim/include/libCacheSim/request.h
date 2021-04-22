@@ -28,6 +28,7 @@ static inline request_t *new_request() {
   req->obj_id_int = 0;
   req->real_time = 0;
   req->hv = 0;
+  req->next_access_ts = -2;
   return req;
 }
 
@@ -73,7 +74,7 @@ static inline void free_request(request_t *req) {
 }
 
 static inline void print_request(request_t *req) {
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   INFO("req real_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
        (unsigned long) req->real_time, (unsigned long long) req->obj_id_int,
        (long) req->obj_size, (long) req->ttl, OP_STR[req->op], req->valid);

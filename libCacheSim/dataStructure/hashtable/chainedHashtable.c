@@ -96,6 +96,7 @@ _move_into_new_table(hashtable_t *hashtable,
 hashtable_t *create_chained_hashtable(const uint16_t hash_power) {
   hashtable_t *hashtable = my_malloc(hashtable_t);
   memset(hashtable, 0, sizeof(hashtable_t));
+
   hashtable->hashpower = hash_power;
   hashtable->table = my_malloc_n(cache_obj_t, hashsize(hashtable->hashpower));
 #ifdef USE_HUGEPAGE
@@ -110,6 +111,7 @@ hashtable_t *create_chained_hashtable(const uint16_t hash_power) {
   memset(hashtable->table, 0, hashsize(hash_power) * sizeof(cache_obj_t));
   hashtable->hashpower = hash_power;
   hashtable->n_cur_item = 0;
+  hashtable->external_obj = false;
   return hashtable;
 }
 

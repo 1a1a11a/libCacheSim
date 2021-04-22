@@ -47,7 +47,7 @@ static inline int twr_read_one_req(reader_t *reader, request_t *req) {
 
   req->obj_size = key_size + val_size;
   req->op = op;
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   req->ttl = ttl;
 #endif
   

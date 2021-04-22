@@ -180,7 +180,7 @@ void LFU_remove(cache_t *cache, obj_id_t obj_id) {
 void LFU_insert(cache_t *cache, request_t *req) {
   LFU_params_t *LFU_params = (LFU_params_t *) (cache->cache_params);
 
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
     req->ttl = cache->default_ttl;
   }

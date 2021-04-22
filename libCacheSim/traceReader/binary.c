@@ -251,7 +251,7 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
     binary_extract(record, params->op_field, params->op_len,
                    params->op_type, &(req->op));
   }
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (params->ttl_type) {
     binary_extract(record, params->ttl_field, params->ttl_len,
                    params->ttl_type, &(req->ttl));

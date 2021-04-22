@@ -76,7 +76,7 @@ cache_ck_res_e slabLRC_check(cache_t *cache, request_t *req,
       params->hashtable, GSIZE_TO_POINTER(req->obj_id_int));
 
   if (cache_obj != NULL) {
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
     if (cache_obj->exp_time < req->real_time) {
       /* obj is expired */
       result = cache_ck_expired;

@@ -178,10 +178,10 @@ cache_ck_res_e optimal_check(cache_t *cache, request_t *req, bool update_cache) 
 }
 
 cache_ck_res_e optimal_get(cache_t *cache, request_t *req) {
-  assert(req->n_req - 1 == cache->req_cnt);
-  if (req->n_req % 100000000 == 0) {
-    printf("cache size %lu n_req %lu\n", cache->cache_size, (cache->req_cnt+1)/1000000);
-  }
+  DEBUG_ASSERT(req->n_req - 1 == cache->req_cnt);
+//  if (req->n_req % 100000000 == 0) {
+//    printf("cache size %lu n_req %lu\n", (unsigned long) cache->cache_size, (unsigned long) (cache->req_cnt+1)/1000000);
+//  }
 
   optimal_params_t *params = cache->cache_params;
 

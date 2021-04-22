@@ -148,7 +148,7 @@ void LFUDA_remove(cache_t *cache, obj_id_t obj_id) {
 void LFUDA_insert(cache_t *cache, request_t *req) {
   LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->cache_params);
 
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
     req->ttl = cache->default_ttl;
   }

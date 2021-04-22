@@ -11,15 +11,16 @@ extern "C" {
 
 // trace type
 typedef enum {
-  CSV_TRACE = 'c',
-  BIN_TRACE = 'b',
-  PLAIN_TXT_TRACE = 'p',
-  VSCSI_TRACE = 'v',
-  TWR_TRACE = 't',
+  CSV_TRACE,
+  BIN_TRACE,
+  PLAIN_TXT_TRACE,
+  VSCSI_TRACE,
+  TWR_TRACE,
+  ORACLE_BIN_TRACE,
 
   ORACLE_TWR_TRACE,
 
-  UNKNOWN_TRACE = 'u',
+  UNKNOWN_TRACE,
 } __attribute__((__packed__)) trace_type_e;
 
 // obj_id type

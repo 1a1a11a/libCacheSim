@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.12)
 project(libCacheSim C)
 set(DESCRIPTION "a high performance cache simulation library")
 set(PROJECT_WEB "http://libCacheSim.info")
@@ -30,6 +30,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     #    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/Users/jason/Library/Python/3.7/lib/python/site-packages/numpy/core/include/")
 
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+#    set(CFLAGS "$ENV{CFLAGS} " "-Wl,--export-dynamic ")
     add_definitions(-DOS_LINUX)
 else ()
     message(FATAL_ERROR "unsupported operating system ${CMAKE_SYSTEM_NAME}")
@@ -45,6 +46,49 @@ endif ()
 ####################
 option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
+option(ENABLE_LLSC "enable learned log-structured cache" ON)
+option(SUPPORT_TTL "whether support TTL" OFF)
+#option(LOGLEVEL "log level VVERBOSE 4, VERBOSE 5, DEBUG 6, INFO 7, WARNING 8, SEVERE 9" 6)
+set(LOG_LEVEL "debug" CACHE STRING "log level: verbost, debug, info, warning, severe")
+
+
+if (SUPPORT_TTL)
+    add_compile_definitions(SUPPORT_TTL=1)
+else()
+    add_compile_definitions(SUPPORT_TTL=0)
+endif(SUPPORT_TTL)
+
+if (USE_HUGEPAGE)
+    add_compile_definitions(USE_HUGEPAGE=1)
+else()
+    add_compile_definitions(USE_HUGEPAGE=0)
+endif(USE_HUGEPAGE)
+
+if (ENABLE_LLSC)
+    add_compile_definitions(ENABLE_LLSC=1)
+else()
+    remove_definitions(ENABLE_LLSC)
+endif(ENABLE_LLSC)
+
+if (LOG_LEVEL MATCHES verbose)
+    message(STATUS "verbose")
+    add_compile_definitions(LOGLEVEL=5)
+elseif (LOG_LEVEL MATCHES debug)
+    message(STATUS "debug")
+    add_compile_definitions(LOGLEVEL=6)
+elseif (LOG_LEVEL MATCHES info)
+    message(STATUS "info")
+    add_compile_definitions(LOGLEVEL=7)
+elseif (LOG_LEVEL MATCHES warning)
+    message(STATUS "warning")
+    add_compile_definitions(LOGLEVEL=8)
+elseif (LOG_LEVEL MATCHES severe)
+    message(STATUS "severe")
+    add_compile_definitions(LOGLEVEL=9)
+endif()
+
+
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOGLEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
 
 
 # set compiler flags
@@ -63,6 +107,7 @@ set(CFLAGS "$ENV{CFLAGS} "
 #                "-Wstrict-prototypes -Wmissing-prototypes "
 #                "-Wmissing-declarations "
         "-Wredundant-decls "
+#        "-Wl,--export-dynamic "
 #                "-Wunused-value -Wunused-variable "
 #                "-Wunused-function "
 #            -std=c11
@@ -70,14 +115,18 @@ set(CFLAGS "$ENV{CFLAGS} "
         )
 
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(CFLAGS "$ENV{CFLAGS} " "-Wl,--export-dynamic ")
+endif ()
+
 string(REPLACE "" "" LOCAL_CFLAGS ${CFLAGS})
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS} ${LOCAL_CFLAGS}")
 
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -ggdb3 -DLOGLEVEL=5 ")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -ggdb3")     # -DLOGLEVEL=5
 else ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -DLOGLEVEL=7")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 endif ()
 
 
@@ -97,12 +146,47 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 find_package(Tcmalloc)
-if ("${Tcmalloc_LIBRARIES}" STREQUAL "")
+if ("${Tcmalloc_LIBRARY}" STREQUAL "")
     message(STATUS "!!! cannot find tcmalloc")
 else ()
     set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
 endif ()
+
+if (ENABLE_LLSC)
+#find_package(xgboost REQUIRED)
+#if (NOT XGBOOST_INCLUDE_DIRS)
+#    message(FATAL_ERROR "XGBOOST_INCLUDE_DIR not found")
+#endif ()
+#include_directories(${XGBOOST_INCLUDE_DIR})
+#target_link_libraries(your_project_name xgboost::xgboost)
+
+find_path(LIGHTGBM_INCLUDE_DIR LightGBM/c_api.h REQUIRED)
+if (NOT LIGHTGBM_INCLUDE_DIR)
+    message(FATAL_ERROR "LIGHTGBM_INCLUDE_DIR not found")
+endif ()
+
+find_library(LIGHTGBM_LIB _lightgbm)
+if (NOT LIGHTGBM_LIB)
+    message(FATAL_ERROR "LIGHTGBM_LIB not found")
+endif ()
+include_directories(${LIGHTGBM_INCLUDE_DIR})
+link_libraries(${LIGHTGBM_LIB})
+message(STATUS "${XGBOOST_INCLUDE_DIR} ${LIGHTGBM_LIB} ${LIGHTGBM_INCLUDE_DIR}")
+endif()
+
+#find_path(LIGHTGBM_INCLUDE_DIR LightGBM/c_api.h REQUIRED)
+#if (NOT LIGHTGBM_INCLUDE_DIR)
+#    message(FATAL_ERROR "LIGHTGBM_INCLUDE_DIR not found")
+#endif ()
+#
+#find_library(LIGHTGBM_LIB _lightgbm)
+##find_library(LIGHTGBM_LIB lib_lightgbm.so)
+#if (NOT LIGHTGBM_LIB)
+#    message(FATAL_ERROR "LIGHTGBM_LIB not found")
+#endif ()
+#target_link_libraries(webcachesim LINK_PUBLIC ${LIGHTGBM_LIB})
+
 
 link_libraries("-lpthread -ldl -lm ${LIBS}")
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -113,8 +197,9 @@ message(STATUS "<<++              libCacheSim summary             ++>>")
 message(STATUS "<<++=====------------------/\\------------------=====++>>")
 
 message(STATUS "================== dependency related ==================")
-message(STATUS "glib found?     " ${GLib_FOUND} " - LIBS = " ${GLib_LIBRARY} ", header = " ${GLib_INCLUDE_DIRS})
-message(STATUS "Tcmalloc found? " ${Tcmalloc_FOUND} " - LIBS = " ${Tcmalloc_LIBRARIES} ", header = " ${Tcmalloc_INCLUDE_DIRS})
+message(STATUS "glib found?     ${GLib_FOUND} - LIBS=${GLib_LIBRARY}, header =${GLib_INCLUDE_DIRS}")
+message(STATUS "tcmalloc found? ${Tcmalloc_FOUND} - LIBS=${Tcmalloc_LIBRARIES}, header=${Tcmalloc_INCLUDE_DIRS}")
+message(STATUS "lightGBM found? - LIBS=${LIGHTGBM_LIB}, header=${LIGHTGBM_INCLUDE_DIR}")
 
 message(STATUS "==================== CMake related =====================")
 message(STATUS "platform          = ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_VERSION}")
@@ -191,6 +276,13 @@ if (ENABLE_TESTS)
 else ()
     message(STATUS "Building without test")
 endif ()
+
+
+
+unset(SUPPORT_TTL CACHE)
+unset(USE_HUGEPAGE CACHE)
+unset(LOGLEVEL CACHE)
+unset(ENABLE_LLSC CACHE)
 
 
 # Example Usages:

@@ -110,7 +110,7 @@ cache_ck_res_e slabObjLRU_check(cache_t *cache, request_t *req,
   if (node != NULL) {
     result = cache_ck_hit;
     slab_cache_obj_t *cache_obj = node->data;
-#ifdef SUPPORT_TTL
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
     if (cache_obj->exp_time < req->real_time) {
       /* obj is expired */
       result = cache_ck_expired;
