@@ -48,6 +48,7 @@ extern "C"
 #define hashtable_insert(hashtable, req) chained_hashtable_insert_v2(hashtable, req)
 #define hashtable_insert_obj(hashtable, cache_obj) chained_hashtable_insert_obj_v2(hashtable, cache_obj)
 #define hashtable_delete(hashtable, cache_obj) chained_hashtable_delete_v2(hashtable, cache_obj)
+#define hashtable_delete_obj_id(hashtable, cache_obj) chained_hashtable_delete_obj_id_v2(hashtable, obj_id)
 #define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj_v2(hashtable)
 #define hashtable_foreach(hashtable, iter_func, user_data) chained_hashtable_foreach_v2(hashtable, iter_func, user_data)
 #define free_hashtable(hashtable) free_chained_hashtable_v2(hashtable)

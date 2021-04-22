@@ -145,19 +145,58 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
     chain_len += 1;
   }
 
-//  if (chain_len > max_chain_len) {
-//    max_chain_len = chain_len;
-//    printf("hv %lu max chain len %d, hash table %ld/%ld %lf\n",
-//           hv, max_chain_len, hashtable->n_cur_item,
-//           hashsize(hashtable->hashpower),
-//           (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
-//           );
-//  }
+  if (chain_len > 5 && chain_len > max_chain_len) {
+    max_chain_len = chain_len;
+    printf("hv %lu max chain len %d, hash table %ld/%ld %lf\n",
+           (unsigned long) hv, max_chain_len,
+           (long) hashtable->n_cur_item,
+           (long) hashsize(hashtable->hashpower),
+           (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
+           );
+  }
 
   DEBUG_ASSERT(cur_obj != NULL);
   cur_obj->hash_next = cache_obj->hash_next;
   if (!hashtable->external_obj)
     free_cache_obj(cache_obj);
+}
+
+
+void chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
+                                 obj_id_t obj_id) {
+  hashtable->n_cur_item -= 1;
+  uint64_t hv = get_hash_value_int_64(obj_id) & hashmask(hashtable->hashpower);
+  cache_obj_t *cache_obj = hashtable->ptr_table[hv];
+  if (cache_obj != NULL && cache_obj->obj_id == obj_id) {
+    hashtable->ptr_table[hv] = cache_obj->hash_next;
+    if (!hashtable->external_obj)
+      free_cache_obj(cache_obj);
+    return;
+  }
+
+  static int max_chain_len = 1;
+  int chain_len = 1;
+  cache_obj = cache_obj->hash_next;
+  while (cache_obj != NULL && cache_obj->obj_id != obj_id) {
+    cache_obj = cache_obj->hash_next;
+    chain_len += 1;
+  }
+
+  if (chain_len > 5 && chain_len > max_chain_len) {
+    max_chain_len = chain_len;
+    printf("hv %lu max chain len %d, hash table %ld/%ld %lf\n",
+           (unsigned long) hv, max_chain_len,
+           (long) hashtable->n_cur_item,
+           (long) hashsize(hashtable->hashpower),
+           (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
+    );
+  }
+
+  if (cache_obj != NULL) {
+    cache_obj->hash_next = cache_obj->hash_next;
+    if (!hashtable->external_obj)
+      free_cache_obj(cache_obj);
+  }
 }
 
 cache_obj_t *chained_hashtable_rand_obj_v2(hashtable_t *hashtable) {

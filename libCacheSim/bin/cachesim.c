@@ -71,13 +71,13 @@ void run_cache(reader_t *reader, cache_t *cache) {
       miss_byte += req->obj_size;
     }
 
-//    if (req->real_time - last_report_ts >= 3600 * 24) {
-//      INFO("ts %lu: %lu requests, miss cnt %lu %.4lf\n",
-//           (unsigned long) req->real_time - start_ts,
-//           (unsigned long) req_cnt, (unsigned long) miss_cnt,
-//           (double) miss_cnt / req_cnt);
-//      last_report_ts = req->real_time;
-//    }
+    if (req->real_time - last_report_ts >= 3600 * 24) {
+      INFO("ts %lu: %lu requests, miss cnt %lu %.4lf\n",
+           (unsigned long) req->real_time - start_ts,
+           (unsigned long) req_cnt, (unsigned long) miss_cnt,
+           (double) miss_cnt / req_cnt);
+      last_report_ts = req->real_time;
+    }
 
     read_one_req(reader, req);
   }

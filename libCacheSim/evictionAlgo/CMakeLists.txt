@@ -18,6 +18,7 @@ if (ENABLE_LLSC)
 set(source ${source}
         logStructure/LLSC.c
         logStructure/learned.c
+        logStructure/oracle.c
         )
 endif()
 
