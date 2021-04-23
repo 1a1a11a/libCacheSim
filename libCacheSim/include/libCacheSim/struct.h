@@ -28,15 +28,8 @@ extern "C" {
 struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
-  union {
     struct cache_obj *list_next;
-    void *list_next_void;
-  };
-  union{
     struct cache_obj *list_prev;
-//    void *list_prev_void;
-    void *segment;
-  };
   union {
     obj_id_t obj_id_int;
     obj_id_t obj_id;
@@ -46,28 +39,27 @@ typedef struct cache_obj {
   uint32_t exp_time;
 #endif
   union {
-#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
     struct {
-//      void *segment;
+      void *segment;
+      int64_t next_access_ts;
       int32_t LLSC_freq;
       int32_t last_access_rtime;
-//      int16_t ref_cnt;
-      int8_t in_cache;
-      int8_t last_history_idx;
-      int8_t last_history_idx_training;
       int16_t idx_in_segment;
-    };
-#endif
+//      int16_t ref_cnt;
+      int8_t last_history_idx;
+      int8_t in_cache:1;
+      int8_t merged:1;
+//      int8_t last_history_idx_training;
+    } LSC;
     int64_t freq;
     double score;
     void *extra_metadata_ptr;
     uint64_t extra_metadata_u64;
     uint8_t extra_metadata_u8[8];
   };
-  union {
-    int64_t next_access_ts;
-    void *extra_metadata_ptr2;
-  };
+//  union {
+//    void *extra_metadata_ptr2;
+//  };
 } __attribute__((packed)) cache_obj_t;
 
 typedef struct {

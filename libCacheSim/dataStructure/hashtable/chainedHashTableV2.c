@@ -145,7 +145,7 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
     chain_len += 1;
   }
 
-  if (chain_len > 5 && chain_len > max_chain_len) {
+  if (chain_len > 8 && chain_len > max_chain_len) {
     max_chain_len = chain_len;
     printf("hv %lu max chain len %d, hash table %ld/%ld %lf\n",
            (unsigned long) hv, max_chain_len,

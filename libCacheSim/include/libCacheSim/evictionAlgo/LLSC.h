@@ -7,16 +7,23 @@
 
 #include "../cache.h"
 
+#include <LightGBM/c_api.h>
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
 #define MAX_N_BUCKET 1
-#define N_TIME_WINDOW 80
+#define N_TRAIN_ITER 8
+#define GEN_TRAINING_SEG_EVERY_N 1
+#define N_MAX_VALIDATION 1000
+#define N_FEATURE_TIME_WINDOW 80
+
 #define MAGIC     1234567890
 
 #define DEFAULT_RANK_INTVL 20
+
 typedef enum {
   SEGCACHE,
   SEGCACHE_ITEM_ORACLE,
@@ -34,6 +41,13 @@ typedef enum {
 //  LOGCACHE_FIFO,
 } LSC_type_e;
 
+typedef enum obj_score_type {
+  OBJ_SCORE_FREQ,
+  OBJ_SCORE_FREQ_BYTE,
+  OBJ_SCORE_FREQ_BYTE_AGE,
+  OBJ_SCORE_ORACLE,
+} obj_score_e;
+
 typedef struct {
   int segment_size;
   int n_merge;
@@ -41,9 +55,60 @@ typedef struct {
   int rank_intvl;
 } LLSC_init_params_t;
 
+
+
 typedef struct {
+//  int16_t n_del_item[N_FEATURE_TIME_WINDOW];
+  int16_t n_active_item_accu[N_FEATURE_TIME_WINDOW];
+  int16_t n_active_item_per_window[N_FEATURE_TIME_WINDOW];
+  int32_t n_active_byte_accu[N_FEATURE_TIME_WINDOW];
+  int32_t n_active_byte_per_window[N_FEATURE_TIME_WINDOW];
+
+  int32_t n_hit[N_FEATURE_TIME_WINDOW];
 
 } seg_feature_t;
+
+typedef struct learner {
+  int32_t feature_history_time_window;
+  bool start_feature_recording;
+//  bool start_train;
+  int64_t start_feature_recording_time;
+
+  BoosterHandle booster;
+
+  int n_train;
+  int n_inference;
+
+  int n_feature;
+
+  double *training_x;
+  float *training_y;
+  double *valid_x;
+  float *valid_y;
+  double *valid_pred_y;
+
+  int32_t n_training_samples;
+  int32_t n_valid_samples;
+//  int32_t n_training_iter;
+
+  int32_t training_n_row;
+  int32_t validation_n_row;
+  int32_t inference_n_row;
+
+  double *inference_data;
+  double *pred;
+
+//  int64_t last_inference_time;
+
+
+  int32_t full_cache_write_time;    /* real time */
+  int32_t last_cache_full_time;     /* real time */
+  int64_t n_byte_written;       /* cleared after each full cache write */
+
+
+} learner_t;
+
+
 
 typedef struct segment {
 //  cache_obj_t *first_obj;
@@ -51,14 +116,24 @@ typedef struct segment {
   cache_obj_t *objs;
   int64_t total_byte;
   int32_t n_total_obj;
-  int32_t create_time;
+  int32_t bucket_idx;
 
   struct segment *prev_seg;
   struct segment *next_seg;
-  bool is_training_seg;
-  int32_t magic;
   int32_t seg_id;
   double penalty;
+
+  int32_t create_rtime;
+  int64_t create_vtime;
+  double req_rate;    /* req rate when create the seg */
+  double write_rate;
+  int64_t eviction_vtime;
+
+  seg_feature_t feature;
+
+  bool n_merge;       /* number of merged times */
+  bool is_training_seg;
+  int32_t magic;
 } segment_t;
 
 typedef struct {
@@ -80,8 +155,8 @@ typedef struct seg_sel{
   double *score_array;
   int score_array_size;
 
-  double *obj_penalty;
-  int obj_penalty_array_size;
+//  double *obj_penalty;
+//  int obj_penalty_array_size;
 
 
 } seg_sel_t;
@@ -97,25 +172,22 @@ typedef struct {
   int curr_evict_bucket_idx;
   segment_t *next_evict_segment;
 
-  int64_t n_segs;
-  int64_t n_training_segs;
+  int32_t n_segs;
+  int32_t n_training_segs;
   int64_t n_allocated_segs;
   int64_t n_evictions;
 
   int64_t curr_time;
   int64_t curr_vtime;
 
-  int32_t full_cache_write_time;    /* real time */
-  int32_t last_cache_full_time;     /* real time */
-  int64_t n_byte_written;       /* cleared after each full cache write */
-  int32_t time_window;              /* real time */
-
   seg_sel_t seg_sel;
   segment_t **segs_to_evict;
 
+  learner_t learner;
+
   LSC_type_e type;
+  obj_score_e obj_score_type;
   int rank_intvl; /* in number of evictions */
-  bool start_feature_recording;
 } LLSC_params_t;
 
 

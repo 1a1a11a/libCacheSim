@@ -128,8 +128,6 @@ static inline void copy_request_to_cache_obj(cache_obj_t *cache_obj,
     cache_obj->exp_time = req->real_time + req->ttl;
 #endif
   cache_obj->obj_id_int = req->obj_id_int;
-  if (req->next_access_ts != -2)
-    cache_obj->next_access_ts = req->next_access_ts;
 }
 
 /**

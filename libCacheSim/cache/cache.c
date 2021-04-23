@@ -124,11 +124,11 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
 
   cache_ck_res_e cache_check = cache->check(cache, req, true);
   if (req->obj_size <= cache->cache_size) {
-    if (cache_check == cache_ck_miss)
+    if (cache_check == cache_ck_miss) {
+      while (cache->occupied_size + req->obj_size + cache->per_obj_overhead > cache->cache_size)
+        cache->evict(cache, req, NULL);
       cache->insert(cache, req);
-
-    while (cache->occupied_size > cache->cache_size)
-      cache->evict(cache, req, NULL);
+    }
   } else {
     WARNING("req %lld: obj size %ld larger than cache size %ld\n",
             (long long) cache->req_cnt, (long) req->obj_size,
