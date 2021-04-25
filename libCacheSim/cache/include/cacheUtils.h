@@ -18,7 +18,7 @@ extern "C" {
 /****************** find obj expiration related info ******************/
 static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
                                             gpointer user_data) {
-  cache_state_t *cache_state = user_data;
+  cache_stat_t *cache_state = user_data;
   cache_state->stored_obj_cnt += 1;
   cache_state->used_bytes += cache_obj->obj_size;
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
@@ -29,7 +29,7 @@ static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
 #endif
 }
 
-static inline void get_cache_state(cache_t *cache, cache_state_t *cache_state) {
+static inline void get_cache_state(cache_t *cache, cache_stat_t *cache_state) {
   hashtable_foreach(cache->hashtable, _get_cache_state_ht_iter,
                     cache_state);
 }

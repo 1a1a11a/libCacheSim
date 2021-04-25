@@ -257,14 +257,14 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
                    params->ttl_type, &(req->ttl));
   }
 #endif
-  if (params->extra_type1) {
-    binary_extract(record, params->extra_field1, params->extra_len1,
-                   params->extra_type1, &(req->extra_field1));
-  }
-  if (params->extra_type2) {
-    binary_extract(record, params->extra_field2, params->extra_len2,
-                   params->extra_type2, &(req->extra_field2));
-  }
+//  if (params->extra_type1) {
+//    binary_extract(record, params->extra_field1, params->extra_len1,
+//                   params->extra_type1, &(req->extra_field1));
+//  }
+//  if (params->extra_type2) {
+//    binary_extract(record, params->extra_field2, params->extra_len2,
+//                   params->extra_type2, &(req->extra_field2));
+//  }
 
 
   (reader->mmap_offset) += reader->item_size;

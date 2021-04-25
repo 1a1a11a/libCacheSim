@@ -14,14 +14,15 @@ extern "C"
 {
 #endif
 
-#define MAX_N_BUCKET 1
+#define MAX_N_BUCKET 120
 #define N_TRAIN_ITER 8
 #define GEN_TRAINING_SEG_EVERY_N 1
 #define N_MAX_VALIDATION 1000
 #define N_FEATURE_TIME_WINDOW 80
 
 
-#define HIT_PROB_MAX_AGE 864000
+#define HIT_PROB_MAX_AGE 86400
+//#define HIT_PROB_MAX_AGE 864000    /* 10 day for akamai */
 #define HIT_PROB_COMPUTE_INTVL 1000000
 #define LHD_EWMA 0.9
 
@@ -58,11 +59,21 @@ typedef enum obj_score_type {
   OBJ_SCORE_ORACLE,
 } obj_score_e;
 
+typedef enum bucket_type {
+  NO_BUCKET = 0,
+
+  SIZE_BUCKET = 10,
+  TTL_BUCKET,
+  CUSTOMER_BUCKET,
+  CONTENT_TYPE_BUCKET,
+} bucket_type_e;
+
 typedef struct {
   int segment_size;
   int n_merge;
   LSC_type_e type;
   int rank_intvl;
+  bucket_type_e bucket_type;
 } LLSC_init_params_t;
 
 
@@ -154,6 +165,8 @@ typedef struct hitProb{
   int32_t n_evict[HIT_PROB_MAX_AGE];
 
   double hit_density[HIT_PROB_MAX_AGE];
+  int64_t n_overflow;
+  int32_t age_shift;
 } hitProb_t;
 
 
@@ -212,6 +225,7 @@ typedef struct {
   int64_t last_hit_prob_compute_vtime;
 
   LSC_type_e type;
+  bucket_type_e bucket_type;
   obj_score_e obj_score_type;
   int rank_intvl; /* in number of evictions */
 } LLSC_params_t;

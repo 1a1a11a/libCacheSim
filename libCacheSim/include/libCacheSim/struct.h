@@ -28,8 +28,8 @@ extern "C" {
 struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
-    struct cache_obj *list_next;
-    struct cache_obj *list_prev;
+  struct cache_obj *list_next;
+  struct cache_obj *list_prev;
   union {
     obj_id_t obj_id_int;
     obj_id_t obj_id;
@@ -45,11 +45,11 @@ typedef struct cache_obj {
       int32_t LLSC_freq;
       int32_t last_access_rtime;
       int16_t idx_in_segment;
-//      int16_t ref_cnt;
+      //      int16_t ref_cnt;
       int8_t last_history_idx;
-      int8_t in_cache:1;
-      int8_t merged:1;
-//      int8_t last_history_idx_training;
+      int8_t in_cache : 1;
+      int8_t merged : 1;
+      //      int8_t last_history_idx_training;
     } LSC;
     int64_t freq;
     double score;
@@ -57,9 +57,15 @@ typedef struct cache_obj {
     uint64_t extra_metadata_u64;
     uint8_t extra_metadata_u8[8];
   };
-//  union {
-//    void *extra_metadata_ptr2;
-//  };
+#ifdef TRACK_EVICTION_AGE
+  union {
+    int64_t last_access_rtime;
+    int64_t last_access_vtime;
+  };
+#endif
+  //  union {
+  //    void *extra_metadata_ptr2;
+  //  };
 } __attribute__((packed)) cache_obj_t;
 
 typedef struct {
@@ -68,9 +74,9 @@ typedef struct {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   uint32_t exp_time;
 #endif
-//#ifdef SUPPORT_SLAB_AUTOMOVE
+  //#ifdef SUPPORT_SLAB_AUTOMOVE
   uint32_t access_time;
-//#endif
+  //#endif
   void *slab;
   int32_t item_pos_in_slab;
 } slab_cache_obj_t;
@@ -79,7 +85,7 @@ typedef struct {
 typedef struct {
   uint64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
   uint64_t hv;        /* hash value, used when offloading hash to reader */
-  union{
+  union {
     obj_id_t obj_id_int;
     obj_id_t obj_id;
   };
@@ -87,20 +93,25 @@ typedef struct {
   int32_t ttl;
   req_op_e op;
 
-  union {
-    int64_t next_access_ts;
-    struct {
-      uint64_t key_size:16;
-      uint64_t val_size:48;
-    };
-    int64_t extra_field1;
+  int64_t next_access_ts;
+  struct {
+    uint64_t key_size : 16;
+    uint64_t val_size : 48;
   };
-  union {
-    uint64_t n_req;
-    int64_t extra_field2;
 
+  union {
+    int32_t customer_id;
+    int32_t app_id;
   };
-  bool valid;        /* indicate whether request is valid request
+  int32_t content_type;
+  int32_t bucket_id;
+
+  //  int64_t extra_field1;
+  //  int64_t extra_field2;
+
+  uint64_t n_req;
+
+  bool valid; /* indicate whether request is valid request
                       * it is invlalid if the trace reaches the end */
 } request_t;
 
@@ -108,4 +119,4 @@ typedef struct {
 }
 #endif
 
-#endif // libCacheSim_STRUCT_H
+#endif// libCacheSim_STRUCT_H

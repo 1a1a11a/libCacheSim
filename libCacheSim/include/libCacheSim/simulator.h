@@ -21,7 +21,7 @@ typedef struct {
   uint64_t miss_cnt;
   uint64_t miss_bytes;
   uint64_t cache_size;
-  cache_state_t cache_state;
+  cache_stat_t cache_state;
   void *other_data;
 } sim_res_t;
 

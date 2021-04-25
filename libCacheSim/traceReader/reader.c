@@ -8,6 +8,8 @@
 
 #include "customizedReader/oracleTwrBin.h"
 #include "customizedReader/oracleBin.h"
+#include "customizedReader/oracleAkamaiBin.h"
+
 #include "customizedReader/twrBin.h"
 #include "include/binary.h"
 #include "include/csv.h"
@@ -104,6 +106,9 @@ reader_t *setup_reader(const char *const trace_path,
     case ORACLE_TWR_TRACE:
       oracleTwr_setup(reader);
       break;
+    case ORACLE_AKAMAI_TRACE:
+      oracleAkamai_setup(reader);
+      break;
     case ORACLE_BIN_TRACE:
       oracleBin_setup(reader);
       break;
@@ -151,6 +156,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     case BIN_TRACE: return binary_read_one_req(reader, req);
     case TWR_TRACE: return twr_read_one_req(reader, req);
     case ORACLE_TWR_TRACE: return oracleTwr_read_one_req(reader, req);
+    case ORACLE_AKAMAI_TRACE: return oracleAkamai_read_one_req(reader, req);
     case ORACLE_BIN_TRACE: return oracleBin_read_one_req(reader, req);
     default:
       ERROR(
@@ -211,6 +217,7 @@ int go_back_one_line(reader_t *const reader) {
     case BIN_TRACE:
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_AKAMAI_TRACE:
     case ORACLE_BIN_TRACE:
     case VSCSI_TRACE:
       if (reader->mmap_offset >= reader->item_size)
@@ -241,6 +248,7 @@ int go_back_two_lines(reader_t *const reader) {
         return 1;
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_AKAMAI_TRACE:
     case BIN_TRACE:
     case ORACLE_BIN_TRACE:
     case VSCSI_TRACE:
@@ -305,6 +313,7 @@ uint64_t skip_n_req(reader_t *const reader, const uint64_t N) {
       break;
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_AKAMAI_TRACE:
     case BIN_TRACE:
     case ORACLE_BIN_TRACE:
     case VSCSI_TRACE:
@@ -335,6 +344,7 @@ void reset_reader(reader_t *const reader) {
     case PLAIN_TXT_TRACE:
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_AKAMAI_TRACE:
     case BIN_TRACE:
     case ORACLE_BIN_TRACE:
     case VSCSI_TRACE: break;
@@ -374,6 +384,7 @@ uint64_t get_num_of_req(reader_t *const reader) {
       break;
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_AKAMAI_TRACE:
     case BIN_TRACE:
     case ORACLE_BIN_TRACE:
     case VSCSI_TRACE: return reader->n_total_req;
@@ -421,6 +432,7 @@ int close_reader(reader_t *const reader) {
       break;
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_AKAMAI_TRACE:
     case BIN_TRACE:
     case ORACLE_BIN_TRACE:
     case VSCSI_TRACE: break;
@@ -448,6 +460,7 @@ void set_no_eof(reader_t *const reader) {
     case PLAIN_TXT_TRACE:
     case TWR_TRACE:
     case ORACLE_TWR_TRACE:
+    case ORACLE_AKAMAI_TRACE:
     case BIN_TRACE:
     case ORACLE_BIN_TRACE:
     case VSCSI_TRACE: break;

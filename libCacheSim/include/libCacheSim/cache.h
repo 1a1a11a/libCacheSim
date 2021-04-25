@@ -55,14 +55,21 @@ typedef void (*cache_evict_func_ptr)(cache_t *, request_t *, cache_obj_t *);
 //typedef void (*cache_remove_obj_func_ptr)(cache_t *, cache_obj_t *);
 typedef void (*cache_remove_func_ptr)(cache_t *, obj_id_t);
 
+#define MAX_EVICTION_AGE_ARRAY_SZE 64
 typedef struct {
+  uint64_t cache_size;
+  uint64_t cur_rtime;
+  uint64_t cur_vtime;
+
   uint64_t stored_obj_cnt;
   uint64_t used_bytes;
-  uint64_t cache_size;
+
+  int log2_eviction_rage[MAX_EVICTION_AGE_ARRAY_SZE];
+  int log2_eviction_vage[MAX_EVICTION_AGE_ARRAY_SZE];
+
   uint64_t expired_obj_cnt;
   uint64_t expired_bytes;
-  uint64_t cur_time;
-} cache_state_t;
+} cache_stat_t;
 
 struct hashtable;
 struct cache {
@@ -90,6 +97,7 @@ struct cache {
 
   int16_t per_obj_overhead;
 
+  cache_stat_t stat;
   void *init_params;
   char cache_name[32];
 };
@@ -152,6 +160,27 @@ cache_obj_t *cache_get_obj(cache_t *cache, request_t *req);
 
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, obj_id_t id);
 
+
+static inline void record_eviction_age(cache_t *cache, int age) {
+#define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X))))
+
+  if (age != 0)
+    age = LOG2(age);
+  cache->stat.log2_eviction_rage[age] += 1;
+}
+
+static inline void print_eviction_age(cache_t *cache) {
+  printf("eviction age %d:%d, ", 0, cache->stat.log2_eviction_rage[0]);
+  for (int i = 1; i < MAX_EVICTION_AGE_ARRAY_SZE; i++) {
+    if (cache->stat.log2_eviction_rage[i] > 0) {
+      if (cache->stat.log2_eviction_rage[i] > 1000000)
+        printf("%d:%.1lfm, ", 1u << (i-1), (double) cache->stat.log2_eviction_rage[i]/1000000);
+      else if (cache->stat.log2_eviction_rage[i] > 1000)
+        printf("%d:%.1lfk, ", 1u << (i-1), (double) cache->stat.log2_eviction_rage[i]/1000);
+    }
+  }
+  printf("\n");
+}
 
 #ifdef __cplusplus
 }

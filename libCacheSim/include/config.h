@@ -51,6 +51,8 @@ extern "C" {
 #undef USE_HUGEPAGE
 #endif
 
+//#define TRACK_EVICTION_AGE
+
 //#define SUPPORT_TTL
 //#define SUPPORT_SLAB_AUTOMOVE
 

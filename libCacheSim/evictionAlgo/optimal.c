@@ -179,19 +179,11 @@ cache_ck_res_e optimal_check(cache_t *cache, request_t *req, bool update_cache) 
 
 cache_ck_res_e optimal_get(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(req->n_req - 1 == cache->req_cnt);
-//  if (req->n_req % 100000000 == 0) {
-//    printf("cache size %lu n_req %lu\n", (unsigned long) cache->cache_size, (unsigned long) (cache->req_cnt+1)/1000000);
-//  }
-
   optimal_params_t *params = cache->cache_params;
 
   DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
   cache_ck_res_e ret = cache_get(cache, req);
 
-//  if (req->obj_id_int == 82537216) {
-//    printf("curr ts %ld %ld obj 82537216 next access at %ld cache %d\n", cache->req_cnt, req->n_req, req->next_access_ts, ret);
-//  }
-  //  printf("%ld %s %ld %ld\n", req->obj_id_int, CACHE_CK_STATUS_STR[ret], cache->n_obj, params->pq->size - 1);
   return ret;
 }
 
@@ -216,11 +208,14 @@ void optimal_insert(cache_t *cache, request_t *req) {
 
 void optimal_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   optimal_params_t *params = cache->cache_params;
-  //  printf("evict %ld %ld\n", cache->n_obj, params->pq->size - 1);
   pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);
 
   cache_obj_t *cached_obj = cache_get_obj_by_id(cache, node->obj_id);
   assert(node == cached_obj->extra_metadata_ptr);
+
+#ifdef TRACK_EVICTION_AGE
+  record_eviction_age(cache, (int) (req->real_time - cached_obj->last_access_rtime));
+#endif
 
   cached_obj->extra_metadata_ptr = NULL;
   my_free(sizeof(pq_node_t), node);

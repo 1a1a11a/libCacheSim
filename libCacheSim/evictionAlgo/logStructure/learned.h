@@ -12,16 +12,9 @@ static inline void transform_seg_to_training(cache_t *cache, bucket_t *bucket, s
 
 
   /* remove from the bucket */
-  remove_seg_from_bucket(bucket, segment);
+  remove_seg_from_bucket(params, bucket, segment);
 
-  append_seg_to_bucket(&params->training_bucket, segment);
-
-  /* add to training bucket */
-  params->n_segs -= 1;
-  params->n_training_segs += 1;
-
-  bucket->n_seg -= 1;
-  params->training_bucket.n_seg += 1;
+  append_seg_to_bucket(params, &params->training_bucket, segment);
 }
 
 static inline int seg_history_idx(segment_t *segment, int32_t curr_time, int32_t time_window) {
