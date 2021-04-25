@@ -19,9 +19,7 @@ extern "C" {
 
 /******************* priority queue structs and def **********************/
 
-static int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) {
-  return (next.pri1 < curr.pri1);
-}
+static int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) { return (next.pri1 < curr.pri1); }
 
 static pqueue_pri_t get_pri(void *a) { return ((pq_node_t *) a)->pri; }
 
@@ -57,8 +55,8 @@ void *setup_mmap(char *file_path, size_t *size) {
   if ((mapped_file) == MAP_FAILED) {
     close(fd);
     mapped_file = NULL;
-    ERROR("Unable to allocate %llu bytes of memory, %s\n",
-          (unsigned long long) st.st_size, strerror(errno));
+    ERROR("Unable to allocate %llu bytes of memory, %s\n", (unsigned long long) st.st_size,
+          strerror(errno));
     abort();
   }
 
@@ -117,9 +115,7 @@ void *setup_mmap(char *file_path, size_t *size) {
 /* generate a trace with each request
  * time, obj_id, obj_size, next access_time
  */
-void gen_trace() {
-  ;
-}
+void gen_trace() { ; }
 
 cache_t *optimal_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("optimal", ccache_params);
@@ -154,18 +150,18 @@ cache_ck_res_e optimal_check(cache_t *cache, request_t *req, bool update_cache) 
     DEBUG_ASSERT(cache_get_obj(cache, req) == NULL);
   }
 
-  if (!update_cache)
-    return ret;
+  if (!update_cache) return ret;
 
   if (ret == cache_ck_hit) {
     /* update next access ts, we use INT64_MAX - 10 because we reserve the largest elements for immediate delete */
     if (req->next_access_ts == -1) {
       optimal_remove_obj(cache, cached_obj);
     } else {
-//      pqueue_pri_t pri = {.pri1 = req->next_access_ts == -1 ? INT64_MAX - 10 : req->next_access_ts};
+      //      pqueue_pri_t pri = {.pri1 = req->next_access_ts == -1 ? INT64_MAX - 10 : req->next_access_ts};
       pqueue_pri_t pri = {.pri1 = req->next_access_ts};
       pqueue_change_priority(params->pq, pri, (pq_node_t *) (cached_obj->extra_metadata_ptr));
-      DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1 == req->next_access_ts);
+      DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1
+                   == req->next_access_ts);
     }
     return cache_ck_hit;
   } else if (ret == cache_ck_expired) {
@@ -203,7 +199,8 @@ void optimal_insert(cache_t *cache, request_t *req) {
   pqueue_insert(params->pq, (void *) node);
   cached_obj->extra_metadata_ptr = node;
 
-  DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1 == req->next_access_ts);
+  DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1
+               == req->next_access_ts);
 }
 
 void optimal_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

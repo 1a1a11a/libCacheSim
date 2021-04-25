@@ -103,44 +103,60 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (strstr(args.trace_path, "w105") != NULL) {
     /* w105 */
     uint64_t s[8] = {500, 1000, 2000, 4000, 8000, 10000, 12000, 16000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = MiB * s[i]; }
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args.cache_sizes[i] = MiB * s[i];
+    }
     args.n_cache_size = 8;
     args.seg_size = 200;
   } else if (strstr(args.trace_path, "w01") != NULL || strstr(args.trace_path, "w03") != NULL) {
     /* w01 */
-    uint64_t s[12] = {2000, 8000, 16000, 32000, 64000, 96000, 128000, 160000, 192000, 244000, 276000, 308000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = MiB * s[i]; }
+    uint64_t s[12] = {2000,   8000,   16000,  32000,  64000,  96000,
+                      128000, 160000, 192000, 244000, 276000, 308000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args.cache_sizes[i] = MiB * s[i];
+    }
     args.n_cache_size = 12;
     args.seg_size = 200;
   } else if (strstr(args.trace_path, "w02") != NULL || strstr(args.trace_path, "w02") != NULL) {
     /* w01 */
     uint64_t s[8] = {500, 1000, 2000, 3000, 4000, 5000, 6000, 8000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = MiB * s[i]; }
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args.cache_sizes[i] = MiB * s[i];
+    }
     args.n_cache_size = 8;
     args.seg_size = 200;
   } else if (strstr(args.trace_path, "media_metadata") != NULL) {
     /* media_metadata */
     //    uint64_t cache_sizes[11] = {MiB * 100, MiB * 200, MiB * 300, MiB * 400, MiB * 500, MiB * 600, MiB * 800, MiB * 1000, MiB * 1200, MiB * 1600, MiB * 2000};
     uint64_t s[11] = {100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1600, 2000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = MiB * s[i]; }
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args.cache_sizes[i] = MiB * s[i];
+    }
     args.n_cache_size = 11;
     args.seg_size = 1000;
   } else if (strstr(args.trace_path, "user_activity") != NULL) {
     /* user activity */
     uint64_t s[8] = {100, 200, 500, 1000, 1500, 2000, 3000, 4000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = MiB * s[i]; }
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args.cache_sizes[i] = MiB * s[i];
+    }
     args.n_cache_size = 8;
     args.seg_size = 1000;
   } else if (strstr(args.trace_path, "nyc") != NULL) {
     /* nyc */
     assert(HIT_PROB_MAX_AGE == 864000);
     uint64_t s[8] = {20, 50, 100, 200, 400, 500, 800, 1000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = GiB * s[i]; }
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args.cache_sizes[i] = GiB * s[i];
+    }
     args.n_cache_size = 8;
   } else if (strstr(args.trace_path, "sjc") != NULL || strstr(args.trace_path, "lax") != NULL) {
     /* nyc */
-    uint64_t s[14] = {50, 100, 200, 400, 500, 800, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = GiB * s[i]; }
+    uint64_t s[14] = {50,   100,  200,  400,  500,  800,  1000,
+                      1500, 2000, 3000, 4000, 5000, 6000, 8000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args.cache_sizes[i] = GiB * s[i];
+    }
     args.n_cache_size = 14;
   } else {
     printf("cannot detect trace name\n");
@@ -149,8 +165,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 
   printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
          "seg size %d, n merge %d, rank_intvl %d\n",
-         argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata, args.seg_size, args.n_merge,
-         args.rank_intvl);
+         argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
+         args.seg_size, args.n_merge, args.rank_intvl);
   return args;
 }
 
@@ -181,8 +197,8 @@ void run_cache(reader_t *reader, cache_t *cache) {
     }
 
     if (req->real_time - last_report_ts >= 3600 * 1 && req->real_time != 0) {
-      INFO("ts %lu: %lu requests, miss cnt %lu %.4lf\n", (unsigned long) req->real_time, (unsigned long) req_cnt,
-           (unsigned long) miss_cnt, (double) miss_cnt / req_cnt);
+      INFO("ts %lu: %lu requests, miss cnt %lu %.4lf\n", (unsigned long) req->real_time,
+           (unsigned long) req_cnt, (unsigned long) miss_cnt, (double) miss_cnt / req_cnt);
 #ifdef TRACK_EVICTION_AGE
       print_eviction_age(cache);
 #endif
@@ -193,9 +209,9 @@ void run_cache(reader_t *reader, cache_t *cache) {
   }
 
   double runtime = gettime() - start_time;
-  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf throughput (MQPS): %.2lf\n", (unsigned long) req->real_time,
-       (unsigned long) req_cnt, (unsigned long) miss_cnt, (double) miss_cnt / req_cnt,
-       (double) req_cnt / 1000000.0 / runtime);
+  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf throughput (MQPS): %.2lf\n",
+       (unsigned long) req->real_time, (unsigned long) req_cnt, (unsigned long) miss_cnt,
+       (double) miss_cnt / req_cnt, (double) req_cnt / 1000000.0 / runtime);
 }
 
 int main(int argc, char **argv) {
@@ -231,12 +247,13 @@ int main(int argc, char **argv) {
 
   if (args.debug) run_cache(reader, cache);
   else {
-    sim_res_t *result =
-        get_miss_ratio_curve(reader, cache, args.n_cache_size, args.cache_sizes, NULL, 0, args.n_thread);
+    sim_res_t *result = get_miss_ratio_curve(reader, cache, args.n_cache_size, args.cache_sizes,
+                                             NULL, 0, args.n_thread);
 
     for (int i = 0; i < args.n_cache_size; i++) {
-      printf("cache size %" PRIu64 ": miss/n_req %" PRIu64 "/%" PRIu64 " (%.4lf)\n", result[i].cache_size,
-             result[i].miss_cnt, result[i].req_cnt, (double) result[i].miss_cnt / result[i].req_cnt);
+      printf("cache size %" PRIu64 ": miss/n_req %" PRIu64 "/%" PRIu64 " (%.4lf)\n",
+             result[i].cache_size, result[i].miss_cnt, result[i].req_cnt,
+             (double) result[i].miss_cnt / result[i].req_cnt);
     }
   }
 

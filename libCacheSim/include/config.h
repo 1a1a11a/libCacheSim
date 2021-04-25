@@ -45,7 +45,6 @@ extern "C" {
 #define CHAINED_HASHTABLE_EXPAND_THRESHOLD 1
 #endif
 
-
 #include <sys/mman.h>
 #ifndef MADV_HUGEPAGE
 #undef USE_HUGEPAGE
@@ -63,4 +62,4 @@ typedef uint64_t obj_id_t;
 }
 #endif
 
-#endif // libCacheSim_CONFIG_H
+#endif// libCacheSim_CONFIG_H

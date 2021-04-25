@@ -6,7 +6,6 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 
-
 static inline void _debug_check_bucket_segs(bucket_t *bkt) {
   segment_t *curr_seg = bkt->first_seg;
   int n_seg = 0;
@@ -35,8 +34,8 @@ static inline int _debug_count_n_obj(cache_t *cache) {
     int n_seg_in_bucket = 0;
     while (curr_seg) {
       if (curr_seg->n_total_obj != params->segment_size) {
-        printf("find segment not full, bucket %d, seg %d: %d objects training %d\n", i, n_seg_in_bucket,
-               curr_seg->n_total_obj, curr_seg->is_training_seg);
+        printf("find segment not full, bucket %d, seg %d: %d objects training %d\n", i,
+               n_seg_in_bucket, curr_seg->n_total_obj, curr_seg->is_training_seg);
       }
       n_obj += curr_seg->n_total_obj;
       curr_seg = curr_seg->next_seg;
@@ -47,14 +46,14 @@ static inline int _debug_count_n_obj(cache_t *cache) {
   return n_obj;
 }
 
-
 static inline int64_t object_age(LLSC_params_t *params, cache_obj_t *obj) {
   return params->curr_rtime - obj->LSC.last_access_rtime;
 }
 
 static inline int64_t object_age_shifted(LLSC_params_t *params, cache_obj_t *obj) {
   bucket_t *bkt = &params->buckets[((segment_t *) (obj->LSC.segment))->bucket_idx];
-  int64_t obj_age = (params->curr_rtime - obj->LSC.last_access_rtime) >> bkt->hit_prob.age_shift;
+  int64_t obj_age =
+      (params->curr_rtime - obj->LSC.last_access_rtime) >> bkt->hit_prob.age_shift;
   if (obj_age >= HIT_PROB_MAX_AGE) {
     bkt->hit_prob.n_overflow += 1;
     obj_age = HIT_PROB_MAX_AGE - 1;
@@ -148,7 +147,8 @@ static inline bool is_seg_evictable_fifo(segment_t *seg, int min_evictable) {
   return n_evictable == min_evictable;
 }
 
-__attribute__((unused)) static inline bool obj_in_hashtable(cache_t *cache, cache_obj_t *cache_obj) {
+__attribute__((unused)) static inline bool obj_in_hashtable(cache_t *cache,
+                                                            cache_obj_t *cache_obj) {
   cache_obj_t *obj = hashtable_find_obj(cache->hashtable, cache_obj);
   bool find = false;
   while (obj != NULL) {
@@ -172,21 +172,33 @@ static inline void clean_one_seg(cache_t *cache, segment_t *seg) {
   my_free(sizeof(segment_t), seg);
 }
 
-static inline void remove_seg_from_bucket(LLSC_params_t *params, bucket_t *bucket, segment_t *segment) {
-  if (bucket->first_seg == segment) { bucket->first_seg = segment->next_seg; }
-  if (bucket->last_seg == segment) { bucket->last_seg = segment->prev_seg; }
+static inline void remove_seg_from_bucket(LLSC_params_t *params, bucket_t *bucket,
+                                          segment_t *segment) {
+  if (bucket->first_seg == segment) {
+    bucket->first_seg = segment->next_seg;
+  }
+  if (bucket->last_seg == segment) {
+    bucket->last_seg = segment->prev_seg;
+  }
 
-  if (segment->prev_seg != NULL) { segment->prev_seg->next_seg = segment->next_seg; }
+  if (segment->prev_seg != NULL) {
+    segment->prev_seg->next_seg = segment->next_seg;
+  }
 
-  if (segment->next_seg != NULL) { segment->next_seg->prev_seg = segment->prev_seg; }
+  if (segment->next_seg != NULL) {
+    segment->next_seg->prev_seg = segment->prev_seg;
+  }
 
   params->n_segs -= 1;
   bucket->n_seg -= 1;
 
-  if (bucket->n_seg == 0) { params->n_used_buckets -= 1; }
+  if (bucket->n_seg == 0) {
+    params->n_used_buckets -= 1;
+  }
 }
 
-static inline void append_seg_to_bucket(LLSC_params_t *params, bucket_t *bucket, segment_t *segment) {
+static inline void append_seg_to_bucket(LLSC_params_t *params, bucket_t *bucket,
+                                        segment_t *segment) {
   /* because the last segment may not be full, so we link before it */
   if (bucket->last_seg == NULL) {
     DEBUG_ASSERT(bucket->first_seg == NULL);
@@ -245,8 +257,8 @@ static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   return new_seg;
 }
 
-static inline void link_new_seg_before_seg(LLSC_params_t *params, bucket_t *bucket, segment_t *old_seg,
-                                           segment_t *new_seg) {
+static inline void link_new_seg_before_seg(LLSC_params_t *params, bucket_t *bucket,
+                                           segment_t *old_seg, segment_t *new_seg) {
   DEBUG_ASSERT(new_seg->bucket_idx == bucket->bucket_idx);
   DEBUG_ASSERT(old_seg->next_seg->bucket_idx == bucket->bucket_idx);
 
@@ -264,8 +276,9 @@ static inline void link_new_seg_before_seg(LLSC_params_t *params, bucket_t *buck
   bucket->n_seg += 1;
 }
 
-static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_type, cache_obj_t *cache_obj,
-                                      int curr_rtime, int64_t curr_vtime) {
+static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_type,
+                                      cache_obj_t *cache_obj, int curr_rtime,
+                                      int64_t curr_vtime) {
   segment_t *seg = cache_obj->LSC.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
@@ -284,8 +297,11 @@ static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_t
     //    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1000 * bkt->hit_prob.hit_density[object_age(params, cache_obj)] / cache_obj->obj_size;
     //
   } else if (score_type == OBJ_SCORE_ORACLE) {
-    if (cache_obj->LSC.next_access_ts == -1) { return 0; }
-    return (double) 1000000.0 / (double) cache_obj->obj_size / (double) (cache_obj->LSC.next_access_ts - curr_vtime);
+    if (cache_obj->LSC.next_access_ts == -1) {
+      return 0;
+    }
+    return (double) 1000000.0 / (double) cache_obj->obj_size
+           / (double) (cache_obj->LSC.next_access_ts - curr_vtime);
 
     //  } else if (score_type == OBJ_SCORE_FREQ_BYTE_AGE) {
     //    DEBUG_ASSERT(curr_rtime >= 0);
@@ -297,8 +313,8 @@ static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_t
   }
 }
 
-static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, segment_t **segs, int n_segs,
-                                 int n_retain) {
+static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, segment_t **segs,
+                                 int n_segs, int n_retain) {
   LLSC_params_t *params = cache->cache_params;
 
   segment_t *seg;
@@ -307,8 +323,8 @@ static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, seg
   for (int i = 0; i < n_segs; i++) {
     seg = segs[i];
     for (int j = 0; j < seg->n_total_obj; j++) {
-      params->seg_sel.score_array[pos++] =
-          cal_object_score(params, obj_score_type, &seg->objs[j], params->curr_rtime, params->curr_vtime);
+      params->seg_sel.score_array[pos++] = cal_object_score(
+          params, obj_score_type, &seg->objs[j], params->curr_rtime, params->curr_vtime);
     }
   }
   DEBUG_ASSERT(pos == params->segment_size * n_segs);
@@ -317,15 +333,15 @@ static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, seg
   return params->seg_sel.score_array[pos - n_retain];
 }
 
-
-static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type, segment_t *seg, int n_retain,
-                                     int64_t rtime, int64_t vtime) {
+static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type, segment_t *seg,
+                                     int n_retain, int64_t rtime, int64_t vtime) {
   LLSC_params_t *params = cache->cache_params;
   seg_sel_t *seg_sel = &params->seg_sel;
 
   int pos = 0;
   for (int j = 0; j < seg->n_total_obj; j++) {
-    seg_sel->score_array[pos++] = cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
+    seg_sel->score_array[pos++] =
+        cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
   }
 
   DEBUG_ASSERT(pos <= seg_sel->score_array_size);
@@ -342,9 +358,11 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type,
   }
 
   double penalty = 0;
-  for (int j = 0; j < seg->n_total_obj - n_retain; j++) { penalty += seg_sel->score_array[j]; }
+  for (int j = 0; j < seg->n_total_obj - n_retain; j++) {
+    penalty += seg_sel->score_array[j];
+  }
 
-//  penalty /= seg->total_byte;
+  //  penalty /= seg->total_byte;
   return penalty;
 }
 
@@ -373,7 +391,6 @@ static inline void update_hit_prob_cdf(bucket_t *bkt) {
     printf("bucket %d overflow %ld\n", bkt->bucket_idx, (long) bkt->hit_prob.n_overflow);
 }
 
-
 static inline void print_bucket(cache_t *cache) {
   LLSC_params_t *params = cache->cache_params;
 
@@ -386,7 +403,6 @@ static inline void print_bucket(cache_t *cache) {
   printf("\n");
 }
 
-
 static inline void print_seg(cache_t *cache, segment_t *seg) {
   LLSC_params_t *params = cache->cache_params;
 
@@ -395,16 +411,18 @@ static inline void print_seg(cache_t *cache, segment_t *seg) {
          "age %d, mean freq %.2lf, total hit %d, total active %d, "
          "%d merges, ",
          (double) seg->total_byte / seg->n_total_obj, seg->req_rate, seg->write_rate,
-         (int) params->curr_rtime - seg->create_rtime, (double) seg->n_total_hit / seg->n_total_active,
-         seg->n_total_hit, seg->n_total_active, seg->n_merge);
+         (int) params->curr_rtime - seg->create_rtime,
+         (double) seg->n_total_hit / seg->n_total_active, seg->n_total_hit, seg->n_total_active,
+         seg->n_merge);
 
   printf("n hit %d %d %d %d %d %d %d %d %d %d %d %d, "
          "n_active_per_window "
          "%d %d %d %d %d %d %d %d %d %d %d %d, "
          "active_accu %d %d %d %d %d %d %d %d %d %d %d %d\n",
-         seg->feature.n_hit[0], seg->feature.n_hit[1], seg->feature.n_hit[2], seg->feature.n_hit[3],
-         seg->feature.n_hit[4], seg->feature.n_hit[5], seg->feature.n_hit[6], seg->feature.n_hit[7],
-         seg->feature.n_hit[8], seg->feature.n_hit[9], seg->feature.n_hit[10], seg->feature.n_hit[11],
+         seg->feature.n_hit[0], seg->feature.n_hit[1], seg->feature.n_hit[2],
+         seg->feature.n_hit[3], seg->feature.n_hit[4], seg->feature.n_hit[5],
+         seg->feature.n_hit[6], seg->feature.n_hit[7], seg->feature.n_hit[8],
+         seg->feature.n_hit[9], seg->feature.n_hit[10], seg->feature.n_hit[11],
 
          seg->feature.n_active_item_per_window[0], seg->feature.n_active_item_per_window[1],
          seg->feature.n_active_item_per_window[2], seg->feature.n_active_item_per_window[3],
@@ -413,8 +431,10 @@ static inline void print_seg(cache_t *cache, segment_t *seg) {
          seg->feature.n_active_item_per_window[8], seg->feature.n_active_item_per_window[9],
          seg->feature.n_active_item_per_window[10], seg->feature.n_active_item_per_window[11],
 
-         seg->feature.n_active_item_accu[0], seg->feature.n_active_item_accu[1], seg->feature.n_active_item_accu[2],
-         seg->feature.n_active_item_accu[3], seg->feature.n_active_item_accu[4], seg->feature.n_active_item_accu[5],
-         seg->feature.n_active_item_accu[6], seg->feature.n_active_item_accu[7], seg->feature.n_active_item_accu[8],
-         seg->feature.n_active_item_accu[9], seg->feature.n_active_item_accu[10], seg->feature.n_active_item_accu[11]);
+         seg->feature.n_active_item_accu[0], seg->feature.n_active_item_accu[1],
+         seg->feature.n_active_item_accu[2], seg->feature.n_active_item_accu[3],
+         seg->feature.n_active_item_accu[4], seg->feature.n_active_item_accu[5],
+         seg->feature.n_active_item_accu[6], seg->feature.n_active_item_accu[7],
+         seg->feature.n_active_item_accu[8], seg->feature.n_active_item_accu[9],
+         seg->feature.n_active_item_accu[10], seg->feature.n_active_item_accu[11]);
 }
