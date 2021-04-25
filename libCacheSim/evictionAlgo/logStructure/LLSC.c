@@ -58,6 +58,7 @@ void init_learner(LLSC_params_t *params) {
 
 static void init_buckets(LLSC_params_t *params) {
   for (int i = 0; i < MAX_N_BUCKET; i++) {
+    params->buckets[i].bucket_idx = i;
     for (int j = 0; j < HIT_PROB_MAX_AGE; j++) {
       /* initialize to a small number, when the hit density is not available
        * before eviction, we use size to make eviction decision */
@@ -172,45 +173,31 @@ __attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache, request_t *req) 
 
   cache_ck_res_e ret = cache_get(cache, req);
 
+  params->n_req_since_last_eviction += 1;
+  if (ret == cache_ck_miss)
+    params->n_miss_since_last_eviction += 1;
+
   return ret;
-}
-
-static int _debug_count_n_obj(cache_t *cache) {
-  LLSC_params_t *params = cache->cache_params;
-  int64_t n_obj = 0;
-
-  for (int i = 0; i < MAX_N_BUCKET; i++) {
-    segment_t *curr_seg = params->buckets[i].first_seg;
-    int n_seg_in_bucket = 0;
-    while (curr_seg) {
-      if (curr_seg->n_total_obj != params->segment_size) {
-        printf("find segment not full, bucket %d, seg %d: %d objects training %d\n", i, n_seg_in_bucket,
-               curr_seg->n_total_obj, curr_seg->is_training_seg);
-      }
-      n_obj += curr_seg->n_total_obj;
-      curr_seg = curr_seg->next_seg;
-      n_seg_in_bucket++;
-    }
-  }
-
-  return n_obj;
 }
 
 __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
   LLSC_params_t *params = cache->cache_params;
-  bucket_t *bucket = &params->buckets[LLSC_find_bucket_idx(params, req)];
+  bucket_t *bucket = &params->buckets[find_bucket_idx(params, req)];
   segment_t *segment = bucket->last_seg;
 
   if (segment == NULL || segment->n_total_obj == params->segment_size) {
     DEBUG_ASSERT(segment == NULL || segment->next_seg == NULL);
     if (segment != NULL) {
-      segment->req_rate = (double) (params->curr_vtime - segment->create_vtime)
-          / ((double) params->curr_rtime - segment->create_rtime + 1);
-      segment->write_rate = (double) segment->n_total_obj / (double) (params->curr_rtime - segment->create_rtime + 1);
+      double rtime = ((double) params->curr_rtime - segment->create_rtime + 1);
+      double n_req = (double) (params->curr_vtime - segment->create_vtime);
+      segment->req_rate = n_req / rtime;
+      segment->write_rate = (double) segment->n_total_obj / rtime;
+      segment->write_ratio = (double) segment->n_total_obj / n_req;
+      segment->cold_miss_ratio = (double) params->n_miss_since_last_eviction / params->n_req_since_last_eviction;
       //      printf("set req rate write rate %lf %lf\n", segment->req_rate, segment->write_rate);
     }
 
-    segment = allocate_new_seg(cache, 0);
+    segment = allocate_new_seg(cache, bucket->bucket_idx);
     append_seg_to_bucket(params, bucket, segment);
   }
 
@@ -239,7 +226,12 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
 
 void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
   LLSC_params_t *params = cache->cache_params;
-  segment_t *new_seg = allocate_new_seg(cache, 0);
+
+  DEBUG_ASSERT(bucket->bucket_idx == segs[0]->bucket_idx);
+  DEBUG_ASSERT(bucket->bucket_idx == segs[1]->bucket_idx);
+
+
+  segment_t *new_seg = allocate_new_seg(cache, bucket->bucket_idx);
   new_seg->create_rtime = segs[0]->create_rtime;
   new_seg->create_vtime = segs[0]->create_vtime;
   double req_rate = 0, write_rate = 0;
@@ -265,7 +257,7 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
   cache_obj_t *cache_obj;
   double cutoff = find_cutoff(cache, params->obj_score_type, segs, params->n_merge, params->segment_size);
 
-  int n_from_each[8] = {0};
+//  int n_from_each[8] = {0};
   int n_reuse = 0;
   for (int i = 0; i < params->n_merge; i++) {
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
@@ -283,7 +275,7 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
         new_obj->LSC.last_history_idx = -1;
         hashtable_insert_obj(cache->hashtable, new_obj);
 
-        n_from_each[i] += 1;
+//        n_from_each[i] += 1;
         new_seg->n_total_obj += 1;
         new_seg->total_byte += cache_obj->obj_size;
         cache_obj->LSC.merged = 1;
@@ -434,18 +426,39 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
   }
 
   if (params->type > LOGCACHE_START_POS) {
-    int i = 0;
-    while (i < params->n_merge) {
-      if (!is_seg_evictable_fifo(ranked_segs[*ranked_seg_pos], 1)) {
-        (*ranked_seg_pos)++;
-        continue;
+    assert(params->n_merge == 2);
+    int i = 0, j = 0;
+    segs[i++] = ranked_segs[*ranked_seg_pos];
+    ranked_segs[(*ranked_seg_pos)++] = NULL;
+    while (i < params->n_merge && *ranked_seg_pos + j < params->n_segs / 2) {
+      int bucket_idx = segs[0]->bucket_idx;
+      while (
+          *ranked_seg_pos + j < params->n_segs / 2
+          && (ranked_segs[*ranked_seg_pos + j] == NULL || ranked_segs[*ranked_seg_pos + j]->bucket_idx != bucket_idx)) {
+        j += 1;
       }
-      segs[i++] = ranked_segs[*ranked_seg_pos];
-      ranked_segs[(*ranked_seg_pos)++] = NULL;
-
+      if (ranked_segs[*ranked_seg_pos + j] == NULL || ranked_segs[*ranked_seg_pos]->bucket_idx != bucket_idx) {
+        /* we cannot find one more segment with the same bucket id,
+         * choose the next segment */
+        i = 0;
+        j = 0;
+        segs[i++] = ranked_segs[*ranked_seg_pos];
+        ranked_segs[(*ranked_seg_pos)++] = NULL;
+      } else {
+        /* we find two segments from the same bucket */
+        segs[i++] = ranked_segs[*ranked_seg_pos + j];
+        ranked_segs[*ranked_seg_pos + j] = NULL;
+        (*ranked_seg_pos)++ ;
+      }
+      //      if (!is_seg_evictable_fifo(ranked_segs[*ranked_seg_pos], 1)) {
+      //        (*ranked_seg_pos)++;
+      //        continue;
+      //      }
+//      segs[i++] = ranked_segs[*ranked_seg_pos];
+//      ranked_segs[(*ranked_seg_pos)++] = NULL;
     }
 
-    return &params->buckets[0];
+    return &params->buckets[segs[0]->bucket_idx];
   } else {
     /* it is non-trivial to determine the bucket of segcache */
     segs[0] = params->seg_sel.ranked_segs[params->seg_sel.ranked_seg_pos];
@@ -461,7 +474,6 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   LLSC_params_t *params = cache->cache_params;
 
   bucket_t *bucket = select_segs(cache, params->segs_to_evict);
-  for (int i = 0; i < params->n_merge; i++) DEBUG_ASSERT(params->segs_to_evict[i] != NULL);
 
   LLSC_merge_segs(cache, bucket, params->segs_to_evict);
 
@@ -494,6 +506,8 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   }
 
   params->n_evictions += 1;
+  params->n_req_since_last_eviction = 0;
+  params->n_miss_since_last_eviction = 0;
 
   if (params->type == LOGCACHE_LEARNED) {
     //    if (params->n_training_segs >= params->n_segs * 4) {

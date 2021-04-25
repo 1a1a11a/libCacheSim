@@ -6,6 +6,48 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 
+
+static inline void _debug_check_bucket_segs(bucket_t *bkt) {
+  segment_t *curr_seg = bkt->first_seg;
+  int n_seg = 0;
+  segment_t *prev_seg = NULL;
+
+  while (curr_seg) {
+    printf("%d %p\n", n_seg, curr_seg);
+    n_seg += 1;
+    assert(curr_seg->prev_seg == prev_seg);
+    assert(curr_seg->bucket_idx == bkt->bucket_idx);
+    prev_seg = curr_seg;
+    curr_seg = curr_seg->next_seg;
+  }
+
+  printf("%d %d segs\n", n_seg, bkt->n_seg);
+  assert(prev_seg == bkt->last_seg);
+  assert(n_seg == bkt->n_seg);
+}
+
+static inline int _debug_count_n_obj(cache_t *cache) {
+  LLSC_params_t *params = cache->cache_params;
+  int64_t n_obj = 0;
+
+  for (int i = 0; i < MAX_N_BUCKET; i++) {
+    segment_t *curr_seg = params->buckets[i].first_seg;
+    int n_seg_in_bucket = 0;
+    while (curr_seg) {
+      if (curr_seg->n_total_obj != params->segment_size) {
+        printf("find segment not full, bucket %d, seg %d: %d objects training %d\n", i, n_seg_in_bucket,
+               curr_seg->n_total_obj, curr_seg->is_training_seg);
+      }
+      n_obj += curr_seg->n_total_obj;
+      curr_seg = curr_seg->next_seg;
+      n_seg_in_bucket++;
+    }
+  }
+
+  return n_obj;
+}
+
+
 static inline int64_t object_age(LLSC_params_t *params, cache_obj_t *obj) {
   return params->curr_rtime - obj->LSC.last_access_rtime;
 }
@@ -78,17 +120,17 @@ static inline int cmp_double(const void *p1, const void *p2) {
     return 1;
 }
 
-static inline int LLSC_find_bucket_idx(LLSC_params_t *params, request_t *req) {
+static inline int find_bucket_idx(LLSC_params_t *params, request_t *req) {
   const double log_base = log(2);
 
   if (params->bucket_type == NO_BUCKET) {
-    return 0;
+    return 1;
   } else if (params->bucket_type == SIZE_BUCKET) {
-    return MAX(0, (int) (log(req->obj_size / 10.0) / log_base));
+    return MAX(0, (int) (log(req->obj_size / 10.0) / log_base)) + 1;
   } else if (params->bucket_type == CUSTOMER_BUCKET) {
-    return req->customer_id;
+    return req->customer_id + 1;
   } else if (params->bucket_type == CONTENT_TYPE_BUCKET) {
-    return req->content_type;
+    return req->content_type + 1;
   } else {
     printf("unknown bucket type %d\n", params->bucket_type);
     abort();
@@ -189,7 +231,6 @@ static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   segment_t *new_seg = my_malloc(segment_t);
   memset(new_seg, 0, sizeof(segment_t));
   new_seg->objs = my_malloc_n(cache_obj_t, params->segment_size);
-  DEBUG_ASSERT(new_seg->objs != NULL);
   memset(new_seg->objs, 0, sizeof(cache_obj_t) * params->segment_size);
 
   new_seg->next_seg = NULL;
@@ -206,6 +247,9 @@ static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
 
 static inline void link_new_seg_before_seg(LLSC_params_t *params, bucket_t *bucket, segment_t *old_seg,
                                            segment_t *new_seg) {
+  DEBUG_ASSERT(new_seg->bucket_idx == bucket->bucket_idx);
+  DEBUG_ASSERT(old_seg->next_seg->bucket_idx == bucket->bucket_idx);
+
   if (old_seg->prev_seg == NULL) {
     DEBUG_ASSERT(bucket->first_seg == old_seg);
     bucket->first_seg = new_seg;
@@ -273,6 +317,7 @@ static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, seg
   return params->seg_sel.score_array[pos - n_retain];
 }
 
+
 static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type, segment_t *seg, int n_retain,
                                      int64_t rtime, int64_t vtime) {
   LLSC_params_t *params = cache->cache_params;
@@ -299,6 +344,7 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type,
   double penalty = 0;
   for (int j = 0; j < seg->n_total_obj - n_retain; j++) { penalty += seg_sel->score_array[j]; }
 
+//  penalty /= seg->total_byte;
   return penalty;
 }
 
@@ -326,6 +372,7 @@ static inline void update_hit_prob_cdf(bucket_t *bkt) {
   if (bkt->hit_prob.n_overflow > 0)
     printf("bucket %d overflow %ld\n", bkt->bucket_idx, (long) bkt->hit_prob.n_overflow);
 }
+
 
 static inline void print_bucket(cache_t *cache) {
   LLSC_params_t *params = cache->cache_params;

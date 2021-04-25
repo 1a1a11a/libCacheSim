@@ -124,7 +124,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     uint64_t s[11] = {100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1600, 2000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) { args.cache_sizes[i] = MiB * s[i]; }
     args.n_cache_size = 11;
-    args.seg_size = 200;
+    args.seg_size = 1000;
   } else if (strstr(args.trace_path, "user_activity") != NULL) {
     /* user activity */
     uint64_t s[8] = {100, 200, 500, 1000, 1500, 2000, 3000, 4000};

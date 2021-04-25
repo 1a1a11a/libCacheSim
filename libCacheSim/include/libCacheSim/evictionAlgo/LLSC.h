@@ -21,7 +21,8 @@ extern "C"
 #define N_FEATURE_TIME_WINDOW 80
 
 
-#define HIT_PROB_MAX_AGE 86400
+//#define HIT_PROB_MAX_AGE 86400
+#define HIT_PROB_MAX_AGE 172800
 //#define HIT_PROB_MAX_AGE 864000    /* 10 day for akamai */
 #define HIT_PROB_COMPUTE_INTVL 1000000
 #define LHD_EWMA 0.9
@@ -151,6 +152,9 @@ typedef struct segment {
   int64_t create_vtime;
   double req_rate;    /* req rate when create the seg */
   double write_rate;
+  double write_ratio;
+  double cold_miss_ratio;
+
   int64_t eviction_vtime;
 
   seg_feature_t feature;
@@ -223,6 +227,9 @@ typedef struct {
 
 //  int64_t last_hit_prob_compute_rtime;
   int64_t last_hit_prob_compute_vtime;
+
+  int n_req_since_last_eviction;
+  int n_miss_since_last_eviction;
 
   LSC_type_e type;
   bucket_type_e bucket_type;
