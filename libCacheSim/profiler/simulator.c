@@ -73,6 +73,9 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
          (long long) n_warmup);
   }
 
+  int64_t start_ts = req->real_time;
+  req->real_time -= start_ts;
+
   while (req->valid) {
     req_cnt++;
     req_byte += req->obj_size;
@@ -81,6 +84,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
       miss_byte += req->obj_size;
     }
     read_one_req(cloned_reader, req);
+    req->real_time -= start_ts;
   }
 
   /* check cache_state */

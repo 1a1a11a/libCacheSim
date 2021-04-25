@@ -20,23 +20,29 @@ extern "C"
 #define N_MAX_VALIDATION 1000
 #define N_FEATURE_TIME_WINDOW 80
 
+
+#define HIT_PROB_MAX_AGE 864000
+#define HIT_PROB_COMPUTE_INTVL 1000000
+#define LHD_EWMA 0.9
+
 #define MAGIC     1234567890
 
 #define DEFAULT_RANK_INTVL 20
 
+
 typedef enum {
-  SEGCACHE,
-  SEGCACHE_ITEM_ORACLE,
-  SEGCACHE_SEG_ORACLE,
-  SEGCACHE_BOTH_ORACLE,
+  SEGCACHE = 0,
+  SEGCACHE_ITEM_ORACLE = 1,
+  SEGCACHE_SEG_ORACLE = 2,
+  SEGCACHE_BOTH_ORACLE = 3,
 
 
-  LOGCACHE_START_POS,
+  LOGCACHE_START_POS = 5 ,
 
-  LOGCACHE_BOTH_ORACLE,
-  LOGCACHE_LOG_ORACLE,
-  LOGCACHE_ITEM_ORACLE,
-  LOGCACHE_LEARNED,
+  LOGCACHE_BOTH_ORACLE = 6,
+  LOGCACHE_LOG_ORACLE = 7,
+  LOGCACHE_ITEM_ORACLE = 8,
+  LOGCACHE_LEARNED = 20,
 //  LOGCACHE_RAMCLOUD,
 //  LOGCACHE_FIFO,
 } LSC_type_e;
@@ -44,7 +50,11 @@ typedef enum {
 typedef enum obj_score_type {
   OBJ_SCORE_FREQ,
   OBJ_SCORE_FREQ_BYTE,
-  OBJ_SCORE_FREQ_BYTE_AGE,
+//  OBJ_SCORE_FREQ_BYTE_AGE,
+
+  OBJ_SCORE_HIT_DENSITY,
+//  OBJ_SCORE_HIT_DENSITY_FREQ,
+
   OBJ_SCORE_ORACLE,
 } obj_score_e;
 
@@ -123,6 +133,9 @@ typedef struct segment {
   int32_t seg_id;
   double penalty;
 
+  int32_t n_total_hit;
+  int32_t n_total_active;
+
   int32_t create_rtime;
   int64_t create_vtime;
   double req_rate;    /* req rate when create the seg */
@@ -131,10 +144,18 @@ typedef struct segment {
 
   seg_feature_t feature;
 
-  bool n_merge;       /* number of merged times */
+  int n_merge;       /* number of merged times */
   bool is_training_seg;
   int32_t magic;
 } segment_t;
+
+typedef struct hitProb{
+  int32_t n_hit[HIT_PROB_MAX_AGE];
+  int32_t n_evict[HIT_PROB_MAX_AGE];
+
+  double hit_density[HIT_PROB_MAX_AGE];
+} hitProb_t;
+
 
 typedef struct {
   int64_t bucket_property;
@@ -143,6 +164,7 @@ typedef struct {
   int32_t n_seg;
   int16_t bucket_idx;
 
+  hitProb_t hit_prob;
 } bucket_t;
 
 typedef struct seg_sel{
@@ -164,6 +186,7 @@ typedef struct seg_sel{
 typedef struct {
   int segment_size;   /* in temrs of number of objects */
   int n_merge;
+  int n_retain_from_seg;
 
   int n_used_buckets;
   bucket_t buckets[MAX_N_BUCKET];
@@ -177,13 +200,16 @@ typedef struct {
   int64_t n_allocated_segs;
   int64_t n_evictions;
 
-  int64_t curr_time;
+  int64_t curr_rtime;
   int64_t curr_vtime;
 
   seg_sel_t seg_sel;
   segment_t **segs_to_evict;
 
   learner_t learner;
+
+//  int64_t last_hit_prob_compute_rtime;
+  int64_t last_hit_prob_compute_vtime;
 
   LSC_type_e type;
   obj_score_e obj_score_type;

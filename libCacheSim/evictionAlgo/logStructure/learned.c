@@ -227,7 +227,7 @@ static void prepare_training_data(cache_t *cache) {
   for (i = 0; i < params->n_training_segs; i++) {
     DEBUG_ASSERT(curr_seg != NULL);
     //    for (int j = 0; j < N_FEATURE_TIME_WINDOW / 2; j++) {
-//    int curr_idx = seg_history_idx(curr_seg, params->curr_time, learner->feature_history_time_window);
+//    int curr_idx = seg_history_idx(curr_seg, params->curr_rtime, learner->feature_history_time_window);
 //    for (int j = curr_idx; j < curr_idx + 1; j++) {
       /* if we have no or little future information,
        * we cannot have a good estimate of y */
@@ -270,11 +270,11 @@ static void prepare_training_data(cache_t *cache) {
   learner->n_training_samples = n_train_samples;
   printf("curr time %ld (vtime %ld) training %d segs %d samples, %d validation samples, "
          "%ld total segs \n",
-         (long) params->curr_time, (long) params->curr_vtime,
+         (long) params->curr_rtime, (long) params->curr_vtime,
          (int) params->n_training_segs, n_train_samples, (int) n_validation_samples, (long) params->n_segs);
 
   clean_training_segs(cache, params->n_training_segs);
-  printf("%ld zero %ld training segs\n", n_zeros, params->n_training_segs);
+  printf("%ld zero %d training segs\n", n_zeros, params->n_training_segs);
   params->learner.n_byte_written = 0;
 }
 
@@ -442,7 +442,7 @@ void prepare_inference_data(cache_t *cache) {
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
       prepare_one_row(cache, curr_seg, N_FEATURE_TIME_WINDOW-1,
-                      (int) (params->curr_time - curr_seg->create_rtime),
+                      (int) (params->curr_rtime - curr_seg->create_rtime),
                       &x[learner->n_feature * n_seg], NULL);
       curr_seg = curr_seg->next_seg;
       n_seg++;

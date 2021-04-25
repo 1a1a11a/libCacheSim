@@ -33,14 +33,14 @@ static inline int seg_history_idx(segment_t *segment, int32_t curr_time, int32_t
     return idx;
 }
 
-static inline void seg_hit(cache_t *cache, cache_obj_t *cache_obj) {
-  LLSC_params_t *params = cache->cache_params;
+static inline void seg_hit(LLSC_params_t *params, cache_obj_t *cache_obj) {
   if (!params->learner.start_feature_recording)
     return;
 
   segment_t *segment = cache_obj->LSC.segment;
+  segment->n_total_hit += 1;
   int last_history_idx = (int) cache_obj->LSC.last_history_idx;
-  int curr_idx = seg_history_idx(segment, params->curr_time, params->learner.feature_history_time_window);
+  int curr_idx = seg_history_idx(segment, params->curr_rtime, params->learner.feature_history_time_window);
   DEBUG_ASSERT(curr_idx >= last_history_idx);
 
 
@@ -50,13 +50,14 @@ static inline void seg_hit(cache_t *cache, cache_obj_t *cache_obj) {
   }
 
   if (last_history_idx == -1) {
+    segment->n_total_active += 1;
     segment->feature.n_active_item_accu[curr_idx] += 1;
     segment->feature.n_active_byte_accu[curr_idx] += cache_obj->obj_size;
   }
 
   segment->feature.n_hit[curr_idx] += 1;
   cache_obj->LSC.last_history_idx = curr_idx;
-  cache_obj->LSC.last_access_rtime = params->curr_time;
+//  cache_obj->LSC.last_access_rtime = params->curr_rtime;
 }
 
 
