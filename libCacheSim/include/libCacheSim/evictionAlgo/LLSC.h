@@ -17,7 +17,12 @@ extern "C" {
 #define N_TRAIN_ITER 8
 #define GEN_TRAINING_SEG_EVERY_N 1
 #define N_MAX_VALIDATION 1000
-#define N_FEATURE_TIME_WINDOW 80
+
+#define N_FEATURE_TIME_WINDOW 10
+
+#define TRAINING_DROP_ZERO    1
+//#define TRAINING_TRUTH_ORACLE
+#define TRAINING_TRUTH_ONLINE
 
 //#define HIT_PROB_MAX_AGE 86400
 #define HIT_PROB_MAX_AGE 172800
@@ -73,22 +78,33 @@ typedef struct {
   bucket_type_e bucket_type;
 } LLSC_init_params_t;
 
+
 typedef struct {
   //  int16_t n_del_item[N_FEATURE_TIME_WINDOW];
-  int16_t n_active_item_accu[N_FEATURE_TIME_WINDOW];
-  int16_t n_active_item_per_window[N_FEATURE_TIME_WINDOW];
-  int32_t n_active_byte_accu[N_FEATURE_TIME_WINDOW];
-  int32_t n_active_byte_per_window[N_FEATURE_TIME_WINDOW];
+//  int16_t n_active_item_accu[N_FEATURE_TIME_WINDOW];
+//  int16_t n_active_item_per_window[N_FEATURE_TIME_WINDOW];
+//  int32_t n_active_byte_accu[N_FEATURE_TIME_WINDOW];
+//  int32_t n_active_byte_per_window[N_FEATURE_TIME_WINDOW];
 
-  int32_t n_hit[N_FEATURE_TIME_WINDOW];
+  int32_t n_hit_per_min[N_FEATURE_TIME_WINDOW];
+  int16_t n_active_item_per_min[N_FEATURE_TIME_WINDOW];
 
+  int32_t n_hit_per_ten_min[N_FEATURE_TIME_WINDOW];
+  int16_t n_active_item_per_ten_min[N_FEATURE_TIME_WINDOW];
+
+  int32_t n_hit_per_hour[N_FEATURE_TIME_WINDOW];
+  int16_t n_active_item_per_hour[N_FEATURE_TIME_WINDOW];
+
+  int64_t last_min_window_ts;
+  int64_t last_ten_min_window_ts;
+  int64_t last_hour_window_ts;
 } seg_feature_t;
 
 typedef struct learner {
-  int32_t feature_history_time_window;
-  bool start_feature_recording;
+//  int32_t feature_history_time_window;
+//  bool start_feature_recording;
   //  bool start_train;
-  int64_t start_feature_recording_time;
+//  int64_t start_feature_recording_time;
 
   BoosterHandle booster;
 
@@ -146,6 +162,7 @@ typedef struct segment {
   double cold_miss_ratio;
 
   int64_t eviction_vtime;
+  int64_t eviction_rtime;
 
   seg_feature_t feature;
 

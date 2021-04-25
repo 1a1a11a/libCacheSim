@@ -137,6 +137,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   } else if (strstr(args.trace_path, "user_activity") != NULL) {
     /* user activity */
     uint64_t s[8] = {100, 200, 500, 1000, 1500, 2000, 3000, 4000};
+//    uint64_t s[6] = {500, 1000, 1500, 2000, 3000, 4000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args.cache_sizes[i] = MiB * s[i];
     }
@@ -150,6 +151,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
       args.cache_sizes[i] = GiB * s[i];
     }
     args.n_cache_size = 8;
+    args.seg_size = 1000;
   } else if (strstr(args.trace_path, "sjc") != NULL || strstr(args.trace_path, "lax") != NULL) {
     /* nyc */
     uint64_t s[14] = {50,   100,  200,  400,  500,  800,  1000,
@@ -238,7 +240,7 @@ int main(int argc, char **argv) {
                                       .n_merge = args.n_merge,
                                       .type = args.lsc_type,
                                       .rank_intvl = args.rank_intvl,
-                                      .bucket_type = NO_BUCKET};
+                                      .bucket_type = SIZE_BUCKET};
     cache = LLSC_init(cc_params, &init_params);
   } else {
     printf("do not support %s\n", args.alg);

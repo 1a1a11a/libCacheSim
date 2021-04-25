@@ -12,7 +12,6 @@ static inline void _debug_check_bucket_segs(bucket_t *bkt) {
   segment_t *prev_seg = NULL;
 
   while (curr_seg) {
-    printf("%d %p\n", n_seg, curr_seg);
     n_seg += 1;
     assert(curr_seg->prev_seg == prev_seg);
     assert(curr_seg->bucket_idx == bkt->bucket_idx);
@@ -20,7 +19,6 @@ static inline void _debug_check_bucket_segs(bucket_t *bkt) {
     curr_seg = curr_seg->next_seg;
   }
 
-  printf("%d %d segs\n", n_seg, bkt->n_seg);
   assert(prev_seg == bkt->last_seg);
   assert(n_seg == bkt->n_seg);
 }
@@ -204,7 +202,8 @@ static inline void append_seg_to_bucket(LLSC_params_t *params, bucket_t *bucket,
     DEBUG_ASSERT(bucket->first_seg == NULL);
     DEBUG_ASSERT(bucket->n_seg == 0);
     bucket->first_seg = segment;
-    params->n_used_buckets += 1;
+    if (&params->training_bucket != bucket)
+      params->n_used_buckets += 1;
   } else {
     bucket->last_seg->next_seg = segment;
   }
@@ -214,7 +213,11 @@ static inline void append_seg_to_bucket(LLSC_params_t *params, bucket_t *bucket,
   bucket->last_seg = segment;
 
   bucket->n_seg += 1;
-  params->n_segs += 1;
+  if (&params->training_bucket == bucket) {
+    params->n_training_segs += 1;
+  } else {
+    params->n_segs += 1;
+  }
 }
 
 static inline void append_seg_to_bucket_before_last(bucket_t *bucket, segment_t *segment) {
@@ -300,7 +303,9 @@ static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_t
     if (cache_obj->LSC.next_access_ts == -1) {
       return 0;
     }
-    return (double) 1000000.0 / (double) cache_obj->obj_size
+
+    DEBUG_ASSERT(cache_obj->LSC.next_access_ts > curr_vtime);
+    return 1000000.0 / (double) cache_obj->obj_size
            / (double) (cache_obj->LSC.next_access_ts - curr_vtime);
 
     //  } else if (score_type == OBJ_SCORE_FREQ_BYTE_AGE) {
@@ -387,8 +392,14 @@ static inline void update_hit_prob_cdf(bucket_t *bkt) {
     }
   }
 
-  if (bkt->hit_prob.n_overflow > 0)
-    printf("bucket %d overflow %ld\n", bkt->bucket_idx, (long) bkt->hit_prob.n_overflow);
+  static int last_overflow = 0;
+  if (bkt->hit_prob.n_overflow > 0) {
+    if (bkt->hit_prob.n_overflow > last_overflow) {
+      printf("bucket %d overflow %ld\n", bkt->bucket_idx, (long) bkt->hit_prob.n_overflow);
+      last_overflow = bkt->hit_prob.n_overflow;
+    }
+    bkt->hit_prob.n_overflow = 0;
+  }
 }
 
 static inline void print_bucket(cache_t *cache) {
@@ -403,38 +414,38 @@ static inline void print_bucket(cache_t *cache) {
   printf("\n");
 }
 
-static inline void print_seg(cache_t *cache, segment_t *seg) {
-  LLSC_params_t *params = cache->cache_params;
-
-  printf("seg mean obj size %.2lf bytes, "
-         "req/write rate %.4lf/%.4lf, "
-         "age %d, mean freq %.2lf, total hit %d, total active %d, "
-         "%d merges, ",
-         (double) seg->total_byte / seg->n_total_obj, seg->req_rate, seg->write_rate,
-         (int) params->curr_rtime - seg->create_rtime,
-         (double) seg->n_total_hit / seg->n_total_active, seg->n_total_hit, seg->n_total_active,
-         seg->n_merge);
-
-  printf("n hit %d %d %d %d %d %d %d %d %d %d %d %d, "
-         "n_active_per_window "
-         "%d %d %d %d %d %d %d %d %d %d %d %d, "
-         "active_accu %d %d %d %d %d %d %d %d %d %d %d %d\n",
-         seg->feature.n_hit[0], seg->feature.n_hit[1], seg->feature.n_hit[2],
-         seg->feature.n_hit[3], seg->feature.n_hit[4], seg->feature.n_hit[5],
-         seg->feature.n_hit[6], seg->feature.n_hit[7], seg->feature.n_hit[8],
-         seg->feature.n_hit[9], seg->feature.n_hit[10], seg->feature.n_hit[11],
-
-         seg->feature.n_active_item_per_window[0], seg->feature.n_active_item_per_window[1],
-         seg->feature.n_active_item_per_window[2], seg->feature.n_active_item_per_window[3],
-         seg->feature.n_active_item_per_window[4], seg->feature.n_active_item_per_window[5],
-         seg->feature.n_active_item_per_window[6], seg->feature.n_active_item_per_window[7],
-         seg->feature.n_active_item_per_window[8], seg->feature.n_active_item_per_window[9],
-         seg->feature.n_active_item_per_window[10], seg->feature.n_active_item_per_window[11],
-
-         seg->feature.n_active_item_accu[0], seg->feature.n_active_item_accu[1],
-         seg->feature.n_active_item_accu[2], seg->feature.n_active_item_accu[3],
-         seg->feature.n_active_item_accu[4], seg->feature.n_active_item_accu[5],
-         seg->feature.n_active_item_accu[6], seg->feature.n_active_item_accu[7],
-         seg->feature.n_active_item_accu[8], seg->feature.n_active_item_accu[9],
-         seg->feature.n_active_item_accu[10], seg->feature.n_active_item_accu[11]);
-}
+//static inline void print_seg(cache_t *cache, segment_t *seg) {
+//  LLSC_params_t *params = cache->cache_params;
+//
+//  printf("seg mean obj size %.2lf bytes, "
+//         "req/write rate %.4lf/%.4lf, "
+//         "age %d, mean freq %.2lf, total hit %d, total active %d, "
+//         "%d merges, ",
+//         (double) seg->total_byte / seg->n_total_obj, seg->req_rate, seg->write_rate,
+//         (int) params->curr_rtime - seg->create_rtime,
+//         (double) seg->n_total_hit / seg->n_total_active, seg->n_total_hit, seg->n_total_active,
+//         seg->n_merge);
+//
+//  printf("n hit %d %d %d %d %d %d %d %d %d %d %d %d, "
+//         "n_active_per_window "
+//         "%d %d %d %d %d %d %d %d %d %d %d %d, "
+//         "active_accu %d %d %d %d %d %d %d %d %d %d %d %d\n",
+//         seg->feature.n_hit[0], seg->feature.n_hit[1], seg->feature.n_hit[2],
+//         seg->feature.n_hit[3], seg->feature.n_hit[4], seg->feature.n_hit[5],
+//         seg->feature.n_hit[6], seg->feature.n_hit[7], seg->feature.n_hit[8],
+//         seg->feature.n_hit[9], seg->feature.n_hit[10], seg->feature.n_hit[11],
+//
+//         seg->feature.n_active_item_per_window[0], seg->feature.n_active_item_per_window[1],
+//         seg->feature.n_active_item_per_window[2], seg->feature.n_active_item_per_window[3],
+//         seg->feature.n_active_item_per_window[4], seg->feature.n_active_item_per_window[5],
+//         seg->feature.n_active_item_per_window[6], seg->feature.n_active_item_per_window[7],
+//         seg->feature.n_active_item_per_window[8], seg->feature.n_active_item_per_window[9],
+//         seg->feature.n_active_item_per_window[10], seg->feature.n_active_item_per_window[11],
+//
+//         seg->feature.n_active_item_accu[0], seg->feature.n_active_item_accu[1],
+//         seg->feature.n_active_item_accu[2], seg->feature.n_active_item_accu[3],
+//         seg->feature.n_active_item_accu[4], seg->feature.n_active_item_accu[5],
+//         seg->feature.n_active_item_accu[6], seg->feature.n_active_item_accu[7],
+//         seg->feature.n_active_item_accu[8], seg->feature.n_active_item_accu[9],
+//         seg->feature.n_active_item_accu[10], seg->feature.n_active_item_accu[11]);
+//}

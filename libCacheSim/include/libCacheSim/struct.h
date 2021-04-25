@@ -46,7 +46,8 @@ typedef struct cache_obj {
       int32_t last_access_rtime;
       int16_t idx_in_segment;
       //      int16_t ref_cnt;
-      int8_t last_history_idx;
+//      int8_t last_history_idx;
+      int8_t active : 1;
       int8_t in_cache : 1;
       int8_t merged : 1;
       //      int8_t last_history_idx_training;

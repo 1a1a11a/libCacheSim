@@ -13,10 +13,10 @@
     }                                                                                         \
   }
 
-static inline int32_t idx_to_age(cache_t *cache, int idx) {
-  LLSC_params_t *params = cache->cache_params;
-  return params->learner.feature_history_time_window * idx;
-}
+//static inline int32_t idx_to_age(cache_t *cache, int idx) {
+//  LLSC_params_t *params = cache->cache_params;
+//  return params->learner.feature_history_time_window * idx;
+//}
 
 static void clean_training_segs(cache_t *cache, int n_clean) {
   LLSC_params_t *params = cache->cache_params;
@@ -41,10 +41,6 @@ static void clean_training_segs(cache_t *cache, int n_clean) {
   params->training_bucket.n_seg -= n_cleaned;
   params->training_bucket.first_seg = seg;
   seg->prev_seg == NULL;
-}
-
-static double cal_seg_evict_penalty_learned(cache_t *cache, segment_t *seg) {
-  ;
 }
 
 static inline void create_data_holder(cache_t *cache) {
@@ -79,62 +75,57 @@ static inline void create_data_holder(cache_t *cache) {
   }
 }
 
-static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, int j, int seg_age, double *x, float *y) {
+static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, double *x, float *y) {
   LLSC_params_t *params = cache->cache_params;
 
   learner_t *learner = &params->learner;
 
   /* suppose we are at the end of j window, the first j features are available */
-  x[0] = 0;
+  x[0] = (double) curr_seg->bucket_idx;
   /* CHANGE ######################### */
-  x[1] = (double) curr_seg->bucket_idx;
+  x[1] = (double) ((curr_seg->create_rtime / 3600) % 24);
+  x[2] = (double) ((curr_seg->create_rtime / 60) % 60);
   /* CHANGE ######################### */
-  x[2] = (double) ((curr_seg->create_rtime / 3600) % 24);
-  if (seg_age >= 0) {
-    x[3] = (double) seg_age;
-  } else {
-    x[3] = (double) idx_to_age(cache, j + 1);
-  }
+  x[3] = (double) curr_seg->eviction_rtime - curr_seg->create_rtime;
+//  if (seg_age >= 0) {
+//    x[3] = (double) seg_age;
+//  } else {
+//    x[3] = (double) idx_to_age(cache, j + 1);
+//  }
   x[4] = (double) curr_seg->req_rate;
   x[5] = (double) curr_seg->write_rate;
   x[6] = (double) curr_seg->total_byte / curr_seg->n_total_obj;
+  x[7] = curr_seg->write_ratio;
+  x[8] = curr_seg->cold_miss_ratio;
+  x[9] = curr_seg->n_total_hit;
+  x[10] = curr_seg->n_total_active;
+//  x[11] = 0;
 
-  for (int k = 0; k <= j; k++) {
+  for (int k = 0; k < N_FEATURE_TIME_WINDOW; k++) {
     //        int32_t window_size = idx_to_window_size(j + k);
-    int32_t window_size = learner->feature_history_time_window;
-    x[7 + k * 5 + 0] =
-        (double) curr_seg->feature.n_hit[k] / window_size;
-    x[7 + k * 5 + 1] =
-        (double) curr_seg->feature.n_active_item_per_window[k] / window_size;
-    x[7 + k * 5 + 2] =
-        (double) curr_seg->feature.n_active_item_accu[k] / window_size;
-    /* CHANGE ######################### */
-    x[7 + k * 5 + 3] =
-        (double) curr_seg->feature.n_active_byte_per_window[k] / window_size;
-    x[7 + k * 5 + 4] =
-        (double) curr_seg->feature.n_active_byte_accu[k] / window_size;
+//    int32_t window_size = learner->feature_history_time_window;
+    x[11 + k * 6 + 0] = (double) curr_seg->feature.n_hit_per_min[k];
+    x[11 + k * 6 + 1] = (double) curr_seg->feature.n_active_item_per_min[k];
+    x[11 + k * 6 + 2] = (double) curr_seg->feature.n_hit_per_ten_min[k];
+    x[11 + k * 6 + 3] = (double) curr_seg->feature.n_active_item_per_ten_min[k];
+    x[11 + k * 6 + 4] = (double) curr_seg->feature.n_hit_per_hour[k];
+    x[11 + k * 6 + 5] = (double) curr_seg->feature.n_active_item_per_hour[k];
   }
 
 //  printf("%lf %lf %lf %lf %lf %lf %lf - %lf %lf %lf %lf %lf\n",
 //         x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11]);
-
-
-  for (unsigned int k = j + 1; k < N_FEATURE_TIME_WINDOW; k++) {
-    x[7 + k * 5 + 0] = 0;
-    x[7 + k * 5 + 1] = 0;
-    x[7 + k * 5 + 2] = 0;
-    x[7 + k * 5 + 3] = 0;
-    x[7 + k * 5 + 4] = 0;
-  }
 
   if (y == NULL) {
     return true;
   }
 
   /* calculate y */
-  double penalty, n_obj, mean_rd, mean_sz;
-  int n_retained_obj;
-  n_retained_obj = curr_seg->n_total_obj / params->n_merge;
+  double penalty = curr_seg->penalty; 
+  int n_retained_obj = params->n_retain_from_seg;
+#if TRAINING_DROP_ZERO == 1
+  n_retained_obj = 0;
+#endif
+
   //      n_retained_obj = 0;
 
   //      /* maybe the retained obj should consider the difficulty of finding them */
@@ -191,8 +182,13 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, int j, i
   //      y[n_train_samples] = (float) n_active_byte / heap.seg_size;
   //      printf("%lf\n", y[n_train_samples]);
 
-  penalty = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
-                            -1, curr_seg->eviction_vtime);
+#if defined(TRAINING_TRUTH_ORACLE)
+  penalty = cal_seg_penalty(cache,
+                            OBJ_SCORE_ORACLE,
+                            curr_seg, n_retained_obj,
+                            curr_seg->eviction_rtime,
+                            curr_seg->eviction_vtime);
+#endif
 
   DEBUG_ASSERT(penalty < INT32_MAX);
   /* CHANGE ######################### */
@@ -222,8 +218,7 @@ static void prepare_training_data(cache_t *cache) {
   int n_train_samples = 0, n_validation_samples = 0;
   segment_t *curr_seg = params->training_bucket.first_seg;
 
-  bool valid_sample;
-  /* CHANGE ######################### */
+  bool is_sample_valid;
   for (i = 0; i < params->n_training_segs; i++) {
     DEBUG_ASSERT(curr_seg != NULL);
     //    for (int j = 0; j < N_FEATURE_TIME_WINDOW / 2; j++) {
@@ -238,29 +233,35 @@ static void prepare_training_data(cache_t *cache) {
       //        break;
       //      }
 
-      if (n_validation_samples < N_MAX_VALIDATION && rand() % params->n_training_segs <= 10) {
-
-        valid_sample = prepare_one_row(
-            cache, curr_seg, N_FEATURE_TIME_WINDOW-1, -1,
+//      if (n_validation_samples < N_MAX_VALIDATION && rand() % (params->n_training_segs/100) <= 0) {
+      if (0) {
+        is_sample_valid = prepare_one_row(
+            cache, curr_seg,
+//            N_FEATURE_TIME_WINDOW-1, -1,
             &valid_x[learner->n_feature * n_validation_samples],
             &valid_y[n_validation_samples]);
 
-        if (valid_sample) {
+        if (is_sample_valid) {
           n_validation_samples += 1;
         } else {
           n_validation_samples += 1;
           n_zeros += 1;
         }
       } else {
-        valid_sample = prepare_one_row(
-            cache, curr_seg, N_FEATURE_TIME_WINDOW-1, -1,
+        is_sample_valid = prepare_one_row(
+            cache, curr_seg,
+//            N_FEATURE_TIME_WINDOW-1, -1,
             &train_x[learner->n_feature * n_train_samples],
             &train_y[n_train_samples]);
 
-        if (valid_sample) {
+        if (is_sample_valid) {
           n_train_samples += 1;
         } else {
-          n_train_samples += 1;
+#if TRAINING_DROP_ZERO == 2
+          /* do not want too much zero */
+          if (n_zeros != 0 && rand() % n_zeros == 0)
+            n_train_samples += 1;
+#endif
           n_zeros += 1;
         }
       }
@@ -268,13 +269,13 @@ static void prepare_training_data(cache_t *cache) {
     curr_seg = curr_seg->next_seg;
   }
   learner->n_training_samples = n_train_samples;
-  printf("curr time %ld (vtime %ld) training %d segs %d samples, %d validation samples, "
-         "%ld total segs \n",
+  printf("cache size %lu, curr time %ld (vtime %ld) training %d segs %d samples, %d validation samples, "
+         "%ld total segs \n", (unsigned long) cache->cache_size,
          (long) params->curr_rtime, (long) params->curr_vtime,
          (int) params->n_training_segs, n_train_samples, (int) n_validation_samples, (long) params->n_segs);
 
   clean_training_segs(cache, params->n_training_segs);
-  printf("%ld zero %d training segs\n", n_zeros, params->n_training_segs);
+  printf("%ld zero\n", n_zeros);
   params->learner.n_byte_written = 0;
 }
 
@@ -282,7 +283,7 @@ static DatasetHandle transform_training_data_lgbm(cache_t *cache) {
   DatasetHandle tdata;
   learner_t *learner = &((LLSC_params_t *) cache->cache_params)->learner;
 
-  char *dataset_params = "categorical_feature=1,2";
+  char *dataset_params = "categorical_feature=0,1,2";
   safe_call(LGBM_DatasetCreateFromMat(learner->training_x,
                                       C_API_DTYPE_FLOAT64,
                                       learner->n_training_samples,
@@ -436,13 +437,12 @@ void prepare_inference_data(cache_t *cache) {
 
   double *x = learner->inference_data;
 
-  segment_t *curr_seg = params->buckets[0].first_seg;
   int n_seg = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
+    segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
-      prepare_one_row(cache, curr_seg, N_FEATURE_TIME_WINDOW-1,
-                      (int) (params->curr_rtime - curr_seg->create_rtime),
+      prepare_one_row(cache, curr_seg,
                       &x[learner->n_feature * n_seg], NULL);
       curr_seg = curr_seg->next_seg;
       n_seg++;
@@ -469,9 +469,9 @@ void inference(cache_t *cache) {
 
   DEBUG_ASSERT(out_len == params->n_segs);
 
-  segment_t *curr_seg = params->buckets[0].first_seg;
   int n_seg = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
+    segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
       curr_seg->penalty = learner->pred[n_seg++];
       curr_seg = curr_seg->next_seg;
