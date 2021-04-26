@@ -16,7 +16,7 @@
 #include "../../include/libCacheSim.h"
 
 static inline int oracleAkamai_setup(reader_t *reader) {
-  reader->trace_type = ORACLE_BIN_TRACE;
+  reader->trace_type = ORACLE_AKAMAI_TRACE;
   reader->item_size = 30;
 
   if (reader->file_size % reader->item_size != 0) {
@@ -39,9 +39,9 @@ static inline int oracleAkamai_read_one_req(reader_t *reader, request_t *req) {
   req->real_time = *(uint32_t *) record;
   req->obj_id_int = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
-  req->customer_id = *(int16_t *) (record + 16);
-  req->bucket_id = *(int16_t *) (record + 18);
-  req->content_type = *(int16_t *) (record + 20);
+  req->customer_id = *(int16_t *) (record + 16) - 1;
+  req->bucket_id = *(int16_t *) (record + 18) - 1;
+  req->content_type = *(int16_t *) (record + 20) - 1;
 
   req->next_access_ts = *(int64_t *) (record + 22);
 

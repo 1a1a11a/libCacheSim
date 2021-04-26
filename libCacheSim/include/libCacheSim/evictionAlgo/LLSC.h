@@ -21,7 +21,6 @@ extern "C" {
 
 #define MAX_N_BUCKET 120
 #define N_TRAIN_ITER 8
-#define GEN_TRAINING_SEG_EVERY_N 1
 #define N_MAX_VALIDATION 1000
 
 #define N_FEATURE_TIME_WINDOW 10
@@ -30,8 +29,8 @@ extern "C" {
 //#define TRAINING_TRUTH_ORACLE
 #define TRAINING_TRUTH_ONLINE
 
-//#define HIT_PROB_MAX_AGE 86400
-#define HIT_PROB_MAX_AGE 172800
+#define HIT_PROB_MAX_AGE 86400
+//#define HIT_PROB_MAX_AGE 172800
 /* enable this on i5 slows down by two times */
 //#define HIT_PROB_MAX_AGE 864000    /* 10 day for akamai */
 #define HIT_PROB_COMPUTE_INTVL 1000000
@@ -96,6 +95,10 @@ typedef struct {
   int n_merge;
   LSC_type_e type;
   int rank_intvl;
+  int min_start_train_seg;
+  int max_start_train_seg;
+  int n_train_seg_growth;
+  int hit_density_age_shift;
   bucket_type_e bucket_type;
 } LLSC_init_params_t;
 
@@ -122,7 +125,16 @@ typedef struct {
 } seg_feature_t;
 
 typedef struct learner {
-//  int32_t feature_history_time_window;
+  int min_start_train_seg;
+  int max_start_train_seg;
+  int n_train_seg_growth;
+  int next_n_train_seg;
+  int sample_every_n_seg_for_training;
+  int64_t last_train_vtime;
+  int64_t last_train_rtime;
+
+
+  //  int32_t feature_history_time_window;
 //  bool start_feature_recording;
   //  bool start_train;
 //  int64_t start_feature_recording_time;

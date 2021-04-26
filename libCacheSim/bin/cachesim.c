@@ -27,9 +27,11 @@ typedef struct {
 
   struct {
     LSC_type_e lsc_type;
+    bucket_type_e bucket_type;
     int seg_size;
     int n_merge;
     int rank_intvl;
+    int age_shift;
   };
 } sim_arg_t;
 
@@ -38,8 +40,100 @@ unsigned int n_cores() {
 
   asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(eax), "2"(ecx) :);
 
-  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
+//  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
   return ebx;
+}
+
+static void set_default_arg(sim_arg_t *args) {
+
+  args->obj_id_type = OBJ_ID_NUM;
+
+  args->seg_size = 1000;
+  args->n_merge = 2;
+  args->rank_intvl = 20;
+  args->age_shift = 0;
+
+  args->bucket_type = NO_BUCKET;
+  args->n_thread = 4;
+
+#ifdef __linux__
+//  printf("This system has %d processors configured and "
+//         "%d processors available.\n",
+//         get_nprocs_conf(), get_nprocs());
+  args->n_thread = get_nprocs();
+#endif
+
+  args->n_thread = (int) n_cores();
+}
+
+static void set_param_with_workload(sim_arg_t *args) {
+  if (strstr(args->trace_path, "w105") != NULL) {
+    /* w105 */
+    uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 7;
+    args->seg_size = 50;
+    args->age_shift = 3;
+  } else if (strstr(args->trace_path, "w01") != NULL || strstr(args->trace_path, "w03") != NULL) {
+    /* w01 */
+    uint64_t s[12] = {2000,   8000,   16000,  32000,  64000,  96000,
+                      128000, 160000, 192000, 244000, 276000, 308000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 12;
+    args->seg_size = 200;
+    args->age_shift = 3;
+  } else if (strstr(args->trace_path, "w02") != NULL || strstr(args->trace_path, "w02") != NULL) {
+    /* w01 */
+    uint64_t s[8] = {500, 1000, 2000, 3000, 4000, 5000, 6000, 8000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 8;
+    args->seg_size = 200;
+    args->age_shift = 3;
+  } else if (strstr(args->trace_path, "media_metadata") != NULL) {
+    /* media_metadata */
+    //    uint64_t cache_sizes[11] = {MiB * 100, MiB * 200, MiB * 300, MiB * 400, MiB * 500, MiB * 600, MiB * 800, MiB * 1000, MiB * 1200, MiB * 1600, MiB * 2000};
+    uint64_t s[11] = {100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1600, 2000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 11;
+    args->seg_size = 1000;
+  } else if (strstr(args->trace_path, "user_activity") != NULL) {
+    /* user activity */
+    uint64_t s[7] = {200, 500, 1000, 1500, 2000, 3000, 4000};
+//    uint64_t s[6] = {500, 1000, 1500, 2000, 3000, 4000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 7;
+    args->seg_size = 1000;
+  } else if (strstr(args->trace_path, "nyc") != NULL) {
+    /* nyc */
+    uint64_t s[8] = {20, 50, 100, 200, 400, 500, 800, 1000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = GiB * s[i];
+    }
+    args->n_cache_size = 8;
+    args->seg_size = 200;
+    args->age_shift = 3;
+  } else if (strstr(args->trace_path, "sjc") != NULL || strstr(args->trace_path, "lax") != NULL) {
+    /* nyc */
+    uint64_t s[14] = {50,   100,  200,  400,  500,  800,  1000,
+                      1500, 2000, 3000, 4000, 5000, 6000, 8000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = GiB * s[i];
+    }
+    args->n_cache_size = 14;
+  } else {
+    printf("cannot detect trace name\n");
+    abort();
+  }
 }
 
 sim_arg_t parse_cmd(int argc, char *argv[]) {
@@ -50,7 +144,9 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     exit(1);
   }
 
-  sim_arg_t args = {.obj_id_type = OBJ_ID_NUM};
+  sim_arg_t args;
+  set_default_arg(&args);
+
   if (strcmp(argv[1], "twr") == 0) {
     args.trace_type = TWR_TRACE;
   } else if (strcmp(argv[1], "vscsi") == 0) {
@@ -68,6 +164,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   }
 
   args.trace_path = argv[2];
+  set_param_with_workload(&args);
+
   args.cache_size = atoi(argv[3]);
   args.alg = argv[4];
   args.per_obj_metadata = atoi(argv[5]);
@@ -92,89 +190,12 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     }
   }
 
-  args.n_thread = 4;
-#ifdef __linux__
-  printf("This system has %d processors configured and "
-         "%d processors available.\n",
-         get_nprocs_conf(), get_nprocs());
-  args.n_thread = get_nprocs();
-#endif
-  args.seg_size = 1000;
-  args.n_merge = 2;
-  args.rank_intvl = 20;
-
-  if (strstr(args.trace_path, "w105") != NULL) {
-    /* w105 */
-    uint64_t s[8] = {500, 1000, 2000, 4000, 8000, 10000, 12000, 16000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args.cache_sizes[i] = MiB * s[i];
-    }
-    args.n_cache_size = 8;
-    args.seg_size = 200;
-  } else if (strstr(args.trace_path, "w01") != NULL || strstr(args.trace_path, "w03") != NULL) {
-    /* w01 */
-    uint64_t s[12] = {2000,   8000,   16000,  32000,  64000,  96000,
-                      128000, 160000, 192000, 244000, 276000, 308000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args.cache_sizes[i] = MiB * s[i];
-    }
-    args.n_cache_size = 12;
-    args.seg_size = 200;
-  } else if (strstr(args.trace_path, "w02") != NULL || strstr(args.trace_path, "w02") != NULL) {
-    /* w01 */
-    uint64_t s[8] = {500, 1000, 2000, 3000, 4000, 5000, 6000, 8000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args.cache_sizes[i] = MiB * s[i];
-    }
-    args.n_cache_size = 8;
-    args.seg_size = 200;
-  } else if (strstr(args.trace_path, "media_metadata") != NULL) {
-    /* media_metadata */
-    //    uint64_t cache_sizes[11] = {MiB * 100, MiB * 200, MiB * 300, MiB * 400, MiB * 500, MiB * 600, MiB * 800, MiB * 1000, MiB * 1200, MiB * 1600, MiB * 2000};
-    uint64_t s[11] = {100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1600, 2000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args.cache_sizes[i] = MiB * s[i];
-    }
-    args.n_cache_size = 11;
-    args.seg_size = 1000;
-  } else if (strstr(args.trace_path, "user_activity") != NULL) {
-    /* user activity */
-    uint64_t s[7] = {200, 500, 1000, 1500, 2000, 3000, 4000};
-//    uint64_t s[6] = {500, 1000, 1500, 2000, 3000, 4000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args.cache_sizes[i] = MiB * s[i];
-    }
-    args.n_cache_size = 7;
-    args.seg_size = 1000;
-  } else if (strstr(args.trace_path, "nyc") != NULL) {
-    /* nyc */
-    if (HIT_PROB_MAX_AGE != 864000) {
-      abort();
-    }
-
-    uint64_t s[8] = {20, 50, 100, 200, 400, 500, 800, 1000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args.cache_sizes[i] = GiB * s[i];
-    }
-    args.n_cache_size = 8;
-    args.seg_size = 200;
-  } else if (strstr(args.trace_path, "sjc") != NULL || strstr(args.trace_path, "lax") != NULL) {
-    /* nyc */
-    uint64_t s[14] = {50,   100,  200,  400,  500,  800,  1000,
-                      1500, 2000, 3000, 4000, 5000, 6000, 8000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args.cache_sizes[i] = GiB * s[i];
-    }
-    args.n_cache_size = 14;
-  } else {
-    printf("cannot detect trace name\n");
-    abort();
+  if (argc > 8) {
+    args.seg_size = atoi(argv[8]);
   }
 
-  printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
-         "seg size %d, n merge %d, rank_intvl %d\n",
-         argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
-         args.seg_size, args.n_merge, args.rank_intvl);
+  args.bucket_type = NO_BUCKET;
+
   return args;
 }
 
@@ -191,6 +212,10 @@ void run_cache(reader_t *reader, cache_t *cache) {
   uint64_t req_byte = 0, miss_byte = 0;
 
   read_one_req(reader, req);
+  if (strstr(reader->trace_path, "sjc") != NULL) {
+    for (int i = 0; i < 200000; i++)
+      read_one_req(reader, req);
+  }
   int32_t start_ts = req->real_time, last_report_ts = 0;
 
   double start_time = gettime();
@@ -246,12 +271,19 @@ int main(int argc, char **argv) {
                                       .n_merge = args.n_merge,
                                       .type = args.lsc_type,
                                       .rank_intvl = args.rank_intvl,
-                                      .bucket_type = SIZE_BUCKET};
+                                      .hit_density_age_shift = args.age_shift,
+                                      .bucket_type = args.bucket_type};
     cache = LLSC_init(cc_params, &init_params);
   } else {
     printf("do not support %s\n", args.alg);
     abort();
   }
+
+  printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
+         "seg size %d, n merge %d, rank_intvl %d, bucket type %d\n",
+         argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
+         args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type);
+
 
   if (args.debug) run_cache(reader, cache);
   else {

@@ -161,7 +161,7 @@ static void prepare_training_data(cache_t *cache) {
   feature_t *valid_x = learner->valid_x;
   train_y_t *valid_y = learner->valid_y;
 
-  int64_t n_zeros = 0;
+  int n_zeros = 0;
 
   int i;
   int n_train_samples = 0, n_validation_samples = 0;
@@ -206,13 +206,13 @@ static void prepare_training_data(cache_t *cache) {
     curr_seg = curr_seg->next_seg;
   }
   learner->n_training_samples = n_train_samples;
-  printf("cache size %lu, curr time %ld (vtime %ld) training %d segs %d samples, %d validation samples, "
+  INFO("cache size %lu, curr time %ld (vtime %ld) training %d segs %d samples, "
+       "%d validation samples, %d zeros, "
          "%ld total segs \n", (unsigned long) cache->cache_size,
          (long) params->curr_rtime, (long) params->curr_vtime,
-         (int) params->n_training_segs, n_train_samples, (int) n_validation_samples, (long) params->n_segs);
+         (int) params->n_training_segs, n_train_samples, (int) n_validation_samples, n_zeros, (long) params->n_segs);
 
   clean_training_segs(cache, params->n_training_segs/2);
-  printf("%ld zero\n", n_zeros);
   params->learner.n_byte_written = 0;
 
 #ifdef USE_XGBOOST
@@ -322,8 +322,6 @@ static void train_xgboost(cache_t *cache) {
 
 
   }
-
-  learner->n_train += 1;
 }
 #endif
 
@@ -355,8 +353,6 @@ void inference_xgboost(cache_t *cache) {
       curr_seg = curr_seg->next_seg;
     }
   }
-
-  learner->n_inference += 1;
 }
 #endif
 
@@ -494,7 +490,6 @@ void train_lgbm(cache_t *cache) {
 
   LGBM_DatasetFree(tdata)l;
 
-  learner->n_train += 1;
 }
 #endif
 
@@ -526,7 +521,6 @@ void inference_lgbm(cache_t *cache) {
     }
   }
 
-  learner->n_inference += 1;
 }
 #endif
 
@@ -534,10 +528,18 @@ void inference_lgbm(cache_t *cache) {
 
 void train(cache_t *cache) {
   train_xgboost(cache);
+
+  LLSC_params_t *params = (LLSC_params_t *) cache->cache_params;
+  params->learner.n_train += 1;
+  params->learner.last_train_rtime = params->curr_rtime;
+  params->learner.last_train_vtime = params->curr_vtime;
 }
 
 void inference(cache_t *cache) {
   inference_xgboost(cache);
+
+  LLSC_params_t *params = (LLSC_params_t *) cache->cache_params;
+  params->learner.n_inference += 1;
 }
 
 

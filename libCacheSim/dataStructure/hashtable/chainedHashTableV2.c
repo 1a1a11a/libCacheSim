@@ -145,9 +145,9 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
     chain_len += 1;
   }
 
-  if (chain_len > 8 && chain_len > max_chain_len) {
+  if (chain_len > 16 && chain_len > max_chain_len) {
     max_chain_len = chain_len;
-    printf("hashtable remove %lu max chain len %d, hashtable load %ld/%ld %lf\n",
+    WARNING("hashtable remove %lu max chain len %d, hashtable load %ld/%ld %lf\n",
            (unsigned long) cache_obj->obj_id, max_chain_len,
            (long) hashtable->n_cur_item,
            (long) hashsize(hashtable->hashpower),
@@ -180,9 +180,9 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
     chain_len += 1;
   }
 
-  if (chain_len > 8 && chain_len > max_chain_len) {
+  if (chain_len > 16 && chain_len > max_chain_len) {
     max_chain_len = chain_len;
-    printf("hashtable remove %ld, hv %lu, max chain len %d, hashtable load %ld/%ld %lf\n",
+    WARNING("hashtable remove %ld, hv %lu, max chain len %d, hashtable load %ld/%ld %lf\n",
            (long) cache_obj->obj_id,
            (unsigned long) hv, max_chain_len,
            (long) hashtable->n_cur_item,

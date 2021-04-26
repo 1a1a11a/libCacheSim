@@ -28,7 +28,7 @@ void init_seg_sel(LLSC_params_t *params) {
   params->seg_sel.ranked_seg_pos = 0;
 }
 
-void init_learner(LLSC_params_t *params) {
+void init_learner(LLSC_params_t *params, LLSC_init_params_t *init_params) {
 
   params->learner.last_cache_full_time = -1;
   //  params->learner.start_feature_recording = false;
@@ -54,15 +54,32 @@ void init_learner(LLSC_params_t *params) {
   //  params->learner.n_training_iter = 0;
   params->learner.n_train = 0;
   params->learner.n_inference = 0;
+
+  params->learner.min_start_train_seg = init_params->min_start_train_seg;
+  params->learner.max_start_train_seg = init_params->max_start_train_seg;
+  params->learner.n_train_seg_growth  = init_params->n_train_seg_growth;
+
+  if (params->learner.min_start_train_seg <= 0)
+    params->learner.min_start_train_seg = 1000;
+  if (params->learner.max_start_train_seg <= 0)
+    params->learner.max_start_train_seg = 10000;
+  if (params->learner.n_train_seg_growth <= 0)
+    params->learner.n_train_seg_growth = 1000;
+  params->learner.next_n_train_seg = params->learner.min_start_train_seg;
+  params->learner.sample_every_n_seg_for_training = 1;
 }
 
-static void init_buckets(LLSC_params_t *params) {
+static void init_buckets(LLSC_params_t *params, int age_shift) {
+  if (age_shift <= 0)
+    age_shift = 0;
+
   for (int i = 0; i < MAX_N_BUCKET; i++) {
     params->buckets[i].bucket_idx = i;
     for (int j = 0; j < HIT_PROB_MAX_AGE; j++) {
       /* initialize to a small number, when the hit density is not available
        * before eviction, we use size to make eviction decision */
       params->buckets[i].hit_prob.hit_density[j] = 1e-8;
+      params->buckets[i].hit_prob.age_shift = age_shift;
     }
   }
 }
@@ -90,7 +107,7 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
     case SEGCACHE_SEG_ORACLE:
     case LOGCACHE_LOG_ORACLE:
     case LOGCACHE_LEARNED:
-      //                  params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
+//                        params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
       params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
       break;
     case SEGCACHE_ITEM_ORACLE:
@@ -101,8 +118,8 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
   };
 
   init_seg_sel(params);
-  init_learner(params);
-  init_buckets(params);
+  init_learner(params, LLSC_init_params);
+  init_buckets(params, LLSC_init_params->hit_density_age_shift);
 
   if (params->segs_to_evict == NULL) {
     params->segs_to_evict = my_malloc_n(segment_t *, params->n_merge);
@@ -367,7 +384,7 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
     }
 
     if (params->type == LOGCACHE_LEARNED
-        && rand() % GEN_TRAINING_SEG_EVERY_N == 0) {
+        && rand() % params->learner.sample_every_n_seg_for_training == 0) {
       transform_seg_to_training(cache, bucket, segs[i]);
     } else {
       remove_seg_from_bucket(params, bucket, segs[i]);
@@ -652,11 +669,25 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   if (params->type == LOGCACHE_LEARNED) {
     //        if (params->n_training_segs >= params->n_segs * 4) {
-    if (params->n_training_segs >= 1000 * params->learner.n_train + 1000) {
+    if (params->n_training_segs >= params->learner.next_n_train_seg) {
       //    if (params->learner.n_byte_written >= cache->cache_size * 2
       //      && params->n_training_segs >= 2000
       //        && params->learner.n_train == 0) {
       train(cache);
+      params->learner.next_n_train_seg = params->learner.min_start_train_seg +
+        params->learner.n_train_seg_growth * params->learner.n_train;
+      if (params->learner.next_n_train_seg > params->learner.max_start_train_seg)
+        params->learner.next_n_train_seg = params->learner.max_start_train_seg;
+
+      params->learner.sample_every_n_seg_for_training += 1;
+    } else {
+      /* do we sample too few */
+      if (params->curr_vtime - params->learner.last_train_vtime > 100 * 1000000) {
+        INFO("reduce sample ratio from %d to %d\n",
+             params->learner.sample_every_n_seg_for_training,
+             params->learner.sample_every_n_seg_for_training/2);
+        params->learner.sample_every_n_seg_for_training /= 2;
+      }
     }
   }
 
@@ -667,12 +698,12 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     }
     params->last_hit_prob_compute_vtime = params->curr_vtime;
 
-    //    static int last_print = 0;
-    //    if (params->curr_rtime - last_print >= 3600) {
-    //      printf("cache size %lu ", (unsigned long) cache->cache_size);
-    //      print_bucket(cache);
-    //      last_print = params->curr_rtime;
-    //    }
+        static int last_print = 0;
+        if (params->curr_rtime - last_print >= 3600) {
+          printf("cache size %lu ", (unsigned long) cache->cache_size);
+          print_bucket(cache);
+          last_print = params->curr_rtime;
+        }
   }
 }
 
