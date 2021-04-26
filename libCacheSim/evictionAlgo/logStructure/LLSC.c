@@ -336,7 +336,6 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
   double cutoff =
       find_cutoff(cache, params->obj_score_type, segs, params->n_merge, params->segment_size);
 
-  //  int n_from_each[8] = {0};
   int n_reuse = 0;
   for (int i = 0; i < params->n_merge; i++) {
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
@@ -355,10 +354,8 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
         new_obj->LSC.n_merged += 1;
         hashtable_insert_obj(cache->hashtable, new_obj);
 
-        //        n_from_each[i] += 1;
         new_seg->n_total_obj += 1;
         new_seg->total_byte += cache_obj->obj_size;
-//        cache_obj->LSC.n_merged = 1;
 
 //        hashtable_delete(cache->hashtable, cache_obj);
       } else {
@@ -370,7 +367,6 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
     }
 
     if (params->type == LOGCACHE_LEARNED
-        //        && segs[i]->create_rtime > params->learner.start_feature_recording_time
         && rand() % GEN_TRAINING_SEG_EVERY_N == 0) {
       transform_seg_to_training(cache, bucket, segs[i]);
     } else {
@@ -393,10 +389,13 @@ static bucket_t *select_segs_segcache(cache_t *cache, segment_t **segs) {
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
   segment_t *seg_to_evict = params->next_evict_segment;
 
+  int n_checked_seg = 0;
   while (!is_seg_evictable_fifo(seg_to_evict, params->n_merge)) {
     params->curr_evict_bucket_idx = (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
     bucket = &params->buckets[params->curr_evict_bucket_idx];
     seg_to_evict = bucket->first_seg;
+    n_checked_seg += 1;
+    DEBUG_ASSERT(n_checked_seg <= params->n_segs);
   }
 
   for (int i = 0; i < params->n_merge; i++) {
@@ -526,10 +525,11 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
   }
 
   if (*ranked_seg_pos > params->n_segs / 4) {
+    params->rank_intvl /= 2 + 1;
     WARNING("cache size %lu: rank frequency too low, "
-            "curr pos in ranked seg %d, total %ld segs\n",
-            (unsigned long) cache->cache_size, *ranked_seg_pos, (long) params->n_segs);
-    params->rank_intvl /= 2;
+            "curr pos in ranked seg %d, total %ld segs, reduce rank_intvl to %d\n",
+            (unsigned long) cache->cache_size, *ranked_seg_pos, (long) params->n_segs, params->rank_intvl);
+    print_bucket(cache);
     //    params->seg_sel.last_rank_time = 0;
     return select_segs(cache, segs);
   }

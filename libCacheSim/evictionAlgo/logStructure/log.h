@@ -362,9 +362,10 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type,
   static int n_err = 0;
   if (seg_sel->score_array[0] == seg_sel->score_array[pos - 1]) {
     if (n_err++ % 1000 == 20)
-      WARNING("cache size %lu: seg may have all objects with no reuse (ignore this if"
-              "it is end of trace running oracle\n",
-              (unsigned long) cache->cache_size);
+      WARNING("cache size %lu: seg may have all objects with no reuse %d (ignore this if"
+              "it is end of trace running oracle)\n",
+              (unsigned long) cache->cache_size, n_err);
+    n_err += 1;
     //    abort();
   }
 

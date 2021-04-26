@@ -7,6 +7,7 @@
 #ifdef __linux__
 #include <sys/sysinfo.h>
 #endif
+#include <assert.h>
 
 typedef struct {
   char *trace_path;
@@ -60,6 +61,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.trace_type = ORACLE_TWR_TRACE;
   } else if (strcmp(argv[1], "oracleBin") == 0) {
     args.trace_type = ORACLE_BIN_TRACE;
+  } else if (strcmp(argv[1], "oracleAkamaiBin") == 0) {
+    args.trace_type = ORACLE_AKAMAI_TRACE;
   } else {
     printf("unknown trace type %s\n", argv[1]);
   }
@@ -136,22 +139,25 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.seg_size = 1000;
   } else if (strstr(args.trace_path, "user_activity") != NULL) {
     /* user activity */
-    uint64_t s[8] = {100, 200, 500, 1000, 1500, 2000, 3000, 4000};
+    uint64_t s[7] = {200, 500, 1000, 1500, 2000, 3000, 4000};
 //    uint64_t s[6] = {500, 1000, 1500, 2000, 3000, 4000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args.cache_sizes[i] = MiB * s[i];
     }
-    args.n_cache_size = 8;
+    args.n_cache_size = 7;
     args.seg_size = 1000;
   } else if (strstr(args.trace_path, "nyc") != NULL) {
     /* nyc */
-    assert(HIT_PROB_MAX_AGE == 864000);
+    if (HIT_PROB_MAX_AGE != 864000) {
+      abort();
+    }
+
     uint64_t s[8] = {20, 50, 100, 200, 400, 500, 800, 1000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args.cache_sizes[i] = GiB * s[i];
     }
     args.n_cache_size = 8;
-    args.seg_size = 1000;
+    args.seg_size = 200;
   } else if (strstr(args.trace_path, "sjc") != NULL || strstr(args.trace_path, "lax") != NULL) {
     /* nyc */
     uint64_t s[14] = {50,   100,  200,  400,  500,  800,  1000,

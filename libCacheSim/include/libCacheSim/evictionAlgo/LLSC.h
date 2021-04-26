@@ -7,7 +7,9 @@
 
 #include "../cache.h"
 
-#include <LightGBM/c_api.h>
+//#include <LightGBM/c_api.h>
+#include <xgboost/c_api.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,14 +27,17 @@ extern "C" {
 #define TRAINING_TRUTH_ONLINE
 
 //#define HIT_PROB_MAX_AGE 86400
-#define HIT_PROB_MAX_AGE 172800
-//#define HIT_PROB_MAX_AGE 864000    /* 10 day for akamai */
+//#define HIT_PROB_MAX_AGE 172800
+#define HIT_PROB_MAX_AGE 864000    /* 10 day for akamai */
 #define HIT_PROB_COMPUTE_INTVL 1000000
 #define LHD_EWMA 0.9
 
 #define MAGIC 1234567890
 
 #define DEFAULT_RANK_INTVL 20
+typedef float feature_t;
+typedef float pred_t;
+typedef float train_y_t;
 
 typedef enum {
   SEGCACHE = 0,
@@ -113,11 +118,14 @@ typedef struct learner {
 
   int n_feature;
 
-  double *training_x;
-  float *training_y;
-  double *valid_x;
-  float *valid_y;
-  double *valid_pred_y;
+  feature_t *training_x;
+  train_y_t *training_y;
+  feature_t *valid_x;
+  train_y_t *valid_y;
+  pred_t *valid_pred_y;
+
+  DMatrixHandle train_dm;
+  DMatrixHandle valid_dm;
 
   int32_t n_training_samples;
   int32_t n_valid_samples;
@@ -127,8 +135,9 @@ typedef struct learner {
   int32_t validation_n_row;
   int32_t inference_n_row;
 
-  double *inference_data;
-  double *pred;
+  feature_t *inference_data;
+  pred_t *pred;
+  DMatrixHandle inf_dm;
 
   //  int64_t last_inference_time;
 
