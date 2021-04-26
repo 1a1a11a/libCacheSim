@@ -3,8 +3,9 @@
 #include "learned.h"
 
 //#include <LightGBM/c_api.h>
+#ifdef USE_XGBOOST
 #include <xgboost/c_api.h>
-
+#endif
 
 //#define safe_call(call)                                                                       \
 //  {                                                                                           \
@@ -214,6 +215,7 @@ static void prepare_training_data(cache_t *cache) {
   printf("%ld zero\n", n_zeros);
   params->learner.n_byte_written = 0;
 
+#ifdef USE_XGBOOST
   if (params->learner.n_train > 0) {
     safe_call(XGDMatrixFree(learner->train_dm));
     safe_call(XGDMatrixFree(learner->valid_dm));
@@ -234,29 +236,21 @@ static void prepare_training_data(cache_t *cache) {
   safe_call(XGDMatrixSetFloatInfo(learner->valid_dm, "label",
                                   learner->valid_y,
                                   learner->n_valid_samples));
-}
-
-#ifdef USE_GBM
-static DatasetHandle transform_training_data_lgbm(cache_t *cache) {
-  DatasetHandle tdata;
-  learner_t *learner = &((LLSC_params_t *) cache->cache_params)->learner;
-
+#elif defined(USE_GBM)
   char *dataset_params = "categorical_feature=0,1,2";
   safe_call(LGBM_DatasetCreateFromMat(learner->training_x,
                                       C_API_DTYPE_FLOAT64,
                                       learner->n_training_samples,
                                       learner->n_feature,
-                                      1, dataset_params, NULL, &tdata));
+                                      1, dataset_params, NULL, &learner->train_dm));
 
-  safe_call(LGBM_DatasetSetField(tdata,
+  safe_call(LGBM_DatasetSetField(learner->train_dm,
                                  "label",
                                  learner->training_y,
                                  learner->n_training_samples,
                                  C_API_DTYPE_FLOAT32));
-
-  return tdata;
-}
 #endif
+}
 
 
 void prepare_inference_data(cache_t *cache) {
@@ -290,6 +284,7 @@ void prepare_inference_data(cache_t *cache) {
   }
   DEBUG_ASSERT(params->n_segs == n_seg);
 
+#ifdef USE_XGBOOST
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
@@ -297,13 +292,14 @@ void prepare_inference_data(cache_t *cache) {
                                    params->n_segs,
                                    learner->n_feature, -1,
                                    &learner->inf_dm));
+#elif defined(USE_GBM)
+  ;
+#endif
 }
 
-
+#ifdef USE_XGBOOST
 static void train_xgboost(cache_t *cache) {
   learner_t *learner = &((LLSC_params_t *) cache->cache_params)->learner;
-//  BoosterHandle booster;
-//  const int eval_dmats_size;
 
   prepare_training_data(cache);
 
@@ -329,12 +325,10 @@ static void train_xgboost(cache_t *cache) {
 
   learner->n_train += 1;
 }
-
-void train(cache_t *cache) {
-  train_xgboost(cache);
-}
+#endif
 
 
+#ifdef USE_XGBOOST
 void inference_xgboost(cache_t *cache) {
   LLSC_params_t *params = cache->cache_params;
 
@@ -364,12 +358,7 @@ void inference_xgboost(cache_t *cache) {
 
   learner->n_inference += 1;
 }
-
-void inference(cache_t *cache) {
-  inference_xgboost(cache);
-}
-
-
+#endif
 
 
 
@@ -446,7 +435,6 @@ void train_lgbm(cache_t *cache) {
   learner_t *learner = &((LLSC_params_t *) cache->cache_params)->learner;
 
   prepare_training_data(cache);
-  DatasetHandle tdata = transform_training_data_lgbm(cache);
 
   char *training_params = "num_leaves=31 "
 //                          "bossting=dart "
@@ -471,7 +459,7 @@ void train_lgbm(cache_t *cache) {
   int64_t out_len;
 
   safe_call(LGBM_BoosterFree(learner->booster));
-  safe_call(LGBM_BoosterCreate(tdata, training_params, &learner->booster));
+  safe_call(LGBM_BoosterCreate(learner->train_dm, training_params, &learner->booster));
 
   int i;
   for (i = 0; i < N_TRAIN_ITER; i++) {
@@ -514,12 +502,11 @@ void train_lgbm(cache_t *cache) {
 #ifdef USE_GBM
 void inference_lgbm(cache_t *cache) {
   LLSC_params_t *params = cache->cache_params;
+
   learner_t *learner = &((LLSC_params_t *) cache->cache_params)->learner;
 
   prepare_inference_data(cache);
 
-  //  for (int i = 0; i < params->n_segs; i++)
-  //    learner->pred[i] = INT32_MAX;
 
   int64_t out_len = 0;
   safe_call(LGBM_BoosterPredictForMat(learner->booster,
@@ -542,3 +529,16 @@ void inference_lgbm(cache_t *cache) {
   learner->n_inference += 1;
 }
 #endif
+
+
+
+void train(cache_t *cache) {
+  train_xgboost(cache);
+}
+
+void inference(cache_t *cache) {
+  inference_xgboost(cache);
+}
+
+
+

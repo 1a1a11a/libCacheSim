@@ -154,9 +154,6 @@ endif ()
 
 if (ENABLE_LLSC)
 find_package(xgboost REQUIRED)
-#if (NOT XGBOOST_INCLUDE_DIRS)
-#    message(FATAL_ERROR "XGBOOST_INCLUDE_DIR not found")
-#endif ()
 include_directories(${XGBOOST_INCLUDE_DIR})
 link_libraries(xgboost::xgboost)
 
