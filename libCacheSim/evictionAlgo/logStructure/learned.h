@@ -13,8 +13,7 @@ static inline void transform_seg_to_training(cache_t *cache, bucket_t *bucket,
   segment->eviction_vtime = params->curr_vtime;
   /* used to calculate age at eviction for training */
   segment->eviction_rtime = params->curr_rtime;
-
-
+  segment->penalty = 0;
 
 
 //  segment->penalty = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, segment, params->n_retain_from_seg, params->curr_rtime, params->curr_vtime);
@@ -62,7 +61,7 @@ static inline void seg_feature_shift(LLSC_params_t *params, segment_t *seg) {
 
   shift = (params->curr_rtime - seg->feature.last_min_window_ts) / 60;
   if (shift <= 0) return;
-  for (int i = 1; i < N_FEATURE_TIME_WINDOW; i++) {
+  for (int i = 1; i < N_FEATURE_TIME_WINDOW-1; i++) {
     seg->feature.n_active_item_per_min[i + 1] = seg->feature.n_active_item_per_min[i];
     seg->feature.n_hit_per_min[i + 1] = seg->feature.n_hit_per_min[i];
   }
@@ -71,7 +70,7 @@ static inline void seg_feature_shift(LLSC_params_t *params, segment_t *seg) {
 
   shift = (params->curr_rtime - seg->feature.last_ten_min_window_ts) / 600;
   if (shift <= 0) return;
-  for (int i = 1; i < N_FEATURE_TIME_WINDOW; i++) {
+  for (int i = 1; i < N_FEATURE_TIME_WINDOW-1; i++) {
     seg->feature.n_active_item_per_ten_min[i + 1] = seg->feature.n_active_item_per_ten_min[i];
     seg->feature.n_hit_per_ten_min[i + 1] = seg->feature.n_hit_per_ten_min[i];
   }
@@ -80,7 +79,7 @@ static inline void seg_feature_shift(LLSC_params_t *params, segment_t *seg) {
 
   shift = (params->curr_rtime - seg->feature.last_hour_window_ts) / 3600;
   if (shift <= 0) return;
-  for (int i = 1; i < N_FEATURE_TIME_WINDOW; i++) {
+  for (int i = 1; i < N_FEATURE_TIME_WINDOW-1; i++) {
     seg->feature.n_active_item_per_hour[i + 1] = seg->feature.n_active_item_per_hour[i];
     seg->feature.n_hit_per_hour[i + 1] = seg->feature.n_hit_per_hour[i];
   }

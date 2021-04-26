@@ -120,67 +120,12 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, double *
   }
 
   /* calculate y */
-  double penalty = curr_seg->penalty; 
-  int n_retained_obj = params->n_retain_from_seg;
-#if TRAINING_DROP_ZERO == 1
-  n_retained_obj = 0;
+  double penalty = curr_seg->penalty;
+  int n_retained_obj = 0;
+#if TRAINING_CONSIDER_RETAIN == 1
+  n_retained_obj = params->n_retain_from_seg;
 #endif
 
-  //      n_retained_obj = 0;
-
-  //      /* maybe the retained obj should consider the difficulty of finding them */
-  //      penalty = 0;
-  //      n_obj = (double) curr_seg->feature.n_active_item_per_window[j + 1];
-  //      /* CHANGE ######################### */
-  //      mean_rd = idx_to_age(cache, j+1) - idx_to_age(cache, j);
-  //      mean_sz = (double) curr_seg->feature.n_active_byte_per_window[j + 1] / n_obj;
-  //
-  //      if (n_obj >= n_retained_obj) {
-  //        /* CHANGE ######################### */
-  //        penalty += (n_obj - n_retained_obj) * 10000 / (mean_rd * mean_sz);
-  //        n_retained_obj = 0;
-  //      } else {
-  //        n_retained_obj -= n_obj;
-  //      }
-  //
-  //      for (int k = j + 2; k < N_FEATURE_TIME_WINDOW; k++) {
-  //        if (curr_seg->feature.n_active_item_accu[k] == 0) {
-  //          DEBUG_ASSERT(curr_seg->feature.n_active_byte_accu[k] == 0);
-  //          continue;
-  //        }
-  //        n_obj = (double) curr_seg->feature.n_active_item_accu[k];
-  //        /* CHANGE ######################### */
-  ////        mean_rd = seg_hist_bin_ts * k;
-  //        mean_rd = idx_to_age(cache, k) - idx_to_age(cache, j);
-  //        mean_sz = (double) curr_seg->feature.n_active_byte_accu[k]  / curr_seg->feature.n_active_item_accu[k];
-  //        if (n_obj >= n_retained_obj) {
-  //          penalty += (n_obj - n_retained_obj) * 10000 / (mean_rd * mean_sz);
-  //          n_retained_obj = 0;
-  //        } else {
-  //          n_retained_obj -= n_obj;
-  //        }
-  //      }
-  //
-  //      DEBUG_ASSERT(penalty < INT32_MAX);
-  //      if (penalty < 0.0001) {
-  //        n_zeros += 1;
-  //        continue;
-  //      }
-  //      /* CHANGE ######################### */
-  //      y[n_train_samples] = (float) penalty;
-
-  /* how many active bytes within one full_cache_write_time */
-  //      n_active_byte = curr_seg->feature.n_active_byte_per_window[j + 1];
-  //      int n_window = (int) rtime_write_full_cache / seg_hist_bin_ts + 1;
-  //      n_window = n_window > SEG_FEATURE_HISTORY_LEN ? SEG_FEATURE_HISTORY_LEN : n_window;
-  //
-  //
-  //      for (int k = j + 2; k < n_window; k++) {
-  //          n_active_byte += curr_seg->feature.n_active_byte_accu[k];
-  //      }
-  //
-  //      y[n_train_samples] = (float) n_active_byte / heap.seg_size;
-  //      printf("%lf\n", y[n_train_samples]);
 
 #if defined(TRAINING_TRUTH_ORACLE)
   penalty = cal_seg_penalty(cache,
@@ -191,7 +136,6 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, double *
 #endif
 
   DEBUG_ASSERT(penalty < INT32_MAX);
-  /* CHANGE ######################### */
   *y = (float) penalty;
 
   if (penalty < 0.0001) {
@@ -219,19 +163,9 @@ static void prepare_training_data(cache_t *cache) {
   segment_t *curr_seg = params->training_bucket.first_seg;
 
   bool is_sample_valid;
-  for (i = 0; i < params->n_training_segs; i++) {
+  for (i = 0; i < params->n_training_segs / 2; i++) {
     DEBUG_ASSERT(curr_seg != NULL);
-    //    for (int j = 0; j < N_FEATURE_TIME_WINDOW / 2; j++) {
-//    int curr_idx = seg_history_idx(curr_seg, params->curr_rtime, learner->feature_history_time_window);
-//    for (int j = curr_idx; j < curr_idx + 1; j++) {
-      /* if we have no or little future information,
-       * we cannot have a good estimate of y */
-      //      if (curr_seg->feature.n_active_item_per_window[j + 1] == 0 ||
-      //          curr_seg->feature.n_active_item_per_window[j + 2] == 0 ||
-      //          curr_seg->feature.n_active_item_per_window[j + 3] == 0 ||
-      //          curr_seg->feature.n_active_item_per_window[j + 4] == 0) {
-      //        break;
-      //      }
+
 
 //      if (n_validation_samples < N_MAX_VALIDATION && rand() % (params->n_training_segs/100) <= 0) {
       if (0) {
@@ -257,11 +191,9 @@ static void prepare_training_data(cache_t *cache) {
         if (is_sample_valid) {
           n_train_samples += 1;
         } else {
-#if TRAINING_DROP_ZERO == 2
           /* do not want too much zero */
           if (n_zeros != 0 && rand() % n_zeros == 0)
             n_train_samples += 1;
-#endif
           n_zeros += 1;
         }
       }
@@ -274,7 +206,7 @@ static void prepare_training_data(cache_t *cache) {
          (long) params->curr_rtime, (long) params->curr_vtime,
          (int) params->n_training_segs, n_train_samples, (int) n_validation_samples, (long) params->n_segs);
 
-  clean_training_segs(cache, params->n_training_segs);
+  clean_training_segs(cache, params->n_training_segs/2);
   printf("%ld zero\n", n_zeros);
   params->learner.n_byte_written = 0;
 }

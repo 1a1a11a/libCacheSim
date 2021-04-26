@@ -47,9 +47,9 @@ typedef struct cache_obj {
       int16_t idx_in_segment;
       //      int16_t ref_cnt;
 //      int8_t last_history_idx;
-      int8_t active : 1;
-      int8_t in_cache : 1;
-      int8_t merged : 1;
+      int16_t active : 2;
+      int16_t in_cache : 2;
+      int16_t n_merged : 12;  /* how many times it has been merged */
       //      int8_t last_history_idx_training;
     } LSC;
     int64_t freq;

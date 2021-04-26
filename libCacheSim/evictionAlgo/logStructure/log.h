@@ -62,6 +62,7 @@ static inline int64_t object_age_shifted(LLSC_params_t *params, cache_obj_t *obj
 static inline void object_hit(LLSC_params_t *params, cache_obj_t *obj, request_t *req) {
   obj->LSC.next_access_ts = req->next_access_ts;
   obj->LSC.LLSC_freq += 1;
+  obj->LSC.n_merged = 0;
 
   segment_t *seg = obj->LSC.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
@@ -159,15 +160,20 @@ __attribute__((unused)) static inline bool obj_in_hashtable(cache_t *cache,
   return find;
 }
 
-static inline void clean_one_seg(cache_t *cache, segment_t *seg) {
+static inline int clean_one_seg(cache_t *cache, segment_t *seg) {
   LLSC_params_t *params = cache->cache_params;
+  int n_cleaned = 0;
   DEBUG_ASSERT(seg->n_total_obj == params->segment_size);
-  //  for (int i = 0; i < seg->n_total_obj; i++) {
-  //    cache_obj = &seg->objs[i];
-  //    hashtable_delete(cache->hashtable, cache_obj);
-  //  }
+    for (int i = 0; i < seg->n_total_obj; i++) {
+      cache_obj_t *cache_obj = &seg->objs[i];
+      if (hashtable_try_delete(cache->hashtable, cache_obj)) {
+        n_cleaned += 1;
+      }
+    }
   my_free(sizeof(cache_obj_t) * params->n_total_obj, seg->objs);
   my_free(sizeof(segment_t), seg);
+
+  return n_cleaned;
 }
 
 static inline void remove_seg_from_bucket(LLSC_params_t *params, bucket_t *bucket,

@@ -144,6 +144,73 @@ __attribute__((unused)) void LLSC_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+#ifdef TRAINING_TRUTH_ONLINE
+__attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req,
+                                                  bool update_cache) {
+  LLSC_params_t *params = cache->cache_params;
+
+  cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
+
+  if (cache_obj == NULL) {
+    return cache_ck_miss;
+  }
+
+  if (!update_cache) {
+    assert(0);
+  }
+
+  if (cache_obj->LSC.in_cache) {
+    /* if there is an evicted entry, the evicted entry should be after this entry */
+    DEBUG_ASSERT(((segment_t *) (cache_obj->LSC.segment))->is_training_seg == false);
+
+    seg_hit(params, cache_obj);
+    object_hit(params, cache_obj, req);
+
+    cache_obj = cache_obj->hash_next;
+    while (cache_obj && cache_obj->obj_id != req->obj_id) {
+      cache_obj = cache_obj->hash_next;
+    }
+
+    while (cache_obj) {
+      /* history entry, it can have more than one history entry, when an object
+       * is retained multiple times then get a hit,
+       * we can delete the history upon the second merge, or
+       * we can remove it here */
+      DEBUG_ASSERT(cache_obj->LSC.in_cache == 0);
+      segment_t *seg = cache_obj->LSC.segment;
+      seg->penalty += 1.0e6 / (double) (params->curr_vtime - seg->eviction_vtime) / cache_obj->obj_size;
+      DEBUG_ASSERT(seg->is_training_seg == true);
+      hashtable_delete(cache->hashtable, cache_obj);
+
+      cache_obj = cache_obj->hash_next;
+      while (cache_obj && cache_obj->obj_id != req->obj_id) {
+        cache_obj = cache_obj->hash_next;
+      }
+    }
+
+    return cache_ck_hit;
+
+  } else {
+    /* no entry in cache */
+    while (cache_obj) {
+      DEBUG_ASSERT(cache_obj->LSC.in_cache == 0);
+      segment_t *seg = cache_obj->LSC.segment;
+      seg->penalty += 1.0e6 / (double) (params->curr_vtime - seg->eviction_vtime) / cache_obj->obj_size;
+      DEBUG_ASSERT(seg->is_training_seg == true);
+      hashtable_delete(cache->hashtable, cache_obj);
+
+      /* there cound be more than one history entry if the object is retained several times and evicted
+       * we can delete the history upon the second merge, or we can remove it here */
+      cache_obj = cache_obj->hash_next;
+      while (cache_obj && cache_obj->obj_id != req->obj_id) {
+        cache_obj = cache_obj->hash_next;
+      }
+    }
+
+    return cache_ck_miss;
+  }
+}
+#else
 __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req,
                                                   bool update_cache) {
   LLSC_params_t *params = cache->cache_params;
@@ -159,19 +226,15 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req
   }
 
   DEBUG_ASSERT(cache_obj->LSC.in_cache);
+  DEBUG_ASSERT(((segment_t *) (cache_obj->LSC.segment))->is_training_seg == false);
 
   seg_hit(params, cache_obj);
   object_hit(params, cache_obj, req);
 
-  if (params->type == LOGCACHE_LEARNED) {
-    /* update segment metadata */
-    //    seg_hit(cache, cache_obj);
-
-    DEBUG_ASSERT(((segment_t *) (cache_obj->LSC.segment))->is_training_seg == false);
-  }
 
   return cache_ck_hit;
 }
+#endif
 
 __attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache, request_t *req) {
   LLSC_params_t *params = cache->cache_params;
@@ -231,6 +294,15 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(cache->n_obj <= params->n_segs * params->segment_size);
 }
 
+static inline int count_hash_chain_len(cache_obj_t *cache_obj) {
+  int n = 0;
+  while (cache_obj) {
+    n += 1;
+    cache_obj = cache_obj->hash_next;
+  }
+  return n;
+}
+
 void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
   LLSC_params_t *params = cache->cache_params;
 
@@ -280,19 +352,19 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
         new_obj->LSC.LLSC_freq = (new_obj->LSC.LLSC_freq + 1) / 2;
         new_obj->LSC.idx_in_segment = new_seg->n_total_obj;
         new_obj->LSC.segment = new_seg;
-        //        new_obj->LSC.last_history_idx = -1;
+        new_obj->LSC.n_merged += 1;
         hashtable_insert_obj(cache->hashtable, new_obj);
 
         //        n_from_each[i] += 1;
         new_seg->n_total_obj += 1;
         new_seg->total_byte += cache_obj->obj_size;
-        cache_obj->LSC.merged = 1;
+//        cache_obj->LSC.n_merged = 1;
 
+//        hashtable_delete(cache->hashtable, cache_obj);
       } else {
         cache->n_obj -= 1;
         cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
       }
-      hashtable_delete(cache->hashtable, cache_obj);
       object_evict(cache, cache_obj);
       cache_obj->LSC.in_cache = 0;
     }
@@ -580,7 +652,7 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   if (params->type == LOGCACHE_LEARNED) {
     //        if (params->n_training_segs >= params->n_segs * 4) {
-    if (params->n_training_segs >= 500 * params->learner.n_train + 500) {
+    if (params->n_training_segs >= 1000 * params->learner.n_train + 1000) {
       //    if (params->learner.n_byte_written >= cache->cache_size * 2
       //      && params->n_training_segs >= 2000
       //        && params->learner.n_train == 0) {

@@ -43,9 +43,9 @@ static inline void add_to_bucket(hashtable_t *hashtable,
     hashtable->ptr_table[hv] = cache_obj;
     return;
   }
-  cache_obj_t *cur_ptr = hashtable->ptr_table[hv];
+  cache_obj_t *head_ptr = hashtable->ptr_table[hv];
 
-  cache_obj->hash_next = cur_ptr;
+  cache_obj->hash_next = head_ptr;
   hashtable->ptr_table[hv] = cache_obj;
 
 //  while (cur_ptr->hash_next != NULL)
@@ -147,8 +147,8 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
 
   if (chain_len > 8 && chain_len > max_chain_len) {
     max_chain_len = chain_len;
-    printf("hv %lu max chain len %d, hash table %ld/%ld %lf\n",
-           (unsigned long) hv, max_chain_len,
+    printf("hashtable remove %lu max chain len %d, hashtable load %ld/%ld %lf\n",
+           (unsigned long) cache_obj->obj_id, max_chain_len,
            (long) hashtable->n_cur_item,
            (long) hashsize(hashtable->hashpower),
            (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
@@ -161,6 +161,53 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
     free_cache_obj(cache_obj);
 }
 
+bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
+                                 cache_obj_t *cache_obj) {
+  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) & hashmask(hashtable->hashpower);
+  if (hashtable->ptr_table[hv] == cache_obj) {
+    hashtable->ptr_table[hv] = cache_obj->hash_next;
+    hashtable->n_cur_item -= 1;
+    if (!hashtable->external_obj)
+      free_cache_obj(cache_obj);
+    return true;
+  }
+
+  static int max_chain_len = 1;
+  int chain_len = 1;
+  cache_obj_t *cur_obj = hashtable->ptr_table[hv];
+  while (cur_obj != NULL && cur_obj->hash_next != cache_obj) {
+    cur_obj = cur_obj->hash_next;
+    chain_len += 1;
+  }
+
+  if (chain_len > 8 && chain_len > max_chain_len) {
+    max_chain_len = chain_len;
+    printf("hashtable remove %ld, hv %lu, max chain len %d, hashtable load %ld/%ld %lf\n",
+           (long) cache_obj->obj_id,
+           (unsigned long) hv, max_chain_len,
+           (long) hashtable->n_cur_item,
+           (long) hashsize(hashtable->hashpower),
+           (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
+    );
+
+
+//    cache_obj_t *tmp_obj = hashtable->ptr_table[hv];
+//    while (tmp_obj) {
+//      printf("%ld (%d), ", (long) tmp_obj->obj_id, tmp_obj->LSC.in_cache);
+//      tmp_obj = tmp_obj->hash_next;
+//    }
+//    printf("\n");
+  }
+
+  if (cur_obj != NULL) {
+    cur_obj->hash_next = cache_obj->hash_next;
+    hashtable->n_cur_item -= 1;
+    if (!hashtable->external_obj)
+      free_cache_obj(cache_obj);
+    return true;
+  }
+  return false;
+}
 
 void chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
                                  obj_id_t obj_id) {
@@ -174,22 +221,9 @@ void chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
     return;
   }
 
-  static int max_chain_len = 1;
-  int chain_len = 1;
   cache_obj = cache_obj->hash_next;
   while (cache_obj != NULL && cache_obj->obj_id != obj_id) {
     cache_obj = cache_obj->hash_next;
-    chain_len += 1;
-  }
-
-  if (chain_len > 5 && chain_len > max_chain_len) {
-    max_chain_len = chain_len;
-    printf("hv %lu max chain len %d, hash table %ld/%ld %lf\n",
-           (unsigned long) hv, max_chain_len,
-           (long) hashtable->n_cur_item,
-           (long) hashsize(hashtable->hashpower),
-           (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
-    );
   }
 
   if (cache_obj != NULL) {
