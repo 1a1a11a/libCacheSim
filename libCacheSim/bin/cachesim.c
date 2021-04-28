@@ -32,6 +32,10 @@ typedef struct {
     int n_merge;
     int rank_intvl;
     int age_shift;
+    int min_start_train_seg;
+    int max_start_train_seg;
+    int n_train_seg_growth;
+    int sample_every_n_seg_for_training;
   };
 } sim_arg_t;
 
@@ -40,7 +44,7 @@ unsigned int n_cores() {
 
   asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(eax), "2"(ecx) :);
 
-//  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
+  //  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
   return ebx;
 }
 
@@ -52,14 +56,18 @@ static void set_default_arg(sim_arg_t *args) {
   args->n_merge = 2;
   args->rank_intvl = 20;
   args->age_shift = 0;
+  args->min_start_train_seg = 1000;
+  args->max_start_train_seg = 10000;
+  args->n_train_seg_growth = 1000;
+  args->sample_every_n_seg_for_training = 1;
 
   args->bucket_type = NO_BUCKET;
   args->n_thread = 4;
 
 #ifdef __linux__
-//  printf("This system has %d processors configured and "
-//         "%d processors available.\n",
-//         get_nprocs_conf(), get_nprocs());
+  //  printf("This system has %d processors configured and "
+  //         "%d processors available.\n",
+  //         get_nprocs_conf(), get_nprocs());
   args->n_thread = get_nprocs();
 #endif
 
@@ -76,25 +84,72 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->n_cache_size = 7;
     args->seg_size = 50;
     args->age_shift = 3;
-  } else if (strstr(args->trace_path, "w01") != NULL || strstr(args->trace_path, "w03") != NULL) {
-    /* w01 */
-    uint64_t s[12] = {2000,   8000,   16000,  32000,  64000,  96000,
-                      128000, 160000, 192000, 244000, 276000, 308000};
+    args->bucket_type = SIZE_BUCKET;
+  } else if (strstr(args->trace_path, "w32") != NULL) {
+    uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
-    args->n_cache_size = 12;
-    args->seg_size = 200;
+    args->n_cache_size = 7;
+    printf("found you!\n");
+
+    /* 8GB 0.1736 1.42 MQPS */
+    args->seg_size = 50;
     args->age_shift = 3;
-  } else if (strstr(args->trace_path, "w02") != NULL || strstr(args->trace_path, "w02") != NULL) {
-    /* w01 */
-    uint64_t s[8] = {500, 1000, 2000, 3000, 4000, 5000, 6000, 8000};
+    args->bucket_type = SIZE_BUCKET;
+    args->min_start_train_seg = 4000;
+    args->max_start_train_seg = 10000;
+    args->n_train_seg_growth = 2000;
+    args->sample_every_n_seg_for_training = 2;
+    args->rank_intvl = 20;
+
+    /* 8GB 0.1865 3 MQPS */
+//    args->seg_size = 200;
+//    args->age_shift = 3;
+//    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 4000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 2000;
+//    args->sample_every_n_seg_for_training = 2;
+//    args->rank_intvl = 20;
+
+    /* 8GB 0.1964 4 MQPS */
+//    args->seg_size = 1000;
+//    args->age_shift = 3;
+//    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 4000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 1000;
+//    args->sample_every_n_seg_for_training = 1;
+//    args->rank_intvl = 20;
+  } else if (strstr(args->trace_path, "w03") != NULL) {
+    uint64_t s[8] = {4000, 8000, 12000, 16000, 24000, 32000, 48000, 64000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
     args->n_cache_size = 8;
     args->seg_size = 200;
     args->age_shift = 3;
+    args->bucket_type = SIZE_BUCKET;
+  } else if (strstr(args->trace_path, "w02") != NULL) {
+    /* w01 */
+    uint64_t s[8] = {500, 1000, 2000, 3000, 4000, 5000, 6000, 8000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 8;
+    args->seg_size = 50;
+    args->age_shift = 3;
+    args->bucket_type = SIZE_BUCKET;
+  } else if (strstr(args->trace_path, "cphy") != NULL) {
+    uint64_t s[9] = {500, 1000, 2000, 4000, 8000, 12000, 16000, 24000, 32000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 9;
+    args->seg_size = 50;
+    args->age_shift = 3;
+    args->bucket_type = SIZE_BUCKET;
   } else if (strstr(args->trace_path, "media_metadata") != NULL) {
     /* media_metadata */
     //    uint64_t cache_sizes[11] = {MiB * 100, MiB * 200, MiB * 300, MiB * 400, MiB * 500, MiB * 600, MiB * 800, MiB * 1000, MiB * 1200, MiB * 1600, MiB * 2000};
@@ -107,22 +162,26 @@ static void set_param_with_workload(sim_arg_t *args) {
   } else if (strstr(args->trace_path, "user_activity") != NULL) {
     /* user activity */
     uint64_t s[7] = {200, 500, 1000, 1500, 2000, 3000, 4000};
-//    uint64_t s[6] = {500, 1000, 1500, 2000, 3000, 4000};
+    //    uint64_t s[6] = {500, 1000, 1500, 2000, 3000, 4000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
     args->n_cache_size = 7;
     args->seg_size = 1000;
-  } else if (strstr(args->trace_path, "nyc") != NULL) {
+    args->bucket_type = SIZE_BUCKET;
+  } else if (strstr(args->trace_path, "nyc") != NULL
+             || strstr(args->trace_path, "wiki") != NULL) {
     /* nyc */
     uint64_t s[8] = {20, 50, 100, 200, 400, 500, 800, 1000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = GiB * s[i];
     }
     args->n_cache_size = 8;
-    args->seg_size = 200;
-    args->age_shift = 3;
-  } else if (strstr(args->trace_path, "sjc") != NULL || strstr(args->trace_path, "lax") != NULL) {
+    args->seg_size = 1000;
+    args->age_shift = 4;
+    args->bucket_type = SIZE_BUCKET;
+  } else if (strstr(args->trace_path, "sjc") != NULL
+             || strstr(args->trace_path, "lax") != NULL) {
     /* nyc */
     uint64_t s[14] = {50,   100,  200,  400,  500,  800,  1000,
                       1500, 2000, 3000, 4000, 5000, 6000, 8000};
@@ -131,15 +190,25 @@ static void set_param_with_workload(sim_arg_t *args) {
     }
     args->n_cache_size = 14;
   } else {
+    uint64_t s[8] = {10, 50, 100, 400, 1000, 2000, 4000, 8000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = 8;
+    args->seg_size = 4000;
+    args->n_thread = 4;
+    args->bucket_type = NO_BUCKET;
+    args->age_shift = 2;
+
     printf("cannot detect trace name\n");
-    abort();
+    //    abort();
   }
 }
 
 sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {
     printf("usage: %s trace_type (twr/vscsi/bin/oracleBin) "
-           "data_path cache_size_MiB alg obj_metadata debug LLSC\n",
+           "data_path cache_size_MiB alg obj_metadata debug LLSC seg_size\n",
            argv[0]);
     exit(1);
   }
@@ -174,16 +243,12 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc > 7) {
     if (strcasecmp(argv[7], "logOracleLog") == 0) {
       args.lsc_type = LOGCACHE_LOG_ORACLE;
-      printf("lsc LOGCACHE_LOG_ORACLE\n");
     } else if (strcasecmp(argv[7], "logOracleBoth") == 0) {
       args.lsc_type = LOGCACHE_BOTH_ORACLE;
-      printf("lsc LOGCACHE_BOTH_ORACLE\n");
     } else if (strcasecmp(argv[7], "logLearned") == 0) {
       args.lsc_type = LOGCACHE_LEARNED;
-      printf("lsc LOGCACHE_LEARNED\n");
     } else if (strcasecmp(argv[7], "segcache") == 0) {
       args.lsc_type = SEGCACHE;
-      printf("lsc SEGCACHE\n");
     } else {
       printf("support logOracleLog/logOracleBoth/logLearned/segcache\n");
       abort();
@@ -194,7 +259,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.seg_size = atoi(argv[8]);
   }
 
-  args.bucket_type = NO_BUCKET;
+  //  args.bucket_type = NO_BUCKET;
 
   return args;
 }
@@ -212,24 +277,35 @@ void run_cache(reader_t *reader, cache_t *cache) {
   uint64_t req_byte = 0, miss_byte = 0;
 
   read_one_req(reader, req);
-  if (strstr(reader->trace_path, "sjc") != NULL) {
-    for (int i = 0; i < 200000; i++)
-      read_one_req(reader, req);
-  }
+  //  if (strstr(reader->trace_path, "sjc") != NULL) {
+  //    for (int i = 0; i < 200000; i++)
+  //      read_one_req(reader, req);
+  //  }
   int32_t start_ts = req->real_time, last_report_ts = 0;
 
-  double start_time = gettime();
 
+  /* skip half of the requests */
+  for (int i = 0; i < reader->n_total_req / 2; i++) {
+    req->real_time -= start_ts;
+    cache->get(cache, req);
+    read_one_req(reader, req);
+  }
+  int64_t last_ts = req->real_time;
+
+  double start_time = gettime();
   while (req->valid) {
     req->real_time -= start_ts;
+    DEBUG_ASSERT(req->real_time >= last_ts);
+    last_ts = req->real_time;
+
     req_cnt++;
     req_byte += req->obj_size;
     if (cache->get(cache, req) != cache_ck_hit) {
-      miss_cnt++;
-      miss_byte += req->obj_size;
+        miss_cnt++;
+        miss_byte += req->obj_size;
     }
 
-    if (req->real_time - last_report_ts >= 3600 * 1 && req->real_time != 0) {
+    if (req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
       INFO("ts %lu: %lu requests, miss cnt %lu %.4lf\n", (unsigned long) req->real_time,
            (unsigned long) req_cnt, (unsigned long) miss_cnt, (double) miss_cnt / req_cnt);
 #ifdef TRACK_EVICTION_AGE
@@ -242,9 +318,10 @@ void run_cache(reader_t *reader, cache_t *cache) {
   }
 
   double runtime = gettime() - start_time;
-  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf throughput (MQPS): %.2lf\n",
+  printf("runtime %lf s\n", runtime);
+  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf throughput (MQPS): %.2lf, skipped %lu requests\n",
        (unsigned long) req->real_time, (unsigned long) req_cnt, (unsigned long) miss_cnt,
-       (double) miss_cnt / req_cnt, (double) req_cnt / 1000000.0 / runtime);
+       (double) miss_cnt / req_cnt, (double) req_cnt / 1000000.0 / runtime, reader->n_total_req/2);
 }
 
 int main(int argc, char **argv) {
@@ -272,26 +349,32 @@ int main(int argc, char **argv) {
                                       .type = args.lsc_type,
                                       .rank_intvl = args.rank_intvl,
                                       .hit_density_age_shift = args.age_shift,
-                                      .bucket_type = args.bucket_type};
+                                      .bucket_type = args.bucket_type,
+        .min_start_train_seg = args.min_start_train_seg,
+        .max_start_train_seg = args.max_start_train_seg,
+        .n_train_seg_growth = args.n_train_seg_growth,
+        .sample_every_n_seg_for_training = args.sample_every_n_seg_for_training
+    };
     cache = LLSC_init(cc_params, &init_params);
   } else {
     printf("do not support %s\n", args.alg);
     abort();
   }
 
-  printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
-         "seg size %d, n merge %d, rank_intvl %d, bucket type %d\n",
-         argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
-         args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type);
+  if (args.debug)  {
+    printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
+           "seg size %d, n merge %d, rank_intvl %d, bucket type %d\n",
+           argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
+           args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type);
 
-
-  if (args.debug) run_cache(reader, cache);
+    run_cache(reader, cache);
+  }
   else {
     sim_res_t *result = get_miss_ratio_curve(reader, cache, args.n_cache_size, args.cache_sizes,
                                              NULL, 0, args.n_thread);
 
     for (int i = 0; i < args.n_cache_size; i++) {
-      printf("cache size %" PRIu64 ": miss/n_req %" PRIu64 "/%" PRIu64 " (%.4lf)\n",
+      printf("cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf)\n",
              result[i].cache_size, result[i].miss_cnt, result[i].req_cnt,
              (double) result[i].miss_cnt / result[i].req_cnt);
     }

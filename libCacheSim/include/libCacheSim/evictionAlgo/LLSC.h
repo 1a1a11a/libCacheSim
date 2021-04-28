@@ -60,34 +60,34 @@ typedef enum {
   SEGCACHE_SEG_ORACLE = 2,
   SEGCACHE_BOTH_ORACLE = 3,
 
-  LOGCACHE_START_POS = 5,
+  LOGCACHE_START_POS = 4,
 
-  LOGCACHE_BOTH_ORACLE = 6,
-  LOGCACHE_LOG_ORACLE = 7,
-  LOGCACHE_ITEM_ORACLE = 8,
-  LOGCACHE_LEARNED = 20,
+  LOGCACHE_BOTH_ORACLE = 5,
+  LOGCACHE_LOG_ORACLE = 6,
+  LOGCACHE_ITEM_ORACLE = 7,
+  LOGCACHE_LEARNED = 8,
   //  LOGCACHE_RAMCLOUD,
   //  LOGCACHE_FIFO,
 } LSC_type_e;
 
 typedef enum obj_score_type {
-  OBJ_SCORE_FREQ,
-  OBJ_SCORE_FREQ_BYTE,
-  //  OBJ_SCORE_FREQ_BYTE_AGE,
+  OBJ_SCORE_FREQ = 0,
+  OBJ_SCORE_FREQ_BYTE = 1,
+  //  OBJ_SCORE_FREQ_BYTE_AGE = 2,
 
-  OBJ_SCORE_HIT_DENSITY,
-  //  OBJ_SCORE_HIT_DENSITY_FREQ,
+  OBJ_SCORE_HIT_DENSITY = 3,
 
-  OBJ_SCORE_ORACLE,
+  OBJ_SCORE_ORACLE = 4,
 } obj_score_e;
 
 typedef enum bucket_type {
   NO_BUCKET = 0,
 
-  SIZE_BUCKET = 10,
-  TTL_BUCKET,
-  CUSTOMER_BUCKET,
-  CONTENT_TYPE_BUCKET,
+  SIZE_BUCKET = 1,
+  TTL_BUCKET = 2,
+  CUSTOMER_BUCKET = 3,
+  BUCKET_ID_BUCKET = 4,
+  CONTENT_TYPE_BUCKET = 5,
 } bucket_type_e;
 
 typedef struct {
@@ -98,6 +98,7 @@ typedef struct {
   int min_start_train_seg;
   int max_start_train_seg;
   int n_train_seg_growth;
+  int sample_every_n_seg_for_training;
   int hit_density_age_shift;
   bucket_type_e bucket_type;
 } LLSC_init_params_t;

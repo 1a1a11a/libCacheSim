@@ -162,6 +162,7 @@ static void prepare_training_data(cache_t *cache) {
   train_y_t *valid_y = learner->valid_y;
 
   int n_zeros = 0;
+  int n_zero_use = 0;
 
   int i;
   int n_train_samples = 0, n_validation_samples = 0;
@@ -197,8 +198,10 @@ static void prepare_training_data(cache_t *cache) {
           n_train_samples += 1;
         } else {
           /* do not want too much zero */
-          if (n_zeros != 0 && rand() % n_zeros == 0)
+          if (n_zeros != 0 && rand() % n_zeros <= 0) {
             n_train_samples += 1;
+            n_zero_use += 1;
+          }
           n_zeros += 1;
         }
       }
@@ -207,10 +210,12 @@ static void prepare_training_data(cache_t *cache) {
   }
   learner->n_training_samples = n_train_samples;
   INFO("cache size %lu, curr time %ld (vtime %ld) training %d segs %d samples, "
-       "%d validation samples, %d zeros, "
+       "%d validation samples, sample every %d segs, rank intvl %d, %d (%d) zeros, "
          "%ld total segs \n", (unsigned long) cache->cache_size,
          (long) params->curr_rtime, (long) params->curr_vtime,
-         (int) params->n_training_segs, n_train_samples, (int) n_validation_samples, n_zeros, (long) params->n_segs);
+         (int) params->n_training_segs, n_train_samples, (int) n_validation_samples,
+       params->learner.sample_every_n_seg_for_training, params->rank_intvl,
+       n_zeros, n_zero_use, (long) params->n_segs);
 
   clean_training_segs(cache, params->n_training_segs/2);
   params->learner.n_byte_written = 0;
@@ -319,8 +324,6 @@ static void train_xgboost(cache_t *cache) {
   for (int i = 0; i < N_TRAIN_ITER; ++i) {
     // Update the model performance for each iteration
     safe_call(XGBoosterUpdateOneIter(learner->booster, i, learner->train_dm));
-
-
   }
 }
 #endif

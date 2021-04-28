@@ -48,8 +48,9 @@ option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `e
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_LLSC "enable learned log-structured cache" ON)
 option(SUPPORT_TTL "whether support TTL" OFF)
-#option(LOGLEVEL "log level VVERBOSE 4, VERBOSE 5, DEBUG 6, INFO 7, WARNING 8, SEVERE 9" 6)
-set(LOG_LEVEL "debug" CACHE STRING "log level: verbost, debug, info, warning, severe")
+#set(LOG_LEVEL "debug" CACHE STRING "log level: verbost, debug, info, warning, severe")
+# log level: verbost, debug, info, warning, severe
+set(LOG_LEVEL debug)
 
 
 if (SUPPORT_TTL)
@@ -87,7 +88,7 @@ elseif (LOG_LEVEL MATCHES severe)
 endif()
 
 
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOGLEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
 
 
 # set compiler flags
@@ -144,6 +145,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_libraries(${GLib2_LDFLAGS})
 endif()
 
+# libgoogle-perftools-dev
 find_package(Tcmalloc)
 if ("${Tcmalloc_LIBRARY}" STREQUAL "")
     message(STATUS "!!! cannot find tcmalloc")
@@ -275,6 +277,7 @@ endif ()
 
 
 
+unset(LOG_LEVEL CACHE)
 unset(SUPPORT_TTL CACHE)
 unset(USE_HUGEPAGE CACHE)
 unset(LOGLEVEL CACHE)

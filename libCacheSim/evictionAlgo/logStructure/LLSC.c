@@ -15,6 +15,29 @@ extern "C" {
 #include <assert.h>
 #include <stdbool.h>
 
+static char *LSC_type_names[] = {
+    "SEGCACHE", "SEGCACHE_ITEM_ORACLE", "SEGCACHE_SEG_ORACLE", "SEGCACHE_BOTH_ORACLE",
+    "LOGCACHE_START_POS",
+    "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE", "LOGCACHE_ITEM_ORACLE",
+    "LOGCACHE_LEARNED"
+};
+
+static char *obj_score_type_names[] = {
+    "OBJ_SCORE_FREQ", "OBJ_SCORE_FREQ_BYTE", "OBJ_SCORE_FREQ_BYTE_AGE",
+    "OBJ_SCORE_HIT_DENSITY",
+    "OBJ_SCORE_ORACLE"
+};
+
+static char *bucket_type_names[] = {
+    "NO_BUCKET",
+    "SIZE_BUCKET",
+    "TTL_BUCKET",
+    "CUSTOMER_BUCKET",
+    "BUCKET_ID_BUCKET",
+    "CONTENT_TYPE_BUCKET"
+};
+
+
 void init_seg_sel(LLSC_params_t *params) {
   params->seg_sel.score_array = my_malloc_n(double, params->n_merge * params->segment_size);
   params->seg_sel.score_array_size = params->n_merge * params->segment_size;
@@ -58,15 +81,17 @@ void init_learner(LLSC_params_t *params, LLSC_init_params_t *init_params) {
   params->learner.min_start_train_seg = init_params->min_start_train_seg;
   params->learner.max_start_train_seg = init_params->max_start_train_seg;
   params->learner.n_train_seg_growth  = init_params->n_train_seg_growth;
+  params->learner.sample_every_n_seg_for_training = init_params->sample_every_n_seg_for_training;
 
   if (params->learner.min_start_train_seg <= 0)
-    params->learner.min_start_train_seg = 1000;
+    params->learner.min_start_train_seg = 2000;
   if (params->learner.max_start_train_seg <= 0)
     params->learner.max_start_train_seg = 10000;
   if (params->learner.n_train_seg_growth <= 0)
-    params->learner.n_train_seg_growth = 1000;
+    params->learner.n_train_seg_growth = 2000;
   params->learner.next_n_train_seg = params->learner.min_start_train_seg;
-  params->learner.sample_every_n_seg_for_training = 1;
+  if (params->learner.sample_every_n_seg_for_training <= 0)
+    params->learner.sample_every_n_seg_for_training = 1;
 }
 
 static void init_buckets(LLSC_params_t *params, int age_shift) {
@@ -107,7 +132,7 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
     case SEGCACHE_SEG_ORACLE:
     case LOGCACHE_LOG_ORACLE:
     case LOGCACHE_LEARNED:
-//                        params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
+//      params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
       params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
       break;
     case SEGCACHE_ITEM_ORACLE:
@@ -130,6 +155,14 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
   cache->cache_params = params;
   cache->init_params = init_params;
 
+  INFO("log-structured cache, size %.2lf MB, type %d %s, object selection %d %s, bucket type %d %s"
+       "n_start_train_seg min %d max %d growth %d sample %d, rank intvl %d\n",
+       (double) cache->cache_size / 1048576, params->type, LSC_type_names[params->type],
+       params->obj_score_type, obj_score_type_names[params->obj_score_type],
+       params->bucket_type, bucket_type_names[params->bucket_type],
+       params->learner.min_start_train_seg, params->learner.max_start_train_seg,
+       params->learner.n_train_seg_growth, params->learner.sample_every_n_seg_for_training, params->rank_intvl
+       );
   return cache;
 }
 
@@ -539,6 +572,15 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
 
     params->seg_sel.last_rank_time = params->n_evictions;
     *ranked_seg_pos = 0;
+
+    if (params->rank_intvl * params->n_merge < params->n_segs / 20) {
+      /* a better way to balance the rank_intvl */
+      if (params->rank_intvl % 20 == 0) {
+        DEBUG("cache size %lu increase rank interval from %d to %d\n",
+             (unsigned long) cache->cache_size, params->rank_intvl, params->rank_intvl + 2);
+      }
+      params->rank_intvl += 1;
+    }
   }
 
   if (*ranked_seg_pos > params->n_segs / 4) {
@@ -683,10 +725,11 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     } else {
       /* do we sample too few */
       if (params->curr_vtime - params->learner.last_train_vtime > 100 * 1000000) {
-        INFO("reduce sample ratio from %d to %d\n",
+        DEBUG("reduce sample ratio from %d to %d\n",
              params->learner.sample_every_n_seg_for_training,
-             params->learner.sample_every_n_seg_for_training/2);
-        params->learner.sample_every_n_seg_for_training /= 2;
+             params->learner.sample_every_n_seg_for_training/2 + 1);
+        params->learner.sample_every_n_seg_for_training =
+            params->learner.sample_every_n_seg_for_training / 2 + 1;
       }
     }
   }
@@ -699,7 +742,7 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->last_hit_prob_compute_vtime = params->curr_vtime;
 
         static int last_print = 0;
-        if (params->curr_rtime - last_print >= 3600) {
+        if (params->curr_rtime - last_print >= 3600 * 24) {
           printf("cache size %lu ", (unsigned long) cache->cache_size);
           print_bucket(cache);
           last_print = params->curr_rtime;

@@ -127,7 +127,9 @@ static inline int find_bucket_idx(LLSC_params_t *params, request_t *req) {
     return MAX(0, (int) (log(req->obj_size / 10.0) / log_base));
 //    return MAX(0, (int) (log(req->obj_size / 120.0) / log_base));
   } else if (params->bucket_type == CUSTOMER_BUCKET) {
-    return req->customer_id;
+    return req->customer_id % 8;
+  } else if (params->bucket_type == BUCKET_ID_BUCKET) {
+    return req->bucket_id % 8;
   } else if (params->bucket_type == CONTENT_TYPE_BUCKET) {
     return req->content_type;
   } else {
@@ -363,7 +365,7 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type,
   static int n_err = 0;
   if (seg_sel->score_array[0] == seg_sel->score_array[pos - 1]) {
     if (n_err++ % 100000 == 20)
-      WARNING("cache size %lu: seg may have all objects with no reuse %d (ignore this if "
+      DEBUG("cache size %lu: seg may have all objects with no reuse %d (ignore this if "
               "it is end of trace running oracle)\n",
               (unsigned long) cache->cache_size, n_err);
     n_err += 1;
