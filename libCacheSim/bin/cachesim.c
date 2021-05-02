@@ -31,10 +31,12 @@ typedef struct {
     int seg_size;
     int n_merge;
     int rank_intvl;
+    int size_bucket_base;
     int age_shift;
     int min_start_train_seg;
     int max_start_train_seg;
     int n_train_seg_growth;
+    int re_train_intvl;
     int sample_every_n_seg_for_training;
   };
 } sim_arg_t;
@@ -60,8 +62,10 @@ static void set_default_arg(sim_arg_t *args) {
   args->max_start_train_seg = 10000;
   args->n_train_seg_growth = 1000;
   args->sample_every_n_seg_for_training = 1;
+  args->re_train_intvl = 86400;
 
   args->bucket_type = NO_BUCKET;
+  args->size_bucket_base = 1;
   args->n_thread = 4;
 
 #ifdef __linux__
@@ -82,8 +86,18 @@ static void set_param_with_workload(sim_arg_t *args) {
       args->cache_sizes[i] = MiB * s[i];
     }
     args->n_cache_size = 7;
-    args->seg_size = 50;
+    args->seg_size = 20;
+    //    args->seg_size = 50;
     args->age_shift = 3;
+    args->min_start_train_seg = 500;
+
+
+    args->min_start_train_seg = 10000;
+        args->max_start_train_seg = 10000;
+        args->n_train_seg_growth = 10000;
+        args->sample_every_n_seg_for_training = 2;
+        args->rank_intvl = 20;
+
     args->bucket_type = SIZE_BUCKET;
   } else if (strstr(args->trace_path, "w32") != NULL) {
     uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};
@@ -93,33 +107,81 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->n_cache_size = 7;
     printf("found you!\n");
 
-    /* 8GB 0.1736 1.42 MQPS */
-    args->seg_size = 50;
+    args->seg_size = 1000;
     args->age_shift = 3;
     args->bucket_type = SIZE_BUCKET;
     args->min_start_train_seg = 4000;
     args->max_start_train_seg = 10000;
-    args->n_train_seg_growth = 2000;
-    args->sample_every_n_seg_for_training = 2;
+    args->n_train_seg_growth = 6000;
+    args->sample_every_n_seg_for_training = 1;
     args->rank_intvl = 20;
+    args->size_bucket_base = 1;
+    args->re_train_intvl = 86400;
+
+
+    /* 8GB 0.1712 0.66 MQPS */
+//    args->seg_size = 20;
+//    args->age_shift = 3;
+//    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 4000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 6000;
+//    args->sample_every_n_seg_for_training = 2;
+//    args->rank_intvl = 20;
+
+
+    /* 8GB 0.1736 using 50% trace as warmup 1.42 MQPS */
+    /* new 8GB 0.1714 using 50% trace as warmup 1.5 MQPS */
+//    args->seg_size = 50;
+//    args->age_shift = 3;
+//    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 4000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 6000;
+//    args->sample_every_n_seg_for_training = 1;
+//    args->rank_intvl = 20;
+//    args->size_bucket_base = 1;
 
     /* 8GB 0.1865 3 MQPS */
+    /* 8GB 0.1709 3.4 MQPS sample_n_seg_train is 2 */
+    /* 8GB 0.1747 3.4 MQPS sample_n_seg_train is 1 */
 //    args->seg_size = 200;
 //    args->age_shift = 3;
 //    args->bucket_type = SIZE_BUCKET;
 //    args->min_start_train_seg = 4000;
 //    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 2000;
-//    args->sample_every_n_seg_for_training = 2;
+//    args->n_train_seg_growth = 6000;
+//    args->sample_every_n_seg_for_training = 1;
 //    args->rank_intvl = 20;
 
     /* 8GB 0.1964 4 MQPS */
+    /* 8GB 0.1990 5.6 MQPS */
 //    args->seg_size = 1000;
 //    args->age_shift = 3;
 //    args->bucket_type = SIZE_BUCKET;
 //    args->min_start_train_seg = 4000;
 //    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 1000;
+//    args->n_train_seg_growth = 6000;
+//    args->sample_every_n_seg_for_training = 1;
+//    args->rank_intvl = 20;
+
+    /* 8GB 0.2173 6.1 MQPS */
+//    args->seg_size = 1500;
+//    args->age_shift = 3;
+//    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 4000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 6000;
+//    args->sample_every_n_seg_for_training = 1;
+//    args->rank_intvl = 20;
+
+    /* 8GB 0.2456 6.3 MQPS */
+//    args->seg_size = 2000;
+//    args->age_shift = 3;
+//    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 4000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 6000;
 //    args->sample_every_n_seg_for_training = 1;
 //    args->rank_intvl = 20;
   } else if (strstr(args->trace_path, "w03") != NULL) {
@@ -131,17 +193,7 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->seg_size = 200;
     args->age_shift = 3;
     args->bucket_type = SIZE_BUCKET;
-  } else if (strstr(args->trace_path, "w02") != NULL) {
-    /* w01 */
-    uint64_t s[8] = {500, 1000, 2000, 3000, 4000, 5000, 6000, 8000};
-    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args->cache_sizes[i] = MiB * s[i];
-    }
-    args->n_cache_size = 8;
-    args->seg_size = 50;
-    args->age_shift = 3;
-    args->bucket_type = SIZE_BUCKET;
-  } else if (strstr(args->trace_path, "cphy") != NULL) {
+  } else if (strstr(args->trace_path, "w68") != NULL) {
     uint64_t s[9] = {500, 1000, 2000, 4000, 8000, 12000, 16000, 24000, 32000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
@@ -149,6 +201,26 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->n_cache_size = 9;
     args->seg_size = 50;
     args->age_shift = 3;
+    args->min_start_train_seg = 4000;
+    args->max_start_train_seg = 10000;
+    args->n_train_seg_growth = 6000;
+    args->sample_every_n_seg_for_training = 2;
+    args->rank_intvl = 20;
+    args->bucket_type = NO_BUCKET;
+  } else if (strstr(args->trace_path, "cphy") != NULL) {
+    uint64_t s[9] = {500, 1000, 2000, 4000, 8000, 12000, 16000, 24000, 32000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    printf("use cphy default parameter\n");
+    args->n_cache_size = 9;
+    args->seg_size = 50;
+    args->age_shift = 3;
+
+    // new
+    args->min_start_train_seg = 10000;
+    args->max_start_train_seg = 80000;
+    args->n_train_seg_growth = 10000;
     args->bucket_type = SIZE_BUCKET;
   } else if (strstr(args->trace_path, "media_metadata") != NULL) {
     /* media_metadata */
@@ -161,14 +233,30 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->seg_size = 1000;
   } else if (strstr(args->trace_path, "user_activity") != NULL) {
     /* user activity */
-    uint64_t s[7] = {200, 500, 1000, 1500, 2000, 3000, 4000};
-    //    uint64_t s[6] = {500, 1000, 1500, 2000, 3000, 4000};
+    uint64_t s[10] = {200, 500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000};
+//    uint64_t s[10] = {200, 500, 800, 1000, 1500, 2000, 3000, 4000, 5000, 6000};
+//    uint64_t s[7] = {7000, 8000, 9000, 10000, 11000, 12000, 16000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
-    args->n_cache_size = 7;
+    args->n_cache_size = 10;
+    args->size_bucket_base = 20;
     args->seg_size = 1000;
+    args->age_shift = 1;
+    args->min_start_train_seg = 500;
+    args->sample_every_n_seg_for_training = 1;
+    args->n_train_seg_growth = 2000;
+    args->re_train_intvl = 86400;
     args->bucket_type = SIZE_BUCKET;
+    args->rank_intvl = 20;
+
+
+    args->min_start_train_seg = 2500;
+    args->sample_every_n_seg_for_training = 1;
+    args->n_train_seg_growth = 5000;
+    args->max_start_train_seg = 2500;
+//    args->re_train_intvl = 86400;
+    args->re_train_intvl = 7200;
   } else if (strstr(args->trace_path, "nyc") != NULL
              || strstr(args->trace_path, "wiki") != NULL) {
     /* nyc */
@@ -177,9 +265,18 @@ static void set_param_with_workload(sim_arg_t *args) {
       args->cache_sizes[i] = GiB * s[i];
     }
     args->n_cache_size = 8;
-    args->seg_size = 1000;
+    args->seg_size = 200;
+//    args->seg_size = 10;
     args->age_shift = 4;
-    args->bucket_type = SIZE_BUCKET;
+    args->bucket_type = NO_BUCKET;
+    args->size_bucket_base = 1000;
+    args->min_start_train_seg = 10000;
+    args->max_start_train_seg = 80000;
+    args->n_train_seg_growth = 20000;
+    args->sample_every_n_seg_for_training = 4;
+    args->re_train_intvl = 86400;
+    args->rank_intvl = 20;
+
   } else if (strstr(args->trace_path, "sjc") != NULL
              || strstr(args->trace_path, "lax") != NULL) {
     /* nyc */
@@ -283,31 +380,30 @@ void run_cache(reader_t *reader, cache_t *cache) {
   //  }
   int32_t start_ts = req->real_time, last_report_ts = 0;
 
-
   /* skip half of the requests */
-  for (int i = 0; i < reader->n_total_req / 2; i++) {
-    req->real_time -= start_ts;
-    cache->get(cache, req);
-    read_one_req(reader, req);
-  }
-  int64_t last_ts = req->real_time;
+  int64_t n_skipped = 0;
+//  for (int i = 0; i < reader->n_total_req / 2; i++) {
+//    n_skipped += 1;
+//    req->real_time -= start_ts;
+//    cache->get(cache, req);
+//    read_one_req(reader, req);
+//  }
 
   double start_time = gettime();
   while (req->valid) {
     req->real_time -= start_ts;
-    DEBUG_ASSERT(req->real_time >= last_ts);
-    last_ts = req->real_time;
 
     req_cnt++;
     req_byte += req->obj_size;
     if (cache->get(cache, req) != cache_ck_hit) {
-        miss_cnt++;
-        miss_byte += req->obj_size;
+      miss_cnt++;
+      miss_byte += req->obj_size;
     }
 
     if (req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
-      INFO("ts %lu: %lu requests, miss cnt %lu %.4lf\n", (unsigned long) req->real_time,
-           (unsigned long) req_cnt, (unsigned long) miss_cnt, (double) miss_cnt / req_cnt);
+      INFO("ts %lu: %lu requests, miss cnt %lu %.4lf, byte miss ratio %.4lf\n",
+           (unsigned long) req->real_time, (unsigned long) req_cnt, (unsigned long) miss_cnt,
+           (double) miss_cnt / req_cnt, (double) miss_byte / req_byte);
 #ifdef TRACK_EVICTION_AGE
       print_eviction_age(cache);
 #endif
@@ -319,9 +415,11 @@ void run_cache(reader_t *reader, cache_t *cache) {
 
   double runtime = gettime() - start_time;
   printf("runtime %lf s\n", runtime);
-  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf throughput (MQPS): %.2lf, skipped %lu requests\n",
+  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf throughput (MQPS): %.2lf, skipped %ld "
+       "requests\n",
        (unsigned long) req->real_time, (unsigned long) req_cnt, (unsigned long) miss_cnt,
-       (double) miss_cnt / req_cnt, (double) req_cnt / 1000000.0 / runtime, reader->n_total_req/2);
+       (double) miss_cnt / req_cnt, (double) req_cnt / 1000000.0 / runtime,
+       n_skipped);
 }
 
 int main(int argc, char **argv) {
@@ -341,6 +439,7 @@ int main(int argc, char **argv) {
   cache_t *cache;
 
   if (strcasecmp(args.alg, "lru") == 0) cache = LRU_init(cc_params, NULL);
+  else if (strcasecmp(args.alg, "fifo") == 0) cache = FIFO_init(cc_params, NULL);
   else if (strcasecmp(args.alg, "optimal") == 0)
     cache = optimal_init(cc_params, NULL);
   else if (strcasecmp(args.alg, "LLSC") == 0) {
@@ -350,33 +449,36 @@ int main(int argc, char **argv) {
                                       .rank_intvl = args.rank_intvl,
                                       .hit_density_age_shift = args.age_shift,
                                       .bucket_type = args.bucket_type,
-        .min_start_train_seg = args.min_start_train_seg,
-        .max_start_train_seg = args.max_start_train_seg,
-        .n_train_seg_growth = args.n_train_seg_growth,
-        .sample_every_n_seg_for_training = args.sample_every_n_seg_for_training
-    };
+                                      .size_bucket_base = args.size_bucket_base,
+                                      .min_start_train_seg = args.min_start_train_seg,
+                                      .max_start_train_seg = args.max_start_train_seg,
+                                      .n_train_seg_growth = args.n_train_seg_growth,
+                                      .re_train_intvl = args.re_train_intvl,
+                                      .sample_every_n_seg_for_training =
+                                          args.sample_every_n_seg_for_training};
     cache = LLSC_init(cc_params, &init_params);
   } else {
     printf("do not support %s\n", args.alg);
     abort();
   }
 
-  if (args.debug)  {
+  if (args.debug) {
     printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
            "seg size %d, n merge %d, rank_intvl %d, bucket type %d\n",
            argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
            args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type);
 
     run_cache(reader, cache);
-  }
-  else {
+  } else {
     sim_res_t *result = get_miss_ratio_curve(reader, cache, args.n_cache_size, args.cache_sizes,
                                              NULL, 0, args.n_thread);
 
     for (int i = 0; i < args.n_cache_size; i++) {
-      printf("cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf)\n",
+      printf("cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf), "
+             "byte miss ratio %.4lf\n",
              result[i].cache_size, result[i].miss_cnt, result[i].req_cnt,
-             (double) result[i].miss_cnt / result[i].req_cnt);
+             (double) result[i].miss_cnt / result[i].req_cnt,
+             (double) result[i].miss_bytes / result[i].req_bytes);
     }
   }
 

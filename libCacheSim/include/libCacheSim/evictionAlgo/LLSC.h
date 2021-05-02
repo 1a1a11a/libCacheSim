@@ -23,11 +23,24 @@ extern "C" {
 #define N_TRAIN_ITER 8
 #define N_MAX_VALIDATION 1000
 
-#define N_FEATURE_TIME_WINDOW 10
+/* change to 10 will speed up */
+#define N_FEATURE_TIME_WINDOW 30
 
-#define TRAINING_CONSIDER_RETAIN    1
-//#define TRAINING_TRUTH_ORACLE
-#define TRAINING_TRUTH_ONLINE
+//#define TRAINING_CONSIDER_RETAIN    1
+
+
+#define TRAINING_TRUTH_ORACLE   1
+#define TRAINING_TRUTH_ONLINE   2
+#define TRAINING_TRUTH    TRAINING_TRUTH_ONLINE
+
+#define ADAPTIVE_RANK  1
+
+/*********** exp *************/
+//#define dump_ranked_seg_frac 0.05
+//#undef ADAPTIVE_RANK
+
+
+//#define DUMP_MODEL 1
 
 #define HIT_PROB_MAX_AGE 86400
 //#define HIT_PROB_MAX_AGE 172800
@@ -73,7 +86,7 @@ typedef enum {
 typedef enum obj_score_type {
   OBJ_SCORE_FREQ = 0,
   OBJ_SCORE_FREQ_BYTE = 1,
-  //  OBJ_SCORE_FREQ_BYTE_AGE = 2,
+  OBJ_SCORE_FREQ_AGE = 2,
 
   OBJ_SCORE_HIT_DENSITY = 3,
 
@@ -94,31 +107,27 @@ typedef struct {
   int segment_size;
   int n_merge;
   LSC_type_e type;
+  int size_bucket_base;
   int rank_intvl;
   int min_start_train_seg;
   int max_start_train_seg;
   int n_train_seg_growth;
   int sample_every_n_seg_for_training;
+  int re_train_intvl;
   int hit_density_age_shift;
   bucket_type_e bucket_type;
 } LLSC_init_params_t;
 
 
 typedef struct {
-  //  int16_t n_del_item[N_FEATURE_TIME_WINDOW];
-//  int16_t n_active_item_accu[N_FEATURE_TIME_WINDOW];
-//  int16_t n_active_item_per_window[N_FEATURE_TIME_WINDOW];
-//  int32_t n_active_byte_accu[N_FEATURE_TIME_WINDOW];
-//  int32_t n_active_byte_per_window[N_FEATURE_TIME_WINDOW];
-
   int32_t n_hit_per_min[N_FEATURE_TIME_WINDOW];
-  int16_t n_active_item_per_min[N_FEATURE_TIME_WINDOW];
+//  int16_t n_active_item_per_min[N_FEATURE_TIME_WINDOW];
 
   int32_t n_hit_per_ten_min[N_FEATURE_TIME_WINDOW];
-  int16_t n_active_item_per_ten_min[N_FEATURE_TIME_WINDOW];
+//  int16_t n_active_item_per_ten_min[N_FEATURE_TIME_WINDOW];
 
   int32_t n_hit_per_hour[N_FEATURE_TIME_WINDOW];
-  int16_t n_active_item_per_hour[N_FEATURE_TIME_WINDOW];
+//  int16_t n_active_item_per_hour[N_FEATURE_TIME_WINDOW];
 
   int64_t last_min_window_ts;
   int64_t last_ten_min_window_ts;
@@ -133,7 +142,7 @@ typedef struct learner {
   int sample_every_n_seg_for_training;
   int64_t last_train_vtime;
   int64_t last_train_rtime;
-
+  int re_train_intvl;
 
   //  int32_t feature_history_time_window;
 //  bool start_feature_recording;
@@ -173,10 +182,14 @@ typedef struct learner {
   feature_t *inference_data;
   pred_t *pred;
 
+
+  int n_evictions_last_hour;
+  int64_t last_hour_ts;
+
   //  int64_t last_inference_time;
 
-  int32_t full_cache_write_time; /* real time */
-  int32_t last_cache_full_time;  /* real time */
+//  int32_t full_cache_write_time; /* real time */
+//  int32_t last_cache_full_time;  /* real time */
   int64_t n_byte_written;        /* cleared after each full cache write */
 
 } learner_t;
@@ -193,6 +206,7 @@ typedef struct segment {
   struct segment *next_seg;
   int32_t seg_id;
   double penalty;
+  int n_skipped_penalty;
 
   int32_t n_total_hit;
   int32_t n_total_active;
@@ -264,6 +278,7 @@ typedef struct {
   int64_t n_allocated_segs;
   int64_t n_evictions;
 
+  int64_t start_rtime;
   int64_t curr_rtime;
   int64_t curr_vtime;
 
@@ -278,6 +293,7 @@ typedef struct {
   int n_req_since_last_eviction;
   int n_miss_since_last_eviction;
 
+  int size_bucket_base;
   LSC_type_e type;
   bucket_type_e bucket_type;
   obj_score_e obj_score_type;

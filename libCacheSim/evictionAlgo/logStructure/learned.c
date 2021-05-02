@@ -86,7 +86,7 @@ static inline void create_data_holder(cache_t *cache) {
   }
 }
 
-static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, feature_t *x, train_y_t *y) {
+static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool training_data, feature_t *x, train_y_t *y) {
   LLSC_params_t *params = cache->cache_params;
 
   learner_t *learner = &params->learner;
@@ -97,7 +97,10 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, feature_
   x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
   x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
   /* CHANGE ######################### */
-  x[3] = (feature_t) curr_seg->eviction_rtime - curr_seg->create_rtime;
+  if (training_data)
+    x[3] = (feature_t) curr_seg->eviction_rtime - curr_seg->create_rtime;
+  else
+    x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
   x[4] = (feature_t) curr_seg->req_rate;
   x[5] = (feature_t) curr_seg->write_rate;
   x[6] = (feature_t) curr_seg->total_byte / curr_seg->n_total_obj;
@@ -105,15 +108,15 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, feature_
   x[8] = curr_seg->cold_miss_ratio;
   x[9] = curr_seg->n_total_hit;
   x[10] = curr_seg->n_total_active;
-//  x[11] = 0;
+  x[11] = curr_seg->n_merge;
 
   for (int k = 0; k < N_FEATURE_TIME_WINDOW; k++) {
-    x[11 + k * 6 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
-    x[11 + k * 6 + 1] = (feature_t) curr_seg->feature.n_active_item_per_min[k];
-    x[11 + k * 6 + 2] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
-    x[11 + k * 6 + 3] = (feature_t) curr_seg->feature.n_active_item_per_ten_min[k];
-    x[11 + k * 6 + 4] = (feature_t) curr_seg->feature.n_hit_per_hour[k];
-    x[11 + k * 6 + 5] = (feature_t) curr_seg->feature.n_active_item_per_hour[k];
+    x[12 + k * 6 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
+//    x[12 + k * 6 + 1] = (feature_t) curr_seg->feature.n_active_item_per_min[k];
+    x[12 + k * 6 + 1] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
+//    x[12 + k * 6 + 3] = (feature_t) curr_seg->feature.n_active_item_per_ten_min[k];
+    x[12 + k * 6 + 2] = (feature_t) curr_seg->feature.n_hit_per_hour[k];
+//    x[12 + k * 6 + 5] = (feature_t) curr_seg->feature.n_active_item_per_hour[k];
   }
 
 //  printf("%f %f %f %f %f %f %f %f %f %f %f - %f %f %f %f %f %f\n",
@@ -126,13 +129,14 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, feature_
 
   /* calculate y */
   double penalty = curr_seg->penalty;
+
   int n_retained_obj = 0;
 #if TRAINING_CONSIDER_RETAIN == 1
   n_retained_obj = params->n_retain_from_seg;
 #endif
 
 
-#if defined(TRAINING_TRUTH_ORACLE)
+#if TRAINING_TRUTH == TRAINING_TRUTH_ORACLE
   penalty = cal_seg_penalty(cache,
                             OBJ_SCORE_ORACLE,
                             curr_seg, n_retained_obj,
@@ -143,7 +147,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, feature_
   DEBUG_ASSERT(penalty < INT32_MAX);
   *y = (train_y_t) penalty;
 
-  if (penalty < 0.0001) {
+  if (penalty < 0.000001) {
     return false;
   }
   return true;
@@ -176,8 +180,7 @@ static void prepare_training_data(cache_t *cache) {
 //      if (n_validation_samples < N_MAX_VALIDATION && rand() % (params->n_training_segs/100) <= 0) {
       if (0) {
         is_sample_valid = prepare_one_row(
-            cache, curr_seg,
-//            N_FEATURE_TIME_WINDOW-1, -1,
+            cache, curr_seg, true,
             &valid_x[learner->n_feature * n_validation_samples],
             &valid_y[n_validation_samples]);
 
@@ -189,8 +192,7 @@ static void prepare_training_data(cache_t *cache) {
         }
       } else {
         is_sample_valid = prepare_one_row(
-            cache, curr_seg,
-//            N_FEATURE_TIME_WINDOW-1, -1,
+            cache, curr_seg, true,
             &train_x[learner->n_feature * n_train_samples],
             &train_y[n_train_samples]);
 
@@ -198,7 +200,7 @@ static void prepare_training_data(cache_t *cache) {
           n_train_samples += 1;
         } else {
           /* do not want too much zero */
-          if (n_zeros != 0 && rand() % n_zeros <= 0) {
+          if (n_zeros != 0 && rand() % n_zeros <= 1) {
             n_train_samples += 1;
             n_zero_use += 1;
           }
@@ -229,6 +231,9 @@ static void prepare_training_data(cache_t *cache) {
   safe_call(XGDMatrixCreateFromMat(learner->training_x,
                                    learner->n_training_samples,
                                    learner->n_feature, -1, &learner->train_dm));
+//  safe_call(XGDMatrixCreateFromMat_omp(learner->training_x,
+//                                   learner->n_training_samples,
+//                                   learner->n_feature, -1, &learner->train_dm, 1));
 
   safe_call(XGDMatrixCreateFromMat(learner->valid_x,
                                    learner->n_valid_samples,
@@ -281,8 +286,17 @@ void prepare_inference_data(cache_t *cache) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
-      prepare_one_row(cache, curr_seg,
+      prepare_one_row(cache, curr_seg, false,
                       &x[learner->n_feature * n_seg], NULL);
+//      printf("%f %f %f %f %f %f %f %f\n", x[learner->n_feature * n_seg],
+//             x[learner->n_feature * n_seg+1],
+//             x[learner->n_feature * n_seg+2],
+//             x[learner->n_feature * n_seg+3],
+//             x[learner->n_feature * n_seg+4],
+//             x[learner->n_feature * n_seg+5],
+//             x[learner->n_feature * n_seg+6],
+//             x[learner->n_feature * n_seg+7]
+//             );
       curr_seg = curr_seg->next_seg;
       n_seg++;
     }
@@ -318,6 +332,7 @@ static void train_xgboost(cache_t *cache) {
   safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
   safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
 //  safe_call(XGBoosterSetParam(learner->booster, "eta", "0.1"));
+//  safe_call(XGBoosterSetParam(learner->booster, "gamma", "1"));
   safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
 
 
@@ -325,6 +340,12 @@ static void train_xgboost(cache_t *cache) {
     // Update the model performance for each iteration
     safe_call(XGBoosterUpdateOneIter(learner->booster, i, learner->train_dm));
   }
+
+
+#ifdef DUMP_MODEL
+  if (learner->n_train == DUMP_MODEL - 1)
+  safe_call(XGBoosterSaveModel(learner->booster, "model.bin"));
+#endif
 }
 #endif
 

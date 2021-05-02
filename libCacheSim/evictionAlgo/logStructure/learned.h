@@ -16,31 +16,6 @@ static inline void transform_seg_to_training(cache_t *cache, bucket_t *bucket,
   segment->penalty = 0;
 
 
-//  segment->penalty = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, segment, params->n_retain_from_seg, params->curr_rtime, params->curr_vtime);
-//  segment->penalty = 0;
-//  double score_array[1000] = {0};
-
-//  for (int j = 0; j < segment->n_total_obj; j++) {
-//    if (segment->objs[j].LSC.next_access_ts < 0)
-//      continue;
-//    score_array[j] = 1000000.0 / segment->objs[j].obj_size / (segment->objs[j].LSC.next_access_ts - params->curr_vtime);
-//  }
-
-//  qsort(score_array, segment->n_total_obj, sizeof(double), cmp_double);
-
-//  for (int i = 0; i < segment->n_total_obj - params->n_retain_from_seg; i++) {
-//    segment->penalty += score_array[i];
-//  }
-//  n+=1;
-//  if (segment->penalty < 1e-5) {
-//    n_zero += 1;
-//    if (n_zero % 20 == 0)
-//      printf("%d/%d\n", n_zero, n);
-//  }
-
-
-
-
   /* remove from the bucket */
   remove_seg_from_bucket(params, bucket, segment);
 
@@ -59,31 +34,57 @@ static inline void seg_feature_shift(LLSC_params_t *params, segment_t *seg) {
 
   int64_t shift;
 
+
   shift = (params->curr_rtime - seg->feature.last_min_window_ts) / 60;
   if (shift <= 0) return;
-  for (int i = 1; i < N_FEATURE_TIME_WINDOW-1; i++) {
-    seg->feature.n_active_item_per_min[i + 1] = seg->feature.n_active_item_per_min[i];
+  for (int i = N_FEATURE_TIME_WINDOW-1; i >= 0; i--) {
+//    seg->feature.n_active_item_per_min[i + 1] = seg->feature.n_active_item_per_min[i];
     seg->feature.n_hit_per_min[i + 1] = seg->feature.n_hit_per_min[i];
   }
-  seg->feature.n_active_item_per_min[0] = 0;
+  seg->feature.n_hit_per_min[0] = 0;
+//  seg->feature.n_active_item_per_min[0] = 0;
   seg->feature.last_min_window_ts = params->curr_rtime;
+//  printf("%d: %d %d %d %d %d %d %d %d %d %d - %d %d %d %d %d %d %d %d %d %d - %d %d %d %d %d %d %d %d %d %d\n",
+//         seg->seg_id,
+//         seg->feature.n_hit_per_min[0], seg->feature.n_hit_per_min[1],
+//         seg->feature.n_hit_per_min[2], seg->feature.n_hit_per_min[3],
+//         seg->feature.n_hit_per_min[4], seg->feature.n_hit_per_min[5],
+//         seg->feature.n_hit_per_min[6], seg->feature.n_hit_per_min[7],
+//         seg->feature.n_hit_per_min[8], seg->feature.n_hit_per_min[9],
+//
+//         seg->feature.n_hit_per_ten_min[0], seg->feature.n_hit_per_ten_min[1],
+//         seg->feature.n_hit_per_ten_min[2], seg->feature.n_hit_per_ten_min[3],
+//         seg->feature.n_hit_per_ten_min[4], seg->feature.n_hit_per_ten_min[5],
+//         seg->feature.n_hit_per_ten_min[6], seg->feature.n_hit_per_ten_min[7],
+//         seg->feature.n_hit_per_ten_min[8], seg->feature.n_hit_per_ten_min[9],
+//
+//         seg->feature.n_hit_per_hour[0], seg->feature.n_hit_per_hour[1],
+//         seg->feature.n_hit_per_hour[2], seg->feature.n_hit_per_hour[3],
+//         seg->feature.n_hit_per_hour[4], seg->feature.n_hit_per_hour[5],
+//         seg->feature.n_hit_per_hour[6], seg->feature.n_hit_per_hour[7],
+//         seg->feature.n_hit_per_hour[8], seg->feature.n_hit_per_hour[9]
+//  );
+//  printf("\n");
 
   shift = (params->curr_rtime - seg->feature.last_ten_min_window_ts) / 600;
   if (shift <= 0) return;
-  for (int i = 1; i < N_FEATURE_TIME_WINDOW-1; i++) {
-    seg->feature.n_active_item_per_ten_min[i + 1] = seg->feature.n_active_item_per_ten_min[i];
+  for (int i = N_FEATURE_TIME_WINDOW-1; i >= 0; i--) {
+//    seg->feature.n_active_item_per_ten_min[i + 1] = seg->feature.n_active_item_per_ten_min[i];
     seg->feature.n_hit_per_ten_min[i + 1] = seg->feature.n_hit_per_ten_min[i];
   }
-  seg->feature.n_active_item_per_ten_min[0] = 0;
+  seg->feature.n_hit_per_ten_min[0] = 0;
+//  seg->feature.n_active_item_per_ten_min[0] = 0;
   seg->feature.last_ten_min_window_ts = params->curr_rtime;
+
 
   shift = (params->curr_rtime - seg->feature.last_hour_window_ts) / 3600;
   if (shift <= 0) return;
-  for (int i = 1; i < N_FEATURE_TIME_WINDOW-1; i++) {
-    seg->feature.n_active_item_per_hour[i + 1] = seg->feature.n_active_item_per_hour[i];
+  for (int i = N_FEATURE_TIME_WINDOW-1; i >= 0; i--) {
+//    seg->feature.n_active_item_per_hour[i + 1] = seg->feature.n_active_item_per_hour[i];
     seg->feature.n_hit_per_hour[i + 1] = seg->feature.n_hit_per_hour[i];
   }
-  seg->feature.n_active_item_per_hour[0] = 0;
+  seg->feature.n_hit_per_hour[0] = 0;
+//  seg->feature.n_active_item_per_hour[0] = 0;
   seg->feature.last_hour_window_ts = params->curr_rtime;
 }
 
@@ -105,9 +106,16 @@ static inline void seg_hit(LLSC_params_t *params, cache_obj_t *cache_obj) {
     segment->n_total_active += 1;
     cache_obj->LSC.active = 1;
 
-    segment->feature.n_active_item_per_min[0] += 1;
-    segment->feature.n_active_item_per_ten_min[0] += 1;
-    segment->feature.n_active_item_per_hour[0] += 1;
+//    segment->feature.n_active_item_per_min[0] += 1;
+//    segment->feature.n_active_item_per_ten_min[0] += 1;
+//    segment->feature.n_active_item_per_hour[0] += 1;
+
+//    if ((params->curr_rtime - cache_obj->LSC.last_access_rtime) / 60 > 0)
+//      segment->feature.n_active_item_per_min[0] += 1;
+//    if ((params->curr_rtime - cache_obj->LSC.last_access_rtime) / 600 > 0)
+//      segment->feature.n_active_item_per_ten_min[0] += 1;
+//    if ((params->curr_rtime - cache_obj->LSC.last_access_rtime) / 3600 > 0)
+//      segment->feature.n_active_item_per_hour[0] += 1;
   }
 
   //  segment->feature.n_hit[curr_idx] += 1;

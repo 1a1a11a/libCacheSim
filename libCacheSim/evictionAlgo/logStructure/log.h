@@ -124,7 +124,11 @@ static inline int find_bucket_idx(LLSC_params_t *params, request_t *req) {
   if (params->bucket_type == NO_BUCKET) {
     return 0;
   } else if (params->bucket_type == SIZE_BUCKET) {
-    return MAX(0, (int) (log(req->obj_size / 10.0) / log_base));
+    if (params->size_bucket_base == 1)
+        return sizeof(unsigned int)*8 - 1 - __builtin_clz(req->obj_size);
+    else
+      return MAX(0, (int) (log((double) req->obj_size / params->size_bucket_base) / log_base));
+//    return MAX(0, (int) (log(req->obj_size / 10.0) / log_base));
 //    return MAX(0, (int) (log(req->obj_size / 120.0) / log_base));
   } else if (params->bucket_type == CUSTOMER_BUCKET) {
     return req->customer_id % 8;
@@ -300,6 +304,9 @@ static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_t
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
     return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1000 / cache_obj->obj_size;
 
+  } else if (score_type == OBJ_SCORE_FREQ_AGE) {
+    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1000 / (curr_rtime - cache_obj->LSC.last_access_rtime);
+
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
     int64_t obj_age = object_age(params, cache_obj);
     obj_age = obj_age >= HIT_PROB_MAX_AGE ? HIT_PROB_MAX_AGE - 1 : obj_age;
@@ -424,18 +431,23 @@ static inline void print_bucket(cache_t *cache) {
   printf("\n");
 }
 
-//static inline void print_seg(cache_t *cache, segment_t *seg) {
-//  LLSC_params_t *params = cache->cache_params;
-//
-//  printf("seg mean obj size %.2lf bytes, "
-//         "req/write rate %.4lf/%.4lf, "
-//         "age %d, mean freq %.2lf, total hit %d, total active %d, "
-//         "%d merges, ",
-//         (double) seg->total_byte / seg->n_total_obj, seg->req_rate, seg->write_rate,
-//         (int) params->curr_rtime - seg->create_rtime,
-//         (double) seg->n_total_hit / seg->n_total_active, seg->n_total_hit, seg->n_total_active,
-//         seg->n_merge);
-//
+static inline void print_seg(cache_t *cache, segment_t *seg) {
+  LLSC_params_t *params = cache->cache_params;
+
+  printf("seg %6d, age %6d, mean obj size %8.2lf bytes, "
+         "req/write rate %.4lf/%.4lf, "
+         "mean freq %4.2lf, total hit %6d, total active %4d, "
+         "%2d merges, penalty %.4lf, "
+         "n_hit/active window %d %d %d %d\n", seg->seg_id, (int) params->curr_rtime - seg->create_rtime,
+         (double) seg->total_byte / seg->n_total_obj, seg->req_rate, seg->write_rate,
+         (double) seg->n_total_hit / seg->n_total_obj, seg->n_total_hit, seg->n_total_active,
+         seg->n_merge, seg->penalty,
+         seg->feature.n_hit_per_min[0],
+         seg->feature.n_hit_per_min[1],
+         seg->feature.n_hit_per_min[2],
+         seg->feature.n_hit_per_min[3]
+         );
+
 //  printf("n hit %d %d %d %d %d %d %d %d %d %d %d %d, "
 //         "n_active_per_window "
 //         "%d %d %d %d %d %d %d %d %d %d %d %d, "
@@ -458,4 +470,4 @@ static inline void print_bucket(cache_t *cache) {
 //         seg->feature.n_active_item_accu[6], seg->feature.n_active_item_accu[7],
 //         seg->feature.n_active_item_accu[8], seg->feature.n_active_item_accu[9],
 //         seg->feature.n_active_item_accu[10], seg->feature.n_active_item_accu[11]);
-//}
+}
