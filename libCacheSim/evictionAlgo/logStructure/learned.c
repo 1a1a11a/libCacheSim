@@ -144,6 +144,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
                             curr_seg->eviction_vtime);
 #endif
 
+  penalty = penalty * 10000000 / curr_seg->total_byte;
   DEBUG_ASSERT(penalty < INT32_MAX);
   *y = (train_y_t) penalty;
 
@@ -373,10 +374,13 @@ void inference_xgboost(cache_t *cache) {
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
-      curr_seg->penalty = learner->pred[n_seg++];
+//      curr_seg->penalty = learner->pred[n_seg++];
+//      curr_seg->penalty = pred[n_seg++] * 1000000 / curr_seg->total_byte;
+      curr_seg->penalty = pred[n_seg++];
       curr_seg = curr_seg->next_seg;
     }
   }
+//  abort();
 }
 #endif
 

@@ -16,7 +16,8 @@ extern "C" {
 #include <stdbool.h>
 
 static char *LSC_type_names[] = {
-    "SEGCACHE", "SEGCACHE_ITEM_ORACLE", "SEGCACHE_SEG_ORACLE", "SEGCACHE_BOTH_ORACLE",
+    "SEGCACHE", "SEGCACHE_ITEM_ORACLE", "SEGCACHE_SEG_ORACLE",
+    "SEGCACHE_BOTH_ORACLE",
     "LOGCACHE_START_POS",
     "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE", "LOGCACHE_ITEM_ORACLE",
     "LOGCACHE_LEARNED"
@@ -37,9 +38,9 @@ static char *bucket_type_names[] = {
     "CONTENT_TYPE_BUCKET"
 };
 
-
 void init_seg_sel(LLSC_params_t *params) {
-  params->seg_sel.score_array = my_malloc_n(double, params->n_merge * params->segment_size);
+  params->seg_sel.score_array =
+      my_malloc_n(double, params->n_merge * params->segment_size);
   params->seg_sel.score_array_size = params->n_merge * params->segment_size;
 
   //  params->seg_sel.obj_penalty = my_malloc_n(double, params->segment_size);
@@ -79,9 +80,10 @@ void init_learner(LLSC_params_t *params, LLSC_init_params_t *init_params) {
 
   params->learner.min_start_train_seg = init_params->min_start_train_seg;
   params->learner.max_start_train_seg = init_params->max_start_train_seg;
-  params->learner.n_train_seg_growth  = init_params->n_train_seg_growth;
-  params->learner.sample_every_n_seg_for_training = init_params->sample_every_n_seg_for_training;
-  params->learner.re_train_intvl  = init_params->re_train_intvl;
+  params->learner.n_train_seg_growth = init_params->n_train_seg_growth;
+  params->learner.sample_every_n_seg_for_training =
+      init_params->sample_every_n_seg_for_training;
+  params->learner.re_train_intvl = init_params->re_train_intvl;
 
   if (params->learner.min_start_train_seg <= 0)
     params->learner.min_start_train_seg = 2000;
@@ -134,19 +136,20 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
   }
 
   switch (params->type) {
-    case SEGCACHE:
-    case SEGCACHE_SEG_ORACLE:
-    case LOGCACHE_LOG_ORACLE:
-    case LOGCACHE_LEARNED:
+  case SEGCACHE:
+  case SEGCACHE_SEG_ORACLE:
+  case LOGCACHE_LOG_ORACLE:
+  case LOGCACHE_LEARNED:
 //      params->obj_score_type = OBJ_SCORE_FREQ_AGE;
 //      params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
-      params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
-      break;
-    case SEGCACHE_ITEM_ORACLE:
-    case SEGCACHE_BOTH_ORACLE:
-    case LOGCACHE_ITEM_ORACLE:
-    case LOGCACHE_BOTH_ORACLE: params->obj_score_type = OBJ_SCORE_ORACLE; break;
-    default: abort();
+    params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
+    break;
+  case SEGCACHE_ITEM_ORACLE:
+  case SEGCACHE_BOTH_ORACLE:
+  case LOGCACHE_ITEM_ORACLE:
+  case LOGCACHE_BOTH_ORACLE: params->obj_score_type = OBJ_SCORE_ORACLE;
+    break;
+  default: abort();
   };
 
   init_seg_sel(params);
@@ -162,16 +165,26 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
   cache->cache_params = params;
   cache->init_params = init_params;
 
-  INFO("log-structured cache, size %.2lf MB, type %d %s, object selection %d %s, bucket type %d %s, "
-       "size_bucket_base %d, n_start_train_seg min %d max %d growth %d sample %d, rank intvl %d, "
-       "training truth %d re-train %d\n",
-       (double) cache->cache_size / 1048576, params->type, LSC_type_names[params->type],
-       params->obj_score_type, obj_score_type_names[params->obj_score_type],
-       params->bucket_type, bucket_type_names[params->bucket_type], params->size_bucket_base,
-       params->learner.min_start_train_seg, params->learner.max_start_train_seg,
-       params->learner.n_train_seg_growth, params->learner.sample_every_n_seg_for_training, params->rank_intvl,
-       TRAINING_TRUTH, params->learner.re_train_intvl
-       );
+  INFO(
+      "log-structured cache, size %.2lf MB, type %d %s, object selection %d %s, bucket type %d %s, "
+      "size_bucket_base %d, n_start_train_seg min %d max %d growth %d sample %d, rank intvl %d, "
+      "training truth %d re-train %d\n",
+      (double) cache->cache_size / 1048576,
+      params->type,
+      LSC_type_names[params->type],
+      params->obj_score_type,
+      obj_score_type_names[params->obj_score_type],
+      params->bucket_type,
+      bucket_type_names[params->bucket_type],
+      params->size_bucket_base,
+      params->learner.min_start_train_seg,
+      params->learner.max_start_train_seg,
+      params->learner.n_train_seg_growth,
+      params->learner.sample_every_n_seg_for_training,
+      params->rank_intvl,
+      TRAINING_TRUTH,
+      params->learner.re_train_intvl
+  );
   return cache;
 }
 
@@ -204,7 +217,8 @@ __attribute__((unused)) void LLSC_free(cache_t *cache) {
 }
 
 #if defined(TRAINING_TRUTH) && TRAINING_TRUTH == TRAINING_TRUTH_ONLINE
-__attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req,
+__attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
+                                                  request_t *req,
                                                   bool update_cache) {
   LLSC_params_t *params = cache->cache_params;
 
@@ -220,7 +234,8 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req
 
   if (cache_obj->LSC.in_cache) {
     /* if there is an evicted entry, the evicted entry should be after this entry */
-    DEBUG_ASSERT(((segment_t *) (cache_obj->LSC.segment))->is_training_seg == false);
+    DEBUG_ASSERT(
+        ((segment_t *) (cache_obj->LSC.segment))->is_training_seg == false);
 
     seg_hit(params, cache_obj);
     object_hit(params, cache_obj, req);
@@ -240,10 +255,14 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req
 #if TRAINING_CONSIDER_RETAIN == 1
       if (seg->n_skipped_penalty ++ > params->n_retain_from_seg)
 #endif
-      if (params->obj_score_type == OBJ_SCORE_FREQ || params->obj_score_type == OBJ_SCORE_FREQ_AGE)
-        seg->penalty += 1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime);
+      if (params->obj_score_type == OBJ_SCORE_FREQ
+          || params->obj_score_type == OBJ_SCORE_FREQ_AGE)
+        seg->penalty +=
+            1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime);
       else
-        seg->penalty += 1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime) / cache_obj->obj_size;
+        seg->penalty +=
+            1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime)
+                / cache_obj->obj_size;
       DEBUG_ASSERT(seg->is_training_seg == true);
       hashtable_delete(cache->hashtable, cache_obj);
 
@@ -263,10 +282,14 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req
 #if TRAINING_CONSIDER_RETAIN == 1
       if (seg->n_skipped_penalty ++ > params->n_retain_from_seg)
 #endif
-      if (params->obj_score_type == OBJ_SCORE_FREQ || params->obj_score_type == OBJ_SCORE_FREQ_AGE)
-        seg->penalty += 1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime);
+      if (params->obj_score_type == OBJ_SCORE_FREQ
+          || params->obj_score_type == OBJ_SCORE_FREQ_AGE)
+        seg->penalty +=
+            1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime);
       else
-        seg->penalty += 1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime) / cache_obj->obj_size;
+        seg->penalty +=
+            1.0e8 / (double) (params->curr_vtime - seg->eviction_vtime)
+                / cache_obj->obj_size;
       DEBUG_ASSERT(seg->is_training_seg == true);
       hashtable_delete(cache->hashtable, cache_obj);
 
@@ -312,7 +335,8 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req
 }
 #endif
 
-__attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache, request_t *req) {
+__attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache,
+                                                request_t *req) {
   LLSC_params_t *params = cache->cache_params;
   if (params->start_rtime == 0)
     params->start_rtime = req->real_time;
@@ -322,7 +346,8 @@ __attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache, request_t *req) 
   cache_ck_res_e ret = cache_get(cache, req);
 
   params->n_req_since_last_eviction += 1;
-  if (ret == cache_ck_miss) params->n_miss_since_last_eviction += 1;
+  if (ret == cache_ck_miss)
+    params->n_miss_since_last_eviction += 1;
 
   return ret;
 }
@@ -341,7 +366,8 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
       segment->write_rate = (double) segment->n_total_obj / rtime;
       segment->write_ratio = (double) segment->n_total_obj / n_req;
       segment->cold_miss_ratio =
-          (double) params->n_miss_since_last_eviction / params->n_req_since_last_eviction;
+          (double) params->n_miss_since_last_eviction
+              / params->n_req_since_last_eviction;
       //      printf("set req rate write rate %lf %lf\n", segment->req_rate, segment->write_rate);
     }
 
@@ -368,7 +394,8 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
 
   params->learner.n_byte_written += cache_obj->obj_size;
 
-  DEBUG_ASSERT(cache->n_obj > (params->n_segs - params->n_used_buckets) * params->segment_size);
+  DEBUG_ASSERT(cache->n_obj > (params->n_segs - params->n_used_buckets)
+      * params->segment_size);
   DEBUG_ASSERT(cache->n_obj <= params->n_segs * params->segment_size);
 }
 
@@ -412,18 +439,26 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 
   cache_obj_t *cache_obj;
   double cutoff =
-      find_cutoff(cache, params->obj_score_type, segs, params->n_merge, params->segment_size);
+      find_cutoff(cache,
+                  params->obj_score_type,
+                  segs,
+                  params->n_merge,
+                  params->segment_size);
 
   int n_reuse = 0;
   for (int i = 0; i < params->n_merge; i++) {
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_total_obj; j++) {
       cache_obj = &segs[i]->objs[j];
-      if (cache_obj->LSC.next_access_ts > 0) n_reuse += 1;
+      if (cache_obj->LSC.next_access_ts > 0)
+        n_reuse += 1;
       if (new_seg->n_total_obj < params->segment_size
-          && cal_object_score(params, params->obj_score_type, cache_obj, params->curr_rtime,
+          && cal_object_score(params,
+                              params->obj_score_type,
+                              cache_obj,
+                              params->curr_rtime,
                               params->curr_vtime)
-                 >= cutoff) {
+              >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_total_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));
         new_obj->LSC.LLSC_freq = (new_obj->LSC.LLSC_freq + 1) / 2;
@@ -455,7 +490,10 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 
   /* not sure if using oracle info */
   if (new_seg->n_total_obj < params->segment_size) {
-    WARNING("cutoff %lf %d objects copied %d reuse\n", cutoff, new_seg->n_total_obj, n_reuse);
+    WARNING("cutoff %lf %d objects copied %d reuse\n",
+            cutoff,
+            new_seg->n_total_obj,
+            n_reuse);
     abort();
   }
 }
@@ -463,13 +501,15 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 static bucket_t *select_segs_segcache(cache_t *cache, segment_t **segs) {
   LLSC_params_t *params = cache->cache_params;
 
-  if (params->curr_evict_bucket_idx == -1) params->curr_evict_bucket_idx = 0;
+  if (params->curr_evict_bucket_idx == -1)
+    params->curr_evict_bucket_idx = 0;
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
   segment_t *seg_to_evict = params->next_evict_segment;
 
   int n_checked_seg = 0;
   while (!is_seg_evictable_fifo(seg_to_evict, params->n_merge)) {
-    params->curr_evict_bucket_idx = (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
+    params->curr_evict_bucket_idx =
+        (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
     bucket = &params->buckets[params->curr_evict_bucket_idx];
     seg_to_evict = bucket->first_seg;
     n_checked_seg += 1;
@@ -499,7 +539,8 @@ static inline int cmp_seg_log(const void *p1, const void *p2) {
 
   DEBUG_ASSERT(seg1->magic == MAGIC);
 
-  if (seg1->penalty < seg2->penalty) return -1;
+  if (seg1->penalty < seg2->penalty)
+    return -1;
   else
     return 1;
 }
@@ -519,7 +560,7 @@ static void rank_segs(cache_t *cache) {
     curr_seg = params->buckets[i].first_seg;
     while (curr_seg) {
       if (!is_seg_evictable_fifo(curr_seg, 1) ||
-          params->buckets[curr_seg->bucket_idx].n_seg < params->n_segs+1) {
+          params->buckets[curr_seg->bucket_idx].n_seg < params->n_merge + 1) {
         curr_seg->penalty = INT32_MAX;
       } else {
         if (params->type == LOGCACHE_LEARNED) {
@@ -530,14 +571,21 @@ static void rank_segs(cache_t *cache) {
 //            curr_seg->penalty = cal_seg_penalty(cache, params->obj_score_type, curr_seg,
 //                                                params->n_retain_from_seg, params->curr_rtime,
 //                                                params->curr_vtime);
-          curr_seg->penalty = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg,
-                                              params->n_retain_from_seg, params->curr_rtime,
+          curr_seg->penalty = cal_seg_penalty(cache,
+                                              OBJ_SCORE_ORACLE,
+                                              curr_seg,
+                                              params->n_retain_from_seg,
+                                              params->curr_rtime,
                                               params->curr_vtime);
         } else if (params->type == SEGCACHE_BOTH_ORACLE
             || params->type == LOGCACHE_BOTH_ORACLE) {
           curr_seg->penalty =
-              cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_from_seg,
-                              params->curr_rtime, params->curr_vtime);
+              cal_seg_penalty(cache,
+                              OBJ_SCORE_ORACLE,
+                              curr_seg,
+                              params->n_retain_from_seg,
+                              params->curr_rtime,
+                              params->curr_vtime);
         } else {
           abort();
         }
@@ -548,10 +596,11 @@ static void rank_segs(cache_t *cache) {
   }
   DEBUG_ASSERT(n_seg == params->n_segs);
 
-
-  if (params->type == SEGCACHE_SEG_ORACLE || params->type == SEGCACHE_BOTH_ORACLE) {
+  if (params->type == SEGCACHE_SEG_ORACLE
+      || params->type == SEGCACHE_BOTH_ORACLE) {
     qsort(ranked_segs, n_seg, sizeof(segment_t *), cmp_seg_seg);
-  } else if (params->type == LOGCACHE_LOG_ORACLE || params->type == LOGCACHE_BOTH_ORACLE
+  } else if (params->type == LOGCACHE_LOG_ORACLE
+      || params->type == LOGCACHE_BOTH_ORACLE
       || params->type == LOGCACHE_LEARNED) {
     qsort(ranked_segs, n_seg, sizeof(segment_t *), cmp_seg_log);
   } else {
@@ -583,11 +632,26 @@ static void rank_segs(cache_t *cache) {
     /* a better way to balance the rank_intvl */
     if (params->rank_intvl % 20 == 0) {
       DEBUG("cache size %lu increase rank interval from %d to %d\n",
-            (unsigned long) cache->cache_size, params->rank_intvl, params->rank_intvl + 2);
+            (unsigned long) cache->cache_size,
+            params->rank_intvl,
+            params->rank_intvl + 2);
     }
     params->rank_intvl += 1;
   }
 #endif
+}
+
+static inline int find_next_qualified_seg(segment_t **ranked_segs,
+                                          int start_pos, int end_pos,
+                                          int bucket_idx) {
+  for (int i = start_pos; i < end_pos; i++) {
+    if (ranked_segs[i] != NULL) {
+      if (bucket_idx == -1 || ranked_segs[i]->bucket_idx == bucket_idx) {
+        return i;
+      }
+    }
+  }
+  return -1;
 }
 
 static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
@@ -604,7 +668,8 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
   /* setup function */
   if (params->seg_sel.ranked_seg_size < params->n_segs) {
     if (params->seg_sel.ranked_segs != NULL) {
-      my_free(sizeof(segment_t *) * ranked_seg_size, params->seg_sel.ranked_segs);
+      my_free(sizeof(segment_t *) * ranked_seg_size,
+              params->seg_sel.ranked_segs);
     }
     params->seg_sel.ranked_segs = my_malloc_n(segment_t *, params->n_segs * 2);
     params->seg_sel.ranked_seg_size = params->n_segs * 2;
@@ -614,7 +679,8 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
   int32_t *ranked_seg_pos = &(params->seg_sel.ranked_seg_pos);
 
-  if (params->n_evictions - params->seg_sel.last_rank_time > params->rank_intvl || array_resized) {
+  if (params->n_evictions - params->seg_sel.last_rank_time > params->rank_intvl
+      || array_resized) {
     rank_segs(cache);
   }
 
@@ -622,9 +688,12 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
     params->rank_intvl /= 2 + 1;
     WARNING("cache size %lu: rank frequency too low, "
             "curr pos in ranked seg %d, total %ld segs, reduce rank_intvl to %d\n",
-            (unsigned long) cache->cache_size, *ranked_seg_pos, (long) params->n_segs, params->rank_intvl);
+            (unsigned long) cache->cache_size,
+            *ranked_seg_pos,
+            (long) params->n_segs,
+            params->rank_intvl);
     print_bucket(cache);
-    //    params->seg_sel.last_rank_time = 0;
+    params->seg_sel.last_rank_time = 0;
     return select_segs(cache, segs);
   }
 
@@ -696,68 +765,49 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
 
 
   if (params->type > LOGCACHE_START_POS) {
-    int i = 0, j = 0;
-    segs[i++] = ranked_segs[*ranked_seg_pos];
-    ranked_segs[(*ranked_seg_pos)++] = NULL;
-    while (ranked_segs[*ranked_seg_pos] == NULL) {
-      (*ranked_seg_pos)++;
-    }
+    int i, j;
+    start:
+    i = 0;
+    j = find_next_qualified_seg(ranked_segs, *ranked_seg_pos, params->n_segs / 2 + 1, -1);
+    segs[i++] = ranked_segs[j];
+    ranked_segs[j] = NULL;
+    *ranked_seg_pos = j + 1;
 
-    while (i < params->n_merge && *ranked_seg_pos + j < params->n_segs / 2) {
-      int bucket_idx = segs[0]->bucket_idx;
-      while (ranked_segs[*ranked_seg_pos + j] == NULL
-          || ranked_segs[*ranked_seg_pos + j]->bucket_idx != bucket_idx) {
-        j += 1;
-        if (*ranked_seg_pos + j >= params->n_segs / 2) {
-          break;
+    if (j < params->n_segs / 2) {
+      while (i < params->n_merge) {
+        j = find_next_qualified_seg(ranked_segs,
+                                    j + 1,
+                                    params->n_segs / 2 + 1,
+                                    segs[0]->bucket_idx);
+        if (j == -1) {
+          goto start;
         }
+        segs[i++] = ranked_segs[j];
+        ranked_segs[j] = NULL;
       }
+      DEBUG_ASSERT(i == params->n_merge);
+      DEBUG_ASSERT(segs[0]->bucket_idx == segs[1]->bucket_idx);
+      DEBUG_ASSERT(segs[0]->next_seg != NULL);
+      DEBUG_ASSERT(segs[1]->next_seg != NULL);
 
-      if (ranked_segs[*ranked_seg_pos + j] != NULL
-          && ranked_segs[*ranked_seg_pos + j]->bucket_idx == bucket_idx) {
-        /* we find two segments from the same bucket */
-        segs[i++] = ranked_segs[*ranked_seg_pos + j];
-        ranked_segs[*ranked_seg_pos + j] = NULL;
-        (*ranked_seg_pos)++;
-        while (ranked_segs[*ranked_seg_pos] == NULL) {
-          (*ranked_seg_pos)++;
-        }
-        break;
-      }
-
-      /* we have reached the end of the seg */
-      DEBUG_ASSERT(*ranked_seg_pos + j >= params->n_segs / 2);
-
-      /* we cannot find one more segment with the same bucket id,
-         * we should try the next segment from ranked_seg_pos */
-      i = 0;
-      j = 0;
-      segs[i++] = ranked_segs[*ranked_seg_pos];
-      ranked_segs[(*ranked_seg_pos)++] = NULL;
-      while (ranked_segs[*ranked_seg_pos] == NULL) {
-        (*ranked_seg_pos)++;
-      }
-    }
-    if (*ranked_seg_pos >= params->n_segs / 2) {
-      printf("cache size %ld, %d segs, hard find a matching seg, "
-             "please increase cache size or reduce segment size\n",
-             (long) cache->cache_size, params->n_segs);
+      return &params->buckets[segs[0]->bucket_idx];
+    } else {
+      printf(
+          "cache size %ld, %d segs, current ranked pos %d, hard find a matching seg, "
+          "please increase cache size or reduce segment size\n",
+          (long) cache->cache_size,
+          params->n_segs,
+          *ranked_seg_pos);
       print_bucket(cache);
-      printf("current ranked pos %d\n", *ranked_seg_pos);
       for (int m = 0; m < params->n_segs; m++) {
-        if (ranked_segs[m]) printf("seg %d penalty %lf\n", m, ranked_segs[m]->penalty);
+        if (ranked_segs[m])
+          printf("seg %d penalty %lf\n", m, ranked_segs[m]->penalty);
         else
           printf("seg %d NULL\n", m);
       }
-      //      abort();
       params->seg_sel.last_rank_time = 0;
-      //      return select_segs(cache, segs);
+      return select_segs(cache, segs);
     }
-
-    DEBUG_ASSERT(i == params->n_merge);
-
-    return &params->buckets[segs[0]->bucket_idx];
-
   } else {
     /* it is non-trivial to determine the bucket of segcache */
     segs[0] = params->seg_sel.ranked_segs[params->seg_sel.ranked_seg_pos];
@@ -792,18 +842,22 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
       train(cache);
 
       learner->next_n_train_seg = learner->min_start_train_seg +
-        learner->n_train_seg_growth * learner->n_train;
+          learner->n_train_seg_growth * learner->n_train;
       if (learner->next_n_train_seg > learner->max_start_train_seg)
         learner->next_n_train_seg = learner->max_start_train_seg;
     } else if (learner->n_train > 0) {
-      int64_t time_since_last_train = params->curr_rtime - learner->last_train_rtime;
-      int64_t time_till_next_train = learner->re_train_intvl - time_since_last_train;
-      learner->sample_every_n_seg_for_training = MAX((int) (time_till_next_train /
-          (learner->next_n_train_seg - params->n_training_segs)), 1);
+      int64_t time_since_last_train =
+          params->curr_rtime - learner->last_train_rtime;
+      int64_t time_till_next_train =
+          learner->re_train_intvl - time_since_last_train;
+      learner->sample_every_n_seg_for_training =
+          MAX((int) (time_till_next_train /
+              (learner->next_n_train_seg - params->n_training_segs)), 1);
     }
   }
 
-  if (params->curr_vtime - params->last_hit_prob_compute_vtime > HIT_PROB_COMPUTE_INTVL) {
+  if (params->curr_vtime - params->last_hit_prob_compute_vtime
+      > HIT_PROB_COMPUTE_INTVL) {
     /* update hit prob for all buckets */
     for (int i = 0; i < MAX_N_BUCKET; i++) {
       update_hit_prob_cdf(&params->buckets[i]);

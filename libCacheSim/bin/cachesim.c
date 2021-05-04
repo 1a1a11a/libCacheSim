@@ -108,6 +108,7 @@ static void set_param_with_workload(sim_arg_t *args) {
     printf("found you!\n");
 
     args->seg_size = 1000;
+    args->n_merge = 2;
     args->age_shift = 3;
     args->bucket_type = SIZE_BUCKET;
     args->min_start_train_seg = 4000;
@@ -234,11 +235,10 @@ static void set_param_with_workload(sim_arg_t *args) {
   } else if (strstr(args->trace_path, "user_activity") != NULL) {
     /* user activity */
     uint64_t s[10] = {200, 500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000};
-//    uint64_t s[10] = {200, 500, 800, 1000, 1500, 2000, 3000, 4000, 5000, 6000};
-//    uint64_t s[7] = {7000, 8000, 9000, 10000, 11000, 12000, 16000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
+    /* 2GB 8 MQPS 0.0509 on full trace */
     args->n_cache_size = 10;
     args->size_bucket_base = 20;
     args->seg_size = 1000;
