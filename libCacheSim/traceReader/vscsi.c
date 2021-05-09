@@ -55,7 +55,7 @@ static inline size_t record_size(vscsi_version_e version) {
     return (-1);
 }
 
-int vscsi_setup(reader_t *const reader) {
+int vscsiReader_setup(reader_t *const reader) {
   vscsi_params_t *params = g_new0(vscsi_params_t, 1);
   reader->reader_params = params;
 

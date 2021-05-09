@@ -2,8 +2,7 @@
 // Created by Juncheng Yang on 4/18/20.
 //
 
-#ifndef libCacheSim_TWRBINREADER_H
-#define libCacheSim_TWRBINREADER_H
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,23 +14,11 @@ extern "C" {
 static inline int twrReader_setup(reader_t *reader) {
   reader->trace_type = TWR_TRACE;
   reader->item_size = 20;
-
-  if (reader->file_size % reader->item_size != 0) {
-    WARNING("trace file size %lu is not multiple of record size %lu\n",
-            (unsigned long) reader->file_size,
-            (unsigned long) reader->item_size);
-  }
-
   reader->n_total_req = (guint64) reader->file_size / (reader->item_size);
   return 0;
 }
 
 static inline int twr_read_one_req(reader_t *reader, request_t *req) {
-  if (reader->mmap_offset >= reader->file_size) {
-    req->valid = FALSE;
-    return 1;
-  }
-
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
   req->obj_id_int = *(uint64_t *) (record + 4);
@@ -62,4 +49,3 @@ static inline int twr_read_one_req(reader_t *reader, request_t *req) {
 }
 #endif
 
-#endif //libCacheSim_TWRBINREADER_H

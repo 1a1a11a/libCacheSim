@@ -65,7 +65,7 @@ typedef struct {
   vscsi_version_e vscsi_ver;
 } vscsi_params_t;
 
-int vscsi_setup(reader_t *const reader);
+int vscsiReader_setup(reader_t *const reader);
 
 int vscsi_read_one_req(reader_t *reader, request_t *c);
 

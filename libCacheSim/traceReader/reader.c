@@ -7,10 +7,15 @@
 //
 
 #include "customizedReader/oracleTwrBin.h"
-#include "customizedReader/oracleBin.h"
+#include "customizedReader/oracleGeneralBin.h"
 #include "customizedReader/oracleAkamaiBin.h"
+#include "customizedReader/oracleWikiBin.h"
 
 #include "customizedReader/twrBin.h"
+#include "customizedReader/akamaiBin.h"
+#include "customizedReader/standardBin.h"
+#include "customizedReader/wikiBin.h"
+
 #include "include/binary.h"
 #include "include/csv.h"
 #include "include/libcsv.h"
@@ -43,6 +48,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->n_uniq_obj = 0;
   reader->n_read_req = 0;
   reader->mmap_offset = 0;
+  reader->item_size = 0;
   reader->cloned = false;
   if (reader_init_param != NULL) {
     memcpy(&reader->init_params, reader_init_param,
@@ -84,43 +90,48 @@ reader_t *setup_reader(const char *const trace_path,
   }
 
   switch (trace_type) {
-    case CSV_TRACE:
-      csv_setup_reader(reader);
-      break;
-    case PLAIN_TXT_TRACE:
-      reader->file = fopen(trace_path, "r");
-      if (reader->file == 0) {
-        ERROR("open trace file %s failed: %s\n", trace_path, strerror(errno));
-        exit(1);
-      }
-      break;
-    case VSCSI_TRACE:
-      vscsi_setup(reader);
-      break;
-    case BIN_TRACE:
-      binaryReader_setup(reader);
-      break;
-    case TWR_TRACE:
-      twrReader_setup(reader);
-      break;
-    case ORACLE_TWR_TRACE:
-      oracleTwr_setup(reader);
-      break;
-    case ORACLE_AKAMAI_TRACE:
-      oracleAkamai_setup(reader);
-      break;
-    case ORACLE_BIN_TRACE:
-      oracleBin_setup(reader);
-      break;
-    default:
-      ERROR("cannot recognize trace type: %c\n", reader->trace_type);
+  case CSV_TRACE:csv_setup_reader(reader);
+    break;
+  case PLAIN_TXT_TRACE:reader->file = fopen(trace_path, "r");
+    if (reader->file == 0) {
+      ERROR("open trace file %s failed: %s\n", trace_path, strerror(errno));
       exit(1);
+    }
+    break;
+  case BIN_TRACE:binaryReader_setup(reader); break;
+  case VSCSI_TRACE:vscsiReader_setup(reader); break;
+  case TWR_TRACE:twrReader_setup(reader); break;
+  case AKAMAI_TRACE:akamaiReader_setup(reader); break;
+  case WIKI16u_TRACE: wiki2016uReader_setup(reader); break;
+  case WIKI19u_TRACE: wiki2019uReader_setup(reader); break;
+  case WIKI19t_TRACE: wiki2019tReader_setup(reader); break;
+  case STANDARD_III_TRACE:standardBinIII_setup(reader); break;
+  case STANDARD_IQI_TRACE:standardBinIQI_setup(reader); break;
+  case ORACLE_GENERAL_BIN:oracleGeneralBin_setup(reader); break;
+  case ORACLE_TWR_BIN:oracleTwrBin_setup(reader); break;
+  case ORACLE_AKAMAI_BIN:oracleAkamai_setup(reader); break;
+  case ORACLE_WIKI16u_BIN:oracleWiki2016uReader_setup(reader); break;
+  case ORACLE_WIKI19u_BIN:oracleWiki2019uReader_setup(reader); break;
+  case ORACLE_WIKI19t_BIN:oracleWiki2019tReader_setup(reader); break;
+    break;
+  default:ERROR("cannot recognize trace type: %c\n", reader->trace_type);
+    exit(1);
+  }
+
+  if (reader->item_size != 0 && reader->file_size % reader->item_size != 0) {
+    WARNING("trace file size %zu is not multiple of record size %zu\n",
+            reader->file_size, reader->item_size);
   }
   close(fd);
   return reader;
 }
 
 int read_one_req(reader_t *const reader, request_t *const req) {
+  if (reader->mmap_offset >= reader->file_size - 1) {
+    req->valid = FALSE;
+    return 1;
+  }
+
   reader->n_read_req += 1;
   req->n_req += 1;
   req->hv = 0;
@@ -128,41 +139,45 @@ int read_one_req(reader_t *const reader, request_t *const req) {
   char *line_end = NULL;
   size_t line_len;
   switch (reader->trace_type) {
-    case CSV_TRACE: return csv_read_one_element(reader, req);
-    case PLAIN_TXT_TRACE:
-      if (reader->mmap_offset >= reader->file_size - 1) {
-        req->valid = false;
-        return 1;
+  case CSV_TRACE: return csv_read_one_element(reader, req);
+  case PLAIN_TXT_TRACE:;
+    char obj_id_str[MAX_OBJ_ID_LEN];
+    find_line_ending(reader, &line_end, &line_len);
+    if (reader->obj_id_type == OBJ_ID_NUM) {
+      req->obj_id_int = str_to_obj_id(
+          (char *) (reader->mapped_file + reader->mmap_offset), line_len);
+    } else {
+      if (line_len >= MAX_OBJ_ID_LEN) {
+        line_len = MAX_OBJ_ID_LEN - 1;
+        ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
+              line_len, MAX_OBJ_ID_LEN);
+        abort();
       }
-      char obj_id_str[MAX_OBJ_ID_LEN];
-      find_line_ending(reader, &line_end, &line_len);
-      if (reader->obj_id_type == OBJ_ID_NUM) {
-        req->obj_id_int = str_to_obj_id(
-            (char *) (reader->mapped_file + reader->mmap_offset), line_len);
-      } else {
-        if (line_len >= MAX_OBJ_ID_LEN) {
-          line_len = MAX_OBJ_ID_LEN - 1;
-          ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
-                line_len, MAX_OBJ_ID_LEN);
-          abort();
-        }
-        memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset, line_len);
-        obj_id_str[line_len] = 0;
-        req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);
-      }
-      reader->mmap_offset = (char *) line_end - reader->mapped_file;
-      return 0;
-    case VSCSI_TRACE: return vscsi_read_one_req(reader, req);
-    case BIN_TRACE: return binary_read_one_req(reader, req);
-    case TWR_TRACE: return twr_read_one_req(reader, req);
-    case ORACLE_TWR_TRACE: return oracleTwr_read_one_req(reader, req);
-    case ORACLE_AKAMAI_TRACE: return oracleAkamai_read_one_req(reader, req);
-    case ORACLE_BIN_TRACE: return oracleBin_read_one_req(reader, req);
-    default:
-      ERROR(
-          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-          reader->trace_type);
-      exit(1);
+      memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset, line_len);
+      obj_id_str[line_len] = 0;
+      req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);
+    }
+    reader->mmap_offset = (char *) line_end - reader->mapped_file;
+    return 0;
+  case BIN_TRACE: return binary_read_one_req(reader, req);
+  case VSCSI_TRACE: return vscsi_read_one_req(reader, req);
+  case TWR_TRACE: return twr_read_one_req(reader, req);
+  case AKAMAI_TRACE: return akamai_read_one_req(reader, req);
+  case WIKI16u_TRACE: return wiki2016u_read_one_req(reader, req);
+  case WIKI19u_TRACE: return wiki2019u_read_one_req(reader, req);
+  case WIKI19t_TRACE: return wiki2019t_read_one_req(reader, req);
+  case STANDARD_III_TRACE:return standardBinIII_read_one_req(reader, req);
+  case STANDARD_IQI_TRACE:return standardBinIQI_read_one_req(reader, req);
+  case ORACLE_GENERAL_BIN:return oracleGeneralBin_read_one_req(reader, req);
+  case ORACLE_TWR_BIN:return oracleTwrBin_read_one_req(reader, req);
+  case ORACLE_AKAMAI_BIN:return oracleAkamai_read_one_req(reader, req);
+  case ORACLE_WIKI16u_BIN:return oracleWiki2016u_read_one_req(reader, req);
+  case ORACLE_WIKI19u_BIN:return oracleWiki2019u_read_one_req(reader, req);
+  case ORACLE_WIKI19t_BIN:return oracleWiki2019t_read_one_req(reader, req);
+  default:ERROR(
+        "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
+        reader->trace_type);
+    exit(1);
   }
 }
 
@@ -171,66 +186,75 @@ int go_back_one_line(reader_t *const reader) {
    return 0 on successful, non-zero otherwise
    */
   switch (reader->trace_type) {
-    case CSV_TRACE:
-    case PLAIN_TXT_TRACE:
-      if (reader->mmap_offset == 0)
-        return 1;
+  case CSV_TRACE:
+  case PLAIN_TXT_TRACE:
+    if (reader->mmap_offset == 0)
+      return 1;
 
-      // use last record size to save loop
-      const char *cp = reader->mapped_file + reader->mmap_offset;
-      if (reader->item_size) {
-        // fix from LZ
-        cp -= reader->item_size + 1;
-        //                cp -= reader->item_size - 1;
-      } else {
-        /*  no record size, can only happen when it is the last line
-         *  or when it is called in go_back_two_lines
-         */
-        cp--;
-        // find current line ending
-        // need to change to use memchr
-        while (*cp == FILE_LF || *cp == FILE_CR) {
-          cp--;
-          if ((char *) cp < reader->mapped_file)
-            return 1;
-        }
-      }
-      /** now cp should point to either the last letter/non-LFCR of current line
-       *  or points to somewhere after the beginning of current line beginning
-       *  find the first character of current line
+    // use last record size to save loop
+    const char *cp = reader->mapped_file + reader->mmap_offset;
+    if (reader->item_size) {
+      // fix from LZ
+      cp -= reader->item_size + 1;
+      //                cp -= reader->item_size - 1;
+    } else {
+      /*  no record size, can only happen when it is the last line
+       *  or when it is called in go_back_two_lines
        */
-      while ((char *) cp > reader->mapped_file && *cp != FILE_LF && *cp != FILE_CR) {
+      cp--;
+      // find current line ending
+      // need to change to use memchr
+      while (*cp == FILE_LF || *cp == FILE_CR) {
         cp--;
+        if ((char *) cp < reader->mapped_file)
+          return 1;
       }
-      if ((void *) cp != reader->mapped_file)
-        cp++;// jump over LFCR
+    }
+    /** now cp should point to either the last letter/non-LFCR of current line
+     *  or points to somewhere after the beginning of current line beginning
+     *  find the first character of current line
+     */
+    while ((char *) cp > reader->mapped_file && *cp != FILE_LF
+        && *cp != FILE_CR) {
+      cp--;
+    }
+    if ((void *) cp != reader->mapped_file)
+      cp++;// jump over LFCR
 
-      if ((char *) cp < reader->mapped_file) {
-        ERROR("current pointer points before mapped file\n");
-        exit(1);
-      }
-      // now cp points to the pos after LFCR before the line that should be read
-      reader->mmap_offset = (char *) cp - reader->mapped_file;
-
-      return 0;
-
-    case BIN_TRACE:
-    case TWR_TRACE:
-    case ORACLE_TWR_TRACE:
-    case ORACLE_AKAMAI_TRACE:
-    case ORACLE_BIN_TRACE:
-    case VSCSI_TRACE:
-      if (reader->mmap_offset >= reader->item_size)
-        reader->mmap_offset -= (reader->item_size);
-      else
-        return -1;
-      return 0;
-
-    default:
-      ERROR(
-          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-          reader->trace_type);
+    if ((char *) cp < reader->mapped_file) {
+      ERROR("current pointer points before mapped file\n");
       exit(1);
+    }
+    // now cp points to the pos after LFCR before the line that should be read
+    reader->mmap_offset = (char *) cp - reader->mapped_file;
+
+    return 0;
+
+  case BIN_TRACE:
+  case VSCSI_TRACE:
+  case TWR_TRACE:
+  case AKAMAI_TRACE:
+  case WIKI16u_TRACE:
+  case WIKI19u_TRACE:
+  case WIKI19t_TRACE:
+  case STANDARD_III_TRACE:
+  case STANDARD_IQI_TRACE:
+  case ORACLE_GENERAL_BIN:
+  case ORACLE_TWR_BIN:
+  case ORACLE_AKAMAI_BIN:
+  case ORACLE_WIKI16u_BIN:
+  case ORACLE_WIKI19u_BIN:
+  case ORACLE_WIKI19t_BIN:
+    if (reader->mmap_offset >= reader->item_size)
+      reader->mmap_offset -= (reader->item_size);
+    else
+      return -1;
+    return 0;
+
+  default:ERROR(
+        "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
+        reader->trace_type);
+    exit(1);
   }
 }
 
@@ -239,29 +263,37 @@ int go_back_two_lines(reader_t *const reader) {
    return 0 on successful, non-zero otherwise
    */
   switch (reader->trace_type) {
-    case CSV_TRACE:
-    case PLAIN_TXT_TRACE:
-      if (go_back_one_line(reader) == 0) {
-        reader->item_size = 0;
-        return go_back_one_line(reader);
-      } else
-        return 1;
-    case TWR_TRACE:
-    case ORACLE_TWR_TRACE:
-    case ORACLE_AKAMAI_TRACE:
-    case BIN_TRACE:
-    case ORACLE_BIN_TRACE:
-    case VSCSI_TRACE:
-      if (reader->mmap_offset >= (reader->item_size * 2))
-        reader->mmap_offset -= (reader->item_size) * 2;
-      else
-        return -1;
-      return 0;
-    default:
-      ERROR(
-          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-          reader->trace_type);
-      exit(1);
+  case CSV_TRACE:
+  case PLAIN_TXT_TRACE:
+    if (go_back_one_line(reader) == 0) {
+      reader->item_size = 0;
+      return go_back_one_line(reader);
+    } else
+      return 1;
+  case BIN_TRACE:
+  case VSCSI_TRACE:
+  case TWR_TRACE:
+  case AKAMAI_TRACE:
+  case WIKI16u_TRACE:
+  case WIKI19u_TRACE:
+  case WIKI19t_TRACE:
+  case STANDARD_III_TRACE:
+  case STANDARD_IQI_TRACE:
+  case ORACLE_GENERAL_BIN:
+  case ORACLE_TWR_BIN:
+  case ORACLE_AKAMAI_BIN:
+  case ORACLE_WIKI16u_BIN:
+  case ORACLE_WIKI19u_BIN:
+  case ORACLE_WIKI19t_BIN:
+    if (reader->mmap_offset >= (reader->item_size * 2))
+      reader->mmap_offset -= (reader->item_size) * 2;
+    else
+      return -1;
+    return 0;
+  default:ERROR(
+        "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
+        reader->trace_type);
+    exit(1);
   }
 }
 
@@ -291,47 +323,55 @@ uint64_t skip_n_req(reader_t *const reader, const uint64_t N) {
   uint64_t count = N;
 
   switch (reader->trace_type) {
-    case CSV_TRACE: csv_skip_N_elements(reader, N);
-    case PLAIN_TXT_TRACE:;
-      char *line_end = NULL;
-      uint64_t i;
-      bool end = false;
-      size_t line_len;
-      for (i = 0; i < N; i++) {
-        end = find_line_ending(reader, &line_end, &line_len);
-        reader->mmap_offset = (char *) line_end - reader->mapped_file;
-        if (end) {
-          if (reader->trace_type == CSV_TRACE) {
-            csv_params_t *params = reader->reader_params;
-            params->reader_end = true;
-          }
-          count = i + 1;
-          break;
+  case CSV_TRACE: csv_skip_N_elements(reader, N);
+  case PLAIN_TXT_TRACE:;
+    char *line_end = NULL;
+    uint64_t i;
+    bool end = false;
+    size_t line_len;
+    for (i = 0; i < N; i++) {
+      end = find_line_ending(reader, &line_end, &line_len);
+      reader->mmap_offset = (char *) line_end - reader->mapped_file;
+      if (end) {
+        if (reader->trace_type == CSV_TRACE) {
+          csv_params_t *params = reader->reader_params;
+          params->reader_end = true;
         }
+        count = i + 1;
+        break;
       }
+    }
 
-      break;
-    case TWR_TRACE:
-    case ORACLE_TWR_TRACE:
-    case ORACLE_AKAMAI_TRACE:
-    case BIN_TRACE:
-    case ORACLE_BIN_TRACE:
-    case VSCSI_TRACE:
-      if (reader->mmap_offset + N * reader->item_size <= reader->file_size) {
-        reader->mmap_offset = reader->mmap_offset + N * reader->item_size;
-      } else {
-        count = (uint64_t)((reader->file_size - reader->mmap_offset) / reader->item_size);
-        reader->mmap_offset = reader->file_size;
-        WARNING("required to skip %lu requests, but only %lu requests left\n",
-                (unsigned long) N, (unsigned long) count);
-      }
+    break;
+  case BIN_TRACE:
+  case VSCSI_TRACE:
+  case TWR_TRACE:
+  case AKAMAI_TRACE:
+  case WIKI16u_TRACE:
+  case WIKI19u_TRACE:
+  case WIKI19t_TRACE:
+  case STANDARD_III_TRACE:
+  case STANDARD_IQI_TRACE:
+  case ORACLE_GENERAL_BIN:
+  case ORACLE_TWR_BIN:
+  case ORACLE_AKAMAI_BIN:
+  case ORACLE_WIKI16u_BIN:
+  case ORACLE_WIKI19u_BIN:
+  case ORACLE_WIKI19t_BIN:
+    if (reader->mmap_offset + N * reader->item_size <= reader->file_size) {
+      reader->mmap_offset = reader->mmap_offset + N * reader->item_size;
+    } else {
+      count = (reader->file_size - reader->mmap_offset) / reader->item_size;
+      reader->mmap_offset = reader->file_size;
+      WARNING("required to skip %lu requests, but only %lu requests left\n",
+              (unsigned long) N, (unsigned long) count);
+    }
 
-      break;
-    default:
-      ERROR("cannot recognize reader trace type: %c\n",
-            reader->trace_type);
-      exit(1);
-      break;
+    break;
+  default:ERROR("cannot recognize reader trace type: %c\n",
+                reader->trace_type);
+    exit(1);
+    break;
   }
   return count;
 }
@@ -340,20 +380,28 @@ void reset_reader(reader_t *const reader) {
   /* rewind the reader back to beginning */
   reader->mmap_offset = 0;
   switch (reader->trace_type) {
-    case CSV_TRACE: csv_reset_reader(reader);
-    case PLAIN_TXT_TRACE:
-    case TWR_TRACE:
-    case ORACLE_TWR_TRACE:
-    case ORACLE_AKAMAI_TRACE:
-    case BIN_TRACE:
-    case ORACLE_BIN_TRACE:
-    case VSCSI_TRACE: break;
-    default:
-      ERROR(
-          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-          reader->trace_type);
-      exit(1);
-      break;
+  case CSV_TRACE: csv_reset_reader(reader);
+  case PLAIN_TXT_TRACE:
+  case BIN_TRACE:
+  case VSCSI_TRACE:
+  case TWR_TRACE:
+  case AKAMAI_TRACE:
+  case WIKI16u_TRACE:
+  case WIKI19u_TRACE:
+  case WIKI19t_TRACE:
+  case STANDARD_III_TRACE:
+  case STANDARD_IQI_TRACE:
+  case ORACLE_GENERAL_BIN:
+  case ORACLE_TWR_BIN:
+  case ORACLE_AKAMAI_BIN:
+  case ORACLE_WIKI16u_BIN:
+  case ORACLE_WIKI19u_BIN:
+  case ORACLE_WIKI19t_BIN: break;
+  default:ERROR(
+        "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
+        reader->trace_type);
+    exit(1);
+    break;
   }
 }
 
@@ -368,32 +416,40 @@ uint64_t get_num_of_req(reader_t *const reader) {
   // reset_reader(reader);
 
   switch (reader->trace_type) {
-    case CSV_TRACE:
-      /* same as plain text, except when has_header, it needs to reduce by 1  */
-    case PLAIN_TXT_TRACE:;
-      char *line_end = NULL;
-      size_t line_len;
-      while (!find_line_ending(reader, &line_end, &line_len)) {
-        reader->mmap_offset = (char *) line_end - reader->mapped_file;
-        n_req++;
-      }
+  case CSV_TRACE:
+    /* same as plain text, except when has_header, it needs to reduce by 1  */
+  case PLAIN_TXT_TRACE:;
+    char *line_end = NULL;
+    size_t line_len;
+    while (!find_line_ending(reader, &line_end, &line_len)) {
+      reader->mmap_offset = (char *) line_end - reader->mapped_file;
       n_req++;
-      if (reader->trace_type == CSV_TRACE)
-        if (((csv_params_t *) (reader->reader_params))->has_header)
-          n_req--;
-      break;
-    case TWR_TRACE:
-    case ORACLE_TWR_TRACE:
-    case ORACLE_AKAMAI_TRACE:
-    case BIN_TRACE:
-    case ORACLE_BIN_TRACE:
-    case VSCSI_TRACE: return reader->n_total_req;
-    default:
-      ERROR(
-          "cannot recognize reader trace type, given reader trace_type: %c\n",
-          reader->trace_type);
-      exit(1);
-      break;
+    }
+    n_req++;
+    if (reader->trace_type == CSV_TRACE)
+      if (((csv_params_t *) (reader->reader_params))->has_header)
+        n_req--;
+    break;
+  case BIN_TRACE:
+  case VSCSI_TRACE:
+  case TWR_TRACE:
+  case AKAMAI_TRACE:
+  case WIKI16u_TRACE:
+  case WIKI19u_TRACE:
+  case WIKI19t_TRACE:
+  case STANDARD_III_TRACE:
+  case STANDARD_IQI_TRACE:
+  case ORACLE_GENERAL_BIN:
+  case ORACLE_TWR_BIN:
+  case ORACLE_AKAMAI_BIN:
+  case ORACLE_WIKI16u_BIN:
+  case ORACLE_WIKI19u_BIN:
+  case ORACLE_WIKI19t_BIN: return reader->n_total_req;
+  default:ERROR(
+        "cannot recognize reader trace type, given reader trace_type: %c\n",
+        reader->trace_type);
+    exit(1);
+    break;
   }
   reader->n_total_req = n_req;
   reader->mmap_offset = old_offset;
@@ -421,26 +477,33 @@ int close_reader(reader_t *const reader) {
    access to the stream is possible.*/
 
   switch (reader->trace_type) {
-    case CSV_TRACE:;
-      csv_params_t *params = reader->reader_params;
-      fclose(reader->file);
-      csv_free(params->csv_parser);
-      g_free(params->csv_parser);
-      break;
-    case PLAIN_TXT_TRACE:
-      fclose(reader->file);
-      break;
-    case TWR_TRACE:
-    case ORACLE_TWR_TRACE:
-    case ORACLE_AKAMAI_TRACE:
-    case BIN_TRACE:
-    case ORACLE_BIN_TRACE:
-    case VSCSI_TRACE: break;
-    default:
-      ERROR(
-          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-          reader->obj_id_type);
-      abort();
+  case CSV_TRACE:;
+    csv_params_t *params = reader->reader_params;
+    fclose(reader->file);
+    csv_free(params->csv_parser);
+    g_free(params->csv_parser);
+    break;
+  case PLAIN_TXT_TRACE:fclose(reader->file);
+    break;
+  case BIN_TRACE:
+  case VSCSI_TRACE:
+  case TWR_TRACE:
+  case AKAMAI_TRACE:
+  case WIKI16u_TRACE:
+  case WIKI19u_TRACE:
+  case WIKI19t_TRACE:
+  case STANDARD_III_TRACE:
+  case STANDARD_IQI_TRACE:
+  case ORACLE_GENERAL_BIN:
+  case ORACLE_TWR_BIN:
+  case ORACLE_AKAMAI_BIN:
+  case ORACLE_WIKI16u_BIN:
+  case ORACLE_WIKI19u_BIN:
+  case ORACLE_WIKI19t_BIN: break;
+  default:ERROR(
+        "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
+        reader->obj_id_type);
+    abort();
   }
 
   if (!reader->cloned)
@@ -454,22 +517,29 @@ int close_reader(reader_t *const reader) {
 void set_no_eof(reader_t *const reader) {
   // remove eof flag for reader
   switch (reader->trace_type) {
-    case CSV_TRACE:
-      csv_set_no_eof(reader);
-      break;
-    case PLAIN_TXT_TRACE:
-    case TWR_TRACE:
-    case ORACLE_TWR_TRACE:
-    case ORACLE_AKAMAI_TRACE:
-    case BIN_TRACE:
-    case ORACLE_BIN_TRACE:
-    case VSCSI_TRACE: break;
-    default:
-      ERROR(
-          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-          reader->trace_type);
-      exit(1);
-      break;
+  case CSV_TRACE:csv_set_no_eof(reader);
+    break;
+  case PLAIN_TXT_TRACE:
+  case BIN_TRACE:
+  case VSCSI_TRACE:
+  case TWR_TRACE:
+  case AKAMAI_TRACE:
+  case WIKI16u_TRACE:
+  case WIKI19u_TRACE:
+  case WIKI19t_TRACE:
+  case STANDARD_III_TRACE:
+  case STANDARD_IQI_TRACE:
+  case ORACLE_GENERAL_BIN:
+  case ORACLE_TWR_BIN:
+  case ORACLE_AKAMAI_BIN:
+  case ORACLE_WIKI16u_BIN:
+  case ORACLE_WIKI19u_BIN:
+  case ORACLE_WIKI19t_BIN: break;
+  default:ERROR(
+        "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
+        reader->trace_type);
+    exit(1);
+    break;
   }
 }
 
@@ -550,14 +620,19 @@ bool find_line_ending(reader_t *const reader, char **line_end,
   *line_len =
       *line_end - ((char *) (reader->mapped_file) + reader->mmap_offset);
 
-  while ((long) (*line_end - (char *) (reader->mapped_file)) < (long) (reader->file_size) - 1 && (*(*line_end + 1) == CSV_CR || *(*line_end + 1) == CSV_LF || *(*line_end + 1) == CSV_TAB || *(*line_end + 1) == CSV_SPACE)) {
+  while ((long) (*line_end - (char *) (reader->mapped_file))
+      < (long) (reader->file_size) - 1
+      && (*(*line_end + 1) == CSV_CR || *(*line_end + 1) == CSV_LF
+          || *(*line_end + 1) == CSV_TAB || *(*line_end + 1) == CSV_SPACE)) {
     (*line_end)++;
-    if ((long) (*line_end - (char *) (reader->mapped_file)) == (long) (reader->file_size) - 1) {
+    if ((long) (*line_end - (char *) (reader->mapped_file))
+        == (long) (reader->file_size) - 1) {
       reader->item_size = *line_len;
       return true;
     }
   }
-  if ((long) (*line_end - (char *) (reader->mapped_file)) == (long) (reader->file_size) - 1) {
+  if ((long) (*line_end - (char *) (reader->mapped_file))
+      == (long) (reader->file_size) - 1) {
     reader->item_size = *line_len;
     return true;
   }

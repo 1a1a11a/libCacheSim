@@ -45,15 +45,13 @@ typedef struct cache_obj {
       int32_t LLSC_freq;
       int32_t last_access_rtime;
       int16_t idx_in_segment;
-      //      int16_t ref_cnt;
-//      int8_t last_history_idx;
       int16_t active : 2;
       int16_t in_cache : 2;
       int16_t n_merged : 12;  /* how many times it has been merged */
-      //      int8_t last_history_idx_training;
     } LSC;
     int64_t freq;
     double score;
+    int64_t next_access_ts;
     void *extra_metadata_ptr;
     uint64_t extra_metadata_u64;
     uint8_t extra_metadata_u8[8];
@@ -64,9 +62,6 @@ typedef struct cache_obj {
     int64_t last_access_vtime;
   };
 #endif
-  //  union {
-  //    void *extra_metadata_ptr2;
-  //  };
 } __attribute__((packed)) cache_obj_t;
 
 typedef struct {

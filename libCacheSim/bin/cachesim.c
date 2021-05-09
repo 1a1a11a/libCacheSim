@@ -346,11 +346,11 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   } else if (strcmp(argv[1], "bin") == 0) {
     args.trace_type = BIN_TRACE;
   } else if (strcmp(argv[1], "oracleTwr") == 0) {
-    args.trace_type = ORACLE_TWR_TRACE;
+    args.trace_type = ORACLE_TWR_BIN;
   } else if (strcmp(argv[1], "oracleBin") == 0) {
-    args.trace_type = ORACLE_BIN_TRACE;
+    args.trace_type = ORACLE_GENERAL_BIN;
   } else if (strcmp(argv[1], "oracleAkamaiBin") == 0) {
-    args.trace_type = ORACLE_AKAMAI_TRACE;
+    args.trace_type = ORACLE_AKAMAI_BIN;
   } else {
     printf("unknown trace type %s\n", argv[1]);
   }
