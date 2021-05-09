@@ -174,23 +174,14 @@ typedef struct learner {
   int32_t n_zero_samples_use;
   int n_trees;
 
-  int32_t training_n_row;
+  int32_t training_n_row;   /* the size of matrix */
   int32_t validation_n_row;
   int32_t inference_n_row;
 
   feature_t *inference_data;
   pred_t *pred;
 
-
   int n_evictions_last_hour;
-  int64_t last_hour_ts;
-
-  //  int64_t last_inference_time;
-
-//  int32_t full_cache_write_time; /* real time */
-//  int32_t last_cache_full_time;  /* real time */
-//  int64_t n_byte_written;        /* cleared after each full cache write */
-
 } learner_t;
 
 typedef struct cache_state {
@@ -269,6 +260,7 @@ typedef struct seg_sel {
   //  double *obj_penalty;
   //  int obj_penalty_array_size;
 
+  segment_t **segs_to_evict;
 } seg_sel_t;
 
 typedef struct {
@@ -293,7 +285,6 @@ typedef struct {
   int64_t curr_vtime;
 
   seg_sel_t seg_sel;
-  segment_t **segs_to_evict;
 
   learner_t learner;
 

@@ -221,3 +221,273 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
     abort();
   }
 }
+
+
+static bucket_t *select_segs_segcache(cache_t *cache, segment_t **segs) {
+  LLSC_params_t *params = cache->cache_params;
+
+  if (params->curr_evict_bucket_idx == -1)
+    params->curr_evict_bucket_idx = 0;
+  bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
+  segment_t *seg_to_evict = params->next_evict_segment;
+
+  int n_checked_seg = 0;
+  while (!is_seg_evictable_fifo(seg_to_evict, params->n_merge)) {
+    params->curr_evict_bucket_idx =
+        (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
+    bucket = &params->buckets[params->curr_evict_bucket_idx];
+    seg_to_evict = bucket->first_seg;
+    n_checked_seg += 1;
+    DEBUG_ASSERT(n_checked_seg <= params->n_segs);
+  }
+
+  for (int i = 0; i < params->n_merge; i++) {
+    segs[i] = seg_to_evict;
+    seg_to_evict = seg_to_evict->next_seg;
+  }
+  params->next_evict_segment = seg_to_evict;
+
+  return bucket;
+}
+
+
+static bucket_t *select_segs_logUnlearned(cache_t *cache, segment_t **segs) {
+  LLSC_params_t *params = cache->cache_params;
+
+  bucket_t *bucket = NULL;
+  segment_t *seg_to_evict = NULL;
+
+  int n_checked_seg = 0;
+  while (!is_seg_evictable_fifo(seg_to_evict, params->n_merge)) {
+    if (bucket != NULL)
+      bucket->next_seg_to_evict = bucket->first_seg;
+    params->curr_evict_bucket_idx =
+        (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
+    bucket = &params->buckets[params->curr_evict_bucket_idx];
+    seg_to_evict = bucket->next_seg_to_evict;
+    n_checked_seg += 1;
+    DEBUG_ASSERT(n_checked_seg <= params->n_segs * 2);
+  }
+
+
+  for (int i = 0; i < params->n_merge; i++) {
+    segs[i] = seg_to_evict;
+    seg_to_evict = seg_to_evict->next_seg;
+  }
+  bucket->next_seg_to_evict = seg_to_evict;
+
+  return bucket;
+}
+
+static inline int find_next_qualified_seg(segment_t **ranked_segs,
+                                          int start_pos, int end_pos,
+                                          int bucket_idx) {
+  for (int i = start_pos; i < end_pos; i++) {
+    if (ranked_segs[i] != NULL) {
+      if (bucket_idx == -1 || ranked_segs[i]->bucket_idx == bucket_idx) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+static bucket_t *select_segs_rand(cache_t *cache, segment_t *segs[]) {
+  LLSC_params_t *params = cache->cache_params;
+
+  bucket_t *bucket = NULL;
+  segment_t *seg_to_evict = NULL;
+
+  int n_checked_seg = 0;
+  while (!is_seg_evictable_fifo(seg_to_evict, params->n_merge)) {
+//    printf("%d\n", params->curr_evict_bucket_idx);
+    bucket = next_unempty_bucket(cache, params->curr_evict_bucket_idx);
+    params->curr_evict_bucket_idx = bucket->bucket_idx;
+    int n_th = rand() % (bucket->n_seg - params->n_merge + 1);
+    seg_to_evict = bucket->first_seg;
+    for (int i = 0; i < n_th; i++)
+      seg_to_evict = seg_to_evict->next_seg;
+
+    n_checked_seg += 1;
+    DEBUG_ASSERT(n_checked_seg <= params->n_segs * 2);
+  }
+
+  for (int i = 0; i < params->n_merge; i++) {
+    segs[i] = seg_to_evict;
+    seg_to_evict = seg_to_evict->next_seg;
+  }
+  bucket->next_seg_to_evict = seg_to_evict;
+
+  return bucket;
+
+
+  return bucket;
+}
+
+
+static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
+  LLSC_params_t *params = cache->cache_params;
+  bool array_resized = false;
+
+  if (params->type == SEGCACHE || params->type == SEGCACHE_ITEM_ORACLE
+      || params->type == LOGCACHE_ITEM_ORACLE)
+    return select_segs_segcache(cache, segs);
+
+  if (params->type == LOGCACHE_LEARNED && params->learner.n_train == 0)
+//    return select_segs_segcache(cache, segs);
+    return select_segs_logUnlearned(cache, segs);
+//    return select_segs_rand(cache, segs);
+
+  /* setup function */
+  if (params->seg_sel.ranked_seg_size < params->n_segs) {
+    if (params->seg_sel.ranked_segs != NULL) {
+      my_free(sizeof(segment_t *) * ranked_seg_size,
+              params->seg_sel.ranked_segs);
+    }
+    params->seg_sel.ranked_segs = my_malloc_n(segment_t *, params->n_segs * 2);
+    params->seg_sel.ranked_seg_size = params->n_segs * 2;
+    array_resized = true;
+  }
+
+  segment_t **ranked_segs = params->seg_sel.ranked_segs;
+  int32_t *ranked_seg_pos = &(params->seg_sel.ranked_seg_pos);
+
+  if (params->n_evictions - params->seg_sel.last_rank_time > params->rank_intvl
+      || array_resized) {
+    rank_segs(cache);
+  }
+
+  if (*ranked_seg_pos > params->n_segs / 4) {
+    params->rank_intvl /= 2 + 1;
+    WARNING("cache size %lu: rank frequency too low, "
+            "curr pos in ranked seg %d, total %ld segs, reduce rank_intvl to %d\n",
+            (unsigned long) cache->cache_size,
+            *ranked_seg_pos,
+            (long) params->n_segs,
+            params->rank_intvl);
+    print_bucket(cache);
+    params->seg_sel.last_rank_time = 0;
+    return select_segs(cache, segs);
+  }
+
+//  if (params->type > LOGCACHE_START_POS) {
+//    assert(params->n_merge == 2);
+//    int i = 0, j = 0;
+//    segs[i++] = ranked_segs[*ranked_seg_pos];
+//    ranked_segs[(*ranked_seg_pos)++] = NULL;
+//    while (ranked_segs[*ranked_seg_pos] == NULL) {
+//      (*ranked_seg_pos)++;
+//    }
+//
+//    while (i < params->n_merge && *ranked_seg_pos + j < params->n_segs / 2) {
+//      int bucket_idx = segs[0]->bucket_idx;
+//      while (ranked_segs[*ranked_seg_pos + j] == NULL
+//             || ranked_segs[*ranked_seg_pos + j]->bucket_idx != bucket_idx) {
+//        j += 1;
+//        if (*ranked_seg_pos + j >= params->n_segs / 2) {
+//          break;
+//        }
+//      }
+//
+//      if (ranked_segs[*ranked_seg_pos + j] != NULL
+//          && ranked_segs[*ranked_seg_pos + j]->bucket_idx == bucket_idx) {
+//        /* we find two segments from the same bucket */
+//        segs[i++] = ranked_segs[*ranked_seg_pos + j];
+//        ranked_segs[*ranked_seg_pos + j] = NULL;
+//        (*ranked_seg_pos)++;
+//        while (ranked_segs[*ranked_seg_pos] == NULL) {
+//          (*ranked_seg_pos)++;
+//        }
+//        break;
+//      }
+//
+//      /* we have reached the end of the seg */
+//      DEBUG_ASSERT(*ranked_seg_pos + j >= params->n_segs / 2);
+//
+//      /* we cannot find one more segment with the same bucket id,
+//         * we should try the next segment from ranked_seg_pos */
+//      i = 0;
+//      j = 0;
+//      segs[i++] = ranked_segs[*ranked_seg_pos];
+//      ranked_segs[(*ranked_seg_pos)++] = NULL;
+//      while (ranked_segs[*ranked_seg_pos] == NULL) {
+//        (*ranked_seg_pos)++;
+//      }
+//    }
+//    if (*ranked_seg_pos >= params->n_segs / 2) {
+//      printf("cache size %ld, %d segs, hard find a matching seg, "
+//             "please increase cache size or reduce segment size\n",
+//             (long) cache->cache_size, params->n_segs);
+//      print_bucket(cache);
+//      printf("current ranked pos %d\n", *ranked_seg_pos);
+//      for (int m = 0; m < params->n_segs; m++) {
+//        if (ranked_segs[m]) printf("seg %d penalty %lf\n", m, ranked_segs[m]->penalty);
+//        else
+//          printf("seg %d NULL\n", m);
+//      }
+//      //      abort();
+//      params->seg_sel.last_rank_time = 0;
+//      //      return select_segs(cache, segs);
+//    }
+//
+//    DEBUG_ASSERT(i == params->n_merge);
+//
+//    return &params->buckets[segs[0]->bucket_idx];
+
+
+
+
+  if (params->type > LOGCACHE_START_POS) {
+    int i, j;
+    start:
+    i = 0;
+    j = find_next_qualified_seg(ranked_segs, *ranked_seg_pos, params->n_segs / 2 + 1, -1);
+    segs[i++] = ranked_segs[j];
+    ranked_segs[j] = NULL;
+    *ranked_seg_pos = j + 1;
+
+    if (j < params->n_segs / 2) {
+      while (i < params->n_merge) {
+        j = find_next_qualified_seg(ranked_segs,
+                                    j + 1,
+                                    params->n_segs / 2 + 1,
+                                    segs[0]->bucket_idx);
+        if (j == -1) {
+          goto start;
+        }
+        segs[i++] = ranked_segs[j];
+        ranked_segs[j] = NULL;
+      }
+      DEBUG_ASSERT(i == params->n_merge);
+      DEBUG_ASSERT(segs[0]->bucket_idx == segs[1]->bucket_idx);
+      DEBUG_ASSERT(segs[0]->next_seg != NULL);
+      DEBUG_ASSERT(segs[1]->next_seg != NULL);
+
+      return &params->buckets[segs[0]->bucket_idx];
+    } else {
+      printf(
+          "cache size %ld, %d segs, current ranked pos %d, hard find a matching seg, "
+          "please increase cache size or reduce segment size\n",
+          (long) cache->cache_size,
+          params->n_segs,
+          *ranked_seg_pos);
+      print_bucket(cache);
+      for (int m = 0; m < params->n_segs; m++) {
+        if (ranked_segs[m])
+          printf("seg %d penalty %lf\n", m, ranked_segs[m]->penalty);
+        else
+          printf("seg %d NULL\n", m);
+      }
+      params->seg_sel.last_rank_time = 0;
+      return select_segs(cache, segs);
+    }
+  } else {
+    /* it is non-trivial to determine the bucket of segcache */
+    segs[0] = params->seg_sel.ranked_segs[params->seg_sel.ranked_seg_pos];
+    params->seg_sel.ranked_segs[params->seg_sel.ranked_seg_pos] = NULL;
+    params->seg_sel.ranked_seg_pos++;
+
+    ERROR("do not support\n");
+    abort();
+  }
+}
