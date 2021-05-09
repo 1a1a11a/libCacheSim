@@ -6,6 +6,8 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 
+static inline void print_seg(cache_t *cache, segment_t *seg, int log_level);
+
 static inline void _debug_check_bucket_segs(bucket_t *bkt) {
   segment_t *curr_seg = bkt->first_seg;
   int n_seg = 0;
@@ -215,6 +217,7 @@ static inline void append_seg_to_bucket(LLSC_params_t *params, bucket_t *bucket,
     DEBUG_ASSERT(bucket->first_seg == NULL);
     DEBUG_ASSERT(bucket->n_seg == 0);
     bucket->first_seg = segment;
+    bucket->next_seg_to_evict = segment;
     if (&params->training_bucket != bucket)
       params->n_used_buckets += 1;
   } else {
@@ -262,7 +265,7 @@ static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   memset(new_seg->objs, 0, sizeof(cache_obj_t) * params->segment_size);
 
   new_seg->next_seg = NULL;
-  new_seg->n_total_obj = new_seg->total_byte = 0;
+  new_seg->n_total_obj = new_seg->total_bytes = 0;
   new_seg->create_rtime = params->curr_rtime;
   new_seg->create_vtime = params->curr_vtime;
   new_seg->is_training_seg = false;
@@ -302,32 +305,25 @@ static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_t
     return (double) cache_obj->LSC.LLSC_freq;
 
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
-    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1000 / cache_obj->obj_size;
+    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1.0e6 / cache_obj->obj_size;
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE) {
-    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1000 / (curr_rtime - cache_obj->LSC.last_access_rtime);
+    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1.0e6 / (curr_rtime - cache_obj->LSC.last_access_rtime);
 
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
     int64_t obj_age = object_age(params, cache_obj);
     obj_age = obj_age >= HIT_PROB_MAX_AGE ? HIT_PROB_MAX_AGE - 1 : obj_age;
-    return bkt->hit_prob.hit_density[obj_age] / cache_obj->obj_size;
+    return 1.0e6 * bkt->hit_prob.hit_density[obj_age] / cache_obj->obj_size;
 
-    //  } else if (score_type == OBJ_SCORE_HIT_DENSITY_FREQ) {
-    //    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1000 * bkt->hit_prob.hit_density[object_age(params, cache_obj)] / cache_obj->obj_size;
-    //
   } else if (score_type == OBJ_SCORE_ORACLE) {
     if (cache_obj->LSC.next_access_ts == -1) {
       return 0;
     }
 
     DEBUG_ASSERT(cache_obj->LSC.next_access_ts > curr_vtime);
-    return 1000000.0 / (double) cache_obj->obj_size
+    return 1.0e8 / (double) cache_obj->obj_size
            / (double) (cache_obj->LSC.next_access_ts - curr_vtime);
 
-    //  } else if (score_type == OBJ_SCORE_FREQ_BYTE_AGE) {
-    //    DEBUG_ASSERT(curr_rtime >= 0);
-    //    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1000 / cache_obj->obj_size / (curr_rtime - cache_obj->LSC.last_access_rtime);
-    //
   } else {
     printf("unknown cache type %d\n", score_type);
     abort();
@@ -371,12 +367,13 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type,
 
   static int n_err = 0;
   if (seg_sel->score_array[0] == seg_sel->score_array[pos - 1]) {
-    if (n_err++ % 100000 == 20)
+    if (n_err++ % 100000 == 20) {
       DEBUG("cache size %lu: seg may have all objects with no reuse %d (ignore this if "
               "it is end of trace running oracle)\n",
               (unsigned long) cache->cache_size, n_err);
+      print_seg(cache, seg, DEBUG_LEVEL);
+    }
     n_err += 1;
-    //    abort();
   }
 
   double penalty = 0;
@@ -384,7 +381,7 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type,
     penalty += seg_sel->score_array[j];
   }
 
-  //  penalty /= seg->total_byte;
+  DEBUG_ASSERT(penalty >= 0);
   return penalty;
 }
 
@@ -431,43 +428,30 @@ static inline void print_bucket(cache_t *cache) {
   printf("\n");
 }
 
-static inline void print_seg(cache_t *cache, segment_t *seg) {
+static inline void print_seg(cache_t *cache, segment_t *seg, int log_level) {
   LLSC_params_t *params = cache->cache_params;
+//  static __thread char msg[1024];
 
-  printf("seg %6d, age %6d, mean obj size %8.2lf bytes, "
-         "req/write rate %.4lf/%.4lf, "
+//  log_level,
+  printf("seg %6d, age %6d, mean obj size %8.0lf bytes, "
+         "req/write rate %6.0lf/%4.2lf, "
+         "write ratio/cold miss %.4lf/%.4lf, "
          "mean freq %4.2lf, total hit %6d, total active %4d, "
-         "%2d merges, penalty %.4lf, "
-         "n_hit/active window %d %d %d %d\n", seg->seg_id, (int) params->curr_rtime - seg->create_rtime,
-         (double) seg->total_byte / seg->n_total_obj, seg->req_rate, seg->write_rate,
+         "%2d merges, penalty %.4lf, oracle_score %lf, "
+         "n_hit/active window %d %d %d %d, \n",
+         seg->seg_id, (int) params->curr_rtime - seg->create_rtime,
+         (double) seg->total_bytes / seg->n_total_obj, seg->req_rate, seg->write_rate,
+         seg->write_ratio, seg->cold_miss_ratio,
          (double) seg->n_total_hit / seg->n_total_obj, seg->n_total_hit, seg->n_total_active,
+
          seg->n_merge, seg->penalty,
+          cal_seg_penalty(cache, OBJ_SCORE_ORACLE,
+                          seg, params->n_retain_from_seg,
+                          params->curr_rtime, params->curr_vtime),
          seg->feature.n_hit_per_min[0],
          seg->feature.n_hit_per_min[1],
          seg->feature.n_hit_per_min[2],
          seg->feature.n_hit_per_min[3]
          );
 
-//  printf("n hit %d %d %d %d %d %d %d %d %d %d %d %d, "
-//         "n_active_per_window "
-//         "%d %d %d %d %d %d %d %d %d %d %d %d, "
-//         "active_accu %d %d %d %d %d %d %d %d %d %d %d %d\n",
-//         seg->feature.n_hit[0], seg->feature.n_hit[1], seg->feature.n_hit[2],
-//         seg->feature.n_hit[3], seg->feature.n_hit[4], seg->feature.n_hit[5],
-//         seg->feature.n_hit[6], seg->feature.n_hit[7], seg->feature.n_hit[8],
-//         seg->feature.n_hit[9], seg->feature.n_hit[10], seg->feature.n_hit[11],
-//
-//         seg->feature.n_active_item_per_window[0], seg->feature.n_active_item_per_window[1],
-//         seg->feature.n_active_item_per_window[2], seg->feature.n_active_item_per_window[3],
-//         seg->feature.n_active_item_per_window[4], seg->feature.n_active_item_per_window[5],
-//         seg->feature.n_active_item_per_window[6], seg->feature.n_active_item_per_window[7],
-//         seg->feature.n_active_item_per_window[8], seg->feature.n_active_item_per_window[9],
-//         seg->feature.n_active_item_per_window[10], seg->feature.n_active_item_per_window[11],
-//
-//         seg->feature.n_active_item_accu[0], seg->feature.n_active_item_accu[1],
-//         seg->feature.n_active_item_accu[2], seg->feature.n_active_item_accu[3],
-//         seg->feature.n_active_item_accu[4], seg->feature.n_active_item_accu[5],
-//         seg->feature.n_active_item_accu[6], seg->feature.n_active_item_accu[7],
-//         seg->feature.n_active_item_accu[8], seg->feature.n_active_item_accu[9],
-//         seg->feature.n_active_item_accu[10], seg->feature.n_active_item_accu[11]);
 }

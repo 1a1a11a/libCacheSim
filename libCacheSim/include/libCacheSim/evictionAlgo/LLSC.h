@@ -20,18 +20,23 @@ extern "C" {
 #endif
 
 #define MAX_N_BUCKET 120
-#define N_TRAIN_ITER 8
+#define N_TRAIN_ITER 40
 #define N_MAX_VALIDATION 1000
+#define CACHE_STATE_UPDATE_INTVL 10
 
 /* change to 10 will speed up */
-#define N_FEATURE_TIME_WINDOW 30
-
-//#define TRAINING_CONSIDER_RETAIN    1
+#define N_FEATURE_TIME_WINDOW 8
 
 
 #define TRAINING_TRUTH_ORACLE   1
 #define TRAINING_TRUTH_ONLINE   2
 #define TRAINING_TRUTH    TRAINING_TRUTH_ONLINE
+//#define TRAINING_TRUTH    TRAINING_TRUTH_ORACLE
+#define TRAINING_CONSIDER_RETAIN    1
+
+
+//#define ACCUMULATIVE_TRAINING
+//#define TRAIN_ONCE
 
 #define ADAPTIVE_RANK  1
 
@@ -41,6 +46,7 @@ extern "C" {
 
 
 //#define DUMP_MODEL 1
+//#define DUMP_TRAINING_DATA
 
 #define HIT_PROB_MAX_AGE 86400
 //#define HIT_PROB_MAX_AGE 172800
@@ -121,13 +127,8 @@ typedef struct {
 
 typedef struct {
   int32_t n_hit_per_min[N_FEATURE_TIME_WINDOW];
-//  int16_t n_active_item_per_min[N_FEATURE_TIME_WINDOW];
-
   int32_t n_hit_per_ten_min[N_FEATURE_TIME_WINDOW];
-//  int16_t n_active_item_per_ten_min[N_FEATURE_TIME_WINDOW];
-
   int32_t n_hit_per_hour[N_FEATURE_TIME_WINDOW];
-//  int16_t n_active_item_per_hour[N_FEATURE_TIME_WINDOW];
 
   int64_t last_min_window_ts;
   int64_t last_ten_min_window_ts;
@@ -135,19 +136,15 @@ typedef struct {
 } seg_feature_t;
 
 typedef struct learner {
-  int min_start_train_seg;
-  int max_start_train_seg;
-  int n_train_seg_growth;
-  int next_n_train_seg;
+  int64_t n_evicted_bytes;
+  int64_t n_bytes_start_collect_train;    /* after evicting n_bytes_start_collect_train bytes,
+ *                                           start collecting training data */
+  int n_segs_to_start_training;
+
   int sample_every_n_seg_for_training;
   int64_t last_train_vtime;
   int64_t last_train_rtime;
   int re_train_intvl;
-
-  //  int32_t feature_history_time_window;
-//  bool start_feature_recording;
-  //  bool start_train;
-//  int64_t start_feature_recording_time;
 
 #ifdef USE_XGBOOST
   BoosterHandle booster;
@@ -168,12 +165,14 @@ typedef struct learner {
   train_y_t *training_y;
   feature_t *valid_x;
   train_y_t *valid_y;
-  pred_t *valid_pred_y;
+//  pred_t *valid_pred_y;
 
 
   int32_t n_training_samples;
-  int32_t n_valid_samples;
-  //  int32_t n_training_iter;
+  int32_t n_validation_samples;
+  int32_t n_zero_samples;
+  int32_t n_zero_samples_use;
+  int n_trees;
 
   int32_t training_n_row;
   int32_t validation_n_row;
@@ -190,15 +189,25 @@ typedef struct learner {
 
 //  int32_t full_cache_write_time; /* real time */
 //  int32_t last_cache_full_time;  /* real time */
-  int64_t n_byte_written;        /* cleared after each full cache write */
+//  int64_t n_byte_written;        /* cleared after each full cache write */
 
 } learner_t;
 
+typedef struct cache_state {
+  double write_rate;
+  double req_rate;
+  double write_ratio;
+  double cold_miss_ratio;
+
+  int64_t last_update_rtime;
+  int64_t last_update_vtime;
+
+  int64_t n_miss;
+} cache_state_t;
+
 typedef struct segment {
-  //  cache_obj_t *first_obj;
-  //  cache_obj_t *last_obj;
   cache_obj_t *objs;
-  int64_t total_byte;
+  int64_t total_bytes;
   int32_t n_total_obj;
   int32_t bucket_idx;
 
@@ -243,6 +252,7 @@ typedef struct {
   segment_t *last_seg;
   int32_t n_seg;
   int16_t bucket_idx;
+  segment_t *next_seg_to_evict;
 
   hitProb_t hit_prob;
 } bucket_t;
@@ -290,8 +300,7 @@ typedef struct {
   //  int64_t last_hit_prob_compute_rtime;
   int64_t last_hit_prob_compute_vtime;
 
-  int n_req_since_last_eviction;
-  int n_miss_since_last_eviction;
+  cache_state_t cache_state;
 
   int size_bucket_base;
   LSC_type_e type;

@@ -38,53 +38,26 @@ static inline void seg_feature_shift(LLSC_params_t *params, segment_t *seg) {
   shift = (params->curr_rtime - seg->feature.last_min_window_ts) / 60;
   if (shift <= 0) return;
   for (int i = N_FEATURE_TIME_WINDOW-1; i >= 0; i--) {
-//    seg->feature.n_active_item_per_min[i + 1] = seg->feature.n_active_item_per_min[i];
     seg->feature.n_hit_per_min[i + 1] = seg->feature.n_hit_per_min[i];
   }
   seg->feature.n_hit_per_min[0] = 0;
-//  seg->feature.n_active_item_per_min[0] = 0;
   seg->feature.last_min_window_ts = params->curr_rtime;
-//  printf("%d: %d %d %d %d %d %d %d %d %d %d - %d %d %d %d %d %d %d %d %d %d - %d %d %d %d %d %d %d %d %d %d\n",
-//         seg->seg_id,
-//         seg->feature.n_hit_per_min[0], seg->feature.n_hit_per_min[1],
-//         seg->feature.n_hit_per_min[2], seg->feature.n_hit_per_min[3],
-//         seg->feature.n_hit_per_min[4], seg->feature.n_hit_per_min[5],
-//         seg->feature.n_hit_per_min[6], seg->feature.n_hit_per_min[7],
-//         seg->feature.n_hit_per_min[8], seg->feature.n_hit_per_min[9],
-//
-//         seg->feature.n_hit_per_ten_min[0], seg->feature.n_hit_per_ten_min[1],
-//         seg->feature.n_hit_per_ten_min[2], seg->feature.n_hit_per_ten_min[3],
-//         seg->feature.n_hit_per_ten_min[4], seg->feature.n_hit_per_ten_min[5],
-//         seg->feature.n_hit_per_ten_min[6], seg->feature.n_hit_per_ten_min[7],
-//         seg->feature.n_hit_per_ten_min[8], seg->feature.n_hit_per_ten_min[9],
-//
-//         seg->feature.n_hit_per_hour[0], seg->feature.n_hit_per_hour[1],
-//         seg->feature.n_hit_per_hour[2], seg->feature.n_hit_per_hour[3],
-//         seg->feature.n_hit_per_hour[4], seg->feature.n_hit_per_hour[5],
-//         seg->feature.n_hit_per_hour[6], seg->feature.n_hit_per_hour[7],
-//         seg->feature.n_hit_per_hour[8], seg->feature.n_hit_per_hour[9]
-//  );
-//  printf("\n");
 
   shift = (params->curr_rtime - seg->feature.last_ten_min_window_ts) / 600;
   if (shift <= 0) return;
   for (int i = N_FEATURE_TIME_WINDOW-1; i >= 0; i--) {
-//    seg->feature.n_active_item_per_ten_min[i + 1] = seg->feature.n_active_item_per_ten_min[i];
     seg->feature.n_hit_per_ten_min[i + 1] = seg->feature.n_hit_per_ten_min[i];
   }
   seg->feature.n_hit_per_ten_min[0] = 0;
-//  seg->feature.n_active_item_per_ten_min[0] = 0;
   seg->feature.last_ten_min_window_ts = params->curr_rtime;
 
 
   shift = (params->curr_rtime - seg->feature.last_hour_window_ts) / 3600;
   if (shift <= 0) return;
   for (int i = N_FEATURE_TIME_WINDOW-1; i >= 0; i--) {
-//    seg->feature.n_active_item_per_hour[i + 1] = seg->feature.n_active_item_per_hour[i];
     seg->feature.n_hit_per_hour[i + 1] = seg->feature.n_hit_per_hour[i];
   }
   seg->feature.n_hit_per_hour[0] = 0;
-//  seg->feature.n_active_item_per_hour[0] = 0;
   seg->feature.last_hour_window_ts = params->curr_rtime;
 }
 

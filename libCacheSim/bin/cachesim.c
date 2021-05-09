@@ -87,18 +87,15 @@ static void set_param_with_workload(sim_arg_t *args) {
     }
     args->n_cache_size = 7;
     args->seg_size = 20;
-    //    args->seg_size = 50;
+//    args->seg_size = 50;
+//    args->n_merge = 4;
     args->age_shift = 3;
-    args->min_start_train_seg = 500;
-
-
-    args->min_start_train_seg = 10000;
-        args->max_start_train_seg = 10000;
-        args->n_train_seg_growth = 10000;
-        args->sample_every_n_seg_for_training = 2;
-        args->rank_intvl = 20;
-
+    args->sample_every_n_seg_for_training = 2;
+    args->rank_intvl = 20;
     args->bucket_type = SIZE_BUCKET;
+    args->re_train_intvl = 86400;
+
+
   } else if (strstr(args->trace_path, "w32") != NULL) {
     uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
@@ -111,13 +108,42 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->n_merge = 2;
     args->age_shift = 3;
     args->bucket_type = SIZE_BUCKET;
-    args->min_start_train_seg = 4000;
-    args->max_start_train_seg = 10000;
-    args->n_train_seg_growth = 6000;
     args->sample_every_n_seg_for_training = 1;
     args->rank_intvl = 20;
     args->size_bucket_base = 1;
     args->re_train_intvl = 86400;
+
+
+
+    args->seg_size = 50;
+    args->n_merge = 2;
+    args->age_shift = 3;
+    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 10000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 6000;
+    args->sample_every_n_seg_for_training = 1;
+    args->rank_intvl = 120;
+    args->size_bucket_base = 1;
+    args->re_train_intvl = 86400;
+
+
+//    args->seg_size = 200;
+//    args->age_shift = 3;
+//    args->bucket_type = SIZE_BUCKET;
+//    args->min_start_train_seg = 4000;
+//    args->max_start_train_seg = 10000;
+//    args->n_train_seg_growth = 6000;
+//    args->sample_every_n_seg_for_training = 1;
+//    args->rank_intvl = 20;
+
+
+
+
+
+
+
+
 
 
     /* 8GB 0.1712 0.66 MQPS */
@@ -374,20 +400,17 @@ void run_cache(reader_t *reader, cache_t *cache) {
   uint64_t req_byte = 0, miss_byte = 0;
 
   read_one_req(reader, req);
-  //  if (strstr(reader->trace_path, "sjc") != NULL) {
-  //    for (int i = 0; i < 200000; i++)
-  //      read_one_req(reader, req);
-  //  }
   int32_t start_ts = req->real_time, last_report_ts = 0;
 
   /* skip half of the requests */
-  int64_t n_skipped = 0;
-//  for (int i = 0; i < reader->n_total_req / 2; i++) {
-//    n_skipped += 1;
-//    req->real_time -= start_ts;
-//    cache->get(cache, req);
-//    read_one_req(reader, req);
-//  }
+  long n_skipped = 0;
+  for (int i = 0; i < reader->n_total_req / 2; i++) {
+//  while (req->real_time - start_ts < 86400 * 4) {
+    n_skipped += 1;
+    req->real_time -= start_ts;
+    cache->get(cache, req);
+    read_one_req(reader, req);
+  }
 
   double start_time = gettime();
   while (req->valid) {
