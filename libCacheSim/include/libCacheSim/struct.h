@@ -47,7 +47,8 @@ typedef struct cache_obj {
       int16_t idx_in_segment;
       int16_t active : 2;
       int16_t in_cache : 2;
-      int16_t n_merged : 12;  /* how many times it has been merged */
+      int16_t seen_after_snapshot : 2;
+//      int16_t n_merged : 12;  /* how many times it has been merged */
     } LSC;
     int64_t freq;
     double score;

@@ -45,8 +45,6 @@ static void rank_segs(cache_t *cache) {
       } else {
         if (params->type == LOGCACHE_LEARNED) {
 //            curr_seg->penalty = 0;
-//          curr_seg->penalty = 1.0 / curr_seg->total_bytes;
-          ;
         } else if (params->type == LOGCACHE_LOG_ORACLE
             || params->type == SEGCACHE_SEG_ORACLE) {
 //            curr_seg->penalty = cal_seg_penalty(cache, params->obj_score_type, curr_seg,
@@ -145,14 +143,19 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 
 
   double req_rate = 0, write_rate = 0;
+  double write_ratio = 0, cold_miss_ratio = 0;
   int n_merge = 0;
   for (int i = 0; i < params->n_merge; i++) {
     req_rate += segs[i]->req_rate;
     write_rate += segs[i]->write_rate;
+    write_ratio += segs[i]->write_ratio;
+    cold_miss_ratio += segs[i]->cold_miss_ratio;
     n_merge = MAX(n_merge, segs[i]->n_merge);
   }
   new_seg->req_rate = req_rate / params->n_merge;
   new_seg->write_rate = write_rate / params->n_merge;
+  new_seg->write_ratio = write_ratio / params->n_merge;
+  new_seg->cold_miss_ratio = cold_miss_ratio / params->n_merge;
   new_seg->n_merge = n_merge + 1;
 
   link_new_seg_before_seg(params, bucket, segs[0], new_seg);
@@ -184,8 +187,6 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
         new_obj->LSC.LLSC_freq = (new_obj->LSC.LLSC_freq + 1) / 2;
         new_obj->LSC.idx_in_segment = new_seg->n_total_obj;
         new_obj->LSC.segment = new_seg;
-        if (new_obj->LSC.n_merged < 1u<<11u)
-          new_obj->LSC.n_merged += 1;
         new_obj->LSC.active = 0;
         hashtable_insert_obj(cache->hashtable, new_obj);
 
@@ -201,6 +202,7 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
       cache_obj->LSC.in_cache = 0;
     }
 
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
     if (params->type == LOGCACHE_LEARNED &&
         params->learner.n_evicted_bytes >
             params->learner.n_bytes_start_collect_train &&
@@ -210,6 +212,11 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
       remove_seg_from_bucket(params, bucket, segs[i]);
       clean_one_seg(cache, segs[i]);
     }
+#else
+//    if (params->curr_rtime - segs[i]->become_train_seg_rtime < )
+    remove_seg_from_bucket(params, bucket, segs[i]);
+    clean_one_seg(cache, segs[i]);
+#endif
   }
 
   /* not sure if using oracle info */
@@ -334,6 +341,7 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
     return select_segs_segcache(cache, segs);
 
   if (params->type == LOGCACHE_LEARNED && params->learner.n_train == 0)
+//  if (params->type == LOGCACHE_LEARNED)
 //    return select_segs_segcache(cache, segs);
     return select_segs_logUnlearned(cache, segs);
 //    return select_segs_rand(cache, segs);

@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #include "../include/libCacheSim/evictionAlgo/FIFO.h"
-#include "include/cacheAlg.h"
+#include "../dataStructure/hashtable/hashtable.h"
 #include <assert.h>
 
 cache_t *FIFO_init(common_cache_params_t ccache_params, void *init_params) {

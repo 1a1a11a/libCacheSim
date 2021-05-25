@@ -53,9 +53,9 @@ static inline int64_t object_age(LLSC_params_t *params, cache_obj_t *obj) {
 static inline int64_t object_age_shifted(LLSC_params_t *params, cache_obj_t *obj) {
   bucket_t *bkt = &params->buckets[((segment_t *) (obj->LSC.segment))->bucket_idx];
   int64_t obj_age =
-      (params->curr_rtime - obj->LSC.last_access_rtime) >> bkt->hit_prob.age_shift;
+      (params->curr_rtime - obj->LSC.last_access_rtime) >> bkt->hit_prob->age_shift;
   if (obj_age >= HIT_PROB_MAX_AGE) {
-    bkt->hit_prob.n_overflow += 1;
+    bkt->hit_prob->n_overflow += 1;
     obj_age = HIT_PROB_MAX_AGE - 1;
   }
   return obj_age;
@@ -64,13 +64,12 @@ static inline int64_t object_age_shifted(LLSC_params_t *params, cache_obj_t *obj
 static inline void object_hit(LLSC_params_t *params, cache_obj_t *obj, request_t *req) {
   obj->LSC.next_access_ts = req->next_access_ts;
   obj->LSC.LLSC_freq += 1;
-  obj->LSC.n_merged = 0;
 
   segment_t *seg = obj->LSC.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
   int64_t obj_age = object_age_shifted(params, obj);
-  bkt->hit_prob.n_hit[obj_age] += 1;
+  bkt->hit_prob->n_hit[obj_age] += 1;
   obj->LSC.last_access_rtime = params->curr_rtime;
 }
 
@@ -84,7 +83,7 @@ static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
 #endif
 
   int64_t obj_age = object_age_shifted(params, obj);
-  bkt->hit_prob.n_evict[obj_age] += 1;
+  bkt->hit_prob->n_evict[obj_age] += 1;
 }
 
 static inline void debug_check_bucket(cache_t *cache) {
@@ -173,12 +172,12 @@ static inline int clean_one_seg(cache_t *cache, segment_t *seg) {
   LLSC_params_t *params = cache->cache_params;
   int n_cleaned = 0;
   DEBUG_ASSERT(seg->n_total_obj == params->segment_size);
-    for (int i = 0; i < seg->n_total_obj; i++) {
-      cache_obj_t *cache_obj = &seg->objs[i];
-      if (hashtable_try_delete(cache->hashtable, cache_obj)) {
-        n_cleaned += 1;
-      }
+  for (int i = 0; i < seg->n_total_obj; i++) {
+    cache_obj_t *cache_obj = &seg->objs[i];
+    if (hashtable_try_delete(cache->hashtable, cache_obj)) {
+      n_cleaned += 1;
     }
+  }
   my_free(sizeof(cache_obj_t) * params->n_total_obj, seg->objs);
   my_free(sizeof(segment_t), seg);
 
@@ -269,6 +268,8 @@ static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   new_seg->create_rtime = params->curr_rtime;
   new_seg->create_vtime = params->curr_vtime;
   new_seg->is_training_seg = false;
+  new_seg->in_training_data = false;
+  new_seg->penalty = 0;
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_idx = bucket_idx;
@@ -313,7 +314,7 @@ static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_t
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
     int64_t obj_age = object_age(params, cache_obj);
     obj_age = obj_age >= HIT_PROB_MAX_AGE ? HIT_PROB_MAX_AGE - 1 : obj_age;
-    return 1.0e6 * bkt->hit_prob.hit_density[obj_age] / cache_obj->obj_size;
+    return 1.0e6 * bkt->hit_prob->hit_density[obj_age] / cache_obj->obj_size;
 
   } else if (score_type == OBJ_SCORE_ORACLE) {
     if (cache_obj->LSC.next_access_ts == -1) {
@@ -328,6 +329,16 @@ static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_t
     printf("unknown cache type %d\n", score_type);
     abort();
   }
+}
+
+static inline int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
+  int n = 0;
+  for (int i = 0; i < seg->n_total_obj; i++) {
+    if (seg->objs[i].LSC.next_access_ts > 0) {
+      n += 1;
+    }
+  }
+  return n;
 }
 
 static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, segment_t **segs,
@@ -381,12 +392,14 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type,
     penalty += seg_sel->score_array[j];
   }
 
+  /* we add this term here because the segment here is not fix-sized */
+//  penalty = penalty * 1e8 / seg->total_bytes;
   DEBUG_ASSERT(penalty >= 0);
   return penalty;
 }
 
 static inline void update_hit_prob_cdf(bucket_t *bkt) {
-  hitProb_t *hb = &bkt->hit_prob;
+  hitProb_t *hb = bkt->hit_prob;
   int64_t n_hit_sum = hb->n_hit[HIT_PROB_MAX_AGE - 1];
   int64_t n_event_sum = n_hit_sum + hb->n_evict[HIT_PROB_MAX_AGE - 1];
   int64_t lifetime_uncond = n_event_sum;
@@ -407,12 +420,12 @@ static inline void update_hit_prob_cdf(bucket_t *bkt) {
   }
 
   static int last_overflow = 0;
-  if (bkt->hit_prob.n_overflow > 0) {
-    if (bkt->hit_prob.n_overflow > last_overflow) {
-      printf("bucket %d overflow %ld\n", bkt->bucket_idx, (long) bkt->hit_prob.n_overflow);
-      last_overflow = bkt->hit_prob.n_overflow;
+  if (bkt->hit_prob->n_overflow > 0) {
+    if (bkt->hit_prob->n_overflow > last_overflow) {
+      printf("bucket %d overflow %ld\n", bkt->bucket_idx, (long) bkt->hit_prob->n_overflow);
+      last_overflow = bkt->hit_prob->n_overflow;
     }
-    bkt->hit_prob.n_overflow = 0;
+    bkt->hit_prob->n_overflow = 0;
   }
 }
 
@@ -437,7 +450,7 @@ static inline void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          "req/write rate %6.0lf/%4.2lf, "
          "write ratio/cold miss %.4lf/%.4lf, "
          "mean freq %4.2lf, total hit %6d, total active %4d, "
-         "%2d merges, penalty %.4lf, oracle_score %lf, "
+         "%2d merges, penalty %.4lf, oracle_score %lf, %d obj have reuse, "
          "n_hit/active window %d %d %d %d, \n",
          seg->seg_id, (int) params->curr_rtime - seg->create_rtime,
          (double) seg->total_bytes / seg->n_total_obj, seg->req_rate, seg->write_rate,
@@ -448,6 +461,8 @@ static inline void print_seg(cache_t *cache, segment_t *seg, int log_level) {
           cal_seg_penalty(cache, OBJ_SCORE_ORACLE,
                           seg, params->n_retain_from_seg,
                           params->curr_rtime, params->curr_vtime),
+         count_n_obj_reuse(cache, seg),
+
          seg->feature.n_hit_per_min[0],
          seg->feature.n_hit_per_min[1],
          seg->feature.n_hit_per_min[2],

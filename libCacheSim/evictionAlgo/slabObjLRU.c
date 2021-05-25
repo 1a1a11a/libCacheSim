@@ -3,7 +3,7 @@
 //
 
 
-#include "include/cacheAlg.h"
+#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/slabObjLRU.h"
 #include "../utils/include/utilsInternal.h"
 

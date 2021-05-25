@@ -13,8 +13,8 @@
 extern "C" {
 #endif
 
+#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/optimal.h"
-#include "include/cacheAlg.h"
 #include <assert.h>
 
 /******************* priority queue structs and def **********************/

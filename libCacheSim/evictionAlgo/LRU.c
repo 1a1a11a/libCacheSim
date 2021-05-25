@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #include "../include/libCacheSim/evictionAlgo/LRU.h"
-#include "include/cacheAlg.h"
+#include "../dataStructure/hashtable/hashtable.h"
 
 cache_t *LRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("LRU", ccache_params);

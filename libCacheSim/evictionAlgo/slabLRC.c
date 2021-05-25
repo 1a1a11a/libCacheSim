@@ -4,7 +4,7 @@
 // Created by Juncheng Yang on 04/22/20.
 //
 
-#include "include/cacheAlg.h"
+#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/slabLRC.h"
 #include "../utils/include/utilsInternal.h"
 

@@ -24,7 +24,11 @@ endif()
 
 #include_directories(${LIGHTGBM_INCLUDE_DIR})
 add_library (evictionAlgo ${source})
-target_link_libraries(evictionAlgo cache ${LIGHTGBM_LIB})
+if (ENABLE_LLSC)
+    target_link_libraries(evictionAlgo cache ${LIGHTGBM_LIB})
+else()
+    target_link_libraries(evictionAlgo cache)
+endif()
 
 
 #file(GLOB src *.c)

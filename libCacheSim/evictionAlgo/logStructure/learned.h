@@ -10,9 +10,9 @@ static inline void transform_seg_to_training(cache_t *cache, bucket_t *bucket,
   LLSC_params_t *params = cache->cache_params;
   segment->is_training_seg = true;
   /* used to calculate the eviction penalty */
-  segment->eviction_vtime = params->curr_vtime;
+  segment->become_train_seg_vtime = params->curr_vtime;
   /* used to calculate age at eviction for training */
-  segment->eviction_rtime = params->curr_rtime;
+  segment->become_train_seg_rtime = params->curr_rtime;
   segment->penalty = 0;
 
 
@@ -78,23 +78,39 @@ static inline void seg_hit(LLSC_params_t *params, cache_obj_t *cache_obj) {
   if (!cache_obj->LSC.active) {
     segment->n_total_active += 1;
     cache_obj->LSC.active = 1;
-
-//    segment->feature.n_active_item_per_min[0] += 1;
-//    segment->feature.n_active_item_per_ten_min[0] += 1;
-//    segment->feature.n_active_item_per_hour[0] += 1;
-
-//    if ((params->curr_rtime - cache_obj->LSC.last_access_rtime) / 60 > 0)
-//      segment->feature.n_active_item_per_min[0] += 1;
-//    if ((params->curr_rtime - cache_obj->LSC.last_access_rtime) / 600 > 0)
-//      segment->feature.n_active_item_per_ten_min[0] += 1;
-//    if ((params->curr_rtime - cache_obj->LSC.last_access_rtime) / 3600 > 0)
-//      segment->feature.n_active_item_per_hour[0] += 1;
   }
-
-  //  segment->feature.n_hit[curr_idx] += 1;
-  //  cache_obj->LSC.last_history_idx = curr_idx;
-  //  cache_obj->LSC.last_access_rtime = params->curr_rtime;
 }
+
+static inline void update_train_y(LLSC_params_t *params, cache_obj_t *cache_obj) {
+  segment_t *seg = cache_obj->LSC.segment;
+
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+  DEBUG_ASSERT(cache_obj->LSC.in_cache == 0);
+  DEBUG_ASSERT(seg->is_training_seg == true);
+#else
+  if (!seg->in_training_data) {
+    return;
+  }
+#endif
+
+#if TRAINING_CONSIDER_RETAIN == 1
+  if (seg->n_skipped_penalty ++ > params->n_retain_from_seg)
+#endif
+  {
+    double age = (double) params->curr_vtime - seg->become_train_seg_vtime;
+    if (params->obj_score_type == OBJ_SCORE_FREQ
+        || params->obj_score_type == OBJ_SCORE_FREQ_AGE) {
+      seg->penalty += 1.0e8 / age;
+    } else {
+      seg->penalty += 1.0e8 / age / cache_obj->obj_size;
+    }
+    params->learner.training_y[seg->training_data_row_idx] = seg->penalty;
+  }
+}
+
+void create_data_holder2(cache_t *cache);
+
+void snapshot_segs_to_training_data(cache_t *cache);
 
 void train(cache_t *cache);
 

@@ -72,7 +72,7 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
 
   INFO(
       "log-structured cache, size %.2lf MB, type %d %s, object selection %d %s, bucket type %d %s, "
-      "size_bucket_base %d, n_start_train_seg min %d max %d growth %d sample %d, rank intvl %d, "
+      "size_bucket_base %d, %ld bytes start training seg collection, sample %d, rank intvl %d, "
       "training truth %d re-train %d\n",
       (double) cache->cache_size / 1048576,
       params->type,
@@ -82,11 +82,13 @@ cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
       params->bucket_type,
       bucket_type_names[params->bucket_type],
       params->size_bucket_base,
-      0,0,0,
-      params->learner.sample_every_n_seg_for_training,
+//      (long) params->learner.n_bytes_start_collect_train,
+//      params->learner.sample_every_n_seg_for_training,
+      0L, 0,
       params->rank_intvl,
       TRAINING_TRUTH,
-      params->learner.re_train_intvl
+      0
+//      params->learner.re_train_intvl
   );
   return cache;
 }
@@ -140,8 +142,14 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
     DEBUG_ASSERT(
         ((segment_t *) (cache_obj->LSC.segment))->is_training_seg == false);
 
+    /* seg_hit update segment state features */
     seg_hit(params, cache_obj);
+    /* object hit update training data y and object stat */
     object_hit(params, cache_obj, req);
+
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_CACHE
+    update_train_y(params, cache_obj);
+#endif
 
     cache_obj = cache_obj->hash_next;
     while (cache_obj && cache_obj->obj_id != req->obj_id) {
@@ -153,21 +161,7 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
        * is retained multiple times then get a hit,
        * we can delete the history upon the second merge, or
        * we can remove it here */
-      DEBUG_ASSERT(cache_obj->LSC.in_cache == 0);
-      segment_t *seg = cache_obj->LSC.segment;
-#if TRAINING_CONSIDER_RETAIN == 1
-      if (seg->n_skipped_penalty ++ > params->n_retain_from_seg)
-#endif
-      {
-        double age_since_ev = (double) params->curr_vtime - seg->eviction_vtime;
-        if (params->obj_score_type == OBJ_SCORE_FREQ
-            || params->obj_score_type == OBJ_SCORE_FREQ_AGE) {
-          seg->penalty += 1.0e8 / age_since_ev;
-        } else {
-          seg->penalty += 1.0e8 / age_since_ev / cache_obj->obj_size;
-        }
-      }
-      DEBUG_ASSERT(seg->is_training_seg == true);
+      update_train_y(params, cache_obj);
       hashtable_delete(cache->hashtable, cache_obj);
 
       cache_obj = cache_obj->hash_next;
@@ -181,21 +175,7 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
   } else {
     /* no entry in cache */
     while (cache_obj) {
-      DEBUG_ASSERT(cache_obj->LSC.in_cache == 0);
-      segment_t *seg = cache_obj->LSC.segment;
-#if TRAINING_CONSIDER_RETAIN == 1
-      if (seg->n_skipped_penalty ++ > params->n_retain_from_seg)
-#endif
-      {
-      double age_since_ev = (double) (params->curr_vtime - seg->eviction_vtime);
-      if (params->obj_score_type == OBJ_SCORE_FREQ
-          || params->obj_score_type == OBJ_SCORE_FREQ_AGE)
-        seg->penalty += 1.0e8 / age_since_ev;
-      else
-        seg->penalty += 1.0e8 / age_since_ev / cache_obj->obj_size;
-      }
-
-      DEBUG_ASSERT(seg->is_training_seg == true);
+      update_train_y(params, cache_obj);
       hashtable_delete(cache->hashtable, cache_obj);
 
       /* there cound be more than one history entry if the object is retained several times and evicted
@@ -249,6 +229,24 @@ __attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache,
   if (ret == cache_ck_miss)
     params->cache_state.n_miss += 1;
 
+
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_CACHE
+  if (params->type == LOGCACHE_LEARNED) {
+    learner_t *l = &params->learner;
+    if (l->n_evicted_bytes >= cache->cache_size / 2) {
+      if (l->n_snapshot == 0) {
+        /* move to initialization */
+        create_data_holder2(cache);
+        l->last_train_rtime = params->curr_rtime;
+      }
+      if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
+        train(cache);
+      }
+      if (params->curr_rtime - l->last_snapshot_rtime > l->snapshot_intvl)
+        snapshot_segs_to_training_data(cache);
+    }
+  }
+#endif
   return ret;
 }
 
@@ -279,6 +277,7 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
   //  cache_obj->LSC.last_history_idx = -1;
   cache_obj->LSC.in_cache = 1;
   cache_obj->LSC.segment = seg;
+  cache_obj->LSC.seen_after_snapshot = 0;
   cache_obj->LSC.idx_in_segment = seg->n_total_obj;
   cache_obj->LSC.next_access_ts = req->next_access_ts;
 
@@ -294,46 +293,34 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(cache->n_obj <= params->n_segs * params->segment_size);
 }
 
-static inline int count_hash_chain_len(cache_obj_t *cache_obj) {
-  int n = 0;
-  while (cache_obj) {
-    n += 1;
-    cache_obj = cache_obj->hash_next;
-  }
-  return n;
-}
-
-
 
 void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   LLSC_params_t *params = cache->cache_params;
 
-  bucket_t *bucket = select_segs(cache, params->seg_sel.segs_to_evict);
-
-  for (int i = 0; i < params->n_merge; i++) {
-    params->learner.n_evicted_bytes += params->seg_sel.segs_to_evict[i]->total_bytes;
-  }
-  LLSC_merge_segs(cache, bucket, params->seg_sel.segs_to_evict);
-
-  params->n_evictions += 1;
-
   learner_t *l = &params->learner;
 
+  bucket_t *bucket = select_segs(cache, params->seg_sel.segs_to_evict);
+
+  params->n_evictions += 1;
+  for (int i = 0; i < params->n_merge; i++) {
+    l->n_evicted_bytes += params->seg_sel.segs_to_evict[i]->total_bytes;
+  }
+
+
   if (params->type == LOGCACHE_LEARNED) {
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
     if (params->n_training_segs >= params->learner.n_segs_to_start_training) {
+//    if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
       train(cache);
 #ifdef TRAIN_ONCE
       printf("only train once ???\n");
       l->re_train_intvl += l->re_train_intvl * 2000;
 #endif
-
-//      learner->next_n_train_seg = learner->min_start_train_seg +
-//          learner->n_train_seg_growth * learner->n_train;
-//      if (learner->next_n_train_seg > learner->max_start_train_seg)
-//        learner->next_n_train_seg = learner->max_start_train_seg;
     } else {
-      if (l->last_train_rtime == 0)
+      if (l->last_train_rtime == 0) {
+        /* initialize the last_train_rtime */
         l->last_train_rtime = params->curr_rtime;
+      }
 
       if (params->n_training_segs > l->n_segs_to_start_training / 10) {
         /* we don't want to rate limit at beginning */
@@ -345,23 +332,29 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
             MAX((int) (time_till_next / MAX(n_tseg_gap, 1)), 1);
       }
     }
+#else
+
+#endif
   }
 
-  if (params->curr_vtime - params->last_hit_prob_compute_vtime
-      > HIT_PROB_COMPUTE_INTVL) {
+
+    LLSC_merge_segs(cache, bucket, params->seg_sel.segs_to_evict);
+
+
+  if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY &&
+        params->curr_vtime - params->last_hit_prob_compute_vtime > HIT_PROB_COMPUTE_INTVL) {
     /* update hit prob for all buckets */
     for (int i = 0; i < MAX_N_BUCKET; i++) {
       update_hit_prob_cdf(&params->buckets[i]);
     }
     params->last_hit_prob_compute_vtime = params->curr_vtime;
-
+  }
 //        static int last_print = 0;
 //        if (params->curr_rtime - last_print >= 3600 * 24) {
 //          printf("cache size %lu ", (unsigned long) cache->cache_size);
 //          print_bucket(cache);
 //          last_print = params->curr_rtime;
 //        }
-  }
 }
 
 void LLSC_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

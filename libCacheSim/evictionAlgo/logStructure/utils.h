@@ -31,4 +31,15 @@ static inline void update_cache_state(cache_t *cache) {
 }
 
 
+static inline int count_hash_chain_len(cache_obj_t *cache_obj) {
+  int n = 0;
+  while (cache_obj) {
+    n += 1;
+    cache_obj = cache_obj->hash_next;
+  }
+  return n;
+}
+
+
+
 

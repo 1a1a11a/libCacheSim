@@ -20,20 +20,27 @@ extern "C" {
 #endif
 
 #define MAX_N_BUCKET 120
-#define N_TRAIN_ITER 40
+#define N_TRAIN_ITER 20
 #define N_MAX_VALIDATION 1000
 #define CACHE_STATE_UPDATE_INTVL 10
 
 /* change to 10 will speed up */
 #define N_FEATURE_TIME_WINDOW 8
 
+#define TRAINING_DATA_FROM_EVICTION 1
+#define TRAINING_DATA_FROM_CACHE    2
+#define TRAINING_DATA_SOURCE    TRAINING_DATA_FROM_CACHE
+
 
 #define TRAINING_TRUTH_ORACLE   1
 #define TRAINING_TRUTH_ONLINE   2
-#define TRAINING_TRUTH    TRAINING_TRUTH_ONLINE
-//#define TRAINING_TRUTH    TRAINING_TRUTH_ORACLE
+//#define TRAINING_TRUTH    TRAINING_TRUTH_ONLINE
+#define TRAINING_TRUTH    TRAINING_TRUTH_ORACLE
 #define TRAINING_CONSIDER_RETAIN    1
 
+#define REG 1
+#define LTR 2
+#define OBJECTIVE LTR
 
 //#define ACCUMULATIVE_TRAINING
 //#define TRAIN_ONCE
@@ -119,6 +126,7 @@ typedef struct {
   int max_start_train_seg;
   int n_train_seg_growth;
   int sample_every_n_seg_for_training;
+  int snapshot_intvl;
   int re_train_intvl;
   int hit_density_age_shift;
   bucket_type_e bucket_type;
@@ -136,15 +144,26 @@ typedef struct {
 } seg_feature_t;
 
 typedef struct learner {
-  int64_t n_evicted_bytes;
-  int64_t n_bytes_start_collect_train;    /* after evicting n_bytes_start_collect_train bytes,
- *                                           start collecting training data */
-  int n_segs_to_start_training;
 
-  int sample_every_n_seg_for_training;
-  int64_t last_train_vtime;
+  int64_t n_evicted_bytes;
+//  int64_t last_train_vtime;
   int64_t last_train_rtime;
   int re_train_intvl;
+
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+  int sample_every_n_seg_for_training;
+  int n_segs_to_start_training;
+  int64_t n_bytes_start_collect_train;    /* after evicting n_bytes_start_collect_train bytes,
+                                           * start collecting training data */
+#elif TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_CACHE
+  int64_t last_snapshot_rtime;
+  int32_t n_max_training_segs;
+  int n_snapshot;
+  int snapshot_intvl;
+#else
+#error
+#endif
+
 
 #ifdef USE_XGBOOST
   BoosterHandle booster;
@@ -168,15 +187,15 @@ typedef struct learner {
 //  pred_t *valid_pred_y;
 
 
-  int32_t n_training_samples;
-  int32_t n_validation_samples;
-  int32_t n_zero_samples;
-  int32_t n_zero_samples_use;
+  unsigned int n_training_samples;
+  unsigned int n_validation_samples;
+  unsigned int n_zero_samples;
+  unsigned int n_zero_samples_use;
   int n_trees;
 
-  int32_t training_n_row;   /* the size of matrix */
-  int32_t validation_n_row;
-  int32_t inference_n_row;
+  int32_t train_matrix_size_row;   /* the size of matrix */
+  int32_t valid_matrix_size_row;
+  int32_t inf_matrix_size_row;
 
   feature_t *inference_data;
   pred_t *pred;
@@ -218,13 +237,18 @@ typedef struct segment {
   double write_ratio;
   double cold_miss_ratio;
 
-  int64_t eviction_vtime;
-  int64_t eviction_rtime;
+  int64_t become_train_seg_vtime;
+  int64_t become_train_seg_rtime;
 
   seg_feature_t feature;
 
   int n_merge; /* number of merged times */
   bool is_training_seg;
+
+
+  bool in_training_data;
+  unsigned int training_data_row_idx;
+
   int32_t magic;
 } segment_t;
 
@@ -245,7 +269,7 @@ typedef struct {
   int16_t bucket_idx;
   segment_t *next_seg_to_evict;
 
-  hitProb_t hit_prob;
+  hitProb_t *hit_prob;
 } bucket_t;
 
 typedef struct seg_sel {

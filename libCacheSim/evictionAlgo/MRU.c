@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#include "include/cacheAlg.h"
+#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/MRU.h"
 
 cache_t *MRU_init(common_cache_params_t ccache_params, void *init_params) {

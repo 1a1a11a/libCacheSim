@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "include/cacheAlg.h"
+#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LRUv0.h"
 #include "../utils/include/utilsInternal.h"
 #include <assert.h>

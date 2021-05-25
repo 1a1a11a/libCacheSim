@@ -54,32 +54,49 @@ static inline void create_data_holder(cache_t *cache) {
 
   learner_t *learner = &params->learner;
 
-  int32_t n_max_training_samples = params->n_training_segs * N_FEATURE_TIME_WINDOW;
-  if (learner->training_n_row < n_max_training_samples) {
+  int32_t n_max_training_samples = params->n_training_segs;
+  if (learner->train_matrix_size_row < n_max_training_samples) {
     n_max_training_samples *= 2;
-    if (learner->training_n_row > 0) {
+    if (learner->train_matrix_size_row > 0) {
       DEBUG_ASSERT(learner->training_x != NULL);
-      my_free(sizeof(feature_t) * learner->training_n_row * learner->n_feature, learner->training_x);
-      my_free(sizeof(train_y_t) * learner->training_n_row, learner->training_y);
+      my_free(sizeof(feature_t) * learner->train_matrix_size_row * learner->n_feature, learner->training_x);
+      my_free(sizeof(train_y_t) * learner->train_matrix_size_row, learner->training_y);
     }
     learner->training_x = my_malloc_n(feature_t, n_max_training_samples * learner->n_feature);
     learner->training_y = my_malloc_n(pred_t, n_max_training_samples);
-    learner->training_n_row = n_max_training_samples;
+    learner->train_matrix_size_row = n_max_training_samples;
   }
 
-  if (learner->validation_n_row < N_MAX_VALIDATION) {
-    if (learner->validation_n_row > 0) {
+  if (learner->valid_matrix_size_row < N_MAX_VALIDATION) {
+    if (learner->valid_matrix_size_row > 0) {
       DEBUG_ASSERT(learner->valid_x != NULL);
-      my_free(sizeof(feature_t) * learner->validation_n_row * learner->n_feature, learner->valid_x);
-      my_free(sizeof(train_y_t) * learner->validation_n_row, learner->valid_y);
-//      my_free(sizeof(pred_t) * learner->validation_n_row, learner->valid_pred_y);
+      my_free(sizeof(feature_t) * learner->valid_matrix_size_row * learner->n_feature, learner->valid_x);
+      my_free(sizeof(train_y_t) * learner->valid_matrix_size_row, learner->valid_y);
+//      my_free(sizeof(pred_t) * learner->valid_matrix_size_row, learner->valid_pred_y);
     }
     learner->valid_x = my_malloc_n(feature_t, N_MAX_VALIDATION * learner->n_feature);
     learner->valid_y = my_malloc_n(train_y_t, N_MAX_VALIDATION);
 //    learner->valid_pred_y = my_malloc_n(pred_t, N_MAX_VALIDATION);
-    learner->validation_n_row = N_MAX_VALIDATION;
+    learner->valid_matrix_size_row = N_MAX_VALIDATION;
   }
 }
+
+void create_data_holder2(cache_t *cache) {
+  LLSC_params_t *params = cache->cache_params;
+
+  learner_t *learner = &params->learner;
+
+  if (learner->train_matrix_size_row == 0) {
+    learner->training_x = my_malloc_n(feature_t, learner->n_max_training_segs * learner->n_feature);
+    learner->training_y = my_malloc_n(pred_t, learner->n_max_training_segs);
+    learner->train_matrix_size_row = learner->n_max_training_segs;
+
+    learner->valid_matrix_size_row = learner->n_max_training_segs / 10;
+    learner->valid_x = my_malloc_n(feature_t, learner->valid_matrix_size_row * learner->n_feature);
+    learner->valid_y = my_malloc_n(train_y_t, learner->valid_matrix_size_row);
+  }
+}
+
 
 static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool training_data, feature_t *x, train_y_t *y) {
   LLSC_params_t *params = cache->cache_params;
@@ -93,7 +110,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
   x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
   x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
   if (training_data)
-    x[3] = (feature_t) curr_seg->eviction_rtime - curr_seg->create_rtime;
+    x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
   else
     x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
   x[4] = (feature_t) curr_seg->req_rate;
@@ -133,14 +150,22 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
   penalty = cal_seg_penalty(cache,
                             OBJ_SCORE_ORACLE,
                             curr_seg, n_retained_obj,
-                            curr_seg->eviction_rtime,
-                            curr_seg->eviction_vtime);
+                            curr_seg->become_train_seg_rtime,
+                            curr_seg->become_train_seg_vtime);
 
 #else
 #endif
 
 //  penalty = penalty * 10000000 / curr_seg->total_bytes;
+#if OBJECTIVE == REG
   *y = (train_y_t) penalty;
+#elif OBJECTIVE == LTR
+  double rel = 1.0 / (penalty*10 + 1e-16);
+  rel = 2 / (1 + exp(-rel)) - 1;
+  DEBUG_ASSERT(rel >= 0 && rel <= 1);
+  *y = rel;
+//  printf("%lf %lf\n", penalty, rel);
+#endif
 
   if (penalty < 0.000001) {
     return false;
@@ -148,82 +173,92 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
   return true;
 }
 
-static void prepare_training_data(cache_t *cache) {
+
+
+
+
+
+static inline void copy_to_train_matrix(cache_t *cache, segment_t *seg) {
   LLSC_params_t *params = cache->cache_params;
+  learner_t *l = &params->learner;
 
-  learner_t *learner = &params->learner;
+  if (l->n_training_samples >= l->n_max_training_segs - 1)
+    return;
 
-  create_data_holder(cache);
+  unsigned int row_idx = l->n_training_samples++;
 
-  feature_t *train_x = learner->training_x;
-  train_y_t *train_y = learner->training_y;
-  feature_t *valid_x = learner->valid_x;
-  train_y_t *valid_y = learner->valid_y;
+  seg->in_training_data = true;
+  seg->training_data_row_idx = row_idx;
+  seg->become_train_seg_rtime = params->curr_rtime;
+  seg->become_train_seg_vtime = params->curr_vtime;
 
-  learner->n_zero_samples = learner->n_zero_samples_use = 0;
-  learner->n_training_samples = learner->n_validation_samples = 0;
+  prepare_one_row(cache, seg, true,
+                  &l->training_x[row_idx*l->n_feature],
+                  &l->training_y[row_idx]);
+//  printf("%d %f: %f %f\n", row_idx, l->training_y[row_idx],
+//         l->training_x[row_idx * l->n_feature + 9],
+//         l->training_x[row_idx * l->n_feature + 10]
+//  );
+//  print_seg(cache, seg, DEBUG_LEVEL);
 
-  int i;
-  segment_t *curr_seg = params->training_bucket.first_seg;
 
-  bool is_sample_valid;
-  for (i = 0; i < params->n_training_segs / 2; i++) {
-    DEBUG_ASSERT(curr_seg != NULL);
+}
 
-    if (learner->n_validation_samples < N_MAX_VALIDATION && rand() % 10 <= 0) {
-      is_sample_valid = prepare_one_row(
-          cache, curr_seg, true,
-          &valid_x[learner->n_feature * learner->n_validation_samples],
-          &valid_y[learner->n_validation_samples]);
+void snapshot_segs_to_training_data(cache_t *cache) {
+  LLSC_params_t *params = cache->cache_params;
+  learner_t *l = &params->learner;
+  segment_t *curr_seg = NULL;
 
-      if (is_sample_valid) {
-        learner->n_validation_samples += 1;
-      } else {
-        if (learner->n_zero_samples != 0 && rand() % learner->n_zero_samples <= 1) {
-          learner->n_validation_samples += 1;
-          learner->n_zero_samples_use += 1;
-        }
-        learner->n_zero_samples += 1;
+  l->n_snapshot += 1;
+  l->last_snapshot_rtime = params->curr_rtime;
+  int sample_n_segs = l->n_max_training_segs / (l->re_train_intvl / l->snapshot_intvl);
+
+  int sample_ratio = MAX(params->n_segs / sample_n_segs, 1);
+
+  for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
+    curr_seg = params->buckets[bi].first_seg;
+    for (int si = 0; si < params->buckets[bi].n_seg - 2; si++) {
+      DEBUG_ASSERT(curr_seg != NULL);
+      if (rand() % sample_ratio == 0) {
+        copy_to_train_matrix(cache, curr_seg);
       }
-    } else {
-      is_sample_valid = prepare_one_row(
-          cache, curr_seg, true,
-          &train_x[learner->n_feature * learner->n_training_samples],
-          &train_y[learner->n_training_samples]);
 
-      if (is_sample_valid) {
-        learner->n_training_samples += 1;
-      } else {
-        /* do not want too much zero */
-        if (learner->n_zero_samples != 0 && rand() % learner->n_zero_samples <= 1) {
-          learner->n_training_samples += 1;
-          learner->n_zero_samples_use += 1;
-        }
-        learner->n_zero_samples += 1;
-      }
+      curr_seg = curr_seg->next_seg;
     }
-    curr_seg = curr_seg->next_seg;
   }
+  int n_snapshot_per_train = l->re_train_intvl / 3600;
+  printf("time %ld (%ld day %ld hour %ld sec) "
+         "snapshot %d: %d/%d sample\n",
+         params->curr_rtime, params->curr_rtime/86400,
+         params->curr_rtime % 86400 / 3600,
+         params->curr_rtime % 3600,
+         l->n_snapshot, l->n_training_samples, l->n_max_training_segs);
+}
 
-#ifdef DUMP_TRAINING_DATA
-  {
-    static __thread char filename[24];
 
-    INFO("dump training data %d\n", learner->n_train);
-    snprintf(filename, 24, "train_data_%d", learner->n_train);
-    FILE *f = fopen(filename, "w");
-    for (int x = 0; x < n_train_samples; x++) {
-      fprintf(f, "%f: ", train_y[x]);
-      for (int y = 0; y < learner->n_feature; y++) {
-        fprintf(f, "%6f,", train_x[learner->n_feature * x + y]);
-      }
-      fprintf(f, "\n");
-    }
-    fclose(f);
-  };
-#endif
 
-  clean_training_segs(cache, params->n_training_segs/2);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static inline void prepare_training_data_per_package(cache_t *cache) {
+  LLSC_params_t *params = cache->cache_params;
+  learner_t *learner = &params->learner;
 
 #ifdef USE_XGBOOST
   if (params->learner.n_train > 0) {
@@ -246,6 +281,12 @@ static void prepare_training_data(cache_t *cache) {
   safe_call(XGDMatrixSetFloatInfo(learner->valid_dm, "label",
                                   learner->valid_y,
                                   learner->n_validation_samples));
+
+#if OBJECTIVE == LTR
+  safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", &learner->n_training_samples, 1));
+  safe_call(XGDMatrixSetUIntInfo(learner->valid_dm, "group", &learner->n_validation_samples, 1));
+#endif
+
 #elif defined(USE_GBM)
   char *dataset_params = "categorical_feature=0,1,2";
   safe_call(LGBM_DatasetCreateFromMat(learner->training_x,
@@ -262,21 +303,204 @@ static void prepare_training_data(cache_t *cache) {
 #endif
 }
 
+int cmp_train_y(const void *p1, const void *p2) {
+  const train_y_t *d1 = p1;
+  const train_y_t *d2 = p2;
+
+  if (*d1 > * d2) {
+    return 1;
+  } else
+    return -1;
+}
+
+
+static void prepare_training_data(cache_t *cache) {
+  LLSC_params_t *params = cache->cache_params;
+  learner_t *learner = &params->learner;
+  int i;
+
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+  create_data_holder(cache);
+#endif
+
+  learner->n_zero_samples = learner->n_zero_samples_use = 0;
+
+#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+  feature_t *train_x = learner->training_x;
+  train_y_t *train_y = learner->training_y;
+  feature_t *valid_x = learner->valid_x;
+  train_y_t *valid_y = learner->valid_y;
+
+  learner->n_training_samples = learner->n_validation_samples = 0;
+  segment_t *curr_seg = params->training_bucket.first_seg;
+
+  bool is_sample_valid;
+  for (i = 0; i < params->n_training_segs / 2; i++) {
+    DEBUG_ASSERT(curr_seg != NULL);
+
+    if (learner->n_validation_samples < N_MAX_VALIDATION && rand() % 10 <= 0) {
+      is_sample_valid = prepare_one_row(
+          cache, curr_seg, true,
+          &valid_x[learner->n_feature * learner->n_validation_samples],
+          &valid_y[learner->n_validation_samples]);
+
+      if (is_sample_valid) {
+        learner->n_validation_samples += 1;
+      } else {
+        if (learner->n_zero_samples != 0
+            && rand() % learner->n_zero_samples <= 1) {
+          learner->n_validation_samples += 1;
+          learner->n_zero_samples_use += 1;
+        }
+        learner->n_zero_samples += 1;
+      }
+    } else {
+      is_sample_valid = prepare_one_row(
+          cache, curr_seg, true,
+          &train_x[learner->n_feature * learner->n_training_samples],
+          &train_y[learner->n_training_samples]);
+
+      if (is_sample_valid) {
+        learner->n_training_samples += 1;
+      } else {
+        /* do not want too much zero */
+        if (learner->n_zero_samples != 0
+            && rand() % learner->n_zero_samples <= 1) {
+          learner->n_training_samples += 1;
+          learner->n_zero_samples_use += 1;
+        }
+        learner->n_zero_samples += 1;
+      }
+    }
+    curr_seg = curr_seg->next_seg;
+  }
+
+  clean_training_segs(cache, params->n_training_segs / 2);
+#else
+  int pos_in_train_data = 0, pos_in_valid_data = 0;
+  bool copy = true;
+  int copy_direction; /* 0: train, 1: validation */
+  int n_feature = learner->n_feature;
+
+  feature_t *x;
+  train_y_t *y;
+
+#if OBJECTIVE == LTR
+  static train_y_t *y_sort = NULL;
+  if (y_sort == NULL)
+    y_sort = my_malloc_n(train_y_t, learner->n_max_training_segs);
+
+  for (i = 0; i < learner->n_training_samples; i++) {
+    y_sort[i] = learner->training_y[i];
+  }
+  qsort(y_sort, learner->n_training_samples, sizeof(train_y_t), cmp_train_y);
+  train_y_t cutoff = y_sort[learner->n_training_samples - learner->n_training_samples / 10];
+#endif
+
+  for (i = 0; i < learner->n_training_samples; i++) {
+    copy = true;
+    if (learner->training_y[i] == 0) {
+      learner->n_zero_samples += 1;
+      if (learner->n_zero_samples_use != 0) {
+        if (rand() % learner->n_zero_samples_use > 1) {
+          copy = false;
+        } else {
+          learner->n_zero_samples_use += 1;
+        }
+      } else {
+        learner->n_zero_samples_use += 1;
+      }
+    }
+
+    if (copy) {
+      copy_direction = 0;
+      if (rand() % 10 == 0 && pos_in_valid_data < learner->valid_matrix_size_row) {
+        copy_direction = 1;
+      }
+
+      if (copy_direction == 0) {
+        if (pos_in_train_data == i) {
+          pos_in_train_data++;
+          continue;
+        }
+        x = &learner->training_x[pos_in_train_data * n_feature];
+        y = &learner->training_y[pos_in_train_data];
+        pos_in_train_data++;
+      } else {
+        x = &learner->valid_x[pos_in_valid_data * n_feature];
+        y = &learner->valid_y[pos_in_valid_data];
+        pos_in_valid_data++;
+      }
+
+      memcpy(x,
+             &learner->training_x[i * n_feature],
+             sizeof(feature_t) * n_feature);
+      *y = learner->training_y[i];
+
+#if OBJECTIVE == LTR
+//      printf("%f\n", *y);
+//      if (*y >= cutoff)
+//        *y = 1;
+//      else
+//        *y = 0;
+#endif
+    }
+  }
+  learner->n_training_samples = pos_in_train_data;
+  learner->n_validation_samples = pos_in_valid_data;
+#endif
+
+
+  prepare_training_data_per_package(cache);
+
+
+#ifdef DUMP_TRAINING_DATA
+  {
+    static __thread char filename[24];
+
+    INFO("dump training data %d\n", learner->n_train);
+
+    snprintf(filename, 24, "train_data_%d", learner->n_train);
+    FILE *f = fopen(filename, "w");
+    for (int m = 0; m < learner->n_training_samples; m++) {
+      fprintf(f, "%f: ", learner->training_y[m]);
+      for (int n = 0; n < learner->n_feature; n++) {
+        fprintf(f, "%6f,", learner->training_x[learner->n_feature * m + n]);
+      }
+      fprintf(f, "\n");
+    }
+    fclose(f);
+
+
+    snprintf(filename, 24, "valid_data_%d", learner->n_train);
+    f = fopen(filename, "w");
+    for (int m = 0; m < learner->n_validation_samples; m++) {
+      fprintf(f, "%f: ", learner->valid_y[m]);
+      for (int n = 0; n < learner->n_feature; n++) {
+        fprintf(f, "%6f,", learner->valid_x[learner->n_feature * m + n]);
+      }
+      fprintf(f, "\n");
+    }
+    fclose(f);
+  };
+#endif
+}
+
 
 void prepare_inference_data(cache_t *cache) {
   LLSC_params_t *params = cache->cache_params;
   learner_t *learner = &((LLSC_params_t *) cache->cache_params)->learner;
 
-  if (learner->inference_n_row < params->n_segs) {
-    if (learner->inference_n_row != 0) {
+  if (learner->inf_matrix_size_row < params->n_segs) {
+    if (learner->inf_matrix_size_row != 0) {
       DEBUG_ASSERT(learner->inference_data != NULL);
-      my_free(sizeof(feature_t) * learner->inference_n_row * learner->n_feature, learner->inference_data);
-      my_free(sizeof(pred_t) * learner->inference_n_row, learner->pred);
+      my_free(sizeof(feature_t) * learner->inf_matrix_size_row * learner->n_feature, learner->inference_data);
+      my_free(sizeof(pred_t) * learner->inf_matrix_size_row, learner->pred);
     }
     int n_row = params->n_segs * 2;
     learner->inference_data = my_malloc_n(feature_t, n_row * learner->n_feature);
     learner->pred = my_malloc_n(pred_t, n_row);
-    learner->inference_n_row = n_row;
+    learner->inf_matrix_size_row = n_row;
   }
 
   feature_t *x = learner->inference_data;
@@ -340,8 +564,13 @@ static void train_xgboost(cache_t *cache) {
   safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
 //  safe_call(XGBoosterSetParam(learner->booster, "eta", "0.1"));
 //  safe_call(XGBoosterSetParam(learner->booster, "gamma", "1"));
+#if OBJECTIVE == REG
   safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
-
+#elif OBJECTIVE == LTR
+//  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
+  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:map"));
+//  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:ndcg"));
+#endif
 
   for (int i = 0; i < N_TRAIN_ITER; ++i) {
     // Update the model performance for each iteration
@@ -349,12 +578,21 @@ static void train_xgboost(cache_t *cache) {
     if (learner->n_validation_samples < 10)
       continue;
     safe_call(XGBoosterEvalOneIter(learner->booster, i, eval_dmats, eval_names, 2, &eval_result));
+#if OBJECTIVE == REG
     char *pos = strstr(eval_result, "valid-rmse") + 11;
+#elif OBJECTIVE == LTR
+    char *pos = strstr(eval_result, "valid-map") + 10;
+#else
+    #error
+#endif
     l2 = strtof(pos, NULL);
 
-//    DEBUG("iter %d %s %lf\n", i, eval_result, l2);
+    DEBUG("iter %d %s %lf\n", i, eval_result, l2);
+    if (l2 > 1000000)
+      abort();
 
     if (fabs(last_l2 - l2) / l2 < 0.01) {
+//    if (fabs(last_l2 - l2) / l2 < 0.01 || l2 > last_l2 * 1.05) {
       n_stable_iter += 1;
       if (n_stable_iter > 2) {
         break;
@@ -378,7 +616,8 @@ static void train_xgboost(cache_t *cache) {
        (int) learner->n_validation_samples,
        (int) learner->n_zero_samples_use, (int) learner->n_zero_samples,
        learner->n_trees,
-       params->learner.sample_every_n_seg_for_training,
+       0,
+//       params->learner.sample_every_n_seg_for_training,
        params->rank_intvl,
        (long) params->n_segs);
 
@@ -425,10 +664,17 @@ void inference_xgboost(cache_t *cache) {
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
-//      curr_seg->penalty = learner->pred[n_seg];
-//      curr_seg->penalty = pred[n_seg] * 1000000 / curr_seg->total_bytes;
-      curr_seg->penalty = pred[n_seg];
-
+#if OBJECTIVE == REG
+//      curr_seg->penalty = pred[n_seg];
+      curr_seg->penalty = pred[n_seg] * 1e6 / curr_seg->total_bytes;
+//      curr_seg->penalty = pred[n_seg] * 1e12 / curr_seg->total_bytes / curr_seg->total_bytes;
+#elif OBJECTIVE == LTR
+      if (pred[n_seg] < 0)
+        curr_seg->penalty = 1e8;
+      else
+        curr_seg->penalty = 1.0 / pred[n_seg];
+      printf("%lf\n", pred[n_seg]);
+#endif
 
 #ifdef DUMP_TRAINING_DATA
       fprintf(f, "%f/%lf: ", pred[n_seg], cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg,
@@ -622,12 +868,18 @@ void inference_lgbm(cache_t *cache) {
 
 
 void train(cache_t *cache) {
+  LLSC_params_t *params = (LLSC_params_t *) cache->cache_params;
+#ifdef TRAIN_ONCE
+  if (params->learner.n_train > 0)
+    return;
+#endif
+
   train_xgboost(cache);
 
-  LLSC_params_t *params = (LLSC_params_t *) cache->cache_params;
   params->learner.n_train += 1;
   params->learner.last_train_rtime = params->curr_rtime;
-  params->learner.last_train_vtime = params->curr_vtime;
+  params->learner.n_training_samples = 0;
+  params->learner.n_validation_samples = 0;
 }
 
 void inference(cache_t *cache) {

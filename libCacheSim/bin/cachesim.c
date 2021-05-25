@@ -31,6 +31,7 @@ typedef struct {
     int seg_size;
     int n_merge;
     int rank_intvl;
+    int snapshot_intvl;
     int size_bucket_base;
     int age_shift;
     int min_start_train_seg;
@@ -62,7 +63,8 @@ static void set_default_arg(sim_arg_t *args) {
   args->max_start_train_seg = 10000;
   args->n_train_seg_growth = 1000;
   args->sample_every_n_seg_for_training = 1;
-  args->re_train_intvl = 86400;
+  args->snapshot_intvl = 3600;
+  args->re_train_intvl = 86400 * 2;
 
   args->bucket_type = NO_BUCKET;
   args->size_bucket_base = 1;
@@ -125,7 +127,7 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->sample_every_n_seg_for_training = 1;
     args->rank_intvl = 120;
     args->size_bucket_base = 1;
-    args->re_train_intvl = 86400;
+    args->re_train_intvl = 86400 * 2;
 
 
 //    args->seg_size = 200;
@@ -242,12 +244,8 @@ static void set_param_with_workload(sim_arg_t *args) {
     printf("use cphy default parameter\n");
     args->n_cache_size = 9;
     args->seg_size = 50;
+    args->snapshot_intvl = 3600;
     args->age_shift = 3;
-
-    // new
-    args->min_start_train_seg = 10000;
-    args->max_start_train_seg = 80000;
-    args->n_train_seg_growth = 10000;
     args->bucket_type = SIZE_BUCKET;
   } else if (strstr(args->trace_path, "media_metadata") != NULL) {
     /* media_metadata */
@@ -258,6 +256,11 @@ static void set_param_with_workload(sim_arg_t *args) {
     }
     args->n_cache_size = 11;
     args->seg_size = 1000;
+    args->age_shift = 1;
+//    args->bucket_type = SIZE_BUCKET;
+    args->snapshot_intvl = 3600;
+    args->re_train_intvl = 3600 * 4;
+
   } else if (strstr(args->trace_path, "user_activity") != NULL) {
     /* user activity */
     uint64_t s[10] = {200, 500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000};
@@ -269,20 +272,19 @@ static void set_param_with_workload(sim_arg_t *args) {
     args->size_bucket_base = 20;
     args->seg_size = 1000;
     args->age_shift = 1;
-    args->min_start_train_seg = 500;
-    args->sample_every_n_seg_for_training = 1;
-    args->n_train_seg_growth = 2000;
-    args->re_train_intvl = 86400;
+//    args->min_start_train_seg = 500;
+//    args->sample_every_n_seg_for_training = 1;
+//    args->n_train_seg_growth = 2000;
+//    args->re_train_intvl = 86400;
     args->bucket_type = SIZE_BUCKET;
     args->rank_intvl = 20;
 
-
-    args->min_start_train_seg = 2500;
-    args->sample_every_n_seg_for_training = 1;
-    args->n_train_seg_growth = 5000;
-    args->max_start_train_seg = 2500;
-//    args->re_train_intvl = 86400;
-    args->re_train_intvl = 7200;
+    /* use LHD for object selection */
+    args->snapshot_intvl = 300 * 6;
+//    args->snapshot_intvl = 3600;
+//    args->re_train_intvl = 3600 * 8;
+    /* use 1-4 when for rank:map */
+    args->re_train_intvl = 3600 * 2;
   } else if (strstr(args->trace_path, "nyc") != NULL
              || strstr(args->trace_path, "wiki") != NULL) {
     /* nyc */
@@ -477,6 +479,7 @@ int main(int argc, char **argv) {
                                       .max_start_train_seg = args.max_start_train_seg,
                                       .n_train_seg_growth = args.n_train_seg_growth,
                                       .re_train_intvl = args.re_train_intvl,
+                                      .snapshot_intvl = args.snapshot_intvl,
                                       .sample_every_n_seg_for_training =
                                           args.sample_every_n_seg_for_training};
     cache = LLSC_init(cc_params, &init_params);

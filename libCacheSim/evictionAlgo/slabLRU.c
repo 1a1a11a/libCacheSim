@@ -6,7 +6,7 @@
 
 #include "../include/libCacheSim/evictionAlgo/slabLRU.h"
 #include "../utils/include/utilsInternal.h"
-#include "include/cacheAlg.h"
+#include "../dataStructure/hashtable/hashtable.h"
 #include <inttypes.h>
 
 #ifdef __cplusplus

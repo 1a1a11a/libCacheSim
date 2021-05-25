@@ -13,8 +13,8 @@ extern "C" {
 #endif
 
 #include "../include/libCacheSim/evictionAlgo/Random.h"
+#include "../dataStructure/hashtable/hashtable.h"
 #include "../utils/include/mymath.h"
-#include "include/cacheAlg.h"
 
 cache_t *Random_init(common_cache_params_t ccache_params,
                      void *cache_specific_init_params) {

@@ -12,9 +12,9 @@ extern "C" {
 #endif
 
 
+#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LRU.h"
 #include "../include/libCacheSim/evictionAlgo/ARC.h"
-#include "include/cacheAlg.h"
 
 cache_t *ARC_init(common_cache_params_t ccache_params_, void *init_params_) {
   cache_t *cache = cache_struct_init("ARC", ccache_params_);
