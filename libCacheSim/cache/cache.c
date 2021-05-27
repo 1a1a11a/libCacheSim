@@ -171,6 +171,7 @@ void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
   cache->list_head = cache->list_head->list_next;
   cache->list_head->list_prev = NULL;
+
   DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
   cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
   cache->n_obj -= 1;

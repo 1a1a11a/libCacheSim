@@ -23,9 +23,6 @@ extern "C" {
 
 #ifdef __cplusplus
 }
-//#include "libCacheSim/cacheObj.hpp"
-//#else
-//#include "libCacheSim/cacheObj.h"
 #endif
 
 #endif // libCacheSim_H

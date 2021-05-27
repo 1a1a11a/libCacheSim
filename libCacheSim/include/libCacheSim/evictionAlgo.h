@@ -18,7 +18,10 @@ extern "C"
 #include "evictionAlgo/LRUv0.h"
 #include "evictionAlgo/MRU.h"
 #include "evictionAlgo/Random.h"
-#include "evictionAlgo/optimal.h"
+
+#include "evictionAlgo/LHD.h"
+
+#include "evictionAlgo/Optimal.h"
 #include "evictionAlgo/LLSC.h"
 
 

@@ -2,14 +2,19 @@
 // Created by Juncheng Yang on 11/17/19.
 //
 
-#ifndef libCacheSim_CACHEOBJ_H
-#define libCacheSim_CACHEOBJ_H
+#pragma once
 
 #include "../config.h"
 #include "request.h"
 #include "struct.h"
 #include <assert.h>
 #include <gmodule.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* see struct.h for the declaration of cache_obj_t */
 
@@ -45,18 +50,15 @@ static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
  */
 static inline void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail,
                                         cache_obj_t *cache_obj) {
-  //  if (){}
   if (cache_obj == *head) {
     *head = cache_obj->list_next;
     if (cache_obj->list_next != NULL)
       cache_obj->list_next->list_prev = NULL;
-//    return;
   }
   if (cache_obj == *tail) {
     *tail = cache_obj->list_prev;
     if (cache_obj->list_prev != NULL)
       cache_obj->list_prev->list_next = NULL;
-//    return;
   }
 
   if (cache_obj->list_prev != NULL)
@@ -171,8 +173,11 @@ static inline slab_cache_obj_t *create_slab_cache_obj_from_req(request_t *req) {
 }
 
 static inline void free_slab_cache_obj(gpointer data) {
-  slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)data;
+  slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) data;
   my_free(sizeof(slab_cache_obj_t), cache_obj);
 }
 
-#endif // libCacheSim_CACHEOBJ_H
+#ifdef __cplusplus
+}
+#endif
+

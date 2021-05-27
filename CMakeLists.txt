@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.12)
-project(libCacheSim C)
+project(libCacheSim)
 set(DESCRIPTION "a high performance cache simulation library")
 set(PROJECT_WEB "http://libCacheSim.info")
 
@@ -15,19 +15,9 @@ set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}
 ####################
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     add_definitions(-DOS_DARWIN)
-
     if (NOT CMAKE_BUILD_TYPE)
         set(CMAKE_BUILD_TYPE Debug)
     endif()
-#    set(CMAKE_MACOSX_RPATH 1)
-    # Fix linking on 10.14+. See https://stackoverflow.com/questions/54068035
-#    LINK_DIRECTORIES(/usr/local/lib)
-    # a temporary fix for mac
-    #    SET(CMAKE_C_FLAGS "-lglib-2.0")
-    #    SET(CMAKE_C_FLAGS "-Wno-unused-command-line-argument -lintl -lglib-2.0 ")
-    #    SET(CMAKE_C_FLAGS "-L/usr/local/lib -I/usr/local/Cellar/gettext/0.20.1/include/")
-    #    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/usr/local/Cellar/python/3.7.5/Frameworks/Python.framework/Versions/3.7/include/python3.7m/")
-    #    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I/Users/jason/Library/Python/3.7/lib/python/site-packages/numpy/core/include/")
 
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 #    set(CFLAGS "$ENV{CFLAGS} " "-Wl,--export-dynamic ")
@@ -48,10 +38,10 @@ option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `e
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_LLSC "enable learned log-structured cache" ON)
 option(SUPPORT_TTL "whether support TTL" OFF)
-#set(LOG_LEVEL "debug" CACHE STRING "log level: verbost, debug, info, warning, severe")
-# log level: verbost, debug, info, warning, severe
-set(LOG_LEVEL debug)
-
+if (NOT LOG_LEVEL)
+    # log level: verbost, debug, info, warning, severe
+    set(LOG_LEVEL debug)
+endif()
 
 if (SUPPORT_TTL)
     add_compile_definitions(SUPPORT_TTL=1)
@@ -155,35 +145,23 @@ else ()
 endif ()
 
 if (ENABLE_LLSC)
-find_package(xgboost REQUIRED)
-include_directories(${XGBOOST_INCLUDE_DIR})
-link_libraries(xgboost::xgboost)
+    find_package(xgboost REQUIRED)
+    include_directories(${XGBOOST_INCLUDE_DIR})
+    link_libraries(xgboost::xgboost)
+    find_path(LIGHTGBM_INCLUDE_DIR LightGBM/c_api.h REQUIRED)
+    if (NOT LIGHTGBM_INCLUDE_DIR)
+        message(FATAL_ERROR "LIGHTGBM_INCLUDE_DIR not found")
+    endif ()
 
-find_path(LIGHTGBM_INCLUDE_DIR LightGBM/c_api.h REQUIRED)
-if (NOT LIGHTGBM_INCLUDE_DIR)
-    message(FATAL_ERROR "LIGHTGBM_INCLUDE_DIR not found")
-endif ()
+    find_library(LIGHTGBM_LIB _lightgbm)
+    if (NOT LIGHTGBM_LIB)
+        message(FATAL_ERROR "LIGHTGBM_LIB not found")
+    endif ()
 
-find_library(LIGHTGBM_LIB _lightgbm)
-if (NOT LIGHTGBM_LIB)
-    message(FATAL_ERROR "LIGHTGBM_LIB not found")
-endif ()
-include_directories(${LIGHTGBM_INCLUDE_DIR})
-link_libraries(${LIGHTGBM_LIB})
-message(STATUS "${XGBOOST_INCLUDE_DIR} ${LIGHTGBM_LIB} ${LIGHTGBM_INCLUDE_DIR}")
+    include_directories(${LIGHTGBM_INCLUDE_DIR})
+    link_libraries(${LIGHTGBM_LIB})
+    message(STATUS "${XGBOOST_INCLUDE_DIR} ${LIGHTGBM_LIB} ${LIGHTGBM_INCLUDE_DIR}")
 endif()
-
-#find_path(LIGHTGBM_INCLUDE_DIR LightGBM/c_api.h REQUIRED)
-#if (NOT LIGHTGBM_INCLUDE_DIR)
-#    message(FATAL_ERROR "LIGHTGBM_INCLUDE_DIR not found")
-#endif ()
-#
-#find_library(LIGHTGBM_LIB _lightgbm)
-##find_library(LIGHTGBM_LIB lib_lightgbm.so)
-#if (NOT LIGHTGBM_LIB)
-#    message(FATAL_ERROR "LIGHTGBM_LIB not found")
-#endif ()
-#target_link_libraries(webcachesim LINK_PUBLIC ${LIGHTGBM_LIB})
 
 
 link_libraries("-lpthread -ldl -lm ${LIBS}")
@@ -258,11 +236,11 @@ install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_
 
 #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
 #add_executable(binBenchmark libCacheSim/benchmark/main.c)
-#target_link_libraries(binBenchmark benchmark cache evictionAlgo traceReader profiler dataStructure traceStat utils
+#target_link_libraries(binBenchmark benchmark cache evictionAlgos traceReader profiler dataStructure utils
 #        ${LIBS})
 
 #add_executable(binDebug ../test/debug.c)
-#target_link_libraries(binDebug cache evictionAlgo traceReader profiler dataStructure traceStat utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
+#target_link_libraries(binDebug cache evictionAlgo traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
 #set_property(TARGET binDebug PROPERTY C_STANDARD 11)
 
 

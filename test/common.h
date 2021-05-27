@@ -123,7 +123,7 @@ static cache_t *create_test_cache(const char *alg_name,
   else if (strcmp(alg_name, "FIFO") == 0)
     cache = FIFO_init(cc_params, NULL);
   else if (strcmp(alg_name, "optimal") == 0)
-    cache = optimal_init(cc_params, NULL);
+    cache = Optimal_init(cc_params, NULL);
   else if (strcmp(alg_name, "LRUv0") == 0)
     cache = LRUv0_init(cc_params, NULL);
   else if (strcmp(alg_name, "Random") == 0)

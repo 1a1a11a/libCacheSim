@@ -62,6 +62,27 @@ extern "C"
 #error not implemented
 #endif
 
+
+static inline void _print_hashtable_elememnt(cache_obj_t *cache_obj, void *newline) {
+  static const char *SEPARATORS[] = {", ", "\n"};
+
+  const char *separator = SEPARATORS[0];
+  if (*(bool *)newline)
+    separator = SEPARATORS[1];
+
+  printf("%lu %lu%s", (unsigned long) cache_obj->obj_id_int, (unsigned long) cache_obj->obj_size, separator);
+}
+
+/**
+ * print all objects (obj id and size) in the hash table
+ * @param hashtable
+ * @param newline whether add a new line to the end of each object
+ */
+static inline void hashtable_print_all(hashtable_t *hashtable, bool newline) {
+  hashtable_foreach(hashtable, _print_hashtable_elememnt, &newline);
+}
+
+
 #ifdef __cplusplus
 }
 #endif

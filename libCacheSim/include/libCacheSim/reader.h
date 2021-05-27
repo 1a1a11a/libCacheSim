@@ -187,7 +187,7 @@ void set_no_eof(reader_t *const reader);
 
 int go_back_one_line(reader_t *const reader);
 
-void reader_set_read_pos(reader_t *const reader, const double pos);
+void reader_set_read_pos(reader_t *const reader, double pos);
 
 
 #ifdef __cplusplus

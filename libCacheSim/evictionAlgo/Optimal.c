@@ -1,8 +1,8 @@
 //
-//  a optimal module that supports different obj size
+//  a Optimal module that supports different obj size
 //
 //
-//  optimal.c
+//  Optimal.c
 //  libCacheSim
 //
 //
@@ -14,7 +14,7 @@ extern "C" {
 #endif
 
 #include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/evictionAlgo/optimal.h"
+#include "../include/libCacheSim/evictionAlgo/Optimal.h"
 #include <assert.h>
 
 /******************* priority queue structs and def **********************/
@@ -64,73 +64,21 @@ void *setup_mmap(char *file_path, size_t *size) {
   return mapped_file;
 }
 
-//void reverse_trace(char *ifile_path, char *ofile_path) {
-//  uint64_t n_req = 1;
-//  size_t size;
-//  char *mapped_file = setup_mmap(ifile_path, &size);
-//  int64_t pos = size;
-//
-//  FILE *ofile = fopen(ofile_path, "wb");
-//  GHashTable last_read_time;
-//  struct reqEntryReuse *re;
-//
-//  while (pos >= req_entry_size) {
-//    pos -= req_entry_size;
-//
-//    if (remove_on_demand_fill) {
-//      re = (struct reqEntryReuse *) (mapped_file + pos);
-//      if (op_is_write(re->op)) {
-//        /* because we do on-demand fill, we remove the demand fill from trace */
-//        auto it = last_read_time.find(re->obj_id);
-//        if (it == last_read_time.end() || re->real_time - it->second > 1) {
-//          /* no previous read or previous read is far away, which means this write is not on-demand write */
-//          ofile_.write(mapped_file + pos, req_entry_size);
-//        } else { ;
-//        }
-//      } else {
-//        /* read */
-//        ofile_.write(mapped_file + pos, req_entry_size);
-//        last_read_time[re->obj_id] = re->real_time;
-//      }
-//    } else {
-//      ofile_.write(mapped_file + pos, req_entry_size);
-//    }
-//
-//
-//    n_req += 1;
-//    if (n_req % 100000000 == 0) {
-//      utilsPrint::print_time();
-//      std::cout << std::setprecision(4) << (double) n_req / 1000000 << " MReq" << std::endl;
-//    }
-//  }
-//
-//  munmap(mapped_file, size);
-//  fclose(ofile);
-//
-//  if (remove(ifile_path) != 0) {
-//    perror("unable to remove the temporary file\n");
-//  }
-//}
 
-/* generate a trace with each request
- * time, obj_id, obj_size, next access_time
- */
-void gen_trace() { ; }
-
-cache_t *optimal_init(common_cache_params_t ccache_params, void *init_params) {
-  cache_t *cache = cache_struct_init("optimal", ccache_params);
+cache_t *Optimal_init(common_cache_params_t ccache_params, void *init_params) {
+  cache_t *cache = cache_struct_init("Optimal", ccache_params);
   //  INFO("running belady requires generating a temporary trace with future knowledge, the trace "
   //       "will be stored in the current directory, make sure you have enough space\n");
 
-  optimal_params_t *params = my_malloc(optimal_params_t);
+  Optimal_params_t *params = my_malloc(Optimal_params_t);
   cache->cache_params = params;
 
   params->pq = pqueue_init(2e7, cmp_pri, get_pri, set_pri, get_pos, set_pos);
   return cache;
 }
 
-void optimal_free(cache_t *cache) {
-  optimal_params_t *params = cache->cache_params;
+void Optimal_free(cache_t *cache) {
+  Optimal_params_t *params = cache->cache_params;
   pq_node_t *node = pqueue_pop(params->pq);
   while (node) {
     my_free(sizeof(pq_node_t), node);
@@ -141,8 +89,8 @@ void optimal_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e optimal_check(cache_t *cache, request_t *req, bool update_cache) {
-  optimal_params_t *params = cache->cache_params;
+cache_ck_res_e Optimal_check(cache_t *cache, request_t *req, bool update_cache) {
+  Optimal_params_t *params = cache->cache_params;
   cache_obj_t *cached_obj;
   cache_ck_res_e ret = cache_check(cache, req, update_cache, &cached_obj);
 
@@ -155,7 +103,7 @@ cache_ck_res_e optimal_check(cache_t *cache, request_t *req, bool update_cache) 
   if (ret == cache_ck_hit) {
     /* update next access ts, we use INT64_MAX - 10 because we reserve the largest elements for immediate delete */
     if (req->next_access_ts == -1) {
-      optimal_remove_obj(cache, cached_obj);
+      Optimal_remove_obj(cache, cached_obj);
     } else {
       //      pqueue_pri_t pri = {.pri1 = req->next_access_ts == -1 ? INT64_MAX - 10 : req->next_access_ts};
       pqueue_pri_t pri = {.pri1 = req->next_access_ts};
@@ -165,7 +113,7 @@ cache_ck_res_e optimal_check(cache_t *cache, request_t *req, bool update_cache) 
     }
     return cache_ck_hit;
   } else if (ret == cache_ck_expired) {
-    optimal_remove_obj(cache, cached_obj);
+    Optimal_remove_obj(cache, cached_obj);
 
     return cache_ck_miss;
   }
@@ -173,9 +121,9 @@ cache_ck_res_e optimal_check(cache_t *cache, request_t *req, bool update_cache) 
   return cache_ck_miss;
 }
 
-cache_ck_res_e optimal_get(cache_t *cache, request_t *req) {
+cache_ck_res_e Optimal_get(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(req->n_req - 1 == cache->req_cnt);
-  optimal_params_t *params = cache->cache_params;
+  Optimal_params_t *params = cache->cache_params;
 
   DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
   cache_ck_res_e ret = cache_get(cache, req);
@@ -183,8 +131,8 @@ cache_ck_res_e optimal_get(cache_t *cache, request_t *req) {
   return ret;
 }
 
-void optimal_insert(cache_t *cache, request_t *req) {
-  optimal_params_t *params = cache->cache_params;
+void Optimal_insert(cache_t *cache, request_t *req) {
+  Optimal_params_t *params = cache->cache_params;
 
   if (req->next_access_ts == -1) {
     return;
@@ -203,8 +151,8 @@ void optimal_insert(cache_t *cache, request_t *req) {
                == req->next_access_ts);
 }
 
-void optimal_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  optimal_params_t *params = cache->cache_params;
+void Optimal_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+  Optimal_params_t *params = cache->cache_params;
   pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);
 
   cache_obj_t *cached_obj = cache_get_obj_by_id(cache, node->obj_id);
@@ -217,11 +165,11 @@ void optimal_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cached_obj->extra_metadata_ptr = NULL;
   my_free(sizeof(pq_node_t), node);
 
-  optimal_remove_obj(cache, cached_obj);
+  Optimal_remove_obj(cache, cached_obj);
 }
 
-void optimal_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  optimal_params_t *params = cache->cache_params;
+void Optimal_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
+  Optimal_params_t *params = cache->cache_params;
 
   DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj_to_remove) == obj_to_remove);
 
@@ -241,9 +189,9 @@ void optimal_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache->n_obj -= 1;
 }
 
-void optimal_remove(cache_t *cache, obj_id_t obj_id) {
+void Optimal_remove(cache_t *cache, obj_id_t obj_id) {
   abort();
-  optimal_params_t *params = cache->cache_params;
+  Optimal_params_t *params = cache->cache_params;
 
   cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (cache_obj == NULL) {

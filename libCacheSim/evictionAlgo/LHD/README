@@ -1,0 +1,76 @@
+Welcome!
+
+This repository gives the simulation code for LHD (Least Hit Density),
+a cache replacement policy described in the paper "LHD: Improving
+Cache Hit Rate by Maximizing Hit Density" published at NSDI 2018.
+
+To build the simulator, simply run
+
+$ make
+
+in this directory. This will produce ./bin/cache, which will run the
+simulator by
+
+$ ./bin/cache example.cfg
+
+However, for this example to run, you first need to obtain trace
+files. example.cfg references MSR trace src1_1, but you can supply any
+trace you like. The expected format of the trace file is given in
+parser.hpp: we use a binary format to encode traces for efficiency,
+but you can define your own format easily in parser.hpp. You then need
+to modify cache.cpp to point the simulator at the right path to your
+trace file.
+
+example.cfg gives reasonable default parameters for LHD. Except for
+associativity, we found that LHD is insensitive to these parameters
+across large values, but feel free to experiment yourself (and please
+send us any exceptions you find!).
+
+To summarize the contents of this repository, the main files are:
+
+- cache.cpp: main().
+
+- cache.hpp: The cache simulator itself that calls into the
+  replacement policy. We model an idealized cache without
+  fragmentation.
+
+- repl.hpp: A generic replacement policy interface. update() is called
+  when an object is referenced. replaced() is called when an object is
+  evicted. rank() is called to get the next victim when the cache is
+  full.
+
+- lhd.hpp: The LHD replacement policy definition. It implements the
+  ReplPolicy interface.
+
+- lhd.cpp: The LHD replacement policy implementation. The core of the
+  policy is implemented in the first 200 lines; the remaining lines
+  are for debugging and infrequent configuration (see comments).
+
+The other files are:
+
+- bytes.hpp: Helper function for printing large values as KB, MB, GB,
+  etc.
+
+- candidate.hpp: Data type to uniquely identify objects in the cache
+  (ie, replacement "candidates").
+
+- config.hpp: Config file parser.
+
+- constants.hpp: Simulation constants. Mostly unused in this release.
+
+- example.cfg: A starter config file (see above).
+
+- LICENSE: This software is released under the MIT license.
+
+- lru.hpp: Baseline LRU replacement policy. Can be selected in
+  example.cfg by setting repl.type to "LRU".
+
+- Makefile: Build instructions.
+
+- parser.hpp: Trace parser. See above.
+
+- rand.hpp: Fast linear-congruential random number generator.
+
+- repl.cpp: Initialization function to create different replacement
+  policies (only LRU and LHD in this release).
+

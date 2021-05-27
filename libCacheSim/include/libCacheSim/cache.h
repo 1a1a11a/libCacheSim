@@ -9,10 +9,6 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "../config.h"
 #include "cacheObj.h"
 #include "const.h"
@@ -29,6 +25,11 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 struct cache;
 typedef struct cache cache_t;

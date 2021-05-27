@@ -6,7 +6,7 @@ set(source
         LRU.c
         LRUv0.c
         MRU.c
-        optimal.c
+        Optimal.c
         Random.c
 
         slabLRC.c
@@ -22,7 +22,6 @@ set(source ${source}
         )
 endif()
 
-#include_directories(${LIGHTGBM_INCLUDE_DIR})
 add_library (evictionAlgo ${source})
 if (ENABLE_LLSC)
     target_link_libraries(evictionAlgo cache ${LIGHTGBM_LIB})
@@ -30,6 +29,10 @@ else()
     target_link_libraries(evictionAlgo cache)
 endif()
 
+
+add_subdirectory(LHD)
+
+set(evictionAlgos evictionAlgo LHD PARENT_SCOPE)
 
 #file(GLOB src *.c)
 #add_library (cacheAlgo ${src})

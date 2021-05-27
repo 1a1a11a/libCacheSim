@@ -543,7 +543,7 @@ void set_no_eof(reader_t *const reader) {
   }
 }
 
-void reader_set_read_pos(reader_t *const reader, const double pos) {
+void reader_set_read_pos(reader_t *const reader, double pos) {
   /* jason (202004): this may not work for CSV
    */
 
@@ -551,6 +551,9 @@ void reader_set_read_pos(reader_t *const reader, const double pos) {
    * reference number will NOT change in the function! .
    * due to above property, this function is dangerous to use.
    */
+  if (pos > 1)
+    pos = 1;
+
   reader->mmap_offset = (long) (reader->file_size * pos);
   if (reader->trace_type == CSV_TRACE
       || reader->trace_type == PLAIN_TXT_TRACE) {
