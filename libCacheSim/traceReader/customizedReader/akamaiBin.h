@@ -13,8 +13,6 @@
 #pragma once
 
 #include <math.h>
-
-
 #include "../../include/libCacheSim.h"
 
 #ifdef __cplusplus
@@ -22,7 +20,8 @@ extern "C" {
 #endif
 
 static inline int akamaiReader_setup(reader_t *reader) {
-  reader->trace_type = AKAMAI_TRACE;
+  reader->trace_type = AKAMAI_BIN_TRACE;
+  reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 22;  /* IqIhhh */
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
   return 0;

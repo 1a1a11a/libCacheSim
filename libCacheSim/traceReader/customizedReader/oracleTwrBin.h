@@ -21,6 +21,7 @@ extern "C" {
 
 static inline int oracleTwrBin_setup(reader_t *reader) {
   reader->trace_type = ORACLE_TWR_BIN;
+  reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 28;
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
   return 0;

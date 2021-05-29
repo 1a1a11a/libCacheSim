@@ -5,7 +5,7 @@
 #include "../include/libCacheSim/experimental/distHeatmap.h"
 #include "../include/libCacheSim/macro.h"
 #include "../include/libCacheSim/dist.h"
-#include "../traceReader/include/readerUtils.h"
+#include "../traceReader/readerUtils.h"
 
 #include <math.h>
 

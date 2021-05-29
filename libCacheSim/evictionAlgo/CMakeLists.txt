@@ -1,4 +1,4 @@
-set(source
+set(sourceC
         ARC.c
         FIFO.c
         LFU.c
@@ -14,27 +14,26 @@ set(source
         slabObjLRU.c
         )
 
-if (ENABLE_LLSC)
-set(source ${source}
-        logStructure/LLSC.c
-        logStructure/learned.c
-        logStructure/oracle.c
-        )
-endif()
+set (sourceCPP
+        cpp/GDSF.cpp)
 
-add_library (evictionAlgo ${source})
-if (ENABLE_LLSC)
-    target_link_libraries(evictionAlgo cache ${LIGHTGBM_LIB})
-else()
-    target_link_libraries(evictionAlgo cache)
-endif()
 
+if (ENABLE_LLSC)
+    add_subdirectory(logStructure)
+endif()
 
 add_subdirectory(LHD)
 
-set(evictionAlgos evictionAlgo LHD PARENT_SCOPE)
+add_library (evictionAlgoC ${sourceC})
+add_library (evictionAlgoCPP ${sourceCPP})
 
-#file(GLOB src *.c)
-#add_library (cacheAlgo ${src})
-#target_link_libraries(cacheAlgo cache)
-#set(LIB_SOURCE ${LIB_SOURCE} ${src} PARENT_SCOPE)
+set_target_properties(evictionAlgoCPP
+        PROPERTIES
+        CXX_STANDARD 11
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+        )
+
+add_library(evictionAlgos INTERFACE)
+target_link_libraries(evictionAlgos INTERFACE evictionAlgoC evictionAlgoCPP LHD)
+

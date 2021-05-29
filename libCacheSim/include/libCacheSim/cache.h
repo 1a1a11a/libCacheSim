@@ -17,8 +17,7 @@
 #include "reader.h"
 #include "request.h"
 
-#include "inttypes.h"
-#include <dlfcn.h>
+#include <inttypes.h>
 #include <glib.h>
 #include <math.h>
 #include <stdbool.h>
@@ -109,7 +108,7 @@ struct cache {
  * @param params
  * @return
  */
-cache_t *cache_struct_init(const char *const cache_name,
+cache_t *cache_struct_init(const char *cache_name,
                            common_cache_params_t params);
 
 /**

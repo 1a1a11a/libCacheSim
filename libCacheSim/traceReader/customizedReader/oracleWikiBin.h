@@ -39,7 +39,8 @@ extern "C" {
 #include "../../include/libCacheSim.h"
 
 static inline int oracleWiki2016uReader_setup(reader_t *reader) {
-  reader->trace_type = WIKI16u_TRACE;
+  reader->trace_type = WIKI16u_BIN_TRACE;
+  reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 22;
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
   return 0;
@@ -59,7 +60,7 @@ static inline int oracleWiki2016u_read_one_req(reader_t *reader, request_t *req)
 }
 
 static inline int oracleWiki2019uReader_setup(reader_t *reader) {
-  reader->trace_type = WIKI19u_TRACE;
+  reader->trace_type = WIKI19u_BIN_TRACE;
   reader->item_size = 26;
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
   return 0;
@@ -79,7 +80,7 @@ static inline int oracleWiki2019u_read_one_req(reader_t *reader, request_t *req)
 }
 
 static inline int oracleWiki2019tReader_setup(reader_t *reader) {
-  reader->trace_type = WIKI19t_TRACE;
+  reader->trace_type = WIKI19t_BIN_TRACE;
   reader->item_size = 24;
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
   return 0;

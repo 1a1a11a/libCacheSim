@@ -9,6 +9,20 @@
 extern "C" {
 #endif
 
+typedef enum {
+  RETURN_OK,
+  RETURN_ERROR,
+
+  RETURN_INVALID
+} rstatus_e;
+
+typedef enum {
+  BINARY_TRACE_FORMAT,
+  TXT_TRACE_FORMAT,
+
+  INVALID_TRACE_FORMAT
+} __attribute__((__packed__)) trace_format_e;
+
 // trace type
 typedef enum {
   CSV_TRACE,
@@ -16,13 +30,14 @@ typedef enum {
   PLAIN_TXT_TRACE,
 
   VSCSI_TRACE,
-  TWR_TRACE,
-  AKAMAI_TRACE,
-  WIKI16u_TRACE,
-  WIKI19u_TRACE,
-  WIKI19t_TRACE,
-  STANDARD_IQI_TRACE,
-  STANDARD_III_TRACE,
+
+  TWR_BIN_TRACE,
+  AKAMAI_BIN_TRACE,
+  WIKI16u_BIN_TRACE,
+  WIKI19u_BIN_TRACE,
+  WIKI19t_BIN_TRACE,
+  STANDARD_BIN_IQI_TRACE,
+  STANDARD_BIN_III_TRACE,
 
   ORACLE_GENERAL_BIN,
   ORACLE_TWR_BIN,

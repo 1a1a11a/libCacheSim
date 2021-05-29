@@ -46,7 +46,7 @@ static void f1(int argc, char* argv[]) {
 //    n_threads = atoi(argv[2]);
 
 //  reader_init_param_t init_params = {.binary_fmt="III", .real_time_field=1, .obj_id_field=2, .obj_size_field=3};
-//  reader_t *reader = setup_reader(trace_path, TWR_TRACE, OBJ_ID_NUM, NULL);
+//  reader_t *reader = setup_reader(trace_path, TWR_BIN_TRACE, OBJ_ID_NUM, NULL);
 //  reader_t *reader = setup_reader("../../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
 //  char cwd[1024];
 //  getcwd(cwd, sizeof(cwd));
@@ -81,7 +81,7 @@ static void f2(int argc, char* argv[]){
   read_one_req(reader, req);
   while (req->valid) {
     cache_ck_res_e ck = cache->get(cache, req);
-    printf("req %lld hit %d\n", req->obj_id_int, ck == cache_ck_hit);
+    printf("req %ld hit %d\n", (long) req->obj_id_int, ck == cache_ck_hit);
     read_one_req(reader, req);
   }
 }

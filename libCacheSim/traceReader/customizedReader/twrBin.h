@@ -12,7 +12,8 @@ extern "C" {
 
 
 static inline int twrReader_setup(reader_t *reader) {
-  reader->trace_type = TWR_TRACE;
+  reader->trace_type = TWR_BIN_TRACE;
+  reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 20;
   reader->n_total_req = (guint64) reader->file_size / (reader->item_size);
   return 0;

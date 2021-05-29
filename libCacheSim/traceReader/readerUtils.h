@@ -10,8 +10,8 @@ extern "C"
 {
 #endif
 
-#include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/request.h"
+#include "../include/libCacheSim/reader.h"
+#include "../include/libCacheSim/request.h"
 
 void read_first_req(reader_t *reader, request_t *req);
 
@@ -26,7 +26,7 @@ void read_last_req(reader_t *reader, request_t *req);
  * @param window
  * @return
  */
-gint64 *get_window_boundary(reader_t *reader, guint32 window, gint32 *n_window);
+int64_t *get_window_boundary(reader_t *reader, uint32_t window, int32_t *n_window);
 
 
 #ifdef __cplusplus

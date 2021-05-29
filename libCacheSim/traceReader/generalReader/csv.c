@@ -6,9 +6,9 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "include/csv.h"
-#include "include/libcsv.h"
-#include "include/readerInternal.h"
+#include "csv.h"
+#include "libcsv.h"
+#include "../readerInternal.h"
 
 #include <stdlib.h>
 
@@ -70,6 +70,7 @@ static inline void csv_cb2(int c, void *data) {
 }
 
 void csv_setup_reader(reader_t *const reader) {
+  reader->trace_format = TXT_TRACE_FORMAT;
   unsigned char options = CSV_APPEND_NULL;
   reader->reader_params = g_new0(csv_params_t, 1);
   csv_params_t *params = reader->reader_params;
@@ -81,11 +82,11 @@ void csv_setup_reader(reader_t *const reader) {
     exit(1);
   }
 
-  reader->file = fopen(reader->trace_path, "rb");
-  if (reader->file == 0) {
-    ERROR("Failed to open %s: %s\n", reader->trace_path, strerror(errno));
-    exit(1);
-  }
+//  reader->file = fopen(reader->trace_path, "rb");
+//  if (reader->file == 0) {
+//    ERROR("Failed to open %s: %s\n", reader->trace_path, strerror(errno));
+//    exit(1);
+//  }
 
   params->current_field_counter = 1;
   params->already_got_req = false;
@@ -168,7 +169,7 @@ guint64 csv_skip_N_elements(reader_t *const reader, const guint64 N) {
 void csv_reset_reader(reader_t *reader) {
   csv_params_t *params = reader->reader_params;
 
-  fseek(reader->file, 0L, SEEK_SET);
+//  fseek(reader->file, 0L, SEEK_SET);
 
   csv_free(params->csv_parser);
   csv_init(params->csv_parser, CSV_APPEND_NULL);

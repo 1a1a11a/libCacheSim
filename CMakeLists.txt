@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 project(libCacheSim)
 set(DESCRIPTION "a high performance cache simulation library")
-set(PROJECT_WEB "http://libCacheSim.info")
+set(PROJECT_WEB "http://cachesim.com")
 
 set(${PROJECT_NAME}_VERSION_MAJOR 0)
 set(${PROJECT_NAME}_VERSION_MINOR 1)
@@ -238,11 +238,6 @@ install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_
 #add_executable(binBenchmark libCacheSim/benchmark/main.c)
 #target_link_libraries(binBenchmark benchmark cache evictionAlgos traceReader profiler dataStructure utils
 #        ${LIBS})
-
-#add_executable(binDebug ../test/debug.c)
-#target_link_libraries(binDebug cache evictionAlgo traceReader profiler dataStructure utils m ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -lpthread -ldl)
-#set_property(TARGET binDebug PROPERTY C_STANDARD 11)
-
 
 if (ENABLE_TESTS)
     include(CTest)

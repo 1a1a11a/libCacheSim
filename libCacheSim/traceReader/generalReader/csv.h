@@ -14,7 +14,7 @@ extern "C"
 {
 #endif
 
-#include "../../include/libCacheSim.h"
+#include "libCacheSim.h"
 
 typedef struct {
   bool has_header;
@@ -29,16 +29,14 @@ typedef struct {
 
 } csv_params_t;
 
-void csv_setup_reader(reader_t *const reader);
+void csv_setup_reader(reader_t *reader);
 
-int csv_read_one_element(reader_t *const,
-                         request_t *const);
+int csv_read_one_element(reader_t *, request_t *);
 
-//int csv_go_back_one_line(reader_t *);
+guint64 csv_skip_N_elements(reader_t *reader, guint64 N);
 
-guint64 csv_skip_N_elements(reader_t *const reader,
-                            const guint64 N);
 void csv_reset_reader(reader_t *reader);
+
 void csv_set_no_eof(reader_t *reader);
 
 #ifdef __cplusplus

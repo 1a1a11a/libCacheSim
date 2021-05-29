@@ -51,7 +51,7 @@ typedef struct reader {
  * setup the reader struct for reading trace
  * @param trace_path
  * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
- * TWR_TRACE
+ * TWR_BIN_TRACE
  * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR
  * @param setup_params
  * @return a pointer to reader_t struct, the returned reader needs to be

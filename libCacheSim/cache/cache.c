@@ -2,6 +2,7 @@
 // Created by Juncheng Yang on 6/20/20.
 //
 
+#include <dlfcn.h>
 #include "../include/libCacheSim/cache.h"
 #include "../dataStructure/hashtable/hashtable.h"
 

@@ -17,6 +17,7 @@ extern "C" {
 #include "enum.h"
 #include "logging.h"
 #include "request.h"
+#include "sampler.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -55,11 +56,13 @@ typedef struct {
 typedef struct reader {
   char *mapped_file; /* mmap the file, this should not change during runtime */
   uint64_t mmap_offset;
+  sampler_t *sampler;
 
-  FILE *file;
+//  FILE *file;
   size_t file_size;
 
-  trace_type_e trace_type;   /* possible types see trace_type_t  */
+  trace_type_e trace_type;   /* possible types see trace_type_e  */
+  trace_format_e trace_format;
   obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
   size_t item_size; /* the size of one record, used to
@@ -80,43 +83,57 @@ typedef struct reader {
   void *reader_params;
   void *other_params; /* currently not used */
 
-  gint ver;
+  int ver;
 
   bool cloned; // true if this is a cloned reader, else false
 
 } reader_t;
 
 /**
- * setup the reader struct for reading trace
- * @param trace_path
+ * setup a reader for reading trace
+ * @param trace_path path to the trace
  * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
- * TWR_TRACE
- * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR
- * @param setup_params
+ *  TWR_BIN_TRACE, see libCacheSim/enum.h for more
+ * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR,
+ *  used by CSV_TRACE and PLAIN_TXT_TRACE, whether the obj_id in the trace is a
+ *  number or not, if it is not a number then we will map it to uint64_t
+ * @param reader_init_param some initialization parameters used by csv and binary traces
+ * these include real_time_field, obj_id_field, obj_size_field,
+ * op_field, ttl_field, has_header, delimiter, binary_fmt
+ *
  * @return a pointer to reader_t struct, the returned reader needs to be
  * explicitly closed by calling close_reader or close_trace
  */
-reader_t *setup_reader(const char *trace_path, const trace_type_e trace_type,
-                       const obj_id_type_e obj_id_type,
-                       const reader_init_param_t *const reader_init_param);
+reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
+                       obj_id_type_e obj_id_type,
+                       const reader_init_param_t *reader_init_param);
 
 /* this is the same function as setup_reader */
 static inline reader_t *
 open_trace(const char *path, const trace_type_e type,
            const obj_id_type_e obj_id_type,
-           const reader_init_param_t *const reader_init_param) {
+           reader_init_param_t *reader_init_param) {
   return setup_reader(path, type, obj_id_type, reader_init_param);
 }
 
 /**
- * read one request from reader, and store it in the pre-allocated request_t req
+ * add a sampler to the reader, the requests from the reader will be sampled
  * @param reader
- * @param req
+ * @param sampler
  */
-uint64_t get_num_of_req(reader_t *const reader);
+static inline void add_sampler(reader_t *reader, sampler_t *sampler) {
+  reader->sampler = sampler;
+}
 
 /**
- * as the name suggests
+ * get the number of requests from the trace
+ * @param reader
+ * @return
+ */
+uint64_t get_num_of_req(reader_t *reader);
+
+/**
+ * get the trace type
  * @param reader
  * @return
  */
@@ -125,7 +142,7 @@ static inline trace_type_e get_trace_type(const reader_t *const reader) {
 }
 
 /**
- * as the name suggests
+ * get the obj_id type, it can be OBJ_ID_NUM or OBJ_ID_STR
  * @param reader
  * @return
  */
@@ -139,8 +156,15 @@ static inline obj_id_type_e get_obj_id_type(const reader_t *const reader) {
  * @param req
  * return 0 on success and 1 if reach end of trace
  */
-int read_one_req(reader_t *const reader, request_t *const req);
+int read_one_req(reader_t *reader, request_t *req);
 
+
+/**
+ * read one request from reader/trace, stored the info in pre-allocated req
+ * @param reader
+ * @param req
+ * return 0 on success and 1 if reach end of trace
+ */
 static inline int read_trace(reader_t *const reader, request_t *const req) {
   return read_one_req(reader, req);
 }
@@ -149,14 +173,14 @@ static inline int read_trace(reader_t *const reader, request_t *const req) {
  * reset reader, so we can read from the beginning
  * @param reader
  */
-void reset_reader(reader_t *const reader);
+void reset_reader(reader_t *reader);
 
 /**
  * close reader and release resources
  * @param reader
  * @return
  */
-int close_reader(reader_t *const reader);
+int close_reader(reader_t *reader);
 
 static inline int close_trace(reader_t *const reader) {
   return close_reader(reader);
@@ -167,7 +191,7 @@ static inline int close_trace(reader_t *const reader) {
  * @param reader
  * @return
  */
-reader_t *clone_reader(const reader_t *const reader);
+reader_t *clone_reader(const reader_t *reader);
 
 
 /********************* legacy APIs *********************/
@@ -178,16 +202,16 @@ reader_t *clone_reader(const reader_t *const reader);
  * @param N
  * @return
  */
-uint64_t skip_n_req(reader_t *const reader, const guint64 N);
+uint64_t skip_n_req(reader_t *reader, guint64 N);
 
-int read_one_req_above(reader_t *const reader, request_t *c);
+int read_one_req_above(reader_t *reader, request_t *c);
 
 // Jason: need to get rid of this, this is to change csv reader
-void set_no_eof(reader_t *const reader);
+void set_no_eof(reader_t *reader);
 
-int go_back_one_line(reader_t *const reader);
+int go_back_one_line(reader_t *reader);
 
-void reader_set_read_pos(reader_t *const reader, double pos);
+void reader_set_read_pos(reader_t *reader, double pos);
 
 
 #ifdef __cplusplus

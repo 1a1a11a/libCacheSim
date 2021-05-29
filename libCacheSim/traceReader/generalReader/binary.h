@@ -1,3 +1,4 @@
+#pragma once
 //
 //  binaryReader.h
 //  libCacheSim
@@ -6,17 +7,12 @@
 //  Copyright © 2017 Juncheng. All rights reserved.
 //
 
-
-
-#ifndef _BINARY_READER_
-#define _BINARY_READER_
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#include "../../include/libCacheSim.h"
+#include "libCacheSim.h"
 
 typedef struct {
   gint obj_id_field;                  // the beginning bytes in the struct
@@ -54,10 +50,8 @@ typedef struct {
 int binary_read_one_req(reader_t *reader, request_t *req);
 
 /* function to setup binary reader */
-int binaryReader_setup(reader_t *const reader);
+int binaryReader_setup(reader_t *reader);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

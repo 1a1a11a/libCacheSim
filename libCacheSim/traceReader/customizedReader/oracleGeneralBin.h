@@ -18,6 +18,7 @@ extern "C" {
 
 static inline int oracleGeneralBin_setup(reader_t *reader) {
   reader->trace_type = ORACLE_GENERAL_BIN;
+  reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 24;
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
   return 0;

@@ -19,7 +19,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   set_default_arg(&args);
 
   if (strcmp(argv[1], "twr") == 0) {
-    args.trace_type = TWR_TRACE;
+    args.trace_type = TWR_BIN_TRACE;
   } else if (strcmp(argv[1], "vscsi") == 0) {
     args.trace_type = VSCSI_TRACE;
   } else if (strcmp(argv[1], "bin") == 0) {

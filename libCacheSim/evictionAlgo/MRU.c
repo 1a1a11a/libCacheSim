@@ -2,7 +2,7 @@
 //  MRU.c
 //  libCacheSim
 //
-//  MRU evictionAlgo replacement policy
+//  MRU eviction
 //
 //  Created by Juncheng on 8/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.

@@ -3,7 +3,7 @@
 //
 
 #include "common.h"
-#include "../libCacheSim/traceReader/include/readerInternal.h"
+#include "../libCacheSim/traceReader/readerInternal.h"
 
 // TRUE DATA
 size_t trace_length = 113872;
@@ -119,6 +119,13 @@ void test_reader_more1(gconstpointer user_data) {
   verify_req(reader, req, 1);
 
   g_assert_true(get_num_of_req(reader) == trace_length);
+
+  reader_set_read_pos(reader, 1.0);
+  for (i = 0; i < trace_length; i++)
+    go_back_one_line(reader);
+  read_one_req(reader, req);
+  verify_req(reader, req, 0);
+
   free_request(req);
 }
 
@@ -133,7 +140,7 @@ void test_reader_more2(gconstpointer user_data) {
 
 void test_twr(gconstpointer user_data) {
   reader_t *reader =
-      setup_reader("/Users/junchengy/twr.sbin", TWR_TRACE, OBJ_ID_NUM, NULL);
+      setup_reader("/Users/junchengy/twr.sbin", TWR_BIN_TRACE, OBJ_ID_NUM, NULL);
   gint64 n_req = get_num_of_req(reader);
   gint64 n_obj = 0;
   request_t *req = new_request();

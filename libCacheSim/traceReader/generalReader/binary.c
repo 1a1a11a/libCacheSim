@@ -6,7 +6,7 @@
 //  Copyright © 2017 Juncheng. All rights reserved.
 //
 
-#include "include/binary.h"
+#include "binary.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -16,6 +16,7 @@ extern "C"
 int binaryReader_setup(reader_t *const reader) {
 
   reader->trace_type = BIN_TRACE;
+  reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 0;
 
   reader->reader_params = g_new0(binary_params_t, 1);
