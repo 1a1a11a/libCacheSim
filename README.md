@@ -2,6 +2,8 @@
 
 
 ![Build Status](https://travis-ci.com/1a1a11a/libCacheSim.svg?token=yJEqB6qLmWucGFp9zK4U&branch=master)
+![Build Status](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/ci.yml/badge.svg?branch=develop)
+
 [![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
 [![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim)
 ![visitors](https://visitor-badge.glitch.me/badge?page_id=1a1a11a.libCacheSim)

@@ -40,24 +40,27 @@ static void print_rusage_diff(struct rusage r1, struct rusage r2) {
 static void f1(int argc, char* argv[]) {
   int n_threads = 1;
   char *trace_path = "/Users/junchengy/twr.sbin";
-  if (argc >= 2)
-    trace_path = argv[1];
-  if (argc >= 3)
-    n_threads = atoi(argv[2]);
+//  if (argc >= 2)
+//    trace_path = argv[1];
+//  if (argc >= 3)
+//    n_threads = atoi(argv[2]);
 
 //  reader_init_param_t init_params = {.binary_fmt="III", .real_time_field=1, .obj_id_field=2, .obj_size_field=3};
 //  reader_t *reader = setup_reader(trace_path, TWR_TRACE, OBJ_ID_NUM, NULL);
-  reader_t *reader = setup_reader("../../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
-//  reader_t *reader = setup_reader("/Users/junchengy/akamai.bin", BIN_TRACE, OBJ_ID_NUM, &init_params);
+//  reader_t *reader = setup_reader("../../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
+//  char cwd[1024];
+//  getcwd(cwd, sizeof(cwd));
+//  printf("%s\n", cwd);
+
+  reader_t *reader = setup_reader("data/syn3.txt", PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
 
   common_cache_params_t cc_params = {.cache_size=1024*1024*1024, .default_ttl=2};
 //  slab_init_params_t slab_init_params = {.slab_size=1024*1024, .per_obj_metadata_size=0, .slab_move_strategy=recency_t};
-  cache_t *cache = create_cache("ARC", cc_params, NULL);
+  cache_t *cache = ARC_init(cc_params, NULL);
 //  cache_t *cache = create_cache("slabObjLRU", cc_params, &slab_init_params);
-  gint num_of_sizes = 6;
+  gint num_of_sizes = 4;
 //  guint64 cache_sizes[] = {2*MB, 8*MB, 16*MB, 32*MB, 64*MB, 128*MB, 8*GB, 16*GB};
-  guint64 cache_sizes[] = {16*MB, 64*MB, 256*MB, 1*GB, 4*GB, 16*GB};
-//  guint64 cache_sizes[] = {1*GB, 4*GB, 8*GB, 16*GB};
+  guint64 cache_sizes[] = {1*GB, 4*GB, 8*GB, 16*GB};
   sim_res_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, NULL, 0, n_threads);
 
   for (int i=0; i<num_of_sizes; i++){
@@ -70,7 +73,17 @@ static void f1(int argc, char* argv[]) {
 }
 
 static void f2(int argc, char* argv[]){
-//  reader_t *reader = setup_reader(argv[1], TWR_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader = setup_reader("data/syn3.txt", PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL);
+  common_cache_params_t cc_params = {.cache_size = 2};
+  cache_t *cache = MRU_init(cc_params, NULL);
+
+  request_t *req = new_request();
+  read_one_req(reader, req);
+  while (req->valid) {
+    cache_ck_res_e ck = cache->get(cache, req);
+    printf("req %lld hit %d\n", req->obj_id_int, ck == cache_ck_hit);
+    read_one_req(reader, req);
+  }
 }
 
 static void f3(int argc, char* argv[]) {
@@ -115,6 +128,7 @@ typedef struct {
 
 int main(int argc, char *argv[]) {
 //  f1(argc, argv);
-  f3(argc, argv);
+  f2(argc, argv);
+//  f3(argc, argv);
   return 0;
 }

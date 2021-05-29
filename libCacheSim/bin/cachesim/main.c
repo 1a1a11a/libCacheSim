@@ -8,7 +8,6 @@
 #include "../../include/libCacheSim/struct.h"
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/simulator.h"
 
 #include "cachesim.h"
@@ -28,10 +27,10 @@ void run_cache(reader_t *reader, cache_t *cache) {
   long n_skipped = 0;
   for (int i = 0; i < reader->n_total_req / 2; i++) {
 //  while (req->real_time - start_ts < 86400 * 4) {
-    n_skipped += 1;
-    req->real_time -= start_ts;
-    cache->get(cache, req);
-    read_one_req(reader, req);
+//    n_skipped += 1;
+//    req->real_time -= start_ts;
+//    cache->get(cache, req);
+//    read_one_req(reader, req);
   }
 
   double start_time = gettime();
@@ -43,12 +42,20 @@ void run_cache(reader_t *reader, cache_t *cache) {
     if (cache->get(cache, req) != cache_ck_hit) {
       miss_cnt++;
       miss_byte += req->obj_size;
+//      printf("%ld %ld miss - cache size %d/%d\n", req_cnt, req->obj_id_int, cache->occupied_size, cache->cache_size);
     }
+    else {
+//      printf("%ld %ld hi - cache size %d/%d\n", req_cnt-1, req->obj_id_int, cache->occupied_size, cache->cache_size);
+//      break;
+    }
+//    if (req_cnt > 20000)
+//      break;
 
     if (req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
       INFO("ts %lu: %lu requests, miss cnt %lu %.4lf, byte miss ratio %.4lf\n",
            (unsigned long) req->real_time, (unsigned long) req_cnt, (unsigned long) miss_cnt,
            (double) miss_cnt / req_cnt, (double) miss_byte / req_byte);
+
 #ifdef TRACK_EVICTION_AGE
       print_eviction_age(cache);
 #endif
@@ -60,10 +67,12 @@ void run_cache(reader_t *reader, cache_t *cache) {
 
   double runtime = gettime() - start_time;
   printf("runtime %lf s\n", runtime);
-  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf throughput (MQPS): %.2lf, skipped %ld "
-       "requests\n",
-       (unsigned long) req->real_time, (unsigned long) req_cnt, (unsigned long) miss_cnt,
-       (double) miss_cnt / req_cnt, (double) req_cnt / 1000000.0 / runtime,
+  INFO("ts %lu: %lu requests, miss cnt %lu %.4lf, miss byte %lu %.4lf,"
+       " throughput (MQPS): %.2lf, skipped %ld requests\n",
+       (unsigned long) req->real_time, (unsigned long) req_cnt,
+       (unsigned long) miss_cnt, (double) miss_cnt / req_cnt,
+       (unsigned long) miss_byte, (double) miss_byte/req_byte,
+       (double) req_cnt / 1000000.0 / runtime,
        n_skipped);
 }
 
