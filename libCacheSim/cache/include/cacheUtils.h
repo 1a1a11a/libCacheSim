@@ -22,7 +22,7 @@ static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
   cache_state->stored_obj_cnt += 1;
   cache_state->used_bytes += cache_obj->obj_size;
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  if (cache_obj->exp_time < cache_state->cur_time) {
+  if (cache_obj->exp_time < cache_state->cur_rtime) {
     cache_state->expired_obj_cnt += 1;
     cache_state->expired_bytes += cache_obj->obj_size;
   }

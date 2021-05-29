@@ -113,12 +113,12 @@ reader_t *setup_reader(const char *const trace_path,
   case ORACLE_WIKI16u_BIN:oracleWiki2016uReader_setup(reader); break;
   case ORACLE_WIKI19u_BIN:oracleWiki2019uReader_setup(reader); break;
   case ORACLE_WIKI19t_BIN:oracleWiki2019tReader_setup(reader); break;
-    break;
   default:ERROR("cannot recognize trace type: %c\n", reader->trace_type);
     exit(1);
   }
 
-  if (reader->item_size != 0 && reader->file_size % reader->item_size != 0) {
+  if (reader->trace_type != PLAIN_TXT_TRACE && reader->trace_type != CSV_TRACE
+      && reader->item_size != 0 && reader->file_size % reader->item_size != 0) {
     WARNING("trace file size %zu is not multiple of record size %zu\n",
             reader->file_size, reader->item_size);
   }
@@ -567,11 +567,11 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
 }
 
 /**
- *  find the closest end of line, store in line_end
- *  line_end should point to the first character of next line (character that is
- * not current line), in other words, the character after all LFCR line_len is
- * the length of current line, does not include CRLF, nor \0 return true, if end
- * of file return false else *
+ *  find the closest end of line (CRLF)
+ *  line_end is set to point to the first character of next line
+ *  line_len is the length of current line, does not include CRLF, nor \0
+ *  return true, if end of file return false else
+ *
  * @param reader
  * @param line_end
  * @param line_len
@@ -588,29 +588,28 @@ bool find_line_ending(reader_t *const reader, char **line_end,
    *  return false else
    */
 
-  size_t size = MAX_LINE_LEN;
+  size_t size = MIN(MAX_LINE_LEN, (long) reader->file_size - reader->mmap_offset);
+  void *start_pos = (void *) ((char *) (reader->mapped_file) + reader->mmap_offset);
   *line_end = NULL;
 
   while (*line_end == NULL) {
-    if (size > (long) reader->file_size - reader->mmap_offset)
-      size = reader->file_size - reader->mmap_offset;
-    *line_end = (char *) memchr(
-        (void *) ((char *) (reader->mapped_file) + reader->mmap_offset), CSV_LF,
-        size);
+    *line_end = (char *) memchr(start_pos, CSV_LF, size);
     if (*line_end == NULL)
-      *line_end = (char *) memchr(
-          (char *) (reader->mapped_file) + reader->mmap_offset, CSV_CR, size);
+      *line_end = (char *) memchr(start_pos, CSV_CR, size);
 
     if (*line_end == NULL) {
+      /* the line is too long or end of file */
       if (size == MAX_LINE_LEN) {
-        WARNING("line length exceeds %d characters, now double max_line_len\n",
-                MAX_LINE_LEN);
-        size *= 2;
+        WARNING("line length exceeds %d characters\n", MAX_LINE_LEN);
+        abort();
       } else {
-        /*  end of trace, does not -1 here
-         *  if file ending has no CRLF, then file_end points to end of file,
-         * return true; if file ending has one or more CRLF, it will goes to
-         * next while, then file_end points to end of file, still return true
+        /*  end of trace
+         *  if file ending has no CRLF,
+         *  then we set line_end points to end of file,
+         *  and return true;
+         *  if file ending has one or more CRLF, it will not arrive here,
+         *  instead it goes to the next while,
+         *  then file_end points to end of file, and return true
          */
         *line_end = (char *) (reader->mapped_file) + reader->file_size;
         *line_len = size;
@@ -620,26 +619,26 @@ bool find_line_ending(reader_t *const reader, char **line_end,
     }
   }
   // currently line_end points to LFCR
-  *line_len =
-      *line_end - ((char *) (reader->mapped_file) + reader->mmap_offset);
+  *line_len = *line_end - ((char *) start_pos);
 
-  while ((long) (*line_end - (char *) (reader->mapped_file))
-      < (long) (reader->file_size) - 1
-      && (*(*line_end + 1) == CSV_CR || *(*line_end + 1) == CSV_LF
-          || *(*line_end + 1) == CSV_TAB || *(*line_end + 1) == CSV_SPACE)) {
+#define IS_CRLF_OR_SPACE(c) \
+((c) == CSV_CR || (c) == CSV_LF || (c) == CSV_TAB || (c) == CSV_SPACE)
+
+#define MMAP_POS(cp) ((long) ((char*) (cp) - (char *) (reader->mapped_file)))
+#define BEFORE_END_OF_FILE(cp) (MMAP_POS(cp) + 1 <= (long) (reader->file_size))
+#define IS_END_OF_FILE(cp)     (MMAP_POS(cp) + 1 == (long) (reader->file_size))
+
+  while (BEFORE_END_OF_FILE(*line_end + 1) &&
+          IS_CRLF_OR_SPACE(*(*line_end + 1))) {
     (*line_end)++;
-    if ((long) (*line_end - (char *) (reader->mapped_file))
-        == (long) (reader->file_size) - 1) {
-      reader->item_size = *line_len;
-      return true;
-    }
   }
-  if ((long) (*line_end - (char *) (reader->mapped_file))
-      == (long) (reader->file_size) - 1) {
+  /* end of file */
+  if (IS_END_OF_FILE(*line_end)) {
     reader->item_size = *line_len;
     return true;
   }
-  // move to next line, non LFCR
+
+  /* not end of file, points line_end to the first character of next line */
   (*line_end)++;
   reader->item_size = *line_len;
 

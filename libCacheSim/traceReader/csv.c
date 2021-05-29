@@ -120,7 +120,9 @@ int csv_read_one_element(reader_t *const reader, request_t *const req) {
   char *line_end = NULL;
   size_t line_len;
   bool end = find_line_ending(reader, &line_end, &line_len);
-  line_len++; // because line_len does not include LFCR
+  /* csv reader needs line ends with CRLF */
+  if (line_end - reader->mapped_file < reader->file_size)
+    line_len += 1;
 
   if ((size_t) csv_parse(params->csv_parser,
                          reader->mapped_file + reader->mmap_offset,

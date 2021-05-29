@@ -26,7 +26,7 @@
 #define STEP_SIZE (128 * CACHE_SIZE_UNIT)
 
 
-#define NUM_OF_THREADS 1
+#define NUM_OF_THREADS 4
 
 static void _detect_data_path(char* data_path, char* data_name) {
   sprintf(data_path, "data/%s", data_name);
@@ -46,6 +46,13 @@ static void _detect_data_path(char* data_path, char* data_name) {
     return;
 
   ERROR("cannot find data %s\n", data_name);
+}
+
+static reader_t *setup_oracleGeneralBin_reader(void) {
+  char data_path[1024];
+  _detect_data_path(data_path, "trace.oracleGeneral.bin");
+  reader_t *reader_oracle = setup_reader(data_path, ORACLE_GENERAL_BIN, OBJ_ID_NUM, NULL);
+  return reader_oracle;
 }
 
 
@@ -118,27 +125,27 @@ static void test_teardown(gpointer data) {
 static cache_t *create_test_cache(const char *alg_name,
                            common_cache_params_t cc_params, reader_t* reader, void *params) {
   cache_t* cache;
-  if (strcmp(alg_name, "LRU") == 0)
+  if (strcasecmp(alg_name, "LRU") == 0)
     cache = LRU_init(cc_params, NULL);
-  else if (strcmp(alg_name, "FIFO") == 0)
+  else if (strcasecmp(alg_name, "FIFO") == 0)
     cache = FIFO_init(cc_params, NULL);
-  else if (strcmp(alg_name, "optimal") == 0)
+  else if (strcasecmp(alg_name, "Optimal") == 0)
     cache = Optimal_init(cc_params, NULL);
-  else if (strcmp(alg_name, "LRUv0") == 0)
+  else if (strcasecmp(alg_name, "LRUv0") == 0)
     cache = LRUv0_init(cc_params, NULL);
-  else if (strcmp(alg_name, "Random") == 0)
+  else if (strcasecmp(alg_name, "Random") == 0)
     cache = Random_init(cc_params, NULL);
-  else if (strcmp(alg_name, "MRU") == 0)
+  else if (strcasecmp(alg_name, "MRU") == 0)
     cache = MRU_init(cc_params, NULL);
 //  else if (strcmp(alg_name, "LRU_K") == 0)
 //    cache = LRU_K_init(cc_params, NULL);
-  else if (strcmp(alg_name, "LFU") == 0)
+  else if (strcasecmp(alg_name, "LFU") == 0)
     cache = LFU_init(cc_params, NULL);
-  else if (strcmp(alg_name, "LFUDA") == 0)
+  else if (strcasecmp(alg_name, "LFUDA") == 0)
     cache = LFUDA_init(cc_params, NULL);
 //  else if (strcmp(alg_name, "LFUFast") == 0)
 //    cache = LFUFast_init(cc_params, NULL);
-  else if (strcmp(alg_name, "ARC") == 0) {
+  else if (strcasecmp(alg_name, "ARC") == 0) {
     ARC_init_params_t *init_params = my_malloc_n(ARC_init_params_t, 1);
     init_params->ghost_list_factor = 1;
     cache = ARC_init(cc_params, init_params);
@@ -155,11 +162,11 @@ static cache_t *create_test_cache(const char *alg_name,
 //    cache = Optimal_init(cc_params, (void *) init_params);
 //  } else if (strcmp(alg_name, "TTL_FIFO") == 0){
 //    cache = TTL_FIFO_init(cc_params, NULL);
-  } else if (strcmp(alg_name, "slabLRC") == 0) {
+  } else if (strcasecmp(alg_name, "slabLRC") == 0) {
     cache = slabLRC_init(cc_params, NULL);
-  } else if (strcmp(alg_name, "slabLRU") == 0) {
+  } else if (strcasecmp(alg_name, "slabLRU") == 0) {
     cache = slabLRU_init(cc_params, NULL);
-  } else if (strcmp(alg_name, "slabObjLRU") == 0) {
+  } else if (strcasecmp(alg_name, "slabObjLRU") == 0) {
     cache = slabObjLRU_init(cc_params, NULL);
 //
 //  } else if (strcmp(alg_name, "PG") == 0) {

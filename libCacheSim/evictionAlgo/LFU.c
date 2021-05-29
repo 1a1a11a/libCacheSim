@@ -154,7 +154,7 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
 }
 
 cache_ck_res_e LFU_get(cache_t *cache, request_t *req) {
-  DEBUG_ASSERT(_verify(cache) == 0);
+//  DEBUG_ASSERT(_verify(cache) == 0);
   return cache_get(cache, req);
 }
 

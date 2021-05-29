@@ -73,7 +73,7 @@ cache_t *Optimal_init(common_cache_params_t ccache_params, void *init_params) {
   Optimal_params_t *params = my_malloc(Optimal_params_t);
   cache->cache_params = params;
 
-  params->pq = pqueue_init(2e7, cmp_pri, get_pri, set_pri, get_pos, set_pos);
+  params->pq = pqueue_init((unsigned long) 8e6, cmp_pri, get_pri, set_pri, get_pos, set_pos);
   return cache;
 }
 
@@ -102,10 +102,9 @@ cache_ck_res_e Optimal_check(cache_t *cache, request_t *req, bool update_cache) 
 
   if (ret == cache_ck_hit) {
     /* update next access ts, we use INT64_MAX - 10 because we reserve the largest elements for immediate delete */
-    if (req->next_access_ts == -1) {
+    if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
       Optimal_remove_obj(cache, cached_obj);
     } else {
-      //      pqueue_pri_t pri = {.pri1 = req->next_access_ts == -1 ? INT64_MAX - 10 : req->next_access_ts};
       pqueue_pri_t pri = {.pri1 = req->next_access_ts};
       pqueue_change_priority(params->pq, pri, (pq_node_t *) (cached_obj->extra_metadata_ptr));
       DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1
@@ -123,6 +122,8 @@ cache_ck_res_e Optimal_check(cache_t *cache, request_t *req, bool update_cache) 
 
 cache_ck_res_e Optimal_get(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(req->n_req - 1 == cache->req_cnt);
+  /* -2 means the trace does not have next_access ts information */
+  DEBUG_ASSERT(req->next_access_ts != -2);
   Optimal_params_t *params = cache->cache_params;
 
   DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);

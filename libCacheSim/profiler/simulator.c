@@ -90,7 +90,7 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   /* check cache_state */
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (local_cache->default_ttl != 0) {
-    result[idx].cache_state.cur_time = req->real_time;
+    result[idx].cache_state.cur_rtime = req->real_time;
     result[idx].cache_state.cache_size = local_cache->cache_size;
     result[idx].cache_state.expired_bytes = 0;
     result[idx].cache_state.expired_obj_cnt = 0;

@@ -70,7 +70,7 @@ void test_reader_basic(gconstpointer user_data) {
     read_one_req(reader, req);
   }
   if (get_obj_id_type(reader) == OBJ_ID_NUM)
-    g_assert_true(last_read_num == trace_end_req_d);
+    g_assert_cmpuint(last_read_num, ==, trace_end_req_d);
   else if (get_obj_id_type(reader) == OBJ_ID_STR)
     g_assert_cmpstr(last_read_str, ==, trace_end_req_s);
   reset_reader(reader);
@@ -198,6 +198,14 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/reader_more1_vscsi", reader,
                        test_reader_more1);
   g_test_add_data_func_full("/libCacheSim/reader_more2_vscsi", reader,
+                            test_reader_more2, test_teardown);
+
+  reader = setup_oracleGeneralBin_reader();
+  g_test_add_data_func("/libCacheSim/reader_basic_oracleGeneral", reader,
+                       test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_oracleGeneral", reader,
+                       test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_oracleGeneral", reader,
                             test_reader_more2, test_teardown);
 
   // g_test_add_data_func("/libCacheSim/test_twr", NULL, test_twr);
