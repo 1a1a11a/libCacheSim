@@ -13,7 +13,6 @@
 #include "enum.h"
 #include "logging.h"
 #include "request.h"
-#include "sampling.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -196,15 +195,10 @@ static inline int close_trace(reader_t *const reader) {
  */
 reader_t *clone_reader(const reader_t *reader);
 
+void read_first_req(reader_t *reader, request_t *req);
 
-/********************* legacy APIs *********************/
-/**            do not use them in new code          **/
-/**
- * skip the next N requests
- * @param reader
- * @param N
- * @return
- */
+void read_last_req(reader_t *reader, request_t *req);
+
 uint64_t skip_n_req(reader_t *reader, guint64 N);
 
 int read_one_req_above(reader_t *reader, request_t *c);

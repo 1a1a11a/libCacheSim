@@ -522,11 +522,21 @@ bool find_line_ending(reader_t *const reader, char **next_line,
   return false;
 }
 
-void add_sampling(struct reader *reader,
-                  void *sampler,
-                  trace_sampling_func func) {
-  reader->sampler = sampler;
-  reader->sample = func;
+void read_first_req(reader_t *reader, request_t *req) {
+  uint64_t offset = reader->mmap_offset;
+  reset_reader(reader);
+  read_one_req(reader, req);
+  reader->mmap_offset = offset;
+}
+
+void read_last_req(reader_t *reader, request_t *req) {
+  uint64_t offset = reader->mmap_offset;
+  reset_reader(reader);
+  reader_set_read_pos(reader, 1.0);
+  go_back_one_line(reader);
+  read_one_req(reader, req);
+
+  reader->mmap_offset = offset;
 }
 
 

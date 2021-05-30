@@ -42,7 +42,7 @@ void *create_prob_admissioner(double ratio) {
   return s;
 }
 
-void free_prob_admisstioner(void *s) {
+void free_prob_admissioner(void *s) {
   my_free(sizeof(struct prob_admissioner), s);
 }
 

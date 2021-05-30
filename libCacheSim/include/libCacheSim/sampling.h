@@ -1,6 +1,8 @@
 #pragma once
 
 #include "struct.h"
+#include "reader.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,10 +19,14 @@ enum sampler_type {
 
 typedef bool (*trace_sampling_func)(void *sampler, request_t *req);
 
-struct reader;
-void add_sampling(struct reader *reader,
+static inline void add_sampling(struct reader *reader,
                   void *sampler,
-                  trace_sampling_func func);
+                  trace_sampling_func func) {
+  reader->sampler = sampler;
+  reader->sample = func;
+}
+
+
 
 
 bool spatial_sample(void *sampler, request_t *req);

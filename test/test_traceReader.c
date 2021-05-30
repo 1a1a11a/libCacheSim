@@ -21,6 +21,15 @@ size_t trace_end_req_d = 42936150;
 char *trace_end_req_s = "42936150";
 
 void verify_req(reader_t *reader, request_t *req, int req_idx) {
+  if (req_idx == -1) {
+    if (get_obj_id_type(reader) == OBJ_ID_NUM)
+      g_assert_true(req->obj_id_int == trace_end_req_d);
+    else if (get_obj_id_type(reader) == OBJ_ID_STR)
+      g_assert_cmpstr(g_quark_to_string(req->obj_id_int), ==,
+                      trace_end_req_s);
+    return;
+  }
+
   if (get_obj_id_type(reader) == OBJ_ID_NUM)
     g_assert_true(req->obj_id_int == trace_start_req_d[req_idx]);
   else if (get_obj_id_type(reader) == OBJ_ID_STR)
@@ -40,7 +49,7 @@ void test_reader_basic(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
   gint i;
   request_t *req = new_request();
-  // check length
+
   g_assert_true(get_num_of_req(reader) == trace_length);
 
   // check reading
@@ -56,23 +65,10 @@ void test_reader_basic(gconstpointer user_data) {
     verify_req(reader, req, i);
   }
 
-  size_t last_read_num = 0;
-  const gchar *last_read_str = NULL;
-  // check reading full data
   while (req->valid) {
-    if (get_obj_id_type(reader) == OBJ_ID_NUM)
-      last_read_num = req->obj_id_int;
-    else if (get_obj_id_type(reader) == OBJ_ID_STR)
-      last_read_str = g_quark_to_string(req->obj_id_int);
-    else
-      g_assert_not_reached();
-
     read_one_req(reader, req);
   }
-  if (get_obj_id_type(reader) == OBJ_ID_NUM)
-    g_assert_cmpuint(last_read_num, ==, trace_end_req_d);
-  else if (get_obj_id_type(reader) == OBJ_ID_STR)
-    g_assert_cmpstr(last_read_str, ==, trace_end_req_s);
+  verify_req(reader, req, -1);
   reset_reader(reader);
 
   g_assert_true(get_num_of_req(reader) == trace_length);
@@ -88,19 +84,7 @@ void test_reader_more1(gconstpointer user_data) {
   g_assert_true(skip_n_req(reader, 4) == 4);
   for (i = 4; i < N_TEST_REQ; i++) {
     read_one_req(reader, req);
-    if (get_obj_id_type(reader) == OBJ_ID_NUM)
-      g_assert_true(GPOINTER_TO_SIZE(req->obj_id_int) == trace_start_req_d[i]);
-    else if (get_obj_id_type(reader) == OBJ_ID_STR)
-      g_assert_cmpstr(g_quark_to_string(req->obj_id_int), ==,
-                      trace_start_req_s[i]);
-
-    if (get_trace_type(reader) == CSV_TRACE ||
-        get_trace_type(reader) == BIN_TRACE ||
-        get_trace_type(reader) == VSCSI_TRACE) {
-      g_assert_true(req->real_time == trace_start_req_time[i] ||
-          req->real_time == trace_start_req_time[i] / 1000000);
-      g_assert_true(req->obj_size == trace_start_req_size[i]);
-    }
+    verify_req(reader, req, i);
   }
   reset_reader(reader);
 
@@ -131,6 +115,15 @@ void test_reader_more1(gconstpointer user_data) {
 
 void test_reader_more2(gconstpointer user_data) {
   reader_t *reader = (reader_t *) user_data;
+  request_t *req = new_request();
+
+  read_last_req(reader, req);
+  verify_req(reader, req, -1);
+
+  read_first_req(reader, req);
+  verify_req(reader, req, 0);
+
+  free_request(req);
 
   // check clone reader
   reader_t *cloned_reader = clone_reader(reader);

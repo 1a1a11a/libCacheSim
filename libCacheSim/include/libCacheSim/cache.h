@@ -58,13 +58,14 @@ typedef bool (*cache_admission_func_ptr)(cache_t *, request_t*);
 
 #define MAX_EVICTION_AGE_ARRAY_SZE 64
 typedef struct {
-  uint64_t cache_size;
-  uint64_t cur_rtime;
-  uint64_t cur_vtime;
-
   uint64_t n_req;
+  uint64_t n_req_byte;
+  uint64_t n_miss;
+  uint64_t n_miss_byte;
+
   uint64_t n_obj;
   uint64_t occupied_size;
+  uint64_t cache_size;
 
   /* eviction age in wall clock time */
   int log2_eviction_rage[MAX_EVICTION_AGE_ARRAY_SZE];
@@ -102,6 +103,8 @@ struct cache {
   uint64_t default_ttl;
   int32_t per_obj_overhead;
 
+  /* cache stat is not updated automatically, it is popped up only in
+   * some situations */
   cache_stat_t stat;
   void *init_params;
   char cache_name[32];

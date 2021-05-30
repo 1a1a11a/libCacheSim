@@ -32,7 +32,7 @@ void *create_bloomfilter_admissioner() {
   return ba;
 }
 
-void free_bloomfilter_admisstioner(void *s) {
+void free_bloomfilter_admissioner(void *s) {
   struct bloomfilter_admissioner *ba = s;
   g_hash_table_destroy(ba->seen_times);
   my_free(sizeof(struct bloomfilter_admissioner), s);
