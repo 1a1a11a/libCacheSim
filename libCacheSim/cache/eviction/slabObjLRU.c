@@ -160,7 +160,7 @@ static void slabObjLRU_move_slab(cache_t *cache, int from_slab_id,
     GList *node = (GList *) g_hash_table_lookup(slabObjLRU_params->hashtable,
                                                 slab_to_evict->slab_items[i]);
     if (node == NULL) {
-      ERROR("req_cnt %lld cannot find object %ld\n", (long long) cache->req_cnt,
+      ERROR("cannot find object %ld\n",
             (long) slab_to_evict->slab_items[i]);
       abort();
     }
@@ -247,7 +247,6 @@ cache_ck_res_e slabObjLRU_get(cache_t *cache, request_t *req) {
     last_automove_time = req->real_time;
   }
 
-  cache->req_cnt += 1;
   return cache_check;
 }
 
@@ -394,8 +393,7 @@ void _slabObjLRU_evict_slab(cache_t *cache) {
     GList *node = (GList *) g_hash_table_lookup(slabObjLRU_params->hashtable,
                                                 slab_to_evict->slab_items[i]);
     if (node == NULL) {
-      ERROR("req_cnt %lld cannot find object at %p \n",
-            (long long) cache->req_cnt, slab_to_evict->slab_items[i]);
+      ERROR("cannot find object at %p \n", slab_to_evict->slab_items[i]);
       abort();
     }
     slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) node->data;

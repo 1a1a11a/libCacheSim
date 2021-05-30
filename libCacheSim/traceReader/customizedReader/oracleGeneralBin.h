@@ -10,7 +10,7 @@
  *
  */
 
-#include "../../include/libCacheSim.h"
+#include "../../include/libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {

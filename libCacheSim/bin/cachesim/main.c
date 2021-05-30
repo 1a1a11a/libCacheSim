@@ -91,15 +91,15 @@ int main(int argc, char **argv) {
 
     run_cache(args.reader, args.cache);
   } else {
-    sim_res_t *result = get_miss_ratio_curve(args.reader, args.cache, args.n_cache_size, args.cache_sizes,
+    cache_stat_t *result = get_miss_ratio_curve(args.reader, args.cache, args.n_cache_size, args.cache_sizes,
                                              NULL, 0, args.n_thread);
 
     for (int i = 0; i < args.n_cache_size; i++) {
       printf("cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf), "
              "byte miss ratio %.4lf\n",
-             result[i].cache_size, result[i].miss_cnt, result[i].req_cnt,
-             (double) result[i].miss_cnt / result[i].req_cnt,
-             (double) result[i].miss_bytes / result[i].req_bytes);
+             result[i].cache_size, result[i].n_miss, result[i].n_req,
+             (double) result[i].n_miss / (double) result[i].n_req,
+             (double) result[i].n_miss_byte / (double) result[i].n_req_byte);
     }
   }
 

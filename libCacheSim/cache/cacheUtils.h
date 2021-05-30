@@ -9,9 +9,9 @@
 extern "C" {
 #endif
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/cacheObj.h"
+#include "../dataStructure/hashtable/hashtable.h"
+#include "../include/libCacheSim/cache.h"
+#include "../include/libCacheSim/cacheObj.h"
 
 #include <glib.h>
 
@@ -22,7 +22,7 @@ static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
   cache_state->n_obj += 1;
   cache_state->occupied_size += cache_obj->obj_size;
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  if (cache_obj->exp_time < cache_state->cur_rtime) {
+  if (cache_obj->exp_time < cache_state->curr_rtime) {
     cache_state->expired_obj_cnt += 1;
     cache_state->expired_bytes += cache_obj->obj_size;
   }

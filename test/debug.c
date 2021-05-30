@@ -61,11 +61,11 @@ static void f1(int argc, char* argv[]) {
   gint num_of_sizes = 4;
 //  guint64 cache_sizes[] = {2*MB, 8*MB, 16*MB, 32*MB, 64*MB, 128*MB, 8*GB, 16*GB};
   guint64 cache_sizes[] = {1*GB, 4*GB, 8*GB, 16*GB};
-  sim_res_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, NULL, 0, n_threads);
+  cache_stat_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, NULL, 0, n_threads);
 
   for (int i=0; i<num_of_sizes; i++){
     printf("%s cache size %lld req %lld miss %lld req_byte %lld miss_byte %lld\n", __func__,
-           (long long) res[i].cache_size, (long long) res[i].req_cnt, (long long) res[i].miss_cnt, (long long) res[i].req_bytes, (long long) res[i].miss_bytes);
+           (long long) res[i].cache_size, (long long) res[i].n_req, (long long) res[i].n_miss, (long long) res[i].n_req_byte, (long long) res[i].n_miss_byte);
   }
   cache->cache_free(cache);
   g_free(res);

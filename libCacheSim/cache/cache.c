@@ -16,6 +16,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->eviction_algo = NULL;
   cache->default_ttl = params.default_ttl;
   cache->per_obj_overhead = params.per_obj_overhead;
+  cache->stat.cache_size = cache->cache_size;
 
   int hash_power = HASH_POWER_DEFAULT;
   if (params.hashpower > 0 && params.hashpower < 40)
@@ -88,9 +89,8 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
     }
   } else {
     WARNING("req %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
-            cache->req_cnt, req->obj_size, cache->cache_size);
+            req->obj_id_int, req->obj_size, cache->cache_size);
   }
-  cache->req_cnt += 1;
   return cache_check;
 }
 

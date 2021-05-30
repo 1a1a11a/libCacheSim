@@ -25,7 +25,7 @@ extern "C" {
  */
 
 
-#include "../../include/libCacheSim.h"
+#include "../../include/libCacheSim/reader.h"
 
 
 

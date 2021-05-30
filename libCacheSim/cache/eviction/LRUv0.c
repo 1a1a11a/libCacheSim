@@ -78,10 +78,9 @@ cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
       LRUv0_evict(cache, req, NULL);
   } else {
     WARNING("req %lld: obj size %ld larger than cache size %ld\n",
-            (long long) cache->req_cnt, (long) req->obj_size,
+            (long long) req->obj_id_int, (long) req->obj_size,
             (long) cache->cache_size);
   }
-  cache->req_cnt += 1;
   return cache_check;
 }
 

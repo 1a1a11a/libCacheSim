@@ -12,7 +12,7 @@ extern "C"
 {
 #endif
 
-#include "../../include/libCacheSim.h"
+#include "../../include/libCacheSim/reader.h"
 
 typedef struct {
   gint obj_id_field;                  // the beginning bytes in the struct

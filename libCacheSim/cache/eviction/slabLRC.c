@@ -113,7 +113,6 @@ cache_ck_res_e slabLRC_get(cache_t *cache, request_t *req) {
     slabLRC_insert(cache, req);
   assert(slabLRC_params->slab_params.n_total_slabs == cache->cache_size / MiB);
 
-  cache->req_cnt += 1;
   return cache_check;
 }
 

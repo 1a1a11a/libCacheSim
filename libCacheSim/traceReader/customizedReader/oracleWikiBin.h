@@ -36,7 +36,7 @@ extern "C" {
  */
 
 
-#include "../../include/libCacheSim.h"
+#include "../../include/libCacheSim/reader.h"
 
 static inline int oracleWiki2016uReader_setup(reader_t *reader) {
   reader->trace_type = WIKI16u_BIN_TRACE;

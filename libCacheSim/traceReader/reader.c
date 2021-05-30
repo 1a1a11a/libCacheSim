@@ -185,7 +185,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         reader->trace_type);
     exit(1);
   }
-#if defined(ENABLE_TRACE_SAMPLING) && ENABLE_TRACE_SAMPLING == 1
+#if defined(SUPPORT_TRACE_SAMPLING) && SUPPORT_TRACE_SAMPLING == 1
   if (reader->sample != NULL) {
     if (!reader->sample(reader->sampler, req)) {
       /* skip this request and read next */

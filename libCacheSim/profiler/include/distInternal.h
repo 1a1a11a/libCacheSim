@@ -11,7 +11,7 @@ extern "C" {
 
 #include "../../dataStructure/include/splay.h"
 #include "../../utils/include/utilsInternal.h"
-#include "../../include/libCacheSim.h"
+//#include "../../include/libCacheSim.h"
 
 /***********************************************************
  * this function is called by _get_last_access_dist,

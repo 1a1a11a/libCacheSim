@@ -58,6 +58,7 @@ typedef bool (*cache_admission_func_ptr)(cache_t *, request_t*);
 
 #define MAX_EVICTION_AGE_ARRAY_SZE 64
 typedef struct {
+  uint64_t n_warmup_req;
   uint64_t n_req;
   uint64_t n_req_byte;
   uint64_t n_miss;
@@ -72,6 +73,7 @@ typedef struct {
   /* eviction age in virtual time/num of requests */
   int log2_eviction_vage[MAX_EVICTION_AGE_ARRAY_SZE];
 
+  uint64_t curr_rtime; /* current trace time, used to determine obj expiration */
   uint64_t expired_obj_cnt;
   uint64_t expired_bytes;
 } cache_stat_t;
@@ -95,7 +97,7 @@ struct cache {
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
 
-  uint64_t req_cnt;
+//  uint64_t req_cnt;
   uint64_t n_obj;
   uint64_t occupied_size;
 

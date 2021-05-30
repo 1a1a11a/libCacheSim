@@ -22,17 +22,17 @@ static void test_simulator_no_size(gconstpointer user_data) {
       .default_ttl = 0};
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
-  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, step_size, NULL, 0, NUM_OF_THREADS);
 
   //  uint64_t* mc = _get_lru_miss_cnt(reader, get_num_of_req(reader));
 
   for (uint64_t i = 0; i < cache_size / step_size; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, step_size * (i + 1));
-    g_assert_cmpuint(req_cnt_true, ==, res[i].req_cnt);
-    g_assert_cmpuint(miss_cnt_true[i], ==, res[i].miss_cnt);
-    g_assert_cmpuint(req_cnt_true, ==, res[i].req_bytes);
-    g_assert_cmpuint(miss_cnt_true[i], ==, res[i].miss_bytes);
+    g_assert_cmpuint(req_cnt_true, ==, res[i].n_req);
+    g_assert_cmpuint(miss_cnt_true[i], ==, res[i].n_miss);
+    g_assert_cmpuint(req_cnt_true, ==, res[i].n_req_byte);
+    g_assert_cmpuint(miss_cnt_true[i], ==, res[i].n_miss_byte);
   }
   cache->cache_free(cache);
   g_free(res);
@@ -56,14 +56,14 @@ static void test_simulator(gconstpointer user_data) {
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
-  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
-    g_assert_cmpuint(res[i].req_cnt, ==, req_cnt_true);
-    g_assert_cmpuint(res[i].req_bytes, ==, req_byte_true);
-    g_assert_cmpuint(res[i].miss_cnt, ==, miss_cnt_true[i]);
-    g_assert_cmpuint(res[i].miss_bytes, ==, miss_byte_true[i]);
+    g_assert_cmpuint(res[i].n_req, ==, req_cnt_true);
+    g_assert_cmpuint(res[i].n_req_byte, ==, req_byte_true);
+    g_assert_cmpuint(res[i].n_miss, ==, miss_cnt_true[i]);
+    g_assert_cmpuint(res[i].n_miss_byte, ==, miss_byte_true[i]);
   }
   g_free(res);
 
@@ -72,11 +72,11 @@ static void test_simulator(gconstpointer user_data) {
   res = get_miss_ratio_curve(reader, cache, 4, cache_sizes, NULL, 0,
                              NUM_OF_THREADS);
   g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
-  g_assert_cmpuint(res[1].req_bytes, ==, req_byte_true);
-  g_assert_cmpuint(res[3].req_cnt, ==, req_cnt_true);
-  g_assert_cmpuint(res[0].miss_bytes, ==, miss_byte_true[0]);
-  g_assert_cmpuint(res[2].miss_cnt, ==, miss_cnt_true[3]);
-  g_assert_cmpuint(res[3].miss_bytes, ==, miss_byte_true[6]);
+  g_assert_cmpuint(res[1].n_req_byte, ==, req_byte_true);
+  g_assert_cmpuint(res[3].n_req, ==, req_cnt_true);
+  g_assert_cmpuint(res[0].n_miss_byte, ==, miss_byte_true[0]);
+  g_assert_cmpuint(res[2].n_miss, ==, miss_cnt_true[3]);
+  g_assert_cmpuint(res[3].n_miss_byte, ==, miss_byte_true[6]);
   g_free(res);
 
   cache->cache_free(cache);
@@ -99,15 +99,15 @@ static void test_simulator_with_warmup1(gconstpointer user_data) {
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
-  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, reader, 0, NUM_OF_THREADS);
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
-    g_assert_cmpuint(res[i].req_cnt, ==, req_cnt_true);
-    g_assert_cmpuint(res[i].miss_cnt, ==, miss_cnt_true[i]);
-    g_assert_cmpuint(res[i].req_bytes, ==, req_byte_true);
-    g_assert_cmpuint(res[i].miss_bytes, ==, miss_byte_true[i]);
+    g_assert_cmpuint(res[i].n_req, ==, req_cnt_true);
+    g_assert_cmpuint(res[i].n_miss, ==, miss_cnt_true[i]);
+    g_assert_cmpuint(res[i].n_req_byte, ==, req_byte_true);
+    g_assert_cmpuint(res[i].n_miss_byte, ==, miss_byte_true[i]);
   }
   g_free(res);
 
@@ -127,15 +127,15 @@ static void test_simulator_with_warmup2(gconstpointer user_data) {
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
-  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0.2, NUM_OF_THREADS);
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
-    g_assert_cmpuint(res[i].req_cnt, ==, req_cnt_true);
-    g_assert_cmpuint(res[i].miss_cnt, ==, miss_cnt_true[i]);
-    g_assert_cmpuint(res[i].req_bytes, ==, req_byte_true);
-    g_assert_cmpuint(res[i].miss_bytes, ==, miss_byte_true[i]);
+    g_assert_cmpuint(res[i].n_req, ==, req_cnt_true);
+    g_assert_cmpuint(res[i].n_miss, ==, miss_cnt_true[i]);
+    g_assert_cmpuint(res[i].n_req_byte, ==, req_byte_true);
+    g_assert_cmpuint(res[i].n_miss_byte, ==, miss_byte_true[i]);
   }
   g_free(res);
 
@@ -155,7 +155,7 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
-  sim_res_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 //  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
 //    printf("size %" PRIu64 " - req %" PRIu64 " - miss %" PRIu64
@@ -163,8 +163,8 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
 //           "%" PRIu64 " - occupied_size %" PRIu64 " - stored_obj %" PRIu64
 //           " - expired_obj %" PRIu64 " - "
 //           "expired_bytes %" PRIu64 "\n",
-//           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_bytes,
-//           res[i].miss_bytes, res[i].cache_state.occupied_size,
+//           res[i].cache_size, res[i].n_req, res[i].n_miss, res[i].n_req_byte,
+//           res[i].n_miss_byte, res[i].cache_state.occupied_size,
 //           res[i].cache_state.n_obj,
 //           res[i].cache_state.expired_obj_cnt,
 //           res[i].cache_state.expired_bytes);
@@ -172,10 +172,10 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
-    g_assert_cmpuint(res[i].req_cnt, ==, req_cnt_true);
-    g_assert_cmpuint(res[i].req_bytes, ==, req_byte_true);
-    g_assert_cmpuint(res[i].miss_cnt, ==, miss_cnt_true[i]);
-    g_assert_cmpuint(res[i].miss_bytes, ==, miss_byte_true[i]);
+    g_assert_cmpuint(res[i].n_req, ==, req_cnt_true);
+    g_assert_cmpuint(res[i].n_req_byte, ==, req_byte_true);
+    g_assert_cmpuint(res[i].n_miss, ==, miss_cnt_true[i]);
+    g_assert_cmpuint(res[i].n_miss_byte, ==, miss_byte_true[i]);
   }
   g_free(res);
 

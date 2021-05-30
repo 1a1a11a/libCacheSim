@@ -5,7 +5,7 @@
  */
 
 
-#include "../../include/libCacheSim.h"
+#include "../../include/libCacheSim/reader.h"
 
 #include <stdint.h>
 #include <stdio.h>

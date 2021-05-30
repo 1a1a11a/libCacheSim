@@ -10,6 +10,13 @@ set(${PROJECT_NAME}_RELEASE_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}_VERSION_PATCH})
 
 
+
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    unset(${_variableName})
+#endforeach()
+
+
 ####################
 # detect platform #
 ####################
@@ -37,9 +44,9 @@ endif ()
 option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_LLSC "enable learned log-structured cache" ON)
-option(ENABLE_TTL "whether support TTL" OFF)
-option(ENABLE_ADMISSION "whether support cache admission" ON)
-option(ENABLE_TRACE_SAMPLING "whether support trace sampling" ON)
+option(SUPPORT_TTL "whether support TTL" OFF)
+option(SUPPORT_ADMISSION "whether support cache admission" OFF)
+option(SUPPORT_TRACE_SAMPLING "whether support trace sampling" OFF)
 
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 
@@ -48,23 +55,23 @@ if (NOT LOG_LEVEL)
     set(LOG_LEVEL debug)
 endif()
 
-if (ENABLE_TTL)
-    add_compile_definitions(ENABLE_TTL=1)
+if (SUPPORT_TTL)
+    add_compile_definitions(SUPPORT_TTL=1)
 else()
-    remove_definitions(ENABLE_TTL)
-endif(ENABLE_TTL)
+    remove_definitions(SUPPORT_TTL)
+endif(SUPPORT_TTL)
 
-if (ENABLE_ADMISSION)
-    add_compile_definitions(ENABLE_ADMISSION=1)
+if (SUPPORT_ADMISSION)
+    add_compile_definitions(SUPPORT_ADMISSION=1)
 else()
-    add_compile_definitions(ENABLE_ADMISSION=0)
+    add_compile_definitions(SUPPORT_ADMISSION=0)
 endif()
 
-if (ENABLE_TRACE_SAMPLING)
-    add_compile_definitions(ENABLE_TRACE_SAMPLING=1)
+if (SUPPORT_TRACE_SAMPLING)
+    add_compile_definitions(SUPPORT_TRACE_SAMPLING=1)
 else()
-    add_compile_definitions(ENABLE_TRACE_SAMPLING=0)
-endif(ENABLE_TRACE_SAMPLING)
+    add_compile_definitions(SUPPORT_TRACE_SAMPLING=0)
+endif(SUPPORT_TRACE_SAMPLING)
 
 if (USE_HUGEPAGE)
     add_compile_definitions(USE_HUGEPAGE=1)
@@ -95,9 +102,9 @@ elseif (LOG_LEVEL MATCHES severe)
 endif()
 
 
-message(STATUS "SUPPORT TTL ${ENABLE_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, ENABLE_ADMISSION ${ENABLE_ADMISSION},
+message(STATUS "SUPPORT TTL ${ENABLE_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION},
 MY_TEST ${MY_TEST},
-ENABLE_SAMPLING ${ENABLE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
+SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
 
 
 # set compiler flags
@@ -268,12 +275,6 @@ else ()
     message(STATUS "Building without test")
 endif ()
 
-
-
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#    unset(${_variableName})
-#endforeach()
 
 
 # Example Usages:

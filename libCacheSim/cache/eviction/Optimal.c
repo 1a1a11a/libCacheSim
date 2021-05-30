@@ -92,7 +92,6 @@ cache_ck_res_e Optimal_check(cache_t *cache,
 }
 
 cache_ck_res_e Optimal_get(cache_t *cache, request_t *req) {
-  DEBUG_ASSERT(req->n_req - 1 == cache->req_cnt);
   /* -2 means the trace does not have next_access ts information */
   DEBUG_ASSERT(req->next_access_ts != -2);
   Optimal_params_t *params = cache->eviction_algo;

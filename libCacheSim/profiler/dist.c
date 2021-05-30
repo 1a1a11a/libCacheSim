@@ -13,6 +13,7 @@ extern "C" {
 
 #include "../dataStructure/include/splay.h"
 #include "../include/libCacheSim/dist.h"
+#include "../include/libCacheSim/macro.h"
 #include "../utils/include/utilsInternal.h"
 #include "include/distInternal.h"
 

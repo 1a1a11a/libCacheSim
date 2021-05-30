@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include "../../include/libCacheSim.h"
+#include "../../include/libCacheSim/reader.h"
 
 
 static inline int twrReader_setup(reader_t *reader) {

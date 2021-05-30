@@ -107,7 +107,6 @@ cache_ck_res_e slabLRU_get(cache_t *cache, request_t *req) {
   else
     slabLRU_update(cache, req);
 
-  cache->req_cnt += 1;
   return cache_check;
 }
 
