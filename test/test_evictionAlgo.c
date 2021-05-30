@@ -4,12 +4,12 @@
 
 #include "common.h"
 
-static void _verify_profiler_results(const sim_res_t *const res,
-                              const uint64_t num_of_sizes,
-                              const uint64_t req_cnt_true,
-                              const uint64_t *const miss_cnt_true,
-                              const uint64_t req_byte_true,
-                              const uint64_t *const miss_byte_true) {
+static void _verify_profiler_results(const sim_res_t * res,
+                              uint64_t num_of_sizes,
+                              uint64_t req_cnt_true,
+                              const uint64_t *miss_cnt_true,
+                              uint64_t req_byte_true,
+                              const uint64_t *miss_byte_true) {
 
   for (uint64_t i = 0; i < num_of_sizes; i++) {
     g_assert_cmpuint(req_cnt_true, ==, res[i].req_cnt);

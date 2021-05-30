@@ -77,7 +77,6 @@ typedef struct pqueue_t {
 
 typedef struct node_t {
   pqueue_pri_t pri;
-  //    obj_id_type_e obj_id_type;
   obj_id_t obj_id;
   size_t pos;
 } pq_node_t;
@@ -188,6 +187,22 @@ void pqueue_dump(pqueue_t *q,
  * @param q the queue
  */
 int pqueue_is_valid(pqueue_t *q);
+
+
+/******************* priority queue structs and def **********************/
+
+static inline int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) {
+  return (next.pri1 < curr.pri1);
+}
+
+static inline pqueue_pri_t get_pri(void *a) { return ((pq_node_t *) a)->pri; }
+
+static inline void set_pri(void *a, pqueue_pri_t pri) { ((pq_node_t *) a)->pri = pri; }
+
+static inline size_t get_pos(void *a) { return ((pq_node_t *) a)->pos; }
+
+static inline void set_pos(void *a, size_t pos) { ((pq_node_t *) a)->pos = pos; }
+
 
 #ifdef __cplusplus
 }

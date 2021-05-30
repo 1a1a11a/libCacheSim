@@ -20,16 +20,13 @@ extern "C"
 
 
 
-
-// by default, the ghost list size is the same size as cache size
-
 typedef struct ARC_params {
-  cache_t *LRU1;            // normal ARC segment
-  cache_t *LRU1g;           // ghost list for normal ARC segment
-  cache_t *LRU2;            // normal ARC segement for items accessed more than once
-  cache_t *LRU2g;           // ghost list for normal LFU segment
-  double ghost_list_factor;  // size(ghost_list)/size(evictionAlgo)
-  int move_pos;             /* where the eviction should come from */
+  cache_t *LRU1;      // LRU
+  cache_t *LRU1g;     // ghost LRU
+  cache_t *LRU2;      // LRU for items accessed more than once
+  cache_t *LRU2g;     // ghost LRU for items accessed more than once3
+  double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
+  int move_pos;              // which LRU list the eviction should come from
 } ARC_params_t;
 
 
@@ -37,7 +34,7 @@ typedef struct ARC_init_params {
   double ghost_list_factor;
 } ARC_init_params_t;
 
-
+/* initialize ARC, the default ghost list size is the same as the cache size */
 cache_t *ARC_init(common_cache_params_t ccache_params,
                   void *cache_specific_params);
 
@@ -47,11 +44,11 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update);
 
 cache_ck_res_e ARC_get(cache_t *cache, request_t *req);
 
-void ARC_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
-
 void ARC_insert(cache_t *ARC, request_t *req);
 
 void ARC_evict(cache_t *ARC, request_t *req, cache_obj_t *cache_obj);
+
+void ARC_remove(cache_t *cache, obj_id_t obj_id);
 
 
 #ifdef __cplusplus
@@ -59,4 +56,4 @@ void ARC_evict(cache_t *ARC, request_t *req, cache_obj_t *cache_obj);
 #endif
 
 
-#endif  /* ARC_H */ 
+#endif  /* ARC_H */

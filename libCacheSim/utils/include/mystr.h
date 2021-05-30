@@ -9,7 +9,7 @@
  * @param size
  * @param str a 8 byte char array
  */
-static inline void convert_size_to_str(long long size, char *str) {
+static inline void convert_size_to_str(unsigned long long size, char *str) {
 
   if (size >= TiB) {
     sprintf(str, "%.0lf TiB", (double)size / TiB);

@@ -5,14 +5,15 @@
 #ifndef libCacheSim_STRUCT_H
 #define libCacheSim_STRUCT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "../config.h"
 #include "enum.h"
 #include <stdbool.h>
 #include <stdint.h>
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * I had a hard time deciding which type of hashtable design I should adopt,
@@ -38,6 +39,7 @@ typedef struct cache_obj {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   uint32_t exp_time;
 #endif
+#if defined(ENABLE_LLSC)
   union {
     struct {
       void *segment;
@@ -50,6 +52,7 @@ typedef struct cache_obj {
       int16_t seen_after_snapshot : 2;
 //      int16_t n_merged : 12;  /* how many times it has been merged */
     } LSC;
+#endif
     int64_t freq;
     double score;
     int64_t next_access_ts;

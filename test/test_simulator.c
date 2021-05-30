@@ -160,12 +160,12 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
 //  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
 //    printf("size %" PRIu64 " - req %" PRIu64 " - miss %" PRIu64
 //           " - req_bytes %" PRIu64 " - miss_bytes "
-//           "%" PRIu64 " - used_bytes %" PRIu64 " - stored_obj %" PRIu64
+//           "%" PRIu64 " - occupied_size %" PRIu64 " - stored_obj %" PRIu64
 //           " - expired_obj %" PRIu64 " - "
 //           "expired_bytes %" PRIu64 "\n",
 //           res[i].cache_size, res[i].req_cnt, res[i].miss_cnt, res[i].req_bytes,
-//           res[i].miss_bytes, res[i].cache_state.used_bytes,
-//           res[i].cache_state.stored_obj_cnt,
+//           res[i].miss_bytes, res[i].cache_state.occupied_size,
+//           res[i].cache_state.n_obj,
 //           res[i].cache_state.expired_obj_cnt,
 //           res[i].cache_state.expired_bytes);
 //  }

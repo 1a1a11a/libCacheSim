@@ -16,7 +16,6 @@ extern "C" {
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
 
-#include <assert.h>
 
 typedef struct simulator_multithreading_params {
   reader_t *reader;
@@ -49,7 +48,11 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
     reader_t *warmup_cloned_reader = clone_reader(params->warmup_reader);
     read_one_req(warmup_cloned_reader, req);
     while (req->valid) {
-      local_cache->get(local_cache, req);
+      cache_ck_res_e ck = local_cache->get(local_cache, req);
+#if defined(ENABLE_ADMISSION) && ENABLE_ADMISSION == 1
+      if (local_cache->admit != NULL && ck == cache_ck_miss)
+        local_cache->admit(local_cache, req);
+#endif
       n_warmup += 1;
       read_one_req(warmup_cloned_reader, req);
     }
@@ -64,7 +67,11 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
   if (params->n_warmup_req > 0) {
     uint64_t n_warmup = 0;
     while (req->valid && n_warmup < params->n_warmup_req) {
-      local_cache->get(local_cache, req);
+      cache_ck_res_e ck = local_cache->get(local_cache, req);
+#if defined(ENABLE_ADMISSION) && ENABLE_ADMISSION == 1
+      if (local_cache->admit != NULL && ck == cache_ck_miss)
+        local_cache->admit(local_cache, req);
+#endif
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }
@@ -73,15 +80,38 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
          (long long) n_warmup);
   }
 
-  int64_t start_ts = req->real_time;
+  int64_t start_ts = (int64_t) req->real_time;
   req->real_time -= start_ts;
 
   while (req->valid) {
     req_cnt++;
     req_byte += req->obj_size;
-    if (local_cache->get(local_cache, req) != cache_ck_hit) {
+    local_cache->req_cnt += 1;
+
+    if (local_cache->check(local_cache, req, true) != cache_ck_hit) {
       miss_cnt++;
       miss_byte += req->obj_size;
+
+      bool admit = true;
+
+#if defined(ENABLE_ADMISSION) && ENABLE_ADMISSION == 1
+      if (local_cache->admit != NULL && !!local_cache->admit(local_cache, req)) {
+          admit = false;
+      }
+#endif
+
+      if (admit) {
+        if (req->obj_size > local_cache->cache_size) {
+          WARNING("req %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
+                  local_cache->req_cnt, req->obj_size, local_cache->cache_size);
+        }
+
+        while (local_cache->occupied_size + req->obj_size +
+                local_cache->per_obj_overhead > local_cache->cache_size)
+          local_cache->evict(local_cache, req, NULL);
+
+        local_cache->insert(local_cache, req);
+      }
     }
     read_one_req(cloned_reader, req);
     req->real_time -= start_ts;
@@ -94,10 +124,10 @@ static void _get_mrc_thread(gpointer data, gpointer user_data) {
     result[idx].cache_state.cache_size = local_cache->cache_size;
     result[idx].cache_state.expired_bytes = 0;
     result[idx].cache_state.expired_obj_cnt = 0;
-    result[idx].cache_state.stored_obj_cnt = 0;
-    result[idx].cache_state.used_bytes = 0;
+    result[idx].cache_state.n_obj = 0;
+    result[idx].cache_state.occupied_size = 0;
     get_cache_state(local_cache, &result[idx].cache_state);
-    assert(result[idx].cache_state.used_bytes == local_cache->occupied_size);
+    assert(result[idx].cache_state.occupied_size == local_cache->occupied_size);
   }
 #endif
 
@@ -124,7 +154,7 @@ sim_res_t *get_miss_ratio_curve_with_step_size(reader_t *const reader,
                                                const double warmup_perc,
                                                const gint num_of_threads) {
 
-  int num_of_sizes = (int) ceil((double) cache->cache_size / step_size);
+  int num_of_sizes = (int) ceil((double) cache->cache_size / (double) step_size);
   get_num_of_req(reader);
   uint64_t *cache_sizes = g_new0(uint64_t, num_of_sizes);
   for (int i = 0; i < num_of_sizes; i++) {
@@ -157,7 +187,7 @@ get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
   params->reader = reader;
   params->warmup_reader = warmup_reader;
   params->cache = (cache_t *) cache;
-  params->n_warmup_req = (uint64_t)(get_num_of_req(reader) * warmup_perc);
+  params->n_warmup_req = (uint64_t)((double) get_num_of_req(reader) * warmup_perc);
   params->result = result;
   params->progress = &progress;
   g_mutex_init(&(params->mtx));

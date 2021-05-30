@@ -5,12 +5,12 @@
 #ifndef libCacheSim_DISTUTILS_H
 #define libCacheSim_DISTUTILS_H
 
+#include "const.h"
+#include "reader.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "const.h"
-#include "reader.h"
 
 typedef enum {
   UNKNOWN_DIST = 0,

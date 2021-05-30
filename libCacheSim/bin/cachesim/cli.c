@@ -4,7 +4,6 @@
 
 #include "cachesim.h"
 #include "params.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
 
 
 sim_arg_t parse_cmd(int argc, char *argv[]) {
@@ -70,9 +69,12 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
       .per_obj_overhead = args.per_obj_metadata};
   cache_t *cache;
 
-  if (strcasecmp(args.alg, "lru") == 0) cache = LRU_init(cc_params, NULL);
-  else if (strcasecmp(args.alg, "fifo") == 0) cache = FIFO_init(cc_params, NULL);
-  else if (strcasecmp(args.alg, "lhd") == 0) cache = LHD_init(cc_params, NULL);
+  if (strcasecmp(args.alg, "lru") == 0)
+    cache = LRU_init(cc_params, NULL);
+  else if (strcasecmp(args.alg, "fifo") == 0)
+    cache = FIFO_init(cc_params, NULL);
+  else if (strcasecmp(args.alg, "lhd") == 0)
+    cache = LHD_init(cc_params, NULL);
   else if (strcasecmp(args.alg, "optimal") == 0)
     cache = Optimal_init(cc_params, NULL);
   else if (strcasecmp(args.alg, "LLSC") == 0) {

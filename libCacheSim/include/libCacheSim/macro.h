@@ -3,12 +3,12 @@
 #ifndef libCacheSim_MACRO_H
 #define libCacheSim_MACRO_H
 
+#include "../config.h"
+#include <assert.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "../config.h"
-#include <assert.h>
 
 #define UNUSED(x) (void) (x)
 #define UNUSED_PARAM __attribute__((unused))// gcc only

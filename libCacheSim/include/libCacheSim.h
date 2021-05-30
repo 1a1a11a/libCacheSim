@@ -5,10 +5,6 @@
 #ifndef libCacheSim_H
 #define libCacheSim_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "config.h"
 #include "libCacheSim/logging.h"
 #include "libCacheSim/macro.h"
@@ -22,21 +18,20 @@ extern "C" {
 #include "libCacheSim/request.h"
 #include "libCacheSim/cacheObj.h"
 
-#include "libCacheSim/sampler.h"
+#include "libCacheSim/sampling.h"
+
+/* admission */
+#include "libCacheSim/admissionAlgo.h"
 
 /* eviction */
 #include "libCacheSim/evictionAlgo.h"
 
 /* sampling */
-#include "libCacheSim/sampler.h"
+#include "libCacheSim/sampling.h"
 
 /* cache simulator */
 #include "libCacheSim/profilerLRU.h"
 #include "libCacheSim/simulator.h"
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif // libCacheSim_H

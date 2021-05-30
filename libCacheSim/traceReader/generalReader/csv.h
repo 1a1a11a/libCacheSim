@@ -14,7 +14,7 @@ extern "C"
 {
 #endif
 
-#include "libCacheSim.h"
+#include "../../include/libCacheSim/reader.h"
 
 typedef struct {
   bool has_header;

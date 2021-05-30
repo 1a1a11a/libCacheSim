@@ -6,35 +6,6 @@
 #include "../include/libCacheSim/cache.h"
 #include "../dataStructure/hashtable/hashtable.h"
 
-static void *_get_func_handle(char *func_name, const char *const cache_name,
-                              bool must_have, bool internal_func) {
-  static void *handle = NULL;
-  if (handle == NULL) {
-    handle = dlopen(NULL, RTLD_GLOBAL);
-//    /* should not check err here, otherwise ubuntu will report err even though
-//     * everything is OK
-//    char *err = dlerror();
-//    if (err != NULL){
-//      ERROR("error dlopen main program %s\n", err);
-//      abort();
-//    }
-//     */
-  }
-
-  char full_func_name[128];
-  if (internal_func)
-    sprintf(full_func_name, "_%s_%s", cache_name, func_name);
-  else
-    sprintf(full_func_name, "%s_%s", cache_name, func_name);
-
-  void *func_ptr = dlsym(handle, full_func_name);
-
-  if (must_have && func_ptr == NULL) {
-    ERROR("unable to find %s error %s\n", full_func_name, dlerror());
-    abort();
-  }
-  return func_ptr;
-}
 
 cache_t *cache_struct_init(const char *const cache_name,
                            common_cache_params_t params) {
@@ -42,7 +13,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   memset(cache, 0, sizeof(cache_t));
   strncpy(cache->cache_name, cache_name, 31);
   cache->cache_size = params.cache_size;
-  cache->cache_params = NULL;
+  cache->eviction_algo = NULL;
   cache->default_ttl = params.default_ttl;
   cache->per_obj_overhead = params.per_obj_overhead;
 
@@ -52,22 +23,6 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->hashtable = create_hashtable(hash_power);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_head);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_tail);
-
-  cache->cache_init =
-      (cache_init_func_ptr) _get_func_handle("init", cache_name, true, false);
-  cache->cache_free =
-      (cache_free_func_ptr) _get_func_handle("free", cache_name, true, false);
-  cache->get =
-      (cache_get_func_ptr) _get_func_handle("get", cache_name, true, false);
-  cache->check =
-      (cache_check_func_ptr) _get_func_handle("check", cache_name, true, false);
-  cache->insert =
-      (cache_insert_func_ptr) _get_func_handle("insert", cache_name, true, false);
-  cache->evict =
-      (cache_evict_func_ptr) _get_func_handle("evict", cache_name, true, false);
-//  cache->remove_obj = (cache_remove_obj_func_ptr) _get_func_handle(
-//      "remove_obj", cache_name, false, false);
-  cache->remove = (cache_remove_func_ptr) _get_func_handle("remove", cache_name, false, false);
 
   return cache;
 }
@@ -128,12 +83,12 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
     if (cache_check == cache_ck_miss) {
       while (cache->occupied_size + req->obj_size + cache->per_obj_overhead > cache->cache_size)
         cache->evict(cache, req, NULL);
+
       cache->insert(cache, req);
     }
   } else {
-    WARNING("req %lld: obj size %ld larger than cache size %ld\n",
-            (long long) cache->req_cnt, (long) req->obj_size,
-            (long) cache->cache_size);
+    WARNING("req %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
+            cache->req_cnt, req->obj_size, cache->cache_size);
   }
   cache->req_cnt += 1;
   return cache_check;
@@ -161,7 +116,9 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
   return cache_obj;
 }
 
-void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void cache_evict_LRU(cache_t *cache,
+                     __attribute__((unused)) request_t *req,
+                     cache_obj_t *evicted_obj) {
   // currently not handle the case when all objects are evicted
 
   cache_obj_t *obj_to_evict = cache->list_head;
@@ -191,3 +148,4 @@ cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, obj_id_t id) {
   return hashtable_find_obj_id(cache->hashtable, id);
 }
+

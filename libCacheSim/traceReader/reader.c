@@ -28,13 +28,6 @@
 extern "C" {
 #endif
 
-//#define FILE_TAB 0x09
-//#define FILE_SPACE 0x20
-//#define FILE_CR 0x0d
-//#define FILE_LF 0x0a
-//#define FILE_COMMA 0x2c
-//#define FILE_QUOTE 0x22
-
 reader_t *setup_reader(const char *const trace_path,
                        trace_type_e trace_type,
                        obj_id_type_e obj_id_type,
@@ -43,12 +36,12 @@ reader_t *setup_reader(const char *const trace_path,
   int fd;
   struct stat st;
   reader_t *const reader = g_new0(reader_t, 1);
+  memset(reader, 0, sizeof(reader_t));
 
   reader->obj_id_type = obj_id_type;
   reader->trace_type = trace_type;
   reader->trace_format = INVALID_TRACE_FORMAT;
   reader->n_total_req = 0;
-  reader->n_uniq_obj = 0;
   reader->n_read_req = 0;
   reader->mmap_offset = 0;
   reader->item_size = 0;
@@ -144,23 +137,23 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     return 1;
   }
 
+  int status;
   reader->n_read_req += 1;
   req->n_req += 1;
   req->hv = 0;
   req->valid = true;
-  char *line_end = NULL;
-  size_t line_len;
+
   switch (reader->trace_type) {
-  case CSV_TRACE: return csv_read_one_element(reader, req);
+  case CSV_TRACE: status = csv_read_one_element(reader, req); break;
   case PLAIN_TXT_TRACE:;
-    char obj_id_str[MAX_OBJ_ID_LEN];
+    char *line_end = NULL;
+    size_t line_len;
+    static __thread char obj_id_str[MAX_OBJ_ID_LEN];
     find_line_ending(reader, &line_end, &line_len);
     if (reader->obj_id_type == OBJ_ID_NUM) {
-      req->obj_id_int = str_to_obj_id(
-          (char *) (reader->mapped_file + reader->mmap_offset), line_len);
+      req->obj_id_int = str_to_obj_id((reader->mapped_file + reader->mmap_offset), line_len);
     } else {
       if (line_len >= MAX_OBJ_ID_LEN) {
-        line_len = MAX_OBJ_ID_LEN - 1;
         ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
               line_len, MAX_OBJ_ID_LEN);
         abort();
@@ -170,27 +163,38 @@ int read_one_req(reader_t *const reader, request_t *const req) {
       req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);
     }
     reader->mmap_offset = (char *) line_end - reader->mapped_file;
-    return 0;
-  case BIN_TRACE: return binary_read_one_req(reader, req);
-  case VSCSI_TRACE: return vscsi_read_one_req(reader, req);
-  case TWR_BIN_TRACE: return twr_read_one_req(reader, req);
-  case AKAMAI_BIN_TRACE: return akamai_read_one_req(reader, req);
-  case WIKI16u_BIN_TRACE: return wiki2016u_read_one_req(reader, req);
-  case WIKI19u_BIN_TRACE: return wiki2019u_read_one_req(reader, req);
-  case WIKI19t_BIN_TRACE: return wiki2019t_read_one_req(reader, req);
-  case STANDARD_BIN_III_TRACE:return standardBinIII_read_one_req(reader, req);
-  case STANDARD_BIN_IQI_TRACE:return standardBinIQI_read_one_req(reader, req);
-  case ORACLE_GENERAL_BIN:return oracleGeneralBin_read_one_req(reader, req);
-  case ORACLE_TWR_BIN:return oracleTwrBin_read_one_req(reader, req);
-  case ORACLE_AKAMAI_BIN:return oracleAkamai_read_one_req(reader, req);
-  case ORACLE_WIKI16u_BIN:return oracleWiki2016u_read_one_req(reader, req);
-  case ORACLE_WIKI19u_BIN:return oracleWiki2019u_read_one_req(reader, req);
-  case ORACLE_WIKI19t_BIN:return oracleWiki2019t_read_one_req(reader, req);
+    status = 0;
+    break;
+  case BIN_TRACE: status = binary_read_one_req(reader, req); break;
+  case VSCSI_TRACE: status = vscsi_read_one_req(reader, req); break;
+  case TWR_BIN_TRACE: status = twr_read_one_req(reader, req); break;
+  case AKAMAI_BIN_TRACE: status = akamai_read_one_req(reader, req); break;
+  case WIKI16u_BIN_TRACE: status = wiki2016u_read_one_req(reader, req); break;
+  case WIKI19u_BIN_TRACE: status = wiki2019u_read_one_req(reader, req); break;
+  case WIKI19t_BIN_TRACE: status = wiki2019t_read_one_req(reader, req); break;
+  case STANDARD_BIN_III_TRACE: status = standardBinIII_read_one_req(reader, req); break;
+  case STANDARD_BIN_IQI_TRACE: status = standardBinIQI_read_one_req(reader, req); break;
+  case ORACLE_GENERAL_BIN: status = oracleGeneralBin_read_one_req(reader, req); break;
+  case ORACLE_TWR_BIN: status = oracleTwrBin_read_one_req(reader, req); break;
+  case ORACLE_AKAMAI_BIN: status = oracleAkamai_read_one_req(reader, req); break;
+  case ORACLE_WIKI16u_BIN: status = oracleWiki2016u_read_one_req(reader, req); break;
+  case ORACLE_WIKI19u_BIN: status = oracleWiki2019u_read_one_req(reader, req); break;
+  case ORACLE_WIKI19t_BIN: status = oracleWiki2019t_read_one_req(reader, req); break;
   default:ERROR(
         "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
         reader->trace_type);
     exit(1);
   }
+#if defined(ENABLE_TRACE_SAMPLING) && ENABLE_TRACE_SAMPLING == 1
+  if (reader->sample != NULL) {
+    if (!reader->sample(reader->sampler, req)) {
+      /* skip this request and read next */
+        return read_one_req(reader, req);
+      }
+  }
+#endif
+
+  return status;
 }
 
 /**
@@ -517,6 +521,14 @@ bool find_line_ending(reader_t *const reader, char **next_line,
 
   return false;
 }
+
+void add_sampling(struct reader *reader,
+                  void *sampler,
+                  trace_sampling_func func) {
+  reader->sampler = sampler;
+  reader->sample = func;
+}
+
 
 #ifdef __cplusplus
 }

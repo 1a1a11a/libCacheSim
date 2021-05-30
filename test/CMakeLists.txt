@@ -1,6 +1,6 @@
 
 
-set(coreLib cache evictionAlgos traceReader profiler dataStructure utils ${LIBS})
+set(coreLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -ldl)
 
 add_executable(testReader ../test/test_traceReader.c)
 target_link_libraries(testReader ${coreLib})
@@ -12,7 +12,7 @@ add_executable(testProfilerLRU test_profilerLRU.c)
 target_link_libraries(testProfilerLRU ${coreLib})
 
 add_executable(testSimulator test_simulator.c)
-target_link_libraries(testSimulator ${coreLib} ${CMAKE_THREAD_LIBS_INIT} -ldl)
+target_link_libraries(testSimulator ${coreLib})
 
 add_executable(testEvictionAlgo test_evictionAlgo.c)
 target_link_libraries(testEvictionAlgo ${coreLib})

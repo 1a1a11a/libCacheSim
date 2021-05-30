@@ -29,6 +29,9 @@ void Random_evict(cache_t *Random, request_t *req, cache_obj_t *cache_obj);
 
 cache_ck_res_e Random_get(cache_t *cache, request_t *req);
 
+void Random_remove(cache_t *cache, obj_id_t obj_id);
+
+
 #ifdef __cplusplus
 }
 

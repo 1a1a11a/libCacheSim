@@ -9,15 +9,11 @@
 #ifndef READER_H
 #define READER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "const.h"
 #include "enum.h"
 #include "logging.h"
 #include "request.h"
-#include "sampler.h"
+#include "sampling.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -32,6 +28,11 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* this provides the info about each field or col in csv and binary trace
  * the field index start with 1 */
@@ -53,17 +54,13 @@ typedef struct {
   char binary_fmt[MAX_BIN_FMT_STR_LEN];
 } reader_init_param_t;
 
+
 typedef struct reader {
   char *mapped_file; /* mmap the file, this should not change during runtime */
   uint64_t mmap_offset;
-  sampler_t *sampler;
 
 //  FILE *file;
   size_t file_size;
-
-  trace_type_e trace_type;   /* possible types see trace_type_e  */
-  trace_format_e trace_format;
-  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
   size_t item_size; /* the size of one record, used to
                      * locate the memory location of next element,
@@ -75,7 +72,13 @@ typedef struct reader {
 
   uint64_t n_read_req;
   uint64_t n_total_req; /* number of requests in the trace */
-  uint64_t n_uniq_obj;  /* number of objects in the trace */
+
+  trace_type_e trace_type;   /* possible types see trace_type_e  */
+  trace_format_e trace_format;
+  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
+
+  void *sampler;
+  bool (*sample)(void *sampler, request_t *req);
 
   char trace_path[MAX_FILE_PATH_LEN];
   reader_init_param_t init_params;
@@ -121,7 +124,7 @@ open_trace(const char *path, const trace_type_e type,
  * @param reader
  * @param sampler
  */
-static inline void add_sampler(reader_t *reader, sampler_t *sampler) {
+static inline void add_sampler(reader_t *reader, void *sampler) {
   reader->sampler = sampler;
 }
 

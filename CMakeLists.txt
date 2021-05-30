@@ -37,22 +37,39 @@ endif ()
 option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_LLSC "enable learned log-structured cache" ON)
-option(SUPPORT_TTL "whether support TTL" OFF)
+option(ENABLE_TTL "whether support TTL" OFF)
+option(ENABLE_ADMISSION "whether support cache admission" ON)
+option(ENABLE_TRACE_SAMPLING "whether support trace sampling" ON)
+
+configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
+
 if (NOT LOG_LEVEL)
     # log level: verbost, debug, info, warning, severe
     set(LOG_LEVEL debug)
 endif()
 
-if (SUPPORT_TTL)
-    add_compile_definitions(SUPPORT_TTL=1)
+if (ENABLE_TTL)
+    add_compile_definitions(ENABLE_TTL=1)
 else()
-    add_compile_definitions(SUPPORT_TTL=0)
-endif(SUPPORT_TTL)
+    remove_definitions(ENABLE_TTL)
+endif(ENABLE_TTL)
+
+if (ENABLE_ADMISSION)
+    add_compile_definitions(ENABLE_ADMISSION=1)
+else()
+    add_compile_definitions(ENABLE_ADMISSION=0)
+endif()
+
+if (ENABLE_TRACE_SAMPLING)
+    add_compile_definitions(ENABLE_TRACE_SAMPLING=1)
+else()
+    add_compile_definitions(ENABLE_TRACE_SAMPLING=0)
+endif(ENABLE_TRACE_SAMPLING)
 
 if (USE_HUGEPAGE)
     add_compile_definitions(USE_HUGEPAGE=1)
 else()
-    add_compile_definitions(USE_HUGEPAGE=0)
+    remove_definitions(USE_HUGEPAGE)
 endif(USE_HUGEPAGE)
 
 if (ENABLE_LLSC)
@@ -78,7 +95,9 @@ elseif (LOG_LEVEL MATCHES severe)
 endif()
 
 
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
+message(STATUS "SUPPORT TTL ${ENABLE_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, ENABLE_ADMISSION ${ENABLE_ADMISSION},
+MY_TEST ${MY_TEST},
+ENABLE_SAMPLING ${ENABLE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
 
 
 # set compiler flags
@@ -192,6 +211,7 @@ message(STATUS "============= Status of optional features ==============")
 message(STATUS "========================================================")
 
 
+set(ALL_MODULES cache admission eviction traceReader profiler dataStructure utils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
 
 
@@ -250,11 +270,10 @@ endif ()
 
 
 
-unset(LOG_LEVEL CACHE)
-unset(SUPPORT_TTL CACHE)
-unset(USE_HUGEPAGE CACHE)
-unset(LOGLEVEL CACHE)
-unset(ENABLE_LLSC CACHE)
+#get_cmake_property(_variableNames VARIABLES)
+#foreach (_variableName ${_variableNames})
+#    unset(${_variableName})
+#endforeach()
 
 
 # Example Usages:

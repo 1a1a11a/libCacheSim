@@ -5,15 +5,15 @@
 #ifndef libCacheSim_REQUEST_H
 #define libCacheSim_REQUEST_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "logging.h"
 #include "mem.h"
 #include "struct.h"
 #include <stdio.h>
 #include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * allocate a new request_t struct and fill in necessary field

@@ -22,7 +22,7 @@ typedef struct {
 } LHD_params_t;
 
 cache_t *LHD_init(common_cache_params_t ccache_params,
-                   void *cache_specific_params);
+                  void *cache_specific_params);
 
 void LHD_free(cache_t *cache);
 
@@ -34,8 +34,7 @@ void LHD_insert(cache_t *LHD, request_t *req);
 
 void LHD_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
-/* TODO (jason) update interface */
-void LHD_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
+void LHD_remove(cache_t *cache, obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

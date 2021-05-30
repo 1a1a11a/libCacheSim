@@ -10,6 +10,7 @@
 #include "libcsv.h"
 #include "../readerInternal.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus

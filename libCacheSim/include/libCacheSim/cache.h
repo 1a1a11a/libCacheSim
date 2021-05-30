@@ -52,8 +52,9 @@ typedef void (*cache_insert_func_ptr)(cache_t *, request_t *);
 
 typedef void (*cache_evict_func_ptr)(cache_t *, request_t *, cache_obj_t *);
 
-//typedef void (*cache_remove_obj_func_ptr)(cache_t *, cache_obj_t *);
 typedef void (*cache_remove_func_ptr)(cache_t *, obj_id_t);
+
+typedef bool (*cache_admission_func_ptr)(cache_t *, request_t*);
 
 #define MAX_EVICTION_AGE_ARRAY_SZE 64
 typedef struct {
@@ -61,15 +62,19 @@ typedef struct {
   uint64_t cur_rtime;
   uint64_t cur_vtime;
 
-  uint64_t stored_obj_cnt;
-  uint64_t used_bytes;
+  uint64_t n_req;
+  uint64_t n_obj;
+  uint64_t occupied_size;
 
+  /* eviction age in wall clock time */
   int log2_eviction_rage[MAX_EVICTION_AGE_ARRAY_SZE];
+  /* eviction age in virtual time/num of requests */
   int log2_eviction_vage[MAX_EVICTION_AGE_ARRAY_SZE];
 
   uint64_t expired_obj_cnt;
   uint64_t expired_bytes;
 } cache_stat_t;
+
 
 struct hashtable;
 struct cache {
@@ -77,25 +82,25 @@ struct cache {
   cache_obj_t *list_head; // for LRU and FIFO
   cache_obj_t *list_tail; // for LRU and FIFO
 
-  void *cache_params;
+  void *eviction_algo;
+  void *admission_algo;
 
   cache_get_func_ptr get;
   cache_check_func_ptr check;
   cache_insert_func_ptr insert;
   cache_evict_func_ptr evict;
-//  cache_remove_obj_func_ptr remove_obj;
   cache_remove_func_ptr remove;
+  cache_admission_func_ptr admit;
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
 
-  uint64_t n_obj;
-
   uint64_t req_cnt;
-  uint64_t cache_size;
+  uint64_t n_obj;
   uint64_t occupied_size;
-  uint64_t default_ttl;
 
-  int16_t per_obj_overhead;
+  uint64_t cache_size;
+  uint64_t default_ttl;
+  int32_t per_obj_overhead;
 
   cache_stat_t stat;
   void *init_params;
@@ -154,7 +159,9 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req);
 cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req);
 
 
-void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+void cache_evict_LRU(cache_t *cache,
+                     request_t *req,
+                     cache_obj_t *evicted_obj);
 
 cache_obj_t *cache_get_obj(cache_t *cache, request_t *req);
 

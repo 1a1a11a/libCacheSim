@@ -22,3 +22,6 @@
 
 //#cmakedefine SUPPORT_TTL
 
+//#cmakedefine SUPPORT_ADMISSION
+
+//#cmakedefine SUPPORT_TRACE_SAMPLING

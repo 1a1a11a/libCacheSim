@@ -8,12 +8,12 @@
 #ifndef simulator_h
 #define simulator_h
 
+#include "cache.h"
+#include "reader.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "cache.h"
-#include "reader.h"
 
 typedef struct {
   uint64_t req_cnt;
@@ -50,10 +50,10 @@ typedef enum {
  * @return
  */
 sim_res_t *
-get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
-                     const gint num_of_sizes, const guint64 *const cache_sizes,
-                     reader_t *const warmup_reader, const double warmup_perc,
-                     const gint num_of_threads);
+get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
+                     gint num_of_sizes, const guint64 *cache_sizes,
+                     reader_t *warmup_reader, double warmup_perc,
+                     gint num_of_threads);
 
 /**
  * this function performs cache_size/step_size simulations to obtain miss ratio,
@@ -70,12 +70,12 @@ get_miss_ratio_curve(reader_t *const reader, const cache_t *const cache,
  * of one simulation
  */
 
-sim_res_t *get_miss_ratio_curve_with_step_size(reader_t *const reader_in,
-                                               const cache_t *const cache_in,
-                                               const guint64 step_size,
-                                               reader_t *const warmup_reader,
-                                               const double warmup_perc,
-                                               const gint num_of_threads);
+sim_res_t *get_miss_ratio_curve_with_step_size(reader_t *reader_in,
+                                               const cache_t *cache_in,
+                                               guint64 step_size,
+                                               reader_t *warmup_reader,
+                                               double warmup_perc,
+                                               gint num_of_threads);
 
 #ifdef __cplusplus
 }

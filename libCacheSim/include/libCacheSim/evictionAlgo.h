@@ -1,14 +1,8 @@
+#pragma once
 //
 // Created by Juncheng Yang on 11/25/19.
 //
 
-#ifndef libCacheSim_CACHEHEADERS_H
-#define libCacheSim_CACHEHEADERS_H
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 #include "evictionAlgo/ARC.h"
 #include "evictionAlgo/FIFO.h"
@@ -35,12 +29,3 @@ extern "C"
 //#include "PG.h"
 //#include "Mithril.h"
 
-
-#ifdef __cplusplus
-}
-#endif
-
-
-
-
-#endif //libCacheSim_CACHEHEADERS_H

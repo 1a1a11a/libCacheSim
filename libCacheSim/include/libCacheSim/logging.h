@@ -11,6 +11,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static inline int _log_header(int level, const char *file, int line);
 static inline void print_stack_trace(void);
 
@@ -24,7 +29,6 @@ static inline void print_stack_trace(void);
     }                                                                          \
     log_lock(0);                                                               \
   } while (0)
-
 
 #if LOGLEVEL <= VVVERBOSE_LEVEL
 #define VVVERBOSE(FMT, ...) LOGGING(VVVERBOSE_LEVEL, FMT, ##__VA_ARGS__)
@@ -83,29 +87,21 @@ static inline int _log_header(int level, const char *file, int line) {
   }
 
   switch (level) {
-  case VVVERBOSE_LEVEL:
-    printf("%s[VVV]   ", CYAN);
+  case VVVERBOSE_LEVEL:printf("%s[VVV]   ", CYAN);
     break;
-  case VVERBOSE_LEVEL:
-    printf("%s[VV]    ", CYAN);
+  case VVERBOSE_LEVEL:printf("%s[VV]    ", CYAN);
     break;
-  case VERBOSE_LEVEL:
-    printf("%s[VERB]  ", MAGENTA);
+  case VERBOSE_LEVEL:printf("%s[VERB]  ", MAGENTA);
     break;
-  case DEBUG_LEVEL:
-    printf("%s[DEBUG] ", CYAN);
+  case DEBUG_LEVEL:printf("%s[DEBUG] ", CYAN);
     break;
-  case INFO_LEVEL:
-    printf("%s[INFO]  ", GREEN);
+  case INFO_LEVEL:printf("%s[INFO]  ", GREEN);
     break;
-  case WARNING_LEVEL:
-    printf("%s[WARN]  ", YELLOW);
+  case WARNING_LEVEL:printf("%s[WARN]  ", YELLOW);
     break;
-  case SEVERE_LEVEL:
-    printf("%s[ERROR] ", RED);
+  case SEVERE_LEVEL:printf("%s[ERROR] ", RED);
     break;
-  default:
-    printf("in logging should not be here\n");
+  default:printf("in logging should not be here\n");
     break;
   }
 
@@ -136,5 +132,9 @@ static inline void print_stack_trace(void) {
   backtrace_symbols_fd(array, size, STDERR_FILENO);
   exit(1);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

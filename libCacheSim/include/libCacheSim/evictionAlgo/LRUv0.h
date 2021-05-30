@@ -30,12 +30,11 @@ cache_ck_res_e LRUv0_check(cache_t *cache, request_t *req, bool update);
 
 cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req);
 
-void LRUv0_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
-
 void LRUv0_insert(cache_t *LRUv0, request_t *req);
 
 void LRUv0_evict(cache_t *LRUv0, request_t *req, cache_obj_t* cache_obj);
 
+void LRUv0_remove(cache_t *cache, obj_id_t obj_id);
 
 
 #ifdef __cplusplus

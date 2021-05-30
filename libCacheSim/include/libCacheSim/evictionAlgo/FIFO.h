@@ -29,8 +29,7 @@ void FIFO_insert(cache_t *FIFO, request_t *req);
 
 void FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
-/* TODO (jason) update interface */
-void FIFO_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
+void FIFO_remove(cache_t *cache, obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,6 @@
 
 
-add_executable(benchmark cacheAlgoPerf.c main.c)
-target_link_libraries(benchmark cache evictionAlgos traceReader profiler dataStructure utils
-        ${CMAKE_THREAD_LIBS_INIT} -ldl)
+add_executable(thrptBenchmark cacheAlgoPerf.c main.c)
+target_link_libraries(thrptBenchmark ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 
