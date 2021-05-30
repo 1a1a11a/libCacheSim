@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "include/pqueue.h"
+#include "pqueue.h"
 
 
 #ifdef __cplusplus

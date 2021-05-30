@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include "../../dataStructure/include/splay.h"
+#include "../../dataStructure/splay.h"
 #include "../../utils/include/utilsInternal.h"
 //#include "../../include/libCacheSim.h"
 

@@ -14,7 +14,7 @@ extern "C"
 #endif
 
 #include "../cache.h"
-#include "../../../dataStructure/include/pqueue.h"
+#include "../../../dataStructure/pqueue.h"
 
 typedef struct Optimal_params {
   pqueue_t *pq;

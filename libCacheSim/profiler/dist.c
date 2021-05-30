@@ -11,7 +11,7 @@ extern "C" {
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "../dataStructure/include/splay.h"
+#include "../dataStructure/splay.h"
 #include "../include/libCacheSim/dist.h"
 #include "../include/libCacheSim/macro.h"
 #include "../utils/include/utilsInternal.h"

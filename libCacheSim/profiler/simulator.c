@@ -193,7 +193,6 @@ get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
   // start computation
   for (i = 1; i < num_of_sizes + 1; i++) {
     result[i-1].cache_size = cache_sizes[i-1];
-//    printf("%llu\n", result[i-1].cache_size);
     ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }

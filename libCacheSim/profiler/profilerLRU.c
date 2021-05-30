@@ -7,7 +7,7 @@
 //
 
 #include "../include/libCacheSim/profilerLRU.h"
-#include "../dataStructure/include/splay.h"
+#include "../dataStructure/splay.h"
 #include "../utils/include/utilsInternal.h"
 #include "include/distInternal.h"
 

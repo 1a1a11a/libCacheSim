@@ -53,7 +53,7 @@ extern "C"
 {
 #endif
 
-#include "include/splay.h"
+#include "splay.h"
 
 
 static sTree * sedgewickized_splay (int i, sTree * t);
