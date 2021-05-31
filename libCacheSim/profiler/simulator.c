@@ -99,7 +99,7 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
       if (admit) {
         if (req->obj_size > local_cache->cache_size) {
           WARNING("object %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
-                  req->obj_id_int, req->obj_size, local_cache->cache_size);
+                  req->obj_id, req->obj_size, local_cache->cache_size);
         }
 
         while (local_cache->occupied_size + req->obj_size +

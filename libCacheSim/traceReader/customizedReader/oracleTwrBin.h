@@ -30,7 +30,7 @@ static inline int oracleTwrBin_setup(reader_t *reader) {
 static inline int oracleTwrBin_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  req->obj_id_int = *(uint64_t *) (record + 4);
+  req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint16_t *) (record + 12);
   req->ttl = *(uint16_t *) (record + 16);
   req->next_access_ts = *(int64_t *) (record + 20);

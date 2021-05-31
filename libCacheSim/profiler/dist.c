@@ -250,7 +250,7 @@ gint64 *get_reuse_time(reader_t *reader) {
 
   while (req->valid) {
     value = GPOINTER_TO_SIZE(
-        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
+        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id)));
     if (value != 0) {
       rt = (gint64) req->real_time - GPOINTER_TO_SIZE(value);
     } else
@@ -262,7 +262,7 @@ gint64 *get_reuse_time(reader_t *reader) {
     }
 
     // insert into hashtable
-    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
+    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id),
                         GSIZE_TO_POINTER((gsize)(req->real_time)));
 
     read_one_req(reader, req);
@@ -378,7 +378,7 @@ gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
 
   while (req->valid) {
     value = GPOINTER_TO_SIZE(
-        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
+        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id)));
     if (value != 0) {
       rt = (gint64) req->real_time - GPOINTER_TO_SIZE(value);
       pos = (gint32)(log((double) rt + 1) / log(log_base));
@@ -390,7 +390,7 @@ gint32 *get_reuse_time_cnt_in_bins(reader_t *reader, double log_base,
     }
 
     // insert into hashtable
-    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
+    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id),
                         GSIZE_TO_POINTER((gsize)(req->real_time)));
 
     read_one_req(reader, req);
@@ -424,7 +424,7 @@ gint32 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base,
 
   while (req->valid) {
     value = GPOINTER_TO_SIZE(
-        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
+        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id)));
     if (value != 0) {
       last_access_dist = (gint64) cur_ts - GPOINTER_TO_SIZE(value);
       pos = (gint32)(log((double) last_access_dist + 1) / log(log_base));
@@ -436,7 +436,7 @@ gint32 *get_last_access_dist_cnt_in_bins(reader_t *reader, double log_base,
     }
 
     // insert into hashtable
-    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
+    g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id),
                         GSIZE_TO_POINTER((gsize)(req->real_time)));
 
     read_one_req(reader, req);
@@ -471,7 +471,7 @@ gint32 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base,
 
   while (req->valid) {
     value = GPOINTER_TO_SIZE(
-        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id_int)));
+        g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id)));
     if (value != 0) {
       first_access_dist = (gint64) cur_ts - GPOINTER_TO_SIZE(value);
       pos = (gint32)(log((double) first_access_dist + 1) / log(log_base));
@@ -481,7 +481,7 @@ gint32 *get_first_access_dist_cnt_in_bins(reader_t *reader, double log_base,
       }
     } else {
       // insert into hashtable
-      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id_int),
+      g_hash_table_insert(hash_table, GSIZE_TO_POINTER((gsize) req->obj_id),
                           GSIZE_TO_POINTER((gsize)(req->real_time)));
     }
 

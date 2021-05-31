@@ -16,8 +16,8 @@ static void _slabObjLRU_evict_slab(cache_t *cache);
 static void check_slab_cache_obj_valid(gpointer key, gpointer value,
                                        gpointer user_data) {
   slab_cache_obj_t *cache_obj = ((GList *) value)->data;
-  if (cache_obj->obj_id_int != GPOINTER_TO_SIZE(key)) {
-    ERROR("here1 %ld %ld\n", (long) key, (long) cache_obj->obj_id_int);
+  if (cache_obj->obj_id != GPOINTER_TO_SIZE(key)) {
+    ERROR("here1 %ld %ld\n", (long) key, (long) cache_obj->obj_id);
     abort();
   }
 
@@ -114,7 +114,7 @@ cache_ck_res_e slabObjLRU_check(cache_t *cache, request_t *req,
   slabObjLRU_params_t *params = (slabObjLRU_params_t *) (cache->eviction_params);
   cache_ck_res_e result = cache_ck_miss;
   GList *node = (GList *) g_hash_table_lookup(params->hashtable,
-                                              GSIZE_TO_POINTER(req->obj_id_int));
+                                              GSIZE_TO_POINTER(req->obj_id));
   if (node != NULL) {
     result = cache_ck_hit;
     slab_cache_obj_t *cache_obj = node->data;
@@ -166,7 +166,7 @@ static void slabObjLRU_move_slab(cache_t *cache, int from_slab_id,
     }
     slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) node->data;
     g_hash_table_remove(slabObjLRU_params->hashtable,
-                        GSIZE_TO_POINTER(cache_obj->obj_id_int));
+                        GSIZE_TO_POINTER(cache_obj->obj_id));
     g_queue_delete_link(slabclass->obj_q, node);
     free_slab_cache_obj((gpointer) cache_obj);
   }
@@ -264,7 +264,7 @@ void slabObjLRU_insert(cache_t *cache, request_t *req) {
   q_node->data = cache_obj;
   g_queue_push_tail_link(slabclass->obj_q, q_node);
   g_hash_table_insert(slabObjLRU_params->hashtable,
-                      GSIZE_TO_POINTER(cache_obj->obj_id_int),
+                      GSIZE_TO_POINTER(cache_obj->obj_id),
                       (gpointer) q_node);
 }
 
@@ -272,7 +272,7 @@ void slabObjLRU_update(cache_t *cache, request_t *req) {
   slabObjLRU_params_t *slabObjLRU_params =
       (slabObjLRU_params_t *) (cache->eviction_params);
   GList *node = g_hash_table_lookup(slabObjLRU_params->hashtable,
-                                    GSIZE_TO_POINTER(req->obj_id_int));
+                                    GSIZE_TO_POINTER(req->obj_id));
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) node->data;
 #ifdef SUPPORT_SLAB_AUTOMOVE
   cache_obj->access_time = req->real_time;
@@ -321,11 +321,11 @@ void slabObjLRU_evict(cache_t *cache, request_t *req,
   //  obj_to_evict->item_pos_in_slab); DEBUG("b %ld %ld\n", objt->obj_id_ptr,
   //  objt->item_pos_in_slab);
   if (slab->slab_items[obj_to_evict->item_pos_in_slab] !=
-      GSIZE_TO_POINTER(obj_to_evict->obj_id_int)) {
+      GSIZE_TO_POINTER(obj_to_evict->obj_id)) {
     ERROR("found inconsistency, obj_to_evict does not match the content in "
           "slab %p %p\n",
           slab->slab_items[obj_to_evict->item_pos_in_slab],
-          GSIZE_TO_POINTER(obj_to_evict->obj_id_int));
+          GSIZE_TO_POINTER(obj_to_evict->obj_id));
     abort();
   }
 
@@ -359,7 +359,7 @@ void slabObjLRU_evict(cache_t *cache, request_t *req,
   //  pos obj %ld\n", slab->slab_items[last_obj->item_pos_in_slab]);
 
   g_hash_table_remove(slabObjLRU_params->hashtable,
-                      GSIZE_TO_POINTER(obj_to_evict->obj_id_int));
+                      GSIZE_TO_POINTER(obj_to_evict->obj_id));
   free_slab_cache_obj((gpointer) obj_to_evict);
 
   //  g_queue_pop_head(q);
@@ -399,7 +399,7 @@ void _slabObjLRU_evict_slab(cache_t *cache) {
     slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) node->data;
     cache->occupied_size -= cache_obj->obj_size;
     g_hash_table_remove(slabObjLRU_params->hashtable,
-                        GSIZE_TO_POINTER(cache_obj->obj_id_int));
+                        GSIZE_TO_POINTER(cache_obj->obj_id));
     g_queue_delete_link(slabclass->obj_q, node);
     free_slab_cache_obj((gpointer) cache_obj);
   }
@@ -416,7 +416,7 @@ void slabObjLRU_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
       (slabObjLRU_params_t *) (cache->eviction_params);
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) g_hash_table_lookup(
       slabObjLRU_params->hashtable,
-      GSIZE_TO_POINTER(obj_to_remove->obj_id_int));
+      GSIZE_TO_POINTER(obj_to_remove->obj_id));
   if (cache_obj == NULL) {
     ERROR("obj to remove is not in the cache\n");
     abort();

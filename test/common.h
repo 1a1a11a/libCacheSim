@@ -25,7 +25,7 @@
 
 #define DEFAULT_TTL (300*86400)
 
-#define NUM_OF_THREADS 4
+#define NUM_OF_THREADS 1
 
 static void _detect_data_path(char* data_path, char* data_name) {
   sprintf(data_path, "data/%s", data_name);

@@ -238,7 +238,7 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   if (params->obj_id_type) {
     binary_extract(record, params->obj_id_field, params->obj_id_len,
-                   params->obj_id_type, &(req->obj_id_int));
+                   params->obj_id_type, &(req->obj_id));
   }
   if (params->real_time_type) {
     binary_extract(record, params->real_time_field, params->real_time_len,

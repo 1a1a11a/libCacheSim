@@ -70,7 +70,7 @@ static inline void _print_hashtable_elememnt(cache_obj_t *cache_obj, void *newli
   if (*(bool *)newline)
     separator = SEPARATORS[1];
 
-  printf("%lu %lu%s", (unsigned long) cache_obj->obj_id_int, (unsigned long) cache_obj->obj_size, separator);
+  printf("%lu %lu%s", (unsigned long) cache_obj->obj_id, (unsigned long) cache_obj->obj_size, separator);
 }
 
 /**

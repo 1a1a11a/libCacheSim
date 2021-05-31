@@ -48,7 +48,7 @@ void LRUv0_free(cache_t *cache) {
 cache_ck_res_e LRUv0_check(cache_t *cache, request_t *req, bool update_cache) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
   GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
-                                              GSIZE_TO_POINTER(req->obj_id_int));
+                                              GSIZE_TO_POINTER(req->obj_id));
   if (node == NULL)
     return cache_ck_miss;
 
@@ -78,7 +78,7 @@ cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
       LRUv0_evict(cache, req, NULL);
   } else {
     WARNING("req %lld: obj size %ld larger than cache size %ld\n",
-            (long long) req->obj_id_int, (long) req->obj_size,
+            (long long) req->obj_id, (long) req->obj_size,
             (long) cache->cache_size);
   }
   return cache_check;
@@ -95,13 +95,13 @@ void LRUv0_insert(cache_t *cache, request_t *req) {
   node->data = cache_obj;
   g_queue_push_tail_link(LRUv0_params->list, node);
   g_hash_table_insert(LRUv0_params->hashtable,
-                      GSIZE_TO_POINTER(cache_obj->obj_id_int), (gpointer) node);
+                      GSIZE_TO_POINTER(cache_obj->obj_id), (gpointer) node);
 }
 
 cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
   GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
-                                              GSIZE_TO_POINTER(req->obj_id_int));
+                                              GSIZE_TO_POINTER(req->obj_id));
   cache_obj_t *cache_obj = node->data;
   return cache_obj;
 }
@@ -112,7 +112,7 @@ void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   assert(cache->occupied_size >= cache_obj->obj_size);
   cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
   g_hash_table_remove(LRUv0_params->hashtable,
-                      (gconstpointer) cache_obj->obj_id_int);
+                      (gconstpointer) cache_obj->obj_id);
   free_cache_obj(cache_obj);
 }
 

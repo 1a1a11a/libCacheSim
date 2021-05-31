@@ -85,7 +85,7 @@ void Hyperbolic_insert(cache_t *cache, request_t *req) {
   cached_obj->freq = 1;
 
   pq_node_t *node = my_malloc(pq_node_t);
-  node->obj_id = req->obj_id_int;
+  node->obj_id = req->obj_id;
   node->pri.pri1_lf = (double) req->obj_size;
   pqueue_insert(params->pq, (void *) node);
   cached_obj->extra_metadata2_ptr = node;

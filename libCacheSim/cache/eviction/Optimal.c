@@ -108,7 +108,7 @@ void Optimal_insert(cache_t *cache, request_t *req) {
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
 
   pq_node_t *node = my_malloc(pq_node_t);
-  node->obj_id = req->obj_id_int;
+  node->obj_id = req->obj_id;
   node->pri.pri1_u64 = req->next_access_ts;
   pqueue_insert(params->pq, (void *) node);
   cached_obj->extra_metadata_ptr = node;

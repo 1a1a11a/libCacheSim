@@ -22,7 +22,7 @@ static inline int twrReader_setup(reader_t *reader) {
 static inline int twr_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  req->obj_id_int = *(uint64_t *) (record + 4);
+  req->obj_id = *(uint64_t *) (record + 4);
 
   uint32_t kv_size = *(uint32_t *) (record + 12);
   uint32_t op_ttl = *(uint32_t *) (record + 16);

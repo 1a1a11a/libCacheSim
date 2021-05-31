@@ -81,7 +81,7 @@ cache_ck_res_e slabLRC_check(cache_t *cache, request_t *req,
 
   cache_ck_res_e result = cache_ck_miss;
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)g_hash_table_lookup(
-      params->hashtable, GSIZE_TO_POINTER(req->obj_id_int));
+      params->hashtable, GSIZE_TO_POINTER(req->obj_id));
 
   if (cache_obj != NULL) {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
@@ -123,7 +123,7 @@ void slabLRC_insert(cache_t *cache, request_t *req) {
   add_to_slabclass(cache, req, cache_obj, &slabLRC_params->slab_params,
                    slabLRC_evict, NULL);
   g_hash_table_insert(slabLRC_params->hashtable,
-                      GSIZE_TO_POINTER(req->obj_id_int), (gpointer)cache_obj);
+                      GSIZE_TO_POINTER(req->obj_id), (gpointer)cache_obj);
 }
 
 void slabLRC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
@@ -146,7 +146,7 @@ void slabLRC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
         slabLRC_params->hashtable, slab_to_evict->slab_items[i]);
     cache->occupied_size -= cache_obj->obj_size;
     g_hash_table_remove(slabLRC_params->hashtable,
-                        GSIZE_TO_POINTER(cache_obj->obj_id_int));
+                        GSIZE_TO_POINTER(cache_obj->obj_id));
     //    cache_obj_destroyer((gpointer)cache_obj);
   }
   _slab_destroyer(slab_to_evict);
@@ -155,7 +155,7 @@ void slabLRC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 void slabLRC_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)g_hash_table_lookup(
-      slabLRC_params->hashtable, GSIZE_TO_POINTER(obj_to_remove->obj_id_int));
+      slabLRC_params->hashtable, GSIZE_TO_POINTER(obj_to_remove->obj_id));
   if (cache_obj == NULL) {
     ERROR("obj to remove is not in the cache\n");
     abort();

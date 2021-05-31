@@ -77,7 +77,7 @@ static void f2(int argc, char* argv[]){
   read_one_req(reader, req);
   while (req->valid) {
     cache_ck_res_e ck = cache->get(cache, req);
-    printf("req %ld hit %d\n", (long) req->obj_id_int, ck == cache_ck_hit);
+    printf("req %ld hit %d\n", (long) req->obj_id, ck == cache_ck_hit);
     read_one_req(reader, req);
   }
 }

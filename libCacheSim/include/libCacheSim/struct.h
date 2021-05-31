@@ -29,6 +29,7 @@ extern "C" {
 struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
+  obj_id_t obj_id;
   union {
     struct cache_obj *list_prev;
     double score;
@@ -36,10 +37,6 @@ typedef struct cache_obj {
   union {
     struct cache_obj *list_next;
     int64_t next_access_ts;
-  };
-  union {
-    obj_id_t obj_id_int;
-    obj_id_t obj_id;
   };
   uint32_t obj_size;
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
@@ -76,7 +73,7 @@ typedef struct cache_obj {
 } __attribute__((packed)) cache_obj_t;
 
 typedef struct {
-  obj_id_t obj_id_int;
+  obj_id_t obj_id;
   uint32_t obj_size;
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   uint32_t exp_time;
@@ -93,7 +90,7 @@ typedef struct {
   uint64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
   uint64_t hv;        /* hash value, used when offloading hash to reader */
   union {
-    obj_id_t obj_id_int;
+    obj_id_t obj_id;
     obj_id_t obj_id;
   };
   uint32_t obj_size;

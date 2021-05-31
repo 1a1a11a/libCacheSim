@@ -74,7 +74,7 @@ static inline void
 _move_into_new_table(hashtable_t *hashtable,
                      cache_obj_t *cache_obj,
                      bool part_of_old_table) {
-  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id_int)
+  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id)
       & hashmask(hashtable->hashpower);
   if (OBJ_EMPTY(&(hashtable->table[hv]))) {
     _move_obj_to_new_loc(hashtable, &hashtable->table[hv], cache_obj);
@@ -128,7 +128,7 @@ cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, obj_id_t obj_id) {
   int depth = 0;
   while (cache_obj) {
     depth += 1;
-    if (cache_obj->obj_id_int == obj_id) {
+    if (cache_obj->obj_id == obj_id) {
       ret = cache_obj;
       break;
     }
@@ -145,7 +145,7 @@ cache_obj_t *chained_hashtable_find_req(hashtable_t *hashtable, request_t *req) 
   uint64_t hv;
 
   if (req->hv == 0) {
-    hv = get_hash_value_int_64(&req->obj_id_int);
+    hv = get_hash_value_int_64(&req->obj_id);
     req->hv = hv;
   } else {
     hv = req->hv;
@@ -161,7 +161,7 @@ cache_obj_t *chained_hashtable_find_req(hashtable_t *hashtable, request_t *req) 
   int depth = 0;
   while (cache_obj) {
     depth += 1;
-    if (cache_obj->obj_id_int == req->obj_id_int) {
+    if (cache_obj->obj_id == req->obj_id) {
       ret = cache_obj;
       break;
     }
@@ -177,7 +177,7 @@ cache_obj_t *chained_hashtable_find_req(hashtable_t *hashtable, request_t *req) 
 
 cache_obj_t *chained_hashtable_find_obj(hashtable_t *hashtable,
                                         cache_obj_t *obj_to_find) {
-  return chained_hashtable_find(hashtable, obj_to_find->obj_id_int);
+  return chained_hashtable_find(hashtable, obj_to_find->obj_id);
 }
 
 cache_obj_t *chained_hashtable_insert(hashtable_t *hashtable, request_t *req) {
@@ -186,7 +186,7 @@ cache_obj_t *chained_hashtable_insert(hashtable_t *hashtable, request_t *req) {
     _chained_hashtable_expand(hashtable);
 
   uint64_t hv =
-      get_hash_value_int_64(&req->obj_id_int) & hashmask(hashtable->hashpower);
+      get_hash_value_int_64(&req->obj_id) & hashmask(hashtable->hashpower);
   cache_obj_t *cache_obj = &hashtable->table[hv];
   if (OBJ_EMPTY(cache_obj)) {
     // this place is available
@@ -209,7 +209,7 @@ cache_obj_t *chained_hashtable_insert(hashtable_t *hashtable, request_t *req) {
 /* you need to free the extra_metadata before deleting from hash table */
 void chained_hashtable_delete(hashtable_t *hashtable, cache_obj_t *cache_obj) {
   hashtable->n_cur_item -= 1;
-  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id_int)
+  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id)
       & hashmask(hashtable->hashpower);
   cache_obj_t *cache_obj_in_bucket = &hashtable->table[hv];
   assert(!OBJ_EMPTY(cache_obj_in_bucket));
@@ -400,7 +400,7 @@ void check_chained_hashtable_integrity(hashtable_t *hashtable) {
   for (uint64_t i = 0; i < hashsize(hashtable->hashpower); i++) {
     cur_obj = &(hashtable->table[i]);
     while (cur_obj && !OBJ_EMPTY(cur_obj)) {
-      hv = get_hash_value_int_64(&cur_obj->obj_id_int)
+      hv = get_hash_value_int_64(&cur_obj->obj_id)
           & hashmask(hashtable->hashpower);
       assert(i == hv);
       cur_obj = cur_obj->hash_next;
@@ -417,7 +417,7 @@ void check_chained_hashtable_integrity2(hashtable_t *hashtable,
   uint64_t hv;
   uint32_t list_idx = 0;
   while (cur_obj) {
-    hv = get_hash_value_int_64(&cur_obj->obj_id_int)
+    hv = get_hash_value_int_64(&cur_obj->obj_id)
         & hashmask(hashtable->hashpower);
     cur_obj_in_chain = &hashtable->table[hv];
     while (cur_obj_in_chain && cur_obj != cur_obj_in_chain) {

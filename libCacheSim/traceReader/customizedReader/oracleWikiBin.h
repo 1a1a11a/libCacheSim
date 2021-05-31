@@ -49,7 +49,7 @@ static inline int oracleWiki2016uReader_setup(reader_t *reader) {
 static inline int oracleWiki2016u_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = 0;
-  req->obj_id_int = *(uint64_t *) (record);
+  req->obj_id = *(uint64_t *) (record);
   req->obj_size = *(uint32_t *) (record + 8);
   req->content_type = *(uint16_t *) (record + 12);
   req->next_access_ts = *(uint64_t *) (record + 14);
@@ -69,7 +69,7 @@ static inline int oracleWiki2019uReader_setup(reader_t *reader) {
 static inline int oracleWiki2019u_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  req->obj_id_int = *(uint64_t *) (record + 4);
+  req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
   req->content_type = *(uint16_t *) (record + 16);
   req->next_access_ts = *(uint64_t *) (record + 18);
@@ -89,7 +89,7 @@ static inline int oracleWiki2019tReader_setup(reader_t *reader) {
 static inline int oracleWiki2019t_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  req->obj_id_int = *(uint64_t *) (record + 4);
+  req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
   req->next_access_ts = *(uint64_t *) (record + 16);
 

@@ -40,7 +40,7 @@ static inline int standardBinIQI_setup(reader_t *reader) {
 static inline int standardBinIQI_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  req->obj_id_int = *(uint64_t *) (record + 4);
+  req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
 
   reader->mmap_offset += reader->item_size;
@@ -60,7 +60,7 @@ static inline int standardBinIII_setup(reader_t *reader) {
 static inline int standardBinIII_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  req->obj_id_int = *(uint64_t *) (record + 4);
+  req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 8);
 
   reader->mmap_offset += reader->item_size;

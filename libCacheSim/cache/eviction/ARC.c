@@ -99,7 +99,7 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
   if (hit1 == cache_ck_hit) {
     /* because the object size may change, so we have to obtain the object size */
     old_sz = ARC_params->LRU1->occupied_size;
-    ARC_params->LRU1->remove(ARC_params->LRU1, req->obj_id_int);
+    ARC_params->LRU1->remove(ARC_params->LRU1, req->obj_id);
     cache->occupied_size -= old_sz - ARC_params->LRU1->occupied_size;
 
     ARC_params->LRU2->insert(ARC_params->LRU2, req);

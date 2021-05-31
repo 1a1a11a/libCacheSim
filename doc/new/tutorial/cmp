@@ -1,0 +1,15 @@
+
+
+Comparison with existing cache simulators 
+
+
+* throughput 
+* parallel 
+* memory-efficiency 
+* generality 
+* features 
+	TTL
+	object metadata 
+
+* cache warmup 
+

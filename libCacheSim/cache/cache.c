@@ -76,7 +76,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cach
 cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
   VVVERBOSE("req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
             ", cache size %" PRIu64 "/%" PRIu64 "\n",
-            cache->req_cnt, req->obj_id_int, req->obj_size,
+            cache->req_cnt, req->obj_id, req->obj_size,
             cache->occupied_size, cache->cache_size);
 
   cache_ck_res_e cache_check = cache->check(cache, req, true);
@@ -89,7 +89,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
     }
   } else {
     WARNING("req %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
-            req->obj_id_int, req->obj_size, cache->cache_size);
+            req->obj_id, req->obj_size, cache->cache_size);
   }
   return cache_check;
 }

@@ -20,7 +20,7 @@ extern "C" {
 
 #define print_cache_obj(cache_obj)                                             \
   printf("cache_obj id %llu, size %llu, exp_time %llu\n",                      \
-         (unsigned long long)(cache_obj)->obj_id_int,                          \
+         (unsigned long long)(cache_obj)->obj_id,                          \
          (unsigned long long)(cache_obj)->obj_size,                            \
          (unsigned long long)(cache_obj)->exp_time)
 
@@ -129,7 +129,7 @@ static inline void copy_request_to_cache_obj(cache_obj_t *cache_obj,
   if (req->ttl != 0)
     cache_obj->exp_time = req->real_time + req->ttl;
 #endif
-  cache_obj->obj_id_int = req->obj_id_int;
+  cache_obj->obj_id = req->obj_id;
 }
 
 /**
@@ -168,7 +168,7 @@ static inline slab_cache_obj_t *create_slab_cache_obj_from_req(request_t *req) {
 #ifdef SUPPORT_SLAB_AUTOMOVE
   cache_obj->access_time = req->real_time;
 #endif
-  cache_obj->obj_id_int = req->obj_id_int;
+  cache_obj->obj_id = req->obj_id;
   return cache_obj;
 }
 

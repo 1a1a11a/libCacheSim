@@ -33,7 +33,7 @@ static inline int oracleAkamai_setup(reader_t *reader) {
 static inline int oracleAkamai_read_one_req(reader_t *reader, request_t *req) {
   char *record = (reader->mapped_file + reader->mmap_offset);
   req->real_time = *(uint32_t *) record;
-  req->obj_id_int = *(uint64_t *) (record + 4);
+  req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
   req->customer_id = *(int16_t *) (record + 16) - 1;
   req->bucket_id = *(int16_t *) (record + 18) - 1;

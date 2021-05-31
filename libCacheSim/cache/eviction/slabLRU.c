@@ -73,7 +73,7 @@ cache_ck_res_e slabLRU_check(cache_t *cache, request_t *req,
   slabLRU_params_t *params = (slabLRU_params_t *)(cache->eviction_params);
   cache_ck_res_e result = cache_ck_miss;
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)g_hash_table_lookup(
-      params->hashtable, GSIZE_TO_POINTER(req->obj_id_int));
+      params->hashtable, GSIZE_TO_POINTER(req->obj_id));
   if (cache_obj != NULL) {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
     if (cache_obj->exp_time < req->real_time) {
@@ -97,7 +97,7 @@ cache_ck_res_e slabLRU_check(cache_t *cache, request_t *req,
 cache_ck_res_e slabLRU_get(cache_t *cache, request_t *req) {
   VVVERBOSE("slabLRU_get req %" PRIu64 ", real time %" PRIu64
             ", obj id %" PRIu64 ", size %" PRIu32 ", op %d, ttl %" PRIu32 "\n",
-            cache->req_cnt, req->real_time, req->obj_id_int, req->obj_size,
+            cache->req_cnt, req->real_time, req->obj_id, req->obj_size,
             req->op, req->ttl);
   cache_ck_res_e cache_check = slabLRU_check(cache, req, true);
 
@@ -117,13 +117,13 @@ void slabLRU_insert(cache_t *cache, request_t *req) {
   add_to_slabclass(cache, req, cache_obj, &slabLRU_params->slab_params,
                    slabLRU_evict, NULL);
   g_hash_table_insert(slabLRU_params->hashtable,
-                      GSIZE_TO_POINTER(req->obj_id_int), (gpointer)cache_obj);
+                      GSIZE_TO_POINTER(req->obj_id), (gpointer)cache_obj);
 }
 
 void slabLRU_update(cache_t *cache, request_t *req) {
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   slab_cache_obj_t *cache_obj = g_hash_table_lookup(
-      slabLRU_params->hashtable, GSIZE_TO_POINTER(req->obj_id_int));
+      slabLRU_params->hashtable, GSIZE_TO_POINTER(req->obj_id));
   slab_t *slab = (slab_t *)cache_obj->slab;
   g_queue_unlink(slabLRU_params->slab_params.global_slab_q, slab->q_node);
   g_queue_push_tail_link(slabLRU_params->slab_params.global_slab_q,
@@ -151,7 +151,7 @@ void slabLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
         GSIZE_TO_POINTER(slab_to_evict->slab_items[i]));
     cache->occupied_size -= cache_obj->obj_size;
     g_hash_table_remove(slabLRU_params->hashtable,
-                        GSIZE_TO_POINTER(cache_obj->obj_id_int));
+                        GSIZE_TO_POINTER(cache_obj->obj_id));
     //    cache_obj_destroyer((gpointer)cache_obj);
   }
   _slab_destroyer(slab_to_evict);
@@ -160,7 +160,7 @@ void slabLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 void slabLRU_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)g_hash_table_lookup(
-      slabLRU_params->hashtable, GSIZE_TO_POINTER(obj_to_remove->obj_id_int));
+      slabLRU_params->hashtable, GSIZE_TO_POINTER(obj_to_remove->obj_id));
   if (cache_obj == NULL) {
     ERROR("obj to remove is not in the cache\n");
     abort();

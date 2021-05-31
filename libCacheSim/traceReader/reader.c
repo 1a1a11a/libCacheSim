@@ -151,7 +151,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     static __thread char obj_id_str[MAX_OBJ_ID_LEN];
     find_line_ending(reader, &line_end, &line_len);
     if (reader->obj_id_type == OBJ_ID_NUM) {
-      req->obj_id_int = str_to_obj_id((reader->mapped_file + reader->mmap_offset), line_len);
+      req->obj_id = str_to_obj_id((reader->mapped_file + reader->mmap_offset), line_len);
     } else {
       if (line_len >= MAX_OBJ_ID_LEN) {
         ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
@@ -160,7 +160,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
       }
       memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset, line_len);
       obj_id_str[line_len] = 0;
-      req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);
+      req->obj_id = (uint64_t) g_quark_from_string(obj_id_str);
     }
     reader->mmap_offset = (char *) line_end - reader->mapped_file;
     status = 0;

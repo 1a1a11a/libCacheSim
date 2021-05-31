@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
     uint64_t n_req = 0, n_req_L2 = 0; 
     /* loop through the trace */
     while (read_one_req(reader, req) == 0) {
-        // printf("req %llu %llu\n", req->obj_id_int, req->obj_size); 
+        // printf("req %llu %llu\n", req->obj_id, req->obj_size);
         n_req += 1;
         if (cache->get(cache, req) == cache_ck_miss) {
             /* write this request out */
-            fwrite((void*) &(req->obj_id_int), 8, 1, ofile);
+            fwrite((void*) &(req->obj_id), 8, 1, ofile);
             fwrite((void*) &(req->obj_size), 4, 1, ofile);
             n_req_L2 += 1;
         }

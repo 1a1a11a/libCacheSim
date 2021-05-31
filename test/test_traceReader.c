@@ -23,17 +23,17 @@ char *trace_end_req_s = "42936150";
 void verify_req(reader_t *reader, request_t *req, int req_idx) {
   if (req_idx == -1) {
     if (get_obj_id_type(reader) == OBJ_ID_NUM)
-      g_assert_true(req->obj_id_int == trace_end_req_d);
+      g_assert_true(req->obj_id == trace_end_req_d);
     else if (get_obj_id_type(reader) == OBJ_ID_STR)
-      g_assert_cmpstr(g_quark_to_string(req->obj_id_int), ==,
+      g_assert_cmpstr(g_quark_to_string(req->obj_id), ==,
                       trace_end_req_s);
     return;
   }
 
   if (get_obj_id_type(reader) == OBJ_ID_NUM)
-    g_assert_true(req->obj_id_int == trace_start_req_d[req_idx]);
+    g_assert_true(req->obj_id == trace_start_req_d[req_idx]);
   else if (get_obj_id_type(reader) == OBJ_ID_STR)
-    g_assert_cmpstr(g_quark_to_string(req->obj_id_int), ==,
+    g_assert_cmpstr(g_quark_to_string(req->obj_id), ==,
                     trace_start_req_s[req_idx]);
 
   if (get_trace_type(reader) == CSV_TRACE ||
@@ -141,7 +141,7 @@ void test_twr(gconstpointer user_data) {
     read_one_req(reader, req);
     //    printf("req %d: real time %lu, obj_id %llu, obj_size %ld, ttl %ld, op
     //    %d\n", i, (unsigned long) req->real_time,
-    //           (unsigned long long) req->obj_id_int, (long) req->obj_size,
+    //           (unsigned long long) req->obj_id, (long) req->obj_size,
     //           (long) req->ttl, req->op);
   }
   printf("%llu req %llu obj\n", (unsigned long long) n_req,

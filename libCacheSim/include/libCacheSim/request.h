@@ -25,7 +25,7 @@ static inline request_t *new_request() {
   req->obj_size = 1;
   req->op = OP_INVALID;
   req->valid = true;
-  req->obj_id_int = 0;
+  req->obj_id = 0;
   req->real_time = 0;
   req->hv = 0;
   req->next_access_ts = -2;
@@ -48,7 +48,7 @@ static inline void copy_request(request_t *req_dest, request_t *req_src) {
  */
 static inline void copy_cache_obj_to_request(request_t *req_dest,
     cache_obj_t *cache_obj) {
-  req_dest->obj_id_int = cache_obj->obj_id_int;
+  req_dest->obj_id = cache_obj->obj_id;
   req_dest->obj_size = cache_obj->obj_size;
   req_dest->valid = true;
 }
@@ -76,11 +76,11 @@ static inline void free_request(request_t *req) {
 static inline void print_request(request_t *req) {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   INFO("req real_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
-       (unsigned long) req->real_time, (unsigned long long) req->obj_id_int,
+       (unsigned long) req->real_time, (unsigned long long) req->obj_id,
        (long) req->obj_size, (long) req->ttl, OP_STR[req->op], req->valid);
 #else
   printf("req real_time %lu, id %llu, size %ld, op %s, valid %d\n",
-         (unsigned long)req->real_time, (unsigned long long)req->obj_id_int,
+         (unsigned long)req->real_time, (unsigned long long)req->obj_id,
          (long)req->obj_size, OP_STR[req->op], req->valid);
 #endif
 }

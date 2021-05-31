@@ -142,7 +142,7 @@ static inline int vscsi_read_ver1(reader_t *reader, request_t *req) {
   req->obj_size = record->len;
   /* need to parse this */
   req->op = record->cmd;
-  req->obj_id_int = record->lbn;
+  req->obj_id = record->lbn;
   (reader->mmap_offset) += reader->item_size;
   return 0;
 }
@@ -153,7 +153,7 @@ static inline int vscsi_read_ver2(reader_t *reader, request_t *req) {
   req->real_time = record->ts / 1000000;
   req->obj_size = record->len;
   req->op = record->cmd;
-  req->obj_id_int = record->lbn;
+  req->obj_id = record->lbn;
   (reader->mmap_offset) += reader->item_size;
   return 0;
 }

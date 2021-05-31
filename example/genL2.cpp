@@ -71,12 +71,12 @@ int main(int argc, char *argv[]) {
         n_req += 1;
         if (cache->get(cache, req) == cache_ck_miss) {
             /* write this request out */
-            fwrite((void*) &(req->obj_id_int), 8, 1, ofile);
+            fwrite((void*) &(req->obj_id), 8, 1, ofile);
             fwrite((void*) &(req->obj_size), 4, 1, ofile);
             n_req_L2 += 1;
 
-            if (L2_obj.find(req->obj_id_int) == L2_obj.end()) {
-                L2_obj.insert(req->obj_id_int); 
+            if (L2_obj.find(req->obj_id) == L2_obj.end()) {
+                L2_obj.insert(req->obj_id);
                 L2_obj_sizes += req->obj_size; 
             }
         }

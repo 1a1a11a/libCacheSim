@@ -42,10 +42,10 @@ void run_cache(reader_t *reader, cache_t *cache) {
     if (cache->get(cache, req) != cache_ck_hit) {
       miss_cnt++;
       miss_byte += req->obj_size;
-//      printf("%ld %ld miss - cache size %d/%d\n", req_cnt, req->obj_id_int, cache->occupied_size, cache->cache_size);
+//      printf("%ld %ld miss - cache size %d/%d\n", req_cnt, req->obj_id, cache->occupied_size, cache->cache_size);
     }
     else {
-//      printf("%ld %ld hi - cache size %d/%d\n", req_cnt-1, req->obj_id_int, cache->occupied_size, cache->cache_size);
+//      printf("%ld %ld hi - cache size %d/%d\n", req_cnt-1, req->obj_id, cache->occupied_size, cache->cache_size);
 //      break;
     }
 //    if (req_cnt > 20000)

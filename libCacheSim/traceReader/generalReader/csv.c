@@ -28,7 +28,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   if (params->current_field_counter == init_params->obj_id_field) {
     if (reader->obj_id_type == OBJ_ID_NUM) {
       // len is not correct for the last request for some reason
-      req->obj_id_int = str_to_obj_id((char *) s, len);
+      req->obj_id = str_to_obj_id((char *) s, len);
     } else {
       if (len >= MAX_OBJ_ID_LEN) {
         len = MAX_OBJ_ID_LEN - 1;
@@ -39,7 +39,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
       char obj_id_str[MAX_OBJ_ID_LEN];
       memcpy(obj_id_str, (char *) s, len);
       obj_id_str[len] = 0;
-      req->obj_id_int = (uint64_t) g_quark_from_string(obj_id_str);
+      req->obj_id = (uint64_t) g_quark_from_string(obj_id_str);
     }
     params->already_got_req = true;
   } else if (params->current_field_counter == init_params->real_time_field) {

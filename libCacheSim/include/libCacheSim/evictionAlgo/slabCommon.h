@@ -98,7 +98,7 @@ static inline void init_slabclass(slab_params_t *slab_params, gint id) {
 static inline gboolean _add_to_slab(slab_t *slab, request_t *req,
                                     slab_cache_obj_t *cache_obj) {
   slab->slab_items[slab->n_stored_items++] =
-      GSIZE_TO_POINTER(cache_obj->obj_id_int);
+      GSIZE_TO_POINTER(cache_obj->obj_id);
   return slab->n_total_items == slab->n_stored_items;
 }
 
@@ -174,7 +174,7 @@ static inline gint add_to_slabclass(cache_t *cache, request_t *req,
     cache_obj->slab = slab;
     cache_obj->item_pos_in_slab = slab->n_stored_items;
     slab->slab_items[slab->n_stored_items++] =
-        GSIZE_TO_POINTER(cache_obj->obj_id_int);
+        GSIZE_TO_POINTER(cache_obj->obj_id);
     if (slab->n_total_items == slab->n_stored_items) {
       // current slab is full, remove it out of free_slab_q
       g_queue_pop_head(slabclass->free_slab_q);
