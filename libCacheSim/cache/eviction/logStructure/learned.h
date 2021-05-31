@@ -7,7 +7,7 @@
 static inline void transform_seg_to_training(cache_t *cache, bucket_t *bucket,
                                              segment_t *segment) {
   static int n = 0, n_zero = 0;
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   segment->is_training_seg = true;
   /* used to calculate the eviction penalty */
   segment->become_train_seg_vtime = params->curr_vtime;

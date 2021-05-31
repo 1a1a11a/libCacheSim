@@ -85,8 +85,8 @@ struct cache {
   cache_obj_t *list_head; // for LRU and FIFO
   cache_obj_t *list_tail; // for LRU and FIFO
 
-  void *eviction_algo;
-  void *admission_algo;
+  void *eviction_params;
+  void *admission_params;
 
   cache_get_func_ptr get;
   cache_check_func_ptr check;
@@ -136,27 +136,37 @@ void cache_struct_free(cache_t *cache);
 cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size);
 
 /**
- * a common cache check function, currently used by LRU and FIFO
+ * a common cache check function
  * @param cache
  * @param req
  * @param update_cache
  * @param cache_obj_ret
  * @return
  */
-cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
+cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cache,
                            cache_obj_t **cache_obj_ret);
 
 /**
- * a common cache get function, currently used by LRU and FIFO
+ * a common cache get function
  * @param cache
  * @param req
  * @return
  */
-cache_ck_res_e cache_get(cache_t *cache, request_t *req);
+cache_ck_res_e cache_get_base(cache_t *cache, request_t *req);
 
 /**
- * a common cache insert function, currently used by LRU and FIFO
+ * a common cache insert function
  * it updates LRU list, used by all algorithms that need to use LRU list
+ * @param cache
+ * @param req
+ * @return
+ */
+cache_obj_t *cache_insert_base(cache_t *cache, request_t *req);
+
+
+/**
+ * insert for LRU/FIFO, first call cache_insert_base then
+ * update LRU, used by all algorithms that need to use LRU list
  * @param cache
  * @param req
  * @return

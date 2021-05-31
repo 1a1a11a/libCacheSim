@@ -26,7 +26,7 @@ static inline void _debug_check_bucket_segs(bucket_t *bkt) {
 }
 
 static inline int _debug_count_n_obj(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   int64_t n_obj = 0;
 
   for (int i = 0; i < MAX_N_BUCKET; i++) {
@@ -74,7 +74,7 @@ static inline void object_hit(LLSC_params_t *params, cache_obj_t *obj, request_t
 }
 
 static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   segment_t *seg = obj->LSC.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
@@ -87,7 +87,7 @@ static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
 }
 
 static inline void debug_check_bucket(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   segment_t *curr_seg;
   int n_seg = 0;
@@ -169,7 +169,7 @@ __attribute__((unused)) static inline bool obj_in_hashtable(cache_t *cache,
 }
 
 static inline int clean_one_seg(cache_t *cache, segment_t *seg) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   int n_cleaned = 0;
   DEBUG_ASSERT(seg->n_total_obj == params->segment_size);
   for (int i = 0; i < seg->n_total_obj; i++) {
@@ -255,7 +255,7 @@ static inline void append_seg_to_bucket_before_last(bucket_t *bucket, segment_t 
 }
 
 static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   /* allocate a new segment */
   segment_t *new_seg = my_malloc(segment_t);
@@ -343,7 +343,7 @@ static inline int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
 
 static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, segment_t **segs,
                                  int n_segs, int n_retain) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   segment_t *seg;
   int pos = 0;
@@ -363,7 +363,7 @@ static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, seg
 
 static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type, segment_t *seg,
                                      int n_retain, int64_t rtime, int64_t vtime) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   seg_sel_t *seg_sel = &params->seg_sel;
 
   int pos = 0;
@@ -430,7 +430,7 @@ static inline void update_hit_prob_cdf(bucket_t *bkt) {
 }
 
 static inline void print_bucket(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   printf("bucket has segs: ");
   for (int i = 0; i < MAX_N_BUCKET; i++) {
@@ -442,7 +442,7 @@ static inline void print_bucket(cache_t *cache) {
 }
 
 static inline void print_seg(cache_t *cache, segment_t *seg, int log_level) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 //  static __thread char msg[1024];
 
 //  log_level,

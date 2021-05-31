@@ -4,7 +4,7 @@
 
 
 //void cal_seg_evict_penalty_oracle(cache_t *cache, segment_t *seg, int curr_vtime) {
-//  LLSC_params_t *params = cache->eviction_algo;
+//  LLSC_params_t *params = cache->eviction_params;
 //  if (seg->next_seg == NULL) {
 //    seg->penalty = INT32_MAX;
 //    return;

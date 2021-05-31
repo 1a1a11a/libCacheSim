@@ -36,7 +36,7 @@ void MRU_insert(cache_t *cache, request_t *req) {
 
 cache_ck_res_e MRU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e ret = cache_check(cache, req, update_cache, &cache_obj);
+  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
     /* lru_tail is the newest, move cur obj to lru_tail */
@@ -59,7 +59,7 @@ void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
 }
 
 cache_ck_res_e MRU_get(cache_t *cache, request_t *req) {
-  return cache_get(cache, req);
+  return cache_get_base(cache, req);
 }
 
 void MRU_remove(cache_t *cache, obj_id_t obj_id) {

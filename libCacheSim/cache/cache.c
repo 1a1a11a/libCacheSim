@@ -13,7 +13,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   memset(cache, 0, sizeof(cache_t));
   strncpy(cache->cache_name, cache_name, 31);
   cache->cache_size = params.cache_size;
-  cache->eviction_algo = NULL;
+  cache->eviction_params = NULL;
   cache->default_ttl = params.default_ttl;
   cache->per_obj_overhead = params.per_obj_overhead;
   cache->stat.cache_size = cache->cache_size;
@@ -43,7 +43,7 @@ cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size) {
   return cache;
 }
 
-cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
+cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cache,
                            cache_obj_t **cache_obj_ret) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
   if (cache_obj_ret != NULL)
@@ -73,7 +73,7 @@ cache_ck_res_e cache_check(cache_t *cache, request_t *req, bool update_cache,
   return ret;
 }
 
-cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
+cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
   VVVERBOSE("req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
             ", cache size %" PRIu64 "/%" PRIu64 "\n",
             cache->req_cnt, req->obj_id_int, req->obj_size,
@@ -94,15 +94,20 @@ cache_ck_res_e cache_get(cache_t *cache, request_t *req) {
   return cache_check;
 }
 
-cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
+cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
-    req->ttl = cache->default_ttl;
+    req->ttl = (int32_t) cache->default_ttl;
   }
 #endif
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
   cache->occupied_size += cache_obj->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
+  return cache_obj;
+}
+
+cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
+  cache_obj_t *cache_obj = cache_insert_base(cache, req);
 
   if (unlikely(cache->list_head == NULL)) {
     // an empty list, this is the first insert

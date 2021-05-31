@@ -44,9 +44,13 @@ extern "C"
 #define right(i)  (((i) << 1) + 1)
 #define parent(i) ((i) >> 1)
 
+pqueue_t *
+pqueue_init(size_t n) {
+  return pqueue_init_full(n, cmp_pri, get_pri, set_pri, get_pos, set_pos);
+}
 
 pqueue_t *
-pqueue_init(size_t n,
+pqueue_init_full(size_t n,
             pqueue_cmp_pri_f cmppri,
             pqueue_get_pri_f getpri,
             pqueue_set_pri_f setpri,
@@ -260,7 +264,7 @@ pqueue_print(pqueue_t *q,
     pqueue_t *dup;
 	void *e;
 
-    dup = pqueue_init(q->size,
+    dup = pqueue_init_full(q->size,
                       q->cmppri, q->getpri, q->setpri,
                       q->getpos, q->setpos);
     dup->size = q->size;

@@ -40,11 +40,14 @@
 extern "C" {
 #endif
 
-#include "libCacheSim/request.h"
+#include "../include/libCacheSim/struct.h"
 
 /** priority data type */
 struct pqueue_pri {
-  int64_t pri1;
+  union {
+    int64_t pri1_u64;
+    double pri1_lf;
+  };
   //    int64_t pri2;
 };
 typedef struct pqueue_pri pqueue_pri_t;
@@ -81,6 +84,10 @@ typedef struct node_t {
   size_t pos;
 } pq_node_t;
 
+pqueue_t *
+pqueue_init(size_t n);
+
+
 /**
  * initialize the queue
  *
@@ -97,7 +104,7 @@ typedef struct node_t {
  * @return the handle or NULL for insufficent memory
  */
 pqueue_t *
-pqueue_init(size_t n,
+pqueue_init_full(size_t n,
             pqueue_cmp_pri_f cmppri,
             pqueue_get_pri_f getpri,
             pqueue_set_pri_f setpri,
@@ -192,7 +199,7 @@ int pqueue_is_valid(pqueue_t *q);
 /******************* priority queue structs and def **********************/
 
 static inline int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) {
-  return (next.pri1 < curr.pri1);
+  return (next.pri1_u64 < curr.pri1_u64);
 }
 
 static inline pqueue_pri_t get_pri(void *a) { return ((pq_node_t *) a)->pri; }

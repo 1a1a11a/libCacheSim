@@ -29,8 +29,8 @@ cache_t *ARC_init(common_cache_params_t ccache_params_, void *init_params_) {
   cache->init_params = init_params_;
   ARC_init_params_t *init_params = (ARC_init_params_t *) init_params_;
 
-  cache->eviction_algo = my_malloc_n(ARC_params_t, 1);
-  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_algo);
+  cache->eviction_params = my_malloc_n(ARC_params_t, 1);
+  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_params);
   if (init_params_ != NULL)
     ARC_params->ghost_list_factor = init_params->ghost_list_factor;
   else
@@ -48,7 +48,7 @@ cache_t *ARC_init(common_cache_params_t ccache_params_, void *init_params_) {
 }
 
 void ARC_free(cache_t *cache) {
-  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_algo);
+  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_params);
   ARC_params->LRU1->cache_free(ARC_params->LRU1);
   ARC_params->LRU1g->cache_free(ARC_params->LRU1g);
   ARC_params->LRU2->cache_free(ARC_params->LRU2);
@@ -63,7 +63,7 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
   if (req_local == NULL)
     req_local = new_request();
 
-  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_algo);
+  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_params);
   uint64_t old_sz;
 
   cache_ck_res_e hit1, hit2, hit1g, hit2g;
@@ -111,12 +111,12 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
 }
 
 cache_ck_res_e ARC_get(cache_t *cache, request_t *req) {
-  return cache_get(cache, req);
+  return cache_get_base(cache, req);
 }
 
 void ARC_insert(cache_t *cache, request_t *req) {
   /* first time add, then it should be add to LRU1 */
-  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_algo);
+  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_params);
   ARC_params->LRU1->insert(ARC_params->LRU1, req);
 
   cache->occupied_size += req->obj_size;
@@ -132,7 +132,7 @@ void ARC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     req_local = new_request();
   }
 
-  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_algo);
+  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_params);
   cache_t *cache_evict, *cache_evict_ghost;
 
   if (ARC_params->move_pos == 1) {
@@ -157,7 +157,7 @@ void ARC_remove(cache_t *cache, obj_id_t obj_id) {
   if (req_local == NULL)
     req_local = new_request();
 
-  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_algo);
+  ARC_params_t *ARC_params = (ARC_params_t *) (cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(ARC_params->LRU1->hashtable, obj_id);
   if (obj != NULL) {
     copy_cache_obj_to_request(req_local, obj);

@@ -4,7 +4,7 @@
 
 
 static inline bucket_t *next_unempty_bucket(cache_t *cache, int curr_idx) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   curr_idx = (curr_idx + 1) % MAX_N_BUCKET;
   while (params->buckets[curr_idx].n_seg < params->n_merge) {
     curr_idx = (curr_idx + 1) % MAX_N_BUCKET;
@@ -13,7 +13,7 @@ static inline bucket_t *next_unempty_bucket(cache_t *cache, int curr_idx) {
 }
 
 static inline void update_cache_state(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   cache_state_t *state = &params->cache_state;
   int64_t rt = params->curr_rtime - state->last_update_rtime;

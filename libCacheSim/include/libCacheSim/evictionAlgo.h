@@ -1,7 +1,4 @@
 #pragma once
-//
-// Created by Juncheng Yang on 11/25/19.
-//
 
 
 #include "evictionAlgo/ARC.h"
@@ -12,8 +9,13 @@
 #include "evictionAlgo/LRUv0.h"
 #include "evictionAlgo/MRU.h"
 #include "evictionAlgo/Random.h"
+#include "evictionAlgo/Clock.h"
 
 #include "evictionAlgo/LHD.h"
+#include "evictionAlgo/Hyperbolic.h"
+#include "evictionAlgo/GDSF.h"
+#include "evictionAlgo/LeCaR.h"
+#include "evictionAlgo/Cacheus.h"
 
 #include "evictionAlgo/Optimal.h"
 #include "evictionAlgo/LLSC.h"

@@ -20,7 +20,7 @@ static void free_list_node(void *list_node) {
 }
 
 static int _verify(cache_t *cache) {
-  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_algo);
+  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_params);
   cache_obj_t *cache_obj, *prev_obj;
   /* update min freq */
   for (uint64_t freq = 1; freq <= LFUDA_params->max_freq; freq++) {
@@ -53,7 +53,7 @@ cache_t *LFUDA_init(common_cache_params_t ccache_params, void *cache_specific_in
   cache->remove = LFUDA_remove;
 
   LFUDA_params_t *LFUDA_params = my_malloc_n(LFUDA_params_t, 1);
-  cache->eviction_algo = LFUDA_params;
+  cache->eviction_params = LFUDA_params;
 
   LFUDA_params->min_freq = 1;
   LFUDA_params->max_freq = 1;
@@ -71,17 +71,17 @@ cache_t *LFUDA_init(common_cache_params_t ccache_params, void *cache_specific_in
 }
 
 void LFUDA_free(cache_t *cache) {
-  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_algo);
+  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_params);
   g_hash_table_destroy(LFUDA_params->freq_map);
   cache_struct_free(cache);
 }
 
 cache_ck_res_e LFUDA_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e ret = cache_check(cache, req, update_cache, &cache_obj);
+  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
-    LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_algo);
+    LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_params);
     /* freq incr and move to next freq node */
     cache_obj->freq += LFUDA_params->min_freq;
     if (LFUDA_params->max_freq < cache_obj->freq) {
@@ -128,15 +128,15 @@ cache_ck_res_e LFUDA_check(cache_t *cache, request_t *req, bool update_cache) {
 cache_ck_res_e LFUDA_get(cache_t *cache, request_t *req) {
 //  DEBUG_ASSERT(_verify(cache) == 0);
 //  static __thread int min_freq = 1;
-//  if (((LFUDA_params_t *) (cache->eviction_algo))->min_freq != min_freq) {
-//    printf("min freq %lu\n", ((LFUDA_params_t *) (cache->eviction_algo))->min_freq);
-//    min_freq = ((LFUDA_params_t *) (cache->eviction_algo))->min_freq;
+//  if (((LFUDA_params_t *) (cache->eviction_params))->min_freq != min_freq) {
+//    printf("min freq %lu\n", ((LFUDA_params_t *) (cache->eviction_params))->min_freq);
+//    min_freq = ((LFUDA_params_t *) (cache->eviction_params))->min_freq;
 //  }
-  return cache_get(cache, req);
+  return cache_get_base(cache, req);
 }
 
 void LFUDA_remove(cache_t *cache, obj_id_t obj_id) {
-  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_algo);
+  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_params);
   cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (cache_obj == NULL) {
     WARNING("obj to remove is not in the cache\n");
@@ -156,7 +156,7 @@ void LFUDA_remove(cache_t *cache, obj_id_t obj_id) {
 }
 
 void LFUDA_insert(cache_t *cache, request_t *req) {
-  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_algo);
+  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_params);
 
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
@@ -192,7 +192,7 @@ void LFUDA_insert(cache_t *cache, request_t *req) {
 }
 
 void LFUDA_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_algo);
+  LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_params);
 
   freq_node_t *min_freq_node = g_hash_table_lookup(
       LFUDA_params->freq_map, GSIZE_TO_POINTER(LFUDA_params->min_freq));

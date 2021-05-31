@@ -41,7 +41,7 @@ static void _check_slab_id_valid_aux(gpointer data, gpointer user_data) {
 
 static void _check_slab_id_valid(cache_t *cache) {
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   for (int i = 0; i < N_SLABCLASS; i++) {
     g_queue_foreach(slabObjLRU_params->slab_params.slabclasses[i].slab_q,
                     _check_slab_id_valid_aux, GINT_TO_POINTER(i));
@@ -59,9 +59,9 @@ cache_t *slabObjLRU_init(common_cache_params_t ccache_params,
   cache->evict = slabObjLRU_evict;
   cache->remove = NULL;
 
-  cache->eviction_algo = g_new0(slabObjLRU_params_t, 1);
+  cache->eviction_params = g_new0(slabObjLRU_params_t, 1);
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   slab_params_t *slab_params = &slabObjLRU_params->slab_params;
   slabObjLRU_params->hashtable =
       create_hash_table_with_obj_id_type(OBJ_ID_NUM, NULL, NULL, g_free, NULL);
@@ -96,7 +96,7 @@ void slabObjLRU_free(cache_t *cache) {
           cache->cache_size, cache->occupied_size);
 
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   slab_params_t *slab_params = &slabObjLRU_params->slab_params;
   g_queue_free_full(slab_params->global_slab_q, _slab_destroyer);
   for (int i = 0; i < N_SLABCLASS; i++) {
@@ -111,7 +111,7 @@ void slabObjLRU_free(cache_t *cache) {
 
 cache_ck_res_e slabObjLRU_check(cache_t *cache, request_t *req,
                                 bool update_cache) {
-  slabObjLRU_params_t *params = (slabObjLRU_params_t *) (cache->eviction_algo);
+  slabObjLRU_params_t *params = (slabObjLRU_params_t *) (cache->eviction_params);
   cache_ck_res_e result = cache_ck_miss;
   GList *node = (GList *) g_hash_table_lookup(params->hashtable,
                                               GSIZE_TO_POINTER(req->obj_id_int));
@@ -136,7 +136,7 @@ static void slabObjLRU_move_slab(cache_t *cache, int from_slab_id,
                                  int to_slab_id) {
   VERBOSE("automove slab from %d to %d\n", from_slab_id, to_slab_id);
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   slab_params_t *slab_params = &(slabObjLRU_params->slab_params);
   // find slab to evict
   //  printf("%d slab\n",
@@ -184,7 +184,7 @@ static void slabObjLRU_move_slab(cache_t *cache, int from_slab_id,
 
 static void slabObjLRU_slab_automove(cache_t *cache, request_t *req) {
   slab_params_t *slab_params =
-      &(((slabObjLRU_params_t *) (cache->eviction_algo))->slab_params);
+      &(((slabObjLRU_params_t *) (cache->eviction_params))->slab_params);
   if (slab_params->slab_move_strategy == recency_t) {
     //    _check_slab_id_valid(cache);
     guint64 oldest_age = 0, youngest_age = ~0U;
@@ -232,7 +232,7 @@ static void slabObjLRU_slab_automove(cache_t *cache, request_t *req) {
 
 cache_ck_res_e slabObjLRU_get(cache_t *cache, request_t *req) {
   slab_params_t *slab_params =
-      &(((slabObjLRU_params_t *) (cache->eviction_algo))->slab_params);
+      &(((slabObjLRU_params_t *) (cache->eviction_params))->slab_params);
   static guint64 last_automove_time = 0;
   cache_ck_res_e cache_check = slabObjLRU_check(cache, req, true);
 
@@ -252,7 +252,7 @@ cache_ck_res_e slabObjLRU_get(cache_t *cache, request_t *req) {
 
 void slabObjLRU_insert(cache_t *cache, request_t *req) {
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   cache->occupied_size += req->obj_size;
   slab_cache_obj_t *cache_obj = create_slab_cache_obj_from_req(req);
   gint slab_id =
@@ -270,7 +270,7 @@ void slabObjLRU_insert(cache_t *cache, request_t *req) {
 
 void slabObjLRU_update(cache_t *cache, request_t *req) {
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   GList *node = g_hash_table_lookup(slabObjLRU_params->hashtable,
                                     GSIZE_TO_POINTER(req->obj_id_int));
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) node->data;
@@ -297,7 +297,7 @@ void slabObjLRU_evict(cache_t *cache, request_t *req,
                       UNUSED_PARAM cache_obj_t *cache_obj) {
   // evict the most recent accessed obj
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   gint slabclass_id = find_slabclass_id(req->obj_size);
   slabObjLRU_params->slab_params.slabclasses[slabclass_id].n_evictions += 1;
   GQueue *q = slabObjLRU_params->slab_params.slabclasses[slabclass_id].obj_q;
@@ -368,7 +368,7 @@ void slabObjLRU_evict(cache_t *cache, request_t *req,
 void _slabObjLRU_evict_slab(cache_t *cache) {
   /* take the least recent used slab and assign to the given slabclass */
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   //  slabclass_t *slabclass = slabObjLRU_params->slab_params.slabclasses;
   //  guint64 smallest_ts = G_MAXUINT64;
   //  gint slabclass_id = 0;
@@ -413,7 +413,7 @@ void _slabObjLRU_evict_slab(cache_t *cache) {
 
 void slabObjLRU_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   slabObjLRU_params_t *slabObjLRU_params =
-      (slabObjLRU_params_t *) (cache->eviction_algo);
+      (slabObjLRU_params_t *) (cache->eviction_params);
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) g_hash_table_lookup(
       slabObjLRU_params->hashtable,
       GSIZE_TO_POINTER(obj_to_remove->obj_id_int));

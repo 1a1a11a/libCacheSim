@@ -18,19 +18,8 @@ create_hash_table(reader_t *reader, GDestroyNotify key_destroy_func_num,
                   GDestroyNotify key_destroy_func_str,
                   GDestroyNotify value_destroy_func_str) {
   GHashTable *hash_table;
-  hash_table =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, key_destroy_func_num,
-                            value_destroy_func_num);
-  //  if (reader->base->obj_id_type == OBJ_ID_NUM) {
-  //    hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal,
-  //    key_destroy_func_num, value_destroy_func_num);
-  //  } else if (reader->base->obj_id_type == OBJ_ID_STR) {
-  //    hash_table = g_hash_table_new_full(g_str_hash, g_str_equal,
-  //    key_destroy_func_str, value_destroy_func_str);
-  //  } else {
-  //    ERROR("cannot recognize reader obj_id_type %c\n",
-  //    reader->base->obj_id_type); abort();
-  //  }
+  hash_table = g_hash_table_new_full(g_direct_hash, g_direct_equal,
+                            key_destroy_func_num, value_destroy_func_num);
   return hash_table;
 }
 

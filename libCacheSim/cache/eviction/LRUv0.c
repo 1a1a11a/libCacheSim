@@ -30,8 +30,8 @@ cache_t *LRUv0_init(common_cache_params_t ccache_params,
   cache->evict = LRUv0_evict;
   cache->remove = LRUv0_remove;
 
-  cache->eviction_algo = g_new0(LRUv0_params_t, 1);
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_algo);
+  cache->eviction_params = g_new0(LRUv0_params_t, 1);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
   LRUv0_params->hashtable =
       create_hash_table_with_obj_id_type(OBJ_ID_NUM, NULL, NULL, g_free, NULL);
   LRUv0_params->list = g_queue_new();
@@ -39,14 +39,14 @@ cache_t *LRUv0_init(common_cache_params_t ccache_params,
 }
 
 void LRUv0_free(cache_t *cache) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_algo);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
   g_hash_table_destroy(LRUv0_params->hashtable);
   g_queue_free_full(LRUv0_params->list, (GDestroyNotify) free_cache_obj);
   cache_struct_free(cache);
 }
 
 cache_ck_res_e LRUv0_check(cache_t *cache, request_t *req, bool update_cache) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_algo);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
   GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
                                               GSIZE_TO_POINTER(req->obj_id_int));
   if (node == NULL)
@@ -85,7 +85,7 @@ cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
 }
 
 void LRUv0_insert(cache_t *cache, request_t *req) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_algo);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
 
   cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
@@ -99,7 +99,7 @@ void LRUv0_insert(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, request_t *req) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_algo);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
   GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
                                               GSIZE_TO_POINTER(req->obj_id_int));
   cache_obj_t *cache_obj = node->data;
@@ -107,7 +107,7 @@ cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, request_t *req) {
 }
 
 void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_algo);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
   cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(LRUv0_params->list);
   assert(cache->occupied_size >= cache_obj->obj_size);
   cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
@@ -117,7 +117,7 @@ void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void LRUv0_remove(cache_t *cache, obj_id_t obj_id){
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_algo);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
 
   GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
                                               (gconstpointer) obj_id);

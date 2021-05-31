@@ -31,19 +31,14 @@ cache_t *Optimal_init(common_cache_params_t ccache_params,
   cache->remove = Optimal_remove;
 
   Optimal_params_t *params = my_malloc(Optimal_params_t);
-  cache->eviction_algo = params;
+  cache->eviction_params = params;
 
-  params->pq = pqueue_init((unsigned long) 8e6,
-                           cmp_pri,
-                           get_pri,
-                           set_pri,
-                           get_pos,
-                           set_pos);
+  params->pq = pqueue_init((unsigned long) 8e6);
   return cache;
 }
 
 void Optimal_free(cache_t *cache) {
-  Optimal_params_t *params = cache->eviction_algo;
+  Optimal_params_t *params = cache->eviction_params;
   pq_node_t *node = pqueue_pop(params->pq);
   while (node) {
     my_free(sizeof(pq_node_t), node);
@@ -57,9 +52,9 @@ void Optimal_free(cache_t *cache) {
 cache_ck_res_e Optimal_check(cache_t *cache,
                              request_t *req,
                              bool update_cache) {
-  Optimal_params_t *params = cache->eviction_algo;
+  Optimal_params_t *params = cache->eviction_params;
   cache_obj_t *cached_obj;
-  cache_ck_res_e ret = cache_check(cache, req, update_cache, &cached_obj);
+  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cached_obj);
 
   if (ret == cache_ck_miss) {
     DEBUG_ASSERT(cache_get_obj(cache, req) == NULL);
@@ -73,12 +68,12 @@ cache_ck_res_e Optimal_check(cache_t *cache,
     if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
       Optimal_remove_obj(cache, cached_obj);
     } else {
-      pqueue_pri_t pri = {.pri1 = req->next_access_ts};
+      pqueue_pri_t pri = {.pri1_u64 = req->next_access_ts};
       pqueue_change_priority(params->pq,
                              pri,
                              (pq_node_t *) (cached_obj->extra_metadata_ptr));
       DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache,
-                                                req)->extra_metadata_ptr)->pri.pri1
+                                                req)->extra_metadata_ptr)->pri.pri1_u64
                        == req->next_access_ts);
     }
     return cache_ck_hit;
@@ -94,39 +89,39 @@ cache_ck_res_e Optimal_check(cache_t *cache,
 cache_ck_res_e Optimal_get(cache_t *cache, request_t *req) {
   /* -2 means the trace does not have next_access ts information */
   DEBUG_ASSERT(req->next_access_ts != -2);
-  Optimal_params_t *params = cache->eviction_algo;
+  Optimal_params_t *params = cache->eviction_params;
 
   DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
-  cache_ck_res_e ret = cache_get(cache, req);
+  cache_ck_res_e ret = cache_get_base(cache, req);
 
   return ret;
 }
 
 void Optimal_insert(cache_t *cache, request_t *req) {
-  Optimal_params_t *params = cache->eviction_algo;
+  Optimal_params_t *params = cache->eviction_params;
 
   if (req->next_access_ts == -1) {
     return;
   }
 
   DEBUG_ASSERT(cache_get_obj(cache, req) == NULL);
-  cache_obj_t *cached_obj = cache_insert_LRU(cache, req);
+  cache_obj_t *cached_obj = cache_insert_base(cache, req);
 
   pq_node_t *node = my_malloc(pq_node_t);
   node->obj_id = req->obj_id_int;
-  node->pri.pri1 = req->next_access_ts;
+  node->pri.pri1_u64 = req->next_access_ts;
   pqueue_insert(params->pq, (void *) node);
   cached_obj->extra_metadata_ptr = node;
 
   DEBUG_ASSERT(
-      ((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1
+      ((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1_u64
           == req->next_access_ts);
 }
 
 void Optimal_evict(cache_t *cache,
                    __attribute__((unused)) request_t *req,
                    __attribute__((unused)) cache_obj_t *evicted_obj) {
-  Optimal_params_t *params = cache->eviction_algo;
+  Optimal_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);
 
   cache_obj_t *cached_obj = cache_get_obj_by_id(cache, node->obj_id);
@@ -143,7 +138,7 @@ void Optimal_evict(cache_t *cache,
 }
 
 void Optimal_remove_obj(cache_t *cache, cache_obj_t *obj) {
-  Optimal_params_t *params = cache->eviction_algo;
+  Optimal_params_t *params = cache->eviction_params;
 
   DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj) == obj);
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
@@ -158,7 +153,6 @@ void Optimal_remove_obj(cache_t *cache, cache_obj_t *obj) {
     obj->extra_metadata_ptr = NULL;
   }
 
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, obj);
   hashtable_delete(cache->hashtable, obj);
 }
 

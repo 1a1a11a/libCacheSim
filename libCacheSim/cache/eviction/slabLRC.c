@@ -25,9 +25,9 @@ cache_t *slabLRC_init(common_cache_params_t ccache_params,
   cache->evict = slabLRC_evict;
   cache->remove = NULL;
   
-  cache->eviction_algo = my_malloc(slabLRC_params_t);
-  memset(cache->eviction_algo, 0, sizeof(slabLRC_params_t));
-  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_algo);
+  cache->eviction_params = my_malloc(slabLRC_params_t);
+  memset(cache->eviction_params, 0, sizeof(slabLRC_params_t));
+  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   slab_params_t *slab_params = &slabLRC_params->slab_params;
   slabLRC_params->hashtable = create_hash_table_with_obj_id_type(
       OBJ_ID_NUM, NULL, free_slab_cache_obj, g_free, free_slab_cache_obj);
@@ -59,7 +59,7 @@ void slabLRC_free(cache_t *cache) {
   VERBOSE("free slabLRC cache size %" PRIu64 ", occupied size %" PRIu64 "\n",
           cache->cache_size, cache->occupied_size);
 
-  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_algo);
+  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   slab_params_t *slab_params = &slabLRC_params->slab_params;
   g_queue_free_full(slab_params->global_slab_q, _slab_destroyer);
   for (int i = 0; i < N_SLABCLASS; i++) {
@@ -76,7 +76,7 @@ void slabLRC_free(cache_t *cache) {
 
 cache_ck_res_e slabLRC_check(cache_t *cache, request_t *req,
                              bool update_cache) {
-  slabLRC_params_t *params = (slabLRC_params_t *)(cache->eviction_algo);
+  slabLRC_params_t *params = (slabLRC_params_t *)(cache->eviction_params);
   // slabLRC does not require update
 
   cache_ck_res_e result = cache_ck_miss;
@@ -101,7 +101,7 @@ cache_ck_res_e slabLRC_check(cache_t *cache, request_t *req,
 }
 
 cache_ck_res_e slabLRC_get(cache_t *cache, request_t *req) {
-  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_algo);
+  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   //  printf("req %d\n", cache->req_cnt);
   //  print_request(req);
   assert(slabLRC_params->slab_params.n_total_slabs == cache->cache_size / MiB);
@@ -117,7 +117,7 @@ cache_ck_res_e slabLRC_get(cache_t *cache, request_t *req) {
 }
 
 void slabLRC_insert(cache_t *cache, request_t *req) {
-  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_algo);
+  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   cache->occupied_size += req->obj_size;
   slab_cache_obj_t *cache_obj = create_slab_cache_obj_from_req(req);
   add_to_slabclass(cache, req, cache_obj, &slabLRC_params->slab_params,
@@ -128,7 +128,7 @@ void slabLRC_insert(cache_t *cache, request_t *req) {
 
 void slabLRC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   // evict the most recent created
-  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_algo);
+  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   slabLRC_params->slab_params.n_allocated_slabs -= 1;
   slab_t *slab_to_evict =
       g_queue_pop_head(slabLRC_params->slab_params.global_slab_q);
@@ -153,7 +153,7 @@ void slabLRC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void slabLRC_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_algo);
+  slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)g_hash_table_lookup(
       slabLRC_params->hashtable, GSIZE_TO_POINTER(obj_to_remove->obj_id_int));
   if (cache_obj == NULL) {

@@ -29,8 +29,14 @@ extern "C" {
 struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
-  struct cache_obj *list_next;
-  struct cache_obj *list_prev;
+  union {
+    struct cache_obj *list_prev;
+    double score;
+  };
+  union {
+    struct cache_obj *list_next;
+    int64_t next_access_ts;
+  };
   union {
     obj_id_t obj_id_int;
     obj_id_t obj_id;
@@ -54,17 +60,18 @@ typedef struct cache_obj {
     } LSC;
 #endif
     int64_t freq;
-    double score;
-    int64_t next_access_ts;
     void *extra_metadata_ptr;
     uint64_t extra_metadata_u64;
     uint8_t extra_metadata_u8[8];
   };
-#ifdef TRACK_EVICTION_AGE
   union {
     int64_t last_access_rtime;
     int64_t last_access_vtime;
+    void *extra_metadata2_ptr;
+    uint64_t extra_metadata2_u64;
+    uint8_t extra_metadata2_u8[8];
   };
+#ifdef TRACK_EVICTION_AGE
 #endif
 } __attribute__((packed)) cache_obj_t;
 

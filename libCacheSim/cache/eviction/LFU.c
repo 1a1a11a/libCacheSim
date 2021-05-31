@@ -29,7 +29,7 @@ static void free_list_node(void *list_node) {
 }
 
 static int _verify(cache_t *cache) {
-  LFU_params_t *LFUDA_params = (LFU_params_t *) (cache->eviction_algo);
+  LFU_params_t *LFUDA_params = (LFU_params_t *) (cache->eviction_params);
   cache_obj_t *cache_obj, *prev_obj;
   /* update min freq */
   for (uint64_t freq = 1; freq <= LFUDA_params->max_freq; freq++) {
@@ -62,7 +62,7 @@ cache_t *LFU_init(common_cache_params_t ccache_params, void *cache_specific_init
   cache->remove = LFU_remove;
 
   LFU_params_t *LFU_params = my_malloc_n(LFU_params_t, 1);
-  cache->eviction_algo = LFU_params;
+  cache->eviction_params = LFU_params;
 
   LFU_params->min_freq = 1;
   LFU_params->max_freq = 1;
@@ -81,17 +81,17 @@ cache_t *LFU_init(common_cache_params_t ccache_params, void *cache_specific_init
 }
 
 void LFU_free(cache_t *cache) {
-  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_algo);
+  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_params);
   g_hash_table_destroy(LFU_params->freq_map);
   cache_struct_free(cache);
 }
 
 cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e ret = cache_check(cache, req, update_cache, &cache_obj);
+  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
-    LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_algo);
+    LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_params);
     /* freq incr and move to next freq node */
     cache_obj->freq += 1;
     if (LFU_params->max_freq < cache_obj->freq) {
@@ -107,9 +107,9 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
       new_node->first_obj = cache_obj;
       new_node->last_obj = NULL;
       g_hash_table_insert(LFU_params->freq_map, GSIZE_TO_POINTER(cache_obj->freq), new_node);
-//      INFO("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj, new_node->last_obj);
+//      DEBUG("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj, new_node->last_obj);
     } else {
-      assert(new_node->freq == cache_obj->freq);
+      DEBUG_ASSERT(new_node->freq == cache_obj->freq);
       new_node->n_obj += 1;
     }
 
@@ -120,32 +120,7 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
     DEBUG_ASSERT(old_node->n_obj > 0);
     old_node->n_obj -= 1;
 
-      remove_obj_from_list(&old_node->first_obj, &old_node->last_obj, cache_obj);
-
-//    if (cache_obj->list_prev == NULL) {
-//      /* head */
-//      DEBUG_ASSERT(old_node->first_obj == cache_obj);
-//      old_node->first_obj = cache_obj->list_next;
-//    } else {
-//      DEBUG_ASSERT(old_node->first_obj != NULL);
-//    }
-//
-//    if (cache_obj->list_next == NULL) {
-//      /* tail */
-//      DEBUG_ASSERT(old_node->last_obj == cache_obj);
-//      old_node->last_obj = cache_obj->list_prev;
-//    }
-//    if (cache_obj->list_next != NULL)
-//      cache_obj->list_next->list_prev = cache_obj->list_prev;
-//    if (cache_obj->list_prev != NULL)
-//      cache_obj->list_prev->list_next = cache_obj->list_next;
-//
-//    if (old_node->first_obj == NULL) {
-//      /* TODO: might want to delete the old node to save memory */
-//      DEBUG_ASSERT(old_node->n_obj == 0);
-//      DEBUG_ASSERT(old_node->last_obj == NULL);
-//    }
-
+    remove_obj_from_list(&old_node->first_obj, &old_node->last_obj, cache_obj);
 
     cache_obj->list_prev = new_node->last_obj;
     cache_obj->list_next = NULL;
@@ -163,11 +138,11 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
 
 cache_ck_res_e LFU_get(cache_t *cache, request_t *req) {
 //  DEBUG_ASSERT(_verify(cache) == 0);
-  return cache_get(cache, req);
+  return cache_get_base(cache, req);
 }
 
 void LFU_remove(cache_t *cache, obj_id_t obj_id) {
-  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_algo);
+  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_params);
   cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (cache_obj == NULL) {
     WARNING("obj to remove is not in the cache\n");
@@ -187,7 +162,7 @@ void LFU_remove(cache_t *cache, obj_id_t obj_id) {
 }
 
 void LFU_insert(cache_t *cache, request_t *req) {
-  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_algo);
+  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_params);
 
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
@@ -214,7 +189,7 @@ void LFU_insert(cache_t *cache, request_t *req) {
 }
 
 void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_algo);
+  LFU_params_t *LFU_params = (LFU_params_t *) (cache->eviction_params);
 
   freq_node_t *min_freq_node = g_hash_table_lookup(
       LFU_params->freq_map, GSIZE_TO_POINTER(LFU_params->min_freq));

@@ -35,11 +35,11 @@ cache_t *FIFO_init(common_cache_params_t ccache_params, void *init_params) {
 void FIFO_free(cache_t *cache) { cache_struct_free(cache); }
 
 cache_ck_res_e FIFO_check(cache_t *cache, request_t *req, bool update_cache) {
-  return cache_check(cache, req, update_cache, NULL);
+  return cache_check_base(cache, req, update_cache, NULL);
 }
 
 cache_ck_res_e FIFO_get(cache_t *cache, request_t *req) {
-  return cache_get(cache, req);
+  return cache_get_base(cache, req);
 }
 
 void FIFO_insert(cache_t *cache, request_t *req) {
@@ -51,17 +51,15 @@ void FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void FIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  cache_obj_t *cache_obj = hashtable_find_obj(cache->hashtable, obj_to_remove);
-  if (cache_obj == NULL) {
-    WARNING("obj is not in the cache\n");
-    return;
+  if (obj_to_remove == NULL) {
+    ERROR("remove NULL from cache\n");
+    abort();
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail,
-                       cache_obj);
-  hashtable_delete(cache->hashtable, cache_obj);
 
-  assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= cache_obj->obj_size;
+  cache->occupied_size -= (obj_to_remove->obj_size + cache->per_obj_overhead);
+  cache->n_obj -= 1;
+  remove_obj_from_list(&cache->list_head, &cache->list_tail, obj_to_remove);
+  hashtable_delete(cache->hashtable, obj_to_remove);
 }
 
 
@@ -71,13 +69,7 @@ void FIFO_remove(cache_t *cache, obj_id_t obj_id) {
     ERROR("remove object %"PRIu64 "that is not cached\n", obj_id);
     return;
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, obj);
-
-  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
-  cache->n_obj -= 1;
-
-  hashtable_delete(cache->hashtable, obj);
+  FIFO_remove_obj(cache, obj);
 }
 
 #ifdef __cplusplus

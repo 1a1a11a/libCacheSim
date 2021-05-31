@@ -29,7 +29,7 @@ static char *bucket_type_names[] = {
 };
 
 void init_seg_sel(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   params->seg_sel.score_array =
       my_malloc_n(double, params->n_merge * params->segment_size);
@@ -45,7 +45,7 @@ void init_seg_sel(cache_t *cache) {
 }
 
 void init_learner(cache_t *cache, LLSC_init_params_t *init_params) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   learner_t *l = &params->learner;
 
@@ -87,7 +87,7 @@ void init_learner(cache_t *cache, LLSC_init_params_t *init_params) {
 }
 
 static void init_buckets(cache_t *cache, int age_shift) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   if (age_shift <= 0)
     age_shift = 0;
@@ -105,7 +105,7 @@ static void init_buckets(cache_t *cache, int age_shift) {
 }
 
 static void init_cache_state(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   params->cache_state.cold_miss_ratio = -1;
   params->cache_state.write_ratio = -1;

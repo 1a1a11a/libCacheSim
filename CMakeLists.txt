@@ -10,16 +10,9 @@ set(${PROJECT_NAME}_RELEASE_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}_VERSION_PATCH})
 
 
-
-#get_cmake_property(_variableNames VARIABLES)
-#foreach (_variableName ${_variableNames})
-#    unset(${_variableName})
-#endforeach()
-
-
-####################
+########################################
 # detect platform #
-####################
+########################################
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     add_definitions(-DOS_DARWIN)
     if (NOT CMAKE_BUILD_TYPE)
@@ -38,9 +31,9 @@ if (NOT CMAKE_BUILD_TYPE)
 endif ()
 
 
-####################
+########################################
 # define options #
-####################
+########################################
 option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_LLSC "enable learned log-structured cache" ON)
@@ -58,7 +51,7 @@ endif()
 if (SUPPORT_TTL)
     add_compile_definitions(SUPPORT_TTL=1)
 else()
-    remove_definitions(SUPPORT_TTL)
+    add_compile_definitions(SUPPORT_TTL=0)
 endif(SUPPORT_TTL)
 
 if (SUPPORT_ADMISSION)
@@ -102,7 +95,7 @@ elseif (LOG_LEVEL MATCHES severe)
 endif()
 
 
-message(STATUS "SUPPORT TTL ${ENABLE_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION},
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION},
 MY_TEST ${MY_TEST},
 SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
 
@@ -113,9 +106,9 @@ SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_
 # add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64)
 
 
-####################
+########################################
 # flags   #
-####################
+########################################
 set(CFLAGS "$ENV{CFLAGS} "
         "-std=gnu99 ${CMAKE_ENABLE_C99} "
         "-Wall -Wshadow -Winline "
@@ -146,9 +139,9 @@ else ()
 endif ()
 
 
-####################
+########################################
 # find dependency #
-####################
+########################################
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(GLib REQUIRED)
@@ -222,9 +215,9 @@ set(ALL_MODULES cache admission eviction traceReader profiler dataStructure util
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
 
 
-####################
+########################################
 # library install  #
-####################
+########################################
 file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*/*.c)
 file(GLOB hashtable ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hashtable/*.c)
 file(GLOB hash ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hash/*.c)
@@ -274,7 +267,6 @@ if (ENABLE_TESTS)
 else ()
     message(STATUS "Building without test")
 endif ()
-
 
 
 # Example Usages:

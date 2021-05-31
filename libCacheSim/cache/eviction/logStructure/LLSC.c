@@ -30,7 +30,7 @@ extern "C" {
 
   LLSC_params_t *params = my_malloc(LLSC_params_t);
   memset(params, 0, sizeof(LLSC_params_t));
-  cache->eviction_algo = params;
+  cache->eviction_params = params;
 
 
   params->curr_evict_bucket_idx = -1;
@@ -95,7 +95,7 @@ extern "C" {
 }
 
 __attribute__((unused)) void LLSC_free(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   bucket_t *bkt = &params->training_bucket;
   segment_t *seg = bkt->first_seg, *next_seg;
 
@@ -126,7 +126,7 @@ __attribute__((unused)) void LLSC_free(cache_t *cache) {
 __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
                                                   request_t *req,
                                                   bool update_cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
@@ -193,7 +193,7 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
 #else
 __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req,
                                                   bool update_cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
@@ -219,13 +219,13 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req
 
 __attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache,
                                                 request_t *req) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   if (params->start_rtime == 0)
     params->start_rtime = req->real_time;
   params->curr_rtime = req->real_time;
   params->curr_vtime++;
 
-  cache_ck_res_e ret = cache_get(cache, req);
+  cache_ck_res_e ret = cache_get_base(cache, req);
 
   if (ret == cache_ck_miss)
     params->cache_state.n_miss += 1;
@@ -252,7 +252,7 @@ __attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache,
 }
 
 __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[find_bucket_idx(params, req)];
   segment_t *seg = bucket->last_seg;
 
@@ -296,7 +296,7 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
 
 
 void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   learner_t *l = &params->learner;
 
@@ -359,7 +359,7 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void LLSC_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   abort();
 
   cache_obj_t *cache_obj = hashtable_find_obj(cache->hashtable, obj_to_remove);

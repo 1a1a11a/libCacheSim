@@ -26,7 +26,7 @@ static inline int cmp_seg_log(const void *p1, const void *p2) {
 }
 
 static void rank_segs(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
   int32_t *ranked_seg_pos = &(params->seg_sel.ranked_seg_pos);
 
@@ -129,7 +129,7 @@ static void rank_segs(cache_t *cache) {
 
 
 void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   DEBUG_ASSERT(bucket->bucket_idx == segs[0]->bucket_idx);
   DEBUG_ASSERT(bucket->bucket_idx == segs[1]->bucket_idx);
@@ -231,7 +231,7 @@ void LLSC_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 
 
 static bucket_t *select_segs_segcache(cache_t *cache, segment_t **segs) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   if (params->curr_evict_bucket_idx == -1)
     params->curr_evict_bucket_idx = 0;
@@ -259,7 +259,7 @@ static bucket_t *select_segs_segcache(cache_t *cache, segment_t **segs) {
 
 
 static bucket_t *select_segs_logUnlearned(cache_t *cache, segment_t **segs) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   bucket_t *bucket = NULL;
   segment_t *seg_to_evict = NULL;
@@ -300,7 +300,7 @@ static inline int find_next_qualified_seg(segment_t **ranked_segs,
 }
 
 static bucket_t *select_segs_rand(cache_t *cache, segment_t *segs[]) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
 
   bucket_t *bucket = NULL;
   segment_t *seg_to_evict = NULL;
@@ -333,7 +333,7 @@ static bucket_t *select_segs_rand(cache_t *cache, segment_t *segs[]) {
 
 
 static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
-  LLSC_params_t *params = cache->eviction_algo;
+  LLSC_params_t *params = cache->eviction_params;
   bool array_resized = false;
 
   if (params->type == SEGCACHE || params->type == SEGCACHE_ITEM_ORACLE

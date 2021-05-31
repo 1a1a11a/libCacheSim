@@ -23,8 +23,8 @@ cache_t *slabLRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->evict = slabLRU_evict;
   cache->remove = NULL;
 
-  cache->eviction_algo = g_new0(slabLRU_params_t, 1);
-  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_algo);
+  cache->eviction_params = g_new0(slabLRU_params_t, 1);
+  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   slabLRU_params->hashtable = create_hash_table_with_obj_id_type(
       OBJ_ID_NUM, NULL, free_slab_cache_obj, g_free, free_slab_cache_obj);
   slab_params_t *slab_params = &slabLRU_params->slab_params;
@@ -55,7 +55,7 @@ cache_t *slabLRU_init(common_cache_params_t ccache_params, void *init_params) {
 void slabLRU_free(cache_t *cache) {
   VERBOSE("free slabLRU cache size %" PRIu64 ", occupied size %" PRIu64 "\n",
           cache->cache_size, cache->occupied_size);
-  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_algo);
+  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   slab_params_t *slab_params = &slabLRU_params->slab_params;
   g_queue_free_full(slab_params->global_slab_q, _slab_destroyer);
   for (int i = 0; i < N_SLABCLASS; i++) {
@@ -70,7 +70,7 @@ void slabLRU_free(cache_t *cache) {
 
 cache_ck_res_e slabLRU_check(cache_t *cache, request_t *req,
                              bool update_cache) {
-  slabLRU_params_t *params = (slabLRU_params_t *)(cache->eviction_algo);
+  slabLRU_params_t *params = (slabLRU_params_t *)(cache->eviction_params);
   cache_ck_res_e result = cache_ck_miss;
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)g_hash_table_lookup(
       params->hashtable, GSIZE_TO_POINTER(req->obj_id_int));
@@ -111,7 +111,7 @@ cache_ck_res_e slabLRU_get(cache_t *cache, request_t *req) {
 }
 
 void slabLRU_insert(cache_t *cache, request_t *req) {
-  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_algo);
+  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   cache->occupied_size += req->obj_size;
   slab_cache_obj_t *cache_obj = create_slab_cache_obj_from_req(req);
   add_to_slabclass(cache, req, cache_obj, &slabLRU_params->slab_params,
@@ -121,7 +121,7 @@ void slabLRU_insert(cache_t *cache, request_t *req) {
 }
 
 void slabLRU_update(cache_t *cache, request_t *req) {
-  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_algo);
+  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   slab_cache_obj_t *cache_obj = g_hash_table_lookup(
       slabLRU_params->hashtable, GSIZE_TO_POINTER(req->obj_id_int));
   slab_t *slab = (slab_t *)cache_obj->slab;
@@ -133,7 +133,7 @@ void slabLRU_update(cache_t *cache, request_t *req) {
 void slabLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   UNUSED(evicted_obj);
   // evict the most recent accessed slab
-  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_algo);
+  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   slabLRU_params->slab_params.n_allocated_slabs -= 1;
   slab_t *slab_to_evict =
       g_queue_pop_head(slabLRU_params->slab_params.global_slab_q);
@@ -158,7 +158,7 @@ void slabLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void slabLRU_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_algo);
+  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   slab_cache_obj_t *cache_obj = (slab_cache_obj_t *)g_hash_table_lookup(
       slabLRU_params->hashtable, GSIZE_TO_POINTER(obj_to_remove->obj_id_int));
   if (cache_obj == NULL) {
@@ -188,7 +188,7 @@ void slabLRU_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
 }
 
 GHashTable *slabLRU_get_objmap(cache_t *cache) {
-  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_algo);
+  slabLRU_params_t *slabLRU_params = (slabLRU_params_t *)(cache->eviction_params);
   return slabLRU_params->hashtable;
 }
 

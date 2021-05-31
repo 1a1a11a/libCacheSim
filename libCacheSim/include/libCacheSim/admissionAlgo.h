@@ -6,7 +6,7 @@
 
 static inline void add_admission_algo(cache_t *cache, void *admissioner,
                                  cache_admission_func_ptr admission_func) {
-  cache->admission_algo = admissioner;
+  cache->admission_params = admissioner;
   cache->admit = admission_func;
 }
 

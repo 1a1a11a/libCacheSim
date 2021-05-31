@@ -17,11 +17,11 @@ public:
   GDSF() {};
 
   cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
-    return cache_check(cache, req, update_cache, NULL);
+    return cache_check_base(cache, req, update_cache, NULL);
   }
 
   cache_ck_res_e GDSF_get(cache_t *cache, request_t *req) {
-    return cache_get(cache, req);
+    return cache_get_base(cache, req);
   }
 
   void GDSF_insert(cache_t *cache, request_t *req) {
@@ -75,11 +75,11 @@ cache_t *GDSF_init(common_cache_params_t ccache_params, void *init_params) {
 void GDSF_free(cache_t *cache) { cache_struct_free(cache); }
 
 cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
-  return cache_check(cache, req, update_cache, NULL);
+  return cache_check_base(cache, req, update_cache, NULL);
 }
 
 cache_ck_res_e GDSF_get(cache_t *cache, request_t *req) {
-  return cache_get(cache, req);
+  return cache_get_base(cache, req);
 }
 
 void GDSF_insert(cache_t *cache, request_t *req) {

@@ -38,16 +38,15 @@ cache_t *Random_init(common_cache_params_t ccache_params,
 void Random_free(cache_t *cache) { cache_struct_free(cache); }
 
 cache_ck_res_e Random_check(cache_t *cache, request_t *req, bool update_cache) {
-  return cache_check(cache, req, update_cache, NULL);
+  return cache_check_base(cache, req, update_cache, NULL);
 }
 
 cache_ck_res_e Random_get(cache_t *cache, request_t *req) {
-  return cache_get(cache, req);
+  return cache_get_base(cache, req);
 }
 
 void Random_insert(cache_t *cache, request_t *req) {
-  cache->occupied_size += req->obj_size + cache->per_obj_overhead;
-  hashtable_insert(cache->hashtable, req);
+  cache_insert_base(cache, req);
 }
 
 void Random_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {

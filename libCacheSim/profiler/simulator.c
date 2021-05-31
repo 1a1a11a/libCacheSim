@@ -73,7 +73,7 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
     }
     local_cache->stat.n_warmup_req += n_warmup;
     INFO("cache %s (size %"PRIu64 ") finishes warm up using the same reader "
-            "with %"PRIu64 "requests\n", local_cache->cache_name,
+            "with %"PRIu64 " requests\n", local_cache->cache_name,
             local_cache->cache_size, n_warmup);
   }
 

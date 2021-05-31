@@ -1,13 +1,15 @@
 set(sourceC
-        ARC.c
-        FIFO.c
+        MRU.c
+        LRUv0.c
+        Random.c
         LFU.c
         LFUDA.c
+        ARC.c
+        FIFO.c
+        Clock.c
         LRU.c
-        LRUv0.c
-        MRU.c
         Optimal.c
-        Random.c
+        Hyperbolic.c
 
         slabLRC.c
         slabLRU.c
