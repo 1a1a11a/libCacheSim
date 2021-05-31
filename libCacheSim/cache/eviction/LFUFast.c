@@ -11,6 +11,7 @@
  *
  * note that the miss ratio of LFU cpp can be different from LFUFast
  * this is because of the difference in handling objects of same frequency
+ * LFU fast uses FIFO to evict objects with the same frequency
  *
  *
  * this module uses linkedList to order requests by frequency,

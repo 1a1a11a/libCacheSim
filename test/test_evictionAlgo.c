@@ -19,6 +19,18 @@ static void _verify_profiler_results(const cache_stat_t *res,
   }
 }
 
+static void print_results(const cache_t *cache,
+                         const cache_stat_t *res) {
+
+  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
+    printf("%s cache size %16" PRIu64 " req %" PRIu64 " miss %8" PRIu64
+           " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
+           cache->cache_name,
+           res[i].cache_size, res[i].n_req, res[i].n_miss, res[i].n_req_byte,
+           res[i].n_miss_byte);
+  }
+}
+
 static void test_LRU(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
   uint64_t miss_cnt_true[] = {93161, 87794, 82945, 81433, 72250, 72083, 71969, 71716};
@@ -98,13 +110,6 @@ static void test_Optimal(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
-//  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-//    printf("cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
-//           " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
-//           res[i].cache_size, res[i].n_req, res[i].n_miss, res[i].n_req_byte,
-//           res[i].n_miss_byte);
-//  }
-
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -146,9 +151,9 @@ static void test_LFUFast(gconstpointer user_data) {
 
 static void test_LFUCpp(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {94803, 90139, 84824, 78820, 72357, 60711, 57426, 56953};
-  uint64_t miss_byte_true[] = {3979410432, 3739941376, 3512698368, 3264467456,
-                               2998834176, 2529203712, 2368519168, 2315060736};
+  uint64_t miss_cnt_true[] = {91385, 84061, 77353, 76506, 68994, 66441, 64819, 64376};
+  uint64_t miss_byte_true[] = {3990213632, 3692986368, 3434442752, 3413374464,
+                               2963407872, 2804032512, 2717934080, 2690728448};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
@@ -158,12 +163,25 @@ static void test_LFUCpp(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
-  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf("Random cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
-           " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
-           res[i].cache_size, res[i].n_req, res[i].n_miss, res[i].n_req_byte,
-           res[i].n_miss_byte);
-  }
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  g_free(res);
+}
+
+static void test_GDSF(gconstpointer user_data) {
+  uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
+  uint64_t miss_cnt_true[] = {86056, 82265, 77939, 68727, 67636, 63616, 58678, 58465};
+  uint64_t miss_byte_true[] = {3863223808, 3707204608, 3552397312, 3267907584,
+                               3198254592, 2966758400, 2666385408, 2652331008};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
+      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("GDSF", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
@@ -370,13 +388,6 @@ static void test_slabLRC(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
-  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf("%s cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
-           " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
-           __func__, res[i].cache_size, res[i].n_req, res[i].n_miss,
-           res[i].n_req_byte, res[i].n_miss_byte);
-  }
-
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -401,13 +412,6 @@ static void test_slabLRU(gconstpointer user_data) {
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
-
-  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf("%s cache size %" PRIu64 " req %" PRIu64 " miss %" PRIu64
-           " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
-           __func__, res[i].cache_size, res[i].n_req, res[i].n_miss,
-           res[i].n_req_byte, res[i].n_miss_byte);
-  }
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
@@ -451,24 +455,26 @@ int main(int argc, char *argv[]) {
 
   reader = setup_csv_reader_obj_num();
 //  reader = setup_vscsi_reader();
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUFast", reader, test_LFUFast);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFUCpp);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader, test_Hyperbolic);
-//  g_test_add_data_func_full("/libCacheSim/free_reader", reader, empty_test, test_teardown);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFUCpp);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
+
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader, test_Hyperbolic);
+  g_test_add_data_func_full("/libCacheSim/free_reader", reader, empty_test, test_teardown);
 
   /* optimal requires reader that has next access information, note that
    * oracleGeneral trace removes all object size changes */
-//  reader = setup_oracleGeneralBin_reader();
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Optimal", reader, test_Optimal);
+  reader = setup_oracleGeneralBin_reader();
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Optimal", reader, test_Optimal);
 
 
   /* these are wrong now */

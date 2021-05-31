@@ -46,46 +46,49 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   auto *lfu = reinterpret_cast<eviction::LFU *>(cache->eviction_params);
   cache_obj_t *obj;
   auto res = cache_check_base(cache, req, update_cache, &obj);
-  if (obj != nullptr && update_cache)
-    lfu->ordered_map[obj] = lfu->ordered_map[obj] + 1;
+  if (obj != nullptr && update_cache) {
+    lfu->vtime ++;
+    obj->freq ++;
+    obj->last_access_vtime = (int64_t)req->n_req;
+    lfu->pq.emplace(obj, (double) obj->freq, lfu->vtime);
+  }
 
   return res;
+}
+
+void LFU_insert(cache_t *cache, request_t *req) {
+  auto *lfu = reinterpret_cast<eviction::LFU *>(cache->eviction_params);
+  lfu->vtime ++;
+
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  obj->freq = 1;
+  obj->last_access_vtime = (int64_t)req->n_req;
+  lfu->pq.emplace(obj, 1.0, lfu->vtime);
+}
+
+void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+  auto *lfu = reinterpret_cast<eviction::LFU *>(cache->eviction_params);
+  eviction::pq_pair p = lfu->pick_lowest_score();
+  cache_obj_t *obj = get<0>(p);
+  if (evicted_obj != nullptr)
+    memcpy(evicted_obj, obj, sizeof(cache_obj_t));
+
+  cache_remove_obj_base(cache, obj);
 }
 
 cache_ck_res_e LFU_get(cache_t *cache, request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LFU_insert(cache_t *cache, request_t *req) {
-  auto *lfu = reinterpret_cast<eviction::LFU *>(cache->eviction_params);
-  cache_obj_t *cache_obj = cache_insert_base(cache, req);
-  lfu->ordered_map[cache_obj] = 1;
-}
-
-void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  auto *lfu = reinterpret_cast<eviction::LFU *>(cache->eviction_params);
-  cache_obj_t *obj = lfu->pick_lowest_score();
-  if (evicted_obj != nullptr)
-    memcpy(evicted_obj, obj, sizeof(cache_obj_t));
-
-  lfu->ordered_map.erase(obj);
-  cache_remove_obj_base(cache, obj);
-}
-
 void LFU_remove_obj(cache_t *cache, cache_obj_t *obj) {
   auto *lfu = reinterpret_cast<eviction::LFU *>(cache->eviction_params);
-  lfu->ordered_map.erase(obj);
-  cache_remove_obj_base(cache, obj);
+  lfu->remove_obj(cache, obj);
 }
 
 
 void LFU_remove(cache_t *cache, obj_id_t obj_id) {
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-  if (obj == nullptr) {
-    WARNING("obj is not in the cache\n");
-    return;
-  }
-  LFU_remove_obj(cache, obj);
+  auto *lfu = reinterpret_cast<eviction::LFU *>(cache->eviction_params);
+  lfu->remove(cache, obj_id);
 }
 
 

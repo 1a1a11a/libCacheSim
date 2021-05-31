@@ -8,56 +8,11 @@
 
 
 namespace eviction {
-class GDSF : virtual abstractRank {
+class GDSF : public abstractRank {
 public:
-  GDSF() {};
+  GDSF() = default;;
 
-  cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
-    return cache_check_base(cache, req, update_cache, NULL);
-  }
-
-  cache_ck_res_e GDSF_get(cache_t *cache, request_t *req) {
-    return cache_get_base(cache, req);
-  }
-
-  void GDSF_insert(cache_t *cache, request_t *req) {
-    cache_insert_LRU(cache, req);
-  }
-
-  void GDSF_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-    cache_evict_LRU(cache, req, evicted_obj);
-  }
-
-  void GDSF_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-    cache_obj_t *cache_obj = hashtable_find_obj(cache->hashtable, obj_to_remove);
-    if (cache_obj == NULL) {
-      WARNING("obj is not in the cache\n");
-      return;
-    }
-    remove_obj_from_list(&cache->list_head, &cache->list_tail,
-                         cache_obj);
-    hashtable_delete(cache->hashtable, cache_obj);
-
-    assert(cache->occupied_size >= cache_obj->obj_size);
-    cache->occupied_size -= cache_obj->obj_size;
-  }
-
-
-  void GDSF_remove(cache_t *cache, obj_id_t obj_id) {
-    cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-    if (cache_obj == NULL) {
-      WARNING("obj is not in the cache\n");
-      return;
-    }
-    remove_obj_from_list(&cache->list_head, &cache->list_tail, cache_obj);
-
-    assert(cache->occupied_size >= cache_obj->obj_size);
-    cache->occupied_size -= cache_obj->obj_size;
-
-    hashtable_delete(cache->hashtable, cache_obj);
-  }
-
-
+  double pri_last_evict = 0.0;
 };
 }
 
@@ -65,52 +20,75 @@ public:
 
 cache_t *GDSF_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("GDSF", ccache_params);
+  cache->eviction_params = reinterpret_cast<void *>(new eviction::GDSF());
+
+  cache->cache_init = GDSF_init;
+  cache->cache_free = GDSF_free;
+  cache->get = cache_get_base;
+  cache->check = GDSF_check;
+  cache->insert = GDSF_insert;
+  cache->evict = GDSF_evict;
+  cache->remove = GDSF_remove;
+
   return cache;
 }
 
-void GDSF_free(cache_t *cache) { cache_struct_free(cache); }
-
-cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
-  return cache_check_base(cache, req, update_cache, NULL);
+void GDSF_free(cache_t *cache) {
+  delete reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
+  cache_struct_free(cache);
 }
 
-cache_ck_res_e GDSF_get(cache_t *cache, request_t *req) {
-  return cache_get_base(cache, req);
+cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
+  auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
+  cache_obj_t *obj;
+  auto res = cache_check_base(cache, req, update_cache, &obj);
+  /* this does not consider object size change */
+  if (obj != nullptr && update_cache) {
+    gdsf->vtime ++;
+    obj->freq += 1;
+    obj->last_access_vtime = (int64_t)req->n_req;
+
+    double pri = gdsf->pri_last_evict + (double) (obj->freq + 1) / obj->obj_size;
+    gdsf->pq.emplace(obj, pri, gdsf->vtime);
+  }
+
+  return res;
 }
 
 void GDSF_insert(cache_t *cache, request_t *req) {
-  cache_insert_LRU(cache, req);
+  auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
+  gdsf->vtime ++;
+
+  cache_obj_t *cache_obj = cache_insert_base(cache, req);
+  cache_obj->freq = 1;
+  cache_obj->last_access_vtime = (int64_t)req->n_req;
+
+  double pri = gdsf->pri_last_evict + 1.0 / cache_obj->obj_size;
+  gdsf->pq.emplace(cache_obj, pri, gdsf->vtime);
 }
 
 void GDSF_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  cache_evict_LRU(cache, req, evicted_obj);
-}
-
-void GDSF_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  cache_obj_t *cache_obj = hashtable_find_obj(cache->hashtable, obj_to_remove);
-  if (cache_obj == NULL) {
-    WARNING("obj is not in the cache\n");
-    return;
+  auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
+  eviction::pq_pair p = gdsf->pick_lowest_score();
+  cache_obj_t *obj = get<0>(p);
+  if (evicted_obj != nullptr) {
+    memcpy(evicted_obj, obj, sizeof(cache_obj_t));
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail,
-                       cache_obj);
-  hashtable_delete(cache->hashtable, cache_obj);
 
-  assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= cache_obj->obj_size;
+  gdsf->pri_last_evict = get<1>(p);
+  cache_remove_obj_base(cache, obj);
 }
 
+void GDSF_remove_obj(cache_t *cache, cache_obj_t *obj) {
+  auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
+  gdsf->remove_obj(cache, obj);
+}
 
 void GDSF_remove(cache_t *cache, obj_id_t obj_id) {
-  cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-  if (cache_obj == NULL) {
-    WARNING("obj is not in the cache\n");
-    return;
-  }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, cache_obj);
-
-  assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= cache_obj->obj_size;
-
-  hashtable_delete(cache->hashtable, cache_obj);
+  auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
+  gdsf->remove(cache, obj_id);
 }
+
+
+
+

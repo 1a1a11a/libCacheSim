@@ -146,6 +146,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = LFUFast_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFUDA") == 0) {
     cache = LFUDA_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "GDSF") == 0) {
+    cache = GDSF_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "ARC") == 0) {
     ARC_init_params_t *init_params = my_malloc_n(ARC_init_params_t, 1);
     init_params->ghost_list_factor = 1;
