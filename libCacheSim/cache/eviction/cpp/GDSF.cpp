@@ -45,10 +45,10 @@ cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
   /* this does not consider object size change */
   if (obj != nullptr && update_cache) {
     gdsf->vtime ++;
-    obj->freq += 1;
-    obj->last_access_vtime = (int64_t)req->n_req;
+    obj->rank.freq += 1;
+    obj->rank.last_access_vtime = (int64_t)req->n_req;
 
-    double pri = gdsf->pri_last_evict + (double) (obj->freq + 1) / obj->obj_size;
+    double pri = gdsf->pri_last_evict + (double) (obj->rank.freq + 1) / obj->obj_size;
     gdsf->pq.emplace(obj, pri, gdsf->vtime);
   }
 
@@ -60,8 +60,8 @@ void GDSF_insert(cache_t *cache, request_t *req) {
   gdsf->vtime ++;
 
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
-  cache_obj->freq = 1;
-  cache_obj->last_access_vtime = (int64_t)req->n_req;
+  cache_obj->rank.freq = 1;
+  cache_obj->rank.last_access_vtime = (int64_t)req->n_req;
 
   double pri = gdsf->pri_last_evict + 1.0 / cache_obj->obj_size;
   gdsf->pq.emplace(cache_obj, pri, gdsf->vtime);

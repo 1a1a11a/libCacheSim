@@ -48,9 +48,9 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   auto res = cache_check_base(cache, req, update_cache, &obj);
   if (obj != nullptr && update_cache) {
     lfu->vtime ++;
-    obj->freq ++;
-    obj->last_access_vtime = (int64_t)req->n_req;
-    lfu->pq.emplace(obj, (double) obj->freq, lfu->vtime);
+    obj->rank.freq ++;
+    obj->rank.last_access_vtime = (int64_t)req->n_req;
+    lfu->pq.emplace(obj, (double) obj->rank.freq, lfu->vtime);
   }
 
   return res;
@@ -61,8 +61,8 @@ void LFU_insert(cache_t *cache, request_t *req) {
   lfu->vtime ++;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
-  obj->freq = 1;
-  obj->last_access_vtime = (int64_t)req->n_req;
+  obj->rank.freq = 1;
+  obj->rank.last_access_vtime = (int64_t)req->n_req;
   lfu->pq.emplace(obj, 1.0, lfu->vtime);
 }
 

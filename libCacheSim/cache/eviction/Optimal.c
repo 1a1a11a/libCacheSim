@@ -68,12 +68,12 @@ cache_ck_res_e Optimal_check(cache_t *cache,
     if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
       Optimal_remove_obj(cache, cached_obj);
     } else {
-      pqueue_pri_t pri = {.pri1_u64 = req->next_access_ts};
+      pqueue_pri_t pri = {.pri = req->next_access_ts};
       pqueue_change_priority(params->pq,
                              pri,
-                             (pq_node_t *) (cached_obj->extra_metadata_ptr));
+                             (pq_node_t *) (cached_obj->optimal.pq_node));
       DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache,
-                                                req)->extra_metadata_ptr)->pri.pri1_u64
+                                                req)->optimal.pq_node)->pri.pri
                        == req->next_access_ts);
     }
     return cache_ck_hit;
@@ -109,12 +109,12 @@ void Optimal_insert(cache_t *cache, request_t *req) {
 
   pq_node_t *node = my_malloc(pq_node_t);
   node->obj_id = req->obj_id;
-  node->pri.pri1_u64 = req->next_access_ts;
+  node->pri.pri = req->next_access_ts;
   pqueue_insert(params->pq, (void *) node);
-  cached_obj->extra_metadata_ptr = node;
+  cached_obj->optimal.pq_node = node;
 
   DEBUG_ASSERT(
-      ((pq_node_t *) cache_get_obj(cache, req)->extra_metadata_ptr)->pri.pri1_u64
+      ((pq_node_t *) cache_get_obj(cache, req)->optimal.pq_node)->pri.pri
           == req->next_access_ts);
 }
 
@@ -125,13 +125,13 @@ void Optimal_evict(cache_t *cache,
   pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);
 
   cache_obj_t *cached_obj = cache_get_obj_by_id(cache, node->obj_id);
-  DEBUG_ASSERT(node == cached_obj->extra_metadata_ptr);
+  DEBUG_ASSERT(node == cached_obj->optimal.pq_node);
 
 #ifdef TRACK_EVICTION_AGE
   record_eviction_age(cache, (int) (req->real_time - cached_obj->last_access_rtime));
 #endif
 
-  cached_obj->extra_metadata_ptr = NULL;
+  cached_obj->optimal.pq_node = NULL;
   my_free(sizeof(pq_node_t), node);
 
   Optimal_remove_obj(cache, cached_obj);
@@ -143,11 +143,11 @@ void Optimal_remove_obj(cache_t *cache, cache_obj_t *obj) {
   DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj) == obj);
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
 
-  if (obj->extra_metadata_ptr != NULL) {
+  if (obj->optimal.pq_node != NULL) {
     /* if it is NULL, it means we have deleted the entry in pq before this */
-    pqueue_remove(params->pq, obj->extra_metadata_ptr);
-    my_free(sizeof(pq_node_t), obj->extra_metadata_ptr);
-    obj->extra_metadata_ptr = NULL;
+    pqueue_remove(params->pq, obj->optimal.pq_node);
+    my_free(sizeof(pq_node_t), obj->optimal.pq_node);
+    obj->optimal.pq_node = NULL;
   }
 
   cache_remove_obj_base(cache, obj);

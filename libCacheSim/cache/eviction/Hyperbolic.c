@@ -27,6 +27,7 @@ cache_t *Hyperbolic_init(common_cache_params_t ccache_params,
   cache->eviction_params = params;
 
   params->pq = pqueue_init((unsigned long) 8e6);
+  params->vtime = 0;
   return cache;
 }
 
@@ -49,19 +50,17 @@ cache_ck_res_e Hyperbolic_check(cache_t *cache,
   cache_obj_t *cached_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cached_obj);
 
-  if (ret == cache_ck_miss) {
-    DEBUG_ASSERT(cache_get_obj(cache, req) == NULL);
-  }
-
   if (!update_cache)
     return ret;
 
+  params->vtime ++;
   if (ret == cache_ck_hit) {
     pqueue_pri_t pri;
-    pri.pri1_lf = (double) cached_obj->obj_size / (double) (++cached_obj->freq);
+    int64_t age = params->vtime - cached_obj->Hyperbolic.vtime_enter_cache;
+    pri.pri = (double) age / (double) (++cached_obj->Hyperbolic.freq);
     pqueue_change_priority(params->pq,
                            pri,
-                           (pq_node_t *) (cached_obj->extra_metadata2_ptr));
+                           (pq_node_t *) (cached_obj->Hyperbolic.pq_node));
 
     return cache_ck_hit;
   } else if (ret == cache_ck_expired) {
@@ -81,14 +80,17 @@ cache_ck_res_e Hyperbolic_get(cache_t *cache, request_t *req) {
 
 void Hyperbolic_insert(cache_t *cache, request_t *req) {
   Hyperbolic_params_t *params = cache->eviction_params;
+  params->vtime ++;
+
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
-  cached_obj->freq = 1;
+  cached_obj->Hyperbolic.freq = 1;
+  cached_obj->Hyperbolic.vtime_enter_cache = params->vtime;
 
   pq_node_t *node = my_malloc(pq_node_t);
   node->obj_id = req->obj_id;
-  node->pri.pri1_lf = (double) req->obj_size;
+  node->pri.pri = (double) req->obj_size;
   pqueue_insert(params->pq, (void *) node);
-  cached_obj->extra_metadata2_ptr = node;
+  cached_obj->Hyperbolic.pq_node = node;
 }
 
 void Hyperbolic_evict(cache_t *cache,
@@ -98,13 +100,13 @@ void Hyperbolic_evict(cache_t *cache,
   pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);
 
   cache_obj_t *cached_obj = cache_get_obj_by_id(cache, node->obj_id);
-  DEBUG_ASSERT(node == cached_obj->extra_metadata2_ptr);
+  DEBUG_ASSERT(node == cached_obj->Hyperbolic.pq_node);
 
 #ifdef TRACK_EVICTION_AGE
   record_eviction_age(cache, (int) (req->real_time - cached_obj->last_access_rtime));
 #endif
 
-  cached_obj->extra_metadata2_ptr = NULL;
+  cached_obj->Hyperbolic.pq_node = NULL;
   my_free(sizeof(pq_node_t), node);
 
   Hyperbolic_remove_obj(cache, cached_obj);
@@ -116,11 +118,11 @@ void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
   DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj) == obj);
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
 
-  if (obj->extra_metadata2_ptr != NULL) {
+  if (obj->Hyperbolic.pq_node != NULL) {
     /* if it is NULL, it means we have deleted the entry in pq before this */
-    pqueue_remove(params->pq, obj->extra_metadata2_ptr);
-    my_free(sizeof(pq_node_t), obj->extra_metadata2_ptr);
-    obj->extra_metadata2_ptr = NULL;
+    pqueue_remove(params->pq, obj->Hyperbolic.pq_node);
+    my_free(sizeof(pq_node_t), obj->Hyperbolic.pq_node);
+    obj->Hyperbolic.pq_node = NULL;
   }
 
   cache_remove_obj_base(cache, obj);

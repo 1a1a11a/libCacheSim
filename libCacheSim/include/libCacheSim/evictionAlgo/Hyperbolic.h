@@ -10,6 +10,7 @@ extern "C"
 
 typedef struct Hyperbolic_params {
   pqueue_t *pq;
+  int64_t vtime;
 } Hyperbolic_params_t;
 
 cache_t *Hyperbolic_init(common_cache_params_t ccache_params,

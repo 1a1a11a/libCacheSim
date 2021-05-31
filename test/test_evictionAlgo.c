@@ -211,9 +211,9 @@ static void test_LHD(gconstpointer user_data) {
 
 static void test_Hyperbolic(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {77316, 72189, 67968, 64545, 61234, 57377, 56121, 54930};
-  uint64_t miss_byte_true[] = {3688320000, 3403058688, 3148354560, 3008943616,
-                               2823863808, 2587067392, 2510083584, 2432542208};
+  uint64_t miss_cnt_true[] = {77842, 72545, 68305, 64548, 61235, 57379, 56122, 54931};
+  uint64_t miss_byte_true[] = {3674691072, 3378123776, 3130418688, 3008906752,
+                               2823867904, 2587132928, 2510087680, 2432546304};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,

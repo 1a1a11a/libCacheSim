@@ -96,7 +96,7 @@ private:
       return false;
     }
 
-    if (get<0>(p)->last_access_vtime != get<2>(p)) {
+    if (get<0>(p)->rank.last_access_vtime != get<2>(p)) {
       return false;
     }
 

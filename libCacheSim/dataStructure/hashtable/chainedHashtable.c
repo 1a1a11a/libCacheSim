@@ -1,6 +1,8 @@
 //
 // Created by Juncheng Yang on 6/7/20.
 //
+// this is deprecated, do not use it
+//
 
 
 
@@ -8,11 +10,9 @@
 #include "../hash/hash.h"
 #include "hashtableStruct.h"
 #include "../../include/libCacheSim/cacheObj.h"
-#include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/macro.h"
 #include "../../utils/include/mymath.h"
 
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -47,20 +47,20 @@ static inline void update_monitored_ptr(hashtable_t *hashtable,
 static inline void _move_obj_to_new_loc(hashtable_t *hashtable,
                                         cache_obj_t *new_obj,
                                         cache_obj_t *old_obj) {
-  if (old_obj->list_prev != NULL)
-    old_obj->list_prev->list_next = new_obj;
-  if (old_obj->list_next != NULL)
-    old_obj->list_next->list_prev = new_obj;
+  if (old_obj->common.list_prev != NULL)
+    old_obj->common.list_prev->common.list_next = new_obj;
+  if (old_obj->common.list_next != NULL)
+    old_obj->common.list_next->common.list_prev = new_obj;
   memcpy(new_obj, old_obj, sizeof(cache_obj_t));
   update_monitored_ptr(hashtable, new_obj, old_obj);
 }
 
 static inline void delete_obj_in_table(hashtable_t *hashtable,
                                        cache_obj_t *cache_obj) {
-  if (cache_obj->list_prev != NULL)
-    cache_obj->list_prev->list_next = cache_obj->list_next;
-  if (cache_obj->list_next != NULL)
-    cache_obj->list_next->list_prev = cache_obj->list_prev;
+  if (cache_obj->common.list_prev != NULL)
+    cache_obj->common.list_prev->common.list_next = cache_obj->common.list_next;
+  if (cache_obj->common.list_next != NULL)
+    cache_obj->common.list_next->common.list_prev = cache_obj->common.list_prev;
   update_monitored_ptr(hashtable, NULL, cache_obj);
 }
 
@@ -99,7 +99,7 @@ hashtable_t *create_chained_hashtable(const uint16_t hash_power) {
 
   hashtable->hashpower = hash_power;
   hashtable->table = my_malloc_n(cache_obj_t, hashsize(hashtable->hashpower));
-#ifdef USE_HUGEPAGE
+#if defined(USE_HUGEPAGE) && defined(MADV_HUGEPAGE)
   madvise(hashtable->table, sizeof(cache_obj_t)*hashsize(hashtable->hashpower), MADV_HUGEPAGE);
 #endif
   if (hashtable->table == NULL) {
@@ -134,9 +134,6 @@ cache_obj_t *chained_hashtable_find(hashtable_t *hashtable, obj_id_t obj_id) {
     }
     cache_obj = cache_obj->hash_next;
   }
-//  if (depth > 6){
-//    printf("depth %d size %d %d\n", depth, hashtable->n_cur_item, hashsize(hashtable->hashpower));
-//  }
   return ret;
 }
 
@@ -296,7 +293,7 @@ void _chained_hashtable_expand(hashtable_t *hashtable) {
   memset(hashtable->table,
          0,
          hashsize(hashtable->hashpower) * sizeof(cache_obj_t));
-#ifdef USE_HUGEPAGE
+#if defined(USE_HUGEPAGE) && defined(MADV_HUGEPAFGE)
   madvise(hashtable->table, sizeof(cache_obj_t)*hashsize(hashtable->hashpower), MADV_HUGEPAGE);
 #endif
   ASSERT_NOT_NULL(hashtable->table,
@@ -412,7 +409,7 @@ void check_chained_hashtable_integrity2(hashtable_t *hashtable,
                                         cache_obj_t *head) {
   THIS_IS_DEBUG_FUNC;
 
-  assert(head->list_prev == NULL);
+  assert(head->common.list_prev == NULL);
   cache_obj_t *cur_obj = head, *cur_obj_in_chain;
   uint64_t hv;
   uint32_t list_idx = 0;
@@ -424,7 +421,7 @@ void check_chained_hashtable_integrity2(hashtable_t *hashtable,
       cur_obj_in_chain = cur_obj_in_chain->hash_next;
     }
     assert(cur_obj == cur_obj_in_chain);
-    cur_obj = cur_obj->list_next;
+    cur_obj = cur_obj->common.list_next;
     list_idx++;
     assert(head != cur_obj);
   }

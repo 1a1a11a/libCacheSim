@@ -21,11 +21,9 @@ extern "C"
 
 
 typedef struct LFUDA_params {
-//  freq_node_t *freq_one_node;
   GHashTable *freq_map;
-  uint64_t min_freq;
-  uint64_t max_freq;
-//  uint64_t age;
+  int64_t min_freq;
+  int64_t max_freq;
 } LFUDA_params_t;
 
 

@@ -33,7 +33,7 @@ cache_ck_res_e Clock_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e res = cache_check_base(cache, req, update_cache, &cache_obj);
   if (cache_obj != NULL)
-    cache_obj->extra_metadata_u8[0] = 1;
+    cache_obj->common.visited = true;
 
   return res;
 }
@@ -43,9 +43,8 @@ cache_ck_res_e Clock_get(cache_t *cache, request_t *req) {
 }
 
 void Clock_insert(cache_t *cache, request_t *req) {
-  Clock_params_t *params = cache->eviction_params;
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
-  cache_obj->extra_metadata_u8[0] = 0;
+  cache_obj->common.visited = false;
 }
 
 void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
@@ -57,17 +56,17 @@ void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     moving_pointer = cache->list_head;
 
   /* find the first untouched */
-  while (moving_pointer != NULL && moving_pointer->extra_metadata_u8[0] == 1) {
-    moving_pointer->extra_metadata_u8[0] = 0;
-    moving_pointer = moving_pointer->list_next;
+  while (moving_pointer != NULL && moving_pointer->common.visited) {
+    moving_pointer->common.visited = false;
+    moving_pointer = moving_pointer->common.list_next;
   }
 
   /* if we have finished one around, start from the head */
   if (moving_pointer == NULL) {
     moving_pointer = cache->list_head;
-    while (moving_pointer != NULL && moving_pointer->extra_metadata_u8[0] == 1) {
-      moving_pointer->extra_metadata_u8[0] = 0;
-      moving_pointer = moving_pointer->list_next;
+    while (moving_pointer != NULL && moving_pointer->common.visited) {
+      moving_pointer->common.visited = false;
+      moving_pointer = moving_pointer->common.list_next;
     }
   }
 
@@ -78,10 +77,10 @@ void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     memcpy(evicted_obj, moving_pointer, sizeof(cache_obj_t));
   }
 
-  params->pointer = moving_pointer->list_next;
+  params->pointer = moving_pointer->common.list_next;
   Clock_remove_obj(cache, moving_pointer);
 
-  DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
+  DEBUG_ASSERT(cache->list_head != cache->list_head->common.list_next);
 }
 
 void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

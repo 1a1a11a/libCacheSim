@@ -51,8 +51,8 @@ void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
     // return evicted object to caller
     memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
   }
-  cache->list_tail = cache->list_tail->list_prev;
-  cache->list_tail->list_next = NULL;
+  cache->list_tail = cache->list_tail->common.list_prev;
+  cache->list_tail->common.list_next = NULL;
   cache_remove_obj_base(cache, obj_to_evict);
 }
 

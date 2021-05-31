@@ -26,8 +26,8 @@ extern "C" {
 
 /**
  * the cache_obj has built-in a doubly list, in the case the list is used as
- * a singly list (prev is not used, next is used)
- * so this function finds the prev element in the list
+ * a singly list (list_prev is not used, next is used)
+ * so this function finds the list_prev element in the list
  *
  * NOTE: this is an expensive op
  * @param head
@@ -37,8 +37,8 @@ extern "C" {
 static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
                                              cache_obj_t *cache_obj) {
   assert(head != cache_obj);
-  while (head != NULL && head->list_next != cache_obj)
-    head = head->list_next;
+  while (head != NULL && head->common.list_next != cache_obj)
+    head = head->common.list_next;
   return head;
 }
 
@@ -51,24 +51,24 @@ static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
 static inline void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail,
                                         cache_obj_t *cache_obj) {
   if (cache_obj == *head) {
-    *head = cache_obj->list_next;
-    if (cache_obj->list_next != NULL)
-      cache_obj->list_next->list_prev = NULL;
+    *head = cache_obj->common.list_next;
+    if (cache_obj->common.list_next != NULL)
+      cache_obj->common.list_next->common.list_prev = NULL;
   }
   if (cache_obj == *tail) {
-    *tail = cache_obj->list_prev;
-    if (cache_obj->list_prev != NULL)
-      cache_obj->list_prev->list_next = NULL;
+    *tail = cache_obj->common.list_prev;
+    if (cache_obj->common.list_prev != NULL)
+      cache_obj->common.list_prev->common.list_next = NULL;
   }
 
-  if (cache_obj->list_prev != NULL)
-    cache_obj->list_prev->list_next = cache_obj->list_next;
+  if (cache_obj->common.list_prev != NULL)
+    cache_obj->common.list_prev->common.list_next = cache_obj->common.list_next;
 
-  if (cache_obj->list_next != NULL)
-    cache_obj->list_next->list_prev = cache_obj->list_prev;
+  if (cache_obj->common.list_next != NULL)
+    cache_obj->common.list_next->common.list_prev = cache_obj->common.list_prev;
 
-  cache_obj->list_prev = NULL;
-  cache_obj->list_next = NULL;
+  cache_obj->common.list_prev = NULL;
+  cache_obj->common.list_next = NULL;
 }
 
 /**
@@ -82,19 +82,19 @@ static inline void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
   if (*head == *tail) {
     // the list only has one element
     assert(cache_obj == *head);
-    assert(cache_obj->list_next == NULL);
-    assert(cache_obj->list_prev == NULL);
+    assert(cache_obj->common.list_next == NULL);
+    assert(cache_obj->common.list_prev == NULL);
     return;
   }
   if (cache_obj == *head) {
     // change head
-    *head = cache_obj->list_next;
-    cache_obj->list_next->list_prev = NULL;
+    *head = cache_obj->common.list_next;
+    cache_obj->common.list_next->common.list_prev = NULL;
 
     // move to tail
-    (*tail)->list_next = cache_obj;
-    cache_obj->list_next = NULL;
-    cache_obj->list_prev = *tail;
+    (*tail)->common.list_next = cache_obj;
+    cache_obj->common.list_next = NULL;
+    cache_obj->common.list_prev = *tail;
     *tail = cache_obj;
     return;
   }
@@ -102,16 +102,16 @@ static inline void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
     return;
   }
 
-  // bridge prev and next
-  cache_obj->list_prev->list_next = cache_obj->list_next;
-  cache_obj->list_next->list_prev = cache_obj->list_prev;
+  // bridge list_prev and next
+  cache_obj->common.list_prev->common.list_next = cache_obj->common.list_next;
+  cache_obj->common.list_next->common.list_prev = cache_obj->common.list_prev;
 
   // handle current tail
-  (*tail)->list_next = cache_obj;
+  (*tail)->common.list_next = cache_obj;
 
   // handle this moving object
-  cache_obj->list_next = NULL;
-  cache_obj->list_prev = *tail;
+  cache_obj->common.list_next = NULL;
+  cache_obj->common.list_prev = *tail;
 
   // handle tail
   *tail = cache_obj;

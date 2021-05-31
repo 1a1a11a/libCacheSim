@@ -30,20 +30,38 @@ struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
   obj_id_t obj_id;
-  union {
-    struct cache_obj *list_prev;
-    double score;
-  };
-  union {
-    struct cache_obj *list_next;
-    int64_t next_access_ts;
-  };
   uint32_t obj_size;
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   uint32_t exp_time;
 #endif
-#if defined(ENABLE_LLSC)
   union {
+    struct {
+      struct cache_obj *list_prev;
+      struct cache_obj *list_next;
+      union {
+        int64_t freq; /* used by LFU */
+        bool visited; /* used by CLOCK */
+      };
+    } common;
+    struct {
+      int64_t freq;
+      int64_t vtime_enter_cache;
+      void *pq_node;
+    } Hyperbolic;
+    struct {
+      union {
+        int64_t freq;
+        double pri;
+      };
+      int64_t last_access_vtime;
+    } rank;
+    struct {
+      void *pq_node;
+      int64_t next_access_ts;
+    } optimal;
+//    int64_t freq;
+//    double score;
+#if defined(ENABLE_LLSC)
     struct {
       void *segment;
       int64_t next_access_ts;
@@ -56,17 +74,6 @@ typedef struct cache_obj {
 //      int16_t n_merged : 12;  /* how many times it has been merged */
     } LSC;
 #endif
-    int64_t freq;
-    void *extra_metadata_ptr;
-    uint64_t extra_metadata_u64;
-    uint8_t extra_metadata_u8[8];
-  };
-  union {
-    int64_t last_access_rtime;
-    int64_t last_access_vtime;
-    void *extra_metadata2_ptr;
-    uint64_t extra_metadata2_u64;
-    uint8_t extra_metadata2_u8[8];
   };
 #ifdef TRACK_EVICTION_AGE
 #endif
@@ -89,10 +96,7 @@ typedef struct {
 typedef struct {
   uint64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
   uint64_t hv;        /* hash value, used when offloading hash to reader */
-  union {
-    obj_id_t obj_id;
-    obj_id_t obj_id;
-  };
+  obj_id_t obj_id;
   uint32_t obj_size;
   int32_t ttl;
   req_op_e op;

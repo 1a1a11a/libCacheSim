@@ -307,19 +307,6 @@ void check_hashtable_integrity_v2(hashtable_t *hashtable) {
   }
 }
 
-void check_hashtable_integrity2_v2(hashtable_t *hashtable, cache_obj_t *head) {
-  cache_obj_t *cur_obj = head, *cur_obj_in_hashchain;
-  uint64_t hv;
-  while (cur_obj) {
-    hv = get_hash_value_int_64(&cur_obj->obj_id)
-        & hashmask(hashtable->hashpower);
-    cur_obj_in_hashchain = hashtable->ptr_table[hv];
-    while (cur_obj_in_hashchain && cur_obj != cur_obj_in_hashchain)
-      cur_obj_in_hashchain = cur_obj_in_hashchain->hash_next;
-    assert(cur_obj_in_hashchain == cur_obj);
-    cur_obj = cur_obj->list_next;
-  }
-}
 
 #ifdef __cplusplus
 }

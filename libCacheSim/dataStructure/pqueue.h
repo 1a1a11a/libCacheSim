@@ -44,14 +44,9 @@ extern "C" {
 
 /** priority data type */
 struct pqueue_pri {
-  union {
-    int64_t pri1_u64;
-    double pri1_lf;
-  };
-  //    int64_t pri2;
+    double pri;
 };
 typedef struct pqueue_pri pqueue_pri_t;
-//typedef unsigned long long pqueue_pri_t;
 
 /** callback functions to get/set/compare the priority of an element */
 typedef pqueue_pri_t (*pqueue_get_pri_f)(void *a);
@@ -199,7 +194,7 @@ int pqueue_is_valid(pqueue_t *q);
 /******************* priority queue structs and def **********************/
 
 static inline int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) {
-  return (next.pri1_u64 < curr.pri1_u64);
+  return (next.pri < curr.pri);
 }
 
 static inline pqueue_pri_t get_pri(void *a) { return ((pq_node_t *) a)->pri; }
