@@ -25,7 +25,7 @@
 #include <unistd.h>
 
 #include "bloom.h"
-#include "hash.h"
+#include "hash/hash.h"
 
 #define MAKESTRING(n) STRING(n)
 #define STRING(n) #n

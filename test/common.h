@@ -25,7 +25,7 @@
 
 #define DEFAULT_TTL (300*86400)
 
-#define NUM_OF_THREADS 1
+#define NUM_OF_THREADS 4
 
 static void _detect_data_path(char* data_path, char* data_name) {
   sprintf(data_path, "data/%s", data_name);
@@ -142,6 +142,8 @@ static cache_t *create_test_cache(const char *alg_name,
 //    cache = LRU_K_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFU") == 0) {
     cache = LFU_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "LFUFast") == 0) {
+    cache = LFUFast_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFUDA") == 0) {
     cache = LFUDA_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "ARC") == 0) {

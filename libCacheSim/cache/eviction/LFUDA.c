@@ -208,8 +208,6 @@ void LFUDA_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   if (evicted_obj != NULL)
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
 
-  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
-
   if (obj_to_evict->list_next == NULL) {
     /* the only obj of curr freq */
     DEBUG_ASSERT(min_freq_node->last_obj == obj_to_evict);
@@ -230,7 +228,7 @@ void LFUDA_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     obj_to_evict->list_next->list_prev = NULL;
   }
 
-  hashtable_delete(cache->hashtable, obj_to_evict);
+  cache_remove_obj_base(cache, obj_to_evict);
 }
 
 #ifdef __cplusplus

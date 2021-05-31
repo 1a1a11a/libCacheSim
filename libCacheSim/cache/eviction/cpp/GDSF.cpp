@@ -6,10 +6,6 @@
 
 #include "abstractRank.h"
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
-//
 
 namespace eviction {
 class GDSF : virtual abstractRank {
@@ -118,7 +114,3 @@ void GDSF_remove(cache_t *cache, obj_id_t obj_id) {
 
   hashtable_delete(cache->hashtable, cache_obj);
 }
-
-//#ifdef __cplusplus
-//}
-//#endif

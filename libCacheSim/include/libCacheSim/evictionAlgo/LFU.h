@@ -19,25 +19,8 @@ extern "C"
 #endif
 
 
-typedef struct freq_node {
-  uint32_t freq;
-  uint32_t n_obj;
-//  struct freq_node *next_node;
-  cache_obj_t *first_obj;
-  cache_obj_t *last_obj;
-} freq_node_t;
-
-typedef struct LFU_params {
-//  freq_node_t *freq_list;
-  freq_node_t *freq_one_node;
-  GHashTable *freq_map;
-  uint64_t min_freq;
-  uint64_t max_freq;
-} LFU_params_t;
-
-
 cache_t *LFU_init(common_cache_params_t ccache_params,
-                  void *cache_specific_params);
+                      void *cache_specific_params);
 
 void LFU_free(cache_t *cache);
 

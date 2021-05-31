@@ -89,10 +89,8 @@ void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
     ERROR("remove NULL from cache\n");
     abort();
   }
-  cache->occupied_size -= (obj_to_remove->obj_size + cache->per_obj_overhead);
-  cache->n_obj -= 1;
   remove_obj_from_list(&cache->list_head, &cache->list_tail, obj_to_remove);
-  hashtable_delete(cache->hashtable, obj_to_remove);
+  cache_remove_obj_base(cache, obj_to_remove);
 }
 
 

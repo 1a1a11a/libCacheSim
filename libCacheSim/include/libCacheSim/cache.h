@@ -173,6 +173,14 @@ cache_obj_t *cache_insert_base(cache_t *cache, request_t *req);
  */
 cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req);
 
+/**
+ * remove object from the cache, this function handles the cache metadata
+ * and removing from hash table
+ *
+ * @param cache
+ * @param obj
+ */
+void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj);
 
 void cache_evict_LRU(cache_t *cache,
                      request_t *req,

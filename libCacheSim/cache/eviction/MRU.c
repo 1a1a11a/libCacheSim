@@ -53,9 +53,7 @@ void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
   }
   cache->list_tail = cache->list_tail->list_prev;
   cache->list_tail->list_next = NULL;
-  DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
-  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
-  hashtable_delete(cache->hashtable, obj_to_evict);
+  cache_remove_obj_base(cache, obj_to_evict);
 }
 
 cache_ck_res_e MRU_get(cache_t *cache, request_t *req) {
@@ -69,11 +67,7 @@ void MRU_remove(cache_t *cache, obj_id_t obj_id) {
     return;
   }
   remove_obj_from_list(&cache->list_head, &cache->list_tail, obj);
-  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
-  cache->n_obj -= 1;
-
-  hashtable_delete(cache->hashtable, obj);
+  cache_remove_obj_base(cache, obj);
 }
 
 #ifdef _cplusplus

@@ -2,7 +2,7 @@ set(sourceC
         MRU.c
         LRUv0.c
         Random.c
-        LFU.c
+        LFUFast.c
         LFUDA.c
         ARC.c
         FIFO.c
@@ -17,6 +17,7 @@ set(sourceC
         )
 
 set (sourceCPP
+        cpp/LFU.cpp
         cpp/GDSF.cpp)
 
 set (evictionLib

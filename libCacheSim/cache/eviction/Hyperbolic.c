@@ -116,9 +116,6 @@ void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
   DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj) == obj);
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
 
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
-  cache->n_obj -= 1;
-
   if (obj->extra_metadata2_ptr != NULL) {
     /* if it is NULL, it means we have deleted the entry in pq before this */
     pqueue_remove(params->pq, obj->extra_metadata2_ptr);
@@ -126,7 +123,7 @@ void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
     obj->extra_metadata2_ptr = NULL;
   }
 
-  hashtable_delete(cache->hashtable, obj);
+  cache_remove_obj_base(cache, obj);
 }
 
 void Hyperbolic_remove(cache_t *cache, obj_id_t obj_id) {

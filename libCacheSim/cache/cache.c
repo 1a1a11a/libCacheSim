@@ -121,6 +121,13 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
   return cache_obj;
 }
 
+void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
+  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
+  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
+  cache->n_obj -= 1;
+  hashtable_delete(cache->hashtable, obj);
+}
+
 void cache_evict_LRU(cache_t *cache,
                      __attribute__((unused)) request_t *req,
                      cache_obj_t *evicted_obj) {
@@ -135,11 +142,7 @@ void cache_evict_LRU(cache_t *cache,
   cache->list_head = cache->list_head->list_next;
   cache->list_head->list_prev = NULL;
 
-  DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
-  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
-  cache->n_obj -= 1;
-
-  hashtable_delete(cache->hashtable, obj_to_evict);
+  cache_remove_obj_base(cache, obj_to_evict);
   DEBUG_ASSERT(cache->list_head != cache->list_head->list_next);
   /** obj_to_evict is not freed or returned to hashtable, if you have
  * extra_metadata allocated with obj_to_evict, you need to free them now,

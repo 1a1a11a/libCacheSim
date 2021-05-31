@@ -64,11 +64,7 @@ void LRU_remove(cache_t *cache, obj_id_t obj_id) {
     return;
   }
   remove_obj_from_list(&cache->list_head, &cache->list_tail, obj);
-  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
-  cache->n_obj -= 1;
-
-  hashtable_delete(cache->hashtable, obj);
+  cache_remove_obj_base(cache, obj);
 }
 
 

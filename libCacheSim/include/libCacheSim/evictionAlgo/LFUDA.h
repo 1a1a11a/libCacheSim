@@ -11,7 +11,7 @@
 
 
 #include "../cache.h"
-#include "LFU.h"
+#include "LFUFast.h"
 
 
 #ifdef __cplusplus

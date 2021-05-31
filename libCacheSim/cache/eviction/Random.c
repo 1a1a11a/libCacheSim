@@ -54,9 +54,7 @@ void Random_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
   DEBUG_ASSERT(obj_to_evict->obj_size != 0);
   if (cache_obj != NULL)
     memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
-  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
-  DEBUG_ASSERT(obj_to_evict->obj_size != 0);
-  hashtable_delete(cache->hashtable, obj_to_evict);
+  cache_remove_obj_base(cache, obj_to_evict);
 }
 
 void Random_remove(cache_t *cache, obj_id_t obj_id) {
@@ -65,10 +63,7 @@ void Random_remove(cache_t *cache, obj_id_t obj_id) {
     WARNING("obj to remove is not in the cache\n");
     return;
   }
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
-  cache->n_obj -= 1;
-
-  hashtable_delete(cache->hashtable, obj);
+  cache_remove_obj_base(cache, obj);
 }
 
 #ifdef __cplusplus
