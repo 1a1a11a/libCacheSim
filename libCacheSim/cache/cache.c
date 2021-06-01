@@ -131,19 +131,20 @@ void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
 void cache_evict_LRU(cache_t *cache,
                      __attribute__((unused)) request_t *req,
                      cache_obj_t *evicted_obj) {
-  // currently not handle the case when all objects are evicted
-
   cache_obj_t *obj_to_evict = cache->list_head;
   if (evicted_obj != NULL) {
     // return evicted object to caller
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
+  DEBUG_ASSERT(cache->list_head != NULL);
   DEBUG_ASSERT(cache->list_head != cache->list_head->common.list_next);
   cache->list_head = cache->list_head->common.list_next;
-  cache->list_head->common.list_prev = NULL;
+  if (likely(cache->list_head != NULL))
+    cache->list_head->common.list_prev = NULL;
 
   cache_remove_obj_base(cache, obj_to_evict);
-  DEBUG_ASSERT(cache->list_head != cache->list_head->common.list_next);
+  DEBUG_ASSERT(cache->list_head == NULL ||
+                      cache->list_head != cache->list_head->common.list_next);
   /** obj_to_evict is not freed or returned to hashtable, if you have
  * extra_metadata allocated with obj_to_evict, you need to free them now,
  * otherwise, there will be memory leakage **/

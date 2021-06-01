@@ -41,6 +41,7 @@ typedef struct cache_obj {
       union {
         int64_t freq; /* used by LFU */
         bool visited; /* used by CLOCK */
+        int64_t last_access_vtime; /* used by LeCaR */
       };
     } common;
     struct {

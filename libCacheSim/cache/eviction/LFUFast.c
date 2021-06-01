@@ -90,6 +90,7 @@ cache_t *LFUFast_init(common_cache_params_t ccache_params,
 void LFUFast_free(cache_t *cache) {
   LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
   g_hash_table_destroy(params->freq_map);
+  my_free(sizeof(LFUFast_params_t), params);
   cache_struct_free(cache);
 }
 
