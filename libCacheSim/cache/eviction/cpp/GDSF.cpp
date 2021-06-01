@@ -10,7 +10,7 @@
 namespace eviction {
 class GDSF : public abstractRank {
 public:
-  GDSF() = default;;
+  GDSF() = default;
 
   double pri_last_evict = 0.0;
 };
@@ -20,7 +20,7 @@ public:
 
 cache_t *GDSF_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("GDSF", ccache_params);
-  cache->eviction_params = reinterpret_cast<void *>(new eviction::GDSF());
+  cache->eviction_params = reinterpret_cast<void *>(new eviction::GDSF);
 
   cache->cache_init = GDSF_init;
   cache->cache_free = GDSF_free;
@@ -48,8 +48,12 @@ cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
     obj->rank.freq += 1;
     obj->rank.last_access_vtime = (int64_t)req->n_req;
 
+    auto itr = gdsf->itr_map[obj];
+    gdsf->pq.erase(itr);
+
     double pri = gdsf->pri_last_evict + (double) (obj->rank.freq + 1) / obj->obj_size;
-    gdsf->pq.emplace(obj, pri, gdsf->vtime);
+    itr = gdsf->pq.emplace(obj, pri, gdsf->vtime).first;
+    gdsf->itr_map[obj] = itr;
   }
 
   return res;
@@ -59,17 +63,18 @@ void GDSF_insert(cache_t *cache, request_t *req) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
   gdsf->vtime ++;
 
-  cache_obj_t *cache_obj = cache_insert_base(cache, req);
-  cache_obj->rank.freq = 1;
-  cache_obj->rank.last_access_vtime = (int64_t)req->n_req;
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  obj->rank.freq = 1;
+  obj->rank.last_access_vtime = (int64_t)req->n_req;
 
-  double pri = gdsf->pri_last_evict + 1.0 / cache_obj->obj_size;
-  gdsf->pq.emplace(cache_obj, pri, gdsf->vtime);
+  double pri = gdsf->pri_last_evict + 1.0 / obj->obj_size;
+  auto itr = gdsf->pq.emplace(obj, pri, gdsf->vtime).first;
+  gdsf->itr_map[obj] = itr;
 }
 
 void GDSF_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
-  eviction::pq_pair p = gdsf->pick_lowest_score();
+  eviction::pq_node_type p = gdsf->pick_lowest_score();
   cache_obj_t *obj = get<0>(p);
   if (evicted_obj != nullptr) {
     memcpy(evicted_obj, obj, sizeof(cache_obj_t));

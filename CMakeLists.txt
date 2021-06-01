@@ -154,14 +154,22 @@ set(LIBS ${LIBS} ${GLib_LIBRARY})
 #    link_libraries(${GLib2_LDFLAGS})
 #endif()
 
-# libgoogle-perftools-dev
+# libgoogle-perftools-dev google-perftools
 find_package(Tcmalloc)
 if ("${Tcmalloc_LIBRARY}" STREQUAL "")
     message(STATUS "!!! cannot find tcmalloc")
 else ()
     set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+#    set(LIBS ${LIBS} "tcmalloc")
 endif ()
+
+find_package(Threads)
+
+#find_package(Boost REQUIRED)
+#message(STATUS "boost found? " ${Boost_FOUND} ", library " ${Boost_LIBRARIES} ", header " ${Boost_INCLUDE_DIRS})
+#include_directories(${Boost_INCLUDE_DIRS})
+
 
 if (ENABLE_LLSC)
     find_package(xgboost REQUIRED)

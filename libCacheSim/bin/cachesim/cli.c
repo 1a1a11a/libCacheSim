@@ -69,15 +69,16 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
       .per_obj_overhead = args.per_obj_metadata};
   cache_t *cache;
 
-  if (strcasecmp(args.alg, "lru") == 0)
+  if (strcasecmp(args.alg, "lru") == 0) {
     cache = LRU_init(cc_params, NULL);
-  else if (strcasecmp(args.alg, "fifo") == 0)
+  } else if (strcasecmp(args.alg, "fifo") == 0) {
     cache = FIFO_init(cc_params, NULL);
-  else if (strcasecmp(args.alg, "lhd") == 0)
+  } else if (strcasecmp(args.alg, "lhd") == 0) {
     cache = LHD_init(cc_params, NULL);
-  else if (strcasecmp(args.alg, "optimal") == 0)
+  } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
-  else if (strcasecmp(args.alg, "LLSC") == 0) {
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+  } else if (strcasecmp(args.alg, "LLSC") == 0) {
     LLSC_init_params_t init_params = {.segment_size = args.seg_size,
         .n_merge = args.n_merge,
         .type = args.lsc_type,
@@ -93,6 +94,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
         .sample_every_n_seg_for_training =
         args.sample_every_n_seg_for_training};
     cache = LLSC_init(cc_params, &init_params);
+#endif
   } else {
     printf("do not support %s\n", args.alg);
     abort();
