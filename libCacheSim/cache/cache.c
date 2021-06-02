@@ -46,33 +46,40 @@ cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size) {
 
 cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cache,
                            cache_obj_t **cache_obj_ret) {
+  cache_ck_res_e ret = cache_ck_hit;
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
-  if (cache_obj_ret != NULL)
-    *cache_obj_ret = cache_obj;
+
   if (cache_obj == NULL) {
-    return cache_ck_miss;
+    ret = cache_ck_miss;
+  } else {
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+    if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->real_time) {
+      ret = cache_ck_expired;
+    }
+#endif
   }
 
-  cache_ck_res_e ret = cache_ck_hit;
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  if (cache->default_ttl != 0) {
-    if (cache_obj->exp_time < req->real_time) {
-      ret = cache_ck_expired;
-      if (likely(update_cache))
-        cache_obj->exp_time =
-            req->real_time + (req->ttl != 0 ? req->ttl : cache->default_ttl);
-    }
+  if (cache_obj_ret != NULL) {
+    if (ret == cache_ck_hit) {
+      *cache_obj_ret = cache_obj;
+    } else
+      *cache_obj_ret = NULL;
   }
-#endif
+
   if (likely(update_cache)) {
     cache->vtime += 1;
 
-    if (unlikely(cache_obj->obj_size != req->obj_size)) {
-      cache->occupied_size -= cache_obj->obj_size;
-      cache->occupied_size += req->obj_size;
-      cache_obj->obj_size = req->obj_size;
+    if (ret == cache_ck_hit) {
+      if (unlikely(cache_obj->obj_size != req->obj_size)) {
+        cache->occupied_size -= cache_obj->obj_size;
+        cache->occupied_size += req->obj_size;
+        cache_obj->obj_size = req->obj_size;
+      }
+    } else if (ret == cache_ck_expired) {
+      cache->remove(cache, cache_obj->obj_id);
     }
   }
+
   return ret;
 }
 
@@ -98,8 +105,6 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
-  cache->vtime += 1;
-
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
     req->ttl = (int32_t) cache->default_ttl;

@@ -131,6 +131,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = FIFO_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "OptimalSize") == 0) {
+    cache = OptimalSize_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LRUv0") == 0) {
     cache = LRUv0_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Random") == 0) {

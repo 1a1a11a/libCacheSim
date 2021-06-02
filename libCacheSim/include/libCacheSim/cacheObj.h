@@ -128,6 +128,8 @@ static inline void copy_request_to_cache_obj(cache_obj_t *cache_obj,
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (req->ttl != 0)
     cache_obj->exp_time = req->real_time + req->ttl;
+  else
+    cache_obj->exp_time = UINT32_MAX;
 #endif
   cache_obj->obj_id = req->obj_id;
 }
@@ -163,7 +165,7 @@ static inline slab_cache_obj_t *create_slab_cache_obj_from_req(request_t *req) {
   if (req->ttl != 0)
     cache_obj->exp_time = req->real_time + req->ttl;
   else
-    cache_obj->exp_time = G_MAXINT32;
+    cache_obj->exp_time = UINT32_MAX;
 #endif
 #ifdef SUPPORT_SLAB_AUTOMOVE
   cache_obj->access_time = req->real_time;

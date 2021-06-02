@@ -132,7 +132,6 @@ void ARC_insert(cache_t *cache, request_t *req) {
 
   params->LRU1->insert(params->LRU1, req);
 
-  cache->vtime += 1;
   cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
   DEBUG_ASSERT(cache->occupied_size ==

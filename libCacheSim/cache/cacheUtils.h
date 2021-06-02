@@ -30,8 +30,10 @@ static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
 }
 
 static inline void get_cache_state(cache_t *cache, cache_stat_t *cache_state) {
-  hashtable_foreach(cache->hashtable, _get_cache_state_ht_iter,
-                    cache_state);
+  if (cache->hashtable->n_obj == 0)
+    return;
+
+  hashtable_foreach(cache->hashtable, _get_cache_state_ht_iter, cache_state);
 }
 
 #ifdef __cplusplus

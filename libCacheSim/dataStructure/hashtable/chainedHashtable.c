@@ -110,7 +110,7 @@ hashtable_t *create_chained_hashtable(const uint16_t hash_power) {
   }
   memset(hashtable->table, 0, hashsize(hash_power) * sizeof(cache_obj_t));
   hashtable->hashpower = hash_power;
-  hashtable->n_cur_item = 0;
+  hashtable->n_obj = 0;
   hashtable->external_obj = false;
   return hashtable;
 }
@@ -178,7 +178,7 @@ cache_obj_t *chained_hashtable_find_obj(hashtable_t *hashtable,
 }
 
 cache_obj_t *chained_hashtable_insert(hashtable_t *hashtable, request_t *req) {
-  if (hashtable->n_cur_item > (uint64_t) (hashsize(hashtable->hashpower)
+  if (hashtable->n_obj > (uint64_t) (hashsize(hashtable->hashpower)
       * CHAINED_HASHTABLE_EXPAND_THRESHOLD))
     _chained_hashtable_expand(hashtable);
 
@@ -199,13 +199,13 @@ cache_obj_t *chained_hashtable_insert(hashtable_t *hashtable, request_t *req) {
     cache_obj->hash_next = new_cache_obj;
     cache_obj = new_cache_obj;
   }
-  hashtable->n_cur_item += 1;
+  hashtable->n_obj += 1;
   return cache_obj;
 }
 
 /* you need to free the extra_metadata before deleting from hash table */
 void chained_hashtable_delete(hashtable_t *hashtable, cache_obj_t *cache_obj) {
-  hashtable->n_cur_item -= 1;
+  hashtable->n_obj -= 1;
   uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id)
       & hashmask(hashtable->hashpower);
   cache_obj_t *cache_obj_in_bucket = &hashtable->table[hv];

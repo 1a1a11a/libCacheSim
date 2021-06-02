@@ -111,8 +111,9 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
   ck_lfu = params->LFU->check(params->LFU, req, update_cache);
   DEBUG_ASSERT(ck_lru == ck_lfu);
 
-  if (!update_cache)
+  if (!update_cache) {
     return ck_lru;
+  }
 
   cache->vtime ++;
 
@@ -135,7 +136,6 @@ cache_ck_res_e LeCaR_get(cache_t *cache, request_t *req) {
 
 void LeCaR_insert(cache_t *cache, request_t *req) {
   LeCaR_params_t *params= (LeCaR_params_t *) (cache->eviction_params);
-  cache->vtime ++;
 
   params->LRU->insert(params->LRU, req);
   params->LFU->insert(params->LFU, req);

@@ -24,7 +24,7 @@ typedef struct hashtable {
     cache_obj_t **ptr_table;
     uint64_t *btable;
   };
-  uint64_t n_cur_item;// current occupied size
+  uint64_t n_obj;
   uint16_t hashpower;
   bool external_obj; /* whether the object should be allocated by hash table, this should be true most of the time */
   union {

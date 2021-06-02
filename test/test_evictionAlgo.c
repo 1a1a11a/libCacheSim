@@ -116,6 +116,29 @@ static void test_Optimal(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_OptimalSize(gconstpointer user_data) {
+  /* the request byte is different from others because the oracleGeneral
+   * trace removes all object size changes (and use the size of last appearance
+   * of an object as the object size throughout the trace */
+  uint64_t req_cnt_true = 113872, req_byte_true = 4368040448;
+  uint64_t miss_cnt_true[] = {74513, 64790, 60367, 56529, 54545, 52614, 50590, 48974};
+  uint64_t miss_byte_true[] = {3541380608, 3057076224, 2779565056, 2537671168,
+                               2403481600, 2269221888, 2135037440, 2029769728};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
+      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("OptimalSize", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
+
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
 static void test_Random(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
   uint64_t miss_cnt_true[] = {92056, 87857, 83304, 78929, 74241, 70337, 66402, 62829};
@@ -493,6 +516,7 @@ int main(int argc, char *argv[]) {
    * oracleGeneral trace removes all object size changes */
   reader = setup_oracleGeneralBin_reader();
   g_test_add_data_func("/libCacheSim/cacheAlgo_Optimal", reader, test_Optimal);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_OptimalSize", reader, test_OptimalSize);
 
 
   /* these are wrong now */

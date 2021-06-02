@@ -8,7 +8,9 @@ set(sourceC
         FIFO.c
         Clock.c
         LRU.c
+
         Optimal.c
+        OptimalSize.c
         Hyperbolic.c
         LeCaR.c
         Cacheus.c

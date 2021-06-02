@@ -116,7 +116,7 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
 
   /* get expiration information */
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  if (local_cache->default_ttl != 0) {
+  if (local_cache->hashtable->n_obj != 0) {
     cache_stat_t stat;
     memset(&stat, 0, sizeof(cache_stat_t));
     stat.curr_rtime = req->real_time;

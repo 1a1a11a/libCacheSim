@@ -61,12 +61,15 @@ cache_ck_res_e LHD_check(cache_t *cache, request_t *req, bool update_cache) {
   auto itr = lhd->sizeMap.find(id);
   bool hit = (itr != lhd->sizeMap.end());
 
+  if (update_cache) {
+    cache->vtime += 1;
+  }
+
   if (!hit) {
     return cache_ck_miss;
   }
 
   if (update_cache) {
-    cache->vtime += 1;
     if (itr->second != req->obj_size) {
       cache->occupied_size -= itr->second;
       cache->occupied_size += req->obj_size;
@@ -91,7 +94,6 @@ void LHD_insert(cache_t *cache, request_t *req) {
   lhd->sizeMap[id] = req->obj_size;
   lhd->update(id, req);
 
-  cache->vtime += 1;
   cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
 }

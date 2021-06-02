@@ -56,10 +56,6 @@ cache_ck_res_e Optimal_check(cache_t *cache,
   cache_obj_t *cached_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cached_obj);
 
-  if (ret == cache_ck_miss) {
-    DEBUG_ASSERT(cache_get_obj(cache, req) == NULL);
-  }
-
   if (!update_cache)
     return ret;
 
@@ -77,10 +73,6 @@ cache_ck_res_e Optimal_check(cache_t *cache,
                        == req->next_access_ts);
     }
     return cache_ck_hit;
-  } else if (ret == cache_ck_expired) {
-    Optimal_remove_obj(cache, cached_obj);
-
-    return cache_ck_miss;
   }
 
   return cache_ck_miss;
@@ -100,11 +92,10 @@ cache_ck_res_e Optimal_get(cache_t *cache, request_t *req) {
 void Optimal_insert(cache_t *cache, request_t *req) {
   Optimal_params_t *params = cache->eviction_params;
 
-  if (req->next_access_ts == -1) {
+  if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
     return;
   }
 
-  DEBUG_ASSERT(cache_get_obj(cache, req) == NULL);
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
 
   pq_node_t *node = my_malloc(pq_node_t);

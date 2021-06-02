@@ -71,7 +71,7 @@ hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
 #endif
   hashtable->external_obj = false;
   hashtable->hashpower = hashpower;
-  hashtable->n_cur_item = 0;
+  hashtable->n_obj = 0;
   return hashtable;
 }
 
@@ -102,13 +102,13 @@ cache_obj_t *chained_hashtable_find_obj_v2(hashtable_t *hashtable,
 /* the user needs to make sure the added object is not in the hash table */
 cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable,
                                          request_t *req) {
-  if (hashtable->n_cur_item > (uint64_t) (hashsize(hashtable->hashpower)
+  if (hashtable->n_obj > (uint64_t) (hashsize(hashtable->hashpower)
       * CHAINED_HASHTABLE_EXPAND_THRESHOLD))
     _chained_hashtable_expand_v2(hashtable);
 
   cache_obj_t *new_cache_obj = create_cache_obj_from_request(req);
   add_to_bucket(hashtable, new_cache_obj);
-  hashtable->n_cur_item += 1;
+  hashtable->n_obj += 1;
   return new_cache_obj;
 }
 
@@ -116,19 +116,19 @@ cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable,
 cache_obj_t *chained_hashtable_insert_obj_v2(hashtable_t *hashtable,
                                          cache_obj_t *cache_obj) {
   DEBUG_ASSERT(hashtable->external_obj);
-  if (hashtable->n_cur_item > (uint64_t) (hashsize(hashtable->hashpower)
+  if (hashtable->n_obj > (uint64_t) (hashsize(hashtable->hashpower)
       * CHAINED_HASHTABLE_EXPAND_THRESHOLD))
     _chained_hashtable_expand_v2(hashtable);
 
   add_to_bucket(hashtable, cache_obj);
-  hashtable->n_cur_item += 1;
+  hashtable->n_obj += 1;
   return cache_obj;
 }
 
 /* you need to free the extra_metadata before deleting from hash table */
 void chained_hashtable_delete_v2(hashtable_t *hashtable,
                                  cache_obj_t *cache_obj) {
-  hashtable->n_cur_item -= 1;
+  hashtable->n_obj -= 1;
   uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == cache_obj) {
     hashtable->ptr_table[hv] = cache_obj->hash_next;
@@ -149,9 +149,9 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
     max_chain_len = chain_len;
 //    WARNING("hashtable remove %lu max chain len %d, hashtable load %ld/%ld %lf\n",
 //           (unsigned long) cache_obj->obj_id, max_chain_len,
-//           (long) hashtable->n_cur_item,
+//           (long) hashtable->n_obj,
 //           (long) hashsize(hashtable->hashpower),
-//           (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
+//           (double) hashtable->n_obj / hashsize(hashtable->hashpower)
 //           );
   }
 
@@ -166,7 +166,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
   uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == cache_obj) {
     hashtable->ptr_table[hv] = cache_obj->hash_next;
-    hashtable->n_cur_item -= 1;
+    hashtable->n_obj -= 1;
     if (!hashtable->external_obj)
       free_cache_obj(cache_obj);
     return true;
@@ -185,9 +185,9 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
 //    WARNING("hashtable remove %ld, hv %lu, max chain len %d, hashtable load %ld/%ld %lf\n",
 //           (long) cache_obj->obj_id,
 //           (unsigned long) hv, max_chain_len,
-//           (long) hashtable->n_cur_item,
+//           (long) hashtable->n_obj,
 //           (long) hashsize(hashtable->hashpower),
-//           (double) hashtable->n_cur_item / hashsize(hashtable->hashpower)
+//           (double) hashtable->n_obj / hashsize(hashtable->hashpower)
 //    );
 
 
@@ -201,7 +201,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
 
   if (cur_obj != NULL) {
     cur_obj->hash_next = cache_obj->hash_next;
-    hashtable->n_cur_item -= 1;
+    hashtable->n_obj -= 1;
     if (!hashtable->external_obj)
       free_cache_obj(cache_obj);
     return true;
@@ -211,7 +211,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
 
 void chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
                                  obj_id_t obj_id) {
-  hashtable->n_cur_item -= 1;
+  hashtable->n_obj -= 1;
   uint64_t hv = get_hash_value_int_64(obj_id) & hashmask(hashtable->hashpower);
   cache_obj_t *cache_obj = hashtable->ptr_table[hv];
   if (cache_obj != NULL && cache_obj->obj_id == obj_id) {
