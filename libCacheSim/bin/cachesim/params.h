@@ -1,15 +1,17 @@
 #pragma once
 
-#ifdef __linux__
-#include <sys/sysinfo.h>
-#endif
 #include "cachesim.h"
 #include "utils.h"
 #include "math.h"
 
 
-static inline void set_default_arg(sim_arg_t *args) {
+#ifdef __linux__
+#include <sys/sysinfo.h>
+#endif
 
+
+static inline void set_default_arg(sim_arg_t *args) {
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
   args->obj_id_type = OBJ_ID_NUM;
 
   args->seg_size = 1000;
@@ -25,6 +27,8 @@ static inline void set_default_arg(sim_arg_t *args) {
 
   args->bucket_type = NO_BUCKET;
   args->size_bucket_base = 1;
+#endif
+
   args->n_thread = 4;
 
 #ifdef __linux__
@@ -38,6 +42,7 @@ static inline void set_default_arg(sim_arg_t *args) {
 }
 
 static inline void set_param_with_workload(sim_arg_t *args) {
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
   if (strstr(args->trace_path, "w105") != NULL) {
     /* w105 */
     uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};
@@ -285,4 +290,5 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     printf("cannot detect trace name\n");
     //    abort();
   }
+#endif
 }

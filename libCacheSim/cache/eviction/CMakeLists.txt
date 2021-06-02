@@ -35,9 +35,9 @@ endif()
 add_subdirectory(LHD)
 
 add_library (evictionC ${sourceC})
-target_link_libraries(evictionC cache dataStructure)
+target_link_libraries(evictionC cache dataStructure utils)
 add_library (evictionCPP ${sourceCPP})
-target_link_libraries(evictionC cache)
+target_link_libraries(evictionC cache utils)
 set_target_properties(evictionCPP
         PROPERTIES
         CXX_STANDARD 11

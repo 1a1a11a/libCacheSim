@@ -30,8 +30,6 @@ cache_t *Random_init(common_cache_params_t ccache_params,
   cache->evict = Random_evict;
   cache->remove = Random_remove;
 
-  srand((unsigned) time(NULL));
-  set_rand_seed(time(NULL));
   return cache;
 }
 
@@ -58,7 +56,7 @@ void Random_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
 }
 
 void Random_remove(cache_t *cache, obj_id_t obj_id) {
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
+  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
     WARNING("obj to remove is not in the cache\n");
     return;

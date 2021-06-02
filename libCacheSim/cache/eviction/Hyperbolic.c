@@ -27,7 +27,6 @@ cache_t *Hyperbolic_init(common_cache_params_t ccache_params,
   cache->eviction_params = params;
 
   params->pq = pqueue_init((unsigned long) 8e6);
-  params->vtime = 0;
   return cache;
 }
 
@@ -53,10 +52,9 @@ cache_ck_res_e Hyperbolic_check(cache_t *cache,
   if (!update_cache)
     return ret;
 
-  params->vtime ++;
   if (ret == cache_ck_hit) {
     pqueue_pri_t pri;
-    int64_t age = params->vtime - cached_obj->Hyperbolic.vtime_enter_cache;
+    int64_t age = cache->vtime - cached_obj->Hyperbolic.vtime_enter_cache;
     pri.pri = (double) age / (double) (++cached_obj->Hyperbolic.freq);
     pqueue_change_priority(params->pq,
                            pri,
@@ -80,11 +78,10 @@ cache_ck_res_e Hyperbolic_get(cache_t *cache, request_t *req) {
 
 void Hyperbolic_insert(cache_t *cache, request_t *req) {
   Hyperbolic_params_t *params = cache->eviction_params;
-  params->vtime ++;
 
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
   cached_obj->Hyperbolic.freq = 1;
-  cached_obj->Hyperbolic.vtime_enter_cache = params->vtime;
+  cached_obj->Hyperbolic.vtime_enter_cache = cache->vtime;
 
   pq_node_t *node = my_malloc(pq_node_t);
   node->obj_id = req->obj_id;
@@ -129,7 +126,7 @@ void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
 }
 
 void Hyperbolic_remove(cache_t *cache, obj_id_t obj_id) {
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
+  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
     WARNING("obj to remove is not in the cache\n");
     return;

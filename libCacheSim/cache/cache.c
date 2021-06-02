@@ -16,6 +16,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->eviction_params = NULL;
   cache->default_ttl = params.default_ttl;
   cache->per_obj_overhead = params.per_obj_overhead;
+  cache->vtime = 0;
   cache->stat.cache_size = cache->cache_size;
 
   int hash_power = HASH_POWER_DEFAULT;
@@ -64,6 +65,8 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cach
   }
 #endif
   if (likely(update_cache)) {
+    cache->vtime += 1;
+
     if (unlikely(cache_obj->obj_size != req->obj_size)) {
       cache->occupied_size -= cache_obj->obj_size;
       cache->occupied_size += req->obj_size;
@@ -95,6 +98,8 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
+  cache->vtime += 1;
+
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
     req->ttl = (int32_t) cache->default_ttl;

@@ -20,7 +20,9 @@
 #include "evictionAlgo/Cacheus.h"
 
 #include "evictionAlgo/Optimal.h"
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
 #include "evictionAlgo/LLSC.h"
+#endif
 
 
 #include "evictionAlgo/slabLRU.h"

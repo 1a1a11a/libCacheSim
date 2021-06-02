@@ -90,6 +90,7 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
   if (!update_cache)
     return hit;
 
+  cache->vtime += 1;
   if (hit != cache_ck_hit) {
     hit1g = params->LRU1g->check(params->LRU1g, req, false);
     hit2g = params->LRU2g->check(params->LRU2g, req, false);
@@ -131,6 +132,7 @@ void ARC_insert(cache_t *cache, request_t *req) {
 
   params->LRU1->insert(params->LRU1, req);
 
+  cache->vtime += 1;
   cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
   DEBUG_ASSERT(cache->occupied_size ==

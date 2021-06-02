@@ -197,7 +197,7 @@ get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
     ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
-  sleep(2);
+//  sleep(2);
 
   char start_cache_size[64], end_cache_size[64];
   convert_size_to_str(cache_sizes[0], start_cache_size);
@@ -217,7 +217,7 @@ get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
   g_thread_pool_free(gthread_pool, FALSE, TRUE);
   g_mutex_clear(&(params->mtx));
   my_free(sizeof(sim_mt_params_t), params);
-  // user is responsible to free the result
+  // user is responsible for free-ing the result
   return result;
 }
 

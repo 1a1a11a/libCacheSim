@@ -85,9 +85,16 @@ int main(int argc, char **argv) {
 
   if (args.debug) {
     printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
-           "seg size %d, n merge %d, rank_intvl %d, bucket type %d\n",
-           argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+           "seg size %d, n merge %d, rank_intvl %d, bucket type %d"
+#endif
+           "\n",
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+        argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
            args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type);
+#else
+    argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata);
+#endif
 
     run_cache(args.reader, args.cache);
   } else {

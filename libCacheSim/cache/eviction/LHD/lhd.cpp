@@ -1,8 +1,8 @@
 #include <sstream>
 #include "lhd.hpp"
-#include "rand.hpp"
 #include "constants.hpp"
 #include "../../include/libCacheSim/struct.h"
+#include "../../../utils/include/mymath.h"
 
 
 namespace repl {
@@ -48,7 +48,7 @@ candidate_t LHD::rank(const request_t* req) {
         ASSOCIATIVITY : 8;
 
     for (uint32_t i = 0; i < candidates; i++) {
-        auto idx = rand.next() % tags.size();
+        auto idx = next_rand() % tags.size();
         auto& tag = tags[idx];
         rank_t rank = getHitDensity(tag);
 
@@ -112,7 +112,7 @@ void LHD::update(candidate_t id, const request_t* req) {
 
     // with some probability, some candidates will never be evicted
     // ... but limit how many resources we spend on doing this
-    bool explore = (rand.next() % EXPLORE_INVERSE_PROBABILITY) == 0;
+    bool explore = (next_rand() % EXPLORE_INVERSE_PROBABILITY) == 0;
     if (explore && explorerBudget > 0 && numReconfigurations < 50) {
         tag->explorer = true;
         explorerBudget -= tag->size;

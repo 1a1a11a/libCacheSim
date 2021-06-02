@@ -97,7 +97,7 @@ struct cache {
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
 
-//  uint64_t req_cnt;
+  int64_t vtime;  /* number of requests (used by some eviction algo) */
   uint64_t n_obj;
   uint64_t occupied_size;
 

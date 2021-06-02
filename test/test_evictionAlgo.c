@@ -117,6 +117,11 @@ static void test_Optimal(gconstpointer user_data) {
 }
 
 static void test_Random(gconstpointer user_data) {
+  uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
+  uint64_t miss_cnt_true[] = {92056, 87857, 83304, 78929, 74241, 70337, 66402, 62829};
+  uint64_t miss_byte_true[] = {3990722048, 3814795264, 3595883008, 3379089920,
+                               3191873024, 2987283968, 2793013248, 2621837824};
+
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower=12,
                                      .default_ttl = DEFAULT_TTL};
@@ -125,6 +130,8 @@ static void test_Random(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }
@@ -211,9 +218,12 @@ static void test_LHD(gconstpointer user_data) {
 
 static void test_Hyperbolic(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {77842, 72545, 68305, 64548, 61235, 57379, 56122, 54931};
-  uint64_t miss_byte_true[] = {3674691072, 3378123776, 3130418688, 3008906752,
-                               2823867904, 2587132928, 2510087680, 2432546304};
+//  uint64_t miss_cnt_true[] = {77842, 72545, 68305, 64548, 61235, 57379, 56122, 54931};
+//  uint64_t miss_byte_true[] = {3674691072, 3378123776, 3130418688, 3008906752,
+//                               2823867904, 2587132928, 2510087680, 2432546304};
+  uint64_t miss_cnt_true[] = {85819, 78714, 70297, 64546, 61234, 57377, 56121, 54930};
+  uint64_t miss_byte_true[] = {3832728576, 3443996160, 3132970496, 3008947712,
+                               2823863808, 2587067392, 2510083584, 2432542208};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
@@ -231,9 +241,12 @@ static void test_Hyperbolic(gconstpointer user_data) {
 
 static void test_LeCaR(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {92692, 86943, 78684, 80389, 72269, 68092, 65518, 67356};
-  uint64_t miss_byte_true[] = {4024961024, 3801507840, 3484686848, 3547768832,
-                               3072761856, 2909752320, 2755649024, 2786736128};
+//  uint64_t miss_cnt_true[] = {92692, 86943, 78684, 80389, 72269, 68092, 65518, 67356};
+//  uint64_t miss_byte_true[] = {4024961024, 3801507840, 3484686848, 3547768832,
+//                               3072761856, 2909752320, 2755649024, 2786736128};
+  uint64_t miss_cnt_true[] = {92692, 86839, 78751, 81283, 72368, 68083, 65219, 68423};
+  uint64_t miss_byte_true[] = {4024961024, 3799468544, 3506645504, 3605686272,
+                               3081307648, 2909224448, 2736208384, 2849179136};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,

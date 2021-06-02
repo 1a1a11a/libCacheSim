@@ -1,7 +1,5 @@
+#pragma once
 
-
-#ifndef libCacheSim_MACRO_H
-#define libCacheSim_MACRO_H
 
 #include "../config.h"
 #include <assert.h>
@@ -149,32 +147,33 @@ extern "C" {
 
 
 
-#define find_max(array, n_elem, max_elem_ptr, max_elem_idx_ptr) \
-  do {                                                          \
-    *max_elem_idx_ptr = 0;                                      \
-    for (uint64_t i = 0; i < (uint64_t) n_elem; i++)            \
-      if (array[i] > array[*max_elem_idx_ptr])                  \
-        *max_elem_idx_ptr = i;                                  \
-    *max_elem_ptr = array[*max_elem_idx_ptr];                   \
+#define find_max(array, n_elem, max_elem_ptr, max_elem_idx_ptr)                \
+  do {                                                                         \
+    *(max_elem_idx_ptr) = 0;                                                   \
+    for (uint64_t i = 0; i < (uint64_t) (n_elem); i++)                         \
+      if ((array)[i] > (array)[*(max_elem_idx_ptr)])                           \
+        *(max_elem_idx_ptr) = i;                                               \
+        *(max_elem_ptr) = (array)[*(max_elem_idx_ptr)];                        \
   } while (0)
 
-#define find_min(array, n_elem, min_elem_ptr, min_elem_idx_ptr) \
-  do {                                                          \
-    *min_elem_idx_ptr = 0;                                      \
-    for (uint64_t i = 0; i < (uint64_t) n_elem; i++)            \
-      if (array[i] < array[*min_elem_idx_ptr])                  \
-        *min_elem_idx_ptr = i;                                  \
-    *min_elem_ptr = array[*min_elem_idx_ptr];                   \
+#define find_min(array, n_elem, min_elem_ptr, min_elem_idx_ptr)                \
+  do {                                                                         \
+    *(min_elem_idx_ptr) = 0;                                                   \
+    for (uint64_t i = 0; i < (uint64_t) (n_elem); i++)                         \
+      if ((array)[i] < (array)[*(min_elem_idx_ptr)])                           \
+        *(min_elem_idx_ptr) = i;                                               \
+    *(min_elem_ptr) = (array)[*(min_elem_idx_ptr)];                            \
   } while (0)
 
-#define FILL(instance, field, value) \
-  do {                               \
-    instance.field = value;          \
-    instance.has_##field = 1;        \
+#define FILL(instance, field, value)                                           \
+  do {                                                                         \
+    (instance).field = value;                                                  \
+    (instance).has_##field = 1;                                                \
   } while (0)
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+

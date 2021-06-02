@@ -3,7 +3,6 @@
 #include <vector>
 #include <limits>
 #include "repl.hpp"
-#include "rand.hpp"
 
 #include "../../include/libCacheSim/cache.h"
 
@@ -120,7 +119,7 @@ private:
   // gone wrong with the age coarsening!!!)
   uint64_t overflows = 0;
 
-  misc::Rand rand;
+//  misc::Rand rand;
 
   // see ADMISSIONS above
   std::vector<candidate_t> recentlyAdmitted;

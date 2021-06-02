@@ -2,24 +2,24 @@
 // Created by Juncheng Yang on 5/7/20.
 //
 
-#ifndef libCacheSim_MATHUTILS_H
-#define libCacheSim_MATHUTILS_H
+#pragma once
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include "../../include/libCacheSim/logging.h"
+
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
+extern __thread uint64_t rand_seed;
 
-static __thread uint64_t rand_seed = 0;
-
-static inline void set_rand_seed(uint64_t seed) {
-  rand_seed = seed;
-}
+void set_rand_seed(uint64_t seed);
 
 /**
  * generate pseudo rand number, taken from LHD simulator
@@ -27,12 +27,14 @@ static inline void set_rand_seed(uint64_t seed) {
  * @return
  */
 static inline uint64_t next_rand() {
+  if (rand_seed == 0) {
+//    INFO("randseed %llu\n", rand_seed);
+  }
+
   rand_seed = 6364136223846793005 * rand_seed + 1442695040888963407;
-  return rand_seed & 0xfffffffffffffffful;
+  return rand_seed;
 }
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif //libCacheSim_MATHUTILS_H

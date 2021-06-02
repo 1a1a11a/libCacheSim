@@ -10,11 +10,6 @@
 #include <iostream>
 #include <tuple>
 
-#include <boost/heap/priority_queue.hpp>
-#include <boost/heap/binomial_heap.hpp>
-#include <boost/heap/fibonacci_heap.hpp>
-using namespace boost::heap;
-
 
 using namespace std;
 
@@ -70,7 +65,6 @@ public:
 
   pq_type pq{};
   unordered_map<cache_obj_t *, pq_type::iterator> itr_map{};
-  uint64_t vtime = 0; /* the number of requests */
 private:
 };
 }

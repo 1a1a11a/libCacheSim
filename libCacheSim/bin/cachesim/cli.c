@@ -41,6 +41,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   args.per_obj_metadata = atoi(argv[5]);
   args.debug = atoi(argv[6]);
 
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
   if (argc > 7) {
     if (strcasecmp(argv[7], "logOracleLog") == 0) {
       args.lsc_type = LOGCACHE_LOG_ORACLE;
@@ -59,6 +60,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc > 8) {
     args.seg_size = atoi(argv[8]);
   }
+#endif
 
   reader_t *reader = setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
   get_num_of_req(reader);

@@ -25,8 +25,6 @@ public:
 cache_t *LFU_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("LFU", ccache_params);
   auto *lfu = new eviction::LFU;
-//  delete lfu;
-//  lfu = new eviction::LFU;
   cache->eviction_params = lfu;
 
   cache->cache_init = LFU_init;
@@ -51,12 +49,11 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *obj;
   auto res = cache_check_base(cache, req, update_cache, &obj);
   if (obj != nullptr && update_cache) {
-    lfu->vtime ++;
     obj->rank.freq ++;
     obj->rank.last_access_vtime = (int64_t)req->n_req;
     auto itr = lfu->itr_map[obj];
     lfu->pq.erase(itr);
-    itr = lfu->pq.emplace(obj, (double) obj->rank.freq, lfu->vtime).first;
+    itr = lfu->pq.emplace(obj, (double) obj->rank.freq, cache->vtime).first;
     lfu->itr_map[obj] = itr;
   }
 
@@ -65,13 +62,12 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
 
 void LFU_insert(cache_t *cache, request_t *req) {
   auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
-  lfu->vtime ++;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->rank.freq = 1;
   obj->rank.last_access_vtime = (int64_t)req->n_req;
 
-  auto itr = lfu->pq.emplace_hint(lfu->pq.begin(), obj, 1.0, lfu->vtime);
+  auto itr = lfu->pq.emplace_hint(lfu->pq.begin(), obj, 1.0, cache->vtime);
   lfu->itr_map[obj] = itr;
   DEBUG_ASSERT(lfu->itr_map.size() == cache->n_obj);
 }
@@ -83,10 +79,6 @@ void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   if (evicted_obj != nullptr)
     memcpy(evicted_obj, obj, sizeof(cache_obj_t));
 
-//  if (obj->obj_id == 6160999 || obj->obj_id == 30152407)
-//    INFO("cache size %llu %llu evicting %llu freq %lf last_access %llu deleted obj set size %zu\n",
-//         cache->cache_size, req->n_req, obj->obj_id,
-//         get<1>(p), get<2>(p), lfu->deleted_obj.size());
   cache_remove_obj_base(cache, obj);
 }
 

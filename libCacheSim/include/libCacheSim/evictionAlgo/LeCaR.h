@@ -17,7 +17,6 @@ typedef struct LeCaR_params {
   double w_lfu;
   double lr;        // learning rate
   double dr;        // discount rate
-  int64_t vtime;
   double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
   int64_t n_hit_lru_history;
   int64_t n_hit_lfu_history;

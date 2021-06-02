@@ -55,12 +55,14 @@ static void f1(int argc, char* argv[]) {
   common_cache_params_t cc_params = {.cache_size=1*1024*1024, .default_ttl=300*86400};
 //  slab_init_params_t slab_init_params = {.slab_size=1024*1024, .per_obj_metadata_size=0, .slab_move_strategy=recency_t};
 //  cache_t *cache = LFU_init(cc_params, NULL);
-  cache_t *cache = LeCaR_init(cc_params, NULL);
+  cache_t *cache = LHD_init(cc_params, NULL);
   gint num_of_sizes = 1;
 //  guint64 cache_sizes[] = {2*MB, 8*MB, 16*MB, 32*MB, 64*MB, 128*MB, 8*GB, 16*GB};
 //  guint64 cache_sizes[] = {1*GB};
-  guint64 cache_sizes[] = {1024 * MiB};
-//  guint64 cache_sizes[] = {536870912};
+//  guint64 cache_sizes[] = {128 * MiB};
+
+  n_threads = num_of_sizes = 4;
+  guint64 cache_sizes[] = {268435456, 268435456, 268435456, 268435456};
 
   cache_stat_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, NULL, 0, n_threads);
 

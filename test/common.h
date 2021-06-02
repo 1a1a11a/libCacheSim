@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include <glib.h>
-#include <glib/gi18n.h>
 
 
 #define BLOCK_UNIT_SIZE 0    // 16 * 1024
@@ -25,7 +24,7 @@
 
 #define DEFAULT_TTL (300*86400)
 
-#define NUM_OF_THREADS 1
+#define NUM_OF_THREADS 4
 
 static void _detect_data_path(char* data_path, char* data_name) {
   sprintf(data_path, "data/%s", data_name);

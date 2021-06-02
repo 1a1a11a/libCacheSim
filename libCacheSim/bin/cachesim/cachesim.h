@@ -21,6 +21,7 @@ typedef struct {
   int n_thread;
   bool debug;
 
+#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
   struct {
     LSC_type_e lsc_type;
     bucket_type_e bucket_type;
@@ -36,7 +37,7 @@ typedef struct {
     int re_train_intvl;
     int sample_every_n_seg_for_training;
   };
-
+#endif
   reader_t *reader;
   cache_t *cache;
 } sim_arg_t;
