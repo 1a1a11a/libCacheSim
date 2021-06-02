@@ -231,9 +231,9 @@ static void test_Hyperbolic(gconstpointer user_data) {
 
 static void test_LeCaR(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {93184, 87794, 82945, 76985, 72324, 72224, 71973, 71716};
-  uint64_t miss_byte_true[] = {4038202880, 3838227968, 3664065536, 3428171264,
-                               3084569600, 3092107264, 3075381760, 3060711936};
+  uint64_t miss_cnt_true[] = {92692, 86943, 78684, 80389, 72269, 68092, 65518, 67356};
+  uint64_t miss_byte_true[] = {4024961024, 3801507840, 3484686848, 3547768832,
+                               3072761856, 2909752320, 2755649024, 2786736128};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
@@ -243,7 +243,6 @@ static void test_LeCaR(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
-  print_results(cache, res);
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -460,27 +459,27 @@ int main(int argc, char *argv[]) {
 
   reader = setup_csv_reader_obj_num();
 //  reader = setup_vscsi_reader();
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUFast", reader, test_LFUFast);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUFast", reader, test_LFUFast);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFUCpp);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFUCpp);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
 
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader, test_Hyperbolic);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader, test_Hyperbolic);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
-//  g_test_add_data_func_full("/libCacheSim/free_reader", reader, empty_test, test_teardown);
+  g_test_add_data_func_full("/libCacheSim/free_reader", reader, empty_test, test_teardown);
 
   /* optimal requires reader that has next access information, note that
    * oracleGeneral trace removes all object size changes */
-//  reader = setup_oracleGeneralBin_reader();
-//  g_test_add_data_func("/libCacheSim/cacheAlgo_Optimal", reader, test_Optimal);
+  reader = setup_oracleGeneralBin_reader();
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Optimal", reader, test_Optimal);
 
 
   /* these are wrong now */

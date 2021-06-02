@@ -15,6 +15,8 @@
 #include <assert.h>
 
 #include "../libCacheSim/include/libCacheSim.h"
+#include "../libCacheSim/utils/include/mymath.h"
+
 #include "common.h"
 
 
@@ -52,11 +54,14 @@ static void f1(int argc, char* argv[]) {
 
   common_cache_params_t cc_params = {.cache_size=1*1024*1024, .default_ttl=300*86400};
 //  slab_init_params_t slab_init_params = {.slab_size=1024*1024, .per_obj_metadata_size=0, .slab_move_strategy=recency_t};
-  cache_t *cache = LFU_init(cc_params, NULL);
+//  cache_t *cache = LFU_init(cc_params, NULL);
+  cache_t *cache = LeCaR_init(cc_params, NULL);
   gint num_of_sizes = 1;
 //  guint64 cache_sizes[] = {2*MB, 8*MB, 16*MB, 32*MB, 64*MB, 128*MB, 8*GB, 16*GB};
 //  guint64 cache_sizes[] = {1*GB};
-  guint64 cache_sizes[] = {134217728};
+  guint64 cache_sizes[] = {1024 * MiB};
+//  guint64 cache_sizes[] = {536870912};
+
   cache_stat_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes, NULL, 0, n_threads);
 
   for (int i=0; i<num_of_sizes; i++){
@@ -64,7 +69,7 @@ static void f1(int argc, char* argv[]) {
            (long long) res[i].cache_size, (long long) res[i].n_req, (long long) res[i].n_miss, (long long) res[i].n_req_byte, (long long) res[i].n_miss_byte);
   }
   cache->cache_free(cache);
-  g_free(res);
+  my_free(sizeof(cache_stat_t), res);
   close_reader(reader);
 }
 

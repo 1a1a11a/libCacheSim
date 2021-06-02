@@ -58,7 +58,7 @@ void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void LRU_remove(cache_t *cache, obj_id_t obj_id) {
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
+  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
     WARNING("obj (%"PRIu64 ") to remove is not in the cache\n", obj_id);
     return;

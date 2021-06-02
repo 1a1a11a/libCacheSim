@@ -10,6 +10,8 @@ set(sourceC
         LRU.c
         Optimal.c
         Hyperbolic.c
+        LeCaR.c
+        Cacheus.c
 
         slabLRC.c
         slabLRU.c

@@ -98,7 +98,7 @@ extern "C" {
 #if LOGLEVEL < INFO_LEVEL
 #define DEBUG_ASSERT(x)        \
   do {                         \
-      assert(x);               \
+      assert((x));               \
   } while (0)
 #else
 #define DEBUG_ASSERT(x)

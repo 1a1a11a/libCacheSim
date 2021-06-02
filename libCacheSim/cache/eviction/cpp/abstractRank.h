@@ -27,7 +27,7 @@ namespace eviction {
 using pq_node_type = tuple<cache_obj_t*, double, int64_t>;
 const pq_node_type INVALID_PQ_PAIR{nullptr, 0, -1};
 struct cmp_pq_node {
-  bool operator() (const pq_node_type &p1, const pq_node_type &p2) {
+  bool operator() (const pq_node_type &p1, const pq_node_type &p2) const {
     if (abs(get<1>(p1) / get<1>(p2) - 1) < 0.0001) {
       /* use FIFO when objects have the same priority */
       return get<2>(p1) < get<2>(p2);

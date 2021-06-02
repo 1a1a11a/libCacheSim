@@ -19,7 +19,8 @@ typedef struct LeCaR_params {
   double dr;        // discount rate
   int64_t vtime;
   double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
-  int move_pos;              // which LRU list the eviction should come from
+  int64_t n_hit_lru_history;
+  int64_t n_hit_lfu_history;
 } LeCaR_params_t;
 
 

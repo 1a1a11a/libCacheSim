@@ -156,6 +156,10 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Hyperbolic") == 0) {
     cache = Hyperbolic_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "LeCaR") == 0) {
+    cache = LeCaR_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "Cacheus") == 0) {
+    cache = Cacheus_init(cc_params, NULL);
 
 //  } else if (strcmp(alg_name, "SLRU") == 0) {
 //    SLRU_init_params_t *init_params = g_new0(SLRU_init_params_t, 1);
