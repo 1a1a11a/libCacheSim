@@ -21,7 +21,7 @@ typedef enum {
   TXT_TRACE_FORMAT,
 
   INVALID_TRACE_FORMAT
-} __attribute__((__packed__)) trace_format_e;
+} trace_format_e;
 
 // trace type
 typedef enum {
@@ -57,31 +57,57 @@ typedef enum {
   UNKNOWN_OBJ_ID,
 } __attribute__((__packed__)) obj_id_type_e;
 
-enum op {
-  OP_GET = 0,
-  OP_GETS,
-  OP_SET,
-  OP_ADD,
-  OP_CAS,
-  OP_REPLACE,
-  OP_APPEND,
-  OP_PREPEND,
-  OP_DELETE,
-  OP_INCR,
-  OP_DECR,
+typedef enum {
+  OP_NOP = 0,
+  OP_GET = 1,
+  OP_GETS = 2,
+  OP_SET = 3,
+  OP_ADD = 4,
+  OP_CAS = 5,
+  OP_REPLACE = 6,
+  OP_APPEND = 7,
+  OP_PREPEND = 8,
+  OP_DELETE = 9,
+  OP_INCR = 10,
+  OP_DECR = 11,
 
   OP_READ,
   OP_WRITE,
   OP_UPDATE,
 
   OP_INVALID,
-} __attribute__((__packed__));
-typedef enum op req_op_e;
+} req_op_e;
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
-static char *OP_STR[OP_INVALID+1] = {
-    "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
+static char *OP_STR[OP_INVALID+2] = {
+    "nop", "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
     "delete", "incr", "decr", "read", "write", "update", "invalid"};
+
+//enum op {
+//  OP_GET = 0,
+//  OP_GETS,
+//  OP_SET,
+//  OP_ADD,
+//  OP_CAS,
+//  OP_REPLACE,
+//  OP_APPEND,
+//  OP_PREPEND,
+//  OP_DELETE,
+//  OP_INCR,
+//  OP_DECR,
+//
+//  OP_READ,
+//  OP_WRITE,
+//  OP_UPDATE,
+//
+//  OP_INVALID,
+//} __attribute__((__packed__));
+//typedef enum op req_op_e;
+//
+//#pragma GCC diagnostic ignored "-Wwrite-strings"
+//static char *OP_STR[OP_INVALID+1] = {
+//    "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
+//    "delete", "incr", "decr", "read", "write", "update", "invalid"};
 //#pragma GCC diagnostic pop
 
 

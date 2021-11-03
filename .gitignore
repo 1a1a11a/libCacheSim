@@ -6,3 +6,4 @@
 *.nogit*
 _build
 .idea
+example/cacheSimulatorC/cmake-build-debug

@@ -6,3 +6,6 @@ This tutorial is for users who need to have a finer control over how to manipula
 * building a cache cluster with consistent hashing 
 * analyze cache performance such as examine eviction age  
 * 
+
+
+explain cache_get, cache_check, cache_insert, cache_evict, cache_remove 

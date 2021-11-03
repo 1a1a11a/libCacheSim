@@ -115,8 +115,8 @@ reader_t *setup_reader(const char *const trace_path,
     exit(1);
   }
 
-  if (reader->trace_type != PLAIN_TXT_TRACE && reader->trace_type != CSV_TRACE
-      && reader->item_size != 0 && reader->file_size % reader->item_size != 0) {
+  if (reader->trace_format == BINARY_TRACE_FORMAT &&
+      reader->item_size != 0 && reader->file_size % reader->item_size != 0) {
     WARNING("trace file size %zu is not multiple of record size %zu\n",
             reader->file_size, reader->item_size);
   }
@@ -277,13 +277,13 @@ int go_back_two_lines(reader_t *const reader) {
  * this method is used when reading the trace from end to beginning
  * @param reader
  * @param c
- * @return
+ * @return 0 on success
  */
-int read_one_req_above(reader_t *const reader, request_t *c) {
+int read_one_req_above(reader_t *const reader, request_t *req) {
   if (go_back_two_lines(reader) == 0) {
-    return read_one_req(reader, c);
+    return read_one_req(reader, req);
   } else {
-    c->valid = false;
+    req->valid = false;
     return 1;
   }
 }
