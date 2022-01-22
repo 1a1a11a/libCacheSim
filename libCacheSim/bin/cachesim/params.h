@@ -11,7 +11,7 @@
 
 
 static inline void set_default_arg(sim_arg_t *args) {
-#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   args->obj_id_type = OBJ_ID_NUM;
 
   args->seg_size = 1000;
@@ -42,7 +42,7 @@ static inline void set_default_arg(sim_arg_t *args) {
 }
 
 static inline void set_param_with_workload(sim_arg_t *args) {
-#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   if (strstr(args->trace_path, "w105") != NULL) {
     /* w105 */
     uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};

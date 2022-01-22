@@ -1,13 +1,13 @@
 #pragma once
 
-#include "../../include/libCacheSim/evictionAlgo/LLSC.h"
+#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "log.h"
 
 
 static inline void transform_seg_to_training(cache_t *cache, bucket_t *bucket,
                                              segment_t *segment) {
   static int n = 0, n_zero = 0;
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   segment->is_training_seg = true;
   /* used to calculate the eviction penalty */
   segment->become_train_seg_vtime = params->curr_vtime;
@@ -30,7 +30,7 @@ static inline int seg_history_idx(segment_t *segment, int32_t curr_time, int32_t
     return idx;
 }
 
-static inline void seg_feature_shift(LLSC_params_t *params, segment_t *seg) {
+static inline void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
 
   int64_t shift;
 
@@ -61,7 +61,7 @@ static inline void seg_feature_shift(LLSC_params_t *params, segment_t *seg) {
   seg->feature.last_hour_window_ts = params->curr_rtime;
 }
 
-static inline void seg_hit(LLSC_params_t *params, cache_obj_t *cache_obj) {
+static inline void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   //  if (!params->learner.start_feature_recording) return;
 
   segment_t *segment = cache_obj->LSC.segment;
@@ -81,7 +81,7 @@ static inline void seg_hit(LLSC_params_t *params, cache_obj_t *cache_obj) {
   }
 }
 
-static inline void update_train_y(LLSC_params_t *params, cache_obj_t *cache_obj) {
+static inline void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->LSC.segment;
 
 #if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION

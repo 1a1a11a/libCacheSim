@@ -36,7 +36,7 @@ endif ()
 ########################################
 option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
-option(ENABLE_LLSC "enable learned log-structured cache" ON)
+option(ENABLE_L2CACHE "enable learned log-structured cache" ON)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ADMISSION "whether support cache admission" OFF)
 option(SUPPORT_TRACE_SAMPLING "whether support trace sampling" OFF)
@@ -72,11 +72,11 @@ else()
     remove_definitions(USE_HUGEPAGE)
 endif(USE_HUGEPAGE)
 
-if (ENABLE_LLSC)
-    add_compile_definitions(ENABLE_LLSC=1)
+if (ENABLE_L2CACHE)
+    add_compile_definitions(ENABLE_L2CACHE=1)
 else()
-    remove_definitions(ENABLE_LLSC)
-endif(ENABLE_LLSC)
+    remove_definitions(ENABLE_L2CACHE)
+endif(ENABLE_L2CACHE)
 
 if (LOG_LEVEL MATCHES verbose)
     message(STATUS "verbose")
@@ -97,7 +97,7 @@ endif()
 
 message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION},
 MY_TEST ${MY_TEST},
-SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_LLSC ${ENABLE_LLSC}")
+SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_L2CACHE ${ENABLE_L2CACHE}")
 
 
 # set compiler flags
@@ -171,7 +171,7 @@ find_package(Threads)
 #include_directories(${Boost_INCLUDE_DIRS})
 
 
-if (ENABLE_LLSC)
+if (ENABLE_L2CACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
     link_libraries(xgboost::xgboost)

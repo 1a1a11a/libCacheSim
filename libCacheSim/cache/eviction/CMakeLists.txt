@@ -29,7 +29,7 @@ set (evictionLib
         evictionCPP
         LHD)
 
-if (ENABLE_LLSC)
+if (ENABLE_L2CACHE)
     add_subdirectory(logStructure)
     set(evictionLib ${evictionLib} L2Cache)
 endif()

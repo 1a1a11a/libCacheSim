@@ -1,5 +1,5 @@
 //
-//  LLSC.h
+//  L2Cache.h
 //  libCacheSim
 //
 
@@ -130,7 +130,7 @@ typedef struct {
   int re_train_intvl;
   int hit_density_age_shift;
   bucket_type_e bucket_type;
-} LLSC_init_params_t;
+} L2Cache_init_params_t;
 
 
 typedef struct {
@@ -322,21 +322,21 @@ typedef struct {
   bucket_type_e bucket_type;
   obj_score_e obj_score_type;
   int rank_intvl; /* in number of evictions */
-} LLSC_params_t;
+} L2Cache_params_t;
 
-cache_t *LLSC_init(common_cache_params_t ccache_params, void *cache_specific_params);
+cache_t *L2Cache_init(common_cache_params_t ccache_params, void *cache_specific_params);
 
-void LLSC_free(cache_t *cache);
+void L2Cache_free(cache_t *cache);
 
-cache_ck_res_e LLSC_check(cache_t *cache, request_t *req, bool update_cache);
+cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache);
 
-cache_ck_res_e LLSC_get(cache_t *cache, request_t *req);
+cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req);
 
-void LLSC_insert(cache_t *LLSC, request_t *req);
+void L2Cache_insert(cache_t *L2Cache, request_t *req);
 
-void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
-void LLSC_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
+void L2Cache_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
 
 #ifdef __cplusplus
 }

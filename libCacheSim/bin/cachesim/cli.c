@@ -9,7 +9,7 @@
 sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {
     printf("usage: %s trace_type (twr/vscsi/bin/oracleTwr/oracleAkamaiBin/oracleBin) "
-           "data_path cache_size_MiB alg obj_metadata debug LLSC seg_size\n",
+           "data_path cache_size_MiB alg obj_metadata debug L2CacheType seg_size\n",
            argv[0]);
     exit(1);
   }
@@ -25,7 +25,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.trace_type = BIN_TRACE;
   } else if (strcmp(argv[1], "oracleTwr") == 0) {
     args.trace_type = ORACLE_TWR_BIN;
-  } else if (strcmp(argv[1], "oracleBin") == 0) {
+  } else if (strcmp(argv[1], "oracleBin") == 0 || strcmp(argv[1], "oracleGeneralBin") == 0) {
     args.trace_type = ORACLE_GENERAL_BIN;
   } else if (strcmp(argv[1], "oracleAkamaiBin") == 0) {
     args.trace_type = ORACLE_AKAMAI_BIN;
@@ -41,7 +41,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   args.per_obj_metadata = atoi(argv[5]);
   args.debug = atoi(argv[6]);
 
-#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   if (argc > 7) {
     if (strcasecmp(argv[7], "logOracleLog") == 0) {
       args.lsc_type = LOGCACHE_LOG_ORACLE;
@@ -79,9 +79,9 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
-#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
-  } else if (strcasecmp(args.alg, "LLSC") == 0) {
-    LLSC_init_params_t init_params = {.segment_size = args.seg_size,
+// #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+  } else if (strcasecmp(args.alg, "L2Cache") == 0) {
+    L2Cache_init_params_t init_params = {.segment_size = args.seg_size,
         .n_merge = args.n_merge,
         .type = args.lsc_type,
         .rank_intvl = args.rank_intvl,
@@ -95,8 +95,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
         .snapshot_intvl = args.snapshot_intvl,
         .sample_every_n_seg_for_training =
         args.sample_every_n_seg_for_training};
-    cache = LLSC_init(cc_params, &init_params);
-#endif
+    cache = L2Cache_init(cc_params, &init_params);
+// #endif
   } else {
     printf("do not support %s\n", args.alg);
     abort();

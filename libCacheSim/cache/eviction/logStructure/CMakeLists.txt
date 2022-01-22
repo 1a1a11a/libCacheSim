@@ -1,5 +1,5 @@
 set(source
-        LLSC.c
+        L2Cache.c
         learned.c
         oracle.c
         )

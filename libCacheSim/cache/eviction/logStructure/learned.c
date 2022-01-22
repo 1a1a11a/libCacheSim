@@ -25,7 +25,7 @@
 
 
 static void clean_training_segs(cache_t *cache, int n_clean) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = params->training_bucket.first_seg;
   segment_t *next_seg;
   int n_cleaned = 0;
@@ -50,7 +50,7 @@ static void clean_training_segs(cache_t *cache, int n_clean) {
 }
 
 static inline void create_data_holder(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   learner_t *learner = &params->learner;
 
@@ -82,7 +82,7 @@ static inline void create_data_holder(cache_t *cache) {
 }
 
 void create_data_holder2(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   learner_t *learner = &params->learner;
 
@@ -99,7 +99,7 @@ void create_data_holder2(cache_t *cache) {
 
 
 static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool training_data, feature_t *x, train_y_t *y) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   learner_t *learner = &params->learner;
 
@@ -179,7 +179,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
 
 
 static inline void copy_to_train_matrix(cache_t *cache, segment_t *seg) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
 
   if (l->n_training_samples >= l->n_max_training_segs - 1)
@@ -205,7 +205,7 @@ static inline void copy_to_train_matrix(cache_t *cache, segment_t *seg) {
 }
 
 void snapshot_segs_to_training_data(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
   segment_t *curr_seg = NULL;
 
@@ -257,7 +257,7 @@ void snapshot_segs_to_training_data(cache_t *cache) {
 
 
 static inline void prepare_training_data_per_package(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
 #ifdef USE_XGBOOST
@@ -315,7 +315,7 @@ int cmp_train_y(const void *p1, const void *p2) {
 
 
 static void prepare_training_data(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
   int i;
 
@@ -488,8 +488,8 @@ static void prepare_training_data(cache_t *cache) {
 
 
 void prepare_inference_data(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
-  learner_t *learner = &((LLSC_params_t *) cache->eviction_params)->learner;
+  L2Cache_params_t *params = cache->eviction_params;
+  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
 
   if (learner->inf_matrix_size_row < params->n_segs) {
     if (learner->inf_matrix_size_row != 0) {
@@ -536,8 +536,8 @@ void prepare_inference_data(cache_t *cache) {
 
 #ifdef USE_XGBOOST
 static void train_xgboost(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
-  learner_t *learner = &((LLSC_params_t *) cache->eviction_params)->learner;
+  L2Cache_params_t *params = cache->eviction_params;
+  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
 
   prepare_training_data(cache);
 
@@ -637,9 +637,9 @@ static void train_xgboost(cache_t *cache) {
 
 #ifdef USE_XGBOOST
 void inference_xgboost(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
-  learner_t *learner = &((LLSC_params_t *) cache->eviction_params)->learner;
+  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
 
   prepare_inference_data(cache);
 
@@ -768,8 +768,8 @@ static void train_eval(const int iter,
 
 #ifdef USE_GBM
 void train_lgbm(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
-  learner_t *learner = &((LLSC_params_t *) cache->eviction_params)->learner;
+  L2Cache_params_t *params = cache->eviction_params;
+  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
 
   prepare_training_data(cache);
 
@@ -837,9 +837,9 @@ void train_lgbm(cache_t *cache) {
 
 #ifdef USE_GBM
 void inference_lgbm(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
-  learner_t *learner = &((LLSC_params_t *) cache->eviction_params)->learner;
+  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
 
   prepare_inference_data(cache);
 
@@ -868,7 +868,7 @@ void inference_lgbm(cache_t *cache) {
 
 
 void train(cache_t *cache) {
-  LLSC_params_t *params = (LLSC_params_t *) cache->eviction_params;
+  L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
 #ifdef TRAIN_ONCE
   if (params->learner.n_train > 0)
     return;
@@ -885,7 +885,7 @@ void train(cache_t *cache) {
 void inference(cache_t *cache) {
   inference_xgboost(cache);
 
-  LLSC_params_t *params = (LLSC_params_t *) cache->eviction_params;
+  L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
   params->learner.n_inference += 1;
 }
 

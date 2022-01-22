@@ -22,8 +22,8 @@
 #include "evictionAlgo/Optimal.h"
 #include "evictionAlgo/OptimalSize.h"
 
-#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
-#include "evictionAlgo/LLSC.h"
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+#include "evictionAlgo/L2Cache.h"
 #endif
 
 

@@ -21,7 +21,7 @@ typedef struct {
   int n_thread;
   bool debug;
 
-#if defined(ENABLE_LLSC) && ENABLE_LLSC == 1
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   struct {
     LSC_type_e lsc_type;
     bucket_type_e bucket_type;

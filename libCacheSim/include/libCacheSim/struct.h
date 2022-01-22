@@ -62,11 +62,11 @@ typedef struct cache_obj {
     } optimal;
 //    int64_t freq;
 //    double score;
-#if defined(ENABLE_LLSC)
+#if defined(ENABLE_L2CACHE)
     struct {
       void *segment;
       int64_t next_access_ts;
-      int32_t LLSC_freq;
+      int32_t L2Cache_freq;
       int32_t last_access_rtime;
       int16_t idx_in_segment;
       int16_t active : 2;

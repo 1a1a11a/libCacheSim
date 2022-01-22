@@ -2,7 +2,7 @@
 
 //#include
 
-#include "../../include/libCacheSim/evictionAlgo/LLSC.h"
+#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 
 #include "../../dataStructure/hashtable/hashtable.h"
 
@@ -26,7 +26,7 @@ static inline void _debug_check_bucket_segs(bucket_t *bkt) {
 }
 
 static inline int _debug_count_n_obj(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   int64_t n_obj = 0;
 
   for (int i = 0; i < MAX_N_BUCKET; i++) {
@@ -46,11 +46,11 @@ static inline int _debug_count_n_obj(cache_t *cache) {
   return n_obj;
 }
 
-static inline int64_t object_age(LLSC_params_t *params, cache_obj_t *obj) {
+static inline int64_t object_age(L2Cache_params_t *params, cache_obj_t *obj) {
   return params->curr_rtime - obj->LSC.last_access_rtime;
 }
 
-static inline int64_t object_age_shifted(LLSC_params_t *params, cache_obj_t *obj) {
+static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *obj) {
   bucket_t *bkt = &params->buckets[((segment_t *) (obj->LSC.segment))->bucket_idx];
   int64_t obj_age =
       (params->curr_rtime - obj->LSC.last_access_rtime) >> bkt->hit_prob->age_shift;
@@ -61,9 +61,9 @@ static inline int64_t object_age_shifted(LLSC_params_t *params, cache_obj_t *obj
   return obj_age;
 }
 
-static inline void object_hit(LLSC_params_t *params, cache_obj_t *obj, request_t *req) {
+static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
   obj->LSC.next_access_ts = req->next_access_ts;
-  obj->LSC.LLSC_freq += 1;
+  obj->LSC.L2Cache_freq += 1;
 
   segment_t *seg = obj->LSC.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
@@ -74,7 +74,7 @@ static inline void object_hit(LLSC_params_t *params, cache_obj_t *obj, request_t
 }
 
 static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = obj->LSC.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
@@ -87,7 +87,7 @@ static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
 }
 
 static inline void debug_check_bucket(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   segment_t *curr_seg;
   int n_seg = 0;
@@ -119,7 +119,7 @@ static inline int cmp_double(const void *p1, const void *p2) {
     return 1;
 }
 
-static inline int find_bucket_idx(LLSC_params_t *params, request_t *req) {
+static inline int find_bucket_idx(L2Cache_params_t *params, request_t *req) {
   const double log_base = log(2);
 
   if (params->bucket_type == NO_BUCKET) {
@@ -169,7 +169,7 @@ __attribute__((unused)) static inline bool obj_in_hashtable(cache_t *cache,
 }
 
 static inline int clean_one_seg(cache_t *cache, segment_t *seg) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   int n_cleaned = 0;
   DEBUG_ASSERT(seg->n_total_obj == params->segment_size);
   for (int i = 0; i < seg->n_total_obj; i++) {
@@ -184,7 +184,7 @@ static inline int clean_one_seg(cache_t *cache, segment_t *seg) {
   return n_cleaned;
 }
 
-static inline void remove_seg_from_bucket(LLSC_params_t *params, bucket_t *bucket,
+static inline void remove_seg_from_bucket(L2Cache_params_t *params, bucket_t *bucket,
                                           segment_t *segment) {
   if (bucket->first_seg == segment) {
     bucket->first_seg = segment->next_seg;
@@ -209,7 +209,7 @@ static inline void remove_seg_from_bucket(LLSC_params_t *params, bucket_t *bucke
   }
 }
 
-static inline void append_seg_to_bucket(LLSC_params_t *params, bucket_t *bucket,
+static inline void append_seg_to_bucket(L2Cache_params_t *params, bucket_t *bucket,
                                         segment_t *segment) {
   /* because the last segment may not be full, so we link before it */
   if (bucket->last_seg == NULL) {
@@ -255,7 +255,7 @@ static inline void append_seg_to_bucket_before_last(bucket_t *bucket, segment_t 
 }
 
 static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   /* allocate a new segment */
   segment_t *new_seg = my_malloc(segment_t);
@@ -277,7 +277,7 @@ static inline segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   return new_seg;
 }
 
-static inline void link_new_seg_before_seg(LLSC_params_t *params, bucket_t *bucket,
+static inline void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket,
                                            segment_t *old_seg, segment_t *new_seg) {
   DEBUG_ASSERT(new_seg->bucket_idx == bucket->bucket_idx);
   DEBUG_ASSERT(old_seg->next_seg->bucket_idx == bucket->bucket_idx);
@@ -296,20 +296,20 @@ static inline void link_new_seg_before_seg(LLSC_params_t *params, bucket_t *buck
   bucket->n_seg += 1;
 }
 
-static inline double cal_object_score(LLSC_params_t *params, obj_score_e score_type,
+static inline double cal_object_score(L2Cache_params_t *params, obj_score_e score_type,
                                       cache_obj_t *cache_obj, int curr_rtime,
                                       int64_t curr_vtime) {
   segment_t *seg = cache_obj->LSC.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
   if (score_type == OBJ_SCORE_FREQ) {
-    return (double) cache_obj->LSC.LLSC_freq;
+    return (double) cache_obj->LSC.L2Cache_freq;
 
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
-    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1.0e6 / cache_obj->obj_size;
+    return (double) (cache_obj->LSC.L2Cache_freq + 0.01) * 1.0e6 / cache_obj->obj_size;
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE) {
-    return (double) (cache_obj->LSC.LLSC_freq + 0.01) * 1.0e6 / (curr_rtime - cache_obj->LSC.last_access_rtime);
+    return (double) (cache_obj->LSC.L2Cache_freq + 0.01) * 1.0e6 / (curr_rtime - cache_obj->LSC.last_access_rtime);
 
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
     int64_t obj_age = object_age(params, cache_obj);
@@ -343,7 +343,7 @@ static inline int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
 
 static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, segment_t **segs,
                                  int n_segs, int n_retain) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   segment_t *seg;
   int pos = 0;
@@ -363,7 +363,7 @@ static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, seg
 
 static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type, segment_t *seg,
                                      int n_retain, int64_t rtime, int64_t vtime) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   seg_sel_t *seg_sel = &params->seg_sel;
 
   int pos = 0;
@@ -430,7 +430,7 @@ static inline void update_hit_prob_cdf(bucket_t *bkt) {
 }
 
 static inline void print_bucket(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   printf("bucket has segs: ");
   for (int i = 0; i < MAX_N_BUCKET; i++) {
@@ -442,7 +442,7 @@ static inline void print_bucket(cache_t *cache) {
 }
 
 static inline void print_seg(cache_t *cache, segment_t *seg, int log_level) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 //  static __thread char msg[1024];
 
 //  log_level,

@@ -3,7 +3,7 @@
 //
 //
 
-#include "../../include/libCacheSim/evictionAlgo/LLSC.h"
+#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "learned.h"
 #include "log.h"
 #include "init.h"
@@ -21,26 +21,26 @@ extern "C" {
 #endif
 
 
-  cache_t *LLSC_init(common_cache_params_t ccache_params, void *init_params) {
-  cache_t *cache = cache_struct_init("LLSC", ccache_params);
-  LLSC_init_params_t *LLSC_init_params = init_params;
+  cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
+  cache_t *cache = cache_struct_init("L2Cache", ccache_params);
+  L2Cache_init_params_t *L2Cache_init_params = init_params;
 
   cache->hashtable->external_obj = true;
   cache->init_params = init_params;
 
-  LLSC_params_t *params = my_malloc(LLSC_params_t);
-  memset(params, 0, sizeof(LLSC_params_t));
+  L2Cache_params_t *params = my_malloc(L2Cache_params_t);
+  memset(params, 0, sizeof(L2Cache_params_t));
   cache->eviction_params = params;
 
 
   params->curr_evict_bucket_idx = -1;
-  params->segment_size = LLSC_init_params->segment_size;
-  params->n_merge = LLSC_init_params->n_merge;
+  params->segment_size = L2Cache_init_params->segment_size;
+  params->n_merge = L2Cache_init_params->n_merge;
   params->n_retain_from_seg = params->segment_size / params->n_merge;
-  params->rank_intvl = LLSC_init_params->rank_intvl;
-  params->type = LLSC_init_params->type;
-  params->bucket_type = LLSC_init_params->bucket_type;
-  params->size_bucket_base = LLSC_init_params->size_bucket_base;
+  params->rank_intvl = L2Cache_init_params->rank_intvl;
+  params->type = L2Cache_init_params->type;
+  params->bucket_type = L2Cache_init_params->bucket_type;
+  params->size_bucket_base = L2Cache_init_params->size_bucket_base;
   if (params->size_bucket_base <= 0) {
     params->size_bucket_base = 1;
   }
@@ -67,8 +67,8 @@ extern "C" {
   };
 
   init_seg_sel(cache);
-  init_learner(cache, LLSC_init_params);
-  init_buckets(cache, LLSC_init_params->hit_density_age_shift);
+  init_learner(cache, L2Cache_init_params);
+  init_buckets(cache, L2Cache_init_params->hit_density_age_shift);
   init_cache_state(cache);
 
   INFO(
@@ -94,8 +94,8 @@ extern "C" {
   return cache;
 }
 
-__attribute__((unused)) void LLSC_free(cache_t *cache) {
-  LLSC_params_t *params = cache->eviction_params;
+__attribute__((unused)) void L2Cache_free(cache_t *cache) {
+  L2Cache_params_t *params = cache->eviction_params;
   bucket_t *bkt = &params->training_bucket;
   segment_t *seg = bkt->first_seg, *next_seg;
 
@@ -118,15 +118,15 @@ __attribute__((unused)) void LLSC_free(cache_t *cache) {
     }
   }
 
-  my_free(sizeof(LLSC_params_t), params);
+  my_free(sizeof(L2Cache_params_t), params);
   cache_struct_free(cache);
 }
 
 #if defined(TRAINING_TRUTH) && TRAINING_TRUTH == TRAINING_TRUTH_ONLINE
-__attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
+__attribute__((unused)) cache_ck_res_e L2Cache_check(cache_t *cache,
                                                   request_t *req,
                                                   bool update_cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
@@ -191,9 +191,9 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache,
   }
 }
 #else
-__attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req,
+__attribute__((unused)) cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req,
                                                   bool update_cache) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
@@ -217,9 +217,9 @@ __attribute__((unused)) cache_ck_res_e LLSC_check(cache_t *cache, request_t *req
 }
 #endif
 
-__attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache,
+__attribute__((unused)) cache_ck_res_e L2Cache_get(cache_t *cache,
                                                 request_t *req) {
-  LLSC_params_t *params = cache->eviction_params;
+  L2Cache_params_t *params = cache->eviction_params;
   if (params->start_rtime == 0)
     params->start_rtime = req->real_time;
   params->curr_rtime = req->real_time;
@@ -251,8 +251,8 @@ __attribute__((unused)) cache_ck_res_e LLSC_get(cache_t *cache,
   return ret;
 }
 
-__attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
-  LLSC_params_t *params = cache->eviction_params;
+__attribute__((unused)) void L2Cache_insert(cache_t *cache, request_t *req) {
+  L2Cache_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[find_bucket_idx(params, req)];
   segment_t *seg = bucket->last_seg;
 
@@ -273,7 +273,7 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
 
   cache_obj_t *cache_obj = &seg->objs[seg->n_total_obj];
   copy_request_to_cache_obj(cache_obj, req);
-  cache_obj->LSC.LLSC_freq = 0;
+  cache_obj->LSC.L2Cache_freq = 0;
   cache_obj->LSC.last_access_rtime = req->real_time;
   //  cache_obj->LSC.last_history_idx = -1;
   cache_obj->LSC.in_cache = 1;
@@ -295,8 +295,8 @@ __attribute__((unused)) void LLSC_insert(cache_t *cache, request_t *req) {
 }
 
 
-void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LLSC_params_t *params = cache->eviction_params;
+void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+  L2Cache_params_t *params = cache->eviction_params;
 
   learner_t *l = &params->learner;
 
@@ -339,7 +339,7 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   }
 
 
-    LLSC_merge_segs(cache, bucket, params->seg_sel.segs_to_evict);
+    L2Cache_merge_segs(cache, bucket, params->seg_sel.segs_to_evict);
 
 
   if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY &&
@@ -358,8 +358,8 @@ void LLSC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 //        }
 }
 
-void LLSC_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  LLSC_params_t *params = cache->eviction_params;
+void L2Cache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
+  L2Cache_params_t *params = cache->eviction_params;
   abort();
 
   cache_obj_t *cache_obj = hashtable_find_obj(cache->hashtable, obj_to_remove);
@@ -374,7 +374,7 @@ void LLSC_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache->occupied_size -= cache_obj->obj_size;
 }
 
-void LLSC_remove(cache_t *cache, obj_id_t obj_id) {
+void L2Cache_remove(cache_t *cache, obj_id_t obj_id) {
   abort();
 
   cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
