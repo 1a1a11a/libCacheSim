@@ -79,7 +79,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
-// #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
     L2Cache_init_params_t init_params = {.segment_size = args.seg_size,
         .n_merge = args.n_merge,
@@ -96,7 +96,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
         .sample_every_n_seg_for_training =
         args.sample_every_n_seg_for_training};
     cache = L2Cache_init(cc_params, &init_params);
-// #endif
+#endif
   } else {
     printf("do not support %s\n", args.alg);
     abort();

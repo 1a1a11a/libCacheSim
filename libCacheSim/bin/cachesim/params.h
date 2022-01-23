@@ -66,7 +66,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
       args->cache_sizes[i] = MiB * s[i];
     }
     args->n_cache_size = 7;
-    printf("found you!\n");
 
     args->seg_size = 1000;
     args->n_merge = 2;
@@ -92,89 +91,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->re_train_intvl = 86400 * 2;
 
 
-//    args->seg_size = 200;
-//    args->age_shift = 3;
-//    args->bucket_type = SIZE_BUCKET;
-//    args->min_start_train_seg = 4000;
-//    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 6000;
-//    args->sample_every_n_seg_for_training = 1;
-//    args->rank_intvl = 20;
-
-
-
-
-
-
-
-
-
-
-    /* 8GB 0.1712 0.66 MQPS */
-//    args->seg_size = 20;
-//    args->age_shift = 3;
-//    args->bucket_type = SIZE_BUCKET;
-//    args->min_start_train_seg = 4000;
-//    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 6000;
-//    args->sample_every_n_seg_for_training = 2;
-//    args->rank_intvl = 20;
-
-
-    /* 8GB 0.1736 using 50% trace as warmup 1.42 MQPS */
-    /* new 8GB 0.1714 using 50% trace as warmup 1.5 MQPS */
-//    args->seg_size = 50;
-//    args->age_shift = 3;
-//    args->bucket_type = SIZE_BUCKET;
-//    args->min_start_train_seg = 4000;
-//    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 6000;
-//    args->sample_every_n_seg_for_training = 1;
-//    args->rank_intvl = 20;
-//    args->size_bucket_base = 1;
-
-    /* 8GB 0.1865 3 MQPS */
-    /* 8GB 0.1709 3.4 MQPS sample_n_seg_train is 2 */
-    /* 8GB 0.1747 3.4 MQPS sample_n_seg_train is 1 */
-//    args->seg_size = 200;
-//    args->age_shift = 3;
-//    args->bucket_type = SIZE_BUCKET;
-//    args->min_start_train_seg = 4000;
-//    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 6000;
-//    args->sample_every_n_seg_for_training = 1;
-//    args->rank_intvl = 20;
-
-    /* 8GB 0.1964 4 MQPS */
-    /* 8GB 0.1990 5.6 MQPS */
-//    args->seg_size = 1000;
-//    args->age_shift = 3;
-//    args->bucket_type = SIZE_BUCKET;
-//    args->min_start_train_seg = 4000;
-//    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 6000;
-//    args->sample_every_n_seg_for_training = 1;
-//    args->rank_intvl = 20;
-
-    /* 8GB 0.2173 6.1 MQPS */
-//    args->seg_size = 1500;
-//    args->age_shift = 3;
-//    args->bucket_type = SIZE_BUCKET;
-//    args->min_start_train_seg = 4000;
-//    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 6000;
-//    args->sample_every_n_seg_for_training = 1;
-//    args->rank_intvl = 20;
-
-    /* 8GB 0.2456 6.3 MQPS */
-//    args->seg_size = 2000;
-//    args->age_shift = 3;
-//    args->bucket_type = SIZE_BUCKET;
-//    args->min_start_train_seg = 4000;
-//    args->max_start_train_seg = 10000;
-//    args->n_train_seg_growth = 6000;
-//    args->sample_every_n_seg_for_training = 1;
-//    args->rank_intvl = 20;
   } else if (strstr(args->trace_path, "w03") != NULL) {
     uint64_t s[8] = {4000, 8000, 12000, 16000, 24000, 32000, 48000, 64000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {

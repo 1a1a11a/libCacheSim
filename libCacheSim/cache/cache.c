@@ -2,13 +2,23 @@
 // Created by Juncheng Yang on 6/20/20.
 //
 
-#include <dlfcn.h>
 #include "../include/libCacheSim/cache.h"
 #include "../dataStructure/hashtable/hashtable.h"
+#include <dlfcn.h>
 
+/** this file contains both base function, which should be called by all eviction algorithms,
+ *  and the queue related functions, which should be called by algorithm that uses only one queue and 
+ *  needs to update the queue such as LRU and FIFO 
+ **/
 
-cache_t *cache_struct_init(const char *const cache_name,
-                           common_cache_params_t params) {
+/**
+ * @brief this function is called by all eviction algorithms to initialize the cache 
+ * 
+ * @param ccache_params common cache parameters
+ * @param init_params eviction algorithm specific parameters
+ * @return cache_t* pointer to the cache 
+ */
+cache_t *cache_struct_init(const char *const cache_name, common_cache_params_t params) {
   cache_t *cache = my_malloc(cache_t);
   memset(cache, 0, sizeof(cache_t));
   strncpy(cache->cache_name, cache_name, 31);
@@ -20,8 +30,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->stat.cache_size = cache->cache_size;
 
   int hash_power = HASH_POWER_DEFAULT;
-  if (params.hashpower > 0 && params.hashpower < 40)
-    hash_power = params.hashpower;
+  if (params.hashpower > 0 && params.hashpower < 40) hash_power = params.hashpower;
   cache->hashtable = create_hashtable(hash_power);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_head);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_tail);
@@ -29,11 +38,23 @@ cache_t *cache_struct_init(const char *const cache_name,
   return cache;
 }
 
+/**
+ * @brief this function is called by all eviction algorithms to free the cache 
+ * 
+ * @param cache 
+ */
 void cache_struct_free(cache_t *cache) {
   free_hashtable(cache->hashtable);
   my_free(sizeof(cache_t), cache);
 }
 
+/**
+ * @brief this function is called by all eviction algorithms to clone old cache with new size
+ * 
+ * @param old_cache
+ * @param new_size
+ * @return cache_t* pointer to the new cache
+ */
 cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size) {
   common_cache_params_t cc_params = {.cache_size = new_size,
                                      .hashpower = old_cache->hashtable->hashpower,
@@ -44,8 +65,20 @@ cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size) {
   return cache;
 }
 
+/**
+ * @brief this function is called by all eviction algorithms to 
+ * check whether an object is in the cache          
+ * 
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache, 
+ *  if true, the number of requests increases by 1, 
+ *  the object size will be updated, 
+ *  and if the object is expired, it is removed from the cache
+ * @return cache_ck_hit, cache_ck_miss, cache_ck_expired 
+ */
 cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cache,
-                           cache_obj_t **cache_obj_ret) {
+                                cache_obj_t **cache_obj_ret) {
   cache_ck_res_e ret = cache_ck_hit;
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
@@ -83,11 +116,21 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cach
   return ret;
 }
 
+/**
+ * @brief this function is called by all eviction algorithms to 
+ * check whether an object is in the cache, 
+ * if not, it will insert the object into the cache
+ * basically, this is check -> return if hit, insert if miss -> evict if needed 
+ * 
+ * @param cache
+ * @param req
+ * @return cache_ck_hit, cache_ck_miss, cache_ck_expired 
+ */
 cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
-  VVVERBOSE("req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
-            ", cache size %" PRIu64 "/%" PRIu64 "\n",
-            cache->req_cnt, req->obj_id, req->obj_size,
-            cache->occupied_size, cache->cache_size);
+  VVVERBOSE("req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32 ", cache size %" PRIu64
+            "/%" PRIu64 "\n",
+            cache->req_cnt, req->obj_id, req->obj_size, cache->occupied_size,
+            cache->cache_size);
 
   cache_ck_res_e cache_check = cache->check(cache, req, true);
   if (req->obj_size <= cache->cache_size) {
@@ -98,12 +141,19 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
       cache->insert(cache, req);
     }
   } else {
-    WARNING("req %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
+    WARNING("req %" PRIu64 ": obj size %" PRIu32 " larger than cache size %" PRIu64 "\n",
             req->obj_id, req->obj_size, cache->cache_size);
   }
   return cache_check;
 }
 
+/**
+ * @brief this function is called by all eviction algorithms to 
+ * insert an object into the cache, update thee cache metadata
+ * 
+ * @param cache
+ * @param req
+ */
 cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (cache->default_ttl != 0 && req->ttl == 0) {
@@ -116,6 +166,14 @@ cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
   return cache_obj;
 }
 
+/**
+ * @brief this function is called by eviction algorithms that use 
+ * a single queue to order objects, such as LRU, FIFO, etc. 
+ * it inserts an object to the tail of queue
+ * 
+ * @param cache
+ * @param req
+ */
 cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
 
@@ -131,6 +189,13 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
   return cache_obj;
 }
 
+/**
+ * @brief this function is called by all eviction algorithms that 
+ * need to remove an object from the cache, it updates the cache metadata. 
+ * 
+ * @param cache
+ * @param req
+ */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
   cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
@@ -160,11 +225,23 @@ void cache_evict_LRU(cache_t *cache,
  * otherwise, there will be memory leakage **/
 }
 
+/**
+ * @brief this function is a helper when we need the actual object
+ * 
+ * @param cache
+ * @param req
+ * @return cache_obj_t* 
+ */
 cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
   return hashtable_find(cache->hashtable, req);
 }
 
+/**
+ * @brief this function is a helper when we need the actual object
+ * 
+ * @param cache
+ * @param obj_id_t
+ */
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, obj_id_t id) {
   return hashtable_find_obj_id(cache->hashtable, id);
 }
-
