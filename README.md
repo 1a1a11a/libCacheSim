@@ -41,6 +41,27 @@ Linux (using Ubuntu as an example)
 sudo apt install libglib2.0-dev libgoogle-perftools-dev
 ```
 
+Install XGBoost (Linux):
+```
+git clone --recursive https://github.com/dmlc/xgboost
+mkdir build
+cd build
+cmake ..
+make -j4
+sudo make install
+```
+
+Install LightBGM (Linux):
+```
+git clone --recursive https://github.com/microsoft/LightGBM
+cd LightGBM
+mkdir build
+cd build
+cmake ..
+make -j4
+sudo make install
+```
+
 #### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```
@@ -53,8 +74,11 @@ make -j
 ```
 
 #### Linking with libCacheSim
-linking can be done in cmake or use pkg-config 
-
+linking can be done in cmake or use pkg-config  
+Such as at the _build directory:  
+```
+export PKG_CONFIG_PATH=$PWD
+```
 #### Performance Optimizations 
 * hugepage - to turn on hugepage support, please do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
 
