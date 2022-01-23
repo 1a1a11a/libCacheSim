@@ -73,6 +73,11 @@ make -j
 [sudo] make install
 ```
 
+#### Test
+```
+make test
+```
+
 #### Linking with libCacheSim
 linking can be done in cmake or use pkg-config  
 Such as at the _build directory:  

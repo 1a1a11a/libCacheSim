@@ -15,9 +15,9 @@ set(sourceC
         LeCaR.c
         Cacheus.c
 
-        slabLRC.c
-        slabLRU.c
-        slabObjLRU.c
+        toUpdate/slabLRC.c
+        toUpdate/slabLRU.c
+        toUpdate/slabObjLRU.c
         )
 
 set (sourceCPP

@@ -27,10 +27,11 @@
 #endif
 
 
-#include "evictionAlgo/slabLRU.h"
-#include "evictionAlgo/slabLRC.h"
-#include "evictionAlgo/slabObjLRU.h"
-#include "evictionAlgo/slabCommon.h"
+// #include "evictionAlgo/slabLRU.h"
+// #include "evictionAlgo/slabLRC.h"
+// #include "evictionAlgo/slabObjLRU.h"
+// #include "evictionAlgo/slabCommon.h"
+// TODO: can add back these header files? (In the older branch)
 
 
 //#include "AMP.h"
