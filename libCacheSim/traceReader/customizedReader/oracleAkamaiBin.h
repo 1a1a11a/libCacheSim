@@ -9,7 +9,7 @@
  *   int16_t customer;
  *   int16_t bucket;
  *   int16_t content;
- *   int64_t next_access_ts;
+ *   int64_t next_access_vtime;
  * }__attribute__((packed));
  *
  */
@@ -39,7 +39,7 @@ static inline int oracleAkamai_read_one_req(reader_t *reader, request_t *req) {
   req->ns = *(int16_t *) (record + 18) - 1;
   req->content_type = *(int16_t *) (record + 20) - 1;
 
-  req->next_access_ts = *(int64_t *) (record + 22);
+  req->next_access_vtime = *(int64_t *) (record + 22);
 
   reader->mmap_offset += reader->item_size;
   if (req->obj_size == 0)

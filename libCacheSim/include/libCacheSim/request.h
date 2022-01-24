@@ -26,7 +26,7 @@ typedef struct request {
   int32_t ttl;
   req_op_e op;
 
-  int64_t next_access_ts;
+  int64_t next_access_vtime;
   struct {
     uint64_t key_size : 16;
     uint64_t val_size : 48;
@@ -55,7 +55,7 @@ static inline request_t *new_request() {
   req->obj_id = 0;
   req->real_time = 0;
   req->hv = 0;
-  req->next_access_ts = -2;
+  req->next_access_vtime = -2;
   return req;
 }
 

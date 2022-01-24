@@ -5,7 +5,7 @@
  *    uint32_t real_time;
  *    uint64_t obj_id;
  *    uint32_t obj_size;
- *    int64_t next_access_ts;
+ *    int64_t next_access_vtime;
  *  };
  *
  */
@@ -29,9 +29,9 @@ static inline int oracleGeneralBin_read_one_req(reader_t *reader, request_t *req
   req->real_time = *(uint32_t *) record;
   req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
-  req->next_access_ts = *(int64_t *) (record + 16);
-  if (req->next_access_ts == -1) {
-    req->next_access_ts = INT64_MAX;
+  req->next_access_vtime = *(int64_t *) (record + 16);
+  if (req->next_access_vtime == -1) {
+    req->next_access_vtime = INT64_MAX;
   }
 
   reader->mmap_offset += reader->item_size;

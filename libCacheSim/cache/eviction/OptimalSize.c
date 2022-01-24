@@ -37,10 +37,10 @@ cache_ck_res_e OptimalSize_check(cache_t *cache, request_t *req, bool update_cac
   cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &obj);
 
   if (update_cache && ck == cache_ck_hit) {
-    if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
+    if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
       OptimalSize_remove(cache, obj->obj_id);
     } else {
-      obj->optimal.next_access_ts = req->next_access_ts;
+      obj->optimal.next_access_vtime = req->next_access_vtime;
     }
   }
 
@@ -52,12 +52,12 @@ cache_ck_res_e OptimalSize_get(cache_t *cache, request_t *req) {
 }
 
 void OptimalSize_insert(cache_t *cache, request_t *req) {
-  if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
     return;
   }
 
   cache_obj_t *obj = cache_insert_base(cache, req);
-  obj->optimal.next_access_ts = req->next_access_ts;
+  obj->optimal.next_access_vtime = req->next_access_vtime;
 }
 
 void OptimalSize_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
@@ -65,7 +65,7 @@ void OptimalSize_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
   int64_t obj_to_evict_score = -1, sampled_obj_score;
   for (int i = 0; i < N_SAMPLE_PER_EVICTION; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
-    sampled_obj_score = sampled_obj->obj_size * (sampled_obj->optimal.next_access_ts - cache->n_req);
+    sampled_obj_score = sampled_obj->obj_size * (sampled_obj->optimal.next_access_vtime - cache->n_req);
     if (obj_to_evict_score < sampled_obj_score) {
       obj_to_evict = sampled_obj;
       obj_to_evict_score = sampled_obj_score;

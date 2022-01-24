@@ -32,12 +32,18 @@ typedef struct  {
 
 typedef struct Optimal_obj_metadata {
   void *pq_node;
-  int64_t next_access_ts;
+  int64_t next_access_vtime;
 } Optimal_obj_metadata_t;
+
+typedef struct FIFOMerge_obj_metadata {
+  int32_t freq; 
+  int32_t last_access_vtime; 
+  int64_t next_access_vtime; 
+} FIFOMerge_obj_metadata_t;
 
 typedef struct L2Cache_obj_metadata {
   void *segment;
-  int64_t next_access_ts;
+  int64_t next_access_vtime;
   int32_t L2Cache_freq;
   int32_t last_access_rtime;
   int16_t idx_in_segment;
@@ -70,6 +76,7 @@ typedef struct cache_obj {
     LeCaR_obj_params_t LeCaR; // for LeCaR
     Hyperbolic_obj_metadata_t hyperbolic;
     Optimal_obj_metadata_t optimal; 
+    FIFOMerge_obj_metadata_t FIFOMerge;
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
     L2Cache_obj_metadata_t L2Cache;
 #endif

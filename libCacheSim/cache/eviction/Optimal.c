@@ -61,16 +61,16 @@ cache_ck_res_e Optimal_check(cache_t *cache,
 
   if (ret == cache_ck_hit) {
     /* update next access ts, we use INT64_MAX - 10 because we reserve the largest elements for immediate delete */
-    if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
+    if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
       Optimal_remove_obj(cache, cached_obj);
     } else {
-      pqueue_pri_t pri = {.pri = req->next_access_ts};
+      pqueue_pri_t pri = {.pri = req->next_access_vtime};
       pqueue_change_priority(params->pq,
                              pri,
                              (pq_node_t *) (cached_obj->optimal.pq_node));
       DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache,
                                                 req)->optimal.pq_node)->pri.pri
-                       == req->next_access_ts);
+                       == req->next_access_vtime);
     }
     return cache_ck_hit;
   }
@@ -80,7 +80,7 @@ cache_ck_res_e Optimal_check(cache_t *cache,
 
 cache_ck_res_e Optimal_get(cache_t *cache, request_t *req) {
   /* -2 means the trace does not have next_access ts information */
-  DEBUG_ASSERT(req->next_access_ts != -2);
+  DEBUG_ASSERT(req->next_access_vtime != -2);
   Optimal_params_t *params = cache->eviction_params;
 
   DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
@@ -92,7 +92,7 @@ cache_ck_res_e Optimal_get(cache_t *cache, request_t *req) {
 void Optimal_insert(cache_t *cache, request_t *req) {
   Optimal_params_t *params = cache->eviction_params;
 
-  if (req->next_access_ts == -1 || req->next_access_ts == INT64_MAX) {
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
     return;
   }
 
@@ -100,13 +100,13 @@ void Optimal_insert(cache_t *cache, request_t *req) {
 
   pq_node_t *node = my_malloc(pq_node_t);
   node->obj_id = req->obj_id;
-  node->pri.pri = req->next_access_ts;
+  node->pri.pri = req->next_access_vtime;
   pqueue_insert(params->pq, (void *) node);
   cached_obj->optimal.pq_node = node;
 
   DEBUG_ASSERT(
       ((pq_node_t *) cache_get_obj(cache, req)->optimal.pq_node)->pri.pri
-          == req->next_access_ts);
+          == req->next_access_vtime);
 }
 
 void Optimal_evict(cache_t *cache,
