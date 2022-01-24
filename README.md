@@ -41,6 +41,27 @@ Linux (using Ubuntu as an example)
 sudo apt install libglib2.0-dev libgoogle-perftools-dev
 ```
 
+Install XGBoost (Linux):
+```
+git clone --recursive https://github.com/dmlc/xgboost
+mkdir build
+cd build
+cmake ..
+make -j4
+sudo make install
+```
+
+Install LightBGM (Linux):
+```
+git clone --recursive https://github.com/microsoft/LightGBM
+cd LightGBM
+mkdir build
+cd build
+cmake ..
+make -j4
+sudo make install
+```
+
 #### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```
@@ -52,9 +73,17 @@ make -j
 [sudo] make install
 ```
 
-#### Linking with libCacheSim
-linking can be done in cmake or use pkg-config 
+#### Test
+```
+make test
+```
 
+#### Linking with libCacheSim
+linking can be done in cmake or use pkg-config  
+Such as at the _build directory:  
+```
+export PKG_CONFIG_PATH=$PWD
+```
 #### Performance Optimizations 
 * hugepage - to turn on hugepage support, please do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
 
@@ -96,7 +125,7 @@ cache->cache_free(cache);
 ```
 save this to `test.c` and compile with 
 ```
-gcc $(pkg-config --cflags --libs libCacheSim glib-2.0) -lm -ldl test.c -o test.out
+g++ $(pkg-config --cflags --libs libCacheSim glib-2.0) -IlibCacheSim/include -lm -ldl test.c -o test.out
 ```
 
 if you get `error while loading shared libraries`, run `sudo ldconfig`

@@ -33,5 +33,6 @@
 #include "libCacheSim/profilerLRU.h"
 #include "libCacheSim/simulator.h"
 
+#include "libCacheSim/plugin.h"
 
 #endif // libCacheSim_H
