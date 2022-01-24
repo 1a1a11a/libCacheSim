@@ -10,12 +10,12 @@
 #define CACHE_H
 
 #include "../config.h"
-#include "cacheObj.h"
 #include "const.h"
 #include "logging.h"
 #include "macro.h"
-#include "reader.h"
+
 #include "request.h"
+#include "cacheObj.h"
 
 #include <inttypes.h>
 #include <glib.h>
@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,8 +83,8 @@ typedef struct {
 struct hashtable;
 struct cache {
   struct hashtable *hashtable;
-  cache_obj_t *list_head; // for LRU and FIFO
-  cache_obj_t *list_tail; // for LRU and FIFO
+  cache_obj_t *q_head; // for LRU and FIFO
+  cache_obj_t *q_tail; // for LRU and FIFO
 
   void *eviction_params;
   void *admission_params;
@@ -97,7 +98,7 @@ struct cache {
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
 
-  int64_t vtime;  /* number of requests (used by some eviction algo) */
+  int64_t n_req;  /* number of requests (used by some eviction algo) */
   uint64_t n_obj;
   uint64_t occupied_size;
 

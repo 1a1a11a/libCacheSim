@@ -31,10 +31,10 @@ static int _verify(cache_t *cache) {
       prev_obj = NULL;
       while (cache_obj != NULL) {
         n_obj ++;
-        DEBUG_ASSERT(cache_obj->common.freq == freq);
-        DEBUG_ASSERT(cache_obj->common.list_prev == prev_obj);
+        DEBUG_ASSERT(cache_obj->lfu.freq == freq);
+        DEBUG_ASSERT(cache_obj->queue.prev == prev_obj);
         prev_obj = cache_obj;
-        cache_obj = cache_obj->common.list_next;
+        cache_obj = cache_obj->queue.next;
       }
       DEBUG_ASSERT(freq_node->n_obj == n_obj);
     }
@@ -84,40 +84,40 @@ cache_ck_res_e LFUDA_check(cache_t *cache, request_t *req, bool update_cache) {
   if (cache_obj && likely(update_cache)) {
     LFUDA_params_t *LFUDA_params = (LFUDA_params_t *) (cache->eviction_params);
     /* freq incr and move to next freq node */
-    cache_obj->common.freq += LFUDA_params->min_freq;
-    if (LFUDA_params->max_freq < cache_obj->common.freq) {
-      LFUDA_params->max_freq = cache_obj->common.freq;
+    cache_obj->lfu.freq += LFUDA_params->min_freq;
+    if (LFUDA_params->max_freq < cache_obj->lfu.freq) {
+      LFUDA_params->max_freq = cache_obj->lfu.freq;
     }
 
     freq_node_t *new_node = g_hash_table_lookup(
-        LFUDA_params->freq_map, GSIZE_TO_POINTER(cache_obj->common.freq));
+        LFUDA_params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
     if (new_node == NULL) {
       new_node = my_malloc_n(freq_node_t, 1);
-      new_node->freq = cache_obj->common.freq;
+      new_node->freq = cache_obj->lfu.freq;
       new_node->n_obj = 1;
       new_node->first_obj = cache_obj;
       new_node->last_obj = NULL;
-      g_hash_table_insert(LFUDA_params->freq_map, GSIZE_TO_POINTER(cache_obj->common.freq), new_node);
+      g_hash_table_insert(LFUDA_params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
     } else {
-      DEBUG_ASSERT(new_node->freq == cache_obj->common.freq);
+      DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
       new_node->n_obj += 1;
     }
 
     freq_node_t *old_node = g_hash_table_lookup(
-        LFUDA_params->freq_map, GSIZE_TO_POINTER(cache_obj->common.freq - LFUDA_params->min_freq));
+        LFUDA_params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq - LFUDA_params->min_freq));
     DEBUG_ASSERT(old_node != NULL);
-    DEBUG_ASSERT(old_node->freq == cache_obj->common.freq - LFUDA_params->min_freq);
+    DEBUG_ASSERT(old_node->freq == cache_obj->lfu.freq - LFUDA_params->min_freq);
     DEBUG_ASSERT(old_node->n_obj > 0);
     old_node->n_obj -= 1;
 
     remove_obj_from_list(&old_node->first_obj, &old_node->last_obj, cache_obj);
 
-    cache_obj->common.list_prev = new_node->last_obj;
-    cache_obj->common.list_next = NULL;
+    cache_obj->queue.prev = new_node->last_obj;
+    cache_obj->queue.next = NULL;
 
     /* add to tail of the list */
     if (new_node->last_obj != NULL) {
-      new_node->last_obj->common.list_next = cache_obj;
+      new_node->last_obj->queue.next = cache_obj;
     }
     new_node->last_obj = cache_obj;
     if (new_node->first_obj == NULL)
@@ -133,27 +133,27 @@ cache_ck_res_e LFUDA_get(cache_t *cache, request_t *req) {
 void LFUDA_insert(cache_t *cache, request_t *req) {
   LFUDA_params_t *params = (LFUDA_params_t *) (cache->eviction_params);
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
-  cache_obj->common.freq = params->min_freq + 1;
+  cache_obj->lfu.freq = params->min_freq + 1;
 
-  freq_node_t *new_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->common.freq));
+  freq_node_t *new_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
   if (new_node == NULL) {
     new_node = my_malloc_n(freq_node_t, 1);
-    new_node->freq = cache_obj->common.freq;
+    new_node->freq = cache_obj->lfu.freq;
     new_node->n_obj = 1;
     new_node->first_obj = cache_obj;
     new_node->last_obj = NULL;
-    g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->common.freq), new_node);
+    g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
   } else {
-    DEBUG_ASSERT(new_node->freq == cache_obj->common.freq);
+    DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
     new_node->n_obj += 1;
   }
 
-  cache_obj->common.list_prev = new_node->last_obj;
-  cache_obj->common.list_next = NULL;
+  cache_obj->queue.prev = new_node->last_obj;
+  cache_obj->queue.next = NULL;
 
   /* add to tail of the list */
   if (new_node->last_obj != NULL) {
-    new_node->last_obj->common.list_next = cache_obj;
+    new_node->last_obj->queue.next = cache_obj;
   }
   new_node->last_obj = cache_obj;
   if (new_node->first_obj == NULL)
@@ -177,7 +177,7 @@ void LFUDA_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   if (evicted_obj != NULL)
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
 
-  if (obj_to_evict->common.list_next == NULL) {
+  if (obj_to_evict->queue.next == NULL) {
     /* the only obj of curr freq */
     DEBUG_ASSERT(min_freq_node->last_obj == obj_to_evict);
     DEBUG_ASSERT(min_freq_node->n_obj == 0);
@@ -193,8 +193,8 @@ void LFUDA_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     }
 
   } else {
-    min_freq_node->first_obj = obj_to_evict->common.list_next;
-    obj_to_evict->common.list_next->common.list_prev = NULL;
+    min_freq_node->first_obj = obj_to_evict->queue.next;
+    obj_to_evict->queue.next->queue.prev = NULL;
   }
 
   cache_remove_obj_base(cache, obj_to_evict);
@@ -208,8 +208,8 @@ void LFUDA_remove(cache_t *cache, obj_id_t obj_id) {
     return;
   }
 
-  freq_node_t *freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(obj->common.freq));
-  DEBUG_ASSERT(freq_node->freq == obj->common.freq);
+  freq_node_t *freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(obj->lfu.freq));
+  DEBUG_ASSERT(freq_node->freq == obj->lfu.freq);
   DEBUG_ASSERT(freq_node->n_obj > 0);
 
   freq_node->n_obj--;

@@ -21,7 +21,7 @@ extern "C" {
 #define MURMUR3 0xb10
 #define XXHASH 0xb20
 #define XXHASH3 0xb21
-#define WYHASH 0xb31 // not significantly faster than MURMUR3
+#define WYHASH 0xb30 // not significantly faster than MURMUR3
 #define IDENTITY 1
 
 #define CHAINED_HASHTABLE 0xc1
@@ -80,6 +80,8 @@ extern "C" {
 #define TB 1000000000000L
 
 //#define DEFAULT_SECTOR_SIZE                             512
+
+#define ENABLE_L2CACHE 1
 
 #ifdef __cplusplus
 }

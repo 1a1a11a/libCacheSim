@@ -26,14 +26,14 @@ cache_t *cache_struct_init(const char *const cache_name, common_cache_params_t p
   cache->eviction_params = NULL;
   cache->default_ttl = params.default_ttl;
   cache->per_obj_overhead = params.per_obj_overhead;
-  cache->vtime = 0;
+  cache->n_req = 0;
   cache->stat.cache_size = cache->cache_size;
 
   int hash_power = HASH_POWER_DEFAULT;
   if (params.hashpower > 0 && params.hashpower < 40) hash_power = params.hashpower;
   cache->hashtable = create_hashtable(hash_power);
-  hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_head);
-  hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->list_tail);
+  hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->q_head);
+  hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->q_tail);
 
   return cache;
 }
@@ -100,7 +100,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cach
   }
 
   if (likely(update_cache)) {
-    cache->vtime += 1;
+    cache->n_req += 1;
 
     if (ret == cache_ck_hit) {
       if (unlikely(cache_obj->obj_size != req->obj_size)) {
@@ -129,7 +129,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cach
 cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
   VVVERBOSE("req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32 ", cache size %" PRIu64
             "/%" PRIu64 "\n",
-            cache->req_cnt, req->obj_id, req->obj_size, cache->occupied_size,
+            cache->n_req, req->obj_id, req->obj_size, cache->occupied_size,
             cache->cache_size);
 
   cache_ck_res_e cache_check = cache->check(cache, req, true);
@@ -177,15 +177,15 @@ cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
 cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
 
-  if (unlikely(cache->list_head == NULL)) {
+  if (unlikely(cache->q_head == NULL)) {
     // an empty list, this is the first insert
-    cache->list_head = cache_obj;
-    cache->list_tail = cache_obj;
+    cache->q_head = cache_obj;
+    cache->q_tail = cache_obj;
   } else {
-    cache->list_tail->common.list_next = cache_obj;
-    cache_obj->common.list_prev = cache->list_tail;
+    cache->q_tail->queue.next = cache_obj;
+    cache_obj->queue.prev = cache->q_tail;
   }
-  cache->list_tail = cache_obj;
+  cache->q_tail = cache_obj;
   return cache_obj;
 }
 
@@ -206,20 +206,20 @@ void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
 void cache_evict_LRU(cache_t *cache,
                      __attribute__((unused)) request_t *req,
                      cache_obj_t *evicted_obj) {
-  cache_obj_t *obj_to_evict = cache->list_head;
+  cache_obj_t *obj_to_evict = cache->q_head;
   if (evicted_obj != NULL) {
     // return evicted object to caller
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
-  DEBUG_ASSERT(cache->list_head != NULL);
-  DEBUG_ASSERT(cache->list_head != cache->list_head->common.list_next);
-  cache->list_head = cache->list_head->common.list_next;
-  if (likely(cache->list_head != NULL))
-    cache->list_head->common.list_prev = NULL;
+  DEBUG_ASSERT(cache->q_head != NULL);
+  DEBUG_ASSERT(cache->q_head != cache->q_head->queue.next);
+  cache->q_head = cache->q_head->queue.next;
+  if (likely(cache->q_head != NULL))
+    cache->q_head->queue.prev = NULL;
 
   cache_remove_obj_base(cache, obj_to_evict);
-  DEBUG_ASSERT(cache->list_head == NULL ||
-                      cache->list_head != cache->list_head->common.list_next);
+  DEBUG_ASSERT(cache->q_head == NULL ||
+                      cache->q_head != cache->q_head->queue.next);
   /** obj_to_evict is not freed or returned to hashtable, if you have
  * extra_metadata allocated with obj_to_evict, you need to free them now,
  * otherwise, there will be memory leakage **/

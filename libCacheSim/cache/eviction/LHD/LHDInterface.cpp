@@ -62,7 +62,7 @@ cache_ck_res_e LHD_check(cache_t *cache, request_t *req, bool update_cache) {
   bool hit = (itr != lhd->sizeMap.end());
 
   if (update_cache) {
-    cache->vtime += 1;
+    cache->n_req += 1;
   }
 
   if (!hit) {

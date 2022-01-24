@@ -5,8 +5,8 @@
 #ifndef libCacheSim_STRUCT_H
 #define libCacheSim_STRUCT_H
 
-#include "../config.h"
 #include "enum.h"
+#include "../config.h"    // obj_id_t 
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -15,114 +15,69 @@
 extern "C" {
 #endif
 
-/**
- * I had a hard time deciding which type of hashtable design I should adopt,
- * cuckoo hash or chained, I was inclined to cuckoo hash due to its CPU cache
- * friendliness, less memory indirection and memory efficiency however, given
- * that if the occupancies rate is low, then more space will be wasted, and of
- * course, it is harder to implement, there is no existing code base I can
- * borrow, so for now, I plan to go with chained hash table
- *
- */
-// ############################## cache obj ###################################
+// // ############## per object metadata used in eviction algorithm cache obj ############
+// typedef struct {
+//   bool visited; 
+// } Clock_obj_params_t; 
 
-struct cache_obj;
-typedef struct cache_obj {
-  struct cache_obj *hash_next;
-  obj_id_t obj_id;
-  uint32_t obj_size;
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  uint32_t exp_time;
-#endif
-  union {
-    struct {
-      struct cache_obj *list_prev;
-      struct cache_obj *list_next;
-      union {
-        int64_t freq; /* used by LFU */
-        bool visited; /* used by CLOCK */
-        int64_t last_access_vtime; /* used by LeCaR */
-      };
-    } common;
-    struct {
-      int64_t freq;
-      int64_t vtime_enter_cache;
-      void *pq_node;
-    } Hyperbolic;
-    struct {
-      union {
-        int64_t freq;
-        double pri;
-      };
-      int64_t last_access_vtime;
-    } rank;
-    struct {
-      void *pq_node;
-      int64_t next_access_ts;
-    } optimal;
-//    int64_t freq;
-//    double score;
-#if defined(ENABLE_L2CACHE)
-    struct {
-      void *segment;
-      int64_t next_access_ts;
-      int32_t L2Cache_freq;
-      int32_t last_access_rtime;
-      int16_t idx_in_segment;
-      int16_t active : 2;
-      int16_t in_cache : 2;
-      int16_t seen_after_snapshot : 2;
-//      int16_t n_merged : 12;  /* how many times it has been merged */
-    } LSC;
-#endif
-  };
-#ifdef TRACK_EVICTION_AGE
-#endif
-} __attribute__((packed)) cache_obj_t;
+// typedef struct {
+//   int64_t last_access_vtime; 
+// } LeCaR_obj_params_t;
 
-typedef struct {
-  obj_id_t obj_id;
-  uint32_t obj_size;
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  uint32_t exp_time;
-#endif
-  //#ifdef SUPPORT_SLAB_AUTOMOVE
-  uint32_t access_time;
-  //#endif
-  void *slab;
-  int32_t item_pos_in_slab;
-} slab_cache_obj_t;
+// typedef struct  {
+//   int64_t freq;
+//   int64_t vtime_enter_cache;
+//   void *pq_node;
+// } Hyperbolic_obj_metadata_t; 
 
-/* need to optimize this for CPU cacheline */
-typedef struct {
-  uint64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
-  uint64_t hv;        /* hash value, used when offloading hash to reader */
-  obj_id_t obj_id;
-  uint32_t obj_size;
-  int32_t ttl;
-  req_op_e op;
+// typedef struct Optimal_obj_metadata {
+//   void *pq_node;
+//   int64_t next_access_ts;
+// } Optimal_obj_metadata_t;
 
-  int64_t next_access_ts;
-  struct {
-    uint64_t key_size : 16;
-    uint64_t val_size : 48;
-  };
+// typedef struct L2Cache_obj_metadata {
+//   void *segment;
+//   int64_t next_access_ts;
+//   int32_t L2Cache_freq;
+//   int32_t last_access_rtime;
+//   int16_t idx_in_segment;
+//   int16_t active : 2;
+//   int16_t in_cache : 2;
+//   int16_t seen_after_snapshot : 2;
+// //      int16_t n_merged : 12;  /* how many times it has been merged */
+// } L2Cache_obj_metadata_t;
 
-  union {
-    int32_t customer_id;
-    int32_t app_id;
-  };
-  int32_t content_type;
-  int32_t bucket_id;
 
-  //  int64_t extra_field1;
-  //  int64_t extra_field2;
+// // ############################## cache obj ###################################
+// struct cache_obj;
+// typedef struct cache_obj {
+//   struct cache_obj *hash_next;
+//   obj_id_t obj_id;
+//   uint32_t obj_size;
+//   struct {
+//     struct cache_obj *prev;
+//     struct cache_obj *next;
+//   } queue; // for LRU, FIFO, etc. 
+// #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+//   uint32_t exp_time;
+// #endif
+//   union {
+//     struct {
+//       int64_t freq; 
+//     } lfu; // for LFU
 
-  uint64_t n_req;
+//     Clock_obj_params_t clock; // for Clock
+//     LeCaR_obj_params_t LeCaR; // for LeCaR
+//     Hyperbolic_obj_metadata_t hyperbolic;
+//     Optimal_obj_metadata_t optimal; 
+// #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+//     L2Cache_obj_metadata_t L2Cache;
+// #endif
+//   };
+// #ifdef TRACK_EVICTION_AGE
+// #endif
+// } __attribute__((packed)) cache_obj_t;
 
-  bool valid; /* indicate whether request is valid request
-                      * it is invlalid if the trace reaches the end */
-} request_t;
 
 #ifdef __cplusplus
 }

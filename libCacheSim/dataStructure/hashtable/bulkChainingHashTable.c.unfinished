@@ -5,7 +5,7 @@
 #include "bulkChainHashTable.h"
 #include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/request.h"
-#include "../../include/libCacheSim/struct.h"
+#include "../../include/libCacheSim/cacheObj.h"
 #include "hashtableStruct.h"
 #include <assert.h>
 #include <stdbool.h>

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../../include/libCacheSim/struct.h"
-
 #include <string>
 #include "candidate.hpp"
 

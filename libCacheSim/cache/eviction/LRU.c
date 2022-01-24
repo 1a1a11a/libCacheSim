@@ -40,7 +40,7 @@ cache_ck_res_e LRU_check(cache_t *cache, request_t *req, bool update_cache) {
 
   if (cache_obj && likely(update_cache)) {
     /* lru_tail is the newest, move cur obj to lru_tail */
-    move_obj_to_tail(&cache->list_head, &cache->list_tail, cache_obj);
+    move_obj_to_tail(&cache->q_head, &cache->q_tail, cache_obj);
   }
   return ret;
 }
@@ -63,7 +63,7 @@ void LRU_remove(cache_t *cache, obj_id_t obj_id) {
     WARNING("obj (%"PRIu64 ") to remove is not in the cache\n", obj_id);
     return;
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, obj);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
   cache_remove_obj_base(cache, obj);
 }
 

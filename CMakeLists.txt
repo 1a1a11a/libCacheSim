@@ -219,7 +219,7 @@ message(STATUS "============= Status of optional features ==============")
 message(STATUS "========================================================")
 
 
-set(ALL_MODULES cache admission eviction traceReader profiler dataStructure utils)
+set(ALL_MODULES cachelib admission eviction traceReader profiler dataStructure ds_hash utils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
 
 
@@ -264,7 +264,7 @@ install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_
 
 #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
 #add_executable(binBenchmark libCacheSim/benchmark/main.c)
-#target_link_libraries(binBenchmark benchmark cache evictionAlgos traceReader profiler dataStructure utils
+#target_link_libraries(binBenchmark benchmark cachelib evictionAlgos traceReader profiler dataStructure utils
 #        ${LIBS})
 
 if (ENABLE_TESTS)
@@ -275,6 +275,9 @@ if (ENABLE_TESTS)
 else ()
     message(STATUS "Building without test")
 endif ()
+
+add_executable(debug test/debug.c)
+target_link_libraries(debug ${ALL_MODULES})
 
 
 # Example Usages:

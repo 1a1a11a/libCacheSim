@@ -38,7 +38,7 @@ void Cacheus_remove(cache_t *cache, obj_id_t obj_id) {
     WARNING("obj is not in the cache\n");
     return;
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, cache_obj);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
 
   assert(cache->occupied_size >= cache_obj->obj_size);
   cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);

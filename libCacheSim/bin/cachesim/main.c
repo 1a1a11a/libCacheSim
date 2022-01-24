@@ -5,7 +5,6 @@
 #endif
 #include <assert.h>
 
-#include "../../include/libCacheSim/struct.h"
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/simulator.h"

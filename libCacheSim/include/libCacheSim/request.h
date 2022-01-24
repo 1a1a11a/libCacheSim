@@ -7,13 +7,40 @@
 
 #include "logging.h"
 #include "mem.h"
-#include "struct.h"
+#include "enum.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+/* need to optimize this for CPU cacheline */
+typedef struct request {
+  uint64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
+  uint64_t hv;        /* hash value, used when offloading hash to reader */
+  obj_id_t obj_id;
+  uint32_t obj_size;
+  int32_t ttl;
+  req_op_e op;
+
+  int64_t next_access_ts;
+  struct {
+    uint64_t key_size : 16;
+    uint64_t val_size : 48;
+  };
+
+  int32_t ns; // namespace
+  int32_t content_type;
+  int32_t tenant_id;
+  uint64_t n_req;
+
+  bool valid; /* indicate whether request is valid request
+                      * it is invlalid if the trace reaches the end */
+} request_t;
+
 
 /**
  * allocate a new request_t struct and fill in necessary field
@@ -39,18 +66,6 @@ static inline request_t *new_request() {
  */
 static inline void copy_request(request_t *req_dest, request_t *req_src) {
   memcpy(req_dest, req_src, sizeof(request_t));
-}
-
-/**
- * copy the cache_obj to req_dest
- * @param req_dest
- * @param cache_obj
- */
-static inline void copy_cache_obj_to_request(request_t *req_dest,
-    cache_obj_t *cache_obj) {
-  req_dest->obj_id = cache_obj->obj_id;
-  req_dest->obj_size = cache_obj->obj_size;
-  req_dest->valid = true;
 }
 
 

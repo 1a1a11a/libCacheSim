@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include "../../include/libCacheSim/struct.h"
+#include "../../include/libCacheSim/cacheObj.h"
 #include <stdbool.h>
 
 #define hashsize(n) ((uint64_t) 1 << (uint16_t)(n))

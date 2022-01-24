@@ -17,6 +17,7 @@ extern "C"
 #include <sys/time.h>
 #include <glib.h>
 #include "../../include/libCacheSim/cache.h"
+#include "../include/libCacheSim/reader.h"
 
 
 static inline double time_diff(struct timeval t0, struct timeval t1) {

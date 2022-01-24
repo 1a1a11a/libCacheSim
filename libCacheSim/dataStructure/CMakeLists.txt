@@ -1,9 +1,4 @@
-#include_directories(include)
-#include_directories(hash)
-#include_directories(hashtable)
 add_subdirectory(hash)
-add_subdirectory(hashtable)
-
 set(source
         pqueue.c
         splay.c
@@ -13,6 +8,4 @@ set(source
         hashtable/chainedHashTableV2.c
         )
 add_library (dataStructure ${source})
-#target_link_libraries(dataStructure ds_hash ds_hashtable)
-
 

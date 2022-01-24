@@ -44,14 +44,13 @@ cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
   auto res = cache_check_base(cache, req, update_cache, &obj);
   /* this does not consider object size change */
   if (obj != nullptr && update_cache) {
-    obj->rank.freq += 1;
-    obj->rank.last_access_vtime = (int64_t)req->n_req;
+    obj->lfu.freq += 1;
 
     auto itr = gdsf->itr_map[obj];
     gdsf->pq.erase(itr);
 
-    double pri = gdsf->pri_last_evict + (double) (obj->rank.freq + 1) / obj->obj_size;
-    itr = gdsf->pq.emplace(obj, pri, cache->vtime).first;
+    double pri = gdsf->pri_last_evict + (double) (obj->lfu.freq + 1) / obj->obj_size;
+    itr = gdsf->pq.emplace(obj, pri, cache->n_req).first;
     gdsf->itr_map[obj] = itr;
   }
 
@@ -62,11 +61,10 @@ void GDSF_insert(cache_t *cache, request_t *req) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
 
   cache_obj_t *obj = cache_insert_base(cache, req);
-  obj->rank.freq = 1;
-  obj->rank.last_access_vtime = (int64_t)req->n_req;
+  obj->lfu.freq = 1;
 
   double pri = gdsf->pri_last_evict + 1.0 / obj->obj_size;
-  auto itr = gdsf->pq.emplace(obj, pri, cache->vtime).first;
+  auto itr = gdsf->pq.emplace(obj, pri, cache->n_req).first;
   gdsf->itr_map[obj] = itr;
 }
 

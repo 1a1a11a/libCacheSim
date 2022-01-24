@@ -25,15 +25,3 @@
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
 #include "evictionAlgo/L2Cache.h"
 #endif
-
-
-#include "evictionAlgo/slabLRU.h"
-#include "evictionAlgo/slabLRC.h"
-#include "evictionAlgo/slabObjLRU.h"
-#include "evictionAlgo/slabCommon.h"
-
-
-//#include "AMP.h"
-//#include "PG.h"
-//#include "Mithril.h"
-

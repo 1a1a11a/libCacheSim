@@ -65,7 +65,7 @@ void OptimalSize_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
   int64_t obj_to_evict_score = -1, sampled_obj_score;
   for (int i = 0; i < N_SAMPLE_PER_EVICTION; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
-    sampled_obj_score = sampled_obj->obj_size * (sampled_obj->optimal.next_access_ts - cache->vtime);
+    sampled_obj_score = sampled_obj->obj_size * (sampled_obj->optimal.next_access_ts - cache->n_req);
     if (obj_to_evict_score < sampled_obj_score) {
       obj_to_evict = sampled_obj;
       obj_to_evict_score = sampled_obj_score;

@@ -56,7 +56,7 @@ void FIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
     abort();
   }
 
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, obj_to_remove);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_remove);
   cache_remove_obj_base(cache, obj_to_remove);
 }
 

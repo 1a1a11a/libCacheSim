@@ -64,7 +64,7 @@ static inline void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
 static inline void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   //  if (!params->learner.start_feature_recording) return;
 
-  segment_t *segment = cache_obj->LSC.segment;
+  segment_t *segment = cache_obj->L2Cache.segment;
   segment->n_total_hit += 1;
 
   if (params->curr_rtime - segment->feature.last_min_window_ts >= 60) {
@@ -75,17 +75,17 @@ static inline void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment->feature.n_hit_per_ten_min[0] += 1;
   segment->feature.n_hit_per_hour[0] += 1;
 
-  if (!cache_obj->LSC.active) {
+  if (!cache_obj->L2Cache.active) {
     segment->n_total_active += 1;
-    cache_obj->LSC.active = 1;
+    cache_obj->L2Cache.active = 1;
   }
 }
 
 static inline void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
-  segment_t *seg = cache_obj->LSC.segment;
+  segment_t *seg = cache_obj->L2Cache.segment;
 
 #if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
-  DEBUG_ASSERT(cache_obj->LSC.in_cache == 0);
+  DEBUG_ASSERT(cache_obj->L2Cache.in_cache == 0);
   DEBUG_ASSERT(seg->is_training_seg == true);
 #else
   if (!seg->in_training_data) {

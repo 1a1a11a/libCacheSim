@@ -22,15 +22,10 @@ extern "C"
 #endif
 
 
-struct LFU_params{
+typedef struct LFU_params{
     GHashTable *hashtable;
     pqueue_t *pq;
-//    gint64 req_cnt;
-};
-typedef struct LFU_params LFU_params_t;
-
-
-
+} LFU_params_t;
 
 
 extern gboolean LFU_check(cache_t* cache, request_t* req);

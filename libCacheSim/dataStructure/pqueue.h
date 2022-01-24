@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-#include "../include/libCacheSim/struct.h"
+#include "../include/config.h"
 
 /** priority data type */
 struct pqueue_pri {

@@ -10,9 +10,7 @@ extern "C"
 {
 #endif
 
-#include "murmur3.h"
 #include "../../include/config.h"
-#include "../../include/libCacheSim/struct.h"
 
 
 typedef enum{
@@ -24,30 +22,32 @@ typedef enum{
   HASH_SEED5 = 0x56789ABC,
   HASH_SEED6 = 0x6789ABCD,
   HASH_SEED7 = 0x789ABCDE,
-}hash_seeds;
+} hash_seeds;
 
 
 #if HASH_TYPE == MURMUR3
-#define get_hash_value_int_64(key_p) (MurmurHash3_x64_64(key_p, sizeof(obj_id_t), HASH_SEED0))
-#define get_hash_value_str(key, key_len) (MurmurHash3_x64_64((void*)(key), key_len, HASH_SEED0))
+  #include "murmur3.h"
+  #define get_hash_value_int_64(key_p) (MurmurHash3_x64_64(key_p, sizeof(obj_id_t), HASH_SEED0))
+  #define get_hash_value_str(key, key_len) (MurmurHash3_x64_64((void*)(key), key_len, HASH_SEED0))
+  #error "murmur hash enabled?"
 #elif HASH_TYPE == XXHASH
 #define XXH_INLINE_ALL
-#include "xxhash.h"
-#define get_hash_value_int_64(key_p) (XXH64((void*)(key_p), sizeof(obj_id_t), HASH_SEED0))
-#define get_hash_value_str(key, key_len) (uint64_t) (XXH64((void*)(key), key_len, HASH_SEED0))
+  #include "xxhash.h"
+  #define get_hash_value_int_64(key_p) (XXH64((void*)(key_p), sizeof(obj_id_t), HASH_SEED0))
+  #define get_hash_value_str(key, key_len) (uint64_t) (XXH64((void*)(key), key_len, HASH_SEED0))
 #elif HASH_TYPE == XXHASH3
-#define XXH_INLINE_ALL
-#include "xxhash.h"
-#include "xxh3.h"
-#define get_hash_value_int_64(key_p) (uint64_t) (XXH3_64bits((void*)(key_p), sizeof(obj_id_t)))
-#define get_hash_value_str(key, key_len) (uint64_t) (XXH3_64bits((void*)(key), key_len))
+  #define XXH_INLINE_ALL
+  #include "xxhash.h"
+  #include "xxh3.h"
+  #define get_hash_value_int_64(key_p) (uint64_t) (XXH3_64bits((void*)(key_p), sizeof(obj_id_t)))
+  #define get_hash_value_str(key, key_len) (uint64_t) (XXH3_64bits((void*)(key), key_len))
 #elif HASH_TYPE == WYHASH
-#include "wyhash.h"
-#define get_hash_value_int_64(key_p) (uint64_t) (wyhash64(*(obj_id_t*)key_p, HASH_SEED0))
-#define get_hash_value_str(key, key_len) abort()
+  #include "wyhash.h"
+  #define get_hash_value_int_64(key_p) (uint64_t) (wyhash64(*(obj_id_t*)key_p, HASH_SEED0))
+  #define get_hash_value_str(key, key_len) abort()
 #elif HASH_TYPE == IDENTITY
-#define get_hash_value_int_64(key) (*key)
-#define get_hash_value_str(key, key_len) abort()
+  #define get_hash_value_int_64(key) (*key)
+  #define get_hash_value_str(key, key_len) abort()
 #else
   #error "unknown hash"
 #endif

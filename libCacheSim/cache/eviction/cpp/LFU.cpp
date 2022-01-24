@@ -49,11 +49,10 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *obj;
   auto res = cache_check_base(cache, req, update_cache, &obj);
   if (obj != nullptr && update_cache) {
-    obj->rank.freq ++;
-    obj->rank.last_access_vtime = (int64_t)req->n_req;
+    obj->lfu.freq ++;
     auto itr = lfu->itr_map[obj];
     lfu->pq.erase(itr);
-    itr = lfu->pq.emplace(obj, (double) obj->rank.freq, cache->vtime).first;
+    itr = lfu->pq.emplace(obj, (double) obj->lfu.freq, cache->n_req).first;
     lfu->itr_map[obj] = itr;
   }
 
@@ -64,10 +63,9 @@ void LFU_insert(cache_t *cache, request_t *req) {
   auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
 
   cache_obj_t *obj = cache_insert_base(cache, req);
-  obj->rank.freq = 1;
-  obj->rank.last_access_vtime = (int64_t)req->n_req;
+  obj->lfu.freq = 1;
 
-  auto itr = lfu->pq.emplace_hint(lfu->pq.begin(), obj, 1.0, cache->vtime);
+  auto itr = lfu->pq.emplace_hint(lfu->pq.begin(), obj, 1.0, cache->n_req);
   lfu->itr_map[obj] = itr;
   DEBUG_ASSERT(lfu->itr_map.size() == cache->n_obj);
 }

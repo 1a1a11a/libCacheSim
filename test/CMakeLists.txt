@@ -1,8 +1,9 @@
 
-
+# message(STATUS "ALL_MODULES = ${ALL_MODULES}")
+# set(ALL_MODULES cachelib admission eviction traceReader profiler dataStructure utils)
 set(coreLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -ldl)
 
-add_executable(testReader ../test/test_traceReader.c)
+add_executable(testReader test_traceReader.c)
 target_link_libraries(testReader ${coreLib})
 
 add_executable(testDistUtils test_dist.c)
@@ -16,9 +17,6 @@ target_link_libraries(testSimulator ${coreLib})
 
 add_executable(testEvictionAlgo test_evictionAlgo.c)
 target_link_libraries(testEvictionAlgo ${coreLib})
-
-add_executable(debug debug.c)
-target_link_libraries(debug ${coreLib})
 
 
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)

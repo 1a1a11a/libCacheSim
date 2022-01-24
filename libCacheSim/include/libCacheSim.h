@@ -11,9 +11,7 @@
 #include "libCacheSim/logging.h"
 #include "libCacheSim/macro.h"
 #include "libCacheSim/const.h"
-
 #include "libCacheSim/enum.h"
-#include "libCacheSim/struct.h"
 
 #include "libCacheSim/cache.h"
 #include "libCacheSim/reader.h"

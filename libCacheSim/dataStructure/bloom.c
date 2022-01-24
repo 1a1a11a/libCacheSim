@@ -26,6 +26,10 @@
 
 #include "bloom.h"
 #include "hash/hash.h"
+#define XXH_INLINE_ALL
+#include "hash/xxhash.h"
+#include "hash/xxh3.h"
+
 
 #define MAKESTRING(n) STRING(n)
 #define STRING(n) #n

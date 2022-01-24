@@ -173,50 +173,6 @@ static cache_t *create_test_cache(const char *alg_name,
 //    init_params->reader = reader;
 //    init_params->ts = 0;
 //    cache = Optimal_init(cc_params, (void *) init_params);
-//  } else if (strcmp(alg_name, "TTL_FIFO") == 0){
-//    cache = TTL_FIFO_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "slabLRC") == 0) {
-    cache = slabLRC_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "slabLRU") == 0) {
-    cache = slabLRU_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "slabObjLRU") == 0) {
-    cache = slabObjLRU_init(cc_params, NULL);
-//
-//  } else if (strcmp(alg_name, "PG") == 0) {
-//    PG_init_params_t *init_params = g_new0(PG_init_params_t, 1);
-//    init_params_g = init_params;
-//    init_params->prefetch_threshold = 0.3;
-//    init_params->lookahead = 1;
-//    init_params->cache_type = "LRU";
-//    init_params->max_meta_data = 0.1;
-//    init_params->block_size = 64 * 1024;
-//    cache = PG_init(cc_params, (void *) init_params);
-//  } else if (strcmp(alg_name, "AMP") == 0) {
-//    struct AMP_init_params *AMP_init_params = g_new0(struct AMP_init_params, 1);
-//    init_params_g = AMP_init_params;
-//    AMP_init_params->APT = 4;
-//    AMP_init_params->K = 1;
-//    AMP_init_params->p_threshold = 256;
-//    AMP_init_params->read_size = 8;
-//    cache = AMP_init(cc_params, AMP_init_params);
-//  } else if (strcmp(alg_name, "Mithril") == 0) {
-//    Mithril_init_params_t *init_params = g_new0(Mithril_init_params_t, 1);
-//    init_params_g = init_params;
-//    init_params->cache_type = "LRU";
-//    init_params->confidence = 0;
-//    init_params->lookahead_range = 20;
-//    init_params->max_support = 12;
-//    init_params->min_support = 3;
-//    init_params->pf_list_size = 2;
-//    init_params->max_metadata_size = 0.1;
-//    init_params->block_size = BLOCK_UNIT_SIZE;
-//    init_params->sequential_type = 0;
-//    init_params->sequential_K = 0;
-////        init_params->recording_loc = miss;
-//    init_params->AMP_pthreshold = 256;
-//    init_params->cycle_time = 2;
-//    init_params->rec_trigger = each_req;
-//    cache = Mithril_init(cc_params, init_params);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

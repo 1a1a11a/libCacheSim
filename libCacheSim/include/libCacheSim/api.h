@@ -1,9 +1,7 @@
 #pragma once
 
 #include "cache.h"
-#include "cacheObj.h"
 #include "reader.h"
-#include "struct.h"
 #include "enum.h"
 
 

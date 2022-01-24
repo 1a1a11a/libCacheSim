@@ -1,7 +1,6 @@
 #include <sstream>
 #include "lhd.hpp"
 #include "constants.hpp"
-#include "../../include/libCacheSim/struct.h"
 #include "../../../utils/include/mymath.h"
 
 

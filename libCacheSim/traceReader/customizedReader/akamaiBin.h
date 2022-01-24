@@ -32,8 +32,8 @@ static inline int akamai_read_one_req(reader_t *reader, request_t *req) {
   req->real_time = *(uint32_t *) record;
   req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
-  req->customer_id = *(uint16_t *) (record + 16);
-  req->bucket_id = *(uint16_t *) (record + 18);
+  req->tenant_id = *(uint16_t *) (record + 16);
+  req->ns = *(uint16_t *) (record + 18);
   req->content_type = *(uint16_t *) (record + 20);
 
   reader->mmap_offset += reader->item_size;

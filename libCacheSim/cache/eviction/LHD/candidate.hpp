@@ -4,7 +4,8 @@
 #include <unordered_map>
 #include "constants.hpp"
 
-#include "../../include/libCacheSim/struct.h"
+#include "../../include/libCacheSim/cacheObj.h"
+#include "../../include/libCacheSim/request.h"
 
 namespace repl {
 

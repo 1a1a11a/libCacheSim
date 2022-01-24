@@ -11,7 +11,6 @@ extern "C" {
 
 #include "../../include/libCacheSim/cacheObj.h"
 #include "../../include/libCacheSim/request.h"
-#include "../../include/libCacheSim/struct.h"
 #include "hashtableStruct.h"
 #include <assert.h>
 #include <stdbool.h>

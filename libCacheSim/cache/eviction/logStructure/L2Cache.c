@@ -138,10 +138,10 @@ __attribute__((unused)) cache_ck_res_e L2Cache_check(cache_t *cache,
     assert(0);
   }
 
-  if (cache_obj->LSC.in_cache) {
+  if (cache_obj->L2Cache.in_cache) {
     /* if there is an evicted entry, the evicted entry should be after this entry */
     DEBUG_ASSERT(
-        ((segment_t *) (cache_obj->LSC.segment))->is_training_seg == false);
+        ((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
 
     /* seg_hit update segment state features */
     seg_hit(params, cache_obj);
@@ -205,7 +205,7 @@ __attribute__((unused)) cache_ck_res_e L2Cache_check(cache_t *cache, request_t *
     return cache_ck_hit;
   }
 
-  if (cache_obj->LSC.in_cache) {
+  if (cache_obj->L2Cache.in_cache) {
     seg_hit(params, cache_obj);
     object_hit(params, cache_obj, req);
 
@@ -273,14 +273,14 @@ __attribute__((unused)) void L2Cache_insert(cache_t *cache, request_t *req) {
 
   cache_obj_t *cache_obj = &seg->objs[seg->n_total_obj];
   copy_request_to_cache_obj(cache_obj, req);
-  cache_obj->LSC.L2Cache_freq = 0;
-  cache_obj->LSC.last_access_rtime = req->real_time;
-  //  cache_obj->LSC.last_history_idx = -1;
-  cache_obj->LSC.in_cache = 1;
-  cache_obj->LSC.segment = seg;
-  cache_obj->LSC.seen_after_snapshot = 0;
-  cache_obj->LSC.idx_in_segment = seg->n_total_obj;
-  cache_obj->LSC.next_access_ts = req->next_access_ts;
+  cache_obj->L2Cache.L2Cache_freq = 0;
+  cache_obj->L2Cache.last_access_rtime = req->real_time;
+  //  cache_obj->L2Cache.last_history_idx = -1;
+  cache_obj->L2Cache.in_cache = 1;
+  cache_obj->L2Cache.segment = seg;
+  cache_obj->L2Cache.seen_after_snapshot = 0;
+  cache_obj->L2Cache.idx_in_segment = seg->n_total_obj;
+  cache_obj->L2Cache.next_access_ts = req->next_access_ts;
 
   hashtable_insert_obj(cache->hashtable, cache_obj);
 
@@ -367,7 +367,7 @@ void L2Cache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
     WARNING("obj is not in the cache\n");
     return;
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, cache_obj);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
   hashtable_delete(cache->hashtable, cache_obj);
 
   assert(cache->occupied_size >= cache_obj->obj_size);
@@ -382,7 +382,7 @@ void L2Cache_remove(cache_t *cache, obj_id_t obj_id) {
     WARNING("obj is not in the cache\n");
     return;
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, cache_obj);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
 
   assert(cache->occupied_size >= cache_obj->obj_size);
   cache->occupied_size -= cache_obj->obj_size;

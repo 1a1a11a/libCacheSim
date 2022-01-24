@@ -90,7 +90,7 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
   if (!update_cache)
     return hit;
 
-  cache->vtime += 1;
+  cache->n_req += 1;
   if (hit != cache_ck_hit) {
     hit1g = params->LRU1g->check(params->LRU1g, req, false);
     hit2g = params->LRU2g->check(params->LRU2g, req, false);

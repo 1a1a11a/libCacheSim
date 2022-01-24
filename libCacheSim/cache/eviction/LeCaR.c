@@ -80,13 +80,13 @@ static void check_and_update_history(cache_t *cache, request_t *req) {
   if (ck_lru_g == cache_ck_hit) {
     params->n_hit_lru_history ++;
     cache_obj_t *obj = cache_get_obj(params->LRU_g, req);
-    int64_t t = cache->vtime - obj->common.last_access_vtime;
+    int64_t t = cache->n_req - obj->LeCaR.last_access_vtime;
     update_weight(cache, t, &params->w_lru, &params->w_lfu);
     params->LRU_g->remove(params->LRU_g, req->obj_id);
   } else if (ck_lfu_g == cache_ck_hit) {
       params->n_hit_lfu_history ++;
       cache_obj_t *obj = cache_get_obj(params->LFU_g, req);
-      int64_t t = cache->vtime - obj->common.last_access_vtime;
+      int64_t t = cache->n_req - obj->LeCaR.last_access_vtime;
       update_weight(cache, t, &params->w_lfu, &params->w_lru);
       params->LFU_g->remove(params->LFU_g, req->obj_id);
   }
@@ -115,7 +115,7 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
     return ck_lru;
   }
 
-  cache->vtime ++;
+  cache->n_req ++;
 
   if (ck_lru != cache_ck_hit) {
     /* cache miss */
@@ -161,14 +161,14 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LRU_g->check(params->LRU_g, req_local, false) == cache_ck_miss);
     params->LRU_g->insert(params->LRU_g, req_local);
-    cache_get_obj(params->LRU_g, req_local)->common.last_access_vtime = cache->vtime;
+    cache_get_obj(params->LRU_g, req_local)->LeCaR.last_access_vtime = cache->n_req;
   } else {
     params->LFU->evict(params->LFU, req, &obj);
     params->LRU->remove(params->LRU, obj.obj_id);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LFU_g->check(params->LFU_g, req_local, false) == cache_ck_miss);
     params->LFU_g->get(params->LFU_g, req_local);
-    cache_get_obj(params->LFU_g, req_local)->common.last_access_vtime = cache->vtime;
+    cache_get_obj(params->LFU_g, req_local)->LeCaR.last_access_vtime = cache->n_req;
   }
 
   if (evicted_obj != NULL) {

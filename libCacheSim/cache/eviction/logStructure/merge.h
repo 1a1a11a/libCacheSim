@@ -173,7 +173,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_total_obj; j++) {
       cache_obj = &segs[i]->objs[j];
-      if (cache_obj->LSC.next_access_ts > 0)
+      if (cache_obj->L2Cache.next_access_ts > 0)
         n_reuse += 1;
       if (new_seg->n_total_obj < params->segment_size
           && cal_object_score(params,
@@ -184,10 +184,10 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
               >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_total_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));
-        new_obj->LSC.L2Cache_freq = (new_obj->LSC.L2Cache_freq + 1) / 2;
-        new_obj->LSC.idx_in_segment = new_seg->n_total_obj;
-        new_obj->LSC.segment = new_seg;
-        new_obj->LSC.active = 0;
+        new_obj->L2Cache.L2Cache_freq = (new_obj->L2Cache.L2Cache_freq + 1) / 2;
+        new_obj->L2Cache.idx_in_segment = new_seg->n_total_obj;
+        new_obj->L2Cache.segment = new_seg;
+        new_obj->L2Cache.active = 0;
         hashtable_insert_obj(cache->hashtable, new_obj);
 
         new_seg->n_total_obj += 1;
@@ -199,7 +199,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
         cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
       }
       object_evict(cache, cache_obj);
-      cache_obj->LSC.in_cache = 0;
+      cache_obj->L2Cache.in_cache = 0;
     }
 
 #if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION

@@ -22,7 +22,6 @@ typedef struct LeCaR_params {
   int64_t n_hit_lfu_history;
 } LeCaR_params_t;
 
-
 cache_t *LeCaR_init(common_cache_params_t ccache_params,
                    void *cache_specific_params);
 

@@ -47,25 +47,25 @@ static inline void update_monitored_ptr(hashtable_t *hashtable,
 static inline void _move_obj_to_new_loc(hashtable_t *hashtable,
                                         cache_obj_t *new_obj,
                                         cache_obj_t *old_obj) {
-  if (old_obj->common.list_prev != NULL)
-    old_obj->common.list_prev->common.list_next = new_obj;
-  if (old_obj->common.list_next != NULL)
-    old_obj->common.list_next->common.list_prev = new_obj;
+  if (old_obj->queue.prev != NULL)
+    old_obj->queue.prev->queue.next = new_obj;
+  if (old_obj->queue.next != NULL)
+    old_obj->queue.next->queue.prev = new_obj;
   memcpy(new_obj, old_obj, sizeof(cache_obj_t));
   update_monitored_ptr(hashtable, new_obj, old_obj);
 }
 
 static inline void delete_obj_in_table(hashtable_t *hashtable,
                                        cache_obj_t *cache_obj) {
-  if (cache_obj->common.list_prev != NULL)
-    cache_obj->common.list_prev->common.list_next = cache_obj->common.list_next;
-  if (cache_obj->common.list_next != NULL)
-    cache_obj->common.list_next->common.list_prev = cache_obj->common.list_prev;
+  if (cache_obj->queue.prev != NULL)
+    cache_obj->queue.prev->queue.next = cache_obj->queue.next;
+  if (cache_obj->queue.next != NULL)
+    cache_obj->queue.next->queue.prev = cache_obj->queue.prev;
   update_monitored_ptr(hashtable, NULL, cache_obj);
 }
 
 /**
- * move cache_obj from old_table into new_table
+ * move cache_obj from old_table into new_table, this is part of the expand
  * @param hashtable
  * @param cache_obj
  * @param part_of_old_table
@@ -211,7 +211,9 @@ void chained_hashtable_delete(hashtable_t *hashtable, cache_obj_t *cache_obj) {
   cache_obj_t *cache_obj_in_bucket = &hashtable->table[hv];
   assert(!OBJ_EMPTY(cache_obj_in_bucket));
   if (cache_obj == cache_obj_in_bucket) {
+    // the object to delete is the first object, which is part of the hash table
     if (cache_obj_in_bucket->hash_next) {
+      // if there are more than one object 
       cache_obj_t *old_obj = cache_obj_in_bucket->hash_next;
       cache_obj_t *new_obj = cache_obj_in_bucket;
       _move_obj_to_new_loc(hashtable, new_obj, old_obj);
@@ -221,6 +223,8 @@ void chained_hashtable_delete(hashtable_t *hashtable, cache_obj_t *cache_obj) {
       memset(cache_obj_in_bucket, 0, sizeof(cache_obj_t));
     }
   } else {
+    // the object to delete is the later in the chain, 
+    // we can just remove it from the hash chain 
     cache_obj_t *prev_cache_obj = NULL;
     while (cache_obj_in_bucket) {
       prev_cache_obj = cache_obj_in_bucket;
@@ -228,7 +232,6 @@ void chained_hashtable_delete(hashtable_t *hashtable, cache_obj_t *cache_obj) {
       if (cache_obj_in_bucket == cache_obj) {
         prev_cache_obj->hash_next = cache_obj->hash_next;
         delete_obj_in_table(hashtable, cache_obj);
-//        memset(cache_obj, 0, sizeof(cache_obj_t));
         free_cache_obj(cache_obj);
         break;
       }
@@ -409,7 +412,7 @@ void check_chained_hashtable_integrity2(hashtable_t *hashtable,
                                         cache_obj_t *head) {
   THIS_IS_DEBUG_FUNC;
 
-  assert(head->common.list_prev == NULL);
+  assert(head->queue.prev == NULL);
   cache_obj_t *cur_obj = head, *cur_obj_in_chain;
   uint64_t hv;
   uint32_t list_idx = 0;
@@ -421,7 +424,7 @@ void check_chained_hashtable_integrity2(hashtable_t *hashtable,
       cur_obj_in_chain = cur_obj_in_chain->hash_next;
     }
     assert(cur_obj == cur_obj_in_chain);
-    cur_obj = cur_obj->common.list_next;
+    cur_obj = cur_obj->queue.next;
     list_idx++;
     assert(head != cur_obj);
   }

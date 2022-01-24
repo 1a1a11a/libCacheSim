@@ -12,7 +12,7 @@ extern "C" {
 //#pragma GCC optimize("Ofast")
 //#pragma GCC target("avx,avx2,fma")
 
-#include "libCacheSim/const.h"
+#include "libCacheSim/const.h" // needed for hash type 
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE /* for sched in utils.h */
@@ -31,6 +31,8 @@ extern "C" {
 //#define HASH_TYPE MURMUR3
 //#define HASH_TYPE WYHASH
 #define HASH_TYPE XXHASH3
+#else
+    #error "HASH_TYPE is defined"
 #endif
 
 #ifndef HASHTABLE_TYPE
@@ -53,7 +55,6 @@ extern "C" {
 //#define TRACK_EVICTION_AGE
 
 //#define SUPPORT_TTL
-//#define SUPPORT_SLAB_AUTOMOVE
 
 #include <stdint.h>
 typedef uint64_t obj_id_t;

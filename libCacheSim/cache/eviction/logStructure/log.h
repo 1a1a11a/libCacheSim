@@ -47,13 +47,13 @@ static inline int _debug_count_n_obj(cache_t *cache) {
 }
 
 static inline int64_t object_age(L2Cache_params_t *params, cache_obj_t *obj) {
-  return params->curr_rtime - obj->LSC.last_access_rtime;
+  return params->curr_rtime - obj->L2Cache.last_access_rtime;
 }
 
 static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *obj) {
-  bucket_t *bkt = &params->buckets[((segment_t *) (obj->LSC.segment))->bucket_idx];
+  bucket_t *bkt = &params->buckets[((segment_t *) (obj->L2Cache.segment))->bucket_idx];
   int64_t obj_age =
-      (params->curr_rtime - obj->LSC.last_access_rtime) >> bkt->hit_prob->age_shift;
+      (params->curr_rtime - obj->L2Cache.last_access_rtime) >> bkt->hit_prob->age_shift;
   if (obj_age >= HIT_PROB_MAX_AGE) {
     bkt->hit_prob->n_overflow += 1;
     obj_age = HIT_PROB_MAX_AGE - 1;
@@ -62,20 +62,20 @@ static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *
 }
 
 static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
-  obj->LSC.next_access_ts = req->next_access_ts;
-  obj->LSC.L2Cache_freq += 1;
+  obj->L2Cache.next_access_ts = req->next_access_ts;
+  obj->L2Cache.L2Cache_freq += 1;
 
-  segment_t *seg = obj->LSC.segment;
+  segment_t *seg = obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
   int64_t obj_age = object_age_shifted(params, obj);
   bkt->hit_prob->n_hit[obj_age] += 1;
-  obj->LSC.last_access_rtime = params->curr_rtime;
+  obj->L2Cache.last_access_rtime = params->curr_rtime;
 }
 
 static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
   L2Cache_params_t *params = cache->eviction_params;
-  segment_t *seg = obj->LSC.segment;
+  segment_t *seg = obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
 #ifdef TRACK_EVICTION_AGE
@@ -132,9 +132,9 @@ static inline int find_bucket_idx(L2Cache_params_t *params, request_t *req) {
 //    return MAX(0, (int) (log(req->obj_size / 10.0) / log_base));
 //    return MAX(0, (int) (log(req->obj_size / 120.0) / log_base));
   } else if (params->bucket_type == CUSTOMER_BUCKET) {
-    return req->customer_id % 8;
+    return req->tenant_id % 8;
   } else if (params->bucket_type == BUCKET_ID_BUCKET) {
-    return req->bucket_id % 8;
+    return req->ns % 8;
   } else if (params->bucket_type == CONTENT_TYPE_BUCKET) {
     return req->content_type;
   } else {
@@ -299,17 +299,17 @@ static inline void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *b
 static inline double cal_object_score(L2Cache_params_t *params, obj_score_e score_type,
                                       cache_obj_t *cache_obj, int curr_rtime,
                                       int64_t curr_vtime) {
-  segment_t *seg = cache_obj->LSC.segment;
+  segment_t *seg = cache_obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
   if (score_type == OBJ_SCORE_FREQ) {
-    return (double) cache_obj->LSC.L2Cache_freq;
+    return (double) cache_obj->L2Cache.L2Cache_freq;
 
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
-    return (double) (cache_obj->LSC.L2Cache_freq + 0.01) * 1.0e6 / cache_obj->obj_size;
+    return (double) (cache_obj->L2Cache.L2Cache_freq + 0.01) * 1.0e6 / cache_obj->obj_size;
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE) {
-    return (double) (cache_obj->LSC.L2Cache_freq + 0.01) * 1.0e6 / (curr_rtime - cache_obj->LSC.last_access_rtime);
+    return (double) (cache_obj->L2Cache.L2Cache_freq + 0.01) * 1.0e6 / (curr_rtime - cache_obj->L2Cache.last_access_rtime);
 
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
     int64_t obj_age = object_age(params, cache_obj);
@@ -317,13 +317,13 @@ static inline double cal_object_score(L2Cache_params_t *params, obj_score_e scor
     return 1.0e6 * bkt->hit_prob->hit_density[obj_age] / cache_obj->obj_size;
 
   } else if (score_type == OBJ_SCORE_ORACLE) {
-    if (cache_obj->LSC.next_access_ts == -1) {
+    if (cache_obj->L2Cache.next_access_ts == -1) {
       return 0;
     }
 
-    DEBUG_ASSERT(cache_obj->LSC.next_access_ts > curr_vtime);
+    DEBUG_ASSERT(cache_obj->L2Cache.next_access_ts > curr_vtime);
     return 1.0e8 / (double) cache_obj->obj_size
-           / (double) (cache_obj->LSC.next_access_ts - curr_vtime);
+           / (double) (cache_obj->L2Cache.next_access_ts - curr_vtime);
 
   } else {
     printf("unknown cache type %d\n", score_type);
@@ -334,7 +334,7 @@ static inline double cal_object_score(L2Cache_params_t *params, obj_score_e scor
 static inline int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
   int n = 0;
   for (int i = 0; i < seg->n_total_obj; i++) {
-    if (seg->objs[i].LSC.next_access_ts > 0) {
+    if (seg->objs[i].L2Cache.next_access_ts > 0) {
       n += 1;
     }
   }

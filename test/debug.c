@@ -1,6 +1,6 @@
-//
-// Created by Juncheng Yang on 4/23/20.
-//
+// //
+// // Created by Juncheng Yang on 4/23/20.
+// //
 
 
 #include <stdio.h>
@@ -53,7 +53,6 @@ static void f1(int argc, char* argv[]) {
   reader_t *reader = setup_reader("../../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
 
   common_cache_params_t cc_params = {.cache_size=1*1024*1024, .default_ttl=300*86400};
-//  slab_init_params_t slab_init_params = {.slab_size=1024*1024, .per_obj_metadata_size=0, .slab_move_strategy=recency_t};
 //  cache_t *cache = LFU_init(cc_params, NULL);
   cache_t *cache = LHD_init(cc_params, NULL);
   gint num_of_sizes = 1;
@@ -130,7 +129,7 @@ typedef struct {
 
 
 int main(int argc, char *argv[]) {
-  f1(argc, argv);
+  // f1(argc, argv);
 //  f2(argc, argv);
 //  f3(argc, argv);
   return 0;

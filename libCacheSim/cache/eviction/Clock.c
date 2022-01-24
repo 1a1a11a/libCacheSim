@@ -33,7 +33,7 @@ cache_ck_res_e Clock_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e res = cache_check_base(cache, req, update_cache, &cache_obj);
   if (cache_obj != NULL)
-    cache_obj->common.visited = true;
+    cache_obj->clock.visited = true;
 
   return res;
 }
@@ -44,7 +44,7 @@ cache_ck_res_e Clock_get(cache_t *cache, request_t *req) {
 
 void Clock_insert(cache_t *cache, request_t *req) {
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
-  cache_obj->common.visited = false;
+  cache_obj->clock.visited = false;
 }
 
 void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
@@ -53,20 +53,20 @@ void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   /* if we have run one full around or first eviction */
   if (moving_pointer == NULL)
-    moving_pointer = cache->list_head;
+    moving_pointer = cache->q_head;
 
   /* find the first untouched */
-  while (moving_pointer != NULL && moving_pointer->common.visited) {
-    moving_pointer->common.visited = false;
-    moving_pointer = moving_pointer->common.list_next;
+  while (moving_pointer != NULL && moving_pointer->clock.visited) {
+    moving_pointer->clock.visited = false;
+    moving_pointer = moving_pointer->queue.next;
   }
 
   /* if we have finished one around, start from the head */
   if (moving_pointer == NULL) {
-    moving_pointer = cache->list_head;
-    while (moving_pointer != NULL && moving_pointer->common.visited) {
-      moving_pointer->common.visited = false;
-      moving_pointer = moving_pointer->common.list_next;
+    moving_pointer = cache->q_head;
+    while (moving_pointer != NULL && moving_pointer->clock.visited) {
+      moving_pointer->clock.visited = false;
+      moving_pointer = moving_pointer->queue.next;
     }
   }
 
@@ -77,10 +77,10 @@ void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     memcpy(evicted_obj, moving_pointer, sizeof(cache_obj_t));
   }
 
-  params->pointer = moving_pointer->common.list_next;
+  params->pointer = moving_pointer->queue.next;
   Clock_remove_obj(cache, moving_pointer);
 
-  DEBUG_ASSERT(cache->list_head != cache->list_head->common.list_next);
+  DEBUG_ASSERT(cache->q_head != cache->q_head->queue.next);
 }
 
 void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
@@ -88,7 +88,7 @@ void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
     ERROR("remove NULL from cache\n");
     abort();
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, obj_to_remove);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_remove);
   cache_remove_obj_base(cache, obj_to_remove);
 }
 

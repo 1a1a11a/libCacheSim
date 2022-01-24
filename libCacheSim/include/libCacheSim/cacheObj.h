@@ -5,24 +5,102 @@
 #pragma once
 
 #include "../config.h"
-#include "request.h"
-#include "struct.h"
-#include <assert.h>
-#include <gmodule.h>
-
+#include <inttypes.h>
+#include <stdbool.h>
+#include <assert.h> 
+#include <stdio.h>
+#include "mem.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// ############## per object metadata used in eviction algorithm cache obj ############
+typedef struct {
+  bool visited; 
+} Clock_obj_params_t; 
 
-/* see struct.h for the declaration of cache_obj_t */
+typedef struct {
+  int64_t last_access_vtime; 
+} LeCaR_obj_params_t;
 
-#define print_cache_obj(cache_obj)                                             \
-  printf("cache_obj id %llu, size %llu, exp_time %llu\n",                      \
-         (unsigned long long)(cache_obj)->obj_id,                          \
-         (unsigned long long)(cache_obj)->obj_size,                            \
-         (unsigned long long)(cache_obj)->exp_time)
+typedef struct  {
+  int64_t freq;
+  int64_t vtime_enter_cache;
+  void *pq_node;
+} Hyperbolic_obj_metadata_t; 
+
+typedef struct Optimal_obj_metadata {
+  void *pq_node;
+  int64_t next_access_ts;
+} Optimal_obj_metadata_t;
+
+typedef struct L2Cache_obj_metadata {
+  void *segment;
+  int64_t next_access_ts;
+  int32_t L2Cache_freq;
+  int32_t last_access_rtime;
+  int16_t idx_in_segment;
+  int16_t active : 2;
+  int16_t in_cache : 2;
+  int16_t seen_after_snapshot : 2;
+//      int16_t n_merged : 12;  /* how many times it has been merged */
+} L2Cache_obj_metadata_t;
+
+
+// ############################## cache obj ###################################
+struct cache_obj;
+typedef struct cache_obj {
+  struct cache_obj *hash_next;
+  obj_id_t obj_id;
+  uint32_t obj_size;
+  struct {
+    struct cache_obj *prev;
+    struct cache_obj *next;
+  } queue; // for LRU, FIFO, etc. 
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+  uint32_t exp_time;
+#endif
+  union {
+    struct {
+      int64_t freq; 
+    } lfu; // for LFU
+
+    Clock_obj_params_t clock; // for Clock
+    LeCaR_obj_params_t LeCaR; // for LeCaR
+    Hyperbolic_obj_metadata_t hyperbolic;
+    Optimal_obj_metadata_t optimal; 
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+    L2Cache_obj_metadata_t L2Cache;
+#endif
+  };
+#ifdef TRACK_EVICTION_AGE
+#endif
+} __attribute__((packed)) cache_obj_t;
+
+
+struct request;
+/**
+ * copy the cache_obj to req_dest
+ * @param req_dest
+ * @param cache_obj
+ */
+void copy_cache_obj_to_request(struct request *req_dest, cache_obj_t *cache_obj);
+
+/**
+ * copy the data from request into cache_obj
+ * @param cache_obj
+ * @param req
+ */
+void copy_request_to_cache_obj(cache_obj_t *cache_obj, struct request *req);
+
+/**
+ * create a cache_obj from request
+ * @param req
+ * @return
+ */
+cache_obj_t *create_cache_obj_from_request(struct request *req); 
+
 
 /**
  * the cache_obj has built-in a doubly list, in the case the list is used as
@@ -37,115 +115,26 @@ extern "C" {
 static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
                                              cache_obj_t *cache_obj) {
   assert(head != cache_obj);
-  while (head != NULL && head->common.list_next != cache_obj)
-    head = head->common.list_next;
+  while (head != NULL && head->queue.next != cache_obj)
+    head = head->queue.next;
   return head;
 }
 
-/** remove the object from the built-in doubly linked list
+/** remove the object from the LRU queue (a built-in doubly linked list)
  *
  * @param head
  * @param tail
  * @param cache_obj
  */
-static inline void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail,
-                                        cache_obj_t *cache_obj) {
-  if (cache_obj == *head) {
-    *head = cache_obj->common.list_next;
-    if (cache_obj->common.list_next != NULL)
-      cache_obj->common.list_next->common.list_prev = NULL;
-  }
-  if (cache_obj == *tail) {
-    *tail = cache_obj->common.list_prev;
-    if (cache_obj->common.list_prev != NULL)
-      cache_obj->common.list_prev->common.list_next = NULL;
-  }
-
-  if (cache_obj->common.list_prev != NULL)
-    cache_obj->common.list_prev->common.list_next = cache_obj->common.list_next;
-
-  if (cache_obj->common.list_next != NULL)
-    cache_obj->common.list_next->common.list_prev = cache_obj->common.list_prev;
-
-  cache_obj->common.list_prev = NULL;
-  cache_obj->common.list_next = NULL;
-}
+void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail, cache_obj_t *cache_obj);
 
 /**
- * move an object to the tail of the doubly linked list
+ * move an object to the tail of the LRU queue (a doubly linked list)
  * @param head
  * @param tail
  * @param cache_obj
  */
-static inline void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
-                                    cache_obj_t *cache_obj) {
-  if (*head == *tail) {
-    // the list only has one element
-    assert(cache_obj == *head);
-    assert(cache_obj->common.list_next == NULL);
-    assert(cache_obj->common.list_prev == NULL);
-    return;
-  }
-  if (cache_obj == *head) {
-    // change head
-    *head = cache_obj->common.list_next;
-    cache_obj->common.list_next->common.list_prev = NULL;
-
-    // move to tail
-    (*tail)->common.list_next = cache_obj;
-    cache_obj->common.list_next = NULL;
-    cache_obj->common.list_prev = *tail;
-    *tail = cache_obj;
-    return;
-  }
-  if (cache_obj == *tail) {
-    return;
-  }
-
-  // bridge list_prev and next
-  cache_obj->common.list_prev->common.list_next = cache_obj->common.list_next;
-  cache_obj->common.list_next->common.list_prev = cache_obj->common.list_prev;
-
-  // handle current tail
-  (*tail)->common.list_next = cache_obj;
-
-  // handle this moving object
-  cache_obj->common.list_next = NULL;
-  cache_obj->common.list_prev = *tail;
-
-  // handle tail
-  *tail = cache_obj;
-}
-
-/**
- * copy the data from request into cache_obj
- * @param cache_obj
- * @param req
- */
-static inline void copy_request_to_cache_obj(cache_obj_t *cache_obj,
-                                             request_t *req) {
-  cache_obj->obj_size = req->obj_size;
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  if (req->ttl != 0)
-    cache_obj->exp_time = req->real_time + req->ttl;
-  else
-    cache_obj->exp_time = UINT32_MAX;
-#endif
-  cache_obj->obj_id = req->obj_id;
-}
-
-/**
- * create a cache_obj from request
- * @param req
- * @return
- */
-static inline cache_obj_t *create_cache_obj_from_request(request_t *req) {
-  cache_obj_t *cache_obj = my_malloc(cache_obj_t);
-  memset(cache_obj, 0, sizeof(cache_obj_t));
-  if (req != NULL)
-    copy_request_to_cache_obj(cache_obj, req);
-  return cache_obj;
-}
+void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail, cache_obj_t *cache_obj); 
 
 /**
  * free cache_obj, this is only used when the cache_obj is explicitly malloced
@@ -153,30 +142,6 @@ static inline cache_obj_t *create_cache_obj_from_request(request_t *req) {
  */
 static inline void free_cache_obj(cache_obj_t *cache_obj) {
   my_free(sizeof(cache_obj_t), cache_obj);
-}
-
-/**
- * slab based algorithm related
- */
-static inline slab_cache_obj_t *create_slab_cache_obj_from_req(request_t *req) {
-  slab_cache_obj_t *cache_obj = my_malloc(slab_cache_obj_t);
-  cache_obj->obj_size = req->obj_size;
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  if (req->ttl != 0)
-    cache_obj->exp_time = req->real_time + req->ttl;
-  else
-    cache_obj->exp_time = UINT32_MAX;
-#endif
-#ifdef SUPPORT_SLAB_AUTOMOVE
-  cache_obj->access_time = req->real_time;
-#endif
-  cache_obj->obj_id = req->obj_id;
-  return cache_obj;
-}
-
-static inline void free_slab_cache_obj(gpointer data) {
-  slab_cache_obj_t *cache_obj = (slab_cache_obj_t *) data;
-  my_free(sizeof(slab_cache_obj_t), cache_obj);
 }
 
 #ifdef __cplusplus

@@ -16,8 +16,6 @@ extern "C"
 #endif
 
 #include "../cache.h"
-#include "ARC.h"
-
 
 
 typedef struct ARC_params {

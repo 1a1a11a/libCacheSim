@@ -40,19 +40,19 @@ cache_ck_res_e MRU_check(cache_t *cache, request_t *req, bool update_cache) {
 
   if (cache_obj && likely(update_cache)) {
     /* lru_tail is the newest, move cur obj to lru_tail */
-    move_obj_to_tail(&cache->list_head, &cache->list_tail, cache_obj);
+    move_obj_to_tail(&cache->q_head, &cache->q_tail, cache_obj);
   }
   return ret;
 }
 
 void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
-  cache_obj_t *obj_to_evict = cache->list_tail;
+  cache_obj_t *obj_to_evict = cache->q_tail;
   if (cache_obj != NULL) {
     // return evicted object to caller
     memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
   }
-  cache->list_tail = cache->list_tail->common.list_prev;
-  cache->list_tail->common.list_next = NULL;
+  cache->q_tail = cache->q_tail->queue.prev;
+  cache->q_tail->queue.next = NULL;
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
@@ -66,7 +66,7 @@ void MRU_remove(cache_t *cache, obj_id_t obj_id) {
     WARNING("obj to remove is not in the cache\n");
     return;
   }
-  remove_obj_from_list(&cache->list_head, &cache->list_tail, obj);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
   cache_remove_obj_base(cache, obj);
 }
 
