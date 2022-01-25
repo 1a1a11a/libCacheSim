@@ -88,13 +88,21 @@ int main(int argc, char **argv) {
                                                 args.cache_sizes,
                                                 NULL, 0, args.n_thread);
 
+    char output_str[1024]; 
+    char output_filename[128]; 
+    sprintf(output_filename, "result/%s", rindex(args.trace_path, '/') + 1);
+    FILE *output_file = fopen(output_filename, "a");
     for (int i = 0; i < args.n_cache_size; i++) {
-      printf("%s %s, cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf), "
+      snprintf(output_str, 1024, 
+             "%s %s, cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf), "
              "byte miss ratio %.4lf\n",
-             args.trace_path, args.alg, result[i].cache_size, result[i].n_miss, result[i].n_req,
+             output_filename, args.alg, result[i].cache_size, result[i].n_miss, result[i].n_req,
              (double) result[i].n_miss / (double) result[i].n_req,
-             (double) result[i].n_miss_byte / (double) result[i].n_req_byte);
+             (double) result[i].n_miss_byte / (double) result[i].n_req_byte); 
+      printf("%s", output_str);
+      fprintf(output_file, "%s", output_str);
     }
+    fclose(output_file); 
   }
 
   close_reader(args.reader);

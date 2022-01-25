@@ -199,7 +199,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     }
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
   } else if (strstr(args->trace_path, "cluster") != NULL) {
-    uint64_t s[12] = {8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384};
+    uint64_t s[9] = {64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
