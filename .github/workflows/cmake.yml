@@ -1,10 +1,10 @@
-name: simple
+name: cmake
 
-on:
-  push:
-    branches: [ master develop ]
-  pull_request:
-    branches: [ master develop ]
+on: [push, pull_request]
+  # push:
+  #   branches: [ master develop ]
+  # pull_request:
+  #   branches: [ master develop ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
@@ -17,30 +17,30 @@ jobs:
     env:
       CC: gcc
     steps:
-    - uses: actions/checkout@v2
-    - name: Prepare
-      run: bash scripts/setup.sh
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-    - name: Run
-      run: ctest -C ${{env.BUILD_TYPE}}
+      - uses: actions/checkout@v2
+      - name: Prepare
+        run: bash scripts/setup.sh
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Build
+        # Build your program with the given configuration
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - name: Run
+        run: ctest -C ${{env.BUILD_TYPE}}
   macos:
     name: macos / clang
     runs-on: macos-10.15
     env:
       CC: clang
     steps:
-    - uses: actions/checkout@v2
-    - name: Prepare
-      run: brew install glib
-    - name: Run
-      continue-on-error: true
-      run: ctest -C ${{env.BUILD_TYPE}}
+      - uses: actions/checkout@v2
+      - name: Prepare
+        run: brew install glib
+      - name: Run
+        continue-on-error: true
+        run: ctest -C ${{env.BUILD_TYPE}}
 
   build:
     # The CMake configure and build commands are platform agnostic and should work equally
