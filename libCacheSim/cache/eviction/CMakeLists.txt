@@ -14,6 +14,8 @@ set(sourceC
         Hyperbolic.c
         LeCaR.c
         Cacheus.c
+        FIFOMerge.c
+        
         )
 
 set (sourceCPP

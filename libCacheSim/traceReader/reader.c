@@ -66,7 +66,9 @@ reader_t *setup_reader(const char *const trace_path,
       strncmp(trace_path + (slen-7), ".zst.22", 7) == 0) {
     reader->is_zstd_file = true;
     reader->zstd_reader_p = create_zstd_reader(trace_path);
-    INFO("opening a zstd compressed data\n");
+    if (!_info_printed) {
+      VERBOSE("opening a zstd compressed data\n");
+    }
   }
 #endif 
 
@@ -108,11 +110,11 @@ reader_t *setup_reader(const char *const trace_path,
   reader->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 #ifdef MADV_HUGEPAGE
   if (!_info_printed) {
-    INFO("use hugepage\n");
-    _info_printed = true;
+    VERBOSE("use hugepage\n");
   }
   madvise(reader->mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
 #endif
+  _info_printed = true;
 
   if ((reader->mapped_file) == MAP_FAILED) {
     close(fd);

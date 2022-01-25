@@ -10,6 +10,7 @@
 #include "evictionAlgo/MRU.h"
 #include "evictionAlgo/Random.h"
 #include "evictionAlgo/Clock.h"
+#include "evictionAlgo/FIFOMerge.h"
 
 #include "evictionAlgo/LFU.h"
 #include "evictionAlgo/GDSF.h"

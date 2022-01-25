@@ -40,7 +40,7 @@ option(ENABLE_L2CACHE "enable learned log-structured cache" ON)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ADMISSION "whether support cache admission" OFF)
 option(SUPPORT_TRACE_SAMPLING "whether support trace sampling" OFF)
-option(SUPPORT_ZSTD_TRACE "whether support zstd trace" OFF)
+option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 
@@ -96,9 +96,7 @@ elseif (LOG_LEVEL MATCHES severe)
 endif()
 
 
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION},
-MY_TEST ${MY_TEST},
-SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_L2CACHE ${ENABLE_L2CACHE}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION}, SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_L2CACHE ${ENABLE_L2CACHE}")
 
 
 # set compiler flags
