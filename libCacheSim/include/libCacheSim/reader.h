@@ -53,13 +53,22 @@ typedef struct {
   char binary_fmt[MAX_BIN_FMT_STR_LEN];
 } reader_init_param_t;
 
-
+struct zstd_reader; 
 typedef struct reader {
   char *mapped_file; /* mmap the file, this should not change during runtime */
   uint64_t mmap_offset;
 
-//  FILE *file;
+  struct zstd_reader *zstd_reader_p;
+  bool is_zstd_file;
+
+  bool ignore_size_zero_req;
+
+  FILE *file;
   size_t file_size;
+
+  trace_type_e trace_type;   /* possible types see trace_type_t  */
+  trace_format_e trace_format;
+  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
   size_t item_size; /* the size of one record, used to
                      * locate the memory location of next element,
@@ -72,22 +81,17 @@ typedef struct reader {
   uint64_t n_read_req;
   uint64_t n_total_req; /* number of requests in the trace */
 
-  trace_type_e trace_type;   /* possible types see trace_type_e  */
-  trace_format_e trace_format;
-  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
-
-  void *sampler;
-  bool (*sample)(void *sampler, request_t *req);
-
   char trace_path[MAX_FILE_PATH_LEN];
   reader_init_param_t init_params;
 
   void *reader_params;
   void *other_params; /* currently not used */
 
+  void *sampler; /* used for sampling */
+
   int ver;
 
-  bool cloned; // true if this is a cloned reader, else false
+  bool cloned;// true if this is a cloned reader, else false
 
 } reader_t;
 
@@ -210,6 +214,12 @@ int go_back_one_line(reader_t *reader);
 
 void reader_set_read_pos(reader_t *reader, double pos);
 
+// static inline uint64_t str_to_obj_id(char *s, size_t len) {
+//   return (uint64_t) atoll(s);
+//   ERROR("not supported yet\n");
+//   abort();
+//   return 0;
+// }
 
 #ifdef __cplusplus
 }

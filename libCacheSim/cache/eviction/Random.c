@@ -58,7 +58,7 @@ void Random_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
 void Random_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    WARNING("obj to remove is not in the cache\n");
+    WARN("obj to remove is not in the cache\n");
     return;
   }
   cache_remove_obj_base(cache, obj);

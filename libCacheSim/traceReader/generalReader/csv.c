@@ -8,14 +8,17 @@
 
 #include "csv.h"
 #include "libcsv.h"
-#include "../readerInternal.h"
 
-#include <assert.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+bool find_line_ending(reader_t *const reader, char **next_line,
+                      size_t *const line_len); 
+
 
 static inline void csv_cb1(void *s, size_t len, void *data) {
   /* call back for csv field end */
@@ -28,7 +31,8 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   if (params->current_field_counter == init_params->obj_id_field) {
     if (reader->obj_id_type == OBJ_ID_NUM) {
       // len is not correct for the last request for some reason
-      req->obj_id = str_to_obj_id((char *) s, len);
+      // req->obj_id = str_to_obj_id((char *) s, len);
+      req->obj_id = atoll((char *) s);
     } else {
       if (len >= MAX_OBJ_ID_LEN) {
         len = MAX_OBJ_ID_LEN - 1;
@@ -51,7 +55,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   } else if (params->current_field_counter == init_params->op_field) {
     fprintf(stderr, "currently operation column is not supported\n");
   } else if (params->current_field_counter == init_params->obj_size_field) {
-    req->obj_size = (guint64) atoll((char *) s);
+    req->obj_size = (uint64_t) atoll((char *) s);
   }
 
   params->current_field_counter++;
@@ -71,23 +75,23 @@ static inline void csv_cb2(int c, void *data) {
 }
 
 void csv_setup_reader(reader_t *const reader) {
-  reader->trace_format = TXT_TRACE_FORMAT;
   unsigned char options = CSV_APPEND_NULL;
-  reader->reader_params = g_new0(csv_params_t, 1);
+  reader->reader_params = (csv_params_t *) malloc(sizeof(csv_params_t));
   csv_params_t *params = reader->reader_params;
   reader_init_param_t *init_params = &reader->init_params;
+  reader->trace_format = TXT_TRACE_FORMAT;
 
-  params->csv_parser = g_new(struct csv_parser, 1);
+  params->csv_parser = (struct csv_parser *) malloc(sizeof(struct csv_parser));
   if (csv_init(params->csv_parser, options) != 0) {
     fprintf(stderr, "Failed to initialize csv parser\n");
     exit(1);
   }
 
-//  reader->file = fopen(reader->trace_path, "rb");
-//  if (reader->file == 0) {
-//    ERROR("Failed to open %s: %s\n", reader->trace_path, strerror(errno));
-//    exit(1);
-//  }
+  reader->file = fopen(reader->trace_path, "rb");
+  if (reader->file == 0) {
+    ERROR("Failed to open %s: %s\n", reader->trace_path, strerror(errno));
+    exit(1);
+  }
 
   params->current_field_counter = 1;
   params->already_got_req = false;
@@ -122,15 +126,13 @@ int csv_read_one_element(reader_t *const reader, request_t *const req) {
   char *line_end = NULL;
   size_t line_len;
   bool end = find_line_ending(reader, &line_end, &line_len);
-  /* csv reader needs line ends with CRLF */
-  if (line_end - reader->mapped_file < reader->file_size)
-    line_len += 1;
+  line_len++; // because line_len does not include LFCR
 
   if ((size_t) csv_parse(params->csv_parser,
                          reader->mapped_file + reader->mmap_offset,
                          line_len, csv_cb1, csv_cb2, reader) != line_len)
-    WARNING("parsing csv file error: %s\n",
-            csv_strerror(csv_error(params->csv_parser)));
+    WARN("parsing csv file error: %s\n",
+         csv_strerror(csv_error(params->csv_parser)));
 
   reader->mmap_offset = (char *) line_end - reader->mapped_file;
 
@@ -150,7 +152,7 @@ int csv_read_one_element(reader_t *const reader, request_t *const req) {
   return 0;
 }
 
-guint64 csv_skip_N_elements(reader_t *const reader, const guint64 N) {
+uint64_t csv_skip_N_elements(reader_t *const reader, const uint64_t N) {
   /* this function skips the next N requests,
    * on success, return N,
    * on failure, return the number of requests skipped
@@ -170,7 +172,7 @@ guint64 csv_skip_N_elements(reader_t *const reader, const guint64 N) {
 void csv_reset_reader(reader_t *reader) {
   csv_params_t *params = reader->reader_params;
 
-//  fseek(reader->file, 0L, SEEK_SET);
+  fseek(reader->file, 0L, SEEK_SET);
 
   csv_free(params->csv_parser);
   csv_init(params->csv_parser, CSV_APPEND_NULL);

@@ -145,7 +145,7 @@ gboolean TTL_FIFO_get_with_ttl(cache_t* cache, request_t *req){
     while (cache->used_size > cache->size)
       _TTL_FIFO_evict(cache, req);
   } else {
-    WARNING("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->req_cnt,
+    WARN("req %lld: obj size %ld larger than cache size %ld\n", (long long) cache->req_cnt,
             (long) req->obj_size, (long) cache->size);
   }
   cache->req_cnt += 1;

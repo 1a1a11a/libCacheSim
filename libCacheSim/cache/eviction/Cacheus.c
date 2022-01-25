@@ -35,7 +35,7 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 void Cacheus_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (cache_obj == NULL) {
-    WARNING("obj is not in the cache\n");
+    WARN("obj is not in the cache\n");
     return;
   }
   remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);

@@ -201,13 +201,13 @@ draw_dict* heatmap_computation(reader_t* reader,
     }
 
     else if (plot_type == hr_st_size) {
-        WARNING("not implemented \n");
+        WARN("not implemented \n");
 
 
     }
 
     else if (plot_type == avg_rd_st_et) {
-        WARNING("not implemented \n");
+        WARN("not implemented \n");
 
 
 

@@ -234,13 +234,13 @@ extern "C"
 
 
         if (break_points->len > 10000){
-            WARNING("number of pixels in one dimension is larger than 10000, "
+            WARN("number of pixels in one dimension is larger than 10000, "
                     "exact size: %d, it may take a very long time, if you didn't "
                     "intend to do it, please try with a larger time stamp\n",
                     break_points->len);
         }
         else if (break_points->len < 20){
-            WARNING("number of pixels in one dimension is smaller than 20, "
+            WARN("number of pixels in one dimension is smaller than 20, "
                     "exact size: %d, each pixel will be very large, if you didn't "
                     "intend to do this, please try with a smaller time stamp\n",
                     break_points->len);
@@ -338,13 +338,13 @@ extern "C"
 
 
         if (break_points->len > 10000){
-            WARNING("number of pixels in one dimension is larger than 10000, "
+            WARN("number of pixels in one dimension is larger than 10000, "
                     "exact size: %d, it may take a very long time, if you didn't "
                     "intend to do it, please try with a larger time stamp\n",
                     break_points->len);
         }
         else if (break_points->len < 20){
-            WARNING("number of pixels in one dimension is smaller than 20, "
+            WARN("number of pixels in one dimension is smaller than 20, "
                     "exact size: %d, each pixel will be very large, if you didn't "
                     "intend to do this, please try with a smaller time stamp\n",
                     break_points->len);

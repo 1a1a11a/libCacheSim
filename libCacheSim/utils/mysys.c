@@ -23,7 +23,7 @@ int set_thread_affinity(pthread_t tid) {
 
   int rc = pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset);
   if (rc != 0) {
-    WARNING("Error calling pthread_setaffinity_np: %d\n", rc);
+    WARN("Error calling pthread_setaffinity_np: %d\n", rc);
   }
 #endif
   return 0;
@@ -38,7 +38,7 @@ int get_n_cores(void) {
 
   return get_nprocs();
 #else
-  WARNING("non linux system, use 4 threads as default\n");
+  WARN("non linux system, use 4 threads as default\n");
 #endif
   return 4;
 }

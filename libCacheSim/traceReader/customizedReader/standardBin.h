@@ -26,11 +26,35 @@ extern "C" {
 
 
 #include "../../include/libCacheSim/reader.h"
+#include "binaryUtils.h"
 
+
+static inline int standardBinIQQ_setup(reader_t *reader) {
+  reader->trace_type = STANDARD_IQI_TRACE;
+  reader->trace_format = BINARY_TRACE_FORMAT;
+  reader->item_size = 20;
+  reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
+  return 0;
+}
+
+static inline int standardBinIQQ_read_one_req(reader_t *reader, request_t *req) {
+  char *record = read_bytes(reader);
+
+  if (record == NULL) {
+    req->valid = FALSE;
+    return 1;
+  }
+
+  req->real_time = *(uint32_t *) record;
+  req->obj_id = *(uint64_t *) (record + 4);
+  req->obj_size = *(uint32_t *) (record + 12);
+
+  return 0;
+}
 
 
 static inline int standardBinIQI_setup(reader_t *reader) {
-  reader->trace_type = STANDARD_BIN_IQI_TRACE;
+  reader->trace_type = STANDARD_IQI_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 16;
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
@@ -38,19 +62,23 @@ static inline int standardBinIQI_setup(reader_t *reader) {
 }
 
 static inline int standardBinIQI_read_one_req(reader_t *reader, request_t *req) {
-  char *record = (reader->mapped_file + reader->mmap_offset);
+  char *record = read_bytes(reader);
+
+  if (record == NULL) {
+    req->valid = FALSE;
+    return 1;
+  }
+
   req->real_time = *(uint32_t *) record;
   req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 12);
-
-  reader->mmap_offset += reader->item_size;
 
   return 0;
 }
 
 
 static inline int standardBinIII_setup(reader_t *reader) {
-  reader->trace_type = STANDARD_BIN_III_TRACE;
+  reader->trace_type = STANDARD_III_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 12;
   reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
@@ -58,12 +86,44 @@ static inline int standardBinIII_setup(reader_t *reader) {
 }
 
 static inline int standardBinIII_read_one_req(reader_t *reader, request_t *req) {
-  char *record = (reader->mapped_file + reader->mmap_offset);
+  char *record = read_bytes(reader);
+
+  if (record == NULL) {
+    req->valid = FALSE;
+    return 1;
+  }
+
   req->real_time = *(uint32_t *) record;
   req->obj_id = *(uint64_t *) (record + 4);
   req->obj_size = *(uint32_t *) (record + 8);
 
-  reader->mmap_offset += reader->item_size;
+  return 0;
+}
+
+
+static inline int standardBinIQIBH_setup(reader_t *reader) {
+  reader->trace_type = STANDARD_IQIBH_TRACE;
+  reader->trace_format = BINARY_TRACE_FORMAT;
+  reader->item_size = 19;
+  reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
+  return 0;
+}
+
+static inline int standardBinIQIBH_read_one_req(reader_t *reader, request_t *req) {
+  char *record = read_bytes(reader);
+
+  if (record == NULL) {
+    req->valid = FALSE;
+    return 1;
+  }
+
+  req->real_time = *(uint32_t *) record;
+  req->obj_id = *(uint64_t *) (record + 4);
+  req->obj_size = *(uint32_t *) (record + 12);
+  req->op = *(uint8_t *) (record + 16);
+  req->ns = *(uint16_t *) (record + 17);
+
+  DEBUG_ASSERT(req->op != 0 && req->op < OP_INVALID);
 
   return 0;
 }

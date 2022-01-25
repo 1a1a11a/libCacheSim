@@ -221,7 +221,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 
   /* not sure if using oracle info */
   if (new_seg->n_total_obj < params->segment_size) {
-    WARNING("cutoff %lf %d objects copied %d reuse\n",
+    WARN("cutoff %lf %d objects copied %d reuse\n",
             cutoff,
             new_seg->n_total_obj,
             n_reuse);
@@ -367,7 +367,7 @@ static bucket_t *select_segs(cache_t *cache, segment_t *segs[]) {
 
   if (*ranked_seg_pos > params->n_segs / 4) {
     params->rank_intvl /= 2 + 1;
-    WARNING("cache size %lu: rank frequency too low, "
+    WARN("cache size %lu: rank frequency too low, "
             "curr pos in ranked seg %d, total %ld segs, reduce rank_intvl to %d\n",
             (unsigned long) cache->cache_size,
             *ranked_seg_pos,

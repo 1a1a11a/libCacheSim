@@ -55,18 +55,8 @@ extern "C" {
 #define VERBOSE_LEVEL 5
 #define DEBUG_LEVEL 6
 #define INFO_LEVEL 7
-#define WARNING_LEVEL 8
+#define WARN_LEVEL 8
 #define SEVERE_LEVEL 9
-
-//#define KB 1024L
-//#define MB 1048576L
-//#define GB 1073741824L
-//#define TB 1099511627776L
-//
-//#define KiB 1000L
-//#define MiB 1000000L
-//#define GiB 1000000000L
-//#define TiB 1000000000000L
 
 // this is correct, to change to this, need to update test
 #define KiB 1024LL
@@ -78,8 +68,6 @@ extern "C" {
 #define MB 1000000L
 #define GB 1000000000L
 #define TB 1000000000000L
-
-//#define DEFAULT_SECTOR_SIZE                             512
 
 #define ENABLE_L2CACHE 1
 

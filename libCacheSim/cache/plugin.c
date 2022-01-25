@@ -66,7 +66,7 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
   err = dlerror();
 
   if (cache_init == NULL) {
-    WARNING("cannot load internal cache %s: error %s\n", cache_alg_name, err);
+    WARN("cannot load internal cache %s: error %s\n", cache_alg_name, err);
     return NULL;
   }
 

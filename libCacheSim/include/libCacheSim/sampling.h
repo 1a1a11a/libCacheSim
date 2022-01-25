@@ -20,10 +20,8 @@ enum sampler_type {
 typedef bool (*trace_sampling_func)(void *sampler, request_t *req);
 
 static inline void add_sampling(struct reader *reader,
-                  void *sampler,
                   trace_sampling_func func) {
-  reader->sampler = sampler;
-  reader->sample = func;
+  reader->sampler = func;
 }
 
 

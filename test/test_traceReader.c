@@ -3,7 +3,9 @@
 //
 
 #include "common.h"
-#include "../libCacheSim/traceReader/readerInternal.h"
+
+// defined in reader.c file, not in public interface 
+int go_back_two_lines(reader_t *const reader); 
 
 // TRUE DATA
 size_t trace_length = 113872;
@@ -133,7 +135,7 @@ void test_reader_more2(gconstpointer user_data) {
 
 void test_twr(gconstpointer user_data) {
   reader_t *reader =
-      setup_reader("/Users/junchengy/twr.sbin", TWR_BIN_TRACE, OBJ_ID_NUM, NULL);
+      setup_reader("/Users/junchengy/twr.sbin", TWR_TRACE, OBJ_ID_NUM, NULL);
   gint64 n_req = get_num_of_req(reader);
   gint64 n_obj = 0;
   request_t *req = new_request();

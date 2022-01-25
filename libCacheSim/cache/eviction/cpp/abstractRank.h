@@ -57,7 +57,7 @@ public:
   inline void remove(cache_t *cache, obj_id_t obj_id) {
     cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
     if (obj == nullptr) {
-      WARNING("obj is not in the cache\n");
+      WARN("obj is not in the cache\n");
       return;
     }
     remove_obj(cache, obj);

@@ -30,7 +30,7 @@ void *create_prob_admissioner(double ratio) {
     ERROR("prob admissioner ratio range error get %lf (should be 0-1)\n", ratio);
     abort();
   } else if (ratio == 1) {
-    WARNING("prob admission ratio 1\n");
+    WARN("prob admission ratio 1\n");
   }
 
   struct prob_admissioner *s = my_malloc(struct prob_admissioner);

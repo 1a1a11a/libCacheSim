@@ -225,7 +225,7 @@ gint64 *get_first_access_dist(reader_t *reader) {
  * @return
  */
 gint64 *get_next_access_dist(reader_t *reader) {
-  //  WARNING("%s has some overhead, need a rewrite\n", __func__);
+  //  WARN("%s has some overhead, need a rewrite\n", __func__);
   return _get_last_access_dist(reader, read_one_req_above);
 }
 

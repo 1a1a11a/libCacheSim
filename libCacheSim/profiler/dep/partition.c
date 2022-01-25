@@ -105,7 +105,7 @@ partition_t *get_partition(reader_t *reader, struct cache *cache, uint8_t n_part
     }
 //        printf("req->ts %ld, current %s\n", req->ts, req->label_ptr);
 //        g_hash_table_foreach( ((struct optimal_params*)cache->cache_params)->hashtable, printHashTable, NULL);
-    SUPPRESS_FUNCTION_NO_USE_WARNING(printHashTable);
+    SUPPRESS_FUNCTION_NO_USE_WARN(printHashTable);
 
     if (partitions->partition_history[0]->len == 1)
       partitions->jump_over_count = counter;

@@ -6,13 +6,15 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#ifndef csvReader_h
-#define csvReader_h
+#pragma once
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+#include <inttypes.h>
+#include <stdbool.h>
 
 #include "../../include/libCacheSim/reader.h"
 
@@ -29,11 +31,11 @@ typedef struct {
 
 } csv_params_t;
 
-void csv_setup_reader(reader_t *reader);
+void csv_setup_reader(reader_t *const reader);
 
-int csv_read_one_element(reader_t *, request_t *);
+int csv_read_one_element(reader_t *const, request_t *const);
 
-guint64 csv_skip_N_elements(reader_t *reader, guint64 N);
+uint64_t csv_skip_N_elements(reader_t *const reader, const uint64_t N);
 
 void csv_reset_reader(reader_t *reader);
 
@@ -43,4 +45,3 @@ void csv_set_no_eof(reader_t *reader);
 }
 #endif
 
-#endif /* csvReader_h */

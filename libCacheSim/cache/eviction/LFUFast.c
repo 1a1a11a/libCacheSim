@@ -212,7 +212,7 @@ void LFUFast_remove(cache_t *cache, obj_id_t obj_id) {
   LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    WARNING("obj to remove is not in the cache\n");
+    WARN("obj to remove is not in the cache\n");
     return;
   }
 

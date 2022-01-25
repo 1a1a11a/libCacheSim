@@ -128,7 +128,7 @@ void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
 void Hyperbolic_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    WARNING("obj to remove is not in the cache\n");
+    WARN("obj to remove is not in the cache\n");
     return;
   }
 

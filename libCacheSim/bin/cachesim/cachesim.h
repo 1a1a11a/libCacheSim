@@ -3,7 +3,6 @@
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
 #include "../../include/libCacheSim/reader.h"
-#include <inttypes.h>
 
 
 typedef struct {

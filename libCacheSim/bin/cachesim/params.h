@@ -199,7 +199,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     }
     args->n_cache_size = 8;
     args->seg_size = 4000;
-    args->n_thread = 4;
+    // args->n_thread = 4;
     args->bucket_type = NO_BUCKET;
     args->age_shift = 2;
 

@@ -24,13 +24,13 @@ void run_cache(reader_t *reader, cache_t *cache) {
 
   /* skip half of the requests */
   long n_skipped = 0;
-  for (int i = 0; i < reader->n_total_req / 2; i++) {
+  // for (int i = 0; i < reader->n_total_req / 2; i++) {
 //  while (req->real_time - start_ts < 86400 * 4) {
 //    n_skipped += 1;
 //    req->real_time -= start_ts;
 //    cache->get(cache, req);
 //    read_one_req(reader, req);
-  }
+  // }
 
   double start_time = gettime();
   while (req->valid) {
@@ -50,7 +50,7 @@ void run_cache(reader_t *reader, cache_t *cache) {
 //    if (req_cnt > 20000)
 //      break;
 
-    if (req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
+    if (req->real_time - last_report_ts >= 3600 * 6 && req->real_time != 0) {
       INFO("ts %lu: %lu requests, miss cnt %lu %.4lf, byte miss ratio %.4lf\n",
            (unsigned long) req->real_time, (unsigned long) req_cnt, (unsigned long) miss_cnt,
            (double) miss_cnt / req_cnt, (double) miss_byte / req_byte);

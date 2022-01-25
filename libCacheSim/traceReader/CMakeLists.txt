@@ -1,9 +1,15 @@
 
-include_directories(customizedReader)
+set(source 
+    generalReader/binary.c 
+    generalReader/csv.c 
+    generalReader/libcsv.c 
+    reader.c)
 
-aux_source_directory(. src_base)
-aux_source_directory(generalReader general)
-aux_source_directory(customizedReader custom)
-aux_source_directory(sampling sampling)
-add_library (traceReader ${src_base} ${general} ${custom} ${sampling})
+if (SUPPORT_ZSTD_TRACE)
+    set(source ${source} generalReader/zstdReader.c)
+endif (SUPPORT_ZSTD_TRACE)
+
+add_library(traceReader ${source})
+
+
 

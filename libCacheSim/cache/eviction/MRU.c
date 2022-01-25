@@ -63,7 +63,7 @@ cache_ck_res_e MRU_get(cache_t *cache, request_t *req) {
 void MRU_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    WARNING("obj to remove is not in the cache\n");
+    WARN("obj to remove is not in the cache\n");
     return;
   }
   remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);

@@ -59,10 +59,10 @@ extern pthread_mutex_t log_mtx;
 #define INFO(FMT, ...)
 #endif
 
-#if LOGLEVEL <= WARNING_LEVEL
-#define WARNING(FMT, ...) LOGGING(WARNING_LEVEL, FMT, ##__VA_ARGS__)
+#if LOGLEVEL <= WARN_LEVEL
+#define WARN(FMT, ...) LOGGING(WARN_LEVEL, FMT, ##__VA_ARGS__)
 #else
-#define WARNING(FMT, ...)
+#define WARN(FMT, ...)
 #endif
 
 #if LOGLEVEL <= SEVERE_LEVEL
@@ -88,7 +88,7 @@ static inline void log_header(int level, const char *file, int line) {
     break;
   case INFO_LEVEL:printf("%s[INFO]  ", GREEN);
     break;
-  case WARNING_LEVEL:printf("%s[WARN]  ", YELLOW);
+  case WARN_LEVEL:printf("%s[WARN]  ", YELLOW);
     break;
   case SEVERE_LEVEL:printf("%s[ERROR] ", RED);
     break;

@@ -6,46 +6,79 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "customizedReader/oracleTwrBin.h"
-#include "customizedReader/oracleGeneralBin.h"
-#include "customizedReader/oracleAkamaiBin.h"
-#include "customizedReader/oracleWikiBin.h"
+#include "../include/libCacheSim/macro.h"
 
-#include "customizedReader/twrBin.h"
-#include "customizedReader/akamaiBin.h"
-#include "customizedReader/standardBin.h"
-#include "customizedReader/wikiBin.h"
-
+#include "generalReader/libcsv.h"
 #include "generalReader/binary.h"
 #include "generalReader/csv.h"
-#include "generalReader/libcsv.h"
-#include "readerInternal.h"
+
+#include "customizedReader/oracle/oracleTwrBin.h"
+#include "customizedReader/oracle/oracleTwrNSBin.h"
+#include "customizedReader/oracle/oracleCF1Bin.h"
+#include "customizedReader/oracle/oracleGeneralBin.h"
+#include "customizedReader/oracle/oracleAkamaiBin.h"
+#include "customizedReader/oracle/oracleWikiBin.h"
+
+#include "customizedReader/twrBin.h"
+#include "customizedReader/twrNSBin.h"
+#include "customizedReader/cf1Bin.h"
+#include "customizedReader/akamaiBin.h"
+#include "customizedReader/standardBin.h"
 #include "customizedReader/vscsi.h"
+#include "customizedReader/wikiBin.h"
 
 #include <ctype.h>
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define FILE_TAB 0x09
+#define FILE_SPACE 0x20
+#define FILE_CR 0x0d
+#define FILE_LF 0x0a
+#define FILE_COMMA 0x2c
+#define FILE_QUOTE 0x22
+
+bool find_line_ending(reader_t *const reader, char **next_line,
+                      size_t *const line_len); 
+
+                      
 reader_t *setup_reader(const char *const trace_path,
-                       trace_type_e trace_type,
-                       obj_id_type_e obj_id_type,
-                       const reader_init_param_t *reader_init_param) {
+                       const trace_type_e trace_type,
+                       const obj_id_type_e obj_id_type,
+                       const reader_init_param_t *const reader_init_param) {
+  static bool _info_printed = false;
 
   int fd;
   struct stat st;
-  reader_t *const reader = g_new0(reader_t, 1);
-  memset(reader, 0, sizeof(reader_t));
+  reader_t *const reader = (reader_t *) malloc(sizeof(reader_t));
+  reader->reader_params = NULL; 
+
+  /* check whether the trace is a zstd trace file,
+   * currently zstd reader only supports a few binary trace */
+  reader->is_zstd_file = false;
+  reader->zstd_reader_p = NULL;
+  size_t slen = strlen(trace_path);
+#ifdef SUPPORT_ZSTD_TRACE
+  if (strncmp(trace_path + (slen-4), ".zst", 4) == 0 ||
+      strncmp(trace_path + (slen-7), ".zst.22", 7) == 0) {
+    reader->is_zstd_file = true;
+    reader->zstd_reader_p = create_zstd_reader(trace_path);
+    INFO("opening a zstd compressed data\n");
+  }
+#endif 
 
   reader->obj_id_type = obj_id_type;
-  reader->trace_type = trace_type;
   reader->trace_format = INVALID_TRACE_FORMAT;
+  reader->trace_type = trace_type;
   reader->n_total_req = 0;
   reader->n_read_req = 0;
   reader->mmap_offset = 0;
-  reader->item_size = 0;
+  reader->ignore_size_zero_req = TRUE;
   reader->cloned = false;
+  reader->item_size = 0;
   if (reader_init_param != NULL) {
     memcpy(&reader->init_params, reader_init_param,
            sizeof(reader_init_param_t));
@@ -73,7 +106,11 @@ reader_t *setup_reader(const char *const trace_path,
   reader->file_size = st.st_size;
 
   reader->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-#if defined(USE_HUGEPAGE) && !defined(__APPLE__)
+#ifdef MADV_HUGEPAGE
+  if (!_info_printed) {
+    INFO("use hugepage\n");
+    _info_printed = true;
+  }
   madvise(reader->mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
 #endif
 
@@ -86,39 +123,47 @@ reader_t *setup_reader(const char *const trace_path,
   }
 
   switch (trace_type) {
-  case CSV_TRACE:csv_setup_reader(reader);
-    break;
-  case PLAIN_TXT_TRACE:
-    reader->trace_format = TXT_TRACE_FORMAT;
-//    reader->file = fopen(trace_path, "r");
-//    if (reader->file == 0) {
-//      ERROR("open trace file %s failed: %s\n", trace_path, strerror(errno));
-//      exit(1);
-//    }
-    break;
-  case BIN_TRACE:binaryReader_setup(reader); break;
-  case VSCSI_TRACE:vscsiReader_setup(reader); break;
-  case TWR_BIN_TRACE:twrReader_setup(reader); break;
-  case AKAMAI_BIN_TRACE:akamaiReader_setup(reader); break;
-  case WIKI16u_BIN_TRACE: wiki2016uReader_setup(reader); break;
-  case WIKI19u_BIN_TRACE: wiki2019uReader_setup(reader); break;
-  case WIKI19t_BIN_TRACE: wiki2019tReader_setup(reader); break;
-  case STANDARD_BIN_III_TRACE:standardBinIII_setup(reader); break;
-  case STANDARD_BIN_IQI_TRACE:standardBinIQI_setup(reader); break;
-  case ORACLE_GENERAL_BIN:oracleGeneralBin_setup(reader); break;
-  case ORACLE_TWR_BIN:oracleTwrBin_setup(reader); break;
-  case ORACLE_AKAMAI_BIN:oracleAkamai_setup(reader); break;
-  case ORACLE_WIKI16u_BIN:oracleWiki2016uReader_setup(reader); break;
-  case ORACLE_WIKI19u_BIN:oracleWiki2019uReader_setup(reader); break;
-  case ORACLE_WIKI19t_BIN:oracleWiki2019tReader_setup(reader); break;
-  default:ERROR("cannot recognize trace type: %c\n", reader->trace_type);
-    exit(1);
+    case CSV_TRACE:csv_setup_reader(reader);
+      break;
+    case PLAIN_TXT_TRACE:
+      reader->trace_format = TXT_TRACE_FORMAT;
+      reader->file = fopen(trace_path, "r");
+      if (reader->file == NULL) {
+        ERROR("open trace file %s failed: %s\n", trace_path, strerror(errno));
+        exit(1);
+      }
+      break;
+    case BIN_TRACE:binaryReader_setup(reader); break;
+    case VSCSI_TRACE:vscsiReader_setup(reader); break;
+    case TWR_TRACE:twrReader_setup(reader); break;
+    case TWRNS_TRACE:twrNSReader_setup(reader); break;
+    case CF1_TRACE:cf1Reader_setup(reader); break;
+    case AKAMAI_TRACE:akamaiReader_setup(reader); break;
+    case WIKI16u_TRACE: wiki2016uReader_setup(reader); break;
+    case WIKI19u_TRACE: wiki2019uReader_setup(reader); break;
+    case WIKI19t_TRACE: wiki2019tReader_setup(reader); break;
+    case STANDARD_III_TRACE:standardBinIII_setup(reader); break;
+    case STANDARD_IQI_TRACE:standardBinIQI_setup(reader); break;
+    case STANDARD_IQQ_TRACE:standardBinIQQ_setup(reader); break;
+    case STANDARD_IQIBH_TRACE:standardBinIQIBH_setup(reader); break;
+    case ORACLE_GENERAL_TRACE:oracleGeneralBin_setup(reader); break;
+    case ORACLE_GENERALOPNS_TRACE:oracleGeneralOpNS_setup(reader); break;
+    case ORACLE_SIM_TWR_TRACE:oracleSimTwrBin_setup(reader); break;
+    case ORACLE_SYS_TWRNS_TRACE:oracleSysTwrNSBin_setup(reader); break;
+    case ORACLE_SIM_TWRNS_TRACE:oracleSimTwrNSBin_setup(reader); break;
+    case ORACLE_CF1_TRACE:oracleCF1_setup(reader); break;
+    case ORACLE_AKAMAI_TRACE:oracleAkamai_setup(reader); break;
+    case ORACLE_WIKI16u_TRACE:oracleWiki2016uReader_setup(reader); break;
+    case ORACLE_WIKI19u_TRACE:oracleWiki2019uReader_setup(reader); break;
+    case ORACLE_WIKI19t_TRACE:oracleWiki2019tReader_setup(reader); break;
+    default:ERROR("cannot recognize trace type: %c\n", reader->trace_type);
+      exit(1);
   }
 
-  if (reader->trace_format == BINARY_TRACE_FORMAT &&
+  if (reader->trace_format == BINARY_TRACE_FORMAT && !reader->is_zstd_file &&
       reader->item_size != 0 && reader->file_size % reader->item_size != 0) {
-    WARNING("trace file size %zu is not multiple of record size %zu\n",
-            reader->file_size, reader->item_size);
+    WARN("trace file size %zu is not multiple of record size %zu\n",
+          reader->file_size, reader->item_size);
   }
 
   if (reader->trace_format == INVALID_TRACE_FORMAT) {
@@ -139,134 +184,131 @@ int read_one_req(reader_t *const reader, request_t *const req) {
 
   int status;
   reader->n_read_req += 1;
-  req->n_req += 1;
   req->hv = 0;
   req->valid = true;
-
+  char *line_end = NULL;
+  size_t line_len;
   switch (reader->trace_type) {
-  case CSV_TRACE: status = csv_read_one_element(reader, req); break;
-  case PLAIN_TXT_TRACE:;
-    char *line_end = NULL;
-    size_t line_len;
-    static __thread char obj_id_str[MAX_OBJ_ID_LEN];
-    find_line_ending(reader, &line_end, &line_len);
-    if (reader->obj_id_type == OBJ_ID_NUM) {
-      req->obj_id = str_to_obj_id((reader->mapped_file + reader->mmap_offset), line_len);
-    } else {
-      if (line_len >= MAX_OBJ_ID_LEN) {
-        ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
-              line_len, MAX_OBJ_ID_LEN);
-        abort();
+    case CSV_TRACE: status = csv_read_one_element(reader, req); break;
+    case PLAIN_TXT_TRACE:;
+//       ############ new ############
+//       char obj_id_str[MAX_OBJ_ID_LEN];
+//       find_line_ending(reader, &line_end, &line_len);
+//       if (reader->obj_id_type == OBJ_ID_NUM) {
+//         req->obj_id = str_to_obj_id(
+//             (char *) (reader->mapped_file + reader->mmap_offset), line_len);
+//       } else {
+//         if (line_len >= MAX_OBJ_ID_LEN) {
+//           line_len = MAX_OBJ_ID_LEN - 1;
+//           ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
+//                 line_len, MAX_OBJ_ID_LEN);
+//           abort();
+//         }
+//         memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset, line_len);
+//         obj_id_str[line_len] = 0;
+//         ERROR("do not support csv\n");
+//         abort();
+// //        req->obj_id = (uint64_t) g_quark_from_string(obj_id_str);
+//       }
+//       reader->mmap_offset = (char *) line_end - reader->mapped_file;
+//       status = 0;
+//       break;
+//       ############ new finish ############
+      char *line_end = NULL; 
+      size_t line_len;
+      static __thread char obj_id_str[MAX_OBJ_ID_LEN];
+      find_line_ending(reader, &line_end, &line_len);
+      if (reader->obj_id_type == OBJ_ID_NUM) {
+        // req->obj_id = str_to_obj_id((reader->mapped_file + reader->mmap_offset), line_len);
+        req->obj_id = atoll(reader->mapped_file + reader->mmap_offset);
+      } else {
+        if (line_len >= MAX_OBJ_ID_LEN) {
+          ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
+                line_len, MAX_OBJ_ID_LEN);
+          abort();
+        }
+        memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset, line_len);
+        obj_id_str[line_len] = 0;
+        req->obj_id = (uint64_t) g_quark_from_string(obj_id_str);
       }
-      memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset, line_len);
-      obj_id_str[line_len] = 0;
-      req->obj_id = (uint64_t) g_quark_from_string(obj_id_str);
-    }
-    reader->mmap_offset = (char *) line_end - reader->mapped_file;
-    status = 0;
-    break;
-  case BIN_TRACE: status = binary_read_one_req(reader, req); break;
-  case VSCSI_TRACE: status = vscsi_read_one_req(reader, req); break;
-  case TWR_BIN_TRACE: status = twr_read_one_req(reader, req); break;
-  case AKAMAI_BIN_TRACE: status = akamai_read_one_req(reader, req); break;
-  case WIKI16u_BIN_TRACE: status = wiki2016u_read_one_req(reader, req); break;
-  case WIKI19u_BIN_TRACE: status = wiki2019u_read_one_req(reader, req); break;
-  case WIKI19t_BIN_TRACE: status = wiki2019t_read_one_req(reader, req); break;
-  case STANDARD_BIN_III_TRACE: status = standardBinIII_read_one_req(reader, req); break;
-  case STANDARD_BIN_IQI_TRACE: status = standardBinIQI_read_one_req(reader, req); break;
-  case ORACLE_GENERAL_BIN: status = oracleGeneralBin_read_one_req(reader, req); break;
-  case ORACLE_TWR_BIN: status = oracleTwrBin_read_one_req(reader, req); break;
-  case ORACLE_AKAMAI_BIN: status = oracleAkamai_read_one_req(reader, req); break;
-  case ORACLE_WIKI16u_BIN: status = oracleWiki2016u_read_one_req(reader, req); break;
-  case ORACLE_WIKI19u_BIN: status = oracleWiki2019u_read_one_req(reader, req); break;
-  case ORACLE_WIKI19t_BIN: status = oracleWiki2019t_read_one_req(reader, req); break;
-  default:ERROR(
-        "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-        reader->trace_type);
-    exit(1);
+      reader->mmap_offset = (char *) line_end - reader->mapped_file;
+      status = 0;
+      break;
+    case BIN_TRACE: status = binary_read_one_req(reader, req); break;
+    case VSCSI_TRACE: status = vscsi_read_one_req(reader, req); break;
+    case TWR_TRACE: status = twr_read_one_req(reader, req); break;
+    case TWRNS_TRACE: status = twrNS_read_one_req(reader, req); break;
+    case CF1_TRACE: status = cf1_read_one_req(reader, req); break;
+    case AKAMAI_TRACE: status = akamai_read_one_req(reader, req); break;
+    case WIKI16u_TRACE: status = wiki2016u_read_one_req(reader, req); break;
+    case WIKI19u_TRACE: status = wiki2019u_read_one_req(reader, req); break;
+    case WIKI19t_TRACE: status = wiki2019t_read_one_req(reader, req); break;
+    case STANDARD_III_TRACE:status = standardBinIII_read_one_req(reader, req); break;
+    case STANDARD_IQI_TRACE:status = standardBinIQI_read_one_req(reader, req); break;
+    case STANDARD_IQQ_TRACE:status = standardBinIQQ_read_one_req(reader, req); break;
+    case STANDARD_IQIBH_TRACE:status = standardBinIQIBH_read_one_req(reader, req); break;
+    case ORACLE_GENERAL_TRACE:status = oracleGeneralBin_read_one_req(reader, req); break;
+    case ORACLE_GENERALOPNS_TRACE:status = oracleGeneralOpNS_read_one_req(reader, req); break;
+    case ORACLE_SIM_TWR_TRACE:status = oracleSimTwrBin_read_one_req(reader, req); break;
+    case ORACLE_SYS_TWRNS_TRACE:status = oracleSysTwrNSBin_read_one_req(reader, req); break;
+    case ORACLE_SIM_TWRNS_TRACE:status = oracleSimTwrNSBin_read_one_req(reader, req); break;
+    case ORACLE_CF1_TRACE:status = oracleCF1_read_one_req(reader, req); break;
+    case ORACLE_AKAMAI_TRACE:status = oracleAkamai_read_one_req(reader, req); break;
+    case ORACLE_WIKI16u_TRACE:status = oracleWiki2016u_read_one_req(reader, req); break;
+    case ORACLE_WIKI19u_TRACE:status = oracleWiki2019u_read_one_req(reader, req); break;
+    case ORACLE_WIKI19t_TRACE:status = oracleWiki2019t_read_one_req(reader, req); break;
+    default:ERROR(
+          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
+          reader->trace_type);
+      exit(1);
   }
-#if defined(SUPPORT_TRACE_SAMPLING) && SUPPORT_TRACE_SAMPLING == 1
-  if (reader->sample != NULL) {
-    if (!reader->sample(reader->sampler, req)) {
-      /* skip this request and read next */
-        return read_one_req(reader, req);
-      }
-  }
-#endif
-
   return status;
 }
 
-/**
- * go back one request in the trace
- * @param reader
- * @return return 0 on successful, non-zero otherwise
- */
 int go_back_one_line(reader_t *const reader) {
   switch (reader->trace_format) {
-  case TXT_TRACE_FORMAT:
-    if (reader->mmap_offset == 0)
-      return 1;
-
-    const char *cp = reader->mapped_file + reader->mmap_offset - 1;
-    while (isspace(*cp)) {
-      if (--cp < reader->mapped_file)
+    case TXT_TRACE_FORMAT:
+      if (reader->mmap_offset == 0)
         return 1;
-    }
-    /** cp now points to either the last non-CRLF of current line */
-    while (cp >= reader->mapped_file && !isspace(*cp)) {
-      cp--;
-    }
-    /* cp now points to CRLF of last line or beginning of the file - 1 */
-    reader->mmap_offset = cp + 1 - reader->mapped_file;
 
-    return 0;
+      const char *cp = reader->mapped_file + reader->mmap_offset - 1;
+      while (isspace(*cp)) {
+        if (--cp < reader->mapped_file)
+          return 1;
+      }
+      /** cp now points to either the last non-CRLF of current line */
+      while (cp >= reader->mapped_file && !isspace(*cp)) {
+        cp--;
+      }
+      /* cp now points to CRLF of last line or beginning of the file - 1 */
+      reader->mmap_offset = cp + 1 - reader->mapped_file;
 
-  case BINARY_TRACE_FORMAT:
-    if (reader->mmap_offset >= reader->item_size) {
-      reader->mmap_offset -= (reader->item_size);
       return 0;
-    } else {
-      return 1;
-    }
-  default:
-    ERROR("cannot recognize reader trace format: %d\n", reader->trace_format);
-    exit(1);
+
+    case BINARY_TRACE_FORMAT:
+      if (reader->mmap_offset >= reader->item_size) {
+        reader->mmap_offset -= (reader->item_size);
+        return 0;
+      } else {
+        return 1;
+      }
+    default:
+      ERROR("cannot recognize reader trace format: %d\n", reader->trace_format);
+      exit(1);
   }
 }
 
-/**
- * go back two requests
- * @param reader
- * @return return 0 on successful, non-zero otherwise
- */
-int go_back_two_lines(reader_t *const reader) {
-//  switch (reader->trace_format) {
-//  case TXT_TRACE_FORMAT:
-//    if (go_back_one_line(reader) == 0) {
-//      reader->item_size = 0;
-//      return go_back_one_line(reader);
-//    } else
-//      return 1;
-//  case BINARY_TRACE_FORMAT:
-//    if (reader->mmap_offset >= (reader->item_size * 2)) {
-//      reader->mmap_offset -= (reader->item_size) * 2;
-//      return 0;
-//    } else {
-//      return -1;
-//    }
-//  default:
-//    ERROR("cannot recognize reader trace format: %d\n", reader->trace_format);
-//    exit(1);
-//  }
 
+int go_back_two_lines(reader_t *const reader) {
+  /* go back two requests
+   return 0 on successful, non-zero otherwise
+   */
   if (go_back_one_line(reader) == 0) {
     return go_back_one_line(reader);
   } else {
     return 1;
   }
 }
-
 
 /**
  * read one request from reader precede current position,
@@ -287,6 +329,7 @@ int read_one_req_above(reader_t *const reader, request_t *req) {
     return 1;
   }
 }
+
 
 /**
  * skip n request for txt trace
@@ -335,7 +378,7 @@ uint64_t skip_n_req(reader_t *reader, uint64_t N) {
     } else {
       count = (reader->file_size - reader->mmap_offset) / reader->item_size;
       reader->mmap_offset = reader->file_size;
-      WARNING("required to skip %lu requests, but only %lu requests left\n",
+      WARN("required to skip %lu requests, but only %lu requests left\n",
               (unsigned long) N, (unsigned long) count);
     }
   } else {
@@ -363,7 +406,7 @@ uint64_t get_num_of_req(reader_t *const reader) {
   uint64_t n_req = 0;
 
   if (reader->trace_type == CSV_TRACE ||
-          reader->trace_type == PLAIN_TXT_TRACE) {
+      reader->trace_type == PLAIN_TXT_TRACE) {
     char *line_end = NULL;
     size_t line_len;
     while (!find_line_ending(reader, &line_end, &line_len)) {
@@ -387,6 +430,7 @@ uint64_t get_num_of_req(reader_t *const reader) {
   return n_req;
 }
 
+
 reader_t *clone_reader(const reader_t *const reader_in) {
   reader_t *const reader =
       setup_reader(reader_in->trace_path, reader_in->trace_type,
@@ -409,18 +453,24 @@ int close_reader(reader_t *const reader) {
 
   if (reader->trace_type == CSV_TRACE) {
     csv_params_t *params = reader->reader_params;
-//    fclose(reader->file);
+    fclose(reader->file);
     csv_free(params->csv_parser);
-    g_free(params->csv_parser);
+    free(params->csv_parser);
   } else if (reader->trace_type == PLAIN_TXT_TRACE) {
-//    fclose(reader->file);
+    fclose(reader->file);
   }
+
+#ifdef SUPPORT_ZSTD_TRACE
+  if (reader->is_zstd_file) {
+    free_zstd_reader(reader->zstd_reader_p);
+  }
+#endif 
 
   if (!reader->cloned)
     munmap(reader->mapped_file, reader->file_size);
   if (reader->reader_params)
-    g_free(reader->reader_params);
-  g_free(reader);
+    free(reader->reader_params);
+  free(reader);
   return 0;
 }
 
@@ -431,12 +481,15 @@ void set_no_eof(reader_t *const reader) {
   }
 }
 
+
 /**
  * jump to given position in the trace, such as 0.2, 0.5, 1.0, etc.
  * because certain functions require reader to be read sequentially,
  * this function should not be used in the middle of reading the trace
  */
 void reader_set_read_pos(reader_t *const reader, double pos) {
+  /* jason (202004): this may not work for CSV
+   */
   if (pos > 1)
     pos = 1;
 
@@ -451,6 +504,7 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
       reader->mmap_offset--;
   }
 }
+
 
 /**
  *  find the closest end of line (CRLF)
@@ -478,7 +532,7 @@ bool find_line_ending(reader_t *const reader, char **next_line,
     if (*next_line == NULL) {
       /* the line is too long or end of file */
       if (size == MAX_LINE_LEN) {
-        WARNING("line length exceeds %d characters\n", MAX_LINE_LEN);
+        WARN("line length exceeds %d characters\n", MAX_LINE_LEN);
         abort();
       } else {
         /*  end of trace
@@ -499,9 +553,6 @@ bool find_line_ending(reader_t *const reader, char **next_line,
   // currently next_line points to LFCR
   *line_len = *next_line - ((char *) start_pos);
 
-//#define IS_CRLF_OR_SPACE(c) \
-//((c) == CSV_CR || (c) == CSV_LF || (c) == CSV_TAB || (c) == CSV_SPACE)
-
 #define MMAP_POS(cp) ((long) ((char*) (cp) - (char *) (reader->mapped_file)))
 #define BEFORE_END_OF_FILE(cp) (MMAP_POS(cp) + 1 <= (long) (reader->file_size))
 #define IS_END_OF_FILE(cp)     (MMAP_POS(cp) + 1 == (long) (reader->file_size))
@@ -521,6 +572,7 @@ bool find_line_ending(reader_t *const reader, char **next_line,
 
   return false;
 }
+
 
 void read_first_req(reader_t *reader, request_t *req) {
   uint64_t offset = reader->mmap_offset;

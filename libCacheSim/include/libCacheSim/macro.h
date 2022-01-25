@@ -10,7 +10,7 @@ extern "C" {
 
 #define UNUSED(x) (void) (x)
 #define UNUSED_PARAM __attribute__((unused))// gcc only
-#define SUPPRESS_FUNCTION_NO_USE_WARNING(f) (void) f
+#define SUPPRESS_FUNCTION_NO_USE_WARN(f) (void) f
 #define ARRAY_LENGTH(A) (sizeof(A) / sizeof(A[0]))
 
 #ifdef _MSC_VER

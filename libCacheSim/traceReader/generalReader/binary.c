@@ -19,9 +19,11 @@ int binaryReader_setup(reader_t *const reader) {
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 0;
 
-  reader->reader_params = g_new0(binary_params_t, 1);
+  reader->reader_params = (binary_params_t *) malloc(sizeof(binary_params_t));
+  memset(reader->reader_params, 0, sizeof(binary_params_t));
   reader_init_param_t *init_params = &reader->init_params;
   binary_params_t *params = (binary_params_t *) reader->reader_params;
+  strcpy(params->fmt, init_params->binary_fmt);
 
 
   /* begin parsing input params and fmt */
@@ -33,9 +35,9 @@ int binaryReader_setup(reader_t *const reader) {
     fmt_str++;
   }
 
-  guint count = 0, last_count_sum = 0;
-  gint count_sum = 0;
-  guint size = 0;
+  uint count, last_count_sum = 0;
+  int count_sum = 0;
+  uint size = 0;
 
   while (*fmt_str) {
     count = 0;
@@ -110,7 +112,7 @@ int binaryReader_setup(reader_t *const reader) {
           size * (init_params->real_time_field - last_count_sum - 1);
       params->real_time_len = *fmt_str == 's' ? count : 1;
       if (params->real_time_len > 4)
-        WARNING("only support timestamp in uint32_t\n");
+        WARN("only support timestamp in uint32_t\n");
       params->real_time_type = *fmt_str;
     }
 
@@ -130,41 +132,43 @@ int binaryReader_setup(reader_t *const reader) {
       params->ttl_type = *fmt_str;
     }
 
-    if (init_params->extra_field1 != 0 && params->extra_len1 == 0
-        && init_params->extra_field1 <= count_sum) {
-      params->extra_field1 = (int) reader->item_size +
-          size * (init_params->extra_field1 - last_count_sum - 1);
-      params->extra_len1  = *fmt_str == 's' ? count : 1;
-      params->extra_type1 = *fmt_str;
-    }
-
-    if (init_params->extra_field2 != 0 && params->extra_len2 == 0
-        && init_params->extra_field2 <= count_sum) {
-      params->extra_field2 = (int) reader->item_size +
-          size * (init_params->extra_field2 - last_count_sum - 1);
-      params->extra_len2  = *fmt_str == 's' ? count : 1;
-      params->extra_type2 = *fmt_str;
-    }
-
+//    if (init_params->extra_field1 != 0 && params->extra_len1 == 0
+//        && init_params->extra_field1 <= count_sum) {
+//      params->extra_field1 = (int) reader->item_size +
+//          size * (init_params->extra_field1 - last_count_sum - 1);
+//      params->extra_len1  = *fmt_str == 's' ? count : 1;
+//      params->extra_type1 = *fmt_str;
+//    }
+//
+//    if (init_params->extra_field2 != 0 && params->extra_len2 == 0
+//        && init_params->extra_field2 <= count_sum) {
+//      params->extra_field2 = (int) reader->item_size +
+//          size * (init_params->extra_field2 - last_count_sum - 1);
+//      params->extra_len2  = *fmt_str == 's' ? count : 1;
+//      params->extra_type2 = *fmt_str;
+//    }
 
     reader->item_size += count * size;
     fmt_str++;
   }
 
   // ASSERTION
-  if (init_params->obj_id_field == -1) {
+  if (params->obj_id_field == -1) {
     ERROR("obj_id position cannot be -1\n");
     exit(1);
   }
 
   if (reader->file_size % reader->item_size != 0) {
-    WARNING("trace file size %lu is not multiple of record size %lu, mod %lu\n",
-            (unsigned long) reader->file_size,
-            (unsigned long) reader->item_size,
-            (unsigned long) reader->file_size % reader->item_size);
+    WARN("trace file size %lu is not multiple of record size %lu, mod %lu\n",
+         (unsigned long) reader->file_size,
+         (unsigned long) reader->item_size,
+         (unsigned long) reader->file_size % reader->item_size);
   }
 
-  reader->n_total_req = (guint64) reader->file_size / (reader->item_size);
+  INFO("binary fmt %s, time_field %d, obj_id_field %d, size_field %d\n", params->fmt,
+      params->real_time_field, params->obj_id_field, params->obj_size_field);
+
+  reader->n_total_req = (uint64_t) reader->file_size / (reader->item_size);
   params->num_of_fields = count_sum;
 
   return 0;
@@ -180,32 +184,32 @@ static inline void binary_extract(char *record, int pos, int len,
     case 'b':
     case 'B':
     case 'c':
-    case '?': WARNING("given obj_id_type %c cannot be used for obj_id or time\n", type);
+    case '?': WARN("given obj_id_type %c cannot be used for obj_id or time\n", type);
       break;
 
     case 'h':
-//            *(gint16*)written_to = *(gint16*)(record + pos);
-      *(gint64 *) written_to = *(gint16 *) (record + pos);
+//            *(int16_t*)written_to = *(int16_t*)(record + pos);
+      *(int64_t *) written_to = *(int16_t *) (record + pos);
       break;
     case 'H':
-      *(gint64 *) written_to = *(guint16 *) (record + pos);
+      *(int64_t *) written_to = *(uint16_t *) (record + pos);
       break;
 
     case 'i':
     case 'l':
-      *(gint64 *) written_to = *(gint32 *) (record + pos);
+      *(int64_t *) written_to = *(int32_t *) (record + pos);
       break;
 
     case 'I':
     case 'L':
-      *(gint64 *) written_to = *(guint32 *) (record + pos);
+      *(int64_t *) written_to = *(uint32_t *) (record + pos);
       break;
 
     case 'q':
-      *(gint64 *) written_to = *(gint64 *) (record + pos);
+      *(int64_t *) written_to = *(int64_t *) (record + pos);
       break;
     case 'Q':
-      *(gint64 *) written_to = *(guint64 *) (record + pos);
+      *(int64_t *) written_to = *(uint64_t *) (record + pos);
       break;
 
     case 'f':
@@ -223,6 +227,7 @@ static inline void binary_extract(char *record, int pos, int len,
       break;
 
     default: ERROR("DO NOT recognize given format character: %c\n", type);
+      abort();
       break;
   }
 }
@@ -252,12 +257,10 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
     binary_extract(record, params->op_field, params->op_len,
                    params->op_type, &(req->op));
   }
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (params->ttl_type) {
     binary_extract(record, params->ttl_field, params->ttl_len,
                    params->ttl_type, &(req->ttl));
   }
-#endif
 //  if (params->extra_type1) {
 //    binary_extract(record, params->extra_field1, params->extra_len1,
 //                   params->extra_type1, &(req->extra_field1));

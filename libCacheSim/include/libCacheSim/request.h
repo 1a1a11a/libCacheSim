@@ -26,6 +26,7 @@ typedef struct request {
   int32_t ttl;
   req_op_e op;
 
+  uint64_t n_req;
   int64_t next_access_vtime;
   struct {
     uint64_t key_size : 16;
@@ -35,7 +36,16 @@ typedef struct request {
   int32_t ns; // namespace
   int32_t content_type;
   int32_t tenant_id;
-  uint64_t n_req;
+
+  
+  int32_t bucket_id; 
+  int32_t age; 
+  int32_t hostname; 
+  int16_t extension; 
+  int16_t colo; 
+  int16_t n_level; 
+  int16_t n_param;
+  int8_t method;
 
   bool valid; /* indicate whether request is valid request
                       * it is invlalid if the trace reaches the end */

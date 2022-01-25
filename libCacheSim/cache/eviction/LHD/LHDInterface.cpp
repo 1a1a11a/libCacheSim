@@ -130,7 +130,7 @@ void LHD_remove(cache_t *cache, obj_id_t obj_id) {
 
   auto itr = lhd->sizeMap.find(id);
   if (itr == lhd->sizeMap.end()) {
-    WARNING("obj to remove is not in the cache\n");
+    WARN("obj to remove is not in the cache\n");
     return;
   }
 

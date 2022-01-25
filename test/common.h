@@ -49,7 +49,7 @@ static void _detect_data_path(char* data_path, char* data_name) {
 static reader_t *setup_oracleGeneralBin_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.oracleGeneral.bin");
-  reader_t *reader_oracle = setup_reader(data_path, ORACLE_GENERAL_BIN, OBJ_ID_NUM, NULL);
+  reader_t *reader_oracle = setup_reader(data_path, ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
   return reader_oracle;
 }
 

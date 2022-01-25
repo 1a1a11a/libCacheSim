@@ -127,7 +127,7 @@ draw_dict *heatmap_computation(reader_t *reader,
                                int num_of_threads) {
   gint64 *dist;
   if (plot_type == hr_st_et) {
-    WARNING("this has been changed not sure it is correct or not\n");
+    WARN("this has been changed not sure it is correct or not\n");
     dist = get_last_access_dist(reader);
     return hm_hr_st_et(reader, cache,
                        hm_comp_params->interval_hit_ratio_b,

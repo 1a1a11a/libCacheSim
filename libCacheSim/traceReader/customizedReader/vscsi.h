@@ -106,7 +106,7 @@ static inline size_t record_size(vscsi_version_e version) {
 }
 
 static inline int vscsiReader_setup(reader_t *const reader) {
-  vscsi_params_t *params = g_new0(vscsi_params_t, 1);
+  vscsi_params_t *params = malloc(sizeof(vscsi_params_t));
   reader->reader_params = params;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->obj_id_type = OBJ_ID_NUM;
@@ -121,15 +121,15 @@ static inline int vscsiReader_setup(reader_t *const reader) {
 
   vscsi_version_e ver = test_vscsi_version(reader->mapped_file);
   switch (ver) {
-  case VSCSI1:
-  case VSCSI2:reader->item_size = record_size(ver);
-    params->vscsi_ver = ver;
-    reader->n_total_req = reader->file_size / (reader->item_size);
-    break;
+    case VSCSI1:
+    case VSCSI2:reader->item_size = record_size(ver);
+      params->vscsi_ver = ver;
+      reader->n_total_req = reader->file_size / (reader->item_size);
+      break;
 
-  case UNKNOWN:
-  default:ERROR("Trace format unrecognized.\n");
-    return -1;
+    case UNKNOWN:
+    default:ERROR("Trace format unrecognized.\n");
+      return -1;
   }
   return 0;
 }
@@ -169,13 +169,13 @@ static inline int vscsi_read_one_req(reader_t *reader, request_t *req) {
 
   int (*fptr)(reader_t *, request_t *) = NULL;
   switch (params->vscsi_ver) {
-  case VSCSI1:fptr = vscsi_read_ver1;
-    break;
+    case VSCSI1:fptr = vscsi_read_ver1;
+      break;
 
-  case VSCSI2:fptr = vscsi_read_ver2;
-    break;
-  case UNKNOWN: ERROR("unknown vscsi version encountered\n");
-    break;
+    case VSCSI2:fptr = vscsi_read_ver2;
+      break;
+    case UNKNOWN: ERROR("unknown vscsi version encountered\n");
+      break;
   }
   return fptr(reader, req);
 }

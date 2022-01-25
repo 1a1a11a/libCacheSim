@@ -28,7 +28,7 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
 
       if (admit) {
         if (req->obj_size > cache->cache_size) {
-          WARNING("object %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
+          WARN("object %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
                   req->obj_id, req->obj_size, cache->cache_size);
         }
 

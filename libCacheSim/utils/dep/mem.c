@@ -29,7 +29,7 @@ static inline void* _allocate_memory(guint64 sz){
     if (! error_reported){
       error_reported = TRUE;
       INFO("allocating %lu byte memory\n", MEM_ARENA_SIZE);
-      WARNING("unable to use huge page");
+      WARN("unable to use huge page");
       perror(": ");
     }
     mem_region = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -38,7 +38,7 @@ static inline void* _allocate_memory(guint64 sz){
 #else
   if (! error_reported){
     error_reported = TRUE;
-    WARNING("system does not support huge page\n");
+    WARN("system does not support huge page\n");
   }
   mem_region = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #endif
