@@ -2,13 +2,13 @@ name: cmake
 
 on: [push, pull_request]
   # push:
-  #   branches: [ master develop ]
+  #   branches: [ master, develop ]
   # pull_request:
-  #   branches: [ master develop ]
+  #   branches: [ master, develop ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Debug Release
+  BUILD_TYPE: Release
 
 jobs:
   linux:
@@ -18,17 +18,16 @@ jobs:
       CC: gcc
     steps:
       - uses: actions/checkout@v2
-      - name: Prepare
+      - name: Prepare1
+        run: sudo apt install libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
+      - name: Prepare2
         run: bash scripts/setup.sh
       - name: Configure CMake
-        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Build
-        # Build your program with the given configuration
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       - name: Run
-        run: ctest -C ${{env.BUILD_TYPE}}
+        run: make test
   macos:
     name: macos / clang
     runs-on: macos-10.15
@@ -36,11 +35,17 @@ jobs:
       CC: clang
     steps:
       - uses: actions/checkout@v2
-      - name: Prepare
-        run: brew install glib
+      - name: Prepare1
+        run: brew install gcc glib google-perftools libomp
+      - name: Prepare2
+        run: bash scripts/setup.sh
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       - name: Run
         continue-on-error: true
-        run: ctest -C ${{env.BUILD_TYPE}}
+        run: make test
 
   build:
     # The CMake configure and build commands are platform agnostic and should work equally
@@ -51,20 +56,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
+      - name: Prepare1
+        run: sudo apt install libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
+      - name: Prepare2
+        run: bash scripts/setup.sh
       - name: Configure CMake
-        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
       - name: Build
-        # Build your program with the given configuration
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
       - name: Test
         working-directory: ${{github.workspace}}/build
-        # Execute tests defined by the CMake configuration.
-        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: ctest -C ${{env.BUILD_TYPE}}
 
 

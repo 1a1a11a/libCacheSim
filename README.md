@@ -1,8 +1,9 @@
 ## libCacheSim - a library for cache simulation, profiling, and analysis 
 
 
-![Build Status](https://travis-ci.com/1a1a11a/libCacheSim.svg?token=yJEqB6qLmWucGFp9zK4U&branch=master)
-![Build Status](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/ci.yml/badge.svg?branch=develop)
+<!-- ![Build Status](https://travis-ci.com/1a1a11a/libCacheSim.svg?token=yJEqB6qLmWucGFp9zK4U&branch=master) -->
+<!-- ![Build Status](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/ci.yml/badge.svg?branch=develop) -->
+[![cmake](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/cmake.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/cmake.yml)
 
 [![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
 [![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim)
@@ -44,6 +45,7 @@ sudo apt install libglib2.0-dev libgoogle-perftools-dev
 Install XGBoost (Linux):
 ```
 git clone --recursive https://github.com/dmlc/xgboost
+cd xgboost
 mkdir build
 cd build
 cmake ..
