@@ -3,7 +3,7 @@
 //
 
 #include "cachesim.h"
-#include "params.h"
+#include "priv/params.h"
 
 
 sim_arg_t parse_cmd(int argc, char *argv[]) {

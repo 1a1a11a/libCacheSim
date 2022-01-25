@@ -10,11 +10,11 @@
 #include "../../include/libCacheSim/simulator.h"
 
 #include "cachesim.h"
-#include "params.h"
+#include "priv/params.h"
 #include "utils.h"
 
 
-void run_cache(reader_t *reader, cache_t *cache) {
+void run_cache_debug(reader_t *reader, cache_t *cache) {
   request_t *req = new_request();
   uint64_t req_cnt = 0, miss_cnt = 0;
   uint64_t req_byte = 0, miss_byte = 0;
@@ -22,33 +22,25 @@ void run_cache(reader_t *reader, cache_t *cache) {
   read_one_req(reader, req);
   int64_t start_ts = (int64_t) req->real_time, last_report_ts = 0;
 
-  /* skip half of the requests */
+  /* skip half of the requests to warm up */
   long n_skipped = 0;
-  // for (int i = 0; i < reader->n_total_req / 2; i++) {
-//  while (req->real_time - start_ts < 86400 * 4) {
-//    n_skipped += 1;
-//    req->real_time -= start_ts;
-//    cache->get(cache, req);
-//    read_one_req(reader, req);
-  // }
+  for (int i = 0; i < reader->n_total_req / 2; i++) {
+    n_skipped += 1;
+    req->real_time -= start_ts;
+    cache->get(cache, req);
+    read_one_req(reader, req);
+  }
+  printf("skip %ld requests\n", n_skipped);
 
   double start_time = gettime();
   while (req->valid) {
-    req->real_time -= start_ts;
-
     req_cnt++;
     req_byte += req->obj_size;
+    req->real_time -= start_ts;
     if (cache->get(cache, req) != cache_ck_hit) {
       miss_cnt++;
       miss_byte += req->obj_size;
-//      printf("%ld %ld miss - cache size %d/%d\n", req_cnt, req->obj_id, cache->occupied_size, cache->cache_size);
     }
-    else {
-//      printf("%ld %ld hi - cache size %d/%d\n", req_cnt-1, req->obj_id, cache->occupied_size, cache->cache_size);
-//      break;
-    }
-//    if (req_cnt > 20000)
-//      break;
 
     if (req->real_time - last_report_ts >= 3600 * 6 && req->real_time != 0) {
       INFO("ts %lu: %lu requests, miss cnt %lu %.4lf, byte miss ratio %.4lf\n",
@@ -77,33 +69,29 @@ void run_cache(reader_t *reader, cache_t *cache) {
 
 int main(int argc, char **argv) {
 
-  //  reader_init_param_t init_params = {.obj_id_field=6, .has_header=FALSE, .delimiter='\t'};
-  //  reader_t *reader = setup_reader("../../data/trace.csv", CSV_TRACE, OBJ_ID_STR, &init_params);
-
   sim_arg_t args = parse_cmd(argc, argv);
 
   if (args.debug) {
-    printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d, "
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-           "seg size %d, n merge %d, rank_intvl %d, bucket type %d"
-#endif
-           "\n",
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-        argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata,
-           args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type);
-#else
-    argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata);
-#endif
+    printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d\n",
+      argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata);
 
-    run_cache(args.reader, args.cache);
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+    printf("seg size %d, n merge %d, rank_intvl %d, bucket type %d\n", 
+      args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type); 
+#endif 
+
+    run_cache_debug(args.reader, args.cache);
   } else {
-    cache_stat_t *result = get_miss_ratio_curve(args.reader, args.cache, args.n_cache_size, args.cache_sizes,
-                                             NULL, 0, args.n_thread);
+    cache_stat_t *result = get_miss_ratio_curve(args.reader, 
+                                                args.cache, 
+                                                args.n_cache_size, 
+                                                args.cache_sizes,
+                                                NULL, 0, args.n_thread);
 
     for (int i = 0; i < args.n_cache_size; i++) {
-      printf("cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf), "
+      printf("%s %s, cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf), "
              "byte miss ratio %.4lf\n",
-             result[i].cache_size, result[i].n_miss, result[i].n_req,
+             args.trace_path, args.alg, result[i].cache_size, result[i].n_miss, result[i].n_req,
              (double) result[i].n_miss / (double) result[i].n_req,
              (double) result[i].n_miss_byte / (double) result[i].n_req_byte);
     }

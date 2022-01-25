@@ -1,7 +1,7 @@
 #pragma once
 
-#include "cachesim.h"
-#include "utils.h"
+#include "../cachesim.h"
+#include "../utils.h"
 #include "math.h"
 
 
@@ -192,6 +192,18 @@ static inline void set_param_with_workload(sim_arg_t *args) {
       args->cache_sizes[i] = GiB * s[i];
     }
     args->n_cache_size = 14;
+  } else if (strstr(args->trace_path, "cluster52") != NULL) {
+    uint64_t s[4] = {128, 256,  512,  1024,};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+  } else if (strstr(args->trace_path, "cluster") != NULL) {
+    uint64_t s[12] = {8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
   } else {
     uint64_t s[8] = {10, 50, 100, 400, 1000, 2000, 4000, 8000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
@@ -199,7 +211,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     }
     args->n_cache_size = 8;
     args->seg_size = 4000;
-    // args->n_thread = 4;
     args->bucket_type = NO_BUCKET;
     args->age_shift = 2;
 
