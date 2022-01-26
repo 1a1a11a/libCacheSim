@@ -26,18 +26,20 @@ cache_t *FIFOMerge_init(common_cache_params_t ccache_params, void *init_params) 
     FIFOMerge_init_params_t *init_params_ptr = (FIFOMerge_init_params_t *)init_params;
     params->n_keep_obj = init_params_ptr->n_keep_obj;
     params->n_merge_obj = init_params_ptr->n_merge_obj;
+    params->use_oracle = init_params_ptr->use_oracle;
   } else {
     /* can we make this parameter learned? */ 
-    // params->n_merge_obj = ccache_params.cache_size / 200 / 10000;
-    params->n_merge_obj = 100;
+    // params->n_merge_obj = 100;
+    // params->metric_list = my_malloc_n(struct fifo_merge_sort_list_node, params->n_merge_obj);
+    params->n_merge_obj = -1;
     params->n_keep_obj = params->n_merge_obj / 4;
+    params->use_oracle = false;
   }
 
   // how many to keep should be a parameter of miss ratio 
   // printf("size %lu MiB, n_merge_obj: %d, n_keep_obj: %d\n", 
   //         ccache_params.cache_size / 1024 / 1024, params->n_merge_obj, params->n_keep_obj);
 
-  params->metric_list = my_malloc_n(struct fifo_merge_sort_list_node, params->n_merge_obj);
   params->next_to_merge = NULL;
   cache->eviction_params = params;
 
@@ -87,18 +89,18 @@ double freq_metric(cache_t *cache, cache_obj_t *cache_obj) {
   return (double) cache_obj->FIFOMerge.freq / (double) cache_obj->obj_size * 1000.0; 
 }
 
-// #define USE_ORACLE
 double FIFOMerge_promote_metric(cache_t *cache, cache_obj_t *cache_obj) {
+  FIFOMerge_params_t *params = (FIFOMerge_params_t *)cache->eviction_params;
+
   // if (cache_obj->FIFOMerge.freq > 0)
     // printf("%ld %.4lf %.4lf %ld\n", cache_obj->obj_id, freq_metric(cache, cache_obj), oracle_metric(cache, cache_obj), cache_obj->FIFOMerge.next_access_vtime);
   // if (cache_obj->FIFOMerge.next_access_vtime == -1 || cache_obj->FIFOMerge.next_access_vtime == INT64_MAX)
   //   return -1;
 
-#ifdef USE_ORACLE
-  return oracle_metric(cache, cache_obj);
-#else
-  return freq_metric(cache, cache_obj);
-#endif 
+  if (params->use_oracle) 
+    return oracle_metric(cache, cache_obj);
+  else 
+    return freq_metric(cache, cache_obj);
 }
 
 void FIFOMerge_insert(cache_t *cache, request_t *req) { 
@@ -119,7 +121,7 @@ int cmp_list_node(const void *a0, const void *b0) {
   } else {
     return 0; 
   }
-}
+} 
 
 void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   assert(evicted_obj == NULL);
@@ -128,7 +130,14 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   if (params->next_to_merge == NULL) {
     params->next_to_merge = cache->q_head;
   } 
-  
+
+  if (params->n_merge_obj == -1) {
+    params->n_merge_obj = cache->n_obj / 200000 + 8;
+    params->n_keep_obj = params->n_merge_obj / 4;
+    params->metric_list = my_malloc_n(struct fifo_merge_sort_list_node, params->n_merge_obj);
+    printf("cache size %lu n_merge_obj: %d, n_keep_obj: %d\n", cache->cache_size, params->n_merge_obj, params->n_keep_obj);
+  }
+
   // collect metric for n_merge obj, we will keep objects with larger metric 
   cache_obj_t *cache_obj = params->next_to_merge;
   if (cache_obj == NULL) {
