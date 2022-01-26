@@ -202,7 +202,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
       cache_obj->L2Cache.in_cache = 0;
     }
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
     if (params->type == LOGCACHE_LEARNED &&
         params->learner.n_evicted_bytes >
             params->learner.n_bytes_start_collect_train &&

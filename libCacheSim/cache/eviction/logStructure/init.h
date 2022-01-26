@@ -60,7 +60,7 @@ void init_learner(cache_t *cache, L2Cache_init_params_t *init_params) {
   l->n_train = 0;
   l->n_inference = 0;
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   l->n_segs_to_start_training = 1024*8;
   l->n_bytes_start_collect_train = cache->cache_size / 1;
 

@@ -122,7 +122,7 @@ __attribute__((unused)) void L2Cache_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-#if defined(TRAINING_TRUTH) && TRAINING_TRUTH == TRAINING_TRUTH_ONLINE
+#if defined(TRAINING_TRUTH) && TRAINING_TRUTH == TRAINING_Y_FROM_ONLINE
 __attribute__((unused)) cache_ck_res_e L2Cache_check(cache_t *cache,
                                                   request_t *req,
                                                   bool update_cache) {
@@ -148,7 +148,7 @@ __attribute__((unused)) cache_ck_res_e L2Cache_check(cache_t *cache,
     /* object hit update training data y and object stat */
     object_hit(params, cache_obj, req);
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_CACHE
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
     update_train_y(params, cache_obj);
 #endif
 
@@ -231,7 +231,7 @@ __attribute__((unused)) cache_ck_res_e L2Cache_get(cache_t *cache,
     params->cache_state.n_miss += 1;
 
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_CACHE
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
   if (params->type == LOGCACHE_LEARNED) {
     learner_t *l = &params->learner;
     if (l->n_evicted_bytes >= cache->cache_size / 2) {
@@ -309,7 +309,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
 
   if (params->type == LOGCACHE_LEARNED) {
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
     if (params->n_training_segs >= params->learner.n_segs_to_start_training) {
 //    if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
       train(cache);

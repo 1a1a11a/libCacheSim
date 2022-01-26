@@ -25,7 +25,7 @@ void init_seg_sel(cache_t *cache) {
 void init_learner(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   L2Cache_init_params_t *init_params = cache->init_params;
-  
+
   learner_t *l = &params->learner;
 
   l->n_feature = N_FEATURE_TIME_WINDOW * 3 + 12;
@@ -39,7 +39,7 @@ void init_learner(cache_t *cache) {
   l->n_train = 0;
   l->n_inference = 0;
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   l->n_segs_to_start_training = 1024*8;
   l->n_bytes_start_collect_train = cache->cache_size / 1;
 

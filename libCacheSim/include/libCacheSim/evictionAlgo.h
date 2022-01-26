@@ -11,7 +11,7 @@
 #include "evictionAlgo/Random.h"
 #include "evictionAlgo/Clock.h"
 #include "evictionAlgo/FIFOMerge.h"
-#include "evictionAlgo/MClock.h"
+// #include "evictionAlgo/MClock.h"
 
 #include "evictionAlgo/LFU.h"
 #include "evictionAlgo/GDSF.h"

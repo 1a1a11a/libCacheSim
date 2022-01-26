@@ -147,7 +147,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
 #endif
 
 
-#if TRAINING_TRUTH == TRAINING_TRUTH_ORACLE
+#if TRAINING_TRUTH == TRAINING_Y_FROM_ORACLE
   penalty = cal_seg_penalty(cache,
                             OBJ_SCORE_ORACLE,
                             curr_seg, n_retained_obj,
@@ -320,13 +320,13 @@ static void prepare_training_data(cache_t *cache) {
   learner_t *learner = &params->learner;
   int i;
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   create_data_holder(cache);
 #endif
 
   learner->n_zero_samples = learner->n_zero_samples_use = 0;
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   feature_t *train_x = learner->training_x;
   train_y_t *train_y = learner->training_y;
   feature_t *valid_x = learner->valid_x;

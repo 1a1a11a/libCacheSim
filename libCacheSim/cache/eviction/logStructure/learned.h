@@ -84,7 +84,7 @@ static inline void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
 static inline void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->L2Cache.segment;
 
-#if TRAINING_DATA_SOURCE == TRAINING_DATA_FROM_EVICTION
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   DEBUG_ASSERT(cache_obj->L2Cache.in_cache == 0);
   DEBUG_ASSERT(seg->is_training_seg == true);
 #else
