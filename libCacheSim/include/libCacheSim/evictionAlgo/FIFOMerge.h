@@ -26,11 +26,13 @@ typedef struct FIFOMerge_params {
     int n_merge_obj; 
     int n_keep_obj; 
     struct fifo_merge_sort_list_node *metric_list; 
+    bool use_oracle; 
 } FIFOMerge_params_t;
 
 typedef struct FIFOMerge_init_params {
     int n_keep_obj; 
     int n_merge_obj; 
+    bool use_oracle; 
 } FIFOMerge_init_params_t;
 
 cache_t *FIFOMerge_init(common_cache_params_t ccache_params,

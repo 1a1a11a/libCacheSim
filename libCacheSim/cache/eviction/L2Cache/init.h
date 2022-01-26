@@ -3,37 +3,15 @@
 #pragma once
 
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
+#include "const.h"
 
 
-static char *LSC_type_names[] = {
-    "SEGCACHE", "SEGCACHE_ITEM_ORACLE", "SEGCACHE_SEG_ORACLE",
-    "SEGCACHE_BOTH_ORACLE",
-    "LOGCACHE_START_POS",
-    "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE", "LOGCACHE_ITEM_ORACLE",
-    "LOGCACHE_LEARNED"
-};
-
-static char *obj_score_type_names[] = {
-    "OBJ_SCORE_FREQ", "OBJ_SCORE_FREQ_BYTE", "OBJ_SCORE_FREQ_BYTE_AGE",
-    "OBJ_SCORE_HIT_DENSITY",
-    "OBJ_SCORE_ORACLE"
-};
-
-static char *bucket_type_names[] = {
-    "NO_BUCKET",
-    "SIZE_BUCKET",
-    "TTL_BUCKET",
-    "CUSTOMER_BUCKET",
-    "BUCKET_ID_BUCKET",
-    "CONTENT_TYPE_BUCKET"
-};
 
 void init_seg_sel(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  params->seg_sel.score_array =
-      my_malloc_n(double, params->n_merge * params->segment_size);
   params->seg_sel.score_array_size = params->n_merge * params->segment_size;
+  params->seg_sel.score_array = my_malloc_n(double, params->seg_sel.score_array_size);
 
   params->seg_sel.last_rank_time = -INT32_MAX;
   params->seg_sel.ranked_segs = NULL;
@@ -44,9 +22,10 @@ void init_seg_sel(cache_t *cache) {
   memset(params->seg_sel.segs_to_evict, 0, sizeof(segment_t *) * params->n_merge);
 }
 
-void init_learner(cache_t *cache, L2Cache_init_params_t *init_params) {
+void init_learner(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
-
+  L2Cache_init_params_t *init_params = cache->init_params;
+  
   learner_t *l = &params->learner;
 
   l->n_feature = N_FEATURE_TIME_WINDOW * 3 + 12;

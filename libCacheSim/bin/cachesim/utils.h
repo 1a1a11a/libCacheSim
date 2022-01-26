@@ -1,5 +1,9 @@
 #pragma once
 
+#include <sys/stat.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdio.h>
 
 static inline unsigned int n_cores() {
   unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
@@ -16,4 +20,10 @@ static inline double gettime() {
   gettimeofday(&tv, NULL);
 
   return tv.tv_sec + tv.tv_usec / 1000000.0;
+}
+
+static inline void create_dir(char *dir_path) {
+  if (access(dir_path, F_OK) == -1) {
+    mkdir(dir_path, 0777);
+  }
 }

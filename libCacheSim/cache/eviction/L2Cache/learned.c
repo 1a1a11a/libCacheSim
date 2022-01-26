@@ -1,6 +1,7 @@
 
 
 #include "learned.h"
+#include "L2CacheInternal.h"
 
 #ifdef USE_XGBOOST
 #include <xgboost/c_api.h>
@@ -142,7 +143,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
 
   int n_retained_obj = 0;
 #if TRAINING_CONSIDER_RETAIN == 1
-  n_retained_obj = params->n_retain_from_seg;
+  n_retained_obj = params->n_retain_per_seg;
 #endif
 
 
@@ -678,7 +679,7 @@ void inference_xgboost(cache_t *cache) {
 
 #ifdef DUMP_TRAINING_DATA
       fprintf(f, "%f/%lf: ", pred[n_seg], cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg,
-                                        params->n_retain_from_seg,
+                                        params->n_retain_per_seg,
                                         params->curr_rtime, params->curr_vtime));
       for (int j = 0; j < learner->n_feature; j++) {
         fprintf(f, "%f,", learner->inference_data[learner->n_feature * n_seg + j]);

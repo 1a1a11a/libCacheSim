@@ -41,7 +41,7 @@ set (evictionLib
         LHD)
 
 if (ENABLE_L2CACHE)
-    add_subdirectory(logStructure)
+    add_subdirectory(L2Cache)
     set(evictionLib ${evictionLib} L2Cache)
 endif()
 

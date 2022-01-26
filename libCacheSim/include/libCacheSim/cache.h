@@ -86,6 +86,7 @@ struct cache {
   cache_obj_t *q_head; // for LRU and FIFO
   cache_obj_t *q_tail; // for LRU and FIFO
 
+  void *init_params;
   void *eviction_params;
   void *admission_params;
 
@@ -109,7 +110,6 @@ struct cache {
   /* cache stat is not updated automatically, it is popped up only in
    * some situations */
   cache_stat_t stat;
-  void *init_params;
   char cache_name[32];
 };
 

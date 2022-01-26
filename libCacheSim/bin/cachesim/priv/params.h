@@ -25,6 +25,7 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->snapshot_intvl = 3600;
   args->re_train_intvl = 86400 * 2;
 
+  args->lsc_type = LOGCACHE_LEARNED;
   args->bucket_type = NO_BUCKET;
   args->size_bucket_base = 1;
 #endif
@@ -39,6 +40,8 @@ static inline void set_default_arg(sim_arg_t *args) {
 #endif
 
   args->n_thread = (int) n_cores();
+  args->per_obj_metadata = 0; 
+  args->debug = 0; 
 }
 
 static inline void set_param_with_workload(sim_arg_t *args) {
@@ -194,6 +197,12 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->n_cache_size = 14;
   } else if (strstr(args->trace_path, "cluster52") != NULL) {
     uint64_t s[4] = {128, 256,  512,  1024,};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+  } else if (strstr(args->trace_path, "cluster17") != NULL || strstr(args->trace_path, "cluster19") != NULL) {
+    uint64_t s[9] = {512, 1024, 2048, 4096, 8192, 16384};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }

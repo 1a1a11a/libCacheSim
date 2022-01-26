@@ -17,20 +17,21 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   sim_arg_t args;
   set_default_arg(&args);
 
-  if (strcmp(argv[1], "twr") == 0) {
+  if (strcasecmp(argv[1], "twr") == 0) {
     args.trace_type = TWR_TRACE;
-  } else if (strcmp(argv[1], "vscsi") == 0) {
+  } else if (strcasecmp(argv[1], "vscsi") == 0) {
     args.trace_type = VSCSI_TRACE;
-  } else if (strcmp(argv[1], "bin") == 0) {
+  } else if (strcasecmp(argv[1], "bin") == 0) {
     args.trace_type = BIN_TRACE;
-  } else if (strcmp(argv[1], "oracleTwrNS") == 0 || strcmp(argv[1], "oracleSimTwrNS")) {
+  } else if (strcasecmp(argv[1], "oracleTwrNS") == 0 || strcasecmp(argv[1], "oracleSimTwrNS") == 0) {
     args.trace_type = ORACLE_SIM_TWRNS_TRACE;
-  } else if (strcmp(argv[1], "oracleBin") == 0 || strcmp(argv[1], "oracleGeneralBin") == 0) {
+  } else if (strcasecmp(argv[1], "oracleGeneral") == 0 || strcasecmp(argv[1], "oracleGeneralBin") == 0) {
     args.trace_type = ORACLE_GENERAL_TRACE;
-  } else if (strcmp(argv[1], "oracleAkamaiBin") == 0) {
+  } else if (strcasecmp(argv[1], "oracleAkamaiBin") == 0) {
     args.trace_type = ORACLE_AKAMAI_TRACE;
   } else {
     printf("unknown trace type %s\n", argv[1]);
+    abort();
   }
 
   args.trace_path = argv[2];
@@ -39,12 +40,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   args.cache_size = atoi(argv[3]);
   args.alg = argv[4];
   
-  if (argc > 5) {
+  if (argc > 5) 
     args.per_obj_metadata = atoi(argv[5]);
-  } else {
-    args.per_obj_metadata = 0;
-  }
-
   if (argc > 6)
     args.debug = atoi(argv[6]);
 

@@ -296,7 +296,7 @@ static inline void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *b
   bucket->n_seg += 1;
 }
 
-static inline double cal_object_score(L2Cache_params_t *params, obj_score_e score_type,
+static inline double cal_object_score(L2Cache_params_t *params, obj_score_type_e score_type,
                                       cache_obj_t *cache_obj, int curr_rtime,
                                       int64_t curr_vtime) {
   segment_t *seg = cache_obj->L2Cache.segment;
@@ -341,7 +341,7 @@ static inline int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
   return n;
 }
 
-static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, segment_t **segs,
+static inline double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **segs,
                                  int n_segs, int n_retain) {
   L2Cache_params_t *params = cache->eviction_params;
 
@@ -361,7 +361,7 @@ static inline double find_cutoff(cache_t *cache, obj_score_e obj_score_type, seg
   return params->seg_sel.score_array[pos - n_retain];
 }
 
-static inline double cal_seg_penalty(cache_t *cache, obj_score_e obj_score_type, segment_t *seg,
+static inline double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
                                      int n_retain, int64_t rtime, int64_t vtime) {
   L2Cache_params_t *params = cache->eviction_params;
   seg_sel_t *seg_sel = &params->seg_sel;
@@ -459,7 +459,7 @@ static inline void print_seg(cache_t *cache, segment_t *seg, int log_level) {
 
          seg->n_merge, seg->penalty,
           cal_seg_penalty(cache, OBJ_SCORE_ORACLE,
-                          seg, params->n_retain_from_seg,
+                          seg, params->n_retain_per_seg,
                           params->curr_rtime, params->curr_vtime),
          count_n_obj_reuse(cache, seg),
 

@@ -98,16 +98,17 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
 #endif
 
       if (admit) {
-        if (req->obj_size > local_cache->cache_size) {
+        if (req->obj_size + local_cache->per_obj_overhead > local_cache->cache_size) {
           WARN("object %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
                   req->obj_id, req->obj_size, local_cache->cache_size);
+        } else {
+
+          while (local_cache->occupied_size + req->obj_size +
+                  local_cache->per_obj_overhead > local_cache->cache_size)
+            local_cache->evict(local_cache, req, NULL);
+
+          local_cache->insert(local_cache, req);
         }
-
-        while (local_cache->occupied_size + req->obj_size +
-                local_cache->per_obj_overhead > local_cache->cache_size)
-          local_cache->evict(local_cache, req, NULL);
-
-        local_cache->insert(local_cache, req);
       }
     }
     read_one_req(cloned_reader, req);

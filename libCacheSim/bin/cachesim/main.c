@@ -90,6 +90,7 @@ int main(int argc, char **argv) {
 
     char output_str[1024]; 
     char output_filename[128]; 
+    create_dir("result/"); 
     sprintf(output_filename, "result/%s", rindex(args.trace_path, '/') + 1);
     FILE *output_file = fopen(output_filename, "a");
     for (int i = 0; i < args.n_cache_size; i++) {

@@ -133,7 +133,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
             cache->cache_size);
 
   cache_ck_res_e cache_check = cache->check(cache, req, true);
-  if (req->obj_size <= cache->cache_size) {
+  if (req->obj_size + cache->per_obj_overhead <= cache->cache_size) {
     if (cache_check == cache_ck_miss) {
       while (cache->occupied_size + req->obj_size + cache->per_obj_overhead > cache->cache_size)
         cache->evict(cache, req, NULL);

@@ -23,7 +23,7 @@ typedef struct {
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   struct {
-    LSC_type_e lsc_type;
+    L2Cache_type_e lsc_type;
     bucket_type_e bucket_type;
     int seg_size;
     int n_merge;

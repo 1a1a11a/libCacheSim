@@ -48,12 +48,12 @@ static void rank_segs(cache_t *cache) {
         } else if (params->type == LOGCACHE_LOG_ORACLE
             || params->type == SEGCACHE_SEG_ORACLE) {
 //            curr_seg->penalty = cal_seg_penalty(cache, params->obj_score_type, curr_seg,
-//                                                params->n_retain_from_seg, params->curr_rtime,
+//                                                params->n_retain_per_seg, params->curr_rtime,
 //                                                params->curr_vtime);
           curr_seg->penalty = cal_seg_penalty(cache,
                                               OBJ_SCORE_ORACLE,
                                               curr_seg,
-                                              params->n_retain_from_seg,
+                                              params->n_retain_per_seg,
                                               params->curr_rtime,
                                               params->curr_vtime);
         } else if (params->type == SEGCACHE_BOTH_ORACLE
@@ -62,7 +62,7 @@ static void rank_segs(cache_t *cache) {
               cal_seg_penalty(cache,
                               OBJ_SCORE_ORACLE,
                               curr_seg,
-                              params->n_retain_from_seg,
+                              params->n_retain_per_seg,
                               params->curr_rtime,
                               params->curr_vtime);
         } else {

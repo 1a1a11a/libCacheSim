@@ -10,7 +10,8 @@
 #include "oracle.h"
 #include "utils.h"
 #include "merge.h"
-
+#include "const.h"
+#include "L2CacheInternal.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -21,33 +22,40 @@ extern "C" {
 #endif
 
 
-  cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
+void check_init_params(L2Cache_init_params_t *init_params) {
+  assert(init_params->segment_size > 1 && init_params->segment_size <= 100000000); 
+  assert(init_params->n_merge > 1 && init_params->n_merge <= 100);
+  assert(init_params->rank_intvl > 0 && init_params->rank_intvl <= 100000000);
+  assert(init_params->segment_size / init_params->n_merge > 1); 
+
+  if (init_params->size_bucket_base <= 0) {
+    init_params->size_bucket_base = 1;
+  }
+}
+
+cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("L2Cache", ccache_params);
   L2Cache_init_params_t *L2Cache_init_params = init_params;
 
   cache->hashtable->external_obj = true;
-  cache->init_params = init_params;
+  check_init_params((L2Cache_init_params_t *) init_params);
+  cache->init_params = my_malloc(L2Cache_init_params_t); 
+  memcpy(cache->init_params, L2Cache_init_params, sizeof(L2Cache_init_params_t));
 
   L2Cache_params_t *params = my_malloc(L2Cache_params_t);
   memset(params, 0, sizeof(L2Cache_params_t));
   cache->eviction_params = params;
 
+  params->type = L2Cache_init_params->type;
+  params->bucket_type = L2Cache_init_params->bucket_type;
+  params->obj_score_type = L2Cache_init_params->obj_score_type;
 
   params->curr_evict_bucket_idx = -1;
   params->segment_size = L2Cache_init_params->segment_size;
   params->n_merge = L2Cache_init_params->n_merge;
-  params->n_retain_from_seg = params->segment_size / params->n_merge;
+  params->n_retain_per_seg = params->segment_size / params->n_merge;
   params->rank_intvl = L2Cache_init_params->rank_intvl;
-  params->type = L2Cache_init_params->type;
-  params->bucket_type = L2Cache_init_params->bucket_type;
   params->size_bucket_base = L2Cache_init_params->size_bucket_base;
-  if (params->size_bucket_base <= 0) {
-    params->size_bucket_base = 1;
-  }
-
-  if (params->rank_intvl <= 0) {
-    params->rank_intvl = DEFAULT_RANK_INTVL;
-  }
 
   switch (params->type) {
   case SEGCACHE:
@@ -67,34 +75,40 @@ extern "C" {
   };
 
   init_seg_sel(cache);
-  init_learner(cache, L2Cache_init_params);
+  init_learner(cache);
   init_buckets(cache, L2Cache_init_params->hit_density_age_shift);
   init_cache_state(cache);
 
-  INFO(
-      "log-structured cache, size %.2lf MB, type %d %s, object selection %d %s, bucket type %d %s, "
-      "size_bucket_base %d, %ld bytes start training seg collection, sample %d, rank intvl %d, "
-      "training truth %d re-train %d\n",
-      (double) cache->cache_size / 1048576,
-      params->type,
-      LSC_type_names[params->type],
-      params->obj_score_type,
-      obj_score_type_names[params->obj_score_type],
-      params->bucket_type,
-      bucket_type_names[params->bucket_type],
-      params->size_bucket_base,
-//      (long) params->learner.n_bytes_start_collect_train,
-//      params->learner.sample_every_n_seg_for_training,
-      0L, 0,
-      params->rank_intvl,
-      TRAINING_TRUTH,
-      0
-//      params->learner.re_train_intvl
-  );
+  cache->cache_init = L2Cache_init; 
+  cache->cache_free = L2Cache_free;
+  cache->get = L2Cache_get;
+  cache->check = L2Cache_check;
+  cache->insert = L2Cache_insert;
+  cache->evict = L2Cache_evict;
+  cache->remove = L2Cache_remove;
+
+//   INFO(
+//       "L2Cche, %.2lf MB, %s, obj sel %s, %s, "
+//       "size_bucket_base %d, %ld bytes start training seg collection, sample %d, rank intvl %d, "
+//       "training truth %d re-train %d\n",
+//       (double) cache->cache_size / 1048576,
+//       LSC_type_names[params->type],
+//       obj_score_type_names[params->obj_score_type],
+//       bucket_type_names[params->bucket_type],
+//       params->size_bucket_base,
+// //      (long) params->learner.n_bytes_start_collect_train,
+// //      params->learner.sample_every_n_seg_for_training,
+//       0L, 0,
+//       params->rank_intvl,
+//       TRAINING_TRUTH,
+//       0
+// //      params->learner.re_train_intvl
+//   );
   return cache;
 }
 
 __attribute__((unused)) void L2Cache_free(cache_t *cache) {
+  my_free(sizeof(L2Cache_init_params_t), cache->init_params);
   L2Cache_params_t *params = cache->eviction_params;
   bucket_t *bkt = &params->training_bucket;
   segment_t *seg = bkt->first_seg, *next_seg;

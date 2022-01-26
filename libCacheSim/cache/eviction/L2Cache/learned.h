@@ -94,7 +94,7 @@ static inline void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_o
 #endif
 
 #if TRAINING_CONSIDER_RETAIN == 1
-  if (seg->n_skipped_penalty ++ > params->n_retain_from_seg)
+  if (seg->n_skipped_penalty ++ > params->n_retain_per_seg)
 #endif
   {
     double age = (double) params->curr_vtime - seg->become_train_seg_vtime;

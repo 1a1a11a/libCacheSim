@@ -36,7 +36,7 @@ extern "C" {
   params->curr_evict_bucket_idx = -1;
   params->segment_size = L2Cache_init_params->segment_size;
   params->n_merge = L2Cache_init_params->n_merge;
-  params->n_retain_from_seg = params->segment_size / params->n_merge;
+  params->n_retain_per_seg = params->segment_size / params->n_merge;
   params->rank_intvl = L2Cache_init_params->rank_intvl;
   params->type = L2Cache_init_params->type;
   params->bucket_type = L2Cache_init_params->bucket_type;
