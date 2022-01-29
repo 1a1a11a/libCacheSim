@@ -1,5 +1,6 @@
 #pragma once
 
+#include "obj.h"
 #include "log.h"
 #include "learned.h"
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
@@ -143,19 +144,17 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 
 
   double req_rate = 0, write_rate = 0;
-  double write_ratio = 0, cold_miss_ratio = 0;
+  double miss_ratio = 0;
   int n_merge = 0;
   for (int i = 0; i < params->n_merge; i++) {
     req_rate += segs[i]->req_rate;
     write_rate += segs[i]->write_rate;
-    write_ratio += segs[i]->write_ratio;
-    cold_miss_ratio += segs[i]->cold_miss_ratio;
+    miss_ratio += segs[i]->miss_ratio;
     n_merge = MAX(n_merge, segs[i]->n_merge);
   }
   new_seg->req_rate = req_rate / params->n_merge;
   new_seg->write_rate = write_rate / params->n_merge;
-  new_seg->write_ratio = write_ratio / params->n_merge;
-  new_seg->cold_miss_ratio = cold_miss_ratio / params->n_merge;
+  new_seg->miss_ratio = miss_ratio / params->n_merge;
   new_seg->n_merge = n_merge + 1;
 
   link_new_seg_before_seg(params, bucket, segs[0], new_seg);
@@ -184,7 +183,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
               >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_total_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));
-        new_obj->L2Cache.L2Cache_freq = (new_obj->L2Cache.L2Cache_freq + 1) / 2;
+        new_obj->L2Cache.freq = (new_obj->L2Cache.freq + 1) / 2;
         new_obj->L2Cache.idx_in_segment = new_seg->n_total_obj;
         new_obj->L2Cache.segment = new_seg;
         new_obj->L2Cache.active = 0;
@@ -308,7 +307,7 @@ static bucket_t *select_segs_rand(cache_t *cache, segment_t *segs[]) {
   int n_checked_seg = 0;
   while (!is_seg_evictable_fifo(seg_to_evict, params->n_merge)) {
 //    printf("%d\n", params->curr_evict_bucket_idx);
-    bucket = next_unempty_bucket(cache, params->curr_evict_bucket_idx);
+    bucket = next_nonempty_bucket(cache, params->curr_evict_bucket_idx);
     params->curr_evict_bucket_idx = bucket->bucket_idx;
     int n_th = rand() % (bucket->n_seg - params->n_merge + 1);
     seg_to_evict = bucket->first_seg;

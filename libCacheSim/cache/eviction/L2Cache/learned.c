@@ -3,6 +3,7 @@
 #include "learned.h"
 #include "L2CacheInternal.h"
 
+
 #ifdef USE_XGBOOST
 #include <xgboost/c_api.h>
 #define safe_call(call) {  \
@@ -56,48 +57,48 @@ static inline void create_data_holder(cache_t *cache) {
   learner_t *learner = &params->learner;
 
   int32_t n_max_training_samples = params->n_training_segs;
-  if (learner->train_matrix_size_row < n_max_training_samples) {
+  if (learner->train_matrix_row_len < n_max_training_samples) {
     n_max_training_samples *= 2;
-    if (learner->train_matrix_size_row > 0) {
+    if (learner->train_matrix_row_len > 0) {
       DEBUG_ASSERT(learner->training_x != NULL);
-      my_free(sizeof(feature_t) * learner->train_matrix_size_row * learner->n_feature, learner->training_x);
-      my_free(sizeof(train_y_t) * learner->train_matrix_size_row, learner->training_y);
+      my_free(sizeof(feature_t) * learner->train_matrix_row_len * learner->n_feature, learner->training_x);
+      my_free(sizeof(train_y_t) * learner->train_matrix_row_len, learner->training_y);
     }
     learner->training_x = my_malloc_n(feature_t, n_max_training_samples * learner->n_feature);
     learner->training_y = my_malloc_n(pred_t, n_max_training_samples);
-    learner->train_matrix_size_row = n_max_training_samples;
+    learner->train_matrix_row_len = n_max_training_samples;
   }
 
-  if (learner->valid_matrix_size_row < N_MAX_VALIDATION) {
-    if (learner->valid_matrix_size_row > 0) {
+  if (learner->valid_matrix_row_len < N_MAX_VALIDATION) {
+    if (learner->valid_matrix_row_len > 0) {
       DEBUG_ASSERT(learner->valid_x != NULL);
-      my_free(sizeof(feature_t) * learner->valid_matrix_size_row * learner->n_feature, learner->valid_x);
-      my_free(sizeof(train_y_t) * learner->valid_matrix_size_row, learner->valid_y);
-//      my_free(sizeof(pred_t) * learner->valid_matrix_size_row, learner->valid_pred_y);
+      my_free(sizeof(feature_t) * learner->valid_matrix_row_len * learner->n_feature, learner->valid_x);
+      my_free(sizeof(train_y_t) * learner->valid_matrix_row_len, learner->valid_y);
+//      my_free(sizeof(pred_t) * learner->valid_matrix_row_len, learner->valid_pred_y);
     }
     learner->valid_x = my_malloc_n(feature_t, N_MAX_VALIDATION * learner->n_feature);
     learner->valid_y = my_malloc_n(train_y_t, N_MAX_VALIDATION);
 //    learner->valid_pred_y = my_malloc_n(pred_t, N_MAX_VALIDATION);
-    learner->valid_matrix_size_row = N_MAX_VALIDATION;
+    learner->valid_matrix_row_len = N_MAX_VALIDATION;
   }
 }
 
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
 void create_data_holder2(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
-
   learner_t *learner = &params->learner;
 
-  if (learner->train_matrix_size_row == 0) {
+  if (learner->train_matrix_row_len == 0) {
     learner->training_x = my_malloc_n(feature_t, learner->n_max_training_segs * learner->n_feature);
     learner->training_y = my_malloc_n(pred_t, learner->n_max_training_segs);
-    learner->train_matrix_size_row = learner->n_max_training_segs;
+    learner->train_matrix_row_len = learner->n_max_training_segs;
 
-    learner->valid_matrix_size_row = learner->n_max_training_segs / 10;
-    learner->valid_x = my_malloc_n(feature_t, learner->valid_matrix_size_row * learner->n_feature);
-    learner->valid_y = my_malloc_n(train_y_t, learner->valid_matrix_size_row);
+    learner->valid_matrix_row_len = learner->n_max_training_segs / 10;
+    learner->valid_x = my_malloc_n(feature_t, learner->valid_matrix_row_len * learner->n_feature);
+    learner->valid_y = my_malloc_n(train_y_t, learner->valid_matrix_row_len);
   }
 }
-
+#endif
 
 static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool training_data, feature_t *x, train_y_t *y) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -117,8 +118,8 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
   x[4] = (feature_t) curr_seg->req_rate;
   x[5] = (feature_t) curr_seg->write_rate;
   x[6] = (feature_t) curr_seg->total_bytes / curr_seg->n_total_obj;
-  x[7] = curr_seg->write_ratio;
-  x[8] = curr_seg->cold_miss_ratio;
+  x[7] = curr_seg->miss_ratio;
+  x[8] = 0.0;
   x[9] = curr_seg->n_total_hit;
   x[10] = curr_seg->n_total_active;
   x[11] = curr_seg->n_merge;
@@ -147,7 +148,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
 #endif
 
 
-#if TRAINING_TRUTH == TRAINING_Y_FROM_ORACLE
+#if TRAINING_Y_SOURCE == TRAINING_Y_FROM_ORACLE
   penalty = cal_seg_penalty(cache,
                             OBJ_SCORE_ORACLE,
                             curr_seg, n_retained_obj,
@@ -178,7 +179,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
 
 
 
-
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
 static inline void copy_to_train_matrix(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
@@ -196,15 +197,11 @@ static inline void copy_to_train_matrix(cache_t *cache, segment_t *seg) {
   prepare_one_row(cache, seg, true,
                   &l->training_x[row_idx*l->n_feature],
                   &l->training_y[row_idx]);
-//  printf("%d %f: %f %f\n", row_idx, l->training_y[row_idx],
-//         l->training_x[row_idx * l->n_feature + 9],
-//         l->training_x[row_idx * l->n_feature + 10]
-//  );
-//  print_seg(cache, seg, DEBUG_LEVEL);
-
-
 }
+#endif 
 
+
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
 void snapshot_segs_to_training_data(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
@@ -235,6 +232,8 @@ void snapshot_segs_to_training_data(cache_t *cache) {
          (long) params->curr_rtime % 3600,
          l->n_snapshot, l->n_training_samples, l->n_max_training_segs);
 }
+#endif 
+
 
 
 
@@ -415,7 +414,7 @@ static void prepare_training_data(cache_t *cache) {
 
     if (copy) {
       copy_direction = 0;
-      if (rand() % 10 == 0 && pos_in_valid_data < learner->valid_matrix_size_row) {
+      if (rand() % 10 == 0 && pos_in_valid_data < learner->valid_matrix_row_len) {
         copy_direction = 1;
       }
 
@@ -492,16 +491,16 @@ void prepare_inference_data(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
 
-  if (learner->inf_matrix_size_row < params->n_segs) {
-    if (learner->inf_matrix_size_row != 0) {
+  if (learner->inf_matrix_row_len < params->n_segs) {
+    if (learner->inf_matrix_row_len != 0) {
       DEBUG_ASSERT(learner->inference_data != NULL);
-      my_free(sizeof(feature_t) * learner->inf_matrix_size_row * learner->n_feature, learner->inference_data);
-      my_free(sizeof(pred_t) * learner->inf_matrix_size_row, learner->pred);
+      my_free(sizeof(feature_t) * learner->inf_matrix_row_len * learner->n_feature, learner->inference_data);
+      my_free(sizeof(pred_t) * learner->inf_matrix_row_len, learner->pred);
     }
     int n_row = params->n_segs * 2;
     learner->inference_data = my_malloc_n(feature_t, n_row * learner->n_feature);
     learner->pred = my_malloc_n(pred_t, n_row);
-    learner->inf_matrix_size_row = n_row;
+    learner->inf_matrix_row_len = n_row;
   }
 
   feature_t *x = learner->inference_data;

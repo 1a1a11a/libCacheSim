@@ -87,7 +87,7 @@ extern "C" {
 //      params->learner.sample_every_n_seg_for_training,
       0L, 0,
       params->rank_intvl,
-      TRAINING_TRUTH,
+      TRAINING_Y_SOURCE,
       0
 //      params->learner.re_train_intvl
   );
@@ -122,7 +122,7 @@ __attribute__((unused)) void L2Cache_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-#if defined(TRAINING_TRUTH) && TRAINING_TRUTH == TRAINING_Y_FROM_ONLINE
+#if defined(TRAINING_Y_SOURCE) && TRAINING_Y_SOURCE == TRAINING_Y_FROM_ONLINE
 __attribute__((unused)) cache_ck_res_e L2Cache_check(cache_t *cache,
                                                   request_t *req,
                                                   bool update_cache) {
@@ -273,7 +273,7 @@ __attribute__((unused)) void L2Cache_insert(cache_t *cache, request_t *req) {
 
   cache_obj_t *cache_obj = &seg->objs[seg->n_total_obj];
   copy_request_to_cache_obj(cache_obj, req);
-  cache_obj->L2Cache.L2Cache_freq = 0;
+  cache_obj->L2Cache.freq = 0;
   cache_obj->L2Cache.last_access_rtime = req->real_time;
   //  cache_obj->L2Cache.last_history_idx = -1;
   cache_obj->L2Cache.in_cache = 1;
@@ -300,11 +300,11 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   learner_t *l = &params->learner;
 
-  bucket_t *bucket = select_segs(cache, params->seg_sel.segs_to_evict);
+  bucket_t *bucket = select_segs(cache, params->obj_sel.segs_to_evict);
 
   params->n_evictions += 1;
   for (int i = 0; i < params->n_merge; i++) {
-    l->n_evicted_bytes += params->seg_sel.segs_to_evict[i]->total_bytes;
+    l->n_evicted_bytes += params->obj_sel.segs_to_evict[i]->total_bytes;
   }
 
 
@@ -339,7 +339,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   }
 
 
-    L2Cache_merge_segs(cache, bucket, params->seg_sel.segs_to_evict);
+    L2Cache_merge_segs(cache, bucket, params->obj_sel.segs_to_evict);
 
 
   if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY &&

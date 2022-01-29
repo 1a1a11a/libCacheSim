@@ -31,17 +31,17 @@ static char *bucket_type_names[] = {
 void init_seg_sel(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  params->seg_sel.score_array =
+  params->obj_sel.score_array =
       my_malloc_n(double, params->n_merge * params->segment_size);
-  params->seg_sel.score_array_size = params->n_merge * params->segment_size;
+  params->obj_sel.score_array_size = params->n_merge * params->segment_size;
 
   params->seg_sel.last_rank_time = -INT32_MAX;
   params->seg_sel.ranked_segs = NULL;
   params->seg_sel.ranked_seg_size = -1;
   params->seg_sel.ranked_seg_pos = 0;
 
-  params->seg_sel.segs_to_evict = my_malloc_n(segment_t *, params->n_merge);
-  memset(params->seg_sel.segs_to_evict, 0, sizeof(segment_t *) * params->n_merge);
+  params->obj_sel.segs_to_evict = my_malloc_n(segment_t *, params->n_merge);
+  memset(params->obj_sel.segs_to_evict, 0, sizeof(segment_t *) * params->n_merge);
 }
 
 void init_learner(cache_t *cache, L2Cache_init_params_t *init_params) {
@@ -52,10 +52,10 @@ void init_learner(cache_t *cache, L2Cache_init_params_t *init_params) {
   l->n_feature = N_FEATURE_TIME_WINDOW * 3 + 12;
   l->pred = NULL;
   l->training_x = NULL;
-  l->train_matrix_size_row = 0;
-  l->valid_matrix_size_row = 0;
+  l->train_matrix_row_len = 0;
+  l->valid_matrix_row_len = 0;
   l->inference_data = NULL;
-  l->inf_matrix_size_row = 0;
+  l->inf_matrix_row_len = 0;
 
   l->n_train = 0;
   l->n_inference = 0;

@@ -184,7 +184,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
               >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_total_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));
-        new_obj->L2Cache.L2Cache_freq = (new_obj->L2Cache.L2Cache_freq + 1) / 2;
+        new_obj->L2Cache.freq = (new_obj->L2Cache.freq + 1) / 2;
         new_obj->L2Cache.idx_in_segment = new_seg->n_total_obj;
         new_obj->L2Cache.segment = new_seg;
         new_obj->L2Cache.active = 0;
@@ -308,7 +308,7 @@ static bucket_t *select_segs_rand(cache_t *cache, segment_t *segs[]) {
   int n_checked_seg = 0;
   while (!is_seg_evictable_fifo(seg_to_evict, params->n_merge)) {
 //    printf("%d\n", params->curr_evict_bucket_idx);
-    bucket = next_unempty_bucket(cache, params->curr_evict_bucket_idx);
+    bucket = next_nonempty_bucket(cache, params->curr_evict_bucket_idx);
     params->curr_evict_bucket_idx = bucket->bucket_idx;
     int n_th = rand() % (bucket->n_seg - params->n_merge + 1);
     seg_to_evict = bucket->first_seg;

@@ -3,7 +3,7 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 
 
-static inline bucket_t *next_unempty_bucket(cache_t *cache, int curr_idx) {
+static inline bucket_t *next_nonempty_bucket(cache_t *cache, int curr_idx) {
   L2Cache_params_t *params = cache->eviction_params;
   curr_idx = (curr_idx + 1) % MAX_N_BUCKET;
   while (params->buckets[curr_idx].n_seg < params->n_merge) {
@@ -18,7 +18,7 @@ static inline void update_cache_state(cache_t *cache) {
   cache_state_t *state = &params->cache_state;
   int64_t rt = params->curr_rtime - state->last_update_rtime;
   int64_t vt = params->curr_vtime - state->last_update_vtime;
-  if (rt >= CACHE_STATE_UPDATE_INTVL && vt > 10 * 1000) {
+  if (rt >= CACHE_STATE_UPDATE_RINTVL && vt > 10 * 1000) {
     state->write_rate = (double) state->n_miss / rt;
     state->req_rate = (double) vt / rt;
     state->write_ratio = (double) state->n_miss / vt;

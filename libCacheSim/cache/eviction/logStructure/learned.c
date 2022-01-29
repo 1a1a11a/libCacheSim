@@ -55,29 +55,29 @@ static inline void create_data_holder(cache_t *cache) {
   learner_t *learner = &params->learner;
 
   int32_t n_max_training_samples = params->n_training_segs;
-  if (learner->train_matrix_size_row < n_max_training_samples) {
+  if (learner->train_matrix_row_len < n_max_training_samples) {
     n_max_training_samples *= 2;
-    if (learner->train_matrix_size_row > 0) {
+    if (learner->train_matrix_row_len > 0) {
       DEBUG_ASSERT(learner->training_x != NULL);
-      my_free(sizeof(feature_t) * learner->train_matrix_size_row * learner->n_feature, learner->training_x);
-      my_free(sizeof(train_y_t) * learner->train_matrix_size_row, learner->training_y);
+      my_free(sizeof(feature_t) * learner->train_matrix_row_len * learner->n_feature, learner->training_x);
+      my_free(sizeof(train_y_t) * learner->train_matrix_row_len, learner->training_y);
     }
     learner->training_x = my_malloc_n(feature_t, n_max_training_samples * learner->n_feature);
     learner->training_y = my_malloc_n(pred_t, n_max_training_samples);
-    learner->train_matrix_size_row = n_max_training_samples;
+    learner->train_matrix_row_len = n_max_training_samples;
   }
 
-  if (learner->valid_matrix_size_row < N_MAX_VALIDATION) {
-    if (learner->valid_matrix_size_row > 0) {
+  if (learner->valid_matrix_row_len < N_MAX_VALIDATION) {
+    if (learner->valid_matrix_row_len > 0) {
       DEBUG_ASSERT(learner->valid_x != NULL);
-      my_free(sizeof(feature_t) * learner->valid_matrix_size_row * learner->n_feature, learner->valid_x);
-      my_free(sizeof(train_y_t) * learner->valid_matrix_size_row, learner->valid_y);
-//      my_free(sizeof(pred_t) * learner->valid_matrix_size_row, learner->valid_pred_y);
+      my_free(sizeof(feature_t) * learner->valid_matrix_row_len * learner->n_feature, learner->valid_x);
+      my_free(sizeof(train_y_t) * learner->valid_matrix_row_len, learner->valid_y);
+//      my_free(sizeof(pred_t) * learner->valid_matrix_row_len, learner->valid_pred_y);
     }
     learner->valid_x = my_malloc_n(feature_t, N_MAX_VALIDATION * learner->n_feature);
     learner->valid_y = my_malloc_n(train_y_t, N_MAX_VALIDATION);
 //    learner->valid_pred_y = my_malloc_n(pred_t, N_MAX_VALIDATION);
-    learner->valid_matrix_size_row = N_MAX_VALIDATION;
+    learner->valid_matrix_row_len = N_MAX_VALIDATION;
   }
 }
 
@@ -86,14 +86,14 @@ void create_data_holder2(cache_t *cache) {
 
   learner_t *learner = &params->learner;
 
-  if (learner->train_matrix_size_row == 0) {
+  if (learner->train_matrix_row_len == 0) {
     learner->training_x = my_malloc_n(feature_t, learner->n_max_training_segs * learner->n_feature);
     learner->training_y = my_malloc_n(pred_t, learner->n_max_training_segs);
-    learner->train_matrix_size_row = learner->n_max_training_segs;
+    learner->train_matrix_row_len = learner->n_max_training_segs;
 
-    learner->valid_matrix_size_row = learner->n_max_training_segs / 10;
-    learner->valid_x = my_malloc_n(feature_t, learner->valid_matrix_size_row * learner->n_feature);
-    learner->valid_y = my_malloc_n(train_y_t, learner->valid_matrix_size_row);
+    learner->valid_matrix_row_len = learner->n_max_training_segs / 10;
+    learner->valid_x = my_malloc_n(feature_t, learner->valid_matrix_row_len * learner->n_feature);
+    learner->valid_y = my_malloc_n(train_y_t, learner->valid_matrix_row_len);
   }
 }
 
@@ -146,7 +146,7 @@ static inline bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool tra
 #endif
 
 
-#if TRAINING_TRUTH == TRAINING_Y_FROM_ORACLE
+#if TRAINING_Y_SOURCE == TRAINING_Y_FROM_ORACLE
   penalty = cal_seg_penalty(cache,
                             OBJ_SCORE_ORACLE,
                             curr_seg, n_retained_obj,
@@ -414,7 +414,7 @@ static void prepare_training_data(cache_t *cache) {
 
     if (copy) {
       copy_direction = 0;
-      if (rand() % 10 == 0 && pos_in_valid_data < learner->valid_matrix_size_row) {
+      if (rand() % 10 == 0 && pos_in_valid_data < learner->valid_matrix_row_len) {
         copy_direction = 1;
       }
 
@@ -491,16 +491,16 @@ void prepare_inference_data(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
 
-  if (learner->inf_matrix_size_row < params->n_segs) {
-    if (learner->inf_matrix_size_row != 0) {
+  if (learner->inf_matrix_row_len < params->n_segs) {
+    if (learner->inf_matrix_row_len != 0) {
       DEBUG_ASSERT(learner->inference_data != NULL);
-      my_free(sizeof(feature_t) * learner->inf_matrix_size_row * learner->n_feature, learner->inference_data);
-      my_free(sizeof(pred_t) * learner->inf_matrix_size_row, learner->pred);
+      my_free(sizeof(feature_t) * learner->inf_matrix_row_len * learner->n_feature, learner->inference_data);
+      my_free(sizeof(pred_t) * learner->inf_matrix_row_len, learner->pred);
     }
     int n_row = params->n_segs * 2;
     learner->inference_data = my_malloc_n(feature_t, n_row * learner->n_feature);
     learner->pred = my_malloc_n(pred_t, n_row);
-    learner->inf_matrix_size_row = n_row;
+    learner->inf_matrix_row_len = n_row;
   }
 
   feature_t *x = learner->inference_data;

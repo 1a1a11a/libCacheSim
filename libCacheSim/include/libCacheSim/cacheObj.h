@@ -44,7 +44,7 @@ typedef struct FIFOMerge_obj_metadata {
 typedef struct L2Cache_obj_metadata {
   void *segment;
   int64_t next_access_vtime;
-  int32_t L2Cache_freq;
+  int32_t freq;
   int32_t last_access_rtime;
   int16_t idx_in_segment;
   int16_t active : 2;

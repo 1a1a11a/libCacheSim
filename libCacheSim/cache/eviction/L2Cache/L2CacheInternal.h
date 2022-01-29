@@ -77,22 +77,23 @@ typedef struct learner {
   unsigned int  n_zero_samples_use;
   int           n_trees;
 
-  int32_t       train_matrix_size_row;   /* the size of matrix */
-  int32_t       valid_matrix_size_row;
-  int32_t       inf_matrix_size_row;
+  int32_t       train_matrix_row_len;   /* the size of matrix */
+  int32_t       valid_matrix_row_len;   
+  int32_t       inf_matrix_row_len;
 
 } learner_t;
 
 typedef struct cache_state {
   double        write_rate;
   double        req_rate;
-  double        write_ratio;
-  double        cold_miss_ratio;
+  double        miss_ratio;
+  // double        cold_miss_ratio;
 
   int64_t       last_update_rtime;
   int64_t       last_update_vtime;
 
   int64_t   n_miss;
+  int64_t   n_miss_bytes; 
 } cache_state_t;
 
 typedef struct segment {
@@ -118,8 +119,8 @@ typedef struct segment {
   int64_t             create_vtime;
   double              req_rate; 
   double              write_rate;
-  double              write_ratio;
-  double              cold_miss_ratio;
+  double              miss_ratio;
+  // double              cold_miss_ratio;
 
   /* training related */
   bool                is_training_seg;
@@ -144,16 +145,19 @@ typedef struct {
   hitProb_t       *hit_prob;    // TODO: move to LHD 
 } bucket_t;
 
+typedef struct obj_sel {
+  segment_t       **segs_to_evict;
+
+  double          *score_array;
+  int             score_array_size;
+} obj_sel_t; 
+
 /* parameters and state related to segment selection */
 typedef struct seg_sel {
   int64_t         last_rank_time;
   segment_t       **ranked_segs;
   int32_t         ranked_seg_size;
   int32_t         ranked_seg_pos;
-
-  double          *score_array;
-  int             score_array_size;
-  segment_t       **segs_to_evict;
 } seg_sel_t;
 
 
@@ -184,6 +188,8 @@ typedef struct {
   int64_t           curr_vtime;
 
   seg_sel_t         seg_sel;
+
+  obj_sel_t         obj_sel;  /* for selecting objects to evict */
 
   learner_t         learner;
 

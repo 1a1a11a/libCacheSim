@@ -63,7 +63,7 @@ static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *
 
 static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
   obj->L2Cache.next_access_vtime = req->next_access_vtime;
-  obj->L2Cache.L2Cache_freq += 1;
+  obj->L2Cache.freq += 1;
 
   segment_t *seg = obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
@@ -303,13 +303,13 @@ static inline double cal_object_score(L2Cache_params_t *params, obj_score_type_e
   bucket_t *bkt = &params->buckets[seg->bucket_idx];
 
   if (score_type == OBJ_SCORE_FREQ) {
-    return (double) cache_obj->L2Cache.L2Cache_freq;
+    return (double) cache_obj->L2Cache.freq;
 
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
-    return (double) (cache_obj->L2Cache.L2Cache_freq + 0.01) * 1.0e6 / cache_obj->obj_size;
+    return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6 / cache_obj->obj_size;
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE) {
-    return (double) (cache_obj->L2Cache.L2Cache_freq + 0.01) * 1.0e6 / (curr_rtime - cache_obj->L2Cache.last_access_rtime);
+    return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6 / (curr_rtime - cache_obj->L2Cache.last_access_rtime);
 
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
     int64_t obj_age = object_age(params, cache_obj);
@@ -351,14 +351,14 @@ static inline double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type
   for (int i = 0; i < n_segs; i++) {
     seg = segs[i];
     for (int j = 0; j < seg->n_total_obj; j++) {
-      params->seg_sel.score_array[pos++] = cal_object_score(
+      params->obj_sel.score_array[pos++] = cal_object_score(
           params, obj_score_type, &seg->objs[j], params->curr_rtime, params->curr_vtime);
     }
   }
   DEBUG_ASSERT(pos == params->segment_size * n_segs);
-  qsort(params->seg_sel.score_array, pos, sizeof(double), cmp_double);
+  qsort(params->obj_sel.score_array, pos, sizeof(double), cmp_double);
 
-  return params->seg_sel.score_array[pos - n_retain];
+  return params->obj_sel.score_array[pos - n_retain];
 }
 
 static inline double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
@@ -368,16 +368,16 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_
 
   int pos = 0;
   for (int j = 0; j < seg->n_total_obj; j++) {
-    seg_sel->score_array[pos++] =
+    obj_sel->score_array[pos++] =
         cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
   }
 
-  DEBUG_ASSERT(pos <= seg_sel->score_array_size);
-  qsort(seg_sel->score_array, pos, sizeof(double), cmp_double);
-  DEBUG_ASSERT(seg_sel->score_array[0] <= seg_sel->score_array[pos - 1]);
+  DEBUG_ASSERT(pos <= obj_sel->score_array_size);
+  qsort(obj_sel->score_array, pos, sizeof(double), cmp_double);
+  DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[pos - 1]);
 
   static int n_err = 0;
-  if (seg_sel->score_array[0] == seg_sel->score_array[pos - 1]) {
+  if (obj_sel->score_array[0] == obj_sel->score_array[pos - 1]) {
     if (n_err++ % 100000 == 20) {
       DEBUG("cache size %lu: seg may have all objects with no reuse %d (ignore this if "
               "it is end of trace running oracle)\n",
@@ -389,7 +389,7 @@ static inline double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_
 
   double penalty = 0;
   for (int j = 0; j < seg->n_total_obj - n_retain; j++) {
-    penalty += seg_sel->score_array[j];
+    penalty += obj_sel->score_array[j];
   }
 
   /* we add this term here because the segment here is not fix-sized */
