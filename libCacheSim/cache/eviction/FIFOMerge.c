@@ -28,13 +28,17 @@ cache_t *FIFOMerge_init(common_cache_params_t ccache_params, void *init_params) 
     params->n_merge_obj = init_params_ptr->n_merge_obj;
     params->use_oracle = init_params_ptr->use_oracle;
   } else {
+    // params->n_merge_obj = -1; // make this adaptive to cache size and object size 
+
     /* can we make this parameter learned? */ 
-    // params->n_merge_obj = 100;
-    // params->metric_list = my_malloc_n(struct fifo_merge_sort_list_node, params->n_merge_obj);
-    params->n_merge_obj = -1;
+    params->n_merge_obj = 100;
+    params->metric_list = my_malloc_n(struct fifo_merge_sort_list_node, params->n_merge_obj);
     params->n_keep_obj = params->n_merge_obj / 4;
     params->use_oracle = false;
   }
+
+  if (params->use_oracle)
+    memcpy(cache->cache_name, "FIFOMerge-optimal", strlen("FIFOMerge-optimal"));
 
   // how many to keep should be a parameter of miss ratio 
   // printf("size %lu MiB, n_merge_obj: %d, n_keep_obj: %d\n", 
