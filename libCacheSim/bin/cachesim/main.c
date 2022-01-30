@@ -57,7 +57,7 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
   }
 
   double runtime = gettime() - start_time;
-  printf("runtime %lf s\n", runtime);
+  // printf("runtime %lf s\n", runtime);
   INFO("ts %lu: %lu requests, miss cnt %lu %.4lf, miss byte %lu %.4lf,"
        " throughput (MQPS): %.2lf, skipped %ld requests\n",
        (unsigned long) req->real_time, (unsigned long) req_cnt,

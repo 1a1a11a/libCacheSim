@@ -48,6 +48,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc > 7) {
     if (strcasecmp(argv[7], "logOracleLog") == 0) {
       args.lsc_type = LOGCACHE_LOG_ORACLE;
+    } else if (strcasecmp(argv[7], "logOracleItem") == 0) {
+      args.lsc_type = LOGCACHE_ITEM_ORACLE; 
     } else if (strcasecmp(argv[7], "logOracleBoth") == 0) {
       args.lsc_type = LOGCACHE_BOTH_ORACLE;
     } else if (strcasecmp(argv[7], "logLearned") == 0) {
@@ -55,7 +57,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     } else if (strcasecmp(argv[7], "segcache") == 0) {
       args.lsc_type = SEGCACHE;
     } else {
-      printf("support logOracleLog/logOracleBoth/logLearned/segcache\n");
+      printf("support logOracleLog/logOracleItem/logOracleBoth/logLearned/segcache\n");
       abort();
     }
   }

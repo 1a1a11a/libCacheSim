@@ -462,7 +462,7 @@ static void train_xgboost(cache_t *cache) {
 #endif
     l2 = strtof(pos, NULL);
 
-    DEBUG("iter %d %s %lf\n", i, eval_result, l2);
+    // DEBUG("iter %d %s %lf\n", i, eval_result, l2);
     if (l2 > 1000000) abort();
 
     if (fabs(last_l2 - l2) / l2 < 0.01) {

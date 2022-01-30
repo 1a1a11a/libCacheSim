@@ -154,10 +154,12 @@ typedef struct obj_sel {
 
 /* parameters and state related to segment selection */
 typedef struct seg_sel {
-  int64_t last_rank_time;
+  int64_t last_rank_time;   // in number of evictions 
   segment_t **ranked_segs;
   int32_t ranked_seg_size;
-  int32_t ranked_seg_pos;
+  int32_t ranked_seg_pos;   // the position of the next segment to be evicted 
+
+  // TODO: per bucket ranked segs 
 } seg_sel_t;
 
 /* parameters and state related to cache */

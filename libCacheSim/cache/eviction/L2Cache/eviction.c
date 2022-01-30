@@ -14,13 +14,16 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t *segs[]) {
     return select_segs_fifo(cache, segs);
   }
 
-  if (params->type == LOGCACHE_LEARNED && params->learner.n_train <= 0) {
-    return select_segs_fifo(cache, segs);
-    //    return select_segs_rand(cache, segs);
+  if (params->type == LOGCACHE_LEARNED || params->type == LOGCACHE_LOG_ORACLE) {
+    if (params->learner.n_train <= 0) {
+      return select_segs_fifo(cache, segs);
+      //    return select_segs_rand(cache, segs);
+    }
+    return select_segs_learned(cache, segs);
   }
 
-  if (params->type == LOGCACHE_LEARNED) {
-    return select_segs_learned(cache, segs);
+  if (params->type == LOGCACHE_BOTH_ORACLE) {
+    return select_segs_learned(cache, segs);      
   }
 
   assert(0);// should not reach here

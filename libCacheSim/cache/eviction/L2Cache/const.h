@@ -33,7 +33,7 @@
 //#define ACCUMULATIVE_TRAINING
 //#define TRAIN_ONCE
 
-#define ADAPTIVE_RANK 1
+// #define ADAPTIVE_RANK 1
 
 /*********** exp *************/
 //#define dump_ranked_seg_frac 0.05

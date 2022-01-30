@@ -3,7 +3,7 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "L2CacheInternal.h"
 
-static inline bool is_seg_evictable_fifo(segment_t *seg, int min_evictable) {
+static inline bool is_seg_evictable(segment_t *seg, int min_evictable) {
   if (seg == NULL) return false;
 
   int n_evictable = 0;
