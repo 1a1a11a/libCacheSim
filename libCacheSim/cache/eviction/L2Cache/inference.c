@@ -10,30 +10,42 @@
 #include "const.h"
 
 
-void prepare_inference_data(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
-
-  if (learner->inf_matrix_row_len < params->n_segs) {
-    if (learner->inf_matrix_row_len != 0) {
-      DEBUG_ASSERT(learner->inference_data != NULL);
-      my_free(sizeof(feature_t) * learner->inf_matrix_row_len * learner->n_feature,
-              learner->inference_data);
-      my_free(sizeof(pred_t) * learner->inf_matrix_row_len, learner->pred);
+/** because each segment is not fixed size, 
+ * the number of segments in total can vary over time, 
+ * if the inference data matrix is not big enough, 
+ * we resize the matrix */
+static inline void resize_inf_matrix(L2Cache_params_t *params, int64_t new_size) {
+  learner_t *learner = &params->learner;
+    if (learner->inf_matrix_n_row != 0) {
+        // free previously allocated memory
+        // TODO: use realloc instead of free
+      DEBUG_ASSERT(learner->inference_x != NULL);
+      my_free(sizeof(feature_t) * learner->inf_matrix_n_row * learner->n_feature,
+              learner->inference_x);
+      my_free(sizeof(pred_t) * learner->inf_matrix_n_row, learner->pred);
     }
     int n_row = params->n_segs * 2;
-    learner->inference_data = my_malloc_n(feature_t, n_row * learner->n_feature);
+    learner->inference_x = my_malloc_n(feature_t, n_row * learner->n_feature);
     learner->pred = my_malloc_n(pred_t, n_row);
-    learner->inf_matrix_row_len = n_row;
+    learner->inf_matrix_n_row = n_row;
+}
+
+/* calculate the ranking of all segments for eviction */
+/* TODO: use sample some segments */
+void prepare_inference_data(cache_t *cache) {
+  L2Cache_params_t *params = cache->eviction_params;
+  learner_t *learner = &params->learner;
+
+  if (learner->inf_matrix_n_row < params->n_segs) {
+      resize_inf_matrix(params, params->n_segs);
   }
 
-  feature_t *x = learner->inference_data;
+  feature_t *x = learner->inference_x;
 
   int n_seg = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
-      DEBUG_ASSERT(curr_seg != NULL);
       prepare_one_row(cache, curr_seg, false, &x[learner->n_feature * n_seg], NULL);
 
       curr_seg = curr_seg->next_seg;
@@ -46,7 +58,7 @@ void prepare_inference_data(cache_t *cache) {
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
-  safe_call(XGDMatrixCreateFromMat(learner->inference_data, params->n_segs, learner->n_feature,
+  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature,
                                    -2, &learner->inf_dm));
 #elif defined(USE_GBM)
   ;
@@ -63,7 +75,7 @@ void inference_lgbm(cache_t *cache) {
   prepare_inference_data(cache);
 
   int64_t out_len = 0;
-  safe_call(LGBM_BoosterPredictForMat(learner->booster, learner->inference_data,
+  safe_call(LGBM_BoosterPredictForMat(learner->booster, learner->inference_x,
                                       C_API_DTYPE_FLOAT64, params->n_segs, learner->n_feature,
                                       1, C_API_PREDICT_NORMAL, 0, -1, "num_threads=1", &out_len,
                                       learner->pred));
@@ -85,8 +97,7 @@ void inference_lgbm(cache_t *cache) {
 #ifdef USE_XGBOOST
 void inference_xgboost(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
-
-  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
+  learner_t *learner = &params->learner;
 
   prepare_inference_data(cache);
 
@@ -96,12 +107,11 @@ void inference_xgboost(cache_t *cache) {
 #ifdef DUMP_TRAINING_DATA
   static __thread char filename[24];
   snprintf(filename, 24, "inf_data_%d", learner->n_train - 1);
-  FILE *f = fopen(filename, "a");
+  FILE *f = fopen(filename, "w");
 #endif
 
   bst_ulong out_len = 0;
   safe_call(XGBoosterPredict(learner->booster, learner->inf_dm, 0, 0, 0, &out_len, &pred));
-
   DEBUG_ASSERT(out_len == params->n_segs);
 
   int n_seg = 0;
@@ -124,7 +134,7 @@ void inference_xgboost(cache_t *cache) {
               cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime));
       for (int j = 0; j < learner->n_feature; j++) {
-        fprintf(f, "%f,", learner->inference_data[learner->n_feature * n_seg + j]);
+        fprintf(f, "%f,", learner->inference_x[learner->n_feature * n_seg + j]);
       }
       fprintf(f, "\n");
 #endif

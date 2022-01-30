@@ -33,7 +33,7 @@ typedef struct {
     int min_start_train_seg;
     int max_start_train_seg;
     int n_train_seg_growth;
-    int re_train_intvl;
+    int retrain_intvl;
     int sample_every_n_seg_for_training;
   };
 #endif

@@ -23,7 +23,7 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->n_train_seg_growth = 1000;
   args->sample_every_n_seg_for_training = 1;
   args->snapshot_intvl = 3600;
-  args->re_train_intvl = 86400 * 2;
+  args->retrain_intvl = 86400 * 2;
 
   args->lsc_type = LOGCACHE_LEARNED;
   args->bucket_type = NO_BUCKET;
@@ -60,7 +60,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->sample_every_n_seg_for_training = 2;
     args->rank_intvl = 20;
     args->bucket_type = SIZE_BUCKET;
-    args->re_train_intvl = 86400;
+    args->retrain_intvl = 86400;
 
 
   } else if (strstr(args->trace_path, "w32") != NULL) {
@@ -77,7 +77,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->sample_every_n_seg_for_training = 1;
     args->rank_intvl = 20;
     args->size_bucket_base = 1;
-    args->re_train_intvl = 86400;
+    args->retrain_intvl = 86400;
 
 
 
@@ -91,7 +91,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->sample_every_n_seg_for_training = 1;
     args->rank_intvl = 120;
     args->size_bucket_base = 1;
-    args->re_train_intvl = 86400 * 2;
+    args->retrain_intvl = 86400 * 2;
 
 
   } else if (strstr(args->trace_path, "w03") != NULL) {
@@ -140,7 +140,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->age_shift = 1;
 //    args->bucket_type = SIZE_BUCKET;
     args->snapshot_intvl = 3600;
-    args->re_train_intvl = 3600 * 4;
+    args->retrain_intvl = 3600 * 4;
 
   } else if (strstr(args->trace_path, "user_activity") != NULL) {
     /* user activity */
@@ -156,16 +156,16 @@ static inline void set_param_with_workload(sim_arg_t *args) {
 //    args->min_start_train_seg = 500;
 //    args->sample_every_n_seg_for_training = 1;
 //    args->n_train_seg_growth = 2000;
-//    args->re_train_intvl = 86400;
+//    args->retrain_intvl = 86400;
     args->bucket_type = SIZE_BUCKET;
     args->rank_intvl = 20;
 
     /* use LHD for object selection */
     args->snapshot_intvl = 300 * 6;
 //    args->snapshot_intvl = 3600;
-//    args->re_train_intvl = 3600 * 8;
+//    args->retrain_intvl = 3600 * 8;
     /* use 1-4 when for rank:map */
-    args->re_train_intvl = 3600 * 2;
+    args->retrain_intvl = 3600 * 2;
   } else if (strstr(args->trace_path, "nyc") != NULL
       || strstr(args->trace_path, "wiki") != NULL) {
     /* nyc */
@@ -183,7 +183,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->max_start_train_seg = 80000;
     args->n_train_seg_growth = 20000;
     args->sample_every_n_seg_for_training = 4;
-    args->re_train_intvl = 86400;
+    args->retrain_intvl = 86400;
     args->rank_intvl = 20;
 
   } else if (strstr(args->trace_path, "sjc") != NULL

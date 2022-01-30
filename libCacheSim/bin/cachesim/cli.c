@@ -69,7 +69,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   get_num_of_req(reader);
 
   common_cache_params_t cc_params = {.cache_size = args.cache_size * MiB,
-                                     .hashpower = 26,
+                                     .hashpower = 20,
                                      .default_ttl = 86400 * 300,
                                      .per_obj_overhead = args.per_obj_metadata};
   cache_t *cache;
@@ -90,6 +90,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "optimalSize") == 0) {
+    cache = OptimalSize_init(cc_params, NULL);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
     L2Cache_init_params_t init_params = {.segment_size = args.seg_size,
@@ -102,7 +104,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
                                          .min_start_train_seg = args.min_start_train_seg,
                                          .max_start_train_seg = args.max_start_train_seg,
                                          .n_train_seg_growth = args.n_train_seg_growth,
-                                         .re_train_intvl = args.re_train_intvl,
+                                         .retrain_intvl = args.retrain_intvl,
                                          .snapshot_intvl = args.snapshot_intvl,
                                          .sample_every_n_seg_for_training =
                                              args.sample_every_n_seg_for_training};

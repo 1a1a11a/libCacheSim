@@ -5,7 +5,7 @@
 #include "utils.h"
 #include "segment.h"
 #include "../../dataStructure/hashtable/hashtable.h"
-
+#include "const.h"
 
 int clean_one_seg(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -36,8 +36,12 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   new_seg->n_obj = new_seg->n_byte = 0;
   new_seg->create_rtime = params->curr_rtime;
   new_seg->create_vtime = params->curr_vtime;
-  new_seg->is_training_seg = false;
+
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
   new_seg->in_training_data = false;
+#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
+  new_seg->is_training_seg = false;
+#endif 
   new_seg->penalty = 0;
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;

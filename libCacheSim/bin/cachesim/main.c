@@ -42,7 +42,7 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
       miss_byte += req->obj_size;
     }
 
-    if (req->real_time - last_report_ts >= 3600 * 6 && req->real_time != 0) {
+    if (req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
       INFO("ts %.2lf hour: %lu requests, miss cnt %lu %.4lf, byte miss ratio %.4lf\n",
            (double) req->real_time / 3600, (unsigned long) req_cnt, (unsigned long) miss_cnt,
            (double) miss_cnt / req_cnt, (double) miss_byte / req_byte);

@@ -28,7 +28,7 @@
 /* training objective, regression or ranking */
 #define REG 1
 #define LTR 2
-#define OBJECTIVE LTR
+#define OBJECTIVE REG
 
 //#define ACCUMULATIVE_TRAINING
 //#define TRAIN_ONCE

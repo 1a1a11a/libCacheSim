@@ -1,9 +1,9 @@
 
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "bucket.h"
+#include "learned.h"
 #include "obj.h"
 #include "segment.h"
-#include "learned.h"
 
 void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   //  if (!params->learner.start_feature_recording) return;
@@ -59,25 +59,34 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
   seg->feature.last_hour_window_ts = params->curr_rtime;
 }
 
-
-bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool training_data, feature_t *x, train_y_t *y) {
+/** 
+ * @brief update the segment feature when a segment is evicted
+ * 
+ * @param is_training_data: whether the data is training or inference 
+ * @param x: feature vector, and we write to x 
+ * @param y: label, for passing the true y 
+ */
+bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data, feature_t *x,
+                     train_y_t *y) {
   L2Cache_params_t *params = cache->eviction_params;
-
   learner_t *learner = &params->learner;
 
+  // debug
   //  x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = x[6] = x[7] = x[8] = x[9] = x[10] = x[11] = 0;
 
   x[0] = (feature_t) curr_seg->bucket_idx;
   x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
   x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
-  if (training_data)
+  if (is_training_data) {
     x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
-  else
+    assert(curr_seg->become_train_seg_rtime == params->curr_rtime);
+  } else {
     x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
+  }
   x[4] = (feature_t) curr_seg->req_rate;
   x[5] = (feature_t) curr_seg->write_rate;
   x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
-  x[7] = curr_seg->miss_ratio;
+  x[7] = (feature_t) curr_seg->miss_ratio;
   x[8] = 0.0;
   x[9] = curr_seg->n_hit;
   x[10] = curr_seg->n_active;
@@ -112,7 +121,6 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool training_data, fe
 #else
 #endif
 
-//  penalty = penalty * 10000000 / curr_seg->n_byte;
 #if OBJECTIVE == REG
   *y = (train_y_t) penalty;
 #elif OBJECTIVE == LTR

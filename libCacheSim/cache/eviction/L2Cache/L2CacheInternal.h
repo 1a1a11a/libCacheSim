@@ -28,7 +28,7 @@ typedef struct hitProb {
 
 typedef struct learner {
   int64_t last_train_rtime;
-  int re_train_intvl;
+  int retrain_intvl;
 
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   int sample_every_n_seg_for_training;
@@ -36,10 +36,10 @@ typedef struct learner {
   int64_t n_bytes_start_collect_train; /* after evicting n_bytes_start_collect_train bytes,
                                            * start collecting training data */
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  int64_t last_snapshot_rtime;
-  int32_t n_max_training_segs;
-  int n_snapshot;
-  int snapshot_intvl;
+  // int64_t last_snapshot_rtime;
+  // int32_t n_max_training_segs;
+  // int n_snapshot;
+  // int snapshot_intvl;
 #else
 #error
 #endif
@@ -62,19 +62,19 @@ typedef struct learner {
   train_y_t *train_y;
   feature_t *valid_x;
   train_y_t *valid_y;
-  feature_t *inference_data;
+  feature_t *inference_x;
   pred_t *pred;
 
   int n_feature;
-  unsigned int n_training_samples;
-  unsigned int n_validation_samples;
-  unsigned int n_zero_samples;
-  unsigned int n_zero_samples_use;
+  unsigned int n_train_samples;
+  unsigned int n_valid_samples;
+  // unsigned int n_zero_samples;
+  // unsigned int n_zero_samples_use;
   int n_trees;
 
-  int32_t train_matrix_row_len; /* the size of matrix */
-  int32_t valid_matrix_row_len;
-  int32_t inf_matrix_row_len;
+  int32_t train_matrix_n_row; /* the size of matrix */
+  int32_t valid_matrix_n_row;
+  int32_t inf_matrix_n_row;
 
 } learner_t;
 
@@ -120,8 +120,11 @@ typedef struct segment {
   // double              cold_miss_ratio;
 
   /* training related */
-  bool is_training_seg;
-  bool in_training_data;
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
+  bool is_training_seg;   // whether this segment is used for training, training seg is ghost seg 
+#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
+  bool in_training_data;  // whether this segment has been chosen to be training data
+#endif 
   int64_t become_train_seg_vtime;
   int64_t become_train_seg_rtime;
   unsigned int training_data_row_idx;

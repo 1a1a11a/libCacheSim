@@ -44,13 +44,13 @@ void init_learner(cache_t *cache) {
   l->n_feature = N_FEATURE_TIME_WINDOW * 3 + 12;
   l->pred = NULL;
   l->train_x = NULL;
-  l->train_matrix_row_len = 0;
-  l->valid_matrix_row_len = 0;
-  l->inference_data = NULL;
-  l->inf_matrix_row_len = 0;
+  l->train_matrix_n_row = 0;
+  l->valid_matrix_n_row = 0;
+  l->inference_x = NULL;
+  l->inf_matrix_n_row = 0;
 
-  l->n_train = 0;
-  l->n_inference = 0;
+  l->n_train = -1;
+  l->n_inference = -1;
 
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   l->n_segs_to_start_training = 1024 * 8;
@@ -59,25 +59,25 @@ void init_learner(cache_t *cache) {
   if (l->sample_every_n_seg_for_training <= 0) 
     l->sample_every_n_seg_for_training = 1;
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  l->n_max_training_segs = 1024 * 8;
-  l->n_snapshot = 0;
-  l->last_snapshot_rtime = 0;
-  l->snapshot_intvl = init_params->snapshot_intvl > 0 ? init_params->snapshot_intvl : 3600 * 2;
+  // l->n_max_training_segs = 1024 * 8;
+  l->train_matrix_n_row = 1024 * 8;
+  // l->n_snapshot = 0;
+  // l->last_snapshot_rtime = 0;
+  // l->snapshot_intvl = init_params->snapshot_intvl > 0 ? init_params->snapshot_intvl : 3600 * 2;
 
-  l->train_x = my_malloc_n(feature_t, l->n_max_training_segs * l->n_feature);
-  l->train_y = my_malloc_n(pred_t, l->n_max_training_segs);
-  l->train_matrix_row_len = l->n_max_training_segs;
+  l->train_x = my_malloc_n(feature_t, l->train_matrix_n_row * l->n_feature);
+  l->train_y = my_malloc_n(pred_t, l->train_matrix_n_row);
+  // l->train_matrix_n_row = l->n_max_training_segs;
 
-  l->valid_matrix_row_len = l->n_max_training_segs / 10;
-  l->valid_x =
-      my_malloc_n(feature_t, l->valid_matrix_row_len * l->n_feature);
-  l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_row_len);
+  l->valid_matrix_n_row = l->train_matrix_n_row / 10;
+  l->valid_x = my_malloc_n(feature_t, l->valid_matrix_n_row * l->n_feature);
+  l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_n_row);
 #else 
 #error "TRAINING_DATA_SOURCE not defined"
 #endif
 
-  l->re_train_intvl = init_params->re_train_intvl;
-  if (l->re_train_intvl <= 0) l->re_train_intvl = 86400;
+  l->retrain_intvl = init_params->retrain_intvl;
+  if (l->retrain_intvl <= 0) l->retrain_intvl = 86400;
 
   l->last_train_rtime = 0;
 }

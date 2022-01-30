@@ -95,7 +95,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   //       params->rank_intvl,
   //       TRAINING_Y_SOURCE,
   //       0
-  // //      params->learner.re_train_intvl
+  // //      params->learner.retrain_intvl
   //   );
   return cache;
 }
@@ -215,19 +215,21 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
     /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
     if (params->cache_state.n_evicted_bytes >= cache->cache_size / 2) {
-      if (unlikely(l->n_snapshot == 0)) {
-        l->last_train_rtime = params->curr_rtime;
-      }
-      if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
-        train(cache);
-      }
-      if (params->curr_rtime - l->last_snapshot_rtime > l->snapshot_intvl)
+      if (l->n_train == -1) {
         snapshot_segs_to_training_data(cache);
+        l->last_train_rtime = params->curr_rtime;
+        l->n_train = 0; 
+      } 
+      if (params->curr_rtime - l->last_train_rtime >= l->retrain_intvl) {
+        train(cache);
+        snapshot_segs_to_training_data(cache);
+      }
     }
   }
 #endif
   return ret;
 }
+
 
 void L2Cache_insert(cache_t *cache, request_t *req) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -260,6 +262,7 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(cache->n_obj <= params->n_segs * params->segment_size);
 }
 
+
 void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
@@ -274,11 +277,11 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   if (params->type == LOGCACHE_LEARNED) {
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
     if (params->n_training_segs >= params->learner.n_segs_to_start_training) {
-      //    if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
+      //    if (params->curr_rtime - l->last_train_rtime >= l->retrain_intvl) {
       train(cache);
 #ifdef TRAIN_ONCE
       printf("only train once ???\n");
-      l->re_train_intvl += l->re_train_intvl * 2000;
+      l->retrain_intvl += l->retrain_intvl * 2000;
 #endif
     } else {
       if (l->last_train_rtime == 0) {
@@ -290,7 +293,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
         /* we don't want to rate limit at beginning */
         int64_t time_since_last, time_till_next, n_tseg_gap;
         time_since_last = params->curr_rtime - l->last_train_rtime;
-        time_till_next = l->re_train_intvl - time_since_last;
+        time_till_next = l->retrain_intvl - time_since_last;
         n_tseg_gap = l->n_segs_to_start_training - params->n_training_segs;
         l->sample_every_n_seg_for_training =
             MAX((int) (time_till_next / MAX(n_tseg_gap, 1)), 1);
