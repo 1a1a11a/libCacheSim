@@ -4,7 +4,6 @@
 #include "../../include/libCacheSim/evictionAlgo.h"
 #include "../../include/libCacheSim/reader.h"
 
-
 typedef struct {
   char *trace_path;
   char *alg;
@@ -42,6 +41,4 @@ typedef struct {
   cache_t *cache;
 } sim_arg_t;
 
-
 sim_arg_t parse_cmd(int argc, char *argv[]);
-

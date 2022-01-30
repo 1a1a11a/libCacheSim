@@ -29,6 +29,31 @@ static inline int cmp_double(const void *p1, const void *p2) {
     return 1;
 }
 
+static int find_argmin_float(const float *y, int n_elem) {
+  float min_val = (float) INT64_MAX;
+  int min_val_pos = -1;
+  for (int i = 0; i < n_elem; i++) {
+    if (y[i] < min_val) {
+      min_val = y[i];
+      min_val_pos = i;
+    }
+  }
+  DEBUG_ASSERT(min_val_pos != -1);
+  return min_val_pos;
+}
+
+static int find_argmin_double(const double *y, int n_elem) {
+  double min_val = (double) INT64_MAX;
+  int min_val_pos = -1;
+  for (int i = 0; i < n_elem; i++) {
+    if (y[i] < min_val) {
+      min_val = y[i];
+      min_val_pos = i;
+    }
+  }
+  DEBUG_ASSERT(min_val_pos != -1);
+  return min_val_pos;
+}
 
 
 

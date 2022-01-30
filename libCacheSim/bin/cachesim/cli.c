@@ -5,7 +5,6 @@
 #include "cachesim.h"
 #include "priv/params.h"
 
-
 sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {
     printf("usage: %s trace_type (twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin) "
@@ -23,9 +22,11 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.trace_type = VSCSI_TRACE;
   } else if (strcasecmp(argv[1], "bin") == 0) {
     args.trace_type = BIN_TRACE;
-  } else if (strcasecmp(argv[1], "oracleTwrNS") == 0 || strcasecmp(argv[1], "oracleSimTwrNS") == 0) {
+  } else if (strcasecmp(argv[1], "oracleTwrNS") == 0
+             || strcasecmp(argv[1], "oracleSimTwrNS") == 0) {
     args.trace_type = ORACLE_SIM_TWRNS_TRACE;
-  } else if (strcasecmp(argv[1], "oracleGeneral") == 0 || strcasecmp(argv[1], "oracleGeneralBin") == 0) {
+  } else if (strcasecmp(argv[1], "oracleGeneral") == 0
+             || strcasecmp(argv[1], "oracleGeneralBin") == 0) {
     args.trace_type = ORACLE_GENERAL_TRACE;
   } else if (strcasecmp(argv[1], "oracleAkamaiBin") == 0) {
     args.trace_type = ORACLE_AKAMAI_TRACE;
@@ -39,11 +40,9 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 
   args.cache_size = atoi(argv[3]);
   args.alg = argv[4];
-  
-  if (argc > 5) 
-    args.per_obj_metadata = atoi(argv[5]);
-  if (argc > 6)
-    args.debug = atoi(argv[6]);
+
+  if (argc > 5) args.per_obj_metadata = atoi(argv[5]);
+  if (argc > 6) args.debug = atoi(argv[6]);
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   if (argc > 7) {
@@ -70,9 +69,9 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   get_num_of_req(reader);
 
   common_cache_params_t cc_params = {.cache_size = args.cache_size * MiB,
-      .hashpower = 26,
-      .default_ttl = 86400 * 300,
-      .per_obj_overhead = args.per_obj_metadata};
+                                     .hashpower = 26,
+                                     .default_ttl = 86400 * 300,
+                                     .per_obj_overhead = args.per_obj_metadata};
   cache_t *cache;
 
   if (strcasecmp(args.alg, "lru") == 0) {
@@ -94,19 +93,19 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
     L2Cache_init_params_t init_params = {.segment_size = args.seg_size,
-        .n_merge = args.n_merge,
-        .type = args.lsc_type,
-        .rank_intvl = args.rank_intvl,
-        .hit_density_age_shift = args.age_shift,
-        .bucket_type = args.bucket_type,
-        .size_bucket_base = args.size_bucket_base,
-        .min_start_train_seg = args.min_start_train_seg,
-        .max_start_train_seg = args.max_start_train_seg,
-        .n_train_seg_growth = args.n_train_seg_growth,
-        .re_train_intvl = args.re_train_intvl,
-        .snapshot_intvl = args.snapshot_intvl,
-        .sample_every_n_seg_for_training =
-        args.sample_every_n_seg_for_training};
+                                         .n_merge = args.n_merge,
+                                         .type = args.lsc_type,
+                                         .rank_intvl = args.rank_intvl,
+                                         .hit_density_age_shift = args.age_shift,
+                                         .bucket_type = args.bucket_type,
+                                         .size_bucket_base = args.size_bucket_base,
+                                         .min_start_train_seg = args.min_start_train_seg,
+                                         .max_start_train_seg = args.max_start_train_seg,
+                                         .n_train_seg_growth = args.n_train_seg_growth,
+                                         .re_train_intvl = args.re_train_intvl,
+                                         .snapshot_intvl = args.snapshot_intvl,
+                                         .sample_every_n_seg_for_training =
+                                             args.sample_every_n_seg_for_training};
     cache = L2Cache_init(cc_params, &init_params);
 #endif
   } else {

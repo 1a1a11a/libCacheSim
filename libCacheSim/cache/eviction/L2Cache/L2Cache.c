@@ -4,25 +4,30 @@
 //
 
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "learned.h"
-#include "log.h"
-#include "init.h"
-#include "obj.h"
-#include "bucket.h"
-#include "oracle.h"
-#include "utils.h"
-#include "merge.h"
-#include "const.h"
+#include "../../dataStructure/hashtable/hashtable.h"
 #include "L2CacheInternal.h"
+
+#include "bucket.h"
+#include "obj.h"
+#include "segment.h"
+
+#include "cacheState.h"
+#include "eviction.h"
+#include "segSel.h"
+
+#include "learned.h"
+#include "oracle.h"
+
+#include "const.h"
+#include "init.h"
+#include "utils.h"
 
 #include <assert.h>
 #include <stdbool.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("L2Cache", ccache_params);
@@ -30,7 +35,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
 
   cache->hashtable->external_obj = true;
   check_init_params((L2Cache_init_params_t *) init_params);
-  cache->init_params = my_malloc(L2Cache_init_params_t); 
+  cache->init_params = my_malloc(L2Cache_init_params_t);
   memcpy(cache->init_params, L2Cache_init_params, sizeof(L2Cache_init_params_t));
 
   L2Cache_params_t *params = my_malloc(L2Cache_params_t);
@@ -49,29 +54,25 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   params->size_bucket_base = L2Cache_init_params->size_bucket_base;
 
   switch (params->type) {
-  case SEGCACHE:
-  case SEGCACHE_SEG_ORACLE:
-  case LOGCACHE_LOG_ORACLE:
-  case LOGCACHE_LEARNED:
-//      params->obj_score_type = OBJ_SCORE_FREQ_AGE;
+    case SEGCACHE:
+    case LOGCACHE_LOG_ORACLE:
+    case LOGCACHE_LEARNED:
+      //      params->obj_score_type = OBJ_SCORE_FREQ_AGE;
       params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
-//    params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
-    break;
-  case SEGCACHE_ITEM_ORACLE:
-  case SEGCACHE_BOTH_ORACLE:
-  case LOGCACHE_ITEM_ORACLE:
-  case LOGCACHE_BOTH_ORACLE: params->obj_score_type = OBJ_SCORE_ORACLE;
-    break;
-  default: abort();
+      //    params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
+      break;
+    case LOGCACHE_ITEM_ORACLE:
+    case LOGCACHE_BOTH_ORACLE: params->obj_score_type = OBJ_SCORE_ORACLE; break;
+    default: abort();
   };
 
   init_seg_sel(cache);
-  init_obj_sel(cache); 
+  init_obj_sel(cache);
   init_learner(cache);
   init_buckets(cache, L2Cache_init_params->hit_density_age_shift);
   init_cache_state(cache);
 
-  cache->cache_init = L2Cache_init; 
+  cache->cache_init = L2Cache_init;
   cache->cache_free = L2Cache_free;
   cache->get = L2Cache_get;
   cache->check = L2Cache_check;
@@ -79,23 +80,23 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   cache->evict = L2Cache_evict;
   cache->remove = L2Cache_remove;
 
-//   INFO(
-//       "L2Cche, %.2lf MB, %s, obj sel %s, %s, "
-//       "size_bucket_base %d, %ld bytes start training seg collection, sample %d, rank intvl %d, "
-//       "training truth %d re-train %d\n",
-//       (double) cache->cache_size / 1048576,
-//       LSC_type_names[params->type],
-//       obj_score_type_names[params->obj_score_type],
-//       bucket_type_names[params->bucket_type],
-//       params->size_bucket_base,
-// //      (long) params->learner.n_bytes_start_collect_train,
-// //      params->learner.sample_every_n_seg_for_training,
-//       0L, 0,
-//       params->rank_intvl,
-//       TRAINING_Y_SOURCE,
-//       0
-// //      params->learner.re_train_intvl
-//   );
+  //   INFO(
+  //       "L2Cche, %.2lf MB, %s, obj sel %s, %s, "
+  //       "size_bucket_base %d, %ld bytes start training seg collection, sample %d, rank intvl %d, "
+  //       "training truth %d re-train %d\n",
+  //       (double) cache->cache_size / 1048576,
+  //       LSC_type_names[params->type],
+  //       obj_score_type_names[params->obj_score_type],
+  //       bucket_type_names[params->bucket_type],
+  //       params->size_bucket_base,
+  // //      (long) params->learner.n_bytes_start_collect_train,
+  // //      params->learner.sample_every_n_seg_for_training,
+  //       0L, 0,
+  //       params->rank_intvl,
+  //       TRAINING_Y_SOURCE,
+  //       0
+  // //      params->learner.re_train_intvl
+  //   );
   return cache;
 }
 
@@ -128,10 +129,8 @@ void L2Cache_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) {
 #if defined(TRAINING_Y_SOURCE) && TRAINING_Y_SOURCE == TRAINING_Y_FROM_ONLINE
-cache_ck_res_e L2Cache_check(cache_t *cache,
-                                                  request_t *req,
-                                                  bool update_cache) {
   L2Cache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
@@ -146,8 +145,7 @@ cache_ck_res_e L2Cache_check(cache_t *cache,
 
   if (cache_obj->L2Cache.in_cache) {
     /* if there is an evicted entry, the evicted entry should be after this entry */
-    DEBUG_ASSERT(
-        ((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
+    DEBUG_ASSERT(((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
 
     /* seg_hit update segment state features */
     seg_hit(params, cache_obj);
@@ -195,56 +193,29 @@ cache_ck_res_e L2Cache_check(cache_t *cache,
 
     return cache_ck_miss;
   }
-}
 #elif defined(TRAINING_Y_SOURCE) && TRAINING_Y_SOURCE == TRAINING_Y_FROM_ORACLE
-cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-
-  cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
-
-  if (cache_obj == NULL) {
-    return cache_ck_miss;
-  }
-
-  if (!update_cache) {
-    return cache_ck_hit;
-  }
-
-  if (cache_obj->L2Cache.in_cache) {
-    seg_hit(params, cache_obj);
-    object_hit(params, cache_obj, req);
-
-    return cache_ck_hit;
-  } else {
-
-    return cache_ck_miss;
-  }
-}
+  return L2Cache_check_oracle(cache, req, update_cache);
 #endif
+}
 
 cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
   L2Cache_params_t *params = cache->eviction_params;
-  if (params->start_rtime == 0) {
-    params->start_rtime = req->real_time;
-  }
-  params->curr_rtime = req->real_time;
-  params->curr_vtime++;
+
+  update_cache_state(cache, req);
 
   cache_ck_res_e ret = cache_get_base(cache, req);
 
   if (ret == cache_ck_miss) {
     params->cache_state.n_miss += 1;
-    params->cache_state.n_miss_bytes += req->obj_size; 
+    params->cache_state.n_miss_bytes += req->obj_size;
   }
-
 
 #if defined(TRAINING_DATA_SOURCE) && TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
   if (params->type == LOGCACHE_LEARNED) {
+    /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
-    if (l->n_evicted_bytes >= cache->cache_size / 2) {
-      if (l->n_snapshot == 0) {
-        /* move to initialization */
-        create_data_holder2(cache);
+    if (params->cache_state.n_evicted_bytes >= cache->cache_size / 2) {
+      if (unlikely(l->n_snapshot == 0)) {
         l->last_train_rtime = params->curr_rtime;
       }
       if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
@@ -264,9 +235,7 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
   segment_t *seg = bucket->last_seg;
   DEBUG_ASSERT(seg == NULL || seg->next_seg == NULL);
 
-  update_cache_state(cache);
-
-  if (seg == NULL || seg->n_total_obj == params->segment_size) {
+  if (seg == NULL || seg->n_obj == params->segment_size) {
     if (seg != NULL) {
       /* set the state of the finished segment */
       seg->req_rate = params->cache_state.req_rate;
@@ -278,45 +247,34 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
     append_seg_to_bucket(params, bucket, seg);
   }
 
-  cache_obj_t *cache_obj = &seg->objs[seg->n_total_obj];
-  copy_request_to_cache_obj(cache_obj, req);
-  cache_obj->L2Cache.freq = 0;
-  cache_obj->L2Cache.last_access_rtime = req->real_time;
-  cache_obj->L2Cache.in_cache = 1;
-  cache_obj->L2Cache.segment = seg;
-  cache_obj->L2Cache.seen_after_snapshot = 0;
-  cache_obj->L2Cache.idx_in_segment = seg->n_total_obj;
-  cache_obj->L2Cache.next_access_vtime = req->next_access_vtime;
-
+  cache_obj_t *cache_obj = &seg->objs[seg->n_obj];
+  object_init(cache, req, cache_obj, seg);
   hashtable_insert_obj(cache->hashtable, cache_obj);
 
+  seg->n_byte += cache_obj->obj_size + cache->per_obj_overhead;
+  seg->n_obj += 1;
   cache->occupied_size += cache_obj->obj_size + cache->per_obj_overhead;
-  seg->total_bytes += cache_obj->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
-  seg->n_total_obj += 1;
 
-  DEBUG_ASSERT(cache->n_obj > (params->n_segs - params->n_used_buckets)
-      * params->segment_size);
+  DEBUG_ASSERT(cache->n_obj > (params->n_segs - params->n_used_buckets) * params->segment_size);
   DEBUG_ASSERT(cache->n_obj <= params->n_segs * params->segment_size);
 }
-
 
 void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
 
-  bucket_t *bucket = select_segs(cache, params->obj_sel.segs_to_evict);
+  bucket_t *bucket = select_segs_to_evict(cache, params->obj_sel.segs_to_evict);
 
   params->n_evictions += 1;
   for (int i = 0; i < params->n_merge; i++) {
-    l->n_evicted_bytes += params->obj_sel.segs_to_evict[i]->total_bytes;
+    params->cache_state.n_evicted_bytes += params->obj_sel.segs_to_evict[i]->n_byte;
   }
-
 
   if (params->type == LOGCACHE_LEARNED) {
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
     if (params->n_training_segs >= params->learner.n_segs_to_start_training) {
-//    if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
+      //    if (params->curr_rtime - l->last_train_rtime >= l->re_train_intvl) {
       train(cache);
 #ifdef TRAIN_ONCE
       printf("only train once ???\n");
@@ -343,24 +301,22 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 #endif
   }
 
+  L2Cache_merge_segs(cache, bucket, params->obj_sel.segs_to_evict);
 
-    L2Cache_merge_segs(cache, bucket, params->obj_sel.segs_to_evict);
-
-
-  if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY &&
-        params->curr_vtime - params->last_hit_prob_compute_vtime > HIT_PROB_COMPUTE_INTVL) {
+  if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY
+      && params->curr_vtime - params->last_hit_prob_compute_vtime > HIT_PROB_COMPUTE_INTVL) {
     /* update hit prob for all buckets */
     for (int i = 0; i < MAX_N_BUCKET; i++) {
       update_hit_prob_cdf(&params->buckets[i]);
     }
     params->last_hit_prob_compute_vtime = params->curr_vtime;
   }
-//        static int last_print = 0;
-//        if (params->curr_rtime - last_print >= 3600 * 24) {
-//          printf("cache size %lu ", (unsigned long) cache->cache_size);
-//          print_bucket(cache);
-//          last_print = params->curr_rtime;
-//        }
+  //        static int last_print = 0;
+  //        if (params->curr_rtime - last_print >= 3600 * 24) {
+  //          printf("cache size %lu ", (unsigned long) cache->cache_size);
+  //          print_bucket(cache);
+  //          last_print = params->curr_rtime;
+  //        }
 }
 
 void L2Cache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

@@ -5,18 +5,16 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "const.h"
 
-
 void check_init_params(L2Cache_init_params_t *init_params) {
-  assert(init_params->segment_size > 1 && init_params->segment_size <= 100000000); 
+  assert(init_params->segment_size > 1 && init_params->segment_size <= 100000000);
   assert(init_params->n_merge > 1 && init_params->n_merge <= 100);
   assert(init_params->rank_intvl > 0 && init_params->rank_intvl <= 100000000);
-  assert(init_params->segment_size / init_params->n_merge > 1); 
+  assert(init_params->segment_size / init_params->n_merge > 1);
 
   if (init_params->size_bucket_base <= 0) {
     init_params->size_bucket_base = 1;
   }
 }
-
 
 void init_seg_sel(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -45,7 +43,7 @@ void init_learner(cache_t *cache) {
 
   l->n_feature = N_FEATURE_TIME_WINDOW * 3 + 12;
   l->pred = NULL;
-  l->training_x = NULL;
+  l->train_x = NULL;
   l->train_matrix_row_len = 0;
   l->valid_matrix_row_len = 0;
   l->inference_data = NULL;
@@ -55,36 +53,39 @@ void init_learner(cache_t *cache) {
   l->n_inference = 0;
 
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  l->n_segs_to_start_training = 1024*8;
+  l->n_segs_to_start_training = 1024 * 8;
   l->n_bytes_start_collect_train = cache->cache_size / 1;
 
-  if (l->sample_every_n_seg_for_training <= 0)
+  if (l->sample_every_n_seg_for_training <= 0) 
     l->sample_every_n_seg_for_training = 1;
-#else
-//  l->n_max_training_segs = 1024 * 16;
+#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
   l->n_max_training_segs = 1024 * 8;
-//  l->next_snapshot_evicted_bytes = cache->cache_size * 1;
   l->n_snapshot = 0;
   l->last_snapshot_rtime = 0;
-  l->snapshot_intvl = init_params->snapshot_intvl;
-  if (l->snapshot_intvl <= 0)
-    l->snapshot_intvl = 3600 * 2;
+  l->snapshot_intvl = init_params->snapshot_intvl > 0 ? init_params->snapshot_intvl : 3600 * 2;
+
+  l->train_x = my_malloc_n(feature_t, l->n_max_training_segs * l->n_feature);
+  l->train_y = my_malloc_n(pred_t, l->n_max_training_segs);
+  l->train_matrix_row_len = l->n_max_training_segs;
+
+  l->valid_matrix_row_len = l->n_max_training_segs / 10;
+  l->valid_x =
+      my_malloc_n(feature_t, l->valid_matrix_row_len * l->n_feature);
+  l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_row_len);
+#else 
+#error "TRAINING_DATA_SOURCE not defined"
 #endif
 
   l->re_train_intvl = init_params->re_train_intvl;
-  if (l->re_train_intvl <= 0)
-    l->re_train_intvl = 86400;
+  if (l->re_train_intvl <= 0) l->re_train_intvl = 86400;
 
-  l->n_evicted_bytes = 0;
   l->last_train_rtime = 0;
-
 }
 
 static void init_buckets(cache_t *cache, int age_shift) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  if (age_shift <= 0)
-    age_shift = 0;
+  if (age_shift <= 0) age_shift = 0;
 
   for (int i = 0; i < MAX_N_BUCKET; i++) {
     params->buckets[i].bucket_idx = i;
