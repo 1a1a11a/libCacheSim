@@ -1,11 +1,10 @@
 
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "obj.h"
-#include "utils.h"
 #include "segment.h"
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "const.h"
+#include "obj.h"
+#include "utils.h"
 
 int clean_one_seg(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -41,7 +40,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   new_seg->in_training_data = false;
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   new_seg->is_training_seg = false;
-#endif 
+#endif
   new_seg->penalty = 0;
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
@@ -105,26 +104,25 @@ double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_type, segment_
   seg_sel_t *seg_sel = &params->seg_sel;
   obj_sel_t *obj_sel = &params->obj_sel;
 
-  int pos = 0;
+  DEBUG_ASSERT(seg->n_obj <= obj_sel->score_array_size);
   for (int j = 0; j < seg->n_obj; j++) {
-    obj_sel->score_array[pos++] =
+    obj_sel->score_array[j] =
         cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
   }
 
-  DEBUG_ASSERT(pos <= obj_sel->score_array_size);
-  qsort(obj_sel->score_array, pos, sizeof(double), cmp_double);
-  DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[pos - 1]);
+  qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
+  DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
 
-  static int n_err = 0;
-  if (obj_sel->score_array[0] == obj_sel->score_array[pos - 1]) {
-    if (n_err++ % 100000 == 20) {
-      DEBUG("cache size %lu: seg may have all objects with no reuse %d (ignore this if "
-            "it is end of trace running oracle)\n",
-            (unsigned long) cache->cache_size, n_err);
-      print_seg(cache, seg, DEBUG_LEVEL);
-    }
-    n_err += 1;
-  }
+//   static int n_err = 0;
+//   if (obj_sel->score_array[0] == obj_sel->score_array[seg->n_obj - 1]) {
+//     if (n_err++ % 100000 == 20) {
+//       DEBUG("cache size %lu: seg may have all objects with no reuse %d (ignore this if "
+//             "it is end of trace running oracle)\n",
+//             (unsigned long) cache->cache_size, n_err);
+//       print_seg(cache, seg, DEBUG_LEVEL);
+//     }
+//     n_err += 1;
+//   }
 
   double penalty = 0;
   for (int j = 0; j < seg->n_obj - n_retain; j++) {
@@ -136,6 +134,7 @@ double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_type, segment_
   DEBUG_ASSERT(penalty >= 0);
   return penalty;
 }
+
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level) {
   L2Cache_params_t *params = cache->eviction_params;

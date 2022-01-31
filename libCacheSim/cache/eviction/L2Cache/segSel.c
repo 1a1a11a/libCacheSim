@@ -64,11 +64,11 @@ void rank_segs(cache_t *cache) {
       } else {
         if (params->type == LOGCACHE_LEARNED) {
           // curr_seg->penalty = 0;
-          // curr_seg->penalty =
-          //     cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
-          //                     params->curr_rtime, params->curr_vtime);
-        } else if (params->type == LOGCACHE_LOG_ORACLE
-                   || params->type == LOGCACHE_BOTH_ORACLE) {
+        } else if (params->type == LOGCACHE_LOG_ORACLE) {
+          curr_seg->penalty =
+              cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
+                              params->curr_rtime, params->curr_vtime);
+        } else if (params->type == LOGCACHE_BOTH_ORACLE) {
           curr_seg->penalty =
               cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime);

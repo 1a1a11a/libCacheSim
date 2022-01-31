@@ -57,8 +57,8 @@
 static char *LSC_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
                                  "LOGCACHE_ITEM_ORACLE", "LOGCACHE_LEARNED"};
 
-static char *obj_score_type_names[] = {"FREQ", "FREQ_BYTE", "FREQ_BYTE_AGE", "HIT_DENSITY",
-                                       "ORACLE"};
+static char *obj_score_type_names[] = {"FREQ",          "FREQ_BYTE",   "FREQ_AGE",
+                                       "FREQ_AGE_BYTE", "HIT_DENSITY", "ORACLE"};
 
 static char *bucket_type_names[] = {"NO_BUCKET",        "SIZE_BUCKET",
                                     "TTL_BUCKET",       "CUSTOMER_BUCKET",

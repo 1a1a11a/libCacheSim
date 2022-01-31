@@ -58,7 +58,8 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
     case LOGCACHE_LOG_ORACLE:
     case LOGCACHE_LEARNED:
       //      params->obj_score_type = OBJ_SCORE_FREQ_AGE;
-      params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
+      params->obj_score_type = OBJ_SCORE_FREQ_BYTE; 
+      // params->obj_score_type = OBJ_SCORE_FREQ_AGE_BYTE; 
       //    params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
       break;
     case LOGCACHE_ITEM_ORACLE:
