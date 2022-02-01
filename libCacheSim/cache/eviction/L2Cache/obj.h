@@ -57,6 +57,8 @@ static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
   bkt->hit_prob->n_evict[obj_age] += 1;
 }
 
+/* calculate the score of object, the larger score, 
+   the more important object is, we should keep it */
 static inline double cal_object_score(L2Cache_params_t *params, obj_score_type_e score_type,
                                       cache_obj_t *cache_obj, int curr_rtime,
                                       int64_t curr_vtime) {

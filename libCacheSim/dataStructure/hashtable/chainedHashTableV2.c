@@ -163,6 +163,8 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
 
 bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
                                  cache_obj_t *cache_obj) {
+  static int max_chain_len = 1;
+
   uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == cache_obj) {
     hashtable->ptr_table[hv] = cache_obj->hash_next;
@@ -172,7 +174,6 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
     return true;
   }
 
-  static int max_chain_len = 1;
   int chain_len = 1;
   cache_obj_t *cur_obj = hashtable->ptr_table[hv];
   while (cur_obj != NULL && cur_obj->hash_next != cache_obj) {

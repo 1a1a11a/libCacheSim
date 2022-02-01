@@ -2,6 +2,7 @@
 #include "eviction.h"
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "bucket.h"
+#include "const.h"
 #include "learned.h"
 #include "segSel.h"
 #include "segment.h"
@@ -23,7 +24,7 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t *segs[]) {
   }
 
   if (params->type == LOGCACHE_BOTH_ORACLE || params->type == LOGCACHE_LOG_ORACLE) {
-    return select_segs_learned(cache, segs);      
+    return select_segs_learned(cache, segs);
   }
 
   assert(0);// should not reach here
@@ -62,16 +63,14 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
   double cutoff =
       find_cutoff(cache, params->obj_score_type, segs, params->n_merge, params->segment_size);
 
-  int n_reuse = 0;
   for (int i = 0; i < params->n_merge; i++) {
+    // merge n segments into one segment
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_obj; j++) {
       cache_obj = &segs[i]->objs[j];
-      if (cache_obj->L2Cache.next_access_vtime > 0) n_reuse += 1;
-      if (new_seg->n_obj < params->segment_size
-          && cal_object_score(params, params->obj_score_type, cache_obj, params->curr_rtime,
-                              params->curr_vtime)
-                 >= cutoff) {
+      double obj_score = cal_object_score(params, params->obj_score_type, cache_obj,
+                                          params->curr_rtime, params->curr_vtime);
+      if (new_seg->n_obj < params->segment_size && obj_score >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));
         new_obj->L2Cache.freq = (new_obj->L2Cache.freq + 1) / 2;
@@ -82,8 +81,6 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
 
         new_seg->n_obj += 1;
         new_seg->n_byte += cache_obj->obj_size;
-
-        //        hashtable_delete(cache->hashtable, cache_obj);
       } else {
         cache->n_obj -= 1;
         cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
@@ -102,15 +99,8 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
       clean_one_seg(cache, segs[i]);
     }
 #else
-    //    if (params->curr_rtime - segs[i]->become_train_seg_rtime < )
     remove_seg_from_bucket(params, bucket, segs[i]);
     clean_one_seg(cache, segs[i]);
 #endif
-  }
-
-  /* not sure if using oracle info */
-  if (new_seg->n_obj < params->segment_size) {
-    WARN("cutoff %lf %d objects copied %d reuse\n", cutoff, new_seg->n_obj, n_reuse);
-    abort();
   }
 }

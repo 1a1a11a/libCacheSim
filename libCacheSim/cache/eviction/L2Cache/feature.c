@@ -107,7 +107,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   }
 
   /* calculate y */
-  double penalty = curr_seg->penalty;
+  double utilization = curr_seg->utilization;
 
   int n_retained_obj = 0;
 #if TRAINING_CONSIDER_RETAIN == 1
@@ -115,23 +115,23 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 #endif
 
 #if TRAINING_Y_SOURCE == TRAINING_Y_FROM_ORACLE
-  penalty = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
+  utilization = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
                             curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
 
 #else
 #endif
 
 #if OBJECTIVE == REG
-  *y = (train_y_t) penalty;
+  *y = (train_y_t) utilization;
 #elif OBJECTIVE == LTR
-  double rel = 1.0 / (penalty * 10 + 1e-16);
+  double rel = 1.0 / (utilization * 10 + 1e-16);
   rel = 2 / (1 + exp(-rel)) - 1;
   DEBUG_ASSERT(rel >= 0 && rel <= 1);
   *y = rel;
-//  printf("%lf %lf\n", penalty, rel);
+//  printf("%lf %lf\n", utilization, rel);
 #endif
 
-  if (penalty < 0.000001) {
+  if (utilization < 0.000001) {
     return false;
   }
   return true;

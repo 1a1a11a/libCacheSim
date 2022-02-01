@@ -8,7 +8,7 @@
 //void cal_seg_evict_penalty_oracle(cache_t *cache, segment_t *seg, int curr_vtime) {
 //  L2Cache_params_t *params = cache->eviction_params;
 //  if (seg->next_seg == NULL) {
-//    seg->penalty = INT32_MAX;
+//    seg->utilization = INT32_MAX;
 //    return;
 //  }
 //
@@ -30,13 +30,13 @@
 //  }
 //  qsort(params->seg_sel.obj_penalty, seg->n_obj, sizeof(double), cmp_double);
 //
-//  double penalty = 0;
+//  double utilization = 0;
 //  int n_retained_obj = seg->n_obj / params->n_merge;
 //
 //  for (int i = 0; i < seg->n_obj - n_retained_obj; i++)
-//    penalty += params->seg_sel.obj_penalty[n_retained_obj + i];
+//    utilization += params->seg_sel.obj_penalty[n_retained_obj + i];
 //
-//  seg->penalty = penalty;
+//  seg->utilization = utilization;
 //}
 
 cache_ck_res_e L2Cache_check_oracle(cache_t *cache, request_t *req, bool update_cache) {

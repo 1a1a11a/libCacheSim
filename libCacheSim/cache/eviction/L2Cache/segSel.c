@@ -10,7 +10,7 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 
   DEBUG_ASSERT(seg1->magic == MAGIC);
 
-  if (seg1->penalty < seg2->penalty) return -1;
+  if (seg1->utilization < seg2->utilization) return -1;
   else
     return 1;
 }
@@ -60,16 +60,16 @@ void rank_segs(cache_t *cache) {
     while (curr_seg) {
       if (!is_seg_evictable(curr_seg, 1)
           || params->buckets[curr_seg->bucket_idx].n_seg < params->n_merge + 1) {
-        curr_seg->penalty = INT32_MAX;
+        curr_seg->utilization = INT32_MAX;
       } else {
         if (params->type == LOGCACHE_LEARNED) {
-          // curr_seg->penalty = 0;
+          // curr_seg->utilization = 0;
         } else if (params->type == LOGCACHE_LOG_ORACLE) {
-          curr_seg->penalty =
+          curr_seg->utilization =
               cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime);
         } else if (params->type == LOGCACHE_BOTH_ORACLE) {
-          curr_seg->penalty =
+          curr_seg->utilization =
               cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime);
         } else {
@@ -274,7 +274,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
   //      print_bucket(cache);
   //      printf("current ranked pos %d\n", *ranked_seg_pos_p);
   //      for (int m = 0; m < params->n_segs; m++) {
-  //        if (ranked_segs[m]) printf("seg %d penalty %lf\n", m, ranked_segs[m]->penalty);
+  //        if (ranked_segs[m]) printf("seg %d utilization %lf\n", m, ranked_segs[m]->utilization);
   //        else
   //          printf("seg %d NULL\n", m);
   //      }
@@ -322,7 +322,7 @@ start:
          (long) cache->cache_size, params->n_segs, *ranked_seg_pos_p);
     print_bucket(cache);
     for (int m = 0; m < params->n_segs; m++) {
-      if (ranked_segs[m]) printf("seg %d penalty %lf\n", m, ranked_segs[m]->penalty);
+      if (ranked_segs[m]) printf("seg %d utilization %lf\n", m, ranked_segs[m]->utilization);
       else
         printf("seg %d NULL\n", m);
     }

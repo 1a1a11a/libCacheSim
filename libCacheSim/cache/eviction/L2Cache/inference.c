@@ -86,7 +86,7 @@ void inference_lgbm(cache_t *cache) {
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
-      curr_seg->penalty = learner->pred[n_seg++];
+      curr_seg->utilization = learner->pred[n_seg++];
       curr_seg = curr_seg->next_seg;
     }
   }
@@ -119,13 +119,13 @@ void inference_xgboost(cache_t *cache) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
 #if OBJECTIVE == REG
-      //      curr_seg->penalty = pred[n_seg];
-      curr_seg->penalty = pred[n_seg] * 1e6 / curr_seg->n_byte;
-//      curr_seg->penalty = pred[n_seg] * 1e12 / curr_seg->n_byte / curr_seg->n_byte;
+      //      curr_seg->utilization = pred[n_seg];
+      curr_seg->utilization = pred[n_seg] * 1e6 / curr_seg->n_byte;
+//      curr_seg->utilization = pred[n_seg] * 1e12 / curr_seg->n_byte / curr_seg->n_byte;
 #elif OBJECTIVE == LTR
-      if (pred[n_seg] < 0) curr_seg->penalty = 1e8;
+      if (pred[n_seg] < 0) curr_seg->utilization = 1e8;
       else
-        curr_seg->penalty = 1.0 / pred[n_seg];
+        curr_seg->utilization = 1.0 / pred[n_seg];
       // printf("%lf\n", pred[n_seg]);
 #endif
 

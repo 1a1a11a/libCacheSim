@@ -3,7 +3,6 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "L2CacheInternal.h"
 #include "bucket.h"
-#include "const.h"
 #include "learnInternal.h"
 #include "learned.h"
 #include "obj.h"
@@ -28,6 +27,7 @@ void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segm
 
 #endif
 
+
 /* used when the training y is calculated online */
 void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->L2Cache.segment;
@@ -37,26 +37,28 @@ void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
      * be called only for evicted objects */
   DEBUG_ASSERT(cache_obj->L2Cache.in_cache == 0);
   DEBUG_ASSERT(seg->is_training_seg == true);
-#else
+#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
   /* if training data is generated from snapshot, then update_train_y should 
      * be called only for objects that are in the snapshot */
   if (!seg->in_training_data) {
     return;
   }
+#else
+#error "invalid TRAINING_DATA_SOURCE"
 #endif
 
 #if TRAINING_CONSIDER_RETAIN == 1
-  if (seg->n_skipped_penalty++ > params->n_retain_per_seg)
+  if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)
 #endif
   {
     double age = (double) params->curr_vtime - seg->become_train_seg_vtime;
     if (params->obj_score_type == OBJ_SCORE_FREQ
         || params->obj_score_type == OBJ_SCORE_FREQ_AGE) {
-      seg->penalty += 1.0e8 / age;
+      seg->utilization += 1.0e8 / age;
     } else {
-      seg->penalty += 1.0e8 / age / cache_obj->obj_size;
+      seg->utilization += 1.0e8 / age / cache_obj->obj_size;
     }
-    params->learner.train_y[seg->training_data_row_idx] = seg->penalty;
+    params->learner.train_y[seg->training_data_row_idx] = seg->utilization;
   }
 }
 

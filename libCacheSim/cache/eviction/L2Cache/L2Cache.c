@@ -145,9 +145,6 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
   }
 
   if (cache_obj->L2Cache.in_cache) {
-    /* if there is an evicted entry, the evicted entry should be after this entry */
-    DEBUG_ASSERT(((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
-
     /* seg_hit update segment state features */
     seg_hit(params, cache_obj);
     /* object hit update training data y and object stat */
@@ -155,6 +152,9 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
 
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
     update_train_y(params, cache_obj);
+#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
+    /* if there is an evicted entry, the evicted entry should be after this entry */
+    DEBUG_ASSERT(((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
 #endif
 
     cache_obj = cache_obj->hash_next;

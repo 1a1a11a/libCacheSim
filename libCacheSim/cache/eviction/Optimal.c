@@ -9,15 +9,14 @@
 // Created by Juncheng Yang on 3/30/21.
 //
 
-#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/Optimal.h"
+#include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void Optimal_remove_obj(cache_t *cache, cache_obj_t *obj);
-
 
 cache_t *Optimal_init(common_cache_params_t ccache_params,
                       __attribute__((unused)) void *init_params) {
@@ -49,15 +48,12 @@ void Optimal_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e Optimal_check(cache_t *cache,
-                             request_t *req,
-                             bool update_cache) {
+cache_ck_res_e Optimal_check(cache_t *cache, request_t *req, bool update_cache) {
   Optimal_params_t *params = cache->eviction_params;
   cache_obj_t *cached_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cached_obj);
 
-  if (!update_cache)
-    return ret;
+  if (!update_cache) return ret;
 
   if (ret == cache_ck_hit) {
     /* update next access ts, we use INT64_MAX - 10 because we reserve the largest elements for immediate delete */
@@ -65,12 +61,9 @@ cache_ck_res_e Optimal_check(cache_t *cache,
       Optimal_remove_obj(cache, cached_obj);
     } else {
       pqueue_pri_t pri = {.pri = req->next_access_vtime};
-      pqueue_change_priority(params->pq,
-                             pri,
-                             (pq_node_t *) (cached_obj->optimal.pq_node));
-      DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache,
-                                                req)->optimal.pq_node)->pri.pri
-                       == req->next_access_vtime);
+      pqueue_change_priority(params->pq, pri, (pq_node_t *) (cached_obj->optimal.pq_node));
+      DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->optimal.pq_node)->pri.pri
+                   == req->next_access_vtime);
     }
     return cache_ck_hit;
   }
@@ -104,13 +97,11 @@ void Optimal_insert(cache_t *cache, request_t *req) {
   pqueue_insert(params->pq, (void *) node);
   cached_obj->optimal.pq_node = node;
 
-  DEBUG_ASSERT(
-      ((pq_node_t *) cache_get_obj(cache, req)->optimal.pq_node)->pri.pri
-          == req->next_access_vtime);
+  DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->optimal.pq_node)->pri.pri
+               == req->next_access_vtime);
 }
 
-void Optimal_evict(cache_t *cache,
-                   __attribute__((unused)) request_t *req,
+void Optimal_evict(cache_t *cache, __attribute__((unused)) request_t *req,
                    __attribute__((unused)) cache_obj_t *evicted_obj) {
   Optimal_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);

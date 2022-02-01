@@ -41,7 +41,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   new_seg->is_training_seg = false;
 #endif
-  new_seg->penalty = 0;
+  new_seg->utilization = 0;
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_idx = bucket_idx;
@@ -124,15 +124,15 @@ double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_type, segment_
 //     n_err += 1;
 //   }
 
-  double penalty = 0;
+  double utilization = 0;
   for (int j = 0; j < seg->n_obj - n_retain; j++) {
-    penalty += obj_sel->score_array[j];
+    utilization += obj_sel->score_array[j];
   }
 
   /* we add this term here because the segment here is not fix-sized */
-  //  penalty = penalty * 1e8 / seg->n_byte;
-  DEBUG_ASSERT(penalty >= 0);
-  return penalty;
+  //  utilization = utilization * 1e8 / seg->n_byte;
+  DEBUG_ASSERT(utilization >= 0);
+  return utilization;
 }
 
 
@@ -143,13 +143,13 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          "req/write rate %6.0lf/%4.2lf, "
          "miss ratio %.4lf, "
          "mean freq %4.2lf, total hit %6d, total active %4d, "
-         "%2d merges, penalty %.4lf, oracle_score %lf, %d obj have reuse, "
+         "%2d merges, utilization %.4lf, oracle_score %lf, %d obj have reuse, "
          "n_hit/active window %d %d %d %d, \n",
          seg->seg_id, (int) params->curr_rtime - seg->create_rtime,
          (double) seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate, seg->miss_ratio,
          (double) seg->n_hit / seg->n_obj, seg->n_hit, seg->n_active,
 
-         seg->n_merge, seg->penalty,
+         seg->n_merge, seg->utilization,
          cal_seg_penalty(cache, OBJ_SCORE_ORACLE, seg, params->n_retain_per_seg,
                          params->curr_rtime, params->curr_vtime),
          count_n_obj_reuse(cache, seg),

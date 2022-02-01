@@ -47,7 +47,7 @@ typedef struct L2Cache_obj_metadata {
   int32_t freq;
   int32_t last_access_rtime;
   int16_t idx_in_segment;
-  int16_t active : 2;
+  int16_t active : 2;       // whether this object has been acccessed 
   int16_t in_cache : 2;
   int16_t seen_after_snapshot : 2;
 //      int16_t n_merged : 12;  /* how many times it has been merged */
