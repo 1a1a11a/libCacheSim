@@ -20,13 +20,6 @@ extern "C"
 #endif
 
 
-typedef struct LFUDA_params {
-  GHashTable *freq_map;
-  int64_t min_freq;
-  int64_t max_freq;
-} LFUDA_params_t;
-
-
 cache_t *LFUDA_init(common_cache_params_t ccache_params,
                   void *cache_specific_params);
 

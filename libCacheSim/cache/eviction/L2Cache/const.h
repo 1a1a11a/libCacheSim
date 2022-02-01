@@ -7,8 +7,8 @@
 /* L2Cache uses cache state features, so we need to track cache states 
  * and update them periodically, because there could be time when request 
  * rate is very low, we update when both conditions are met: */
-#define CACHE_STATE_UPDATE_RINTVL 10  // update every 10 seconds
-#define CACHE_STATE_UPDATE_VINTVL 1000// update every 10000 requests
+#define CACHE_STATE_UPDATE_RINTVL 10    // update every 10 seconds
+#define CACHE_STATE_UPDATE_VINTVL 1000  // update every 10000 requests
 
 /* change to 10 will slow down */
 /* the number of time windows we keep in features */

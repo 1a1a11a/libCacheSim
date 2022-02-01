@@ -30,6 +30,7 @@
 extern "C" {
 #endif
 
+
 static void free_list_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
 }
@@ -106,22 +107,6 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
       params->max_freq = cache_obj->lfu.freq;
     }
 
-    freq_node_t *new_node = g_hash_table_lookup(
-        params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
-    if (new_node == NULL) {
-      new_node = my_malloc_n(freq_node_t, 1);
-      new_node->freq = cache_obj->lfu.freq;
-      new_node->n_obj = 1;
-      new_node->first_obj = cache_obj;
-      /* to make sure when link the tail to cache_obj, it will not become a circle */
-      new_node->last_obj = NULL;
-      g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
-//      DEBUG("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj, new_node->last_obj);
-    } else {
-      DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
-      new_node->n_obj += 1;
-    }
-
     freq_node_t *old_node = g_hash_table_lookup(
         params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq - 1));
     DEBUG_ASSERT(old_node != NULL);
@@ -130,16 +115,45 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     old_node->n_obj -= 1;
     remove_obj_from_list(&old_node->first_obj, &old_node->last_obj, cache_obj);
 
-    cache_obj->queue.prev = new_node->last_obj;
-    cache_obj->queue.next = NULL;
+    if (params->min_freq == old_node->freq && old_node->n_obj == 0) {
+      /* update min freq */
+      uint64_t old_min_freq = params->min_freq;
+      for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+        if (g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)) != NULL) {
+          params->min_freq = freq;
+          break;
+        }
+      }
+      DEBUG_ASSERT(params->min_freq > old_min_freq); 
+    }
+
+    freq_node_t *new_node = g_hash_table_lookup(
+        params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
+    if (new_node == NULL) {
+      new_node = my_malloc_n(freq_node_t, 1);
+      memset(new_node, 0, sizeof(freq_node_t));
+      new_node->freq = cache_obj->lfu.freq;
+      g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
+      VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj, new_node->last_obj);
+    } else {
+      // it could be new_node is empty
+      DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
+    }
 
     /* add to tail of the list */
     if (new_node->last_obj != NULL) {
       new_node->last_obj->queue.next = cache_obj;
-    }
-    new_node->last_obj = cache_obj;
-    if (new_node->first_obj == NULL)
+      cache_obj->queue.prev = new_node->last_obj;
+    } else {
+      DEBUG_ASSERT(new_node->first_obj == NULL);
+      DEBUG_ASSERT(new_node->n_obj == 0);
       new_node->first_obj = cache_obj;
+      cache_obj->queue.prev = NULL; 
+    }
+
+    cache_obj->queue.next = NULL;
+    new_node->last_obj = cache_obj;
+    new_node->n_obj += 1;
   }
   return ret;
 }
@@ -193,12 +207,14 @@ void LFUFast_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     min_freq_node->last_obj = NULL;
 
     /* update min freq */
+    uint64_t old_min_freq = params->min_freq;
     for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
       if (g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)) != NULL) {
         params->min_freq = freq;
         break;
       }
     }
+    DEBUG_ASSERT(params->min_freq > old_min_freq); 
 
   } else {
     min_freq_node->first_obj = obj_to_evict->queue.next;

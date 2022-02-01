@@ -15,6 +15,14 @@ extern "C" {
 #endif
 
 
+
+typedef struct LFUDA_params {
+  GHashTable *freq_map;
+  int64_t min_freq;
+  int64_t max_freq;
+} LFUDA_params_t;
+
+
 static void free_list_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
 }
