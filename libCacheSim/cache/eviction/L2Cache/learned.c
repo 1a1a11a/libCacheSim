@@ -25,6 +25,7 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   seg->training_data_row_idx = row_idx;
   seg->become_train_seg_rtime = params->curr_rtime;
   seg->become_train_seg_vtime = params->curr_vtime;
+  seg->utility = 0;
 
   prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);
 }
@@ -39,14 +40,16 @@ void snapshot_segs_to_training_data(cache_t *cache) {
   learner_t *l = &params->learner;
   segment_t *curr_seg = NULL;
 
-  // int sample_n_segs = l->n_max_training_segs / (l->retrain_intvl / l->snapshot_intvl);
-  int sample_ratio = MAX(params->n_segs / l->train_matrix_n_row, 1);
+  double sample_ratio = MAX((double) params->n_segs / (double) l->train_matrix_n_row, 1.0);
 
+  double credit = 0; // when credit reaches sample ratio, we sample a segment
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_seg - 2; si++) {
+    for (int si = 0; si < params->buckets[bi].n_seg - 1; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
-      if (rand() % sample_ratio == 0) {
+      credit += 1; 
+      if (credit >= sample_ratio) {
+        credit -= sample_ratio; 
         copy_seg_to_train_matrix(cache, curr_seg);
       } else {
         curr_seg->in_training_data = false;
@@ -61,6 +64,8 @@ void snapshot_segs_to_training_data(cache_t *cache) {
 }
 #endif
 
+
+// validation on training data 
 static void train_eval(const int iter, const double *pred, const float *true_y, int n_elem) {
   int pred_selected = find_argmin_double(pred, n_elem);
   int true_selected = find_argmin_float(true_y, n_elem);

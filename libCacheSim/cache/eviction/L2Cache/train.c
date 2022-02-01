@@ -25,53 +25,6 @@ void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segm
   append_seg_to_bucket(params, &params->training_bucket, segment);
 }
 
-#endif
-
-
-/* used when the training y is calculated online */
-void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
-  segment_t *seg = cache_obj->L2Cache.segment;
-
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  /* if training data is generated from eviction, then update_train_y should 
-     * be called only for evicted objects */
-  DEBUG_ASSERT(cache_obj->L2Cache.in_cache == 0);
-  DEBUG_ASSERT(seg->is_training_seg == true);
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  /* if training data is generated from snapshot, then update_train_y should 
-     * be called only for objects that are in the snapshot */
-  if (!seg->in_training_data) {
-    return;
-  }
-#else
-#error "invalid TRAINING_DATA_SOURCE"
-#endif
-
-#if TRAINING_CONSIDER_RETAIN == 1
-  if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)
-#endif
-  {
-    double age = (double) params->curr_vtime - seg->become_train_seg_vtime;
-    if (params->obj_score_type == OBJ_SCORE_FREQ
-        || params->obj_score_type == OBJ_SCORE_FREQ_AGE) {
-      seg->utilization += 1.0e8 / age;
-    } else {
-      seg->utilization += 1.0e8 / age / cache_obj->obj_size;
-    }
-    params->learner.train_y[seg->training_data_row_idx] = seg->utilization;
-  }
-}
-
-int cmp_train_y(const void *p1, const void *p2) {
-  const train_y_t *d1 = p1;
-  const train_y_t *d2 = p2;
-
-  if (*d1 > *d2) {
-    return 1;
-  } else
-    return -1;
-}
-
 static void clean_training_segs(cache_t *cache, int n_clean) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = params->training_bucket.first_seg;
@@ -130,13 +83,59 @@ static void create_data_holder(cache_t *cache) {
     learner->valid_matrix_n_row = N_MAX_VALIDATION;
   }
 }
+#endif
+
+/* used when the training y is calculated online */
+void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
+  segment_t *seg = cache_obj->L2Cache.segment;
+
+#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
+  /* if training data is generated from eviction, then update_train_y should 
+     * be called only for evicted objects */
+  DEBUG_ASSERT(cache_obj->L2Cache.in_cache == 0);
+  DEBUG_ASSERT(seg->is_training_seg == true);
+#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
+  /* if training data is generated from snapshot, then update_train_y should 
+     * be called only for objects that are in the snapshot */
+  if (!seg->in_training_data) {
+    return;
+  }
+#else
+#error "invalid TRAINING_DATA_SOURCE"
+#endif
+
+#if TRAINING_CONSIDER_RETAIN == 1
+  if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)
+#endif
+  {
+    double age = (double) params->curr_vtime - seg->become_train_seg_vtime;
+    //TODO: should age be in real time?
+    if (params->obj_score_type == OBJ_SCORE_FREQ
+        || params->obj_score_type == OBJ_SCORE_FREQ_AGE) {
+      seg->utility += 1.0e8 / age;
+    } else {
+      seg->utility += 1.0e8 / age / cache_obj->obj_size;
+    }
+    params->learner.train_y[seg->training_data_row_idx] = seg->utility;
+  }
+}
+
+int cmp_train_y(const void *p1, const void *p2) {
+  const train_y_t *d1 = p1;
+  const train_y_t *d2 = p2;
+
+  if (*d1 > *d2) {
+    return 1;
+  } else
+    return -1;
+}
 
 void prepare_training_data_per_package(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
 #ifdef USE_XGBOOST
-  if (params->learner.n_train > 0) {
+  if (learner->n_train > 0) {
     safe_call(XGDMatrixFree(learner->train_dm));
     safe_call(XGDMatrixFree(learner->valid_dm));
   }
@@ -155,8 +154,7 @@ void prepare_training_data_per_package(cache_t *cache) {
 
 #if OBJECTIVE == LTR
   safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", &learner->n_train_samples, 1));
-  safe_call(
-      XGDMatrixSetUIntInfo(learner->valid_dm, "group", &learner->n_valid_samples, 1));
+  safe_call(XGDMatrixSetUIntInfo(learner->valid_dm, "group", &learner->n_valid_samples, 1));
 #endif
 
 #elif defined(USE_GBM)
@@ -180,14 +178,13 @@ static void prepare_training_data(cache_t *cache) {
   if (learner->train_matrix_n_row < params->n_training_segs) {
     resize_matrix(params, &learner->train_x, &learner->train_y, &learner->train_matrix_n_row,
                   params->n_training_segs * 2);
-  } 
+  }
 
   if (learner->valid_matrix_n_row < params->n_training_segs) {
     resize_matrix(params, &learner->valid_x, &learner->valid_y, &learner->valid_matrix_n_row,
                   params->n_training_segs * 2);
-  } 
+  }
 
-  
 #endif
 
   int n_zero_samples = 0, n_zero_samples_use = 0;
@@ -201,7 +198,7 @@ static void prepare_training_data(cache_t *cache) {
   learner->n_train_samples = learner->n_valid_samples = 0;
   segment_t *curr_seg = params->training_bucket.first_seg;
 
-  // not all training data is useful 
+  // not all training data is useful
   // because for some of them we do not have good enough y to learn
   bool is_sample_useful;
   for (i = 0; i < params->n_training_segs / 2; i++) {
@@ -490,8 +487,8 @@ static void train_xgboost(cache_t *cache) {
        "%ld total segs \n",
        (unsigned long) cache->cache_size, (long) params->curr_rtime, (long) params->curr_vtime,
        (int) params->n_training_segs, (int) learner->n_train_samples,
-       (int) learner->n_valid_samples, 
-      //  (int) n_zero_samples_use, (int) n_zero_samples, 
+       (int) learner->n_valid_samples,
+       //  (int) n_zero_samples_use, (int) n_zero_samples,
        learner->n_trees, 0,
        //       params->learner.sample_every_n_seg_for_training,
        params->rank_intvl, (long) params->n_segs);

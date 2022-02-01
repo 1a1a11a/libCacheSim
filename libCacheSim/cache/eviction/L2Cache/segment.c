@@ -41,7 +41,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   new_seg->is_training_seg = false;
 #endif
-  new_seg->utilization = 0;
+  new_seg->utility = 0;
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_idx = bucket_idx;
@@ -149,7 +149,7 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          (double) seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate, seg->miss_ratio,
          (double) seg->n_hit / seg->n_obj, seg->n_hit, seg->n_active,
 
-         seg->n_merge, seg->utilization,
+         seg->n_merge, seg->utility,
          cal_seg_penalty(cache, OBJ_SCORE_ORACLE, seg, params->n_retain_per_seg,
                          params->curr_rtime, params->curr_vtime),
          count_n_obj_reuse(cache, seg),

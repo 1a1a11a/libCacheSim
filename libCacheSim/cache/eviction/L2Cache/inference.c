@@ -120,7 +120,7 @@ void inference_xgboost(cache_t *cache) {
     for (int si = 0; si < params->buckets[bi].n_seg; si++) {
 #if OBJECTIVE == REG
       //      curr_seg->utilization = pred[n_seg];
-      curr_seg->utilization = pred[n_seg] * 1e6 / curr_seg->n_byte;
+      curr_seg->utility = pred[n_seg] * 1e6 / curr_seg->n_byte;
 //      curr_seg->utilization = pred[n_seg] * 1e12 / curr_seg->n_byte / curr_seg->n_byte;
 #elif OBJECTIVE == LTR
       if (pred[n_seg] < 0) curr_seg->utilization = 1e8;

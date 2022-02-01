@@ -101,7 +101,7 @@ typedef struct segment {
   struct segment *next_seg;
   int32_t seg_id;
 
-  double utilization;
+  double utility;
   int n_skipped_penalty;
 
   /* stat when segment is cached */

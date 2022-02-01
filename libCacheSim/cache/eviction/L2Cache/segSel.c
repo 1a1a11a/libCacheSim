@@ -10,7 +10,7 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 
   DEBUG_ASSERT(seg1->magic == MAGIC);
 
-  if (seg1->utilization < seg2->utilization) return -1;
+  if (seg1->utility < seg2->utility) return -1;
   else
     return 1;
 }
@@ -60,16 +60,16 @@ void rank_segs(cache_t *cache) {
     while (curr_seg) {
       if (!is_seg_evictable(curr_seg, 1)
           || params->buckets[curr_seg->bucket_idx].n_seg < params->n_merge + 1) {
-        curr_seg->utilization = INT32_MAX;
+        curr_seg->utility = INT32_MAX;
       } else {
         if (params->type == LOGCACHE_LEARNED) {
           // curr_seg->utilization = 0;
         } else if (params->type == LOGCACHE_LOG_ORACLE) {
-          curr_seg->utilization =
+          curr_seg->utility =
               cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime);
         } else if (params->type == LOGCACHE_BOTH_ORACLE) {
-          curr_seg->utilization =
+          curr_seg->utility =
               cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime);
         } else {
@@ -322,7 +322,7 @@ start:
          (long) cache->cache_size, params->n_segs, *ranked_seg_pos_p);
     print_bucket(cache);
     for (int m = 0; m < params->n_segs; m++) {
-      if (ranked_segs[m]) printf("seg %d utilization %lf\n", m, ranked_segs[m]->utilization);
+      if (ranked_segs[m]) printf("seg %d utilization %lf\n", m, ranked_segs[m]->utility);
       else
         printf("seg %d NULL\n", m);
     }
