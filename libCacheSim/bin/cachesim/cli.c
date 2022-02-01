@@ -83,6 +83,12 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = FIFOMerge_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lhd") == 0) {
     cache = LHD_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "slru") == 0){
+
+    SLRU_init_params_t init_params;
+    init_params.n_seg = 5; // Currently hard-coded
+    cache = SLRU_init(cc_params, &init_params);
+    
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1

@@ -386,19 +386,17 @@ static void test_ARC(gconstpointer user_data) {
 
 static void test_SLRU(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {0,     93193, 87172, 84321, 83888,
-                             72331, 72230, 72181, 72141};
-  uint64_t miss_byte_true[] = {0,          4035451392, 3815613440,
-                              3724681728, 3751948288, 3083697664,
-                              3081942528, 3081872384, 3080036864};
+  uint64_t miss_cnt_true[] = {90089, 85723, 81723, 76995, 71130, 66325, 64635, 63452};
+  uint64_t miss_byte_true[] = {3919772672, 3669526016, 3469073408, 3293797888,
+                               3033513984, 2907733504, 2855347712, 2845867008};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
       .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
+  cache_t *cache = create_test_cache("SLRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, 1);
+      reader, cache, STEP_SIZE, NULL, 0, NUM_OF_THREADS);
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
@@ -496,6 +494,8 @@ int main(int argc, char *argv[]) {
   reader = setup_csv_reader_obj_num();
 //  reader = setup_vscsi_reader();
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
+
   g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);

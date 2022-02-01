@@ -15,6 +15,7 @@ extern "C" {
 #include "../include/libCacheSim/plugin.h"
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
+#include "../include/libCacheSim/evictionAlgo.h"
 
 
 typedef struct simulator_multithreading_params {

@@ -8,6 +8,7 @@ set(sourceC
         FIFO.c
         Clock.c
         LRU.c
+        SLRU.c
 
         Optimal.c
         OptimalSize.c

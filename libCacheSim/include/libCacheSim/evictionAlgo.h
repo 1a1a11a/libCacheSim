@@ -17,6 +17,7 @@
 #include "evictionAlgo/GDSF.h"
 
 #include "evictionAlgo/LHD.h"
+#include "evictionAlgo/SLRU.h"
 #include "evictionAlgo/Hyperbolic.h"
 #include "evictionAlgo/LeCaR.h"
 #include "evictionAlgo/Cacheus.h"

@@ -173,6 +173,10 @@ static cache_t *create_test_cache(const char *alg_name,
 //    init_params->reader = reader;
 //    init_params->ts = 0;
 //    cache = Optimal_init(cc_params, (void *) init_params);
+  } else if (strcasecmp(alg_name, "SLRU") == 0) {
+    SLRU_init_params_t init_params;
+    init_params.n_seg = 5; // Currently hard-coded
+    cache = SLRU_init(cc_params, &init_params);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

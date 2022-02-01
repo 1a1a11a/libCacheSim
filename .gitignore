@@ -7,3 +7,5 @@
 _build
 .idea
 example/cacheSimulatorC/cmake-build-debug
+.vscode/*
+*.log
