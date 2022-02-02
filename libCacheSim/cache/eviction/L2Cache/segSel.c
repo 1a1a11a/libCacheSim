@@ -114,18 +114,25 @@ static inline int find_next_qualified_seg(segment_t **ranked_segs, int start_pos
 bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  int start_bkt_idx = params->curr_evict_bucket_idx; 
+  int n_scanned_bucket = 0; 
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
   segment_t *seg_to_evict = bucket->next_seg_to_evict;
-
+  if (seg_to_evict == NULL) {
+    seg_to_evict = bucket->first_seg;
+  }
 
   while (!is_seg_evictable(seg_to_evict, params->n_merge)) {
     bucket->next_seg_to_evict = bucket->first_seg;
     params->curr_evict_bucket_idx = (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
     bucket = &params->buckets[params->curr_evict_bucket_idx];
     seg_to_evict = bucket->next_seg_to_evict;
+    if (seg_to_evict == NULL) {
+      seg_to_evict = bucket->first_seg;
+    }
 
-    if (params->curr_evict_bucket_idx == start_bkt_idx) {
+    n_scanned_bucket += 1; 
+
+    if (n_scanned_bucket > MAX_N_BUCKET + 1) {
       DEBUG("no evictable seg found\n");
       abort(); 
       segs[0] = NULL; 
@@ -134,11 +141,18 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   }
 
   for (int i = 0; i < params->n_merge; i++) {
+    DEBUG_ASSERT(seg_to_evict->bucket_idx == bucket->bucket_idx);
     segs[i] = seg_to_evict;
     seg_to_evict = seg_to_evict->next_seg;
   }
-  params->next_evict_segment = seg_to_evict;
-  bucket->next_seg_to_evict = seg_to_evict->next_seg;
+
+  // TODO: this is not good enough, we should not merge till the end 
+  if (bucket->n_seg > params->n_merge + 1) {
+    bucket->next_seg_to_evict = seg_to_evict;
+  } else {
+    bucket->next_seg_to_evict = NULL;
+    params->curr_evict_bucket_idx = (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
+  }
 
   return bucket;
 }

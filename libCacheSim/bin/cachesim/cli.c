@@ -47,15 +47,15 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   if (argc > 7) {
     if (strcasecmp(argv[7], "logOracleLog") == 0) {
-      args.lsc_type = LOGCACHE_LOG_ORACLE;
+      args.L2Cache_type = LOGCACHE_LOG_ORACLE;
     } else if (strcasecmp(argv[7], "logOracleItem") == 0) {
-      args.lsc_type = LOGCACHE_ITEM_ORACLE; 
+      args.L2Cache_type = LOGCACHE_ITEM_ORACLE; 
     } else if (strcasecmp(argv[7], "logOracleBoth") == 0) {
-      args.lsc_type = LOGCACHE_BOTH_ORACLE;
+      args.L2Cache_type = LOGCACHE_BOTH_ORACLE;
     } else if (strcasecmp(argv[7], "logLearned") == 0) {
-      args.lsc_type = LOGCACHE_LEARNED;
+      args.L2Cache_type = LOGCACHE_LEARNED;
     } else if (strcasecmp(argv[7], "segcache") == 0) {
-      args.lsc_type = SEGCACHE;
+      args.L2Cache_type = SEGCACHE;
     } else {
       printf("support logOracleLog/logOracleItem/logOracleBoth/logLearned/segcache\n");
       abort();
@@ -100,7 +100,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
     L2Cache_init_params_t init_params = {.segment_size = args.seg_size,
                                          .n_merge = args.n_merge,
-                                         .type = args.lsc_type,
+                                         .type = args.L2Cache_type,
                                          .rank_intvl = args.rank_intvl,
                                          .hit_density_age_shift = args.age_shift,
                                          .bucket_type = args.bucket_type,
@@ -109,7 +109,6 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
                                          .max_start_train_seg = args.max_start_train_seg,
                                          .n_train_seg_growth = args.n_train_seg_growth,
                                          .retrain_intvl = args.retrain_intvl,
-                                         .snapshot_intvl = args.snapshot_intvl,
                                          .sample_every_n_seg_for_training =
                                              args.sample_every_n_seg_for_training};
     cache = L2Cache_init(cc_params, &init_params);

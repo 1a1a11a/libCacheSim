@@ -39,7 +39,6 @@ typedef struct learner {
   // int64_t last_snapshot_rtime;
   // int32_t n_max_training_segs;
   // int n_snapshot;
-  // int snapshot_intvl;
 #else
 #error
 #endif
@@ -178,7 +177,6 @@ typedef struct {
   bucket_t training_bucket; /* segments that are evicted and used for training */
 
   int curr_evict_bucket_idx;
-  segment_t *next_evict_segment;
 
   /* space pre-allocated for training data */
   int32_t n_training_segs;

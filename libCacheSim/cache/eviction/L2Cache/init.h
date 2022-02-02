@@ -59,15 +59,10 @@ void init_learner(cache_t *cache) {
   if (l->sample_every_n_seg_for_training <= 0) 
     l->sample_every_n_seg_for_training = 1;
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  // l->n_max_training_segs = 1024 * 8;
   l->train_matrix_n_row = 1024 * 8;
-  // l->n_snapshot = 0;
-  // l->last_snapshot_rtime = 0;
-  // l->snapshot_intvl = init_params->snapshot_intvl > 0 ? init_params->snapshot_intvl : 3600 * 2;
 
   l->train_x = my_malloc_n(feature_t, l->train_matrix_n_row * l->n_feature);
   l->train_y = my_malloc_n(pred_t, l->train_matrix_n_row);
-  // l->train_matrix_n_row = l->n_max_training_segs;
 
   l->valid_matrix_n_row = l->train_matrix_n_row / 10;
   l->valid_x = my_malloc_n(feature_t, l->valid_matrix_n_row * l->n_feature);

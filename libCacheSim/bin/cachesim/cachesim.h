@@ -22,12 +22,11 @@ typedef struct {
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   struct {
-    L2Cache_type_e lsc_type;
+    L2Cache_type_e L2Cache_type;
     bucket_type_e bucket_type;
     int seg_size;
     int n_merge;
     double rank_intvl;
-    int snapshot_intvl;
     int size_bucket_base;
     int age_shift;
     int min_start_train_seg;

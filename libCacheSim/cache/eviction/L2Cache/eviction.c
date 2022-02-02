@@ -8,7 +8,7 @@
 #include "segment.h"
 
 /* choose which segment to evict */
-bucket_t *select_segs_to_evict(cache_t *cache, segment_t *segs[]) {
+bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 
   if (params->type == SEGCACHE || params->type == LOGCACHE_ITEM_ORACLE) {
@@ -30,7 +30,7 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t *segs[]) {
   assert(0);// should not reach here
 }
 
-void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t *segs[]) {
+void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 
   DEBUG_ASSERT(bucket->bucket_idx == segs[0]->bucket_idx);
