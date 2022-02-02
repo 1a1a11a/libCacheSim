@@ -20,7 +20,7 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
   uint64_t req_byte = 0, miss_byte = 0;
 
   read_one_req(reader, req);
-  int64_t start_ts = (int64_t) req->real_time, last_report_ts = 0;
+  int64_t start_ts = (int64_t) req->real_time, last_report_ts;
 
   /* skip half of the requests to warm up */
   long n_skipped = 0;
@@ -31,6 +31,7 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
     read_one_req(reader, req);
   }
   printf("skip %ld requests\n", n_skipped);
+  last_report_ts = req->real_time;
 
   double start_time = gettime();
   while (req->valid) {
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
       argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata);
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-    printf("seg size %d, n merge %d, rank_intvl %d, bucket type %d\n", 
+    printf("seg size %d, n merge %d, rank_intvl %.4lf, bucket type %d\n", 
       args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type); 
 #endif 
 

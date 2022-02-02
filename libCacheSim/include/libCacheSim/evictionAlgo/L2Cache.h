@@ -65,7 +65,7 @@ typedef struct {
   int n_merge;
   // used for calculate size bucket id logx(size - size_bucket_base)
   int size_bucket_base;
-  int rank_intvl;// how often to rank
+  double rank_intvl;     // how often to rank, in terms of fraction of total segments (0.0 - 1.0)
   int min_start_train_seg;
   int max_start_train_seg;
   int n_train_seg_growth;

@@ -212,5 +212,5 @@ typedef struct {
   int64_t last_hit_prob_compute_vtime; /* LHD selection */
 
   /* in number of evictions */
-  int rank_intvl;
+  double rank_intvl;
 } L2Cache_params_t;

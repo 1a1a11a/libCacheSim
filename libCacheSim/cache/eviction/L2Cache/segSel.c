@@ -92,17 +92,6 @@ void rank_segs(cache_t *cache) {
 
   params->seg_sel.last_rank_time = params->n_evictions;
   params->seg_sel.ranked_seg_pos = 0;
-
-#if defined(ADAPTIVE_RANK) && ADAPTIVE_RANK == 1
-  if (params->rank_intvl * params->n_merge < params->n_segs / 100) {
-    /* a better way to balance the rank_intvl */
-    if (params->rank_intvl % 100 == 0) {
-      DEBUG("cache size %lu increase rank interval from %d to %d\n",
-            (unsigned long) cache->cache_size, params->rank_intvl, params->rank_intvl + 1);
-    }
-    params->rank_intvl += 1;
-  }
-#endif
 }
 
 /** we need to find segments from the same bucket to merge, 
@@ -218,19 +207,11 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
   segment_t **ranked_segs = ss->ranked_segs;
   int32_t *ranked_seg_pos_p = &(ss->ranked_seg_pos);
 
-  if (params->n_evictions - ss->last_rank_time > params->rank_intvl || array_resized) {
+  /* rerank every rerank_intvl_evictions evictions */
+  int rerank_intvl_evictions = params->n_segs * params->rank_intvl;
+  rerank_intvl_evictions = MAX(rerank_intvl_evictions, 1); 
+  if (params->n_evictions - ss->last_rank_time >= rerank_intvl_evictions || array_resized) {
     rank_segs(cache);
-  }
-
-  if (*ranked_seg_pos_p > params->n_segs / 8 && params->rank_intvl > 2) {
-    params->rank_intvl = params->rank_intvl / 2 + 1;
-    WARN("cache size %lu: rank frequency too low, "
-         "curr pos in ranked seg %d, total %ld segs, reduce rank_intvl to %d\n",
-         (unsigned long) cache->cache_size, *ranked_seg_pos_p, (long) params->n_segs,
-         params->rank_intvl);
-    // print_bucket(cache);
-    ss->last_rank_time = 0;
-    return select_segs_learned(cache, segs);
   }
 
   assert(params->type != SEGCACHE);

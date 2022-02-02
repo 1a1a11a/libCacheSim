@@ -8,7 +8,7 @@
 void check_init_params(L2Cache_init_params_t *init_params) {
   assert(init_params->segment_size > 1 && init_params->segment_size <= 100000000);
   assert(init_params->n_merge > 1 && init_params->n_merge <= 100);
-  assert(init_params->rank_intvl > 0 && init_params->rank_intvl <= 100000000);
+  assert(init_params->rank_intvl > 0 && init_params->rank_intvl < 1);
   assert(init_params->segment_size / init_params->n_merge > 1);
 
   if (init_params->size_bucket_base <= 0) {

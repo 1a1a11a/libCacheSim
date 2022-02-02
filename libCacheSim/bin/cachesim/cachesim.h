@@ -26,7 +26,7 @@ typedef struct {
     bucket_type_e bucket_type;
     int seg_size;
     int n_merge;
-    int rank_intvl;
+    double rank_intvl;
     int snapshot_intvl;
     int size_bucket_base;
     int age_shift;

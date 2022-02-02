@@ -483,7 +483,7 @@ static void train_xgboost(cache_t *cache) {
   INFO("cache size %lu, curr time %ld (vtime %ld) training %d segs %d samples, "
        "%d validation samples, "
        "%d trees, "
-       "sample every %d segs, rank intvl %d, "
+       "sample every %d segs, rank intvl %.4lf, "
        "%ld total segs \n",
        (unsigned long) cache->cache_size, (long) params->curr_rtime, (long) params->curr_vtime,
        (int) params->n_training_segs, (int) learner->n_train_samples,

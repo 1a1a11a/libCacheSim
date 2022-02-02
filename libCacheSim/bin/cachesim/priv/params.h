@@ -16,7 +16,7 @@ static inline void set_default_arg(sim_arg_t *args) {
 
   args->seg_size = 1000;
   args->n_merge = 2;
-  args->rank_intvl = 20;
+  args->rank_intvl = 0.01;
   args->age_shift = 0;
   args->min_start_train_seg = 1000;
   args->max_start_train_seg = 10000;
@@ -58,7 +58,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
 // //    args->n_merge = 4;
 //     args->age_shift = 3;
 //     args->sample_every_n_seg_for_training = 2;
-//     args->rank_intvl = 20;
 //     args->bucket_type = SIZE_BUCKET;
 //     args->retrain_intvl = 86400;
 
@@ -69,15 +68,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
-    args->n_cache_size = 7;
-
-    args->seg_size = 1000;
-    args->n_merge = 2;
-    args->age_shift = 3;
-    args->bucket_type = SIZE_BUCKET;
-    args->sample_every_n_seg_for_training = 1;
-    args->rank_intvl = 20;
-    args->size_bucket_base = 1;
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
     args->retrain_intvl = 86400;
 
 
@@ -90,7 +81,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
 //    args->max_start_train_seg = 10000;
 //    args->n_train_seg_growth = 6000;
     args->sample_every_n_seg_for_training = 1;
-    args->rank_intvl = 120;
+    args->rank_intvl = 0.05;
     args->size_bucket_base = 1;
     args->retrain_intvl = 86400 * 2;
 
@@ -116,7 +107,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
   //   args->max_start_train_seg = 10000;
   //   args->n_train_seg_growth = 6000;
   //   args->sample_every_n_seg_for_training = 2;
-  //   args->rank_intvl = 20;
   //   args->bucket_type = NO_BUCKET;
   } else if (strstr(args->trace_path, "cphy") != NULL) {
     uint64_t s[10] = {500, 1000, 2000, 4000, 8000, 12000, 16000, 24000, 32000, 64000};
@@ -129,7 +119,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->seg_size = 50;
     args->snapshot_intvl = 3600;
     args->age_shift = 3;
-    args->rank_intvl = 120;
     args->size_bucket_base = 1;
     args->retrain_intvl = 86400 * 2;
     args->bucket_type = SIZE_BUCKET;
@@ -163,7 +152,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
 //    args->n_train_seg_growth = 2000;
 //    args->retrain_intvl = 86400;
     args->bucket_type = SIZE_BUCKET;
-    args->rank_intvl = 20;
 
     /* use LHD for object selection */
     args->snapshot_intvl = 300 * 6;
@@ -189,7 +177,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->n_train_seg_growth = 20000;
     args->sample_every_n_seg_for_training = 4;
     args->retrain_intvl = 86400;
-    args->rank_intvl = 20;
 
   } else if (strstr(args->trace_path, "sjc") != NULL
       || strstr(args->trace_path, "lax") != NULL) {
