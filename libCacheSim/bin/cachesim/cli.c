@@ -94,6 +94,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = Optimal_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimalSize") == 0) {
     cache = OptimalSize_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "lecar") == 0) {
+    cache = LeCaR_init(cc_params, NULL);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
     L2Cache_init_params_t init_params = {.segment_size = args.seg_size,

@@ -30,8 +30,8 @@ extern "C" {
 #endif
 
 cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
-  cache_t *cache = cache_struct_init("L2Cache", ccache_params);
   L2Cache_init_params_t *L2Cache_init_params = init_params;
+  cache_t *cache = cache_struct_init(L2Cache_type_names[L2Cache_init_params->type], ccache_params);
 
   cache->hashtable->external_obj = true;
   check_init_params((L2Cache_init_params_t *) init_params);
@@ -46,7 +46,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   params->bucket_type = L2Cache_init_params->bucket_type;
   params->obj_score_type = L2Cache_init_params->obj_score_type;
 
-  params->curr_evict_bucket_idx = -1;
+  params->curr_evict_bucket_idx = 0;
   params->segment_size = L2Cache_init_params->segment_size;
   params->n_merge = L2Cache_init_params->n_merge;
   params->n_retain_per_seg = params->segment_size / params->n_merge;
@@ -86,7 +86,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   //       "size_bucket_base %d, %ld bytes start training seg collection, sample %d, rank intvl %d, "
   //       "training truth %d re-train %d\n",
   //       (double) cache->cache_size / 1048576,
-  //       LSC_type_names[params->type],
+  //       L2Cache_type_names[params->type],
   //       obj_score_type_names[params->obj_score_type],
   //       bucket_type_names[params->bucket_type],
   //       params->size_bucket_base,
@@ -270,10 +270,10 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   bucket_t *bucket = select_segs_to_evict(cache, params->obj_sel.segs_to_evict);
 
-  params->n_evictions += 1;
   for (int i = 0; i < params->n_merge; i++) {
     params->cache_state.n_evicted_bytes += params->obj_sel.segs_to_evict[i]->n_byte;
   }
+  params->n_evictions += 1;
 
   if (params->type == LOGCACHE_LEARNED) {
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
@@ -300,8 +300,11 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
             MAX((int) (time_till_next / MAX(n_tseg_gap, 1)), 1);
       }
     }
-#else
+#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
+  // TODO: remove the evicted segs from the training data
 
+#else
+#error "TRAINING_DATA_SOURCE not defined"
 #endif
   }
 

@@ -54,7 +54,7 @@
 
 #define DEFAULT_RANK_INTVL 20
 
-static char *LSC_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
+static char *L2Cache_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
                                  "LOGCACHE_ITEM_ORACLE", "LOGCACHE_LEARNED"};
 
 static char *obj_score_type_names[] = {"FREQ",          "FREQ_BYTE",   "FREQ_AGE",
