@@ -6,7 +6,6 @@
 #include "learnInternal.h"
 #include "utils.h"
 
-
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
 /** @brief copy a segment to training data matrix
  *
@@ -42,14 +41,14 @@ void snapshot_segs_to_training_data(cache_t *cache) {
 
   double sample_ratio = MAX((double) params->n_segs / (double) l->train_matrix_n_row, 1.0);
 
-  double credit = 0; // when credit reaches sample ratio, we sample a segment
+  double credit = 0;// when credit reaches sample ratio, we sample a segment
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_segs - 1; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
-      credit += 1; 
+      credit += 1;
       if (credit >= sample_ratio) {
-        credit -= sample_ratio; 
+        credit -= sample_ratio;
         copy_seg_to_train_matrix(cache, curr_seg);
       } else {
         curr_seg->in_training_data = false;
@@ -64,8 +63,7 @@ void snapshot_segs_to_training_data(cache_t *cache) {
 }
 #endif
 
-
-// validation on training data 
+// validation on training data
 static void train_eval(const int iter, const double *pred, const float *true_y, int n_elem) {
   int pred_selected = find_argmin_double(pred, n_elem);
   int true_selected = find_argmin_float(true_y, n_elem);

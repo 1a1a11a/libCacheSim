@@ -35,7 +35,7 @@ static void check_ranked_segs(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
 
-  int n_segs = params->seg_sel.n_ranked_segs; 
+  int n_segs = params->seg_sel.n_ranked_segs;
   for (int i = 0; i < n_segs; i++) {
     for (int j = i + 1; j < n_segs; j++) {
       if (ranked_segs[i] != NULL) {
@@ -45,7 +45,7 @@ static void check_ranked_segs(cache_t *cache) {
       }
       DEBUG_ASSERT(ranked_segs[j] == NULL || ranked_segs[j]->rank == j);
     }
-  }  
+  }
 }
 
 static void check_ranked_segs_per_bucket(cache_t *cache) {
@@ -53,23 +53,23 @@ static void check_ranked_segs_per_bucket(cache_t *cache) {
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
 
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-    segment_t *seg = params->buckets[bi].ranked_seg_head; 
-    segment_t *last_seg = seg; 
-    int n_segs = 0; 
+    segment_t *seg = params->buckets[bi].ranked_seg_head;
+    segment_t *last_seg = seg;
+    int n_segs = 0;
     while (seg != NULL) {
       n_segs += 1;
       DEBUG_ASSERT(seg->magic == MAGIC);
       DEBUG_ASSERT(seg->bucket_idx == bi);
-      last_seg = seg; 
+      last_seg = seg;
       seg = seg->next_ranked_seg;
 
       DEBUG_ASSERT(n_segs < params->n_segs * 2);
     }
     DEBUG_ASSERT(n_segs <= params->buckets[bi].n_segs);
     DEBUG_ASSERT(last_seg == params->buckets[bi].ranked_seg_tail);
-  }  
+  }
 }
-#endif 
+#endif
 
 void rank_segs(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -99,30 +99,27 @@ void rank_segs(cache_t *cache) {
         abort();
       }
 
-      if (!is_seg_evictable(curr_seg, 1, true) 
+      if (!is_seg_evictable(curr_seg, 1, true)
           || params->buckets[curr_seg->bucket_idx].n_segs < params->n_merge + 1) {
-        curr_seg->utility += INT32_MAX/2;
-      } 
+        curr_seg->utility += INT32_MAX / 2;
+      }
 
       ranked_segs[n_segs++] = curr_seg;
       curr_seg = curr_seg->next_seg;
     }
   }
 
-
   DEBUG_ASSERT(n_segs == params->n_segs);
 
-  DEBUG_ASSERT(params->type == LOGCACHE_LOG_ORACLE 
-               || params->type == LOGCACHE_BOTH_ORACLE
+  DEBUG_ASSERT(params->type == LOGCACHE_LOG_ORACLE || params->type == LOGCACHE_BOTH_ORACLE
                || params->type == LOGCACHE_LEARNED);
   qsort(ranked_segs, n_segs, sizeof(segment_t *), cmp_seg);
 
   params->seg_sel.last_rank_time = params->n_evictions;
   params->seg_sel.ranked_seg_pos = 0;
 
-
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-    params->buckets[bi].ranked_seg_head = NULL; 
+    params->buckets[bi].ranked_seg_head = NULL;
     params->buckets[bi].ranked_seg_tail = NULL;
   }
 
@@ -141,7 +138,6 @@ void rank_segs(cache_t *cache) {
   }
   params->seg_sel.n_ranked_segs = params->n_segs;
 }
-  
 
 /** we need to find segments from the same bucket to merge, 
 }
@@ -166,7 +162,7 @@ static inline int find_next_qualified_seg(segment_t **ranked_segs, int start_pos
 bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  int n_scanned_bucket = 0; 
+  int n_scanned_bucket = 0;
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
   segment_t *seg_to_evict = bucket->next_seg_to_evict;
   if (seg_to_evict == NULL) {
@@ -182,13 +178,13 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
       seg_to_evict = bucket->first_seg;
     }
 
-    n_scanned_bucket += 1; 
+    n_scanned_bucket += 1;
 
     if (n_scanned_bucket > MAX_N_BUCKET + 1) {
       DEBUG("no evictable seg found\n");
-      abort(); 
-      segs[0] = NULL; 
-      return NULL; 
+      abort();
+      segs[0] = NULL;
+      return NULL;
     }
   }
 
@@ -198,7 +194,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
     seg_to_evict = seg_to_evict->next_seg;
   }
 
-  // TODO: this is not good enough, we should not merge till the end 
+  // TODO: this is not good enough, we should not merge till the end
   if (bucket->n_segs > params->n_merge + 1) {
     bucket->next_seg_to_evict = seg_to_evict;
   } else {
@@ -273,34 +269,32 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
   segment_t **ranked_segs = ss->ranked_segs;
   int32_t *ranked_seg_pos_p = &(ss->ranked_seg_pos);
 
-
   /* rerank every rerank_intvl_evictions evictions */
   int rerank_intvl_evictions = params->n_segs * params->rank_intvl / params->n_merge;
-  rerank_intvl_evictions = MAX(rerank_intvl_evictions, 1); 
+  rerank_intvl_evictions = MAX(rerank_intvl_evictions, 1);
   if (params->n_evictions - ss->last_rank_time >= rerank_intvl_evictions || array_resized) {
     rank_segs(cache);
   }
 
-
-  /* choosing n_merge segments with the lowest utility, may not be consecutive */ 
-  segment_t *seg_to_evict = ranked_segs[*ranked_seg_pos_p]; 
+  /* choosing n_merge segments with the lowest utility, may not be consecutive */
+  segment_t *seg_to_evict = ranked_segs[*ranked_seg_pos_p];
   // find the segment with the lowest utility
   while (seg_to_evict == NULL && *ranked_seg_pos_p < ss->ranked_seg_size) {
     *ranked_seg_pos_p = *ranked_seg_pos_p + 1;
     seg_to_evict = ranked_segs[*ranked_seg_pos_p];
   }
-  // keep the first seg_to_evict in case we cannot find segments to merge, and we 
+  // keep the first seg_to_evict in case we cannot find segments to merge, and we
   // need to evict one segment (without retaining)
-  segment_t *seg_to_evict_first = seg_to_evict; 
-  ranked_segs[*ranked_seg_pos_p] = NULL; 
+  segment_t *seg_to_evict_first = seg_to_evict;
+  ranked_segs[*ranked_seg_pos_p] = NULL;
 
   // find the segment with n_mergeable segments
   while (!is_seg_evictable(seg_to_evict, params->n_merge, params->merge_consecutive_segs)) {
     if (*ranked_seg_pos_p > ss->n_ranked_segs * 0.8) {
-      // let's evict one seg rather than merging multiple 
+      // let's evict one seg rather than merging multiple
       segs[0] = seg_to_evict_first;
       bucket_t *bkt = &params->buckets[segs[0]->bucket_idx];
-      // this does not hold, because it is possible that bkt->ranked_seg_head was not evictable earlier due to 
+      // this does not hold, because it is possible that bkt->ranked_seg_head was not evictable earlier due to
       // not enough segments, but now become evictable after new segments are inserted
       // DEBUG_ASSERT(bkt->ranked_seg_head == segs[0]);
       bkt->ranked_seg_head = NULL;
@@ -312,35 +306,32 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     }
     *ranked_seg_pos_p = *ranked_seg_pos_p + 1;
     seg_to_evict = ranked_segs[*ranked_seg_pos_p];
-    ranked_segs[*ranked_seg_pos_p] = NULL; 
+    ranked_segs[*ranked_seg_pos_p] = NULL;
   }
-  *ranked_seg_pos_p = (*ranked_seg_pos_p + 1); 
+  *ranked_seg_pos_p = (*ranked_seg_pos_p + 1);
 
-  // store the n_merge segments 
+  // store the n_merge segments
   segs[0] = seg_to_evict;
   for (int i = 1; i < params->n_merge; i++) {
-    // next seg could have been evicted 
+    // next seg could have been evicted
     if (params->merge_consecutive_segs) {
-      segs[i] = segs[i-1]->next_seg;
+      segs[i] = segs[i - 1]->next_seg;
     } else {
-      segs[i] = segs[i-1]->next_ranked_seg;
+      segs[i] = segs[i - 1]->next_ranked_seg;
     }
 
-    DEBUG_ASSERT(segs[i]->next_seg != NULL); 
-    DEBUG_ASSERT(segs[i]->bucket_idx == segs[i-1]->bucket_idx);
+    DEBUG_ASSERT(segs[i]->next_seg != NULL);
+    DEBUG_ASSERT(segs[i]->bucket_idx == segs[i - 1]->bucket_idx);
 
-    DEBUG_ASSERT(params->merge_consecutive_segs || 
-        segs[i]->utility >= segs[i-1]->utility);
+    DEBUG_ASSERT(params->merge_consecutive_segs || segs[i]->utility >= segs[i - 1]->utility);
     ranked_segs[segs[i]->rank] = NULL;
   }
 
   bucket_t *bkt = &params->buckets[segs[0]->bucket_idx];
-  bkt->ranked_seg_head = segs[params->n_merge - 1]->next_ranked_seg; 
-  if (segs[params->n_merge - 1]->next_ranked_seg == NULL) 
-    bkt->ranked_seg_tail = NULL;
+  bkt->ranked_seg_head = segs[params->n_merge - 1]->next_ranked_seg;
+  if (segs[params->n_merge - 1]->next_ranked_seg == NULL) bkt->ranked_seg_tail = NULL;
 
   // printf("%d %d ######\n", segs[0]->rank, segs[1]->rank);
 
-  return bkt; 
+  return bkt;
 }
-

@@ -31,7 +31,8 @@ extern "C" {
 
 cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   L2Cache_init_params_t *L2Cache_init_params = init_params;
-  cache_t *cache = cache_struct_init(L2Cache_type_names[L2Cache_init_params->type], ccache_params);
+  cache_t *cache =
+      cache_struct_init(L2Cache_type_names[L2Cache_init_params->type], ccache_params);
 
   cache->hashtable->external_obj = true;
   check_init_params((L2Cache_init_params_t *) init_params);
@@ -60,8 +61,8 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
     case LOGCACHE_LOG_ORACLE:
     case LOGCACHE_LEARNED:
       //      params->obj_score_type = OBJ_SCORE_FREQ_AGE;
-      params->obj_score_type = OBJ_SCORE_FREQ_BYTE; 
-      // params->obj_score_type = OBJ_SCORE_FREQ_AGE_BYTE; 
+      params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
+      // params->obj_score_type = OBJ_SCORE_FREQ_AGE_BYTE;
       //    params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
       break;
     case LOGCACHE_ITEM_ORACLE:
@@ -130,6 +131,30 @@ void L2Cache_free(cache_t *cache) {
 
   my_free(sizeof(L2Cache_params_t), params);
   cache_struct_free(cache);
+}
+
+cache_ck_res_e L2Cache_check_oracle(cache_t *cache, request_t *req, bool update_cache) {
+  L2Cache_params_t *params = cache->eviction_params;
+
+  cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
+
+  if (cache_obj == NULL) {
+    return cache_ck_miss;
+  }
+
+  if (!update_cache) {
+    return cache_ck_hit;
+  }
+
+  if (cache_obj->L2Cache.in_cache) {
+    seg_hit(params, cache_obj);
+    object_hit(params, cache_obj, req);
+
+    return cache_ck_hit;
+  } else {
+
+    return cache_ck_miss;
+  }
 }
 
 cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) {
@@ -221,8 +246,8 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
       if (l->n_train == -1) {
         snapshot_segs_to_training_data(cache);
         l->last_train_rtime = params->curr_rtime;
-        l->n_train = 0; 
-      } 
+        l->n_train = 0;
+      }
       if (params->curr_rtime - l->last_train_rtime >= l->retrain_intvl) {
         train(cache);
         snapshot_segs_to_training_data(cache);
@@ -232,7 +257,6 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
 #endif
   return ret;
 }
-
 
 void L2Cache_insert(cache_t *cache, request_t *req) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -265,7 +289,6 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(cache->n_obj <= params->n_segs * params->segment_size);
 }
 
-
 void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
@@ -273,23 +296,23 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   bucket_t *bucket = select_segs_to_evict(cache, params->obj_sel.segs_to_evict);
   if (bucket == NULL) {
     // this can happen when space is fragmented between buckets and we cannot merge
-    // evict segs[0] and return 
+    // evict segs[0] and return
 
-    segment_t *seg = params->obj_sel.segs_to_evict[0]; 
+    segment_t *seg = params->obj_sel.segs_to_evict[0];
     bucket = &params->buckets[seg->bucket_idx];
 
     static int64_t last_print_time = 0;
     if (params->curr_rtime - last_print_time > 3600) {
       last_print_time = params->curr_rtime;
-      DEBUG("%.2lf hour, cache size %lu MB, %d segs, evicting and cannot merge\n", 
-          (double) params->curr_rtime / 3600.0, cache->cache_size / 1024 / 1024, params->n_segs);
+      DEBUG("%.2lf hour, cache size %lu MB, %d segs, evicting and cannot merge\n",
+            (double) params->curr_rtime / 3600.0, cache->cache_size / 1024 / 1024,
+            params->n_segs);
     }
-    
+
     remove_seg_from_bucket(params, bucket, seg);
     evict_one_seg(cache, params->obj_sel.segs_to_evict[0]);
-    return; 
+    return;
   }
-
 
   for (int i = 0; i < params->n_merge; i++) {
     params->cache_state.n_evicted_bytes += params->obj_sel.segs_to_evict[i]->n_byte;
@@ -322,7 +345,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
       }
     }
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  // TODO: remove the evicted segs from the training data
+    // TODO: remove the evicted segs from the training data
 
 #else
 #error "TRAINING_DATA_SOURCE not defined"

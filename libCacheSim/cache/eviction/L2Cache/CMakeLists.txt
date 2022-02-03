@@ -7,8 +7,6 @@ set(source
         segSel.c 
         eviction.c 
 
-        oracle.c
-
         feature.c
         train.c 
         inference.c

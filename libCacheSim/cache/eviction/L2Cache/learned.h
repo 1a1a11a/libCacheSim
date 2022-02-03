@@ -20,10 +20,6 @@ void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segm
 
 /************* inference *****************/
 
-// void create_data_holder(cache_t *cache);
-
-// void create_data_holder2(cache_t *cache);
-
 void snapshot_segs_to_training_data(cache_t *cache);
 
 void train(cache_t *cache);

@@ -2,13 +2,12 @@
 
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "L2CacheInternal.h"
-#include "learnInternal.h"
 #include "bucket.h"
+#include "const.h"
+#include "learnInternal.h"
+#include "learned.h"
 #include "obj.h"
 #include "segment.h"
-#include "learned.h"
-#include "const.h"
-
 
 /** because each segment is not fixed size, 
  * the number of segments in total can vary over time, 
@@ -16,18 +15,18 @@
  * we resize the matrix */
 static inline void resize_inf_matrix(L2Cache_params_t *params, int64_t new_size) {
   learner_t *learner = &params->learner;
-    if (learner->inf_matrix_n_row != 0) {
-        // free previously allocated memory
-        // TODO: use realloc instead of free
-      DEBUG_ASSERT(learner->inference_x != NULL);
-      my_free(sizeof(feature_t) * learner->inf_matrix_n_row * learner->n_feature,
-              learner->inference_x);
-      my_free(sizeof(pred_t) * learner->inf_matrix_n_row, learner->pred);
-    }
-    int n_row = params->n_segs * 2;
-    learner->inference_x = my_malloc_n(feature_t, n_row * learner->n_feature);
-    learner->pred = my_malloc_n(pred_t, n_row);
-    learner->inf_matrix_n_row = n_row;
+  if (learner->inf_matrix_n_row != 0) {
+    // free previously allocated memory
+    // TODO: use realloc instead of free
+    DEBUG_ASSERT(learner->inference_x != NULL);
+    my_free(sizeof(feature_t) * learner->inf_matrix_n_row * learner->n_feature,
+            learner->inference_x);
+    my_free(sizeof(pred_t) * learner->inf_matrix_n_row, learner->pred);
+  }
+  int n_row = params->n_segs * 2;
+  learner->inference_x = my_malloc_n(feature_t, n_row * learner->n_feature);
+  learner->pred = my_malloc_n(pred_t, n_row);
+  learner->inf_matrix_n_row = n_row;
 }
 
 /* calculate the ranking of all segments for eviction */
@@ -37,7 +36,7 @@ void prepare_inference_data(cache_t *cache) {
   learner_t *learner = &params->learner;
 
   if (learner->inf_matrix_n_row < params->n_segs) {
-      resize_inf_matrix(params, params->n_segs);
+    resize_inf_matrix(params, params->n_segs);
   }
 
   feature_t *x = learner->inference_x;
@@ -58,13 +57,12 @@ void prepare_inference_data(cache_t *cache) {
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
-  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature,
-                                   -2, &learner->inf_dm));
+  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature, -2,
+                                   &learner->inf_dm));
 #elif defined(USE_GBM)
   ;
 #endif
 }
-
 
 #ifdef USE_GBM
 void inference_lgbm(cache_t *cache) {
@@ -92,7 +90,6 @@ void inference_lgbm(cache_t *cache) {
   }
 }
 #endif
-
 
 #ifdef USE_XGBOOST
 void inference_xgboost(cache_t *cache) {
@@ -126,7 +123,7 @@ void inference_xgboost(cache_t *cache) {
       if (pred[n_segs] < 0) curr_seg->utilization = 1e8;
       else
         curr_seg->utilization = 1.0 / pred[n_segs];
-      // printf("%lf\n", pred[n_segs]);
+        // printf("%lf\n", pred[n_segs]);
 #endif
 
 #ifdef DUMP_TRAINING_DATA
@@ -149,7 +146,6 @@ void inference_xgboost(cache_t *cache) {
 #endif
 }
 #endif
-
 
 void inference(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
