@@ -9,6 +9,12 @@
 #endif
 
 static inline void set_default_arg(sim_arg_t *args) {
+  uint64_t s[8] = {10, 50, 100, 400, 1000, 2000, 4000, 8000};
+  for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+    args->cache_sizes[i] = MiB * s[i];
+  }
+  args->n_cache_size = 8;
+
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   args->obj_id_type = OBJ_ID_NUM;
 
@@ -204,6 +210,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     }
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
   } else {
+    printf("cannot detect trace name\n");
     uint64_t s[8] = {10, 50, 100, 400, 1000, 2000, 4000, 8000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
@@ -213,7 +220,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->bucket_type = NO_BUCKET;
     args->age_shift = 2;
 
-    printf("cannot detect trace name\n");
     //    abort();
   }
 #endif

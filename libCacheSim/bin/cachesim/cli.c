@@ -71,7 +71,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   get_num_of_req(reader);
 
   common_cache_params_t cc_params = {.cache_size = args.cache_size * MiB,
-                                     .hashpower = 20,
+                                     .hashpower = 24,
                                      .default_ttl = 86400 * 300,
                                      .per_obj_overhead = args.per_obj_metadata};
   cache_t *cache;
