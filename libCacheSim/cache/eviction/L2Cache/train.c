@@ -173,6 +173,8 @@ static void prepare_training_data(cache_t *cache) {
   learner_t *learner = &params->learner;
   int i;
 
+  int n_zero_samples = 0, n_zero_samples_use = 0;
+
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   // create_data_holder(cache);
   if (learner->train_matrix_n_row < params->n_training_segs) {
@@ -185,11 +187,6 @@ static void prepare_training_data(cache_t *cache) {
                   params->n_training_segs * 2);
   }
 
-#endif
-
-  int n_zero_samples = 0, n_zero_samples_use = 0;
-
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   // feature_t *train_x = learner->train_x;
   // train_y_t *train_y = learner->train_y;
   // feature_t *valid_x = learner->valid_x;
@@ -240,7 +237,6 @@ static void prepare_training_data(cache_t *cache) {
   clean_training_segs(cache, params->n_training_segs / 2);
 #else
   int pos_in_train_data = 0, pos_in_valid_data = 0;
-  bool copy = true;
   int copy_direction; /* 0: train, 1: validation */
   int n_feature = learner->n_feature;
 
@@ -259,42 +255,31 @@ static void prepare_training_data(cache_t *cache) {
 #endif
 
   for (i = 0; i < learner->n_train_samples; i++) {
-    copy = true;
     if (learner->train_y[i] == 0) {
       n_zero_samples += 1;
-      if (n_zero_samples_use != 0) {
-        if (rand() % n_zero_samples_use > 1) {
-          copy = false;
-        } else {
-          n_zero_samples_use += 1;
-        }
-      } else {
-        n_zero_samples_use += 1;
-      }
     }
 
-    if (copy) {
-      copy_direction = 0;
-      if (rand() % 10 == 0 && pos_in_valid_data < learner->valid_matrix_n_row) {
-        copy_direction = 1;
-      }
+    copy_direction = 0;
+    if (i % 10 == 0 && pos_in_valid_data < learner->valid_matrix_n_row) {
+      copy_direction = 1;
+    }
 
-      if (copy_direction == 0) {
-        if (pos_in_train_data == i) {
-          pos_in_train_data++;
-          continue;
-        }
-        x = &learner->train_x[pos_in_train_data * n_feature];
-        y = &learner->train_y[pos_in_train_data];
-        pos_in_train_data++;
-      } else {
-        x = &learner->valid_x[pos_in_valid_data * n_feature];
-        y = &learner->valid_y[pos_in_valid_data];
-        pos_in_valid_data++;
-      }
+    if (copy_direction == 0) {
+      // if (pos_in_train_data == i) {
+      //   pos_in_train_data++;
+      //   continue;
+      // }
+      x = &learner->train_x[pos_in_train_data * n_feature];
+      y = &learner->train_y[pos_in_train_data];
+      pos_in_train_data++;
+    } else {
+      x = &learner->valid_x[pos_in_valid_data * n_feature];
+      y = &learner->valid_y[pos_in_valid_data];
+      pos_in_valid_data++;
+    }
 
-      memcpy(x, &learner->train_x[i * n_feature], sizeof(feature_t) * n_feature);
-      *y = learner->train_y[i];
+    memcpy(x, &learner->train_x[i * n_feature], sizeof(feature_t) * n_feature);
+    *y = learner->train_y[i];
 
 #if OBJECTIVE == LTR
 //      printf("%f\n", *y);
@@ -303,12 +288,14 @@ static void prepare_training_data(cache_t *cache) {
 //      else
 //        *y = 0;
 #endif
-    }
   }
   learner->n_train_samples = pos_in_train_data;
   learner->n_valid_samples = pos_in_valid_data;
 #endif
 
+  DEBUG("%.2lf hour, %d segs, %d zero samples, train:valid %d/%d\n", 
+    (double) params->curr_rtime/3600.0, params->n_segs, 
+    n_zero_samples, pos_in_train_data, pos_in_valid_data); 
   prepare_training_data_per_package(cache);
 
 #ifdef DUMP_TRAINING_DATA
@@ -419,19 +406,14 @@ static void train_xgboost(cache_t *cache) {
   DMatrixHandle eval_dmats[2] = {learner->train_dm, learner->valid_dm};
   static const char *eval_names[2] = {"train", "valid"};
   const char *eval_result;
-  double l2, last_l2 = 0;
+  double train_loss, valid_loss, last_valid_loss = 0;
   int n_stable_iter = 0;
 
-  if (learner->n_train == 0) {
-    safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
-  }
-#ifndef ACCUMULATIVE_TRAINING
-  else {
+  if (learner->n_train > 0) {
     safe_call(XGBoosterFree(learner->booster));
-    safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
   }
-#endif
 
+  safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
   safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
   //  safe_call(XGBoosterSetParam(learner->booster, "booster", "gblinear"));
   safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
@@ -453,19 +435,20 @@ static void train_xgboost(cache_t *cache) {
     safe_call(
         XGBoosterEvalOneIter(learner->booster, i, eval_dmats, eval_names, 2, &eval_result));
 #if OBJECTIVE == REG
-    char *pos = strstr(eval_result, "valid-rmse") + 11;
+    char *train_pos = strstr(eval_result, "train-rmse:") + 11;
+    char *valid_pos = strstr(eval_result, "valid-rmse") + 11;
 #elif OBJECTIVE == LTR
-    char *pos = strstr(eval_result, "valid-map") + 10;
+    char *valid_pos = strstr(eval_result, "valid-map") + 10;
 #else
 #error
 #endif
-    l2 = strtof(pos, NULL);
+    train_loss = strtof(train_pos, NULL);
+    valid_loss = strtof(valid_pos, NULL);
 
-    // DEBUG("iter %d %s %lf\n", i, eval_result, l2);
-    if (l2 > 1000000) abort();
+    DEBUG("iter %d, train loss %.4lf, valid loss %.4lf\n", i, train_loss, valid_loss);
+    if (valid_loss > 1000000) abort();
 
-    if (fabs(last_l2 - l2) / l2 < 0.01) {
-      //    if (fabs(last_l2 - l2) / l2 < 0.01 || l2 > last_l2 * 1.05) {
+    if (fabs(last_valid_loss - valid_loss) / valid_loss < 0.01) {
       n_stable_iter += 1;
       if (n_stable_iter > 2) {
         break;
@@ -473,25 +456,22 @@ static void train_xgboost(cache_t *cache) {
     } else {
       n_stable_iter = 0;
     }
-    last_l2 = l2;
+    last_valid_loss = valid_loss;
   }
 
 #ifndef __APPLE__
   safe_call(XGBoosterBoostedRounds(learner->booster, &learner->n_trees));
 #endif
 
-  INFO("cache size %lu, curr time %ld (vtime %ld) training %d segs %d samples, "
-       "%d validation samples, "
+  INFO("cache size %lu MB, %.2lf hour, vtime %ld, train/valid %d/%d samples, "
        "%d trees, "
-       "sample every %d segs, rank intvl %.4lf, "
-       "%ld total segs \n",
-       (unsigned long) cache->cache_size, (long) params->curr_rtime, (long) params->curr_vtime,
-       (int) params->n_training_segs, (int) learner->n_train_samples,
+       "rank intvl %.4lf\n",
+       (unsigned long) cache->cache_size / 1024 / 1024, 
+       (double) params->curr_rtime/3600, (long) params->curr_vtime,
+       (int) learner->n_train_samples,
        (int) learner->n_valid_samples,
-       //  (int) n_zero_samples_use, (int) n_zero_samples,
-       learner->n_trees, 0,
-       //       params->learner.sample_every_n_seg_for_training,
-       params->rank_intvl, (long) params->n_segs);
+       learner->n_trees, 
+       params->rank_intvl);
 
 #ifdef DUMP_MODEL
   {
