@@ -17,6 +17,8 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->seg_size = 1000;
   args->n_merge = 2;
   args->rank_intvl = 0.01;
+  args->merge_consecutive_segs = true; 
+  
   args->age_shift = 0;
   args->min_start_train_seg = 1000;
   args->max_start_train_seg = 10000;

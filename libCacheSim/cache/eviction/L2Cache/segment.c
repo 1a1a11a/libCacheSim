@@ -22,6 +22,29 @@ int clean_one_seg(cache_t *cache, segment_t *seg) {
   return n_cleaned;
 }
 
+// called when there is no segment can be merged due to fragmentation 
+// different from clean_one_seg becausee this function also updates cache state 
+int evict_one_seg(cache_t *cache, segment_t *seg) {
+  L2Cache_params_t *params = cache->eviction_params;
+  int n_cleaned = 0;
+  for (int i = 0; i < seg->n_obj; i++) {
+    cache_obj_t *cache_obj = &seg->objs[i];
+    object_evict(cache, cache_obj);
+    cache_obj->L2Cache.in_cache = 0;
+
+    if (hashtable_try_delete(cache->hashtable, cache_obj)) {
+      n_cleaned += 1;
+      cache->n_obj -= 1;
+      cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
+    }
+
+  }
+  my_free(sizeof(cache_obj_t) * params->n_obj, seg->objs);
+  my_free(sizeof(segment_t), seg);
+
+  return n_cleaned;
+}
+
 segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   L2Cache_params_t *params = cache->eviction_params;
 
@@ -41,7 +64,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   new_seg->is_training_seg = false;
 #endif
-  new_seg->utility = 0;
+  new_seg->utility = INT64_MAX;   // to avoid it being picked for eviction 
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_idx = bucket_idx;
@@ -65,7 +88,7 @@ void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment
   old_seg->prev_seg = new_seg;
 
   params->n_segs += 1;
-  bucket->n_seg += 1;
+  bucket->n_segs += 1;
 }
 
 int count_n_obj_reuse(cache_t *cache, segment_t *seg) {

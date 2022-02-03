@@ -42,17 +42,17 @@ void prepare_inference_data(cache_t *cache) {
 
   feature_t *x = learner->inference_x;
 
-  int n_seg = 0;
+  int n_segs = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_seg; si++) {
-      prepare_one_row(cache, curr_seg, false, &x[learner->n_feature * n_seg], NULL);
+    for (int si = 0; si < params->buckets[bi].n_segs; si++) {
+      prepare_one_row(cache, curr_seg, false, &x[learner->n_feature * n_segs], NULL);
 
       curr_seg = curr_seg->next_seg;
-      n_seg++;
+      n_segs++;
     }
   }
-  DEBUG_ASSERT(params->n_segs == n_seg);
+  DEBUG_ASSERT(params->n_segs == n_segs);
 
 #ifdef USE_XGBOOST
   if (params->learner.n_inference > 0) {
@@ -82,11 +82,11 @@ void inference_lgbm(cache_t *cache) {
 
   DEBUG_ASSERT(out_len == params->n_segs);
 
-  int n_seg = 0;
+  int n_segs = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_seg; si++) {
-      curr_seg->utilization = learner->pred[n_seg++];
+    for (int si = 0; si < params->buckets[bi].n_segs; si++) {
+      curr_seg->utilization = learner->pred[n_segs++];
       curr_seg = curr_seg->next_seg;
     }
   }
@@ -114,32 +114,32 @@ void inference_xgboost(cache_t *cache) {
   safe_call(XGBoosterPredict(learner->booster, learner->inf_dm, 0, 0, 0, &out_len, &pred));
   DEBUG_ASSERT(out_len == params->n_segs);
 
-  int n_seg = 0;
+  int n_segs = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_seg; si++) {
+    for (int si = 0; si < params->buckets[bi].n_segs; si++) {
 #if OBJECTIVE == REG
-      //      curr_seg->utilization = pred[n_seg];
-      curr_seg->utility = pred[n_seg] * 1e6 / curr_seg->n_byte;
-//      curr_seg->utilization = pred[n_seg] * 1e12 / curr_seg->n_byte / curr_seg->n_byte;
+      //      curr_seg->utilization = pred[n_segs];
+      curr_seg->utility = pred[n_segs] * 1e6 / curr_seg->n_byte;
+//      curr_seg->utilization = pred[n_segs] * 1e12 / curr_seg->n_byte / curr_seg->n_byte;
 #elif OBJECTIVE == LTR
-      if (pred[n_seg] < 0) curr_seg->utilization = 1e8;
+      if (pred[n_segs] < 0) curr_seg->utilization = 1e8;
       else
-        curr_seg->utilization = 1.0 / pred[n_seg];
-      // printf("%lf\n", pred[n_seg]);
+        curr_seg->utilization = 1.0 / pred[n_segs];
+      // printf("%lf\n", pred[n_segs]);
 #endif
 
 #ifdef DUMP_TRAINING_DATA
-      fprintf(f, "%f/%lf: ", pred[n_seg],
+      fprintf(f, "%f/%lf: ", pred[n_segs],
               cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime));
       for (int j = 0; j < learner->n_feature; j++) {
-        fprintf(f, "%f,", learner->inference_x[learner->n_feature * n_seg + j]);
+        fprintf(f, "%f,", learner->inference_x[learner->n_feature * n_segs + j]);
       }
       fprintf(f, "\n");
 #endif
 
-      n_seg++;
+      n_segs++;
       curr_seg = curr_seg->next_seg;
     }
   }

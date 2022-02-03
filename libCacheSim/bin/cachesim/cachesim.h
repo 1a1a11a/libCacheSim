@@ -27,6 +27,8 @@ typedef struct {
     int seg_size;
     int n_merge;
     double rank_intvl;
+    bool merge_consecutive_segs; 
+    
     int size_bucket_base;
     int age_shift;
     int min_start_train_seg;

@@ -45,7 +45,7 @@ static void clean_training_segs(cache_t *cache, int n_clean) {
   }
 
   params->n_training_segs -= n_cleaned;
-  params->training_bucket.n_seg -= n_cleaned;
+  params->training_bucket.n_segs -= n_cleaned;
   params->training_bucket.first_seg = seg;
   seg->prev_seg == NULL;
 }

@@ -95,13 +95,19 @@ typedef struct cache_state {
 typedef struct segment {
 
   cache_obj_t *objs;
-  int32_t bucket_idx;
-  struct segment *prev_seg;
-  struct segment *next_seg;
+  
   int32_t seg_id;
+  int32_t bucket_idx;
+  // used to connect segments in the same bucket in create order
+  struct segment *prev_seg;   
+  struct segment *next_seg;
+
+  // used to connect segments in the same bucket in ranked order 
+  struct segment *next_ranked_seg;
 
   double utility;
   int n_skipped_penalty;
+  int rank; 
 
   /* stat when segment is cached */
   int64_t n_byte;
@@ -138,7 +144,10 @@ typedef struct {
   int64_t bucket_property;
   segment_t *first_seg;
   segment_t *last_seg;
-  int32_t n_seg;
+  segment_t *ranked_seg_head; 
+  segment_t *ranked_seg_tail; 
+
+  int32_t n_segs;
   int16_t bucket_idx;
   segment_t *next_seg_to_evict;
   hitProb_t *hit_prob;// TODO: move to LHD
@@ -155,7 +164,9 @@ typedef struct obj_sel {
 typedef struct seg_sel {
   int64_t last_rank_time;   // in number of evictions 
   segment_t **ranked_segs;
-  int32_t ranked_seg_size;
+  
+  int32_t n_ranked_segs;    // the number of ranked segments (ranked_segs.size())
+  int32_t ranked_seg_size;  // the malloc-ed size of ranked_segs (ranked_segs.capacity())
   int32_t ranked_seg_pos;   // the position of the next segment to be evicted 
 
   // TODO: per bucket ranked segs 
@@ -167,26 +178,26 @@ typedef struct {
   int n_merge;
   /* retain n objects from each seg, total retain n_retain * n_merge objects */
   int n_retain_per_seg;
-  /* whether the merged segment should be consecutive segments */
-  bool consecutive_merge;
+  // whether we merge consecutive segments (with the first segment has the lowest utility)
+  // or we merge non-consecutive segments based on ranking 
+  bool merge_consecutive_segs; 
 
+  // cache state 
   int32_t n_segs;
-
   int n_used_buckets;
   bucket_t buckets[MAX_N_BUCKET];
   bucket_t training_bucket; /* segments that are evicted and used for training */
-
   int curr_evict_bucket_idx;
+
+  int64_t start_rtime;
+  int64_t curr_rtime;
+  int64_t curr_vtime;
 
   /* space pre-allocated for training data */
   int32_t n_training_segs;
 
   int64_t n_allocated_segs;
   int64_t n_evictions;
-
-  int64_t start_rtime;
-  int64_t curr_rtime;
-  int64_t curr_vtime;
 
   seg_sel_t seg_sel;
 

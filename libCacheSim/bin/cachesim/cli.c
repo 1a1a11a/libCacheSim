@@ -102,6 +102,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
                                          .n_merge = args.n_merge,
                                          .type = args.L2Cache_type,
                                          .rank_intvl = args.rank_intvl,
+                                         .merge_consecutive_segs = args.merge_consecutive_segs, 
+
                                          .hit_density_age_shift = args.age_shift,
                                          .bucket_type = args.bucket_type,
                                          .size_bucket_base = args.size_bucket_base,

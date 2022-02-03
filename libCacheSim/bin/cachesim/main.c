@@ -45,9 +45,11 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
     }
 
     if (req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
-      INFO("%.2lf hour: %lu requests, miss cnt %lu %.4lf, byte miss ratio %.4lf\n",
-           (double) req->real_time / 3600, (unsigned long) req_cnt, (unsigned long) miss_cnt,
-           (double) miss_cnt / req_cnt, (double) miss_byte / req_byte);
+      INFO("%.2lf hour: %lu requests, miss ratio %.4lf\n",
+           (double) req->real_time / 3600, 
+           (unsigned long) req_cnt, 
+          //  (unsigned long) miss_cnt,
+           (double) miss_cnt / req_cnt);
 
 #ifdef TRACK_EVICTION_AGE
       print_eviction_age(cache);
@@ -60,11 +62,11 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
 
   double runtime = gettime() - start_time;
   // printf("runtime %lf s\n", runtime);
-  INFO("%.2lf hour: %lu requests, miss cnt %lu %.4lf, miss byte %lu %.4lf,"
-       " throughput (MQPS): %.2lf, skipped %ld requests\n",
+  INFO("%.2lf hour: %lu requests, miss ratio %.4lf, miss byte %.4lf,"
+       " throughput %.2lf MQPS, skipped %ld requests\n",
        (double) req->real_time / 3600.0, (unsigned long) req_cnt,
-       (unsigned long) miss_cnt, (double) miss_cnt / req_cnt,
-       (unsigned long) miss_byte, (double) miss_byte/req_byte,
+       (double) miss_cnt / req_cnt,
+       (double) miss_byte/req_byte,
        (double) req_cnt / 1000000.0 / runtime,
        n_skipped);
 }

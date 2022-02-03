@@ -45,7 +45,7 @@ void snapshot_segs_to_training_data(cache_t *cache) {
   double credit = 0; // when credit reaches sample ratio, we sample a segment
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_seg - 1; si++) {
+    for (int si = 0; si < params->buckets[bi].n_segs - 1; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
       credit += 1; 
       if (credit >= sample_ratio) {
