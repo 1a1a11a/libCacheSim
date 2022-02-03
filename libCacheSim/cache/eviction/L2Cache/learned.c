@@ -57,9 +57,9 @@ void snapshot_segs_to_training_data(cache_t *cache) {
       curr_seg = curr_seg->next_seg;
     }
   }
-  INFO("time %ld (%ld day %ld hour %ld sec) %d/%d training sample\n", (long) params->curr_rtime,
-       (long) params->curr_rtime / 86400, (long) params->curr_rtime % 86400 / 3600,
-       (long) params->curr_rtime % 3600, l->n_train_samples, l->train_matrix_n_row);
+  INFO("%.2lf hour snapshot %d/%d train sample\n", 
+       (double) params->curr_rtime / 3600.0,
+       l->n_train_samples, l->train_matrix_n_row);
 }
 #endif
 

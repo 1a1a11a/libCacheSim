@@ -193,7 +193,7 @@ typedef struct {
   int64_t curr_rtime;
   int64_t curr_vtime;
 
-  /* space pre-allocated for training data */
+  // current number of ghost segments for training 
   int32_t n_training_segs;
 
   int64_t n_allocated_segs;

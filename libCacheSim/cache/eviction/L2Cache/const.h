@@ -30,7 +30,6 @@
 #define LTR 2
 #define OBJECTIVE REG
 
-//#define ACCUMULATIVE_TRAINING
 //#define TRAIN_ONCE
 
 /*********** exp *************/

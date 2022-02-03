@@ -171,7 +171,9 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
     assert(0);
   }
 
-  if (cache_obj->L2Cache.in_cache) {
+  DEBUG_ASSERT(cache_obj->L2Cache.in_cache); 
+
+  // if (cache_obj->L2Cache.in_cache) {
     /* seg_hit update segment state features */
     seg_hit(params, cache_obj);
     /* object hit update training data y and object stat */
@@ -184,43 +186,42 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
     DEBUG_ASSERT(((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
 #endif
 
-    cache_obj = cache_obj->hash_next;
-    while (cache_obj && cache_obj->obj_id != req->obj_id) {
-      cache_obj = cache_obj->hash_next;
-    }
+  //   cache_obj = cache_obj->hash_next;
+  //   while (cache_obj && cache_obj->obj_id != req->obj_id) {
+  //     cache_obj = cache_obj->hash_next;
+  //   }
 
-    while (cache_obj) {
-      /* history entry, it can have more than one history entry, when an object
-       * is retained multiple times then get a hit,
-       * we can delete the history upon the second merge, or
-       * we can remove it here */
-      update_train_y(params, cache_obj);
-      hashtable_delete(cache->hashtable, cache_obj);
+  //   while (cache_obj) {
+  //     /* history entry, it can have more than one history entry, when an object
+  //      * is retained multiple times then get a hit,
+  //      * we can delete the history upon the second merge, or
+  //      * we can remove it here */
+  //     update_train_y(params, cache_obj);
+  //     hashtable_delete(cache->hashtable, cache_obj);
 
-      cache_obj = cache_obj->hash_next;
-      while (cache_obj && cache_obj->obj_id != req->obj_id) {
-        cache_obj = cache_obj->hash_next;
-      }
-    }
-
+  //     cache_obj = cache_obj->hash_next;
+  //     while (cache_obj && cache_obj->obj_id != req->obj_id) {
+  //       cache_obj = cache_obj->hash_next;
+  //     }
+  //   }
     return cache_ck_hit;
 
-  } else {
-    /* no entry in cache */
-    while (cache_obj) {
-      update_train_y(params, cache_obj);
-      hashtable_delete(cache->hashtable, cache_obj);
+  // } else {
+  //   /* no entry in cache */
+  //   while (cache_obj) {
+  //     update_train_y(params, cache_obj);
+  //     hashtable_delete(cache->hashtable, cache_obj);
 
-      /* there cound be more than one history entry if the object is retained several times and evicted
-       * we can delete the history upon the second merge, or we can remove it here */
-      cache_obj = cache_obj->hash_next;
-      while (cache_obj && cache_obj->obj_id != req->obj_id) {
-        cache_obj = cache_obj->hash_next;
-      }
-    }
+  //     /* there cound be more than one history entry if the object is retained several times and evicted
+  //      * we can delete the history upon the second merge, or we can remove it here */
+  //     cache_obj = cache_obj->hash_next;
+  //     while (cache_obj && cache_obj->obj_id != req->obj_id) {
+  //       cache_obj = cache_obj->hash_next;
+  //     }
+  //   }
 
-    return cache_ck_miss;
-  }
+  //   return cache_ck_miss;
+  // }
 #elif defined(TRAINING_Y_SOURCE) && TRAINING_Y_SOURCE == TRAINING_Y_FROM_ORACLE
   return L2Cache_check_oracle(cache, req, update_cache);
 #endif

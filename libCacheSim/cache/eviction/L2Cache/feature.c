@@ -6,7 +6,6 @@
 #include "segment.h"
 
 void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
-  //  if (!params->learner.start_feature_recording) return;
 
   segment_t *segment = cache_obj->L2Cache.segment;
   segment->n_hit += 1;
