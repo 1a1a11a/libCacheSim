@@ -447,7 +447,7 @@ static void train_xgboost(cache_t *cache) {
     train_loss = strtof(train_pos, NULL);
     valid_loss = strtof(valid_pos, NULL);
 
-    DEBUG("iter %d, train loss %.4lf, valid loss %.4lf\n", i, train_loss, valid_loss);
+    // DEBUG("iter %d, train loss %.4lf, valid loss %.4lf\n", i, train_loss, valid_loss); 
     if (valid_loss > 1000000) {
       printf("valid loss is too large, stop training\n");
       abort();

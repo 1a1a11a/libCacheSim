@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
       snprintf(output_str, 1024, 
              "%s %s, cache size %16" PRIu64 ": miss/n_req %16" PRIu64 "/%16" PRIu64 " (%.4lf), "
              "byte miss ratio %.4lf\n",
-             output_filename, args.alg, result[i].cache_size, result[i].n_miss, result[i].n_req,
+             output_filename, args.cache->cache_name, result[i].cache_size, result[i].n_miss, result[i].n_req,
              (double) result[i].n_miss / (double) result[i].n_req,
              (double) result[i].n_miss_byte / (double) result[i].n_req_byte); 
       printf("%s", output_str);
