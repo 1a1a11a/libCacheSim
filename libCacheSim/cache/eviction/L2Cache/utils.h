@@ -3,17 +3,6 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "L2CacheInternal.h"
 
-
-// static inline bucket_t *next_nonempty_bucket(cache_t *cache, int curr_idx) {
-//   L2Cache_params_t *params = cache->eviction_params;
-//   curr_idx = (curr_idx + 1) % MAX_N_BUCKET;
-//   while (params->buckets[curr_idx].n_segs < params->n_merge) {
-//     curr_idx = (curr_idx + 1) % MAX_N_BUCKET;
-//   }
-//   return &params->buckets[curr_idx];
-// }
-
-
 static inline int count_hash_chain_len(cache_obj_t *cache_obj) {
   int n = 0;
   while (cache_obj) {
@@ -53,6 +42,13 @@ static int find_argmin_double(const double *y, int n_elem) {
   }
   DEBUG_ASSERT(min_val_pos != -1);
   return min_val_pos;
+}
+
+static inline uint64_t gettime_usec() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+
+  return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
 

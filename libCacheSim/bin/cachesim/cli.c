@@ -93,6 +93,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimalSize") == 0) {
+    cc_params.hashpower -= 4; 
     cache = OptimalSize_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lecar") == 0) {
     cache = LeCaR_init(cc_params, NULL);

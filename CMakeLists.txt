@@ -36,11 +36,11 @@ endif ()
 ########################################
 option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
-option(ENABLE_L2CACHE "enable learned log-structured cache" OFF)
+option(ENABLE_L2CACHE "enable learned log-structured cache" ON)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ADMISSION "whether support cache admission" OFF)
 option(SUPPORT_TRACE_SAMPLING "whether support trace sampling" OFF)
-option(SUPPORT_ZSTD_TRACE "whether support zstd trace" OFF)
+option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 

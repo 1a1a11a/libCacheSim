@@ -16,7 +16,6 @@
 #include "segSel.h"
 
 #include "learned.h"
-#include "oracle.h"
 
 #include "const.h"
 #include "init.h"

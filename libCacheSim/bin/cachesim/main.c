@@ -30,8 +30,8 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
     cache->get(cache, req);
     read_one_req(reader, req);
   }
-  printf("%.2lf hour: skip %ld requests\n", 
-      (double) (req->real_time - start_ts) / 3600.0, n_skipped);
+  // printf("%.2lf hour: skip %ld requests\n", 
+  //     (double) (req->real_time - start_ts) / 3600.0, n_skipped);
   last_report_ts = req->real_time - start_ts;
 
   double start_time = gettime();

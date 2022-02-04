@@ -71,6 +71,8 @@ extern "C" {
 #define GB 1000000000L
 #define TB 1000000000000L
 
+#define ENABLE_L2CACHE 1
+
 #ifdef __cplusplus
 }
 #endif

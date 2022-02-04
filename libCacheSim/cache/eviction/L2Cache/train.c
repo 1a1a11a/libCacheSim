@@ -7,6 +7,7 @@
 #include "learned.h"
 #include "obj.h"
 #include "segment.h"
+#include "utils.h"
 
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
 void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segment) {
@@ -438,6 +439,7 @@ static void train_xgboost(cache_t *cache) {
     char *train_pos = strstr(eval_result, "train-rmse:") + 11;
     char *valid_pos = strstr(eval_result, "valid-rmse") + 11;
 #elif OBJECTIVE == LTR
+    char *train_pos = strstr(eval_result, "train-map") + 10;
     char *valid_pos = strstr(eval_result, "valid-map") + 10;
 #else
 #error
@@ -446,7 +448,10 @@ static void train_xgboost(cache_t *cache) {
     valid_loss = strtof(valid_pos, NULL);
 
     DEBUG("iter %d, train loss %.4lf, valid loss %.4lf\n", i, train_loss, valid_loss);
-    if (valid_loss > 1000000) abort();
+    if (valid_loss > 1000000) {
+      printf("valid loss is too large, stop training\n");
+      abort();
+    }
 
     if (fabs(last_valid_loss - valid_loss) / valid_loss < 0.01) {
       n_stable_iter += 1;
@@ -490,8 +495,12 @@ void train(cache_t *cache) {
   if (params->learner.n_train > 0) return;
 #endif
 
+  uint64_t start_time = gettime_usec(); 
+
   train_xgboost(cache);
 
+  uint64_t end_time = gettime_usec();
+  INFO("training time %.4lf sec\n", (end_time - start_time) / 1000000.0); 
   params->learner.n_train += 1;
   params->learner.last_train_rtime = params->curr_rtime;
   params->learner.n_train_samples = 0;
