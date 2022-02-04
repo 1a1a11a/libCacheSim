@@ -113,12 +113,10 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   n_retained_obj = params->n_retain_per_seg;
 #endif
 
-#if TRAINING_Y_SOURCE == TRAINING_Y_FROM_ORACLE
-  utility = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
-                            curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
-
-#else
-#endif
+  if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
+    utility = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
+                              curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
+  }
 
 #if OBJECTIVE == REG
   *y = (train_y_t) utility;

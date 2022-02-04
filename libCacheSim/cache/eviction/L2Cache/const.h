@@ -7,8 +7,8 @@
 /* L2Cache uses cache state features, so we need to track cache states 
  * and update them periodically, because there could be time when request 
  * rate is very low, we update when both conditions are met: */
-#define CACHE_STATE_UPDATE_RINTVL 10    // update every 10 seconds
-#define CACHE_STATE_UPDATE_VINTVL 1000  // update every 10000 requests
+#define CACHE_STATE_UPDATE_RINTVL 10  // update every 10 seconds
+#define CACHE_STATE_UPDATE_VINTVL 1000// update every 10000 requests
 
 /* change to 10 will slow down */
 /* the number of time windows we keep in features */
@@ -20,9 +20,10 @@
 #define TRAINING_DATA_SOURCE TRAINING_X_FROM_CACHE
 
 /* where the training data (Y) is generated from */
-#define TRAINING_Y_FROM_ORACLE 1
-#define TRAINING_Y_FROM_ONLINE 2
-#define TRAINING_Y_SOURCE TRAINING_Y_FROM_ORACLE
+// #define TRAIN_Y_FROM_ORACLE 1
+// #define TRAIN_Y_FROM_ONLINE 2
+// #define TRAINING_Y_SOURCE TRAIN_Y_FROM_ORACLE
+
 #define TRAINING_CONSIDER_RETAIN 1
 
 /* training objective, regression or ranking */
@@ -51,7 +52,7 @@
 #define DEFAULT_RANK_INTVL 20
 
 static char *L2Cache_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
-                                 "LOGCACHE_ITEM_ORACLE", "LOGCACHE_LEARNED"};
+                                     "LOGCACHE_ITEM_ORACLE", "LOGCACHE_LEARNED"};
 
 static char *obj_score_type_names[] = {"FREQ",          "FREQ_BYTE",   "FREQ_AGE",
                                        "FREQ_AGE_BYTE", "HIT_DENSITY", "ORACLE"};
@@ -59,3 +60,7 @@ static char *obj_score_type_names[] = {"FREQ",          "FREQ_BYTE",   "FREQ_AGE
 static char *bucket_type_names[] = {"NO_BUCKET",        "SIZE_BUCKET",
                                     "TTL_BUCKET",       "CUSTOMER_BUCKET",
                                     "BUCKET_ID_BUCKET", "CONTENT_TYPE_BUCKET"};
+
+static char *training_source_names[] = {"X_FROM_EVICTION", "X_FROM_SNAPSHOT", "Y_FROM_ONLINE",
+                                        "Y_FROM_ORACLE"};
+

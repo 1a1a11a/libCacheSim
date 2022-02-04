@@ -122,7 +122,6 @@ typedef struct segment {
   double req_rate;
   double write_rate;
   double miss_ratio;
-  // double              cold_miss_ratio;
 
   /* training related */
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
@@ -181,12 +180,14 @@ typedef struct {
   // whether we merge consecutive segments (with the first segment has the lowest utility)
   // or we merge non-consecutive segments based on ranking 
   bool merge_consecutive_segs; 
+  train_source_e train_source_x;
+  train_source_e train_source_y;
 
   // cache state 
   int32_t n_segs;
   int n_used_buckets;
   bucket_t buckets[MAX_N_BUCKET];
-  bucket_t training_bucket; /* segments that are evicted and used for training */
+  bucket_t train_bucket; /* segments that are evicted and used for training */
   int curr_evict_bucket_idx;
 
   int64_t start_rtime;

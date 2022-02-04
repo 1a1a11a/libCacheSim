@@ -23,12 +23,12 @@ void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segm
   /* remove from the bucket */
   remove_seg_from_bucket(params, bucket, segment);
 
-  append_seg_to_bucket(params, &params->training_bucket, segment);
+  append_seg_to_bucket(params, &params->train_bucket, segment);
 }
 
 static void clean_training_segs(cache_t *cache, int n_clean) {
   L2Cache_params_t *params = cache->eviction_params;
-  segment_t *seg = params->training_bucket.first_seg;
+  segment_t *seg = params->train_bucket.first_seg;
   segment_t *next_seg;
   int n_cleaned = 0;
 
@@ -42,12 +42,12 @@ static void clean_training_segs(cache_t *cache, int n_clean) {
 
   if (n_clean == params->n_training_segs) {
     DEBUG_ASSERT(seg == NULL);
-    params->training_bucket.last_seg = NULL;
+    params->train_bucket.last_seg = NULL;
   }
 
   params->n_training_segs -= n_cleaned;
-  params->training_bucket.n_segs -= n_cleaned;
-  params->training_bucket.first_seg = seg;
+  params->train_bucket.n_segs -= n_cleaned;
+  params->train_bucket.first_seg = seg;
   seg->prev_seg == NULL;
 }
 
@@ -194,7 +194,7 @@ static void prepare_training_data(cache_t *cache) {
   // train_y_t *valid_y = learner->valid_y;
 
   learner->n_train_samples = learner->n_valid_samples = 0;
-  segment_t *curr_seg = params->training_bucket.first_seg;
+  segment_t *curr_seg = params->train_bucket.first_seg;
 
   // not all training data is useful
   // because for some of them we do not have good enough y to learn
@@ -468,10 +468,10 @@ static void train_xgboost(cache_t *cache) {
   safe_call(XGBoosterBoostedRounds(learner->booster, &learner->n_trees));
 #endif
 
-  INFO("cache size %lu MB, %.2lf hour, vtime %ld, train/valid %d/%d samples, "
+  INFO("%.2lf hour, vtime %ld, train/valid %d/%d samples, "
        "%d trees, "
        "rank intvl %.4lf\n",
-       (unsigned long) cache->cache_size / 1024 / 1024, 
+      //  (unsigned long) cache->cache_size / 1024 / 1024, 
        (double) params->curr_rtime/3600, (long) params->curr_vtime,
        (int) learner->n_train_samples,
        (int) learner->n_valid_samples,
@@ -500,7 +500,7 @@ void train(cache_t *cache) {
   train_xgboost(cache);
 
   uint64_t end_time = gettime_usec();
-  INFO("training time %.4lf sec\n", (end_time - start_time) / 1000000.0); 
+  // INFO("training time %.4lf sec\n", (end_time - start_time) / 1000000.0); 
   params->learner.n_train += 1;
   params->learner.last_train_rtime = params->curr_rtime;
   params->learner.n_train_samples = 0;

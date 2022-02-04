@@ -62,11 +62,11 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
 
   double runtime = gettime() - start_time;
   // printf("runtime %lf s\n", runtime);
-  INFO("%.2lf hour: %lu requests, miss ratio %.4lf, miss byte %.4lf,"
+  INFO("%.2lf hour: %lu requests, miss ratio %.4lf, "
        " throughput %.2lf MQPS, skipped %ld requests\n",
        (double) req->real_time / 3600.0, (unsigned long) req_cnt,
        (double) miss_cnt / req_cnt,
-       (double) miss_byte/req_byte,
+      //  (double) miss_byte/req_byte,
        (double) req_cnt / 1000000.0 / runtime,
        n_skipped);
 }
@@ -76,14 +76,6 @@ int main(int argc, char **argv) {
   sim_arg_t args = parse_cmd(argc, argv);
 
   if (args.debug) {
-    printf("trace type %s, trace %s cache_size %ld MiB alg %s metadata_size %d\n",
-      argv[1], args.trace_path, (long) args.cache_size, args.alg, args.per_obj_metadata);
-
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-    printf("seg size %d, n merge %d, rank_intvl %.4lf, bucket type %d\n", 
-      args.seg_size, args.n_merge, args.rank_intvl, args.bucket_type); 
-#endif 
-
     run_cache_debug(args.reader, args.cache);
   } else {
     cache_stat_t *result = get_miss_ratio_curve(args.reader, 

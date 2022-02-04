@@ -39,8 +39,8 @@ static inline void debug_check_bucket(cache_t *cache) {
   DEBUG_ASSERT(params->n_segs == n_segs);
 
   n_segs = 0;
-  curr_seg = params->training_bucket.first_seg;
-  for (int si = 0; si < params->training_bucket.n_segs; si++) {
+  curr_seg = params->train_bucket.first_seg;
+  for (int si = 0; si < params->train_bucket.n_segs; si++) {
     n_segs += 1;
     DEBUG_ASSERT(curr_seg != NULL);
     curr_seg = curr_seg->next_seg;

@@ -10,7 +10,7 @@ void append_seg_to_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t 
     DEBUG_ASSERT(bucket->n_segs == 0);
     bucket->first_seg = segment;
     bucket->next_seg_to_evict = segment;
-    if (&params->training_bucket != bucket) params->n_used_buckets += 1;
+    if (&params->train_bucket != bucket) params->n_used_buckets += 1;
   } else {
     bucket->last_seg->next_seg = segment;
   }
@@ -20,7 +20,7 @@ void append_seg_to_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t 
   bucket->last_seg = segment;
 
   bucket->n_segs += 1;
-  if (&params->training_bucket == bucket) {
+  if (&params->train_bucket == bucket) {
     params->n_training_segs += 1;
   } else {
     params->n_segs += 1;

@@ -58,6 +58,14 @@ typedef enum bucket_type {
   CONTENT_TYPE_BUCKET = 5,
 } bucket_type_e;
 
+typedef enum training_source {
+  TRAIN_X_FROM_EVICTION = 0,
+  TRAIN_X_FROM_SNAPSHOT = 1,
+
+  TRAIN_Y_FROM_ONLINE, 
+  TRAIN_Y_FROM_ORACLE, 
+} train_source_e;
+
 typedef struct {
   // how many objects in one segment
   int segment_size;
@@ -68,6 +76,8 @@ typedef struct {
   // whether we merge consecutive segments (with the first segment has the lowest utility)
   // or we merge non-consecutive segments based on ranking 
   bool merge_consecutive_segs; 
+  train_source_e train_source_x;
+  train_source_e train_source_y;
 
   int retrain_intvl;
 

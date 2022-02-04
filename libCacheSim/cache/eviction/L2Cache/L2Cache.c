@@ -47,6 +47,8 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   params->type = L2Cache_init_params->type;
   params->bucket_type = L2Cache_init_params->bucket_type;
   params->obj_score_type = L2Cache_init_params->obj_score_type;
+  params->train_source_x = L2Cache_init_params->train_source_x;
+  params->train_source_y = L2Cache_init_params->train_source_y;
 
   params->merge_consecutive_segs = L2Cache_init_params->merge_consecutive_segs;
   params->segment_size = L2Cache_init_params->segment_size;
@@ -96,7 +98,8 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   // //      params->learner.sample_every_n_seg_for_training,
   //       0L, 0,
   //       params->rank_intvl,
-  //       TRAINING_Y_SOURCE,
+  //       params->train_source_x, 
+  //       params->train_source_y, 
   //       0
   // //      params->learner.retrain_intvl
   //   );
@@ -106,7 +109,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
 void L2Cache_free(cache_t *cache) {
   my_free(sizeof(L2Cache_init_params_t), cache->init_params);
   L2Cache_params_t *params = cache->eviction_params;
-  bucket_t *bkt = &params->training_bucket;
+  bucket_t *bkt = &params->train_bucket;
   segment_t *seg = bkt->first_seg, *next_seg;
 
   while (seg != NULL) {
@@ -132,32 +135,31 @@ void L2Cache_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e L2Cache_check_oracle(cache_t *cache, request_t *req, bool update_cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+// cache_ck_res_e L2Cache_check_oracle(cache_t *cache, request_t *req, bool update_cache) {
+//   L2Cache_params_t *params = cache->eviction_params;
 
-  cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
+//   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
-  if (cache_obj == NULL) {
-    return cache_ck_miss;
-  }
+//   if (cache_obj == NULL) {
+//     return cache_ck_miss;
+//   }
 
-  if (!update_cache) {
-    return cache_ck_hit;
-  }
+//   if (!update_cache) {
+//     return cache_ck_hit;
+//   }
 
-  if (cache_obj->L2Cache.in_cache) {
-    seg_hit(params, cache_obj);
-    object_hit(params, cache_obj, req);
+//   if (cache_obj->L2Cache.in_cache) {
+//     seg_hit(params, cache_obj);
+//     object_hit(params, cache_obj, req);
 
-    return cache_ck_hit;
-  } else {
+//     return cache_ck_hit;
+//   } else {
 
-    return cache_ck_miss;
-  }
-}
+//     return cache_ck_miss;
+//   }
+// }
 
 cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) {
-#if defined(TRAINING_Y_SOURCE) && TRAINING_Y_SOURCE == TRAINING_Y_FROM_ONLINE
   L2Cache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
@@ -172,58 +174,20 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
 
   DEBUG_ASSERT(cache_obj->L2Cache.in_cache); 
 
-  // if (cache_obj->L2Cache.in_cache) {
-    /* seg_hit update segment state features */
-    seg_hit(params, cache_obj);
-    /* object hit update training data y and object stat */
-    object_hit(params, cache_obj, req);
+  /* seg_hit update segment state features */
+  seg_hit(params, cache_obj);
+  /* object hit update training data y and object stat */
+  object_hit(params, cache_obj, req);
 
+  if (params->train_source_y == TRAIN_Y_FROM_ONLINE) {
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
     update_train_y(params, cache_obj);
 #elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
     /* if there is an evicted entry, the evicted entry should be after this entry */
     DEBUG_ASSERT(((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
 #endif
-
-  //   cache_obj = cache_obj->hash_next;
-  //   while (cache_obj && cache_obj->obj_id != req->obj_id) {
-  //     cache_obj = cache_obj->hash_next;
-  //   }
-
-  //   while (cache_obj) {
-  //     /* history entry, it can have more than one history entry, when an object
-  //      * is retained multiple times then get a hit,
-  //      * we can delete the history upon the second merge, or
-  //      * we can remove it here */
-  //     update_train_y(params, cache_obj);
-  //     hashtable_delete(cache->hashtable, cache_obj);
-
-  //     cache_obj = cache_obj->hash_next;
-  //     while (cache_obj && cache_obj->obj_id != req->obj_id) {
-  //       cache_obj = cache_obj->hash_next;
-  //     }
-  //   }
-    return cache_ck_hit;
-
-  // } else {
-  //   /* no entry in cache */
-  //   while (cache_obj) {
-  //     update_train_y(params, cache_obj);
-  //     hashtable_delete(cache->hashtable, cache_obj);
-
-  //     /* there cound be more than one history entry if the object is retained several times and evicted
-  //      * we can delete the history upon the second merge, or we can remove it here */
-  //     cache_obj = cache_obj->hash_next;
-  //     while (cache_obj && cache_obj->obj_id != req->obj_id) {
-  //       cache_obj = cache_obj->hash_next;
-  //     }
-  //   }
-
-  //   return cache_ck_miss;
-  // }
-#elif defined(TRAINING_Y_SOURCE) && TRAINING_Y_SOURCE == TRAINING_Y_FROM_ORACLE
-  return L2Cache_check_oracle(cache, req, update_cache);
-#endif
+  }
+  return cache_ck_hit;
 }
 
 cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {

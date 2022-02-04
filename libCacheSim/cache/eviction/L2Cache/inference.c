@@ -8,6 +8,7 @@
 #include "learned.h"
 #include "obj.h"
 #include "segment.h"
+#include "utils.h" 
 
 /** because each segment is not fixed size, 
  * the number of segments in total can vary over time, 
@@ -150,7 +151,12 @@ void inference_xgboost(cache_t *cache) {
 void inference(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
 
+  uint64_t start_time = gettime_usec(); 
+
   inference_xgboost(cache);
+
+  uint64_t end_time = gettime_usec();
+  // INFO("inference time %.4lf sec\n", (end_time - start_time) / 1000000.0); 
 
   params->learner.n_inference += 1;
 }
