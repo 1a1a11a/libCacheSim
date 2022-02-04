@@ -1,4 +1,5 @@
 
+CURR_DIR=$(pwd)
 
 setup_ubuntu() {
 	sudo apt install libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
@@ -16,41 +17,49 @@ setup_macOS() {
 }
 
 setup_xgboost() {
-    cd /tmp/
+    pushd /tmp/
 	git clone --recursive https://github.com/dmlc/xgboost
-	cd xgboost
+	pushd xgboost
 	mkdir build
-	cd build
+	pushd build
 	cmake ..
 	make -j
 	sudo make install	
 }
 
 setup_lightgbm() {
-    cd /tmp/
+    pushd /tmp/
 	git clone --recursive https://github.com/microsoft/LightGBM
-	cd LightGBM
+	pushd LightGBM
 	mkdir build
-	cd build
+	pushd build
 	cmake ..
 	make -j
 	sudo make install
 }
 
 setup_zstd() {
-    cd /tmp/
+    pushd /tmp/
     wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz
     tar xvf zstd-1.5.0.tar.gz;
-    cd zstd-1.5.0/build/cmake/
+    pushd zstd-1.5.0/build/cmake/
     mkdir _build;
-    cd _build/;
+    pushd _build/;
     cmake ..
     make -j
     sudo make install
 }
 
+
 # setup_ubuntu 
+download_data
 setup_xgboost
 setup_lightgbm
 setup_zstd
+
+
+
+
+
+
 

@@ -241,9 +241,6 @@ static void test_LHD(gconstpointer user_data) {
 
 static void test_Hyperbolic(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-//  uint64_t miss_cnt_true[] = {77842, 72545, 68305, 64548, 61235, 57379, 56122, 54931};
-//  uint64_t miss_byte_true[] = {3674691072, 3378123776, 3130418688, 3008906752,
-//                               2823867904, 2587132928, 2510087680, 2432546304};
   uint64_t miss_cnt_true[] = {85819, 78714, 70297, 64546, 61234, 57377, 56121, 54930};
   uint64_t miss_byte_true[] = {3832728576, 3443996160, 3132970496, 3008947712,
                                2823863808, 2587067392, 2510083584, 2432542208};
@@ -264,9 +261,6 @@ static void test_Hyperbolic(gconstpointer user_data) {
 
 static void test_LeCaR(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-//  uint64_t miss_cnt_true[] = {92692, 86943, 78684, 80389, 72269, 68092, 65518, 67356};
-//  uint64_t miss_byte_true[] = {4024961024, 3801507840, 3484686848, 3547768832,
-//                               3072761856, 2909752320, 2755649024, 2786736128};
   uint64_t miss_cnt_true[] = {92692, 86839, 78751, 81283, 72368, 68083, 65219, 68423};
   uint64_t miss_byte_true[] = {4024961024, 3799468544, 3506645504, 3605686272,
                                3081307648, 2909224448, 2736208384, 2849179136};
@@ -288,9 +282,6 @@ static void test_LeCaR(gconstpointer user_data) {
 
 static void test_LFUDA(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-//  uint64_t miss_cnt_true[] = {92233, 85809, 80462, 79335, 73049, 69671, 67942, 67782};
-//  uint64_t miss_byte_true[] = {4023913984, 3752341504, 3534985216, 3504430592, 3150782464, 2977339904, 2867254784, 2824277504};
-
   uint64_t miss_cnt_true[] = {92233, 85805, 80462, 79335, 73049, 69670, 67946, 67783};
   uint64_t miss_byte_true[] = {4023913984, 3752284160, 3534985216, 3504430592,
                                3150782464, 2977274368, 2867447296, 2824343040};
@@ -311,11 +302,6 @@ static void test_LFUDA(gconstpointer user_data) {
 
 static void test_MRU(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-//  uint64_t miss_cnt_true[] = {97661, 94006, 88557, 83224,
-//                             77645, 66502, 62676, 59598};
-//  uint64_t miss_byte_true[] = {4002354176, 3760773120, 3541634048, 3329184768,
-//                              3101117440, 2661397504, 2484923904, 2363019776};
-
   /* a new result */
   uint64_t miss_cnt_true[] = {100096, 93466, 87001, 82124, 77443, 71956, 68252, 64936};
   uint64_t miss_byte_true[] = {3929311744, 3599883264, 3304649728, 3097044480,
@@ -359,13 +345,6 @@ static void test_LRU_K(gconstpointer user_data) {
 
 static void test_ARC(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-//  uint64_t miss_cnt_true[] = {91767, 86514, 83030, 83100, 73160, 69011, 67656, 66081};
-//  uint64_t miss_byte_true[] = {3998675456, 3785527296, 3658743808, 3684266496, 3143558656, 2961070080, 2879977472, 2780966912};
-
-//  uint64_t miss_cnt_true[] = {91385, 84061, 77353, 76506, 68994, 66441, 64819, 64376};
-//  uint64_t miss_byte_true[] = {3990213632, 3692986368, 3434442752, 3413374464,
-//                               2963407872, 2804032512, 2717934080, 2690728448};
-
   uint64_t miss_cnt_true[] = {93798, 87602, 84471, 83216, 73606, 68674, 72144, 72726};
   uint64_t miss_byte_true[] = {4037066752, 3814765056, 3722742784, 3637225984,
                                3158606848, 2914956800, 3077340160, 3112387584};

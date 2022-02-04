@@ -161,18 +161,6 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = LeCaR_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Cacheus") == 0) {
     cache = Cacheus_init(cc_params, NULL);
-
-//  } else if (strcmp(alg_name, "SLRU") == 0) {
-//    SLRU_init_params_t *init_params = g_new0(SLRU_init_params_t, 1);
-//    init_params_g = init_params;
-//    init_params->n_seg = 2;
-//    cache = SLRU_init(cc_params, init_params);
-//  } else if (strcmp(alg_name, "Optimal") == 0) {
-//    struct Optimal_init_params *init_params = g_new0(struct Optimal_init_params, 1);
-//    init_params_g = init_params;
-//    init_params->reader = reader;
-//    init_params->ts = 0;
-//    cache = Optimal_init(cc_params, (void *) init_params);
   } else if (strcasecmp(alg_name, "SLRU") == 0) {
     SLRU_init_params_t init_params;
     init_params.n_seg = 5; // Currently hard-coded
