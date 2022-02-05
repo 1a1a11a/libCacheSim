@@ -46,7 +46,7 @@ void init_learner(cache_t *cache) {
   l->inf_matrix_n_row = 0;
 
   l->n_train = -1;
-  l->n_inference = -1;
+  l->n_inference = 0;
 
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
   l->n_segs_to_start_training = 1024 * 8;

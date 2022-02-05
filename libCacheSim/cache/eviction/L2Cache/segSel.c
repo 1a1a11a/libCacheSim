@@ -181,7 +181,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
     n_scanned_bucket += 1;
 
     if (n_scanned_bucket > MAX_N_BUCKET + 1) {
-      DEBUG("no evictable seg found\n");
+      DEBUG("cache size %.2lf MB, no evictable seg found\n", (double) cache->cache_size / (1024.0 * 1024.0));
       abort();
       segs[0] = NULL;
       return NULL;

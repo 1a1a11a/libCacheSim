@@ -29,18 +29,18 @@ extern "C" {
 #endif
 
 void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
-  init_params->segment_size = 50;
+  init_params->segment_size = 100;
   init_params->n_merge = 2;
   init_params->type = LOGCACHE_LOG_ORACLE;
-  init_params->rank_intvl = 0.01;
+  init_params->rank_intvl = 0.05;
   init_params->merge_consecutive_segs = true;
   init_params->train_source_x = TRAIN_X_FROM_SNAPSHOT;
   init_params->train_source_y = TRAIN_Y_FROM_ORACLE;
   init_params->bucket_type = SIZE_BUCKET;
   init_params->retrain_intvl = 86400 * 2;
   init_params->hit_density_age_shift = 3; 
-  init_params->sample_every_n_seg_for_training = 1;
-  init_params->min_start_train_seg = 0;
+  init_params->sample_every_n_seg_for_training = 2;
+  init_params->min_start_train_seg = 1000;
   init_params->max_start_train_seg = 8192;
   init_params->n_train_seg_growth = 1;
 }
@@ -149,30 +149,6 @@ void L2Cache_free(cache_t *cache) {
   my_free(sizeof(L2Cache_params_t), params);
   cache_struct_free(cache);
 }
-
-// cache_ck_res_e L2Cache_check_oracle(cache_t *cache, request_t *req, bool update_cache) {
-//   L2Cache_params_t *params = cache->eviction_params;
-
-//   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
-
-//   if (cache_obj == NULL) {
-//     return cache_ck_miss;
-//   }
-
-//   if (!update_cache) {
-//     return cache_ck_hit;
-//   }
-
-//   if (cache_obj->L2Cache.in_cache) {
-//     seg_hit(params, cache_obj);
-//     object_hit(params, cache_obj, req);
-
-//     return cache_ck_hit;
-//   } else {
-
-//     return cache_ck_miss;
-//   }
-// }
 
 cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) {
   L2Cache_params_t *params = cache->eviction_params;

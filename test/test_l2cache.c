@@ -4,150 +4,155 @@
 
 #include "common.h"
 
+#define L2Cache_CACHE_SIZE (4 * GiB)
+#define L2Cache_STEP_SIZE GiB
+
 static void _verify_profiler_results(const cache_stat_t *res,
                               uint64_t num_of_sizes,
                               uint64_t req_cnt_true,
-                              const uint64_t *miss_cnt_true,
-                              uint64_t req_byte_true,
-                              const uint64_t *miss_byte_true) {
+                              const uint64_t *miss_cnt_true) {
 
   for (uint64_t i = 0; i < num_of_sizes; i++) {
     g_assert_cmpuint(req_cnt_true, ==, res[i].n_req);
-    g_assert_cmpfloat((double)(res[i].n_miss - miss_cnt_true[i]) / miss_cnt_true[i], <=, 0.01);
-    g_assert_cmpuint(req_byte_true, ==, res[i].n_req_byte);
-    g_assert_cmpfloat((double)(res[i].n_miss_byte - miss_byte_true[i]) / miss_byte_true[i], <=, 0.01);
+    double true_v = miss_cnt_true[i];
+    double res_v = res[i].n_miss;
+    double diff = fabs(res_v - true_v) / true_v;
+    if (diff > 0.02) {
+      printf("%lu %lu %lf\n", true_v, res_v, diff); 
+      g_assert(0); 
+    }
   }
 }
 
 static void print_results(const cache_t *cache,
                          const cache_stat_t *res) {
 
-  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf("%s cache size %16" PRIu64 " req %" PRIu64 " miss %8" PRIu64
+  for (uint64_t i = 0; i < L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE; i++) {
+    printf("%s cache size %8.4lf GB, req %" PRIu64 " miss %8" PRIu64
            " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
            cache->cache_name,
-           res[i].cache_size, res[i].n_req, res[i].n_miss, res[i].n_req_byte,
+           (double) res[i].cache_size / (double) GiB, 
+           res[i].n_req, res[i].n_miss, res[i].n_req_byte,
            res[i].n_miss_byte);
   }
 }
 
 static void test_L2Cache_ORACLE_LOG(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {6459134, 4849425, 3960033, 3185497, 2715623, 2536562, 2199445, 2071379};
-  uint64_t miss_byte_true[] = {124680727040, 103748910080, 90579069440, 79519862784, 70003931136, 65120653824, 59818039808, 54074082816};
+  uint64_t miss_cnt_true[] = {2076134, 1358640, 1048470, 945319};
 
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
+      .hashpower = 24, .default_ttl = DEFAULT_TTL};
   
   cache_t *cache = create_test_cache("L2Cache-OracleLog", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
 
   print_results(cache, res); 
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
+                           miss_cnt_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }
+
 static void test_L2Cache_ORACLE_ITEM(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {6389915, 5224625, 4334381, 3747497, 3323236, 2992171, 2758805, 2574795};
-  uint64_t miss_byte_true[] = {122192135168, 103598505472, 88274618368, 77836705280, 70164604928, 64013555200, 59667272704, 56197281280};
+  uint64_t miss_cnt_true[] = {2573673, 1832838, 1555903, 1380232};
 
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
+      .hashpower = 24, .default_ttl = DEFAULT_TTL};
   
   cache_t *cache = create_test_cache("L2Cache-OracleItem", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
 
   print_results(cache, res); 
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
+                           miss_cnt_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }
+
 static void test_L2Cache_ORACLE_BOTH(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {6131542, 5251245, 4561764, 3595778, 3062567, 2789390, 2341065, 1934686};
-  uint64_t miss_byte_true[] = {126390494208, 117896260096, 110056763392, 100195554304, 93243265024, 88165374464, 79403701760, 70925711872};
+  uint64_t miss_cnt_true[] = {1485927, 1022736, 937075, 898857};
 
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
+      .hashpower = 24, .default_ttl = DEFAULT_TTL};
   
   cache_t *cache = create_test_cache("L2Cache-OracleBoth", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
 
   print_results(cache, res); 
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
+                           miss_cnt_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }
+
 static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {6751007, 5699593, 4841244, 4171326, 3634421, 3262314, 2991878, 2778794};
-  uint64_t miss_byte_true[] = {129173642240, 111849560576, 97042920448, 84940804096, 75040174592, 68449256960, 63475947520, 59417136640};
+  uint64_t miss_cnt_true[] = {2255891, 1601486, 1305691, 1205976};
 
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
+      .hashpower = 24, .default_ttl = DEFAULT_TTL};
   
   cache_t *cache = create_test_cache("L2Cache-LearnedTrueY", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
 
   print_results(cache, res); 
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
+                           miss_cnt_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }
+
 static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {6751007, 5699593, 4841244, 4171326, 3634421, 3262314, 2991878, 2778794};
-  uint64_t miss_byte_true[] = {129173642240, 111849560576, 97042920448, 84940804096, 75040174592, 68449256960, 63475947520, 59417136640};
+  uint64_t miss_cnt_true[] = {2600178, 1598445, 1296337, 1212834};
 
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
+      .hashpower = 24, .default_ttl = DEFAULT_TTL};
   
   cache_t *cache = create_test_cache("L2Cache-LearnedOnline", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
 
   print_results(cache, res); 
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
+                           miss_cnt_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }
+
 static void test_L2Cache_SEGCACHE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {6751007, 5699593, 4841244, 4171326, 3634421, 3262314, 2991878, 2778794};
-  uint64_t miss_byte_true[] = {129173642240, 111849560576, 97042920448, 84940804096, 75040174592, 68449256960, 63475947520, 59417136640};
+  uint64_t miss_cnt_true[] = {2867283, 2012928, 1691945, 1495364};
 
   reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
+      .hashpower = 24, .default_ttl = DEFAULT_TTL};
   
   cache_t *cache = create_test_cache("L2Cache-Segcache", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
 
   print_results(cache, res); 
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
+                           miss_cnt_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }
@@ -156,6 +161,9 @@ static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
+  // where does the randomization come from, sort? 
+  // the miss ratio results can vary a lot depending on the randomization
+  srand(0); // for reproducibility
   reader_t *reader;
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1

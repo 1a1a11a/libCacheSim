@@ -48,10 +48,6 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
     while (req->valid) {
       cache_ck_res_e ck = local_cache->get(local_cache, req);
       local_cache->stat.n_warmup_req += 1;
-#if defined(SUPPORT_ADMISSION) && SUPPORT_ADMISSION == 1
-      if (local_cache->admit != NULL && ck == cache_ck_miss)
-        local_cache->admit(local_cache, req);
-#endif
       read_one_req(warmup_cloned_reader, req);
     }
     close_reader(warmup_cloned_reader);
@@ -66,10 +62,6 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
     uint64_t n_warmup = 0;
     while (req->valid && n_warmup < params->n_warmup_req) {
       cache_ck_res_e ck = local_cache->get(local_cache, req);
-#if defined(SUPPORT_ADMISSION) && SUPPORT_ADMISSION == 1
-      if (local_cache->admit != NULL && ck == cache_ck_miss)
-        local_cache->admit(local_cache, req);
-#endif
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }
@@ -86,31 +78,9 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
     local_cache->stat.n_req++;
     local_cache->stat.n_req_byte += req->obj_size;
 
-    if (local_cache->check(local_cache, req, true) != cache_ck_hit) {
+    if (local_cache->get(local_cache, req) != cache_ck_hit) {
       local_cache->stat.n_miss++;
       local_cache->stat.n_miss_byte += req->obj_size;
-
-      bool admit = true;
-
-#if defined(SUPPORT_ADMISSION) && SUPPORT_ADMISSION == 1
-      if (local_cache->admit != NULL && !!local_cache->admit(local_cache, req)) {
-          admit = false;
-      }
-#endif
-
-      if (admit) {
-        if (req->obj_size + local_cache->per_obj_overhead > local_cache->cache_size) {
-          WARN("object %"PRIu64 ": obj size %"PRIu32 " larger than cache size %"PRIu64 "\n",
-                  req->obj_id, req->obj_size, local_cache->cache_size);
-        } else {
-
-          while (local_cache->occupied_size + req->obj_size +
-                  local_cache->per_obj_overhead > local_cache->cache_size)
-            local_cache->evict(local_cache, req, NULL);
-
-          local_cache->insert(local_cache, req);
-        }
-      }
     }
     read_one_req(cloned_reader, req);
     req->real_time -= start_ts;
