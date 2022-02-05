@@ -38,6 +38,11 @@ void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->train_source_y = TRAIN_Y_FROM_ORACLE;
   init_params->bucket_type = SIZE_BUCKET;
   init_params->retrain_intvl = 86400 * 2;
+  init_params->hit_density_age_shift = 3; 
+  init_params->sample_every_n_seg_for_training = 1;
+  init_params->min_start_train_seg = 0;
+  init_params->max_start_train_seg = 8192;
+  init_params->n_train_seg_growth = 1;
 }
 
 cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
