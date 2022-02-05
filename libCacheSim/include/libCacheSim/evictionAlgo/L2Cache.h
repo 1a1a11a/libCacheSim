@@ -71,7 +71,6 @@ typedef struct {
   int segment_size;
   // how many segments to merge (n_merge segments merge to one segment)
   int n_merge;
-  // used for calculate size bucket id logx(size - size_bucket_base)
   double rank_intvl;     // how often to rank, in terms of fraction of total segments (0.0 - 1.0)
   // whether we merge consecutive segments (with the first segment has the lowest utility)
   // or we merge non-consecutive segments based on ranking 
@@ -81,7 +80,6 @@ typedef struct {
 
   int retrain_intvl;
 
-  int size_bucket_base;
   int min_start_train_seg;
   int max_start_train_seg;
   int n_train_seg_growth;

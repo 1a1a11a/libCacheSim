@@ -34,7 +34,6 @@ static inline void set_default_arg(sim_arg_t *args) {
 
   args->L2Cache_type = LOGCACHE_LEARNED;
   args->bucket_type = NO_BUCKET;
-  args->size_bucket_base = 1;
 #endif
 
   args->n_thread = 4;
@@ -86,7 +85,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     //    args->n_train_seg_growth = 6000;
     args->sample_every_n_seg_for_training = 1;
     args->rank_intvl = 0.05;
-    args->size_bucket_base = 1;
     args->retrain_intvl = 86400 * 2;
 
     // } else if (strstr(args->trace_path, "w03") != NULL) {
@@ -122,7 +120,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->seg_size = 50;
     args->rank_intvl = 0.05;
     args->age_shift = 3;
-    args->size_bucket_base = 1;
     args->retrain_intvl = 86400 * 2;
     args->bucket_type = SIZE_BUCKET;
   } else if (strstr(args->trace_path, "media_metadata") != NULL) {
@@ -146,7 +143,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     }
     /* 2GB 8 MQPS 0.0509 on full trace */
     args->n_cache_size = 10;
-    args->size_bucket_base = 20;
+    // args->size_bucket_base = 20;
     args->seg_size = 1000;
     args->age_shift = 1;
     //    args->min_start_train_seg = 500;
@@ -171,7 +168,7 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     //    args->seg_size = 10;
     args->age_shift = 4;
     args->bucket_type = NO_BUCKET;
-    args->size_bucket_base = 1000;
+    // args->size_bucket_base = 1000;
     args->min_start_train_seg = 10000;
     args->max_start_train_seg = 80000;
     args->n_train_seg_growth = 20000;

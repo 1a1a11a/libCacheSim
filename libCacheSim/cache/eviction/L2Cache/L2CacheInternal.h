@@ -213,7 +213,6 @@ typedef struct {
 
   /* bucket and related parameters */
   bucket_type_e bucket_type;
-  int size_bucket_base; /* size bucket */
 
   /* object selection related parameters */
   obj_score_type_e obj_score_type;

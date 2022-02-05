@@ -31,7 +31,6 @@ typedef struct {
     train_source_e train_source_x; 
     train_source_e train_source_y;
     
-    int size_bucket_base;
     int age_shift;
     int min_start_train_seg;
     int max_start_train_seg;

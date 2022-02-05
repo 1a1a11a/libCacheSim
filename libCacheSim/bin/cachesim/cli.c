@@ -109,7 +109,6 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 
                                          .hit_density_age_shift = args.age_shift,
                                          .bucket_type = args.bucket_type,
-                                         .size_bucket_base = args.size_bucket_base,
                                          .min_start_train_seg = args.min_start_train_seg,
                                          .max_start_train_seg = args.max_start_train_seg,
                                          .n_train_seg_growth = args.n_train_seg_growth,

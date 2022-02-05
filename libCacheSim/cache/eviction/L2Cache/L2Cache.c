@@ -67,7 +67,6 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   params->n_merge = L2Cache_init_params->n_merge;
   params->n_retain_per_seg = params->segment_size / params->n_merge;
   params->rank_intvl = L2Cache_init_params->rank_intvl;
-  params->size_bucket_base = L2Cache_init_params->size_bucket_base;
 
   switch (params->type) {
     case SEGCACHE:
@@ -99,13 +98,12 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
 
   //   INFO(
   //       "L2Cche, %.2lf MB, %s, obj sel %s, %s, "
-  //       "size_bucket_base %d, %ld bytes start training seg collection, sample %d, rank intvl %d, "
+  //       %ld bytes start training seg collection, sample %d, rank intvl %d, "
   //       "training truth %d re-train %d\n",
   //       (double) cache->cache_size / 1048576,
   //       L2Cache_type_names[params->type],
   //       obj_score_type_names[params->obj_score_type],
   //       bucket_type_names[params->bucket_type],
-  //       params->size_bucket_base,
   // //      (long) params->learner.n_bytes_start_collect_train,
   // //      params->learner.sample_every_n_seg_for_training,
   //       0L, 0,
