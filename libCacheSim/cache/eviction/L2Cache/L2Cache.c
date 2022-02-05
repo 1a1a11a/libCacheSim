@@ -28,6 +28,18 @@
 extern "C" {
 #endif
 
+void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
+  init_params->segment_size = 50;
+  init_params->n_merge = 2;
+  init_params->type = LOGCACHE_LOG_ORACLE;
+  init_params->rank_intvl = 0.01;
+  init_params->merge_consecutive_segs = true;
+  init_params->train_source_x = TRAIN_X_FROM_SNAPSHOT;
+  init_params->train_source_y = TRAIN_Y_FROM_ORACLE;
+  init_params->bucket_type = SIZE_BUCKET;
+  init_params->retrain_intvl = 86400 * 2;
+}
+
 cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   L2Cache_init_params_t *L2Cache_init_params = init_params;
   cache_t *cache =

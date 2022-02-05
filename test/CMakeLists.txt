@@ -24,3 +24,14 @@ add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
 add_test(NAME testSimulator COMMAND testSimulator WORKING_DIRECTORY .)
 add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
+
+if (ENABLE_L2CACHE)
+    add_executable(testL2Cache test_l2cache.c)
+    target_link_libraries(testL2Cache ${coreLib})
+    add_test(NAME testL2Cache COMMAND testL2Cache WORKING_DIRECTORY .)
+endif (ENABLE_L2CACHE)
+
+
+
+
+

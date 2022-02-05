@@ -108,6 +108,8 @@ void L2Cache_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
 
 void L2Cache_remove(cache_t *cache, obj_id_t obj_id);
 
+void L2Cache_set_default_init_params(L2Cache_init_params_t *params); 
+
 #ifdef __cplusplus
 }
 #endif

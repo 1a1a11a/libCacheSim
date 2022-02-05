@@ -24,7 +24,7 @@ setup_xgboost() {
 	pushd build
 	cmake ..
 	make -j
-	sudo make install	
+	sudo make install
 }
 
 setup_lightgbm() {
@@ -52,7 +52,6 @@ setup_zstd() {
 
 
 # setup_ubuntu 
-download_data
 setup_xgboost
 setup_lightgbm
 setup_zstd

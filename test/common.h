@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include <glib.h>
+#include <stdlib.h>
 
 
 #define BLOCK_UNIT_SIZE 0    // 16 * 1024
@@ -24,7 +25,14 @@
 
 #define DEFAULT_TTL (300*86400)
 
-#define NUM_OF_THREADS 4
+static inline unsigned int _n_cores() {
+  unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
+
+  asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(eax), "2"(ecx) :);
+
+  //  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
+  return ebx;
+}
 
 static void _detect_data_path(char* data_path, char* data_name) {
   sprintf(data_path, "data/%s", data_name);
@@ -50,6 +58,17 @@ static reader_t *setup_oracleGeneralBin_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.oracleGeneral.bin");
   reader_t *reader_oracle = setup_reader(data_path, ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
+  return reader_oracle;
+}
+
+static reader_t *setup_L2CacheTestData_reader(void) {
+  char *url = "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/.w68.oracleGeneral.bin.zst"; 
+  int ret = system("rm .w68.oracleGeneral.bin.zst || true; wget https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/.w68.oracleGeneral.bin.zst"); 
+  if (ret != 0) {
+    ERROR("downloading data failed\n");
+  } 
+
+  reader_t *reader_oracle = setup_reader(".w68.oracleGeneral.bin.zst", ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
   return reader_oracle;
 }
 
@@ -153,6 +172,27 @@ static cache_t *create_test_cache(const char *alg_name,
     ARC_init_params_t *init_params = my_malloc_n(ARC_init_params_t, 1);
     init_params->ghost_list_factor = 1;
     cache = ARC_init(cc_params, init_params);
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+  } else if (strncasecmp(alg_name, "L2Cache", 7) == 0) {
+    L2Cache_init_params_t init_params; 
+    L2Cache_set_default_init_params(&init_params); 
+    if (strcasecmp(alg_name, "L2Cache-OracleLog") == 0) {
+      init_params.type = LOGCACHE_LOG_ORACLE;
+    } else if (strcasecmp(alg_name, "L2Cache-OracleItem") == 0) {
+      init_params.type = LOGCACHE_ITEM_ORACLE;
+    } else if (strcasecmp(alg_name, "L2Cache-Segcache") == 0) {
+      init_params.type = SEGCACHE;
+    } else if (strcasecmp(alg_name, "L2Cache-OracleBoth") == 0) {
+      init_params.type = LOGCACHE_BOTH_ORACLE;
+    } else if (strcasecmp(alg_name, "L2Cache-LearnedTrueY") == 0) {
+      init_params.type = LOGCACHE_LEARNED;
+      init_params.train_source_y = TRAIN_Y_FROM_ORACLE; 
+    } else if (strcasecmp(alg_name, "L2Cache-LearnedOnline") == 0) {
+      init_params.type = LOGCACHE_LEARNED;
+      init_params.train_source_y = TRAIN_Y_FROM_ONLINE; 
+    }
+    cache = L2Cache_init(cc_params, &init_params);
+#endif
   } else if (strcasecmp(alg_name, "LHD") == 0) {
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Hyperbolic") == 0) {
