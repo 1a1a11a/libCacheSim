@@ -3,6 +3,7 @@
 #include "learned.h"
 #include "segment.h"
 #include "utils.h"
+#include "../../../utils/include/mymath.h"
 
 static inline int cmp_seg(const void *p1, const void *p2) {
   segment_t *seg1 = *(segment_t **) p1;
@@ -83,10 +84,15 @@ void rank_segs(cache_t *cache) {
   int n_segs = 0;
   segment_t *curr_seg;
   for (int i = 0; i < MAX_N_BUCKET; i++) {
+    int j = 0; 
     curr_seg = params->buckets[i].first_seg;
     while (curr_seg) {
       if (params->type == LOGCACHE_LEARNED) {
         // curr_seg->utility = 0;
+        // printf("bucket %d, %dth seg, %.4lf %.4lf\n", 
+        //         i, j, 
+        //         curr_seg->utility, cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
+        //                     params->curr_rtime, params->curr_vtime)); 
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
         curr_seg->utility =
             cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
@@ -99,6 +105,7 @@ void rank_segs(cache_t *cache) {
         abort();
       }
 
+      j += 1; 
       if (!is_seg_evictable(curr_seg, 1, true)
           || params->buckets[curr_seg->bucket_idx].n_segs < params->n_merge + 1) {
         curr_seg->utility += INT32_MAX / 2;
@@ -232,7 +239,7 @@ bucket_t *select_segs_rand(cache_t *cache, segment_t **segs) {
     params->curr_evict_bucket_idx = (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
     bucket = &params->buckets[params->curr_evict_bucket_idx];
 
-    int n_th = rand() % (bucket->n_segs - params->n_merge);
+    int n_th = next_rand() % (bucket->n_segs - params->n_merge);
     seg_to_evict = bucket->first_seg;
     for (int i = 0; i < n_th; i++) seg_to_evict = seg_to_evict->next_seg;
 
