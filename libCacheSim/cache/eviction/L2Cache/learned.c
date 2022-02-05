@@ -24,7 +24,7 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   seg->training_data_row_idx = row_idx;
   seg->become_train_seg_rtime = params->curr_rtime;
   seg->become_train_seg_vtime = params->curr_vtime;
-  seg->utility = 0;
+  seg->train_utility = 0;
 
   prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);
 }

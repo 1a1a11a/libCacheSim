@@ -113,11 +113,11 @@ void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
     //TODO: should age be in real time?
     if (params->obj_score_type == OBJ_SCORE_FREQ
         || params->obj_score_type == OBJ_SCORE_FREQ_AGE) {
-      seg->utility += 1.0e8 / age;
+      seg->train_utility += 1.0e8 / age;
     } else {
-      seg->utility += 1.0e8 / age / cache_obj->obj_size;
+      seg->train_utility += 1.0e8 / age / cache_obj->obj_size;
     }
-    params->learner.train_y[seg->training_data_row_idx] = seg->utility;
+    params->learner.train_y[seg->training_data_row_idx] = seg->train_utility;
   }
 }
 
@@ -447,7 +447,7 @@ static void train_xgboost(cache_t *cache) {
     train_loss = strtof(train_pos, NULL);
     valid_loss = strtof(valid_pos, NULL);
 
-    // DEBUG("iter %d, train loss %.4lf, valid loss %.4lf\n", i, train_loss, valid_loss); 
+    // DEBUG("iter %d, train loss %.4lf, valid loss %.4lf\n", i, train_loss, valid_loss);
     if (valid_loss > 1000000) {
       printf("valid loss is too large, stop training\n");
       abort();

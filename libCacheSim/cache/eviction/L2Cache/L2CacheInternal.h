@@ -105,7 +105,8 @@ typedef struct segment {
   // used to connect segments in the same bucket in ranked order 
   struct segment *next_ranked_seg;
 
-  double utility;
+  double pred_utility;
+  double train_utility;
   int n_skipped_penalty;
   int rank; 
 

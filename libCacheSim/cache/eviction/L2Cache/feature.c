@@ -106,7 +106,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   }
 
   /* calculate y */
-  double utility = curr_seg->utility;
+  double utility = curr_seg->train_utility;
 
   int n_retained_obj = 0;
 #if TRAINING_CONSIDER_RETAIN == 1

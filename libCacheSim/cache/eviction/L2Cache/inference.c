@@ -117,14 +117,14 @@ void inference_xgboost(cache_t *cache) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_segs; si++) {
 #if OBJECTIVE == REG
-      //      curr_seg->utilization = pred[n_segs];
-      curr_seg->utility = pred[n_segs] * 1e6 / curr_seg->n_byte;
+      // curr_seg->utilization = pred[n_segs];
+      curr_seg->pred_utility = pred[n_segs] * 1e6 / curr_seg->n_byte;
 //      curr_seg->utilization = pred[n_segs] * 1e12 / curr_seg->n_byte / curr_seg->n_byte;
 #elif OBJECTIVE == LTR
-      if (pred[n_segs] < 0) curr_seg->utilization = 1e8;
+      if (pred[n_segs] < 0) curr_seg->pred_utility = 1e8;
       else
-        curr_seg->utilization = 1.0 / pred[n_segs];
-        // printf("%lf\n", pred[n_segs]);
+        curr_seg->pred_utility = 1.0 / pred[n_segs];
+        DEBUG("%lf\n", pred[n_segs]);
 #endif
 
 #ifdef DUMP_TRAINING_DATA

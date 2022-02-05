@@ -20,10 +20,6 @@
 #define TRAINING_DATA_SOURCE TRAINING_X_FROM_CACHE
 
 /* where the training data (Y) is generated from */
-// #define TRAIN_Y_FROM_ORACLE 1
-// #define TRAIN_Y_FROM_ONLINE 2
-// #define TRAINING_Y_SOURCE TRAIN_Y_FROM_ORACLE
-
 #define TRAINING_CONSIDER_RETAIN 1
 
 /* training objective, regression or ranking */

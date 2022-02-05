@@ -18,7 +18,7 @@ static void _verify_profiler_results(const cache_stat_t *res,
     double res_v = res[i].n_miss;
     double diff = fabs(res_v - true_v) / true_v;
     if (diff > 0.02) {
-      printf("%lu %lu %lf\n", true_v, res_v, diff); 
+      printf("%lf %lf %lf\n", true_v, res_v, diff); 
       g_assert(0); 
     }
   }
@@ -119,7 +119,8 @@ static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
 
 static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {2600178, 1598445, 1296337, 1212834};
+  // uint64_t miss_cnt_true[] = {2600178, 1598445, 1296337, 1212834};
+  uint64_t miss_cnt_true[] = {2371604, 1590259, 1289356, 1205920};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,

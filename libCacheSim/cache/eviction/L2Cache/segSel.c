@@ -11,7 +11,7 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 
   DEBUG_ASSERT(seg1->magic == MAGIC);
 
-  if (seg1->utility < seg2->utility) return -1;
+  if (seg1->pred_utility < seg2->pred_utility) return -1;
   else
     return 1;
 }
@@ -94,11 +94,11 @@ void rank_segs(cache_t *cache) {
         //         curr_seg->utility, cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
         //                     params->curr_rtime, params->curr_vtime)); 
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
-        curr_seg->utility =
+        curr_seg->pred_utility =
             cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
                             params->curr_rtime, params->curr_vtime);
       } else if (params->type == LOGCACHE_BOTH_ORACLE) {
-        curr_seg->utility =
+        curr_seg->pred_utility =
             cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                             params->curr_rtime, params->curr_vtime);
       } else {
@@ -108,7 +108,7 @@ void rank_segs(cache_t *cache) {
       j += 1; 
       if (!is_seg_evictable(curr_seg, 1, true)
           || params->buckets[curr_seg->bucket_idx].n_segs < params->n_merge + 1) {
-        curr_seg->utility += INT32_MAX / 2;
+        curr_seg->pred_utility += INT32_MAX / 2;
       }
 
       ranked_segs[n_segs++] = curr_seg;
@@ -330,7 +330,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     DEBUG_ASSERT(segs[i]->next_seg != NULL);
     DEBUG_ASSERT(segs[i]->bucket_idx == segs[i - 1]->bucket_idx);
 
-    DEBUG_ASSERT(params->merge_consecutive_segs || segs[i]->utility >= segs[i - 1]->utility);
+    DEBUG_ASSERT(params->merge_consecutive_segs || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
     ranked_segs[segs[i]->rank] = NULL;
   }
 
