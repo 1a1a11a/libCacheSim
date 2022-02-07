@@ -393,7 +393,7 @@ void train_lgbm(cache_t *cache) {
   //  last_eval_time = time(NULL);
   //  }
 
-  LGBM_DatasetFree(tdata) l;
+  LGBM_DatasetFree(tdata);
 }
 #endif
 

@@ -18,7 +18,7 @@ static void _verify_profiler_results(const cache_stat_t *res,
     double res_v = res[i].n_miss;
     double diff = fabs(res_v - true_v) / true_v;
     if (diff > 0.02) {
-      printf("%lf %lf %lf\n", true_v, res_v, diff); 
+      printf("true %.0lf curr %.0lf %lf\n", true_v, res_v, diff); 
       g_assert(0); 
     }
   }
@@ -169,11 +169,11 @@ int main(int argc, char *argv[]) {
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   reader = setup_L2CacheTestData_reader(); 
+  g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_LEARNED_TRUE_Y", reader, test_L2Cache_LEARNED_TRUE_Y);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_LEARNED_ONLINE", reader, test_L2Cache_LEARNED_ONLINE);
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_ORACLE_LOG", reader, test_L2Cache_ORACLE_LOG);
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_ORACLE_ITEM", reader, test_L2Cache_ORACLE_ITEM);
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_ORACLE_BOTH", reader, test_L2Cache_ORACLE_BOTH);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_LEARNED_TRUE_Y", reader, test_L2Cache_LEARNED_TRUE_Y);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_LEARNED_ONLINE", reader, test_L2Cache_LEARNED_ONLINE);
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_SEGCACHE", reader, test_L2Cache_SEGCACHE);
 
 
