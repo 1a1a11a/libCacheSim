@@ -202,7 +202,7 @@ static void prepare_training_data(cache_t *cache) {
   for (i = 0; i < params->n_training_segs / 2; i++) {
     DEBUG_ASSERT(curr_seg != NULL);
 
-    if (learner->n_valid_samples < N_MAX_VALIDATION && rand() % 10 <= 0) {
+    if (learner->n_valid_samples < N_MAX_VALIDATION && next_rand() % 10 <= 0) {
       is_sample_useful = prepare_one_row(
           cache, curr_seg, true, &valid_x[learner->n_feature * learner->n_valid_samples],
           &valid_y[learner->n_valid_samples]);
@@ -210,7 +210,7 @@ static void prepare_training_data(cache_t *cache) {
       if (is_sample_useful) {
         learner->n_valid_samples += 1;
       } else {
-        if (n_zero_samples != 0 && rand() % n_zero_samples <= 1) {
+        if (n_zero_samples != 0 && next_rand() % n_zero_samples <= 1) {
           learner->n_valid_samples += 1;
           n_zero_samples_use += 1;
         }
@@ -225,7 +225,7 @@ static void prepare_training_data(cache_t *cache) {
         learner->n_train_samples += 1;
       } else {
         /* do not want too much zero */
-        if (n_zero_samples != 0 && rand() % n_zero_samples <= 1) {
+        if (n_zero_samples != 0 && next_rand() % n_zero_samples <= 1) {
           learner->n_train_samples += 1;
           n_zero_samples_use += 1;
         }

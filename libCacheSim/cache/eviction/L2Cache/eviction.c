@@ -92,7 +92,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
     if (params->type == LOGCACHE_LEARNED
         && params->cache_state.n_evicted_bytes > params->learner.n_bytes_start_collect_train
-        && rand() % params->learner.sample_every_n_seg_for_training == 0) {
+        && next_rand() % params->learner.sample_every_n_seg_for_training == 0) {
       transform_seg_to_training(cache, bucket, segs[i]);
     } else {
       remove_seg_from_bucket(params, bucket, segs[i]);

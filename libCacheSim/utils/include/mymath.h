@@ -27,10 +27,6 @@ void set_rand_seed(uint64_t seed);
  * @return
  */
 static inline uint64_t next_rand() {
-  if (rand_seed == 0) {
-//    INFO("randseed %llu\n", rand_seed);
-  }
-
   rand_seed = 6364136223846793005 * rand_seed + 1442695040888963407;
   return rand_seed;
 }

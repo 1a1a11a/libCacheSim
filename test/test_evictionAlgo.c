@@ -233,6 +233,7 @@ static void test_LHD(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, _n_cores());
 
+  // print_results(cache, res); 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -388,6 +389,7 @@ static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
+  srand(0); // for reproducibility
   reader_t *reader;
 
   reader = setup_csv_reader_obj_num();
