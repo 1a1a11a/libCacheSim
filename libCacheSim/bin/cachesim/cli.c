@@ -85,11 +85,9 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   } else if (strcasecmp(args.alg, "lhd") == 0) {
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "slru") == 0){
-
     SLRU_init_params_t init_params;
     init_params.n_seg = 5; // Currently hard-coded
-    cache = SLRU_init(cc_params, &init_params);
-    
+    cache = SLRU_init(cc_params, &init_params);  
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimalSize") == 0) {
@@ -97,6 +95,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = OptimalSize_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lecar") == 0) {
     cache = LeCaR_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "lfu") == 0) {
+    cache = LFUFast_init(cc_params, NULL);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
     L2Cache_init_params_t init_params = {.segment_size = args.seg_size,

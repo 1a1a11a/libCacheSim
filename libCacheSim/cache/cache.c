@@ -104,6 +104,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cach
 
     if (ret == cache_ck_hit) {
       if (unlikely(cache_obj->obj_size != req->obj_size)) {
+        VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size, req->obj_size);
         cache->occupied_size -= cache_obj->obj_size;
         cache->occupied_size += req->obj_size;
         cache_obj->obj_size = req->obj_size;

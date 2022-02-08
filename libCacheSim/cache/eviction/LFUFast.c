@@ -19,7 +19,8 @@
  * the drawback of this implementation is the memory usage, because two pointers
  * are associated with each obj_id
  *
- * this LFUFast clear the frequency of an obj_id after evicting from cache
+ * this implementation do not keep an object's frequency after evicting from cache
+ * so objects are inserted with frequency 1 
  */
 
 #include "../include/libCacheSim/evictionAlgo/LFUFast.h"
@@ -107,6 +108,7 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
       params->max_freq = cache_obj->lfu.freq;
     }
 
+    // find the freq_node this object belongs to and update its info
     freq_node_t *old_node = g_hash_table_lookup(
         params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq - 1));
     DEBUG_ASSERT(old_node != NULL);
@@ -115,18 +117,7 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     old_node->n_obj -= 1;
     remove_obj_from_list(&old_node->first_obj, &old_node->last_obj, cache_obj);
 
-    if (params->min_freq == old_node->freq && old_node->n_obj == 0) {
-      /* update min freq */
-      uint64_t old_min_freq = params->min_freq;
-      for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
-        if (g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)) != NULL) {
-          params->min_freq = freq;
-          break;
-        }
-      }
-      DEBUG_ASSERT(params->min_freq > old_min_freq); 
-    }
-
+    // find the new freq_node this object should move to
     freq_node_t *new_node = g_hash_table_lookup(
         params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
     if (new_node == NULL) {
@@ -154,12 +145,27 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     cache_obj->queue.next = NULL;
     new_node->last_obj = cache_obj;
     new_node->n_obj += 1;
+
+
+    // if the old freq_node only has one object, after removing this object, it will have no object
+    // and if it is the min_freq, then we should update min_freq 
+    if (params->min_freq == old_node->freq && old_node->n_obj == 0) {
+      /* update min freq */
+      uint64_t old_min_freq = params->min_freq;
+      for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+        freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)); 
+        if (node != NULL && node->n_obj > 0) {
+          params->min_freq = freq;
+          break;
+        }
+      }
+      DEBUG_ASSERT(params->min_freq > old_min_freq); 
+    }
   }
   return ret;
 }
 
 cache_ck_res_e LFUFast_get(cache_t *cache, request_t *req) {
-//  DEBUG_ASSERT(_verify(cache) == 0);
   return cache_get_base(cache, req);
 }
 
@@ -181,8 +187,6 @@ void LFUFast_insert(cache_t *cache, request_t *req) {
   }
   freq_one_node->last_obj = cache_obj;
   DEBUG_ASSERT(freq_one_node->first_obj != NULL);
-//  if (freq_one_node->first_obj == NULL)
-//    freq_one_node->first_obj = cache_obj;
 }
 
 void LFUFast_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
@@ -209,7 +213,8 @@ void LFUFast_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     /* update min freq */
     uint64_t old_min_freq = params->min_freq;
     for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
-      if (g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)) != NULL) {
+      freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)); 
+      if (node != NULL && node->n_obj > 0) {
         params->min_freq = freq;
         break;
       }
