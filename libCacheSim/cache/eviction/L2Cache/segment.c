@@ -121,7 +121,9 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
   return params->obj_sel.score_array[pos - n_retain];
 }
 
-double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
+
+/** calculate segment utility, and a segment with a lower utility should be evicted first **/
+double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
                        int n_retain, int64_t rtime, int64_t vtime) {
   L2Cache_params_t *params = cache->eviction_params;
   seg_sel_t *seg_sel = &params->seg_sel;
@@ -171,7 +173,7 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          (double) seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate, seg->miss_ratio,
          (double) seg->n_hit / seg->n_obj, seg->n_hit, seg->n_active, seg->n_merge,
          seg->train_utility, seg->pred_utility,
-         cal_seg_penalty(cache, OBJ_SCORE_ORACLE, seg, params->n_retain_per_seg,
+         cal_seg_utility(cache, OBJ_SCORE_ORACLE, seg, params->n_retain_per_seg,
                          params->curr_rtime, params->curr_vtime),
          count_n_obj_reuse(cache, seg),
 

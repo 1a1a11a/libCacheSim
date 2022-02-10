@@ -14,7 +14,8 @@ set(source
         )
 
 add_library(L2Cache ${source})
-target_link_libraries(L2Cache ${LIGHTGBM_LIB})
+# target_link_libraries(L2Cache ${LIGHTGBM_LIB})
 
 
-
+add_executable(test_xgboost testXGBoost.c)
+# target_link_libraries(test_xgboost ${LIGHTGBM_LIB})

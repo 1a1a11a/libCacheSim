@@ -31,7 +31,7 @@ void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment
 double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **segs,
                    int n_segs, int n_retain);
 
-double cal_seg_penalty(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
+double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
                        int n_retain, int64_t rtime, int64_t vtime);
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level);

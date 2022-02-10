@@ -11,7 +11,7 @@
 
 #if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
 void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segment) {
-  static int n = 0, n_zero = 0;
+  static __thread int n = 0, n_zero = 0;
   L2Cache_params_t *params = cache->eviction_params;
   segment->is_training_seg = true;
   /* used to calculate the eviction penalty */
@@ -154,6 +154,14 @@ void prepare_training_data_per_package(cache_t *cache) {
                                   learner->n_valid_samples));
 
 #if OBJECTIVE == LTR
+  // const int n_group = 20;
+  // unsigned int group[n_group]; 
+  // for (int i = 0; i < n_group; i++) {
+  //   group[i] = learner->n_train_samples/n_group;
+  // }
+  // group[(n_group - 1)] = learner->n_train_samples - (learner->n_train_samples/n_group) * (n_group - 1); 
+  // safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", group, n_group));
+
   safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", &learner->n_train_samples, 1));
   safe_call(XGDMatrixSetUIntInfo(learner->valid_dm, "group", &learner->n_valid_samples, 1));
 #endif
@@ -245,14 +253,30 @@ static void prepare_training_data(cache_t *cache) {
   train_y_t *y;
 
 #if OBJECTIVE == LTR
-  static train_y_t *y_sort = NULL;
-  if (y_sort == NULL) y_sort = my_malloc_n(train_y_t, learner->train_matrix_n_row);
+  /** convert utility to rank relevance 0 - 4, with 4 being the most relevant
+      let n_candidate = learner->n_train_samples * params->rank_intvl samples 
+      assume params->rank_intvl < 0.125, 
+      cat 4: n_candidate, 
+      cat 3: 2 * n_candidate, 
+      cat 2: 3 * n_candidate,
+      cat 1, 0: (n - 6 * n_candidate) / 2,
+   */
+  static __thread train_y_t *y_sort = NULL;
+  static __thread train_y_t train_y_cutoffs[5]; 
 
-  for (i = 0; i < learner->n_train_samples; i++) {
-    y_sort[i] = learner->train_y[i];
-  }
-  qsort(y_sort, learner->n_train_samples, sizeof(train_y_t), cmp_train_y);
-  train_y_t cutoff = y_sort[learner->n_train_samples - learner->n_train_samples / 10];
+  assert(params->rank_intvl <= 0.15); 
+  int n = learner->n_train_samples; 
+  int n_candidate = (int) (n * params->rank_intvl);
+
+  if (y_sort == NULL) y_sort = my_malloc_n(train_y_t, learner->train_matrix_n_row);
+  memcpy(y_sort, learner->train_y, sizeof(train_y_t) * n);
+  qsort(y_sort, n, sizeof(train_y_t), cmp_train_y);
+
+  train_y_cutoffs[4] = y_sort[n_candidate];
+  train_y_cutoffs[3] = y_sort[n_candidate * 3];
+  train_y_cutoffs[2] = y_sort[n_candidate * 6];
+  train_y_cutoffs[1] = y_sort[n_candidate * 6 + (n - n_candidate * 6) / 2];
+  train_y_cutoffs[0] = y_sort[n-1] + 1;   // to make sure the largest value is always insma
 #endif
 
   for (i = 0; i < learner->n_train_samples; i++) {
@@ -279,15 +303,18 @@ static void prepare_training_data(cache_t *cache) {
       pos_in_valid_data++;
     }
 
+    // TODO: is this memcpy really necessary? 
     memcpy(x, &learner->train_x[i * n_feature], sizeof(feature_t) * n_feature);
     *y = learner->train_y[i];
 
 #if OBJECTIVE == LTR
-//      printf("%f\n", *y);
-//      if (*y >= cutoff)
-//        *y = 1;
-//      else
-//        *y = 0;
+    // convert utility to rank relevance 0 - 4, with 4 being the most relevant
+    for (int p = 4; p >= 0; p--) {
+      if (*y <= train_y_cutoffs[p]) {
+        *y = p;
+        break;
+      }
+    }
 #endif
   }
   learner->n_train_samples = pos_in_train_data;
@@ -330,73 +357,6 @@ static void prepare_training_data(cache_t *cache) {
 #endif
 }
 
-#ifdef USE_GBM
-void train_lgbm(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
-
-  prepare_training_data(cache);
-
-  char *training_params = "num_leaves=31 "
-                          //                          "bossting=dart "
-                          "objective=regression "
-                          //                          "reg_sqrt=true "
-                          "linear_tree=false "
-                          "force_row_wise=true "
-                          "verbosity=0 "
-                          "early_stopping_round=5 "
-
-                          "feature_fraction=0.8 "
-                          "bagging_freq=5 "
-                          "bagging_fraction=0.8 "
-                          "learning_rate=0.1 "
-
-                          "num_threads=1";
-
-  //    "metric=l2,l1 "
-  //    "num_iterations=120 "
-  //    training_params = "";
-
-  int64_t out_len;
-
-  safe_call(LGBM_BoosterFree(learner->booster));
-  safe_call(LGBM_BoosterCreate(learner->train_dm, training_params, &learner->booster));
-
-  int i;
-  for (i = 0; i < N_TRAIN_ITER; i++) {
-    int is_finished;
-    safe_call(LGBM_BoosterUpdateOneIter(learner->booster, &is_finished));
-    if (is_finished) {
-      break;
-    }
-  }
-
-  static time_t last_eval_time = 0;
-  //  if (time(NULL) - last_eval_time > 20) {
-  //  safe_call(LGBM_BoosterPredictForMat(learner->booster,
-  //                                      learner->valid_x,
-  //                                      C_API_DTYPE_FLOAT64,
-  //                                      learner->n_valid_samples,
-  //                                      learner->n_feature,
-  //                                      1,
-  //                                      C_API_PREDICT_NORMAL,
-  //                                      0,
-  //                                      -1,
-  //                                      "linear_tree=false",
-  //                                      &out_len,
-  //                                      learner->valid_pred_y));
-  //
-  //  DEBUG_ASSERT(out_len == learner->n_valid_samples);
-  //  train_eval(i, learner->valid_pred_y,
-  //             learner->valid_y,
-  //             learner->n_valid_samples);
-  //  last_eval_time = time(NULL);
-  //  }
-
-  LGBM_DatasetFree(tdata);
-}
-#endif
-
 #ifdef USE_XGBOOST
 static void train_xgboost(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -424,8 +384,8 @@ static void train_xgboost(cache_t *cache) {
 #if OBJECTIVE == REG
   safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
 #elif OBJECTIVE == LTR
-  //  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
-  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:map"));
+   safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
+  // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:map"));
 //  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:ndcg"));
 #endif
 
@@ -433,8 +393,7 @@ static void train_xgboost(cache_t *cache) {
     // Update the model performance for each iteration
     safe_call(XGBoosterUpdateOneIter(learner->booster, i, learner->train_dm));
     if (learner->n_valid_samples < 10) continue;
-    safe_call(
-        XGBoosterEvalOneIter(learner->booster, i, eval_dmats, eval_names, 2, &eval_result));
+    safe_call(XGBoosterEvalOneIter(learner->booster, i, eval_dmats, eval_names, 2, &eval_result));
 #if OBJECTIVE == REG
     char *train_pos = strstr(eval_result, "train-rmse:") + 11;
     char *valid_pos = strstr(eval_result, "valid-rmse") + 11;
@@ -480,10 +439,11 @@ static void train_xgboost(cache_t *cache) {
 
 #ifdef DUMP_MODEL
   {
-    static char s[16];
+    static __thread char s[16];
     snprintf(s, 16, "model_%d.bin", learner->n_train);
     safe_call(XGBoosterSaveModel(learner->booster, s));
     INFO("dump model %s\n", s);
+    abort();
   }
 #endif
 }

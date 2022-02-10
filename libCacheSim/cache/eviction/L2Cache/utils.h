@@ -3,6 +3,26 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "L2CacheInternal.h"
 
+#define MAYBE_RESIZE_MATRIX(matrix_type, matrix_p, expect_dim1, expect_dim2, curr_dim1_p, curr_dim2_p) \
+  do { \
+    if ((matrix_p) == NULL || (expect_dim1) > (*(curr_dim1_p)) || (expect_dim2) > (*(curr_dim2_p))) { \
+      my_free(sizeof(matrix_type) * (*(curr_dim1_p)) * (*(curr_dim2_p)), (matrix_p)); \
+      matrix_p = (matrix_type *) malloc(sizeof(matrix_type) * (expect_dim1) * (expect_dim2)); \
+      *(curr_dim1_p) = (expect_dim1); \
+      *(curr_dim2_p) = (expect_dim2); \
+    } \
+  } while (0)
+
+#define MAYBE_RESIZE_VECTOR(matrix_type, matrix_p, expect_dim, curr_dim_p) \
+  do { \
+    if ((matrix_p) == NULL || (expect_dim) > (*(curr_dim_p))) { \
+      my_free(sizeof(matrix_type) * (*(curr_dim_p)), (matrix_p)); \
+      matrix_p = (matrix_type *) malloc(sizeof(matrix_type) * (expect_dim)); \
+      *(curr_dim_p) = expect_dim; \
+    } \
+  } while (0)
+
+
 static inline int count_hash_chain_len(cache_obj_t *cache_obj) {
   int n = 0;
   while (cache_obj) {

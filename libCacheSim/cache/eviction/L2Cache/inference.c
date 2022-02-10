@@ -47,7 +47,6 @@ void prepare_inference_data(cache_t *cache) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
     for (int si = 0; si < params->buckets[bi].n_segs; si++) {
       prepare_one_row(cache, curr_seg, false, &x[learner->n_feature * n_segs], NULL);
-
       curr_seg = curr_seg->next_seg;
       n_segs++;
     }
@@ -58,39 +57,13 @@ void prepare_inference_data(cache_t *cache) {
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
-  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature, -2,
-                                   &learner->inf_dm));
+  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature, -2, &learner->inf_dm));
+  
+  // safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &params->n_segs, 1));
 #elif defined(USE_GBM)
-  ;
+#error
 #endif
 }
-
-#ifdef USE_GBM
-void inference_lgbm(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-
-  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
-
-  prepare_inference_data(cache);
-
-  int64_t out_len = 0;
-  safe_call(LGBM_BoosterPredictForMat(learner->booster, learner->inference_x,
-                                      C_API_DTYPE_FLOAT64, params->n_segs, learner->n_feature,
-                                      1, C_API_PREDICT_NORMAL, 0, -1, "num_threads=1", &out_len,
-                                      learner->pred));
-
-  DEBUG_ASSERT(out_len == params->n_segs);
-
-  int n_segs = 0;
-  for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-    segment_t *curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_segs; si++) {
-      curr_seg->utilization = learner->pred[n_segs++];
-      curr_seg = curr_seg->next_seg;
-    }
-  }
-}
-#endif
 
 #ifdef USE_XGBOOST
 void inference_xgboost(cache_t *cache) {
@@ -119,17 +92,28 @@ void inference_xgboost(cache_t *cache) {
 #if OBJECTIVE == REG
       // curr_seg->pred_utility = pred[n_segs];
       curr_seg->pred_utility = pred[n_segs] * 1e6 / curr_seg->n_byte;
-//      curr_seg->pred_utility = pred[n_segs] * 1e12 / curr_seg->n_byte / curr_seg->n_byte;
 #elif OBJECTIVE == LTR
-      if (pred[n_segs] < 0) curr_seg->pred_utility = 1e8;
-      else
+      // segments with smaller utility (high relevance) are evicted first  
+      if (pred[n_segs] > 0) {
         curr_seg->pred_utility = 1.0 / pred[n_segs];
-        DEBUG("%lf\n", pred[n_segs]);
+      } else {
+        curr_seg->pred_utility = INT32_MAX;
+      }
 #endif
+      // PRINT_N_TIMES(8, "%d y_hat %f, features: %.0f %.0f %.0f %.2f %.2f %.2f %.2f\n", 
+      //   n_segs, pred[n_segs], 
+      //   learner->inference_x[learner->n_feature * n_segs + 0], 
+      //   learner->inference_x[learner->n_feature * n_segs + 1], 
+      //   learner->inference_x[learner->n_feature * n_segs + 2], 
+      //   learner->inference_x[learner->n_feature * n_segs + 3], 
+      //   learner->inference_x[learner->n_feature * n_segs + 4], 
+      //   learner->inference_x[learner->n_feature * n_segs + 5], 
+      //   learner->inference_x[learner->n_feature * n_segs + 6] 
+      // );
 
 #ifdef DUMP_TRAINING_DATA
       fprintf(f, "%f/%lf: ", pred[n_segs],
-              cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
+              cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                               params->curr_rtime, params->curr_vtime));
       for (int j = 0; j < learner->n_feature; j++) {
         fprintf(f, "%f,", learner->inference_x[learner->n_feature * n_segs + j]);

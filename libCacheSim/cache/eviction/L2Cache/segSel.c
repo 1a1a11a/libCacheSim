@@ -91,15 +91,15 @@ void rank_segs(cache_t *cache) {
         // curr_seg->utility = 0;
         // printf("bucket %d, %dth seg, %.4lf %.4lf\n", 
         //         i, j, 
-        //         curr_seg->utility, cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
+        //         curr_seg->utility, cal_seg_utility(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
         //                     params->curr_rtime, params->curr_vtime)); 
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
         curr_seg->pred_utility =
-            cal_seg_penalty(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
+            cal_seg_utility(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
                             params->curr_rtime, params->curr_vtime);
       } else if (params->type == LOGCACHE_BOTH_ORACLE) {
         curr_seg->pred_utility =
-            cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
+            cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
                             params->curr_rtime, params->curr_vtime);
       } else {
         abort();

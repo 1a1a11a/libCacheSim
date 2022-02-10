@@ -61,9 +61,26 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
 /** 
  * @brief update the segment feature when a segment is evicted
  * 
+ * features: 
+ *    bucket_id: the bucket id of the segment
+ *    create_hour: the hour when the segment is created
+ *    create_min: the min when the segment is created
+ *    req_rate: the request rate of the segment when it was created
+ *    write_rate: the write rate of the segment when it was created
+ *    mean_obj_size 
+ *    miss_ratio: the miss ratio of the segment when it was created
+ *    NA
+ *    n_hit: the number of requests so far 
+ *    n_active: the number of active objects 
+ *    n_merge: the number of times it has been merged 
+ *    n_hit_per_min: the number of requests per min
+ *    n_hit_per_ten_min: the number of requests per 10 min
+ *    n_hit_per_hour: the number of requests per hour
+ * 
  * @param is_training_data: whether the data is training or inference 
  * @param x: feature vector, and we write to x 
  * @param y: label, for passing the true y 
+ * 
  */
 bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data, feature_t *x,
                      train_y_t *y) {
@@ -101,6 +118,18 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     //    x[12 + k * 3 + 2] = 0;
   }
 
+    // if (is_training_data)
+    //   printf("train: ");
+    // else
+    //   printf("test:  ");
+
+    // for (int j = 0; j < 36; j++) {
+    //   printf("%.2f, ", x[j]); 
+    // }
+    // printf("\n"); 
+
+
+
   if (y == NULL) {
     return true;
   }
@@ -114,19 +143,25 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 #endif
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
-    utility = cal_seg_penalty(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
+    /* lower utility should be evicted first */
+    utility = cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
                               curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
   }
 
-#if OBJECTIVE == REG
+// #if OBJECTIVE == REG
   *y = (train_y_t) utility;
-#elif OBJECTIVE == LTR
-  double rel = 1.0 / (utility * 10 + 1e-16);
-  rel = 2 / (1 + exp(-rel)) - 1;
-  DEBUG_ASSERT(rel >= 0 && rel <= 1);
-  *y = rel;
+// #elif OBJECTIVE == LTR
+  /* relevance score, the higher, the more relevant (and better candidates to evict), 
+     convert to 0-1 range,  */
+  // double rel = 1.0 / (utility + 1e-16);
+  // rel = 1 / (1 + exp(-rel));
+  // DEBUG_ASSERT(rel >= 0 && rel <= 1);
+  // *y = rel;
+
+  // convert utility into 0-5 category 
+  
 //  printf("%lf %lf\n", utility, rel);
-#endif
+// #endif
 
   if (utility < 0.000001) {
     return false;

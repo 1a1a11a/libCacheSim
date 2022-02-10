@@ -25,14 +25,14 @@
 /* training objective, regression or ranking */
 #define REG 1
 #define LTR 2
-#define OBJECTIVE REG
+#define OBJECTIVE LTR
 
 //#define TRAIN_ONCE
 
 /*********** exp *************/
 //#define dump_ranked_seg_frac 0.05
 
-//#define DUMP_MODEL 1
+// #define DUMP_MODEL 1
 //#define DUMP_TRAINING_DATA
 
 /* LHD parameters */
