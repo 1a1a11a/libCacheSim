@@ -151,8 +151,12 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
         cache->insert(cache, req);
       }
     } else {
-      WARN("req %" PRIu64 ": obj size %" PRIu32 " larger than cache size %" PRIu64 "\n",
-              req->obj_id, req->obj_size, cache->cache_size);
+      static __thread bool has_printed = false;
+      if (!has_printed) {
+        has_printed = true; 
+        WARN("req %" PRIu64 ": obj size %" PRIu32 " larger than cache size %" PRIu64 "\n",
+                req->obj_id, req->obj_size, cache->cache_size);
+      }
     }
   }
   return cache_check;
