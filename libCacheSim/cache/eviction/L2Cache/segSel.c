@@ -172,9 +172,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   int n_scanned_bucket = 0;
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
   segment_t *seg_to_evict = bucket->next_seg_to_evict;
-  if (seg_to_evict == NULL) {
-    seg_to_evict = bucket->first_seg;
-  }
+  DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id); 
 
   while (!is_seg_evictable(seg_to_evict, params->n_merge, true)) {
     bucket->next_seg_to_evict = bucket->first_seg;
@@ -184,13 +182,26 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
     if (seg_to_evict == NULL) {
       seg_to_evict = bucket->first_seg;
     }
+    DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id); 
 
     n_scanned_bucket += 1;
 
     if (n_scanned_bucket > MAX_N_BUCKET + 1) {
-      DEBUG("cache size %.2lf MB, no evictable seg found\n", (double) cache->cache_size / (1024.0 * 1024.0));
-      abort();
-      segs[0] = NULL;
+      // no evictable seg found, random+FIFO select one
+      int n_th_seg = next_rand() % params->n_segs;
+      for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
+        if (params->buckets[bi].n_segs == 0) 
+          continue; 
+
+        if (n_th_seg > params->buckets[bi].n_segs) {
+          n_th_seg -= params->buckets[bi].n_segs;
+        } else {
+          bucket = &params->buckets[bi];
+          break;
+        }
+      }
+      segs[0] = bucket->first_seg;
+      bucket->next_seg_to_evict = NULL; 
       return NULL;
     }
   }
