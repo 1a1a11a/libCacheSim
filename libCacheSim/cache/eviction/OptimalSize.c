@@ -26,6 +26,7 @@ cache_t *OptimalSize_init(common_cache_params_t ccache_params,
   cache->insert = OptimalSize_insert;
   cache->evict = OptimalSize_evict;
   cache->remove = OptimalSize_remove;
+  cache->to_evict = OptimalSize_to_evict;
 
   return cache;
 }
@@ -58,6 +59,21 @@ void OptimalSize_insert(cache_t *cache, request_t *req) {
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->optimal.next_access_vtime = req->next_access_vtime;
+}
+
+cache_obj_t *OptimalSize_to_evict(cache_t *cache) {
+  cache_obj_t *obj_to_evict, *sampled_obj;
+  int64_t obj_to_evict_score = -1, sampled_obj_score;
+  for (int i = 0; i < N_SAMPLE_PER_EVICTION; i++) {
+    sampled_obj = hashtable_rand_obj(cache->hashtable);
+    sampled_obj_score =
+        sampled_obj->obj_size * (sampled_obj->optimal.next_access_vtime - cache->n_req);
+    if (obj_to_evict_score < sampled_obj_score) {
+      obj_to_evict = sampled_obj;
+      obj_to_evict_score = sampled_obj_score;
+    }
+  }
+  return obj_to_evict;
 }
 
 void OptimalSize_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {

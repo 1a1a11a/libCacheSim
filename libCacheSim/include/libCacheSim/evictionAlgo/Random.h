@@ -25,6 +25,8 @@ void Random_insert(cache_t *Random, request_t *req);
 
 cache_ck_res_e Random_check(cache_t *cache, request_t *req, bool update_cache);
 
+cache_obj_t *Random_to_evict(cache_t *cache);
+
 void Random_evict(cache_t *Random, request_t *req, cache_obj_t *cache_obj);
 
 cache_ck_res_e Random_get(cache_t *cache, request_t *req);

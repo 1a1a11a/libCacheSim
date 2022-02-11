@@ -29,6 +29,8 @@ void LRU_remove(cache_t *cache, obj_id_t obj_id);
 
 void LRU_insert(cache_t *cache, request_t *req);
 
+cache_obj_t *LRU_to_evict(cache_t *cache);
+
 void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 #ifdef __cplusplus

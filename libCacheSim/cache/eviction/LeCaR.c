@@ -24,6 +24,7 @@ cache_t *LeCaR_init(common_cache_params_t ccache_params_, void *init_params_) {
   cache->insert = LeCaR_insert;
   cache->evict = LeCaR_evict;
   cache->remove = LeCaR_remove;
+  cache->to_evict = LeCaR_to_evict;
 
   cache->eviction_params = my_malloc_n(LeCaR_params_t, 1);
   LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
@@ -144,9 +145,18 @@ void LeCaR_insert(cache_t *cache, request_t *req) {
   cache->n_obj += 1;
 }
 
+cache_obj_t *LeCaR_to_evict(cache_t *cache) {
+  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  double r = ((double) (next_rand() % 100)) / 100.0;
+  if (r < params->w_lru) {
+    return params->LRU->to_evict(params->LRU);
+  } else {
+    params->LFU->to_evict(params->LFU);
+  }
+}
 
 void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  static __thread request_t *req_local = NULL;
+  request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }

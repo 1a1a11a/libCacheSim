@@ -201,6 +201,10 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = LeCaR_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Cacheus") == 0) {
     cache = Cacheus_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "SR_LRU") == 0) {
+    cache = SR_LRU_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "CR_LFU") == 0) {
+    cache = CR_LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "SLRU") == 0) {
     SLRU_init_params_t init_params;
     init_params.n_seg = 5; // Currently hard-coded

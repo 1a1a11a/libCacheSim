@@ -44,6 +44,8 @@ cache_ck_res_e ARC_get(cache_t *cache, request_t *req);
 
 void ARC_insert(cache_t *ARC, request_t *req);
 
+cache_obj_t *ARC_to_evict(cache_t *cache);
+
 void ARC_evict(cache_t *ARC, request_t *req, cache_obj_t *cache_obj);
 
 void ARC_remove(cache_t *cache, obj_id_t obj_id);

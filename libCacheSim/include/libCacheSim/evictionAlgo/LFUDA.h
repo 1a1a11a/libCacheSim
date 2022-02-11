@@ -33,6 +33,8 @@ void LFUDA_remove(cache_t *cache, obj_id_t obj_id);
 
 void LFUDA_insert(cache_t *LFUDA, request_t *req);
 
+cache_obj_t *LFUDA_to_evict(cache_t *cache);
+
 void LFUDA_evict(cache_t *LFUDA, request_t *req, cache_obj_t *cache_obj);
 
 

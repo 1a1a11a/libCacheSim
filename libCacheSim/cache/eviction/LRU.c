@@ -26,7 +26,7 @@ cache_t *LRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->insert = LRU_insert;
   cache->evict = LRU_evict;
   cache->remove = LRU_remove;
-
+  cache->to_evict = LRU_to_evict;
   return cache;
 }
 
@@ -51,6 +51,10 @@ cache_ck_res_e LRU_get(cache_t *cache, request_t *req) {
 
 void LRU_insert(cache_t *cache, request_t *req) {
   cache_insert_LRU(cache, req);
+}
+
+cache_obj_t *LRU_to_evict(cache_t *cache){
+  return cache->q_head;
 }
 
 void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

@@ -60,6 +60,7 @@ cache_t *LFUDA_init(common_cache_params_t ccache_params,
   cache->insert = LFUDA_insert;
   cache->evict = LFUDA_evict;
   cache->remove = LFUDA_remove;
+  cache->to_evict = LFUDA_to_evict;
 
   LFUDA_params_t *params = my_malloc_n(LFUDA_params_t, 1);
   cache->eviction_params = params;
@@ -166,6 +167,21 @@ void LFUDA_insert(cache_t *cache, request_t *req) {
   new_node->last_obj = cache_obj;
   if (new_node->first_obj == NULL)
     new_node->first_obj = cache_obj;
+}
+
+cache_obj_t *LFUDA_to_evict(cache_t *cache) {
+
+  LFUDA_params_t *params = (LFUDA_params_t *) (cache->eviction_params);
+
+  freq_node_t *min_freq_node = g_hash_table_lookup(
+      params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+  if (min_freq_node == NULL || min_freq_node->first_obj == NULL)
+    min_freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq + 1));
+
+  DEBUG_ASSERT(min_freq_node != NULL);
+  DEBUG_ASSERT(min_freq_node->first_obj != NULL);
+
+  return min_freq_node->first_obj;
 }
 
 void LFUDA_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

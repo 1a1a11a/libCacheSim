@@ -22,6 +22,8 @@ cache_ck_res_e Clock_get(cache_t *cache, request_t *req);
 
 void Clock_insert(cache_t *Clock, request_t *req);
 
+cache_obj_t *Clock_to_evict(cache_t *cache);
+
 void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 void Clock_remove(cache_t *cache, obj_id_t obj_id);

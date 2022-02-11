@@ -24,6 +24,19 @@ typedef struct {
   int64_t last_access_vtime; 
 } LeCaR_obj_params_t;
 
+typedef struct {
+  int64_t last_access_vtime; 
+} Cacheus_obj_params_t;
+
+typedef struct {
+  bool demoted;
+  bool new_obj;
+} SR_LRU_obj_params_t;
+
+typedef struct {
+  int64_t last_access_vtime; 
+} CR_LFU_obj_params_t;
+
 typedef struct  {
   int64_t freq;
   int64_t vtime_enter_cache;
@@ -74,6 +87,9 @@ typedef struct cache_obj {
 
     Clock_obj_params_t clock; // for Clock
     LeCaR_obj_params_t LeCaR; // for LeCaR
+    Cacheus_obj_params_t Cacheus; // for Cacheus
+    SR_LRU_obj_params_t SR_LRU;
+    CR_LFU_obj_params_t CR_LFU;
     Hyperbolic_obj_metadata_t hyperbolic;
     Optimal_obj_metadata_t optimal; 
     FIFOMerge_obj_metadata_t FIFOMerge;

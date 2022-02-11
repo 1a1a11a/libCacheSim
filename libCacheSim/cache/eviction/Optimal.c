@@ -27,6 +27,7 @@ cache_t *Optimal_init(common_cache_params_t ccache_params,
   cache->check = Optimal_check;
   cache->insert = Optimal_insert;
   cache->evict = Optimal_evict;
+  cache->to_evict = Optimal_to_evict;
   cache->remove = Optimal_remove;
 
   Optimal_params_t *params = my_malloc(Optimal_params_t);
@@ -99,6 +100,12 @@ void Optimal_insert(cache_t *cache, request_t *req) {
 
   DEBUG_ASSERT(((pq_node_t *) cache_get_obj(cache, req)->optimal.pq_node)->pri.pri
                == req->next_access_vtime);
+}
+
+cache_obj_t *Optimal_to_evict(cache_t *cache) {
+  Optimal_params_t *params = cache->eviction_params;
+  pq_node_t *node = (pq_node_t *) pqueue_peek(params->pq);
+  return cache_get_obj_by_id(cache, node->obj_id);
 }
 
 void Optimal_evict(cache_t *cache, __attribute__((unused)) request_t *req,

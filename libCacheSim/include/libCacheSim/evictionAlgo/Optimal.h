@@ -29,6 +29,8 @@ void Optimal_insert(cache_t *Optimal, request_t *req);
 
 cache_ck_res_e Optimal_check(cache_t *cache, request_t *req, bool update_cache);
 
+cache_obj_t *Optimal_to_evict(cache_t *cache);
+
 void Optimal_evict(cache_t *Optimal,
                    __attribute__((unused)) request_t *req,
                    __attribute__((unused)) cache_obj_t *cache_obj);

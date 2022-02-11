@@ -54,6 +54,7 @@ cache_t *FIFOMerge_init(common_cache_params_t ccache_params, void *init_params) 
   cache->insert = FIFOMerge_insert;
   cache->evict = FIFOMerge_evict;
   cache->remove = FIFOMerge_remove;
+  cache->to_evict = FIFOMerge_to_evict;
 
   return cache;
 }
@@ -126,6 +127,10 @@ int cmp_list_node(const void *a0, const void *b0) {
     return 0; 
   }
 } 
+
+cache_obj_t *FIFOMerge_to_evict(cache_t *cache) {
+  ERROR("Undefined! Multiple objs will be evicted\n");
+}
 
 void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   assert(evicted_obj == NULL);

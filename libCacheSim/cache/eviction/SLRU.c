@@ -41,6 +41,7 @@ cache_t *SLRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->insert = SLRU_insert;
   cache->evict = SLRU_evict;
   cache->remove = SLRU_remove;
+  cache->to_evict = SLRU_to_evict;
 
   return cache;
 }
@@ -59,6 +60,10 @@ void SLRU_cool(cache_t *cache, request_t *req, int i) {
 
   cache_obj_t evicted_obj;
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->eviction_params);
+  request_t *req_local = NULL;
+  if (req_local == NULL) {
+    req_local = new_request();
+  }
   LRU_evict(SLRU_params->LRUs[i], req, &evicted_obj);
 
   if (i == 0)
@@ -68,8 +73,8 @@ void SLRU_cool(cache_t *cache, request_t *req, int i) {
   while (SLRU_params->LRUs[i - 1]->occupied_size + evicted_obj.obj_size + cache->per_obj_overhead > SLRU_params->LRUs[i - 1]->cache_size)
     SLRU_cool(cache, req, i - 1);
   
-  req->obj_id = evicted_obj.obj_id;
-  LRU_insert(SLRU_params->LRUs[i - 1], req);
+  copy_cache_obj_to_request(req_local, &evicted_obj);
+  LRU_insert(SLRU_params->LRUs[i - 1], req_local);
 }
 
 cache_ck_res_e SLRU_check(cache_t *cache, request_t *req, bool update_cache) {
@@ -141,6 +146,11 @@ void SLRU_insert(cache_t *cache, request_t *req) {
   }
 }
 
+cache_obj_t *SLRU_to_evict(cache_t *cache) {
+  SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->eviction_params);
+  return SLRU_params->LRUs[0]->to_evict(SLRU_params->LRUs[0]);
+}
+
 void SLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->eviction_params);
@@ -148,13 +158,21 @@ void SLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void SLRU_remove(cache_t *cache, obj_id_t obj_id) {
-  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
+  SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->eviction_params);
+  cache_obj_t *obj;
+  for (int i = 0; i < SLRU_params->n_seg; i++){
+
+    obj = cache_get_obj_by_id(SLRU_params->LRUs[i], obj_id);
+    if (obj){
+      remove_obj_from_list(&(SLRU_params->LRUs[i])->q_head, &(SLRU_params->LRUs[i])->q_tail, obj);
+      cache_remove_obj_base(SLRU_params->LRUs[i], obj);
+      return;
+    }
+  }
   if (obj == NULL) {
     WARN("obj (%"PRIu64 ") to remove is not in the cache\n", obj_id);
     return;
   }
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
-  cache_remove_obj_base(cache, obj);
 }
 
 

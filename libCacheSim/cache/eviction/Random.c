@@ -27,6 +27,7 @@ cache_t *Random_init(common_cache_params_t ccache_params,
   cache->get = Random_get;
   cache->check = Random_check;
   cache->insert = Random_insert;
+  cache->to_evict = Random_to_evict;
   cache->evict = Random_evict;
   cache->remove = Random_remove;
 
@@ -45,6 +46,10 @@ cache_ck_res_e Random_get(cache_t *cache, request_t *req) {
 
 void Random_insert(cache_t *cache, request_t *req) {
   cache_insert_base(cache, req);
+}
+
+cache_obj_t *Random_to_evict(cache_t *cache) {
+  return hashtable_rand_obj(cache->hashtable);
 }
 
 void Random_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {

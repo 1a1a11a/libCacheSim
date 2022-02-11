@@ -20,6 +20,7 @@ cache_t *Clock_init(common_cache_params_t ccache_params, void *init_params) {
   cache->insert = Clock_insert;
   cache->evict = Clock_evict;
   cache->remove = Clock_remove;
+  cache->to_evict = Clock_to_evict;
 
   cache->eviction_params = my_malloc(Clock_params_t);
   ((Clock_params_t *)(cache->eviction_params))->pointer = NULL;
@@ -45,6 +46,34 @@ cache_ck_res_e Clock_get(cache_t *cache, request_t *req) {
 void Clock_insert(cache_t *cache, request_t *req) {
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
   cache_obj->clock.visited = false;
+}
+
+cache_obj_t *Clock_to_evict(cache_t *cache) {
+
+  cache_obj_t evicted_obj;
+
+  Clock_params_t *params = cache->eviction_params;
+  cache_obj_t *moving_pointer = params->pointer;
+
+  /* if we have run one full around or first eviction */
+  if (moving_pointer == NULL)
+    moving_pointer = cache->q_head;
+
+  /* find the first untouched */
+  while (moving_pointer != NULL && moving_pointer->clock.visited) {
+    moving_pointer->clock.visited = false;
+    moving_pointer = moving_pointer->queue.next;
+  }
+
+  /* if we have finished one around, start from the head */
+  if (moving_pointer == NULL) {
+    moving_pointer = cache->q_head;
+    while (moving_pointer != NULL && moving_pointer->clock.visited) {
+      moving_pointer->clock.visited = false;
+      moving_pointer = moving_pointer->queue.next;
+    }
+  }
+  return moving_pointer;
 }
 
 void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

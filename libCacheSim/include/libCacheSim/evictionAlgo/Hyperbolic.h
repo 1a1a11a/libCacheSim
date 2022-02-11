@@ -23,6 +23,8 @@ cache_ck_res_e Hyperbolic_get(cache_t *cache, request_t *req);
 
 void Hyperbolic_insert(cache_t *Hyperbolic, request_t *req);
 
+cache_obj_t *Hyperbolic_to_evict(cache_t *cache);
+
 void Hyperbolic_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 void Hyperbolic_remove(cache_t *cache, obj_id_t obj_id);

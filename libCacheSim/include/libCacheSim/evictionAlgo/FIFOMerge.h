@@ -46,6 +46,8 @@ cache_ck_res_e FIFOMerge_get(cache_t *cache, request_t *req);
 
 void FIFOMerge_insert(cache_t *FIFOMerge, request_t *req);
 
+cache_obj_t *FIFOMerge_to_evict(cache_t *cache);
+
 void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 void FIFOMerge_remove(cache_t *cache, obj_id_t obj_id);

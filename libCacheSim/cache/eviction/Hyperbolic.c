@@ -22,6 +22,7 @@ cache_t *Hyperbolic_init(common_cache_params_t ccache_params,
   cache->insert = Hyperbolic_insert;
   cache->evict = Hyperbolic_evict;
   cache->remove = Hyperbolic_remove;
+  cache->to_evict = Hyperbolic_to_evict;
 
   Hyperbolic_params_t *params = my_malloc(Hyperbolic_params_t);
   cache->eviction_params = params;
@@ -88,6 +89,14 @@ void Hyperbolic_insert(cache_t *cache, request_t *req) {
   node->pri.pri = (double) req->obj_size;
   pqueue_insert(params->pq, (void *) node);
   cached_obj->hyperbolic.pq_node = node;
+}
+
+cache_obj_t *Hyperbolic_to_evict(cache_t *cache) {
+
+  Hyperbolic_params_t *params = cache->eviction_params;
+  pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);
+
+  return cache_get_obj_by_id(cache, node->obj_id);
 }
 
 void Hyperbolic_evict(cache_t *cache,

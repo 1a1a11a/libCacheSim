@@ -24,6 +24,7 @@ cache_t *ARC_init(common_cache_params_t ccache_params_, void *init_params_) {
   cache->insert = ARC_insert;
   cache->evict = ARC_evict;
   cache->remove = ARC_remove;
+  cache->to_evict = ARC_to_evict;
 
   cache->init_params = init_params_;
   ARC_init_params_t *init_params = (ARC_init_params_t *) init_params_;
@@ -72,7 +73,7 @@ void _verify(cache_t *cache, request_t *req) {
 }
 
 cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
-  static __thread request_t *req_local = NULL;
+  request_t *req_local = NULL;
   if (req_local == NULL)
     req_local = new_request();
 
@@ -139,9 +140,25 @@ void ARC_insert(cache_t *cache, request_t *req) {
 
 }
 
+cache_obj_t *ARC_to_evict(cache_t *cache) {
+
+  cache_obj_t obj;
+
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache_t *cache_evict;
+
+  if ((params->evict_lru == 1 || params->LRU2->n_obj == 0) &&
+        params->LRU1->n_obj != 0) {
+    cache_evict = params->LRU1;
+  } else {
+    cache_evict = params->LRU2;
+  }
+  return cache_evict->to_evict(cache_evict);
+}
+
 void ARC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache_obj_t obj;
-  static __thread request_t *req_local = NULL;
+  request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }

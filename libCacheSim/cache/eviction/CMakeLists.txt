@@ -9,7 +9,8 @@ set(sourceC
         Clock.c
         LRU.c
         SLRU.c
-
+        CR_LFU.c
+        SR_LRU.c
         Optimal.c
         OptimalSize.c
         Hyperbolic.c

@@ -28,7 +28,7 @@ cache_t *FIFO_init(common_cache_params_t ccache_params, void *init_params) {
   cache->insert = FIFO_insert;
   cache->evict = FIFO_evict;
   cache->remove = FIFO_remove;
-
+  cache->to_evict = FIFO_to_evict;
   return cache;
 }
 
@@ -44,6 +44,10 @@ cache_ck_res_e FIFO_get(cache_t *cache, request_t *req) {
 
 void FIFO_insert(cache_t *cache, request_t *req) {
   cache_insert_LRU(cache, req);
+}
+
+cache_obj_t *FIFO_to_evict(cache_t *cache) {
+  return cache->to_evict(cache);
 }
 
 void FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

@@ -14,10 +14,12 @@
 // #include "evictionAlgo/MClock.h"
 
 #include "evictionAlgo/LFU.h"
+#include "evictionAlgo/CR_LFU.h"
 #include "evictionAlgo/GDSF.h"
 
 #include "evictionAlgo/LHD.h"
 #include "evictionAlgo/SLRU.h"
+#include "evictionAlgo/SR_LRU.h"
 #include "evictionAlgo/Hyperbolic.h"
 #include "evictionAlgo/LeCaR.h"
 #include "evictionAlgo/Cacheus.h"

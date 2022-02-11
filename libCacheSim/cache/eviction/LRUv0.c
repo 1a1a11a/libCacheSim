@@ -29,6 +29,7 @@ cache_t *LRUv0_init(common_cache_params_t ccache_params,
   cache->insert = LRUv0_insert;
   cache->evict = LRUv0_evict;
   cache->remove = LRUv0_remove;
+  cache->to_evict = LRUv0_to_evict;
 
   cache->eviction_params = g_new0(LRUv0_params_t, 1);
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
@@ -104,6 +105,11 @@ cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, request_t *req) {
                                               GSIZE_TO_POINTER(req->obj_id));
   cache_obj_t *cache_obj = node->data;
   return cache_obj;
+}
+
+cache_obj_t *LRUv0_to_evict(cache_t *cache) {
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
+  return (cache_obj_t *) g_queue_peek_head(LRUv0_params->list);
 }
 
 void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

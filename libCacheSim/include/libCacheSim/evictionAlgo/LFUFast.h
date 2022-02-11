@@ -47,6 +47,8 @@ void LFUFast_remove(cache_t *cache, obj_id_t obj_id);
 
 void LFUFast_insert(cache_t *LFUFast, request_t *req);
 
+cache_obj_t *FLUFast_to_evict(cache_t *cache);
+
 void LFUFast_evict(cache_t *LFUFast, request_t *req, cache_obj_t *cache_obj);
 
 

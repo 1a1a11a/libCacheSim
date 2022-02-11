@@ -23,6 +23,7 @@ cache_t *MRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->check = MRU_check;
   cache->insert = MRU_insert;
   cache->evict = MRU_evict;
+  cache->to_evict = MRU_to_evict;
   cache->remove = MRU_remove;
 
   return cache;
@@ -43,6 +44,10 @@ cache_ck_res_e MRU_check(cache_t *cache, request_t *req, bool update_cache) {
     move_obj_to_tail(&cache->q_head, &cache->q_tail, cache_obj);
   }
   return ret;
+}
+
+cache_obj_t *MRU_to_evict(cache_t *cache) {
+  return cache->q_tail;
 }
 
 void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {

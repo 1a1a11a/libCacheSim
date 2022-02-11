@@ -19,6 +19,8 @@ void MRU_insert(cache_t *cache, request_t *req);
 
 cache_ck_res_e MRU_check(cache_t *cache, request_t *req, bool update_cache);
 
+cache_obj_t *MRU_to_evict(cache_t *cache);
+
 void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj);
 
 cache_ck_res_e MRU_get(cache_t *cache, request_t *req);

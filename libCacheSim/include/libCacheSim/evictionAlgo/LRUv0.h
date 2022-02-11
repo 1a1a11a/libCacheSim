@@ -32,6 +32,8 @@ cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req);
 
 void LRUv0_insert(cache_t *LRUv0, request_t *req);
 
+cache_obj_t *LRUv0_to_evict(cache_t *cache);
+
 void LRUv0_evict(cache_t *LRUv0, request_t *req, cache_obj_t* cache_obj);
 
 void LRUv0_remove(cache_t *cache, obj_id_t obj_id);

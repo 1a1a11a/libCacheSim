@@ -33,6 +33,8 @@ cache_ck_res_e LeCaR_get(cache_t *cache, request_t *req);
 
 void LeCaR_insert(cache_t *LeCaR, request_t *req);
 
+cache_obj_t *LeCaR_to_evict(cache_t *cache);
+
 void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 void LeCaR_remove(cache_t *cache, obj_id_t obj_id);

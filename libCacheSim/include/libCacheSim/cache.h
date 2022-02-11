@@ -53,6 +53,8 @@ typedef void (*cache_insert_func_ptr)(cache_t *, request_t *);
 
 typedef void (*cache_evict_func_ptr)(cache_t *, request_t *, cache_obj_t *);
 
+typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
+
 typedef void (*cache_remove_func_ptr)(cache_t *, obj_id_t);
 
 typedef bool (*cache_admission_func_ptr)(cache_t *, request_t*);
@@ -98,6 +100,7 @@ struct cache {
   cache_admission_func_ptr admit;
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
+  cache_to_evict_func_ptr to_evict;
 
   int64_t n_req;  /* number of requests (used by some eviction algo) */
   uint64_t n_obj;
