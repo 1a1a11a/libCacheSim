@@ -44,7 +44,7 @@ int evict_one_seg(cache_t *cache, segment_t *seg) {
   return n_cleaned;
 }
 
-segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
+segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   L2Cache_params_t *params = cache->eviction_params;
 
   /* allocate a new segment */
@@ -67,15 +67,15 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_idx) {
   new_seg->train_utility = 0; // to avoid it being picked for eviction
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
-  new_seg->bucket_idx = bucket_idx;
+  new_seg->bucket_id = bucket_id;
 
   return new_seg;
 }
 
 void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment_t *old_seg,
                              segment_t *new_seg) {
-  DEBUG_ASSERT(new_seg->bucket_idx == bucket->bucket_idx);
-  DEBUG_ASSERT(old_seg->next_seg->bucket_idx == bucket->bucket_idx);
+  DEBUG_ASSERT(new_seg->bucket_id == bucket->bucket_id);
+  DEBUG_ASSERT(old_seg->next_seg->bucket_id == bucket->bucket_id);
 
   if (old_seg->prev_seg == NULL) {
     DEBUG_ASSERT(bucket->first_seg == old_seg);

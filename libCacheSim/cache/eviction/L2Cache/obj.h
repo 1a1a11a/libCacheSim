@@ -22,7 +22,7 @@ static inline int64_t object_age(L2Cache_params_t *params, cache_obj_t *obj) {
 }
 
 static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *obj) {
-  bucket_t *bkt = &params->buckets[((segment_t *) (obj->L2Cache.segment))->bucket_idx];
+  bucket_t *bkt = &params->buckets[((segment_t *) (obj->L2Cache.segment))->bucket_id];
   int64_t obj_age =
       (params->curr_rtime - obj->L2Cache.last_access_rtime) >> bkt->hit_prob->age_shift;
   if (obj_age >= HIT_PROB_MAX_AGE) {
@@ -38,7 +38,7 @@ static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, reques
   obj->L2Cache.freq += 1;
 
   segment_t *seg = obj->L2Cache.segment;
-  bucket_t *bkt = &params->buckets[seg->bucket_idx];
+  bucket_t *bkt = &params->buckets[seg->bucket_id];
 
   int64_t obj_age = object_age_shifted(params, obj);
   bkt->hit_prob->n_hit[obj_age] += 1;
@@ -47,7 +47,7 @@ static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, reques
 static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = obj->L2Cache.segment;
-  bucket_t *bkt = &params->buckets[seg->bucket_idx];
+  bucket_t *bkt = &params->buckets[seg->bucket_id];
 
 #ifdef TRACK_EVICTION_AGE
   record_eviction_age(cache, (int) (params->curr_rtime - obj->last_access_rtime));
@@ -63,7 +63,7 @@ static inline double cal_object_score(L2Cache_params_t *params, obj_score_type_e
                                       cache_obj_t *cache_obj, int curr_rtime,
                                       int64_t curr_vtime) {
   segment_t *seg = cache_obj->L2Cache.segment;
-  bucket_t *bkt = &params->buckets[seg->bucket_idx];
+  bucket_t *bkt = &params->buckets[seg->bucket_id];
 
   if (score_type == OBJ_SCORE_FREQ) {
     return (double) cache_obj->L2Cache.freq;

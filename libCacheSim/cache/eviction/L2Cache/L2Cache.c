@@ -223,7 +223,7 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
       seg->miss_ratio = params->cache_state.miss_ratio;
     }
 
-    seg = allocate_new_seg(cache, bucket->bucket_idx);
+    seg = allocate_new_seg(cache, bucket->bucket_id);
     append_seg_to_bucket(params, bucket, seg);
   }
 
@@ -249,7 +249,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     // this can happen when space is fragmented between buckets and we cannot merge
     // and we evict segs[0] and return
     segment_t *seg = params->obj_sel.segs_to_evict[0];
-    bucket = &params->buckets[seg->bucket_idx];
+    bucket = &params->buckets[seg->bucket_id];
 
     static int64_t last_print_time = 0;
     if (params->curr_rtime - last_print_time > 3600) {

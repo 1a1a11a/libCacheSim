@@ -90,7 +90,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   // debug
   //  x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = x[6] = x[7] = x[8] = x[9] = x[10] = x[11] = 0;
 
-  x[0] = (feature_t) curr_seg->bucket_idx;
+  x[0] = (feature_t) curr_seg->bucket_id;
   x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
   x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
   if (is_training_data) {

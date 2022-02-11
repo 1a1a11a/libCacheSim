@@ -13,7 +13,7 @@ static inline void _debug_check_bucket_segs(bucket_t *bkt) {
   while (curr_seg) {
     n_segs += 1;
     assert(curr_seg->prev_seg == prev_seg);
-    assert(curr_seg->bucket_idx == bkt->bucket_idx);
+    assert(curr_seg->bucket_id == bkt->bucket_id);
     prev_seg = curr_seg;
     curr_seg = curr_seg->next_seg;
   }

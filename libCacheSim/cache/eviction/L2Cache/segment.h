@@ -23,7 +23,7 @@ static inline bool is_seg_evictable(segment_t *seg, int min_evictable, bool cons
   return n_evictable >= min_evictable;
 }
 
-segment_t *allocate_new_seg(cache_t *cache, int bucket_idx);
+segment_t *allocate_new_seg(cache_t *cache, int bucket_id);
 
 void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment_t *old_seg,
                              segment_t *new_seg);

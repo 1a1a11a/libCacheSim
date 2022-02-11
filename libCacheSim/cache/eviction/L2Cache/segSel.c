@@ -60,7 +60,7 @@ static void check_ranked_segs_per_bucket(cache_t *cache) {
     while (seg != NULL) {
       n_segs += 1;
       DEBUG_ASSERT(seg->magic == MAGIC);
-      DEBUG_ASSERT(seg->bucket_idx == bi);
+      DEBUG_ASSERT(seg->bucket_id == bi);
       last_seg = seg;
       seg = seg->next_ranked_seg;
 
@@ -107,7 +107,7 @@ void rank_segs(cache_t *cache) {
 
       j += 1; 
       if (!is_seg_evictable(curr_seg, 1, true)
-          || params->buckets[curr_seg->bucket_idx].n_segs < params->n_merge + 1) {
+          || params->buckets[curr_seg->bucket_id].n_segs < params->n_merge + 1) {
         curr_seg->pred_utility += INT32_MAX / 2;
       }
 
@@ -133,7 +133,7 @@ void rank_segs(cache_t *cache) {
   for (int i = 0; i < params->n_segs; i++) {
     ranked_segs[i]->rank = i;
 
-    bucket_t *bkt = &(params->buckets[ranked_segs[i]->bucket_idx]);
+    bucket_t *bkt = &(params->buckets[ranked_segs[i]->bucket_id]);
     if (bkt->ranked_seg_head == NULL) {
       bkt->ranked_seg_head = ranked_segs[i];
       bkt->ranked_seg_tail = ranked_segs[i];
@@ -151,10 +151,10 @@ void rank_segs(cache_t *cache) {
  * this is used when we do not require the merged segments to be consecutive 
  */
 static inline int find_next_qualified_seg(segment_t **ranked_segs, int start_pos, int end_pos,
-                                          int bucket_idx) {
+                                          int bucket_id) {
   for (int i = start_pos; i < end_pos; i++) {
     if (ranked_segs[i] != NULL) {
-      if (bucket_idx == -1 || ranked_segs[i]->bucket_idx == bucket_idx) {
+      if (bucket_id == -1 || ranked_segs[i]->bucket_id == bucket_id) {
         if (ranked_segs[i]->next_seg != NULL) {
           return i;
         }
@@ -196,7 +196,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   }
 
   for (int i = 0; i < params->n_merge; i++) {
-    DEBUG_ASSERT(seg_to_evict->bucket_idx == bucket->bucket_idx);
+    DEBUG_ASSERT(seg_to_evict->bucket_id == bucket->bucket_id);
     segs[i] = seg_to_evict;
     seg_to_evict = seg_to_evict->next_seg;
   }
@@ -300,7 +300,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     if (*ranked_seg_pos_p > ss->n_ranked_segs * 0.8) {
       // let's evict one seg rather than merging multiple
       segs[0] = seg_to_evict_first;
-      bucket_t *bkt = &params->buckets[segs[0]->bucket_idx];
+      bucket_t *bkt = &params->buckets[segs[0]->bucket_id];
       // this does not hold, because it is possible that bkt->ranked_seg_head was not evictable earlier due to
       // not enough segments, but now become evictable after new segments are inserted
       // DEBUG_ASSERT(bkt->ranked_seg_head == segs[0]);
@@ -328,13 +328,13 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     }
 
     DEBUG_ASSERT(segs[i]->next_seg != NULL);
-    DEBUG_ASSERT(segs[i]->bucket_idx == segs[i - 1]->bucket_idx);
+    DEBUG_ASSERT(segs[i]->bucket_id == segs[i - 1]->bucket_id);
 
     DEBUG_ASSERT(params->merge_consecutive_segs || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
     ranked_segs[segs[i]->rank] = NULL;
   }
 
-  bucket_t *bkt = &params->buckets[segs[0]->bucket_idx];
+  bucket_t *bkt = &params->buckets[segs[0]->bucket_id];
   bkt->ranked_seg_head = segs[params->n_merge - 1]->next_ranked_seg;
   if (segs[params->n_merge - 1]->next_ranked_seg == NULL) bkt->ranked_seg_tail = NULL;
 

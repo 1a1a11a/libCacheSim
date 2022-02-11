@@ -33,10 +33,10 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
 void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  DEBUG_ASSERT(bucket->bucket_idx == segs[0]->bucket_idx);
-  DEBUG_ASSERT(bucket->bucket_idx == segs[1]->bucket_idx);
+  DEBUG_ASSERT(bucket->bucket_id == segs[0]->bucket_id);
+  DEBUG_ASSERT(bucket->bucket_id == segs[1]->bucket_id);
 
-  segment_t *new_seg = allocate_new_seg(cache, bucket->bucket_idx);
+  segment_t *new_seg = allocate_new_seg(cache, bucket->bucket_id);
   //  new_seg->create_rtime = segs[0]->create_rtime;
   //  new_seg->create_vtime = segs[0]->create_vtime;
 

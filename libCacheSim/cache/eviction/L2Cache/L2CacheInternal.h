@@ -97,7 +97,7 @@ typedef struct segment {
   cache_obj_t *objs;
   
   int32_t seg_id;
-  int32_t bucket_idx;
+  int32_t bucket_id;
   // used to connect segments in the same bucket in create order
   struct segment *prev_seg;   
   struct segment *next_seg;
@@ -148,7 +148,7 @@ typedef struct {
   segment_t *ranked_seg_tail; 
 
   int32_t n_segs;
-  int16_t bucket_idx;
+  int16_t bucket_id;
   segment_t *next_seg_to_evict;
   hitProb_t *hit_prob;// TODO: move to LHD
 } bucket_t;
