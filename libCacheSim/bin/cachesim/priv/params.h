@@ -26,10 +26,6 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->train_source_y = TRAIN_Y_FROM_ORACLE; 
 
   args->age_shift = 0;
-  args->min_start_train_seg = 1000;
-  args->max_start_train_seg = 10000;
-  args->n_train_seg_growth = 1000;
-  args->sample_every_n_seg_for_training = 1;
   args->retrain_intvl = 86400 * 2;
 
   args->L2Cache_type = LOGCACHE_LEARNED;

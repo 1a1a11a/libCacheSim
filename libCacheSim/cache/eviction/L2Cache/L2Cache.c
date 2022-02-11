@@ -39,10 +39,6 @@ void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->bucket_type = SIZE_BUCKET;
   init_params->retrain_intvl = 86400 * 2;
   init_params->hit_density_age_shift = 3; 
-  init_params->sample_every_n_seg_for_training = 2;
-  init_params->min_start_train_seg = 1000;
-  init_params->max_start_train_seg = 8192;
-  init_params->n_train_seg_growth = 1;
 }
 
 cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
@@ -251,8 +247,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   bucket_t *bucket = select_segs_to_evict(cache, params->obj_sel.segs_to_evict);
   if (bucket == NULL) {
     // this can happen when space is fragmented between buckets and we cannot merge
-    // evict segs[0] and return
-
+    // and we evict segs[0] and return
     segment_t *seg = params->obj_sel.segs_to_evict[0];
     bucket = &params->buckets[seg->bucket_idx];
 

@@ -80,10 +80,6 @@ typedef struct {
 
   int retrain_intvl;
 
-  int min_start_train_seg;
-  int max_start_train_seg;
-  int n_train_seg_growth;
-  int sample_every_n_seg_for_training;
   int hit_density_age_shift;
   L2Cache_type_e type;
   obj_score_type_e obj_score_type;

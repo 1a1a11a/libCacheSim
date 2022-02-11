@@ -117,12 +117,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 
                                          .hit_density_age_shift = args.age_shift,
                                          .bucket_type = args.bucket_type,
-                                         .min_start_train_seg = args.min_start_train_seg,
-                                         .max_start_train_seg = args.max_start_train_seg,
-                                         .n_train_seg_growth = args.n_train_seg_growth,
-                                         .retrain_intvl = args.retrain_intvl,
-                                         .sample_every_n_seg_for_training =
-                                             args.sample_every_n_seg_for_training};
+                                         .retrain_intvl = args.retrain_intvl}; 
     cache = L2Cache_init(cc_params, &init_params);
 #endif
   } else {
