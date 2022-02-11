@@ -321,9 +321,9 @@ static void prepare_training_data(cache_t *cache) {
   learner->n_valid_samples = pos_in_valid_data;
 #endif
 
-  DEBUG("%.2lf hour, %d segs, %d zero samples, train:valid %d/%d\n", 
-    (double) params->curr_rtime/3600.0, params->n_segs, 
-    n_zero_samples, pos_in_train_data, pos_in_valid_data); 
+  // DEBUG("%.2lf hour, %d segs, %d zero samples, train:valid %d/%d\n", 
+  //   (double) params->curr_rtime/3600.0, params->n_segs, 
+  //   n_zero_samples, pos_in_train_data, pos_in_valid_data); 
   prepare_training_data_per_package(cache);
 
 #ifdef DUMP_TRAINING_DATA
@@ -427,7 +427,7 @@ static void train_xgboost(cache_t *cache) {
   safe_call(XGBoosterBoostedRounds(learner->booster, &learner->n_trees));
 #endif
 
-  INFO("%.2lf hour, vtime %ld, train/valid %d/%d samples, "
+  DEBUG("%.2lf hour, vtime %ld, train/valid %d/%d samples, "
        "%d trees, "
        "rank intvl %.4lf\n",
       //  (unsigned long) cache->cache_size / 1024 / 1024, 

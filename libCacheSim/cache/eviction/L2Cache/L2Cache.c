@@ -254,7 +254,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     static int64_t last_print_time = 0;
     if (params->curr_rtime - last_print_time > 3600 * 6) {
       last_print_time = params->curr_rtime;
-      DEBUG("%.2lf hour, cache size %lu MB, %d segs, evicting and cannot merge\n",
+      WARN("%.2lf hour, cache size %lu MB, %d segs, evicting and cannot merge\n",
             (double) params->curr_rtime / 3600.0, cache->cache_size / 1024 / 1024,
             params->n_segs);
     }

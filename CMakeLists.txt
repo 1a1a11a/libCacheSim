@@ -28,7 +28,11 @@ endif ()
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
-endif ()
+    set(LOG_LEVEL info)
+elseif (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    # log level: verbose, debug, info, warning, severe
+    set(LOG_LEVEL debug)
+endif()
 
 
 ########################################
@@ -43,11 +47,6 @@ option(SUPPORT_TRACE_SAMPLING "whether support trace sampling" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
-
-if (NOT LOG_LEVEL)
-    # log level: verbost, debug, info, warning, severe
-    set(LOG_LEVEL debug)
-endif()
 
 if (SUPPORT_TTL)
     add_compile_definitions(SUPPORT_TTL=1)
