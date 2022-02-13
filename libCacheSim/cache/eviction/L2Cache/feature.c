@@ -65,6 +65,7 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
  *    bucket_id: the bucket id of the segment
  *    create_hour: the hour when the segment is created
  *    create_min: the min when the segment is created
+ *    age: the age of the segment
  *    req_rate: the request rate of the segment when it was created
  *    write_rate: the write rate of the segment when it was created
  *    mean_obj_size 
@@ -122,6 +123,10 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     //   printf("train: ");
     // else
     //   printf("test:  ");
+
+    // printf("%.0f/%.0f/%.0f/%.0f | %.0f, %.0f, %.0f, %.4f | %.0f/%.0f/%.0f, %.0f|%.0f|%.0f\n", 
+    //   x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[9], x[10], x[11], x[12], x[20], x[28] 
+    // ); 
 
     // for (int j = 0; j < 36; j++) {
     //   printf("%.2f, ", x[j]); 

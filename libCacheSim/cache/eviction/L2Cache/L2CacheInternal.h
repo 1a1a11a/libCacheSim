@@ -30,19 +30,6 @@ typedef struct learner {
   int64_t last_train_rtime;
   int retrain_intvl;
 
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  int sample_every_n_seg_for_training;
-  int n_segs_to_start_training;
-  int64_t n_bytes_start_collect_train; /* after evicting n_bytes_start_collect_train bytes,
-                                           * start collecting training data */
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  // int64_t last_snapshot_rtime;
-  // int32_t n_max_training_segs;
-  // int n_snapshot;
-#else
-#error
-#endif
-
 #ifdef USE_XGBOOST
   BoosterHandle booster; // model
   DMatrixHandle train_dm;// training data
@@ -125,11 +112,7 @@ typedef struct segment {
   double miss_ratio;
 
   /* training related */
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  bool is_training_seg;   // whether this segment is used for training, training seg is ghost seg 
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  bool in_training_data;  // whether this segment has been chosen to be training data
-#endif 
+  bool selected_for_training;  // whether this segment has been chosen to be training data
   int64_t become_train_seg_vtime;
   int64_t become_train_seg_rtime;
   unsigned int training_data_row_idx;

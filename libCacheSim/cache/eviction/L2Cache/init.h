@@ -48,24 +48,14 @@ void init_learner(cache_t *cache) {
   l->n_train = -1;
   l->n_inference = 0;
 
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  l->n_segs_to_start_training = 1024 * 8;
-  l->n_bytes_start_collect_train = cache->cache_size / 1;
 
-  if (l->sample_every_n_seg_for_training <= 0) 
-    l->sample_every_n_seg_for_training = 1;
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
   l->train_matrix_n_row = 1024 * 8;
-
   l->train_x = my_malloc_n(feature_t, l->train_matrix_n_row * l->n_feature);
   l->train_y = my_malloc_n(pred_t, l->train_matrix_n_row);
-
   l->valid_matrix_n_row = l->train_matrix_n_row / 10;
   l->valid_x = my_malloc_n(feature_t, l->valid_matrix_n_row * l->n_feature);
   l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_n_row);
-#else 
-#error "TRAINING_DATA_SOURCE not defined"
-#endif
+
 
   l->retrain_intvl = init_params->retrain_intvl;
   if (l->retrain_intvl <= 0) l->retrain_intvl = 86400;

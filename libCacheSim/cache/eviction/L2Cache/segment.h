@@ -38,8 +38,6 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level);
 
 int clean_one_seg(cache_t *cache, segment_t *seg);
 
-int evict_one_seg(cache_t *cache, segment_t *seg); 
-
 int count_n_obj_reuse(cache_t *cache, segment_t *seg);
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level);

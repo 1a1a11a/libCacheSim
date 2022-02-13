@@ -6,63 +6,6 @@
 #include "learnInternal.h"
 #include "utils.h"
 
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-/** @brief copy a segment to training data matrix
- *
- * @param cache
- * @param seg
- */
-static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
-  L2Cache_params_t *params = cache->eviction_params;
-  learner_t *l = &params->learner;
-
-  if (l->n_train_samples >= l->train_matrix_n_row) return;
-
-  unsigned int row_idx = l->n_train_samples++;
-
-  seg->in_training_data = true;
-  seg->training_data_row_idx = row_idx;
-  seg->become_train_seg_rtime = params->curr_rtime;
-  seg->become_train_seg_vtime = params->curr_vtime;
-  seg->train_utility = 0;
-
-  prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);
-}
-
-/** @brief sample some segments and copy their features to training data matrix 
- *
- * @param cache
- * @param seg
- */
-void snapshot_segs_to_training_data(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-  learner_t *l = &params->learner;
-  segment_t *curr_seg = NULL;
-
-  double sample_ratio = MAX((double) params->n_segs / (double) l->train_matrix_n_row, 1.0);
-
-  double credit = 0;// when credit reaches sample ratio, we sample a segment
-  for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-    curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_segs - 1; si++) {
-      DEBUG_ASSERT(curr_seg != NULL);
-      credit += 1;
-      if (credit >= sample_ratio) {
-        credit -= sample_ratio;
-        copy_seg_to_train_matrix(cache, curr_seg);
-      } else {
-        curr_seg->in_training_data = false;
-      }
-
-      curr_seg = curr_seg->next_seg;
-    }
-  }
-  DEBUG("%.2lf hour cache size %.2lf MB snapshot %d/%d train sample\n", 
-       (double) params->curr_rtime / 3600.0, cache->cache_size / 1024.0 / 1024.0, 
-       l->n_train_samples, l->train_matrix_n_row);
-}
-#endif
-
 // validation on training data
 static void train_eval(const int iter, const double *pred, const float *true_y, int n_elem) {
   int pred_selected = find_argmin_double(pred, n_elem);

@@ -14,10 +14,10 @@
 /* the number of time windows we keep in features */
 #define N_FEATURE_TIME_WINDOW 8
 
-/* where the training data (X) is generated from */
-#define TRAINING_X_FROM_EVICTION 1
-#define TRAINING_X_FROM_CACHE 2
-#define TRAINING_DATA_SOURCE TRAINING_X_FROM_CACHE
+// /* where the training data (X) is generated from */
+// #define TRAINING_X_FROM_EVICTION 1
+// #define TRAINING_X_FROM_CACHE 2
+// #define TRAINING_DATA_SOURCE TRAINING_X_FROM_CACHE
 
 /* where the training data (Y) is generated from */
 #define TRAINING_CONSIDER_RETAIN 1
@@ -25,9 +25,7 @@
 /* training objective, regression or ranking */
 #define REG 1
 #define LTR 2
-#define OBJECTIVE LTR
-
-//#define TRAIN_ONCE
+#define OBJECTIVE REG
 
 /*********** exp *************/
 //#define dump_ranked_seg_frac 0.05

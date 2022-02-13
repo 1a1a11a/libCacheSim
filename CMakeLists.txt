@@ -32,6 +32,8 @@ if (NOT CMAKE_BUILD_TYPE)
 elseif (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     # log level: verbose, debug, info, warning, severe
     set(LOG_LEVEL debug)
+else()
+    set(LOG_LEVEL debug)
 endif()
 
 

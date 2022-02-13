@@ -9,16 +9,15 @@
 #include "segment.h"
 #include "utils.h"
 
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
 void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segment) {
   static __thread int n = 0, n_zero = 0;
   L2Cache_params_t *params = cache->eviction_params;
-  segment->is_training_seg = true;
+  segment->selected_for_training = true;
   /* used to calculate the eviction penalty */
   segment->become_train_seg_vtime = params->curr_vtime;
   /* used to calculate age at eviction for training */
   segment->become_train_seg_rtime = params->curr_rtime;
-  segment->penalty = 0;
+  segment->train_utility = 0;
 
   /* remove from the bucket */
   remove_seg_from_bucket(params, bucket, segment);
@@ -84,26 +83,75 @@ static void create_data_holder(cache_t *cache) {
     learner->valid_matrix_n_row = N_MAX_VALIDATION;
   }
 }
-#endif
+
+/** @brief copy a segment to training data matrix
+ *
+ * @param cache
+ * @param seg
+ */
+static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
+  L2Cache_params_t *params = cache->eviction_params;
+  learner_t *l = &params->learner;
+
+  if (l->n_train_samples >= l->train_matrix_n_row) return;
+
+  unsigned int row_idx = l->n_train_samples++;
+
+  seg->selected_for_training = true;
+  seg->training_data_row_idx = row_idx;
+  seg->become_train_seg_rtime = params->curr_rtime;
+  seg->become_train_seg_vtime = params->curr_vtime;
+  seg->train_utility = 0;
+
+  // TODO: do we need this? 
+  prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);
+}
+
+/** @brief sample some segments and copy their features to training data matrix 
+ *
+ * @param cache
+ * @param seg
+ */
+void snapshot_segs_to_training_data(cache_t *cache) {
+  L2Cache_params_t *params = cache->eviction_params;
+  learner_t *l = &params->learner;
+  segment_t *curr_seg = NULL;
+
+  double sample_ratio = MAX((double) params->n_segs / (double) l->train_matrix_n_row, 1.0);
+
+  double credit = 0;// when credit reaches sample ratio, we sample a segment
+  for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
+    curr_seg = params->buckets[bi].first_seg;
+    for (int si = 0; si < params->buckets[bi].n_segs - 1; si++) {
+      DEBUG_ASSERT(curr_seg != NULL);
+      credit += 1;
+      if (credit >= sample_ratio) {
+        curr_seg->selected_for_training = true;
+        credit -= sample_ratio;
+
+        copy_seg_to_train_matrix(cache, curr_seg);
+      } else {
+        curr_seg->selected_for_training = false;
+        curr_seg->train_utility = 0; // reset utility
+      }
+
+      curr_seg = curr_seg->next_seg;
+    }
+  }
+  DEBUG("%.2lf hour cache size %.2lf MB snapshot %d/%d train sample\n", 
+       (double) params->curr_rtime / 3600.0, cache->cache_size / 1024.0 / 1024.0, 
+       l->n_train_samples, l->train_matrix_n_row);
+}
+
+
 
 /* used when the training y is calculated online */
 void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->L2Cache.segment;
 
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  /* if training data is generated from eviction, then update_train_y should 
-     * be called only for evicted objects */
-  DEBUG_ASSERT(cache_obj->L2Cache.in_cache == 0);
-  DEBUG_ASSERT(seg->is_training_seg == true);
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  /* if training data is generated from snapshot, then update_train_y should 
-     * be called only for objects that are in the snapshot */
-  if (!seg->in_training_data) {
+  if (!seg->selected_for_training) {
     return;
   }
-#else
-#error "invalid TRAINING_DATA_SOURCE"
-#endif
 
 #if TRAINING_CONSIDER_RETAIN == 1
   if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)
@@ -183,68 +231,6 @@ static void prepare_training_data(cache_t *cache) {
   int i;
 
   int n_zero_samples = 0, n_zero_samples_use = 0;
-
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  // create_data_holder(cache);
-  if (learner->train_matrix_n_row < params->n_training_segs) {
-    resize_matrix(params, &learner->train_x, &learner->train_y, &learner->train_matrix_n_row,
-                  params->n_training_segs * 2);
-  }
-
-  if (learner->valid_matrix_n_row < params->n_training_segs) {
-    resize_matrix(params, &learner->valid_x, &learner->valid_y, &learner->valid_matrix_n_row,
-                  params->n_training_segs * 2);
-  }
-
-  // feature_t *train_x = learner->train_x;
-  // train_y_t *train_y = learner->train_y;
-  // feature_t *valid_x = learner->valid_x;
-  // train_y_t *valid_y = learner->valid_y;
-
-  learner->n_train_samples = learner->n_valid_samples = 0;
-  segment_t *curr_seg = params->train_bucket.first_seg;
-
-  // not all training data is useful
-  // because for some of them we do not have good enough y to learn
-  bool is_sample_useful;
-  for (i = 0; i < params->n_training_segs / 2; i++) {
-    DEBUG_ASSERT(curr_seg != NULL);
-
-    if (learner->n_valid_samples < N_MAX_VALIDATION && next_rand() % 10 <= 0) {
-      is_sample_useful = prepare_one_row(
-          cache, curr_seg, true, &valid_x[learner->n_feature * learner->n_valid_samples],
-          &valid_y[learner->n_valid_samples]);
-
-      if (is_sample_useful) {
-        learner->n_valid_samples += 1;
-      } else {
-        if (n_zero_samples != 0 && next_rand() % n_zero_samples <= 1) {
-          learner->n_valid_samples += 1;
-          n_zero_samples_use += 1;
-        }
-        n_zero_samples += 1;
-      }
-    } else {
-      is_sample_useful = prepare_one_row(
-          cache, curr_seg, true, &train_x[learner->n_feature * learner->n_train_samples],
-          &train_y[learner->n_train_samples]);
-
-      if (is_sample_useful) {
-        learner->n_train_samples += 1;
-      } else {
-        /* do not want too much zero */
-        if (n_zero_samples != 0 && next_rand() % n_zero_samples <= 1) {
-          learner->n_train_samples += 1;
-          n_zero_samples_use += 1;
-        }
-        n_zero_samples += 1;
-      }
-    }
-    curr_seg = curr_seg->next_seg;
-  }
-
-  clean_training_segs(cache, params->n_training_segs / 2);
-#else
   int pos_in_train_data = 0, pos_in_valid_data = 0;
   int copy_direction; /* 0: train, 1: validation */
   int n_feature = learner->n_feature;
@@ -319,7 +305,6 @@ static void prepare_training_data(cache_t *cache) {
   }
   learner->n_train_samples = pos_in_train_data;
   learner->n_valid_samples = pos_in_valid_data;
-#endif
 
   // DEBUG("%.2lf hour, %d segs, %d zero samples, train:valid %d/%d\n", 
   //   (double) params->curr_rtime/3600.0, params->n_segs, 
@@ -397,12 +382,6 @@ static void train_xgboost(cache_t *cache) {
 #if OBJECTIVE == REG
     char *train_pos = strstr(eval_result, "train-rmse:") + 11;
     char *valid_pos = strstr(eval_result, "valid-rmse") + 11;
-#elif OBJECTIVE == LTR
-    char *train_pos = strstr(eval_result, "train-map") + 10;
-    char *valid_pos = strstr(eval_result, "valid-map") + 10;
-#else
-#error
-#endif
     train_loss = strtof(train_pos, NULL);
     valid_loss = strtof(valid_pos, NULL);
 
@@ -421,6 +400,13 @@ static void train_xgboost(cache_t *cache) {
       n_stable_iter = 0;
     }
     last_valid_loss = valid_loss;
+#elif OBJECTIVE == LTR
+    char *train_pos = strstr(eval_result, "train-map") + 10;
+    char *valid_pos = strstr(eval_result, "valid-map") + 10;
+    // DEBUG("%s\n", eval_result); 
+#else
+#error
+#endif
   }
 
 #ifndef __APPLE__
@@ -430,7 +416,6 @@ static void train_xgboost(cache_t *cache) {
   DEBUG("%.2lf hour, vtime %ld, train/valid %d/%d samples, "
        "%d trees, "
        "rank intvl %.4lf\n",
-      //  (unsigned long) cache->cache_size / 1024 / 1024, 
        (double) params->curr_rtime/3600, (long) params->curr_vtime,
        (int) learner->n_train_samples,
        (int) learner->n_valid_samples,
@@ -451,9 +436,6 @@ static void train_xgboost(cache_t *cache) {
 
 void train(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
-#ifdef TRAIN_ONCE
-  if (params->learner.n_train > 0) return;
-#endif
 
   uint64_t start_time = gettime_usec(); 
 

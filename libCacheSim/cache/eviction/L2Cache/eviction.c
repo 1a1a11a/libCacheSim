@@ -77,6 +77,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
         new_obj->L2Cache.idx_in_segment = new_seg->n_obj;
         new_obj->L2Cache.segment = new_seg;
         new_obj->L2Cache.active = 0;
+        new_obj->L2Cache.in_cache = 1; 
         hashtable_insert_obj(cache->hashtable, new_obj);
 
         new_seg->n_obj += 1;
@@ -89,18 +90,30 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
       cache_obj->L2Cache.in_cache = 0;
     }
 
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-    if (params->type == LOGCACHE_LEARNED
-        && params->cache_state.n_evicted_bytes > params->learner.n_bytes_start_collect_train
-        && next_rand() % params->learner.sample_every_n_seg_for_training == 0) {
-      transform_seg_to_training(cache, bucket, segs[i]);
-    } else {
-      remove_seg_from_bucket(params, bucket, segs[i]);
-      clean_one_seg(cache, segs[i]);
-    }
-#else
     remove_seg_from_bucket(params, bucket, segs[i]);
     clean_one_seg(cache, segs[i]);
-#endif
   }
 }
+
+// called when there is no segment can be merged due to fragmentation
+// different from clean_one_seg becausee this function also updates cache state
+int evict_one_seg(cache_t *cache, segment_t *seg) {
+  L2Cache_params_t *params = cache->eviction_params;
+  int n_cleaned = 0;
+  for (int i = 0; i < seg->n_obj; i++) {
+    cache_obj_t *cache_obj = &seg->objs[i];
+    object_evict(cache, cache_obj);
+    cache_obj->L2Cache.in_cache = 0;
+
+    if (hashtable_try_delete(cache->hashtable, cache_obj)) {
+      n_cleaned += 1;
+      cache->n_obj -= 1;
+      cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
+    }
+  }
+  my_free(sizeof(cache_obj_t) * params->n_obj, seg->objs);
+  my_free(sizeof(segment_t), seg);
+
+  return n_cleaned;
+}
+

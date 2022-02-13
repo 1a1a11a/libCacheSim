@@ -167,12 +167,7 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
   object_hit(params, cache_obj, req);
 
   if (params->train_source_y == TRAIN_Y_FROM_ONLINE) {
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
     update_train_y(params, cache_obj);
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-    /* if there is an evicted entry, the evicted entry should be after this entry */
-    DEBUG_ASSERT(((segment_t *) (cache_obj->L2Cache.segment))->is_training_seg == false);
-#endif
   }
   return cache_ck_hit;
 }
@@ -189,7 +184,6 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
     params->cache_state.n_miss_bytes += req->obj_size;
   }
 
-#if defined(TRAINING_DATA_SOURCE) && TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
   if (params->type == LOGCACHE_LEARNED) {
     /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
@@ -205,7 +199,6 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
       }
     }
   }
-#endif
   return ret;
 }
 
@@ -269,39 +262,6 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   }
   params->n_evictions += 1;
 
-  if (params->type == LOGCACHE_LEARNED) {
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-    if (params->n_training_segs >= params->learner.n_segs_to_start_training) {
-      //    if (params->curr_rtime - l->last_train_rtime >= l->retrain_intvl) {
-      train(cache);
-#ifdef TRAIN_ONCE
-      printf("only train once ???\n");
-      l->retrain_intvl += l->retrain_intvl * 2000;
-#endif
-    } else {
-      if (l->last_train_rtime == 0) {
-        /* initialize the last_train_rtime */
-        l->last_train_rtime = params->curr_rtime;
-      }
-
-      if (params->n_training_segs > l->n_segs_to_start_training / 10) {
-        /* we don't want to rate limit at beginning */
-        int64_t time_since_last, time_till_next, n_tseg_gap;
-        time_since_last = params->curr_rtime - l->last_train_rtime;
-        time_till_next = l->retrain_intvl - time_since_last;
-        n_tseg_gap = l->n_segs_to_start_training - params->n_training_segs;
-        l->sample_every_n_seg_for_training =
-            MAX((int) (time_till_next / MAX(n_tseg_gap, 1)), 1);
-      }
-    }
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-    // TODO: remove the evicted segs from the training data
-
-#else
-#error "TRAINING_DATA_SOURCE not defined"
-#endif
-  }
-
   L2Cache_merge_segs(cache, bucket, params->obj_sel.segs_to_evict);
 
   if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY
@@ -312,44 +272,16 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     }
     params->last_hit_prob_compute_vtime = params->curr_vtime;
   }
-  //        static int last_print = 0;
-  //        if (params->curr_rtime - last_print >= 3600 * 24) {
-  //          printf("cache size %lu ", (unsigned long) cache->cache_size);
-  //          print_bucket(cache);
-  //          last_print = params->curr_rtime;
-  //        }
 }
 
 void L2Cache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   L2Cache_params_t *params = cache->eviction_params;
   abort();
-
-  cache_obj_t *cache_obj = hashtable_find_obj(cache->hashtable, obj_to_remove);
-  if (cache_obj == NULL) {
-    WARN("obj is not in the cache\n");
-    return;
-  }
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
-  hashtable_delete(cache->hashtable, cache_obj);
-
-  assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= cache_obj->obj_size;
 }
 
 void L2Cache_remove(cache_t *cache, obj_id_t obj_id) {
+
   abort();
-
-  cache_obj_t *cache_obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-  if (cache_obj == NULL) {
-    WARN("obj is not in the cache\n");
-    return;
-  }
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
-
-  assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= cache_obj->obj_size;
-
-  hashtable_delete(cache->hashtable, cache_obj);
 }
 
 #ifdef __cplusplus

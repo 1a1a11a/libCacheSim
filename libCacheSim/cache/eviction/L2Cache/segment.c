@@ -22,28 +22,6 @@ int clean_one_seg(cache_t *cache, segment_t *seg) {
   return n_cleaned;
 }
 
-// called when there is no segment can be merged due to fragmentation
-// different from clean_one_seg becausee this function also updates cache state
-int evict_one_seg(cache_t *cache, segment_t *seg) {
-  L2Cache_params_t *params = cache->eviction_params;
-  int n_cleaned = 0;
-  for (int i = 0; i < seg->n_obj; i++) {
-    cache_obj_t *cache_obj = &seg->objs[i];
-    object_evict(cache, cache_obj);
-    cache_obj->L2Cache.in_cache = 0;
-
-    if (hashtable_try_delete(cache->hashtable, cache_obj)) {
-      n_cleaned += 1;
-      cache->n_obj -= 1;
-      cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
-    }
-  }
-  my_free(sizeof(cache_obj_t) * params->n_obj, seg->objs);
-  my_free(sizeof(segment_t), seg);
-
-  return n_cleaned;
-}
-
 segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   L2Cache_params_t *params = cache->eviction_params;
 
@@ -58,11 +36,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   new_seg->create_rtime = params->curr_rtime;
   new_seg->create_vtime = params->curr_vtime;
 
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_CACHE
-  new_seg->in_training_data = false;
-#elif TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-  new_seg->is_training_seg = false;
-#endif
+  new_seg->selected_for_training = false;
   new_seg->pred_utility = INT64_MAX; // to avoid it being picked for eviction
   new_seg->train_utility = 0; // to avoid it being picked for eviction
   new_seg->magic = MAGIC;
@@ -137,17 +111,6 @@ double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_
 
   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
   DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
-
-  //   static int n_err = 0;
-  //   if (obj_sel->score_array[0] == obj_sel->score_array[seg->n_obj - 1]) {
-  //     if (n_err++ % 100000 == 20) {
-  //       DEBUG("cache size %lu: seg may have all objects with no reuse %d (ignore this if "
-  //             "it is end of trace running oracle)\n",
-  //             (unsigned long) cache->cache_size, n_err);
-  //       print_seg(cache, seg, DEBUG_LEVEL);
-  //     }
-  //     n_err += 1;
-  //   }
 
   double utilization = 0;
   for (int j = 0; j < seg->n_obj - n_retain; j++) {
