@@ -114,7 +114,7 @@ cache_obj_t *LRUv0_to_evict(cache_t *cache) {
 
 void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
-  cache_obj_t *cache_obj = (cache_obj_t *) g_queue_pop_head(LRUv0_params->list);
+  cache_obj_t *cache_obj = LRUv0_to_evict(cache);
   assert(cache->occupied_size >= cache_obj->obj_size);
   cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
   g_hash_table_remove(LRUv0_params->hashtable,

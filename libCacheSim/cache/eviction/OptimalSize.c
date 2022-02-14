@@ -77,18 +77,7 @@ cache_obj_t *OptimalSize_to_evict(cache_t *cache) {
 }
 
 void OptimalSize_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
-  cache_obj_t *obj_to_evict, *sampled_obj;
-  int64_t obj_to_evict_score = -1, sampled_obj_score;
-  for (int i = 0; i < N_SAMPLE_PER_EVICTION; i++) {
-    sampled_obj = hashtable_rand_obj(cache->hashtable);
-    sampled_obj_score =
-        sampled_obj->obj_size * (sampled_obj->optimal.next_access_vtime - cache->n_req);
-    if (obj_to_evict_score < sampled_obj_score) {
-      obj_to_evict = sampled_obj;
-      obj_to_evict_score = sampled_obj_score;
-    }
-  }
-
+  cache_obj_t *obj_to_evict = OptimalSize_to_evict(cache);
   if (cache_obj != NULL) memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
   cache_remove_obj_base(cache, obj_to_evict);
 }

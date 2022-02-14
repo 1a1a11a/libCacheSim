@@ -94,7 +94,7 @@ void Hyperbolic_insert(cache_t *cache, request_t *req) {
 cache_obj_t *Hyperbolic_to_evict(cache_t *cache) {
 
   Hyperbolic_params_t *params = cache->eviction_params;
-  pq_node_t *node = (pq_node_t *) pqueue_pop(params->pq);
+  pq_node_t *node = (pq_node_t *) pqueue_peek(params->pq);
 
   return cache_get_obj_by_id(cache, node->obj_id);
 }

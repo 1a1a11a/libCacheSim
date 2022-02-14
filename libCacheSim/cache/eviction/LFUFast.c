@@ -259,6 +259,32 @@ void LFUFast_remove(cache_t *cache, obj_id_t obj_id) {
   remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, obj);
 
   cache_remove_obj_base(cache, obj);
+
+  freq_node_t *min_freq_node = g_hash_table_lookup(
+      params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+
+  if (min_freq_node->n_obj == 0) {
+    /* the only obj of min freq */
+    min_freq_node->first_obj = NULL;
+    min_freq_node->last_obj = NULL;
+
+    /* update min freq */
+    uint64_t old_min_freq = params->min_freq;
+    for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+      freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)); 
+      if (node != NULL && node->n_obj > 0) {
+        params->min_freq = freq;
+        break;
+      }
+    }
+    DEBUG_ASSERT(params->min_freq > old_min_freq); 
+  }
+
+  min_freq_node = g_hash_table_lookup(
+        params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+  DEBUG_ASSERT(min_freq_node != NULL);
+  DEBUG_ASSERT(min_freq_node->last_obj != NULL);
+  DEBUG_ASSERT(min_freq_node->n_obj > 0);
 }
 
 

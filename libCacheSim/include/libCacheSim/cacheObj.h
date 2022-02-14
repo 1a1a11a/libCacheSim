@@ -35,6 +35,7 @@ typedef struct {
 
 typedef struct {
   int64_t last_access_vtime; 
+  int64_t freq; 
 } CR_LFU_obj_params_t;
 
 typedef struct  {

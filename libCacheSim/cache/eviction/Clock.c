@@ -78,28 +78,7 @@ cache_obj_t *Clock_to_evict(cache_t *cache) {
 
 void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   Clock_params_t *params = cache->eviction_params;
-  cache_obj_t *moving_pointer = params->pointer;
-
-  /* if we have run one full around or first eviction */
-  if (moving_pointer == NULL)
-    moving_pointer = cache->q_head;
-
-  /* find the first untouched */
-  while (moving_pointer != NULL && moving_pointer->clock.visited) {
-    moving_pointer->clock.visited = false;
-    moving_pointer = moving_pointer->queue.next;
-  }
-
-  /* if we have finished one around, start from the head */
-  if (moving_pointer == NULL) {
-    moving_pointer = cache->q_head;
-    while (moving_pointer != NULL && moving_pointer->clock.visited) {
-      moving_pointer->clock.visited = false;
-      moving_pointer = moving_pointer->queue.next;
-    }
-  }
-
-  DEBUG_ASSERT(moving_pointer != NULL);
+  cache_obj_t *moving_pointer = Clock_to_evict(cache);
 
   if (evicted_obj != NULL) {
     // return evicted object to caller

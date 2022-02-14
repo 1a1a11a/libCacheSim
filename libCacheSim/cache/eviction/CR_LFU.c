@@ -1,4 +1,5 @@
 #include "../include/libCacheSim/evictionAlgo/CR_LFU.h"
+#include "../include/libCacheSim/evictionAlgo/SR_LRU.h"
 #include "../dataStructure/hashtable/hashtable.h"
 // CR_LFU is used by Cacheus.
 
@@ -51,6 +52,7 @@ cache_t *CR_LFU_init(common_cache_params_t ccache_params,
 
   params->min_freq = 1;
   params->max_freq = 1;
+  params->other_cache = NULL;  // for Cacheus
 
   freq_node_t *freq_node = my_malloc_n(freq_node_t, 1);
   params->freq_one_node = freq_node;
@@ -75,7 +77,7 @@ void CR_LFU_free(cache_t *cache) {
 cache_ck_res_e CR_LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
-
+  
   if (cache_obj && likely(update_cache)) {
     CR_LFU_params_t *params = (CR_LFU_params_t *) (cache->eviction_params);
     /* freq incr and move to next freq node */
@@ -141,28 +143,86 @@ cache_ck_res_e CR_LFU_check(cache_t *cache, request_t *req, bool update_cache) {
 }
 
 cache_ck_res_e CR_LFU_get(cache_t *cache, request_t *req) {
-//  DEBUG_ASSERT(_verify(cache) == 0);
   return cache_get_base(cache, req);
 }
 
 void CR_LFU_insert(cache_t *cache, request_t *req) {
   CR_LFU_params_t *params = (CR_LFU_params_t *) (cache->eviction_params);
-  params->min_freq = 1;
-  freq_node_t *freq_one_node = params->freq_one_node;
-
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
   cache_obj->lfu.freq = 1;
-  cache_obj->queue.prev = freq_one_node->last_obj;
-  freq_one_node->n_obj += 1;
 
-  if (freq_one_node->last_obj != NULL) {
-    freq_one_node->last_obj->queue.next = cache_obj;
-  } else {
-    DEBUG_ASSERT(freq_one_node->first_obj == NULL);
-    freq_one_node->first_obj = cache_obj;
+  if (params->other_cache) {
+    // Check if the requested obj is present in SR-LRU's history
+    cache_obj_t *obj_other_cache = cache_get_obj_by_id(((SR_LRU_params_t *)params->other_cache->eviction_params)->H_list, cache_obj->obj_id);
+    DEBUG_ASSERT(cache_get_obj_by_id(((SR_LRU_params_t *)params->other_cache->eviction_params)->R_list, cache_obj->obj_id) == NULL);
+    DEBUG_ASSERT(cache_get_obj_by_id(((SR_LRU_params_t *)params->other_cache->eviction_params)->SR_list, cache_obj->obj_id) == NULL);
+    if (obj_other_cache != NULL) {
+      DEBUG_ASSERT(obj_other_cache->CR_LFU.freq >= 1);
+      // Load the obj frequency into the current CR-LFU
+      cache_obj->lfu.freq = obj_other_cache->CR_LFU.freq + 1;
+    }
   }
-  freq_one_node->last_obj = cache_obj;
-  DEBUG_ASSERT(freq_one_node->first_obj != NULL);
+
+  // If the obj was new, i.e. not inserted in SR_LRU history
+  if (cache_obj->lfu.freq == 1) {
+    params->min_freq = 1;
+    freq_node_t *freq_one_node = params->freq_one_node;
+    cache_obj->queue.prev = freq_one_node->last_obj;
+    freq_one_node->n_obj += 1;
+
+    if (freq_one_node->last_obj != NULL) {
+      freq_one_node->last_obj->queue.next = cache_obj;
+    } else {
+      DEBUG_ASSERT(freq_one_node->first_obj == NULL);
+      freq_one_node->first_obj = cache_obj;
+    }
+    freq_one_node->last_obj = cache_obj;
+    DEBUG_ASSERT(freq_one_node->first_obj != NULL);
+  }
+  else {
+    // find the new freq_node this object should move to
+
+    DEBUG_ASSERT(params->other_cache != NULL);
+    freq_node_t *new_node = g_hash_table_lookup(
+          params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
+    if (new_node == NULL) {
+      new_node = my_malloc_n(freq_node_t, 1);
+      memset(new_node, 0, sizeof(freq_node_t));
+      new_node->freq = cache_obj->lfu.freq;
+      g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
+      VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj, new_node->last_obj);
+    } else {
+      // it could be new_node is empty
+      DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
+    }
+    /* add to tail of the list */
+    if (new_node->last_obj != NULL) {
+      new_node->last_obj->queue.next = cache_obj;
+      cache_obj->queue.prev = new_node->last_obj;
+    } else {
+      DEBUG_ASSERT(new_node->first_obj == NULL);
+      DEBUG_ASSERT(new_node->n_obj == 0);
+      new_node->first_obj = cache_obj;
+      cache_obj->queue.prev = NULL; 
+    }
+
+    cache_obj->queue.next = NULL;
+    new_node->last_obj = cache_obj;
+    new_node->n_obj += 1;
+  }
+
+  // Update min_freq and max_freq
+  if (params->max_freq < cache_obj->lfu.freq) {
+    params->max_freq = cache_obj->lfu.freq;
+  }
+  if (params->min_freq > cache_obj->lfu.freq) {
+    params->min_freq = cache_obj->lfu.freq;
+  }
+  freq_node_t *min_freq_node = g_hash_table_lookup(
+      params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+  DEBUG_ASSERT(min_freq_node != NULL);
+  DEBUG_ASSERT(min_freq_node->last_obj != NULL);
+  DEBUG_ASSERT(min_freq_node->n_obj > 0);
 }
 
 cache_obj_t *CR_LFU_to_evict(cache_t *cache){
@@ -190,7 +250,14 @@ void CR_LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   min_freq_node->n_obj--;
 
   cache_obj_t *obj_to_evict = min_freq_node->last_obj;
-  // cache_obj_t *obj_to_evict = min_freq_node->first_obj;
+
+  if (params->other_cache) {
+    // Before evicting the object, "offload" the obj frequency to history in SR-LRU
+    // In case in the future history hit, LFU can load that frequency again.
+    cache_obj_t *obj_other_cache = cache_get_obj_by_id(((SR_LRU_params_t *)params->other_cache->eviction_params)->H_list, obj_to_evict->obj_id);
+    DEBUG_ASSERT(obj_other_cache != NULL);
+    obj_other_cache->CR_LFU.freq = obj_to_evict->lfu.freq;
+  }
 
   if (evicted_obj != NULL)
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
@@ -217,18 +284,33 @@ void CR_LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     min_freq_node->last_obj = obj_to_evict->queue.prev;
     obj_to_evict->queue.prev->queue.next = NULL;
   }
-
   cache_remove_obj_base(cache, obj_to_evict);
+
+  min_freq_node = g_hash_table_lookup(
+      params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+  DEBUG_ASSERT(min_freq_node != NULL);
+  DEBUG_ASSERT(min_freq_node->last_obj != NULL);
+  DEBUG_ASSERT(min_freq_node->n_obj > 0);
 }
 
 void CR_LFU_remove(cache_t *cache, obj_id_t obj_id) {
   CR_LFU_params_t *params = (CR_LFU_params_t *) (cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
+
   if (obj == NULL) {
-    raise(SIGINT);
     WARN("obj to remove is not in the cache\n");
     return;
   }
+
+  if (params->other_cache) {
+    // Before evicting the object, "offload" the obj frequency to history in SR-LRU
+    // In case in the future history hit, LFU can load that frequency again.
+    cache_obj_t *obj_other_cache = cache_get_obj_by_id(((SR_LRU_params_t *)params->other_cache->eviction_params)->H_list, obj->obj_id);
+    // Since we call SR_LRU evict before CR_LFU remove, the obj has to be either in H
+    DEBUG_ASSERT (obj_other_cache != NULL);
+    obj_other_cache->CR_LFU.freq = obj->lfu.freq;
+  }
+
 
   freq_node_t *freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(obj->lfu.freq));
   DEBUG_ASSERT(freq_node->freq == obj->lfu.freq);
@@ -238,6 +320,32 @@ void CR_LFU_remove(cache_t *cache, obj_id_t obj_id) {
   remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, obj);
 
   cache_remove_obj_base(cache, obj);
+
+  freq_node_t *min_freq_node = g_hash_table_lookup(
+      params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+
+  if (min_freq_node->n_obj == 0) {
+    /* the only obj of min freq */
+    min_freq_node->first_obj = NULL;
+    min_freq_node->last_obj = NULL;
+
+    /* update min freq */
+    uint64_t old_min_freq = params->min_freq;
+    for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+      freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)); 
+      if (node != NULL && node->n_obj > 0) {
+        params->min_freq = freq;
+        break;
+      }
+    }
+    DEBUG_ASSERT(params->min_freq > old_min_freq); 
+  }
+
+  min_freq_node = g_hash_table_lookup(
+        params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+  DEBUG_ASSERT(min_freq_node != NULL);
+  DEBUG_ASSERT(min_freq_node->last_obj != NULL);
+  DEBUG_ASSERT(min_freq_node->n_obj > 0);
 }
 
 

@@ -21,7 +21,7 @@ cache_t *SR_LRU_init(common_cache_params_t ccache_params, void *init_params) {
 
   cache->eviction_params = my_malloc_n(SR_LRU_params_t, 1);
   SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);
-
+  params->other_cache = NULL; // for Cacheus
   // 1/2 for each SR and R, 1 for H
   params->H_list = LRU_init(ccache_params, NULL); 
   ccache_params.cache_size /= 2;
@@ -48,12 +48,11 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, request_t *req, bool update_cache) {
 
   // SR_LRU_check will cover cases where:
   // Hit in Cache (R) and hit in Cache (SR) and does not hit anything
-
   SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);
   cache_ck_res_e ck_R = params->R_list->check(params->R_list, req, false);
   cache_ck_res_e ck_sr = params->SR_list->check(params->SR_list, req, false);
 
-  request_t *req_local = NULL;
+  static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }
@@ -77,7 +76,8 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, request_t *req, bool update_cache) {
       LRU_insert(params->SR_list, req_local);
       if (!evicted_obj.SR_LRU.demoted){
         params->C_demoted += 1;
-        evicted_obj.SR_LRU.demoted = true;
+        // evicted_obj.SR_LRU.demoted = true;
+        cache_get_obj_by_id(params->SR_list, req_local->obj_id)->SR_LRU.demoted = true;
       }
     } 
     params->R_list->insert(params->R_list, req);
@@ -131,7 +131,7 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
   // SR_LRU_insert covers the cases where hit in history or does not hit anything.
   SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);  
   cache_ck_res_e ck_hist = params->H_list->check(params->H_list, req, false);
-  request_t *req_local = NULL;
+  static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }
@@ -152,7 +152,9 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
       // Mark the obj as demoted
       if (!evicted_obj.SR_LRU.demoted){
         params->C_demoted += 1;
-        evicted_obj.SR_LRU.demoted = true;
+        // evicted_obj.SR_LRU.demoted = true;
+        cache_get_obj_by_id(params->SR_list, req_local->obj_id)->SR_LRU.demoted = true;
+        // assert(cache_get_obj_by_id(params->SR_list, req_local->obj_id)->SR_LRU.demoted == true);
       }
     }    
 
@@ -201,10 +203,12 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
       params->other_cache->remove(params->other_cache, evicted_obj.obj_id);
 
     if (evicted_obj.SR_LRU.new_obj) {
-        params->C_new += 1;  // increment the number of new objs in history
+      params->C_new += 1;  // increment the number of new objs in history
+      cache_get_obj_by_id(params->H_list, req_local->obj_id)->SR_LRU.new_obj = true;
     }
     if (evicted_obj.SR_LRU.demoted){
-      evicted_obj.SR_LRU.demoted = false;
+      // evicted_obj.SR_LRU.demoted = false;
+      cache_get_obj_by_id(params->H_list, req_local->obj_id)->SR_LRU.demoted = false;
       params->C_demoted -= 1;
     }
   }
@@ -227,7 +231,7 @@ void SR_LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);
   params->SR_list->evict(params->SR_list, req, evicted_obj);
 
-  request_t *req_local = NULL;
+  static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }
@@ -235,11 +239,14 @@ void SR_LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   copy_cache_obj_to_request(req_local, evicted_obj);    
   params->H_list->insert(params->H_list, req_local);
 
-  if (evicted_obj->SR_LRU.new_obj)  // if evicted obj is new
+  if (evicted_obj->SR_LRU.new_obj) {  // if evicted obj is new
     params->C_new += 1;   // increment the number of new objs in hist
+    cache_get_obj_by_id(params->H_list, req_local->obj_id)->SR_LRU.new_obj = true;
+  }
   if (evicted_obj->SR_LRU.demoted){
     params->C_demoted -= 1; // decrement the number of demoted objs in cache
-    evicted_obj->SR_LRU.demoted = false;
+    cache_get_obj_by_id(params->H_list, req_local->obj_id)->SR_LRU.demoted = true;
+    // evicted_obj->SR_LRU.demoted = false;
   }
 
   while (params->H_list->occupied_size >= params->H_list->cache_size) {
@@ -260,15 +267,38 @@ void SR_LRU_remove(cache_t *cache, obj_id_t obj_id) {
     cache_remove_obj_base(params->SR_list, obj);  
     cache->n_obj = params->SR_list->n_obj + params->R_list->n_obj;
     cache->occupied_size = params->SR_list->occupied_size + params->R_list->occupied_size;
-    return;
   }
-  obj = cache_get_obj_by_id(params->R_list, obj_id);
-  if (obj) {
+  else {
+    obj = cache_get_obj_by_id(params->R_list, obj_id);
+    DEBUG_ASSERT(obj != NULL);
     remove_obj_from_list(&(params->R_list)->q_head, &(params->R_list)->q_tail, obj);
     cache_remove_obj_base(params->R_list, obj);  
     cache->n_obj = params->SR_list->n_obj + params->R_list->n_obj;
     cache->occupied_size = params->SR_list->occupied_size + params->R_list->occupied_size;
-    return;
+  }
+  DEBUG_ASSERT(obj != NULL);
+  // Remove should remove the obj and push it to history
+  static __thread request_t *req_local = NULL;
+  if (req_local == NULL) {
+    req_local = new_request();
+  }
+
+  copy_cache_obj_to_request(req_local, obj);    
+  params->H_list->insert(params->H_list, req_local);
+
+  if (obj->SR_LRU.new_obj) { // if evicted obj is new
+    params->C_new += 1;   // increment the number of new objs in hist
+    cache_get_obj_by_id(params->H_list, req_local->obj_id)->SR_LRU.new_obj = true;  
+  }
+  if (obj->SR_LRU.demoted){
+    params->C_demoted -= 1; // decrement the number of demoted objs in cache
+    // obj->SR_LRU.demoted = false;
+    cache_get_obj_by_id(params->H_list, req_local->obj_id)->SR_LRU.demoted = false;
+  }
+
+  while (params->H_list->occupied_size >= params->H_list->cache_size) {
+    cache_obj_t evicted_obj;
+    params->H_list->evict(params->H_list, req_local, &evicted_obj);
   }
 
   if (obj == NULL) {

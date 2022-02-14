@@ -51,7 +51,7 @@ cache_obj_t *MRU_to_evict(cache_t *cache) {
 }
 
 void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
-  cache_obj_t *obj_to_evict = cache->q_tail;
+  cache_obj_t *obj_to_evict = MRU_to_evict(cache);
   if (cache_obj != NULL) {
     // return evicted object to caller
     memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));

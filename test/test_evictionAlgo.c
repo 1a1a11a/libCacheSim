@@ -282,9 +282,9 @@ static void test_LeCaR(gconstpointer user_data) {
 
 static void test_Cacheus(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {89498, 85315, 78355, 74312, 72415, 67663, 66911, 65765};
-  uint64_t miss_byte_true[] = {3926906368, 3681398784, 3401589248, 3251191808,
-                               3088958464, 2871321600, 2837641216, 2774483968};
+  uint64_t miss_cnt_true[] = {89700, 83673, 79199, 72762, 69277, 67883, 67476, 66501};
+  uint64_t miss_byte_true[] = {3922595328, 3631532544, 3387103232, 3152389632,
+                               2961427456, 2885015040, 2864854528, 2807194112};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
@@ -293,7 +293,6 @@ static void test_Cacheus(gconstpointer user_data) {
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, _n_cores());
-
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);

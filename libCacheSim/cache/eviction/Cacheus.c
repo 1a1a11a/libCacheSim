@@ -40,6 +40,8 @@ cache_t *Cacheus_init(common_cache_params_t ccache_params, void *init_params) {
   SR_LRU_params_t *SR_LRU_params = (SR_LRU_params_t *) (params->LRU->eviction_params);
   // When SR_LRU evicts, makes CR_LFU evicts as well.
   SR_LRU_params->other_cache = params->LFU;
+  CR_LFU_params_t *CR_LFU_params = (CR_LFU_params_t *) (params->LFU->eviction_params);
+  CR_LFU_params->other_cache = params->LRU;
 
   /* set ghost_list_factor to 2 can reduce miss ratio anomaly */
   ccache_params.cache_size = (uint64_t) (
@@ -198,8 +200,9 @@ void Cacheus_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
-  params->LRU->insert(params->LRU, req);
+  // LFU must be first because it may load frequency stored in lRU history
   params->LFU->insert(params->LFU, req);
+  params->LRU->insert(params->LRU, req);
 
   cache->occupied_size = params->LRU->occupied_size;
   cache->n_obj = params->LRU->n_obj;
@@ -233,7 +236,7 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   // If two voters decide the same:
   if (params->LRU->to_evict(params->LRU)->obj_id == params->LFU->to_evict(params->LFU)->obj_id){
     params->LRU->evict(params->LRU, req, &obj);
-    params->LFU->evict(params->LFU, req, &obj);
+    params->LFU->evict(params->LFU, req, &obj); 
   }
   else if (r < params->w_lru) {
     params->LRU->evict(params->LRU, req, &obj);
@@ -244,8 +247,9 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   // action is LFU
   } else {
+    // Remove first because LFU needs to offload the freq to obj in LRU history
+    params->LRU->remove(params->LRU, params->LFU->to_evict(params->LFU)->obj_id);
     params->LFU->evict(params->LFU, req, &obj);
-    params->LRU->remove(params->LRU, obj.obj_id);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LFU_g->check(params->LFU_g, req_local, false) == cache_ck_miss);
     params->LFU_g->insert(params->LFU_g, req_local);

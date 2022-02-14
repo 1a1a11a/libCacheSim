@@ -15,6 +15,7 @@ typedef struct CR_LFU_params {
   GHashTable *freq_map;
   uint64_t min_freq;
   uint64_t max_freq;
+  cache_t *other_cache;
 } CR_LFU_params_t;
 
 
