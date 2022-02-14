@@ -103,7 +103,7 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   seg->become_train_seg_vtime = params->curr_vtime;
   seg->train_utility = 0;
 
-  // TODO: do we need this? 
+  // TODO: do we need this?
   prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);
 }
 
@@ -132,18 +132,16 @@ void snapshot_segs_to_training_data(cache_t *cache) {
         copy_seg_to_train_matrix(cache, curr_seg);
       } else {
         curr_seg->selected_for_training = false;
-        curr_seg->train_utility = 0; // reset utility
+        curr_seg->train_utility = 0;// reset utility
       }
 
       curr_seg = curr_seg->next_seg;
     }
   }
-  DEBUG("%.2lf hour cache size %.2lf MB snapshot %d/%d train sample\n", 
-       (double) params->curr_rtime / 3600.0, cache->cache_size / 1024.0 / 1024.0, 
-       l->n_train_samples, l->train_matrix_n_row);
+  DEBUG("%.2lf hour cache size %.2lf MB snapshot %d/%d train sample\n",
+        (double) params->curr_rtime / 3600.0, cache->cache_size / 1024.0 / 1024.0,
+        l->n_train_samples, l->train_matrix_n_row);
 }
-
-
 
 /* used when the training y is calculated online */
 void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
@@ -203,11 +201,11 @@ void prepare_training_data_per_package(cache_t *cache) {
 
 #if OBJECTIVE == LTR
   // const int n_group = 20;
-  // unsigned int group[n_group]; 
+  // unsigned int group[n_group];
   // for (int i = 0; i < n_group; i++) {
   //   group[i] = learner->n_train_samples/n_group;
   // }
-  // group[(n_group - 1)] = learner->n_train_samples - (learner->n_train_samples/n_group) * (n_group - 1); 
+  // group[(n_group - 1)] = learner->n_train_samples - (learner->n_train_samples/n_group) * (n_group - 1);
   // safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", group, n_group));
 
   safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", &learner->n_train_samples, 1));
@@ -248,10 +246,10 @@ static void prepare_training_data(cache_t *cache) {
       cat 1, 0: (n - 6 * n_candidate) / 2,
    */
   static __thread train_y_t *y_sort = NULL;
-  static __thread train_y_t train_y_cutoffs[5]; 
+  static __thread train_y_t train_y_cutoffs[5];
 
-  assert(params->rank_intvl <= 0.15); 
-  int n = learner->n_train_samples; 
+  assert(params->rank_intvl <= 0.15);
+  int n = learner->n_train_samples;
   int n_candidate = (int) (n * params->rank_intvl);
 
   if (y_sort == NULL) y_sort = my_malloc_n(train_y_t, learner->train_matrix_n_row);
@@ -262,7 +260,7 @@ static void prepare_training_data(cache_t *cache) {
   train_y_cutoffs[3] = y_sort[n_candidate * 3];
   train_y_cutoffs[2] = y_sort[n_candidate * 6];
   train_y_cutoffs[1] = y_sort[n_candidate * 6 + (n - n_candidate * 6) / 2];
-  train_y_cutoffs[0] = y_sort[n-1] + 1;   // to make sure the largest value is always insma
+  train_y_cutoffs[0] = y_sort[n - 1] + 1;// to make sure the largest value is always insma
 #endif
 
   for (i = 0; i < learner->n_train_samples; i++) {
@@ -289,7 +287,7 @@ static void prepare_training_data(cache_t *cache) {
       pos_in_valid_data++;
     }
 
-    // TODO: is this memcpy really necessary? 
+    // TODO: is this memcpy really necessary?
     memcpy(x, &learner->train_x[i * n_feature], sizeof(feature_t) * n_feature);
     *y = learner->train_y[i];
 
@@ -306,9 +304,9 @@ static void prepare_training_data(cache_t *cache) {
   learner->n_train_samples = pos_in_train_data;
   learner->n_valid_samples = pos_in_valid_data;
 
-  // DEBUG("%.2lf hour, %d segs, %d zero samples, train:valid %d/%d\n", 
-  //   (double) params->curr_rtime/3600.0, params->n_segs, 
-  //   n_zero_samples, pos_in_train_data, pos_in_valid_data); 
+  // DEBUG("%.2lf hour, %d segs, %d zero samples, train:valid %d/%d\n",
+  //   (double) params->curr_rtime/3600.0, params->n_segs,
+  //   n_zero_samples, pos_in_train_data, pos_in_valid_data);
   prepare_training_data_per_package(cache);
 
 #ifdef DUMP_TRAINING_DATA
@@ -369,7 +367,7 @@ static void train_xgboost(cache_t *cache) {
 #if OBJECTIVE == REG
   safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
 #elif OBJECTIVE == LTR
-   safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
+  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
   // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:map"));
 //  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:ndcg"));
 #endif
@@ -378,7 +376,8 @@ static void train_xgboost(cache_t *cache) {
     // Update the model performance for each iteration
     safe_call(XGBoosterUpdateOneIter(learner->booster, i, learner->train_dm));
     if (learner->n_valid_samples < 10) continue;
-    safe_call(XGBoosterEvalOneIter(learner->booster, i, eval_dmats, eval_names, 2, &eval_result));
+    safe_call(
+        XGBoosterEvalOneIter(learner->booster, i, eval_dmats, eval_names, 2, &eval_result));
 #if OBJECTIVE == REG
     char *train_pos = strstr(eval_result, "train-rmse:") + 11;
     char *valid_pos = strstr(eval_result, "valid-rmse") + 11;
@@ -403,7 +402,7 @@ static void train_xgboost(cache_t *cache) {
 #elif OBJECTIVE == LTR
     char *train_pos = strstr(eval_result, "train-map") + 10;
     char *valid_pos = strstr(eval_result, "valid-map") + 10;
-    // DEBUG("%s\n", eval_result); 
+    // DEBUG("%s\n", eval_result);
 #else
 #error
 #endif
@@ -414,13 +413,11 @@ static void train_xgboost(cache_t *cache) {
 #endif
 
   DEBUG("%.2lf hour, vtime %ld, train/valid %d/%d samples, "
-       "%d trees, "
-       "rank intvl %.4lf\n",
-       (double) params->curr_rtime/3600, (long) params->curr_vtime,
-       (int) learner->n_train_samples,
-       (int) learner->n_valid_samples,
-       learner->n_trees, 
-       params->rank_intvl);
+        "%d trees, "
+        "rank intvl %.4lf\n",
+        (double) params->curr_rtime / 3600, (long) params->curr_vtime,
+        (int) learner->n_train_samples, (int) learner->n_valid_samples, learner->n_trees,
+        params->rank_intvl);
 
 #ifdef DUMP_MODEL
   {
@@ -434,15 +431,39 @@ static void train_xgboost(cache_t *cache) {
 }
 #endif
 
+// validation on training data
+static void train_eval(const int iter, const double *pred, const float *true_y, int n_elem) {
+  int pred_selected = find_argmin_double(pred, n_elem);
+  int true_selected = find_argmin_float(true_y, n_elem);
+  double val_in_pred_selected_by_true = pred[true_selected];
+  double val_in_true_selected_by_pred = true_y[pred_selected];
+
+  int pred_selected_rank_in_true = 0, true_selected_rank_in_pred = 0;
+
+  for (int i = 0; i < n_elem; i++) {
+    if (pred[i] < val_in_pred_selected_by_true) {
+      true_selected_rank_in_pred += 1;
+    }
+    if (true_y[i] < val_in_true_selected_by_pred) {
+      pred_selected_rank_in_true += 1;
+    }
+  }
+
+  printf("iter %d: %d/%d pred:true pos %d/%d val %lf %f\n", iter, pred_selected_rank_in_true,
+         true_selected_rank_in_pred, pred_selected, true_selected, pred[pred_selected],
+         true_y[true_selected]);
+  //    abort();
+}
+
 void train(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
 
-  uint64_t start_time = gettime_usec(); 
+  uint64_t start_time = gettime_usec();
 
   train_xgboost(cache);
 
   uint64_t end_time = gettime_usec();
-  // INFO("training time %.4lf sec\n", (end_time - start_time) / 1000000.0); 
+  // INFO("training time %.4lf sec\n", (end_time - start_time) / 1000000.0);
   params->learner.n_train += 1;
   params->learner.last_train_rtime = params->curr_rtime;
   params->learner.n_train_samples = 0;

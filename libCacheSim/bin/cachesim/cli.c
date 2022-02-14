@@ -49,7 +49,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     if (strcasecmp(argv[7], "logOracleLog") == 0) {
       args.L2Cache_type = LOGCACHE_LOG_ORACLE;
     } else if (strcasecmp(argv[7], "logOracleItem") == 0) {
-      args.L2Cache_type = LOGCACHE_ITEM_ORACLE; 
+      args.L2Cache_type = LOGCACHE_ITEM_ORACLE;
     } else if (strcasecmp(argv[7], "logOracleBoth") == 0) {
       args.L2Cache_type = LOGCACHE_BOTH_ORACLE;
     } else if (strcasecmp(argv[7], "logLearned") == 0) {
@@ -84,18 +84,18 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = FIFOMerge_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lhd") == 0) {
     cache = LHD_init(cc_params, NULL);
-  } else if (strcasecmp(args.alg, "slru") == 0){
+  } else if (strcasecmp(args.alg, "slru") == 0) {
     SLRU_init_params_t init_params;
-    init_params.n_seg = 5; // Currently hard-coded
+    init_params.n_seg = 5;// Currently hard-coded
     cache = SLRU_init(cc_params, &init_params);
-  } else if (strcasecmp(args.alg, "sr_lru") == 0){
+  } else if (strcasecmp(args.alg, "sr_lru") == 0) {
     cache = SR_LRU_init(cc_params, NULL);
-  } else if (strcasecmp(args.alg, "lfu") == 0){
+  } else if (strcasecmp(args.alg, "lfu") == 0) {
     cache = LFUFast_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimalSize") == 0) {
-    cc_params.hashpower -= 4; 
+    cc_params.hashpower -= 4;
     cache = OptimalSize_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lecar") == 0) {
     cache = LeCaR_init(cc_params, NULL);
@@ -111,13 +111,13 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
                                          .n_merge = args.n_merge,
                                          .type = args.L2Cache_type,
                                          .rank_intvl = args.rank_intvl,
-                                         .merge_consecutive_segs = args.merge_consecutive_segs, 
+                                         .merge_consecutive_segs = args.merge_consecutive_segs,
                                          .train_source_x = args.train_source_x,
                                          .train_source_y = args.train_source_y,
 
                                          .hit_density_age_shift = args.age_shift,
                                          .bucket_type = args.bucket_type,
-                                         .retrain_intvl = args.retrain_intvl}; 
+                                         .retrain_intvl = args.retrain_intvl};
     cache = L2Cache_init(cc_params, &init_params);
 #endif
   } else {

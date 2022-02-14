@@ -37,8 +37,8 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   new_seg->create_vtime = params->curr_vtime;
 
   new_seg->selected_for_training = false;
-  new_seg->pred_utility = INT64_MAX; // to avoid it being picked for eviction
-  new_seg->train_utility = 0; // to avoid it being picked for eviction
+  new_seg->pred_utility = INT64_MAX;// to avoid it being picked for eviction
+  new_seg->train_utility = 0;       // to avoid it being picked for eviction
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_id = bucket_id;
@@ -94,7 +94,6 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
 
   return params->obj_sel.score_array[pos - n_retain];
 }
-
 
 /** calculate segment utility, and a segment with a lower utility should be evicted first **/
 double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,

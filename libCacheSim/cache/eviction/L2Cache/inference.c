@@ -8,7 +8,7 @@
 #include "learned.h"
 #include "obj.h"
 #include "segment.h"
-#include "utils.h" 
+#include "utils.h"
 
 /** because each segment is not fixed size, 
  * the number of segments in total can vary over time, 
@@ -57,8 +57,9 @@ void prepare_inference_data(cache_t *cache) {
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
-  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature, -2, &learner->inf_dm));
-  
+  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature, -2,
+                                   &learner->inf_dm));
+
   // safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &params->n_segs, 1));
 #elif defined(USE_GBM)
 #error
@@ -93,22 +94,22 @@ void inference_xgboost(cache_t *cache) {
       // curr_seg->pred_utility = pred[n_segs];
       curr_seg->pred_utility = pred[n_segs] * 1e6 / curr_seg->n_byte;
 #elif OBJECTIVE == LTR
-      // segments with smaller utility (high relevance) are evicted first  
+      // segments with smaller utility (high relevance) are evicted first
       if (pred[n_segs] > 0) {
         curr_seg->pred_utility = 1.0 / pred[n_segs];
       } else {
         curr_seg->pred_utility = INT32_MAX;
       }
 #endif
-      // PRINT_N_TIMES(8, "%d y_hat %f, features: %.0f %.0f %.0f %.2f %.2f %.2f %.2f\n", 
-      //   n_segs, pred[n_segs], 
-      //   learner->inference_x[learner->n_feature * n_segs + 0], 
-      //   learner->inference_x[learner->n_feature * n_segs + 1], 
-      //   learner->inference_x[learner->n_feature * n_segs + 2], 
-      //   learner->inference_x[learner->n_feature * n_segs + 3], 
-      //   learner->inference_x[learner->n_feature * n_segs + 4], 
-      //   learner->inference_x[learner->n_feature * n_segs + 5], 
-      //   learner->inference_x[learner->n_feature * n_segs + 6] 
+      // PRINT_N_TIMES(8, "%d y_hat %f, features: %.0f %.0f %.0f %.2f %.2f %.2f %.2f\n",
+      //   n_segs, pred[n_segs],
+      //   learner->inference_x[learner->n_feature * n_segs + 0],
+      //   learner->inference_x[learner->n_feature * n_segs + 1],
+      //   learner->inference_x[learner->n_feature * n_segs + 2],
+      //   learner->inference_x[learner->n_feature * n_segs + 3],
+      //   learner->inference_x[learner->n_feature * n_segs + 4],
+      //   learner->inference_x[learner->n_feature * n_segs + 5],
+      //   learner->inference_x[learner->n_feature * n_segs + 6]
       // );
 
 #ifdef DUMP_TRAINING_DATA
@@ -135,12 +136,12 @@ void inference_xgboost(cache_t *cache) {
 void inference(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
 
-  uint64_t start_time = gettime_usec(); 
+  uint64_t start_time = gettime_usec();
 
   inference_xgboost(cache);
 
   uint64_t end_time = gettime_usec();
-  // INFO("inference time %.4lf sec\n", (end_time - start_time) / 1000000.0); 
+  // INFO("inference time %.4lf sec\n", (end_time - start_time) / 1000000.0);
 
   params->learner.n_inference += 1;
 }

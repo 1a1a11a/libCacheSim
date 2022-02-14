@@ -30,7 +30,6 @@ extern "C" {
 
 FILE *ofile_cmp_y = NULL;
 
-
 void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->segment_size = 100;
   init_params->n_merge = 2;
@@ -41,7 +40,7 @@ void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->train_source_y = TRAIN_Y_FROM_ORACLE;
   init_params->bucket_type = SIZE_BUCKET;
   init_params->retrain_intvl = 86400 * 2;
-  init_params->hit_density_age_shift = 3; 
+  init_params->hit_density_age_shift = 3;
 }
 
 cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
@@ -113,8 +112,8 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   // //      params->learner.sample_every_n_seg_for_training,
   //       0L, 0,
   //       params->rank_intvl,
-  //       params->train_source_x, 
-  //       params->train_source_y, 
+  //       params->train_source_x,
+  //       params->train_source_y,
   //       0
   // //      params->learner.retrain_intvl
   //   );
@@ -163,7 +162,7 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
     assert(0);
   }
 
-  DEBUG_ASSERT(cache_obj->L2Cache.in_cache); 
+  DEBUG_ASSERT(cache_obj->L2Cache.in_cache);
 
   /* seg_hit update segment state features */
   seg_hit(params, cache_obj);
@@ -252,8 +251,8 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     if (params->curr_rtime - last_print_time > 3600 * 6) {
       last_print_time = params->curr_rtime;
       WARN("%.2lf hour, cache size %lu MB, %d segs, evicting and cannot merge\n",
-            (double) params->curr_rtime / 3600.0, cache->cache_size / 1024 / 1024,
-            params->n_segs);
+           (double) params->curr_rtime / 3600.0, cache->cache_size / 1024 / 1024,
+           params->n_segs);
     }
 
     remove_seg_from_bucket(params, bucket, seg);
@@ -283,10 +282,7 @@ void L2Cache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   abort();
 }
 
-void L2Cache_remove(cache_t *cache, obj_id_t obj_id) {
-
-  abort();
-}
+void L2Cache_remove(cache_t *cache, obj_id_t obj_id) { abort(); }
 
 #ifdef __cplusplus
 }

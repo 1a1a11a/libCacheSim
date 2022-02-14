@@ -1,9 +1,9 @@
 
 #include "segSel.h"
+#include "../../../utils/include/mymath.h"
 #include "learned.h"
 #include "segment.h"
 #include "utils.h"
-#include "../../../utils/include/mymath.h"
 
 static inline int cmp_seg(const void *p1, const void *p2) {
   segment_t *seg1 = *(segment_t **) p1;
@@ -70,15 +70,15 @@ void rank_segs(cache_t *cache) {
   int n_segs = 0;
   segment_t *curr_seg;
   for (int i = 0; i < MAX_N_BUCKET; i++) {
-    int j = 0; 
+    int j = 0;
     curr_seg = params->buckets[i].first_seg;
     while (curr_seg) {
       if (params->type == LOGCACHE_LEARNED) {
         // curr_seg->utility = 0;
-        // printf("bucket %d, %dth seg, %.4lf %.4lf\n", 
-        //         i, j, 
+        // printf("bucket %d, %dth seg, %.4lf %.4lf\n",
+        //         i, j,
         //         curr_seg->utility, cal_seg_utility(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
-        //                     params->curr_rtime, params->curr_vtime)); 
+        //                     params->curr_rtime, params->curr_vtime));
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
         curr_seg->pred_utility =
             cal_seg_utility(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
@@ -91,7 +91,7 @@ void rank_segs(cache_t *cache) {
         abort();
       }
 
-      j += 1; 
+      j += 1;
       if (!is_seg_evictable(curr_seg, 1, true)
           || params->buckets[curr_seg->bucket_id].n_segs < params->n_merge + 1) {
         curr_seg->pred_utility += INT32_MAX / 2;
@@ -158,7 +158,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   int n_scanned_bucket = 0;
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
   segment_t *seg_to_evict = bucket->next_seg_to_evict;
-  DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id); 
+  DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id);
 
   while (!is_seg_evictable(seg_to_evict, params->n_merge, true)) {
     bucket->next_seg_to_evict = bucket->first_seg;
@@ -168,7 +168,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
     if (seg_to_evict == NULL) {
       seg_to_evict = bucket->first_seg;
     }
-    DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id); 
+    DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id);
 
     n_scanned_bucket += 1;
 
@@ -176,8 +176,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
       // no evictable seg found, random+FIFO select one
       int n_th_seg = next_rand() % params->n_segs;
       for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-        if (params->buckets[bi].n_segs == 0) 
-          continue; 
+        if (params->buckets[bi].n_segs == 0) continue;
 
         if (n_th_seg > params->buckets[bi].n_segs) {
           n_th_seg -= params->buckets[bi].n_segs;
@@ -187,7 +186,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
         }
       }
       segs[0] = bucket->first_seg;
-      bucket->next_seg_to_evict = NULL; 
+      bucket->next_seg_to_evict = NULL;
       return NULL;
     }
   }
@@ -327,7 +326,8 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     DEBUG_ASSERT(segs[i]->next_seg != NULL);
     DEBUG_ASSERT(segs[i]->bucket_id == segs[i - 1]->bucket_id);
 
-    DEBUG_ASSERT(params->merge_consecutive_segs || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
+    DEBUG_ASSERT(params->merge_consecutive_segs
+                 || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
     ranked_segs[segs[i]->rank] = NULL;
   }
 

@@ -77,7 +77,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
         new_obj->L2Cache.idx_in_segment = new_seg->n_obj;
         new_obj->L2Cache.segment = new_seg;
         new_obj->L2Cache.active = 0;
-        new_obj->L2Cache.in_cache = 1; 
+        new_obj->L2Cache.in_cache = 1;
         hashtable_insert_obj(cache->hashtable, new_obj);
 
         new_seg->n_obj += 1;
@@ -116,4 +116,3 @@ int evict_one_seg(cache_t *cache, segment_t *seg) {
 
   return n_cleaned;
 }
-

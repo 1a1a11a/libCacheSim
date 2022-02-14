@@ -119,21 +119,19 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     //    x[12 + k * 3 + 2] = 0;
   }
 
-    // if (is_training_data)
-    //   printf("train: ");
-    // else
-    //   printf("test:  ");
+  // if (is_training_data)
+  //   printf("train: ");
+  // else
+  //   printf("test:  ");
 
-    // printf("%.0f/%.0f/%.0f/%.0f | %.0f, %.0f, %.0f, %.4f | %.0f/%.0f/%.0f, %.0f|%.0f|%.0f\n", 
-    //   x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[9], x[10], x[11], x[12], x[20], x[28] 
-    // ); 
+  // printf("%.0f/%.0f/%.0f/%.0f | %.0f, %.0f, %.0f, %.4f | %.0f/%.0f/%.0f, %.0f|%.0f|%.0f\n",
+  //   x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[9], x[10], x[11], x[12], x[20], x[28]
+  // );
 
-    // for (int j = 0; j < 36; j++) {
-    //   printf("%.2f, ", x[j]); 
-    // }
-    // printf("\n"); 
-
-
+  // for (int j = 0; j < 36; j++) {
+  //   printf("%.2f, ", x[j]);
+  // }
+  // printf("\n");
 
   if (y == NULL) {
     // this is for inference
@@ -142,7 +140,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 
   /* calculate y for training */
   double online_utility = curr_seg->train_utility;
-  double offline_utility = -1; 
+  double offline_utility = -1;
   *y = (train_y_t) online_utility;
   int n_retained_obj = 0;
 
@@ -152,18 +150,21 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
     /* lower utility should be evicted first */
-    offline_utility = cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
-                              curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
+    offline_utility =
+        cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
+                        curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
     *y = (train_y_t) offline_utility;
   }
 
 #ifdef COMPARE_TRAINING_Y
   if (offline_utility < 0) {
-    offline_utility = cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
-                              curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);    
+    offline_utility =
+        cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
+                        curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
   }
-  fprintf(ofile_cmp_y, "%d, %d, %lf, %lf\n", curr_seg->bucket_id, curr_seg->seg_id, online_utility, offline_utility);
+  fprintf(ofile_cmp_y, "%d, %d, %lf, %lf\n", curr_seg->bucket_id, curr_seg->seg_id,
+          online_utility, offline_utility);
 #endif
 
-  return *y > 0.000001; 
+  return *y > 0.000001;
 }

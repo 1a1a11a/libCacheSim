@@ -26,10 +26,9 @@
 //#define DUMP_TRAINING_DATA
 
 /* if this is turned on, dump the online and offline calculated segment utility */
-#define COMPARE_TRAINING_Y 
+#define COMPARE_TRAINING_Y
 #define COMPARE_TRAINING_Y_FILE "compare_y.txt"
-extern FILE *ofile_cmp_y; 
-
+extern FILE *ofile_cmp_y;
 
 /* LHD parameters */
 #define HIT_PROB_MAX_AGE 86400
@@ -39,7 +38,7 @@ extern FILE *ofile_cmp_y;
 #define HIT_PROB_COMPUTE_INTVL 1000000
 #define LHD_EWMA 0.9
 
-// used to detect overflow 
+// used to detect overflow
 #define MAGIC 1234567890
 
 static char *L2Cache_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
@@ -54,4 +53,3 @@ static char *bucket_type_names[] = {"NO_BUCKET",        "SIZE_BUCKET",
 
 static char *training_source_names[] = {"X_FROM_EVICTION", "X_FROM_SNAPSHOT", "Y_FROM_ONLINE",
                                         "Y_FROM_ORACLE"};
-
