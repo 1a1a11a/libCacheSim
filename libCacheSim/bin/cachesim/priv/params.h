@@ -23,7 +23,7 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->rank_intvl = 0.01;
   args->merge_consecutive_segs = true;
   args->train_source_x = TRAIN_X_FROM_SNAPSHOT; 
-  args->train_source_y = TRAIN_Y_FROM_ORACLE; 
+  args->train_source_y = TRAIN_Y_FROM_ONLINE; 
 
   args->age_shift = 0;
   args->retrain_intvl = 86400 * 2;
@@ -35,9 +35,6 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->n_thread = 4;
 
 #ifdef __linux__
-  //  printf("This system has %d processors configured and "
-  //         "%d processors available.\n",
-  //         get_nprocs_conf(), get_nprocs());
   args->n_thread = get_nprocs();
 #endif
 

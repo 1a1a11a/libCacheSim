@@ -14,12 +14,7 @@
 /* the number of time windows we keep in features */
 #define N_FEATURE_TIME_WINDOW 8
 
-// /* where the training data (X) is generated from */
-// #define TRAINING_X_FROM_EVICTION 1
-// #define TRAINING_X_FROM_CACHE 2
-// #define TRAINING_DATA_SOURCE TRAINING_X_FROM_CACHE
-
-/* where the training data (Y) is generated from */
+/* whether the training data (segment utility) considers retain */
 #define TRAINING_CONSIDER_RETAIN 1
 
 /* training objective, regression or ranking */
@@ -27,11 +22,14 @@
 #define LTR 2
 #define OBJECTIVE REG
 
-/*********** exp *************/
-//#define dump_ranked_seg_frac 0.05
-
 // #define DUMP_MODEL 1
 //#define DUMP_TRAINING_DATA
+
+/* if this is turned on, dump the online and offline calculated segment utility */
+#define COMPARE_TRAINING_Y 
+#define COMPARE_TRAINING_Y_FILE "compare_y.txt"
+extern FILE *ofile_cmp_y; 
+
 
 /* LHD parameters */
 #define HIT_PROB_MAX_AGE 86400
@@ -41,9 +39,8 @@
 #define HIT_PROB_COMPUTE_INTVL 1000000
 #define LHD_EWMA 0.9
 
+// used to detect overflow 
 #define MAGIC 1234567890
-
-#define DEFAULT_RANK_INTVL 20
 
 static char *L2Cache_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
                                      "LOGCACHE_ITEM_ORACLE", "LOGCACHE_LEARNED"};

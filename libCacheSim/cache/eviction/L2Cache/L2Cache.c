@@ -28,6 +28,9 @@
 extern "C" {
 #endif
 
+FILE *ofile_cmp_y = NULL;
+
+
 void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->segment_size = 100;
   init_params->n_merge = 2;
@@ -83,6 +86,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
     default: abort();
   };
 
+  init_global_params();
   init_seg_sel(cache);
   init_obj_sel(cache);
   init_learner(cache);

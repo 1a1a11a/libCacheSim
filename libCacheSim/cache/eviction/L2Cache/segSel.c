@@ -18,20 +18,6 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 
 // #define DEBUG_CODE
 #ifdef DEBUG_CODE
-static inline void examine_ranked_seg(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-  segment_t **ranked_segs = params->seg_sel.ranked_segs;
-
-#ifdef dump_ranked_seg_frac
-  printf("curr time %ld %ld: ranked segs ", (long) params->curr_rtime,
-         (long) params->curr_vtime);
-  for (int d = 0; d < params->n_segs * dump_ranked_seg_frac; d++) {
-    printf("%d,", ranked_segs[d]->seg_id);
-  }
-  printf("\n");
-#endif
-}
-
 static void check_ranked_segs(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;

@@ -5,6 +5,23 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "const.h"
 
+
+void init_global_params() {
+#ifdef COMPARE_TRAINING_Y
+  ofile_cmp_y = fopen(COMPARE_TRAINING_Y_FILE, "w"); 
+  fprintf(ofile_cmp_y, "# segment utility calculated online and offline, format: bucket, segment, online, offline\n"); 
+#endif
+
+
+}
+
+void deinit_global_params() {
+  if (ofile_cmp_y) {
+    fclose(ofile_cmp_y);
+  }
+
+}
+
 void check_init_params(L2Cache_init_params_t *init_params) {
   assert(init_params->segment_size > 1 && init_params->segment_size <= 100000000);
   assert(init_params->n_merge > 1 && init_params->n_merge <= 100);

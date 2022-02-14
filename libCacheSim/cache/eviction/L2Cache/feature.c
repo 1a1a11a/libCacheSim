@@ -136,40 +136,34 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 
 
   if (y == NULL) {
+    // this is for inference
     return true;
   }
 
-  /* calculate y */
-  double utility = curr_seg->train_utility;
-
+  /* calculate y for training */
+  double online_utility = curr_seg->train_utility;
+  double offline_utility = -1; 
+  *y = (train_y_t) online_utility;
   int n_retained_obj = 0;
+
 #if TRAINING_CONSIDER_RETAIN == 1
   n_retained_obj = params->n_retain_per_seg;
 #endif
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
     /* lower utility should be evicted first */
-    utility = cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
+    offline_utility = cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
                               curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
+    *y = (train_y_t) offline_utility;
   }
 
-// #if OBJECTIVE == REG
-  *y = (train_y_t) utility;
-// #elif OBJECTIVE == LTR
-  /* relevance score, the higher, the more relevant (and better candidates to evict), 
-     convert to 0-1 range,  */
-  // double rel = 1.0 / (utility + 1e-16);
-  // rel = 1 / (1 + exp(-rel));
-  // DEBUG_ASSERT(rel >= 0 && rel <= 1);
-  // *y = rel;
-
-  // convert utility into 0-5 category 
-  
-//  printf("%lf %lf\n", utility, rel);
-// #endif
-
-  if (utility < 0.000001) {
-    return false;
+#ifdef COMPARE_TRAINING_Y
+  if (offline_utility < 0) {
+    offline_utility = cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, n_retained_obj,
+                              curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);    
   }
-  return true;
+  fprintf(ofile_cmp_y, "%d, %d, %lf, %lf\n", curr_seg->bucket_id, curr_seg->seg_id, online_utility, offline_utility);
+#endif
+
+  return *y > 0.000001; 
 }
