@@ -150,9 +150,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
     /* lower utility should be evicted first */
-    offline_utility =
-        cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, 
-                        curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
+    offline_utility = cal_seg_utility_oracle(cache, curr_seg, curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
     *y = (train_y_t) offline_utility;
   }
 

@@ -17,7 +17,7 @@
 #define N_FEATURE_TIME_WINDOW 8
 
 /* whether the training data (segment utility) considers retain */
-// #define TRAINING_CONSIDER_RETAIN 1
+#define TRAINING_CONSIDER_RETAIN 1
 
 /* training objective, regression or ranking */
 #define REG 1
@@ -28,7 +28,7 @@
 // #define DUMP_TRAINING_DATA
 
 /* if this is turned on, dump the online and offline calculated segment utility */
-// #define COMPARE_TRAINING_Y 1
+#define COMPARE_TRAINING_Y 1
 extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
 
 /* LHD parameters */

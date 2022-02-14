@@ -96,9 +96,40 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
   return params->obj_sel.score_array[pos - n_retain];
 }
 
+// /** calculate segment utility, and a segment with a lower utility should be evicted first **/
+// double cal_seg_utility(cache_t *cache, segment_t *seg, int64_t rtime, int64_t vtime) {
+//   L2Cache_params_t *params = cache->eviction_params;
+//   seg_sel_t *seg_sel = &params->seg_sel;
+//   obj_sel_t *obj_sel = &params->obj_sel;
+//   cache_obj_t *cache_obj; 
+
+//   DEBUG_ASSERT(seg->n_obj <= obj_sel->score_array_size);
+
+//   for (int j = 0; j < seg->n_obj; j++) {
+//     // obj_sel->score_array[j] = 
+//         // cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
+//     cache_obj = &seg->objs[j]; 
+//     double age = rtime - cache_obj->L2Cache.last_access_rtime; 
+//     obj_sel->score_array[j] = 1.0e6 / age / cache_obj->obj_size; 
+//   }
+
+//   double utility = 0;
+//   int n_retained_obj = 0; 
+// #ifdef TRAINING_CONSIDER_RETAIN
+//   n_retained_obj = params->n_retain_per_seg;
+//   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
+//   DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
+// #else 
+//   for (int j = 0; j < seg->n_obj - n_retained_obj; j++) {
+//     utility += obj_sel->score_array[j];
+//   }
+// #endif
+
+//   return utility;
+// }
+
 /** calculate segment utility, and a segment with a lower utility should be evicted first **/
-double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
-                       int64_t rtime, int64_t vtime) {
+double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int64_t vtime) {
   L2Cache_params_t *params = cache->eviction_params;
   seg_sel_t *seg_sel = &params->seg_sel;
   obj_sel_t *obj_sel = &params->obj_sel;
@@ -108,10 +139,14 @@ double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_
 
   for (int j = 0; j < seg->n_obj; j++) {
     // obj_sel->score_array[j] = 
-        // cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
+    //     cal_object_score(params, OBJ_SCORE_ORACLE, &seg->objs[j], rtime, vtime); 
     cache_obj = &seg->objs[j]; 
-    double age = rtime - cache_obj->L2Cache.last_access_rtime; 
-    obj_sel->score_array[j] = 1.0e6 / age / cache_obj->obj_size; 
+    double dist = cache_obj->L2Cache.next_access_vtime - vtime; 
+    if (dist < 0) {
+      obj_sel->score_array[j] = 0; 
+    } else {
+      obj_sel->score_array[j] = 1.0e8 / dist / cache_obj->obj_size; 
+    }
   }
 
   double utility = 0;
@@ -120,14 +155,15 @@ double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_
   n_retained_obj = params->n_retain_per_seg;
   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
   DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
-#else 
+#endif
+
   for (int j = 0; j < seg->n_obj - n_retained_obj; j++) {
     utility += obj_sel->score_array[j];
   }
-#endif
 
   return utility;
 }
+
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -142,8 +178,7 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          (double) seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate, seg->miss_ratio,
          (double) seg->n_hit / seg->n_obj, seg->n_hit, seg->n_active, seg->n_merge,
          seg->train_utility, seg->pred_utility,
-         cal_seg_utility(cache, OBJ_SCORE_ORACLE, seg, 
-                         params->curr_rtime, params->curr_vtime),
+         cal_seg_utility_oracle(cache, seg, params->curr_rtime, params->curr_vtime),
          count_n_obj_reuse(cache, seg),
 
          seg->feature.n_hit_per_min[0], seg->feature.n_hit_per_min[1],

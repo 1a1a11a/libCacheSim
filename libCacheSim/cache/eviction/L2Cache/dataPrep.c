@@ -102,9 +102,7 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   seg->train_utility = 0;
 
 #ifdef COMPARE_TRAINING_Y
-  l->train_y_oracle[row_idx] =
-      cal_seg_utility(cache, OBJ_SCORE_ORACLE, seg, seg->become_train_seg_rtime,
-                      seg->become_train_seg_vtime);
+  l->train_y_oracle[row_idx] = cal_seg_utility_oracle(cache, seg, seg->become_train_seg_rtime, seg->become_train_seg_vtime);
 #endif
 
   // TODO: do we need this?
