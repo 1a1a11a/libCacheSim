@@ -38,7 +38,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
 
   new_seg->selected_for_training = false;
   new_seg->pred_utility = INT64_MAX;// to avoid it being picked for eviction
-  new_seg->train_utility = 0;       // to avoid it being picked for eviction
+  new_seg->train_utility = 0;
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_id = bucket_id;
@@ -75,6 +75,7 @@ int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
   return n;
 }
 
+/* find the cutoff object score to retain objects, this is used in merging multiple segments into one */
 double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **segs,
                    int n_segs, int n_retain) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -97,29 +98,35 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
 
 /** calculate segment utility, and a segment with a lower utility should be evicted first **/
 double cal_seg_utility(cache_t *cache, obj_score_type_e obj_score_type, segment_t *seg,
-                       int n_retain, int64_t rtime, int64_t vtime) {
+                       int64_t rtime, int64_t vtime) {
   L2Cache_params_t *params = cache->eviction_params;
   seg_sel_t *seg_sel = &params->seg_sel;
   obj_sel_t *obj_sel = &params->obj_sel;
+  cache_obj_t *cache_obj; 
 
   DEBUG_ASSERT(seg->n_obj <= obj_sel->score_array_size);
+
   for (int j = 0; j < seg->n_obj; j++) {
-    obj_sel->score_array[j] =
-        cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
+    // obj_sel->score_array[j] = 
+        // cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
+    cache_obj = &seg->objs[j]; 
+    double age = rtime - cache_obj->L2Cache.last_access_rtime; 
+    obj_sel->score_array[j] = 1.0e6 / age / cache_obj->obj_size; 
   }
 
+  double utility = 0;
+  int n_retained_obj = 0; 
+#ifdef TRAINING_CONSIDER_RETAIN
+  n_retained_obj = params->n_retain_per_seg;
   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
   DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
-
-  double utilization = 0;
-  for (int j = 0; j < seg->n_obj - n_retain; j++) {
-    utilization += obj_sel->score_array[j];
+#else 
+  for (int j = 0; j < seg->n_obj - n_retained_obj; j++) {
+    utility += obj_sel->score_array[j];
   }
+#endif
 
-  /* we add this term here because the segment here is not fix-sized */
-  //  utilization = utilization * 1e8 / seg->n_byte;
-  DEBUG_ASSERT(utilization >= 0);
-  return utilization;
+  return utility;
 }
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level) {
@@ -135,7 +142,7 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          (double) seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate, seg->miss_ratio,
          (double) seg->n_hit / seg->n_obj, seg->n_hit, seg->n_active, seg->n_merge,
          seg->train_utility, seg->pred_utility,
-         cal_seg_utility(cache, OBJ_SCORE_ORACLE, seg, params->n_retain_per_seg,
+         cal_seg_utility(cache, OBJ_SCORE_ORACLE, seg, 
                          params->curr_rtime, params->curr_vtime),
          count_n_obj_reuse(cache, seg),
 

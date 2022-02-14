@@ -30,6 +30,7 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
   assert(0);// should not reach here
 }
 
+/** merge multiple segments into one segment **/
 void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 

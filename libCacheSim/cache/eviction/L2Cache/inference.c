@@ -114,7 +114,7 @@ void inference_xgboost(cache_t *cache) {
 
 #ifdef DUMP_TRAINING_DATA
       fprintf(f, "%f/%lf: ", pred[n_segs],
-              cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
+              cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, 
                               params->curr_rtime, params->curr_vtime));
       for (int j = 0; j < learner->n_feature; j++) {
         fprintf(f, "%f,", learner->inference_x[learner->n_feature * n_segs + j]);

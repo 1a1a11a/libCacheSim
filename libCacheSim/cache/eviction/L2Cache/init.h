@@ -7,7 +7,7 @@
 
 void init_global_params() {
 #ifdef COMPARE_TRAINING_Y
-  ofile_cmp_y = fopen(COMPARE_TRAINING_Y_FILE, "w");
+  ofile_cmp_y = fopen("compare_y.txt", "w");
   fprintf(ofile_cmp_y, "# segment utility calculated online and offline, format: bucket, "
                        "segment, online, offline\n");
 #endif
@@ -65,6 +65,7 @@ void init_learner(cache_t *cache) {
   l->train_matrix_n_row = 1024 * 8;
   l->train_x = my_malloc_n(feature_t, l->train_matrix_n_row * l->n_feature);
   l->train_y = my_malloc_n(pred_t, l->train_matrix_n_row);
+  l->train_y_oracle = my_malloc_n(pred_t, l->train_matrix_n_row);
   l->valid_matrix_n_row = l->train_matrix_n_row / 10;
   l->valid_x = my_malloc_n(feature_t, l->valid_matrix_n_row * l->n_feature);
   l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_n_row);

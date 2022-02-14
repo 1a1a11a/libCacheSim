@@ -8,6 +8,7 @@ set(source
         eviction.c 
 
         feature.c
+        dataPrep.c
         train.c 
         inference.c
         )

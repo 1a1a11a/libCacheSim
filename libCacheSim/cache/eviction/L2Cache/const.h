@@ -7,15 +7,17 @@
 /* L2Cache uses cache state features, so we need to track cache states 
  * and update them periodically, because there could be time when request 
  * rate is very low, we update when both conditions are met: */
-#define CACHE_STATE_UPDATE_RINTVL 10  // update every 10 seconds
-#define CACHE_STATE_UPDATE_VINTVL 1000// update every 10000 requests
+// update every 10 seconds
+#define CACHE_STATE_UPDATE_RINTVL 10  
+// update every 10000 requests
+#define CACHE_STATE_UPDATE_VINTVL 1000
 
 /* change to 10 will slow down */
 /* the number of time windows we keep in features */
 #define N_FEATURE_TIME_WINDOW 8
 
 /* whether the training data (segment utility) considers retain */
-#define TRAINING_CONSIDER_RETAIN 1
+// #define TRAINING_CONSIDER_RETAIN 1
 
 /* training objective, regression or ranking */
 #define REG 1
@@ -23,12 +25,11 @@
 #define OBJECTIVE REG
 
 // #define DUMP_MODEL 1
-//#define DUMP_TRAINING_DATA
+// #define DUMP_TRAINING_DATA
 
 /* if this is turned on, dump the online and offline calculated segment utility */
-#define COMPARE_TRAINING_Y
-#define COMPARE_TRAINING_Y_FILE "compare_y.txt"
-extern FILE *ofile_cmp_y;
+// #define COMPARE_TRAINING_Y 1
+extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
 
 /* LHD parameters */
 #define HIT_PROB_MAX_AGE 86400
