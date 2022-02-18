@@ -71,7 +71,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
     for (int j = 0; j < segs[i]->n_obj; j++) {
       cache_obj = &segs[i]->objs[j];
       DEBUG_ASSERT(cache_obj->L2Cache.seen_after_snapshot == 0);
-      double obj_score = cal_object_score(params, params->obj_score_type, cache_obj,
+      double obj_score = cal_obj_score(params, params->obj_score_type, cache_obj,
                                           params->curr_rtime, params->curr_vtime);
       if (new_seg->n_obj < params->segment_size && obj_score >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_obj];
@@ -89,7 +89,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
         cache->n_obj -= 1;
         cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
       }
-      object_evict_update(cache, cache_obj);
+      obj_evict_update(cache, cache_obj);
       cache_obj->L2Cache.in_cache = 0;
     }
 
@@ -106,7 +106,7 @@ int evict_one_seg(cache_t *cache, segment_t *seg) {
   int n_cleaned = 0;
   for (int i = 0; i < seg->n_obj; i++) {
     cache_obj_t *cache_obj = &seg->objs[i];
-    object_evict_update(cache, cache_obj);
+    obj_evict_update(cache, cache_obj);
     cache_obj->L2Cache.in_cache = 0;
 
     if (hashtable_try_delete(cache->hashtable, cache_obj)) {

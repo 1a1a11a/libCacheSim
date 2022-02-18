@@ -7,7 +7,7 @@
 #include "utils.h"
 
 
-void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
+void seg_hit_update(L2Cache_params_t *params, cache_obj_t *cache_obj) {
 
   segment_t *segment = cache_obj->L2Cache.segment;
   segment->n_hit += 1;
@@ -141,7 +141,7 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
   for (int i = 0; i < n_segs; i++) {
     seg = segs[i];
     for (int j = 0; j < seg->n_obj; j++) {
-      params->obj_sel.score_array[pos++] = cal_object_score(
+      params->obj_sel.score_array[pos++] = cal_obj_score(
           params, obj_score_type, &seg->objs[j], params->curr_rtime, params->curr_vtime);
     }
   }
@@ -162,7 +162,7 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
 
 //   for (int j = 0; j < seg->n_obj; j++) {
 //     // obj_sel->score_array[j] = 
-//         // cal_object_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
+//         // cal_obj_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
 //     cache_obj = &seg->objs[j]; 
 //     double age = rtime - cache_obj->L2Cache.last_access_rtime; 
 //     obj_sel->score_array[j] = 1.0e6 / age / cache_obj->obj_size; 
@@ -194,7 +194,7 @@ double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int
 
   for (int j = 0; j < seg->n_obj; j++) {
     // obj_sel->score_array[j] = 
-    //     cal_object_score(params, OBJ_SCORE_ORACLE, &seg->objs[j], rtime, vtime); 
+    //     cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j], rtime, vtime); 
     cache_obj = &seg->objs[j]; 
     double dist = cache_obj->L2Cache.next_access_vtime - vtime; 
     if (dist < 0) {

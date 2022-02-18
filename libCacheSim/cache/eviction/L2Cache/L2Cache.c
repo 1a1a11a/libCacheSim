@@ -165,10 +165,10 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
 
   DEBUG_ASSERT(cache_obj->L2Cache.in_cache);
 
-  /* seg_hit update segment state features */
-  seg_hit(params, cache_obj);
+  /* seg_hit_update update segment state features */
+  seg_hit_update(params, cache_obj);
   /* object hit update training data y and object stat */
-  object_hit_update(params, cache_obj, req);
+  obj_hit_update(params, cache_obj, req);
 
   if (params->train_source_y == TRAIN_Y_FROM_ONLINE) {
     update_train_y(params, cache_obj);
@@ -225,7 +225,7 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
   }
 
   cache_obj_t *cache_obj = &seg->objs[seg->n_obj];
-  object_init(cache, req, cache_obj, seg);
+  obj_init(cache, req, cache_obj, seg);
   hashtable_insert_obj(cache->hashtable, cache_obj);
 
   seg->n_byte += cache_obj->obj_size + cache->per_obj_overhead;
