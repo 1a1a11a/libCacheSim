@@ -7,6 +7,8 @@
 #include "utils.h"
 
 
+void seg_feature_shift(L2Cache_params_t *params, segment_t *seg); 
+
 void seg_hit_update(L2Cache_params_t *params, cache_obj_t *cache_obj) {
 
   segment_t *segment = cache_obj->L2Cache.segment;
@@ -61,6 +63,7 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
 }
 
 
+/* this function removes objects from hash table, but not update the cache state */
 int clean_one_seg(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
   int n_cleaned = 0;
@@ -116,8 +119,8 @@ void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment
   new_seg->next_seg = old_seg;
   old_seg->prev_seg = new_seg;
 
-  params->n_segs += 1;
-  bucket->n_segs += 1;
+  params->n_in_use_segs += 1;
+  bucket->n_in_use_segs += 1;
 }
 
 int count_n_obj_reuse(cache_t *cache, segment_t *seg) {

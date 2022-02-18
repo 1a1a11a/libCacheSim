@@ -129,7 +129,7 @@ typedef struct {
   segment_t *ranked_seg_head;
   segment_t *ranked_seg_tail;
 
-  int32_t n_segs;
+  int32_t n_in_use_segs;
   int16_t bucket_id;
   segment_t *next_seg_to_evict;
   hitProb_t *hit_prob;// TODO: move to LHD
@@ -167,7 +167,7 @@ typedef struct {
   train_source_e train_source_y;
 
   // cache state
-  int32_t n_segs;
+  int32_t n_in_use_segs;
   int n_used_buckets;
   bucket_t buckets[MAX_N_BUCKET];
   bucket_t train_bucket; /* segments that are evicted and used for training */

@@ -41,29 +41,13 @@ void dump_training_data(cache_t *cache) {
   fclose(f);
 }
 
-void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *seg) {
-  static __thread int n = 0, n_zero = 0;
-  L2Cache_params_t *params = cache->eviction_params;
-  seg->selected_for_training = true;
-  /* used to calculate the eviction penalty */
-  seg->become_train_seg_vtime = params->curr_vtime;
-  /* used to calculate age at eviction for training */
-  seg->become_train_seg_rtime = params->curr_rtime;
-  seg->train_utility = 0;
-
-  /* remove from the bucket */
-  remove_seg_from_bucket(params, bucket, seg);
-
-  append_seg_to_bucket(params, &params->train_bucket, seg);
-}
-
-static void clean_training_segs(cache_t *cache, int n_clean) {
+static void clean_training_segs(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = params->train_bucket.first_seg;
   segment_t *next_seg;
   int n_cleaned = 0;
 
-  while (n_cleaned < n_clean) {
+  while (seg != NULL) {
     DEBUG_ASSERT(seg != NULL);
     next_seg = seg->next_seg;
     clean_one_seg(cache, seg);
@@ -71,15 +55,13 @@ static void clean_training_segs(cache_t *cache, int n_clean) {
     n_cleaned += 1;
   }
 
-  if (n_clean == params->n_training_segs) {
-    DEBUG_ASSERT(seg == NULL);
-    params->train_bucket.last_seg = NULL;
-  }
+  DEBUG_ASSERT(n_cleaned == params->n_training_segs); 
+  DEBUG_ASSERT(n_cleaned == params->train_bucket.n_in_use_segs);
 
   params->n_training_segs -= n_cleaned;
-  params->train_bucket.n_segs -= n_cleaned;
-  params->train_bucket.first_seg = seg;
-  seg->prev_seg == NULL;
+  params->train_bucket.n_in_use_segs -= n_cleaned;
+  params->train_bucket.first_seg = NULL;
+  params->train_bucket.last_seg = NULL;
 }
 
 /** 
@@ -218,12 +200,12 @@ void snapshot_segs_to_training_data(cache_t *cache) {
   learner_t *l = &params->learner;
   segment_t *curr_seg = NULL;
 
-  double sample_ratio = MAX((double) params->n_segs / (double) l->train_matrix_n_row, 1.0);
+  double sample_ratio = MAX((double) params->n_in_use_segs / (double) l->train_matrix_n_row, 1.0);
 
   double credit = 0;// when credit reaches sample ratio, we sample a segment
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_segs - 1; si++) {
+    for (int si = 0; si < params->buckets[bi].n_in_use_segs - 1; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
       credit += 1;
       if (credit >= sample_ratio) {
@@ -249,16 +231,11 @@ void snapshot_segs_to_training_data(cache_t *cache) {
 void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->L2Cache.segment;
 
-  if (!seg->selected_for_training) {
-    return;
-  }
-
 #if TRAINING_CONSIDER_RETAIN == 1
   if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)
 #endif
   {
     double age = (double) params->curr_vtime - seg->become_train_seg_vtime;
-    //TODO: should age be in real time?
     seg->train_utility += 1.0e6 / age / cache_obj->obj_size;
     params->learner.train_y[seg->training_data_row_idx] = seg->train_utility;
   }
@@ -408,4 +385,6 @@ void prepare_training_data(cache_t *cache) {
 #ifdef DUMP_TRAINING_DATA
   dump_training_data(cache);
 #endif
+
+  clean_training_segs(cache); 
 }

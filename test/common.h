@@ -63,7 +63,7 @@ static reader_t *setup_oracleGeneralBin_reader(void) {
 
 static reader_t *setup_L2CacheTestData_reader(void) {
   char *url = "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/.w68.oracleGeneral.bin.zst"; 
-  int ret = system("rm .w68.oracleGeneral.bin.zst || true; wget https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/.w68.oracleGeneral.bin.zst"); 
+  int ret = system("if [ ! -f .w68.oracleGeneral.bin.zst ]; then wget https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/.w68.oracleGeneral.bin.zst; fi"); 
   if (ret != 0) {
     ERROR("downloading data failed\n");
   } 

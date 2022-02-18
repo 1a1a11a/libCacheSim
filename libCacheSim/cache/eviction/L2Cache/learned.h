@@ -14,9 +14,7 @@ void seg_hit_update(L2Cache_params_t *params, cache_obj_t *cache_obj);
 void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj);
 
 /************* training *****************/
-#if TRAINING_DATA_SOURCE == TRAINING_X_FROM_EVICTION
-void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segment);
-#endif
+
 
 /************* inference *****************/
 
@@ -44,8 +42,6 @@ static inline void resize_matrix(L2Cache_params_t *params, feature_t **x_p, pred
 
 /************* data preparation *****************/
 void dump_training_data(cache_t *cache); 
-
-void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *segment); 
 
 void snapshot_segs_to_training_data(cache_t *cache); 
 

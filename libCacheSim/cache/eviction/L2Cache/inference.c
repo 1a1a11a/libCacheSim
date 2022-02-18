@@ -24,7 +24,7 @@ static inline void resize_inf_matrix(L2Cache_params_t *params, int64_t new_size)
             learner->inference_x);
     my_free(sizeof(pred_t) * learner->inf_matrix_n_row, learner->pred);
   }
-  int n_row = params->n_segs * 2;
+  int n_row = params->n_in_use_segs * 2;
   learner->inference_x = my_malloc_n(feature_t, n_row * learner->n_feature);
   learner->pred = my_malloc_n(pred_t, n_row);
   learner->inf_matrix_n_row = n_row;
@@ -36,8 +36,8 @@ void prepare_inference_data(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
-  if (learner->inf_matrix_n_row < params->n_segs) {
-    resize_inf_matrix(params, params->n_segs);
+  if (learner->inf_matrix_n_row < params->n_in_use_segs) {
+    resize_inf_matrix(params, params->n_in_use_segs);
   }
 
   feature_t *x = learner->inference_x;
@@ -45,22 +45,22 @@ void prepare_inference_data(cache_t *cache) {
   int n_segs = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_segs; si++) {
+    for (int si = 0; si < params->buckets[bi].n_in_use_segs; si++) {
       prepare_one_row(cache, curr_seg, false, &x[learner->n_feature * n_segs], NULL);
       curr_seg = curr_seg->next_seg;
       n_segs++;
     }
   }
-  DEBUG_ASSERT(params->n_segs == n_segs);
+  DEBUG_ASSERT(params->n_in_use_segs == n_segs);
 
 #ifdef USE_XGBOOST
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
-  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_segs, learner->n_feature, -2,
+  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_in_use_segs, learner->n_feature, -2,
                                    &learner->inf_dm));
 
-  // safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &params->n_segs, 1));
+  // safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &params->n_in_use_segs, 1));
 #elif defined(USE_GBM)
 #error
 #endif
@@ -84,12 +84,12 @@ void inference_xgboost(cache_t *cache) {
 
   bst_ulong out_len = 0;
   safe_call(XGBoosterPredict(learner->booster, learner->inf_dm, 0, 0, 0, &out_len, &pred));
-  DEBUG_ASSERT(out_len == params->n_segs);
+  DEBUG_ASSERT(out_len == params->n_in_use_segs);
 
   int n_segs = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     segment_t *curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_segs; si++) {
+    for (int si = 0; si < params->buckets[bi].n_in_use_segs; si++) {
 #if OBJECTIVE == REG
       // curr_seg->pred_utility = pred[n_segs];
       curr_seg->pred_utility = pred[n_segs] * 1e6 / curr_seg->n_byte;

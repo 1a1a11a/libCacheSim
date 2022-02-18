@@ -163,16 +163,48 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
     assert(0);
   }
 
-  DEBUG_ASSERT(cache_obj->L2Cache.in_cache);
+  // DEBUG_ASSERT(cache_obj->L2Cache.in_cache);
 
-  /* seg_hit_update update segment state features */
-  seg_hit_update(params, cache_obj);
-  /* object hit update training data y and object stat */
-  obj_hit_update(params, cache_obj, req);
+  int n_in_cache = 0; 
+  while (cache_obj != NULL) {
+    /* a cache obj can be a cached object, or one of the objects on the evicted segments */
+    if (cache_obj->obj_id != req->obj_id) {
+      cache_obj = cache_obj->hash_next;
+      continue;
+    }
 
-  if (params->train_source_y == TRAIN_Y_FROM_ONLINE) {
-    update_train_y(params, cache_obj);
+    segment_t *seg = cache_obj->L2Cache.segment; 
+
+    if (cache_obj->L2Cache.in_cache == 1) {
+      // update features 
+      n_in_cache++;
+
+      /* seg_hit_update update segment state features */
+      seg_hit_update(params, cache_obj);
+      /* object hit update training data y and object stat */
+      obj_hit_update(params, cache_obj, req);
+
+      if (seg->selected_for_training) {
+        cache_obj->L2Cache.seen_after_snapshot = 1; 
+        update_train_y(params, cache_obj); 
+      }
+
+    } else {
+      DEBUG_ASSERT(seg->selected_for_training == true); 
+      DEBUG_ASSERT(cache_obj->L2Cache.seen_after_snapshot == 0);
+
+      cache_obj->L2Cache.seen_after_snapshot = 1; 
+      update_train_y(params, cache_obj); 
+
+      /* remove object from hash table */
+      hashtable_delete(cache->hashtable, cache_obj);
+    }
+
+    cache_obj = cache_obj->hash_next;
   }
+
+  DEBUG_ASSERT(n_in_cache <= 1);
+
   return cache_ck_hit;
 }
 
@@ -233,8 +265,8 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
   cache->occupied_size += cache_obj->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
 
-  DEBUG_ASSERT(cache->n_obj > (params->n_segs - params->n_used_buckets) * params->segment_size);
-  DEBUG_ASSERT(cache->n_obj <= params->n_segs * params->segment_size);
+  DEBUG_ASSERT(cache->n_obj > (params->n_in_use_segs - params->n_used_buckets) * params->segment_size);
+  DEBUG_ASSERT(cache->n_obj <= params->n_in_use_segs * params->segment_size);
 }
 
 void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
@@ -252,7 +284,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
       last_print_time = params->curr_rtime;
       WARN("%.2lf hour, cache size %lu MB, %d segs, evicting and cannot merge\n",
            (double) params->curr_rtime / 3600.0, cache->cache_size / 1024 / 1024,
-           params->n_segs);
+           params->n_in_use_segs);
     }
 
     evict_one_seg(cache, params->obj_sel.segs_to_evict[0]);
