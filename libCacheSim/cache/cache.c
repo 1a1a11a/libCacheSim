@@ -133,6 +133,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
             cache->n_req, req->obj_id, req->obj_size, cache->occupied_size,
             cache->cache_size);
 
+  cache->n_req += 1;
   cache_ck_res_e cache_check = cache->check(cache, req, true);
 
   bool admit = true;

@@ -67,7 +67,7 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
 int clean_one_seg(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
   int n_cleaned = 0;
-  DEBUG_ASSERT(seg->n_obj == params->segment_size);
+
   for (int i = 0; i < seg->n_obj; i++) {
     cache_obj_t *cache_obj = &seg->objs[i];
     if (hashtable_try_delete(cache->hashtable, cache_obj)) {
