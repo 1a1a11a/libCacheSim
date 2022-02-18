@@ -82,6 +82,105 @@ static void clean_training_segs(cache_t *cache, int n_clean) {
   seg->prev_seg == NULL;
 }
 
+/** 
+ * @brief update the segment feature when a segment is evicted
+ * 
+ * features: 
+ *    bucket_id: the bucket id of the segment
+ *    create_hour: the hour when the segment is created
+ *    create_min: the min when the segment is created
+ *    age: the age of the segment
+ *    req_rate: the request rate of the segment when it was created
+ *    write_rate: the write rate of the segment when it was created
+ *    mean_obj_size 
+ *    miss_ratio: the miss ratio of the segment when it was created
+ *    NA
+ *    n_hit: the number of requests so far 
+ *    n_active: the number of active objects 
+ *    n_merge: the number of times it has been merged 
+ *    n_hit_per_min: the number of requests per min
+ *    n_hit_per_ten_min: the number of requests per 10 min
+ *    n_hit_per_hour: the number of requests per hour
+ * 
+ * @param is_training_data: whether the data is training or inference 
+ * @param x: feature vector, and we write to x 
+ * @param y: label, for passing the true y 
+ * 
+ */
+bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data, feature_t *x,
+                     train_y_t *y) {
+  L2Cache_params_t *params = cache->eviction_params;
+  learner_t *learner = &params->learner;
+
+  // debug
+  //  x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = x[6] = x[7] = x[8] = x[9] = x[10] = x[11] = 0;
+
+  x[0] = (feature_t) curr_seg->bucket_id;
+  x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
+  x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
+  if (is_training_data) {
+    x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
+    assert(curr_seg->become_train_seg_rtime == params->curr_rtime);
+  } else {
+    x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
+  }
+  x[4] = (feature_t) curr_seg->req_rate;
+  x[5] = (feature_t) curr_seg->write_rate;
+  x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
+  x[7] = (feature_t) curr_seg->miss_ratio;
+  x[8] = 0.0;
+  x[9] = curr_seg->n_hit;
+  x[10] = curr_seg->n_active;
+  x[11] = curr_seg->n_merge;
+
+  for (int k = 0; k < N_FEATURE_TIME_WINDOW; k++) {
+    x[12 + k * 3 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
+    x[12 + k * 3 + 1] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
+    x[12 + k * 3 + 2] = (feature_t) curr_seg->feature.n_hit_per_hour[k];
+
+    //    x[12 + k * 3 + 0] = 0;
+    //    x[12 + k * 3 + 1] = 0;
+    //    x[12 + k * 3 + 2] = 0;
+  }
+
+  // if (is_training_data)
+  //   printf("train: ");
+  // else
+  //   printf("test:  ");
+
+  // printf("%.0f/%.0f/%.0f/%.0f | %.0f, %.0f, %.0f, %.4f | %.0f/%.0f/%.0f, %.0f|%.0f|%.0f\n",
+  //   x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[9], x[10], x[11], x[12], x[20], x[28]
+  // );
+
+  // for (int j = 0; j < 36; j++) {
+  //   printf("%.2f, ", x[j]);
+  // }
+  // printf("\n");
+
+  if (y == NULL) {
+    // this is for inference
+    return true;
+  }
+
+  /* calculate y for training */
+  double online_utility = curr_seg->train_utility;
+  double offline_utility = -1;
+  *y = (train_y_t) online_utility;
+  int n_retained_obj = 0;
+
+#if TRAINING_CONSIDER_RETAIN == 1
+  n_retained_obj = params->n_retain_per_seg;
+#endif
+
+  if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
+    /* lower utility should be evicted first */
+    offline_utility = cal_seg_utility_oracle(cache, curr_seg, curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
+    *y = (train_y_t) offline_utility;
+  }
+
+  return *y > 0.000001;
+}
+
 /** @brief copy a segment to training data matrix
  *
  * @param cache
@@ -141,9 +240,9 @@ void snapshot_segs_to_training_data(cache_t *cache) {
       curr_seg = curr_seg->next_seg;
     }
   }
-  DEBUG("%.2lf hour cache size %.2lf MB snapshot %d/%d train sample\n",
-        (double) params->curr_rtime / 3600.0, cache->cache_size / 1024.0 / 1024.0,
-        l->n_train_samples, l->train_matrix_n_row);
+  // DEBUG("%.2lf hour cache size %.2lf MB snapshot %d/%d train sample\n",
+  //       (double) params->curr_rtime / 3600.0, cache->cache_size / 1024.0 / 1024.0,
+  //       l->n_train_samples, l->train_matrix_n_row);
 }
 
 /* used when the training y is calculated online */

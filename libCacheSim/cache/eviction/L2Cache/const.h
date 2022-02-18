@@ -28,7 +28,7 @@
 // #define DUMP_TRAINING_DATA
 
 /* if this is turned on, dump the online and offline calculated segment utility */
-#define COMPARE_TRAINING_Y 1
+// #define COMPARE_TRAINING_Y 1
 extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
 
 /* LHD parameters */

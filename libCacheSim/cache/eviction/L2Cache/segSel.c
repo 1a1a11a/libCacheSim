@@ -1,3 +1,7 @@
+/* this file handles the segment selection for L2 cache
+   it uses FIFO, weighted FIFO, rand, ranking to choose segments 
+ */
+
 
 #include "segSel.h"
 #include "../../../utils/include/mymath.h"

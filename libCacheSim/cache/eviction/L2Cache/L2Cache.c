@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+/* output file for comparing online and offline calculated segment utility */
 FILE *ofile_cmp_y = NULL;
 
 void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
@@ -167,7 +168,7 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
   /* seg_hit update segment state features */
   seg_hit(params, cache_obj);
   /* object hit update training data y and object stat */
-  object_hit(params, cache_obj, req);
+  object_hit_update(params, cache_obj, req);
 
   if (params->train_source_y == TRAIN_Y_FROM_ONLINE) {
     update_train_y(params, cache_obj);
@@ -245,7 +246,6 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     // this can happen when space is fragmented between buckets and we cannot merge
     // and we evict segs[0] and return
     segment_t *seg = params->obj_sel.segs_to_evict[0];
-    bucket = &params->buckets[seg->bucket_id];
 
     static int64_t last_print_time = 0;
     if (params->curr_rtime - last_print_time > 3600 * 6) {
@@ -255,7 +255,6 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
            params->n_segs);
     }
 
-    remove_seg_from_bucket(params, bucket, seg);
     evict_one_seg(cache, params->obj_sel.segs_to_evict[0]);
     return;
   }

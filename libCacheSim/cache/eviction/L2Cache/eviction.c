@@ -6,6 +6,7 @@
 #include "learned.h"
 #include "segSel.h"
 #include "segment.h"
+#include "L2CacheInternal.h"
 
 /* choose which segment to evict */
 bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
@@ -69,6 +70,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_obj; j++) {
       cache_obj = &segs[i]->objs[j];
+      DEBUG_ASSERT(cache_obj->L2Cache.seen_after_snapshot == 0);
       double obj_score = cal_object_score(params, params->obj_score_type, cache_obj,
                                           params->curr_rtime, params->curr_vtime);
       if (new_seg->n_obj < params->segment_size && obj_score >= cutoff) {
@@ -87,11 +89,12 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
         cache->n_obj -= 1;
         cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
       }
-      object_evict(cache, cache_obj);
+      object_evict_update(cache, cache_obj);
       cache_obj->L2Cache.in_cache = 0;
     }
 
     remove_seg_from_bucket(params, bucket, segs[i]);
+    // append_seg_to_bucket(params, &params->train_bucket, segs[i]);
     clean_one_seg(cache, segs[i]);
   }
 }
@@ -103,7 +106,7 @@ int evict_one_seg(cache_t *cache, segment_t *seg) {
   int n_cleaned = 0;
   for (int i = 0; i < seg->n_obj; i++) {
     cache_obj_t *cache_obj = &seg->objs[i];
-    object_evict(cache, cache_obj);
+    object_evict_update(cache, cache_obj);
     cache_obj->L2Cache.in_cache = 0;
 
     if (hashtable_try_delete(cache->hashtable, cache_obj)) {
@@ -114,6 +117,8 @@ int evict_one_seg(cache_t *cache, segment_t *seg) {
   }
   my_free(sizeof(cache_obj_t) * params->n_obj, seg->objs);
   my_free(sizeof(segment_t), seg);
+
+  remove_seg_from_bucket(params, &params->buckets[seg->bucket_id], seg);
 
   return n_cleaned;
 }

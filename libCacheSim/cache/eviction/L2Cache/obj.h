@@ -32,7 +32,8 @@ static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *
   return obj_age;
 }
 
-static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
+/* some internal state update when an object is requested */
+static inline void object_hit_update(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
   obj->L2Cache.next_access_vtime = req->next_access_vtime;
   obj->L2Cache.last_access_rtime = params->curr_rtime;
   obj->L2Cache.freq += 1;
@@ -44,7 +45,8 @@ static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, reques
   bkt->hit_prob->n_hit[obj_age] += 1;
 }
 
-static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
+/* some internal state update bwhen an object is evicted */
+static inline void object_evict_update(cache_t *cache, cache_obj_t *obj) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_id];

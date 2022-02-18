@@ -6,6 +6,61 @@
 #include "obj.h"
 #include "utils.h"
 
+
+void seg_hit(L2Cache_params_t *params, cache_obj_t *cache_obj) {
+
+  segment_t *segment = cache_obj->L2Cache.segment;
+  segment->n_hit += 1;
+
+  if (params->curr_rtime - segment->feature.last_min_window_ts >= 60) {
+    seg_feature_shift(params, segment);
+  }
+
+  segment->feature.n_hit_per_min[0] += 1;
+  segment->feature.n_hit_per_ten_min[0] += 1;
+  segment->feature.n_hit_per_hour[0] += 1;
+
+  if (cache_obj->L2Cache.active == 0) {
+    segment->n_active += 1;
+    cache_obj->L2Cache.active = 1;
+  }
+}
+
+/* because we use windowed feature, we need to shift the feature
+ * when the window moves */
+void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
+
+  int64_t shift;
+
+  /* whether it is a new min window now */
+  shift = (params->curr_rtime - seg->feature.last_min_window_ts) / 60;
+  if (shift <= 0) return;
+  for (int i = N_FEATURE_TIME_WINDOW - 1; i >= 0; i--) {
+    seg->feature.n_hit_per_min[i + 1] = seg->feature.n_hit_per_min[i];
+  }
+  seg->feature.n_hit_per_min[0] = 0;
+  seg->feature.last_min_window_ts = params->curr_rtime;
+
+  /* whether it is a new 10-min window now */
+  shift = (params->curr_rtime - seg->feature.last_ten_min_window_ts) / 600;
+  if (shift <= 0) return;
+  for (int i = N_FEATURE_TIME_WINDOW - 1; i >= 0; i--) {
+    seg->feature.n_hit_per_ten_min[i + 1] = seg->feature.n_hit_per_ten_min[i];
+  }
+  seg->feature.n_hit_per_ten_min[0] = 0;
+  seg->feature.last_ten_min_window_ts = params->curr_rtime;
+
+  /* whether it is a new hour window now */
+  shift = (params->curr_rtime - seg->feature.last_hour_window_ts) / 3600;
+  if (shift <= 0) return;
+  for (int i = N_FEATURE_TIME_WINDOW - 1; i >= 0; i--) {
+    seg->feature.n_hit_per_hour[i + 1] = seg->feature.n_hit_per_hour[i];
+  }
+  seg->feature.n_hit_per_hour[0] = 0;
+  seg->feature.last_hour_window_ts = params->curr_rtime;
+}
+
+
 int clean_one_seg(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
   int n_cleaned = 0;
