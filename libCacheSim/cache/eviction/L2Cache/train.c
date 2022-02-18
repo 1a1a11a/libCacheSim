@@ -11,11 +11,24 @@
 
 
 #ifdef USE_XGBOOST
+static void debug_print_feature_matrix(const DMatrixHandle handle, int print_n_row) {
+  unsigned long out_len; 
+  const float *out_data; 
+  XGDMatrixGetFloatInfo(handle, "label", &out_len, &out_data);
+
+  printf("out_len: %lu\n", out_len);
+  for (int i = 0; i < print_n_row; i++) {
+    printf("%.4f, ", out_data[i]);
+  }
+  printf("\n"); 
+}
+
 static void train_xgboost(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
-  learner_t *learner = &((L2Cache_params_t *) cache->eviction_params)->learner;
+  learner_t *learner = &params->learner;
 
   prepare_training_data(cache);
+  // debug_print_feature_matrix(learner->train_dm, 20);
 
   DMatrixHandle eval_dmats[2] = {learner->train_dm, learner->valid_dm};
   static const char *eval_names[2] = {"train", "valid"};

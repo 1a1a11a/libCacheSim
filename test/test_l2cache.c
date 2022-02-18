@@ -103,7 +103,8 @@ static void test_L2Cache_ORACLE_BOTH(gconstpointer user_data) {
 
 static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {2255891, 1601486, 1305691, 1205976};
+  // uint64_t miss_cnt_true[] = {2255891, 1601486, 1305691, 1205976};
+  uint64_t miss_cnt_true[] = {2263035, 1509245, 1269869, 1176711};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -124,7 +125,8 @@ static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
 static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
   // uint64_t miss_cnt_true[] = {2600178, 1598445, 1296337, 1212834};
-  uint64_t miss_cnt_true[] = {2371604, 1590259, 1289356, 1205920};
+  // uint64_t miss_cnt_true[] = {2371604, 1590259, 1289356, 1205920};
+  uint64_t miss_cnt_true[] = {2500987, 1508243, 1283680, 1286305};    // cannot decrease because of too large segments? 
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -174,7 +176,7 @@ int main(int argc, char *argv[]) {
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   reader = setup_L2CacheTestData_reader(); 
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_LEARNED_TRUE_Y", reader, test_L2Cache_LEARNED_TRUE_Y);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_LEARNED_ONLINE", reader, test_L2Cache_LEARNED_ONLINE);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_LEARNED_ONLINE", reader, test_L2Cache_LEARNED_ONLINE);
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_ORACLE_LOG", reader, test_L2Cache_ORACLE_LOG);
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_ORACLE_ITEM", reader, test_L2Cache_ORACLE_ITEM);
   g_test_add_data_func("/libCacheSim/cacheAlgo_L2Cache_ORACLE_BOTH", reader, test_L2Cache_ORACLE_BOTH);

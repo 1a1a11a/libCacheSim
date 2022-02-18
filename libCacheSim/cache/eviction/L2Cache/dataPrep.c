@@ -148,11 +148,6 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   double online_utility = curr_seg->train_utility;
   double offline_utility = -1;
   *y = (train_y_t) online_utility;
-  int n_retained_obj = 0;
-
-#if TRAINING_CONSIDER_RETAIN == 1
-  n_retained_obj = params->n_retain_per_seg;
-#endif
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
     /* lower utility should be evicted first */
@@ -230,6 +225,9 @@ void snapshot_segs_to_training_data(cache_t *cache) {
 /* used when the training y is calculated online */
 void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->L2Cache.segment;
+
+  if (params->train_source_y == TRAIN_Y_FROM_ORACLE) 
+    return; // do nothing
 
 #if TRAINING_CONSIDER_RETAIN == 1
   if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)

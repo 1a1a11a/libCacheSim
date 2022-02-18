@@ -37,6 +37,8 @@ else()
 endif()
 
 
+set(LOG_LEVEL "verbose")
+
 ########################################
 # define options #
 ########################################
@@ -80,19 +82,19 @@ else()
     remove_definitions(ENABLE_L2CACHE)
 endif(ENABLE_L2CACHE)
 
-if (LOG_LEVEL MATCHES verbose)
-    message(STATUS "verbose")
+if (LOG_LEVEL MATCHES vvverbose)
+    add_compile_definitions(LOGLEVEL=3)
+elseif (LOG_LEVEL MATCHES vverbose)
+    add_compile_definitions(LOGLEVEL=4)
+elseif (LOG_LEVEL MATCHES verbose)
     add_compile_definitions(LOGLEVEL=5)
 elseif (LOG_LEVEL MATCHES debug)
     add_compile_definitions(LOGLEVEL=6)
 elseif (LOG_LEVEL MATCHES info)
-    message(STATUS "info")
     add_compile_definitions(LOGLEVEL=7)
 elseif (LOG_LEVEL MATCHES warning)
-    message(STATUS "warn")
     add_compile_definitions(LOGLEVEL=8)
 elseif (LOG_LEVEL MATCHES severe)
-    message(STATUS "severe")
     add_compile_definitions(LOGLEVEL=9)
 endif()
 
