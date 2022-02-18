@@ -183,7 +183,6 @@ cache_ck_res_e Cacheus_get(cache_t *cache, request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *) (cache->eviction_params);
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
-  cache->n_req ++;
 
   cache_ck_res_e ret = cache_get_base(cache, req);
 

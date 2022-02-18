@@ -116,8 +116,6 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
     return ck_lru;
   }
 
-  cache->n_req ++;
-
   if (ck_lru != cache_ck_hit) {
     /* cache miss */
     check_and_update_history(cache, req);

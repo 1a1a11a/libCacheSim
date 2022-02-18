@@ -61,10 +61,6 @@ cache_ck_res_e LHD_check(cache_t *cache, request_t *req, bool update_cache) {
   auto itr = lhd->sizeMap.find(id);
   bool hit = (itr != lhd->sizeMap.end());
 
-  if (update_cache) {
-    cache->n_req += 1;
-  }
-
   if (!hit) {
     return cache_ck_miss;
   }
