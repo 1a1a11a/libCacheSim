@@ -5,6 +5,20 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "const.h"
 
+void init_global_params() {
+#ifdef COMPARE_TRAINING_Y
+  ofile_cmp_y = fopen("compare_y.txt", "w");
+  fprintf(ofile_cmp_y, "# segment utility calculated online and offline, format: bucket, "
+                       "segment, online, offline\n");
+#endif
+}
+
+void deinit_global_params() {
+  if (ofile_cmp_y) {
+    fclose(ofile_cmp_y);
+  }
+}
+
 void check_init_params(L2Cache_init_params_t *init_params) {
   assert(init_params->segment_size > 1 && init_params->segment_size <= 100000000);
   assert(init_params->n_merge > 1 && init_params->n_merge <= 100);
@@ -48,14 +62,13 @@ void init_learner(cache_t *cache) {
   l->n_train = -1;
   l->n_inference = 0;
 
-
   l->train_matrix_n_row = 1024 * 8;
   l->train_x = my_malloc_n(feature_t, l->train_matrix_n_row * l->n_feature);
   l->train_y = my_malloc_n(pred_t, l->train_matrix_n_row);
+  l->train_y_oracle = my_malloc_n(pred_t, l->train_matrix_n_row);
   l->valid_matrix_n_row = l->train_matrix_n_row / 10;
   l->valid_x = my_malloc_n(feature_t, l->valid_matrix_n_row * l->n_feature);
   l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_n_row);
-
 
   l->retrain_intvl = init_params->retrain_intvl;
   if (l->retrain_intvl <= 0) l->retrain_intvl = 86400;

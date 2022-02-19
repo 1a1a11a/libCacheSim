@@ -1,9 +1,13 @@
+/* this file handles the segment selection for L2 cache
+   it uses FIFO, weighted FIFO, rand, ranking to choose segments 
+ */
+
 
 #include "segSel.h"
+#include "../../../utils/include/mymath.h"
 #include "learned.h"
 #include "segment.h"
 #include "utils.h"
-#include "../../../utils/include/mymath.h"
 
 static inline int cmp_seg(const void *p1, const void *p2) {
   segment_t *seg1 = *(segment_t **) p1;
@@ -18,20 +22,6 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 
 // #define DEBUG_CODE
 #ifdef DEBUG_CODE
-static inline void examine_ranked_seg(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-  segment_t **ranked_segs = params->seg_sel.ranked_segs;
-
-#ifdef dump_ranked_seg_frac
-  printf("curr time %ld %ld: ranked segs ", (long) params->curr_rtime,
-         (long) params->curr_vtime);
-  for (int d = 0; d < params->n_segs * dump_ranked_seg_frac; d++) {
-    printf("%d,", ranked_segs[d]->seg_id);
-  }
-  printf("\n");
-#endif
-}
-
 static void check_ranked_segs(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
@@ -84,30 +74,29 @@ void rank_segs(cache_t *cache) {
   int n_segs = 0;
   segment_t *curr_seg;
   for (int i = 0; i < MAX_N_BUCKET; i++) {
-    int j = 0; 
+    int j = 0;
     curr_seg = params->buckets[i].first_seg;
     while (curr_seg) {
       if (params->type == LOGCACHE_LEARNED) {
         // curr_seg->utility = 0;
-        // printf("bucket %d, %dth seg, %.4lf %.4lf\n", 
-        //         i, j, 
-        //         curr_seg->utility, cal_seg_utility(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
-        //                     params->curr_rtime, params->curr_vtime)); 
+        // printf("bucket %d, %dth seg, %.4lf %.4lf\n",
+        //         i, j,
+        //         curr_seg->utility, cal_seg_utility(cache, params->obj_score_type, curr_seg, 
+        //                     params->curr_rtime, params->curr_vtime));
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
         curr_seg->pred_utility =
-            cal_seg_utility(cache, params->obj_score_type, curr_seg, params->n_retain_per_seg,
-                            params->curr_rtime, params->curr_vtime);
+            // cal_seg_utility(cache, params->obj_score_type, curr_seg, params->curr_rtime, params->curr_vtime);
+            cal_seg_utility_oracle(cache, curr_seg, params->curr_rtime, params->curr_vtime);
       } else if (params->type == LOGCACHE_BOTH_ORACLE) {
         curr_seg->pred_utility =
-            cal_seg_utility(cache, OBJ_SCORE_ORACLE, curr_seg, params->n_retain_per_seg,
-                            params->curr_rtime, params->curr_vtime);
+            cal_seg_utility_oracle(cache, curr_seg, params->curr_rtime, params->curr_vtime);
       } else {
         abort();
       }
 
-      j += 1; 
+      j += 1;
       if (!is_seg_evictable(curr_seg, 1, true)
-          || params->buckets[curr_seg->bucket_id].n_segs < params->n_merge + 1) {
+          || params->buckets[curr_seg->bucket_id].n_in_use_segs < params->n_merge + 1) {
         curr_seg->pred_utility += INT32_MAX / 2;
       }
 
@@ -116,7 +105,7 @@ void rank_segs(cache_t *cache) {
     }
   }
 
-  DEBUG_ASSERT(n_segs == params->n_segs);
+  DEBUG_ASSERT(n_segs == params->n_in_use_segs);
 
   DEBUG_ASSERT(params->type == LOGCACHE_LOG_ORACLE || params->type == LOGCACHE_BOTH_ORACLE
                || params->type == LOGCACHE_LEARNED);
@@ -130,7 +119,7 @@ void rank_segs(cache_t *cache) {
     params->buckets[bi].ranked_seg_tail = NULL;
   }
 
-  for (int i = 0; i < params->n_segs; i++) {
+  for (int i = 0; i < params->n_in_use_segs; i++) {
     ranked_segs[i]->rank = i;
 
     bucket_t *bkt = &(params->buckets[ranked_segs[i]->bucket_id]);
@@ -143,7 +132,7 @@ void rank_segs(cache_t *cache) {
     }
     ranked_segs[i]->next_ranked_seg = NULL;
   }
-  params->seg_sel.n_ranked_segs = params->n_segs;
+  params->seg_sel.n_ranked_segs = params->n_in_use_segs;
 }
 
 /** we need to find segments from the same bucket to merge, 
@@ -172,7 +161,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   int n_scanned_bucket = 0;
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
   segment_t *seg_to_evict = bucket->next_seg_to_evict;
-  DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id); 
+  DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id);
 
   while (!is_seg_evictable(seg_to_evict, params->n_merge, true)) {
     bucket->next_seg_to_evict = bucket->first_seg;
@@ -182,26 +171,25 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
     if (seg_to_evict == NULL) {
       seg_to_evict = bucket->first_seg;
     }
-    DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id); 
+    DEBUG_ASSERT(seg_to_evict == NULL || seg_to_evict->bucket_id == bucket->bucket_id);
 
     n_scanned_bucket += 1;
 
     if (n_scanned_bucket > MAX_N_BUCKET + 1) {
       // no evictable seg found, random+FIFO select one
-      int n_th_seg = next_rand() % params->n_segs;
+      int n_th_seg = next_rand() % params->n_in_use_segs;
       for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-        if (params->buckets[bi].n_segs == 0) 
-          continue; 
+        if (params->buckets[bi].n_in_use_segs == 0) continue;
 
-        if (n_th_seg > params->buckets[bi].n_segs) {
-          n_th_seg -= params->buckets[bi].n_segs;
+        if (n_th_seg > params->buckets[bi].n_in_use_segs) {
+          n_th_seg -= params->buckets[bi].n_in_use_segs;
         } else {
           bucket = &params->buckets[bi];
           break;
         }
       }
       segs[0] = bucket->first_seg;
-      bucket->next_seg_to_evict = NULL; 
+      bucket->next_seg_to_evict = NULL;
       return NULL;
     }
   }
@@ -213,7 +201,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
   }
 
   // TODO: this is not good enough, we should not merge till the end
-  if (bucket->n_segs > params->n_merge + 1) {
+  if (bucket->n_in_use_segs > params->n_merge + 1) {
     bucket->next_seg_to_evict = seg_to_evict;
   } else {
     bucket->next_seg_to_evict = NULL;
@@ -250,12 +238,12 @@ bucket_t *select_segs_rand(cache_t *cache, segment_t **segs) {
     params->curr_evict_bucket_idx = (params->curr_evict_bucket_idx + 1) % MAX_N_BUCKET;
     bucket = &params->buckets[params->curr_evict_bucket_idx];
 
-    int n_th = next_rand() % (bucket->n_segs - params->n_merge);
+    int n_th = next_rand() % (bucket->n_in_use_segs - params->n_merge);
     seg_to_evict = bucket->first_seg;
     for (int i = 0; i < n_th; i++) seg_to_evict = seg_to_evict->next_seg;
 
     n_checked_seg += 1;
-    DEBUG_ASSERT(n_checked_seg <= params->n_segs * 2);
+    DEBUG_ASSERT(n_checked_seg <= params->n_in_use_segs * 2);
   }
 
   for (int i = 0; i < params->n_merge; i++) {
@@ -275,12 +263,12 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
   bool array_resized = false;
 
   /* setup function */
-  if (unlikely(ss->ranked_seg_size < params->n_segs)) {
+  if (unlikely(ss->ranked_seg_size < params->n_in_use_segs)) {
     if (ss->ranked_segs != NULL) {
       my_free(sizeof(segment_t *) * ss->ranked_seg_size, ss->ranked_segs);
     }
-    ss->ranked_seg_size = params->n_segs * 2;
-    ss->ranked_segs = my_malloc_n(segment_t *, params->n_segs * 2);
+    ss->ranked_seg_size = params->n_in_use_segs * 2;
+    ss->ranked_segs = my_malloc_n(segment_t *, params->n_in_use_segs * 2);
     array_resized = true;
   }
 
@@ -288,7 +276,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
   int32_t *ranked_seg_pos_p = &(ss->ranked_seg_pos);
 
   /* rerank every rerank_intvl_evictions evictions */
-  int rerank_intvl_evictions = params->n_segs * params->rank_intvl / params->n_merge;
+  int rerank_intvl_evictions = params->n_in_use_segs * params->rank_intvl / params->n_merge;
   rerank_intvl_evictions = MAX(rerank_intvl_evictions, 1);
   if (params->n_evictions - ss->last_rank_time >= rerank_intvl_evictions || array_resized) {
     rank_segs(cache);
@@ -341,7 +329,8 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     DEBUG_ASSERT(segs[i]->next_seg != NULL);
     DEBUG_ASSERT(segs[i]->bucket_id == segs[i - 1]->bucket_id);
 
-    DEBUG_ASSERT(params->merge_consecutive_segs || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
+    DEBUG_ASSERT(params->merge_consecutive_segs
+                 || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
     ranked_segs[segs[i]->rank] = NULL;
   }
 

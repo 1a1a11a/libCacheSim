@@ -4,7 +4,7 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "L2CacheInternal.h"
 
-static inline void object_init(cache_t *cache, request_t *req, cache_obj_t *cache_obj,
+static inline void obj_init(cache_t *cache, request_t *req, cache_obj_t *cache_obj,
                                segment_t *seg) {
   copy_request_to_cache_obj(cache_obj, req);
   cache_obj->L2Cache.freq = 0;
@@ -17,7 +17,7 @@ static inline void object_init(cache_t *cache, request_t *req, cache_obj_t *cach
   cache_obj->L2Cache.idx_in_segment = seg->n_obj;
 }
 
-static inline int64_t object_age(L2Cache_params_t *params, cache_obj_t *obj) {
+static inline int64_t obj_age(L2Cache_params_t *params, cache_obj_t *obj) {
   return params->curr_rtime - obj->L2Cache.last_access_rtime;
 }
 
@@ -32,7 +32,8 @@ static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *
   return obj_age;
 }
 
-static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
+/* some internal state update when an object is requested */
+static inline void obj_hit_update(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
   obj->L2Cache.next_access_vtime = req->next_access_vtime;
   obj->L2Cache.last_access_rtime = params->curr_rtime;
   obj->L2Cache.freq += 1;
@@ -44,7 +45,8 @@ static inline void object_hit(L2Cache_params_t *params, cache_obj_t *obj, reques
   bkt->hit_prob->n_hit[obj_age] += 1;
 }
 
-static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
+/* some internal state update bwhen an object is evicted */
+static inline void obj_evict_update(cache_t *cache, cache_obj_t *obj) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_id];
@@ -59,7 +61,7 @@ static inline void object_evict(cache_t *cache, cache_obj_t *obj) {
 
 /* calculate the score of object, the larger score, 
    the more important object is, we should keep it */
-static inline double cal_object_score(L2Cache_params_t *params, obj_score_type_e score_type,
+static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e score_type,
                                       cache_obj_t *cache_obj, int curr_rtime,
                                       int64_t curr_vtime) {
   segment_t *seg = cache_obj->L2Cache.segment;
@@ -80,9 +82,9 @@ static inline double cal_object_score(L2Cache_params_t *params, obj_score_type_e
            / (curr_rtime - cache_obj->L2Cache.last_access_rtime);
 
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
-    int64_t obj_age = object_age(params, cache_obj);
-    obj_age = obj_age >= HIT_PROB_MAX_AGE ? HIT_PROB_MAX_AGE - 1 : obj_age;
-    return 1.0e6 * bkt->hit_prob->hit_density[obj_age] / cache_obj->obj_size;
+    int64_t age = obj_age(params, cache_obj);
+    age = age >= HIT_PROB_MAX_AGE ? HIT_PROB_MAX_AGE - 1 : age;
+    return 1.0e6 * bkt->hit_prob->hit_density[age] / cache_obj->obj_size;
 
   } else if (score_type == OBJ_SCORE_ORACLE) {
     if (cache_obj->L2Cache.next_access_vtime == -1) {

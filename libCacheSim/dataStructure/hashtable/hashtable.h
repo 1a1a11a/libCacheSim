@@ -15,16 +15,6 @@ extern "C"
 #include "../../include/config.h"
 #include "../../utils/include/mymath.h"
 
-
-//#if HASHTABLE_TYPE == CHAINED_HASHTABLE
-//#include "chainedHashTable.h"
-//#elif HASHTABLE_TYPE == CUCKCOO_HASHTABLE
-//#include "cuckooHashTable.h"
-//#else
-//#include "chainedHashTable.h"
-//#endif
-
-
 #if HASHTABLE_TYPE == CHAINED_HASHTABLE
 #include "chainedHashTable.h"
 #define create_hashtable(hashpower) create_chained_hashtable(hashpower)
@@ -38,6 +28,7 @@ extern "C"
 #define hashtable_foreach(hashtable, iter_func, user_data) chained_hashtable_foreach(hashtable, iter_func, user_data)
 #define free_hashtable(hashtable) free_chained_hashtable(hashtable)
 #define hashtable_add_ptr_to_monitoring(hashtable, ptr) chained_hashtable_add_ptr_to_monitoring(hashtable, ptr)
+#define HASHTABLE_VER 1
 
 #elif HASHTABLE_TYPE == CHAINED_HASHTABLEV2
 #include "chainedHashTableV2.h"
@@ -54,6 +45,7 @@ extern "C"
 #define hashtable_foreach(hashtable, iter_func, user_data) chained_hashtable_foreach_v2(hashtable, iter_func, user_data)
 #define free_hashtable(hashtable) free_chained_hashtable_v2(hashtable)
 #define hashtable_add_ptr_to_monitoring(hashtable, ptr)
+#define HASHTABLE_VER 2
 
 #elif HASHTABLE_TYPE == CUCKCOO_HASHTABLE
 #include "cuckooHashTable.h"

@@ -7,7 +7,7 @@ void append_seg_to_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t 
   /* because the last segment may not be full, so we link before it */
   if (bucket->last_seg == NULL) {
     DEBUG_ASSERT(bucket->first_seg == NULL);
-    DEBUG_ASSERT(bucket->n_segs == 0);
+    DEBUG_ASSERT(bucket->n_in_use_segs == 0);
     bucket->first_seg = segment;
     bucket->next_seg_to_evict = segment;
     if (&params->train_bucket != bucket) params->n_used_buckets += 1;
@@ -19,11 +19,11 @@ void append_seg_to_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t 
   segment->next_seg = NULL;
   bucket->last_seg = segment;
 
-  bucket->n_segs += 1;
+  bucket->n_in_use_segs += 1;
   if (&params->train_bucket == bucket) {
     params->n_training_segs += 1;
   } else {
-    params->n_segs += 1;
+    params->n_in_use_segs += 1;
   }
 }
 
@@ -43,10 +43,10 @@ void remove_seg_from_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_
     segment->next_seg->prev_seg = segment->prev_seg;
   }
 
-  params->n_segs -= 1;
-  bucket->n_segs -= 1;
+  params->n_in_use_segs -= 1;
+  bucket->n_in_use_segs -= 1;
 
-  if (bucket->n_segs == 0) {
+  if (bucket->n_in_use_segs == 0) {
     params->n_used_buckets -= 1;
   }
 }
@@ -108,8 +108,8 @@ void print_bucket(cache_t *cache) {
 
   printf("bucket has segs: ");
   for (int i = 0; i < MAX_N_BUCKET; i++) {
-    if (params->buckets[i].n_segs != 0) {
-      printf("%d (%d), ", i, params->buckets[i].n_segs);
+    if (params->buckets[i].n_in_use_segs != 0) {
+      printf("%d (%d), ", i, params->buckets[i].n_in_use_segs);
     }
   }
   printf("\n");

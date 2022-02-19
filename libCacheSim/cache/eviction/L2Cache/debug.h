@@ -7,11 +7,11 @@
 
 static inline void _debug_check_bucket_segs(bucket_t *bkt) {
   segment_t *curr_seg = bkt->first_seg;
-  int n_segs = 0;
+  int n_in_use_segs = 0;
   segment_t *prev_seg = NULL;
 
   while (curr_seg) {
-    n_segs += 1;
+    n_in_use_segs += 1;
     assert(curr_seg->prev_seg == prev_seg);
     assert(curr_seg->bucket_id == bkt->bucket_id);
     prev_seg = curr_seg;
@@ -19,34 +19,34 @@ static inline void _debug_check_bucket_segs(bucket_t *bkt) {
   }
 
   assert(prev_seg == bkt->last_seg);
-  assert(n_segs == bkt->n_segs);
+  assert(n_in_use_segs == bkt->n_in_use_segs);
 }
 
 static inline void debug_check_bucket(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
 
   segment_t *curr_seg;
-  int n_segs = 0;
+  int n_in_use_segs = 0;
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_segs; si++) {
-      n_segs += 1;
+    for (int si = 0; si < params->buckets[bi].n_in_use_segs; si++) {
+      n_in_use_segs += 1;
       DEBUG_ASSERT(curr_seg != NULL);
       curr_seg = curr_seg->next_seg;
     }
   }
   DEBUG_ASSERT(curr_seg == NULL);
-  DEBUG_ASSERT(params->n_segs == n_segs);
+  DEBUG_ASSERT(params->n_in_use_segs == n_in_use_segs);
 
-  n_segs = 0;
+  n_in_use_segs = 0;
   curr_seg = params->train_bucket.first_seg;
-  for (int si = 0; si < params->train_bucket.n_segs; si++) {
-    n_segs += 1;
+  for (int si = 0; si < params->train_bucket.n_in_use_segs; si++) {
+    n_in_use_segs += 1;
     DEBUG_ASSERT(curr_seg != NULL);
     curr_seg = curr_seg->next_seg;
   }
   DEBUG_ASSERT(curr_seg == NULL);
-  DEBUG_ASSERT(params->n_training_segs == n_segs);
+  DEBUG_ASSERT(params->n_training_segs == n_in_use_segs);
 }
 
 

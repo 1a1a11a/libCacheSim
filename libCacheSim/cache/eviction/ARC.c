@@ -73,7 +73,7 @@ void _verify(cache_t *cache, request_t *req) {
 }
 
 cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
-  request_t *req_local = NULL;
+  static __thread request_t *req_local = NULL;
   if (req_local == NULL)
     req_local = new_request();
 
@@ -91,7 +91,6 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
   if (!update_cache)
     return hit;
 
-  cache->n_req += 1;
   if (hit != cache_ck_hit) {
     hit1g = params->LRU1g->check(params->LRU1g, req, false);
     hit2g = params->LRU2g->check(params->LRU2g, req, false);

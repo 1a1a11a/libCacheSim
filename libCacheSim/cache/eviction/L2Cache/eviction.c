@@ -6,6 +6,7 @@
 #include "learned.h"
 #include "segSel.h"
 #include "segment.h"
+#include "L2CacheInternal.h"
 
 /* choose which segment to evict */
 bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
@@ -30,6 +31,19 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
   assert(0);// should not reach here
 }
 
+void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *seg) {
+  L2Cache_params_t *params = cache->eviction_params;
+  seg->become_train_seg_vtime = params->curr_vtime;
+  seg->become_train_seg_rtime = params->curr_rtime;
+  seg->train_utility = 0;
+
+  /* remove from the bucket */
+  remove_seg_from_bucket(params, bucket, seg);
+
+  append_seg_to_bucket(params, &params->train_bucket, seg);
+}
+
+/** merge multiple segments into one segment **/
 void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 
@@ -68,7 +82,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_obj; j++) {
       cache_obj = &segs[i]->objs[j];
-      double obj_score = cal_object_score(params, params->obj_score_type, cache_obj,
+      double obj_score = cal_obj_score(params, params->obj_score_type, cache_obj,
                                           params->curr_rtime, params->curr_vtime);
       if (new_seg->n_obj < params->segment_size && obj_score >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_obj];
@@ -77,7 +91,8 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
         new_obj->L2Cache.idx_in_segment = new_seg->n_obj;
         new_obj->L2Cache.segment = new_seg;
         new_obj->L2Cache.active = 0;
-        new_obj->L2Cache.in_cache = 1; 
+        new_obj->L2Cache.in_cache = 1;
+        new_obj->L2Cache.seen_after_snapshot = 0; 
         hashtable_insert_obj(cache->hashtable, new_obj);
 
         new_seg->n_obj += 1;
@@ -86,34 +101,60 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
         cache->n_obj -= 1;
         cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
       }
-      object_evict(cache, cache_obj);
+      obj_evict_update(cache, cache_obj);
       cache_obj->L2Cache.in_cache = 0;
+
+      if (cache_obj->L2Cache.seen_after_snapshot == 1) {
+        /* do not need to keep a ghost in the hashtable */
+        hashtable_delete(cache->hashtable, cache_obj);
+      }
     }
 
-    remove_seg_from_bucket(params, bucket, segs[i]);
-    clean_one_seg(cache, segs[i]);
+    if (segs[i]->selected_for_training) {
+      transform_seg_to_training(cache, bucket, segs[i]);
+    } else {
+      remove_seg_from_bucket(params, bucket, segs[i]);
+      clean_one_seg(cache, segs[i]);
+    }
   }
 }
 
 // called when there is no segment can be merged due to fragmentation
 // different from clean_one_seg becausee this function also updates cache state
 int evict_one_seg(cache_t *cache, segment_t *seg) {
+  VVERBOSE("req %lu, evict one seg id %d occupied size %lu/%lu\n", cache->n_req, seg->seg_id, cache->occupied_size,
+           cache->cache_size); 
   L2Cache_params_t *params = cache->eviction_params;
+  bucket_t *bucket = &params->buckets[seg->bucket_id]; 
+
   int n_cleaned = 0;
   for (int i = 0; i < seg->n_obj; i++) {
     cache_obj_t *cache_obj = &seg->objs[i];
-    object_evict(cache, cache_obj);
-    cache_obj->L2Cache.in_cache = 0;
 
-    if (hashtable_try_delete(cache->hashtable, cache_obj)) {
+    obj_evict_update(cache, cache_obj);
+
+    // if (hashtable_try_delete(cache->hashtable, cache_obj)) {
+    if (cache_obj->L2Cache.in_cache == 1) {
+      cache_obj->L2Cache.in_cache = 0;
+
       n_cleaned += 1;
       cache->n_obj -= 1;
       cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
     }
+
+    if (seg->selected_for_training && cache_obj->L2Cache.seen_after_snapshot == 1) {
+      /* do not need to keep a ghost in the hashtable */
+      hashtable_delete(cache->hashtable, cache_obj);
+    }
   }
-  my_free(sizeof(cache_obj_t) * params->n_obj, seg->objs);
-  my_free(sizeof(segment_t), seg);
+
+
+  if (seg->selected_for_training) {
+    transform_seg_to_training(cache, bucket, seg);
+  } else {
+    remove_seg_from_bucket(params, bucket, seg);
+    clean_one_seg(cache, seg);
+  }
 
   return n_cleaned;
 }
-

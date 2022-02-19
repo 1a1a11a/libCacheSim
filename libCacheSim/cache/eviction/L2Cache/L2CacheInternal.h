@@ -46,6 +46,7 @@ typedef struct learner {
 
   feature_t *train_x;
   train_y_t *train_y;
+  train_y_t *train_y_oracle;
   feature_t *valid_x;
   train_y_t *valid_y;
   feature_t *inference_x;
@@ -54,8 +55,6 @@ typedef struct learner {
   int n_feature;
   unsigned int n_train_samples;
   unsigned int n_valid_samples;
-  // unsigned int n_zero_samples;
-  // unsigned int n_zero_samples_use;
   int n_trees;
 
   int32_t train_matrix_n_row; /* the size of matrix */
@@ -82,20 +81,20 @@ typedef struct cache_state {
 typedef struct segment {
 
   cache_obj_t *objs;
-  
+
   int32_t seg_id;
   int32_t bucket_id;
   // used to connect segments in the same bucket in create order
-  struct segment *prev_seg;   
+  struct segment *prev_seg;
   struct segment *next_seg;
 
-  // used to connect segments in the same bucket in ranked order 
+  // used to connect segments in the same bucket in ranked order
   struct segment *next_ranked_seg;
 
   double pred_utility;
   double train_utility;
   int n_skipped_penalty;
-  int rank; 
+  int rank;
 
   /* stat when segment is cached */
   int64_t n_byte;
@@ -112,7 +111,7 @@ typedef struct segment {
   double miss_ratio;
 
   /* training related */
-  bool selected_for_training;  // whether this segment has been chosen to be training data
+  bool selected_for_training;// whether this segment has been chosen to be training data
   int64_t become_train_seg_vtime;
   int64_t become_train_seg_rtime;
   unsigned int training_data_row_idx;
@@ -127,10 +126,10 @@ typedef struct {
   int64_t bucket_property;
   segment_t *first_seg;
   segment_t *last_seg;
-  segment_t *ranked_seg_head; 
-  segment_t *ranked_seg_tail; 
+  segment_t *ranked_seg_head;
+  segment_t *ranked_seg_tail;
 
-  int32_t n_segs;
+  int32_t n_in_use_segs;
   int16_t bucket_id;
   segment_t *next_seg_to_evict;
   hitProb_t *hit_prob;// TODO: move to LHD
@@ -145,14 +144,14 @@ typedef struct obj_sel {
 
 /* parameters and state related to segment selection */
 typedef struct seg_sel {
-  int64_t last_rank_time;   // in number of evictions 
+  int64_t last_rank_time;// in number of evictions
   segment_t **ranked_segs;
-  
-  int32_t n_ranked_segs;    // the number of ranked segments (ranked_segs.size())
-  int32_t ranked_seg_size;  // the malloc-ed size of ranked_segs (ranked_segs.capacity())
-  int32_t ranked_seg_pos;   // the position of the next segment to be evicted 
 
-  // TODO: per bucket ranked segs 
+  int32_t n_ranked_segs;  // the number of ranked segments (ranked_segs.size())
+  int32_t ranked_seg_size;// the malloc-ed size of ranked_segs (ranked_segs.capacity())
+  int32_t ranked_seg_pos; // the position of the next segment to be evicted
+
+  // TODO: per bucket ranked segs
 } seg_sel_t;
 
 /* parameters and state related to cache */
@@ -162,13 +161,13 @@ typedef struct {
   /* retain n objects from each seg, total retain n_retain * n_merge objects */
   int n_retain_per_seg;
   // whether we merge consecutive segments (with the first segment has the lowest utility)
-  // or we merge non-consecutive segments based on ranking 
-  bool merge_consecutive_segs; 
+  // or we merge non-consecutive segments based on ranking
+  bool merge_consecutive_segs;
   train_source_e train_source_x;
   train_source_e train_source_y;
 
-  // cache state 
-  int32_t n_segs;
+  // cache state
+  int32_t n_in_use_segs;
   int n_used_buckets;
   bucket_t buckets[MAX_N_BUCKET];
   bucket_t train_bucket; /* segments that are evicted and used for training */
@@ -178,7 +177,7 @@ typedef struct {
   int64_t curr_rtime;
   int64_t curr_vtime;
 
-  // current number of ghost segments for training 
+  // current number of ghost segments for training
   int32_t n_training_segs;
 
   int64_t n_allocated_segs;

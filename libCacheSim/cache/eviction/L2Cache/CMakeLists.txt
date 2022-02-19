@@ -7,15 +7,12 @@ set(source
         segSel.c 
         eviction.c 
 
-        feature.c
+        dataPrep.c
         train.c 
         inference.c
-        learned.c
         )
 
 add_library(L2Cache ${source})
-# target_link_libraries(L2Cache ${LIGHTGBM_LIB})
 
 
 add_executable(test_xgboost testXGBoost.c)
-# target_link_libraries(test_xgboost ${LIGHTGBM_LIB})

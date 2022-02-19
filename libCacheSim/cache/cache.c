@@ -100,8 +100,6 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cach
   }
 
   if (likely(update_cache)) {
-    cache->n_req += 1;
-
     if (ret == cache_ck_hit) {
       if (unlikely(cache_obj->obj_size != req->obj_size)) {
         VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size, req->obj_size);
@@ -132,6 +130,8 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
             "/%" PRIu64 "\n",
             cache->n_req, req->obj_id, req->obj_size, cache->occupied_size,
             cache->cache_size);
+
+  cache->n_req += 1;
 
   cache_ck_res_e cache_check = cache->check(cache, req, true);
 

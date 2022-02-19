@@ -7,9 +7,15 @@
 
 sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {
-    printf("usage: %s trace_type (twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin) "
-           "data_path cache_size_MiB alg optional: obj_metadata debug L2CacheType seg_size\n",
-           argv[0]);
+    // if cache size is specified, then it will only run one simulation at the given size
+    printf("usage: %s trace_type data_path alg "
+          "(optional: seg_size n_merge rank_intvl bucket_type train_source cache_size)\n\n"
+          "param options: \n"
+          "trace_type:  twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin\n"
+          "bucket_type: no_bucket, size_bucket\n"
+          "train_source: online, oracle\n"
+          "cache_size: if given, one simulation is of given size is ran, this is used for debugging\n",
+          argv[0]);
     exit(1);
   }
 
@@ -35,37 +41,81 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     abort();
   }
 
-  args.trace_path = argv[2];
-  set_param_with_workload(&args);
+  set_param_with_workload(&args, argv[2]);
 
-  args.cache_size = atoi(argv[3]);
-  args.alg = argv[4];
+  args.alg = argv[3];
 
-  if (argc > 5) args.per_obj_metadata = atoi(argv[5]);
-  if (argc > 6) args.debug = atoi(argv[6]);
-
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-  if (argc > 7) {
-    if (strcasecmp(argv[7], "logOracleLog") == 0) {
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1  
+  if (strncasecmp(args.alg, "L2Cache", 7) == 0) {
+    if (strcasecmp(args.alg + 8, "oracleLog") == 0) {
+      // L2Cache-oracleLog
       args.L2Cache_type = LOGCACHE_LOG_ORACLE;
-    } else if (strcasecmp(argv[7], "logOracleItem") == 0) {
-      args.L2Cache_type = LOGCACHE_ITEM_ORACLE; 
-    } else if (strcasecmp(argv[7], "logOracleBoth") == 0) {
+    } else if (strcasecmp(args.alg + 8, "oracleItem") == 0) {
+      args.L2Cache_type = LOGCACHE_ITEM_ORACLE;
+    } else if (strcasecmp(args.alg + 8, "oracleBoth") == 0) {
       args.L2Cache_type = LOGCACHE_BOTH_ORACLE;
-    } else if (strcasecmp(argv[7], "logLearned") == 0) {
+    } else if (strcasecmp(args.alg + 8, "learned") == 0) {
       args.L2Cache_type = LOGCACHE_LEARNED;
-    } else if (strcasecmp(argv[7], "segcache") == 0) {
+    } else if (strcasecmp(args.alg + 8, "segcache") == 0) {
       args.L2Cache_type = SEGCACHE;
     } else {
-      printf("support logOracleLog/logOracleItem/logOracleBoth/logLearned/segcache\n");
+      printf("support oracleLog/oracleItem/oracleBoth/learned/segcache\n");
+      abort();
+    }
+    args.alg = "L2Cache"; 
+  }
+#endif
+
+  if (argc >= 5) {
+    int seg_size = atoi(argv[4]);
+    if (seg_size > 0) {
+      args.seg_size = seg_size;
+    }
+  }
+
+  if (argc >= 6) {
+    int n_merge = atoi(argv[5]);
+    if (n_merge > 0) {
+      args.n_merge = n_merge;
+    }
+  }
+
+  if (argc >= 7) {
+    double rank_intvl = atof(argv[6]);
+    if (rank_intvl > 0) {
+      args.rank_intvl = rank_intvl;
+    }
+  }
+
+  if (argc >= 8) {
+    if (strncasecmp(argv[7], "no_bucket", 9) == 0) {
+      args.bucket_type = NO_BUCKET;
+    } else if (strncasecmp(argv[7], "size_bucket", 11) == 0) {
+      args.bucket_type = SIZE_BUCKET;
+    } else {
+      printf("unknown bucket type %s\n", argv[7]);
       abort();
     }
   }
 
-  if (argc > 8) {
-    args.seg_size = atoi(argv[8]);
+  if (argc >= 9) {
+    if (strncasecmp(argv[8], "oracle", 6) == 0) {
+      args.train_source_y = TRAIN_Y_FROM_ORACLE;
+    } else if (strncasecmp(argv[8], "online", 6) == 0) {
+      args.train_source_y = TRAIN_Y_FROM_ONLINE;
+    } else {
+      printf("unknown bucket type %s\n", argv[7]);
+      abort();
+    }
   }
-#endif
+
+  if (argc >= 10) {
+    int cache_size = atoi(argv[9]);
+    if (cache_size > 0) {
+      args.cache_size = cache_size;
+      args.debug = true;
+    }
+  }
 
   reader_t *reader = setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
   get_num_of_req(reader);
@@ -84,18 +134,18 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = FIFOMerge_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lhd") == 0) {
     cache = LHD_init(cc_params, NULL);
-  } else if (strcasecmp(args.alg, "slru") == 0){
+  } else if (strcasecmp(args.alg, "slru") == 0) {
     SLRU_init_params_t init_params;
-    init_params.n_seg = 5; // Currently hard-coded
+    init_params.n_seg = 5;// Currently hard-coded
     cache = SLRU_init(cc_params, &init_params);
-  } else if (strcasecmp(args.alg, "sr_lru") == 0){
+  } else if (strcasecmp(args.alg, "sr_lru") == 0) {
     cache = SR_LRU_init(cc_params, NULL);
-  } else if (strcasecmp(args.alg, "lfu") == 0){
+  } else if (strcasecmp(args.alg, "lfu") == 0) {
     cache = LFUFast_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimalSize") == 0) {
-    cc_params.hashpower -= 4; 
+    cc_params.hashpower -= 4;
     cache = OptimalSize_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lecar") == 0) {
     cache = LeCaR_init(cc_params, NULL);
@@ -111,17 +161,17 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
                                          .n_merge = args.n_merge,
                                          .type = args.L2Cache_type,
                                          .rank_intvl = args.rank_intvl,
-                                         .merge_consecutive_segs = args.merge_consecutive_segs, 
+                                         .merge_consecutive_segs = args.merge_consecutive_segs,
                                          .train_source_x = args.train_source_x,
                                          .train_source_y = args.train_source_y,
 
                                          .hit_density_age_shift = args.age_shift,
                                          .bucket_type = args.bucket_type,
-                                         .retrain_intvl = args.retrain_intvl}; 
+                                         .retrain_intvl = args.retrain_intvl};
     cache = L2Cache_init(cc_params, &init_params);
 #endif
   } else {
-    printf("do not support %s\n", args.alg);
+    ERROR("do not support algorithm %s\n", args.alg);
     abort();
   }
 
