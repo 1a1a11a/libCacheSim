@@ -14,13 +14,17 @@ static inline void set_default_arg(sim_arg_t *args) {
     args->cache_sizes[i] = MiB * s[i];
   }
   args->n_cache_size = 8;
+  args->cache_size = 1024 * MiB;
+  args->per_obj_metadata = 0;
+
+  args->debug = false; 
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   args->obj_id_type = OBJ_ID_NUM;
 
   args->seg_size = 1000;
   args->n_merge = 2;
-  args->rank_intvl = 0.01;
+  args->rank_intvl = 0.02;
   args->merge_consecutive_segs = true;
   args->train_source_x = TRAIN_X_FROM_SNAPSHOT;
   args->train_source_y = TRAIN_Y_FROM_ONLINE;
@@ -32,35 +36,15 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->bucket_type = NO_BUCKET;
 #endif
 
+
   args->n_thread = 4;
-
-#ifdef __linux__
-  args->n_thread = get_nprocs();
-#endif
-
   args->n_thread = (int) n_cores();
-  args->per_obj_metadata = 0;
-  args->debug = 0;
 }
 
-static inline void set_param_with_workload(sim_arg_t *args) {
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-  //   if (strstr(args->trace_path, "w105") != NULL) {
-  //     /* w105 */
-  //     uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};
-  //     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-  //       args->cache_sizes[i] = MiB * s[i];
-  //     }
-  //     args->n_cache_size = 7;
-  //     args->seg_size = 20;
-  // //    args->seg_size = 50;
-  // //    args->n_merge = 4;
-  //     args->age_shift = 3;
-  //     args->sample_every_n_seg_for_training = 2;
-  //     args->bucket_type = SIZE_BUCKET;
-  //     args->retrain_intvl = 86400;
+static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
+  args->trace_path = trace_path;
 
-  //   } else
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   if (strstr(args->trace_path, "w320") != NULL) {
     uint64_t s[7] = {1000, 2000, 4000, 8000, 10000, 12000, 16000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
@@ -72,42 +56,15 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->seg_size = 50;
     args->n_merge = 2;
     args->age_shift = 3;
-    // args->bucket_type = SIZE_BUCKET;
-    //    args->min_start_train_seg = 10000;
-    //    args->max_start_train_seg = 10000;
-    //    args->n_train_seg_growth = 6000;
     args->sample_every_n_seg_for_training = 1;
     args->rank_intvl = 0.05;
     args->retrain_intvl = 86400 * 2;
-
-    // } else if (strstr(args->trace_path, "w03") != NULL) {
-    //   uint64_t s[8] = {4000, 8000, 12000, 16000, 24000, 32000, 48000, 64000};
-    //   for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-    //     args->cache_sizes[i] = MiB * s[i];
-    //   }
-    //   args->n_cache_size = 8;
-    //   args->seg_size = 200;
-    //   args->age_shift = 3;
-    //   args->bucket_type = SIZE_BUCKET;
-    // } else if (strstr(args->trace_path, "w68") != NULL) {
-    //   uint64_t s[9] = {500, 1000, 2000, 4000, 8000, 12000, 16000, 24000, 32000};
-    //   for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-    //     args->cache_sizes[i] = MiB * s[i];
-    //   }
-    //   args->n_cache_size = 9;
-    //   args->seg_size = 50;
-    //   args->age_shift = 3;
-    //   args->min_start_train_seg = 4000;
-    //   args->max_start_train_seg = 10000;
-    //   args->n_train_seg_growth = 6000;
-    //   args->sample_every_n_seg_for_training = 2;
-    //   args->bucket_type = NO_BUCKET;
   } else if (strstr(args->trace_path, "cphy") != NULL) {
     uint64_t s[10] = {500, 1000, 2000, 4000, 8000, 12000, 16000, 24000, 32000, 64000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
-    printf("use cphy default parameter\n");
+    INFO("use cphy default parameter\n");
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
     args->n_merge = 2;
     args->seg_size = 50;
@@ -117,7 +74,6 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     args->bucket_type = SIZE_BUCKET;
   } else if (strstr(args->trace_path, "media_metadata") != NULL) {
     /* media_metadata */
-    //    uint64_t cache_sizes[11] = {MiB * 100, MiB * 200, MiB * 300, MiB * 400, MiB * 500, MiB * 600, MiB * 800, MiB * 1000, MiB * 1200, MiB * 1600, MiB * 2000};
     uint64_t s[11] = {100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1600, 2000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
@@ -136,13 +92,8 @@ static inline void set_param_with_workload(sim_arg_t *args) {
     }
     /* 2GB 8 MQPS 0.0509 on full trace */
     args->n_cache_size = 10;
-    // args->size_bucket_base = 20;
     args->seg_size = 1000;
     args->age_shift = 1;
-    //    args->min_start_train_seg = 500;
-    //    args->sample_every_n_seg_for_training = 1;
-    //    args->n_train_seg_growth = 2000;
-    //    args->retrain_intvl = 86400;
     args->bucket_type = SIZE_BUCKET;
 
     /* use LHD for object selection */

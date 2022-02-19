@@ -181,7 +181,6 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   l->train_y_oracle[row_idx] = cal_seg_utility_oracle(cache, seg, seg->become_train_seg_rtime, seg->become_train_seg_vtime);
 #endif
 
-  // TODO: do we need this?
   prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);
 }
 
@@ -203,7 +202,7 @@ void snapshot_segs_to_training_data(cache_t *cache) {
     for (int si = 0; si < params->buckets[bi].n_in_use_segs - 1; si++) {
       DEBUG_ASSERT(curr_seg != NULL);
       credit += 1;
-      if (credit >= sample_ratio) {
+      if (credit >= sample_ratio && curr_seg->next_seg != NULL) {
         curr_seg->selected_for_training = true;
         credit -= sample_ratio;
 
