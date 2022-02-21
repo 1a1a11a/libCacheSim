@@ -328,7 +328,9 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
 
     DEBUG_ASSERT(params->merge_consecutive_segs
                  || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
-    ranked_segs[segs[i]->rank] = NULL;
+
+    if (segs[i]->rank != -1)
+      ranked_segs[segs[i]->rank] = NULL;
   }
 
   bucket_t *bkt = &params->buckets[segs[0]->bucket_id];

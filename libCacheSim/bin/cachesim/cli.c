@@ -64,7 +64,6 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     }
     args.alg = "L2Cache"; 
   }
-#endif
 
   if (argc >= 5) {
     int seg_size = atoi(argv[4]);
@@ -108,6 +107,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
       abort();
     }
   }
+#endif
 
   if (argc >= 10) {
     int cache_size = atoi(argv[9]);
