@@ -111,7 +111,6 @@ void rank_segs(cache_t *cache) {
                || params->type == LOGCACHE_LEARNED);
   qsort(ranked_segs, n_segs, sizeof(segment_t *), cmp_seg);
 
-  params->seg_sel.last_rank_time = params->n_evictions;
   params->seg_sel.ranked_seg_pos = 0;
 
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
@@ -275,10 +274,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
   segment_t **ranked_segs = ss->ranked_segs;
   int32_t *ranked_seg_pos_p = &(ss->ranked_seg_pos);
 
-  /* rerank every rerank_intvl_evictions evictions */
-  int rerank_intvl_evictions = params->n_in_use_segs * params->rank_intvl / params->n_merge;
-  rerank_intvl_evictions = MAX(rerank_intvl_evictions, 1);
-  if (params->n_evictions - ss->last_rank_time >= rerank_intvl_evictions || array_resized) {
+  if (*ranked_seg_pos_p >= ss->n_ranked_segs * params->rank_intvl || array_resized) {
     rank_segs(cache);
   }
 
@@ -299,6 +295,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     if (*ranked_seg_pos_p > ss->n_ranked_segs * 0.8) {
       // let's evict one seg rather than merging multiple
       segs[0] = seg_to_evict_first;
+      segs[1] = NULL; 
       bucket_t *bkt = &params->buckets[segs[0]->bucket_id];
       // this does not hold, because it is possible that bkt->ranked_seg_head was not evictable earlier due to
       // not enough segments, but now become evictable after new segments are inserted
@@ -307,7 +304,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
       bkt->ranked_seg_tail = NULL;
 
       // trigger a rerank process
-      ss->last_rank_time = 0;
+      ss->ranked_seg_pos = INT32_MAX; 
       return NULL;
     }
     *ranked_seg_pos_p = *ranked_seg_pos_p + 1;
@@ -339,6 +336,8 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
   if (segs[params->n_merge - 1]->next_ranked_seg == NULL) bkt->ranked_seg_tail = NULL;
 
   // printf("%d %d ######\n", segs[0]->rank, segs[1]->rank);
+  // printf("about to clean seg %d %d - rank %d %d - pos %d\n", segs[0]->seg_id, segs[1]->seg_id, segs[0]->rank, segs[1]->rank, *ranked_seg_pos_p);
+  DEBUG_ASSERT(segs[0]->rank != -1);
 
   return bkt;
 }

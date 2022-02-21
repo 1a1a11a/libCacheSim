@@ -29,7 +29,6 @@ void check_init_params(L2Cache_init_params_t *init_params) {
 void init_seg_sel(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  params->seg_sel.last_rank_time = -INT32_MAX;
   params->seg_sel.ranked_segs = NULL;
   params->seg_sel.ranked_seg_size = -1;
   params->seg_sel.ranked_seg_pos = 0;

@@ -37,7 +37,7 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
   /* whether it is a new min window now */
   shift = (params->curr_rtime - seg->feature.last_min_window_ts) / 60;
   if (shift <= 0) return;
-  for (int i = N_FEATURE_TIME_WINDOW - 1; i >= 0; i--) {
+  for (int i = N_FEATURE_TIME_WINDOW - 2; i >= 0; i--) {
     seg->feature.n_hit_per_min[i + 1] = seg->feature.n_hit_per_min[i];
   }
   seg->feature.n_hit_per_min[0] = 0;
@@ -46,7 +46,7 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
   /* whether it is a new 10-min window now */
   shift = (params->curr_rtime - seg->feature.last_ten_min_window_ts) / 600;
   if (shift <= 0) return;
-  for (int i = N_FEATURE_TIME_WINDOW - 1; i >= 0; i--) {
+  for (int i = N_FEATURE_TIME_WINDOW - 2; i >= 0; i--) {
     seg->feature.n_hit_per_ten_min[i + 1] = seg->feature.n_hit_per_ten_min[i];
   }
   seg->feature.n_hit_per_ten_min[0] = 0;
@@ -55,7 +55,7 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
   /* whether it is a new hour window now */
   shift = (params->curr_rtime - seg->feature.last_hour_window_ts) / 3600;
   if (shift <= 0) return;
-  for (int i = N_FEATURE_TIME_WINDOW - 1; i >= 0; i--) {
+  for (int i = N_FEATURE_TIME_WINDOW - 2; i >= 0; i--) {
     seg->feature.n_hit_per_hour[i + 1] = seg->feature.n_hit_per_hour[i];
   }
   seg->feature.n_hit_per_hour[0] = 0;
@@ -100,6 +100,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_id = bucket_id;
+  new_seg->rank = -1; 
 
   return new_seg;
 }

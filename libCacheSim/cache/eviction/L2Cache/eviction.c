@@ -43,6 +43,17 @@ void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *seg)
   append_seg_to_bucket(params, &params->train_bucket, seg);
 }
 
+
+/* make sure the segment is not in the bucket */
+static void assert_seg_not_in_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t *seg_to_find) {
+  DEBUG_ASSERT(bucket->bucket_id == seg_to_find->bucket_id);
+  segment_t *seg = bucket->first_seg; 
+  while (seg != NULL) {
+    DEBUG_ASSERT(seg != seg_to_find); 
+    seg = seg->next_seg;
+  }
+}
+
 /** merge multiple segments into one segment **/
 void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;

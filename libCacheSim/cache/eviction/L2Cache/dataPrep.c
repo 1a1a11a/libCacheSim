@@ -94,9 +94,6 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
-  // debug
-  //  x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = x[6] = x[7] = x[8] = x[9] = x[10] = x[11] = 0;
-
   x[0] = (feature_t) curr_seg->bucket_id;
   x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
   x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
@@ -119,11 +116,10 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     x[12 + k * 3 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
     x[12 + k * 3 + 1] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
     x[12 + k * 3 + 2] = (feature_t) curr_seg->feature.n_hit_per_hour[k];
-
-    //    x[12 + k * 3 + 0] = 0;
-    //    x[12 + k * 3 + 1] = 0;
-    //    x[12 + k * 3 + 2] = 0;
   }
+
+  // debug
+  // x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = x[6] = x[7] = x[8] = x[9] = x[10] = x[11] = 0;
 
   // if (is_training_data)
   //   printf("train: ");

@@ -163,8 +163,6 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
     assert(0);
   }
 
-  // DEBUG_ASSERT(cache_obj->L2Cache.in_cache);
-
   int n_in_cache = 0; 
   while (cache_obj != NULL) {
     /* a cache obj can be a cached object, or one of the objects on the evicted segments */

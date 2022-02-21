@@ -39,9 +39,9 @@ static void print_results(const cache_t *cache,
 
 static void test_L2Cache_ORACLE_LOG(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  // uint64_t miss_cnt_true[] = {2076134, 1358640, 1048470, 945319};
+  uint64_t miss_cnt_true[] = {1816675, 1201297, 1059332, 961428};
   // uint64_t miss_cnt_true[] = {1800593, 1238324, 1016389, 949717};   // do not consider retain 
-  uint64_t miss_cnt_true[] = {1843224, 1226081, 1069476, 942701};   // consider retain 
+  // uint64_t miss_cnt_true[] = {1843224, 1226081, 1069476, 942701};   // consider retain 
 
 
   reader_t *reader = (reader_t *)user_data;
@@ -103,8 +103,9 @@ static void test_L2Cache_ORACLE_BOTH(gconstpointer user_data) {
 
 static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  // uint64_t miss_cnt_true[] = {2255891, 1601486, 1305691, 1205976};
-  uint64_t miss_cnt_true[] = {2263035, 1509245, 1269869, 1176711};
+  // uint64_t miss_cnt_true[] = {2233211, 1519050, 1263993, 1175170};
+  // uint64_t miss_cnt_true[] = {2263035, 1509245, 1269869, 1176711};
+  uint64_t miss_cnt_true[] = {2428542, 1521798, 1286571, 1189299};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -124,9 +125,9 @@ static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
 
 static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  // uint64_t miss_cnt_true[] = {2600178, 1598445, 1296337, 1212834};
+  uint64_t miss_cnt_true[] = {2567030, 1613234, 1451226, 1190799};
   // uint64_t miss_cnt_true[] = {2371604, 1590259, 1289356, 1205920};
-  uint64_t miss_cnt_true[] = {2500987, 1508243, 1283680, 1286305};    // cannot decrease because of too large segments? 
+  // uint64_t miss_cnt_true[] = {2500987, 1508243, 1283680, 1286305};    // cannot decrease because of too large segments? 
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
