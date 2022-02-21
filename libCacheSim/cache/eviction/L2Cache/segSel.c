@@ -140,6 +140,31 @@ void rank_segs(cache_t *cache) {
   params->seg_sel.n_ranked_segs = params->n_in_use_segs;
 }
 
+/* when cache size is small and space is fragmented between buckets, 
+ * it is possible that there is no bucket with n_merge + 1 segments, 
+ * in which case, we randonly pick one and uses eviction w/o merge */
+static bucket_t *select_one_seg_to_evict(cache_t *cache, segment_t **segs) {
+  L2Cache_params_t *params = cache->eviction_params;
+  bucket_t *bucket = NULL; 
+
+  // no evictable seg found, random+FIFO select one
+  int n_th_seg = next_rand() % params->n_in_use_segs;
+  for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
+    if (params->buckets[bi].n_in_use_segs == 0) continue;
+
+    if (n_th_seg > params->buckets[bi].n_in_use_segs) {
+      n_th_seg -= params->buckets[bi].n_in_use_segs;
+    } else {
+      bucket = &params->buckets[bi];
+      break;
+    }
+  }
+  segs[0] = bucket->first_seg;
+  segs[1] = NULL;
+  bucket->next_seg_to_evict = NULL;
+  return NULL;
+}
+
 /* choose the next segment to evict, use FIFO to choose bucket, 
  * and FIFO within bucket */
 bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
@@ -163,21 +188,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
     n_scanned_bucket += 1;
 
     if (n_scanned_bucket > MAX_N_BUCKET + 1) {
-      // no evictable seg found, random+FIFO select one
-      int n_th_seg = next_rand() % params->n_in_use_segs;
-      for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-        if (params->buckets[bi].n_in_use_segs == 0) continue;
-
-        if (n_th_seg > params->buckets[bi].n_in_use_segs) {
-          n_th_seg -= params->buckets[bi].n_in_use_segs;
-        } else {
-          bucket = &params->buckets[bi];
-          break;
-        }
-      }
-      segs[0] = bucket->first_seg;
-      bucket->next_seg_to_evict = NULL;
-      return NULL;
+      return select_one_seg_to_evict(cache, segs);
     }
   }
 
@@ -187,7 +198,6 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
     seg_to_evict = seg_to_evict->next_seg;
   }
 
-  // TODO: this is not good enough, we should not merge till the end
   if (bucket->n_in_use_segs > params->n_merge + 1) {
     bucket->next_seg_to_evict = seg_to_evict;
   } else {
@@ -206,9 +216,45 @@ bucket_t *select_segs_weighted_fifo(cache_t *cache, segment_t **segs) {
   segment_t *seg_to_evict = NULL;
   bucket_t *bucket = NULL;
 
-  int n_checked_seg = 0;
-  // TODO:
+  int r = next_rand() % params->n_in_use_segs;
+  /* select a bucket based on the probability weighted using the bucket size */
+  for (int bi = 0; bi < MAX_N_BUCKET * 2; bi++) {
+    int bucket_idx = bi % MAX_N_BUCKET; 
+    if (params->buckets[bucket_idx].n_in_use_segs < params->n_merge + 1) continue;
 
+    if (r > params->buckets[bucket_idx].n_in_use_segs) {
+      r -= params->buckets[bucket_idx].n_in_use_segs;
+    } else {
+      seg_to_evict = params->buckets[bucket_idx].next_seg_to_evict;
+      if (seg_to_evict == NULL) {
+        seg_to_evict = params->buckets[bucket_idx].first_seg;
+      }
+      if (is_seg_evictable(seg_to_evict, params->n_merge, true)) {
+        bucket = &params->buckets[bucket_idx];
+        break;
+      } else {
+        params->buckets[bucket_idx].next_seg_to_evict = NULL; 
+      }
+    }
+  }
+
+  if (bucket == NULL) {
+      // no evictable seg found, random+FIFO select one
+    return select_one_seg_to_evict(cache, segs); 
+  }
+
+  for (int i = 0; i < params->n_merge; i++) {
+    DEBUG_ASSERT(seg_to_evict->bucket_id == bucket->bucket_id);
+    segs[i] = seg_to_evict;
+    seg_to_evict = seg_to_evict->next_seg;
+  }
+
+  if (bucket->n_in_use_segs > params->n_merge * 2 + 1) {
+    bucket->next_seg_to_evict = seg_to_evict;
+  } else {
+    bucket->next_seg_to_evict = NULL;
+  }
+  
   return bucket;
 }
 

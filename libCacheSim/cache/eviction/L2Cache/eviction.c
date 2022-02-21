@@ -19,7 +19,7 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
   if (params->type == LOGCACHE_LEARNED) {
     if (params->learner.n_train <= 0) {
       return select_segs_fifo(cache, segs);
-      //    return select_segs_rand(cache, segs);
+      // return select_segs_weighted_fifo(cache, segs); 
     }
     return select_segs_learned(cache, segs);
   }
