@@ -9,18 +9,17 @@
 #include "segment.h"
 #include "utils.h"
 
-
 #ifdef USE_XGBOOST
 static void debug_print_feature_matrix(const DMatrixHandle handle, int print_n_row) {
-  unsigned long out_len; 
-  const float *out_data; 
+  unsigned long out_len;
+  const float *out_data;
   XGDMatrixGetFloatInfo(handle, "label", &out_len, &out_data);
 
   printf("out_len: %lu\n", out_len);
   for (int i = 0; i < print_n_row; i++) {
     printf("%.4f, ", out_data[i]);
   }
-  printf("\n"); 
+  printf("\n");
 }
 
 static void train_xgboost(cache_t *cache) {
@@ -113,30 +112,6 @@ static void train_xgboost(cache_t *cache) {
 #endif
 }
 #endif
-
-// validation on training data
-static void train_eval(const int iter, const double *pred, const float *true_y, int n_elem) {
-  int pred_selected = find_argmin_double(pred, n_elem);
-  int true_selected = find_argmin_float(true_y, n_elem);
-  double val_in_pred_selected_by_true = pred[true_selected];
-  double val_in_true_selected_by_pred = true_y[pred_selected];
-
-  int pred_selected_rank_in_true = 0, true_selected_rank_in_pred = 0;
-
-  for (int i = 0; i < n_elem; i++) {
-    if (pred[i] < val_in_pred_selected_by_true) {
-      true_selected_rank_in_pred += 1;
-    }
-    if (true_y[i] < val_in_true_selected_by_pred) {
-      pred_selected_rank_in_true += 1;
-    }
-  }
-
-  printf("iter %d: %d/%d pred:true pos %d/%d val %lf %f\n", iter, pred_selected_rank_in_true,
-         true_selected_rank_in_pred, pred_selected, true_selected, pred[pred_selected],
-         true_y[true_selected]);
-  //    abort();
-}
 
 void train(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;

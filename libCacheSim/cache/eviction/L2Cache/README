@@ -1,0 +1,61 @@
+
+
+
+
+## data collection 
+
+
+## training 
+### training data 
+Training in L2Cache needs training data, which consists of X (features) and Y (segment utility). 
+
+L2Cache generates training data by taking snapshots of segment features and calculating utility.
+Specifically, L2Cache takes a snapshot of (randomly sampled) segments after each training, 
+and calculates the segment utility over time using U_seg = \sum \frac{1}{D_obj \times S_obj}. 
+Note that `D_obj` is the distance/time _since snapshot_. Each object is counted for calculating 
+segment utility, when it has been counted, we mark the `seen_after_snapshot' and does not count again. 
+
+Notce that the X (features) used in training is the features of the 
+snapshotted segments *at the snapshot time*, 
+and the Y (utility) is calculated over time as objects are requested again, 
+and the calculated Y is for *the features at the snapshot time* too.
+Because both features and segment utility are time-dependent, it is very important that they match each other.
+
+#### Handling evicted segments 
+Because the snapshotted segments may be evicted over time, after eviction, L2Cache cannot 
+track utility any more. To address this problem,  
+L2Cache moves evicted (and snapshotted) segments to a training bucket after eviction, 
+and keeps ghost entries of evicted objects in the hash table so that we can continue to calculate utility. 
+
+
+### retraining 
+Every `retrain_interval' seconds, L2Cache retrains the model. Currently it is two days. 
+After training, we need to clean up the training bucket and the ghost entries in the hash table.
+
+
+### model 
+Currently L2Cache uses XGBoost (boosting trees) as the model.
+
+
+### objective 
+Currently L2Cache uses regression as the objective, we have also tried ranking objective, 
+specifically, pairwise, map and ndcg, however, map and ndcg require group information 
+and do not work well, pairwise does not need group information, and works well. 
+
+Comparing regression and ranking objective, it seems that regression is slightly better, 
+but the loss is hard to interpret. In the correct setting, I think ranking should be 
+at least as better as regresssion. 
+
+
+
+
+
+## inference 
+We perform inference periodically, each time we rank all segments, 
+then we merge evict segments one by one in the ranked order, until `rank_intvl * n_in_use_segs` 
+(rank_intvl fraction of all segments) are evicted. In other words, we only need `1/rank_intvl` inferences
+to evict/write `cache_size`' bytes. 
+
+
+
+

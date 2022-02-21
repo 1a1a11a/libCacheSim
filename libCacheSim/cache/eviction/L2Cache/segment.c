@@ -6,8 +6,7 @@
 #include "obj.h"
 #include "utils.h"
 
-
-void seg_feature_shift(L2Cache_params_t *params, segment_t *seg); 
+void seg_feature_shift(L2Cache_params_t *params, segment_t *seg);
 
 void seg_hit_update(L2Cache_params_t *params, cache_obj_t *cache_obj) {
 
@@ -62,7 +61,6 @@ void seg_feature_shift(L2Cache_params_t *params, segment_t *seg) {
   seg->feature.last_hour_window_ts = params->curr_rtime;
 }
 
-
 /* this function removes objects from hash table, but not update the cache state */
 int clean_one_seg(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
@@ -100,11 +98,12 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   new_seg->magic = MAGIC;
   new_seg->seg_id = params->n_allocated_segs++;
   new_seg->bucket_id = bucket_id;
-  new_seg->rank = -1; 
+  new_seg->rank = -1;
 
   return new_seg;
 }
 
+/* link a segment before antoher segment, this is used to place the merged segment in the same position as old segments */
 void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment_t *old_seg,
                              segment_t *new_seg) {
   DEBUG_ASSERT(new_seg->bucket_id == bucket->bucket_id);
@@ -160,25 +159,25 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
 //   L2Cache_params_t *params = cache->eviction_params;
 //   seg_sel_t *seg_sel = &params->seg_sel;
 //   obj_sel_t *obj_sel = &params->obj_sel;
-//   cache_obj_t *cache_obj; 
+//   cache_obj_t *cache_obj;
 
 //   DEBUG_ASSERT(seg->n_obj <= obj_sel->score_array_size);
 
 //   for (int j = 0; j < seg->n_obj; j++) {
-//     // obj_sel->score_array[j] = 
+//     // obj_sel->score_array[j] =
 //         // cal_obj_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
-//     cache_obj = &seg->objs[j]; 
-//     double age = rtime - cache_obj->L2Cache.last_access_rtime; 
-//     obj_sel->score_array[j] = 1.0e6 / age / cache_obj->obj_size; 
+//     cache_obj = &seg->objs[j];
+//     double age = rtime - cache_obj->L2Cache.last_access_rtime;
+//     obj_sel->score_array[j] = 1.0e6 / age / cache_obj->obj_size;
 //   }
 
 //   double utility = 0;
-//   int n_retained_obj = 0; 
+//   int n_retained_obj = 0;
 // #ifdef TRAINING_CONSIDER_RETAIN
 //   n_retained_obj = params->n_retain_per_seg;
 //   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
 //   DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
-// #else 
+// #else
 //   for (int j = 0; j < seg->n_obj - n_retained_obj; j++) {
 //     utility += obj_sel->score_array[j];
 //   }
@@ -192,24 +191,24 @@ double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int
   L2Cache_params_t *params = cache->eviction_params;
   seg_sel_t *seg_sel = &params->seg_sel;
   obj_sel_t *obj_sel = &params->obj_sel;
-  cache_obj_t *cache_obj; 
+  cache_obj_t *cache_obj;
 
   DEBUG_ASSERT(seg->n_obj <= obj_sel->score_array_size);
 
   for (int j = 0; j < seg->n_obj; j++) {
-    // obj_sel->score_array[j] = 
-    //     cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j], rtime, vtime); 
-    cache_obj = &seg->objs[j]; 
-    double dist = cache_obj->L2Cache.next_access_vtime - vtime; 
+    // obj_sel->score_array[j] =
+    //     cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j], rtime, vtime);
+    cache_obj = &seg->objs[j];
+    double dist = cache_obj->L2Cache.next_access_vtime - vtime;
     if (dist < 0) {
-      obj_sel->score_array[j] = 0; 
+      obj_sel->score_array[j] = 0;
     } else {
-      obj_sel->score_array[j] = 1.0e8 / dist / cache_obj->obj_size; 
+      obj_sel->score_array[j] = 1.0e8 / dist / cache_obj->obj_size;
     }
   }
 
   double utility = 0;
-  int n_retained_obj = 0; 
+  int n_retained_obj = 0;
 #ifdef TRAINING_CONSIDER_RETAIN
   n_retained_obj = params->n_retain_per_seg;
   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
@@ -222,7 +221,6 @@ double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int
 
   return utility;
 }
-
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level) {
   L2Cache_params_t *params = cache->eviction_params;

@@ -10,34 +10,19 @@
 #include "segment.h"
 #include "utils.h"
 
-/** because each segment is not fixed size, 
- * the number of segments in total can vary over time, 
- * if the inference data matrix is not big enough, 
- * we resize the matrix */
-static inline void resize_inf_matrix(L2Cache_params_t *params, int64_t new_size) {
-  learner_t *learner = &params->learner;
-  if (learner->inf_matrix_n_row != 0) {
-    // free previously allocated memory
-    // TODO: use realloc instead of free
-    DEBUG_ASSERT(learner->inference_x != NULL);
-    my_free(sizeof(feature_t) * learner->inf_matrix_n_row * learner->n_feature,
-            learner->inference_x);
-    my_free(sizeof(pred_t) * learner->inf_matrix_n_row, learner->pred);
-  }
-  int n_row = params->n_in_use_segs * 2;
-  learner->inference_x = my_malloc_n(feature_t, n_row * learner->n_feature);
-  learner->pred = my_malloc_n(pred_t, n_row);
-  learner->inf_matrix_n_row = n_row;
-}
-
 /* calculate the ranking of all segments for eviction */
-/* TODO: use sample some segments */
+/* TODO: can sample some segments to improve throughput */
 void prepare_inference_data(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
+  /** because each segment is not fixed size, 
+   * the number of segments in total can vary over time, 
+   * if the inference data matrix is not big enough, 
+   * we resize the matrix */
   if (learner->inf_matrix_n_row < params->n_in_use_segs) {
-    resize_inf_matrix(params, params->n_in_use_segs);
+    resize_matrix(params, &learner->inference_x, &learner->pred, &learner->inf_matrix_n_row,
+                  params->n_in_use_segs * 2);
   }
 
   feature_t *x = learner->inference_x;
@@ -57,10 +42,10 @@ void prepare_inference_data(cache_t *cache) {
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
-  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_in_use_segs, learner->n_feature, -2,
-                                   &learner->inf_dm));
+  safe_call(XGDMatrixCreateFromMat(learner->inference_x, params->n_in_use_segs,
+                                   learner->n_feature, -2, &learner->inf_dm));
 
-  // safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &params->n_in_use_segs, 1));
+  safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &params->n_in_use_segs, 1));
 #elif defined(USE_GBM)
 #error
 #endif

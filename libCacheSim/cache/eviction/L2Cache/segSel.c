@@ -2,7 +2,6 @@
    it uses FIFO, weighted FIFO, rand, ranking to choose segments 
  */
 
-
 #include "segSel.h"
 #include "../../../utils/include/mymath.h"
 #include "learned.h"
@@ -60,8 +59,10 @@ static void check_ranked_segs_per_bucket(cache_t *cache) {
     DEBUG_ASSERT(last_seg == params->buckets[bi].ranked_seg_tail);
   }
 }
-#endif
+#endif// DEBUG_CODE
 
+/* rank the segments according to predicted segment utility, 
+ * the ranked segments will be used for merge eviction */
 void rank_segs(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
@@ -81,7 +82,7 @@ void rank_segs(cache_t *cache) {
         // curr_seg->utility = 0;
         // printf("bucket %d, %dth seg, %.4lf %.4lf\n",
         //         i, j,
-        //         curr_seg->utility, cal_seg_utility(cache, params->obj_score_type, curr_seg, 
+        //         curr_seg->utility, cal_seg_utility(cache, params->obj_score_type, curr_seg,
         //                     params->curr_rtime, params->curr_vtime));
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
         curr_seg->pred_utility =
@@ -97,6 +98,7 @@ void rank_segs(cache_t *cache) {
       j += 1;
       if (!is_seg_evictable(curr_seg, 1, true)
           || params->buckets[curr_seg->bucket_id].n_in_use_segs < params->n_merge + 1) {
+        // if the segment is the last segment of a bucket or the bucket does not have enough segments
         curr_seg->pred_utility += INT32_MAX / 2;
       }
 
@@ -111,8 +113,12 @@ void rank_segs(cache_t *cache) {
                || params->type == LOGCACHE_LEARNED);
   qsort(ranked_segs, n_segs, sizeof(segment_t *), cmp_seg);
 
+  // ranked_seg_pos records the position in the ranked_segs array,
+  // segment before this position have been evicted
   params->seg_sel.ranked_seg_pos = 0;
 
+  // link the segments in each bucket into chain so that we can easily find the segment ranked next
+  // this is used when we do not merge consecutive segments
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
     params->buckets[bi].ranked_seg_head = NULL;
     params->buckets[bi].ranked_seg_tail = NULL;
@@ -132,24 +138,6 @@ void rank_segs(cache_t *cache) {
     ranked_segs[i]->next_ranked_seg = NULL;
   }
   params->seg_sel.n_ranked_segs = params->n_in_use_segs;
-}
-
-/** we need to find segments from the same bucket to merge, 
-}
- * this is used when we do not require the merged segments to be consecutive 
- */
-static inline int find_next_qualified_seg(segment_t **ranked_segs, int start_pos, int end_pos,
-                                          int bucket_id) {
-  for (int i = start_pos; i < end_pos; i++) {
-    if (ranked_segs[i] != NULL) {
-      if (bucket_id == -1 || ranked_segs[i]->bucket_id == bucket_id) {
-        if (ranked_segs[i]->next_seg != NULL) {
-          return i;
-        }
-      }
-    }
-  }
-  return -1;
 }
 
 /* choose the next segment to evict, use FIFO to choose bucket, 
@@ -295,7 +283,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     if (*ranked_seg_pos_p > ss->n_ranked_segs * 0.8) {
       // let's evict one seg rather than merging multiple
       segs[0] = seg_to_evict_first;
-      segs[1] = NULL; 
+      segs[1] = NULL;
       bucket_t *bkt = &params->buckets[segs[0]->bucket_id];
       // this does not hold, because it is possible that bkt->ranked_seg_head was not evictable earlier due to
       // not enough segments, but now become evictable after new segments are inserted
@@ -304,7 +292,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
       bkt->ranked_seg_tail = NULL;
 
       // trigger a rerank process
-      ss->ranked_seg_pos = INT32_MAX; 
+      ss->ranked_seg_pos = INT32_MAX;
       return NULL;
     }
     *ranked_seg_pos_p = *ranked_seg_pos_p + 1;
@@ -329,8 +317,7 @@ bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
     DEBUG_ASSERT(params->merge_consecutive_segs
                  || segs[i]->pred_utility >= segs[i - 1]->pred_utility);
 
-    if (segs[i]->rank != -1)
-      ranked_segs[segs[i]->rank] = NULL;
+    if (segs[i]->rank != -1) ranked_segs[segs[i]->rank] = NULL;
   }
 
   bucket_t *bkt = &params->buckets[segs[0]->bucket_id];

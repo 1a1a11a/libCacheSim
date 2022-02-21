@@ -20,22 +20,6 @@ void train(cache_t *cache);
 
 void inference(cache_t *cache);
 
-static inline void resize_matrix(L2Cache_params_t *params, feature_t **x_p, pred_t **y_p,
-                                 int32_t *size_p, int64_t new_size) {
-  learner_t *learner = &params->learner;
-  if ((*size_p) != 0) {
-    // free previously allocated memory
-    DEBUG_ASSERT(*x_p != NULL);
-    my_free(sizeof(feature_t) * (*size_p) * learner->n_feature, *x_p);
-    my_free(sizeof(pred_t) * (*size_p), *y_p);
-  }
-
-  *x_p = my_malloc_n(feature_t, new_size * learner->n_feature);
-  *y_p = my_malloc_n(pred_t, new_size);
-  *size_p = new_size;
-}
-
-
 /************* data preparation *****************/
 void dump_training_data(cache_t *cache); 
 

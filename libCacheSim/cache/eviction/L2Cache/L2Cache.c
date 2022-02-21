@@ -163,7 +163,7 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
     assert(0);
   }
 
-  int n_in_cache = 0; 
+  int n_in_cache = 0;
   while (cache_obj != NULL) {
     /* a cache obj can be a cached object, or one of the objects on the evicted segments */
     if (cache_obj->obj_id != req->obj_id) {
@@ -171,10 +171,10 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
       continue;
     }
 
-    segment_t *seg = cache_obj->L2Cache.segment; 
+    segment_t *seg = cache_obj->L2Cache.segment;
 
     if (cache_obj->L2Cache.in_cache == 1) {
-      // update features 
+      // update features
       n_in_cache++;
 
       /* seg_hit_update update segment state features */
@@ -183,16 +183,16 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
       obj_hit_update(params, cache_obj, req);
 
       if (seg->selected_for_training) {
-        cache_obj->L2Cache.seen_after_snapshot = 1; 
-        update_train_y(params, cache_obj); 
+        cache_obj->L2Cache.seen_after_snapshot = 1;
+        update_train_y(params, cache_obj);
       }
 
     } else {
-      DEBUG_ASSERT(seg->selected_for_training == true); 
+      DEBUG_ASSERT(seg->selected_for_training == true);
       DEBUG_ASSERT(cache_obj->L2Cache.seen_after_snapshot == 0);
 
-      cache_obj->L2Cache.seen_after_snapshot = 1; 
-      update_train_y(params, cache_obj); 
+      cache_obj->L2Cache.seen_after_snapshot = 1;
+      update_train_y(params, cache_obj);
 
       /* remove object from hash table */
       hashtable_delete(cache->hashtable, cache_obj);
@@ -264,7 +264,8 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
   cache->occupied_size += cache_obj->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
 
-  DEBUG_ASSERT(cache->n_obj > (params->n_in_use_segs - params->n_used_buckets) * params->segment_size);
+  DEBUG_ASSERT(cache->n_obj
+               > (params->n_in_use_segs - params->n_used_buckets) * params->segment_size);
   DEBUG_ASSERT(cache->n_obj <= params->n_in_use_segs * params->segment_size);
 }
 

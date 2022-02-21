@@ -67,7 +67,6 @@ typedef struct cache_state {
   double write_rate;
   double req_rate;
   double miss_ratio;
-  // double        cold_miss_ratio;
 
   int64_t last_update_rtime;
   int64_t last_update_vtime;

@@ -41,6 +41,13 @@ void dump_training_data(cache_t *cache) {
   fclose(f);
 }
 
+/* currently we snapshot segments after each training, then we collect segment utility 
+ * for the snapshotted segments over time, when it is time to retrain, we used the snapshotted segment featuers 
+ * and calculated utility to train a model, Because the snapshotted segments may be evicted over time, 
+ * we move evicted segments to training buckets and keep ghost entries of evicted objects so that 
+ * we can more accurately calculate utility. Because we keep ghost entries, clean_training_segs is used to clean
+ * up the ghost entries after each training
+ */
 static void clean_training_segs(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   segment_t *seg = params->train_bucket.first_seg;
@@ -55,7 +62,7 @@ static void clean_training_segs(cache_t *cache) {
     n_cleaned += 1;
   }
 
-  DEBUG_ASSERT(n_cleaned == params->n_training_segs); 
+  DEBUG_ASSERT(n_cleaned == params->n_training_segs);
   DEBUG_ASSERT(n_cleaned == params->train_bucket.n_in_use_segs);
 
   params->n_training_segs -= n_cleaned;
@@ -86,7 +93,7 @@ static void clean_training_segs(cache_t *cache) {
  * 
  * @param is_training_data: whether the data is training or inference 
  * @param x: feature vector, and we write to x 
- * @param y: label, for passing the true y 
+ * @param y: label, for training  
  * 
  */
 bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data, feature_t *x,
@@ -136,7 +143,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   // printf("\n");
 
   if (y == NULL) {
-    // this is for inference
+    // this is for inference and we do not calculate y
     return true;
   }
 
@@ -147,7 +154,8 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
     /* lower utility should be evicted first */
-    offline_utility = cal_seg_utility_oracle(cache, curr_seg, curr_seg->become_train_seg_rtime, curr_seg->become_train_seg_vtime);
+    offline_utility = cal_seg_utility_oracle(cache, curr_seg, curr_seg->become_train_seg_rtime,
+                                             curr_seg->become_train_seg_vtime);
     *y = (train_y_t) offline_utility;
   }
 
@@ -174,7 +182,8 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   seg->train_utility = 0;
 
 #ifdef COMPARE_TRAINING_Y
-  l->train_y_oracle[row_idx] = cal_seg_utility_oracle(cache, seg, seg->become_train_seg_rtime, seg->become_train_seg_vtime);
+  l->train_y_oracle[row_idx] = cal_seg_utility_oracle(cache, seg, seg->become_train_seg_rtime,
+                                                      seg->become_train_seg_vtime);
 #endif
 
   prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);
@@ -190,7 +199,8 @@ void snapshot_segs_to_training_data(cache_t *cache) {
   learner_t *l = &params->learner;
   segment_t *curr_seg = NULL;
 
-  double sample_ratio = MAX((double) params->n_in_use_segs / (double) l->train_matrix_n_row, 1.0);
+  double sample_ratio =
+      MAX((double) params->n_in_use_segs / (double) l->train_matrix_n_row, 1.0);
 
   double credit = 0;// when credit reaches sample ratio, we sample a segment
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
@@ -212,17 +222,18 @@ void snapshot_segs_to_training_data(cache_t *cache) {
       curr_seg = curr_seg->next_seg;
     }
   }
-  // DEBUG("%.2lf hour cache size %.2lf MB snapshot %d/%d train sample\n",
-  //       (double) params->curr_rtime / 3600.0, cache->cache_size / 1024.0 / 1024.0,
-  //       l->n_train_samples, l->train_matrix_n_row);
 }
 
-/* used when the training y is calculated online */
+/* used when the training y is calculated online, 
+ * we calculate segment utility (for training) online in the following way: 
+ * after segment is snatshotted, we calculate the segment utility correspond to the time 
+ * when the snapshot was taken:
+ * each time when an object on the segment is requested, we accumulate 1/(D_snapshot * S_obj) to the segment utility
+ */
 void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->L2Cache.segment;
 
-  if (params->train_source_y == TRAIN_Y_FROM_ORACLE) 
-    return; // do nothing
+  if (params->train_source_y == TRAIN_Y_FROM_ORACLE) return;// do nothing
 
 #if TRAINING_CONSIDER_RETAIN == 1
   if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)
@@ -367,7 +378,7 @@ void prepare_training_data(cache_t *cache) {
 #endif
   }
 #ifdef COMPARE_TRAINING_Y
-    fprintf(ofile_cmp_y, "#####################################\n");
+  fprintf(ofile_cmp_y, "#####################################\n");
 #endif
 
   learner->n_train_samples = pos_in_train_data;
@@ -379,5 +390,5 @@ void prepare_training_data(cache_t *cache) {
   dump_training_data(cache);
 #endif
 
-  clean_training_segs(cache); 
+  clean_training_segs(cache);
 }

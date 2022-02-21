@@ -5,7 +5,7 @@
 #include "L2CacheInternal.h"
 
 static inline void obj_init(cache_t *cache, request_t *req, cache_obj_t *cache_obj,
-                               segment_t *seg) {
+                            segment_t *seg) {
   copy_request_to_cache_obj(cache_obj, req);
   cache_obj->L2Cache.freq = 0;
   cache_obj->L2Cache.last_access_rtime = req->real_time;
@@ -62,8 +62,7 @@ static inline void obj_evict_update(cache_t *cache, cache_obj_t *obj) {
 /* calculate the score of object, the larger score, 
    the more important object is, we should keep it */
 static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e score_type,
-                                      cache_obj_t *cache_obj, int curr_rtime,
-                                      int64_t curr_vtime) {
+                                   cache_obj_t *cache_obj, int curr_rtime, int64_t curr_vtime) {
   segment_t *seg = cache_obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 
