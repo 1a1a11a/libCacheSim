@@ -135,30 +135,35 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
 
   cache_ck_res_e cache_check = cache->check(cache, req, true);
 
+  if (cache_check == cache_ck_hit) 
+    return cache_check; 
+
+
   bool admit = true;
 
 #if defined(SUPPORT_ADMISSION) && SUPPORT_ADMISSION == 1
   if (cache->admit != NULL && !cache->admit(cache, req)) {
-      admit = false;
+      return cache_check; 
   }
 #endif
-  if (admit) {
-    if (req->obj_size + cache->per_obj_overhead <= cache->cache_size) {
-      if (cache_check == cache_ck_miss) {
-        while (cache->occupied_size + req->obj_size + cache->per_obj_overhead > cache->cache_size)
-          cache->evict(cache, req, NULL);
 
-        cache->insert(cache, req);
-      }
-    } else {
-      static __thread bool has_printed = false;
-      if (!has_printed) {
-        has_printed = true; 
-        WARN("req %" PRIu64 ": obj size %" PRIu32 " larger than cache size %" PRIu64 "\n",
-                req->obj_id, req->obj_size, cache->cache_size);
-      }
+  if (req->obj_size + cache->per_obj_overhead > cache->cache_size) {
+    static __thread bool has_printed = false;
+    if (!has_printed) {
+      has_printed = true; 
+      WARN("req %" PRIu64 ": obj size %" PRIu32 " larger than cache size %" PRIu64 "\n",
+              req->obj_id, req->obj_size, cache->cache_size);
     }
+    return cache_check;
   }
+
+  if (cache_check == cache_ck_miss) {
+    while (cache->occupied_size + req->obj_size + cache->per_obj_overhead > cache->cache_size)
+      cache->evict(cache, req, NULL);
+
+    cache->insert(cache, req);
+  }
+
   return cache_check;
 }
 

@@ -242,7 +242,7 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->LFU->remove(params->LFU, obj.obj_id);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LRU_g->check(params->LRU_g, req_local, false) == cache_ck_miss);
-    params->LRU_g->insert(params->LRU_g, req_local);
+    params->LRU_g->get(params->LRU_g, req_local);
 
   // action is LFU
   } else {
@@ -251,7 +251,7 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->LFU->evict(params->LFU, req, &obj);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LFU_g->check(params->LFU_g, req_local, false) == cache_ck_miss);
-    params->LFU_g->insert(params->LFU_g, req_local);
+    params->LFU_g->get(params->LFU_g, req_local);
   }
 
   if (evicted_obj != NULL) {

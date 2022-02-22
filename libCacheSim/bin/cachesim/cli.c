@@ -9,7 +9,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {
     // if cache size is specified, then it will only run one simulation at the given size
     printf("usage: %s trace_type data_path alg "
-          "(optional: seg_size n_merge rank_intvl bucket_type train_source cache_size)\n\n"
+          "(optional: cache_size seg_size n_merge rank_intvl bucket_type train_source)\n\n"
           "param options: \n"
           "trace_type:  twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin\n"
           "bucket_type: no_bucket, size_bucket\n"
@@ -45,6 +45,14 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 
   args.alg = argv[3];
 
+  if (argc >= 5) {
+    int cache_size = atoi(argv[4]);
+    if (cache_size > 0) {
+      args.cache_size = cache_size;
+      args.debug = true;
+    }
+  }
+
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1  
   if (strncasecmp(args.alg, "L2Cache", 7) == 0) {
     if (strcasecmp(args.alg + 8, "oracleLog") == 0) {
@@ -65,57 +73,49 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.alg = "L2Cache"; 
   }
 
-  if (argc >= 5) {
-    int seg_size = atoi(argv[4]);
+  if (argc >= 6) {
+    int seg_size = atoi(argv[5]);
     if (seg_size > 0) {
       args.seg_size = seg_size;
     }
   }
 
-  if (argc >= 6) {
-    int n_merge = atoi(argv[5]);
+  if (argc >= 7) {
+    int n_merge = atoi(argv[6]);
     if (n_merge > 0) {
       args.n_merge = n_merge;
     }
   }
 
-  if (argc >= 7) {
-    double rank_intvl = atof(argv[6]);
+  if (argc >= 8) {
+    double rank_intvl = atof(argv[7]);
     if (rank_intvl > 0) {
       args.rank_intvl = rank_intvl;
     }
   }
 
-  if (argc >= 8) {
-    if (strncasecmp(argv[7], "no_bucket", 9) == 0) {
+  if (argc >= 9) {
+    if (strncasecmp(argv[8], "no_bucket", 9) == 0) {
       args.bucket_type = NO_BUCKET;
-    } else if (strncasecmp(argv[7], "size_bucket", 11) == 0) {
+    } else if (strncasecmp(argv[8], "size_bucket", 11) == 0) {
       args.bucket_type = SIZE_BUCKET;
     } else {
-      printf("unknown bucket type %s\n", argv[7]);
+      printf("unknown bucket type %s\n", argv[8]);
       abort();
     }
   }
 
-  if (argc >= 9) {
-    if (strncasecmp(argv[8], "oracle", 6) == 0) {
+  if (argc >= 10) {
+    if (strncasecmp(argv[9], "oracle", 6) == 0) {
       args.train_source_y = TRAIN_Y_FROM_ORACLE;
-    } else if (strncasecmp(argv[8], "online", 6) == 0) {
+    } else if (strncasecmp(argv[9], "online", 6) == 0) {
       args.train_source_y = TRAIN_Y_FROM_ONLINE;
     } else {
-      printf("unknown bucket type %s\n", argv[7]);
+      printf("unknown bucket type %s\n", argv[9]);
       abort();
     }
   }
 #endif
-
-  if (argc >= 10) {
-    int cache_size = atoi(argv[9]);
-    if (cache_size > 0) {
-      args.cache_size = cache_size;
-      args.debug = true;
-    }
-  }
 
   reader_t *reader = setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
   get_num_of_req(reader);

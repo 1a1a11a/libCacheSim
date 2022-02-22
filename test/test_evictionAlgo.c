@@ -262,9 +262,9 @@ static void test_Hyperbolic(gconstpointer user_data) {
 
 static void test_LeCaR(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {92692, 86839, 78751, 81283, 72368, 68083, 65219, 68423};
-  uint64_t miss_byte_true[] = {4024961024, 3799468544, 3506645504, 3605686272,
-                               3081307648, 2909224448, 2736208384, 2849179136};
+  uint64_t miss_cnt_true[] = {93210, 86935, 78841, 81401, 72380, 68472, 65219, 68423};
+  uint64_t miss_byte_true[] = {4040029696, 3800505344, 3511674368, 3609508352, 
+                              3090144256, 2904426496, 2736208384, 2849179136};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
@@ -282,9 +282,9 @@ static void test_LeCaR(gconstpointer user_data) {
 
 static void test_Cacheus(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {89700, 83673, 79199, 72762, 69277, 67883, 67476, 66501};
-  uint64_t miss_byte_true[] = {3922595328, 3631532544, 3387103232, 3152389632,
-                               2961427456, 2885015040, 2864854528, 2807194112};
+  uint64_t miss_cnt_true[] = {89422, 83826, 80091, 72648, 69286, 67883, 67476, 66501};
+  uint64_t miss_byte_true[] = {3907576320, 3663195136, 3441767424, 3147611648, 
+                              2962097152, 2885015040, 2864854528, 2807194112};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
@@ -293,6 +293,7 @@ static void test_Cacheus(gconstpointer user_data) {
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -452,11 +453,12 @@ int main(int argc, char *argv[]) {
 
   reader = setup_csv_reader_obj_num();
 //  reader = setup_vscsi_reader();
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_CR_LFU", reader, test_CR_LFU);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
@@ -471,7 +473,6 @@ int main(int argc, char *argv[]) {
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader, test_Hyperbolic);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
   g_test_add_data_func_full("/libCacheSim/free_reader", reader, empty_test, test_teardown);
 
   /* optimal requires reader that has next access information, note that
