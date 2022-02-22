@@ -168,15 +168,19 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->LFU->remove(params->LFU, obj.obj_id);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LRU_g->check(params->LRU_g, req_local, false) == cache_ck_miss);
-    params->LRU_g->get(params->LRU_g, req_local);
-    cache_get_obj(params->LRU_g, req_local)->LeCaR.last_access_vtime = cache->n_req;
+    if (req_local->obj_size < params->LRU_g->cache_size) {
+      params->LRU_g->get(params->LRU_g, req_local);
+      cache_get_obj(params->LRU_g, req_local)->LeCaR.last_access_vtime = cache->n_req;
+    }
   } else {
     params->LFU->evict(params->LFU, req, &obj);
     params->LRU->remove(params->LRU, obj.obj_id);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LFU_g->check(params->LFU_g, req_local, false) == cache_ck_miss);
-    params->LFU_g->get(params->LFU_g, req_local);
-    cache_get_obj(params->LFU_g, req_local)->LeCaR.last_access_vtime = cache->n_req;
+    if (req_local->obj_size < params->LFU_g->cache_size) {
+      params->LFU_g->get(params->LFU_g, req_local);
+      cache_get_obj(params->LFU_g, req_local)->LeCaR.last_access_vtime = cache->n_req;
+    }
   }
 
   if (evicted_obj != NULL) {
