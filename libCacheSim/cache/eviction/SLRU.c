@@ -60,7 +60,7 @@ void SLRU_cool(cache_t *cache, request_t *req, int i) {
 
   cache_obj_t evicted_obj;
   SLRU_params_t *SLRU_params = (SLRU_params_t *) (cache->eviction_params);
-  request_t *req_local = NULL;
+  static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }

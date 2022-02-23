@@ -183,8 +183,38 @@ cache_ck_res_e Cacheus_get(cache_t *cache, request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *) (cache->eviction_params);
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
+  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_size == cache->occupied_size);
 
-  cache_ck_res_e ret = cache_get_base(cache, req);
+  cache->n_req += 1;
+  cache_ck_res_e ret = cache->check(cache, req, true);
+
+  if (ret != cache_ck_hit) 
+  {
+    SR_LRU_params_t *params_LRU = (SR_LRU_params_t *) (params->LRU->eviction_params);
+    if (req->obj_size + cache->per_obj_overhead > cache->cache_size || req->obj_size + cache->per_obj_overhead > params_LRU->SR_list->cache_size) {
+      static __thread bool has_printed = false;
+      if (!has_printed) {
+        has_printed = true; 
+        if (req->obj_size + cache->per_obj_overhead > cache->cache_size) {
+          WARN("req %" PRIu64 ": obj size %" PRIu32 " larger than cache size %" PRIu64 "\n",
+                  req->obj_id, req->obj_size, cache->cache_size);
+        }
+        else if (req->obj_size + cache->per_obj_overhead > params_LRU->SR_list->cache_size) {
+          WARN("req %" PRIu64 ": obj size %" PRIu32 " larger than SR-LRU - SR size %" PRIu64 "\n",
+                  req->obj_id, req->obj_size, params_LRU->SR_list->cache_size);      
+        }
+      }
+    }
+
+    else if (ret == cache_ck_miss) {
+      while (cache->occupied_size + req->obj_size + cache->per_obj_overhead > cache->cache_size)
+        cache->evict(cache, req, NULL);
+
+      cache->insert(cache, req);
+    }
+  }
+  // cache_ck_res_e ret = cache_get_base(cache, req);
 
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
@@ -242,7 +272,9 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->LFU->remove(params->LFU, obj.obj_id);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LRU_g->check(params->LRU_g, req_local, false) == cache_ck_miss);
-    params->LRU_g->get(params->LRU_g, req_local);
+    if (req_local->obj_size < params->LRU_g->cache_size) {
+      params->LRU_g->get(params->LRU_g, req_local);
+    }
 
   // action is LFU
   } else {
@@ -251,7 +283,9 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->LFU->evict(params->LFU, req, &obj);
     copy_cache_obj_to_request(req_local, &obj);
     DEBUG_ASSERT(params->LFU_g->check(params->LFU_g, req_local, false) == cache_ck_miss);
-    params->LFU_g->get(params->LFU_g, req_local);
+    if (req_local->obj_size < params->LRU_g->cache_size) {
+      params->LFU_g->get(params->LFU_g, req_local);
+    }
   }
 
   if (evicted_obj != NULL) {

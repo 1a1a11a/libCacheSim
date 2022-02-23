@@ -3,7 +3,7 @@
 #include <vector>
 #include <limits>
 #include "repl.hpp"
-
+#include <math.h>
 #include "../../include/libCacheSim/cache.h"
 
 namespace repl {
@@ -145,10 +145,28 @@ private:
 
   inline uint32_t getClassId(const Tag &tag) const {
     uint32_t hitAgeId = hitAgeClass(tag.lastHitAge + tag.lastLastHitAge);
+    // uint32_t hitAgeId = hitAgeClass(tag.lastHitAge);
     return tag.app * HIT_AGE_CLASSES + hitAgeId;
   }
 
+  inline uint32_t getClassIdBySize(const Tag &tag) const {
+    uint32_t hitSizeId = 0;
+    uint64_t size = (uint64_t) tag.size;
+    return tag.app * HIT_AGE_CLASSES + ((uint64_t) log(size)) % HIT_AGE_CLASSES;
+  }
+
+  inline uint32_t getClassIdBySizeAndAge(const Tag &tag) const {
+    if (tag.lastHitAge == 0)
+      return getClassIdBySize(tag);
+
+    uint32_t hitSizeId = 0;
+    uint64_t size = (uint64_t) tag.size;
+    return tag.app * HIT_AGE_CLASSES + ((uint64_t) log(size) + (uint64_t) log(tag.lastHitAge)) % HIT_AGE_CLASSES;
+  }
+
   inline Class &getClass(const Tag &tag) {
+    // return classes[getClassIdBySizeAndAge(tag)];
+    // return classes[getClassIdBySize(tag)];
     return classes[getClassId(tag)];
   }
 

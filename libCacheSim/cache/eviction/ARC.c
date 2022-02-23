@@ -157,7 +157,7 @@ cache_obj_t *ARC_to_evict(cache_t *cache) {
 
 void ARC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache_obj_t obj;
-  request_t *req_local = NULL;
+  static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }

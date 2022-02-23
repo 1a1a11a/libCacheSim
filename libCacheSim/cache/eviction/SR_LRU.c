@@ -69,6 +69,7 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, request_t *req, bool update_cache) {
 
     // If R list is full, move obj from R to SR.
     while (params->R_list->occupied_size + req->obj_size + cache->per_obj_overhead > params->R_list->cache_size){
+      DEBUG_ASSERT(params->R_list->occupied_size != 0);
       cache_obj_t evicted_obj;
       LRU_evict(params->R_list, req, &evicted_obj);
       copy_cache_obj_to_request(req_local, &evicted_obj);
@@ -120,7 +121,12 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, request_t *req, bool update_cache) {
 cache_ck_res_e SR_LRU_get(cache_t *cache, request_t *req) {
   cache_ck_res_e ret;
   ret = SR_LRU_check(cache, req, true);
+  SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);
+
   if (ret == cache_ck_miss) {
+    if (req->obj_size + cache->per_obj_overhead > params->SR_list->cache_size) {
+      return ret;
+    }
     SR_LRU_insert(cache, req);
   }
   return ret;
@@ -132,6 +138,7 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
   SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);  
   cache_ck_res_e ck_hist = params->H_list->check(params->H_list, req, false);
   static __thread request_t *req_local = NULL;
+  DEBUG_ASSERT(req->obj_size + cache->per_obj_overhead < params->SR_list->cache_size);
   if (req_local == NULL) {
     req_local = new_request();
   }
@@ -143,6 +150,7 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
 
     // If R list is full, move obj from R to SR.
     while (params->R_list->occupied_size + req->obj_size + cache->per_obj_overhead > params->R_list->cache_size){
+      DEBUG_ASSERT(params->R_list->occupied_size != 0);
 
       cache_obj_t evicted_obj;
       LRU_evict(params->R_list, req, &evicted_obj);
@@ -154,7 +162,6 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
         params->C_demoted += 1;
         // evicted_obj.SR_LRU.demoted = true;
         cache_get_obj_by_id(params->SR_list, req_local->obj_id)->SR_LRU.demoted = true;
-        // assert(cache_get_obj_by_id(params->SR_list, req_local->obj_id)->SR_LRU.demoted == true);
       }
     }    
 
@@ -189,6 +196,7 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
     
     // label that obj as new obj;
     obj->SR_LRU.new_obj = true;
+    DEBUG_ASSERT(params->SR_list->to_evict);
   }
   
   // If SR is full
@@ -211,6 +219,7 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
       cache_get_obj_by_id(params->H_list, req_local->obj_id)->SR_LRU.demoted = false;
       params->C_demoted -= 1;
     }
+    DEBUG_ASSERT(params->SR_list->to_evict);
   }
   // If H is full
   while (params->H_list->occupied_size >= params->H_list->cache_size) {
@@ -223,13 +232,22 @@ void SR_LRU_insert(cache_t *cache, request_t *req) {
 
 cache_obj_t *SR_LRU_to_evict(cache_t *cache){
   SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);
-  return params->SR_list->to_evict(params->SR_list);
+  if (params->SR_list->to_evict(params->SR_list))
+    return params->SR_list->to_evict(params->SR_list);
+  else {
+    DEBUG_ASSERT(0);
+  }
 }
 
 void SR_LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   SR_LRU_params_t *params = (SR_LRU_params_t *) (cache->eviction_params);
-  params->SR_list->evict(params->SR_list, req, evicted_obj);
+  if (params->SR_list->to_evict(params->SR_list)) {
+    params->SR_list->evict(params->SR_list, req, evicted_obj);
+  }
+  else {
+    DEBUG_ASSERT(0);
+  }
 
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
