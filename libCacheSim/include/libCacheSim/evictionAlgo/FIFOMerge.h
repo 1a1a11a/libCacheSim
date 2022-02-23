@@ -50,6 +50,8 @@ cache_obj_t *FIFOMerge_to_evict(cache_t *cache);
 
 void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
+void FIFOMerge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove); 
+
 void FIFOMerge_remove(cache_t *cache, obj_id_t obj_id);
 
 #ifdef __cplusplus

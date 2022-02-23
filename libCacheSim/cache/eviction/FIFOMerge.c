@@ -163,7 +163,15 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
       cache_obj = cache->q_head;
       i = 0; 
       if (n_loop++ > 2) {
-        ERROR("FIFOMerge_evict: loop too many times");
+        ERROR("FIFOMerge_evict: loop too many times\n");
+
+        cache_obj = params->next_to_merge;
+        if (cache_obj->queue.next != NULL) {
+          cache_obj = cache_obj->queue.next;
+        }
+
+        FIFOMerge_remove_obj(cache, params->next_to_merge);
+        return; 
       }
     }
   }
@@ -176,20 +184,7 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   // remove objects 
   for (int i = 0; i < params->n_merge_obj - params->n_keep_obj; i++) {
     cache_obj = params->metric_list[i].cache_obj;
-    if (cache_obj->queue.prev != NULL) {
-      cache_obj->queue.prev->queue.next = cache_obj->queue.next; 
-    } 
-    if (cache_obj->queue.next != NULL) {
-      cache_obj->queue.next->queue.prev = cache_obj->queue.prev; 
-    } 
-    if (unlikely(cache_obj == cache->q_head)) {
-      cache->q_head = cache_obj->queue.next; 
-    }
-    if (unlikely(cache_obj == cache->q_tail)) {
-      cache->q_tail = cache_obj->queue.prev; 
-    }
-
-    cache_remove_obj_base(cache, cache_obj);
+    FIFOMerge_remove_obj(cache, cache_obj);
   }
 
   for (int i = 0; i < params->n_keep_obj; i++) {
