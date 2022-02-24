@@ -33,7 +33,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.trace_type = ORACLE_SIM_TWRNS_TRACE;
   } else if (strcasecmp(argv[1], "oracleGeneral") == 0
              || strcasecmp(argv[1], "oracleGeneralBin") == 0) {
-    args.trace_type = ORACLE_GENERAL_TRACE;
+  } else if (strcasecmp(argv[1], "oracleGeneralOpNS") == 0) {
+    args.trace_type = ORACLE_GENERALOPNS_TRACE;
   } else if (strcasecmp(argv[1], "oracleAkamaiBin") == 0) {
     args.trace_type = ORACLE_AKAMAI_TRACE;
   } else {
