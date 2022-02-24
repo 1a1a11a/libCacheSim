@@ -148,12 +148,22 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   }
 
   // collect metric for n_merge obj, we will keep objects with larger metric 
+  int n_loop = 0;
   cache_obj_t *cache_obj = params->next_to_merge;
   if (cache_obj == NULL) {
     params->next_to_merge = cache->q_head;
+    n_loop = 1;
   }
 
-  int n_loop = 0;
+  if (cache->n_obj <= params->n_merge_obj) {
+    // just evict one object 
+    cache_obj = params->next_to_merge->queue.next;
+    FIFOMerge_remove_obj(cache, params->next_to_merge);
+    params->next_to_merge = cache_obj;
+
+    return; 
+  }
+  
   for (int i = 0; i < params->n_merge_obj; i++) {
     assert(cache_obj != NULL);
     struct fifo_merge_sort_list_node n = {FIFOMerge_promote_metric(cache, cache_obj), cache_obj}; 
@@ -161,17 +171,14 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     cache_obj = cache_obj->queue.next;
     if (cache_obj == NULL) {
       cache_obj = cache->q_head;
-      i = 0; 
-      if (n_loop++ > 2) {
-        ERROR("FIFOMerge_evict: loop too many times\n");
-
-        cache_obj = params->next_to_merge;
-        if (cache_obj->queue.next != NULL) {
-          cache_obj = cache_obj->queue.next;
-        }
-
-        FIFOMerge_remove_obj(cache, params->next_to_merge);
-        return; 
+      n_loop++; 
+      if (n_loop == 2) {
+        ERROR("FIFOMerge_evict: loop too many times because not enough objects to merge\n");
+        abort(); 
+        // cache_obj = params->next_to_merge->queue.next;
+        // FIFOMerge_remove_obj(cache, params->next_to_merge);
+        // params->next_to_merge = cache_obj;
+        // return; 
       }
     }
   }
@@ -179,7 +186,6 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   
   // sort metrics 
   qsort(params->metric_list, params->n_merge_obj, sizeof(struct fifo_merge_sort_list_node), cmp_list_node);
-  // printf("%.4lf %.4lf %.4lf %.4lf\n", params->metric_list[0].metric, params->metric_list[1].metric, params->metric_list[2].metric, params->metric_list[3].metric);
 
   // remove objects 
   for (int i = 0; i < params->n_merge_obj - params->n_keep_obj; i++) {

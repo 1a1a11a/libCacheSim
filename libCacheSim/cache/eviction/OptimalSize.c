@@ -62,7 +62,7 @@ void OptimalSize_insert(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *OptimalSize_to_evict(cache_t *cache) {
-  cache_obj_t *obj_to_evict, *sampled_obj;
+  cache_obj_t *obj_to_evict = NULL, *sampled_obj;
   int64_t obj_to_evict_score = -1, sampled_obj_score;
   for (int i = 0; i < N_SAMPLE_PER_EVICTION; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
