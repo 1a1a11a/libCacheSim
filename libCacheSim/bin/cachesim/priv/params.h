@@ -3,6 +3,7 @@
 #include "../cachesim.h"
 #include "../utils.h"
 #include "math.h"
+#include "cphy.h"
 
 #ifdef __linux__
 #include <sys/sysinfo.h>
@@ -64,8 +65,10 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
-    INFO("use cphy default parameter\n");
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+
+    if (!set_cphy_size(args))
+      INFO("use cphy default parameter\n");
     args->n_merge = 2;
     args->seg_size = 50;
     args->rank_intvl = 0.05;
