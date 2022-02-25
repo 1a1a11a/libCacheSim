@@ -12,7 +12,7 @@ for i in range(1, 107):
     )
 */
 static inline bool set_cphy_size(sim_arg_t *args) {
-  // set size to 0.01%, 0.05%, 0.1%, 0.5%, 1%, 5%, 10%, 20% of working set size
+  // set size to 0.05%, 0.1%, 0.5%, 1%, 5%, 10%, 20% of working set size
   double working_set_size_mb;
   bool find_data = false;
   if (strstr(args->trace_path, "w01.") != NULL) {
@@ -441,7 +441,7 @@ static inline bool set_cphy_size(sim_arg_t *args) {
     INFO("use cphy w106 cache size\n");
   }
 
-  double s[8] = {0.01, 0.05, 0.1, 0.5, 1, 5, 10, 20};
+  double s[7] = {0.05, 0.1, 0.5, 1, 5, 10, 20};
   for (int i = 0; i < sizeof(s) / sizeof(double); i++) {
     args->cache_sizes[i] = (uint64_t) (working_set_size_mb / 100.0 * s[i] * MiB);
   }
