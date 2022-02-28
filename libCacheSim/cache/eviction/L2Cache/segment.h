@@ -35,7 +35,6 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
 
 double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int64_t vtime);
 
-void print_seg(cache_t *cache, segment_t *seg, int log_level);
 
 int clean_one_seg(cache_t *cache, segment_t *seg);
 

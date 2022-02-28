@@ -441,11 +441,16 @@ static inline bool set_cphy_size(sim_arg_t *args) {
     INFO("use cphy w106 cache size\n");
   }
 
-  double s[7] = {0.05, 0.1, 0.5, 1, 5, 10, 20};
+  double s[9] = {0.01, 0.05, 0.1, 0.5, 1, 5, 10, 20, 40};
+  int n_skipped = 0;
   for (int i = 0; i < sizeof(s) / sizeof(double); i++) {
-    args->cache_sizes[i] = (uint64_t) (working_set_size_mb / 100.0 * s[i] * MiB);
+    if (working_set_size_mb / 100.0 * s[i] < 32) {
+      n_skipped++;
+      continue;
+    }
+    args->cache_sizes[i - n_skipped] = (uint64_t) (working_set_size_mb / 100.0 * s[i] * MiB);
   }
-  args->n_cache_size = sizeof(s) / sizeof(double);
+  args->n_cache_size = sizeof(s) / sizeof(double) - n_skipped;
 
   return find_data;
 }

@@ -209,7 +209,7 @@ double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int
 
   double utility = 0;
   int n_retained_obj = 0;
-#ifdef TRAINING_CONSIDER_RETAIN
+#ifdef EVICTION_CONSIDER_RETAIN
   n_retained_obj = params->n_retain_per_seg;
   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
   DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);

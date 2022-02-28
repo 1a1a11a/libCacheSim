@@ -16,8 +16,8 @@
 /* the number of time windows we keep in features */
 #define N_FEATURE_TIME_WINDOW 8
 
-/* whether the training data (segment utility) considers retain */
-#define TRAINING_CONSIDER_RETAIN 1
+/* whether the segment utility considers retain */
+#define EVICTION_CONSIDER_RETAIN 1
 
 /* training objective, regression or ranking */
 #define REG 1

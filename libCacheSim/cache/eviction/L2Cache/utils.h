@@ -3,25 +3,26 @@
 #include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
 #include "L2CacheInternal.h"
 
-#define MAYBE_RESIZE_MATRIX(matrix_type, matrix_p, expect_dim1, expect_dim2, curr_dim1_p, curr_dim2_p) \
-  do { \
-    if ((matrix_p) == NULL || (expect_dim1) > (*(curr_dim1_p)) || (expect_dim2) > (*(curr_dim2_p))) { \
-      my_free(sizeof(matrix_type) * (*(curr_dim1_p)) * (*(curr_dim2_p)), (matrix_p)); \
-      matrix_p = (matrix_type *) malloc(sizeof(matrix_type) * (expect_dim1) * (expect_dim2)); \
-      *(curr_dim1_p) = (expect_dim1); \
-      *(curr_dim2_p) = (expect_dim2); \
-    } \
+#define MAYBE_RESIZE_MATRIX(matrix_type, matrix_p, expect_dim1, expect_dim2, curr_dim1_p,      \
+                            curr_dim2_p)                                                       \
+  do {                                                                                         \
+    if ((matrix_p) == NULL || (expect_dim1) > (*(curr_dim1_p))                                 \
+        || (expect_dim2) > (*(curr_dim2_p))) {                                                 \
+      my_free(sizeof(matrix_type) * (*(curr_dim1_p)) * (*(curr_dim2_p)), (matrix_p));          \
+      matrix_p = (matrix_type *) malloc(sizeof(matrix_type) * (expect_dim1) * (expect_dim2));  \
+      *(curr_dim1_p) = (expect_dim1);                                                          \
+      *(curr_dim2_p) = (expect_dim2);                                                          \
+    }                                                                                          \
   } while (0)
 
-#define MAYBE_RESIZE_VECTOR(matrix_type, matrix_p, expect_dim, curr_dim_p) \
-  do { \
-    if ((matrix_p) == NULL || (expect_dim) > (*(curr_dim_p))) { \
-      my_free(sizeof(matrix_type) * (*(curr_dim_p)), (matrix_p)); \
-      matrix_p = (matrix_type *) malloc(sizeof(matrix_type) * (expect_dim)); \
-      *(curr_dim_p) = expect_dim; \
-    } \
+#define MAYBE_RESIZE_VECTOR(matrix_type, matrix_p, expect_dim, curr_dim_p)                     \
+  do {                                                                                         \
+    if ((matrix_p) == NULL || (expect_dim) > (*(curr_dim_p))) {                                \
+      my_free(sizeof(matrix_type) * (*(curr_dim_p)), (matrix_p));                              \
+      matrix_p = (matrix_type *) malloc(sizeof(matrix_type) * (expect_dim));                   \
+      *(curr_dim_p) = expect_dim;                                                              \
+    }                                                                                          \
   } while (0)
-
 
 static inline int count_hash_chain_len(cache_obj_t *cache_obj) {
   int n = 0;
@@ -71,5 +72,24 @@ static inline uint64_t gettime_usec() {
   return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
+typedef struct double_double_pair {
+  double x;
+  double y;
+} dd_pair_t;
 
+static int cmp_double_double_pair(const void *p1, const void *p2) {
+  dd_pair_t *pair1 = (dd_pair_t *) p1;
+  dd_pair_t *pair2 = (dd_pair_t *) p2;
+  if (pair1->x < pair2->x * 0.999) return -1;
+  else if (pair1->x > pair2->x * 1.001)
+    return 1;
+  else {
+    if (pair1->y < pair2->y * 0.999) return -1;
+    else if (pair1->y > pair2->y * 1.001)
+      return 1;
+    else
+      return 0;
+  }
+  return 0;
+}
 
