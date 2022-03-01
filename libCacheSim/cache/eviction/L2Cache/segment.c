@@ -5,6 +5,7 @@
 #include "const.h"
 #include "obj.h"
 #include "utils.h"
+#include "../../include/libCacheSim/mem.h"
 
 void seg_feature_shift(L2Cache_params_t *params, segment_t *seg);
 
@@ -144,8 +145,7 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
   for (int i = 0; i < n_segs; i++) {
     seg = segs[i];
     for (int j = 0; j < seg->n_obj; j++) {
-      params->obj_sel.score_array[pos++] = cal_obj_score(
-          params, obj_score_type, &seg->objs[j], params->curr_rtime, params->curr_vtime);
+      params->obj_sel.score_array[pos++] = cal_obj_score(params, obj_score_type, &seg->objs[j]);
     }
   }
   DEBUG_ASSERT(pos == params->segment_size * n_segs);
@@ -154,56 +154,29 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
   return params->obj_sel.score_array[pos - n_retain];
 }
 
-// /** calculate segment utility, and a segment with a lower utility should be evicted first **/
-// double cal_seg_utility(cache_t *cache, segment_t *seg, int64_t rtime, int64_t vtime) {
-//   L2Cache_params_t *params = cache->eviction_params;
-//   seg_sel_t *seg_sel = &params->seg_sel;
-//   obj_sel_t *obj_sel = &params->obj_sel;
-//   cache_obj_t *cache_obj;
 
-//   DEBUG_ASSERT(seg->n_obj <= obj_sel->score_array_size);
 
-//   for (int j = 0; j < seg->n_obj; j++) {
-//     // obj_sel->score_array[j] =
-//         // cal_obj_score(params, obj_score_type, &seg->objs[j], rtime, vtime);
-//     cache_obj = &seg->objs[j];
-//     double age = rtime - cache_obj->L2Cache.last_access_rtime;
-//     obj_sel->score_array[j] = 1.0e6 / age / cache_obj->obj_size;
-//   }
-
-//   double utility = 0;
-//   int n_retained_obj = 0;
-// #ifdef TRAINING_CONSIDER_RETAIN
-//   n_retained_obj = params->n_retain_per_seg;
-//   qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
-//   DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
-// #else
-//   for (int j = 0; j < seg->n_obj - n_retained_obj; j++) {
-//     utility += obj_sel->score_array[j];
-//   }
-// #endif
-
-//   return utility;
-// }
-
-/** calculate segment utility, and a segment with a lower utility should be evicted first **/
-double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int64_t vtime) {
+/** calculate segment utility, 
+ * oracle_obj_sel: if true, the retained objects are chosen using oracle obj_score, 
+ * if false, use current obj_score_type to choose what objects to retain
+ * this is used to make sure logOracle can choose the best segments given the object selection **/
+double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel) {
   L2Cache_params_t *params = cache->eviction_params;
-  seg_sel_t *seg_sel = &params->seg_sel;
-  obj_sel_t *obj_sel = &params->obj_sel;
   cache_obj_t *cache_obj;
 
-  DEBUG_ASSERT(seg->n_obj <= obj_sel->score_array_size);
+  /* array of object score pair, the first is online score, the second is oracle score */
+  static __thread dd_pair_t *obj_score_online_oracle = NULL; 
+  if (obj_score_online_oracle == NULL) {
+    obj_score_online_oracle = my_malloc_n(dd_pair_t, params->segment_size);
+  }
 
   for (int j = 0; j < seg->n_obj; j++) {
-    // obj_sel->score_array[j] =
-    //     cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j], rtime, vtime);
-    cache_obj = &seg->objs[j];
-    double dist = cache_obj->L2Cache.next_access_vtime - vtime;
-    if (dist < 0) {
-      obj_sel->score_array[j] = 0;
+    if (oracle_obj_sel) {
+      obj_score_online_oracle[j].x = cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j]);
+      obj_score_online_oracle[j].y = obj_score_online_oracle[j].x;
     } else {
-      obj_sel->score_array[j] = 1.0e8 / dist / cache_obj->obj_size;
+      obj_score_online_oracle[j].x = cal_obj_score(params, params->obj_score_type, &seg->objs[j]);
+      obj_score_online_oracle[j].y = cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j]);
     }
   }
 
@@ -211,12 +184,12 @@ double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int
   int n_retained_obj = 0;
 #ifdef EVICTION_CONSIDER_RETAIN
   n_retained_obj = params->n_retain_per_seg;
-  qsort(obj_sel->score_array, seg->n_obj, sizeof(double), cmp_double);
-  DEBUG_ASSERT(obj_sel->score_array[0] <= obj_sel->score_array[seg->n_obj - 1]);
-#endif
+  qsort(obj_score_online_oracle, seg->n_obj, sizeof(dd_pair_t), cmp_double_double_pair);
+  DEBUG_ASSERT(obj_score_online_oracle[0].x <= obj_score_online_oracle[seg->n_obj - 1].x);
+#endif 
 
   for (int j = 0; j < seg->n_obj - n_retained_obj; j++) {
-    utility += obj_sel->score_array[j];
+    utility += obj_score_online_oracle[j].y;
   }
 
   return utility;
@@ -235,7 +208,7 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          (double) seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate, seg->miss_ratio,
          (double) seg->n_hit / seg->n_obj, seg->n_hit, seg->n_active, seg->n_merge,
          seg->train_utility, seg->pred_utility,
-         cal_seg_utility_oracle(cache, seg, params->curr_rtime, params->curr_vtime),
+         cal_seg_utility(cache, seg, true),
          count_n_obj_reuse(cache, seg),
 
          seg->feature.n_hit_per_min[0], seg->feature.n_hit_per_min[1],

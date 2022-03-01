@@ -154,8 +154,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) {
     /* lower utility should be evicted first */
-    offline_utility = cal_seg_utility_oracle(cache, curr_seg, curr_seg->become_train_seg_rtime,
-                                             curr_seg->become_train_seg_vtime);
+    offline_utility = cal_seg_utility(cache, curr_seg, true);
     *y = (train_y_t) offline_utility;
   }
 
@@ -182,8 +181,7 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   seg->train_utility = 0;
 
 #ifdef COMPARE_TRAINING_Y
-  l->train_y_oracle[row_idx] = cal_seg_utility_oracle(cache, seg, seg->become_train_seg_rtime,
-                                                      seg->become_train_seg_vtime);
+  l->train_y_oracle[row_idx] = cal_seg_utility(cache, seg, true);
 #endif
 
   prepare_one_row(cache, seg, true, &l->train_x[row_idx * l->n_feature], &l->train_y[row_idx]);

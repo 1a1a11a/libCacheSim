@@ -81,12 +81,9 @@ void rank_segs(cache_t *cache) {
       if (params->type == LOGCACHE_LEARNED) {
         ;
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
-        curr_seg->pred_utility =
-            // cal_seg_utility(cache, params->obj_score_type, curr_seg, params->curr_rtime, params->curr_vtime);
-            cal_seg_utility_oracle(cache, curr_seg, params->curr_rtime, params->curr_vtime);
+        curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, false);
       } else if (params->type == LOGCACHE_BOTH_ORACLE) {
-        curr_seg->pred_utility =
-            cal_seg_utility_oracle(cache, curr_seg, params->curr_rtime, params->curr_vtime);
+        curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, true);
       } else {
         abort();
       }

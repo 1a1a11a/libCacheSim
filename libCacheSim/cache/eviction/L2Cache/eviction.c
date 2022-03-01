@@ -93,8 +93,7 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_obj; j++) {
       cache_obj = &segs[i]->objs[j];
-      double obj_score = cal_obj_score(params, params->obj_score_type, cache_obj,
-                                       params->curr_rtime, params->curr_vtime);
+      double obj_score = cal_obj_score(params, params->obj_score_type, cache_obj);
       if (new_seg->n_obj < params->segment_size && obj_score >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));

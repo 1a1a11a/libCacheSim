@@ -62,8 +62,10 @@ static inline void obj_evict_update(cache_t *cache, cache_obj_t *obj) {
 /* calculate the score of object, the larger score, 
    the more important object is, we should keep it */
 static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e score_type,
-                                   cache_obj_t *cache_obj, int curr_rtime, int64_t curr_vtime) {
+                                   cache_obj_t *cache_obj) {
   segment_t *seg = cache_obj->L2Cache.segment;
+  int64_t curr_rtime = params->curr_rtime; 
+  int64_t curr_vtime = params->curr_vtime; 
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 
   if (score_type == OBJ_SCORE_FREQ) {

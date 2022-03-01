@@ -68,10 +68,7 @@ void init_learner(cache_t *cache) {
   l->valid_matrix_n_row = l->train_matrix_n_row / 10;
   l->valid_x = my_malloc_n(feature_t, l->valid_matrix_n_row * l->n_feature);
   l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_n_row);
-
   l->retrain_intvl = init_params->retrain_intvl;
-  if (l->retrain_intvl <= 0) l->retrain_intvl = 86400;
-
   l->last_train_rtime = 0;
 }
 

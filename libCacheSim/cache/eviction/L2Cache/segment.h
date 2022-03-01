@@ -31,13 +31,11 @@ void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment
 double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **segs,
                    int n_segs, int n_retain);
 
-// double cal_seg_utility(cache_t *cache, segment_t *seg, int64_t rtime, int64_t vtime);
-
-double cal_seg_utility_oracle(cache_t *cache, segment_t *seg, int64_t rtime, int64_t vtime);
-
+double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel); 
 
 int clean_one_seg(cache_t *cache, segment_t *seg);
 
 int count_n_obj_reuse(cache_t *cache, segment_t *seg);
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level);
+

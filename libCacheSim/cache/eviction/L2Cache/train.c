@@ -35,24 +35,27 @@ static void train_xgboost(cache_t *cache) {
   double train_loss, valid_loss, last_valid_loss = 0;
   int n_stable_iter = 0;
 
-  if (learner->n_train > 0) {
-    safe_call(XGBoosterFree(learner->booster));
-  }
 
-  safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
-  safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
-  //  safe_call(XGBoosterSetParam(learner->booster, "booster", "gblinear"));
-  safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
-  safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
-//  safe_call(XGBoosterSetParam(learner->booster, "eta", "0.1"));
-//  safe_call(XGBoosterSetParam(learner->booster, "gamma", "1"));
+  if (learner->n_train != 0) {
+    // retrain a new model every epoch 
+    safe_call(XGBoosterFree(learner->booster));
+    safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
+  } else {
+    safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
+    safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
+    //  safe_call(XGBoosterSetParam(learner->booster, "booster", "gblinear"));
+    safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
+    safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
+  //  safe_call(XGBoosterSetParam(learner->booster, "eta", "0.1"));
+  //  safe_call(XGBoosterSetParam(learner->booster, "gamma", "1"));
 #if OBJECTIVE == REG
-  safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
+    safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
 #elif OBJECTIVE == LTR
-  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
-  // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:map"));
-//  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:ndcg"));
+    safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
+    // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:map"));
+    // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:ndcg"));
 #endif
+  } 
 
   for (int i = 0; i < N_TRAIN_ITER; ++i) {
     // Update the model performance for each iteration
@@ -66,7 +69,11 @@ static void train_xgboost(cache_t *cache) {
     train_loss = strtof(train_pos, NULL);
     valid_loss = strtof(valid_pos, NULL);
 
-    // DEBUG("iter %d, train loss %.4lf, valid loss %.4lf\n", i, train_loss, valid_loss);
+    // DEBUG("%.2lf hour, cache size %.2lf MB, iter %d, train loss %.4lf, valid loss %.4lf\n", 
+    //     (double) params->curr_rtime / 3600.0, 
+    //     (double) cache->cache_size / 1024.0 / 1024.0,
+    //     i, train_loss, valid_loss);
+    
     if (valid_loss > 1000000) {
       printf("valid loss is too large, stop training\n");
       abort();
@@ -94,10 +101,12 @@ static void train_xgboost(cache_t *cache) {
   safe_call(XGBoosterBoostedRounds(learner->booster, &learner->n_trees));
 #endif
 
-  DEBUG("%.2lf hour, vtime %ld, train/valid %d/%d samples, "
+  DEBUG("%.2lf hour, cache size %.2lf MB, vtime %ld, train/valid %d/%d samples, "
         "%d trees, "
         "rank intvl %.4lf\n",
-        (double) params->curr_rtime / 3600, (long) params->curr_vtime,
+        (double) params->curr_rtime / 3600.0, 
+        (double) cache->cache_size / 1024.0 / 1024.0,
+        (long) params->curr_vtime,
         (int) learner->n_train_samples, (int) learner->n_valid_samples, learner->n_trees,
         params->rank_intvl);
 
