@@ -72,11 +72,6 @@ static inline uint64_t gettime_usec() {
   return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-typedef struct double_double_pair {
-  double x;
-  double y;
-} dd_pair_t;
-
 static int cmp_double_double_pair(const void *p1, const void *p2) {
   dd_pair_t *pair1 = (dd_pair_t *) p1;
   dd_pair_t *pair2 = (dd_pair_t *) p2;

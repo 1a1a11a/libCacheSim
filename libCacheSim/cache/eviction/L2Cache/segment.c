@@ -93,6 +93,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   new_seg->create_rtime = params->curr_rtime;
   new_seg->create_vtime = params->curr_vtime;
 
+  new_seg->n_seg_util_skipped = 0;
   new_seg->selected_for_training = false;
   new_seg->pred_utility = INT64_MAX;// to avoid it being picked for eviction
   new_seg->train_utility = 0;
@@ -165,11 +166,7 @@ double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel) {
   cache_obj_t *cache_obj;
 
   /* array of object score pair, the first is online score, the second is oracle score */
-  static __thread dd_pair_t *obj_score_online_oracle = NULL; 
-  if (obj_score_online_oracle == NULL) {
-    obj_score_online_oracle = my_malloc_n(dd_pair_t, params->segment_size);
-  }
-
+  dd_pair_t *obj_score_online_oracle = params->obj_sel.dd_pair_array; 
   for (int j = 0; j < seg->n_obj; j++) {
     if (oracle_obj_sel) {
       obj_score_online_oracle[j].x = cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j]);

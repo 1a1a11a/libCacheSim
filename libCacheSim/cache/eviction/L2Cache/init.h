@@ -37,8 +37,9 @@ void init_seg_sel(cache_t *cache) {
 void init_obj_sel(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  params->obj_sel.score_array_size = params->n_merge * params->segment_size;
-  params->obj_sel.score_array = my_malloc_n(double, params->obj_sel.score_array_size);
+  params->obj_sel.array_size = params->n_merge * params->segment_size;
+  params->obj_sel.score_array = my_malloc_n(double, params->obj_sel.array_size);
+  params->obj_sel.dd_pair_array = my_malloc_n(dd_pair_t, params->obj_sel.array_size);
 
   params->obj_sel.segs_to_evict = my_malloc_n(segment_t *, params->n_merge);
   memset(params->obj_sel.segs_to_evict, 0, sizeof(segment_t *) * params->n_merge);
@@ -61,7 +62,7 @@ void init_learner(cache_t *cache) {
   l->n_train = -1;
   l->n_inference = 0;
 
-  l->train_matrix_n_row = 1024 * 8;
+  l->train_matrix_n_row = N_MAX_TRAINING_DATA;
   l->train_x = my_malloc_n(feature_t, l->train_matrix_n_row * l->n_feature);
   l->train_y = my_malloc_n(pred_t, l->train_matrix_n_row);
   l->train_y_oracle = my_malloc_n(pred_t, l->train_matrix_n_row);

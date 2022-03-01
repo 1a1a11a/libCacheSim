@@ -234,7 +234,7 @@ void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) return;// do nothing
 
 #ifdef EVICTION_CONSIDER_RETAIN
-  if (seg->n_skipped_penalty++ >= params->n_retain_per_seg)
+  if (seg->n_seg_util_skipped++ >= params->n_retain_per_seg)
 #endif
   {
     double age = (double) params->curr_vtime - seg->become_train_seg_vtime;

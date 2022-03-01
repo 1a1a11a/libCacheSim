@@ -92,7 +92,7 @@ typedef struct segment {
 
   double pred_utility;
   double train_utility;
-  int n_skipped_penalty;
+  int n_seg_util_skipped;
   int rank;
 
   /* stat when segment is cached */
@@ -134,11 +134,17 @@ typedef struct {
   hitProb_t *hit_prob;// TODO: move to LHD
 } bucket_t;
 
+typedef struct double_double_pair {
+  double x;
+  double y;
+} dd_pair_t;
+
 typedef struct obj_sel {
   segment_t **segs_to_evict;
 
   double *score_array;
-  int score_array_size;
+  dd_pair_t *dd_pair_array; 
+  int array_size;
 } obj_sel_t;
 
 /* parameters and state related to segment selection */

@@ -58,7 +58,7 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     }
 
     args->age_shift = 3;
-    args->retrain_intvl = 86400 * 2;
+    args->retrain_intvl = 86400 * 1;
   } else if (strstr(args->trace_path, "media_metadata") != NULL) {
     /* media_metadata */
     uint64_t s[11] = {100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1600, 2000};

@@ -221,13 +221,12 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
   if (params->type == LOGCACHE_LEARNED) {
     /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
-    if (params->cache_state.n_evicted_bytes >= cache->cache_size / 2) {
+    if (params->curr_rtime > 86400) {
       if (l->n_train == -1) {
         snapshot_segs_to_training_data(cache);
         l->last_train_rtime = params->curr_rtime;
         l->n_train = 0;
-      }
-      if (params->curr_rtime - l->last_train_rtime >= l->retrain_intvl) {
+      }  else if (params->curr_rtime - l->last_train_rtime >= l->retrain_intvl) {
         train(cache);
         snapshot_segs_to_training_data(cache);
       }

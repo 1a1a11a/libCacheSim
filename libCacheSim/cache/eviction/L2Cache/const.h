@@ -3,6 +3,7 @@
 #define MAX_N_BUCKET 120
 #define N_TRAIN_ITER 20
 #define N_MAX_VALIDATION 1000
+#define N_MAX_TRAINING_DATA 8192
 
 /* L2Cache uses cache state features, so we need to track cache states 
  * and update them periodically, because there could be time when request 
@@ -14,7 +15,7 @@
 
 /* change to 10 will slow down */
 /* the number of time windows we keep in features */
-#define N_FEATURE_TIME_WINDOW 8
+#define N_FEATURE_TIME_WINDOW 0
 
 /* whether the segment utility considers retain */
 #define EVICTION_CONSIDER_RETAIN 1

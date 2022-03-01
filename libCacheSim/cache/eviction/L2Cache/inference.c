@@ -68,6 +68,7 @@ void inference_xgboost(cache_t *cache) {
 #endif
 
   bst_ulong out_len = 0;
+  // TODO: use XGBoosterPredictFromDense to avoid copy https://github.com/dmlc/xgboost/blob/36346f8f563ef79bae94604e60483fb0bf4c2661/demo/c-api/inference/inference.c 
   safe_call(XGBoosterPredict(learner->booster, learner->inf_dm, 0, 0, 0, &out_len, &pred));
   DEBUG_ASSERT(out_len == params->n_in_use_segs);
 
