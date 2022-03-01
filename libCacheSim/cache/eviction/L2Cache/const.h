@@ -13,7 +13,6 @@
 // update every 10000 requests
 #define CACHE_STATE_UPDATE_VINTVL 1000
 
-/* change to 10 will slow down */
 /* the number of time windows we keep in features */
 #define N_FEATURE_TIME_WINDOW 0
 

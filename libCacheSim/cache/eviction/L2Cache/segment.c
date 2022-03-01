@@ -182,7 +182,7 @@ double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel) {
 #ifdef EVICTION_CONSIDER_RETAIN
   n_retained_obj = params->n_retain_per_seg;
   qsort(obj_score_online_oracle, seg->n_obj, sizeof(dd_pair_t), cmp_double_double_pair);
-  DEBUG_ASSERT(obj_score_online_oracle[0].x <= obj_score_online_oracle[seg->n_obj - 1].x);
+  // DEBUG_ASSERT(obj_score_online_oracle[0].x <= obj_score_online_oracle[seg->n_obj - 1].x);
 #endif 
 
   for (int j = 0; j < seg->n_obj - n_retained_obj; j++) {

@@ -116,7 +116,6 @@ static void train_xgboost(cache_t *cache) {
     snprintf(s, 16, "model_%d.bin", learner->n_train);
     safe_call(XGBoosterSaveModel(learner->booster, s));
     INFO("dump model %s\n", s);
-    abort();
   }
 #endif
 }
