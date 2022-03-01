@@ -85,7 +85,8 @@ static void init_buckets(cache_t *cache, int age_shift) {
     for (int j = 0; j < HIT_PROB_MAX_AGE; j++) {
       /* initialize to a small number, when the hit density is not available
        * before eviction, we use size to make eviction decision */
-      params->buckets[i].hit_prob->hit_density[j] = 1e-8;
+      for (int k = 0; k < HIT_PROB_CLASSES; k++)
+        params->buckets[i].hit_prob->hit_density[k][j] = 1e-8;
       params->buckets[i].hit_prob->age_shift = age_shift;
     }
   }

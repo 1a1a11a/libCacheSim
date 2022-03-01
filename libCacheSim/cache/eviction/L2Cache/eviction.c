@@ -12,8 +12,15 @@
 bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  if (params->type == SEGCACHE || params->type == LOGCACHE_ITEM_ORACLE) {
+  if (params->type == SEGCACHE) {
     return select_segs_fifo(cache, segs);
+  }
+
+  if (params->type == LOGCACHE_ITEM_ORACLE) {
+    if (params->learner.n_train <= 0) {
+      return select_segs_fifo(cache, segs);
+    }
+    return select_segs_learned(cache, segs);
   }
 
   if (params->type == LOGCACHE_LEARNED) {

@@ -79,7 +79,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
       //      params->obj_score_type = OBJ_SCORE_FREQ_AGE;
       params->obj_score_type = OBJ_SCORE_FREQ_BYTE;
       // params->obj_score_type = OBJ_SCORE_FREQ_AGE_BYTE;
-      //    params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
+      // params->obj_score_type = OBJ_SCORE_HIT_DENSITY;
       break;
     case LOGCACHE_ITEM_ORACLE:
     case LOGCACHE_BOTH_ORACLE: params->obj_score_type = OBJ_SCORE_ORACLE; break;
@@ -218,7 +218,7 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
     params->cache_state.n_miss_bytes += req->obj_size;
   }
 
-  if (params->type == LOGCACHE_LEARNED) {
+  if (params->type == LOGCACHE_LEARNED || params->type == LOGCACHE_ITEM_ORACLE) {
     /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
     if (params->curr_rtime > 86400) {
@@ -298,12 +298,20 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   L2Cache_merge_segs(cache, bucket, params->obj_sel.segs_to_evict);
 
   if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY
+      #if LHD_USE_VTIME
       && params->curr_vtime - params->last_hit_prob_compute_vtime > HIT_PROB_COMPUTE_INTVL) {
+      #else
+      && params->curr_rtime - params->last_hit_prob_compute_rtime > HIT_PROB_COMPUTE_INTVLR) {
+      #endif
     /* update hit prob for all buckets */
     for (int i = 0; i < MAX_N_BUCKET; i++) {
       update_hit_prob_cdf(&params->buckets[i]);
     }
+    #if LHD_USE_VTIME
     params->last_hit_prob_compute_vtime = params->curr_vtime;
+    #else
+    params->last_hit_prob_compute_rtime = params->curr_rtime;
+    #endif
   }
 }
 

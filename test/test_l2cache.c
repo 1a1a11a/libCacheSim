@@ -61,7 +61,7 @@ static void test_L2Cache_ORACLE_LOG(gconstpointer user_data) {
 
 static void test_L2Cache_ORACLE_ITEM(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {2573673, 1832838, 1555903, 1380232};
+  uint64_t miss_cnt_true[] = {2143656, 1438234, 1204795, 1081270};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,

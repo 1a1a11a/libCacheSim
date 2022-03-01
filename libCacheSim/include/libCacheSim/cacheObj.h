@@ -60,6 +60,7 @@ typedef struct L2Cache_obj_metadata {
   int64_t next_access_vtime;
   int32_t freq;
   int32_t last_access_rtime;
+  int32_t last_access_vtime;
   int16_t idx_in_segment;
   int16_t active : 2;       // whether this object has been acccessed 
   int16_t in_cache : 2;

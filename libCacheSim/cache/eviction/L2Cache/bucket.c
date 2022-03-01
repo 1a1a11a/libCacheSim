@@ -73,33 +73,37 @@ int find_bucket_idx(L2Cache_params_t *params, request_t *req) {
 }
 
 void update_hit_prob_cdf(bucket_t *bkt) {
-  hitProb_t *hb = bkt->hit_prob;
-  int64_t n_hit_sum = hb->n_hit[HIT_PROB_MAX_AGE - 1];
-  int64_t n_event_sum = n_hit_sum + hb->n_evict[HIT_PROB_MAX_AGE - 1];
-  int64_t lifetime_uncond = n_event_sum;
 
-  for (int i = HIT_PROB_MAX_AGE - 2; i >= 0; i--) {
-    n_hit_sum += hb->n_hit[i];
-    n_event_sum += hb->n_hit[i] + hb->n_evict[i];
-    lifetime_uncond += n_event_sum;
+  for (int cl = 0; cl < HIT_PROB_CLASSES; cl ++){
+    hitProb_t *hb = bkt->hit_prob;
+    int64_t n_hit_sum = hb->n_hit[cl][HIT_PROB_MAX_AGE - 1];
+    int64_t n_event_sum = n_hit_sum + hb->n_evict[cl][HIT_PROB_MAX_AGE - 1];
+    int64_t lifetime_uncond = n_event_sum;
 
-    hb->n_hit[i] *= LHD_EWMA;
-    hb->n_evict[i] *= LHD_EWMA;
+    for (int i = HIT_PROB_MAX_AGE - 2; i >= 0; i--) {
 
-    if (n_event_sum > 0) {
-      hb->hit_density[i] = (double) n_hit_sum * 1e10 / lifetime_uncond;
-    } else {
-      hb->hit_density[i] = 1e-8;
+      n_hit_sum += hb->n_hit[cl][i];
+      n_event_sum += hb->n_hit[cl][i] + hb->n_evict[cl][i];
+      lifetime_uncond += n_event_sum;
+
+      hb->n_hit[cl][i] *= LHD_EWMA;
+      hb->n_evict[cl][i] *= LHD_EWMA;
+
+      if (n_event_sum > 0) {
+        hb->hit_density[cl][i] = (double) n_hit_sum * 1e10 / lifetime_uncond;
+      } else {
+        hb->hit_density[cl][i] = 1e-8;
+      }
     }
-  }
 
-  static int last_overflow = 0;
-  if (bkt->hit_prob->n_overflow > 0) {
-    if (bkt->hit_prob->n_overflow > last_overflow) {
-      printf("bucket %d overflow %ld\n", bkt->bucket_id, (long) bkt->hit_prob->n_overflow);
-      last_overflow = bkt->hit_prob->n_overflow;
+    static int last_overflow = 0;
+    if (bkt->hit_prob->n_overflow > 0) {
+      if (bkt->hit_prob->n_overflow > last_overflow) {
+        printf("bucket %d overflow %ld\n", bkt->bucket_id, (long) bkt->hit_prob->n_overflow);
+        last_overflow = bkt->hit_prob->n_overflow;
+      }
+      bkt->hit_prob->n_overflow = 0;
     }
-    bkt->hit_prob->n_overflow = 0;
   }
 }
 

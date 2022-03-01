@@ -224,7 +224,7 @@ void snapshot_segs_to_training_data(cache_t *cache) {
 
 /* used when the training y is calculated online, 
  * we calculate segment utility (for training) online in the following way: 
- * after segment is snatshotted, we calculate the segment utility correspond to the time 
+ * after segment is snapshotted, we calculate the segment utility correspond to the time 
  * when the snapshot was taken:
  * each time when an object on the segment is requested, we accumulate 1/(D_snapshot * S_obj) to the segment utility
  */

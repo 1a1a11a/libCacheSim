@@ -68,7 +68,7 @@ void rank_segs(cache_t *cache) {
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
   int32_t *ranked_seg_pos_p = &(params->seg_sel.ranked_seg_pos);
 
-  if (params->type == LOGCACHE_LEARNED) {
+  if (params->type == LOGCACHE_LEARNED || params->type==LOGCACHE_ITEM_ORACLE) {
     inference(cache);
   }
 
@@ -78,8 +78,8 @@ void rank_segs(cache_t *cache) {
     int j = 0;
     curr_seg = params->buckets[i].first_seg;
     while (curr_seg) {
-      if (params->type == LOGCACHE_LEARNED) {
         ;
+      if (params->type == LOGCACHE_LEARNED || params->type==LOGCACHE_ITEM_ORACLE) {
       } else if (params->type == LOGCACHE_LOG_ORACLE) {
         curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, false);
       } else if (params->type == LOGCACHE_BOTH_ORACLE) {
@@ -103,7 +103,7 @@ void rank_segs(cache_t *cache) {
   DEBUG_ASSERT(n_segs == params->n_in_use_segs);
 
   DEBUG_ASSERT(params->type == LOGCACHE_LOG_ORACLE || params->type == LOGCACHE_BOTH_ORACLE
-               || params->type == LOGCACHE_LEARNED);
+               || params->type == LOGCACHE_LEARNED || params->type == LOGCACHE_ITEM_ORACLE);
   qsort(ranked_segs, n_segs, sizeof(segment_t *), cmp_seg);
 
   // ranked_seg_pos records the position in the ranked_segs array,

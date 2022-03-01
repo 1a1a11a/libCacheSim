@@ -18,10 +18,10 @@ typedef struct {
 
 /* LHD related states */
 typedef struct hitProb {
-  int32_t n_hit[HIT_PROB_MAX_AGE];
-  int32_t n_evict[HIT_PROB_MAX_AGE];
+  int32_t n_hit[HIT_PROB_CLASSES][HIT_PROB_MAX_AGE];
+  int32_t n_evict[HIT_PROB_CLASSES][HIT_PROB_MAX_AGE];
 
-  double hit_density[HIT_PROB_MAX_AGE];
+  double hit_density[HIT_PROB_CLASSES][HIT_PROB_MAX_AGE];
   int64_t n_overflow;
   int32_t age_shift;
 } hitProb_t;
@@ -204,6 +204,8 @@ typedef struct {
 
   //  int64_t last_hit_prob_compute_rtime;
   int64_t last_hit_prob_compute_vtime; /* LHD selection */
+
+  int64_t last_hit_prob_compute_rtime; /* LHD selection */
 
   /* in number of evictions */
   double rank_intvl;
