@@ -23,7 +23,7 @@ static void test_simulator_no_size(gconstpointer user_data) {
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, step_size, NULL, 0, _n_cores());
+      reader, cache, step_size, NULL, 0, 0, _n_cores());
 
   //  uint64_t* mc = _get_lru_miss_cnt(reader, get_num_of_req(reader));
 
@@ -57,7 +57,7 @@ static void test_simulator(gconstpointer user_data) {
   g_assert_true(cache != NULL);
 
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
     g_assert_cmpuint(res[i].n_req, ==, req_cnt_true);
@@ -70,7 +70,7 @@ static void test_simulator(gconstpointer user_data) {
   uint64_t cache_sizes[] = {STEP_SIZE, STEP_SIZE * 2, STEP_SIZE * 4,
                             STEP_SIZE * 7};
   res = get_miss_ratio_curve(reader, cache, 4, cache_sizes, NULL, 0,
-                             _n_cores());
+                             0, _n_cores());
   g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
   g_assert_cmpuint(res[1].n_req_byte, ==, req_byte_true);
   g_assert_cmpuint(res[3].n_req, ==, req_cnt_true);
@@ -100,7 +100,7 @@ static void test_simulator_with_warmup1(gconstpointer user_data) {
   g_assert_true(cache != NULL);
 
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, reader, 0, _n_cores());
+      reader, cache, STEP_SIZE, reader, 0, 0, _n_cores());
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
@@ -128,7 +128,7 @@ static void test_simulator_with_warmup2(gconstpointer user_data) {
   g_assert_true(cache != NULL);
 
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0.2, _n_cores());
+      reader, cache, STEP_SIZE, NULL, 0.2, 0, _n_cores());
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
@@ -156,7 +156,7 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
   g_assert_true(cache != NULL);
 
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 //  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
 //    printf("size %" PRIu64 " - req %" PRIu64 " - miss %" PRIu64
 //           " - req_bytes %" PRIu64 " - miss_bytes "

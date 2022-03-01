@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
                                                 args.cache, 
                                                 args.n_cache_size, 
                                                 args.cache_sizes,
-                                                NULL, 0, args.n_thread);
+                                                NULL, 0, 86400*0, args.n_thread);
 
     char output_str[1024]; 
     char output_filename[128]; 

@@ -51,7 +51,7 @@ static void test_L2Cache_ORACLE_LOG(gconstpointer user_data) {
   cache_t *cache = create_test_cache("L2Cache-OracleLog", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res); 
   _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
@@ -71,7 +71,7 @@ static void test_L2Cache_ORACLE_ITEM(gconstpointer user_data) {
   cache_t *cache = create_test_cache("L2Cache-OracleItem", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res); 
   _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
@@ -92,7 +92,7 @@ static void test_L2Cache_ORACLE_BOTH(gconstpointer user_data) {
   cache_t *cache = create_test_cache("L2Cache-OracleBoth", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res); 
   _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
@@ -114,7 +114,7 @@ static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
   cache_t *cache = create_test_cache("L2Cache-LearnedTrueY", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res); 
   _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
@@ -136,7 +136,7 @@ static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
   cache_t *cache = create_test_cache("L2Cache-LearnedOnline", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res); 
   _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,
@@ -156,7 +156,7 @@ static void test_L2Cache_SEGCACHE(gconstpointer user_data) {
   cache_t *cache = create_test_cache("L2Cache-Segcache", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
-      reader, cache, L2Cache_STEP_SIZE, NULL, 0, _n_cores());
+      reader, cache, L2Cache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res); 
   _verify_profiler_results(res, L2Cache_CACHE_SIZE / L2Cache_STEP_SIZE, req_cnt_true,

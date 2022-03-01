@@ -21,9 +21,9 @@ extern "C" {
 typedef struct simulator_multithreading_params {
   reader_t *reader;
   cache_t *cache;
-  uint64_t n_warmup_req; /* num of requests used for warming up cache if using
-                            requests from reader */
+  uint64_t n_warmup_req; /* num of requests used for warming up cache */
   reader_t *warmup_reader;
+  int warmup_sec;  /* num of seconds of requests used for warming up cache */
   cache_stat_t *result;
   GMutex mtx; /* prevent simultaneous write to progress */
   gint *progress;
@@ -52,38 +52,40 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
     }
     close_reader(warmup_cloned_reader);
     INFO("cache %s (size %"PRIu64 ") finishes warm up using warmup reader "
-            "with %"PRIu64 "requests\n", local_cache->cache_name,
-            local_cache->cache_size, local_cache->stat.n_warmup_req);
+          "with %"PRIu64 "requests\n", local_cache->cache_name,
+          local_cache->cache_size, local_cache->stat.n_warmup_req);
   }
 
-  /* using warmup_frac of requests from reader to warm up */
   read_one_req(cloned_reader, req);
-  if (params->n_warmup_req > 0) {
+  int64_t start_ts = (int64_t) req->real_time;
+
+  /* using warmup_frac or warmup_sec of requests from reader to warm up */
+  if (params->n_warmup_req > 0 || params->warmup_sec > 0) {
     uint64_t n_warmup = 0;
-    while (req->valid && n_warmup < params->n_warmup_req) {
+    while (req->valid && (n_warmup < params->n_warmup_req || 
+            req->real_time - start_ts < params->warmup_sec)) {
+      req->real_time -= start_ts;
       cache_ck_res_e ck = local_cache->get(local_cache, req);
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }
     local_cache->stat.n_warmup_req += n_warmup;
-    INFO("cache %s (size %"PRIu64 ") finishes warm up using the same reader "
-            "with %"PRIu64 " requests\n", local_cache->cache_name,
-            local_cache->cache_size, n_warmup);
+    INFO("cache %s (size %"PRIu64 ") finishes warm up using "
+            "with %"PRIu64 " requests, %.2lf hour trace time\n", 
+            local_cache->cache_name, local_cache->cache_size, 
+            n_warmup, (double) (req->real_time - start_ts)/3600.0);
   }
-
-  int64_t start_ts = (int64_t) req->real_time;
-  req->real_time -= start_ts;
 
   while (req->valid) {
     local_cache->stat.n_req++;
     local_cache->stat.n_req_byte += req->obj_size;
 
+    req->real_time -= start_ts;
     if (local_cache->get(local_cache, req) != cache_ck_hit) {
       local_cache->stat.n_miss++;
       local_cache->stat.n_miss_byte += req->obj_size;
     }
     read_one_req(cloned_reader, req);
-    req->real_time -= start_ts;
   }
 
   /* get expiration information */
@@ -121,6 +123,7 @@ cache_stat_t *get_miss_ratio_curve_with_step_size(reader_t *const reader,
                                                   uint64_t step_size,
                                                   reader_t *warmup_reader,
                                                   double warmup_frac,
+                                                  int warmup_sec, 
                                                   int num_of_threads) {
 
   int num_of_sizes = (int) ceil((double) cache->cache_size / (double) step_size);
@@ -132,15 +135,31 @@ cache_stat_t *get_miss_ratio_curve_with_step_size(reader_t *const reader,
 
   cache_stat_t *res =
       get_miss_ratio_curve(reader, cache, num_of_sizes, cache_sizes,
-                           warmup_reader, warmup_frac, num_of_threads);
+                           warmup_reader, warmup_frac, warmup_sec, num_of_threads);
   my_free(sizeof(uint64_t) * num_of_sizes, cache_sizes);
   return res;
 }
 
+/** 
+ * @brief get miss ratio curve for different cache sizes 
+ * 
+ * @param reader
+ * @param cache
+ * @param num_of_sizes
+ * @param cache_sizes
+ * @param warmup_reader if not NULL, read from warmup_reader to warm up cache 
+ * @param warmup_frac use warmup_frac of requests from reader to warm up cache 
+ * @param warmup_sec uses warmup_sec seconds of requests to warm up cache 
+ * @param num_of_threads
+ * 
+ * note that warmup_reader, warmup_frac and warmup_sec are mutually exclusive
+ * 
+ */  
 cache_stat_t *
 get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
                      int num_of_sizes, const uint64_t *cache_sizes,
                      reader_t *warmup_reader, double warmup_frac,
+                     int warmup_sec, 
                      int num_of_threads) {
 
   int i, progress = 0;
@@ -151,6 +170,7 @@ get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
   sim_mt_params_t *params = my_malloc(sim_mt_params_t);
   params->reader = reader;
   params->warmup_reader = warmup_reader;
+  params->warmup_sec = warmup_sec; 
   params->cache = (cache_t *) cache;
   params->n_warmup_req = (uint64_t)((double) get_num_of_req(reader) * warmup_frac);
   params->result = result;
@@ -168,7 +188,6 @@ get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
     ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
-//  sleep(2);
 
   char start_cache_size[64], end_cache_size[64];
   convert_size_to_str(cache_sizes[0], start_cache_size);

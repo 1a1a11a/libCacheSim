@@ -24,7 +24,9 @@ extern "C" {
  * this also supports warmup using
  *      a different trace by setting warmup_reader pointing to the trace
  *              or
- *      fraction of the requests in the given trace reader by setting warmup_frac
+ *      fraction of the requests from the reader
+ *              or 
+ *      warmup_sec of requests from the reader   
  *
  * @param reader
  * @param cache
@@ -39,6 +41,7 @@ cache_stat_t *
 get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
                      int num_of_sizes, const uint64_t *cache_sizes,
                      reader_t *warmup_reader, double warmup_frac,
+                     int warmup_sec, 
                      int num_of_threads);
 
 /**
@@ -66,6 +69,7 @@ cache_stat_t *get_miss_ratio_curve_with_step_size(reader_t *reader_in,
                                                   uint64_t step_size,
                                                   reader_t *warmup_reader,
                                                   double warmup_frac,
+                                                  int warmup_sec, 
                                                   int num_of_threads);
 
 #ifdef __cplusplus
