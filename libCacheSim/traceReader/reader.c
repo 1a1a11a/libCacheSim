@@ -174,6 +174,12 @@ reader_t *setup_reader(const char *const trace_path,
     abort();
   }
 
+  if (reader->is_zstd_file) {
+    // we cannot get the total number requests 
+    // from compressed trace without reading the tracee 
+    reader->n_total_req = 0; 
+  }
+
   close(fd);
   return reader;
 }
@@ -423,9 +429,15 @@ uint64_t get_num_of_req(reader_t *const reader) {
         ((csv_params_t *) (reader->reader_params))->has_header) {
       n_req--;
     }
+  } else if (reader->is_zstd_file) {
+    request_t *req = new_request();
+    while (read_one_req(reader, req) == 0) {
+      n_req++;
+    }
   } else {
-    ERROR("non csv/txt trace should calculate "
+    ERROR("non csv/txt/zstd trace should calculate "
           "the number of requests during setup\n");
+    abort(); 
   }
   reader->n_total_req = n_req;
   reader->mmap_offset = old_offset;

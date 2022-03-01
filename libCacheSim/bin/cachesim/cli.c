@@ -120,7 +120,6 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 #endif
 
   reader_t *reader = setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
-  get_num_of_req(reader);
 
   common_cache_params_t cc_params = {.cache_size = args.cache_size * MiB,
                                      .hashpower = 24,

@@ -144,7 +144,6 @@ get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
                      int num_of_threads) {
 
   int i, progress = 0;
-  get_num_of_req(reader);
 
   cache_stat_t *result = my_malloc_n(cache_stat_t, num_of_sizes);
 
