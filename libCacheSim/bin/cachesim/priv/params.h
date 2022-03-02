@@ -15,7 +15,7 @@ static inline void set_default_arg(sim_arg_t *args) {
     args->cache_sizes[i] = MiB * s[i];
   }
   args->n_cache_size = 8;
-  args->cache_size = 1024 * MiB;
+  args->cache_size_in_mb = 1024 * MiB;
   args->per_obj_metadata = 0;
 
   args->debug = false; 
@@ -53,9 +53,9 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     }
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
 
-    if (!set_cphy_size(args)) {
-      INFO("use cphy default parameter\n");
-    }
+    // if (!set_cphy_size(args)) {
+    //   INFO("use cphy default parameter\n");
+    // }
 
     args->age_shift = 3;
     args->retrain_intvl = 86400 * 1;

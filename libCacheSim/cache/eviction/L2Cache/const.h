@@ -10,7 +10,7 @@
  * rate is very low, we update when both conditions are met: */
 // update every 10 seconds
 #define CACHE_STATE_UPDATE_RINTVL 10  
-// update every 10000 requests
+// update every 1000 requests
 #define CACHE_STATE_UPDATE_VINTVL 1000
 
 /* the number of time windows we keep in features */

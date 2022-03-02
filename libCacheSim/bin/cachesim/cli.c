@@ -9,7 +9,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {
     // if cache size is specified, then it will only run one simulation at the given size
     printf("usage: %s trace_type data_path alg "
-          "(optional: cache_size seg_size n_merge rank_intvl bucket_type train_source)\n\n"
+          "(optional: cache_size_in_mb seg_size n_merge rank_intvl bucket_type train_source)\n\n"
           "param options: \n"
           "trace_type:  twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin\n"
           "bucket_type: no_bucket, size_bucket\n"
@@ -50,7 +50,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc >= 5) {
     int cache_size = atoi(argv[4]);
     if (cache_size > 0) {
-      args.cache_size = cache_size;
+      args.cache_size_in_mb = cache_size;
       args.debug = true;
     }
   }
@@ -121,7 +121,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
 
   reader_t *reader = setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
 
-  common_cache_params_t cc_params = {.cache_size = args.cache_size * MiB,
+  common_cache_params_t cc_params = {.cache_size = args.cache_size_in_mb * MiB,
                                      .hashpower = 24,
                                      .default_ttl = 86400 * 300,
                                      .per_obj_overhead = args.per_obj_metadata};

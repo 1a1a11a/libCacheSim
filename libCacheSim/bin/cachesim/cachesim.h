@@ -11,7 +11,7 @@ typedef struct {
   obj_id_type_e obj_id_type;
   int per_obj_metadata;
 
-  int64_t cache_size;
+  int64_t cache_size_in_mb;
   struct {
     uint64_t cache_sizes[128];
     int n_cache_size;

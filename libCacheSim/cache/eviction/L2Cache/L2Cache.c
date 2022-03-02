@@ -59,6 +59,7 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   cache->eviction_params = params;
 
   params->curr_evict_bucket_idx = 0;
+  params->start_rtime = -1; 
 
   params->type = L2Cache_init_params->type;
   params->bucket_type = L2Cache_init_params->bucket_type;
@@ -209,14 +210,9 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
 cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
   L2Cache_params_t *params = cache->eviction_params;
 
-  update_cache_state(cache, req);
-
   cache_ck_res_e ret = cache_get_base(cache, req);
 
-  if (ret == cache_ck_miss) {
-    params->cache_state.n_miss += 1;
-    params->cache_state.n_miss_bytes += req->obj_size;
-  }
+  update_cache_state(cache, req, ret);
 
   if (params->type == LOGCACHE_LEARNED || params->type == LOGCACHE_ITEM_ORACLE) {
     /* generate training data by taking a snapshot */
