@@ -102,23 +102,20 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   cache->evict = L2Cache_evict;
   cache->remove = L2Cache_remove;
 
-  //   INFO(
-  //       "L2Cche, %.2lf MB, %s, obj sel %s, %s, "
-  //       %ld bytes start training seg collection, sample %d, rank intvl %d, "
-  //       "training truth %d re-train %d\n",
-  //       (double) cache->cache_size / 1048576,
-  //       L2Cache_type_names[params->type],
-  //       obj_score_type_names[params->obj_score_type],
-  //       bucket_type_names[params->bucket_type],
-  // //      (long) params->learner.n_bytes_start_collect_train,
-  // //      params->learner.sample_every_n_seg_for_training,
-  //       0L, 0,
-  //       params->rank_intvl,
-  //       params->train_source_x,
-  //       params->train_source_y,
-  //       0
-  // //      params->learner.retrain_intvl
-  //   );
+  INFO(
+      "%s, %.0lfMB, training_interval %d, source %d, "
+      "rank interval %.2lf, merge consecutive segments %d, "
+      "merge %d segments\n", 
+      L2Cache_type_names[params->type],
+      (double) cache->cache_size / 1048576.0,
+      // obj_score_type_names[params->obj_score_type],
+      // bucket_type_names[params->bucket_type],
+      params->learner.retrain_intvl, 
+      params->train_source_y,
+      params->rank_intvl,
+      params->merge_consecutive_segs, 
+      params->n_merge
+    );
   return cache;
 }
 

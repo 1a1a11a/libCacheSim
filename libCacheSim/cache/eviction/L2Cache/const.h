@@ -11,7 +11,7 @@
 // update every 10 seconds
 #define CACHE_STATE_UPDATE_RINTVL 10  
 // update every 1000 requests
-#define CACHE_STATE_UPDATE_VINTVL 1000
+#define CACHE_STATE_UPDATE_VINTVL 10000
 
 /* the number of time windows we keep in features */
 #define N_FEATURE_TIME_WINDOW 0
@@ -32,7 +32,7 @@
 
 // #define DUMP_MODEL 1
 // #define DUMP_TRAINING_DATA
-#define DUMP_INFERENCE
+// #define DUMP_INFERENCE
 
 /* if this is turned on, dump the online and offline calculated segment utility */
 // #define COMPARE_TRAINING_Y 1

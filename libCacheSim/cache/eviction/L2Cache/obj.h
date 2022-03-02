@@ -34,7 +34,7 @@ static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *
   return obj_age;
 }
 
-inline int64_t hitAgeClass(int64_t age) {
+static inline int64_t hitAgeClass(int64_t age) {
   if (age == 0) {
     return HIT_PROB_CLASSES - 1;
   }
@@ -46,7 +46,7 @@ inline int64_t hitAgeClass(int64_t age) {
   return log;
 }
 
-inline int64_t hitSizeClass(uint32_t size) {
+static inline int64_t hitSizeClass(uint32_t size) {
   return ((uint64_t) log(size)) % HIT_PROB_CLASSES;
 }
 

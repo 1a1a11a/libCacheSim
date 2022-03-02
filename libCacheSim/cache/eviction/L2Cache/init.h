@@ -94,7 +94,7 @@ static void init_buckets(cache_t *cache, int age_shift) {
 
 static void init_cache_state(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
-  params->cache_state.miss_ratio = -1;
-  params->cache_state.req_rate = -1;
-  params->cache_state.write_rate = -1;
+  params->cache_state.miss_ratio = 0.5;
+  params->cache_state.req_rate = 1;
+  params->cache_state.write_rate = 1;
 }

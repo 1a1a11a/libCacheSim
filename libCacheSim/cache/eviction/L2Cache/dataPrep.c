@@ -128,6 +128,10 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   // debug
   // x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = x[6] = x[7] = x[8] = x[9] = x[10] = x[11] = 0;
 
+  for (int i = 0; i < params->learner.n_feature; i++) {
+    DEBUG_ASSERT(x[0] >= 0); 
+  }
+
   // if (is_training_data)
   //   printf("train: ");
   // else

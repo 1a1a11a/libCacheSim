@@ -6,7 +6,7 @@
 
 
 /* update the cache state */
-static inline void update_cache_state(cache_t *cache, request_t *req, cache_ck_res ck) {
+static inline void update_cache_state(cache_t *cache, request_t *req, cache_ck_res_e ck) {
   L2Cache_params_t *params = cache->eviction_params;
   cache_state_t *state = &params->cache_state;
   if (unlikely(params->start_rtime == -1)) {
@@ -22,7 +22,7 @@ static inline void update_cache_state(cache_t *cache, request_t *req, cache_ck_r
 
   int64_t rt = params->curr_rtime - state->last_update_rtime;
   int64_t vt = params->curr_vtime - state->last_update_vtime;
-  if (vt > CACHE_STATE_UPDATE_VINTVL) {
+  if (rt > CACHE_STATE_UPDATE_RINTVL && vt > CACHE_STATE_UPDATE_VINTVL) {
     state->write_rate = (double) state->n_miss / rt;
     state->req_rate = (double) vt / rt;
     state->miss_ratio = (double) state->n_miss / vt;
