@@ -60,6 +60,8 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
 
   params->curr_evict_bucket_idx = 0;
   params->start_rtime = -1; 
+  params->last_hit_prob_compute_vtime = 0; 
+  params->last_hit_prob_compute_rtime = 0; 
 
   params->type = L2Cache_init_params->type;
   params->bucket_type = L2Cache_init_params->bucket_type;
@@ -301,11 +303,8 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     for (int i = 0; i < MAX_N_BUCKET; i++) {
       update_hit_prob_cdf(&params->buckets[i]);
     }
-    #if LHD_USE_VTIME
     params->last_hit_prob_compute_vtime = params->curr_vtime;
-    #else
     params->last_hit_prob_compute_rtime = params->curr_rtime;
-    #endif
   }
 }
 

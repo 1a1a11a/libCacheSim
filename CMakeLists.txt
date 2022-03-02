@@ -37,7 +37,7 @@ else()
 endif()
 
 
-set(LOG_LEVEL "debug")
+# set(LOG_LEVEL "debug")
 
 ########################################
 # define options #

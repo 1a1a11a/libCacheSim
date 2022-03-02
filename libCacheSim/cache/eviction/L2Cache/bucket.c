@@ -99,7 +99,7 @@ void update_hit_prob_cdf(bucket_t *bkt) {
     static int last_overflow = 0;
     if (bkt->hit_prob->n_overflow > 0) {
       if (bkt->hit_prob->n_overflow > last_overflow) {
-        printf("bucket %d overflow %ld\n", bkt->bucket_id, (long) bkt->hit_prob->n_overflow);
+        DEBUG("bucket %d overflow %ld\n", bkt->bucket_id, (long) bkt->hit_prob->n_overflow);
         last_overflow = bkt->hit_prob->n_overflow;
       }
       bkt->hit_prob->n_overflow = 0;

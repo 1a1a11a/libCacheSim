@@ -22,9 +22,6 @@
 /* whether we normalize the pred utility by curr_seg->n_byte */
 #define NORMALIZE_PRED_UTILITY 1
 
-/* whether we use vtime instead of rtime to determine for hit probability compute interval */
-#define LHD_USE_VTIME 0
-
 /* training objective, regression or ranking */
 #define REG 1
 #define LTR 2
@@ -39,13 +36,15 @@
 extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
 
 /* LHD parameters */
+/* whether we use vtime instead of rtime to determine for hit probability compute interval */
+#define LHD_USE_VTIME 0
 #define HIT_PROB_MAX_AGE 86400
 #define HIT_PROB_CLASSES 1
 //#define HIT_PROB_MAX_AGE 172800
 /* enable this on i5 slows down by two times */
 //#define HIT_PROB_MAX_AGE 864000    /* 10 day for akamai */
 #define HIT_PROB_COMPUTE_INTVL 1000000
-#define HIT_PROB_COMPUTE_INTVLR (1 << 20)
+#define HIT_PROB_COMPUTE_INTVLR 86400
 #define LHD_EWMA 0.9
 
 // used to detect overflow

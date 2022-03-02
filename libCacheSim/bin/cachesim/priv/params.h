@@ -30,8 +30,8 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->train_source_x = TRAIN_X_FROM_SNAPSHOT;
   args->train_source_y = TRAIN_Y_FROM_ONLINE;
 
-  args->age_shift = 0;
-  args->retrain_intvl = 86400 * 2;
+  args->age_shift = 2; 
+  args->retrain_intvl = 86400;
 
   args->L2Cache_type = LOGCACHE_LEARNED;
   args->bucket_type = NO_BUCKET;
@@ -57,7 +57,6 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     //   INFO("use cphy default parameter\n");
     // }
 
-    args->age_shift = 3;
     args->retrain_intvl = 86400 * 1;
   } else if (strstr(args->trace_path, "media_metadata") != NULL) {
     /* media_metadata */
@@ -67,7 +66,6 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     }
     args->n_cache_size = 11;
     args->seg_size = 1000;
-    args->age_shift = 1;
     //    args->bucket_type = SIZE_BUCKET;
     args->retrain_intvl = 3600 * 4;
 
@@ -80,7 +78,6 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     /* 2GB 8 MQPS 0.0509 on full trace */
     args->n_cache_size = 10;
     args->seg_size = 1000;
-    args->age_shift = 1;
     args->bucket_type = SIZE_BUCKET;
 
     /* use LHD for object selection */
