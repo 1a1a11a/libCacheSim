@@ -209,8 +209,6 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
 
   cache_ck_res_e ret = cache_get_base(cache, req);
 
-  update_cache_state(cache, req, ret);
-
   if (params->type == LOGCACHE_LEARNED || params->type == LOGCACHE_ITEM_ORACLE) {
     /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
@@ -225,6 +223,9 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
       }
     }
   }
+
+  update_cache_state(cache, req, ret);
+
   return ret;
 }
 
