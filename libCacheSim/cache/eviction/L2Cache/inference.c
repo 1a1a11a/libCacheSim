@@ -80,7 +80,12 @@ void inference_xgboost(cache_t *cache) {
       #if !NORMALIZE_PRED_UTILITY
         curr_seg->pred_utility = pred[n_segs];
       #else
-        curr_seg->pred_utility = pred[n_segs] * 1e6 / curr_seg->n_byte;
+        // TODO: handle negative!!! 
+        // curr_seg->pred_utility = (pred[n_segs]) * 1e6 / curr_seg->n_byte;
+        if (pred[n_segs] > 0)
+          curr_seg->pred_utility = pred[n_segs] * 1e6 / curr_seg->n_byte;
+        else if (pred[n_segs] < 0)
+          curr_seg->pred_utility = pred[n_segs] * curr_seg->n_byte;
       #endif
 #elif OBJECTIVE == LTR
       // segments with smaller utility (high relevance) are evicted first
