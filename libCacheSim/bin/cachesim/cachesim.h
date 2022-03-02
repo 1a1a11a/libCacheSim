@@ -1,5 +1,8 @@
 #pragma once
 
+// #define UNIFORM_OBJ_SIZE 1
+
+
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
 #include "../../include/libCacheSim/reader.h"

@@ -125,6 +125,10 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
                                      .hashpower = 24,
                                      .default_ttl = 86400 * 300,
                                      .per_obj_overhead = args.per_obj_metadata};
+#ifdef UNIFORM_OBJ_SIZE
+  cc_params.cache_size = args.cache_size_in_mb;
+#endif
+
   cache_t *cache;
 
   if (strcasecmp(args.alg, "lru") == 0) {

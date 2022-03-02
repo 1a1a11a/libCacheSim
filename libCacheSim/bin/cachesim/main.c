@@ -29,7 +29,9 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
   double start_time = -1;
   while (req->valid) {
     req->real_time -= start_ts;
-
+#ifdef UNIFORM_OBJ_SIZE
+    req->obj_size = 1; 
+#endif 
     if (req->real_time <= SKIP_HOUR * 3600) {
       cache->get(cache, req); 
       read_one_req(reader, req);
