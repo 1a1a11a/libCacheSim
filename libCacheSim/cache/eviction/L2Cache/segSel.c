@@ -105,6 +105,33 @@ void rank_segs(cache_t *cache) {
   DEBUG_ASSERT(params->type == LOGCACHE_LOG_ORACLE || params->type == LOGCACHE_BOTH_ORACLE
                || params->type == LOGCACHE_LEARNED || params->type == LOGCACHE_ITEM_ORACLE);
   qsort(ranked_segs, n_segs, sizeof(segment_t *), cmp_seg);
+#ifdef DUMP_INFERENCE 
+  {
+    static __thread char fname[128];
+    int n_day = params->curr_rtime / (24 * 3600);
+    sprintf(fname, "dump/inference_%s_%d.txt", L2Cache_type_names[params->type],
+                 n_day);
+    FILE *ofile = fopen(fname, "a");
+    fprintf(ofile, "# seg_util pred/oracle: hour, min, age, n_merge, req_rate, write_rate, mean_obj_size, miss_ratio, n_hit, n_active\n");
+    for (int i = 0; i < params->n_in_use_segs; i++)
+      fprintf(ofile, "%.4lf/%.4lf: %d,%d,%ld,%d, %.4lf, %.4lf, %.4lf, %.4lf, %d,%d\n", 
+                    ranked_segs[i]->pred_utility, cal_seg_utility(cache, ranked_segs[i], true), 
+                    (ranked_segs[i]->create_rtime / 3600) % 24, 
+                    (ranked_segs[i]->create_rtime / 60) % 60, 
+                    params->curr_rtime - ranked_segs[i]->create_rtime, 
+                    ranked_segs[i]->n_merge,
+                    ranked_segs[i]->req_rate,
+                    ranked_segs[i]->write_rate,
+                    (double) ranked_segs[i]->n_byte / ranked_segs[i]->n_obj,
+                    ranked_segs[i]->miss_ratio, 
+                    ranked_segs[i]->n_hit, 
+                    ranked_segs[i]->n_active
+              );
+
+    fclose(ofile); 
+    PRINT_N_TIMES(1, "dump inference data %s\n", fname);
+  }
+#endif 
 
   // ranked_seg_pos records the position in the ranked_segs array,
   // segment before this position have been evicted

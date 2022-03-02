@@ -32,6 +32,7 @@
 
 // #define DUMP_MODEL 1
 // #define DUMP_TRAINING_DATA
+#define DUMP_INFERENCE
 
 /* if this is turned on, dump the online and offline calculated segment utility */
 // #define COMPARE_TRAINING_Y 1
