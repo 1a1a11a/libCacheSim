@@ -1,7 +1,8 @@
 //
 //  FIFOMerge scans N objects and retains M objects, 
 //  it is similar to multi-bit clock, but it does bounded work, guarantees some objects are evicted, some are retained   
-//
+//  
+//  TODO: wrap back to the head of the list early before reaching the end of the list
 //
 //  FIFOMerge.c
 //  libCacheSim
@@ -87,7 +88,7 @@ cache_ck_res_e FIFOMerge_get(cache_t *cache, request_t *req) {
 double oracle_metric(cache_t *cache, cache_obj_t *cache_obj) {
   if (cache_obj->FIFOMerge.next_access_vtime == -1 || cache_obj->FIFOMerge.next_access_vtime == INT64_MAX)
     return -1;
-  return (double) 1000000000.0 / (cache_obj->FIFOMerge.next_access_vtime - cache->n_req) / (double) cache_obj->obj_size; 
+  return (double) 1e9 / (cache_obj->FIFOMerge.next_access_vtime - cache->n_req) / (double) cache_obj->obj_size; 
 }
 
 double freq_metric(cache_t *cache, cache_obj_t *cache_obj) {
@@ -141,6 +142,7 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   } 
 
   if (params->n_merge_obj == -1) {
+    // choose n_merge_obj automatically based on size, not working
     params->n_merge_obj = cache->n_obj / 200000 + 8;
     params->n_keep_obj = params->n_merge_obj / 4;
     params->metric_list = my_malloc_n(struct fifo_merge_sort_list_node, params->n_merge_obj);
@@ -175,10 +177,6 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
       if (n_loop == 2) {
         ERROR("FIFOMerge_evict: loop too many times because not enough objects to merge\n");
         abort(); 
-        // cache_obj = params->next_to_merge->queue.next;
-        // FIFOMerge_remove_obj(cache, params->next_to_merge);
-        // params->next_to_merge = cache_obj;
-        // return; 
       }
     }
   }
