@@ -58,6 +58,11 @@ typedef struct reader {
   char *mapped_file; /* mmap the file, this should not change during runtime */
   uint64_t mmap_offset;
 
+  /* this is used when the reader splits a large req into multiple chunked requests */
+  int n_chunked_req_left;   
+  int64_t chunked_req_clock_time; 
+
+
   struct zstd_reader *zstd_reader_p;
   bool is_zstd_file;
 

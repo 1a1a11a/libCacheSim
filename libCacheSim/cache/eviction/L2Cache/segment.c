@@ -199,7 +199,7 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
          "req/write rate %6.0lf/%4.2lf, "
          "miss ratio %.4lf, "
          "mean freq %4.2lf, total hit %6d, total active %4d, "
-         "%2d merges, utility %.4lf/%.4lf, oracle_score %lf, %d obj have reuse, "
+         "%2d merges, utility %.4lf/%.4lf/%.4lf, %d obj have reuse, "
          "n_hit/active window %d %d %d %d, \n",
          seg->seg_id, (int) params->curr_rtime - seg->create_rtime,
          (double) seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate, seg->miss_ratio,

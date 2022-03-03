@@ -115,9 +115,11 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
   x[7] = (feature_t) curr_seg->miss_ratio;
   x[8] = 0.0;
-  x[9] = curr_seg->n_hit;
-  x[10] = curr_seg->n_active;
-  x[11] = curr_seg->n_merge;
+  x[9] = (feature_t) curr_seg->n_hit;
+  x[10] = (feature_t) curr_seg->n_active;
+  // x[9] = (feature_t) curr_seg->n_hit / (x[3] + 1);
+  // x[10] = (feature_t) curr_seg->n_active / (x[3] + 1);
+  x[11] = (feature_t) curr_seg->n_merge;
 
   for (int k = 0; k < N_FEATURE_TIME_WINDOW; k++) {
     x[12 + k * 3 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
