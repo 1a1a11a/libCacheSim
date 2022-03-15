@@ -3,7 +3,8 @@
 #define MAX_N_BUCKET 120
 #define N_TRAIN_ITER 20
 #define N_MAX_VALIDATION 1000
-#define N_MAX_TRAINING_DATA 8192
+// #define N_MAX_TRAINING_DATA 8192
+#define N_MAX_TRAINING_DATA 16384
 
 /* L2Cache uses cache state features, so we need to track cache states 
  * and update them periodically, because there could be time when request 
@@ -22,14 +23,20 @@
 /* whether we normalize the pred utility by curr_seg->n_byte */
 #define NORMALIZE_PRED_UTILITY 1
 
+#define USE_DISTINCT_CUTOFF 0
+
 /* training objective, regression or ranking */
 #define REG 1
 #define LTR 2
 #define OBJECTIVE REG
 
-// #define DUMP_MODEL 1
+// #define DUMP_MODEL
+// #define LOAD_MODEL
 // #define DUMP_TRAINING_DATA
 // #define DUMP_INFERENCE
+
+#define NEW_FEATURE
+// #define LOG_UTILITY
 
 /* if this is turned on, dump the online and offline calculated segment utility */
 // #define COMPARE_TRAINING_Y 1

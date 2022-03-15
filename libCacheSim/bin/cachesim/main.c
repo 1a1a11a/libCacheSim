@@ -48,7 +48,6 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
       miss_cnt++;
       miss_byte += req->obj_size;
     }
-
     if (req->real_time >= (SKIP_HOUR + 24) * 3600 && \
         req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
       INFO("%.2lf hour: %lu requests, miss ratio %.4lf, interval miss ratio %.4lf\n",

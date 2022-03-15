@@ -121,6 +121,11 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   // x[10] = (feature_t) curr_seg->n_active / (x[3] + 1);
   x[11] = (feature_t) curr_seg->n_merge;
 
+  #ifdef NEW_FEATURE
+  x[0] = 0;
+  x[2] = 0;
+  x[11] = 0;  
+  #endif
   for (int k = 0; k < N_FEATURE_TIME_WINDOW; k++) {
     x[12 + k * 3 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
     x[12 + k * 3 + 1] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
@@ -154,7 +159,17 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   }
 
   /* calculate y for training */
+
+  #ifdef LOG_UTILITY
+  double online_utility;
+  if (curr_seg->train_utility == 0) {
+    online_utility = -10000;
+  } else {
+    online_utility = log(curr_seg->train_utility);
+  }
+  #else
   double online_utility = curr_seg->train_utility;
+  #endif
   double offline_utility = -1;
   *y = (train_y_t) online_utility;
 
@@ -343,6 +358,22 @@ void prepare_training_data(cache_t *cache) {
   train_y_cutoffs[2] = y_sort[n_candidate * 6];
   train_y_cutoffs[1] = y_sort[n_candidate * 6 + (n - n_candidate * 6) / 2];
   train_y_cutoffs[0] = y_sort[n - 1] + 1;// to make sure the largest value is always insma
+
+  #if USE_DISTINCT_CUTOFF == 1
+  n = n / 3 * 2;
+  int index = n / 5;
+  for (int p = 4; p >= 1 && index <= n - 1; p--) {
+
+    train_y_cutoffs[p] = y_sort[index];
+    if (p == 1)
+      break;
+    index = index + ((n - index) / p);
+    while (index <= n - 1 && train_y_cutoffs[p] == y_sort[index]) {
+      index += 1;
+    }
+  }
+  #endif
+
 #endif
 
   bool use_for_validation; /* 0: train, 1: validation */

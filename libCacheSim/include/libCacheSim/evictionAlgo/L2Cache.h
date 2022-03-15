@@ -46,6 +46,7 @@ typedef enum obj_score_type {
   OBJ_SCORE_HIT_DENSITY = 4,
 
   OBJ_SCORE_ORACLE = 5,
+  OBJ_SCORE_SIZE_AGE = 6,
 } obj_score_type_e;
 
 typedef enum bucket_type {

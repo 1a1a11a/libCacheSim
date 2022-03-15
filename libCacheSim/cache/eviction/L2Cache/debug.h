@@ -61,7 +61,7 @@ static inline int _debug_count_n_obj(cache_t *cache) {
     while (curr_seg) {
       if (curr_seg->n_obj != params->segment_size) {
         printf("find segment not full, bucket %d, seg %d: %d objects training %d\n", i,
-               n_seg_in_bucket, curr_seg->n_obj, curr_seg->is_training_seg);
+               n_seg_in_bucket, curr_seg->n_obj, curr_seg->selected_for_training);
       }
       n_obj += curr_seg->n_obj;
       curr_seg = curr_seg->next_seg;

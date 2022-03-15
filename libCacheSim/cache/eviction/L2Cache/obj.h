@@ -95,6 +95,10 @@ static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e sc
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
     return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6 / cache_obj->obj_size;
 
+  } else if (score_type == OBJ_SCORE_SIZE_AGE) {
+    return 1.0e8 / (double) cache_obj->obj_size
+           / (double) (curr_vtime - cache_obj->L2Cache.last_access_vtime);
+
   } else if (score_type == OBJ_SCORE_FREQ_AGE_BYTE) {
     return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e8 / cache_obj->obj_size
            / (curr_rtime - cache_obj->L2Cache.last_access_rtime);
