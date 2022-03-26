@@ -37,7 +37,7 @@
 
 #define AGE_SHIFT_FACTOR 0
 #define NEW_FEATURE
-#define SCALE_AGE
+// #define SCALE_AGE
 #define NORMALIZE_Y
 #define RANDOMIZE_MERGE
 // #define STANDARDIZE_Y

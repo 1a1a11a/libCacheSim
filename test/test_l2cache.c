@@ -61,7 +61,7 @@ static void test_L2Cache_ORACLE_LOG(gconstpointer user_data) {
 static void test_L2Cache_ORACLE_ITEM(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
   // uint64_t miss_cnt_true[] = {2143656, 1438234, 1204795, 1081270};
-  uint64_t miss_cnt_true[] = {2128510, 1452293, 1171958, 1062571};
+  uint64_t miss_cnt_true[] = {2140097, 1449064, 1177661, 1096220};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -125,7 +125,7 @@ static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
 static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
 
-  uint64_t miss_cnt_true[] = {2518463, 1586424, 1258589, 1122008};
+  uint64_t miss_cnt_true[] = {2484031, 1593598, 1260100, 1163184};
   // uint64_t miss_cnt_true[] = {2662530, 1600746, 1319404, 1254072};    // cannot decrease because of too large segments? 
 
   reader_t *reader = (reader_t *)user_data;
