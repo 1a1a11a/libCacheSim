@@ -135,11 +135,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cc_params.per_obj_overhead = 2; // freq 
     cache = FIFOMerge_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lhd") == 0) {
-    #ifdef UNIFORM_OBJ_SIZE
-    cc_params.per_obj_overhead = 0;
-    #else
     cc_params.per_obj_overhead = 8 * 3 + 1; // two age, one timestamp, one bool 
-    #endif
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "slru") == 0) {
     cc_params.per_obj_overhead = 8 * 2; 
@@ -166,11 +162,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = CR_LFU_init(cc_params, NULL);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
-    #ifdef UNIFORM_OBJ_SIZE
-    cc_params.per_obj_overhead = 0;
-    #else
     cc_params.per_obj_overhead = 2 + 1 + 8; // freq, bool, history 
-    #endif 
     L2Cache_init_params_t init_params = {.segment_size = args.seg_size,
                                          .n_merge = args.n_merge,
                                          .type = args.L2Cache_type,
