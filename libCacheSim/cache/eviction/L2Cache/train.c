@@ -35,11 +35,13 @@ static void train_xgboost(cache_t *cache) {
   double train_loss, valid_loss, last_valid_loss = 0;
   int n_stable_iter = 0;
 
-
   if (learner->n_train != 0) {
     // retrain a new model every epoch 
+    #ifdef INCREMENTAL_TRAINING
+    #else
     safe_call(XGBoosterFree(learner->booster));
     safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
+    #endif
   } else {
     safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
     safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
@@ -64,8 +66,12 @@ static void train_xgboost(cache_t *cache) {
     // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:ndcg"));
 #endif
   } 
-
+  #ifdef INCREMENTAL_TRAINING
+  int i;
+  for (i = learner->n_iteration; i < learner->n_iteration + N_TRAIN_ITER; ++i) {
+  #else
   for (int i = 0; i < N_TRAIN_ITER; ++i) {
+  #endif
     // Update the model performance for each iteration
     safe_call(XGBoosterUpdateOneIter(learner->booster, i, learner->train_dm));
     if (learner->n_valid_samples < 10) continue;
@@ -81,9 +87,12 @@ static void train_xgboost(cache_t *cache) {
     //     (double) params->curr_rtime / 3600.0, 
     //     (double) cache->cache_size / 1024.0 / 1024.0,
     //     i, train_loss, valid_loss);
-    
+    #ifdef BYTE_MISS_RATIO
+    if (valid_loss > 10000000) {
+    #else
     if (valid_loss > 1000000) {
-      printf("valid loss is too large, stop training\n");
+    #endif
+      printf("valid loss is too large, stop training, %f\n", valid_loss);
       abort();
     }
 
@@ -104,7 +113,9 @@ static void train_xgboost(cache_t *cache) {
 #error
 #endif
   }
-
+  #ifdef INCREMENTAL_TRAINING
+  learner->n_iteration = i + 1;
+  #endif
 #ifndef __APPLE__
   safe_call(XGBoosterBoostedRounds(learner->booster, &learner->n_trees));
 #endif

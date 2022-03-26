@@ -95,12 +95,19 @@ void L2Cache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
   double cutoff =
       find_cutoff(cache, params->obj_score_type, segs, params->n_merge, params->segment_size);
 
+  #ifdef RANDOMIZE_MERGE
+  int pos = 0;
+  #endif
   for (int i = 0; i < params->n_merge; i++) {
     // merge n segments into one segment
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_obj; j++) {
       cache_obj = &segs[i]->objs[j];
+      #ifdef RANDOMIZE_MERGE
+      double obj_score = params->obj_sel.score_array_offset[pos++];
+      #else 
       double obj_score = cal_obj_score(params, params->obj_score_type, cache_obj);
+      #endif
       if (new_seg->n_obj < params->segment_size && obj_score >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));

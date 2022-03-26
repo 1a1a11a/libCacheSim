@@ -56,7 +56,9 @@ typedef struct learner {
   unsigned int n_train_samples;
   unsigned int n_valid_samples;
   int n_trees;
-
+  #ifdef INCREMENTAL_TRAINING
+  int n_iteration;
+  #endif
   int32_t train_matrix_n_row; /* the size of matrix */
   int32_t valid_matrix_n_row;
   int32_t inf_matrix_n_row;
@@ -143,6 +145,9 @@ typedef struct obj_sel {
   segment_t **segs_to_evict;
 
   double *score_array;
+  #ifdef RANDOMIZE_MERGE
+  double *score_array_offset;
+  #endif
   dd_pair_t *dd_pair_array; 
   int array_size;
 } obj_sel_t;

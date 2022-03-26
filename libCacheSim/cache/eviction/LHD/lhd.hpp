@@ -188,7 +188,11 @@ private:
       return std::numeric_limits<rank_t>::lowest();
     }
     auto &cl = getClass(tag);
+    #ifdef BYTE_MISS_RATIO
+    rank_t density = cl.hitDensities[age];
+    #else
     rank_t density = cl.hitDensities[age] / tag.size;
+    #endif
     if (tag.explorer) {
       density += 1.;
     }

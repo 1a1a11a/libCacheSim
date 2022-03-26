@@ -146,7 +146,14 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
   for (int i = 0; i < n_segs; i++) {
     seg = segs[i];
     for (int j = 0; j < seg->n_obj; j++) {
+      #ifdef RANDOMIZE_MERGE
+      double random_offset = (double) (next_rand() % RAND_MAX) / ((double) (RAND_MAX)) * 0.00001;
+      params->obj_sel.score_array[pos] = cal_obj_score(params, obj_score_type, &seg->objs[j]) + random_offset;
+      params->obj_sel.score_array_offset[pos] = params->obj_sel.score_array[pos];
+      pos ++;
+      #else
       params->obj_sel.score_array[pos++] = cal_obj_score(params, obj_score_type, &seg->objs[j]);
+      #endif
     }
   }
   DEBUG_ASSERT(pos == params->segment_size * n_segs);

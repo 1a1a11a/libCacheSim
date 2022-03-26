@@ -47,7 +47,11 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   if (strstr(args->trace_path, "cphy") != NULL) {
+    #ifdef UNIFORM_OBJ_SIZE
+    float s[12] = {0.1, 0.2, 0.4, 0.5, 1, 2, 4};
+    #else
     uint64_t s[10] = {500, 1000, 2000, 4000, 8000, 12000, 16000, 24000, 32000, 64000};
+    #endif
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }

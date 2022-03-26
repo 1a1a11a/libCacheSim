@@ -8,7 +8,7 @@
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/simulator.h"
-
+#include "../../utils/include/mymath.h"
 #include "cachesim.h"
 #include "priv/params.h"
 #include "utils.h"
@@ -76,10 +76,15 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
 
 int main(int argc, char **argv) {
 
+  // This will only affect the debug mode
+  // where we run with only one cache size.
+  srand(time(NULL));
+  set_rand_seed(rand());
+
   sim_arg_t args = parse_cmd(argc, argv);
 
   if (args.debug) {
-    run_cache_debug(args.reader, args.cache);
+    run_cache_debug(args.reader, args.cache); 
   } else {
     cache_stat_t *result = get_miss_ratio_curve(args.reader, 
                                                 args.cache, 

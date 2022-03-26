@@ -39,6 +39,9 @@ void init_obj_sel(cache_t *cache) {
 
   params->obj_sel.array_size = params->n_merge * params->segment_size;
   params->obj_sel.score_array = my_malloc_n(double, params->obj_sel.array_size);
+  #ifdef RANDOMIZE_MERGE
+  params->obj_sel.score_array_offset = my_malloc_n(double, params->obj_sel.array_size);
+  #endif
   params->obj_sel.dd_pair_array = my_malloc_n(dd_pair_t, params->obj_sel.array_size);
 
   params->obj_sel.segs_to_evict = my_malloc_n(segment_t *, params->n_merge);

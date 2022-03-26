@@ -20,6 +20,7 @@ extern "C" {
 
 
 #include "../../../include/libCacheSim/reader.h"
+#include "../../../bin/cachesim/cachesim.h"
 
 
 static inline int oracleGeneralBin_setup(reader_t *reader) {
@@ -40,7 +41,11 @@ static inline int oracleGeneralBin_read_one_req(reader_t *reader, request_t *req
 
   req->real_time = *(uint32_t *) record;
   req->obj_id = *(uint64_t *) (record + 4);
+  #ifdef UNIFORM_OBJ_SIZE
+  req->obj_size = 1;
+  #else
   req->obj_size = *(uint32_t *) (record + 12);
+  #endif
   req->next_access_vtime = *(int64_t *) (record + 16);
     if (req->next_access_vtime == -1) {
       req->next_access_vtime = INT64_MAX;
@@ -69,7 +74,11 @@ static inline int oracleGeneralOpNS_read_one_req(reader_t *reader, request_t *re
 
   req->real_time = *(uint32_t *) record;
   req->obj_id = *(uint64_t *) (record + 4);
+  #ifdef UNIFORM_OBJ_SIZE
+  req->obj_size = 1;
+  #else
   req->obj_size = *(uint32_t *) (record + 12);
+  #endif
   req->op = *(uint8_t *) (record + 16);
   req->ns = *(uint16_t *) (record + 17);
   req->next_access_vtime = *(int64_t *) (record + 19);

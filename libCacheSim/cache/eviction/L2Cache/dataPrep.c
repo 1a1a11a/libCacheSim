@@ -114,7 +114,6 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   x[5] = (feature_t) curr_seg->write_rate;
   x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
   x[7] = (feature_t) curr_seg->miss_ratio;
-  x[8] = 0.0;
   x[9] = (feature_t) curr_seg->n_hit;
   x[10] = (feature_t) curr_seg->n_active;
   // x[9] = (feature_t) curr_seg->n_hit / (x[3] + 1);
@@ -123,6 +122,10 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
 
   #ifdef NEW_FEATURE
   x[0] = 0;
+  #ifdef SCALE_AGE
+  x[3] = (feature_t) x[3] / ((feature_t) params->curr_rtime);
+  #endif
+  x[1] = 0; // I observe hours to be highly skewed toward a short range.
   x[2] = 0;
   x[11] = 0;  
   #endif
@@ -191,9 +194,22 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
 
-  if (l->n_train_samples >= l->train_matrix_n_row) return;
+  #ifdef TRAIN_KEEP_HALF
+  unsigned int row_idx;
 
+  if (l->n_train_samples >= l->train_matrix_n_row) return;
+  if ( next_rand() % 5 >= 2) {
+    row_idx = l->n_train_samples++;
+  } else {
+    l->n_train_samples++;
+    copy_seg_to_train_matrix(cache, seg);
+    return;
+  }
+
+  #else
+  if (l->n_train_samples >= l->train_matrix_n_row) return;
   unsigned int row_idx = l->n_train_samples++;
+  #endif
 
   seg->selected_for_training = true;
   seg->training_data_row_idx = row_idx;
@@ -218,8 +234,13 @@ void snapshot_segs_to_training_data(cache_t *cache) {
   learner_t *l = &params->learner;
   segment_t *curr_seg = NULL;
 
+  #ifdef TRAIN_KEEP_HALF
+  double sample_ratio =
+      MAX((double) params->n_in_use_segs / (double) (l->train_matrix_n_row / 2), 1.0);
+  #else
   double sample_ratio =
       MAX((double) params->n_in_use_segs / (double) l->train_matrix_n_row, 1.0);
+  #endif 
 
   double credit = 0;// when credit reaches sample ratio, we sample a segment
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
@@ -258,8 +279,17 @@ void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
   if (seg->n_seg_util_skipped++ >= params->n_retain_per_seg)
 #endif
   {
-    double age = (double) params->curr_vtime - seg->become_train_seg_vtime;
+    #if AGE_SHIFT_FACTOR == 0
+    double age = (double) (params->curr_vtime - seg->become_train_seg_vtime);
+    #else
+    double age = (double) (((params->curr_vtime - seg->become_train_seg_vtime) >> AGE_SHIFT_FACTOR) + 1);
+    assert(age != 0);
+    #endif
+    #ifdef BYTE_MISS_RATIO
+    seg->train_utility += 1.0e6 / age;
+    #else
     seg->train_utility += 1.0e6 / age / cache_obj->obj_size;
+    #endif
     params->learner.train_y[seg->training_data_row_idx] = seg->train_utility;
   }
 }
@@ -377,12 +407,59 @@ void prepare_training_data(cache_t *cache) {
 #endif
 
   bool use_for_validation; /* 0: train, 1: validation */
+
+  #ifdef NORMALIZE_Y
+  float max_y = learner->train_y[0];
+  float min_y = learner->train_y[0];
+  for (int y = 1; y < learner->n_train_samples; y++) {
+    if (learner->train_y[y] > max_y) {
+      max_y = learner->train_y[y];
+    } 
+    if (learner->train_y[y] < min_y) {
+      min_y = learner->train_y[y];
+    }
+  }
+  #endif 
+
+  #ifdef STANDARDIZE_Y
+  float average = 0;
+  float stdev = 0;
+  for (int y = 0; y < learner->n_train_samples; y++) {
+    average += learner->train_y[y];
+  }
+  average /= learner->n_train_samples;
+  for (int y = 0; y < learner->n_train_samples; y++) {
+    stdev += (learner->train_y[y] - average) * (learner->train_y[y] - average);
+  }
+  stdev = sqrt(stdev / learner->n_train_samples);
+  #endif
+
+  #ifdef TRAIN_KEEP_HALF
+  int n_row_in_use = learner->train_matrix_n_row;
+  if (learner->n_train_samples < n_row_in_use) {
+    n_row_in_use = learner->n_train_samples;
+  }
+  for (i = 0; i < n_row_in_use; i++) {
+  #else
+
   for (i = 0; i < learner->n_train_samples; i++) {
+  #endif
     if (learner->train_y[i] == 0) {
       n_zero_samples += 1;
     }
 
     use_for_validation = (i % 10 == 0 && pos_in_valid_data < learner->valid_matrix_n_row);
+
+    bool all_zero = true;
+    for (int j = 0; j < n_feature; j++) {
+      if (learner->train_x[i * n_feature + j] != 0){
+        all_zero = false;
+        break;
+      }
+    }
+    if (all_zero) {
+      continue;
+    }
 
     if (!use_for_validation) {
       x = &learner->train_x[pos_in_train_data * n_feature];
@@ -396,7 +473,14 @@ void prepare_training_data(cache_t *cache) {
 
     // TODO: optimize memcpy by splitting into train and valid in snapshot
     memcpy(x, &learner->train_x[i * n_feature], sizeof(feature_t) * n_feature);
+    #if defined(NORMALIZE_Y)
+    *y = (learner->train_y[i] - min_y) / (max_y - min_y);
+    #elif defined(STANDARDIZE_Y)
+    *y = (learner->train_y[i] - average) / stdev;
+    #else 
     *y = learner->train_y[i];
+    #endif
+
 
 #ifdef COMPARE_TRAINING_Y
     fprintf(ofile_cmp_y, "%lf, %lf\n", learner->train_y[i], learner->train_y_oracle[i]);
@@ -416,10 +500,16 @@ void prepare_training_data(cache_t *cache) {
   fprintf(ofile_cmp_y, "#####################################\n");
 #endif
 
+  #ifdef TRAIN_KEEP_HALF
+  int original_n_train_samples = learner->n_train_samples;
+  #endif
   learner->n_train_samples = pos_in_train_data;
   learner->n_valid_samples = pos_in_valid_data;
 
   prepare_training_data_per_package(cache);
+  #ifdef TRAIN_KEEP_HALF
+  learner->n_train_samples = original_n_train_samples;
+  #endif
 
 #ifdef DUMP_TRAINING_DATA
   dump_training_data(cache);

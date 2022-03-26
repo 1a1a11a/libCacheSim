@@ -35,7 +35,15 @@
 // #define DUMP_TRAINING_DATA
 // #define DUMP_INFERENCE
 
+#define AGE_SHIFT_FACTOR 0
 #define NEW_FEATURE
+#define SCALE_AGE
+#define NORMALIZE_Y
+#define RANDOMIZE_MERGE
+// #define STANDARDIZE_Y
+// #define INCREMENTAL_TRAINING
+// #define BYTE_MISS_RATIO
+// #define TRAIN_KEEP_HALF
 // #define LOG_UTILITY
 
 /* if this is turned on, dump the online and offline calculated segment utility */
