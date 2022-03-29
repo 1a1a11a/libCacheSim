@@ -26,41 +26,42 @@
 #include "../include/libCacheSim/evictionAlgo/LFUFast.h"
 #include "../dataStructure/hashtable/hashtable.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+static void free_freq_node(void *list_node) { my_free(sizeof(freq_node_t), list_node); }
 
-static void free_list_node(void *list_node) {
-  my_free(sizeof(freq_node_t), list_node);
+static inline freq_node_t *get_min_freq_node(LFUFast_params_t *params) {
+  freq_node_t *min_freq_node = NULL;
+  if (params->min_freq == 1) {
+    // printf("freq one node %p\n", params->freq_one_node); 
+    min_freq_node = params->freq_one_node;
+  } else {
+    min_freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+    // printf("min freq node %p\n", min_freq_node);
+  }
+
+  DEBUG_ASSERT(min_freq_node != NULL);
+  DEBUG_ASSERT(min_freq_node->first_obj != NULL);
+  DEBUG_ASSERT(min_freq_node->n_obj > 0);
+
+  return min_freq_node;
 }
 
-static int _verify(cache_t *cache) {
-  LFUFast_params_t *LFUFastDA_params = (LFUFast_params_t *) (cache->eviction_params);
-  cache_obj_t *cache_obj, *prev_obj;
-  /* update min freq */
-  for (uint64_t freq = 1; freq <= LFUFastDA_params->max_freq; freq++) {
-    freq_node_t *freq_node = g_hash_table_lookup(LFUFastDA_params->freq_map, GSIZE_TO_POINTER(freq));
-    if (freq_node != NULL) {
-      uint32_t n_obj = 0;
-      cache_obj = freq_node->first_obj;
-      prev_obj = NULL;
-      while (cache_obj != NULL) {
-        n_obj ++;
-        DEBUG_ASSERT(cache_obj->lfu.freq == freq);
-        DEBUG_ASSERT(cache_obj->queue.prev == prev_obj);
-        prev_obj = cache_obj;
-        cache_obj = cache_obj->queue.next;
-      }
-      DEBUG_ASSERT(freq_node->n_obj == n_obj);
+static inline void update_min_freq(LFUFast_params_t *params) {
+  uint64_t old_min_freq = params->min_freq;
+  for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+    freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
+    if (node != NULL && node->n_obj > 0) {
+      params->min_freq = freq;
+      break;
     }
   }
-  return 0;
+  DEBUG_ASSERT(params->min_freq > old_min_freq);
 }
 
-cache_t *LFUFast_init(common_cache_params_t ccache_params,
-                      void *cache_specific_init_params) {
+cache_t *LFUFast_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
   cache_t *cache = cache_struct_init("LFUFast", ccache_params);
   cache->cache_init = LFUFast_init;
   cache->cache_free = LFUFast_free;
@@ -69,9 +70,10 @@ cache_t *LFUFast_init(common_cache_params_t ccache_params,
   cache->insert = LFUFast_insert;
   cache->evict = LFUFast_evict;
   cache->remove = LFUFast_remove;
-  cache->to_evict = FLUFast_to_evict;
+  cache->to_evict = LFUFast_to_evict; 
 
   LFUFast_params_t *params = my_malloc_n(LFUFast_params_t, 1);
+  memset(params, 0, sizeof(LFUFast_params_t));
   cache->eviction_params = params;
 
   params->min_freq = 1;
@@ -84,7 +86,8 @@ cache_t *LFUFast_init(common_cache_params_t ccache_params,
   freq_node->first_obj = NULL;
   freq_node->last_obj = NULL;
 
-  params->freq_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, (GDestroyNotify) free_list_node);
+  params->freq_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
+                                           (GDestroyNotify) free_freq_node);
   g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(1), freq_node);
 
   return cache;
@@ -105,13 +108,13 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
     /* freq incr and move to next freq node */
     cache_obj->lfu.freq += 1;
-    if (params->max_freq < cache_obj->lfu.freq)  {
+    if (params->max_freq < cache_obj->lfu.freq) {
       params->max_freq = cache_obj->lfu.freq;
     }
 
     // find the freq_node this object belongs to and update its info
-    freq_node_t *old_node = g_hash_table_lookup(
-        params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq - 1));
+    freq_node_t *old_node =
+        g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq - 1));
     DEBUG_ASSERT(old_node != NULL);
     DEBUG_ASSERT(old_node->freq == cache_obj->lfu.freq - 1);
     DEBUG_ASSERT(old_node->n_obj > 0);
@@ -119,14 +122,15 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     remove_obj_from_list(&old_node->first_obj, &old_node->last_obj, cache_obj);
 
     // find the new freq_node this object should move to
-    freq_node_t *new_node = g_hash_table_lookup(
-        params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
+    freq_node_t *new_node =
+        g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
     if (new_node == NULL) {
       new_node = my_malloc_n(freq_node_t, 1);
       memset(new_node, 0, sizeof(freq_node_t));
       new_node->freq = cache_obj->lfu.freq;
       g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
-      VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj, new_node->last_obj);
+      VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj,
+               new_node->first_obj, new_node->last_obj);
     } else {
       // it could be new_node is empty
       DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
@@ -140,27 +144,18 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
       DEBUG_ASSERT(new_node->first_obj == NULL);
       DEBUG_ASSERT(new_node->n_obj == 0);
       new_node->first_obj = cache_obj;
-      cache_obj->queue.prev = NULL; 
+      cache_obj->queue.prev = NULL;
     }
 
     cache_obj->queue.next = NULL;
     new_node->last_obj = cache_obj;
     new_node->n_obj += 1;
 
-
     // if the old freq_node only has one object, after removing this object, it will have no object
-    // and if it is the min_freq, then we should update min_freq 
+    // and if it is the min_freq, then we should update min_freq
     if (params->min_freq == old_node->freq && old_node->n_obj == 0) {
       /* update min freq */
-      uint64_t old_min_freq = params->min_freq;
-      for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
-        freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)); 
-        if (node != NULL && node->n_obj > 0) {
-          params->min_freq = freq;
-          break;
-        }
-      }
-      DEBUG_ASSERT(params->min_freq > old_min_freq); 
+      update_min_freq(params);
     }
   }
   return ret;
@@ -190,32 +185,20 @@ void LFUFast_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(freq_one_node->first_obj != NULL);
 }
 
-cache_obj_t *FLUFast_to_evict(cache_t *cache){
-
+cache_obj_t *LFUFast_to_evict(cache_t *cache) {
   LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
-
-  freq_node_t *min_freq_node = g_hash_table_lookup(
-      params->freq_map, GSIZE_TO_POINTER(params->min_freq));
-  DEBUG_ASSERT(min_freq_node != NULL);
-  DEBUG_ASSERT(min_freq_node->first_obj != NULL);
-  DEBUG_ASSERT(min_freq_node->n_obj > 0);
-
+  freq_node_t *min_freq_node = get_min_freq_node(params);
   return min_freq_node->first_obj;
 }
 
 void LFUFast_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
 
-  freq_node_t *min_freq_node = g_hash_table_lookup(
-      params->freq_map, GSIZE_TO_POINTER(params->min_freq));
-  DEBUG_ASSERT(min_freq_node != NULL);
-  DEBUG_ASSERT(min_freq_node->first_obj != NULL);
-  DEBUG_ASSERT(min_freq_node->n_obj > 0);
+  freq_node_t *min_freq_node = get_min_freq_node(params);
   min_freq_node->n_obj--;
 
   cache_obj_t *obj_to_evict = min_freq_node->first_obj;
-  if (evicted_obj != NULL)
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  if (evicted_obj != NULL) memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
 
   if (obj_to_evict->queue.next == NULL) {
     /* the only obj of curr freq */
@@ -225,15 +208,7 @@ void LFUFast_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     min_freq_node->last_obj = NULL;
 
     /* update min freq */
-    uint64_t old_min_freq = params->min_freq;
-    for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
-      freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)); 
-      if (node != NULL && node->n_obj > 0) {
-        params->min_freq = freq;
-        break;
-      }
-    }
-    DEBUG_ASSERT(params->min_freq > old_min_freq || cache->n_obj == 1); // only one object
+    update_min_freq(params);
 
   } else {
     min_freq_node->first_obj = obj_to_evict->queue.next;
@@ -251,7 +226,8 @@ void LFUFast_remove(cache_t *cache, obj_id_t obj_id) {
     return;
   }
 
-  freq_node_t *freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(obj->lfu.freq));
+  freq_node_t *freq_node =
+      g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(obj->lfu.freq));
   DEBUG_ASSERT(freq_node->freq == obj->lfu.freq);
   DEBUG_ASSERT(freq_node->n_obj > 0);
 
@@ -262,18 +238,9 @@ void LFUFast_remove(cache_t *cache, obj_id_t obj_id) {
 
   if (freq_node->freq == params->min_freq && freq_node->n_obj == 0) {
     /* update min freq */
-    uint64_t old_min_freq = params->min_freq;
-    for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
-      freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq)); 
-      if (node != NULL && node->n_obj > 0) {
-        params->min_freq = freq;
-        break;
-      }
-    }
-    DEBUG_ASSERT(params->min_freq > old_min_freq || cache->n_obj == 0); 
+    update_min_freq(params);
   }
 }
-
 
 #ifdef __cplusplus
 }
