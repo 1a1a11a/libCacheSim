@@ -1,23 +1,34 @@
 #pragma once
 
 #include "../cache.h"
+#include "LFUFast.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-
 typedef struct LeCaR_params {
-  cache_t *LRU;      // LRU
-  cache_t *LRU_g;     // eviction history of LRU
-  cache_t *LFU;      // LFU
-  cache_t *LFU_g;     // eviction history of LFU
+
+  // LRU chain pointers are part of cache_t struct 
+  
+  // used for LFU 
+  freq_node_t *freq_one_node;
+  GHashTable *freq_map;
+  uint64_t min_freq;
+  uint64_t max_freq;
+
+  // eviction history 
+  cache_obj_t *ghost_lru_head;
+  cache_obj_t *ghost_lru_tail;
+  int64_t ghost_entry_used_size;
+
+  // LeCaR 
   double w_lru;
   double w_lfu;
   double lr;        // learning rate
   double dr;        // discount rate
-  double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
+  // double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
   int64_t n_hit_lru_history;
   int64_t n_hit_lfu_history;
 } LeCaR_params_t;

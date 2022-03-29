@@ -15,6 +15,7 @@ set(sourceC
         OptimalSize.c
         Hyperbolic.c
         LeCaR.c
+        LeCaR0.c
         Cacheus.c
         FIFOMerge.c
         

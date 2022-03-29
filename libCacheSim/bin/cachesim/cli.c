@@ -155,6 +155,9 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   } else if (strcasecmp(args.alg, "lecar") == 0) {
     cc_params.per_obj_overhead = 8 * 2 + 8 * 2 + 8; // LRU chain, LFU chain, history 
     cache = LeCaR_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "lecar0") == 0) {
+    cc_params.per_obj_overhead = 8 * 2 + 8 * 2 + 8; // LRU chain, LFU chain, history 
+    cache = LeCaR0_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "cacheus") == 0) {
     cc_params.per_obj_overhead = 8 * 2 + 8 * 2 + 8; // LRU chain, LFU chain, history 
     cache = Cacheus_init(cc_params, NULL);

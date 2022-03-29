@@ -21,7 +21,12 @@ typedef struct {
 } Clock_obj_params_t; 
 
 typedef struct {
-  int64_t last_access_vtime; 
+  int64_t eviction_vtime; 
+  void *lfu_next;
+  void *lfu_prev;
+  int32_t freq; 
+  bool ghost_evicted_by_lru;
+  bool ghost_evicted_by_lfu;
 } LeCaR_obj_params_t;
 
 typedef struct {

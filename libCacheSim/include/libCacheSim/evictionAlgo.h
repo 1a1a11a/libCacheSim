@@ -21,6 +21,7 @@
 #include "evictionAlgo/SLRU.h"
 #include "evictionAlgo/SR_LRU.h"
 #include "evictionAlgo/Hyperbolic.h"
+#include "evictionAlgo/LeCaR0.h"
 #include "evictionAlgo/LeCaR.h"
 #include "evictionAlgo/Cacheus.h"
 
