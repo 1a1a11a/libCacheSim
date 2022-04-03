@@ -37,6 +37,10 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.trace_type = ORACLE_GENERALOPNS_TRACE;
   } else if (strcasecmp(argv[1], "oracleAkamaiBin") == 0) {
     args.trace_type = ORACLE_AKAMAI_TRACE;
+  } else if (strcasecmp(argv[1], "oracleCF1") == 0) {
+    args.trace_type = ORACLE_CF1_TRACE;
+  } else if (strcasecmp(argv[1], "oracleSysTwrNS") == 0) {
+    args.trace_type = ORACLE_SYS_TWRNS_TRACE;
   } else {
     printf("unknown trace type %s\n", argv[1]);
     abort();
