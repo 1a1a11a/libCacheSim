@@ -121,9 +121,9 @@ static void test_OptimalSize(gconstpointer user_data) {
    * trace removes all object size changes (and use the size of last appearance
    * of an object as the object size throughout the trace */
   uint64_t req_cnt_true = 113872, req_byte_true = 4368040448;
-  uint64_t miss_cnt_true[] = {74513, 64790, 60367, 56529, 54545, 52614, 50590, 48974};
-  uint64_t miss_byte_true[] = {3541380608, 3057076224, 2779565056, 2537671168,
-                               2403481600, 2269221888, 2135037440, 2029769728};
+  uint64_t miss_cnt_true[] = {74329, 64524, 60279, 56514, 54539, 52613, 50581, 48974};
+  uint64_t miss_byte_true[] = {3507168256, 3044453888, 2773635072, 2537643008, 
+                               2403463680, 2269248512, 2135011840, 2029769728};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
