@@ -27,7 +27,6 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->n_merge = 2;
   args->rank_intvl = 0.02;
   args->merge_consecutive_segs = true;
-  args->train_source_x = TRAIN_X_FROM_SNAPSHOT;
   args->train_source_y = TRAIN_Y_FROM_ONLINE;
 
   args->age_shift = 2; 

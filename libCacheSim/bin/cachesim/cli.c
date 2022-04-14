@@ -116,7 +116,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     } else if (strncasecmp(argv[9], "online", 6) == 0) {
       args.train_source_y = TRAIN_Y_FROM_ONLINE;
     } else {
-      printf("unknown bucket type %s\n", argv[9]);
+      printf("unknown training source %s\n", argv[9]);
       abort();
     }
   }
@@ -175,7 +175,6 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
                                          .type = args.L2Cache_type,
                                          .rank_intvl = args.rank_intvl,
                                          .merge_consecutive_segs = args.merge_consecutive_segs,
-                                         .train_source_x = args.train_source_x,
                                          .train_source_y = args.train_source_y,
 
                                          .hit_density_age_shift = args.age_shift,

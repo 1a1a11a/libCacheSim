@@ -38,7 +38,6 @@ void prepare_inference_data(cache_t *cache) {
   }
   DEBUG_ASSERT(params->n_in_use_segs == n_segs);
 
-#ifdef USE_XGBOOST
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
@@ -46,12 +45,8 @@ void prepare_inference_data(cache_t *cache) {
                                    learner->n_feature, -2, &learner->inf_dm));
 
   safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &params->n_in_use_segs, 1));
-#elif defined(USE_GBM)
-#error
-#endif
 }
 
-#ifdef USE_XGBOOST
 void inference_xgboost(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
@@ -61,10 +56,10 @@ void inference_xgboost(cache_t *cache) {
   /* pred result stored in xgboost lib */
   const float *pred;
 
-#ifdef DUMP_TRAINING_DATA
+#ifdef DUMP_INFERENCE_DATA
   static __thread char filename[24];
   snprintf(filename, 24, "inf_data_%d", learner->n_train - 1);
-  FILE *f = fopen(filename, "w");
+  FILE *f = fopen(filename, "a");
 #endif
 
   bst_ulong out_len = 0;
@@ -95,18 +90,8 @@ void inference_xgboost(cache_t *cache) {
         curr_seg->pred_utility = INT32_MAX;
       }
 #endif
-      // PRINT_N_TIMES(8, "%d y_hat %f, features: %.0f %.0f %.0f %.2f %.2f %.2f %.2f\n",
-      //   n_segs, pred[n_segs],
-      //   learner->inference_x[learner->n_feature * n_segs + 0],
-      //   learner->inference_x[learner->n_feature * n_segs + 1],
-      //   learner->inference_x[learner->n_feature * n_segs + 2],
-      //   learner->inference_x[learner->n_feature * n_segs + 3],
-      //   learner->inference_x[learner->n_feature * n_segs + 4],
-      //   learner->inference_x[learner->n_feature * n_segs + 5],
-      //   learner->inference_x[learner->n_feature * n_segs + 6]
-      // );
 
-#ifdef DUMP_TRAINING_DATA
+#ifdef DUMP_INFERENCE_DATA
       fprintf(f, "%f/%lf: ", pred[n_segs], cal_seg_utility(cache, curr_seg, true));
       for (int j = 0; j < learner->n_feature; j++) {
         fprintf(f, "%f,", learner->inference_x[learner->n_feature * n_segs + j]);
@@ -118,12 +103,11 @@ void inference_xgboost(cache_t *cache) {
       curr_seg = curr_seg->next_seg;
     }
   }
-#ifdef DUMP_TRAINING_DATA
+#ifdef DUMP_INFERENCE_DATA
   fprintf(f, "\n\n\n\n");
   fclose(f);
 #endif
 }
-#endif
 
 void inference(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;

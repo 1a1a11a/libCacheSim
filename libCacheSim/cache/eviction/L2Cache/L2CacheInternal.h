@@ -170,7 +170,6 @@ typedef struct {
   // whether we merge consecutive segments (with the first segment has the lowest utility)
   // or we merge non-consecutive segments based on ranking
   bool merge_consecutive_segs;
-  train_source_e train_source_x;
   train_source_e train_source_y;
 
   // cache state

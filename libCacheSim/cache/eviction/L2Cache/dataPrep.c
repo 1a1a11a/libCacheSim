@@ -135,20 +135,6 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     DEBUG_ASSERT(x[0] >= 0); 
   }
 
-  // if (is_training_data)
-  //   printf("train: ");
-  // else
-  //   printf("test:  ");
-
-  // printf("%.0f/%.0f/%.0f/%.0f | %.0f, %.0f, %.0f, %.4f | %.0f/%.0f/%.0f, %.0f|%.0f|%.0f\n",
-  //   x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[9], x[10], x[11], x[12], x[20], x[28]
-  // );
-
-  // for (int j = 0; j < 36; j++) {
-  //   printf("%.2f, ", x[j]);
-  // }
-  // printf("\n");
-
   if (y == NULL) {
     // this is for inference and we do not calculate y
     return true;
@@ -301,7 +287,6 @@ static void prepare_training_data_per_package(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
-#ifdef USE_XGBOOST
   if (learner->n_train > 0) {
     safe_call(XGDMatrixFree(learner->train_dm));
     safe_call(XGDMatrixFree(learner->valid_dm));
@@ -331,16 +316,6 @@ static void prepare_training_data_per_package(cache_t *cache) {
 
   safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", &learner->n_train_samples, 1));
   safe_call(XGDMatrixSetUIntInfo(learner->valid_dm, "group", &learner->n_valid_samples, 1));
-#endif
-
-#elif defined(USE_GBM)
-  char *dataset_params = "categorical_feature=0,1,2";
-  safe_call(LGBM_DatasetCreateFromMat(learner->train_x, C_API_DTYPE_FLOAT64,
-                                      learner->n_train_samples, learner->n_feature, 1,
-                                      dataset_params, NULL, &learner->train_dm));
-
-  safe_call(LGBM_DatasetSetField(learner->train_dm, "label", learner->train_y,
-                                 learner->n_train_samples, C_API_DTYPE_FLOAT32));
 #endif
 }
 

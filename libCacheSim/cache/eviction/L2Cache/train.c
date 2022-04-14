@@ -9,7 +9,6 @@
 #include "segment.h"
 #include "utils.h"
 
-#ifdef USE_XGBOOST
 static void debug_print_feature_matrix(const DMatrixHandle handle, int print_n_row) {
   unsigned long out_len;
   const float *out_data;
@@ -138,7 +137,6 @@ static void train_xgboost(cache_t *cache) {
   }
 #endif
 }
-#endif
 
 void train(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;

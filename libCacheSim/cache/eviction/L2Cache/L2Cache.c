@@ -37,7 +37,6 @@ void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->type = LOGCACHE_LOG_ORACLE;
   init_params->rank_intvl = 0.05;
   init_params->merge_consecutive_segs = true;
-  init_params->train_source_x = TRAIN_X_FROM_SNAPSHOT;
   init_params->train_source_y = TRAIN_Y_FROM_ORACLE;
   init_params->bucket_type = SIZE_BUCKET;
   init_params->retrain_intvl = 86400 * 2;
@@ -66,7 +65,6 @@ cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
   params->type = L2Cache_init_params->type;
   params->bucket_type = L2Cache_init_params->bucket_type;
   params->obj_score_type = L2Cache_init_params->obj_score_type;
-  params->train_source_x = L2Cache_init_params->train_source_x;
   params->train_source_y = L2Cache_init_params->train_source_y;
 
   params->merge_consecutive_segs = L2Cache_init_params->merge_consecutive_segs;
