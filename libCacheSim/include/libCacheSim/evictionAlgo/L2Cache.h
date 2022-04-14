@@ -60,9 +60,6 @@ typedef enum bucket_type {
 } bucket_type_e;
 
 typedef enum training_source {
-  TRAIN_X_FROM_EVICTION = 0,
-  TRAIN_X_FROM_SNAPSHOT = 1,
-
   TRAIN_Y_FROM_ONLINE, 
   TRAIN_Y_FROM_ORACLE, 
 } train_source_e;

@@ -166,8 +166,11 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
     seg = segs[i];
     for (int j = 0; j < seg->n_obj; j++) {
       #ifdef RANDOMIZE_MERGE
-      double random_offset = (double) (next_rand() % RAND_MAX) / ((double) (RAND_MAX)) * 0.00001;
-      params->obj_sel.score_array[pos] = cal_obj_score(params, obj_score_type, &seg->objs[j]) + random_offset;
+      double r = 1.0; 
+      // if (params->type != LOGCACHE_BOTH_ORACLE || params->type != LOGCACHE_ITEM_ORACLE)
+      r = 1 + ((double) (next_rand() % RAND_MAX) / ((double) (RAND_MAX)) - 0.5) * 0.001;
+
+      params->obj_sel.score_array[pos] = cal_obj_score(params, obj_score_type, &seg->objs[j]) * r;
       params->obj_sel.score_array_offset[pos] = params->obj_sel.score_array[pos];
       pos ++;
       #else

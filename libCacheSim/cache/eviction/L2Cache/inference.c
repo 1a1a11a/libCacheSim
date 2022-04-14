@@ -92,7 +92,7 @@ void inference_xgboost(cache_t *cache) {
 #endif
 
 #ifdef DUMP_INFERENCE_DATA
-      fprintf(f, "%f/%lf: ", pred[n_segs], cal_seg_utility(cache, curr_seg, true));
+      fprintf(f, "%d %f/%lf: ", n_segs, pred[n_segs], cal_seg_utility(cache, curr_seg, true));
       for (int j = 0; j < learner->n_feature; j++) {
         fprintf(f, "%f,", learner->inference_x[learner->n_feature * n_segs + j]);
       }

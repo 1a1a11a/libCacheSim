@@ -40,6 +40,14 @@ static void train_xgboost(cache_t *cache) {
     #else
     safe_call(XGBoosterFree(learner->booster));
     safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
+    safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
+    safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
+    safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
+#if OBJECTIVE == REG
+    safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
+#elif OBJECTIVE == LTR
+    safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
+#endif
     #endif
   } else {
     safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));

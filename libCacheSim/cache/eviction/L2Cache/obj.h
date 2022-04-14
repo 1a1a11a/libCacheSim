@@ -138,7 +138,7 @@ static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e sc
     #endif
 
   } else if (score_type == OBJ_SCORE_ORACLE) {
-    if (cache_obj->L2Cache.next_access_vtime == -1) {
+    if (cache_obj->L2Cache.next_access_vtime == -1 || cache_obj->L2Cache.next_access_vtime == INT64_MAX) {
       return 0;
     }
 

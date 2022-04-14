@@ -104,6 +104,21 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   // x[0] = (feature_t) curr_seg->bucket_id;
   // x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
   // x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
+  // if (is_training_data) {
+  //   x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
+  //   assert(curr_seg->become_train_seg_rtime == params->curr_rtime);
+  // } else {
+  //   x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
+  // }
+  // x[4] = (feature_t) curr_seg->req_rate;
+  // x[5] = (feature_t) curr_seg->write_rate;
+  // x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
+  // x[7] = (feature_t) curr_seg->miss_ratio;
+  // x[9] = (feature_t) curr_seg->n_hit;
+  // x[10] = (feature_t) curr_seg->n_active;
+  // x[11] = (feature_t) curr_seg->n_merge;
+
+
   if (is_training_data) {
     x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
     assert(curr_seg->become_train_seg_rtime == params->curr_rtime);
@@ -111,12 +126,17 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
   }
   x[4] = (feature_t) curr_seg->req_rate;
-  x[5] = (feature_t) curr_seg->write_rate;
   x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
-  x[7] = (feature_t) curr_seg->miss_ratio;
   x[9] = (feature_t) curr_seg->n_hit;
-  x[10] = (feature_t) curr_seg->n_active;
-  // x[11] = (feature_t) curr_seg->n_merge;
+
+
+  // x[0] = rand() % 1000000; 
+  // x[1] = rand() % 1000000;
+  // x[2] = rand() % 1000000;
+  // x[3] = rand() % 1000000;
+  // x[4] = rand() % 1000000;
+  // x[5] = rand() % 1000000;
+  // x[6] = rand() % 1000000;
 
   #ifdef SCALE_AGE
   x[3] = (feature_t) x[3] / ((feature_t) params->curr_rtime);
@@ -161,6 +181,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     *y = (train_y_t) offline_utility;
   }
 
+  // *y = 1.0 / x[6]; 
   return *y > 0.000001;
 }
 
@@ -259,7 +280,7 @@ void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
 #endif
   {
     #if AGE_SHIFT_FACTOR == 0
-    double age = (double) (params->curr_vtime - seg->become_train_seg_vtime);
+    double age = (double) (params->curr_vtime - seg->become_train_seg_vtime) + 1;
     #else
     double age = (double) (((params->curr_vtime - seg->become_train_seg_vtime) >> AGE_SHIFT_FACTOR) + 1);
     assert(age != 0);

@@ -33,12 +33,13 @@
 // #define DUMP_MODEL
 // #define LOAD_MODEL
 // #define DUMP_TRAINING_DATA
+// #define DUMP_INFERENCE_DATA
 // #define DUMP_INFERENCE
 
 #define AGE_SHIFT_FACTOR 0
 // #define SCALE_AGE
 #define NORMALIZE_Y
-#define RANDOMIZE_MERGE
+// #define RANDOMIZE_MERGE
 // #define STANDARDIZE_Y
 // #define INCREMENTAL_TRAINING
 // #define BYTE_MISS_RATIO
