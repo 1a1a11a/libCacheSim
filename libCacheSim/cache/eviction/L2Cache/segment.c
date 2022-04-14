@@ -79,6 +79,25 @@ int clean_one_seg(cache_t *cache, segment_t *seg) {
   return n_cleaned;
 }
 
+void clear_dynamic_features(cache_t *cache) {
+  L2Cache_params_t *params = cache->eviction_params;
+  segment_t *curr_seg = NULL; 
+
+  for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
+    curr_seg = params->buckets[bi].first_seg;
+    for (int si = 0; si < params->buckets[bi].n_in_use_segs; si++) {
+      DEBUG_ASSERT(curr_seg != NULL);
+      for (int i = 0; i < curr_seg->n_obj; i++) {
+        curr_seg->objs[i].L2Cache.active = false;
+      }
+      curr_seg->n_hit = 0; 
+      curr_seg->n_active = 0; 
+      curr_seg = curr_seg->next_seg;
+    }
+  }
+
+}
+
 segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   L2Cache_params_t *params = cache->eviction_params;
 

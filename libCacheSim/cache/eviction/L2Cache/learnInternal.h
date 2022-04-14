@@ -42,6 +42,8 @@ static inline void resize_matrix(L2Cache_params_t *params, feature_t **x_p, pred
   }
 
   *x_p = my_malloc_n(feature_t, new_size * learner->n_feature);
+  memset(*x_p, 0, sizeof(feature_t) * new_size * learner->n_feature);
   *y_p = my_malloc_n(pred_t, new_size);
+  memset(*y_p, 0, sizeof(pred_t) * new_size);
   *size_p = new_size;
 }

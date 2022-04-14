@@ -67,11 +67,16 @@ void init_learner(cache_t *cache) {
 
   l->train_matrix_n_row = N_MAX_TRAINING_DATA;
   l->train_x = my_malloc_n(feature_t, l->train_matrix_n_row * l->n_feature);
+  memset(l->train_x, 0, sizeof(feature_t) * l->train_matrix_n_row * l->n_feature);
   l->train_y = my_malloc_n(pred_t, l->train_matrix_n_row);
+  memset(l->train_y, 0, sizeof(pred_t) * l->train_matrix_n_row);
   l->train_y_oracle = my_malloc_n(pred_t, l->train_matrix_n_row);
+  memset(l->train_y_oracle, 0, sizeof(pred_t) * l->train_matrix_n_row);
   l->valid_matrix_n_row = l->train_matrix_n_row / 10;
   l->valid_x = my_malloc_n(feature_t, l->valid_matrix_n_row * l->n_feature);
+  memset(l->valid_x, 0, sizeof(feature_t) * l->valid_matrix_n_row * l->n_feature);
   l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_n_row);
+  memset(l->valid_y, 0, sizeof(train_y_t) * l->valid_matrix_n_row);
   l->retrain_intvl = init_params->retrain_intvl;
   l->last_train_rtime = 0;
 }

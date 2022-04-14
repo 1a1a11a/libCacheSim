@@ -37,5 +37,7 @@ int clean_one_seg(cache_t *cache, segment_t *seg);
 
 int count_n_obj_reuse(cache_t *cache, segment_t *seg);
 
+void clear_dynamic_features(cache_t *cache); 
+
 void print_seg(cache_t *cache, segment_t *seg, int log_level);
 

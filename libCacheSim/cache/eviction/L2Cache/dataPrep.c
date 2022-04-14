@@ -101,9 +101,9 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
-  x[0] = (feature_t) curr_seg->bucket_id;
-  x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
-  x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
+  // x[0] = (feature_t) curr_seg->bucket_id;
+  // x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
+  // x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
   if (is_training_data) {
     x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
     assert(curr_seg->become_train_seg_rtime == params->curr_rtime);
@@ -116,19 +116,12 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   x[7] = (feature_t) curr_seg->miss_ratio;
   x[9] = (feature_t) curr_seg->n_hit;
   x[10] = (feature_t) curr_seg->n_active;
-  // x[9] = (feature_t) curr_seg->n_hit / (x[3] + 1);
-  // x[10] = (feature_t) curr_seg->n_active / (x[3] + 1);
-  x[11] = (feature_t) curr_seg->n_merge;
+  // x[11] = (feature_t) curr_seg->n_merge;
 
-  #ifdef NEW_FEATURE
-  x[0] = 0;
   #ifdef SCALE_AGE
   x[3] = (feature_t) x[3] / ((feature_t) params->curr_rtime);
   #endif
-  x[1] = 0; // I observe hours to be highly skewed toward a short range.
-  x[2] = 0;
-  x[11] = 0;  
-  #endif
+
   for (int k = 0; k < N_FEATURE_TIME_WINDOW; k++) {
     x[12 + k * 3 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
     x[12 + k * 3 + 1] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
