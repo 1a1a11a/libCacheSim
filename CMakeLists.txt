@@ -101,6 +101,8 @@ endif()
 
 message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION}, SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_L2CACHE ${ENABLE_L2CACHE}")
 
+# add_compile_options(-fsanitize=address)
+# add_link_options(-fsanitize=address)
 
 # set compiler flags
 # string concat is easier in 3.0, but older versions don't have the concat subcommand

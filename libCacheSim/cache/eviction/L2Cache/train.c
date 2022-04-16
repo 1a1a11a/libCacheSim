@@ -25,6 +25,12 @@ static void train_xgboost(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
+  if (learner->n_train != 0) {
+    safe_call(XGBoosterFree(learner->booster));
+    safe_call(XGDMatrixFree(learner->train_dm));
+    safe_call(XGDMatrixFree(learner->valid_dm));
+  }
+
   prepare_training_data(cache);
   // debug_print_feature_matrix(learner->train_dm, 20);
 
@@ -34,51 +40,17 @@ static void train_xgboost(cache_t *cache) {
   double train_loss, valid_loss, last_valid_loss = 0;
   int n_stable_iter = 0;
 
-  if (learner->n_train != 0) {
-    // retrain a new model every epoch 
-    #ifdef INCREMENTAL_TRAINING
-    #else
-    safe_call(XGBoosterFree(learner->booster));
-    safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
-    safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
-    safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
-    safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
+  safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
+  safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
+  safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
+  safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
 #if OBJECTIVE == REG
-    safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
+  safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
 #elif OBJECTIVE == LTR
-    safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
+  safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
 #endif
-    #endif
-  } else {
-    safe_call(XGBoosterCreate(eval_dmats, 1, &learner->booster));
-    safe_call(XGBoosterSetParam(learner->booster, "booster", "gbtree"));
-    //  safe_call(XGBoosterSetParam(learner->booster, "booster", "gblinear"));
-    safe_call(XGBoosterSetParam(learner->booster, "verbosity", "1"));
-    safe_call(XGBoosterSetParam(learner->booster, "nthread", "1"));
-  //  safe_call(XGBoosterSetParam(learner->booster, "eta", "0.1"));
-  //  safe_call(XGBoosterSetParam(learner->booster, "gamma", "1"));
-#ifdef LOAD_MODEL
-  {
-    static __thread char s[128]; 
-    snprintf(s, 128, "dump/model_%d.bin", 1);
 
-    safe_call(XGBoosterLoadModel(learner->booster, s));
-    INFO("Load model %s\n", s);
-  }
-#elif OBJECTIVE == REG
-    safe_call(XGBoosterSetParam(learner->booster, "objective", "reg:squarederror"));
-#elif OBJECTIVE == LTR
-    safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:pairwise"));
-    // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:map"));
-    // safe_call(XGBoosterSetParam(learner->booster, "objective", "rank:ndcg"));
-#endif
-  } 
-  #ifdef INCREMENTAL_TRAINING
-  int i;
-  for (i = learner->n_iteration; i < learner->n_iteration + N_TRAIN_ITER; ++i) {
-  #else
   for (int i = 0; i < N_TRAIN_ITER; ++i) {
-  #endif
     // Update the model performance for each iteration
     safe_call(XGBoosterUpdateOneIter(learner->booster, i, learner->train_dm));
     if (learner->n_valid_samples < 10) continue;
@@ -94,14 +66,6 @@ static void train_xgboost(cache_t *cache) {
     //     (double) params->curr_rtime / 3600.0, 
     //     (double) cache->cache_size / 1024.0 / 1024.0,
     //     i, train_loss, valid_loss);
-    #ifdef BYTE_MISS_RATIO
-    if (valid_loss > 10000000) {
-    #else
-    if (valid_loss > 1000000) {
-    #endif
-      printf("valid loss is too large, stop training, %f\n", valid_loss);
-      abort();
-    }
 
     if (fabs(last_valid_loss - valid_loss) / valid_loss < 0.01) {
       n_stable_iter += 1;
@@ -120,9 +84,6 @@ static void train_xgboost(cache_t *cache) {
 #error
 #endif
   }
-  #ifdef INCREMENTAL_TRAINING
-  learner->n_iteration = i + 1;
-  #endif
 #ifndef __APPLE__
   safe_call(XGBoosterBoostedRounds(learner->booster, &learner->n_trees));
 #endif
@@ -150,13 +111,18 @@ void train(cache_t *cache) {
   L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
 
   uint64_t start_time = gettime_usec();
-  #ifdef LOAD_MODEL
-  if (params->learner.n_train == 0) {
-    train_xgboost(cache);
+#ifdef LOAD_MODEL
+  {
+    static __thread char s[128]; 
+    snprintf(s, 128, "dump/model_%d.bin", 1);
+
+    safe_call(XGBoosterLoadModel(learner->booster, s));
+    INFO("Load model %s\n", s);
   }
-  #else
-  train_xgboost(cache);
-  #endif
+#else 
+    train_xgboost(cache);
+#endif
+
   uint64_t end_time = gettime_usec();
   // INFO("training time %.4lf sec\n", (end_time - start_time) / 1000000.0);
   params->learner.n_train += 1;

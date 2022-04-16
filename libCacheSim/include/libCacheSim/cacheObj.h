@@ -21,6 +21,11 @@ typedef struct {
 } Clock_obj_params_t; 
 
 typedef struct {
+  int lru_id;
+  bool ghost; 
+} ARC_obj_params_t; 
+
+typedef struct {
   int64_t eviction_vtime; 
   void *lfu_next;
   void *lfu_prev;
@@ -93,6 +98,7 @@ typedef struct cache_obj {
     } lfu; // for LFU
 
     Clock_obj_params_t clock; // for Clock
+    ARC_obj_params_t arc; // for ARC
     LeCaR_obj_params_t LeCaR; // for LeCaR
     Cacheus_obj_params_t Cacheus; // for Cacheus
     SR_LRU_obj_params_t SR_LRU;

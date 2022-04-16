@@ -145,6 +145,18 @@ void L2Cache_free(cache_t *cache) {
     }
   }
 
+  my_free(sizeof(double) * params->obj_sel.array_size, params->obj_sel.score_array);
+  my_free(sizeof(dd_pair_t) * params->obj_sel.array_size, params->obj_sel.dd_pair_array);
+  my_free(sizeof(segment_t *) * params->n_merge, params->obj_sel.segs_to_evict);
+  
+  my_free(sizeof(segment_t *) * params->n_seg, params->seg_sel.ranked_segs);
+  my_free(sizeof(feature_t) * params->learner.train_matrix_n_row, params->learner.train_x);
+  my_free(sizeof(feature_t) * params->learner.train_matrix_n_row, params->learner.train_y);
+  my_free(sizeof(feature_t) * params->learner.train_matrix_n_row, params->learner.train_y_oracle);
+  my_free(sizeof(feature_t) * params->learner.valid_matrix_n_row, params->learner.valid_x);
+  my_free(sizeof(feature_t) * params->learner.valid_matrix_n_row, params->learner.valid_y);
+  my_free(sizeof(pred_t) * params->learner.inf_matrix_n_row, params->learner.inference_x);
+
   my_free(sizeof(L2Cache_params_t), params);
   cache_struct_free(cache);
 }

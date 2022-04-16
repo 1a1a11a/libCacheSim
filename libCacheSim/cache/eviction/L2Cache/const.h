@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_N_BUCKET 120
+#define MAX_N_BUCKET 1
 #define N_TRAIN_ITER 20
 #define N_MAX_VALIDATION 1000
 // #define N_MAX_TRAINING_DATA 8192
@@ -20,9 +20,6 @@
 /* whether the segment utility considers retain */
 #define EVICTION_CONSIDER_RETAIN 1
 
-/* whether we normalize the pred utility by curr_seg->n_byte */
-#define NORMALIZE_PRED_UTILITY 1
-
 #define USE_DISTINCT_CUTOFF 0
 
 /* training objective, regression or ranking */
@@ -41,7 +38,6 @@
 #define NORMALIZE_Y
 // #define RANDOMIZE_MERGE
 // #define STANDARDIZE_Y
-// #define INCREMENTAL_TRAINING
 // #define BYTE_MISS_RATIO
 // #define TRAIN_KEEP_HALF
 // #define LOG_UTILITY

@@ -308,11 +308,6 @@ static void prepare_training_data_per_package(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
-  if (learner->n_train > 0) {
-    safe_call(XGDMatrixFree(learner->train_dm));
-    safe_call(XGDMatrixFree(learner->valid_dm));
-  }
-
   safe_call(XGDMatrixCreateFromMat(learner->train_x, learner->n_train_samples,
                                    learner->n_feature, -2, &learner->train_dm));
 
