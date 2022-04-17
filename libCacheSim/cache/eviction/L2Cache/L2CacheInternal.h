@@ -130,7 +130,9 @@ typedef struct {
   int32_t n_in_use_segs;
   int16_t bucket_id;
   segment_t *next_seg_to_evict;
+#ifdef USE_LHD
   hitProb_t *hit_prob;// TODO: move to LHD
+#endif
 } bucket_t;
 
 typedef struct double_double_pair {

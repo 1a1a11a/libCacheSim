@@ -304,12 +304,13 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
   L2Cache_merge_segs(cache, bucket, params->obj_sel.segs_to_evict);
 
+#ifdef USE_LHD
   if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY
-      #if LHD_USE_VTIME
+#if LHD_USE_VTIME
       && params->curr_vtime - params->last_hit_prob_compute_vtime > HIT_PROB_COMPUTE_INTVL) {
-      #else
+#else
       && params->curr_rtime - params->last_hit_prob_compute_rtime > HIT_PROB_COMPUTE_INTVLR) {
-      #endif
+#endif
     /* update hit prob for all buckets */
     for (int i = 0; i < MAX_N_BUCKET; i++) {
       update_hit_prob_cdf(&params->buckets[i]);
@@ -317,6 +318,7 @@ void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->last_hit_prob_compute_vtime = params->curr_vtime;
     params->last_hit_prob_compute_rtime = params->curr_rtime;
   }
+#endif   
 }
 
 void L2Cache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

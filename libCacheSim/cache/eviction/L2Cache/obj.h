@@ -23,6 +23,7 @@ static inline int64_t obj_age(L2Cache_params_t *params, cache_obj_t *obj) {
   return params->curr_rtime - obj->L2Cache.last_access_rtime;
 }
 
+#ifdef USE_LHD
 static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *obj) {
   bucket_t *bkt = &params->buckets[((segment_t *) (obj->L2Cache.segment))->bucket_id];
   int64_t obj_age =
@@ -49,6 +50,7 @@ static inline int64_t hitAgeClass(int64_t age) {
 static inline int64_t hitSizeClass(uint32_t size) {
   return ((uint64_t) log(size)) % HIT_PROB_CLASSES;
 }
+#endif 
 
 /* some internal state update when an object is requested */
 static inline void obj_hit_update(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
@@ -60,9 +62,11 @@ static inline void obj_hit_update(L2Cache_params_t *params, cache_obj_t *obj, re
   segment_t *seg = obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 
+#ifdef USE_LHD
   int64_t obj_age_shifted = object_age_shifted(params, obj);
   bkt->hit_prob->n_hit[hitAgeClass(obj_age(params, obj))][obj_age_shifted] += 1;
   // bkt->hit_prob->n_hit[hitSizeClass(obj->obj_size)][obj_age_shifted] += 1;
+#endif
 }
 
 /* some internal state update bwhen an object is evicted */
@@ -71,13 +75,11 @@ static inline void obj_evict_update(cache_t *cache, cache_obj_t *obj) {
   segment_t *seg = obj->L2Cache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 
-#ifdef TRACK_EVICTION_AGE
-  record_eviction_age(cache, (int) (params->curr_rtime - obj->last_access_rtime));
-#endif
-
+#ifdef USE_LHD
   int64_t obj_age_shifted = object_age_shifted(params, obj);
   bkt->hit_prob->n_evict[hitAgeClass(obj_age(params, obj))][obj_age_shifted] += 1;
   // bkt->hit_prob->n_evict[hitSizeClass(obj->obj_size)][obj_age_shifted] += 1;
+#endif
 }
 
 /* calculate the score of object, the larger score, 
@@ -88,54 +90,55 @@ static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e sc
   int64_t curr_rtime = params->curr_rtime; 
   int64_t curr_vtime = params->curr_vtime; 
   bucket_t *bkt = &params->buckets[seg->bucket_id];
-  #if AGE_SHIFT_FACTOR == 0
+#if AGE_SHIFT_FACTOR == 0
   double age_vtime = (double) (curr_vtime - cache_obj->L2Cache.last_access_vtime);
-  #else
+#else
   double age_vtime = (double) (((curr_vtime - cache_obj->L2Cache.last_access_vtime) >> AGE_SHIFT_FACTOR) + 1);
   assert(age_vtime != 0);
-  #endif
+#endif
   if (score_type == OBJ_SCORE_FREQ) {
     return (double) cache_obj->L2Cache.freq;
 
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
-    #ifdef BYTE_MISS_RATIO
+#ifdef BYTE_MISS_RATIO
     return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6;
-    #else
+#else
     return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6 / cache_obj->obj_size;
-    #endif 
+#endif 
 
   } else if (score_type == OBJ_SCORE_SIZE_AGE) {
-    #ifdef BYTE_MISS_RATIO
+#ifdef BYTE_MISS_RATIO
     return 1.0e8 / age_vtime;
-    #else 
-    return 1.0e8 / (double) cache_obj->obj_size
-           / age_vtime;
-    #endif
+#else 
+    return 1.0e8 / (double) cache_obj->obj_size / age_vtime;
+#endif
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE_BYTE) {
-    #ifdef BYTE_MISS_RATIO
+#ifdef BYTE_MISS_RATIO
     return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e8 
            / age_vtime;    
-    #else
+#else
     return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e8 / cache_obj->obj_size
            / age_vtime;
-    #endif
+#endif
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE) {
     return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6
            / (curr_rtime - cache_obj->L2Cache.last_access_rtime);
 
+#ifdef USE_LHD
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
     int64_t obj_age_shifted = object_age_shifted(params, cache_obj);
     obj_age_shifted = obj_age_shifted >= HIT_PROB_MAX_AGE ? HIT_PROB_MAX_AGE - 1 : obj_age_shifted;
 
-    #ifdef BYTE_MISS_RATIO
+#ifdef BYTE_MISS_RATIO
     return 1.0e6 * bkt->hit_prob->hit_density[hitAgeClass(obj_age(params, cache_obj))][obj_age_shifted];
     // return 1.0e6 * bkt->hit_prob->hit_density[hitSizeClass(cache_obj->obj_size)][obj_age_shifted];
-    #else
+#else
     return 1.0e6 * bkt->hit_prob->hit_density[hitAgeClass(obj_age(params, cache_obj))][obj_age_shifted] / cache_obj->obj_size;
     // return 1.0e6 * bkt->hit_prob->hit_density[hitSizeClass(cache_obj->obj_size)][obj_age_shifted] / cache_obj->obj_size;
-    #endif
+#endif
+#endif 
 
   } else if (score_type == OBJ_SCORE_ORACLE) {
     if (cache_obj->L2Cache.next_access_vtime == -1 || cache_obj->L2Cache.next_access_vtime == INT64_MAX) {
@@ -143,13 +146,13 @@ static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e sc
     }
 
     DEBUG_ASSERT(cache_obj->L2Cache.next_access_vtime > curr_vtime);
-    #ifdef BYTE_MISS_RATIO
+#ifdef BYTE_MISS_RATIO
     return 1.0e8
            / (double) (cache_obj->L2Cache.next_access_vtime - curr_vtime);
-    #else
+#else
     return 1.0e8 / (double) cache_obj->obj_size
            / (double) (cache_obj->L2Cache.next_access_vtime - curr_vtime);
-    #endif
+#endif
 
   } else {
     printf("unknown cache type %d\n", score_type);

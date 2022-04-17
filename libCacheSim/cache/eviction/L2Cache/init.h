@@ -89,6 +89,8 @@ static void init_buckets(cache_t *cache, int age_shift) {
   for (int i = 0; i < MAX_N_BUCKET; i++) {
     memset(&params->buckets[i], 0, sizeof(bucket_t));
     params->buckets[i].bucket_id = i;
+
+#ifdef USE_LHD
     params->buckets[i].hit_prob = my_malloc(hitProb_t);
     for (int j = 0; j < HIT_PROB_MAX_AGE; j++) {
       /* initialize to a small number, when the hit density is not available
@@ -97,6 +99,7 @@ static void init_buckets(cache_t *cache, int age_shift) {
         params->buckets[i].hit_prob->hit_density[k][j] = 1e-8;
       params->buckets[i].hit_prob->age_shift = age_shift;
     }
+#endif
   }
 }
 

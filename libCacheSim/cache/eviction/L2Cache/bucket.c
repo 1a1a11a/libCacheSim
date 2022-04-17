@@ -72,6 +72,7 @@ int find_bucket_idx(L2Cache_params_t *params, request_t *req) {
   }
 }
 
+#ifdef USE_LHD
 void update_hit_prob_cdf(bucket_t *bkt) {
 
   for (int cl = 0; cl < HIT_PROB_CLASSES; cl ++){
@@ -106,6 +107,7 @@ void update_hit_prob_cdf(bucket_t *bkt) {
     }
   }
 }
+#endif 
 
 void print_bucket(cache_t *cache) {
   L2Cache_params_t *params = cache->eviction_params;

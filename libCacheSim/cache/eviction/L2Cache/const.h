@@ -42,10 +42,12 @@
 // #define TRAIN_KEEP_HALF
 // #define LOG_UTILITY
 
+
 /* if this is turned on, dump the online and offline calculated segment utility */
 // #define COMPARE_TRAINING_Y 1
 extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
 
+// #define USE_LHD
 /* LHD parameters */
 /* whether we use vtime instead of rtime to determine for hit probability compute interval */
 #define LHD_USE_VTIME 0
