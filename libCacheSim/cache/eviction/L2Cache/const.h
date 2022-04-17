@@ -16,6 +16,7 @@
 
 /* the number of time windows we keep in features */
 #define N_FEATURE_TIME_WINDOW 0
+#define N_FEATURE_NORMAL 7
 
 /* whether the segment utility considers retain */
 #define EVICTION_CONSIDER_RETAIN 1

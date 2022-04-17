@@ -101,55 +101,26 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
-  // x[0] = (feature_t) curr_seg->bucket_id;
   // x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
   // x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
-  // if (is_training_data) {
-  //   x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
-  //   assert(curr_seg->become_train_seg_rtime == params->curr_rtime);
-  // } else {
-  //   x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
-  // }
-  // x[4] = (feature_t) curr_seg->req_rate;
-  // x[5] = (feature_t) curr_seg->write_rate;
-  // x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
-  // x[7] = (feature_t) curr_seg->miss_ratio;
-  // x[9] = (feature_t) curr_seg->n_hit;
-  // x[10] = (feature_t) curr_seg->n_active;
-  // x[11] = (feature_t) curr_seg->n_merge;
 
-
-  if (is_training_data) {
-    x[3] = (feature_t) curr_seg->become_train_seg_rtime - curr_seg->create_rtime;
-    assert(curr_seg->become_train_seg_rtime == params->curr_rtime);
-  } else {
-    x[3] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
-  }
+  x[0] = (feature_t) params->curr_rtime - curr_seg->create_rtime;
+  x[1] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
+  x[2] = (feature_t) curr_seg->n_hit;
+  x[3] = (feature_t) curr_seg->n_active;
   x[4] = (feature_t) curr_seg->req_rate;
-  x[6] = (feature_t) curr_seg->n_byte / curr_seg->n_obj;
-  x[9] = (feature_t) curr_seg->n_hit;
-
-
-  // x[0] = rand() % 1000000; 
-  // x[1] = rand() % 1000000;
-  // x[2] = rand() % 1000000;
-  // x[3] = rand() % 1000000;
-  // x[4] = rand() % 1000000;
-  // x[5] = rand() % 1000000;
-  // x[6] = rand() % 1000000;
+  x[5] = (feature_t) curr_seg->write_rate;
+  x[6] = (feature_t) curr_seg->miss_ratio;
 
   #ifdef SCALE_AGE
-  x[3] = (feature_t) x[3] / ((feature_t) params->curr_rtime);
+  x[0] = (feature_t) x[3] / ((feature_t) params->curr_rtime);
   #endif
 
   for (int k = 0; k < N_FEATURE_TIME_WINDOW; k++) {
-    x[12 + k * 3 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
-    x[12 + k * 3 + 1] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
-    x[12 + k * 3 + 2] = (feature_t) curr_seg->feature.n_hit_per_hour[k];
+    x[N_FEATURE_NORMAL + k * 3 + 0] = (feature_t) curr_seg->feature.n_hit_per_min[k];
+    x[N_FEATURE_NORMAL + k * 3 + 1] = (feature_t) curr_seg->feature.n_hit_per_ten_min[k];
+    x[N_FEATURE_NORMAL + k * 3 + 2] = (feature_t) curr_seg->feature.n_hit_per_hour[k];
   }
-
-  // debug
-  // x[0] = x[1] = x[2] = x[3] = x[4] = x[5] = x[6] = x[7] = x[8] = x[9] = x[10] = x[11] = 0;
 
   for (int i = 0; i < params->learner.n_feature; i++) {
     DEBUG_ASSERT(x[0] >= 0); 
@@ -181,7 +152,6 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
     *y = (train_y_t) offline_utility;
   }
 
-  // *y = 1.0 / x[6]; 
   return *y > 0.000001;
 }
 

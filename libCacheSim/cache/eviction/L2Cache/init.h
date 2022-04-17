@@ -54,7 +54,7 @@ void init_learner(cache_t *cache) {
 
   learner_t *l = &params->learner;
 
-  l->n_feature = N_FEATURE_TIME_WINDOW * 3 + 12;
+  l->n_feature = N_FEATURE_TIME_WINDOW * 3 + N_FEATURE_NORMAL;
   l->pred = NULL;
   l->train_x = NULL;
   l->train_matrix_n_row = 0;
