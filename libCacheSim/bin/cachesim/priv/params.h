@@ -16,7 +16,7 @@ static inline void set_default_arg(sim_arg_t *args) {
   }
   args->n_cache_size = 8;
   args->cache_size_in_mb = 1024 * MiB;
-  args->per_obj_metadata = 0;
+  args->per_obj_overhead = 0;
 
   args->debug = false; 
 

@@ -69,14 +69,14 @@ cache_t *slabObjLRU_init(common_cache_params_t ccache_params,
   slab_params->slab_size = MiB;
   slab_params->n_total_slabs =
       ccache_params.cache_size / slab_params->slab_size;
-  slab_params->per_obj_metadata_size = 0;
+  slab_params->per_obj_overhead = 0;
 
   if (init_params != NULL) {
     slab_init_params_t *slab_init_params = init_params;
     cache->init_params = init_params;
     slab_params->slab_size = slab_init_params->slab_size;
-    slab_params->per_obj_metadata_size =
-        slab_init_params->per_obj_metadata_size;
+    slab_params->per_obj_overhead =
+        slab_init_params->per_obj_overhead;
     slab_params->slab_move_strategy = slab_init_params->slab_move_strategy;
   }
 
@@ -86,7 +86,7 @@ cache_t *slabObjLRU_init(common_cache_params_t ccache_params,
   VERBOSE("create slabObjLRU cache size %" PRIu64 ", occupied size %" PRIu64
               ", slab size %" PRIu64 ", per obj metadata %" PRIu8 "\n",
           cache->cache_size, cache->occupied_size, slab_params->slab_size,
-          slab_params->per_obj_metadata_size);
+          slab_params->per_obj_overhead);
 
   return cache;
 }

@@ -9,7 +9,7 @@ typedef struct {
   char *alg;
   trace_type_e trace_type;
   obj_id_type_e obj_id_type;
-  int per_obj_metadata;
+  int per_obj_overhead;
 
   int64_t cache_size_in_mb;
   struct {
