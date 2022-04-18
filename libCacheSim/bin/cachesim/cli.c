@@ -125,7 +125,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   reader_t *reader = setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
 
   common_cache_params_t cc_params = {.cache_size = args.cache_size_in_mb * MiB,
-                                     .hashpower = 24,
+                                     .hashpower = 28,
                                      .default_ttl = 86400 * 300,
                                      .per_obj_overhead = args.per_obj_metadata};
   cache_t *cache;

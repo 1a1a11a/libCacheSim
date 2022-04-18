@@ -109,8 +109,8 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   x[2] = (feature_t) curr_seg->n_hit;
   x[3] = (feature_t) curr_seg->n_active;
   x[4] = (feature_t) curr_seg->req_rate;
-  x[5] = (feature_t) curr_seg->write_rate;
-  x[6] = (feature_t) curr_seg->miss_ratio;
+  // x[5] = (feature_t) curr_seg->write_rate;
+  x[5] = (feature_t) curr_seg->miss_ratio;
 
   #ifdef SCALE_AGE
   x[0] = (feature_t) x[3] / ((feature_t) params->curr_rtime);

@@ -70,41 +70,36 @@ void rank_segs(cache_t *cache) {
 
   if (params->type == LOGCACHE_LEARNED || params->type==LOGCACHE_ITEM_ORACLE) {
     inference(cache);
-  }
+  } else {
+    int n_segs = 0;
+    segment_t *curr_seg;
+    for (int i = 0; i < MAX_N_BUCKET; i++) {
+      curr_seg = params->buckets[i].first_seg;
+      while (curr_seg) {
+        if (params->type == LOGCACHE_LOG_ORACLE) {
+          curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, false);
+        } else if (params->type == LOGCACHE_BOTH_ORACLE) {
+          curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, true);
+        } else {
+          abort();
+        }
 
-  int n_segs = 0;
-  segment_t *curr_seg;
-  for (int i = 0; i < MAX_N_BUCKET; i++) {
-    int j = 0;
-    curr_seg = params->buckets[i].first_seg;
-    while (curr_seg) {
-        ;
-      if (params->type == LOGCACHE_LEARNED || params->type==LOGCACHE_ITEM_ORACLE) {
-      } else if (params->type == LOGCACHE_LOG_ORACLE) {
-        curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, false);
-      } else if (params->type == LOGCACHE_BOTH_ORACLE) {
-        curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, true);
-      } else {
-        abort();
+        if (!is_seg_evictable(curr_seg, 1, true)
+            || params->buckets[curr_seg->bucket_id].n_in_use_segs < params->n_merge + 1) {
+          // if the segment is the last segment of a bucket or the bucket does not have enough segments
+          curr_seg->pred_utility += INT32_MAX / 2;
+        }
+
+        ranked_segs[n_segs++] = curr_seg;
+        curr_seg = curr_seg->next_seg;
       }
-
-      j += 1;
-      if (!is_seg_evictable(curr_seg, 1, true)
-          || params->buckets[curr_seg->bucket_id].n_in_use_segs < params->n_merge + 1) {
-        // if the segment is the last segment of a bucket or the bucket does not have enough segments
-        curr_seg->pred_utility += INT32_MAX / 2;
-      }
-
-      ranked_segs[n_segs++] = curr_seg;
-      curr_seg = curr_seg->next_seg;
     }
+    DEBUG_ASSERT(n_segs == params->n_in_use_segs);
+    params->seg_sel.n_ranked_segs = params->n_in_use_segs;
   }
 
-  DEBUG_ASSERT(n_segs == params->n_in_use_segs);
-
-  DEBUG_ASSERT(params->type == LOGCACHE_LOG_ORACLE || params->type == LOGCACHE_BOTH_ORACLE
-               || params->type == LOGCACHE_LEARNED || params->type == LOGCACHE_ITEM_ORACLE);
-  qsort(ranked_segs, n_segs, sizeof(segment_t *), cmp_seg);
+  
+  qsort(ranked_segs, params->seg_sel.n_ranked_segs, sizeof(segment_t *), cmp_seg);
 #ifdef DUMP_INFERENCE 
   {
     static __thread char fname[128];
@@ -144,7 +139,7 @@ void rank_segs(cache_t *cache) {
     params->buckets[bi].ranked_seg_tail = NULL;
   }
 
-  for (int i = 0; i < params->n_in_use_segs; i++) {
+  for (int i = 0; i < params->seg_sel.n_ranked_segs; i++) {
     ranked_segs[i]->rank = i;
 
     bucket_t *bkt = &(params->buckets[ranked_segs[i]->bucket_id]);
@@ -157,7 +152,6 @@ void rank_segs(cache_t *cache) {
     }
     ranked_segs[i]->next_ranked_seg = NULL;
   }
-  params->seg_sel.n_ranked_segs = params->n_in_use_segs;
 }
 
 /* when cache size is small and space is fragmented between buckets, 

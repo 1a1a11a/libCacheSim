@@ -110,8 +110,6 @@ typedef struct cache_obj {
     L2Cache_obj_metadata_t L2Cache;
 #endif
   };
-#ifdef TRACK_EVICTION_AGE
-#endif
 } __attribute__((packed)) cache_obj_t;
 
 
