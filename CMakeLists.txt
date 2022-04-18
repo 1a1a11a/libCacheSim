@@ -78,8 +78,10 @@ endif(USE_HUGEPAGE)
 
 if (ENABLE_L2CACHE)
     add_compile_definitions(ENABLE_L2CACHE=1)
+    set(ENABLE_L2CACHE ON)
 else()
     remove_definitions(ENABLE_L2CACHE)
+    set(ENABLE_L2CACHE OFF)
 endif(ENABLE_L2CACHE)
 
 if (LOG_LEVEL MATCHES vvverbose)

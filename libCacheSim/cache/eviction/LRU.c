@@ -39,8 +39,8 @@ cache_ck_res_e LRU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
-    /* lru_tail is the newest, move cur obj to lru_tail */
-    move_obj_to_tail(&cache->q_head, &cache->q_tail, cache_obj);
+    /* lru_head is the newest, move cur obj to lru_head */
+    move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
   }
   return ret;
 }
@@ -54,7 +54,7 @@ void LRU_insert(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *LRU_to_evict(cache_t *cache){
-  return cache->q_head;
+  return cache->q_tail;
 }
 
 void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

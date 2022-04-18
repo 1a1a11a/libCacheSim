@@ -171,6 +171,14 @@ void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail, cache_obj_t *c
 void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail, cache_obj_t *cache_obj); 
 
 /**
+ * move an object to the head of the LRU queue (a doubly linked list)
+ * @param head
+ * @param tail
+ * @param cache_obj
+ */
+void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail, cache_obj_t *cache_obj); 
+
+/**
  * free cache_obj, this is only used when the cache_obj is explicitly malloced
  * @param cache_obj
  */

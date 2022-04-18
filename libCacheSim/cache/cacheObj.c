@@ -119,3 +119,49 @@ void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
   *tail = cache_obj;
 }
 
+/**
+ * move an object to the head of the doubly linked list
+ * @param head
+ * @param tail
+ * @param cache_obj
+ */
+void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
+                                    cache_obj_t *cache_obj) {
+  if (*head == *tail) {
+    // the list only has one element
+    assert(cache_obj == *head);
+    assert(cache_obj->queue.next == NULL);
+    assert(cache_obj->queue.prev == NULL);
+    return;
+  }
+  if (cache_obj == *head) {
+    return;
+  }
+  if (cache_obj == *tail) {
+    // change tail
+    *tail = cache_obj->queue.prev;
+    cache_obj->queue.prev->queue.next = NULL;
+
+    // move to head
+    (*head)->queue.prev = cache_obj;
+    cache_obj->queue.prev = NULL;
+    cache_obj->queue.next = *head;
+    *head = cache_obj;
+    return;
+  }
+
+  // bridge list_prev and next
+  cache_obj->queue.prev->queue.next = cache_obj->queue.next;
+  cache_obj->queue.next->queue.prev = cache_obj->queue.prev;
+
+  // handle current head
+  (*head)->queue.prev = cache_obj;
+
+  // handle this moving object
+  cache_obj->queue.prev = NULL;
+  cache_obj->queue.next = *head;
+
+  // handle head
+  *head = cache_obj;
+}
+
