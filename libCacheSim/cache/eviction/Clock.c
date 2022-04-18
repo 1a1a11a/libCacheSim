@@ -49,28 +49,25 @@ void Clock_insert(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *Clock_to_evict(cache_t *cache) {
-
-  cache_obj_t evicted_obj;
-
   Clock_params_t *params = cache->eviction_params;
   cache_obj_t *moving_pointer = params->pointer;
 
   /* if we have run one full around or first eviction */
   if (moving_pointer == NULL)
-    moving_pointer = cache->q_head;
+    moving_pointer = cache->q_tail;
 
   /* find the first untouched */
   while (moving_pointer != NULL && moving_pointer->clock.visited) {
     moving_pointer->clock.visited = false;
-    moving_pointer = moving_pointer->queue.next;
+    moving_pointer = moving_pointer->queue.prev;
   }
 
-  /* if we have finished one around, start from the head */
+  /* if we have finished one around, start from the tail */
   if (moving_pointer == NULL) {
-    moving_pointer = cache->q_head;
+    moving_pointer = cache->q_tail;
     while (moving_pointer != NULL && moving_pointer->clock.visited) {
       moving_pointer->clock.visited = false;
-      moving_pointer = moving_pointer->queue.next;
+      moving_pointer = moving_pointer->queue.prev;
     }
   }
   return moving_pointer;
@@ -85,10 +82,8 @@ void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     memcpy(evicted_obj, moving_pointer, sizeof(cache_obj_t));
   }
 
-  params->pointer = moving_pointer->queue.next;
+  params->pointer = moving_pointer->queue.prev;
   Clock_remove_obj(cache, moving_pointer);
-
-  DEBUG_ASSERT(cache->q_head != cache->q_head->queue.next);
 }
 
 void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

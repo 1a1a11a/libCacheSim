@@ -112,7 +112,7 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
     params->LRU1->remove(params->LRU1, req->obj_id);
     params->LRU2->insert(params->LRU2, req);
   } else if (hit2 == cache_ck_hit) {
-    /* moving to the tail of LRU2 has already been done */
+    /* moving to the head of LRU2 has already been done */
   }
   cache->occupied_size =
       params->LRU1->occupied_size + params->LRU2->occupied_size;
@@ -140,9 +140,6 @@ void ARC_insert(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *ARC_to_evict(cache_t *cache) {
-
-  cache_obj_t obj;
-
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   cache_t *cache_evict;
 

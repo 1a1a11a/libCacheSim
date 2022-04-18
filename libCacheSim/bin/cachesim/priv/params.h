@@ -36,8 +36,6 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->bucket_type = NO_BUCKET;
 #endif
 
-
-  args->n_thread = 4;
   args->n_thread = (int) n_cores();
 }
 

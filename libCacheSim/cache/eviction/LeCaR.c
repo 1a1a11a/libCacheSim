@@ -217,7 +217,7 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
   } else {
     // if it is an cached object, update cache state
     // update LRU chain
-    move_obj_to_tail(&cache->q_head, &cache->q_tail, cache_obj);
+    move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
 
     // update LFU state
     remove_obj_from_freq_node(params, cache_obj);
@@ -269,7 +269,7 @@ cache_obj_t *LeCaR_to_evict(cache_t *cache) {
 
   double r = ((double) (next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
-    return cache->q_head;
+    return cache->q_tail;
   } else {
     freq_node_t *min_freq_node = get_min_freq_node(params);
     return min_freq_node->first_obj;
@@ -283,7 +283,7 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   double r = ((double) (next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     // evict from LRU
-    cache_obj = cache->q_head;
+    cache_obj = cache->q_tail;
     // printf("%ld evict from LRU %p\n", cache->n_req, cache_obj);
 
     // mark as ghost object
@@ -325,20 +325,20 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     params->ghost_lru_head = cache_obj;
     params->ghost_lru_tail = cache_obj;
   } else {
-    params->ghost_lru_tail->queue.next = cache_obj;
-    cache_obj->queue.prev = params->ghost_lru_tail;
+    params->ghost_lru_head->queue.prev = cache_obj;
+    cache_obj->queue.next = params->ghost_lru_head;
   }
-  params->ghost_lru_tail = cache_obj;
+  params->ghost_lru_head = cache_obj;
 
   params->ghost_entry_used_size += cache_obj->obj_size + cache->per_obj_overhead;
   // evict ghost entries if its full
   while (params->ghost_entry_used_size > cache->cache_size) {
-      cache_obj_t *ghost_to_evict = params->ghost_lru_head;
+      cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
       // printf("remove ghost %p size %ld\n", ghost_to_evict, params->ghost_entry_used_size); 
       params->ghost_entry_used_size -= (ghost_to_evict->obj_size + cache->per_obj_overhead);
-      params->ghost_lru_head = params->ghost_lru_head->queue.next;
-      if (likely(params->ghost_lru_head != NULL))
-        params->ghost_lru_head->queue.prev = NULL;
+      params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
+      if (likely(params->ghost_lru_tail != NULL))
+        params->ghost_lru_tail->queue.next = NULL;
 
       hashtable_delete(cache->hashtable, ghost_to_evict);
   }
