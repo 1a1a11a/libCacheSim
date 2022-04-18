@@ -5,7 +5,7 @@
 #define N_MAX_VALIDATION 1000
 #define N_MAX_TRAINING_DATA 8192
 // #define N_MAX_TRAINING_DATA 16384
-#define N_INFERENCE_DATA 2048000
+#define N_INFERENCE_DATA 2048000    // large enough to not sample 
 
 /* L2Cache uses cache state features, so we need to track cache states 
  * and update them periodically, because there could be time when request 

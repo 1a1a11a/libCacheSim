@@ -39,9 +39,7 @@ static void print_results(const cache_t *cache,
 
 static void test_L2Cache_ORACLE_LOG(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  // uint64_t miss_cnt_true[] = {1816675, 1201297, 1059332, 961428};
-  uint64_t miss_cnt_true[] = {1619051, 1077926, 946792, 898035};   // consider retain 
-
+  uint64_t miss_cnt_true[] = {1630908, 1126212, 979809, 922256};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -60,8 +58,7 @@ static void test_L2Cache_ORACLE_LOG(gconstpointer user_data) {
 
 static void test_L2Cache_ORACLE_ITEM(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  // uint64_t miss_cnt_true[] = {2143656, 1438234, 1204795, 1081270};
-  uint64_t miss_cnt_true[] = {2140097, 1449064, 1177661, 1096220};
+  uint64_t miss_cnt_true[] = {2002142, 1367698, 1226807, 1138180};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -81,8 +78,8 @@ static void test_L2Cache_ORACLE_ITEM(gconstpointer user_data) {
 
 static void test_L2Cache_ORACLE_BOTH(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {1470570, 996737, 893844, 862882}; // consider retain
-  // uint64_t miss_cnt_true[] = {1590088, 1137377, 956045, 912532};     // do not consider retain 
+  // uint64_t miss_cnt_true[] = {1470570, 996737, 893844, 862882}; // consider retain
+  uint64_t miss_cnt_true[] = {1476768, 1091173, 1027426, 1004396};     // do not consider retain 
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -102,9 +99,7 @@ static void test_L2Cache_ORACLE_BOTH(gconstpointer user_data) {
 
 static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {2276681, 1501129, 1253072, 1105797};
-  // uint64_t miss_cnt_true[] = {2263035, 1509245, 1269869, 1176711};
-  // uint64_t miss_cnt_true[] = {2428542, 1521798, 1286571, 1189299};
+  uint64_t miss_cnt_true[] = {2073551, 1363620, 1150011, 1027232};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -125,8 +120,8 @@ static void test_L2Cache_LEARNED_TRUE_Y(gconstpointer user_data) {
 static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
 
-  uint64_t miss_cnt_true[] = {2484031, 1593598, 1260100, 1163184};
-  // uint64_t miss_cnt_true[] = {2662530, 1600746, 1319404, 1254072};    // cannot decrease because of too large segments? 
+  // uint64_t miss_cnt_true[] = {2484031, 1593598, 1260100, 1163184};
+  uint64_t miss_cnt_true[] = {2107759, 1385318, 1165780, 1031401};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,
@@ -146,7 +141,8 @@ static void test_L2Cache_LEARNED_ONLINE(gconstpointer user_data) {
 
 static void test_L2Cache_SEGCACHE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {2774838, 1937879, 1627133, 1432318};
+  // uint64_t miss_cnt_true[] = {2774838, 1937879, 1627133, 1432318};
+  uint64_t miss_cnt_true[] = {2053537, 1502902, 1288417, 1162762};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = L2Cache_CACHE_SIZE,

@@ -34,11 +34,11 @@ FILE *ofile_cmp_y = NULL;
 void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->segment_size = 100;
   init_params->n_merge = 2;
-  init_params->type = LOGCACHE_LOG_ORACLE;
+  init_params->type = LOGCACHE_LEARNED;
   init_params->rank_intvl = 0.05;
   init_params->merge_consecutive_segs = true;
-  init_params->train_source_y = TRAIN_Y_FROM_ORACLE;
-  init_params->bucket_type = SIZE_BUCKET;
+  init_params->train_source_y = TRAIN_Y_FROM_ONLINE;
+  init_params->bucket_type = NO_BUCKET;
   init_params->retrain_intvl = 86400 * 2;
   init_params->hit_density_age_shift = 3;
 }

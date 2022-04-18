@@ -58,8 +58,6 @@ int find_bucket_idx(L2Cache_params_t *params, request_t *req) {
     return 0;
   } else if (params->bucket_type == SIZE_BUCKET) {
     return sizeof(unsigned int) * 8 - 1 - __builtin_clz(req->obj_size);
-    //    return MAX(0, (int) (log(req->obj_size / 10.0) / log_base));
-    //    return MAX(0, (int) (log(req->obj_size / 120.0) / log_base));
   } else if (params->bucket_type == CUSTOMER_BUCKET) {
     return req->tenant_id % 8;
   } else if (params->bucket_type == BUCKET_ID_BUCKET) {
