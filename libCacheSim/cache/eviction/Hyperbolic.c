@@ -2,11 +2,17 @@
 
 #include "../include/libCacheSim/evictionAlgo/Hyperbolic.h"
 #include "../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/pqueue.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+typedef struct Hyperbolic_params {
+  pqueue_t *pq;
+} Hyperbolic_params_t;
 
 
 void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj);

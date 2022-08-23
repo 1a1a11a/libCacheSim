@@ -15,25 +15,19 @@ enum sampler_type {
   INVALID_SAMPLER
 };
 
+struct spatial_sampler_params {
+  int ratio;    // sample one of every ratio objects
+};
+
+struct temporal_sampler_params {
+  int ratio;    // sample one of every ratio requests
+};
+
+typedef bool (*trace_sampling_func)(void *sampler_params, request_t *req);
 
 
-typedef bool (*trace_sampling_func)(void *sampler, request_t *req);
-
-static inline void add_sampling(struct reader *reader,
-                  trace_sampling_func func) {
-  reader->sampler = func;
-}
-
-
-
-
-bool spatial_sample(void *sampler, request_t *req);
-void* create_spatial_sampler(double ratio);
-void free_spatial_sampler(void *s);
-
-bool temporal_sample(void *sampler, request_t *req);
-void* create_temporal_sampler(double ratio);
-void free_temporal_sampler(void *s);
+bool spatial_sample(void *sampler_params, request_t *req);
+bool temporal_sample(void *sampler_params, request_t *req);
 
 
 #ifdef __cplusplus

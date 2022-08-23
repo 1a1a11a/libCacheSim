@@ -13,6 +13,7 @@
 #include "enum.h"
 #include "logging.h"
 #include "request.h"
+#include "sampling.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -92,7 +93,7 @@ typedef struct reader {
   void *reader_params;
   void *other_params; /* currently not used */
 
-  void *sampler; /* used for sampling */
+  trace_sampling_func sampling_func; /* used for sampling */
 
   int ver;
 
@@ -128,12 +129,12 @@ open_trace(const char *path, const trace_type_e type,
 }
 
 /**
- * add a sampler to the reader, the requests from the reader will be sampled
+ * add a sampling_func to the reader, the requests from the reader will be sampled
  * @param reader
- * @param sampler
+ * @param sampling_func
  */
-static inline void add_sampler(reader_t *reader, void *sampler) {
-  reader->sampler = sampler;
+static inline void add_sampling(reader_t *reader, trace_sampling_func sampling_func) {
+  reader->sampling_func = sampling_func;
 }
 
 /**

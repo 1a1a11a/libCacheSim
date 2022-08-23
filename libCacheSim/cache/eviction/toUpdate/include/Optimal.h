@@ -11,7 +11,6 @@
 
 
 #include "../../include/libCacheSim/cache.h"
-#include "pqueue.h"
 #include "../../include/libCacheSim/distUtils.h"
 #include "utilsInternal.h"
 
@@ -20,15 +19,6 @@
 extern "C"
 {
 #endif
-
-
-struct Optimal_params {
-  GHashTable *hashtable;
-  pqueue_t *pq;
-  GArray *next_access;
-  guint64 ts;       // virtual time stamp
-  reader_t *reader;
-};
 
 
 struct Optimal_init_params {

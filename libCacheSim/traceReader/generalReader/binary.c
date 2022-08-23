@@ -35,9 +35,9 @@ int binaryReader_setup(reader_t *const reader) {
     fmt_str++;
   }
 
-  uint count, last_count_sum = 0;
+  uint32_t count, last_count_sum = 0;
   int count_sum = 0;
-  uint size = 0;
+  uint32_t size = 0;
 
   while (*fmt_str) {
     count = 0;

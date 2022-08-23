@@ -131,6 +131,7 @@ int cmp_list_node(const void *a0, const void *b0) {
 
 cache_obj_t *FIFOMerge_to_evict(cache_t *cache) {
   ERROR("Undefined! Multiple objs will be evicted\n");
+  return NULL;
 }
 
 void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {

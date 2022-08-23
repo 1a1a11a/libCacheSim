@@ -11,10 +11,17 @@
 
 #include "../include/libCacheSim/evictionAlgo/Optimal.h"
 #include "../dataStructure/hashtable/hashtable.h"
+#include "../dataStructure/pqueue.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+typedef struct Optimal_params {
+  pqueue_t *pq;
+} Optimal_params_t;
+
 
 void Optimal_remove_obj(cache_t *cache, cache_obj_t *obj);
 

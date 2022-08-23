@@ -9,16 +9,12 @@
 #pragma once
 
 #include "../cache.h"
-#include "../../../dataStructure/pqueue.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-typedef struct Optimal_params {
-  pqueue_t *pq;
-} Optimal_params_t;
 
 cache_t *Optimal_init(common_cache_params_t ccache_params,
                       __attribute__((unused)) void *cache_specific_init_params);
