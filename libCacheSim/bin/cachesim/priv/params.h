@@ -3,7 +3,6 @@
 #include "../cachesim.h"
 #include "../utils.h"
 #include "math.h"
-#include "cphy.h"
 
 #ifdef __linux__
 #include <sys/sysinfo.h>
@@ -83,22 +82,21 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     args->retrain_intvl = 3600 * 2;
   } else if (strstr(args->trace_path, "nyc") != NULL
              || strstr(args->trace_path, "wiki") != NULL) {
-    /* nyc */
-    uint64_t s[8] = {20, 50, 100, 200, 400, 500, 800, 1000};
+    uint64_t s[12] = {10, 20, 50, 100, 200, 400, 800, 1200, 1600, 2400, 3200, 6400};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = GiB * s[i];
     }
-    args->n_cache_size = 8;
-    args->seg_size = 200;
-    //    args->seg_size = 10;
-    args->age_shift = 4;
-    args->bucket_type = NO_BUCKET;
-    // args->size_bucket_base = 1000;
-    args->min_start_train_seg = 10000;
-    args->max_start_train_seg = 80000;
-    args->n_train_seg_growth = 20000;
-    args->sample_every_n_seg_for_training = 4;
-    args->retrain_intvl = 86400;
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+    // args->seg_size = 200;
+    // //    args->seg_size = 10;
+    // args->age_shift = 4;
+    // args->bucket_type = NO_BUCKET;
+    // // args->size_bucket_base = 1000;
+    // args->min_start_train_seg = 10000;
+    // args->max_start_train_seg = 80000;
+    // args->n_train_seg_growth = 20000;
+    // args->sample_every_n_seg_for_training = 4;
+    // args->retrain_intvl = 86400;
 
   } else if (strstr(args->trace_path, "sjc") != NULL
              || strstr(args->trace_path, "lax") != NULL) {
@@ -117,7 +115,7 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
   } else {
     printf("cannot detect trace name\n");
-    uint64_t s[7] = {50, 100, 400, 1000, 2000, 4000, 8000};
+    uint64_t s[8] = {50, 100, 400, 1000, 2000, 4000, 8000, 16000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];
     }
