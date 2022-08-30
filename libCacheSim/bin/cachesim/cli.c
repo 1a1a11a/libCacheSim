@@ -6,15 +6,20 @@
 
 sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {
-    // if cache size is specified, then it will only run one simulation at the given size
-    printf("usage: %s trace_type data_path alg "
-          "(optional: cache_size_in_mb seg_size n_merge rank_intvl bucket_type train_source)\n\n"
-          "param options: \n"
-          "trace_type:  twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin\n"
-          "bucket_type: no_bucket, size_bucket\n"
-          "train_source: online, oracle\n"
-          "cache_size: if given, one simulation is of given size is ran, this is used for debugging\n",
-          argv[0]);
+    // if cache size is specified, then it will only run one simulation at the
+    // given size
+    printf(
+        "usage: %s trace_type data_path alg "
+        "(optional: cache_size_in_mb seg_size n_merge rank_intvl bucket_type "
+        "train_source)\n\n"
+        "param options: \n"
+        "trace_type:  "
+        "twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin\n"
+        "bucket_type: no_bucket, size_bucket\n"
+        "train_source: online, oracle\n"
+        "cache_size: if given, one simulation is of given size is ran, this is "
+        "used for debugging\n",
+        argv[0]);
     exit(1);
   }
 
@@ -27,11 +32,11 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     args.trace_type = VSCSI_TRACE;
   } else if (strcasecmp(argv[1], "bin") == 0) {
     args.trace_type = BIN_TRACE;
-  } else if (strcasecmp(argv[1], "oracleTwrNS") == 0
-             || strcasecmp(argv[1], "oracleSimTwrNS") == 0) {
+  } else if (strcasecmp(argv[1], "oracleTwrNS") == 0 ||
+             strcasecmp(argv[1], "oracleSimTwrNS") == 0) {
     args.trace_type = ORACLE_SIM_TWRNS_TRACE;
-  } else if (strcasecmp(argv[1], "oracleGeneral") == 0
-             || strcasecmp(argv[1], "oracleGeneralBin") == 0) {
+  } else if (strcasecmp(argv[1], "oracleGeneral") == 0 ||
+             strcasecmp(argv[1], "oracleGeneralBin") == 0) {
     args.trace_type = ORACLE_GENERAL_TRACE;
   } else if (strcasecmp(argv[1], "oracleGeneralOpNS") == 0) {
     args.trace_type = ORACLE_GENERALOPNS_TRACE;
@@ -58,7 +63,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     }
   }
 
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1  
+#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   if (strncasecmp(args.alg, "L2Cache", 7) == 0) {
     if (strcasecmp(args.alg + 8, "oracleLog") == 0) {
       // L2Cache-oracleLog
@@ -75,7 +80,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
       printf("support oracleLog/oracleItem/oracleBoth/learned/segcache\n");
       abort();
     }
-    args.alg = "L2Cache"; 
+    args.alg = "L2Cache";
   }
 
   if (argc >= 6) {
@@ -122,7 +127,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   }
 #endif
 
-  reader_t *reader = setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
+  reader_t *reader =
+      setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
 
   common_cache_params_t cc_params = {.cache_size = args.cache_size_in_mb * MiB,
                                      .hashpower = 28,
@@ -131,25 +137,27 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   cache_t *cache;
 
   if (strcasecmp(args.alg, "lru") == 0) {
-    cc_params.per_obj_overhead = 8 * 2; 
+    cc_params.per_obj_overhead = 8 * 2;
     cache = LRU_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "fifo") == 0) {
     cache = FIFO_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "arc") == 0) {
+    cache = ARC_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "fifomerge") == 0) {
-    cc_params.per_obj_overhead = 2; // freq 
+    cc_params.per_obj_overhead = 2;  // freq
     cache = FIFOMerge_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lhd") == 0) {
-    cc_params.per_obj_overhead = 8 * 3 + 1; // two age, one timestamp, one bool 
+    cc_params.per_obj_overhead = 8 * 3 + 1;  // two age, one timestamp, one bool
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "slru") == 0) {
-    cc_params.per_obj_overhead = 8 * 2; 
+    cc_params.per_obj_overhead = 8 * 2;
     SLRU_init_params_t init_params;
-    init_params.n_seg = 5;// Currently hard-coded
+    init_params.n_seg = 5;  // Currently hard-coded
     cache = SLRU_init(cc_params, &init_params);
   } else if (strcasecmp(args.alg, "sr_lru") == 0) {
     cache = SR_LRU_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lfu") == 0) {
-    cc_params.per_obj_overhead = 8 * 2; 
+    cc_params.per_obj_overhead = 8 * 2;
     cache = LFUFast_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "optimal") == 0) {
     cache = Optimal_init(cc_params, NULL);
@@ -157,29 +165,33 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cc_params.hashpower -= 4;
     cache = OptimalSize_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lecar") == 0) {
-    cc_params.per_obj_overhead = 8 * 2 + 8 * 2 + 8; // LRU chain, LFU chain, history 
+    cc_params.per_obj_overhead =
+        8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
     cache = LeCaR_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lecar0") == 0) {
-    cc_params.per_obj_overhead = 8 * 2 + 8 * 2 + 8; // LRU chain, LFU chain, history 
+    cc_params.per_obj_overhead =
+        8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
     cache = LeCaR0_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "cacheus") == 0) {
-    cc_params.per_obj_overhead = 8 * 2 + 8 * 2 + 8; // LRU chain, LFU chain, history 
+    cc_params.per_obj_overhead =
+        8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
     cache = Cacheus_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "cr_lfu") == 0) {
     cache = CR_LFU_init(cc_params, NULL);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strcasecmp(args.alg, "L2Cache") == 0) {
-    cc_params.per_obj_overhead = 2 + 1 + 8; // freq, bool, history 
-    L2Cache_init_params_t init_params = {.segment_size = args.seg_size,
-                                         .n_merge = args.n_merge,
-                                         .type = args.L2Cache_type,
-                                         .rank_intvl = args.rank_intvl,
-                                         .merge_consecutive_segs = args.merge_consecutive_segs,
-                                         .train_source_y = args.train_source_y,
+    cc_params.per_obj_overhead = 2 + 1 + 8;  // freq, bool, history
+    L2Cache_init_params_t init_params = {
+        .segment_size = args.seg_size,
+        .n_merge = args.n_merge,
+        .type = args.L2Cache_type,
+        .rank_intvl = args.rank_intvl,
+        .merge_consecutive_segs = args.merge_consecutive_segs,
+        .train_source_y = args.train_source_y,
 
-                                         .hit_density_age_shift = args.age_shift,
-                                         .bucket_type = args.bucket_type,
-                                         .retrain_intvl = args.retrain_intvl};
+        .hit_density_age_shift = args.age_shift,
+        .bucket_type = args.bucket_type,
+        .retrain_intvl = args.retrain_intvl};
     cache = L2Cache_init(cc_params, &init_params);
 #endif
   } else {

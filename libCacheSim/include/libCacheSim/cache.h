@@ -9,27 +9,24 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-#include "../config.h"
-#include "const.h"
-#include "logging.h"
-#include "macro.h"
-
-#include "request.h"
-#include "cacheObj.h"
-
-#include <inttypes.h>
 #include <glib.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
+
+#include "../config.h"
+#include "cacheObj.h"
+#include "const.h"
+#include "logging.h"
+#include "macro.h"
+#include "request.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 struct cache;
 typedef struct cache cache_t;
@@ -57,7 +54,7 @@ typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
 
 typedef void (*cache_remove_func_ptr)(cache_t *, obj_id_t);
 
-typedef bool (*cache_admission_func_ptr)(cache_t *, request_t*);
+typedef bool (*cache_admission_func_ptr)(cache_t *, request_t *);
 
 #define MAX_EVICTION_AGE_ARRAY_SZE 64
 typedef struct {
@@ -76,17 +73,17 @@ typedef struct {
   /* eviction age in virtual time/num of requests */
   int log2_eviction_vage[MAX_EVICTION_AGE_ARRAY_SZE];
 
-  uint64_t curr_rtime; /* current trace time, used to determine obj expiration */
+  uint64_t
+      curr_rtime; /* current trace time, used to determine obj expiration */
   uint64_t expired_obj_cnt;
   uint64_t expired_bytes;
 } cache_stat_t;
 
-
 struct hashtable;
 struct cache {
   struct hashtable *hashtable;
-  cache_obj_t *q_head; // for LRU and FIFO
-  cache_obj_t *q_tail; // for LRU and FIFO
+  cache_obj_t *q_head;  // for LRU and FIFO
+  cache_obj_t *q_tail;  // for LRU and FIFO
 
   void *init_params;
   void *eviction_params;
@@ -102,7 +99,7 @@ struct cache {
   cache_free_func_ptr cache_free;
   cache_to_evict_func_ptr to_evict;
 
-  int64_t n_req;  /* number of requests (used by some eviction algo) */
+  int64_t n_req; /* number of requests (used by some eviction algo) */
   uint64_t n_obj;
   uint64_t occupied_size;
 
@@ -147,8 +144,8 @@ cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size);
  * @param cache_obj_ret
  * @return
  */
-cache_ck_res_e cache_check_base(cache_t *cache, request_t *req, bool update_cache,
-                           cache_obj_t **cache_obj_ret);
+cache_ck_res_e cache_check_base(cache_t *cache, request_t *req,
+                                bool update_cache, cache_obj_t **cache_obj_ret);
 
 /**
  * a common cache get function
@@ -166,7 +163,6 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req);
  * @return
  */
 cache_obj_t *cache_insert_base(cache_t *cache, request_t *req);
-
 
 /**
  * insert for LRU/FIFO, first call cache_insert_base then
@@ -186,20 +182,17 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req);
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj);
 
-void cache_evict_LRU(cache_t *cache,
-                     request_t *req,
-                     cache_obj_t *evicted_obj);
+void cache_evict_LRU(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 cache_obj_t *cache_get_obj(cache_t *cache, request_t *req);
 
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, obj_id_t id);
 
-
 static inline void record_eviction_age(cache_t *cache, int age) {
-#define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X))))
+#define LOG2(X) \
+  ((unsigned)(8 * sizeof(unsigned long long) - __builtin_clzll((X))))
 
-  if (age != 0)
-    age = LOG2(age);
+  if (age != 0) age = LOG2(age);
   cache->stat.log2_eviction_rage[age] += 1;
 }
 
@@ -208,9 +201,11 @@ static inline void print_eviction_age(cache_t *cache) {
   for (int i = 1; i < MAX_EVICTION_AGE_ARRAY_SZE; i++) {
     if (cache->stat.log2_eviction_rage[i] > 0) {
       if (cache->stat.log2_eviction_rage[i] > 1000000)
-        printf("%d:%.1lfm, ", 1u << (i-1), (double) cache->stat.log2_eviction_rage[i]/1000000);
+        printf("%d:%.1lfm, ", 1u << (i - 1),
+               (double)cache->stat.log2_eviction_rage[i] / 1000000);
       else if (cache->stat.log2_eviction_rage[i] > 1000)
-        printf("%d:%.1lfk, ", 1u << (i-1), (double) cache->stat.log2_eviction_rage[i]/1000);
+        printf("%d:%.1lfk, ", 1u << (i - 1),
+               (double)cache->stat.log2_eviction_rage[i] / 1000);
     }
   }
   printf("\n");
