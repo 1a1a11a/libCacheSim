@@ -8,6 +8,8 @@
 
 #include "../include/libCacheSim/evictionAlgo/LeCaR.h"
 
+#include <assert.h>
+
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LFU.h"
 #include "../include/libCacheSim/evictionAlgo/LFUFast.h"
@@ -21,12 +23,51 @@ static void free_freq_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
 }
 
+static void verify_ghost_lru_integrity(cache_t *cache, LeCaR_params_t *params) {
+  if (params->ghost_lru_head == NULL) {
+    assert(params->ghost_lru_tail == NULL);
+    assert(params->ghost_entry_used_size == 0);
+    return;
+  } else {
+    assert(params->ghost_lru_tail != NULL);
+    assert(params->ghost_entry_used_size > 0);
+  }
+
+  int64_t ghost_entry_size = 0;
+  cache_obj_t *cur = params->ghost_lru_head;
+  while (cur != NULL) {
+    ghost_entry_size += (cur->obj_size + cache->per_obj_overhead);
+    if (cur->queue.next == NULL) {
+      assert(cur == params->ghost_lru_tail);
+    } else {
+      assert(cur->queue.next->queue.prev == cur);
+    }
+    cur = cur->queue.next;
+  }
+
+  VVVERBOSE(
+      "ghost entry head %p tail %p, "
+      "ghost_entry_size from scan = %ld,"
+      "ghost_entry_used_size = %ld\n ",
+      params->ghost_lru_head, params->ghost_lru_tail, ghost_entry_size,
+      params->ghost_entry_used_size);
+
+  // cur = params->ghost_lru_head;
+  // while (cur != NULL) {
+  //   printf("%p -> ", cur);
+  //   cur = cur->queue.next;
+  // }
+  // printf("NULL\n");
+
+  assert(ghost_entry_size == params->ghost_entry_used_size);
+}
+
 /* LFU related function, LFU uses a chain of freq node sorted by freq in
  * ascending order, each node stores a list of objects with the same frequency
  * in FIFO order, when evicting, we find the min freq node and evict the first
- * object of the min freq */
+ * object of the min freq, this is only called when current min_freq is empty */
 static inline void update_LFU_min_freq(LeCaR_params_t *params) {
-  // uint64_t old_min_freq = params->min_freq;
+  unsigned old_min_freq = params->min_freq;
   for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
     freq_node_t *node =
         g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
@@ -35,7 +76,9 @@ static inline void update_LFU_min_freq(LeCaR_params_t *params) {
       break;
     }
   }
-  // DEBUG_ASSERT(params->min_freq > old_min_freq || cache->n_obj == 0);
+  VVERBOSE("update LFU min freq from %u to %u\n", (unsigned)old_min_freq,
+           (unsigned)params->min_freq);
+  DEBUG_ASSERT(params->min_freq > old_min_freq);
 }
 
 static inline freq_node_t *get_min_freq_node(LeCaR_params_t *params) {
@@ -61,17 +104,19 @@ static inline void remove_obj_from_freq_node(LeCaR_params_t *params,
   DEBUG_ASSERT(freq_node != NULL);
   DEBUG_ASSERT(freq_node->freq == cache_obj->LeCaR.freq);
   DEBUG_ASSERT(freq_node->n_obj > 0);
+  VVERBOSE("remove object from freq node %p (freq %d, %d obj)\n", freq_node,
+           freq_node->freq, freq_node->n_obj);
   freq_node->n_obj--;
-  // remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj,
-  // cache_obj);
 
   if (cache_obj == freq_node->first_obj) {
+    VVVERBOSE("remove object from freq node --- object is the first object\n");
     freq_node->first_obj = cache_obj->LeCaR.lfu_next;
     if (cache_obj->LeCaR.lfu_next != NULL)
       ((cache_obj_t *)(cache_obj->LeCaR.lfu_next))->LeCaR.lfu_prev = NULL;
   }
 
   if (cache_obj == freq_node->last_obj) {
+    VVVERBOSE("remove object from freq node --- object is the last object\n");
     freq_node->last_obj = cache_obj->LeCaR.lfu_prev;
     if (cache_obj->LeCaR.lfu_prev != NULL)
       ((cache_obj_t *)(cache_obj->LeCaR.lfu_prev))->LeCaR.lfu_next = NULL;
@@ -104,11 +149,17 @@ static inline void insert_obj_info_freq_node(LeCaR_params_t *params,
     new_node->freq = cache_obj->LeCaR.freq;
     g_hash_table_insert(params->freq_map,
                         GSIZE_TO_POINTER(cache_obj->LeCaR.freq), new_node);
-    VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj,
-             new_node->first_obj, new_node->last_obj);
+    VVERBOSE(
+        "create new freq node (%d): %d object, first obj %p, last object "
+        "%p\n",
+        new_node->freq, new_node->n_obj, new_node->first_obj,
+        new_node->last_obj);
   } else {
     DEBUG_ASSERT(new_node->freq == cache_obj->LeCaR.freq);
   }
+
+  VVERBOSE("insert obj into freq node (freq %u, %u obj)\n", new_node->freq,
+           new_node->n_obj);
 
   /* add to tail of the list */
   if (new_node->last_obj != NULL) {
@@ -144,7 +195,6 @@ cache_t *LeCaR_init(common_cache_params_t ccache_params_, void *init_params_) {
   memset(params, 0, sizeof(LeCaR_params_t));
 
   // LeCaR params
-  // params->ghost_list_factor = 1;
   params->lr = 0.45;
   params->dr = pow(0.005, 1.0 / (double)ccache_params_.cache_size);
   params->w_lru = params->w_lfu = 0.50;
@@ -215,6 +265,8 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
     remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
                          cache_obj);
     hashtable_delete(cache->hashtable, cache_obj);
+    params->ghost_entry_used_size -=
+        (cache_obj->obj_size + cache->per_obj_overhead);
 
     return cache_ck_miss;
 
@@ -226,6 +278,8 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
     remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
                          cache_obj);
     hashtable_delete(cache->hashtable, cache_obj);
+    params->ghost_entry_used_size -=
+        (cache_obj->obj_size + cache->per_obj_overhead);
 
     return cache_ck_miss;
 
@@ -244,17 +298,28 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
     }
 
     insert_obj_info_freq_node(params, cache_obj);
+
+    /* it is possible that we update freq to a higher freq
+     * when remove_obj_from_freq_node */
+    if (cache_obj->LeCaR.freq < params->min_freq) {
+      params->min_freq = cache_obj->LeCaR.freq;
+      VVERBOSE("update min freq to %d\n", (int)params->min_freq);
+    }
   }
 
   return ck;
 }
 
 cache_ck_res_e LeCaR_get(cache_t *cache, request_t *req) {
-  return cache_get_base(cache, req);
+  // LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
+  cache_ck_res_e ck = cache_get_base(cache, req);
+  return ck;
 }
 
 void LeCaR_insert(cache_t *cache, request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
+
+  VVERBOSE("insert object %lu into cache\n", (unsigned long)req->obj_id);
 
   // LRU and hash table insert
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
@@ -299,7 +364,7 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   if (r < params->w_lru) {
     // evict from LRU
     cache_obj = cache->q_tail;
-    // printf("%ld evict from LRU %p\n", cache->n_req, cache_obj);
+    VVERBOSE("evict object %lu from LRU\n", (unsigned long)cache_obj);
 
     // mark as ghost object
     cache_obj->LeCaR.ghost_evicted_by_lru = true;
@@ -309,7 +374,7 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     // evict from LFU
     freq_node_t *min_freq_node = get_min_freq_node(params);
     cache_obj = min_freq_node->first_obj;
-    // printf("%ld evict from LFU %p\n", cache->n_req, cache_obj);
+    VVERBOSE("evict object %lu from LFU\n", (unsigned long)cache_obj);
 
     // mark as ghost object
     cache_obj->LeCaR.ghost_evicted_by_lfu = true;
@@ -343,14 +408,16 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     cache_obj->queue.next = params->ghost_lru_head;
   }
   params->ghost_lru_head = cache_obj;
+  VVERBOSE("insert to ghost history, update ghost lru head to %p\n",
+           params->ghost_lru_head);
 
   params->ghost_entry_used_size +=
       cache_obj->obj_size + cache->per_obj_overhead;
   // evict ghost entries if its full
   while (params->ghost_entry_used_size > cache->cache_size) {
     cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
-    // printf("remove ghost %p size %ld\n", ghost_to_evict,
-    // params->ghost_entry_used_size);
+    VVERBOSE("remove ghost %p, ghost cache size (before) %ld\n", ghost_to_evict,
+             params->ghost_entry_used_size);
     assert(ghost_to_evict != NULL);
     params->ghost_entry_used_size -=
         (ghost_to_evict->obj_size + cache->per_obj_overhead);
