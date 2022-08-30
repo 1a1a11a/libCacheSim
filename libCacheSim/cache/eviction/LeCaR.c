@@ -264,9 +264,9 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
 
     remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
                          cache_obj);
-    hashtable_delete(cache->hashtable, cache_obj);
     params->ghost_entry_used_size -=
         (cache_obj->obj_size + cache->per_obj_overhead);
+    hashtable_delete(cache->hashtable, cache_obj);
 
     return cache_ck_miss;
 
@@ -277,9 +277,9 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
 
     remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
                          cache_obj);
-    hashtable_delete(cache->hashtable, cache_obj);
     params->ghost_entry_used_size -=
         (cache_obj->obj_size + cache->per_obj_overhead);
+    hashtable_delete(cache->hashtable, cache_obj);
 
     return cache_ck_miss;
 
