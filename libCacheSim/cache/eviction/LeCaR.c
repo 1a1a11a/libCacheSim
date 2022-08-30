@@ -1,12 +1,13 @@
 /* LeCaR: HotStorage'18
  *
- * the implementation implements LRU and LFU within LeCaR, it has a better performance, 
- * but it is harder to follow. 
- * LeCaR0 is a simpler implementation, it has a lower throughput.
- * 
+ * the implementation implements LRU and LFU within LeCaR, it has a better
+ * performance, but it is harder to follow. LeCaR0 is a simpler implementation,
+ * it has a lower throughput.
+ *
  * */
 
 #include "../include/libCacheSim/evictionAlgo/LeCaR.h"
+
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LFU.h"
 #include "../include/libCacheSim/evictionAlgo/LFUFast.h"
@@ -16,15 +17,19 @@
 extern "C" {
 #endif
 
-static void free_freq_node(void *list_node) { my_free(sizeof(freq_node_t), list_node); }
+static void free_freq_node(void *list_node) {
+  my_free(sizeof(freq_node_t), list_node);
+}
 
-/* LFU related function, LFU uses a chain of freq node sorted by freq in ascending order, 
- * each node stores a list of objects with the same frequency in FIFO order,
- * when evicting, we find the min freq node and evict the first object of the min freq */
+/* LFU related function, LFU uses a chain of freq node sorted by freq in
+ * ascending order, each node stores a list of objects with the same frequency
+ * in FIFO order, when evicting, we find the min freq node and evict the first
+ * object of the min freq */
 static inline void update_LFU_min_freq(LeCaR_params_t *params) {
   // uint64_t old_min_freq = params->min_freq;
   for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
-    freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
+    freq_node_t *node =
+        g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
     if (node != NULL && node->n_obj > 0) {
       params->min_freq = freq;
       break;
@@ -38,42 +43,47 @@ static inline freq_node_t *get_min_freq_node(LeCaR_params_t *params) {
   if (params->min_freq == 1) {
     min_freq_node = params->freq_one_node;
   } else {
-    min_freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+    min_freq_node = g_hash_table_lookup(params->freq_map,
+                                        GSIZE_TO_POINTER(params->min_freq));
   }
 
   DEBUG_ASSERT(min_freq_node != NULL);
   DEBUG_ASSERT(min_freq_node->first_obj != NULL);
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
 
-  return min_freq_node; 
+  return min_freq_node;
 }
 
-static inline void remove_obj_from_freq_node(LeCaR_params_t *params, cache_obj_t *cache_obj) {
-  freq_node_t *freq_node =
-      g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->LeCaR.freq));
+static inline void remove_obj_from_freq_node(LeCaR_params_t *params,
+                                             cache_obj_t *cache_obj) {
+  freq_node_t *freq_node = g_hash_table_lookup(
+      params->freq_map, GSIZE_TO_POINTER(cache_obj->LeCaR.freq));
   DEBUG_ASSERT(freq_node != NULL);
   DEBUG_ASSERT(freq_node->freq == cache_obj->LeCaR.freq);
   DEBUG_ASSERT(freq_node->n_obj > 0);
   freq_node->n_obj--;
-  // remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, cache_obj);
+  // remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj,
+  // cache_obj);
 
   if (cache_obj == freq_node->first_obj) {
     freq_node->first_obj = cache_obj->LeCaR.lfu_next;
     if (cache_obj->LeCaR.lfu_next != NULL)
-      ((cache_obj_t *) (cache_obj->LeCaR.lfu_next))->LeCaR.lfu_prev = NULL;
+      ((cache_obj_t *)(cache_obj->LeCaR.lfu_next))->LeCaR.lfu_prev = NULL;
   }
 
   if (cache_obj == freq_node->last_obj) {
     freq_node->last_obj = cache_obj->LeCaR.lfu_prev;
     if (cache_obj->LeCaR.lfu_prev != NULL)
-      ((cache_obj_t *) (cache_obj->LeCaR.lfu_prev))->LeCaR.lfu_next = NULL;
+      ((cache_obj_t *)(cache_obj->LeCaR.lfu_prev))->LeCaR.lfu_next = NULL;
   }
 
   if (cache_obj->LeCaR.lfu_prev != NULL)
-    ((cache_obj_t *) (cache_obj->LeCaR.lfu_prev))->LeCaR.lfu_next = cache_obj->LeCaR.lfu_next;
+    ((cache_obj_t *)(cache_obj->LeCaR.lfu_prev))->LeCaR.lfu_next =
+        cache_obj->LeCaR.lfu_next;
 
   if (cache_obj->LeCaR.lfu_next != NULL)
-    ((cache_obj_t *) (cache_obj->LeCaR.lfu_next))->LeCaR.lfu_prev = cache_obj->LeCaR.lfu_prev;
+    ((cache_obj_t *)(cache_obj->LeCaR.lfu_next))->LeCaR.lfu_prev =
+        cache_obj->LeCaR.lfu_prev;
 
   cache_obj->LeCaR.lfu_prev = NULL;
   cache_obj->LeCaR.lfu_next = NULL;
@@ -83,17 +93,19 @@ static inline void remove_obj_from_freq_node(LeCaR_params_t *params, cache_obj_t
   }
 }
 
-static inline void insert_obj_info_freq_node(LeCaR_params_t *params, cache_obj_t *cache_obj) {
+static inline void insert_obj_info_freq_node(LeCaR_params_t *params,
+                                             cache_obj_t *cache_obj) {
   // find the new freq_node this object should move to
-  freq_node_t *new_node =
-      g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->LeCaR.freq));
+  freq_node_t *new_node = g_hash_table_lookup(
+      params->freq_map, GSIZE_TO_POINTER(cache_obj->LeCaR.freq));
   if (new_node == NULL) {
     new_node = my_malloc_n(freq_node_t, 1);
     memset(new_node, 0, sizeof(freq_node_t));
     new_node->freq = cache_obj->LeCaR.freq;
-    g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->LeCaR.freq), new_node);
-    VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj, new_node->first_obj,
-             new_node->last_obj);
+    g_hash_table_insert(params->freq_map,
+                        GSIZE_TO_POINTER(cache_obj->LeCaR.freq), new_node);
+    VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj,
+             new_node->first_obj, new_node->last_obj);
   } else {
     DEBUG_ASSERT(new_node->freq == cache_obj->LeCaR.freq);
   }
@@ -128,13 +140,13 @@ cache_t *LeCaR_init(common_cache_params_t ccache_params_, void *init_params_) {
   cache->to_evict = LeCaR_to_evict;
 
   cache->eviction_params = my_malloc_n(LeCaR_params_t, 1);
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
   memset(params, 0, sizeof(LeCaR_params_t));
 
   // LeCaR params
   // params->ghost_list_factor = 1;
   params->lr = 0.45;
-  params->dr = pow(0.005, 1.0 / (double) ccache_params_.cache_size);
+  params->dr = pow(0.005, 1.0 / (double)ccache_params_.cache_size);
   params->w_lru = params->w_lfu = 0.50;
   params->n_hit_lru_history = params->n_hit_lfu_history = 0;
 
@@ -148,24 +160,25 @@ cache_t *LeCaR_init(common_cache_params_t ccache_params_, void *init_params_) {
   memset(freq_node, 0, sizeof(freq_node_t));
   freq_node->freq = 1;
   params->freq_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
-                                           (GDestroyNotify) free_freq_node);
+                                           (GDestroyNotify)free_freq_node);
   g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(1), freq_node);
 
   return cache;
 }
 
 void LeCaR_free(cache_t *cache) {
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
   g_hash_table_destroy(params->freq_map);
   my_free(sizeof(LeCaR_params_t), params);
   cache_struct_free(cache);
 }
 
-static void update_weight(cache_t *cache, int64_t t, double *w_update, double *w_no_update) {
+static void update_weight(cache_t *cache, int64_t t, double *w_update,
+                          double *w_no_update) {
   DEBUG_ASSERT(fabs(*w_update + *w_no_update - 1.0) < 0.0001);
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
-  double r = pow(params->dr, (double) t);
+  double r = pow(params->dr, (double)t);
   *w_update = *w_update * exp(-params->lr * r) + 1e-10; /* to avoid w was 0 */
   double s = *w_update + *w_no_update + +2e-10;
   *w_update = *w_update / s;
@@ -173,7 +186,7 @@ static void update_weight(cache_t *cache, int64_t t, double *w_update, double *w
 }
 
 cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache_obj_t *cache_obj = NULL;
   cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &cache_obj);
@@ -182,8 +195,8 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
     return ck;
   }
 
-  bool is_ghost =
-      cache_obj->LeCaR.ghost_evicted_by_lru || cache_obj->LeCaR.ghost_evicted_by_lfu;
+  bool is_ghost = cache_obj->LeCaR.ghost_evicted_by_lru ||
+                  cache_obj->LeCaR.ghost_evicted_by_lfu;
 
   if (!update_cache) {
     if (is_ghost) {
@@ -199,20 +212,22 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
     int64_t t = cache->n_req - cache_obj->LeCaR.eviction_vtime;
     update_weight(cache, t, &params->w_lru, &params->w_lfu);
 
-    remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail, cache_obj);
+    remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
+                         cache_obj);
     hashtable_delete(cache->hashtable, cache_obj);
 
-    return cache_ck_miss; 
+    return cache_ck_miss;
 
   } else if (cache_obj->LeCaR.ghost_evicted_by_lfu) {
     params->n_hit_lfu_history++;
     int64_t t = cache->n_req - cache_obj->LeCaR.eviction_vtime;
     update_weight(cache, t, &params->w_lfu, &params->w_lru);
 
-    remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail, cache_obj);
+    remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
+                         cache_obj);
     hashtable_delete(cache->hashtable, cache_obj);
 
-    return cache_ck_miss; 
+    return cache_ck_miss;
 
   } else {
     // if it is an cached object, update cache state
@@ -234,18 +249,19 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
   return ck;
 }
 
-cache_ck_res_e LeCaR_get(cache_t *cache, request_t *req) { return cache_get_base(cache, req); }
-
+cache_ck_res_e LeCaR_get(cache_t *cache, request_t *req) {
+  return cache_get_base(cache, req);
+}
 
 void LeCaR_insert(cache_t *cache, request_t *req) {
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   // LRU and hash table insert
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
   cache_obj->LeCaR.freq = 1;
-  cache_obj->LeCaR.eviction_vtime = 0; 
-  cache_obj->LeCaR.ghost_evicted_by_lru = false; 
-  cache_obj->LeCaR.ghost_evicted_by_lfu = false; 
+  cache_obj->LeCaR.eviction_vtime = 0;
+  cache_obj->LeCaR.ghost_evicted_by_lru = false;
+  cache_obj->LeCaR.ghost_evicted_by_lfu = false;
 
   // LFU insert
   params->min_freq = 1;
@@ -263,11 +279,10 @@ void LeCaR_insert(cache_t *cache, request_t *req) {
   freq_one_node->last_obj = cache_obj;
 }
 
-
 cache_obj_t *LeCaR_to_evict(cache_t *cache) {
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
-  double r = ((double) (next_rand() % 100)) / 100.0;
+  double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     return cache->q_tail;
   } else {
@@ -277,10 +292,10 @@ cache_obj_t *LeCaR_to_evict(cache_t *cache) {
 }
 
 void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache_obj_t *cache_obj = NULL;
-  double r = ((double) (next_rand() % 100)) / 100.0;
+  double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     // evict from LRU
     cache_obj = cache->q_tail;
@@ -319,8 +334,7 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
   cache->n_obj -= 1;
 
-
-  // update history 
+  // update history
   if (unlikely(params->ghost_lru_head == NULL)) {
     params->ghost_lru_head = cache_obj;
     params->ghost_lru_tail = cache_obj;
@@ -330,22 +344,26 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   }
   params->ghost_lru_head = cache_obj;
 
-  params->ghost_entry_used_size += cache_obj->obj_size + cache->per_obj_overhead;
+  params->ghost_entry_used_size +=
+      cache_obj->obj_size + cache->per_obj_overhead;
   // evict ghost entries if its full
   while (params->ghost_entry_used_size > cache->cache_size) {
-      cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
-      // printf("remove ghost %p size %ld\n", ghost_to_evict, params->ghost_entry_used_size); 
-      params->ghost_entry_used_size -= (ghost_to_evict->obj_size + cache->per_obj_overhead);
-      params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
-      if (likely(params->ghost_lru_tail != NULL))
-        params->ghost_lru_tail->queue.next = NULL;
+    cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
+    // printf("remove ghost %p size %ld\n", ghost_to_evict,
+    // params->ghost_entry_used_size);
+    assert(ghost_to_evict != NULL);
+    params->ghost_entry_used_size -=
+        (ghost_to_evict->obj_size + cache->per_obj_overhead);
+    params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
+    if (likely(params->ghost_lru_tail != NULL))
+      params->ghost_lru_tail->queue.next = NULL;
 
-      hashtable_delete(cache->hashtable, ghost_to_evict);
+    hashtable_delete(cache->hashtable, ghost_to_evict);
   }
 }
 
 void LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
-  LeCaR_params_t *params = (LeCaR_params_t *) (cache->eviction_params);
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
     ERROR("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
