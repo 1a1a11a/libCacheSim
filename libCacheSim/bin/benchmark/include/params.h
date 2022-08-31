@@ -6,9 +6,8 @@
 #define libCacheSim_PARAMS_H
 
 #define OBJ_SIZE 1
-#define CACHE_SIZE (128*1024L*OBJ_SIZE)
+#define CACHE_SIZE (128 * 1024L * OBJ_SIZE)
 #define MAX_RUNTIME 20
 //#define N_WRITE CACHE_SZE/OBJ_SIZE
 
-
-#endif //libCacheSim_PARAMS_H
+#endif  // libCacheSim_PARAMS_H
