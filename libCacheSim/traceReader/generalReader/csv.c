@@ -7,23 +7,23 @@
 //
 
 #include "csv.h"
-#include "libcsv.h"
 
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
+
+#include "libcsv.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 bool find_line_ending(reader_t *const reader, char **next_line,
-                      size_t *const line_len); 
-
+                      size_t *const line_len);
 
 static inline void csv_cb1(void *s, size_t len, void *data) {
   /* call back for csv field end */
 
-  reader_t *reader = (reader_t *) data;
+  reader_t *reader = (reader_t *)data;
   csv_params_t *params = reader->reader_params;
   reader_init_param_t *init_params = &reader->init_params;
   request_t *req = params->req_pointer;
@@ -32,7 +32,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     if (reader->obj_id_type == OBJ_ID_NUM) {
       // len is not correct for the last request for some reason
       // req->obj_id = str_to_obj_id((char *) s, len);
-      req->obj_id = atoll((char *) s);
+      req->obj_id = atoll((char *)s);
     } else {
       if (len >= MAX_OBJ_ID_LEN) {
         len = MAX_OBJ_ID_LEN - 1;
@@ -41,21 +41,21 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
         abort();
       }
       char obj_id_str[MAX_OBJ_ID_LEN];
-      memcpy(obj_id_str, (char *) s, len);
+      memcpy(obj_id_str, (char *)s, len);
       obj_id_str[len] = 0;
-      req->obj_id = (uint64_t) g_quark_from_string(obj_id_str);
+      req->obj_id = (uint64_t)g_quark_from_string(obj_id_str);
     }
     params->already_got_req = true;
   } else if (params->current_field_counter == init_params->real_time_field) {
     // this does not work, because s is not null terminated
-    uint64_t ts = (uint64_t) atof((char *) s);
+    uint64_t ts = (uint64_t)atof((char *)s);
     // we only support 32-bit ts
     assert(ts < UINT32_MAX);
     req->real_time = ts;
   } else if (params->current_field_counter == init_params->op_field) {
     fprintf(stderr, "currently operation column is not supported\n");
   } else if (params->current_field_counter == init_params->obj_size_field) {
-    req->obj_size = (uint64_t) atoll((char *) s);
+    req->obj_size = (uint64_t)atoll((char *)s);
   }
 
   params->current_field_counter++;
@@ -64,7 +64,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
 static inline void csv_cb2(int c, void *data) {
   /* call back for csv row end */
 
-  reader_t *reader = (reader_t *) data;
+  reader_t *reader = (reader_t *)data;
   csv_params_t *params = reader->reader_params;
   params->current_field_counter = 1;
 
@@ -76,12 +76,12 @@ static inline void csv_cb2(int c, void *data) {
 
 void csv_setup_reader(reader_t *const reader) {
   unsigned char options = CSV_APPEND_NULL;
-  reader->reader_params = (csv_params_t *) malloc(sizeof(csv_params_t));
+  reader->reader_params = (csv_params_t *)malloc(sizeof(csv_params_t));
   csv_params_t *params = reader->reader_params;
   reader_init_param_t *init_params = &reader->init_params;
   reader->trace_format = TXT_TRACE_FORMAT;
 
-  params->csv_parser = (struct csv_parser *) malloc(sizeof(struct csv_parser));
+  params->csv_parser = (struct csv_parser *)malloc(sizeof(struct csv_parser));
   if (csv_init(params->csv_parser, options) != 0) {
     fprintf(stderr, "Failed to initialize csv parser\n");
     exit(1);
@@ -107,7 +107,7 @@ void csv_setup_reader(reader_t *const reader) {
     char *line_end = NULL;
     size_t line_len = 0;
     find_line_ending(reader, &line_end, &line_len);
-    reader->mmap_offset = (char *) line_end - reader->mapped_file;
+    reader->mmap_offset = (char *)line_end - reader->mapped_file;
     params->has_header = init_params->has_header;
   }
 }
@@ -126,26 +126,25 @@ int csv_read_one_element(reader_t *const reader, request_t *const req) {
   char *line_end = NULL;
   size_t line_len;
   bool end = find_line_ending(reader, &line_end, &line_len);
-  line_len++; // because line_len does not include LFCR
+  line_len++;  // because line_len does not include LFCR
 
-  if ((size_t) csv_parse(params->csv_parser,
-                         reader->mapped_file + reader->mmap_offset,
-                         line_len, csv_cb1, csv_cb2, reader) != line_len)
+  if ((size_t)csv_parse(params->csv_parser,
+                        reader->mapped_file + reader->mmap_offset, line_len,
+                        csv_cb1, csv_cb2, reader) != line_len)
     WARN("parsing csv file error: %s\n",
          csv_strerror(csv_error(params->csv_parser)));
 
-  reader->mmap_offset = (char *) line_end - reader->mapped_file;
+  reader->mmap_offset = (char *)line_end - reader->mapped_file;
 
-  if (end)
-    params->reader_end = true;
+  if (end) params->reader_end = true;
 
-  if (!params->already_got_req) { // didn't read in trace obj_id
+  if (!params->already_got_req) {  // didn't read in trace obj_id
     if (params->reader_end)
       csv_fini(params->csv_parser, csv_cb1, csv_cb2, reader);
     else {
       ERROR("parsing csv file, current mmap_offset %lu, next string %s\n",
-            (unsigned long) reader->mmap_offset,
-            (char *) (reader->mapped_file + reader->mmap_offset));
+            (unsigned long)reader->mmap_offset,
+            (char *)(reader->mapped_file + reader->mmap_offset));
       abort();
     }
   }
@@ -162,8 +161,7 @@ uint64_t csv_skip_N_elements(reader_t *const reader, const uint64_t N) {
   csv_free(params->csv_parser);
   csv_init(params->csv_parser, CSV_APPEND_NULL);
 
-  if (params->delim)
-    csv_set_delim(params->csv_parser, params->delim);
+  if (params->delim) csv_set_delim(params->csv_parser, params->delim);
 
   params->reader_end = false;
   return 0;
@@ -176,14 +174,13 @@ void csv_reset_reader(reader_t *reader) {
 
   csv_free(params->csv_parser);
   csv_init(params->csv_parser, CSV_APPEND_NULL);
-  if (params->delim)
-    csv_set_delim(params->csv_parser, params->delim);
+  if (params->delim) csv_set_delim(params->csv_parser, params->delim);
 
   if (params->has_header) {
     char *line_end = NULL;
     size_t line_len = 0;
     find_line_ending(reader, &line_end, &line_len);
-    reader->mmap_offset = (char *) line_end - reader->mapped_file;
+    reader->mmap_offset = (char *)line_end - reader->mapped_file;
   }
   params->reader_end = false;
 }

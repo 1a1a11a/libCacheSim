@@ -1,33 +1,32 @@
 
 #include "zstdReader.h"
+
+#include <assert.h>
+#include <errno.h>  // errno
+#include <inttypes.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>  // strerror
+#include <sys/stat.h>
+#include <zstd.h>
+
 #include "../include/libCacheSim/logging.h"
 #include "csv.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <zstd.h>
-#include <string.h>    // strerror
-#include <errno.h>     // errno
-#include <assert.h>
-#include <sys/stat.h>
-#include <inttypes.h>
-#include <stdbool.h>
-
-
 #define LINE_DELIM '\n'
 
-
-zstd_reader* create_zstd_reader(const char *trace_path) {
+zstd_reader *create_zstd_reader(const char *trace_path) {
   zstd_reader *reader = malloc(sizeof(zstd_reader));
 
-  reader->ifile  = fopen(trace_path, "rb");
+  reader->ifile = fopen(trace_path, "rb");
   if (reader->ifile == NULL) {
     printf("cannot open %s\n", trace_path);
     exit(1);
   }
 
   reader->buff_in_sz = ZSTD_DStreamInSize();
-  reader->buff_in  = malloc(reader->buff_in_sz);
+  reader->buff_in = malloc(reader->buff_in_sz);
   reader->input.src = reader->buff_in;
   reader->input.size = 0;
   reader->input.pos = 0;
@@ -42,7 +41,6 @@ zstd_reader* create_zstd_reader(const char *trace_path) {
   reader->status = 0;
 
   reader->zds = ZSTD_createDStream();
-
 
   return reader;
 }
@@ -66,7 +64,7 @@ size_t _read_from_file(zstd_reader *reader) {
       return 0;
     }
   }
-//  DEBUG("read %zu bytes from file\n", read_sz);
+  //  DEBUG("read %zu bytes from file\n", read_sz);
 
   reader->input.size = read_sz;
   reader->input.pos = 0;
@@ -95,18 +93,18 @@ rstatus _decompress_from_buff(zstd_reader *reader) {
     }
   }
 
-  size_t const ret = ZSTD_decompressStream(reader->zds, &(reader->output), &(reader->input));
+  size_t const ret =
+      ZSTD_decompressStream(reader->zds, &(reader->output), &(reader->input));
   if (ret != 0) {
     if (ZSTD_isError(ret)) {
       printf("%zu\n", ret);
       WARN("zstd decompression error: %s\n", ZSTD_getErrorName(ret));
     }
   }
-//  DEBUG("decompress %zu - %zu bytes\n", reader->output.pos, old_pos);
+  //  DEBUG("decompress %zu - %zu bytes\n", reader->output.pos, old_pos);
 
   return OK;
 }
-
 
 /**
     *line_start points to the start of the new line
@@ -114,7 +112,8 @@ rstatus _decompress_from_buff(zstd_reader *reader) {
 
     @return the number of bytes read (include line ending byte)
 **/
-size_t zstd_reader_read_line(zstd_reader *reader, char **line_start, char **line_end) {
+size_t zstd_reader_read_line(zstd_reader *reader, char **line_start,
+                             char **line_end) {
   bool has_data_in_line_buff = false;
 
   if (reader->buff_out_read_pos < reader->output.pos) {
@@ -124,7 +123,8 @@ size_t zstd_reader_read_line(zstd_reader *reader, char **line_start, char **line
     size_t buff_left_sz = reader->output.pos - reader->buff_out_read_pos;
     *line_end = memchr(buff_start, LINE_DELIM, buff_left_sz);
     if (*line_end == NULL) {
-      /* cannot find end of line, copy left over bytes, and decompress the next frame */
+      /* cannot find end of line, copy left over bytes, and decompress the next
+       * frame */
       has_data_in_line_buff = true;
     } else {
       /* find a line in buff_out */
@@ -150,7 +150,8 @@ size_t zstd_reader_read_line(zstd_reader *reader, char **line_start, char **line
 
   *line_start = reader->buff_out + reader->buff_out_read_pos;
   *line_end = memchr(*line_start, LINE_DELIM, reader->output.pos);
-  // printf("start at %d %d end %d %d\n", reader->buff_out_read_pos, **line_start, *line_end - *line_start, **line_end);
+  // printf("start at %d %d end %d %d\n", reader->buff_out_read_pos,
+  // **line_start, *line_end - *line_start, **line_end);
   assert(*line_end != NULL);
   assert(**line_end == LINE_DELIM);
   size_t sz = *line_end - *line_start + 1;
@@ -160,7 +161,8 @@ size_t zstd_reader_read_line(zstd_reader *reader, char **line_start, char **line
 }
 
 /**
- * read n_byte from reader, decompress if needed, data_start points to the new data
+ * read n_byte from reader, decompress if needed, data_start points to the new
+ * data
  *
  * return the number of available bytes
  *
@@ -169,7 +171,8 @@ size_t zstd_reader_read_line(zstd_reader *reader, char **line_start, char **line
  * @param data_start
  * @return
  */
-size_t zstd_reader_read_bytes(zstd_reader *reader, size_t n_byte, char **data_start) {
+size_t zstd_reader_read_bytes(zstd_reader *reader, size_t n_byte,
+                              char **data_start) {
   size_t sz = 0;
   while (reader->buff_out_read_pos + n_byte > reader->output.pos) {
     rstatus status = _decompress_from_buff(reader);
@@ -187,12 +190,13 @@ size_t zstd_reader_read_bytes(zstd_reader *reader, size_t n_byte, char **data_st
 
   if (reader->buff_out_read_pos + n_byte <= reader->output.pos) {
     sz = n_byte;
-    *data_start = ((char*) reader->buff_out) + reader->buff_out_read_pos;
+    *data_start = ((char *)reader->buff_out) + reader->buff_out_read_pos;
     reader->buff_out_read_pos += n_byte;
 
     return sz;
   } else {
-    ERROR("do not have enough bytes %zu < %zu\n", reader->output.pos - reader->buff_out_read_pos, n_byte);
+    ERROR("do not have enough bytes %zu < %zu\n",
+          reader->output.pos - reader->buff_out_read_pos, n_byte);
 
     return sz;
   }

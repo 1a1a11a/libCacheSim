@@ -1,7 +1,7 @@
 #ifndef LIBCSV_H__
 #define LIBCSV_H__
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,36 +16,40 @@ extern "C" {
 #define CSV_EPARSE 1   /* Parse error in strict mode */
 #define CSV_ENOMEM 2   /* Out of memory while increasing buffer size */
 #define CSV_ETOOBIG 3  /* Buffer larger than SIZE_MAX needed */
-#define CSV_EINVALID 4 /* Invalid code,should never be received from csv_error*/
-
+#define CSV_EINVALID 4 /* Invalid code,should never be received from \
+                          csv_error*/
 
 /* parser options */
 #define CSV_STRICT 1    /* enable strict mode */
-#define CSV_REPALL_NL 2 /* report all unquoted carriage returns and linefeeds */
-#define CSV_STRICT_FINI 4 /* causes csv_fini to return CSV_EPARSE if last
-                             field is quoted and doesn't containg ending 
+#define CSV_REPALL_NL 2 /* report all unquoted carriage returns and linefeeds \
+                         */
+#define CSV_STRICT_FINI                                                   \
+  4                       /* causes csv_fini to return CSV_EPARSE if last \
+                             field is quoted and doesn't containg ending  \
                              quote */
 #define CSV_APPEND_NULL 8 /* Ensure that all fields are null-terminated */
-#define CSV_EMPTY_IS_NULL 16 /* Pass null pointer to cb1 function when
-                                empty, unquoted fields are encountered */
-
+#define CSV_EMPTY_IS_NULL                      \
+  16 /* Pass null pointer to cb1 function when \
+        empty, unquoted fields are encountered */
 
 /* Character values */
-#define CSV_TAB    0x09
-#define CSV_SPACE  0x20
-#define CSV_CR     0x0d
-#define CSV_LF     0x0a
-#define CSV_COMMA  0x2c
-#define CSV_QUOTE  0x22
+#define CSV_TAB 0x09
+#define CSV_SPACE 0x20
+#define CSV_CR 0x0d
+#define CSV_LF 0x0a
+#define CSV_COMMA 0x2c
+#define CSV_QUOTE 0x22
 
 struct csv_parser {
-  int pstate;         /* Parser state */
-  int quoted;         /* Is the current field a quoted field? */
-  size_t spaces;      /* Number of continious spaces after quote or in a non-quoted field */
-  unsigned char * entry_buf;   /* Entry buffer */
-  size_t entry_pos;   /* Current position in entry_buf (and current size of entry) */
-  size_t entry_size;  /* Size of entry buffer */
-  int status;         /* Operation status */
+  int pstate;    /* Parser state */
+  int quoted;    /* Is the current field a quoted field? */
+  size_t spaces; /* Number of continious spaces after quote or in a non-quoted
+                    field */
+  unsigned char *entry_buf; /* Entry buffer */
+  size_t
+      entry_pos; /* Current position in entry_buf (and current size of entry) */
+  size_t entry_size; /* Size of entry buffer */
+  int status;        /* Operation status */
   unsigned char options;
   unsigned char quote_char;
   unsigned char delim_char;
@@ -59,15 +63,21 @@ struct csv_parser {
 
 /* Function Prototypes */
 int csv_init(struct csv_parser *p, unsigned char options);
-int csv_fini(struct csv_parser *p, void (*cb1)(void *, size_t, void *), void (*cb2)(int, void *), void *data);
+int csv_fini(struct csv_parser *p, void (*cb1)(void *, size_t, void *),
+             void (*cb2)(int, void *), void *data);
 void csv_free(struct csv_parser *p);
 int csv_error(struct csv_parser *p);
-char * csv_strerror(int error);
-size_t csv_parse(struct csv_parser *p, const void *s, size_t len, void (*cb1)(void *, size_t, void *), void (*cb2)(int, void *), void *data);
-size_t csv_write(void *dest, size_t dest_size, const void *src, size_t src_size);
+char *csv_strerror(int error);
+size_t csv_parse(struct csv_parser *p, const void *s, size_t len,
+                 void (*cb1)(void *, size_t, void *), void (*cb2)(int, void *),
+                 void *data);
+size_t csv_write(void *dest, size_t dest_size, const void *src,
+                 size_t src_size);
 int csv_fwrite(FILE *fp, const void *src, size_t src_size);
-size_t csv_write2(void *dest, size_t dest_size, const void *src, size_t src_size, unsigned char quote);
-int csv_fwrite2(FILE *fp, const void *src, size_t src_size, unsigned char quote);
+size_t csv_write2(void *dest, size_t dest_size, const void *src,
+                  size_t src_size, unsigned char quote);
+int csv_fwrite2(FILE *fp, const void *src, size_t src_size,
+                unsigned char quote);
 int csv_get_opts(struct csv_parser *p);
 int csv_set_opts(struct csv_parser *p, unsigned char options);
 void csv_set_delim(struct csv_parser *p, unsigned char c);

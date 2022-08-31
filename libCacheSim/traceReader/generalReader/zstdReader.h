@@ -1,10 +1,9 @@
 #pragma once
 
-#include "../../include/libCacheSim/enum.h"
-
 #include <stdio.h>
 #include <zstd.h>
 
+#include "../../include/libCacheSim/enum.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,10 +30,13 @@ zstd_reader *create_zstd_reader(const char *trace_path);
 
 void free_zstd_reader(zstd_reader *reader);
 
-size_t zstd_reader_read_line(zstd_reader *reader, char **line_start, char **line_end);
+size_t zstd_reader_read_line(zstd_reader *reader, char **line_start,
+                             char **line_end);
 
-/* read n_byte from reader, decompress if needed, data_start points to the new data */
-size_t zstd_reader_read_bytes(zstd_reader *reader, size_t n_byte, char **data_start);
+/* read n_byte from reader, decompress if needed, data_start points to the new
+ * data */
+size_t zstd_reader_read_bytes(zstd_reader *reader, size_t n_byte,
+                              char **data_start);
 
 #ifdef __cplusplus
 }

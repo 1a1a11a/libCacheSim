@@ -9,8 +9,7 @@
 #pragma once
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include <inttypes.h>
@@ -44,4 +43,3 @@ void csv_set_no_eof(reader_t *reader);
 #ifdef __cplusplus
 }
 #endif
-

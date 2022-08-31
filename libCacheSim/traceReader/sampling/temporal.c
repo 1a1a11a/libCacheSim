@@ -1,7 +1,6 @@
-#include "../../include/libCacheSim/sampling.h"
 #include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/mem.h"
-
+#include "../../include/libCacheSim/sampling.h"
 
 struct temporal_sampler {
   double sampling_ratio;
@@ -20,7 +19,7 @@ bool temporal_sample(void *sampler, request_t *req) {
   return false;
 }
 
-void* create_temporal_sampler(double ratio) {
+void *create_temporal_sampler(double ratio) {
   struct temporal_sampler *s = my_malloc(struct temporal_sampler);
   memset(s, 0, sizeof(struct temporal_sampler));
   if (ratio > 1 || ratio <= 0) {
@@ -32,7 +31,7 @@ void* create_temporal_sampler(double ratio) {
 
   s->sampling_ratio = ratio;
   s->n_samples = 0;
-  s->sampling_every_n = (int) (1.0 / ratio);
+  s->sampling_every_n = (int)(1.0 / ratio);
 
   return s;
 }
@@ -40,5 +39,3 @@ void* create_temporal_sampler(double ratio) {
 void free_temporal_sampler(void *s) {
   my_free(sizeof(struct temporal_sampler), s);
 }
-
-

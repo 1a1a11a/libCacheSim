@@ -20,7 +20,8 @@ static inline char *_read_bytes(reader_t *reader) {
 /* read zstd compressed data */
 static inline char *_read_bytes_zstd(reader_t *reader) {
   char *record;
-  size_t sz = zstd_reader_read_bytes(reader->zstd_reader_p, reader->item_size, &record);
+  size_t sz =
+      zstd_reader_read_bytes(reader->zstd_reader_p, reader->item_size, &record);
   if (sz == 0) {
     if (reader->zstd_reader_p->status != MY_EOF) {
       ERROR("fail to read zstd trace\n");
@@ -30,17 +31,17 @@ static inline char *_read_bytes_zstd(reader_t *reader) {
 
   return record;
 }
-#endif 
+#endif
 
 static inline char *read_bytes(reader_t *reader) {
   char *record = NULL;
 #ifdef SUPPORT_ZSTD_TRACE
   if (reader->is_zstd_file) {
     record = _read_bytes_zstd(reader);
-  } else 
-#endif 
+  } else
+#endif
   {
     record = _read_bytes(reader);
   }
-  return record; 
+  return record;
 }

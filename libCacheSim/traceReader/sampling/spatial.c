@@ -1,11 +1,11 @@
-#include "../../include/libCacheSim/sampling.h"
 #include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/mem.h"
+#include "../../include/libCacheSim/sampling.h"
 #include "../dataStructure/hash/hash.h"
 
 struct spatial_sampler {
-    double sampling_ratio;
-    uint64_t sampling_boundary;
+  double sampling_ratio;
+  uint64_t sampling_boundary;
 };
 
 bool spatial_sample(void *sampler, request_t *req) {
@@ -16,13 +16,12 @@ bool spatial_sample(void *sampler, request_t *req) {
     req->hv = hash_value;
   }
 
-  if (hash_value <= s->sampling_boundary)
-    return true;
+  if (hash_value <= s->sampling_boundary) return true;
 
   return false;
 }
 
-void* create_spatial_sampler(double ratio) {
+void *create_spatial_sampler(double ratio) {
   struct spatial_sampler *s = my_malloc(struct spatial_sampler);
   memset(s, 0, sizeof(struct spatial_sampler));
   if (ratio > 1 || ratio <= 0) {
@@ -33,7 +32,7 @@ void* create_spatial_sampler(double ratio) {
   }
 
   s->sampling_ratio = ratio;
-  s->sampling_boundary = (uint64_t) (ratio * UINT64_MAX);
+  s->sampling_boundary = (uint64_t)(ratio * UINT64_MAX);
 
   return s;
 }
@@ -41,4 +40,3 @@ void* create_spatial_sampler(double ratio) {
 void free_spatial_sampler(void *s) {
   my_free(sizeof(struct spatial_sampler), s);
 }
-
