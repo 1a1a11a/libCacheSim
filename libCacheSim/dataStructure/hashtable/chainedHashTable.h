@@ -12,11 +12,12 @@
 extern "C" {
 #endif
 
-#include "../../include/libCacheSim/request.h"
-#include "../../include/libCacheSim/cacheObj.h"
-#include "hashtableStruct.h"
 #include <assert.h>
 #include <stdbool.h>
+
+#include "../../include/libCacheSim/cacheObj.h"
+#include "../../include/libCacheSim/request.h"
+#include "hashtableStruct.h"
 
 hashtable_t *create_chained_hashtable(const uint16_t hashpower_init);
 
@@ -34,16 +35,17 @@ void chained_hashtable_delete(hashtable_t *hashtable, cache_obj_t *cache_obj);
 
 cache_obj_t *chained_hashtable_rand_obj(hashtable_t *hashtable);
 
-void chained_hashtable_foreach(hashtable_t *hashtable,
-                               hashtable_iter iter_func,
+void chained_hashtable_foreach(hashtable_t *hashtable, hashtable_iter iter_func,
                                void *user_data);
 
 void free_chained_hashtable(hashtable_t *hashtable);
 
 /**
- * because in hashtableV1 some of the cache_obj are baked into hashtable and when their content are moved internally,
- * either due to hashtable expansion or delete, their memory address will change, so any externally pointers referencing
- * to these pointers will be updated, hashtable->monitored_ptrs are those pointers used externally
+ * because in hashtableV1 some of the cache_obj are baked into hashtable and
+ * when their content are moved internally, either due to hashtable expansion or
+ * delete, their memory address will change, so any externally pointers
+ * referencing to these pointers will be updated, hashtable->monitored_ptrs are
+ * those pointers used externally
  *
  * this function adds an externally monitored pointer into monitoring
  * @param hashtable
@@ -65,4 +67,4 @@ void _chained_hashtable_expand(hashtable_t *hashtable);
 }
 #endif
 
-#endif//libCacheSim_CHAINEDHASHTABLE_H
+#endif  // libCacheSim_CHAINEDHASHTABLE_H

@@ -9,18 +9,14 @@
 #ifndef LFU_H
 #define LFU_H
 
-
 #include "../cache.h"
 
-
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-
 cache_t *LFU_init(common_cache_params_t ccache_params,
-                      void *cache_specific_params);
+                  void *cache_specific_params);
 
 void LFU_free(cache_t *cache);
 
@@ -34,10 +30,8 @@ void LFU_insert(cache_t *LFU, request_t *req);
 
 void LFU_evict(cache_t *LFU, request_t *req, cache_obj_t *cache_obj);
 
-
 #ifdef __cplusplus
 }
 #endif
 
-
-#endif	/* LFU_H */
+#endif /* LFU_H */

@@ -9,13 +9,14 @@
 #ifndef profilerLRU_h
 #define profilerLRU_h
 
-#include "const.h"
-#include "dist.h"
-#include "reader.h"
 #include <glib.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "const.h"
+#include "dist.h"
+#include "reader.h"
 
 #ifdef __cplusplus
 extern "C" {

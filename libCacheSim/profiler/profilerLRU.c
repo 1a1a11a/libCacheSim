@@ -7,6 +7,7 @@
 //
 
 #include "../include/libCacheSim/profilerLRU.h"
+
 #include "../dataStructure/splay.h"
 #include "../utils/include/utilsInternal.h"
 #include "include/distInternal.h"
@@ -56,7 +57,6 @@ guint64 *_get_lru_miss_cnt(reader_t *reader, gint64 size) {
  */
 
 guint64 *_get_lru_hit_cnt(reader_t *reader, gint64 size) {
-
   guint64 ts = 0;
   gint64 stack_dist;
   guint64 *hit_count_array = g_new0(guint64, size + 1);

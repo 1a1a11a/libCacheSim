@@ -10,8 +10,7 @@
 #define LRU_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "../cache.h"
@@ -37,4 +36,4 @@ void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 }
 #endif
 
-#endif  /* LRU_H */
+#endif /* LRU_H */

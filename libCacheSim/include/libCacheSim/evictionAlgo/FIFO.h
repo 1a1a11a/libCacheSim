@@ -12,8 +12,7 @@
 #include "../cache.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 cache_t *FIFO_init(common_cache_params_t ccache_params,
@@ -37,4 +36,4 @@ void FIFO_remove(cache_t *cache, obj_id_t obj_id);
 }
 #endif
 
-#endif  /* FIFO_SIZE_H */
+#endif /* FIFO_SIZE_H */

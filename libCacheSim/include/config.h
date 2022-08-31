@@ -12,7 +12,7 @@ extern "C" {
 //#pragma GCC optimize("Ofast")
 //#pragma GCC target("avx,avx2,fma")
 
-#include "libCacheSim/const.h" // needed for hash type 
+#include "libCacheSim/const.h"  // needed for hash type
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE /* for sched in utils.h */
@@ -32,7 +32,7 @@ extern "C" {
 //#define HASH_TYPE WYHASH
 #define HASH_TYPE XXHASH3
 #else
-    #error "HASH_TYPE is defined"
+#error "HASH_TYPE is defined"
 #endif
 
 #ifndef HASHTABLE_TYPE
@@ -63,4 +63,4 @@ typedef uint64_t obj_id_t;
 }
 #endif
 
-#endif// libCacheSim_CONFIG_H
+#endif  // libCacheSim_CONFIG_H

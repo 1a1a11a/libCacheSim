@@ -1,4 +1,4 @@
-#pragma once 
+#pragma once
 
 //
 //  const.h
@@ -23,7 +23,7 @@ extern "C" {
 #define MURMUR3 0xb10
 #define XXHASH 0xb20
 #define XXHASH3 0xb21
-#define WYHASH 0xb30 // not significantly faster than MURMUR3
+#define WYHASH 0xb30  // not significantly faster than MURMUR3
 #define IDENTITY 1
 
 #define CHAINED_HASHTABLE 0xc1
@@ -70,7 +70,6 @@ extern "C" {
 #define MB 1000000L
 #define GB 1000000000L
 #define TB 1000000000000L
-
 
 #ifdef __cplusplus
 }

@@ -1,15 +1,16 @@
 #pragma once
 
-#include "../config.h"
 #include <assert.h>
+
+#include "../config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define UNUSED(x) (void) (x)
-#define UNUSED_PARAM __attribute__((unused))// gcc only
-#define SUPPRESS_FUNCTION_NO_USE_WARN(f) (void) f
+#define UNUSED(x) (void)(x)
+#define UNUSED_PARAM __attribute__((unused))  // gcc only
+#define SUPPRESS_FUNCTION_NO_USE_WARN(f) (void)f
 #define ARRAY_LENGTH(A) (sizeof(A) / sizeof(A[0]))
 
 #ifdef _MSC_VER
@@ -32,16 +33,16 @@ extern "C" {
 
 #define BIT(x) (1 << (x))
 #define GETNAME(var) #var
-#define OFFSETOF(type, element) ((size_t) & (((type *) 0)->element))
+#define OFFSETOF(type, element) ((size_t) & (((type *)0)->element))
 #define OFFSETOF2(t, d) __builtin_offsetof(t, d)
 
 #define PASTE(a, b) a##b
 
-#define U(x) ((unsigned) (x))
-#define UL(x) ((unsigned long) (x))
-#define ULL(x) ((unsigned long long) (x))
-#define L(x) ((long) (x))
-#define LL(x) ((long long) (x))
+#define U(x) ((unsigned)(x))
+#define UL(x) ((unsigned long)(x))
+#define ULL(x) ((unsigned long long)(x))
+#define L(x) ((long)(x))
+#define LL(x) ((long long)(x))
 
 #define XSTR(x) STR(x)
 #define STR(x) #x
@@ -61,36 +62,41 @@ extern "C" {
 #define MAX2(a, b) MAX(a, b)
 #define MIN2(a, b) MIN(a, b)
 
-#define MAX3(a, b, c) ((a) > (b) ? ((a) > (c) ? (a) : (c)) : ((b) > (c) ? (b) : (c)))
-#define MIN3(a, b, c) ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
+#define MAX3(a, b, c) \
+  ((a) > (b) ? ((a) > (c) ? (a) : (c)) : ((b) > (c) ? (b) : (c)))
+#define MIN3(a, b, c) \
+  ((a) < (b) ? ((a) < (c) ? (a) : (c)) : ((b) < (c) ? (b) : (c)))
 
-#define SWAP(a, b)                                                                             \
-  do {                                                                                         \
-    __typeof__(a) _tmp = (a);                                                                  \
-    (a) = (b);                                                                                 \
-    (b) = _tmp;                                                                                \
+#define SWAP(a, b)            \
+  do {                        \
+    __typeof__(a) _tmp = (a); \
+    (a) = (b);                \
+    (b) = _tmp;               \
   } while (0)
 
-#define CHECK_CONDITION(a, op, b, FMT, ...)                                                    \
-  do {                                                                                         \
-    if ((a) op(b)) {                                                                           \
-      printf("%s: %d ", __FILE__, __LINE__);                                                   \
-      printf(FMT, ##__VA_ARGS__);                                                              \
-      fflush(stdout);                                                                          \
-      abort();                                                                                 \
-    }                                                                                          \
+#define CHECK_CONDITION(a, op, b, FMT, ...)  \
+  do {                                       \
+    if ((a)op(b)) {                          \
+      printf("%s: %d ", __FILE__, __LINE__); \
+      printf(FMT, ##__VA_ARGS__);            \
+      fflush(stdout);                        \
+      abort();                               \
+    }                                        \
   } while (0)
 
-#define ASSERT_NOT_NULL(x, FMT, ...) CHECK_CONDITION(x, ==, NULL, FMT, ##__VA_ARGS__)
+#define ASSERT_NOT_NULL(x, FMT, ...) \
+  CHECK_CONDITION(x, ==, NULL, FMT, ##__VA_ARGS__)
 
-#define ASSERT_EQUAL(a, b, FMT, ...) CHECK_CONDITION(a, !=, b, FMT, ##__VA_ARGS__)
-#define ASSERT_TRUE(x, FMT, ...) CHECK_CONDITION(x, !=, true, FMT, ##__VA_ARGS__)
+#define ASSERT_EQUAL(a, b, FMT, ...) \
+  CHECK_CONDITION(a, !=, b, FMT, ##__VA_ARGS__)
+#define ASSERT_TRUE(x, FMT, ...) \
+  CHECK_CONDITION(x, !=, true, FMT, ##__VA_ARGS__)
 #define ASSERT_ZERO(x, FMT, ...) CHECK_CONDITION(a, !=, 0, FMT, ##__VA_ARGS__)
 
 #if LOGLEVEL < INFO_LEVEL
-#define DEBUG_ASSERT(x)                                                                        \
-  do {                                                                                         \
-    assert((x));                                                                               \
+#define DEBUG_ASSERT(x) \
+  do {                  \
+    assert((x));        \
   } while (0)
 #else
 #define DEBUG_ASSERT(x)
@@ -116,24 +122,24 @@ extern "C" {
 #define THIS_IS_DEBUG3_FUNC
 #endif
 
-#define PRINT_ONCE(FMT, ...)                                                                   \
-  do {                                                                                         \
-    static bool printed = false;                                                               \
-    if (!printed) {                                                                            \
-      printf(FMT, ##__VA_ARGS__);                                                              \
-      printed = true;                                                                          \
-      fflush(stdout);                                                                          \
-    }                                                                                          \
+#define PRINT_ONCE(FMT, ...)      \
+  do {                            \
+    static bool printed = false;  \
+    if (!printed) {               \
+      printf(FMT, ##__VA_ARGS__); \
+      printed = true;             \
+      fflush(stdout);             \
+    }                             \
   } while (0)
 
-#define PRINT_N_TIMES(N, FMT, ...)                                                                   \
-  do {                                                                                         \
-    static int n_printed = 0;                                                               \
-    if (n_printed < N) {                                                                            \
-      printf(FMT, ##__VA_ARGS__);                                                              \
-      n_printed += 1;                                                                          \
-      fflush(stdout);                                                                          \
-    }                                                                                          \
+#define PRINT_N_TIMES(N, FMT, ...) \
+  do {                             \
+    static int n_printed = 0;      \
+    if (n_printed < N) {           \
+      printf(FMT, ##__VA_ARGS__);  \
+      n_printed += 1;              \
+      fflush(stdout);              \
+    }                              \
   } while (0)
 
 /*  count the number of one’s(set bits) in an integer */
@@ -157,26 +163,26 @@ extern "C" {
 // int ffsl(long int i);
 // int ffsll(long long int i);
 
-#define find_max(array, n_elem, max_elem_ptr, max_elem_idx_ptr)                                \
-  do {                                                                                         \
-    *(max_elem_idx_ptr) = 0;                                                                   \
-    for (uint64_t i = 0; i < (uint64_t) (n_elem); i++)                                         \
-      if ((array)[i] > (array)[*(max_elem_idx_ptr)]) *(max_elem_idx_ptr) = i;                  \
-    *(max_elem_ptr) = (array)[*(max_elem_idx_ptr)];                                            \
+#define find_max(array, n_elem, max_elem_ptr, max_elem_idx_ptr)               \
+  do {                                                                        \
+    *(max_elem_idx_ptr) = 0;                                                  \
+    for (uint64_t i = 0; i < (uint64_t)(n_elem); i++)                         \
+      if ((array)[i] > (array)[*(max_elem_idx_ptr)]) *(max_elem_idx_ptr) = i; \
+    *(max_elem_ptr) = (array)[*(max_elem_idx_ptr)];                           \
   } while (0)
 
-#define find_min(array, n_elem, min_elem_ptr, min_elem_idx_ptr)                                \
-  do {                                                                                         \
-    *(min_elem_idx_ptr) = 0;                                                                   \
-    for (uint64_t i = 0; i < (uint64_t) (n_elem); i++)                                         \
-      if ((array)[i] < (array)[*(min_elem_idx_ptr)]) *(min_elem_idx_ptr) = i;                  \
-    *(min_elem_ptr) = (array)[*(min_elem_idx_ptr)];                                            \
+#define find_min(array, n_elem, min_elem_ptr, min_elem_idx_ptr)               \
+  do {                                                                        \
+    *(min_elem_idx_ptr) = 0;                                                  \
+    for (uint64_t i = 0; i < (uint64_t)(n_elem); i++)                         \
+      if ((array)[i] < (array)[*(min_elem_idx_ptr)]) *(min_elem_idx_ptr) = i; \
+    *(min_elem_ptr) = (array)[*(min_elem_idx_ptr)];                           \
   } while (0)
 
-#define FILL(instance, field, value)                                                           \
-  do {                                                                                         \
-    (instance).field = value;                                                                  \
-    (instance).has_##field = 1;                                                                \
+#define FILL(instance, field, value) \
+  do {                               \
+    (instance).field = value;        \
+    (instance).has_##field = 1;      \
   } while (0)
 
 #ifdef __cplusplus

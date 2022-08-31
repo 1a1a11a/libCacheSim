@@ -7,17 +7,14 @@
 
 #include "config.h"
 #include "libCacheSim/api.h"
-
-#include "libCacheSim/logging.h"
-#include "libCacheSim/macro.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/cacheObj.h"
 #include "libCacheSim/const.h"
 #include "libCacheSim/enum.h"
-
-#include "libCacheSim/cache.h"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/macro.h"
 #include "libCacheSim/reader.h"
 #include "libCacheSim/request.h"
-#include "libCacheSim/cacheObj.h"
-
 #include "libCacheSim/sampling.h"
 
 /* admission */
@@ -30,9 +27,8 @@
 #include "libCacheSim/sampling.h"
 
 /* cache simulator */
+#include "libCacheSim/plugin.h"
 #include "libCacheSim/profilerLRU.h"
 #include "libCacheSim/simulator.h"
 
-#include "libCacheSim/plugin.h"
-
-#endif // libCacheSim_H
+#endif  // libCacheSim_H

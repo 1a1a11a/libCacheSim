@@ -3,8 +3,7 @@
 #include "../cache.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 typedef struct {
@@ -12,7 +11,7 @@ typedef struct {
 } Clock_params_t;
 
 cache_t *Clock_init(common_cache_params_t ccache_params,
-                         void *cache_specific_params);
+                    void *cache_specific_params);
 
 void Clock_free(cache_t *cache);
 
@@ -31,5 +30,3 @@ void Clock_remove(cache_t *cache, obj_id_t obj_id);
 #ifdef __cplusplus
 }
 #endif
-
-

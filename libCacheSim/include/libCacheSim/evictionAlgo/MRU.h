@@ -32,7 +32,6 @@ cache_t *MRU_init(common_cache_params_t ccache_params,
 
 void MRU_remove(cache_t *cache, obj_id_t obj_id);
 
-
 #ifdef __cplusplus
 }
 #endif

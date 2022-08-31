@@ -9,15 +9,11 @@
 #ifndef LFUFast_H
 #define LFUFast_H
 
-
 #include "../cache.h"
 
-
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
-
 
 typedef struct freq_node {
   uint32_t freq;
@@ -33,9 +29,8 @@ typedef struct LFUFast_params {
   uint64_t max_freq;
 } LFUFast_params_t;
 
-
 cache_t *LFUFast_init(common_cache_params_t ccache_params,
-                  void *cache_specific_params);
+                      void *cache_specific_params);
 
 void LFUFast_free(cache_t *cache);
 
@@ -51,10 +46,8 @@ cache_obj_t *LFUFast_to_evict(cache_t *cache);
 
 void LFUFast_evict(cache_t *LFUFast, request_t *req, cache_obj_t *cache_obj);
 
-
 #ifdef __cplusplus
 }
 #endif
 
-
-#endif	/* LFUFast_H */
+#endif /* LFUFast_H */

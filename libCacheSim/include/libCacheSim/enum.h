@@ -33,7 +33,7 @@ typedef enum {
 
   TWR_TRACE,
   TWRNS_TRACE,
-  CF1_TRACE, 
+  CF1_TRACE,
   AKAMAI_TRACE,
   WIKI16u_TRACE,
   WIKI19u_TRACE,
@@ -49,7 +49,7 @@ typedef enum {
   ORACLE_SYS_TWR_TRACE,
   ORACLE_SIM_TWRNS_TRACE,
   ORACLE_SYS_TWRNS_TRACE,
-  ORACLE_CF1_TRACE, 
+  ORACLE_CF1_TRACE,
 
   ORACLE_AKAMAI_TRACE,
   ORACLE_WIKI16u_TRACE,
@@ -89,11 +89,11 @@ typedef enum {
 } req_op_e;
 
 #pragma GCC diagnostic ignored "-Wwrite-strings"
-static char *OP_STR[OP_INVALID+2] = {
-    "nop", "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
-    "delete", "incr", "decr", "read", "write", "update", "invalid"};
+static char *OP_STR[OP_INVALID + 2] = {
+    "nop",     "get",    "gets", "set",  "add",  "cas",   "replace", "append",
+    "prepend", "delete", "incr", "decr", "read", "write", "update",  "invalid"};
 
-//enum op {
+// enum op {
 //  OP_GET = 0,
 //  OP_GETS,
 //  OP_SET,
@@ -112,14 +112,13 @@ static char *OP_STR[OP_INVALID+2] = {
 //
 //  OP_INVALID,
 //} __attribute__((__packed__));
-//typedef enum op req_op_e;
+// typedef enum op req_op_e;
 //
 //#pragma GCC diagnostic ignored "-Wwrite-strings"
-//static char *OP_STR[OP_INVALID+1] = {
+// static char *OP_STR[OP_INVALID+1] = {
 //    "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
 //    "delete", "incr", "decr", "read", "write", "update", "invalid"};
 //#pragma GCC diagnostic pop
-
 
 typedef enum {
   cache_ck_hit = 0,
@@ -129,18 +128,13 @@ typedef enum {
   cache_ck_invalid,
 } __attribute__((__packed__)) cache_ck_res_e;
 
-static char *CACHE_CK_STATUS_STR[cache_ck_invalid + 1] = {
-    "hit", "miss", "expired", "invalid"
-};
+static char *CACHE_CK_STATUS_STR[cache_ck_invalid + 1] = {"hit", "miss",
+                                                          "expired", "invalid"};
 
-typedef enum {
-  ERR,
-  OK,
-  MY_EOF
-} rstatus;
+typedef enum { ERR, OK, MY_EOF } rstatus;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // libCacheSim_ENUM_H
+#endif  // libCacheSim_ENUM_H

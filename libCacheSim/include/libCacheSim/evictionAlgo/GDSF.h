@@ -3,8 +3,7 @@
 #include "../cache.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 cache_t *GDSF_init(common_cache_params_t ccache_params,
@@ -22,9 +21,6 @@ void GDSF_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 
 void GDSF_remove(cache_t *cache, obj_id_t obj_id);
 
-
 #ifdef __cplusplus
 }
 #endif
-
-

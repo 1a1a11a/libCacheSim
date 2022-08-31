@@ -7,8 +7,7 @@
 #define SLRU_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "../cache.h"
@@ -19,14 +18,12 @@ typedef struct SLRU_params {
   int n_seg;
 } SLRU_params_t;
 
-
 typedef struct SLRU_init_params {
   int n_seg;
 } SLRU_init_params_t;
 
-
 cache_t *SLRU_init(common_cache_params_t ccache_params,
-                  void *cache_specific_params);
+                   void *cache_specific_params);
 
 void SLRU_free(cache_t *cache);
 
@@ -46,4 +43,4 @@ void SLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
 }
 #endif
 
-#endif  /* SLRU_H */
+#endif /* SLRU_H */

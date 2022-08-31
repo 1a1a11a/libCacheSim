@@ -1,13 +1,11 @@
 #ifndef CR_LFU_H
 #define CR_LFU_H
 
-
 #include "../cache.h"
 #include "LFUFast.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 typedef struct CR_LFU_params {
@@ -18,9 +16,8 @@ typedef struct CR_LFU_params {
   cache_t *other_cache;
 } CR_LFU_params_t;
 
-
 cache_t *CR_LFU_init(common_cache_params_t ccache_params,
-                  void *cache_specific_params);
+                     void *cache_specific_params);
 
 void CR_LFU_free(cache_t *cache);
 
@@ -36,10 +33,8 @@ cache_obj_t *CR_LFU_to_evict(cache_t *cache);
 
 void CR_LFU_evict(cache_t *CR_LFU, request_t *req, cache_obj_t *cache_obj);
 
-
 #ifdef __cplusplus
 }
 #endif
 
-
-#endif	/* CR_LFU_H */
+#endif /* CR_LFU_H */

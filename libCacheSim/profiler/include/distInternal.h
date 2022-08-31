@@ -24,10 +24,10 @@ extern "C" {
  * @param ts            current timestamp
  * @return              distance to last access
  */
-static inline gint64
-_get_last_dist_add_req(request_t *req, GHashTable *hash_table, guint64 ts) {
-  gpointer gp =
-      g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
+static inline gint64 _get_last_dist_add_req(request_t *req,
+                                            GHashTable *hash_table,
+                                            guint64 ts) {
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
   gint64 ret = -1;
   if (gp == NULL) {
     // it has not been requested before
@@ -53,10 +53,10 @@ _get_last_dist_add_req(request_t *req, GHashTable *hash_table, guint64 ts) {
  * @param ts            current timestamp
  * @return              distance to last access
  */
-static inline gint64
-_get_first_dist_add_req(request_t *req, GHashTable *hash_table, guint64 ts) {
-  gpointer gp =
-      g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
+static inline gint64 _get_first_dist_add_req(request_t *req,
+                                             GHashTable *hash_table,
+                                             guint64 ts) {
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
   gint64 ret = -1;
   if (gp == NULL) {
     // it has not been requested before
@@ -87,9 +87,7 @@ _get_first_dist_add_req(request_t *req, GHashTable *hash_table, guint64 ts) {
 static inline sTree *get_stack_dist_add_req(request_t *req, sTree *splay_tree,
                                             GHashTable *hash_table, guint64 ts,
                                             gint64 *stack_dist) {
-
-  gpointer gp =
-      g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
 
   sTree *newtree;
   if (gp == NULL) {
@@ -129,8 +127,7 @@ static inline sTree *get_byte_stack_dist_add_req(request_t *req,
                                                  GHashTable *hash_table,
                                                  guint64 ts,
                                                  gint64 *byte_stack_dist) {
-  gpointer gp =
-      g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
+  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
 
   sTree *newtree;
   if (gp == NULL) {
@@ -155,4 +152,4 @@ static inline sTree *get_byte_stack_dist_add_req(request_t *req,
 }
 #endif
 
-#endif // libCacheSim_DISTUTILSINTERNAL_H
+#endif  // libCacheSim_DISTUTILSINTERNAL_H

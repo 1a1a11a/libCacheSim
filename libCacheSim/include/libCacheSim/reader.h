@@ -9,12 +9,6 @@
 #ifndef READER_H
 #define READER_H
 
-#include "const.h"
-#include "enum.h"
-#include "logging.h"
-#include "request.h"
-#include "sampling.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <glib.h>
@@ -29,10 +23,15 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#include "const.h"
+#include "enum.h"
+#include "logging.h"
+#include "request.h"
+#include "sampling.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /* this provides the info about each field or col in csv and binary trace
  * the field index start with 1 */
@@ -54,15 +53,15 @@ typedef struct {
   char binary_fmt[MAX_BIN_FMT_STR_LEN];
 } reader_init_param_t;
 
-struct zstd_reader; 
+struct zstd_reader;
 typedef struct reader {
   char *mapped_file; /* mmap the file, this should not change during runtime */
   uint64_t mmap_offset;
 
-  /* this is used when the reader splits a large req into multiple chunked requests */
-  int n_chunked_req_left;   
-  int64_t chunked_req_clock_time; 
-
+  /* this is used when the reader splits a large req into multiple chunked
+   * requests */
+  int n_chunked_req_left;
+  int64_t chunked_req_clock_time;
 
   struct zstd_reader *zstd_reader_p;
   bool is_zstd_file;
@@ -72,7 +71,7 @@ typedef struct reader {
   FILE *file;
   size_t file_size;
 
-  trace_type_e trace_type;   /* possible types see trace_type_t  */
+  trace_type_e trace_type; /* possible types see trace_type_t  */
   trace_format_e trace_format;
   obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
@@ -97,7 +96,7 @@ typedef struct reader {
 
   int ver;
 
-  bool cloned;// true if this is a cloned reader, else false
+  bool cloned;  // true if this is a cloned reader, else false
 
 } reader_t;
 
@@ -109,8 +108,8 @@ typedef struct reader {
  * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR,
  *  used by CSV_TRACE and PLAIN_TXT_TRACE, whether the obj_id in the trace is a
  *  number or not, if it is not a number then we will map it to uint64_t
- * @param reader_init_param some initialization parameters used by csv and binary traces
- * these include real_time_field, obj_id_field, obj_size_field,
+ * @param reader_init_param some initialization parameters used by csv and
+ * binary traces these include real_time_field, obj_id_field, obj_size_field,
  * op_field, ttl_field, has_header, delimiter, binary_fmt
  *
  * @return a pointer to reader_t struct, the returned reader needs to be
@@ -121,19 +120,20 @@ reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
                        const reader_init_param_t *reader_init_param);
 
 /* this is the same function as setup_reader */
-static inline reader_t *
-open_trace(const char *path, const trace_type_e type,
-           const obj_id_type_e obj_id_type,
-           reader_init_param_t *reader_init_param) {
+static inline reader_t *open_trace(const char *path, const trace_type_e type,
+                                   const obj_id_type_e obj_id_type,
+                                   reader_init_param_t *reader_init_param) {
   return setup_reader(path, type, obj_id_type, reader_init_param);
 }
 
 /**
- * add a sampling_func to the reader, the requests from the reader will be sampled
+ * add a sampling_func to the reader, the requests from the reader will be
+ * sampled
  * @param reader
  * @param sampling_func
  */
-static inline void add_sampling(reader_t *reader, trace_sampling_func sampling_func) {
+static inline void add_sampling(reader_t *reader,
+                                trace_sampling_func sampling_func) {
   reader->sampling_func = sampling_func;
 }
 
@@ -169,7 +169,6 @@ static inline obj_id_type_e get_obj_id_type(const reader_t *const reader) {
  * return 0 on success and 1 if reach end of trace
  */
 int read_one_req(reader_t *reader, request_t *req);
-
 
 /**
  * read one request from reader/trace, stored the info in pre-allocated req

@@ -3,8 +3,7 @@
 #include "../cache.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 typedef struct {
@@ -13,7 +12,6 @@ typedef struct {
 } LHD_init_params_t;
 
 typedef struct {
-
   void *LHD_cache;
 
   int associativity;
@@ -39,4 +37,3 @@ void LHD_remove(cache_t *cache, obj_id_t obj_id);
 #ifdef __cplusplus
 }
 #endif
-
