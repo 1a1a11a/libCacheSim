@@ -4,8 +4,8 @@
 
 #include "common.h"
 
-// defined in reader.c file, not in public interface 
-int go_back_two_lines(reader_t *const reader); 
+// defined in reader.c file, not in public interface
+int go_back_two_lines(reader_t *const reader);
 
 // TRUE DATA
 size_t trace_length = 113872;
@@ -27,8 +27,7 @@ void verify_req(reader_t *reader, request_t *req, int req_idx) {
     if (get_obj_id_type(reader) == OBJ_ID_NUM)
       g_assert_true(req->obj_id == trace_end_req_d);
     else if (get_obj_id_type(reader) == OBJ_ID_STR)
-      g_assert_cmpstr(g_quark_to_string(req->obj_id), ==,
-                      trace_end_req_s);
+      g_assert_cmpstr(g_quark_to_string(req->obj_id), ==, trace_end_req_s);
     return;
   }
 
@@ -42,13 +41,13 @@ void verify_req(reader_t *reader, request_t *req, int req_idx) {
       get_trace_type(reader) == BIN_TRACE ||
       get_trace_type(reader) == VSCSI_TRACE) {
     g_assert_true(req->real_time == trace_start_req_time[req_idx] ||
-        req->real_time == trace_start_req_time[req_idx] / 1000000);
+                  req->real_time == trace_start_req_time[req_idx] / 1000000);
     g_assert_true(req->obj_size == trace_start_req_size[req_idx]);
   }
 }
 
 void test_reader_basic(gconstpointer user_data) {
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   gint i;
   request_t *req = new_request();
 
@@ -78,7 +77,7 @@ void test_reader_basic(gconstpointer user_data) {
 }
 
 void test_reader_more1(gconstpointer user_data) {
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   int i;
   request_t *req = new_request();
 
@@ -107,8 +106,7 @@ void test_reader_more1(gconstpointer user_data) {
   g_assert_true(get_num_of_req(reader) == trace_length);
 
   reader_set_read_pos(reader, 1.0);
-  for (i = 0; i < trace_length; i++)
-    go_back_one_line(reader);
+  for (i = 0; i < trace_length; i++) go_back_one_line(reader);
   read_one_req(reader, req);
   verify_req(reader, req, 0);
 
@@ -116,7 +114,7 @@ void test_reader_more1(gconstpointer user_data) {
 }
 
 void test_reader_more2(gconstpointer user_data) {
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   request_t *req = new_request();
 
   read_last_req(reader, req);
@@ -129,7 +127,7 @@ void test_reader_more2(gconstpointer user_data) {
 
   // check clone reader
   reader_t *cloned_reader = clone_reader(reader);
-  test_reader_basic(cloned_reader); // do not close cloned reader
+  test_reader_basic(cloned_reader);  // do not close cloned reader
   close_reader(cloned_reader);
 }
 
@@ -146,8 +144,8 @@ void test_twr(gconstpointer user_data) {
     //           (unsigned long long) req->obj_id, (long) req->obj_size,
     //           (long) req->ttl, req->op);
   }
-  printf("%llu req %llu obj\n", (unsigned long long) n_req,
-         (unsigned long long) n_obj);
+  printf("%llu req %llu obj\n", (unsigned long long)n_req,
+         (unsigned long long)n_obj);
 }
 
 int main(int argc, char *argv[]) {

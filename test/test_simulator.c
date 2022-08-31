@@ -17,9 +17,9 @@ static void test_simulator_no_size(gconstpointer user_data) {
   uint64_t miss_cnt_true[] = {99411, 96397, 95652, 95370,
                               95182, 94997, 94891, 94816};
 
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = cache_size,
-      .default_ttl = 0};
+                                     .default_ttl = 0};
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
@@ -50,9 +50,11 @@ static void test_simulator(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {4036642816, 3838227968, 3664065536, 3611544064,
                                3081624576, 3079594496, 3075357184, 3060711936};
 
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .default_ttl = 0, .hashpower = 16, .per_obj_overhead = 0};
+                                     .default_ttl = 0,
+                                     .hashpower = 16,
+                                     .per_obj_overhead = 0};
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -69,8 +71,8 @@ static void test_simulator(gconstpointer user_data) {
 
   uint64_t cache_sizes[] = {STEP_SIZE, STEP_SIZE * 2, STEP_SIZE * 4,
                             STEP_SIZE * 7};
-  res = get_miss_ratio_curve(reader, cache, 4, cache_sizes, NULL, 0,
-                             0, _n_cores());
+  res = get_miss_ratio_curve(reader, cache, 4, cache_sizes, NULL, 0, 0,
+                             _n_cores());
   g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
   g_assert_cmpuint(res[1].n_req_byte, ==, req_byte_true);
   g_assert_cmpuint(res[3].n_req, ==, req_cnt_true);
@@ -93,9 +95,9 @@ static void test_simulator_with_warmup1(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {4034876416, 3836408320, 3662237696, 3609691648,
                                3079616512, 3077579776, 3072181760, 3045314048};
 
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .default_ttl = 0};
+                                     .default_ttl = 0};
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -121,9 +123,9 @@ static void test_simulator_with_warmup2(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {3036331008, 2839400448, 2676338688, 2623825408,
                                2263264256, 2261316096, 2257078784, 2242433536};
 
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .default_ttl = 0};
+                                     .default_ttl = 0};
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
@@ -149,26 +151,26 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
   uint64_t miss_byte_true[] = {4037085184, 3838869504, 3666520064, 3614002688,
                                3084368896, 3082371584, 3078228480, 3075253760};
 
-  reader_t *reader = (reader_t *) user_data;
+  reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
-      .default_ttl = 2400};
+                                     .default_ttl = 2400};
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
-//  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-//    printf("size %" PRIu64 " - req %" PRIu64 " - miss %" PRIu64
-//           " - req_bytes %" PRIu64 " - miss_bytes "
-//           "%" PRIu64 " - occupied_size %" PRIu64 " - stored_obj %" PRIu64
-//           " - expired_obj %" PRIu64 " - "
-//           "expired_bytes %" PRIu64 "\n",
-//           res[i].cache_size, res[i].n_req, res[i].n_miss, res[i].n_req_byte,
-//           res[i].n_miss_byte, res[i].cache_state.occupied_size,
-//           res[i].cache_state.n_obj,
-//           res[i].cache_state.expired_obj_cnt,
-//           res[i].cache_state.expired_bytes);
-//  }
+  //  for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
+  //    printf("size %" PRIu64 " - req %" PRIu64 " - miss %" PRIu64
+  //           " - req_bytes %" PRIu64 " - miss_bytes "
+  //           "%" PRIu64 " - occupied_size %" PRIu64 " - stored_obj %" PRIu64
+  //           " - expired_obj %" PRIu64 " - "
+  //           "expired_bytes %" PRIu64 "\n",
+  //           res[i].cache_size, res[i].n_req, res[i].n_miss,
+  //           res[i].n_req_byte, res[i].n_miss_byte,
+  //           res[i].cache_state.occupied_size, res[i].cache_state.n_obj,
+  //           res[i].cache_state.expired_obj_cnt,
+  //           res[i].cache_state.expired_bytes);
+  //  }
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));

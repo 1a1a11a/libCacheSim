@@ -5,15 +5,14 @@
 #ifndef libCacheSim_TEST_COMMON_H
 #define libCacheSim_TEST_COMMON_H
 
+#include <glib.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "../libCacheSim/include/libCacheSim.h"
-#include <unistd.h>
-#include <inttypes.h>
-#include <glib.h>
-#include <stdlib.h>
 
-
-#define BLOCK_UNIT_SIZE 0    // 16 * 1024
+#define BLOCK_UNIT_SIZE 0   // 16 * 1024
 #define DISK_SECTOR_SIZE 0  // 512
 
 #define N_TEST_REQ 6
@@ -23,33 +22,32 @@
 #define CACHE_SIZE (1024 * CACHE_SIZE_UNIT)
 #define STEP_SIZE (128 * CACHE_SIZE_UNIT)
 
-#define DEFAULT_TTL (300*86400)
+#define DEFAULT_TTL (300 * 86400)
 
 static inline unsigned int _n_cores() {
   unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
 
-  asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(eax), "2"(ecx) :);
+  asm volatile("cpuid"
+               : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+               : "0"(eax), "2"(ecx)
+               :);
 
   //  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
   return ebx;
 }
 
-static void _detect_data_path(char* data_path, char* data_name) {
+static void _detect_data_path(char *data_path, char *data_name) {
   sprintf(data_path, "data/%s", data_name);
-  if( access(data_path, F_OK ) != -1 )
-    return;
+  if (access(data_path, F_OK) != -1) return;
 
   sprintf(data_path, "../data/%s", data_name);
-  if( access(data_path, F_OK ) != -1 )
-    return;
+  if (access(data_path, F_OK) != -1) return;
 
   sprintf(data_path, "../../data/%s", data_name);
-  if( access(data_path, F_OK ) != -1 )
-    return;
+  if (access(data_path, F_OK) != -1) return;
 
   sprintf(data_path, "../../../data/%s", data_name);
-  if( access(data_path, F_OK ) != -1 )
-    return;
+  if (access(data_path, F_OK) != -1) return;
 
   ERROR("cannot find data %s\n", data_name);
 }
@@ -57,26 +55,33 @@ static void _detect_data_path(char* data_path, char* data_name) {
 static reader_t *setup_oracleGeneralBin_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.oracleGeneral.bin");
-  reader_t *reader_oracle = setup_reader(data_path, ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader_oracle =
+      setup_reader(data_path, ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
   return reader_oracle;
 }
 
 static reader_t *setup_L2CacheTestData_reader(void) {
-  char *url = "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/.w68.oracleGeneral.bin.zst"; 
-  int ret = system("if [ ! -f .w68.oracleGeneral.bin.zst ]; then wget https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/.w68.oracleGeneral.bin.zst; fi"); 
+  char *url =
+      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/"
+      ".w68.oracleGeneral.bin.zst";
+  int ret = system(
+      "if [ ! -f .w68.oracleGeneral.bin.zst ]; then wget "
+      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/"
+      ".w68.oracleGeneral.bin.zst; fi");
   if (ret != 0) {
     ERROR("downloading data failed\n");
-  } 
+  }
 
-  reader_t *reader_oracle = setup_reader(".w68.oracleGeneral.bin.zst", ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader_oracle = setup_reader(
+      ".w68.oracleGeneral.bin.zst", ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
   return reader_oracle;
 }
-
 
 static reader_t *setup_vscsi_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.vscsi");
-  reader_t *reader_vscsi = setup_reader(data_path, VSCSI_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader_vscsi =
+      setup_reader(data_path, VSCSI_TRACE, OBJ_ID_NUM, NULL);
   return reader_vscsi;
 }
 
@@ -88,7 +93,8 @@ static reader_t *setup_binary_reader(void) {
   init_params_bin->obj_size_field = 2;
   init_params_bin->obj_id_field = 6;
   init_params_bin->real_time_field = 7;
-  reader_t *reader_bin_l = setup_reader(data_path, BIN_TRACE, OBJ_ID_NUM, init_params_bin);
+  reader_t *reader_bin_l =
+      setup_reader(data_path, BIN_TRACE, OBJ_ID_NUM, init_params_bin);
   g_free(init_params_bin);
   return reader_bin_l;
 }
@@ -102,7 +108,8 @@ static reader_t *setup_csv_reader_obj_str(void) {
   init_params_csv->obj_id_field = 5;
   init_params_csv->obj_size_field = 4;
   init_params_csv->has_header = TRUE;
-  reader_t *reader_csv_c = setup_reader(data_path, CSV_TRACE, OBJ_ID_STR, init_params_csv);
+  reader_t *reader_csv_c =
+      setup_reader(data_path, CSV_TRACE, OBJ_ID_STR, init_params_csv);
   g_free(init_params_csv);
   return reader_csv_c;
 }
@@ -116,7 +123,8 @@ static reader_t *setup_csv_reader_obj_num(void) {
   init_params_csv->obj_id_field = 5;
   init_params_csv->obj_size_field = 4;
   init_params_csv->has_header = TRUE;
-  reader_t *reader_csv_l = setup_reader(data_path, CSV_TRACE, OBJ_ID_NUM, init_params_csv);
+  reader_t *reader_csv_l =
+      setup_reader(data_path, CSV_TRACE, OBJ_ID_NUM, init_params_csv);
   g_free(init_params_csv);
   return reader_csv_l;
 }
@@ -133,14 +141,14 @@ static reader_t *setup_plaintxt_reader_str(void) {
   return setup_reader(data_path, PLAIN_TXT_TRACE, OBJ_ID_STR, NULL);
 }
 
-
 static void test_teardown(gpointer data) {
-  reader_t *reader = (reader_t *) data;
+  reader_t *reader = (reader_t *)data;
   close_reader(reader);
 }
 
 static cache_t *create_test_cache(const char *alg_name,
-                           common_cache_params_t cc_params, reader_t* reader, void *params) {
+                                  common_cache_params_t cc_params,
+                                  reader_t *reader, void *params) {
   cache_t *cache;
   if (strcasecmp(alg_name, "LRU") == 0) {
     cache = LRU_init(cc_params, NULL);
@@ -158,8 +166,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = Random_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "MRU") == 0) {
     cache = MRU_init(cc_params, NULL);
-//  } else if (strcmp(alg_name, "LRU_K") == 0) {
-//    cache = LRU_K_init(cc_params, NULL);
+    //  } else if (strcmp(alg_name, "LRU_K") == 0) {
+    //    cache = LRU_K_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFU") == 0) {
     cache = LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFUFast") == 0) {
@@ -174,8 +182,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = ARC_init(cc_params, init_params);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strncasecmp(alg_name, "L2Cache", 7) == 0) {
-    L2Cache_init_params_t init_params; 
-    L2Cache_set_default_init_params(&init_params); 
+    L2Cache_init_params_t init_params;
+    L2Cache_set_default_init_params(&init_params);
     if (strcasecmp(alg_name, "L2Cache-OracleLog") == 0) {
       init_params.type = LOGCACHE_LOG_ORACLE;
     } else if (strcasecmp(alg_name, "L2Cache-OracleItem") == 0) {
@@ -186,10 +194,10 @@ static cache_t *create_test_cache(const char *alg_name,
       init_params.type = LOGCACHE_BOTH_ORACLE;
     } else if (strcasecmp(alg_name, "L2Cache-LearnedTrueY") == 0) {
       init_params.type = LOGCACHE_LEARNED;
-      init_params.train_source_y = TRAIN_Y_FROM_ORACLE; 
+      init_params.train_source_y = TRAIN_Y_FROM_ORACLE;
     } else if (strcasecmp(alg_name, "L2Cache-LearnedOnline") == 0) {
       init_params.type = LOGCACHE_LEARNED;
-      init_params.train_source_y = TRAIN_Y_FROM_ONLINE; 
+      init_params.train_source_y = TRAIN_Y_FROM_ONLINE;
     }
     cache = L2Cache_init(cc_params, &init_params);
 #endif
@@ -207,7 +215,7 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = CR_LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "SLRU") == 0) {
     SLRU_init_params_t init_params;
-    init_params.n_seg = 5; // Currently hard-coded
+    init_params.n_seg = 5;  // Currently hard-coded
     cache = SLRU_init(cc_params, &init_params);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
@@ -216,5 +224,4 @@ static cache_t *create_test_cache(const char *alg_name,
   return cache;
 }
 
-
-#endif //libCacheSim_TEST_COMMON_H
+#endif  // libCacheSim_TEST_COMMON_H
