@@ -83,7 +83,14 @@ hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
 
   size_t size = sizeof(cache_obj_t *) * hashsize(hashtable->hashpower);
   hashtable->ptr_table = my_malloc_n(cache_obj_t *, hashsize(hashpower));
+  if (hashtable->ptr_table == NULL) {
+    ERROR("allcoate hash table %zu entry * %lu B = %ld MiB failed\n",
+          sizeof(cache_obj_t *), (unsigned long)(hashsize(hashpower)),
+          (long)(sizeof(cache_obj_t *) * hashsize(hashpower) / 1024 / 1024));
+    exit(1);
+  }
   memset(hashtable->ptr_table, 0, size);
+
 #ifdef USE_HUGEPAGE
   madvise(hashtable->table, size, MADV_HUGEPAGE);
 #endif

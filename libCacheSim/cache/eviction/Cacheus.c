@@ -29,11 +29,10 @@ cache_t *Cacheus_init(common_cache_params_t ccache_params, void *init_params) {
   params->ghost_list_factor = 1;
 
   params->update_interval = ccache_params.cache_size;  // From paper
-  params->lr =
-      0.001 + ((double)(next_rand() % 1000)) /
-                  1000;  // learning rate chooses randomly between 10-3 & 1
+  // learning rate chooses randomly between 10-3 & 1
   // LR will be reset after 10 consecutive decreases. Whether reset to the same
   // val or diff value, the repo differs from their paper. I followed paper.
+  params->lr = 0.001 + ((double)(next_rand() % 1000)) / 1000;
   params->lr_previous = 0;
 
   params->w_lru = params->w_lfu = 0.50;  // weights for LRU and LFU
@@ -75,6 +74,7 @@ static void update_weight(cache_t *cache, request_t *req) {
 
   ck_lru_g = params->LRU_g->check(params->LRU_g, req, false);
   ck_lfu_g = params->LFU_g->check(params->LFU_g, req, false);
+  /* can only be evicted by one of the two experts, but is this true? (TODO) */
   DEBUG_ASSERT((ck_lru_g == cache_ck_hit ? 1 : 0) +
                    (ck_lfu_g == cache_ck_hit ? 1 : 0) <=
                1);
