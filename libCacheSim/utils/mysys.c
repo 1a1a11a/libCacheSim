@@ -32,9 +32,10 @@ int set_thread_affinity(pthread_t tid) {
 int get_n_cores(void) {
 #ifdef __linux__
 
-  INFO("This system has %d processors configured and "
-       "%d processors available.\n",
-       get_nprocs_conf(), get_nprocs());
+  INFO(
+      "This system has %d processors configured and "
+      "%d processors available.\n",
+      get_nprocs_conf(), get_nprocs());
 
   return get_nprocs();
 #else
@@ -56,4 +57,3 @@ void print_glib_ver(void) {
   printf("glib version %d.%d.%d %d\n", glib_major_version, glib_minor_version,
          glib_micro_version, glib_binary_age);
 }
-

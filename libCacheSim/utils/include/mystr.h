@@ -10,7 +10,6 @@
  * @param str a 8 byte char array
  */
 static inline void convert_size_to_str(unsigned long long size, char *str) {
-
   if (size >= TiB) {
     sprintf(str, "%.0lf TiB", (double)size / TiB);
   } else if (size >= GiB) {
@@ -31,4 +30,3 @@ static inline uint64_t str_to_u64(const char *start, size_t len) {
   }
   return n;
 }
-

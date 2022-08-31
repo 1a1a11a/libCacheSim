@@ -4,17 +4,15 @@
 
 #pragma once
 
-
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
+
 #include "../../include/libCacheSim/logging.h"
 
-
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 extern __thread uint64_t rand_seed;
