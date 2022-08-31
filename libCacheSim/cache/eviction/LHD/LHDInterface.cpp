@@ -1,8 +1,9 @@
 
 
-#include "../include/libCacheSim/evictionAlgo/LHD.h"
-#include "../dataStructure/hashtable/hashtable.h"
 #include <cassert>
+
+#include "../dataStructure/hashtable/hashtable.h"
+#include "../include/libCacheSim/evictionAlgo/LHD.h"
 #include "lhd.hpp"
 #include "repl.hpp"
 
@@ -38,24 +39,25 @@ cache_t *LHD_init(common_cache_params_t ccache_params, void *init_params) {
   if (params->admission == 0) {
     params->admission = 8;
   }
-  if(params->associativity == 0) {
+  if (params->associativity == 0) {
     params->associativity = 32;
   }
 
-  params->LHD_cache = static_cast<void *> (new LHD(params->associativity, params->admission, cache));
+  params->LHD_cache = static_cast<void *>(
+      new LHD(params->associativity, params->admission, cache));
   return cache;
 }
 
 void LHD_free(cache_t *cache) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
-  auto *lhd = static_cast<repl::LHD*>(params->LHD_cache);
+  auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   delete lhd;
   cache_struct_free(cache);
 }
 
 cache_ck_res_e LHD_check(cache_t *cache, request_t *req, bool update_cache) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
-  auto *lhd = static_cast<repl::LHD*>(params->LHD_cache);
+  auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
 
   auto id = repl::candidate_t::make(req);
   auto itr = lhd->sizeMap.find(id);
@@ -77,14 +79,13 @@ cache_ck_res_e LHD_check(cache_t *cache, request_t *req, bool update_cache) {
   return cache_ck_hit;
 }
 
-
 cache_ck_res_e LHD_get(cache_t *cache, request_t *req) {
   return cache_get_base(cache, req);
 }
 
 void LHD_insert(cache_t *cache, request_t *req) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
-  auto *lhd = static_cast<repl::LHD*>(params->LHD_cache);
+  auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   auto id = repl::candidate_t::make(req);
 
   lhd->sizeMap[id] = req->obj_size;
@@ -96,7 +97,7 @@ void LHD_insert(cache_t *cache, request_t *req) {
 
 void LHD_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
-  auto *lhd = static_cast<repl::LHD*>(params->LHD_cache);
+  auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
 
   repl::candidate_t victim = lhd->rank(req);
   auto victimItr = lhd->sizeMap.find(victim);
@@ -104,7 +105,7 @@ void LHD_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     std::cerr << "Couldn't find victim: " << victim << std::endl;
   }
   assert(victimItr != lhd->sizeMap.end());
-//  printf("evict %llu size %u\n", victimItr->first.id, victimItr->second);
+  //  printf("evict %llu size %u\n", victimItr->first.id, victimItr->second);
 
   lhd->replaced(victim);
   lhd->sizeMap.erase(victimItr);
@@ -121,8 +122,8 @@ void LHD_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 
 void LHD_remove(cache_t *cache, obj_id_t obj_id) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
-  auto *lhd = static_cast<repl::LHD*>(params->LHD_cache);
-  repl::candidate_t id{DEFAULT_APP_ID, (int64_t) obj_id};
+  auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
+  repl::candidate_t id{DEFAULT_APP_ID, (int64_t)obj_id};
 
   auto itr = lhd->sizeMap.find(id);
   if (itr == lhd->sizeMap.end()) {

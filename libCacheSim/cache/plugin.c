@@ -3,12 +3,12 @@
 //
 
 #include "../include/libCacheSim/plugin.h"
-#include "../include/libCacheSim/evictionAlgo.h"
 
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +33,7 @@ cache_t *create_cache_external(const char *const cache_alg_name,
   }
   dlerror(); /* Clear any existing error */
 
-  *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
+  *(void **)(&cache_init) = dlsym(handle, cache_init_func_name);
 
   if ((error = dlerror()) != NULL) {
     fprintf(stderr, "%s\n", error);
@@ -61,7 +61,7 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
    * everything is OK */
 
   sprintf(cache_init_func_name, "%s_init", cache_alg_name);
-//  *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
+  //  *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
   cache_init = dlsym(handle, cache_init_func_name);
   err = dlerror();
 
@@ -73,12 +73,10 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
   VERBOSE("internal cache %s loaded\n", cache_alg_name);
   cache_t *cache = cache_init(cc_params, cache_specific_params);
   return cache;
-
 }
 
 cache_t *create_cache(const char *const cache_alg_name,
-                      common_cache_params_t cc_params,
-                      void *specific_params) {
+                      common_cache_params_t cc_params, void *specific_params) {
   cache_t *cache =
       create_cache_internal(cache_alg_name, cc_params, specific_params);
   if (cache == NULL) {

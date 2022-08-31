@@ -9,11 +9,12 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LRUv0.h"
-#include "../utils/include/utilsInternal.h"
+
 #include <assert.h>
 
+#include "../dataStructure/hashtable/hashtable.h"
+#include "../utils/include/utilsInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +33,7 @@ cache_t *LRUv0_init(common_cache_params_t ccache_params,
   cache->to_evict = LRUv0_to_evict;
 
   cache->eviction_params = g_new0(LRUv0_params_t, 1);
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   LRUv0_params->hashtable =
       create_hash_table_with_obj_id_type(OBJ_ID_NUM, NULL, NULL, g_free, NULL);
   LRUv0_params->list = g_queue_new();
@@ -40,21 +41,19 @@ cache_t *LRUv0_init(common_cache_params_t ccache_params,
 }
 
 void LRUv0_free(cache_t *cache) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   g_hash_table_destroy(LRUv0_params->hashtable);
-  g_queue_free_full(LRUv0_params->list, (GDestroyNotify) free_cache_obj);
+  g_queue_free_full(LRUv0_params->list, (GDestroyNotify)free_cache_obj);
   cache_struct_free(cache);
 }
 
 cache_ck_res_e LRUv0_check(cache_t *cache, request_t *req, bool update_cache) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
-  GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
-                                              GSIZE_TO_POINTER(req->obj_id));
-  if (node == NULL)
-    return cache_ck_miss;
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
+  GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
+                                             GSIZE_TO_POINTER(req->obj_id));
+  if (node == NULL) return cache_ck_miss;
 
-  if (!update_cache)
-    return cache_ck_hit;
+  if (!update_cache) return cache_ck_hit;
 
   cache_obj_t *cache_obj = node->data;
   if (likely(update_cache)) {
@@ -72,21 +71,19 @@ cache_ck_res_e LRUv0_check(cache_t *cache, request_t *req, bool update_cache) {
 cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
   cache_ck_res_e cache_check = LRUv0_check(cache, req, true);
   if (req->obj_size <= cache->cache_size) {
-    if (cache_check == cache_ck_miss)
-      LRUv0_insert(cache, req);
+    if (cache_check == cache_ck_miss) LRUv0_insert(cache, req);
 
     while (cache->occupied_size > cache->cache_size)
       LRUv0_evict(cache, req, NULL);
   } else {
     WARN("req %lld: obj size %ld larger than cache size %ld\n",
-            (long long) req->obj_id, (long) req->obj_size,
-            (long) cache->cache_size);
+         (long long)req->obj_id, (long)req->obj_size, (long)cache->cache_size);
   }
   return cache_check;
 }
 
 void LRUv0_insert(cache_t *cache, request_t *req) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
   cache->occupied_size += req->obj_size + cache->per_obj_overhead;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
@@ -96,48 +93,49 @@ void LRUv0_insert(cache_t *cache, request_t *req) {
   node->data = cache_obj;
   g_queue_push_tail_link(LRUv0_params->list, node);
   g_hash_table_insert(LRUv0_params->hashtable,
-                      GSIZE_TO_POINTER(cache_obj->obj_id), (gpointer) node);
+                      GSIZE_TO_POINTER(cache_obj->obj_id), (gpointer)node);
 }
 
 cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, request_t *req) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
-  GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
-                                              GSIZE_TO_POINTER(req->obj_id));
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
+  GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
+                                             GSIZE_TO_POINTER(req->obj_id));
   cache_obj_t *cache_obj = node->data;
   return cache_obj;
 }
 
 cache_obj_t *LRUv0_to_evict(cache_t *cache) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
-  return (cache_obj_t *) g_queue_peek_head(LRUv0_params->list);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
+  return (cache_obj_t *)g_queue_peek_head(LRUv0_params->list);
 }
 
 void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = LRUv0_to_evict(cache);
   assert(cache->occupied_size >= cache_obj->obj_size);
   cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
   g_hash_table_remove(LRUv0_params->hashtable,
-                      (gconstpointer) cache_obj->obj_id);
+                      (gconstpointer)cache_obj->obj_id);
   free_cache_obj(cache_obj);
 }
 
-void LRUv0_remove(cache_t *cache, obj_id_t obj_id){
-  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *) (cache->eviction_params);
+void LRUv0_remove(cache_t *cache, obj_id_t obj_id) {
+  LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
-  GList *node = (GList *) g_hash_table_lookup(LRUv0_params->hashtable,
-                                              (gconstpointer) obj_id);
+  GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
+                                             (gconstpointer)obj_id);
   if (!node) {
     ERROR("obj to remove is not in the cache\n");
     return;
   }
-  cache_obj_t *cache_obj = (cache_obj_t *) (node->data);
+  cache_obj_t *cache_obj = (cache_obj_t *)(node->data);
   assert(cache->occupied_size >= cache_obj->obj_size + cache->per_obj_overhead);
-  cache->occupied_size -= (((cache_obj_t *) (node->data))->obj_size + cache->per_obj_overhead);
+  cache->occupied_size -=
+      (((cache_obj_t *)(node->data))->obj_size + cache->per_obj_overhead);
   cache->n_obj -= 1;
 
-  g_queue_delete_link(LRUv0_params->list, (GList *) node);
-  g_hash_table_remove(LRUv0_params->hashtable, (gconstpointer) obj_id);
+  g_queue_delete_link(LRUv0_params->list, (GList *)node);
+  g_hash_table_remove(LRUv0_params->hashtable, (gconstpointer)obj_id);
   free_cache_obj(cache_obj);
 }
 

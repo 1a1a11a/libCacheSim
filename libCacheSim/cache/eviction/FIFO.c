@@ -10,14 +10,14 @@
 //
 
 #include "../include/libCacheSim/evictionAlgo/FIFO.h"
-#include "../dataStructure/hashtable/hashtable.h"
+
 #include <assert.h>
 
+#include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 cache_t *FIFO_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("FIFO", ccache_params);
@@ -46,9 +46,7 @@ void FIFO_insert(cache_t *cache, request_t *req) {
   cache_insert_LRU(cache, req);
 }
 
-cache_obj_t *FIFO_to_evict(cache_t *cache) {
-  return cache->to_evict(cache);
-}
+cache_obj_t *FIFO_to_evict(cache_t *cache) { return cache->to_evict(cache); }
 
 void FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache_evict_LRU(cache, req, evicted_obj);
@@ -64,11 +62,10 @@ void FIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-
 void FIFO_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %"PRIu64 "that is not cached\n", obj_id);
+    ERROR("remove object %" PRIu64 "that is not cached\n", obj_id);
     return;
   }
   FIFO_remove_obj(cache, obj);

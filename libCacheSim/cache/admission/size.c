@@ -2,7 +2,6 @@
 #include "../include/libCacheSim/admissionAlgo.h"
 #include "../utils/include/mymath.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,7 +9,6 @@ extern "C" {
 struct size_admissioner {
   uint64_t size_threshold;
 };
-
 
 bool size_admit(void *size_admissioner, request_t *req) {
   struct size_admissioner *a = size_admissioner;
@@ -23,8 +21,8 @@ bool size_admit(void *size_admissioner, request_t *req) {
 
 void *create_size_admissioner(uint64_t size_threshold) {
   if (size_threshold <= 1) {
-    ERROR("size admissioner size error get %"PRIu64
-            "(should be 2 - inf)\n", size_threshold);
+    ERROR("size admissioner size error get %" PRIu64 "(should be 2 - inf)\n",
+          size_threshold);
     abort();
   }
 

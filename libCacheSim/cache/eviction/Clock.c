@@ -1,15 +1,14 @@
 
 
 #include "../include/libCacheSim/evictionAlgo/Clock.h"
-#include "../dataStructure/hashtable/hashtable.h"
 
+#include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
-
 
 cache_t *Clock_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("Clock", ccache_params);
@@ -33,8 +32,7 @@ void Clock_free(cache_t *cache) { cache_struct_free(cache); }
 cache_ck_res_e Clock_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e res = cache_check_base(cache, req, update_cache, &cache_obj);
-  if (cache_obj != NULL)
-    cache_obj->clock.visited = true;
+  if (cache_obj != NULL) cache_obj->clock.visited = true;
 
   return res;
 }
@@ -53,8 +51,7 @@ cache_obj_t *Clock_to_evict(cache_t *cache) {
   cache_obj_t *moving_pointer = params->pointer;
 
   /* if we have run one full around or first eviction */
-  if (moving_pointer == NULL)
-    moving_pointer = cache->q_tail;
+  if (moving_pointer == NULL) moving_pointer = cache->q_tail;
 
   /* find the first untouched */
   while (moving_pointer != NULL && moving_pointer->clock.visited) {
@@ -95,11 +92,10 @@ void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-
 void Clock_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %"PRIu64 "that is not cached\n", obj_id);
+    ERROR("remove object %" PRIu64 "that is not cached\n", obj_id);
     return;
   }
   Clock_remove_obj(cache, obj);

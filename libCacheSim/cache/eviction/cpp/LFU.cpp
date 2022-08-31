@@ -7,20 +7,19 @@
  */
 
 #include "libCacheSim/evictionAlgo/LFU.h"
-#include "hashtable.h"
+
 #include <cassert>
 
 #include "abstractRank.h"
-
+#include "hashtable.h"
 
 namespace eviction {
 class LFU : public abstractRank {
-public:
-  LFU() = default;;
+ public:
+  LFU() = default;
+  ;
 };
-}
-
-
+}  // namespace eviction
 
 cache_t *LFU_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("LFU", ccache_params);
@@ -49,10 +48,10 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *obj;
   auto res = cache_check_base(cache, req, update_cache, &obj);
   if (obj != nullptr && update_cache) {
-    obj->lfu.freq ++;
+    obj->lfu.freq++;
     auto itr = lfu->itr_map[obj];
     lfu->pq.erase(itr);
-    itr = lfu->pq.emplace(obj, (double) obj->lfu.freq, cache->n_req).first;
+    itr = lfu->pq.emplace(obj, (double)obj->lfu.freq, cache->n_req).first;
     lfu->itr_map[obj] = itr;
   }
 
@@ -74,8 +73,7 @@ void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
   eviction::pq_node_type p = lfu->pick_lowest_score();
   cache_obj_t *obj = get<0>(p);
-  if (evicted_obj != nullptr)
-    memcpy(evicted_obj, obj, sizeof(cache_obj_t));
+  if (evicted_obj != nullptr) memcpy(evicted_obj, obj, sizeof(cache_obj_t));
 
   cache_remove_obj_base(cache, obj);
 }
@@ -89,10 +87,7 @@ void LFU_remove_obj(cache_t *cache, cache_obj_t *obj) {
   lfu->remove_obj(cache, obj);
 }
 
-
 void LFU_remove(cache_t *cache, obj_id_t obj_id) {
   auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
   lfu->remove(cache, obj_id);
 }
-
-

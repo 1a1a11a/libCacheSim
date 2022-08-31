@@ -1,13 +1,13 @@
 #pragma once
 
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace misc {
 
 inline std::string bytes(uint64_t size) {
   std::stringstream ss;
-  const char* suffixes[] = { "B", "KB", "MB", "GB", "TB" };
+  const char* suffixes[] = {"B", "KB", "MB", "GB", "TB"};
 
   uint32_t i;
   for (i = 0; i < sizeof(suffixes) / sizeof(suffixes[0]); i++) {
@@ -26,4 +26,4 @@ inline std::string bytes(uint64_t size) {
   return ss.str();
 }
 
-}
+}  // namespace misc

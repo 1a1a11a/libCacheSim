@@ -1,15 +1,17 @@
 #pragma once
 
-#include <vector>
-#include <limits>
-#include "repl.hpp"
 #include <math.h>
+
+#include <limits>
+#include <vector>
+
 #include "../../include/libCacheSim/cache.h"
+#include "repl.hpp"
 
 namespace repl {
 
 class LHD {
-public:
+ public:
   // TYPES ///////////////////////////////
   typedef uint64_t timestamp_t;
   typedef uint64_t age_t;
@@ -23,7 +25,7 @@ public:
     uint32_t app;
 
     candidate_t id;
-    rank_t size; // stored redundantly with cache
+    rank_t size;  // stored redundantly with cache
     bool explorer;
   };
 
@@ -57,8 +59,7 @@ public:
   std::vector<Class> classes;
   std::unordered_map<candidate_t, uint64_t> indices;
 
-private:
-
+ private:
   // CONSTANTS ///////////////////////////
 
   // how to sample candidates; can significantly impact hit
@@ -98,8 +99,7 @@ private:
 
   // FIELDS //////////////////////////////
   cache_t *cache;
-//    repl::CandidateMap<bool> historyAccess;
-
+  //    repl::CandidateMap<bool> historyAccess;
 
   // time is measured in # of requests
   timestamp_t timestamp = 0;
@@ -119,7 +119,7 @@ private:
   // gone wrong with the age coarsening!!!)
   uint64_t overflows = 0;
 
-//  misc::Rand rand;
+  //  misc::Rand rand;
 
   // see ADMISSIONS above
   std::vector<candidate_t> recentlyAdmitted;
@@ -151,17 +151,18 @@ private:
 
   inline uint32_t getClassIdBySize(const Tag &tag) const {
     uint32_t hitSizeId = 0;
-    uint64_t size = (uint64_t) tag.size;
-    return tag.app * HIT_AGE_CLASSES + ((uint64_t) log(size)) % HIT_AGE_CLASSES;
+    uint64_t size = (uint64_t)tag.size;
+    return tag.app * HIT_AGE_CLASSES + ((uint64_t)log(size)) % HIT_AGE_CLASSES;
   }
 
   inline uint32_t getClassIdBySizeAndAge(const Tag &tag) const {
-    if (tag.lastHitAge == 0)
-      return getClassIdBySize(tag);
+    if (tag.lastHitAge == 0) return getClassIdBySize(tag);
 
     uint32_t hitSizeId = 0;
-    uint64_t size = (uint64_t) tag.size;
-    return tag.app * HIT_AGE_CLASSES + ((uint64_t) log(size) + (uint64_t) log(tag.lastHitAge)) % HIT_AGE_CLASSES;
+    uint64_t size = (uint64_t)tag.size;
+    return tag.app * HIT_AGE_CLASSES +
+           ((uint64_t)log(size) + (uint64_t)log(tag.lastHitAge)) %
+               HIT_AGE_CLASSES;
   }
 
   inline Class &getClass(const Tag &tag) {
@@ -171,14 +172,14 @@ private:
   }
 
   inline age_t getAge(Tag tag) {
-    timestamp_t
-        age = (timestamp - (timestamp_t) tag.timestamp) >> ageCoarseningShift;
+    timestamp_t age =
+        (timestamp - (timestamp_t)tag.timestamp) >> ageCoarseningShift;
 
     if (age >= MAX_AGE) {
       ++overflows;
       return MAX_AGE - 1;
     } else {
-      return (age_t) age;
+      return (age_t)age;
     }
   }
 
@@ -188,11 +189,11 @@ private:
       return std::numeric_limits<rank_t>::lowest();
     }
     auto &cl = getClass(tag);
-    #ifdef BYTE_MISS_RATIO
+#ifdef BYTE_MISS_RATIO
     rank_t density = cl.hitDensities[age];
-    #else
+#else
     rank_t density = cl.hitDensities[age] / tag.size;
-    #endif
+#endif
     if (tag.explorer) {
       density += 1.;
     }
@@ -206,4 +207,4 @@ private:
   void dumpClassRanks(Class &cl);
 };
 
-} // namespace repl
+}  // namespace repl

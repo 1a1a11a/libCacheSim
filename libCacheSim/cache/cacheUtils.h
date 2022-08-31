@@ -9,11 +9,11 @@
 extern "C" {
 #endif
 
+#include <glib.h>
+
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/cache.h"
 #include "../include/libCacheSim/cacheObj.h"
-
-#include <glib.h>
 
 /****************** find obj expiration related info ******************/
 static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
@@ -30,8 +30,7 @@ static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
 }
 
 static inline void get_cache_state(cache_t *cache, cache_stat_t *cache_state) {
-  if (cache->hashtable->n_obj == 0)
-    return;
+  if (cache->hashtable->n_obj == 0) return;
 
   hashtable_foreach(cache->hashtable, _get_cache_state_ht_iter, cache_state);
 }
@@ -40,4 +39,4 @@ static inline void get_cache_state(cache_t *cache, cache_stat_t *cache_state) {
 }
 #endif
 
-#endif // libCacheSim_CACHEUTILS_H
+#endif  // libCacheSim_CACHEUTILS_H

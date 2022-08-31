@@ -7,6 +7,7 @@
 //
 
 #include "../include/libCacheSim/evictionAlgo/OptimalSize.h"
+
 #include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
@@ -34,7 +35,8 @@ cache_t *OptimalSize_init(common_cache_params_t ccache_params,
 
 void OptimalSize_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e OptimalSize_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e OptimalSize_check(cache_t *cache, request_t *req,
+                                 bool update_cache) {
   cache_obj_t *obj;
   cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &obj);
 
@@ -62,24 +64,25 @@ void OptimalSize_insert(cache_t *cache, request_t *req) {
   obj->optimal.next_access_vtime = req->next_access_vtime;
 }
 
-
 #ifdef EXACT_OPTIMAL
 struct hash_iter_user_data {
-  uint64_t curr_vtime; 
+  uint64_t curr_vtime;
   cache_obj_t *to_evict_obj;
   uint64_t max_score;
-}; 
+};
 
-static inline void hashtable_iter_optimal_size(cache_obj_t *cache_obj, void *userdata) {
-  struct hash_iter_user_data *iter_userdata = (struct hash_iter_user_data *)userdata;
-  if (iter_userdata->max_score == UINT64_MAX) 
-    return; 
+static inline void hashtable_iter_optimal_size(cache_obj_t *cache_obj,
+                                               void *userdata) {
+  struct hash_iter_user_data *iter_userdata =
+      (struct hash_iter_user_data *)userdata;
+  if (iter_userdata->max_score == UINT64_MAX) return;
 
-  uint64_t obj_score; 
-  if (cache_obj->optimal.next_access_vtime == -1) 
-    obj_score = UINT64_MAX; 
-  else 
-    obj_score = cache_obj->obj_size * (cache_obj->optimal.next_access_vtime - iter_userdata->curr_vtime);
+  uint64_t obj_score;
+  if (cache_obj->optimal.next_access_vtime == -1)
+    obj_score = UINT64_MAX;
+  else
+    obj_score = cache_obj->obj_size * (cache_obj->optimal.next_access_vtime -
+                                       iter_userdata->curr_vtime);
 
   if (obj_score > iter_userdata->max_score) {
     iter_userdata->to_evict_obj = cache_obj;
@@ -89,11 +92,12 @@ static inline void hashtable_iter_optimal_size(cache_obj_t *cache_obj, void *use
 
 cache_obj_t *OptimalSize_to_evict(cache_t *cache) {
   struct hash_iter_user_data iter_userdata;
-  iter_userdata.curr_vtime = cache->n_req; 
+  iter_userdata.curr_vtime = cache->n_req;
   iter_userdata.max_score = 0;
   iter_userdata.to_evict_obj = NULL;
 
-  hashtable_foreach(cache->hashtable, hashtable_iter_optimal_size, &iter_userdata);
+  hashtable_foreach(cache->hashtable, hashtable_iter_optimal_size,
+                    &iter_userdata);
 
   return iter_userdata.to_evict_obj;
 }
@@ -104,8 +108,8 @@ cache_obj_t *OptimalSize_to_evict(cache_t *cache) {
   int64_t obj_to_evict_score = -1, sampled_obj_score;
   for (int i = 0; i < N_SAMPLE_PER_EVICTION; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
-    sampled_obj_score =
-        sampled_obj->obj_size * (sampled_obj->optimal.next_access_vtime - cache->n_req);
+    sampled_obj_score = sampled_obj->obj_size *
+                        (sampled_obj->optimal.next_access_vtime - cache->n_req);
     if (obj_to_evict_score < sampled_obj_score) {
       obj_to_evict = sampled_obj;
       obj_to_evict_score = sampled_obj_score;
@@ -113,7 +117,7 @@ cache_obj_t *OptimalSize_to_evict(cache_t *cache) {
   }
   return obj_to_evict;
 }
-#endif 
+#endif
 
 void OptimalSize_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
   cache_obj_t *obj_to_evict = OptimalSize_to_evict(cache);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 #include "candidate.hpp"
 
 namespace LHDCache {
@@ -12,7 +13,7 @@ namespace repl {
 const float NULL_MAX_RANK = 1;
 
 class Policy {
-public:
+ public:
   Policy() {}
   virtual ~Policy() {}
 
@@ -23,4 +24,4 @@ public:
   virtual void dumpStats(LHDCache::Cache *cache) {}
 };
 
-} // namespace repl
+}  // namespace repl

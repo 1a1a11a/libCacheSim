@@ -1,22 +1,20 @@
 /* GDSF: greedy dual frequency size */
 
 #include "libCacheSim/evictionAlgo/GDSF.h"
-#include "hashtable.h"
+
 #include <cassert>
 
 #include "abstractRank.h"
-
+#include "hashtable.h"
 
 namespace eviction {
 class GDSF : public abstractRank {
-public:
+ public:
   GDSF() = default;
 
   double pri_last_evict = 0.0;
 };
-}
-
-
+}  // namespace eviction
 
 cache_t *GDSF_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("GDSF", ccache_params);
@@ -49,7 +47,8 @@ cache_ck_res_e GDSF_check(cache_t *cache, request_t *req, bool update_cache) {
     auto itr = gdsf->itr_map[obj];
     gdsf->pq.erase(itr);
 
-    double pri = gdsf->pri_last_evict + (double) (obj->lfu.freq + 1) / obj->obj_size;
+    double pri =
+        gdsf->pri_last_evict + (double)(obj->lfu.freq + 1) / obj->obj_size;
     itr = gdsf->pq.emplace(obj, pri, cache->n_req).first;
     gdsf->itr_map[obj] = itr;
   }
@@ -89,7 +88,3 @@ void GDSF_remove(cache_t *cache, obj_id_t obj_id) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
   gdsf->remove(cache, obj_id);
 }
-
-
-
-

@@ -8,8 +8,9 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/MRU.h"
+
+#include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef _cplusplus
 extern "C" {
@@ -45,9 +46,7 @@ cache_ck_res_e MRU_check(cache_t *cache, request_t *req, bool update_cache) {
   return ret;
 }
 
-cache_obj_t *MRU_to_evict(cache_t *cache) {
-  return cache->q_head;
-}
+cache_obj_t *MRU_to_evict(cache_t *cache) { return cache->q_head; }
 
 void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
   cache_obj_t *obj_to_evict = MRU_to_evict(cache);

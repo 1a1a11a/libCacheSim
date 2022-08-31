@@ -19,26 +19,30 @@
  * the drawback of this implementation is the memory usage, because two pointers
  * are associated with each obj_id
  *
- * this implementation do not keep an object's frequency after evicting from cache
- * so objects are inserted with frequency 1 
+ * this implementation do not keep an object's frequency after evicting from
+ * cache so objects are inserted with frequency 1
  */
 
 #include "../include/libCacheSim/evictionAlgo/LFUFast.h"
+
 #include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-static void free_freq_node(void *list_node) { my_free(sizeof(freq_node_t), list_node); }
+static void free_freq_node(void *list_node) {
+  my_free(sizeof(freq_node_t), list_node);
+}
 
 static inline freq_node_t *get_min_freq_node(LFUFast_params_t *params) {
   freq_node_t *min_freq_node = NULL;
   if (params->min_freq == 1) {
-    // printf("freq one node %p\n", params->freq_one_node); 
+    // printf("freq one node %p\n", params->freq_one_node);
     min_freq_node = params->freq_one_node;
   } else {
-    min_freq_node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));
+    min_freq_node = g_hash_table_lookup(params->freq_map,
+                                        GSIZE_TO_POINTER(params->min_freq));
     // printf("min freq node %p\n", min_freq_node);
   }
 
@@ -52,7 +56,8 @@ static inline freq_node_t *get_min_freq_node(LFUFast_params_t *params) {
 static inline void update_min_freq(LFUFast_params_t *params) {
   uint64_t old_min_freq = params->min_freq;
   for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
-    freq_node_t *node = g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
+    freq_node_t *node =
+        g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
     if (node != NULL && node->n_obj > 0) {
       params->min_freq = freq;
       break;
@@ -61,7 +66,8 @@ static inline void update_min_freq(LFUFast_params_t *params) {
   DEBUG_ASSERT(params->min_freq > old_min_freq);
 }
 
-cache_t *LFUFast_init(common_cache_params_t ccache_params, void *cache_specific_init_params) {
+cache_t *LFUFast_init(common_cache_params_t ccache_params,
+                      void *cache_specific_init_params) {
   cache_t *cache = cache_struct_init("LFUFast", ccache_params);
   cache->cache_init = LFUFast_init;
   cache->cache_free = LFUFast_free;
@@ -70,7 +76,7 @@ cache_t *LFUFast_init(common_cache_params_t ccache_params, void *cache_specific_
   cache->insert = LFUFast_insert;
   cache->evict = LFUFast_evict;
   cache->remove = LFUFast_remove;
-  cache->to_evict = LFUFast_to_evict; 
+  cache->to_evict = LFUFast_to_evict;
 
   LFUFast_params_t *params = my_malloc_n(LFUFast_params_t, 1);
   memset(params, 0, sizeof(LFUFast_params_t));
@@ -87,25 +93,26 @@ cache_t *LFUFast_init(common_cache_params_t ccache_params, void *cache_specific_
   freq_node->last_obj = NULL;
 
   params->freq_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
-                                           (GDestroyNotify) free_freq_node);
+                                           (GDestroyNotify)free_freq_node);
   g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(1), freq_node);
 
   return cache;
 }
 
 void LFUFast_free(cache_t *cache) {
-  LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
+  LFUFast_params_t *params = (LFUFast_params_t *)(cache->eviction_params);
   g_hash_table_destroy(params->freq_map);
   my_free(sizeof(LFUFast_params_t), params);
   cache_struct_free(cache);
 }
 
-cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req,
+                             bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
-    LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
+    LFUFast_params_t *params = (LFUFast_params_t *)(cache->eviction_params);
     /* freq incr and move to next freq node */
     cache_obj->lfu.freq += 1;
     if (params->max_freq < cache_obj->lfu.freq) {
@@ -113,8 +120,8 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     }
 
     // find the freq_node this object belongs to and update its info
-    freq_node_t *old_node =
-        g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq - 1));
+    freq_node_t *old_node = g_hash_table_lookup(
+        params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq - 1));
     DEBUG_ASSERT(old_node != NULL);
     DEBUG_ASSERT(old_node->freq == cache_obj->lfu.freq - 1);
     DEBUG_ASSERT(old_node->n_obj > 0);
@@ -122,13 +129,14 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     remove_obj_from_list(&old_node->first_obj, &old_node->last_obj, cache_obj);
 
     // find the new freq_node this object should move to
-    freq_node_t *new_node =
-        g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
+    freq_node_t *new_node = g_hash_table_lookup(
+        params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
     if (new_node == NULL) {
       new_node = my_malloc_n(freq_node_t, 1);
       memset(new_node, 0, sizeof(freq_node_t));
       new_node->freq = cache_obj->lfu.freq;
-      g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
+      g_hash_table_insert(params->freq_map,
+                          GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
       VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj,
                new_node->first_obj, new_node->last_obj);
     } else {
@@ -151,8 +159,9 @@ cache_ck_res_e LFUFast_check(cache_t *cache, request_t *req, bool update_cache) 
     new_node->last_obj = cache_obj;
     new_node->n_obj += 1;
 
-    // if the old freq_node only has one object, after removing this object, it will have no object
-    // and if it is the min_freq, then we should update min_freq
+    // if the old freq_node only has one object, after removing this object, it
+    // will have no object and if it is the min_freq, then we should update
+    // min_freq
     if (params->min_freq == old_node->freq && old_node->n_obj == 0) {
       /* update min freq */
       update_min_freq(params);
@@ -166,7 +175,7 @@ cache_ck_res_e LFUFast_get(cache_t *cache, request_t *req) {
 }
 
 void LFUFast_insert(cache_t *cache, request_t *req) {
-  LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
+  LFUFast_params_t *params = (LFUFast_params_t *)(cache->eviction_params);
   params->min_freq = 1;
   freq_node_t *freq_one_node = params->freq_one_node;
 
@@ -186,19 +195,20 @@ void LFUFast_insert(cache_t *cache, request_t *req) {
 }
 
 cache_obj_t *LFUFast_to_evict(cache_t *cache) {
-  LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
+  LFUFast_params_t *params = (LFUFast_params_t *)(cache->eviction_params);
   freq_node_t *min_freq_node = get_min_freq_node(params);
   return min_freq_node->first_obj;
 }
 
 void LFUFast_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
+  LFUFast_params_t *params = (LFUFast_params_t *)(cache->eviction_params);
 
   freq_node_t *min_freq_node = get_min_freq_node(params);
   min_freq_node->n_obj--;
 
   cache_obj_t *obj_to_evict = min_freq_node->first_obj;
-  if (evicted_obj != NULL) memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  if (evicted_obj != NULL)
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
 
   if (obj_to_evict->queue.next == NULL) {
     /* the only obj of curr freq */
@@ -219,7 +229,7 @@ void LFUFast_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 }
 
 void LFUFast_remove(cache_t *cache, obj_id_t obj_id) {
-  LFUFast_params_t *params = (LFUFast_params_t *) (cache->eviction_params);
+  LFUFast_params_t *params = (LFUFast_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     WARN("obj to remove is not in the cache\n");

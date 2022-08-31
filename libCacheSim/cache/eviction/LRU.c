@@ -10,12 +10,12 @@
 //
 
 #include "../include/libCacheSim/evictionAlgo/LRU.h"
+
 #include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 cache_t *LRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache_t *cache = cache_struct_init("LRU", ccache_params);
@@ -30,9 +30,7 @@ cache_t *LRU_init(common_cache_params_t ccache_params, void *init_params) {
   return cache;
 }
 
-void LRU_free(cache_t *cache) {
-  cache_struct_free(cache);
-}
+void LRU_free(cache_t *cache) { cache_struct_free(cache); }
 
 cache_ck_res_e LRU_check(cache_t *cache, request_t *req, bool update_cache) {
   cache_obj_t *cache_obj;
@@ -53,9 +51,7 @@ void LRU_insert(cache_t *cache, request_t *req) {
   cache_insert_LRU(cache, req);
 }
 
-cache_obj_t *LRU_to_evict(cache_t *cache){
-  return cache->q_tail;
-}
+cache_obj_t *LRU_to_evict(cache_t *cache) { return cache->q_tail; }
 
 void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache_evict_LRU(cache, req, evicted_obj);
@@ -64,13 +60,12 @@ void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
 void LRU_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    WARN("obj (%"PRIu64 ") to remove is not in the cache\n", obj_id);
+    WARN("obj (%" PRIu64 ") to remove is not in the cache\n", obj_id);
     return;
   }
   remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
   cache_remove_obj_base(cache, obj);
 }
-
 
 #ifdef __cplusplus
 extern "C" {
