@@ -9,19 +9,7 @@
 #ifndef UTILS_h
 #define UTILS_h
 
-#include <glib.h>
-#include <math.h>
 #include <pthread.h>
-#include <sched.h>
-#include <stdio.h>
-#include <unistd.h>
-
-#include "../../include/config.h"
-#include "../../include/libCacheSim/const.h"
-#include "../../include/libCacheSim/logging.h"
-#ifndef __APPLE__
-#include <sys/sysinfo.h>
-#endif
 
 int set_thread_affinity(pthread_t tid);
 

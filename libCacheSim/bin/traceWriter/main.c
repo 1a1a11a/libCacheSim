@@ -12,7 +12,6 @@ void fix_msr_oracleGeneral_trace(char *trace_path);
 void fix_msr_oracleGeneralOpNS_trace(char *trace_path);
 void convert_wiki16_trace(char *trace_path);
 
-
 int main(int argc, char *argv[]) {
   // fix_msr_oracleGeneral_trace(argv[1]);
   // fix_msr_oracleGeneralOpNS_trace(argv[1]);
@@ -22,9 +21,9 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-
 void fix_msr_oracleGeneral_trace(char *trace_path) {
-  reader_t *reader = setup_reader(trace_path, ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader =
+      setup_reader(trace_path, ORACLE_GENERAL_TRACE, OBJ_ID_NUM, NULL);
   request_t *req = new_request();
 
   char ofilepath[256];
@@ -52,7 +51,8 @@ void fix_msr_oracleGeneral_trace(char *trace_path) {
 }
 
 void fix_msr_oracleGeneralOpNS_trace(char *trace_path) {
-  reader_t *reader = setup_reader(trace_path, ORACLE_GENERALOPNS_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader =
+      setup_reader(trace_path, ORACLE_GENERALOPNS_TRACE, OBJ_ID_NUM, NULL);
   request_t *req = new_request();
 
   char ofilepath[256];
@@ -80,7 +80,8 @@ void fix_msr_oracleGeneralOpNS_trace(char *trace_path) {
     fwrite(&ns, 2, 1, ofile);
     fwrite(&req->next_access_vtime, 8, 1, ofile);
 
-    // fprintf(ofile2, "%lu %lu %u %lu %u %u\n", req->real_time, req->obj_id, req->obj_size, req->next_access_vtime, op, ns);
+    // fprintf(ofile2, "%lu %lu %u %lu %u %u\n", req->real_time, req->obj_id,
+    // req->obj_size, req->next_access_vtime, op, ns);
 
     read_one_req(reader, req);
   }
@@ -90,7 +91,8 @@ void fix_msr_oracleGeneralOpNS_trace(char *trace_path) {
 }
 
 void convert_wiki16_trace(char *trace_path) {
-  reader_t *reader = setup_reader(trace_path, ORACLE_WIKI16u_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader =
+      setup_reader(trace_path, ORACLE_WIKI16u_TRACE, OBJ_ID_NUM, NULL);
   request_t *req = new_request();
   uint64_t n = 0;
   uint64_t n_total_req = get_num_of_req(reader);
@@ -101,7 +103,7 @@ void convert_wiki16_trace(char *trace_path) {
   read_one_req(reader, req);
 
   while (req->valid) {
-    req->real_time = (int) ((double) n / (double) n_total_req * 3600 * 168);
+    req->real_time = (int)((double)n / (double)n_total_req * 3600 * 168);
     if (req->next_access_vtime == INT64_MAX) {
       req->next_access_vtime = -1;
     }

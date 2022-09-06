@@ -6,6 +6,20 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
+#define _GNU_SOURCE
+
+#include <glib.h>
+#include <math.h>
+#include <pthread.h>
+#include <sched.h>
+#include <stdio.h>
+#include <unistd.h>
+#ifndef __APPLE__
+#include <sys/sysinfo.h>
+#endif
+#include "../../include/config.h"
+#include "../../include/libCacheSim/const.h"
+#include "../../include/libCacheSim/logging.h"
 #include "include/mysys.h"
 
 int set_thread_affinity(pthread_t tid) {
