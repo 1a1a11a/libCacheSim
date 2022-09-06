@@ -17,9 +17,9 @@
 #ifndef __APPLE__
 #include <sys/sysinfo.h>
 #endif
-#include "../../include/config.h"
-#include "../../include/libCacheSim/const.h"
-#include "../../include/libCacheSim/logging.h"
+#include "../include/config.h"
+#include "../include/libCacheSim/const.h"
+#include "../include/libCacheSim/logging.h"
 #include "include/mysys.h"
 
 int set_thread_affinity(pthread_t tid) {
