@@ -13,7 +13,7 @@
 #include "utils.h"
 
 void run_cache_debug(reader_t *reader, cache_t *cache) {
-  const int SKIP_HOUR = 0;
+  const int SKIP_HOUR = 72;
 
   request_t *req = new_request();
   uint64_t req_cnt = 0, miss_cnt = 0;
@@ -62,9 +62,11 @@ void run_cache_debug(reader_t *reader, cache_t *cache) {
   double runtime = gettime() - start_time;
   // printf("runtime %lf s\n", runtime);
   INFO(
-      "%.2lf hour: %lu requests, miss ratio %.4lf, "
-      " throughput %.2lf MQPS\n",
-      (double)req->real_time / 3600.0, (unsigned long)req_cnt,
+      "%.2lf hour: %s, cache size %d, %lu "
+      "requests, miss ratio %.4lf, "
+      "throughput %.2lf MQPS\n",
+      (double)req->real_time / 3600.0, reader->trace_path,
+      (int)(cache->cache_size / 1024 / 1024), (unsigned long)req_cnt,
       (double)miss_cnt / req_cnt,
       //  (double) miss_byte/req_byte,
       (double)req_cnt / 1000000.0 / runtime);
