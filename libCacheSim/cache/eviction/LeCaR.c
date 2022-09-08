@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+// #define LECAR_USE_BELADY
+
 static void free_freq_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
 }
@@ -51,13 +53,6 @@ static void verify_ghost_lru_integrity(cache_t *cache, LeCaR_params_t *params) {
       "ghost_entry_used_size = %ld\n ",
       params->ghost_lru_head, params->ghost_lru_tail, ghost_entry_size,
       params->ghost_entry_used_size);
-
-  // cur = params->ghost_lru_head;
-  // while (cur != NULL) {
-  //   printf("%p -> ", cur);
-  //   cur = cur->queue.next;
-  // }
-  // printf("NULL\n");
 
   assert(ghost_entry_size == params->ghost_entry_used_size);
 }
@@ -305,6 +300,10 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
       params->min_freq = cache_obj->LeCaR.freq;
       VVERBOSE("update min freq to %d\n", (int)params->min_freq);
     }
+
+#ifdef LECAR_USE_BELADY
+    cache_obj->LeCaR.next_access_vtime = req->next_access_vtime;
+#endif
   }
 
   return ck;
@@ -327,6 +326,9 @@ void LeCaR_insert(cache_t *cache, request_t *req) {
   cache_obj->LeCaR.eviction_vtime = 0;
   cache_obj->LeCaR.ghost_evicted_by_lru = false;
   cache_obj->LeCaR.ghost_evicted_by_lfu = false;
+#ifdef LECAR_USE_BELADY
+  cache_obj->LeCaR.next_access_vtime = req->next_access_vtime;
+#endif
 
   // LFU insert
   params->min_freq = 1;
@@ -344,6 +346,104 @@ void LeCaR_insert(cache_t *cache, request_t *req) {
   freq_one_node->last_obj = cache_obj;
 }
 
+#ifdef LECAR_USE_BELADY
+cache_obj_t *LeCaR_to_evict(cache_t *cache) {
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
+
+  cache_obj_t *lru_choice = cache->q_tail;
+
+  freq_node_t *min_freq_node = get_min_freq_node(params);
+  cache_obj_t *lfu_choice = min_freq_node->first_obj;
+
+  if (lru_choice->LeCaR.next_access_vtime == -1) {
+    return lru_choice;
+  } else if (lfu_choice->LeCaR.next_access_vtime == -1) {
+    return lfu_choice;
+  } else if (lru_choice->LeCaR.next_access_vtime >
+             lfu_choice->LeCaR.next_access_vtime) {
+    return lru_choice;
+  } else {
+    return lfu_choice;
+  }
+}
+
+void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+  LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
+
+  cache_obj_t *cache_obj = NULL;
+
+  cache_obj_t *lru_choice = cache->q_tail;
+
+  freq_node_t *min_freq_node = get_min_freq_node(params);
+  cache_obj_t *lfu_choice = min_freq_node->first_obj;
+
+  // we divide by 1,000,000 to avoid overflow when next_access_vtime is
+  // INT64_MAX
+  double lru_belady_metric =
+      (double)(lru_choice->LeCaR.next_access_vtime - cache->n_req) / 1000000.0 *
+      lru_choice->obj_size;
+  double lfu_belady_metric =
+      (double)(lfu_choice->LeCaR.next_access_vtime - cache->n_req) / 1000000.0 *
+      lfu_choice->obj_size;
+  if (lru_belady_metric > lfu_belady_metric) {
+    cache_obj = lru_choice;
+    cache_obj->LeCaR.ghost_evicted_by_lru = true;
+    cache_obj->LeCaR.ghost_evicted_by_lfu = false;
+  } else {
+    cache_obj = lfu_choice;
+    cache_obj->LeCaR.ghost_evicted_by_lfu = true;
+    cache_obj->LeCaR.ghost_evicted_by_lru = false;
+  }
+
+  cache_obj->LeCaR.eviction_vtime = cache->n_req;
+
+  if (evicted_obj != NULL) {
+    // return evicted object to caller
+    memcpy(evicted_obj, cache_obj, sizeof(cache_obj_t));
+  }
+
+  // update LRU chain state
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
+
+  // update LFU chain state
+  remove_obj_from_freq_node(params, cache_obj);
+
+  // update cache state
+  DEBUG_ASSERT(cache->occupied_size >= cache_obj->obj_size);
+  cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_overhead);
+  cache->n_obj -= 1;
+
+  // update history
+  if (unlikely(params->ghost_lru_head == NULL)) {
+    params->ghost_lru_head = cache_obj;
+    params->ghost_lru_tail = cache_obj;
+  } else {
+    params->ghost_lru_head->queue.prev = cache_obj;
+    cache_obj->queue.next = params->ghost_lru_head;
+  }
+  params->ghost_lru_head = cache_obj;
+  VVERBOSE("insert to ghost history, update ghost lru head to %p\n",
+           params->ghost_lru_head);
+
+  params->ghost_entry_used_size +=
+      cache_obj->obj_size + cache->per_obj_overhead;
+  // evict ghost entries if its full
+  while (params->ghost_entry_used_size > cache->cache_size) {
+    cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
+    VVERBOSE("remove ghost %p, ghost cache size (before) %ld\n", ghost_to_evict,
+             params->ghost_entry_used_size);
+    assert(ghost_to_evict != NULL);
+    params->ghost_entry_used_size -=
+        (ghost_to_evict->obj_size + cache->per_obj_overhead);
+    params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
+    if (likely(params->ghost_lru_tail != NULL))
+      params->ghost_lru_tail->queue.next = NULL;
+
+    hashtable_delete(cache->hashtable, ghost_to_evict);
+  }
+}
+
+#else
 cache_obj_t *LeCaR_to_evict(cache_t *cache) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
@@ -428,6 +528,7 @@ void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     hashtable_delete(cache->hashtable, ghost_to_evict);
   }
 }
+#endif
 
 void LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);

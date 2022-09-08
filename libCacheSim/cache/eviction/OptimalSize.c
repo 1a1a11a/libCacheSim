@@ -5,6 +5,7 @@
 //  sample object and compare reuse_distance * size, then evict the greatest one
 //
 //
+/* todo: change to BeladySize */
 
 #include "../include/libCacheSim/evictionAlgo/OptimalSize.h"
 

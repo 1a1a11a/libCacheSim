@@ -28,6 +28,7 @@ typedef struct {
 
 typedef struct {
   int64_t eviction_vtime;
+  int64_t next_access_vtime;
   void *lfu_next;
   void *lfu_prev;
   int32_t freq;
