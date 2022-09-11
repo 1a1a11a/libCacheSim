@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../cachesim.h"
-#include "../utils.h"
 #include "math.h"
 #include "msr.h"
 
@@ -69,7 +68,7 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
     uint64_t s[12] = {10,  20,   50,   100,  200,  400,
                       800, 1200, 1600, 2400, 3200, 6400};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
-      args->cache_sizes[i] = s[i] * 1000 * MiB;
+      args->cache_sizes[i] = s[i] * 1024 * MiB;
     }
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
   } else if (strstr(args->trace_path, "cluster") != NULL) {

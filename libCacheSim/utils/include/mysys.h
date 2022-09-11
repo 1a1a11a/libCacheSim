@@ -15,7 +15,13 @@ int set_thread_affinity(pthread_t tid);
 
 int get_n_cores(void);
 
+int n_cores(void);
+
+double gettime();
+
 void print_cwd(void);
+
+void create_dir(char *dir_path);
 
 void print_glib_ver(void);
 

@@ -8,12 +8,15 @@
 
 #define _GNU_SOURCE
 
+#include <dirent.h>
 #include <glib.h>
 #include <math.h>
 #include <pthread.h>
 #include <sched.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <unistd.h>
+
 #ifndef __APPLE__
 #include <sys/sysinfo.h>
 #endif
@@ -54,6 +57,7 @@ int get_n_cores(void) {
   return get_nprocs();
 #else
   WARN("non linux system, use 4 threads as default\n");
+  return sysconf(_SC_NPROCESSORS_ONLN)
 #endif
   return 4;
 }
@@ -70,4 +74,29 @@ void print_cwd(void) {
 void print_glib_ver(void) {
   printf("glib version %d.%d.%d %d\n", glib_major_version, glib_minor_version,
          glib_micro_version, glib_binary_age);
+}
+
+// unsigned int n_cores() {
+//   unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
+
+//   asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) :
+//   "0"(eax), "2"(ecx) :);
+
+//   printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
+//   return ebx;
+// }
+
+int n_cores() { return get_n_cores(); }
+
+double gettime() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+
+  return tv.tv_sec + tv.tv_usec / 1000000.0;
+}
+
+void create_dir(char *dir_path) {
+  if (access(dir_path, F_OK) == -1) {
+    mkdir(dir_path, 0777);
+  }
 }

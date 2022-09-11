@@ -9,8 +9,8 @@
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/simulator.h"
 #include "../../utils/include/mymath.h"
+#include "../../utils/include/mysys.h"
 #include "priv/params.h"
-#include "utils.h"
 
 void run_cache_debug(reader_t *reader, cache_t *cache) {
   const int SKIP_HOUR = 72;
