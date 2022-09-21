@@ -143,6 +143,8 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = FIFO_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "arc") == 0) {
     cache = ARC_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "arc2") == 0) {
+    cache = ARC2_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "fifomerge") == 0) {
     cc_params.per_obj_overhead = 2;  // freq
     cache = FIFOMerge_init(cc_params, NULL);

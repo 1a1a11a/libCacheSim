@@ -1,7 +1,6 @@
 
 
-#include <cassert>
-
+#include <assert.h>
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LHD.h"
 #include "lhd.hpp"
@@ -127,7 +126,7 @@ void LHD_remove(cache_t *cache, obj_id_t obj_id) {
 
   auto itr = lhd->sizeMap.find(id);
   if (itr == lhd->sizeMap.end()) {
-    WARN("obj to remove is not in the cache\n");
+    PRINT_ONCE("obj to remove is not in the cache\n");
     return;
   }
 

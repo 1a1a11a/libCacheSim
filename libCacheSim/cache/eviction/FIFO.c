@@ -65,7 +65,7 @@ void FIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
 void FIFO_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached\n", obj_id);
+    PRINT_ONCE("remove object %" PRIu64 "that is not cached\n", obj_id);
     return;
   }
   FIFO_remove_obj(cache, obj);

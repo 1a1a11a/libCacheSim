@@ -175,7 +175,11 @@ static inline void insert_obj_info_freq_node(LeCaR_params_t *params,
 /* end of LFU functions */
 
 cache_t *LeCaR_init(common_cache_params_t ccache_params_, void *init_params_) {
+#ifdef LECAR_USE_BELADY
+  cache_t *cache = cache_struct_init("LeCaR-Belady", ccache_params_);
+#else
   cache_t *cache = cache_struct_init("LeCaR", ccache_params_);
+#endif
   cache->cache_init = LeCaR_init;
   cache->cache_free = LeCaR_free;
   cache->get = LeCaR_get;

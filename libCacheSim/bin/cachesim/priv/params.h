@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../utils/include/mysys.h"
 #include "../cachesim.h"
 #include "math.h"
 #include "msr.h"
