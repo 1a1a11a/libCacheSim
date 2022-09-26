@@ -13,9 +13,12 @@
 // #define ADD_METADATA
 // #define NO_FRAGMENTATION
 // #define NO_CALCIFICATION
+// #define FIFO_REDUCE_METADATA
+// #define SAMPLING_RATIO 100   // 1 / SAMPLING_RATIO
+
 
 #ifdef NO_FRAGMENTATION
-int alloc_sizes[47] = {
+static int alloc_sizes[47] = {
     72,     96,     120,    152,     192,     240,     304,    384,
     480,    600,    752,    944,     1184,    1480,    1856,   2320,
     2904,   3632,   4544,   5680,    7104,    8880,    11104,  13880,
@@ -23,7 +26,7 @@ int alloc_sizes[47] = {
     103496, 129376, 161720, 202152,  252696,  315872,  394840, 493552,
     616944, 771184, 963984, 1204984, 1506232, 1882792, 4194304};
 
-int size_mapping[1048576];
+static int size_mapping[1048576];
 
 #endif  // NO_FRAGMENTATION
 
@@ -41,7 +44,9 @@ void run_cache(reader_t *reader, cache_t *cache) {
   while (req->valid) {
     req->real_time -= start_ts;
 
-    // req->obj_size -= 12;
+#ifdef FIFO_REDUCE_METADATA
+    req->obj_size -= 12;
+#endif // FIFO_REDUCE_METADATA
 #ifdef ADD_METADATA
     req->obj_size += 32;
 #endif  // ADD_METADATA
@@ -51,13 +56,20 @@ void run_cache(reader_t *reader, cache_t *cache) {
 #ifndef ADD_METADATA
 #error "ERROR: NO_CALCIFICATION requires ADD_METADATA\n"
 #endif // ADD_METADATA
-    // value + key + metadata
+    // value + key + metadata NO_CALCIFICATION
     req->obj_size = size_mapping[160 + 24 + 32];
-#else
+#else // NO NO_CALCIFICATION
     // object size = value + key
     req->obj_size = size_mapping[req->obj_size];
 #endif // NO_CALCIFICATION
 #endif // NO_FRAGMENTATION
+
+#ifdef SAMPLING_RATIO
+    if (req->obj_id % (SAMPLING_RATIO * 100 + 1) > 100) {
+         read_one_req(reader, req);
+          continue;
+    }
+#endif // SAMPLING_RATIO
 
     if (req->op == OP_SET || req->op == OP_REPLACE) {
       cache->get(cache, req);
@@ -118,6 +130,10 @@ int main(int argc, char **argv) {
                                      .default_ttl = 86400 * 300,
                                      .per_obj_overhead = 0};
   cache_t *cache;
+
+#ifdef SAMPLING_RATIO
+  cc_params.cache_size /= SAMPLING_RATIO;
+#endif // SAMPLING_RATIO
 
   if (strcasecmp(eviction_algo, "lru") == 0) {
     cache = LRU_init(cc_params, NULL);

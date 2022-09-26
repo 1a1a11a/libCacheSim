@@ -2,7 +2,7 @@
 // Created by Juncheng on 5/24/21.
 //
 
-#include "priv/params.h"
+#include "params/params.h"
 
 sim_arg_t parse_cmd(int argc, char *argv[]) {
   if (argc < 4) {

@@ -19,9 +19,9 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->per_obj_overhead = 0;
 
   args->debug = false;
+  args->obj_id_type = OBJ_ID_NUM;
 
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-  args->obj_id_type = OBJ_ID_NUM;
 
   args->seg_size = 200;
   args->n_merge = 2;
