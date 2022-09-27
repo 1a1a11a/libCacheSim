@@ -139,6 +139,9 @@ if you get `error while loading shared libraries`, run `sudo ldconfig`
   
   
 
+---
+### Questions? 
+Please join the Google group https://groups.google.com/g/libcachesim and ask questions.
 
 
 ---
@@ -158,13 +161,25 @@ This project adheres to Google's coding style. By participating, you are expecte
 
 ---
 #### Reference
-Fill in
+```
+@inproceedings {libCacheSim,
+author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
+title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
+booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
+year = {2020},
+isbn = {978-1-939133-19-9},
+pages = {191--208},
+url = {https://www.usenix.org/conference/osdi20/presentation/yang},
+publisher = {USENIX Association},
+month = nov,
+}
+```
 
 ---
 
 ---
 #### Related
-* [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform
+* [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated
 ---
 
 
