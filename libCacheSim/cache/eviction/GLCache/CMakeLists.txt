@@ -1,6 +1,7 @@
 set(source
-        L2Cache.c
-
+        GLCache.c
+        init.c
+        
         segment.c
         bucket.c
 
@@ -12,7 +13,4 @@ set(source
         inference.c
         )
 
-add_library(L2Cache ${source})
-
-
-add_executable(test_xgboost testXGBoost.c)
+add_library(GLCache ${source})

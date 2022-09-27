@@ -1,7 +1,7 @@
 
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 #include "bucket.h"
 #include "learnInternal.h"
 #include "learned.h"
@@ -10,7 +10,7 @@
 #include "utils.h"
 
 void dump_training_data(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
   static __thread char filename[24];
@@ -49,7 +49,7 @@ void dump_training_data(cache_t *cache) {
  * up the ghost entries after each training
  */
 static void clean_training_segs(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   segment_t *seg = params->train_bucket.first_seg;
   segment_t *next_seg;
   int n_cleaned = 0;
@@ -98,7 +98,7 @@ static void clean_training_segs(cache_t *cache) {
  */
 bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data, feature_t *x,
                      train_y_t *y) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
   // x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
@@ -161,7 +161,7 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
  * @param seg
  */
 static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
 
   #ifdef TRAIN_KEEP_HALF
@@ -200,7 +200,7 @@ static inline void copy_seg_to_train_matrix(cache_t *cache, segment_t *seg) {
  * @param seg
  */
 void snapshot_segs_to_training_data(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
   segment_t *curr_seg = NULL;
 
@@ -240,8 +240,8 @@ void snapshot_segs_to_training_data(cache_t *cache) {
  * when the snapshot was taken:
  * each time when an object on the segment is requested, we accumulate 1/(D_snapshot * S_obj) to the segment utility
  */
-void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj) {
-  segment_t *seg = cache_obj->L2Cache.segment;
+void update_train_y(GLCache_params_t *params, cache_obj_t *cache_obj) {
+  segment_t *seg = cache_obj->GLCache.segment;
 
   if (params->train_source_y == TRAIN_Y_FROM_ORACLE) return;// do nothing
 
@@ -275,7 +275,7 @@ static int cmp_train_y(const void *p1, const void *p2) {
 }
 
 static void prepare_training_data_per_package(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
   safe_call(XGDMatrixCreateFromMat(learner->train_x, learner->n_train_samples,
@@ -306,7 +306,7 @@ static void prepare_training_data_per_package(cache_t *cache) {
 }
 
 void prepare_training_data(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
   int i;
 

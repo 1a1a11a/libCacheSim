@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 
 bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs);
 

@@ -26,6 +26,6 @@
 #include "evictionAlgo/SLRU.h"
 #include "evictionAlgo/SR_LRU.h"
 
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-#include "evictionAlgo/L2Cache.h"
+#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+#include "evictionAlgo/GLCache.h"
 #endif

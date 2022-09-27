@@ -7,7 +7,7 @@
 // #define N_MAX_TRAINING_DATA 16384
 #define N_INFERENCE_DATA 2048000    // large enough to not sample 
 
-/* L2Cache uses cache state features, so we need to track cache states 
+/* GLCache uses cache state features, so we need to track cache states 
  * and update them periodically, because there could be time when request 
  * rate is very low, we update when both conditions are met: */
 // update every 10 seconds
@@ -65,7 +65,7 @@ extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
 // used to detect overflow
 #define MAGIC 1234567890
 
-static char *L2Cache_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
+static char *GLCache_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
                                      "LOGCACHE_ITEM_ORACLE", "LOGCACHE_LEARNED"};
 
 static char *obj_score_type_names[] = {"FREQ",          "FREQ_BYTE",   "FREQ_AGE",

@@ -73,7 +73,7 @@ typedef struct FIFO_readmission_obj_metadata {
   int64_t next_access_vtime;
 } FIFO_readmission_obj_metadata_t;
 
-typedef struct L2Cache_obj_metadata {
+typedef struct {
   void *segment;
   int64_t next_access_vtime;
   int32_t freq;
@@ -84,7 +84,7 @@ typedef struct L2Cache_obj_metadata {
   int16_t in_cache : 2;
   int16_t seen_after_snapshot : 2;
   //      int16_t n_merged : 12;  /* how many times it has been merged */
-} L2Cache_obj_metadata_t;
+} GLCache_obj_metadata_t;
 
 #define DEBUG_MODE
 // ############################## cache obj ###################################
@@ -118,8 +118,8 @@ typedef struct cache_obj {
     Belady_obj_metadata_t Belady;
     FIFOMerge_obj_metadata_t FIFOMerge;
     FIFO_readmission_obj_metadata_t FIFO_readmission;
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-    L2Cache_obj_metadata_t L2Cache;
+#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+    GLCache_obj_metadata_t GLCache;
 #endif
   };
 } __attribute__((packed)) cache_obj_t;

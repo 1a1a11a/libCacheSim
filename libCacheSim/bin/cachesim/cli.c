@@ -63,24 +63,24 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     }
   }
 
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-  if (strncasecmp(args.alg, "L2Cache", 7) == 0) {
+#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+  if (strncasecmp(args.alg, "GLCache", 7) == 0) {
     if (strcasecmp(args.alg + 8, "oracleLog") == 0) {
-      // L2Cache-oracleLog
-      args.L2Cache_type = LOGCACHE_LOG_ORACLE;
+      // GLCache-oracleLog
+      args.GLCache_type = LOGCACHE_LOG_ORACLE;
     } else if (strcasecmp(args.alg + 8, "oracleItem") == 0) {
-      args.L2Cache_type = LOGCACHE_ITEM_ORACLE;
+      args.GLCache_type = LOGCACHE_ITEM_ORACLE;
     } else if (strcasecmp(args.alg + 8, "oracleBoth") == 0) {
-      args.L2Cache_type = LOGCACHE_BOTH_ORACLE;
+      args.GLCache_type = LOGCACHE_BOTH_ORACLE;
     } else if (strcasecmp(args.alg + 8, "learned") == 0) {
-      args.L2Cache_type = LOGCACHE_LEARNED;
+      args.GLCache_type = LOGCACHE_LEARNED;
     } else if (strcasecmp(args.alg + 8, "segcache") == 0) {
-      args.L2Cache_type = SEGCACHE;
+      args.GLCache_type = SEGCACHE;
     } else {
       printf("support oracleLog/oracleItem/oracleBoth/learned/segcache\n");
       abort();
     }
-    args.alg = "L2Cache";
+    args.alg = "GLCache";
   }
 
   if (argc >= 6) {
@@ -105,14 +105,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
   }
 
   if (argc >= 9) {
-    if (strncasecmp(argv[8], "no_bucket", 9) == 0) {
-      args.bucket_type = NO_BUCKET;
-    } else if (strncasecmp(argv[8], "size_bucket", 11) == 0) {
-      args.bucket_type = SIZE_BUCKET;
-    } else {
-      printf("unknown bucket type %s\n", argv[8]);
-      abort();
-    }
+    ;
   }
 
   if (argc >= 10) {
@@ -174,21 +167,18 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = Cacheus_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "cr_lfu") == 0) {
     cache = CR_LFU_init(cc_params, NULL);
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-  } else if (strcasecmp(args.alg, "L2Cache") == 0) {
+#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+  } else if (strcasecmp(args.alg, "GLCache") == 0) {
     cc_params.per_obj_overhead = 2 + 1 + 8;  // freq, bool, history
-    L2Cache_init_params_t init_params = {
-        .segment_size = args.seg_size,
-        .n_merge = args.n_merge,
-        .type = args.L2Cache_type,
-        .rank_intvl = args.rank_intvl,
-        .merge_consecutive_segs = args.merge_consecutive_segs,
-        .train_source_y = args.train_source_y,
-
-        .hit_density_age_shift = args.age_shift,
-        .bucket_type = args.bucket_type,
-        .retrain_intvl = args.retrain_intvl};
-    cache = L2Cache_init(cc_params, &init_params);
+    // GLCache_init_params_t init_params = {
+    //     .segment_size = args.seg_size,
+    //     .n_merge = args.n_merge,
+    //     .type = args.GLCache_type,
+    //     .rank_intvl = args.rank_intvl,
+    //     .merge_consecutive_segs = args.merge_consecutive_segs,
+    //     .train_source_y = args.train_source_y,
+    //     .retrain_intvl = args.retrain_intvl};
+    cache = GLCache_init(cc_params, NULL);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", args.alg);

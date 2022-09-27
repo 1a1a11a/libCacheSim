@@ -44,9 +44,9 @@ set (evictionLib
         evictionCPP
         LHD)
 
-if (ENABLE_L2CACHE)
-    add_subdirectory(L2Cache)
-    set(evictionLib ${evictionLib} L2Cache)
+if (ENABLE_GLCACHE)
+    add_subdirectory(GLCache)
+    set(evictionLib ${evictionLib} GLCache)
 endif()
 
 

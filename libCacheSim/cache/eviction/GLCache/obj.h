@@ -1,33 +1,33 @@
 #pragma once
 
 #include "../../include/libCacheSim/cacheObj.h"
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 
-static inline void obj_init(cache_t *cache, request_t *req, cache_obj_t *cache_obj,
+static inline void obj_init(cache_t *cache, const request_t *req, cache_obj_t *cache_obj,
                             segment_t *seg) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   copy_request_to_cache_obj(cache_obj, req);
-  cache_obj->L2Cache.freq = 0;
-  cache_obj->L2Cache.last_access_rtime = req->real_time;
-  cache_obj->L2Cache.last_access_vtime = params->curr_vtime;
-  cache_obj->L2Cache.in_cache = 1;
-  cache_obj->L2Cache.seen_after_snapshot = 0;
-  cache_obj->L2Cache.next_access_vtime = req->next_access_vtime;
+  cache_obj->GLCache.freq = 0;
+  cache_obj->GLCache.last_access_rtime = req->real_time;
+  cache_obj->GLCache.last_access_vtime = params->curr_vtime;
+  cache_obj->GLCache.in_cache = 1;
+  cache_obj->GLCache.seen_after_snapshot = 0;
+  cache_obj->GLCache.next_access_vtime = req->next_access_vtime;
 
-  cache_obj->L2Cache.segment = seg;
-  cache_obj->L2Cache.idx_in_segment = seg->n_obj;
+  cache_obj->GLCache.segment = seg;
+  cache_obj->GLCache.idx_in_segment = seg->n_obj;
 }
 
-static inline int64_t obj_age(L2Cache_params_t *params, cache_obj_t *obj) {
-  return params->curr_rtime - obj->L2Cache.last_access_rtime;
+static inline int64_t obj_age(GLCache_params_t *params, cache_obj_t *obj) {
+  return params->curr_rtime - obj->GLCache.last_access_rtime;
 }
 
 #ifdef USE_LHD
-static inline int64_t object_age_shifted(L2Cache_params_t *params, cache_obj_t *obj) {
-  bucket_t *bkt = &params->buckets[((segment_t *) (obj->L2Cache.segment))->bucket_id];
+static inline int64_t object_age_shifted(GLCache_params_t *params, cache_obj_t *obj) {
+  bucket_t *bkt = &params->buckets[((segment_t *) (obj->GLCache.segment))->bucket_id];
   int64_t obj_age =
-      (params->curr_rtime - obj->L2Cache.last_access_rtime) >> bkt->hit_prob->age_shift;
+      (params->curr_rtime - obj->GLCache.last_access_rtime) >> bkt->hit_prob->age_shift;
   if (obj_age >= HIT_PROB_MAX_AGE) {
     bkt->hit_prob->n_overflow += 1;
     obj_age = HIT_PROB_MAX_AGE - 1;
@@ -53,13 +53,13 @@ static inline int64_t hitSizeClass(uint32_t size) {
 #endif 
 
 /* some internal state update when an object is requested */
-static inline void obj_hit_update(L2Cache_params_t *params, cache_obj_t *obj, request_t *req) {
-  obj->L2Cache.next_access_vtime = req->next_access_vtime;
-  obj->L2Cache.last_access_rtime = params->curr_rtime;
-  obj->L2Cache.last_access_vtime = params->curr_vtime;
-  obj->L2Cache.freq += 1;
+static inline void obj_hit_update(GLCache_params_t *params, cache_obj_t *obj, const request_t *req) {
+  obj->GLCache.next_access_vtime = req->next_access_vtime;
+  obj->GLCache.last_access_rtime = params->curr_rtime;
+  obj->GLCache.last_access_vtime = params->curr_vtime;
+  obj->GLCache.freq += 1;
 
-  segment_t *seg = obj->L2Cache.segment;
+  segment_t *seg = obj->GLCache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 
 #ifdef USE_LHD
@@ -71,8 +71,8 @@ static inline void obj_hit_update(L2Cache_params_t *params, cache_obj_t *obj, re
 
 /* some internal state update bwhen an object is evicted */
 static inline void obj_evict_update(cache_t *cache, cache_obj_t *obj) {
-  L2Cache_params_t *params = cache->eviction_params;
-  segment_t *seg = obj->L2Cache.segment;
+  GLCache_params_t *params = cache->eviction_params;
+  segment_t *seg = obj->GLCache.segment;
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 
 #ifdef USE_LHD
@@ -84,26 +84,26 @@ static inline void obj_evict_update(cache_t *cache, cache_obj_t *obj) {
 
 /* calculate the score of object, the larger score, 
    the more important object is, we should keep it */
-static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e score_type,
+static inline double cal_obj_score(GLCache_params_t *params, obj_score_type_e score_type,
                                    cache_obj_t *cache_obj) {
-  segment_t *seg = cache_obj->L2Cache.segment;
+  segment_t *seg = cache_obj->GLCache.segment;
   int64_t curr_rtime = params->curr_rtime; 
   int64_t curr_vtime = params->curr_vtime; 
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 #if AGE_SHIFT_FACTOR == 0
-  double age_vtime = (double) (curr_vtime - cache_obj->L2Cache.last_access_vtime);
+  double age_vtime = (double) (curr_vtime - cache_obj->GLCache.last_access_vtime);
 #else
-  double age_vtime = (double) (((curr_vtime - cache_obj->L2Cache.last_access_vtime) >> AGE_SHIFT_FACTOR) + 1);
+  double age_vtime = (double) (((curr_vtime - cache_obj->GLCache.last_access_vtime) >> AGE_SHIFT_FACTOR) + 1);
   assert(age_vtime != 0);
 #endif
   if (score_type == OBJ_SCORE_FREQ) {
-    return (double) cache_obj->L2Cache.freq;
+    return (double) cache_obj->GLCache.freq;
 
   } else if (score_type == OBJ_SCORE_FREQ_BYTE) {
 #ifdef BYTE_MISS_RATIO
-    return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6;
+    return (double) (cache_obj->GLCache.freq + 0.01) * 1.0e6;
 #else
-    return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6 / cache_obj->obj_size;
+    return (double) (cache_obj->GLCache.freq + 0.01) * 1.0e6 / cache_obj->obj_size;
 #endif 
 
   } else if (score_type == OBJ_SCORE_SIZE_AGE) {
@@ -115,16 +115,16 @@ static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e sc
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE_BYTE) {
 #ifdef BYTE_MISS_RATIO
-    return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e8 
+    return (double) (cache_obj->GLCache.freq + 0.01) * 1.0e8 
            / age_vtime;    
 #else
-    return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e8 / cache_obj->obj_size
+    return (double) (cache_obj->GLCache.freq + 0.01) * 1.0e8 / cache_obj->obj_size
            / age_vtime;
 #endif
 
   } else if (score_type == OBJ_SCORE_FREQ_AGE) {
-    return (double) (cache_obj->L2Cache.freq + 0.01) * 1.0e6
-           / (curr_rtime - cache_obj->L2Cache.last_access_rtime);
+    return (double) (cache_obj->GLCache.freq + 0.01) * 1.0e6
+           / (curr_rtime - cache_obj->GLCache.last_access_rtime);
 
 #ifdef USE_LHD
   } else if (score_type == OBJ_SCORE_HIT_DENSITY) {
@@ -141,17 +141,17 @@ static inline double cal_obj_score(L2Cache_params_t *params, obj_score_type_e sc
 #endif 
 
   } else if (score_type == OBJ_SCORE_ORACLE) {
-    if (cache_obj->L2Cache.next_access_vtime == -1 || cache_obj->L2Cache.next_access_vtime == INT64_MAX) {
+    if (cache_obj->GLCache.next_access_vtime == -1 || cache_obj->GLCache.next_access_vtime == INT64_MAX) {
       return 0;
     }
 
-    DEBUG_ASSERT(cache_obj->L2Cache.next_access_vtime > curr_vtime);
+    DEBUG_ASSERT(cache_obj->GLCache.next_access_vtime > curr_vtime);
 #ifdef BYTE_MISS_RATIO
     return 1.0e8
-           / (double) (cache_obj->L2Cache.next_access_vtime - curr_vtime);
+           / (double) (cache_obj->GLCache.next_access_vtime - curr_vtime);
 #else
     return 1.0e8 / (double) cache_obj->obj_size
-           / (double) (cache_obj->L2Cache.next_access_vtime - curr_vtime);
+           / (double) (cache_obj->GLCache.next_access_vtime - curr_vtime);
 #endif
 
   } else {

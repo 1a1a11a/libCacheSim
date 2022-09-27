@@ -1,4 +1,4 @@
-/* this file handles the segment selection for L2 cache
+/* this file handles the segment selection for GL cache
    it uses FIFO, weighted FIFO, rand, ranking to choose segments 
  */
 
@@ -22,7 +22,7 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 // #define DEBUG_CODE
 #ifdef DEBUG_CODE
 static void check_ranked_segs(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
 
   int n_segs = params->seg_sel.n_ranked_segs;
@@ -39,7 +39,7 @@ static void check_ranked_segs(cache_t *cache) {
 }
 
 static void check_ranked_segs_per_bucket(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
 
   for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
@@ -64,7 +64,7 @@ static void check_ranked_segs_per_bucket(cache_t *cache) {
 /* rank the segments according to predicted segment utility, 
  * the ranked segments will be used for merge eviction */
 void rank_segs(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
   int32_t *ranked_seg_pos_p = &(params->seg_sel.ranked_seg_pos);
 
@@ -104,7 +104,7 @@ void rank_segs(cache_t *cache) {
   {
     static __thread char fname[128];
     int n_day = params->curr_rtime / (24 * 3600);
-    sprintf(fname, "dump/inference_%s_%d.txt", L2Cache_type_names[params->type],
+    sprintf(fname, "dump/inference_%s_%d.txt", GLCache_type_names[params->type],
                  n_day);
     FILE *ofile = fopen(fname, "a");
     fprintf(ofile, "# seg_util pred/oracle: hour, min, age, n_merge, req_rate, write_rate, mean_obj_size, miss_ratio, n_hit, n_active\n");
@@ -158,7 +158,7 @@ void rank_segs(cache_t *cache) {
  * it is possible that there is no bucket with n_merge + 1 segments, 
  * in which case, we randonly pick one and uses eviction w/o merge */
 static bucket_t *select_one_seg_to_evict(cache_t *cache, segment_t **segs) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   bucket_t *bucket = NULL; 
 
   // no evictable seg found, random+FIFO select one
@@ -182,7 +182,7 @@ static bucket_t *select_one_seg_to_evict(cache_t *cache, segment_t **segs) {
 /* choose the next segment to evict, use FIFO to choose bucket, 
  * and FIFO within bucket */
 bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
 
   int n_scanned_bucket = 0;
   bucket_t *bucket = &params->buckets[params->curr_evict_bucket_idx];
@@ -225,7 +225,7 @@ bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs) {
 /* choose bucket with probability being the size of the bucket, 
  * uses FIFO to choose within bucket */
 bucket_t *select_segs_weighted_fifo(cache_t *cache, segment_t **segs) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
 
   segment_t *seg_to_evict = NULL;
   bucket_t *bucket = NULL;
@@ -275,7 +275,7 @@ bucket_t *select_segs_weighted_fifo(cache_t *cache, segment_t **segs) {
 /* select segment randomly, we choose bucket in fifo order, 
  * and randomly within the bucket */
 bucket_t *select_segs_rand(cache_t *cache, segment_t **segs) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
 
   bucket_t *bucket = NULL;
   segment_t *seg_to_evict = NULL;
@@ -304,7 +304,7 @@ bucket_t *select_segs_rand(cache_t *cache, segment_t **segs) {
 
 /* choose which segment to evict, segs store the segments to evict */
 bucket_t *select_segs_learned(cache_t *cache, segment_t **segs) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   seg_sel_t *ss = &params->seg_sel;
 
   bool array_resized = false;

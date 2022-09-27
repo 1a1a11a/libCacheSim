@@ -1,8 +1,8 @@
 #pragma once 
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "../../include/libCacheSim/cache.h"
-#include "L2CacheInternal.h"
+#include "GLCacheInternal.h"
 
 
 static inline void _debug_check_bucket_segs(bucket_t *bkt) {
@@ -23,7 +23,7 @@ static inline void _debug_check_bucket_segs(bucket_t *bkt) {
 }
 
 static inline void debug_check_bucket(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = (GLCache_params_t *) cache->eviction_params;
 
   segment_t *curr_seg;
   int n_in_use_segs = 0;
@@ -52,7 +52,7 @@ static inline void debug_check_bucket(cache_t *cache) {
 
 
 static inline int _debug_count_n_obj(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = (GLCache_params_t *) cache->eviction_params;
   int64_t n_obj = 0;
 
   for (int i = 0; i < MAX_N_BUCKET; i++) {

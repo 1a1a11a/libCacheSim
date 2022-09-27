@@ -60,7 +60,7 @@ static reader_t *setup_oracleGeneralBin_reader(void) {
   return reader_oracle;
 }
 
-static reader_t *setup_L2CacheTestData_reader(void) {
+static reader_t *setup_GLCacheTestData_reader(void) {
   char *url =
       "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/"
       ".w68.oracleGeneral.bin.zst";
@@ -178,26 +178,23 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = GDSF_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "ARC") == 0) {
     cache = ARC_init(cc_params, NULL);
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
-  } else if (strncasecmp(alg_name, "L2Cache", 7) == 0) {
-    L2Cache_init_params_t init_params;
-    L2Cache_set_default_init_params(&init_params);
-    if (strcasecmp(alg_name, "L2Cache-OracleLog") == 0) {
-      init_params.type = LOGCACHE_LOG_ORACLE;
-    } else if (strcasecmp(alg_name, "L2Cache-OracleItem") == 0) {
-      init_params.type = LOGCACHE_ITEM_ORACLE;
-    } else if (strcasecmp(alg_name, "L2Cache-Segcache") == 0) {
-      init_params.type = SEGCACHE;
-    } else if (strcasecmp(alg_name, "L2Cache-OracleBoth") == 0) {
-      init_params.type = LOGCACHE_BOTH_ORACLE;
-    } else if (strcasecmp(alg_name, "L2Cache-LearnedTrueY") == 0) {
-      init_params.type = LOGCACHE_LEARNED;
-      init_params.train_source_y = TRAIN_Y_FROM_ORACLE;
-    } else if (strcasecmp(alg_name, "L2Cache-LearnedOnline") == 0) {
-      init_params.type = LOGCACHE_LEARNED;
-      init_params.train_source_y = TRAIN_Y_FROM_ONLINE;
+#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+  } else if (strncasecmp(alg_name, "GLCache", 7) == 0) {
+    // GLCache_init_params_t init_params;
+    // GLCache_set_default_init_params(&init_params);
+    const char *init_params;
+    if (strcasecmp(alg_name, "GLCache-OracleLog") == 0) {
+      init_params = "type=logOracle";
+    } else if (strcasecmp(alg_name, "GLCache-OracleItem") == 0) {
+      init_params = "type=itemOracle";
+    } else if (strcasecmp(alg_name, "GLCache-OracleBoth") == 0) {
+      init_params = "type=twoOracle";
+    } else if (strcasecmp(alg_name, "GLCache-LearnedTrueY") == 0) {
+      init_params = "type=learned;train_source_y=oracle";
+    } else if (strcasecmp(alg_name, "GLCache-LearnedOnline") == 0) {
+      init_params = "type=learned;train_source_y=online";
     }
-    cache = L2Cache_init(cc_params, &init_params);
+    cache = GLCache_init(cc_params, init_params);
 #endif
   } else if (strcasecmp(alg_name, "LHD") == 0) {
     cache = LHD_init(cc_params, NULL);

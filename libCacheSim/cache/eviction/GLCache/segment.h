@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 
 // check whether there are min_evictable segments to evict 
 // consecutive indicates the merge eviction uses consecutive segments in the chain
@@ -25,7 +25,7 @@ static inline bool is_seg_evictable(segment_t *seg, int min_evictable, bool cons
 
 segment_t *allocate_new_seg(cache_t *cache, int bucket_id);
 
-void link_new_seg_before_seg(L2Cache_params_t *params, bucket_t *bucket, segment_t *old_seg,
+void link_new_seg_before_seg(GLCache_params_t *params, bucket_t *bucket, segment_t *old_seg,
                              segment_t *new_seg);
 
 double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **segs,

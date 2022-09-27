@@ -1,7 +1,7 @@
 
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 #include "bucket.h"
 #include "const.h"
 #include "learnInternal.h"
@@ -13,7 +13,7 @@
 /* calculate the ranking of all segments for eviction */
 /* TODO: can sample some segments to improve throughput */
 static int prepare_inference_data(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
   /** because each segment is not fixed size, 
@@ -58,7 +58,7 @@ static int prepare_inference_data(cache_t *cache) {
 }
 
 void inference_xgboost(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
   int n_segs = prepare_inference_data(cache);
@@ -157,7 +157,7 @@ void inference_xgboost(cache_t *cache) {
 }
 
 void inference(cache_t *cache) {
-  L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
+  GLCache_params_t *params = (GLCache_params_t *) cache->eviction_params;
 
   uint64_t start_time = gettime_usec();
 

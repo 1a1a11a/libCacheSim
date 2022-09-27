@@ -1,9 +1,9 @@
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 
 /* append a segment to the end of bucket */
-void append_seg_to_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t *segment) {
+void append_seg_to_bucket(GLCache_params_t *params, bucket_t *bucket, segment_t *segment) {
   /* because the last segment may not be full, so we link before it */
   if (bucket->last_seg == NULL) {
     DEBUG_ASSERT(bucket->first_seg == NULL);
@@ -27,7 +27,7 @@ void append_seg_to_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t 
   }
 }
 
-void remove_seg_from_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_t *segment) {
+void remove_seg_from_bucket(GLCache_params_t *params, bucket_t *bucket, segment_t *segment) {
   if (bucket->first_seg == segment) {
     bucket->first_seg = segment->next_seg;
   }
@@ -51,23 +51,25 @@ void remove_seg_from_bucket(L2Cache_params_t *params, bucket_t *bucket, segment_
   }
 }
 
-int find_bucket_idx(L2Cache_params_t *params, request_t *req) {
-  const double log_base = log(2);
+int find_bucket_idx(GLCache_params_t *params, request_t *req) {
+  // const double log_base = log(2);
 
-  if (params->bucket_type == NO_BUCKET) {
-    return 0;
-  } else if (params->bucket_type == SIZE_BUCKET) {
-    return sizeof(unsigned int) * 8 - 1 - __builtin_clz(req->obj_size);
-  } else if (params->bucket_type == CUSTOMER_BUCKET) {
-    return req->tenant_id % 8;
-  } else if (params->bucket_type == BUCKET_ID_BUCKET) {
-    return req->ns % 8;
-  } else if (params->bucket_type == CONTENT_TYPE_BUCKET) {
-    return req->content_type;
-  } else {
-    printf("unknown bucket type %d\n", params->bucket_type);
-    abort();
-  }
+  return 0;
+
+  // if (params->bucket_type == NO_BUCKET) {
+  //   return 0;
+  // } else if (params->bucket_type == SIZE_BUCKET) {
+  //   return sizeof(unsigned int) * 8 - 1 - __builtin_clz(req->obj_size);
+  // } else if (params->bucket_type == CUSTOMER_BUCKET) {
+  //   return req->tenant_id % 8;
+  // } else if (params->bucket_type == BUCKET_ID_BUCKET) {
+  //   return req->ns % 8;
+  // } else if (params->bucket_type == CONTENT_TYPE_BUCKET) {
+  //   return req->content_type;
+  // } else {
+  //   printf("unknown bucket type %d\n", params->bucket_type);
+  //   abort();
+  // }
 }
 
 #ifdef USE_LHD
@@ -108,7 +110,7 @@ void update_hit_prob_cdf(bucket_t *bkt) {
 #endif 
 
 void print_bucket(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
 
   printf("bucket has segs: ");
   for (int i = 0; i < MAX_N_BUCKET; i++) {

@@ -1,7 +1,7 @@
 
-
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include <math.h>
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 #include "bucket.h"
 #include "learnInternal.h"
 #include "learned.h"
@@ -22,7 +22,7 @@ static void debug_print_feature_matrix(const DMatrixHandle handle, int print_n_r
 }
 
 static void train_xgboost(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
   if (learner->n_train != 0) {
@@ -108,7 +108,7 @@ static void train_xgboost(cache_t *cache) {
 }
 
 void train(cache_t *cache) {
-  L2Cache_params_t *params = (L2Cache_params_t *) cache->eviction_params;
+  GLCache_params_t *params = (GLCache_params_t *) cache->eviction_params;
 
   uint64_t start_time = gettime_usec();
 #ifdef LOAD_MODEL

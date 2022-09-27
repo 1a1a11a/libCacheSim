@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "const.h"
 
 typedef struct {
@@ -30,14 +30,10 @@ typedef struct learner {
   int64_t last_train_rtime;
   int retrain_intvl;
 
-#ifdef USE_XGBOOST
   BoosterHandle booster; // model
   DMatrixHandle train_dm;// training data
   DMatrixHandle valid_dm;// validation data
   DMatrixHandle inf_dm;  // inference data
-#elif defined(USE_GBM)
-  DatasetHandle train_dm;// training data
-#endif
 
   /* learner stat */
   int n_train;
@@ -197,10 +193,10 @@ typedef struct {
   cache_state_t cache_state;
 
   /* cache type */
-  L2Cache_type_e type;
+  GLCache_type_e type;
 
-  /* bucket and related parameters */
-  bucket_type_e bucket_type;
+  // /* bucket and related parameters */
+  // bucket_type_e bucket_type;
 
   /* object selection related parameters */
   obj_score_type_e obj_score_type;
@@ -212,4 +208,31 @@ typedef struct {
 
   /* in number of evictions */
   double rank_intvl;
-} L2Cache_params_t;
+} GLCache_params_t;
+
+typedef struct {
+  // how many objects in one segment
+  int segment_size;
+  // how many segments to merge (n_merge segments merge to one segment)
+  int n_merge;
+  double rank_intvl;  // how often to rank, in terms of fraction of total
+                      // segments (0.0 - 1.0)
+  // whether we merge consecutive segments (with the first segment has the
+  // lowest utility) or we merge non-consecutive segments based on ranking
+  bool merge_consecutive_segs;
+
+  int retrain_intvl;
+
+  train_source_e train_source_y;
+  GLCache_type_e type;
+} GLCache_init_params_t;
+
+void init_global_params();
+void deinit_global_params();
+void check_init_params(GLCache_init_params_t *init_params);
+void init_seg_sel(cache_t *cache);
+void init_obj_sel(cache_t *cache);
+void init_learner(cache_t *cache, int retrain_intvl);
+void init_cache_state(cache_t *cache);
+void init_learner(cache_t *cache, int retrain_intvl);
+

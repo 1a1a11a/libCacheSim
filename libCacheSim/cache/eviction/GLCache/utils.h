@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
-#include "L2CacheInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 
 #define MAYBE_RESIZE_MATRIX(matrix_type, matrix_p, expect_dim1, expect_dim2, curr_dim1_p,      \
                             curr_dim2_p)                                                       \

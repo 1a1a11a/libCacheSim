@@ -21,7 +21,7 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->debug = false;
   args->obj_id_type = OBJ_ID_NUM;
 
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
 
   args->seg_size = 200;
   args->n_merge = 2;
@@ -32,8 +32,7 @@ static inline void set_default_arg(sim_arg_t *args) {
   args->age_shift = 2;
   args->retrain_intvl = 86400;
 
-  args->L2Cache_type = LOGCACHE_LEARNED;
-  args->bucket_type = NO_BUCKET;
+  args->GLCache_type = LOGCACHE_LEARNED;
 #endif
 
   args->n_thread = (int)n_cores();
@@ -49,7 +48,7 @@ static inline void set_param_with_workload(sim_arg_t *args, char *trace_path) {
       args->cache_sizes[i] = MiB * s[i];
     }
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
-#if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
+#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
     args->retrain_intvl = 86400 * 1;
 #endif
   } else if (strstr(args->trace_path, "msr") != NULL) {

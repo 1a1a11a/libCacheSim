@@ -1,8 +1,6 @@
 
-
-#pragma once
-
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "GLCacheInternal.h"
 #include "const.h"
 
 void init_global_params() {
@@ -19,7 +17,7 @@ void deinit_global_params() {
   }
 }
 
-void check_init_params(L2Cache_init_params_t *init_params) {
+void check_init_params(GLCache_init_params_t *init_params) {
   assert(init_params->segment_size > 1 && init_params->segment_size <= 100000000);
   assert(init_params->n_merge > 1 && init_params->n_merge <= 100);
   assert(init_params->rank_intvl > 0 && init_params->rank_intvl < 1);
@@ -27,7 +25,7 @@ void check_init_params(L2Cache_init_params_t *init_params) {
 }
 
 void init_seg_sel(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
 
   params->seg_sel.ranked_segs = NULL;
   params->seg_sel.ranked_seg_size = -1;
@@ -35,7 +33,7 @@ void init_seg_sel(cache_t *cache) {
 }
 
 void init_obj_sel(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+  GLCache_params_t *params = cache->eviction_params;
 
   params->obj_sel.array_size = params->n_merge * params->segment_size;
   params->obj_sel.score_array = my_malloc_n(double, params->obj_sel.array_size);
@@ -48,9 +46,8 @@ void init_obj_sel(cache_t *cache) {
   memset(params->obj_sel.segs_to_evict, 0, sizeof(segment_t *) * params->n_merge);
 }
 
-void init_learner(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
-  L2Cache_init_params_t *init_params = cache->init_params;
+void init_learner(cache_t *cache, int retrain_intvl) {
+  GLCache_params_t *params = cache->eviction_params;
 
   learner_t *l = &params->learner;
 
@@ -77,14 +74,14 @@ void init_learner(cache_t *cache) {
   memset(l->valid_x, 0, sizeof(feature_t) * l->valid_matrix_n_row * l->n_feature);
   l->valid_y = my_malloc_n(train_y_t, l->valid_matrix_n_row);
   memset(l->valid_y, 0, sizeof(train_y_t) * l->valid_matrix_n_row);
-  l->retrain_intvl = init_params->retrain_intvl;
+  l->retrain_intvl = retrain_intvl;
   l->last_train_rtime = 0;
 }
 
-static void init_buckets(cache_t *cache, int age_shift) {
-  L2Cache_params_t *params = cache->eviction_params;
+static void init_buckets(cache_t *cache) {
+  GLCache_params_t *params = cache->eviction_params;
 
-  if (age_shift <= 0) age_shift = 0;
+  int age_shift = 3;
 
   for (int i = 0; i < MAX_N_BUCKET; i++) {
     memset(&params->buckets[i], 0, sizeof(bucket_t));
@@ -103,8 +100,8 @@ static void init_buckets(cache_t *cache, int age_shift) {
   }
 }
 
-static void init_cache_state(cache_t *cache) {
-  L2Cache_params_t *params = cache->eviction_params;
+void init_cache_state(cache_t *cache) {
+  GLCache_params_t *params = cache->eviction_params;
   params->cache_state.miss_ratio = 0.5;
   params->cache_state.req_rate = 1;
   params->cache_state.write_rate = 1;

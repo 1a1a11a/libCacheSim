@@ -1,15 +1,15 @@
 #pragma once
 
-#include "../../include/libCacheSim/evictionAlgo/L2Cache.h"
+#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "bucket.h"
 #include "const.h"
 #include "obj.h"
 #include "segment.h"
 
 /************* feature *****************/
-void seg_feature_shift(L2Cache_params_t *params, segment_t *seg);
+void seg_feature_shift(GLCache_params_t *params, segment_t *seg);
 
-void seg_hit_update(L2Cache_params_t *params, cache_obj_t *cache_obj);
+void seg_hit_update(GLCache_params_t *params, cache_obj_t *cache_obj);
 
 /************* training *****************/
 
@@ -25,7 +25,7 @@ void dump_training_data(cache_t *cache);
 
 void snapshot_segs_to_training_data(cache_t *cache); 
 
-void update_train_y(L2Cache_params_t *params, cache_obj_t *cache_obj); 
+void update_train_y(GLCache_params_t *params, cache_obj_t *cache_obj); 
 
 void prepare_training_data(cache_t *cache); 
 
