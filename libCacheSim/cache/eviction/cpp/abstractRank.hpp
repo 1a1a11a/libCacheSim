@@ -1,5 +1,7 @@
 #pragma once
 
+#include <math.h>
+
 #include <fstream>
 #include <iostream>
 #include <map>

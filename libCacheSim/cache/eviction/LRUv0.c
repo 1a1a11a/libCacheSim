@@ -1,5 +1,6 @@
 //
 //  this is the version using glib hashtable
+//  compared to LRU, this uses more memory and is slower
 //
 //
 //  LRUv0.c
@@ -20,8 +21,13 @@
 extern "C" {
 #endif
 
-cache_t *LRUv0_init(common_cache_params_t ccache_params,
-                    void *cache_specific_params) {
+typedef struct LRUv0_params {
+  GHashTable *hashtable;
+  GQueue *list;
+} LRUv0_params_t;
+
+cache_t *LRUv0_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("LRUv0", ccache_params);
   cache->cache_init = LRUv0_init;
   cache->cache_free = LRUv0_free;
@@ -31,6 +37,12 @@ cache_t *LRUv0_init(common_cache_params_t ccache_params,
   cache->evict = LRUv0_evict;
   cache->remove = LRUv0_remove;
   cache->to_evict = LRUv0_to_evict;
+
+  if (cache_specific_params != NULL) {
+    printf("LRUv0 does not support any parameters, but got %s\n",
+           cache_specific_params);
+    abort();
+  }
 
   cache->eviction_params = g_new0(LRUv0_params_t, 1);
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
@@ -47,7 +59,8 @@ void LRUv0_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e LRUv0_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e LRUv0_check(cache_t *cache, const request_t *req,
+                           const bool update_cache) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
                                              GSIZE_TO_POINTER(req->obj_id));
@@ -68,7 +81,7 @@ cache_ck_res_e LRUv0_check(cache_t *cache, request_t *req, bool update_cache) {
   return cache_ck_hit;
 }
 
-cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
+cache_ck_res_e LRUv0_get(cache_t *cache, const request_t *req) {
   cache_ck_res_e cache_check = LRUv0_check(cache, req, true);
   if (req->obj_size <= cache->cache_size) {
     if (cache_check == cache_ck_miss) LRUv0_insert(cache, req);
@@ -82,7 +95,7 @@ cache_ck_res_e LRUv0_get(cache_t *cache, request_t *req) {
   return cache_check;
 }
 
-void LRUv0_insert(cache_t *cache, request_t *req) {
+void LRUv0_insert(cache_t *cache, const request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
   cache->occupied_size += req->obj_size + cache->per_obj_overhead;
@@ -96,7 +109,7 @@ void LRUv0_insert(cache_t *cache, request_t *req) {
                       GSIZE_TO_POINTER(cache_obj->obj_id), (gpointer)node);
 }
 
-cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, request_t *req) {
+cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, const request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
                                              GSIZE_TO_POINTER(req->obj_id));
@@ -109,7 +122,8 @@ cache_obj_t *LRUv0_to_evict(cache_t *cache) {
   return (cache_obj_t *)g_queue_peek_head(LRUv0_params->list);
 }
 
-void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void LRUv0_evict(cache_t *cache, const request_t *req,
+                 cache_obj_t *evicted_obj) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = LRUv0_to_evict(cache);
   assert(cache->occupied_size >= cache_obj->obj_size);
@@ -119,13 +133,13 @@ void LRUv0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   free_cache_obj(cache_obj);
 }
 
-void LRUv0_remove(cache_t *cache, obj_id_t obj_id) {
+void LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
   GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
                                              (gconstpointer)obj_id);
   if (!node) {
-    ERROR("obj to remove is not in the cache\n");
+    PRINT_ONCE("obj to remove is not in the cache\n");
     return;
   }
   cache_obj_t *cache_obj = (cache_obj_t *)(node->data);
@@ -140,5 +154,5 @@ void LRUv0_remove(cache_t *cache, obj_id_t obj_id) {
 }
 
 #ifdef __cplusplus
-extern "C" {
+}
 #endif

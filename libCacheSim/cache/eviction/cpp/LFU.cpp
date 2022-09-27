@@ -10,7 +10,7 @@
 
 #include <cassert>
 
-#include "abstractRank.h"
+#include "abstractRank.hpp"
 #include "hashtable.h"
 
 namespace eviction {

@@ -15,20 +15,30 @@
 extern "C" {
 #endif
 
-cache_t *LFU_init(common_cache_params_t ccache_params,
-                  void *cache_specific_params);
+typedef struct freq_node {
+  uint32_t freq;
+  uint32_t n_obj;
+  cache_obj_t *first_obj;
+  cache_obj_t *last_obj;
+} freq_node_t;
+
+cache_t *LFU_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params);
 
 void LFU_free(cache_t *cache);
 
-cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update);
+cache_ck_res_e LFU_check(cache_t *cache, const request_t *req,
+                         const bool update);
 
-cache_ck_res_e LFU_get(cache_t *cache, request_t *req);
+cache_ck_res_e LFU_get(cache_t *cache, const request_t *req);
 
-void LFU_remove(cache_t *cache, obj_id_t obj_id);
+void LFU_remove(cache_t *cache, const obj_id_t obj_id);
 
-void LFU_insert(cache_t *LFU, request_t *req);
+void LFU_insert(cache_t *LFU, const request_t *req);
 
-void LFU_evict(cache_t *LFU, request_t *req, cache_obj_t *cache_obj);
+cache_obj_t *LFU_to_evict(cache_t *cache);
+
+void LFU_evict(cache_t *LFU, const request_t *req, cache_obj_t *cache_obj);
 
 #ifdef __cplusplus
 }

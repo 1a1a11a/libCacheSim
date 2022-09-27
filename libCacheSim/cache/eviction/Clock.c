@@ -8,9 +8,14 @@
 extern "C" {
 #endif
 
+typedef struct {
+  cache_obj_t *pointer;
+} Clock_params_t;
+
 void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
 
-cache_t *Clock_init(common_cache_params_t ccache_params, void *init_params) {
+cache_t *Clock_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("Clock", ccache_params);
   cache->cache_init = Clock_init;
   cache->cache_free = Clock_free;
@@ -21,6 +26,12 @@ cache_t *Clock_init(common_cache_params_t ccache_params, void *init_params) {
   cache->remove = Clock_remove;
   cache->to_evict = Clock_to_evict;
 
+  if (cache_specific_params != NULL) {
+    ERROR("Clock does not support any parameters, but got %s\n",
+          cache_specific_params);
+    abort();
+  }
+
   cache->eviction_params = my_malloc(Clock_params_t);
   ((Clock_params_t *)(cache->eviction_params))->pointer = NULL;
 
@@ -29,7 +40,8 @@ cache_t *Clock_init(common_cache_params_t ccache_params, void *init_params) {
 
 void Clock_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e Clock_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e Clock_check(cache_t *cache, const request_t *req,
+                           const bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e res = cache_check_base(cache, req, update_cache, &cache_obj);
   if (cache_obj != NULL) cache_obj->clock.visited = true;
@@ -37,11 +49,11 @@ cache_ck_res_e Clock_check(cache_t *cache, request_t *req, bool update_cache) {
   return res;
 }
 
-cache_ck_res_e Clock_get(cache_t *cache, request_t *req) {
+cache_ck_res_e Clock_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void Clock_insert(cache_t *cache, request_t *req) {
+void Clock_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
   cache_obj->clock.visited = false;
 }
@@ -70,7 +82,8 @@ cache_obj_t *Clock_to_evict(cache_t *cache) {
   return moving_pointer;
 }
 
-void Clock_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void Clock_evict(cache_t *cache, const request_t *req,
+                 cache_obj_t *evicted_obj) {
   Clock_params_t *params = cache->eviction_params;
   cache_obj_t *moving_pointer = Clock_to_evict(cache);
 
@@ -92,10 +105,10 @@ void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-void Clock_remove(cache_t *cache, obj_id_t obj_id) {
+void Clock_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached\n", obj_id);
+    PRINT_ONCE("remove object %" PRIu64 "that is not cached\n", obj_id);
     return;
   }
   Clock_remove_obj(cache, obj);

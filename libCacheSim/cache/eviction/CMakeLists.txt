@@ -1,9 +1,9 @@
 set(sourceC
         MRU.c
-        LRUv0.c
         Random.c
-        LFUFast.c
+        LFU.c
         LFUDA.c
+        ARC2.c
         ARC.c
         FIFO.c
         Clock.c
@@ -11,14 +11,15 @@ set(sourceC
         SLRU.c
         CR_LFU.c
         SR_LRU.c
-        Optimal.c
-        OptimalSize.c
+        Belady.c
+        BeladySize.c
         Hyperbolic.c
         LeCaR.c
-        LeCaR0.c
         Cacheus.c
         FIFOMerge.c
         
+        LRUv0.c
+        LeCaRv0.c
         )
 
 set (sourceCPP

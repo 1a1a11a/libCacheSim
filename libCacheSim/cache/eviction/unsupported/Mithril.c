@@ -993,8 +993,6 @@ void Mithril_destroy_unique(cache_t *cache) {
    is that the former one only free the resources that are
    unique to the cache, freeing these resources won't affect
    other caches copied from original cache
-   in Optimal, next_access should not be freed in destroy_unique,
-   because it is shared between different caches copied from the original one.
    */
 
   Mithril_params_t *Mithril_params = (Mithril_params_t *)(cache->cache_params);
@@ -1146,10 +1144,10 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
     AMP_init_params->K = init_params->sequential_K;
     Mithril_params->cache =
         AMP_init(size, obj_id_type, AMP_init_params);
-  } else if (strcmp(init_params->cache_type, "Optimal") == 0) {
-    struct Optimal_init_params *Optimal_init_params =
-        g_new(struct Optimal_init_params, 1);
-    Optimal_init_params->reader = NULL;
+  } else if (strcmp(init_params->cache_type, "Belady") == 0) {
+    struct Belady_init_params *Belady_init_params =
+        g_new(struct Belady_init_params, 1);
+    Belady_init_params->reader = NULL;
     Mithril_params->cache = NULL;
     ;
   } else {

@@ -1,6 +1,7 @@
 
 
 #include <assert.h>
+
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LHD.h"
 #include "lhd.hpp"
@@ -8,7 +9,16 @@
 
 using namespace repl;
 
-cache_t *LHD_init(common_cache_params_t ccache_params, void *init_params) {
+typedef struct {
+  void *LHD_cache;
+
+  int associativity;
+  int admission;
+
+} LHD_params_t;
+
+cache_t *LHD_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params) {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (ccache_params.default_ttl < 30 * 86400) {
     ERROR("LHD does not support expiration\n");
@@ -29,12 +39,6 @@ cache_t *LHD_init(common_cache_params_t ccache_params, void *init_params) {
   memset(params, 0, sizeof(LHD_params_t));
   cache->eviction_params = params;
 
-  if (init_params != nullptr) {
-    auto *LHD_init_params = static_cast<LHD_init_params_t *>(init_params);
-    params->admission = LHD_init_params->admission;
-    params->associativity = LHD_init_params->associativity;
-  }
-
   if (params->admission == 0) {
     params->admission = 8;
   }
@@ -54,7 +58,8 @@ void LHD_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e LHD_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e LHD_check(cache_t *cache, const request_t *req,
+                         const bool update_cache) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
 
@@ -78,11 +83,11 @@ cache_ck_res_e LHD_check(cache_t *cache, request_t *req, bool update_cache) {
   return cache_ck_hit;
 }
 
-cache_ck_res_e LHD_get(cache_t *cache, request_t *req) {
+cache_ck_res_e LHD_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LHD_insert(cache_t *cache, request_t *req) {
+void LHD_insert(cache_t *cache, const request_t *req) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   auto id = repl::candidate_t::make(req);
@@ -94,7 +99,7 @@ void LHD_insert(cache_t *cache, request_t *req) {
   cache->n_obj += 1;
 }
 
-void LHD_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
 
@@ -119,7 +124,7 @@ void LHD_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   }
 }
 
-void LHD_remove(cache_t *cache, obj_id_t obj_id) {
+void LHD_remove(cache_t *cache, const obj_id_t obj_id) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   repl::candidate_t id{DEFAULT_APP_ID, (int64_t)obj_id};

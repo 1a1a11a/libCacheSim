@@ -1,4 +1,4 @@
-/* LeCaR0: HotStorage'18
+/* LeCaRv0: HotStorage'18
  *
  * the implementation uses a LRU and LFU, each object is stored both in LRU and
  * LFU, when updating, the object is updated in both caches when
@@ -9,63 +9,86 @@
  *
  * */
 
-#include "../include/libCacheSim/evictionAlgo/LeCaR0.h"
+#include "../include/libCacheSim/evictionAlgo/LeCaRv0.h"
+
+#include <math.h>
 
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LFU.h"
-#include "../include/libCacheSim/evictionAlgo/LFUFast.h"
 #include "../include/libCacheSim/evictionAlgo/LRU.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-cache_t *LeCaR0_init(common_cache_params_t ccache_params_, void *init_params_) {
-  cache_t *cache = cache_struct_init("LeCaR0", ccache_params_);
-  cache->cache_init = LeCaR0_init;
-  cache->cache_free = LeCaR0_free;
-  cache->get = LeCaR0_get;
-  cache->check = LeCaR0_check;
-  cache->insert = LeCaR0_insert;
-  cache->evict = LeCaR0_evict;
-  cache->remove = LeCaR0_remove;
-  cache->to_evict = LeCaR0_to_evict;
+typedef struct LeCaRv0_params {
+  cache_t *LRU;    // LRU
+  cache_t *LRU_g;  // eviction history of LRU
+  cache_t *LFU;    // LFU
+  cache_t *LFU_g;  // eviction history of LFU
+  double w_lru;
+  double w_lfu;
+  double lr;                 // learning rate
+  double dr;                 // discount rate
+  double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
+  int64_t n_hit_lru_history;
+  int64_t n_hit_lfu_history;
+} LeCaRv0_params_t;
 
-  cache->eviction_params = my_malloc_n(LeCaR0_params_t, 1);
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("LeCaRv0", ccache_params);
+  cache->cache_init = LeCaRv0_init;
+  cache->cache_free = LeCaRv0_free;
+  cache->get = LeCaRv0_get;
+  cache->check = LeCaRv0_check;
+  cache->insert = LeCaRv0_insert;
+  cache->evict = LeCaRv0_evict;
+  cache->remove = LeCaRv0_remove;
+  cache->to_evict = LeCaRv0_to_evict;
+
+  if (cache_specific_params != NULL) {
+    printf("LeCaRv0 does not support any parameters, but got %s\n",
+           cache_specific_params);
+    abort();
+  }
+
+  cache->eviction_params = my_malloc_n(LeCaRv0_params_t, 1);
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
   params->ghost_list_factor = 1;
   params->lr = 0.45;
-  params->dr = pow(0.005, 1.0 / (double)ccache_params_.cache_size);
+  params->dr = pow(0.005, 1.0 / (double)ccache_params.cache_size);
   params->w_lru = params->w_lfu = 0.50;
   params->n_hit_lru_history = params->n_hit_lfu_history = 0;
 
-  params->LRU = LRU_init(ccache_params_, NULL);
-  params->LFU = LFUFast_init(ccache_params_, NULL);
+  params->LRU = LRU_init(ccache_params, NULL);
+  params->LFU = LFU_init(ccache_params, NULL);
 
+  common_cache_params_t ccache_params_g = ccache_params;
   /* set ghost_list_factor to 2 can reduce miss ratio anomaly */
-  ccache_params_.cache_size = (uint64_t)((double)ccache_params_.cache_size / 2 *
-                                         params->ghost_list_factor);
+  ccache_params_g.cache_size = (uint64_t)((double)ccache_params.cache_size / 2 *
+                                          params->ghost_list_factor);
 
-  params->LRU_g = LRU_init(ccache_params_, NULL);
-  params->LFU_g = LRU_init(ccache_params_, NULL);
+  params->LRU_g = LRU_init(ccache_params_g, NULL);
+  params->LFU_g = LRU_init(ccache_params_g, NULL);
 
   return cache;
 }
 
-void LeCaR0_free(cache_t *cache) {
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+void LeCaRv0_free(cache_t *cache) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
   params->LRU->cache_free(params->LRU);
   params->LRU_g->cache_free(params->LRU_g);
   params->LFU->cache_free(params->LFU);
   params->LFU_g->cache_free(params->LFU_g);
-  my_free(sizeof(LeCaR0_params_t), params);
+  my_free(sizeof(LeCaRv0_params_t), params);
   cache_struct_free(cache);
 }
 
 static void update_weight(cache_t *cache, int64_t t, double *w_update,
                           double *w_no_update) {
   DEBUG_ASSERT(fabs(*w_update + *w_no_update - 1.0) < 0.0001);
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
   double r = pow(params->dr, (double)t);
   *w_update = *w_update * exp(-params->lr * r) + 1e-10; /* to avoid w was 0 */
@@ -74,8 +97,8 @@ static void update_weight(cache_t *cache, int64_t t, double *w_update,
   *w_no_update = (*w_no_update + 1e-10) / s;
 }
 
-static void check_and_update_history(cache_t *cache, request_t *req) {
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+static void check_and_update_history(cache_t *cache, const request_t *req) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
   cache_ck_res_e ck_lru_g, ck_lfu_g;
 
@@ -100,8 +123,9 @@ static void check_and_update_history(cache_t *cache, request_t *req) {
   }
 }
 
-cache_ck_res_e LeCaR0_check(cache_t *cache, request_t *req, bool update_cache) {
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+cache_ck_res_e LeCaRv0_check(cache_t *cache, const request_t *req,
+                             bool update_cache) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
   cache_ck_res_e ck_lru, ck_lfu;
   ck_lru = params->LRU->check(params->LRU, req, update_cache);
@@ -125,12 +149,12 @@ cache_ck_res_e LeCaR0_check(cache_t *cache, request_t *req, bool update_cache) {
   return ck_lru;
 }
 
-cache_ck_res_e LeCaR0_get(cache_t *cache, request_t *req) {
+cache_ck_res_e LeCaRv0_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LeCaR0_insert(cache_t *cache, request_t *req) {
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+void LeCaRv0_insert(cache_t *cache, const request_t *req) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
   params->LRU->insert(params->LRU, req);
   params->LFU->insert(params->LFU, req);
@@ -139,8 +163,8 @@ void LeCaR0_insert(cache_t *cache, request_t *req) {
   cache->n_obj += 1;
 }
 
-cache_obj_t *LeCaR0_to_evict(cache_t *cache) {
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+cache_obj_t *LeCaRv0_to_evict(cache_t *cache) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     return params->LRU->to_evict(params->LRU);
@@ -149,13 +173,14 @@ cache_obj_t *LeCaR0_to_evict(cache_t *cache) {
   }
 }
 
-void LeCaR0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void LeCaRv0_evict(cache_t *cache, const request_t *req,
+                   cache_obj_t *evicted_obj) {
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }
 
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
   cache_obj_t obj;
   double r = ((double)(next_rand() % 100)) / 100.0;
@@ -191,8 +216,8 @@ void LeCaR0_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache->n_obj -= 1;
 }
 
-void LeCaR0_remove(cache_t *cache, obj_id_t obj_id) {
-  LeCaR0_params_t *params = (LeCaR0_params_t *)(cache->eviction_params);
+void LeCaRv0_remove(cache_t *cache, obj_id_t obj_id) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(params->LRU, obj_id);
   if (obj == NULL) {
     ERROR("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);

@@ -9,7 +9,8 @@
 extern "C" {
 #endif
 
-cache_t *SR_LRU_init(common_cache_params_t ccache_params, void *init_params) {
+cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("SR_LRU", ccache_params);
   cache->cache_init = SR_LRU_init;
   cache->cache_free = SR_LRU_free;
@@ -20,15 +21,22 @@ cache_t *SR_LRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->remove = SR_LRU_remove;
   cache->to_evict = SR_LRU_to_evict;
 
+  if (cache_specific_params != NULL) {
+    printf("SR-LRU does not support any parameters, but got %s\n",
+           cache_specific_params);
+    abort();
+  }
+
   cache->eviction_params = my_malloc_n(SR_LRU_params_t, 1);
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
   params->other_cache = NULL;  // for Cacheus
   // 1/2 for each SR and R, 1 for H
   params->H_list = LRU_init(ccache_params, NULL);
-  ccache_params.cache_size /= 2;
-  params->SR_list = LRU_init(ccache_params, NULL);
-  params->R_list = LRU_init(ccache_params, NULL);
-  ccache_params.cache_size *= 2;
+
+  common_cache_params_t ccache_params_local = ccache_params;
+  ccache_params_local.cache_size /= 2;
+  params->SR_list = LRU_init(ccache_params_local, NULL);
+  params->R_list = LRU_init(ccache_params_local, NULL);
   params->C_demoted = 0;
   params->C_new = 0;
 
@@ -44,7 +52,8 @@ void SR_LRU_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e SR_LRU_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e SR_LRU_check(cache_t *cache, const request_t *req,
+                            const bool update_cache) {
   // SR_LRU_check will cover cases where:
   // Hit in Cache (R) and hit in Cache (SR) and does not hit anything
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
@@ -124,7 +133,7 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, request_t *req, bool update_cache) {
   return ck_R;
 }
 
-cache_ck_res_e SR_LRU_get(cache_t *cache, request_t *req) {
+cache_ck_res_e SR_LRU_get(cache_t *cache, const request_t *req) {
   cache_ck_res_e ret;
   ret = SR_LRU_check(cache, req, true);
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
@@ -138,7 +147,7 @@ cache_ck_res_e SR_LRU_get(cache_t *cache, request_t *req) {
   return ret;
 }
 
-void SR_LRU_insert(cache_t *cache, request_t *req) {
+void SR_LRU_insert(cache_t *cache, const request_t *req) {
   // SR_LRU_insert covers the cases where hit in history or does not hit
   // anything.
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
@@ -250,7 +259,8 @@ cache_obj_t *SR_LRU_to_evict(cache_t *cache) {
   }
 }
 
-void SR_LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void SR_LRU_evict(cache_t *cache, const request_t *req,
+                  cache_obj_t *evicted_obj) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
   if (params->SR_list->to_evict(params->SR_list)) {
     params->SR_list->evict(params->SR_list, req, evicted_obj);
@@ -288,7 +298,7 @@ void SR_LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
       params->SR_list->occupied_size + params->R_list->occupied_size;
 }
 
-void SR_LRU_remove(cache_t *cache, obj_id_t obj_id) {
+void SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
@@ -344,5 +354,5 @@ void SR_LRU_remove(cache_t *cache, obj_id_t obj_id) {
 }
 
 #ifdef __cplusplus
-extern "C" {
+}
 #endif

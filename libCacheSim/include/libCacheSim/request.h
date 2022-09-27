@@ -97,11 +97,11 @@ static inline void print_request(request_t *req) {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   INFO("req real_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
        (unsigned long)req->real_time, (unsigned long long)req->obj_id,
-       (long)req->obj_size, (long)req->ttl, OP_STR[req->op], req->valid);
+       (long)req->obj_size, (long)req->ttl, req_op_str[req->op], req->valid);
 #else
   printf("req real_time %lu, id %llu, size %ld, op %s, valid %d\n",
          (unsigned long)req->real_time, (unsigned long long)req->obj_id,
-         (long)req->obj_size, OP_STR[req->op], req->valid);
+         (long)req->obj_size, req_op_str[req->op], req->valid);
 #endif
 }
 

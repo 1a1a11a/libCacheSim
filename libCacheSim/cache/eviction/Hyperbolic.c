@@ -15,8 +15,9 @@ typedef struct Hyperbolic_params {
 
 void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj);
 
-cache_t *Hyperbolic_init(common_cache_params_t ccache_params,
-                         __attribute__((unused)) void *init_params) {
+cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
+                         __attribute__((unused))
+                         const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("Hyperbolic", ccache_params);
   cache->cache_init = Hyperbolic_init;
   cache->cache_free = Hyperbolic_free;
@@ -26,6 +27,12 @@ cache_t *Hyperbolic_init(common_cache_params_t ccache_params,
   cache->evict = Hyperbolic_evict;
   cache->remove = Hyperbolic_remove;
   cache->to_evict = Hyperbolic_to_evict;
+
+  if (cache_specific_params != NULL) {
+    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
+          cache_specific_params);
+    abort();
+  }
 
   Hyperbolic_params_t *params = my_malloc(Hyperbolic_params_t);
   cache->eviction_params = params;
@@ -46,8 +53,8 @@ void Hyperbolic_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e Hyperbolic_check(cache_t *cache, request_t *req,
-                                bool update_cache) {
+cache_ck_res_e Hyperbolic_check(cache_t *cache, const request_t *req,
+                                const bool update_cache) {
   Hyperbolic_params_t *params = cache->eviction_params;
   cache_obj_t *cached_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cached_obj);
@@ -71,13 +78,13 @@ cache_ck_res_e Hyperbolic_check(cache_t *cache, request_t *req,
   return cache_ck_miss;
 }
 
-cache_ck_res_e Hyperbolic_get(cache_t *cache, request_t *req) {
+cache_ck_res_e Hyperbolic_get(cache_t *cache, const request_t *req) {
   cache_ck_res_e ret = cache_get_base(cache, req);
 
   return ret;
 }
 
-void Hyperbolic_insert(cache_t *cache, request_t *req) {
+void Hyperbolic_insert(cache_t *cache, const request_t *req) {
   Hyperbolic_params_t *params = cache->eviction_params;
 
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
@@ -98,18 +105,14 @@ cache_obj_t *Hyperbolic_to_evict(cache_t *cache) {
   return cache_get_obj_by_id(cache, node->obj_id);
 }
 
-void Hyperbolic_evict(cache_t *cache, __attribute__((unused)) request_t *req,
+void Hyperbolic_evict(cache_t *cache,
+                      __attribute__((unused)) const request_t *req,
                       __attribute__((unused)) cache_obj_t *evicted_obj) {
   Hyperbolic_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *)pqueue_pop(params->pq);
 
   cache_obj_t *cached_obj = cache_get_obj_by_id(cache, node->obj_id);
   DEBUG_ASSERT(node == cached_obj->hyperbolic.pq_node);
-
-#ifdef TRACK_EVICTION_AGE
-  record_eviction_age(cache,
-                      (int)(req->real_time - cached_obj->last_access_rtime));
-#endif
 
   cached_obj->hyperbolic.pq_node = NULL;
   my_free(sizeof(pq_node_t), node);
@@ -133,10 +136,10 @@ void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
   cache_remove_obj_base(cache, obj);
 }
 
-void Hyperbolic_remove(cache_t *cache, obj_id_t obj_id) {
+void Hyperbolic_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    WARN("obj to remove is not in the cache\n");
+    PRINT_ONCE("obj to remove is not in the cache\n");
     return;
   }
 

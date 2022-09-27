@@ -1,3 +1,5 @@
+
+
 #include "../include/libCacheSim/cacheObj.h"
 
 #include <assert.h>
@@ -10,7 +12,8 @@
  * @param req_dest
  * @param cache_obj
  */
-void copy_cache_obj_to_request(request_t *req_dest, cache_obj_t *cache_obj) {
+void copy_cache_obj_to_request(request_t *req_dest,
+                               const cache_obj_t *cache_obj) {
   req_dest->obj_id = cache_obj->obj_id;
   req_dest->obj_size = cache_obj->obj_size;
   req_dest->valid = true;
@@ -21,7 +24,7 @@ void copy_cache_obj_to_request(request_t *req_dest, cache_obj_t *cache_obj) {
  * @param cache_obj
  * @param req
  */
-void copy_request_to_cache_obj(cache_obj_t *cache_obj, request_t *req) {
+void copy_request_to_cache_obj(cache_obj_t *cache_obj, const request_t *req) {
   cache_obj->obj_size = req->obj_size;
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   if (req->ttl != 0)
@@ -37,7 +40,7 @@ void copy_request_to_cache_obj(cache_obj_t *cache_obj, request_t *req) {
  * @param req
  * @return
  */
-cache_obj_t *create_cache_obj_from_request(request_t *req) {
+cache_obj_t *create_cache_obj_from_request(const request_t *req) {
   cache_obj_t *cache_obj = my_malloc(cache_obj_t);
   memset(cache_obj, 0, sizeof(cache_obj_t));
   if (req != NULL) copy_request_to_cache_obj(cache_obj, req);

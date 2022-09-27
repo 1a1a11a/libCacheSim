@@ -15,22 +15,23 @@
 extern "C" {
 #endif
 
-cache_t *FIFO_init(common_cache_params_t ccache_params,
-                   void *cache_specific_params);
+cache_t *FIFO_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
 
 void FIFO_free(cache_t *cache);
 
-cache_ck_res_e FIFO_check(cache_t *cache, request_t *req, bool update_cache);
+cache_ck_res_e FIFO_check(cache_t *cache, const request_t *req,
+                          const bool update_cache);
 
-cache_ck_res_e FIFO_get(cache_t *cache, request_t *req);
+cache_ck_res_e FIFO_get(cache_t *cache, const request_t *req);
 
-void FIFO_insert(cache_t *FIFO, request_t *req);
+void FIFO_insert(cache_t *FIFO, const request_t *req);
 
 cache_obj_t *FIFO_to_evict(cache_t *cache);
 
-void FIFO_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+void FIFO_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj);
 
-void FIFO_remove(cache_t *cache, obj_id_t obj_id);
+void FIFO_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

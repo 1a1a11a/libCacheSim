@@ -1,8 +1,10 @@
 #ifndef CR_LFU_H
 #define CR_LFU_H
 
+#include <glib.h>
+
 #include "../cache.h"
-#include "LFUFast.h"
+#include "LFU.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,22 +18,24 @@ typedef struct CR_LFU_params {
   cache_t *other_cache;
 } CR_LFU_params_t;
 
-cache_t *CR_LFU_init(common_cache_params_t ccache_params,
-                     void *cache_specific_params);
+cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
 
 void CR_LFU_free(cache_t *cache);
 
-cache_ck_res_e CR_LFU_check(cache_t *cache, request_t *req, bool update);
+cache_ck_res_e CR_LFU_check(cache_t *cache, const request_t *req,
+                            const bool update);
 
-cache_ck_res_e CR_LFU_get(cache_t *cache, request_t *req);
+cache_ck_res_e CR_LFU_get(cache_t *cache, const request_t *req);
 
-void CR_LFU_remove(cache_t *cache, obj_id_t obj_id);
+void CR_LFU_remove(cache_t *cache, const obj_id_t obj_id);
 
-void CR_LFU_insert(cache_t *CR_LFU, request_t *req);
+void CR_LFU_insert(cache_t *CR_LFU, const request_t *req);
 
 cache_obj_t *CR_LFU_to_evict(cache_t *cache);
 
-void CR_LFU_evict(cache_t *CR_LFU, request_t *req, cache_obj_t *cache_obj);
+void CR_LFU_evict(cache_t *CR_LFU, const request_t *req,
+                  cache_obj_t *cache_obj);
 
 #ifdef __cplusplus
 }

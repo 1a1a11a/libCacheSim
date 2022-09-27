@@ -16,22 +16,24 @@ typedef struct SR_LRU_params {
   cache_t *other_cache;
 } SR_LRU_params_t;
 
-cache_t *SR_LRU_init(common_cache_params_t ccache_params,
-                     void *cache_specific_params);
+cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
 
 void SR_LRU_free(cache_t *cache);
 
-cache_ck_res_e SR_LRU_check(cache_t *cache, request_t *req, bool update);
+cache_ck_res_e SR_LRU_check(cache_t *cache, const request_t *req,
+                            const bool update);
 
-cache_ck_res_e SR_LRU_get(cache_t *cache, request_t *req);
+cache_ck_res_e SR_LRU_get(cache_t *cache, const request_t *req);
 
-void SR_LRU_remove(cache_t *cache, obj_id_t obj_id);
+void SR_LRU_remove(cache_t *cache, const obj_id_t obj_id);
 
-void SR_LRU_insert(cache_t *cache, request_t *req);
+void SR_LRU_insert(cache_t *cache, const request_t *req);
 
 cache_obj_t *SR_LRU_to_evict(cache_t *cache);
 
-void SR_LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+void SR_LRU_evict(cache_t *cache, const request_t *req,
+                  cache_obj_t *evicted_obj);
 
 #ifdef __cplusplus
 }

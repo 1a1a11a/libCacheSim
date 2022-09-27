@@ -16,7 +16,8 @@
 extern "C" {
 #endif
 
-cache_t *MRU_init(common_cache_params_t ccache_params, void *init_params) {
+cache_t *MRU_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("MRU", ccache_params);
   cache->cache_init = MRU_init;
   cache->cache_free = MRU_free;
@@ -27,16 +28,23 @@ cache_t *MRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->to_evict = MRU_to_evict;
   cache->remove = MRU_remove;
 
+  if (cache_specific_params != NULL) {
+    printf("MRU does not support any parameters, but got %s\n",
+           cache_specific_params);
+    abort();
+  }
+
   return cache;
 }
 
 void MRU_free(cache_t *cache) { cache_struct_free(cache); }
 
-void MRU_insert(cache_t *cache, request_t *req) {
+void MRU_insert(cache_t *cache, const request_t *req) {
   cache_insert_LRU(cache, req);
 }
 
-cache_ck_res_e MRU_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e MRU_check(cache_t *cache, const request_t *req,
+                         const bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
@@ -48,7 +56,7 @@ cache_ck_res_e MRU_check(cache_t *cache, request_t *req, bool update_cache) {
 
 cache_obj_t *MRU_to_evict(cache_t *cache) { return cache->q_head; }
 
-void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
+void MRU_evict(cache_t *cache, const request_t *req, cache_obj_t *cache_obj) {
   cache_obj_t *obj_to_evict = MRU_to_evict(cache);
   if (cache_obj != NULL) {
     // return evicted object to caller
@@ -59,14 +67,14 @@ void MRU_evict(cache_t *cache, request_t *req, cache_obj_t *cache_obj) {
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
-cache_ck_res_e MRU_get(cache_t *cache, request_t *req) {
+cache_ck_res_e MRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void MRU_remove(cache_t *cache, obj_id_t obj_id) {
+void MRU_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    WARN("obj to remove is not in the cache\n");
+    PRINT_ONCE("obj to remove is not in the cache\n");
     return;
   }
   remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);

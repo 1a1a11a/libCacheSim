@@ -1,4 +1,8 @@
+
 #include "../include/libCacheSim/evictionAlgo/CR_LFU.h"
+
+#include <glib.h>
+#include <math.h>
 
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/SR_LRU.h"
@@ -37,8 +41,8 @@ static int _verify(cache_t *cache) {
   return 0;
 }
 
-cache_t *CR_LFU_init(common_cache_params_t ccache_params,
-                     void *cache_specific_init_params) {
+cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("CR_LFU", ccache_params);
   cache->cache_init = CR_LFU_init;
   cache->cache_free = CR_LFU_free;
@@ -48,6 +52,12 @@ cache_t *CR_LFU_init(common_cache_params_t ccache_params,
   cache->evict = CR_LFU_evict;
   cache->remove = CR_LFU_remove;
   cache->to_evict = CR_LFU_to_evict;
+
+  if (cache_specific_params != NULL) {
+    printf("CR-LFU does not support any parameters, but got %s\n",
+           cache_specific_params);
+    abort();
+  }
 
   CR_LFU_params_t *params = my_malloc_n(CR_LFU_params_t, 1);
   cache->eviction_params = params;
@@ -77,7 +87,8 @@ void CR_LFU_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e CR_LFU_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e CR_LFU_check(cache_t *cache, const request_t *req,
+                            const bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
@@ -150,11 +161,11 @@ cache_ck_res_e CR_LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   return ret;
 }
 
-cache_ck_res_e CR_LFU_get(cache_t *cache, request_t *req) {
+cache_ck_res_e CR_LFU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void CR_LFU_insert(cache_t *cache, request_t *req) {
+void CR_LFU_insert(cache_t *cache, const request_t *req) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
   cache_obj->lfu.freq = 1;
@@ -254,7 +265,8 @@ cache_obj_t *CR_LFU_to_evict(cache_t *cache) {
   return min_freq_node->last_obj;
 }
 
-void CR_LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void CR_LFU_evict(cache_t *cache, const request_t *req,
+                  cache_obj_t *evicted_obj) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
 
   freq_node_t *min_freq_node =
@@ -314,7 +326,7 @@ void CR_LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
 }
 
-void CR_LFU_remove(cache_t *cache, obj_id_t obj_id) {
+void CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 

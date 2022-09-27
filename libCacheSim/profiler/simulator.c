@@ -12,6 +12,8 @@ extern "C" {
 
 #include "../include/libCacheSim/simulator.h"
 
+#include <math.h>
+
 #include "../cache/cacheUtils.h"
 #include "../include/libCacheSim/evictionAlgo.h"
 #include "../include/libCacheSim/plugin.h"

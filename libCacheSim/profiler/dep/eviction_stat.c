@@ -11,7 +11,7 @@
 
 #include "../../include/libCacheSim/reader.h"
 #include "../../cacheAlg/dep/FIFO.h"
-#include "Optimal.h"
+#include "Belady.h"
 #include "LRU_K.h"
 #include "../../cacheAlg/dep/LRU.h"
 

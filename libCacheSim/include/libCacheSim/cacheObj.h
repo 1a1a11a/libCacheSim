@@ -56,10 +56,10 @@ typedef struct {
   void *pq_node;
 } Hyperbolic_obj_metadata_t;
 
-typedef struct Optimal_obj_metadata {
+typedef struct Belady_obj_metadata {
   void *pq_node;
   int64_t next_access_vtime;
-} Optimal_obj_metadata_t;
+} Belady_obj_metadata_t;
 
 typedef struct FIFOMerge_obj_metadata {
   int32_t freq;
@@ -115,7 +115,7 @@ typedef struct cache_obj {
     SR_LRU_obj_params_t SR_LRU;
     CR_LFU_obj_params_t CR_LFU;
     Hyperbolic_obj_metadata_t hyperbolic;
-    Optimal_obj_metadata_t optimal;
+    Belady_obj_metadata_t Belady;
     FIFOMerge_obj_metadata_t FIFOMerge;
     FIFO_readmission_obj_metadata_t FIFO_readmission;
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
@@ -131,21 +131,22 @@ struct request;
  * @param cache_obj
  */
 void copy_cache_obj_to_request(struct request *req_dest,
-                               cache_obj_t *cache_obj);
+                               const cache_obj_t *cache_obj);
 
 /**
  * copy the data from request into cache_obj
  * @param cache_obj
  * @param req
  */
-void copy_request_to_cache_obj(cache_obj_t *cache_obj, struct request *req);
+void copy_request_to_cache_obj(cache_obj_t *cache_obj,
+                               const struct request *req);
 
 /**
  * create a cache_obj from request
  * @param req
  * @return
  */
-cache_obj_t *create_cache_obj_from_request(struct request *req);
+cache_obj_t *create_cache_obj_from_request(const struct request *req);
 
 /**
  * the cache_obj has built-in a doubly list, in the case the list is used as

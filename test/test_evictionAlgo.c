@@ -90,7 +90,7 @@ static void test_FIFO(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
-static void test_Optimal(gconstpointer user_data) {
+static void test_Belady(gconstpointer user_data) {
   /* the request byte is different from others because the oracleGeneral
    * trace removes all object size changes (and use the size of last appearance
    * of an object as the object size throughout the trace */
@@ -103,7 +103,7 @@ static void test_Optimal(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("Optimal", cc_params, reader, NULL);
+  cache_t *cache = create_test_cache("Belady", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
@@ -114,7 +114,7 @@ static void test_Optimal(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
-static void test_OptimalSize(gconstpointer user_data) {
+static void test_BeladySize(gconstpointer user_data) {
   /* the request byte is different from others because the oracleGeneral
    * trace removes all object size changes (and use the size of last appearance
    * of an object as the object size throughout the trace */
@@ -127,11 +127,10 @@ static void test_OptimalSize(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("OptimalSize", cc_params, reader, NULL);
+  cache_t *cache = create_test_cache("BeladySize", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
-
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -159,7 +158,7 @@ static void test_Random(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
-static void test_LFUFast(gconstpointer user_data) {
+static void test_LFU(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
   uint64_t miss_cnt_true[] = {91385, 84061, 77353, 76506,
                               68994, 66441, 64819, 64376};
@@ -169,7 +168,7 @@ static void test_LFUFast(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("LFUFast", cc_params, reader, NULL);
+  cache_t *cache = create_test_cache("LFU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
@@ -237,7 +236,6 @@ static void test_LHD(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
-  // print_results(cache, res);
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -288,7 +286,6 @@ static void test_LeCaR(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
-  print_results(cache, res);
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -485,10 +482,10 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
   // g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUFast", reader, test_LFUFast);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFUCpp);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUCpp", reader, test_LFUCpp);
   g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
@@ -497,12 +494,12 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func_full("/libCacheSim/free_reader", reader, empty_test,
                             test_teardown);
 
-  /* optimal requires reader that has next access information, note that
+  /* Belady requires reader that has next access information, note that
    * oracleGeneral trace removes all object size changes */
   reader = setup_oracleGeneralBin_reader();
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Optimal", reader, test_Optimal);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_OptimalSize", reader,
-                       test_OptimalSize);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
+                       test_BeladySize);
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);

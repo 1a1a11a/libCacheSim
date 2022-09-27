@@ -148,7 +148,7 @@ static void test_teardown(gpointer data) {
 
 static cache_t *create_test_cache(const char *alg_name,
                                   common_cache_params_t cc_params,
-                                  reader_t *reader, void *params) {
+                                  reader_t *reader, const char *params) {
   cache_t *cache;
   if (strcasecmp(alg_name, "LRU") == 0) {
     cache = LRU_init(cc_params, NULL);
@@ -156,10 +156,10 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = Clock_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO") == 0) {
     cache = FIFO_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "Optimal") == 0) {
-    cache = Optimal_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "OptimalSize") == 0) {
-    cache = OptimalSize_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "Belady") == 0) {
+    cache = Belady_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "BeladySize") == 0) {
+    cache = BeladySize_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LRUv0") == 0) {
     cache = LRUv0_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Random") == 0) {
@@ -170,16 +170,14 @@ static cache_t *create_test_cache(const char *alg_name,
     //    cache = LRU_K_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFU") == 0) {
     cache = LFU_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "LFUFast") == 0) {
-    cache = LFUFast_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "LFU") == 0) {
+    cache = LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFUDA") == 0) {
     cache = LFUDA_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "GDSF") == 0) {
     cache = GDSF_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "ARC") == 0) {
-    ARC_init_params_t *init_params = my_malloc_n(ARC_init_params_t, 1);
-    init_params->ghost_list_factor = 1;
-    cache = ARC_init(cc_params, init_params);
+    cache = ARC_init(cc_params, NULL);
 #if defined(ENABLE_L2CACHE) && ENABLE_L2CACHE == 1
   } else if (strncasecmp(alg_name, "L2Cache", 7) == 0) {
     L2Cache_init_params_t init_params;
@@ -214,9 +212,7 @@ static cache_t *create_test_cache(const char *alg_name,
   } else if (strcasecmp(alg_name, "CR_LFU") == 0) {
     cache = CR_LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "SLRU") == 0) {
-    SLRU_init_params_t init_params;
-    init_params.n_seg = 5;  // Currently hard-coded
-    cache = SLRU_init(cc_params, &init_params);
+    cache = SLRU_init(cc_params, "n_seg=5");
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

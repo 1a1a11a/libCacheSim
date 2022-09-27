@@ -131,7 +131,7 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
       setup_reader(args.trace_path, args.trace_type, args.obj_id_type, NULL);
 
   common_cache_params_t cc_params = {.cache_size = args.cache_size_in_mb * MiB,
-                                     .hashpower = 28,
+                                     .hashpower = 26,
                                      .default_ttl = 86400 * 300,
                                      .per_obj_overhead = args.per_obj_overhead};
   cache_t *cache;
@@ -153,27 +153,21 @@ sim_arg_t parse_cmd(int argc, char *argv[]) {
     cache = LHD_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "slru") == 0) {
     cc_params.per_obj_overhead = 8 * 2;
-    SLRU_init_params_t init_params;
-    init_params.n_seg = 5;  // Currently hard-coded
-    cache = SLRU_init(cc_params, &init_params);
+    cache = SLRU_init(cc_params, "n_seg=4;");
   } else if (strcasecmp(args.alg, "sr_lru") == 0) {
     cache = SR_LRU_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lfu") == 0) {
     cc_params.per_obj_overhead = 8 * 2;
-    cache = LFUFast_init(cc_params, NULL);
-  } else if (strcasecmp(args.alg, "optimal") == 0) {
-    cache = Optimal_init(cc_params, NULL);
-  } else if (strcasecmp(args.alg, "optimalSize") == 0) {
+    cache = LFU_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "belady") == 0) {
+    cache = Belady_init(cc_params, NULL);
+  } else if (strcasecmp(args.alg, "beladySize") == 0) {
     cc_params.hashpower -= 4;
-    cache = OptimalSize_init(cc_params, NULL);
+    cache = BeladySize_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "lecar") == 0) {
     cc_params.per_obj_overhead =
         8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
     cache = LeCaR_init(cc_params, NULL);
-  } else if (strcasecmp(args.alg, "lecar0") == 0) {
-    cc_params.per_obj_overhead =
-        8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
-    cache = LeCaR0_init(cc_params, NULL);
   } else if (strcasecmp(args.alg, "cacheus") == 0) {
     cc_params.per_obj_overhead =
         8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history

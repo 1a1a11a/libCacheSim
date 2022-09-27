@@ -46,8 +46,8 @@ void _chained_hashtable_expand_v2(hashtable_t *hashtable);
 /**
  * get the last object in the hash bucket
  */
-static inline cache_obj_t *_last_obj_in_bucket(hashtable_t *hashtable,
-                                               uint64_t hv) {
+static inline cache_obj_t *_last_obj_in_bucket(const hashtable_t *hashtable,
+                                               const uint64_t hv) {
   cache_obj_t *cur_obj_in_bucket = hashtable->ptr_table[hv];
   while (cur_obj_in_bucket->hash_next) {
     cur_obj_in_bucket = cur_obj_in_bucket->hash_next;
@@ -100,8 +100,8 @@ hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
   return hashtable;
 }
 
-cache_obj_t *chained_hashtable_find_obj_id_v2(hashtable_t *hashtable,
-                                              obj_id_t obj_id) {
+cache_obj_t *chained_hashtable_find_obj_id_v2(const hashtable_t *hashtable,
+                                              const obj_id_t obj_id) {
   cache_obj_t *cache_obj = NULL;
   uint64_t hv = get_hash_value_int_64(&obj_id);
   hv = hv & hashmask(hashtable->hashpower);
@@ -116,18 +116,19 @@ cache_obj_t *chained_hashtable_find_obj_id_v2(hashtable_t *hashtable,
   return cache_obj;
 }
 
-cache_obj_t *chained_hashtable_find_v2(hashtable_t *hashtable, request_t *req) {
+cache_obj_t *chained_hashtable_find_v2(const hashtable_t *hashtable,
+                                       const request_t *req) {
   return chained_hashtable_find_obj_id_v2(hashtable, req->obj_id);
 }
 
-cache_obj_t *chained_hashtable_find_obj_v2(hashtable_t *hashtable,
-                                           cache_obj_t *obj_to_find) {
+cache_obj_t *chained_hashtable_find_obj_v2(const hashtable_t *hashtable,
+                                           const cache_obj_t *obj_to_find) {
   return chained_hashtable_find_obj_id_v2(hashtable, obj_to_find->obj_id);
 }
 
 /* the user needs to make sure the added object is not in the hash table */
 cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable,
-                                         request_t *req) {
+                                         const request_t *req) {
   if (hashtable->n_obj > (uint64_t)(hashsize(hashtable->hashpower) *
                                     CHAINED_HASHTABLE_EXPAND_THRESHOLD)) {
     _chained_hashtable_expand_v2(hashtable);
@@ -237,7 +238,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
 }
 
 void chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
-                                        obj_id_t obj_id) {
+                                        const obj_id_t obj_id) {
   hashtable->n_obj -= 1;
   uint64_t hv = get_hash_value_int_64(obj_id) & hashmask(hashtable->hashpower);
   cache_obj_t *cache_obj = hashtable->ptr_table[hv];
@@ -258,7 +259,7 @@ void chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
   }
 }
 
-cache_obj_t *chained_hashtable_rand_obj_v2(hashtable_t *hashtable) {
+cache_obj_t *chained_hashtable_rand_obj_v2(const hashtable_t *hashtable) {
   uint64_t pos = next_rand() & hashmask(hashtable->hashpower);
   while (hashtable->ptr_table[pos] == NULL)
     pos = next_rand() & hashmask(hashtable->hashpower);
@@ -320,7 +321,7 @@ void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
   my_free(sizeof(cache_obj_t) * hashsize(hashtable->hashpower), old_table);
 }
 
-void check_hashtable_integrity_v2(hashtable_t *hashtable) {
+void check_hashtable_integrity_v2(const hashtable_t *hashtable) {
   cache_obj_t *cur_obj, *next_obj;
   for (uint64_t i = 0; i < hashsize(hashtable->hashpower); i++) {
     cur_obj = hashtable->ptr_table[i];

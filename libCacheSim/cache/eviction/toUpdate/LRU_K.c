@@ -188,8 +188,6 @@ void LRU_K_destroy(cache_t *cache) {
 //   is that the former one only free the resources that are
 //   unique to the cache, freeing these resources won't affect
 //   other caches copied from original cache
-//   in Optimal, next_access should not be freed in destroy_cloned_cache,
-//   because it is shared between different caches copied from the original one.
 //   */
 //  struct LRU_K_params *LRU_K_params =
 //      (struct LRU_K_params *)(cache->cache_params);

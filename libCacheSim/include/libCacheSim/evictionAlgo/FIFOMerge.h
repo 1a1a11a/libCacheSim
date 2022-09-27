@@ -15,44 +15,26 @@
 extern "C" {
 #endif
 
-struct fifo_merge_sort_list_node {
-  double metric;
-  cache_obj_t *cache_obj;
-};
-
-typedef struct FIFOMerge_params {
-  cache_obj_t *next_to_merge;
-  int n_merge_obj;
-  int n_keep_obj;
-  struct fifo_merge_sort_list_node *metric_list;
-  bool use_oracle;
-} FIFOMerge_params_t;
-
-typedef struct FIFOMerge_init_params {
-  int n_keep_obj;
-  int n_merge_obj;
-  bool use_oracle;
-} FIFOMerge_init_params_t;
-
-cache_t *FIFOMerge_init(common_cache_params_t ccache_params,
-                        void *cache_specific_params);
+cache_t *FIFOMerge_init(const common_cache_params_t ccache_params,
+                        const char *cache_specific_params);
 
 void FIFOMerge_free(cache_t *cache);
 
-cache_ck_res_e FIFOMerge_check(cache_t *cache, request_t *req,
-                               bool update_cache);
+cache_ck_res_e FIFOMerge_check(cache_t *cache, const request_t *req,
+                               const bool update_cache);
 
-cache_ck_res_e FIFOMerge_get(cache_t *cache, request_t *req);
+cache_ck_res_e FIFOMerge_get(cache_t *cache, const request_t *req);
 
-void FIFOMerge_insert(cache_t *FIFOMerge, request_t *req);
+void FIFOMerge_insert(cache_t *FIFOMerge, const request_t *req);
 
 cache_obj_t *FIFOMerge_to_evict(cache_t *cache);
 
-void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+void FIFOMerge_evict(cache_t *cache, const request_t *req,
+                     cache_obj_t *evicted_obj);
 
 void FIFOMerge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
 
-void FIFOMerge_remove(cache_t *cache, obj_id_t obj_id);
+void FIFOMerge_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

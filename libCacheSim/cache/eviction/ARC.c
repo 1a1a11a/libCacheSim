@@ -8,6 +8,8 @@
 
 #include "../include/libCacheSim/evictionAlgo/ARC.h"
 
+#include <string.h>
+
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LRU.h"
 
@@ -15,8 +17,24 @@
 extern "C" {
 #endif
 
-cache_t *ARC_init(common_cache_params_t ccache_params_, void *init_params_) {
-  cache_t *cache = cache_struct_init("ARC", ccache_params_);
+typedef struct ARC_params {
+  cache_t *LRU1;             // LRU
+  cache_t *LRU1g;            // ghost LRU
+  cache_t *LRU2;             // LRU for items accessed more than once
+  cache_t *LRU2g;            // ghost LRU for items accessed more than once3
+  double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
+  int evict_lru;             // which LRU list the eviction should come from
+} ARC_params_t;
+
+// typedef struct ARC_init_params {
+//   double ghost_list_factor;
+// } ARC_init_params_t;
+
+const char *ARC_default_init_params(void) { return "ghost_list_factor=1.0;"; }
+
+cache_t *ARC_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("ARC", ccache_params);
   cache->cache_init = ARC_init;
   cache->cache_free = ARC_free;
   cache->get = ARC_get;
@@ -25,25 +43,38 @@ cache_t *ARC_init(common_cache_params_t ccache_params_, void *init_params_) {
   cache->evict = ARC_evict;
   cache->remove = ARC_remove;
   cache->to_evict = ARC_to_evict;
-
-  cache->init_params = init_params_;
-  ARC_init_params_t *init_params = (ARC_init_params_t *)init_params_;
+  cache->init_params = cache_specific_params;
 
   cache->eviction_params = my_malloc_n(ARC_params_t, 1);
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  if (init_params_ != NULL)
-    params->ghost_list_factor = init_params->ghost_list_factor;
-  else
-    params->ghost_list_factor = 1;
+  params->ghost_list_factor = 1;
+
+  if (cache_specific_params != NULL) {
+    char *params_str = malloc(strlen(cache_specific_params) + 1);
+    memcpy(params_str, cache_specific_params, strlen(cache_specific_params));
+    params_str[strlen(cache_specific_params)] = '\0';
+
+    while (params_str != NULL && params_str[0] != '\0') {
+      char *key = strsep((char **)&params_str, "=");
+      char *value = strsep((char **)&params_str, ";");
+      if (strcmp(key, "ghost_list_factor") == 0) {
+        params->ghost_list_factor = atof(value);
+      } else {
+        ERROR("%s does not have parameter %s", cache->cache_name, key);
+        exit(1);
+      }
+    }
+  }
 
   /* the two LRU are initialized with cache_size, but they will not be full */
-  params->LRU1 = LRU_init(ccache_params_, NULL);
-  params->LRU2 = LRU_init(ccache_params_, NULL);
+  params->LRU1 = LRU_init(ccache_params, NULL);
+  params->LRU2 = LRU_init(ccache_params, NULL);
 
-  ccache_params_.cache_size = (uint64_t)((double)ccache_params_.cache_size / 2 *
-                                         params->ghost_list_factor);
-  params->LRU1g = LRU_init(ccache_params_, NULL);
-  params->LRU2g = LRU_init(ccache_params_, NULL);
+  common_cache_params_t ccache_params_ghost = ccache_params;
+  ccache_params_ghost.cache_size = (uint64_t)((double)ccache_params.cache_size /
+                                              2 * params->ghost_list_factor);
+  params->LRU1g = LRU_init(ccache_params_ghost, NULL);
+  params->LRU2g = LRU_init(ccache_params_ghost, NULL);
 
   return cache;
 }
@@ -58,7 +89,7 @@ void ARC_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-void _verify(cache_t *cache, request_t *req) {
+void _verify(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   cache_ck_res_e hit1 = params->LRU1->check(params->LRU1, req, false);
   cache_ck_res_e hit2 = params->LRU2->check(params->LRU2, req, false);
@@ -71,7 +102,8 @@ void _verify(cache_t *cache, request_t *req) {
   //  CACHE_CK_STATUS_STR[hit1], CACHE_CK_STATUS_STR[hit2]);
 }
 
-cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
+                         const bool update_cache) {
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) req_local = new_request();
 
@@ -118,11 +150,11 @@ cache_ck_res_e ARC_check(cache_t *cache, request_t *req, bool update_cache) {
   return hit;
 }
 
-cache_ck_res_e ARC_get(cache_t *cache, request_t *req) {
+cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void ARC_insert(cache_t *cache, request_t *req) {
+void ARC_insert(cache_t *cache, const request_t *req) {
   /* first time add, then it should be add to LRU1 */
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
@@ -147,7 +179,7 @@ cache_obj_t *ARC_to_evict(cache_t *cache) {
   return cache_evict->to_evict(cache_evict);
 }
 
-void ARC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   cache_obj_t obj;
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
@@ -177,7 +209,7 @@ void ARC_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache->n_obj -= 1;
 }
 
-void ARC_remove(cache_t *cache, obj_id_t obj_id) {
+void ARC_remove(cache_t *cache, const obj_id_t obj_id) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(params->LRU1, obj_id);
   if (obj != NULL) {
@@ -187,7 +219,7 @@ void ARC_remove(cache_t *cache, obj_id_t obj_id) {
     if (obj != NULL) {
       params->LRU2->remove(params->LRU2, obj_id);
     } else {
-      ERROR("remove object %" PRIu64 "that is not cached\n", obj_id);
+      PRINT_ONCE("remove object %" PRIu64 "that is not cached\n", obj_id);
       return;
     }
   }

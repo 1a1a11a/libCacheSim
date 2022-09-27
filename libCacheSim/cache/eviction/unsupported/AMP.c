@@ -604,8 +604,6 @@ void AMP_destroy_unique(cache_t *cache) {
    is that the former one only free the resources that are
    unique to the eviction, freeing these resources won't affect
    other caches copied from original eviction
-   in Optimal, next_access should not be freed in destroy_unique,
-   because it is shared between different caches copied from the original one.
    */
   struct AMP_params *AMP_params = (struct AMP_params *)(cache->cache_params);
 

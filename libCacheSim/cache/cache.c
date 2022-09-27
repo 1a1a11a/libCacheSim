@@ -4,8 +4,6 @@
 
 #include "../include/libCacheSim/cache.h"
 
-#include <dlfcn.h>
-
 #include "../dataStructure/hashtable/hashtable.h"
 
 /** this file contains both base function, which should be called by all
@@ -23,7 +21,7 @@
  * @return cache_t* pointer to the cache
  */
 cache_t *cache_struct_init(const char *const cache_name,
-                           common_cache_params_t params) {
+                           const common_cache_params_t params) {
   cache_t *cache = my_malloc(cache_t);
   memset(cache, 0, sizeof(cache_t));
   strncpy(cache->cache_name, cache_name, 31);
@@ -62,7 +60,8 @@ void cache_struct_free(cache_t *cache) {
  * @param new_size
  * @return cache_t* pointer to the new cache
  */
-cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size) {
+cache_t *create_cache_with_new_size(const cache_t *old_cache,
+                                    uint64_t new_size) {
   common_cache_params_t cc_params = {
       .cache_size = new_size,
       .hashpower = old_cache->hashtable->hashpower,
@@ -85,8 +84,8 @@ cache_t *create_cache_with_new_size(cache_t *old_cache, uint64_t new_size) {
  *  and if the object is expired, it is removed from the cache
  * @return cache_ck_hit, cache_ck_miss, cache_ck_expired
  */
-cache_ck_res_e cache_check_base(cache_t *cache, request_t *req,
-                                bool update_cache,
+cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
+                                const bool update_cache,
                                 cache_obj_t **cache_obj_ret) {
   cache_ck_res_e ret = cache_ck_hit;
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
@@ -135,7 +134,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, request_t *req,
  * @param req
  * @return cache_ck_hit, cache_ck_miss, cache_ck_expired
  */
-cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
+cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
   VVERBOSE("******* req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
@@ -188,15 +187,16 @@ cache_ck_res_e cache_get_base(cache_t *cache, request_t *req) {
  * @param cache
  * @param req
  */
-cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
-  if (cache->default_ttl != 0 && req->ttl == 0) {
-    req->ttl = (int32_t)cache->default_ttl;
-  }
-#endif
+cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
   cache->occupied_size += cache_obj->obj_size + cache->per_obj_overhead;
   cache->n_obj += 1;
+
+#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+  if (cache->default_ttl != 0 && req->ttl == 0) {
+    cache_obj->ttl = (int32_t)cache->default_ttl;
+  }
+#endif
   return cache_obj;
 }
 
@@ -208,7 +208,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, request_t *req) {
  * @param cache
  * @param req
  */
-cache_obj_t *cache_insert_LRU(cache_t *cache, request_t *req) {
+cache_obj_t *cache_insert_LRU(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
 
   if (unlikely(cache->q_head == NULL)) {
@@ -237,7 +237,14 @@ void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
   hashtable_delete(cache->hashtable, obj);
 }
 
-void cache_evict_LRU(cache_t *cache, __attribute__((unused)) request_t *req,
+/**
+ * @brief eviction an object using LRU
+ *
+ * @param cache
+ * @param evicted_obj
+ */
+void cache_evict_LRU(cache_t *cache,
+                     __attribute__((unused)) const request_t *req,
                      cache_obj_t *evicted_obj) {
   cache_obj_t *obj_to_evict = cache->q_tail;
   if (evicted_obj != NULL) {
@@ -264,7 +271,7 @@ void cache_evict_LRU(cache_t *cache, __attribute__((unused)) request_t *req,
  * @param req
  * @return cache_obj_t*
  */
-cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
+cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req) {
   return hashtable_find(cache->hashtable, req);
 }
 
@@ -274,6 +281,26 @@ cache_obj_t *cache_get_obj(cache_t *cache, request_t *req) {
  * @param cache
  * @param obj_id_t
  */
-cache_obj_t *cache_get_obj_by_id(cache_t *cache, obj_id_t id) {
+cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id) {
   return hashtable_find_obj_id(cache->hashtable, id);
+}
+
+/**
+ * @brief print the recorded eviction age
+ *
+ * @param cache
+ */
+void print_eviction_age(const cache_t *cache) {
+  printf("eviction age %d:%d, ", 0, cache->stat.log2_eviction_rage[0]);
+  for (int i = 1; i < MAX_EVICTION_AGE_ARRAY_SZE; i++) {
+    if (cache->stat.log2_eviction_rage[i] > 0) {
+      if (cache->stat.log2_eviction_rage[i] > 1000000)
+        printf("%d:%.1lfm, ", 1u << (i - 1),
+               (double)cache->stat.log2_eviction_rage[i] / 1000000);
+      else if (cache->stat.log2_eviction_rage[i] > 1000)
+        printf("%d:%.1lfk, ", 1u << (i - 1),
+               (double)cache->stat.log2_eviction_rage[i] / 1000);
+    }
+  }
+  printf("\n");
 }

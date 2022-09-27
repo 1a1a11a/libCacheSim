@@ -13,31 +13,23 @@ extern "C" {
 #include "../cache.h"
 #include "LRU.h"
 
-typedef struct SLRU_params {
-  cache_t **LRUs;
-  int n_seg;
-} SLRU_params_t;
-
-typedef struct SLRU_init_params {
-  int n_seg;
-} SLRU_init_params_t;
-
-cache_t *SLRU_init(common_cache_params_t ccache_params,
-                   void *cache_specific_params);
+cache_t *SLRU_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
 
 void SLRU_free(cache_t *cache);
 
-cache_ck_res_e SLRU_check(cache_t *cache, request_t *req, bool update);
+cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
+                          const bool update);
 
-cache_ck_res_e SLRU_get(cache_t *cache, request_t *req);
+cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req);
 
-void SLRU_remove(cache_t *cache, obj_id_t obj_id);
+void SLRU_remove(cache_t *cache, const obj_id_t obj_id);
 
-void SLRU_insert(cache_t *cache, request_t *req);
+void SLRU_insert(cache_t *cache, const request_t *req);
 
 cache_obj_t *SLRU_to_evict(cache_t *cache);
 
-void SLRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+void SLRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj);
 
 #ifdef __cplusplus
 }

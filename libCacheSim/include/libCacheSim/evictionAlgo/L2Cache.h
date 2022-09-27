@@ -31,7 +31,7 @@ typedef enum {
   SEGCACHE = 0,
   LOGCACHE_BOTH_ORACLE = 1,
   LOGCACHE_LOG_ORACLE = 2,
-  LOGCACHE_ITEM_ORACLE = 3,// FIFO for seg selection
+  LOGCACHE_ITEM_ORACLE = 3,  // FIFO for seg selection
   LOGCACHE_LEARNED = 4,
   //  LOGCACHE_RAMCLOUD,
   //  LOGCACHE_FIFO,
@@ -60,8 +60,8 @@ typedef enum bucket_type {
 } bucket_type_e;
 
 typedef enum training_source {
-  TRAIN_Y_FROM_ONLINE, 
-  TRAIN_Y_FROM_ORACLE, 
+  TRAIN_Y_FROM_ONLINE,
+  TRAIN_Y_FROM_ORACLE,
 } train_source_e;
 
 typedef struct {
@@ -69,10 +69,11 @@ typedef struct {
   int segment_size;
   // how many segments to merge (n_merge segments merge to one segment)
   int n_merge;
-  double rank_intvl;     // how often to rank, in terms of fraction of total segments (0.0 - 1.0)
-  // whether we merge consecutive segments (with the first segment has the lowest utility)
-  // or we merge non-consecutive segments based on ranking 
-  bool merge_consecutive_segs; 
+  double rank_intvl;  // how often to rank, in terms of fraction of total
+                      // segments (0.0 - 1.0)
+  // whether we merge consecutive segments (with the first segment has the
+  // lowest utility) or we merge non-consecutive segments based on ranking
+  bool merge_consecutive_segs;
   train_source_e train_source_x;
   train_source_e train_source_y;
 
@@ -84,23 +85,26 @@ typedef struct {
   bucket_type_e bucket_type;
 } L2Cache_init_params_t;
 
-cache_t *L2Cache_init(common_cache_params_t ccache_params, void *cache_specific_params);
+cache_t *L2Cache_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params);
 
 void L2Cache_free(cache_t *cache);
 
-cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache);
+cache_ck_res_e L2Cache_check(cache_t *cache, const request_t *req,
+                             const bool update_cache);
 
-cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req);
+cache_ck_res_e L2Cache_get(cache_t *cache, const request_t *req);
 
-void L2Cache_insert(cache_t *L2Cache, request_t *req);
+void L2Cache_insert(cache_t *L2Cache, const request_t *req);
 
-void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj);
+void L2Cache_evict(cache_t *cache, const request_t *req,
+                   cache_obj_t *evicted_obj);
 
 void L2Cache_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
 
-void L2Cache_remove(cache_t *cache, obj_id_t obj_id);
+void L2Cache_remove(cache_t *cache, const obj_id_t obj_id);
 
-void L2Cache_set_default_init_params(L2Cache_init_params_t *params); 
+void L2Cache_set_default_init_params(L2Cache_init_params_t *params);
 
 #ifdef __cplusplus
 }

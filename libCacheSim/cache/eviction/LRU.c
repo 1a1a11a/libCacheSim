@@ -17,7 +17,8 @@
 extern "C" {
 #endif
 
-cache_t *LRU_init(common_cache_params_t ccache_params, void *init_params) {
+cache_t *LRU_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("LRU", ccache_params);
   cache->cache_init = LRU_init;
   cache->cache_free = LRU_free;
@@ -27,12 +28,20 @@ cache_t *LRU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->evict = LRU_evict;
   cache->remove = LRU_remove;
   cache->to_evict = LRU_to_evict;
+
+  if (cache_specific_params != NULL) {
+    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
+          cache_specific_params);
+    abort();
+  }
+
   return cache;
 }
 
 void LRU_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e LRU_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e LRU_check(cache_t *cache, const request_t *req,
+                         const bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
@@ -43,21 +52,21 @@ cache_ck_res_e LRU_check(cache_t *cache, request_t *req, bool update_cache) {
   return ret;
 }
 
-cache_ck_res_e LRU_get(cache_t *cache, request_t *req) {
+cache_ck_res_e LRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LRU_insert(cache_t *cache, request_t *req) {
+void LRU_insert(cache_t *cache, const request_t *req) {
   cache_insert_LRU(cache, req);
 }
 
 cache_obj_t *LRU_to_evict(cache_t *cache) { return cache->q_tail; }
 
-void LRU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void LRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   cache_evict_LRU(cache, req, evicted_obj);
 }
 
-void LRU_remove(cache_t *cache, obj_id_t obj_id) {
+void LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
     PRINT_ONCE("obj (%" PRIu64 ") to remove is not in the cache\n", obj_id);
@@ -68,5 +77,5 @@ void LRU_remove(cache_t *cache, obj_id_t obj_id) {
 }
 
 #ifdef __cplusplus
-extern "C" {
+}
 #endif

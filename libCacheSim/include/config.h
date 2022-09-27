@@ -40,7 +40,7 @@ extern "C" {
 #endif
 
 #ifndef HASH_POWER_DEFAULT
-#define HASH_POWER_DEFAULT 24
+#define HASH_POWER_DEFAULT 23
 #endif
 
 #ifndef CHAINED_HASHTABLE_EXPAND_THRESHOLD

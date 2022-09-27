@@ -43,7 +43,7 @@ void L2Cache_set_default_init_params(L2Cache_init_params_t *init_params) {
   init_params->hit_density_age_shift = 3;
 }
 
-cache_t *L2Cache_init(common_cache_params_t ccache_params, void *init_params) {
+cache_t *L2Cache_init(const common_cache_params_t ccache_params, const char *init_params) {
   L2Cache_init_params_t *L2Cache_init_params = init_params;
   cache_t *cache =
       cache_struct_init(L2Cache_type_names[L2Cache_init_params->type], ccache_params);
@@ -161,7 +161,7 @@ void L2Cache_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e L2Cache_check(cache_t *cache, const request_t *req, const bool update_cache) {
   L2Cache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
@@ -217,7 +217,7 @@ cache_ck_res_e L2Cache_check(cache_t *cache, request_t *req, bool update_cache) 
   return cache_ck_hit;
 }
 
-cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
+cache_ck_res_e L2Cache_get(cache_t *cache, const request_t *req) {
   L2Cache_params_t *params = cache->eviction_params;
 
   cache_ck_res_e ret = cache_get_base(cache, req);
@@ -242,7 +242,7 @@ cache_ck_res_e L2Cache_get(cache_t *cache, request_t *req) {
   return ret;
 }
 
-void L2Cache_insert(cache_t *cache, request_t *req) {
+void L2Cache_insert(cache_t *cache, const request_t *req) {
   L2Cache_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[find_bucket_idx(params, req)];
   segment_t *seg = bucket->last_seg;
@@ -275,7 +275,7 @@ void L2Cache_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(cache->n_obj <= params->n_in_use_segs * params->segment_size);
 }
 
-void L2Cache_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void L2Cache_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   L2Cache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
 
@@ -326,7 +326,7 @@ void L2Cache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   abort();
 }
 
-void L2Cache_remove(cache_t *cache, obj_id_t obj_id) { abort(); }
+void L2Cache_remove(cache_t *cache, const obj_id_t obj_id) { abort(); }
 
 #ifdef __cplusplus
 }

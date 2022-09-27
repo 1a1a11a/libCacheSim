@@ -3,6 +3,7 @@
 #include "../include/libCacheSim/evictionAlgo/Cacheus.h"
 
 #include <assert.h>
+#include <math.h>
 
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/CR_LFU.h"
@@ -13,7 +14,27 @@
 extern "C" {
 #endif
 
-cache_t *Cacheus_init(common_cache_params_t ccache_params, void *init_params) {
+typedef struct Cacheus_params {
+  cache_t *LRU;        // LRU
+  cache_t *LRU_g;      // eviction history of LRU
+  cache_t *LFU;        // LFU
+  cache_t *LFU_g;      // eviction history of LFU
+  double w_lru;        // Weight for LRU
+  double w_lfu;        // Weight for LFU
+  double lr;           // learning rate
+  double lr_previous;  // previous learning rate
+
+  double ghost_list_factor;  // size(ghost_list)/size(cache), default 1
+  int64_t unlearn_count;
+
+  int64_t num_hit;
+  double hit_rate_prev;
+
+  uint64_t update_interval;
+} Cacheus_params_t;
+
+cache_t *Cacheus_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("Cacheus", ccache_params);
   cache->cache_init = Cacheus_init;
   cache->cache_free = Cacheus_free;
@@ -23,6 +44,12 @@ cache_t *Cacheus_init(common_cache_params_t ccache_params, void *init_params) {
   cache->evict = Cacheus_evict;
   cache->remove = Cacheus_remove;
   cache->to_evict = Cacheus_to_evict;
+
+  if (cache_specific_params != NULL) {
+    printf("%s does not support any parameters, but got %s\n",
+           cache->cache_name, cache_specific_params);
+    abort();
+  }
 
   cache->eviction_params = my_malloc_n(Cacheus_params_t, 1);
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
@@ -49,12 +76,13 @@ cache_t *Cacheus_init(common_cache_params_t ccache_params, void *init_params) {
       (CR_LFU_params_t *)(params->LFU->eviction_params);
   CR_LFU_params->other_cache = params->LRU;
 
+  common_cache_params_t ccache_params_g = ccache_params;
   /* set ghost_list_factor to 2 can reduce miss ratio anomaly */
-  ccache_params.cache_size = (uint64_t)((double)ccache_params.cache_size / 2 *
-                                        params->ghost_list_factor);
+  ccache_params_g.cache_size = (uint64_t)((double)ccache_params.cache_size / 2 *
+                                          params->ghost_list_factor);
 
-  params->LRU_g = LRU_init(ccache_params, NULL);  // LRU_history
-  params->LFU_g = LRU_init(ccache_params, NULL);  // LFU_history
+  params->LRU_g = LRU_init(ccache_params_g, NULL);  // LRU_history
+  params->LFU_g = LRU_init(ccache_params_g, NULL);  // LFU_history
   return cache;
 }
 
@@ -68,7 +96,7 @@ void Cacheus_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-static void update_weight(cache_t *cache, request_t *req) {
+static void update_weight(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   cache_ck_res_e ck_lru_g, ck_lfu_g;
 
@@ -89,7 +117,7 @@ static void update_weight(cache_t *cache, request_t *req) {
   params->w_lfu = 1 - params->w_lru;
 }
 
-static void update_lr(cache_t *cache, request_t *req) {
+static void update_lr(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   // Here: num_hit is the number of hits; reset to 0 when update_lr is called.
   double hit_rate_current = params->num_hit / params->update_interval;
@@ -135,7 +163,7 @@ static void update_lr(cache_t *cache, request_t *req) {
 }
 
 // Update weight and history, only called in cache miss.
-static void check_and_update_history(cache_t *cache, request_t *req) {
+static void check_and_update_history(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
 
   cache_ck_res_e ck_lru_g, ck_lfu_g;
@@ -157,7 +185,7 @@ static void check_and_update_history(cache_t *cache, request_t *req) {
   }
 }
 
-cache_ck_res_e Cacheus_check(cache_t *cache, request_t *req,
+cache_ck_res_e Cacheus_check(cache_t *cache, const request_t *req,
                              bool update_cache) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
 
@@ -187,7 +215,7 @@ cache_ck_res_e Cacheus_check(cache_t *cache, request_t *req,
   return ck_lru;
 }
 
-cache_ck_res_e Cacheus_get(cache_t *cache, request_t *req) {
+cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
@@ -236,7 +264,7 @@ cache_ck_res_e Cacheus_get(cache_t *cache, request_t *req) {
   return ret;
 }
 
-void Cacheus_insert(cache_t *cache, request_t *req) {
+void Cacheus_insert(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
@@ -261,7 +289,8 @@ cache_obj_t *Cacheus_to_evict(cache_t *cache) {
   }
 }
 
-void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void Cacheus_evict(cache_t *cache, const request_t *req,
+                   cache_obj_t *evicted_obj) {
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
@@ -312,17 +341,17 @@ void Cacheus_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   DEBUG_ASSERT(params->LRU->n_obj == params->LFU->n_obj);
 }
 
-void Cacheus_remove(cache_t *cache, obj_id_t obj_id) {
+void Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(params->LRU, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
+    PRINT_ONCE("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
   }
   params->LRU->remove(params->LRU, obj_id);
 
   obj = cache_get_obj_by_id(params->LFU, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached in LFU\n", obj_id);
+    PRINT_ONCE("remove object %" PRIu64 "that is not cached in LFU\n", obj_id);
   }
   params->LFU->remove(params->LFU, obj_id);
 

@@ -49,16 +49,16 @@ int set_thread_affinity(pthread_t tid) {
 int get_n_cores(void) {
 #ifdef __linux__
 
-  INFO(
-      "This system has %d processors configured and "
-      "%d processors available.\n",
-      get_nprocs_conf(), get_nprocs());
+  // INFO(
+  //     "This system has %d processors configured and "
+  //     "%d processors available.\n",
+  //     get_nprocs_conf(), get_nprocs());
 
   return get_nprocs();
 #else
-  WARN("non linux system, use 4 threads as default\n");
   return sysconf(_SC_NPROCESSORS_ONLN)
 #endif
+  WARN("Unknown system, use 4 threads as default\n");
   return 4;
 }
 

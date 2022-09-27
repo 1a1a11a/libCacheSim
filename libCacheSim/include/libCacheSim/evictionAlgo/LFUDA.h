@@ -10,28 +10,29 @@
 #define LFUDA_H
 
 #include "../cache.h"
-#include "LFUFast.h"
+#include "LFU.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-cache_t *LFUDA_init(common_cache_params_t ccache_params,
-                    void *cache_specific_params);
+cache_t *LFUDA_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
 
 void LFUDA_free(cache_t *cache);
 
-cache_ck_res_e LFUDA_check(cache_t *cache, request_t *req, bool update);
+cache_ck_res_e LFUDA_check(cache_t *cache, const request_t *req,
+                           const bool update);
 
-cache_ck_res_e LFUDA_get(cache_t *cache, request_t *req);
+cache_ck_res_e LFUDA_get(cache_t *cache, const request_t *req);
 
-void LFUDA_remove(cache_t *cache, obj_id_t obj_id);
+void LFUDA_remove(cache_t *cache, const obj_id_t obj_id);
 
-void LFUDA_insert(cache_t *LFUDA, request_t *req);
+void LFUDA_insert(cache_t *LFUDA, const request_t *req);
 
 cache_obj_t *LFUDA_to_evict(cache_t *cache);
 
-void LFUDA_evict(cache_t *LFUDA, request_t *req, cache_obj_t *cache_obj);
+void LFUDA_evict(cache_t *LFUDA, const request_t *req, cache_obj_t *cache_obj);
 
 #ifdef __cplusplus
 }

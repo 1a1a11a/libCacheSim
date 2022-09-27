@@ -9,12 +9,7 @@
 extern "C" {
 #endif
 
-typedef enum {
-  RETURN_OK,
-  RETURN_ERROR,
-
-  RETURN_INVALID
-} rstatus_e;
+#pragma GCC diagnostic ignored "-Wwrite-strings"
 
 typedef enum {
   BINARY_TRACE_FORMAT,
@@ -29,6 +24,9 @@ typedef enum {
   BIN_TRACE,
   PLAIN_TXT_TRACE,
 
+  ORACLE_GENERAL_TRACE,
+
+  /* special trace */
   VSCSI_TRACE,
 
   TWR_TRACE,
@@ -43,7 +41,6 @@ typedef enum {
   STANDARD_III_TRACE,
   STANDARD_IQIBH_TRACE,
 
-  ORACLE_GENERAL_TRACE,
   ORACLE_GENERALOPNS_TRACE,
   ORACLE_SIM_TWR_TRACE,
   ORACLE_SYS_TWR_TRACE,
@@ -58,6 +55,37 @@ typedef enum {
 
   UNKNOWN_TRACE,
 } __attribute__((__packed__)) trace_type_e;
+
+static char *trace_type_str[UNKNOWN_TRACE + 2] = {
+    "CSV_TRACE",
+    "BIN_TRACE",
+    "PLAIN_TXT_TRACE",
+    "STANDARD_IQI_TRACE",
+    "ORACLE_GENERAL_TRACE",
+
+    "VSCSI_TRACE",
+    "TWR_TRACE",
+    "TWRNS_TRACE",
+    "CF1_TRACE",
+    "AKAMAI_TRACE",
+    "WIKI16u_TRACE",
+    "WIKI19u_TRACE",
+    "WIKI19t_TRACE",
+    "STANDARD_IQQ_TRACE",
+    "STANDARD_III_TRACE",
+    "STANDARD_IQIBH_TRACE",
+    "ORACLE_GENERALOPNS_TRACE",
+    "ORACLE_SIM_TWR_TRACE",
+    "ORACLE_SYS_TWR_TRACE",
+    "ORACLE_SIM_TWRNS_TRACE",
+    "ORACLE_SYS_TWRNS_TRACE",
+    "ORACLE_CF1_TRACE",
+    "ORACLE_AKAMAI_TRACE",
+    "ORACLE_WIKI16u_TRACE",
+    "ORACLE_WIKI19u_TRACE",
+    "ORACLE_WIKI19t_TRACE",
+    "UNKNOWN_TRACE",
+};
 
 // obj_id type
 typedef enum {
@@ -88,37 +116,9 @@ typedef enum {
   OP_INVALID,
 } req_op_e;
 
-#pragma GCC diagnostic ignored "-Wwrite-strings"
-static char *OP_STR[OP_INVALID + 2] = {
+static char *req_op_str[OP_INVALID + 2] = {
     "nop",     "get",    "gets", "set",  "add",  "cas",   "replace", "append",
     "prepend", "delete", "incr", "decr", "read", "write", "update",  "invalid"};
-
-// enum op {
-//  OP_GET = 0,
-//  OP_GETS,
-//  OP_SET,
-//  OP_ADD,
-//  OP_CAS,
-//  OP_REPLACE,
-//  OP_APPEND,
-//  OP_PREPEND,
-//  OP_DELETE,
-//  OP_INCR,
-//  OP_DECR,
-//
-//  OP_READ,
-//  OP_WRITE,
-//  OP_UPDATE,
-//
-//  OP_INVALID,
-//} __attribute__((__packed__));
-// typedef enum op req_op_e;
-//
-//#pragma GCC diagnostic ignored "-Wwrite-strings"
-// static char *OP_STR[OP_INVALID+1] = {
-//    "get", "gets", "set", "add", "cas", "replace", "append", "prepend",
-//    "delete", "incr", "decr", "read", "write", "update", "invalid"};
-//#pragma GCC diagnostic pop
 
 typedef enum {
   cache_ck_hit = 0,
@@ -128,10 +128,11 @@ typedef enum {
   cache_ck_invalid,
 } __attribute__((__packed__)) cache_ck_res_e;
 
-static char *CACHE_CK_STATUS_STR[cache_ck_invalid + 1] = {"hit", "miss",
-                                                          "expired", "invalid"};
+static char *cache_ck_res_str[cache_ck_invalid + 1] = {"hit", "miss", "expired",
+                                                       "invalid"};
 
 typedef enum { ERR, OK, MY_EOF } rstatus;
+static char *rstatus_str[3] = {"ERR", "OK", "MY_EOF"};
 
 #ifdef __cplusplus
 }

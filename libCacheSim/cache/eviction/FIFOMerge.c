@@ -23,8 +23,27 @@
 extern "C" {
 #endif
 
-cache_t *FIFOMerge_init(common_cache_params_t ccache_params,
-                        void *init_params) {
+struct fifo_merge_sort_list_node {
+  double metric;
+  cache_obj_t *cache_obj;
+};
+
+typedef struct FIFOMerge_params {
+  cache_obj_t *next_to_merge;
+  int n_merge_obj;
+  int n_keep_obj;
+  struct fifo_merge_sort_list_node *metric_list;
+  bool use_oracle;
+} FIFOMerge_params_t;
+
+typedef struct FIFOMerge_init_params {
+  int n_keep_obj;
+  int n_merge_obj;
+  bool use_oracle;
+} FIFOMerge_init_params_t;
+
+cache_t *FIFOMerge_init(const common_cache_params_t ccache_params,
+                        const char *init_params) {
   cache_t *cache = cache_struct_init("FIFOMerge", ccache_params);
 
   FIFOMerge_params_t *params = my_malloc(FIFOMerge_params_t);
@@ -77,8 +96,8 @@ void FIFOMerge_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e FIFOMerge_check(cache_t *cache, request_t *req,
-                               bool update_cache) {
+cache_ck_res_e FIFOMerge_check(cache_t *cache, const request_t *req,
+                               const bool update_cache) {
   cache_obj_t *cache_obj;
   cache_ck_res_e res = cache_check_base(cache, req, update_cache, &cache_obj);
 
@@ -91,7 +110,7 @@ cache_ck_res_e FIFOMerge_check(cache_t *cache, request_t *req,
   return res;
 }
 
-cache_ck_res_e FIFOMerge_get(cache_t *cache, request_t *req) {
+cache_ck_res_e FIFOMerge_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -125,7 +144,7 @@ double FIFOMerge_promote_metric(cache_t *cache, cache_obj_t *cache_obj) {
     return freq_metric(cache, cache_obj);
 }
 
-void FIFOMerge_insert(cache_t *cache, request_t *req) {
+void FIFOMerge_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
   cache_obj->FIFOMerge.freq = 0;
   cache_obj->FIFOMerge.last_access_vtime = cache->n_req;
@@ -150,7 +169,8 @@ cache_obj_t *FIFOMerge_to_evict(cache_t *cache) {
   return NULL;
 }
 
-void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void FIFOMerge_evict(cache_t *cache, const request_t *req,
+                     cache_obj_t *evicted_obj) {
   assert(evicted_obj == NULL);
 
   FIFOMerge_params_t *params = (FIFOMerge_params_t *)cache->eviction_params;
@@ -214,7 +234,8 @@ void FIFOMerge_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
     FIFOMerge_remove_obj(cache, cache_obj);
   }
 
-  for (int i = 0; i < params->n_keep_obj; i++) {
+  for (int i = params->n_merge_obj - params->n_keep_obj;
+       i < params->n_merge_obj; i++) {
     params->metric_list[i].cache_obj->FIFOMerge.freq =
         (params->metric_list[i].cache_obj->FIFOMerge.freq + 1) / 2;
   }
@@ -230,10 +251,10 @@ void FIFOMerge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-void FIFOMerge_remove(cache_t *cache, obj_id_t obj_id) {
+void FIFOMerge_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached\n", obj_id);
+    PRINT_ONCE("remove object %" PRIu64 "that is not cached\n", obj_id);
     return;
   }
   FIFOMerge_remove_obj(cache, obj);

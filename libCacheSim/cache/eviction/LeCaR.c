@@ -9,17 +9,42 @@
 #include "../include/libCacheSim/evictionAlgo/LeCaR.h"
 
 #include <assert.h>
+#include <glib.h>
+#include <math.h>
 
 #include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/evictionAlgo/LFU.h"
-#include "../include/libCacheSim/evictionAlgo/LFUFast.h"
 #include "../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../include/libCacheSim/logging.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // #define LECAR_USE_BELADY
+
+typedef struct LeCaR_params {
+  // LRU chain pointers are part of cache_t struct
+
+  // used for LFU
+  freq_node_t *freq_one_node;
+  GHashTable *freq_map;
+  uint64_t min_freq;
+  uint64_t max_freq;
+
+  // eviction history
+  cache_obj_t *ghost_lru_head;
+  cache_obj_t *ghost_lru_tail;
+  int64_t ghost_entry_used_size;
+
+  // LeCaR
+  double w_lru;
+  double w_lfu;
+  double lr;  // learning rate
+  double dr;  // discount rate
+  int64_t n_hit_lru_history;
+  int64_t n_hit_lfu_history;
+} LeCaR_params_t;
 
 static void free_freq_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
@@ -174,7 +199,8 @@ static inline void insert_obj_info_freq_node(LeCaR_params_t *params,
 
 /* end of LFU functions */
 
-cache_t *LeCaR_init(common_cache_params_t ccache_params_, void *init_params_) {
+cache_t *LeCaR_init(const common_cache_params_t ccache_params_,
+                    const char *cache_specific_params) {
 #ifdef LECAR_USE_BELADY
   cache_t *cache = cache_struct_init("LeCaR-Belady", ccache_params_);
 #else
@@ -188,6 +214,12 @@ cache_t *LeCaR_init(common_cache_params_t ccache_params_, void *init_params_) {
   cache->evict = LeCaR_evict;
   cache->remove = LeCaR_remove;
   cache->to_evict = LeCaR_to_evict;
+
+  if (cache_specific_params != NULL) {
+    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
+          cache_specific_params);
+    abort();
+  }
 
   cache->eviction_params = my_malloc_n(LeCaR_params_t, 1);
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
@@ -234,7 +266,8 @@ static void update_weight(cache_t *cache, int64_t t, double *w_update,
   *w_no_update = (*w_no_update + 1e-10) / s;
 }
 
-cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
+cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
+                           bool update_cache) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache_obj_t *cache_obj = NULL;
@@ -313,13 +346,13 @@ cache_ck_res_e LeCaR_check(cache_t *cache, request_t *req, bool update_cache) {
   return ck;
 }
 
-cache_ck_res_e LeCaR_get(cache_t *cache, request_t *req) {
+cache_ck_res_e LeCaR_get(cache_t *cache, const request_t *req) {
   // LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
   cache_ck_res_e ck = cache_get_base(cache, req);
   return ck;
 }
 
-void LeCaR_insert(cache_t *cache, request_t *req) {
+void LeCaR_insert(cache_t *cache, const request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   VVERBOSE("insert object %lu into cache\n", (unsigned long)req->obj_id);
@@ -371,7 +404,8 @@ cache_obj_t *LeCaR_to_evict(cache_t *cache) {
   }
 }
 
-void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void LeCaR_evict(cache_t *cache, const request_t *req,
+                 cache_obj_t *evicted_obj) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache_obj_t *cache_obj = NULL;
@@ -460,7 +494,8 @@ cache_obj_t *LeCaR_to_evict(cache_t *cache) {
   }
 }
 
-void LeCaR_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
+void LeCaR_evict(cache_t *cache, const request_t *req,
+                 cache_obj_t *evicted_obj) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache_obj_t *cache_obj = NULL;
@@ -538,7 +573,7 @@ void LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
+    PRINT_ONCE("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
   }
 
   // remove from LRU list
