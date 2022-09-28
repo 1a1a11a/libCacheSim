@@ -6,8 +6,7 @@
 #include "const.h"
 
 typedef enum {
-  SEGCACHE = 0,
-  LOGCACHE_BOTH_ORACLE = 1,
+  LOGCACHE_TWO_ORACLE = 1,
   LOGCACHE_LOG_ORACLE = 2,
   LOGCACHE_ITEM_ORACLE = 3,  // FIFO for seg selection
   LOGCACHE_LEARNED = 4,
@@ -18,22 +17,10 @@ typedef enum obj_score_type {
   OBJ_SCORE_FREQ_BYTE = 1,
   OBJ_SCORE_FREQ_AGE = 2,
   OBJ_SCORE_FREQ_AGE_BYTE = 3,
+  OBJ_SCORE_AGE_BYTE = 6,
 
-  OBJ_SCORE_HIT_DENSITY = 4,
-
-  OBJ_SCORE_ORACLE = 5,
-  OBJ_SCORE_SIZE_AGE = 6,
+  OBJ_SCORE_ORACLE = 8,
 } obj_score_type_e;
-
-typedef enum bucket_type {
-  NO_BUCKET = 0,
-
-  SIZE_BUCKET = 1,
-  TTL_BUCKET = 2,
-  CUSTOMER_BUCKET = 3,
-  BUCKET_ID_BUCKET = 4,
-  CONTENT_TYPE_BUCKET = 5,
-} bucket_type_e;
 
 typedef enum training_source {
   TRAIN_Y_FROM_ONLINE,
@@ -41,7 +28,7 @@ typedef enum training_source {
 } train_source_e;
 
 typedef struct {
-  /* rolling stat on hits, 
+  /* rolling stat on hits,
    * number of hits in the N_FEATURE_TIME_WINDOW min, 10min, hour */
   int32_t n_hit_per_min[N_FEATURE_TIME_WINDOW];
   int32_t n_hit_per_ten_min[N_FEATURE_TIME_WINDOW];
@@ -53,24 +40,14 @@ typedef struct {
   int64_t last_hour_window_ts;
 } seg_feature_t;
 
-/* LHD related states */
-typedef struct hitProb {
-  int32_t n_hit[HIT_PROB_CLASSES][HIT_PROB_MAX_AGE];
-  int32_t n_evict[HIT_PROB_CLASSES][HIT_PROB_MAX_AGE];
-
-  double hit_density[HIT_PROB_CLASSES][HIT_PROB_MAX_AGE];
-  int64_t n_overflow;
-  int32_t age_shift;
-} hitProb_t;
-
 typedef struct learner {
   int64_t last_train_rtime;
   int retrain_intvl;
 
-  BoosterHandle booster; // model
-  DMatrixHandle train_dm;// training data
-  DMatrixHandle valid_dm;// validation data
-  DMatrixHandle inf_dm;  // inference data
+  BoosterHandle booster;   // model
+  DMatrixHandle train_dm;  // training data
+  DMatrixHandle valid_dm;  // validation data
+  DMatrixHandle inf_dm;    // inference data
 
   /* learner stat */
   int n_train;
@@ -110,7 +87,6 @@ typedef struct cache_state {
 } cache_state_t;
 
 typedef struct segment {
-
   cache_obj_t *objs;
 
   int32_t seg_id;
@@ -142,7 +118,8 @@ typedef struct segment {
   double miss_ratio;
 
   /* training related */
-  bool selected_for_training;// whether this segment has been chosen to be training data
+  bool selected_for_training;  // whether this segment has been chosen to be
+                               // training data
   int64_t become_train_seg_vtime;
   int64_t become_train_seg_rtime;
   unsigned int training_data_row_idx;
@@ -163,9 +140,6 @@ typedef struct {
   int32_t n_in_use_segs;
   int16_t bucket_id;
   segment_t *next_seg_to_evict;
-#ifdef USE_LHD
-  hitProb_t *hit_prob;// TODO: move to LHD
-#endif
 } bucket_t;
 
 typedef struct double_double_pair {
@@ -177,10 +151,10 @@ typedef struct obj_sel {
   segment_t **segs_to_evict;
 
   double *score_array;
-  #ifdef RANDOMIZE_MERGE
+#ifdef RANDOMIZE_MERGE
   double *score_array_offset;
-  #endif
-  dd_pair_t *dd_pair_array; 
+#endif
+  dd_pair_t *dd_pair_array;
   int array_size;
 } obj_sel_t;
 
@@ -189,8 +163,9 @@ typedef struct seg_sel {
   segment_t **ranked_segs;
 
   int32_t n_ranked_segs;  // the number of ranked segments (ranked_segs.size())
-  int32_t ranked_seg_size;// the malloc-ed size of ranked_segs (ranked_segs.capacity())
-  int32_t ranked_seg_pos; // the position of the next segment to be evicted
+  int32_t ranked_seg_size;  // the malloc-ed size of ranked_segs
+                            // (ranked_segs.capacity())
+  int32_t ranked_seg_pos;   // the position of the next segment to be evicted
 } seg_sel_t;
 
 /* parameters and state related to cache */
@@ -199,8 +174,8 @@ typedef struct {
   int n_merge;
   /* retain n objects from each seg, total retain n_retain * n_merge objects */
   int n_retain_per_seg;
-  // whether we merge consecutive segments (with the first segment has the lowest utility)
-  // or we merge non-consecutive segments based on ranking
+  // whether we merge consecutive segments (with the first segment has the
+  // lowest utility) or we merge non-consecutive segments based on ranking
   bool merge_consecutive_segs;
   train_source_e train_source_y;
 
@@ -212,7 +187,9 @@ typedef struct {
   int curr_evict_bucket_idx;
 
   int64_t start_rtime;
+  /* rtime is wall clock time */
   int64_t curr_rtime;
+  /* vtime is reference count*/
   int64_t curr_vtime;
 
   // current number of ghost segments for training
@@ -232,16 +209,13 @@ typedef struct {
   /* cache type */
   GLCache_type_e type;
 
-  // /* bucket and related parameters */
-  // bucket_type_e bucket_type;
-
   /* object selection related parameters */
   obj_score_type_e obj_score_type;
 
-  //  int64_t last_hit_prob_compute_rtime;
-  int64_t last_hit_prob_compute_vtime; /* LHD selection */
+  // //  int64_t last_hit_prob_compute_rtime;
+  // int64_t last_hit_prob_compute_vtime; /* LHD selection */
 
-  int64_t last_hit_prob_compute_rtime; /* LHD selection */
+  // int64_t last_hit_prob_compute_rtime; /* LHD selection */
 
   /* in number of evictions */
   double rank_intvl;
@@ -272,4 +246,3 @@ void init_obj_sel(cache_t *cache);
 void init_learner(cache_t *cache, int retrain_intvl);
 void init_cache_state(cache_t *cache);
 void init_learner(cache_t *cache, int retrain_intvl);
-

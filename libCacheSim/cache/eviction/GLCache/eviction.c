@@ -12,10 +12,6 @@
 bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
   GLCache_params_t *params = cache->eviction_params;
 
-  if (params->type == SEGCACHE) {
-    return select_segs_fifo(cache, segs);
-  }
-
   if (params->type == LOGCACHE_ITEM_ORACLE) {
     if (params->learner.n_train <= 0) {
       return select_segs_fifo(cache, segs);
@@ -31,7 +27,7 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
     return select_segs_learned(cache, segs);
   }
 
-  if (params->type == LOGCACHE_BOTH_ORACLE || params->type == LOGCACHE_LOG_ORACLE) {
+  if (params->type == LOGCACHE_TWO_ORACLE || params->type == LOGCACHE_LOG_ORACLE) {
     return select_segs_learned(cache, segs);
   }
 

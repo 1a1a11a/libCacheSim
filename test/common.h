@@ -180,23 +180,21 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = ARC_init(cc_params, NULL);
 #if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
   } else if (strncasecmp(alg_name, "GLCache", 7) == 0) {
-    // GLCache_init_params_t init_params;
-    // GLCache_set_default_init_params(&init_params);
     const char *init_params;
     if (strcasecmp(alg_name, "GLCache-OracleLog") == 0) {
-      init_params = "type=logOracle;rank_intvl=0.05;retrain_intvl=172800";
+      init_params = "type=logOracle; rank_intvl=0.05; retrain_intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-OracleItem") == 0) {
-      init_params = "type=itemOracle;rank_intvl=0.05;retrain_intvl=172800";
+      init_params = "type=itemOracle; rank_intvl=0.05; retrain_intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-OracleBoth") == 0) {
-      init_params = "type=twoOracle;rank_intvl=0.05;retrain_intvl=172800";
+      init_params = "type=twoOracle; rank_intvl=0.05; retrain_intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-LearnedTrueY") == 0) {
       init_params =
           "type=learned;"
-          "train_source_y=oracle;rank_intvl=0.05;retrain_intvl=172800";
+          "train_source_y=oracle; rank_intvl=0.05; retrain_intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-LearnedOnline") == 0) {
       init_params =
           "type=learned;"
-          "train_source_y=online;rank_intvl=0.05;retrain_intvl=172800";
+          "train_source_y=online; rank_intvl=0.05; retrain_intvl=172800";
     }
     cache = GLCache_init(cc_params, init_params);
 #endif

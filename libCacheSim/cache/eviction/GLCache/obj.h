@@ -106,7 +106,7 @@ static inline double cal_obj_score(GLCache_params_t *params, obj_score_type_e sc
     return (double) (cache_obj->GLCache.freq + 0.01) * 1.0e6 / cache_obj->obj_size;
 #endif 
 
-  } else if (score_type == OBJ_SCORE_SIZE_AGE) {
+  } else if (score_type == OBJ_SCORE_AGE_BYTE) {
 #ifdef BYTE_MISS_RATIO
     return 1.0e8 / age_vtime;
 #else 

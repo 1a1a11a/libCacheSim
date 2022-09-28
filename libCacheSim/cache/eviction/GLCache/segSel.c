@@ -78,7 +78,7 @@ void rank_segs(cache_t *cache) {
       while (curr_seg) {
         if (params->type == LOGCACHE_LOG_ORACLE) {
           curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, false);
-        } else if (params->type == LOGCACHE_BOTH_ORACLE) {
+        } else if (params->type == LOGCACHE_TWO_ORACLE) {
           curr_seg->pred_utility = cal_seg_utility(cache, curr_seg, true);
         } else {
           abort();

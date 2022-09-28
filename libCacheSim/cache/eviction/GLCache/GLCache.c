@@ -38,19 +38,22 @@ static void set_default_init_params(GLCache_init_params_t *init_params) {
 }
 
 const char *GLCache_default_params(void) {
-  return "segment_size=100;n_merge=2;"
-         "type=learned;rank_intvl=0.02;"
-         "merge_consecutive_segs=true;train_source_y=online;"
+  return "segment_size=100; n_merge=2; "
+         "type=learned; rank_intvl=0.02;"
+         "merge_consecutive_segs=true; train_source_y=online;"
          "retrain_intvl=86400;";
 }
 
 static void parse_init_params(const char *cache_specific_params,
-                       GLCache_init_params_t *params) {
+                              GLCache_init_params_t *params) {
   char *params_str = strdup(cache_specific_params);
 
   while (params_str != NULL && params_str[0] != '\0') {
     char *key = strsep((char **)&params_str, "=");
     char *value = strsep((char **)&params_str, ";");
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
     if (strcasecmp(key, "segment_size") == 0) {
       params->segment_size = atoi(value);
     } else if (strcasecmp(key, "n_merge") == 0) {
@@ -78,9 +81,12 @@ static void parse_init_params(const char *cache_specific_params,
       } else if (strcasecmp(value, "itemOracle") == 0) {
         params->type = LOGCACHE_ITEM_ORACLE;
       } else if (strcasecmp(value, "twoOracle") == 0) {
-        params->type = LOGCACHE_BOTH_ORACLE;
+        params->type = LOGCACHE_TWO_ORACLE;
       } else {
-        ERROR("Unknown type %s, support learned/logOracle/itemOracle/twoOracle\n", value);
+        ERROR(
+            "Unknown type %s, support "
+            "learned/logOracle/itemOracle/twoOracle\n",
+            value);
         exit(1);
       }
     } else {
@@ -108,8 +114,6 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
 
   params->curr_evict_bucket_idx = 0;
   params->start_rtime = -1;
-  params->last_hit_prob_compute_vtime = 0;
-  params->last_hit_prob_compute_rtime = 0;
 
   params->type = init_params.type;
   params->train_source_y = init_params.train_source_y;
@@ -121,13 +125,12 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   params->rank_intvl = init_params.rank_intvl;
 
   switch (params->type) {
-    case SEGCACHE:
     case LOGCACHE_LOG_ORACLE:
     case LOGCACHE_LEARNED:
-      params->obj_score_type = OBJ_SCORE_SIZE_AGE;
+      params->obj_score_type = OBJ_SCORE_AGE_BYTE;
       break;
     case LOGCACHE_ITEM_ORACLE:
-    case LOGCACHE_BOTH_ORACLE:
+    case LOGCACHE_TWO_ORACLE:
       params->obj_score_type = OBJ_SCORE_ORACLE;
       break;
     default:

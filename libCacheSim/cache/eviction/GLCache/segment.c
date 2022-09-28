@@ -167,7 +167,7 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type, segment_t **
     for (int j = 0; j < seg->n_obj; j++) {
       #ifdef RANDOMIZE_MERGE
       double r = 1.0; 
-      // if (params->type != LOGCACHE_BOTH_ORACLE || params->type != LOGCACHE_ITEM_ORACLE)
+      // if (params->type != LOGCACHE_TWO_ORACLE || params->type != LOGCACHE_ITEM_ORACLE)
       r = 1 + ((double) (next_rand() % RAND_MAX) / ((double) (RAND_MAX)) - 0.5) * 0.001;
 
       params->obj_sel.score_array[pos] = cal_obj_score(params, obj_score_type, &seg->objs[j]) * r;

@@ -65,7 +65,7 @@ extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
 // used to detect overflow
 #define MAGIC 1234567890
 
-static char *GLCache_type_names[] = {"SEGCACHE", "LOGCACHE_BOTH_ORACLE", "LOGCACHE_LOG_ORACLE",
+static char *GLCache_type_names[] = {"SEGCACHE", "LOGCACHE_TWO_ORACLE", "LOGCACHE_LOG_ORACLE",
                                      "LOGCACHE_ITEM_ORACLE", "LOGCACHE_LEARNED"};
 
 static char *obj_score_type_names[] = {"FREQ",          "FREQ_BYTE",   "FREQ_AGE",
