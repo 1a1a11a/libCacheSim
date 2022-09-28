@@ -30,18 +30,18 @@ FILE *ofile_cmp_y = NULL;
 static void set_default_init_params(GLCache_init_params_t *init_params) {
   init_params->segment_size = 100;
   init_params->n_merge = 2;
-  init_params->rank_intvl = 0.05;
+  init_params->rank_intvl = 0.02;
   init_params->merge_consecutive_segs = true;
-  init_params->retrain_intvl = 86400 * 2;
+  init_params->retrain_intvl = 86400;
   init_params->train_source_y = TRAIN_Y_FROM_ONLINE;
   init_params->type = LOGCACHE_LEARNED;
 }
 
 const char *GLCache_default_params(void) {
   return "segment_size=100;n_merge=2;"
-         "type=LOGCACHE_LEARNED;rank_intvl=0.05;"
-         "merge_consecutive_segs=true;train_source_y=TRAIN_Y_FROM_ONLINE;"
-         "retrain_intvl=172800;";
+         "type=learned;rank_intvl=0.02;"
+         "merge_consecutive_segs=true;train_source_y=online;"
+         "retrain_intvl=86400;";
 }
 
 static void parse_init_params(const char *cache_specific_params,
@@ -67,7 +67,7 @@ static void parse_init_params(const char *cache_specific_params,
       } else if (strcasecmp(value, "oracle") == 0) {
         params->train_source_y = TRAIN_Y_FROM_ORACLE;
       } else {
-        ERROR("Unknown train_source_y %s\n", value);
+        ERROR("Unknown train_source_y %s, support online/oracle\n", value);
         exit(1);
       }
     } else if (strcasecmp(key, "type") == 0) {
@@ -80,7 +80,7 @@ static void parse_init_params(const char *cache_specific_params,
       } else if (strcasecmp(value, "twoOracle") == 0) {
         params->type = LOGCACHE_BOTH_ORACLE;
       } else {
-        ERROR("Unknown type %s\n", value);
+        ERROR("Unknown type %s, support learned/logOracle/itemOracle/twoOracle\n", value);
         exit(1);
       }
     } else {

@@ -1,5 +1,7 @@
 
 #include <math.h>
+#include <xgboost/c_api.h>
+
 #include "../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "GLCacheInternal.h"
 #include "bucket.h"
