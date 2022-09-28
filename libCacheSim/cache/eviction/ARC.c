@@ -50,20 +50,20 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   params->ghost_list_factor = 1;
 
   if (cache_specific_params != NULL) {
-    char *params_str = malloc(strlen(cache_specific_params) + 1);
-    memcpy(params_str, cache_specific_params, strlen(cache_specific_params));
-    params_str[strlen(cache_specific_params)] = '\0';
+    char *params_str = strdup(cache_specific_params);
 
     while (params_str != NULL && params_str[0] != '\0') {
       char *key = strsep((char **)&params_str, "=");
       char *value = strsep((char **)&params_str, ";");
-      if (strcmp(key, "ghost_list_factor") == 0) {
+      if (strcasecmp(key, "ghost_list_factor") == 0) {
         params->ghost_list_factor = atof(value);
       } else {
-        ERROR("%s does not have parameter %s", cache->cache_name, key);
+        ERROR("%s does not have parameter %s\n", cache->cache_name, key);
         exit(1);
       }
     }
+
+    free(params_str);
   }
 
   /* the two LRU are initialized with cache_size, but they will not be full */
