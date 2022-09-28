@@ -46,6 +46,13 @@ cache_t *ARC2_init(const common_cache_params_t ccache_params,
 
   cache->init_params = cache_specific_params;
 
+  if (ccache_params.consider_obj_metadata) {
+    // freq
+    cache->per_obj_metadata_size = 8 * 2;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   cache->eviction_params = my_malloc_n(ARC2_params_t, 1);
   memset(cache->eviction_params, 0, sizeof(ARC2_params_t));
   ARC2_params_t *params = (ARC2_params_t *)(cache->eviction_params);

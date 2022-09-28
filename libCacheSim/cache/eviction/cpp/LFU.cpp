@@ -34,6 +34,13 @@ cache_t *LFU_init(common_cache_params_t ccache_params, void *init_params) {
   cache->evict = LFU_evict;
   cache->remove = LFU_remove;
 
+  if (ccache_params.consider_obj_metadata) {
+    // freq
+    cache->per_obj_metadata_size = 8;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   return cache;
 }
 

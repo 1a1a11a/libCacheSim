@@ -62,6 +62,12 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
   cache->remove = LFUDA_remove;
   cache->to_evict = LFUDA_to_evict;
 
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 8 * 2;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   if (cache_specific_params != NULL) {
     ERROR("LFUDA does not support any parameters, but got %s\n",
           cache_specific_params);

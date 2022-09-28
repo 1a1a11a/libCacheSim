@@ -53,6 +53,12 @@ cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
   cache->remove = CR_LFU_remove;
   cache->to_evict = CR_LFU_to_evict;
 
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 16;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   if (cache_specific_params != NULL) {
     printf("CR-LFU does not support any parameters, but got %s\n",
            cache_specific_params);

@@ -47,6 +47,13 @@ cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
   cache->remove = LeCaRv0_remove;
   cache->to_evict = LeCaRv0_to_evict;
 
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size =
+        8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   if (cache_specific_params != NULL) {
     printf("LeCaRv0 does not support any parameters, but got %s\n",
            cache_specific_params);

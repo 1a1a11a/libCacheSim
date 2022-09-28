@@ -26,6 +26,11 @@ cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
            cache_specific_params);
     abort();
   }
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 2;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
 
   cache->eviction_params = my_malloc_n(SR_LRU_params_t, 1);
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);

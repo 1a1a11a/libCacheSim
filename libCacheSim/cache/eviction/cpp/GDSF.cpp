@@ -29,6 +29,13 @@ cache_t *GDSF_init(const common_cache_params_t ccache_params,
   cache->evict = GDSF_evict;
   cache->remove = GDSF_remove;
 
+  if (ccache_params.consider_obj_metadata) {
+    // frequency
+    cache->per_obj_metadata_size = 8;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   if (cache_specific_params != NULL) {
     ERROR("%s does not support any parameters, but got %s\n",
            cache->cache_name, cache_specific_params);

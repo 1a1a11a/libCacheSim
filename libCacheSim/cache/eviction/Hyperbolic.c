@@ -33,6 +33,12 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
           cache_specific_params);
     abort();
   }
+  if (ccache_params.consider_obj_metadata) {
+    // freq + age
+    cache->per_obj_metadata_size = 8 + 8;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
 
   Hyperbolic_params_t *params = my_malloc(Hyperbolic_params_t);
   cache->eviction_params = params;

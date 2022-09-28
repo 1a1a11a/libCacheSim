@@ -26,6 +26,12 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
   cache->remove = Clock_remove;
   cache->to_evict = Clock_to_evict;
 
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 1;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   if (cache_specific_params != NULL) {
     ERROR("Clock does not support any parameters, but got %s\n",
           cache_specific_params);
