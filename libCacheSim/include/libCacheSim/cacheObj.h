@@ -65,13 +65,13 @@ typedef struct FIFOMerge_obj_metadata {
   int32_t freq;
   int32_t last_access_vtime;
   int64_t next_access_vtime;
-} FIFOMerge_obj_metadata_t;
+} FIFO_Merge_obj_metadata_t;
 
-typedef struct FIFO_readmission_obj_metadata {
+typedef struct {
   int32_t freq;
   int32_t last_access_vtime;
   int64_t next_access_vtime;
-} FIFO_readmission_obj_metadata_t;
+} FIFO_Reinsertion_obj_metadata_t;
 
 typedef struct {
   void *segment;
@@ -116,8 +116,8 @@ typedef struct cache_obj {
     CR_LFU_obj_params_t CR_LFU;
     Hyperbolic_obj_metadata_t hyperbolic;
     Belady_obj_metadata_t Belady;
-    FIFOMerge_obj_metadata_t FIFOMerge;
-    FIFO_readmission_obj_metadata_t FIFO_readmission;
+    FIFO_Merge_obj_metadata_t FIFO_Merge;
+    FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
 #if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
     GLCache_obj_metadata_t GLCache;
 #endif

@@ -189,13 +189,21 @@ static void init_arg(struct arguments *args) {
  * @return unsigned long
  */
 static unsigned long conv_size_to_byte(char *cache_size_str) {
-  if (strcasestr(cache_size_str, "kb") != NULL) {
+  if (strcasestr(cache_size_str, "kb") != NULL ||
+      cache_size_str[strlen(cache_size_str) - 1] == 'k' ||
+      cache_size_str[strlen(cache_size_str) - 1] == 'K') {
     return strtoul(cache_size_str, NULL, 10) * KiB;
-  } else if (strcasestr(cache_size_str, "mb") != NULL) {
+  } else if (strcasestr(cache_size_str, "mb") != NULL ||
+             cache_size_str[strlen(cache_size_str) - 1] == 'm' ||
+             cache_size_str[strlen(cache_size_str) - 1] == 'M') {
     return strtoul(cache_size_str, NULL, 10) * MiB;
-  } else if (strcasestr(cache_size_str, "gb") != NULL) {
+  } else if (strcasestr(cache_size_str, "gb") != NULL ||
+             cache_size_str[strlen(cache_size_str) - 1] == 'g' ||
+             cache_size_str[strlen(cache_size_str) - 1] == 'G') {
     return strtoul(cache_size_str, NULL, 10) * GiB;
-  } else if (strcasestr(cache_size_str, "tb") != NULL) {
+  } else if (strcasestr(cache_size_str, "tb") != NULL ||
+             cache_size_str[strlen(cache_size_str) - 1] == 't' ||
+             cache_size_str[strlen(cache_size_str) - 1] == 'T') {
     return strtoul(cache_size_str, NULL, 10) * TiB;
   }
 
@@ -382,8 +390,9 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = FIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "arc") == 0) {
     cache = ARC_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "fifomerge") == 0) {
-    cache = FIFOMerge_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "fifomerge") == 0 ||
+             strcasecmp(args->eviction_algo, "fifo-merge") == 0) {
+    cache = FIFO_Merge_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lhd") == 0) {
     cache = LHD_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {

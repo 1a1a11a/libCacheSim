@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 
   cache_stat_t *result =
       get_miss_ratio_curve(args.reader, args.cache, args.n_cache_size,
-                           args.cache_sizes, NULL, 0, 86400 * 3, args.n_thread);
+                           args.cache_sizes, NULL, 0, args.warmup_sec, args.n_thread);
 
   char output_str[1024];
   char output_filename[128];

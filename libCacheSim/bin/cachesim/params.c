@@ -125,5 +125,15 @@ bool set_hard_code_cache_size(struct arguments *args) {
       args->cache_sizes[i] = MiB * s[i];
     }
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+    return false;
   }
+
+  return true;
 }
+
+
+
+
+
+
+
