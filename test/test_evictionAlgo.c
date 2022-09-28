@@ -106,6 +106,27 @@ static void test_FIFO_Merge(gconstpointer user_data) {
   cache_stat_t *res = get_miss_ratio_curve_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
+static void test_FIFO_Reinsertion(gconstpointer user_data) {
+  uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
+  uint64_t miss_cnt_true[] = {90854, 85386, 79839, 75702,
+                              72785, 68092, 65945, 65403};
+  uint64_t miss_byte_true[] = {3982227968, 3767993344, 3531636224, 3343059968,
+                               3195103232, 2915291136, 2796444160, 2761173504};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {
+      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("FIFO_Reinsertion", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
+
   // print_results(cache, res);
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
@@ -490,6 +511,7 @@ int main(int argc, char *argv[]) {
   reader = setup_csv_reader_obj_num();
   //  reader = setup_vscsi_reader();
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO_Merge", reader, test_FIFO_Merge);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO_Reinsertion", reader, test_FIFO_Reinsertion);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);

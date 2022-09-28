@@ -208,6 +208,20 @@ cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req);
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id);
 
 /**
+ * @brief print cache 
+ * 
+ * @param cache 
+ */
+static inline void print_cache(cache_t *cache) {
+  printf("%s cache size %" PRIu64 ", occupied size %" PRIu64 ", n_req %" PRIu64
+         ", n_obj %" PRIu64 ", default TTL %" PRIu64
+         ", per_obj_metadata_size %" PRIi32 "\n",
+         cache->cache_name, cache->cache_size, cache->occupied_size,
+         cache->n_req, cache->n_obj, cache->default_ttl,
+         cache->per_obj_metadata_size);
+}
+
+/**
  * @brief record eviction age in wall clock time
  *
  * @param cache

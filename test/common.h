@@ -158,6 +158,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = FIFO_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO_Merge") == 0) {
     cache = FIFO_Merge_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "FIFO_Reinsertion") == 0) {
+    cache = FIFO_Reinsertion_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Belady") == 0) {
     cache = Belady_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "BeladySize") == 0) {

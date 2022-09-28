@@ -5,7 +5,7 @@
 #include "evictionAlgo/Clock.h"
 #include "evictionAlgo/FIFO.h"
 #include "evictionAlgo/FIFO_Merge.h"
-// #include "evictionAlgo/FIFO_Reinsertion.h"
+#include "evictionAlgo/FIFO_Reinsertion.h"
 #include "evictionAlgo/LFU.h"
 #include "evictionAlgo/LFUDA.h"
 #include "evictionAlgo/LRU.h"

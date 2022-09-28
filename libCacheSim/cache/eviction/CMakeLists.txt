@@ -17,7 +17,8 @@ set(sourceC
         LeCaR.c
         Cacheus.c
         FIFO_Merge.c
-        
+        FIFO_Reinsertion.c
+
         LRUv0.c
         LeCaRv0.c
         )
