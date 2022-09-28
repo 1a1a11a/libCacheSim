@@ -22,9 +22,9 @@ enum argp_option_short {
   OPTION_N_THREAD = 'n',
   OPTION_IGNORE_OBJ_SIZE = 0x101,
   OPTION_USE_TTL = 0x102,
-  OPTION_WARMUP_SEC = 'w',
+  OPTION_WARMUP_SEC = 0x104,
   OPTION_VERBOSE = 'v',
-  OPTION_CONSIDER_OBJ_METADATA = 0x104,
+  OPTION_CONSIDER_OBJ_METADATA = 0x105,
 };
 
 /*
@@ -55,22 +55,22 @@ static struct argp_option options[] = {
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output"},
 
     {0, 0, 0, 0, "Other less used options:"},
-    {"ignore_obj_size", OPTION_IGNORE_OBJ_SIZE, "true", 0,
+    {"ignore_obj_size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
      "specify to ignore the object size from the trace", 10},
     {"warmup_sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
     {"use_ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
      11},
-    {"consider_obj_metadata", OPTION_CONSIDER_OBJ_METADATA, "0", 0,
+    {"consider_obj_metadata", OPTION_CONSIDER_OBJ_METADATA, "true", 0,
      "Whether consider per object metadata size in the simulated cache", 10},
 
     {0}};
 
 static inline bool is_true(const char *arg) {
-  if (strcasecmp(arg, "true") || strcasecmp(arg, "1") ||
-      strcasecmp(arg, "yes") || strcasecmp(arg, "y")) {
+  if (strcasecmp(arg, "true") == 0 || strcasecmp(arg, "1") == 0 ||
+      strcasecmp(arg, "yes") == 0 || strcasecmp(arg, "y") == 0) {
     return true;
-  } else if (strcasecmp(arg, "false") || strcasecmp(arg, "0") ||
-             strcasecmp(arg, "no") || strcasecmp(arg, "n")) {
+  } else if (strcasecmp(arg, "false") == 0 || strcasecmp(arg, "0") == 0 ||
+             strcasecmp(arg, "no") == 0 || strcasecmp(arg, "n") == 0) {
     return false;
   } else {
     ERROR("Invalid value: %s, expect true/false", arg);
@@ -108,28 +108,16 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->ofilepath = arg;
       break;
     case OPTION_VERBOSE:
-      if (is_true(arg)) {
-        arguments->verbose = true;
-      } else {
-        arguments->verbose = false;
-      }
+      arguments->verbose = is_true(arg) ? true : false;
       break;
     case OPTION_USE_TTL:
-      if (is_true(arg)) {
-        arguments->use_ttl = true;
-      } else {
-        arguments->use_ttl = false;
-      }
+      arguments->use_ttl = is_true(arg) ? true : false;
       break;
     case OPTION_IGNORE_OBJ_SIZE:
-      arguments->ignore_obj_size = true;
+      arguments->ignore_obj_size = is_true(arg) ? true : false;
       break;
     case OPTION_CONSIDER_OBJ_METADATA:
-      if (is_true(arg)) {
-        arguments->consider_obj_metadata = true;
-      } else {
-        arguments->consider_obj_metadata = false;
-      }
+      arguments->consider_obj_metadata = is_true(arg) ? true : false;
       break;
     case OPTION_WARMUP_SEC:
       arguments->warmup_sec = atoi(arg);
@@ -282,9 +270,10 @@ static void print_parsed_args(struct arguments *args) {
 static void verify_trace_type(struct arguments *args) {
   if (strcasestr(args->trace_path, "oracleGeneralBin") != NULL ||
       strcasestr(args->trace_path, "oracleGeneral.bin") != NULL) {
-    assert(args->trace_type_str == "oracleGeneral");
+    assert(strcasecmp(args->trace_type_str, "oracleGeneral") == 0 ||
+           strcasecmp(args->trace_type_str, "oracleGeneralBin") == 0);
   } else if (strcasestr(args->trace_path, "oracleSysTwrNS") != NULL) {
-    assert(args->trace_type_str == "oracleSysTwrNS");
+    assert(strcasecmp(args->trace_type_str, "oracleSysTwrNS") == 0);
   } else {
     ;
   }
@@ -406,6 +395,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
     cc_params.hashpower -= 4;
     cache = BeladySize_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
+    cache = Hyperbolic_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lecar") == 0) {
     cache = LeCaR_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "cacheus") == 0) {

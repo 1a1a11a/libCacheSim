@@ -87,8 +87,13 @@ static void parse_init_params(const char *cache_specific_params,
             value);
         exit(1);
       }
+    } else if (strcasecmp(key, "print") == 0 ||
+               strcasecmp(key, "default") == 0) {
+      printf("default params: %s\n", GLCache_default_params());
+      exit(0);
     } else {
       ERROR("GLCache does not have parameter %s\n", key);
+      printf("default params: %s\n", GLCache_default_params());
       exit(1);
     }
   }
@@ -114,8 +119,12 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   GLCache_params_t *params = my_malloc(GLCache_params_t);
   memset(params, 0, sizeof(GLCache_params_t));
   cache->eviction_params = params;
+
   set_default_params(params);
-  parse_init_params(cache_specific_params, params);
+
+  if (cache_specific_params != NULL)
+    parse_init_params(cache_specific_params, params);
+
   check_params(params);
 
   params->n_retain_per_seg = params->segment_size / params->n_merge;
@@ -148,10 +157,11 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   cache->remove = GLCache_remove;
 
   INFO(
-      "%s, %.0lfMB, training_interval %d, source %d, "
+      "%s, %.0lfMB, segment_size %d, training_interval %d, source %d, "
       "rank interval %.2lf, merge consecutive segments %d, "
       "merge %d segments\n",
       GLCache_type_names[params->type], (double)cache->cache_size / 1048576.0,
+      params->segment_size,
       params->retrain_intvl, params->train_source_y, params->rank_intvl,
       params->merge_consecutive_segs, params->n_merge);
   return cache;
