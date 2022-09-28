@@ -385,7 +385,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "fifomerge") == 0) {
     cache = FIFOMerge_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lhd") == 0) {
-    bool cache = LHD_init(cc_params, args->eviction_params);
+    cache = LHD_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfu") == 0) {

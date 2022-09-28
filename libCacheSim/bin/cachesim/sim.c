@@ -62,12 +62,12 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
   snprintf(output_str, 1024,
-           "%.2lf hour: %12s, cache size %d, %lu "
+           "%.2lf hour: %12s, cache size %d, %s, %lu "
            "requests, miss ratio %.4lf, "
            "throughput %.2lf MQPS\n",
            (double)req->real_time / 3600.0, reader->trace_path,
-           (int)(cache->cache_size / 1024 / 1024), (unsigned long)req_cnt,
-           (double)miss_cnt / req_cnt,
+           (int)(cache->cache_size / 1024 / 1024), cache->cache_name,
+           (unsigned long)req_cnt, (double)miss_cnt / req_cnt,
            (double)req_cnt / 1000000.0 / runtime);
 #pragma GCC diagnostic pop
   INFO("%s", output_str);

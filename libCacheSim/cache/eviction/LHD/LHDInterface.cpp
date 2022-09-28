@@ -34,8 +34,15 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->insert = LHD_insert;
   cache->evict = LHD_evict;
   cache->remove = LHD_remove;
+  cache->init_params = cache_specific_params;
+  if (cache_specific_params != NULL) {
+    ERROR("%s does not support any parameters, but got %s\n",
+           cache->cache_name, cache_specific_params);
+    abort();
+  }
+
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 8 * 3 + 1; // two age, one time stamp
+    cache->per_obj_metadata_size = 8 * 3 + 1;  // two age, one time stamp
   } else {
     cache->per_obj_metadata_size = 0;
   }
@@ -53,6 +60,7 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
 
   params->LHD_cache = static_cast<void *>(
       new LHD(params->associativity, params->admission, cache));
+
   return cache;
 }
 
@@ -60,6 +68,7 @@ void LHD_free(cache_t *cache) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   delete lhd;
+  my_free(sizeof(LHD_params_t), params);
   cache_struct_free(cache);
 }
 

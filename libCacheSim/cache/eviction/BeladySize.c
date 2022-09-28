@@ -15,8 +15,13 @@
 extern "C" {
 #endif
 
-#define N_SAMPLE_PER_EVICTION 128
 // #define EXACT_Belady 1
+
+typedef struct {
+  int n_sample;
+} BeladySize_params_t; /* BeladySize parameters */
+
+const char *BeladySize_default_params(void) { return "n_sample=128"; }
 
 cache_t *BeladySize_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params) {
@@ -31,10 +36,30 @@ cache_t *BeladySize_init(const common_cache_params_t ccache_params,
   cache->remove = BeladySize_remove;
   cache->to_evict = BeladySize_to_evict;
 
+  BeladySize_params_t *params =
+      (BeladySize_params_t *)malloc(sizeof(BeladySize_params_t));
+  params->n_sample = 128;
+  cache->eviction_params = params;
+
   if (cache_specific_params != NULL) {
-    printf("BeladySize does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
+    char *params_str = strdup(cache_specific_params);
+
+    while (params_str != NULL && params_str[0] != '\0') {
+      char *key = strsep((char **)&params_str, "=");
+      char *value = strsep((char **)&params_str, ";");
+      while (params_str != NULL && *params_str == ' ') {
+        params_str++;
+      }
+      if (strcasecmp(key, "n_sample") == 0) {
+        params->n_sample = atoi(value);
+      } else {
+        ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
+              key, BeladySize_default_params());
+        exit(1);
+      }
+    }
+
+    free(params_str);
   }
 
   return cache;
@@ -111,9 +136,11 @@ cache_obj_t *BeladySize_to_evict(cache_t *cache) {
 
 #else
 cache_obj_t *BeladySize_to_evict(cache_t *cache) {
+  BeladySize_params_t *params =
+      (BeladySize_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = NULL, *sampled_obj;
   int64_t obj_to_evict_score = -1, sampled_obj_score;
-  for (int i = 0; i < N_SAMPLE_PER_EVICTION; i++) {
+  for (int i = 0; i < params->n_sample; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
     sampled_obj_score = sampled_obj->obj_size *
                         (sampled_obj->Belady.next_access_vtime - cache->n_req);
