@@ -27,6 +27,7 @@ cache_t *MRU_init(const common_cache_params_t ccache_params,
   cache->evict = MRU_evict;
   cache->to_evict = MRU_to_evict;
   cache->remove = MRU_remove;
+  cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
     printf("MRU does not support any parameters, but got %s\n",

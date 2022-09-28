@@ -27,6 +27,7 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
   cache->evict = Hyperbolic_evict;
   cache->remove = Hyperbolic_remove;
   cache->to_evict = Hyperbolic_to_evict;
+  cache->init_params = cache_specific_params;
 
   Hyperbolic_params_t *params = my_malloc(Hyperbolic_params_t);
   params->n_sample = 64;
@@ -41,6 +42,7 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
       while (params_str != NULL && *params_str == ' ') {
         params_str++;
       }
+
       if (strcasecmp(key, "n_sample") == 0) {
         params->n_sample = atoi(value);
       } else {
@@ -106,7 +108,6 @@ cache_obj_t *Hyperbolic_to_evict(cache_t *cache) {
   cache_obj_t *best_candidate = NULL, *sampled_obj;
   double best_candidate_score = 1.0e16, sampled_obj_score;
   for (int i = 0; i < params->n_sample; i++) {
-    // printf("%ld %d\n", cache->n_req, i);
     sampled_obj = hashtable_rand_obj(cache->hashtable);
     double age =
         (double)(cache->n_req - sampled_obj->hyperbolic.vtime_enter_cache);

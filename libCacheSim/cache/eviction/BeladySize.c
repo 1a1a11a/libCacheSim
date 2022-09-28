@@ -72,6 +72,8 @@ cache_ck_res_e BeladySize_check(cache_t *cache, const request_t *req,
   cache_obj_t *obj;
   cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &obj);
 
+  if (!update_cache) return ck;
+
   if (update_cache && ck == cache_ck_hit) {
     if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
       BeladySize_remove(cache, obj->obj_id);
@@ -136,14 +138,14 @@ cache_obj_t *BeladySize_to_evict(cache_t *cache) {
 
 #else
 cache_obj_t *BeladySize_to_evict(cache_t *cache) {
-  BeladySize_params_t *params =
-      (BeladySize_params_t *)cache->eviction_params;
+  BeladySize_params_t *params = (BeladySize_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = NULL, *sampled_obj;
   int64_t obj_to_evict_score = -1, sampled_obj_score;
   for (int i = 0; i < params->n_sample; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
-    sampled_obj_score = sampled_obj->obj_size *
-                        (sampled_obj->Belady.next_access_vtime - cache->n_req);
+    sampled_obj_score =
+        (int64_t)sampled_obj->obj_size *
+        (int64_t)(sampled_obj->Belady.next_access_vtime - cache->n_req);
     if (obj_to_evict_score < sampled_obj_score) {
       obj_to_evict = sampled_obj;
       obj_to_evict_score = sampled_obj_score;
@@ -156,7 +158,9 @@ cache_obj_t *BeladySize_to_evict(cache_t *cache) {
 void BeladySize_evict(cache_t *cache, const request_t *req,
                       cache_obj_t *cache_obj) {
   cache_obj_t *obj_to_evict = BeladySize_to_evict(cache);
-  if (cache_obj != NULL) memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
+  if (cache_obj != NULL) {
+    memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
+  }
   cache_remove_obj_base(cache, obj_to_evict);
 }
 

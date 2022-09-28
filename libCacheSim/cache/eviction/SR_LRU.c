@@ -20,6 +20,7 @@ cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
   cache->evict = SR_LRU_evict;
   cache->remove = SR_LRU_remove;
   cache->to_evict = SR_LRU_to_evict;
+  cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
     printf("SR-LRU does not support any parameters, but got %s\n",

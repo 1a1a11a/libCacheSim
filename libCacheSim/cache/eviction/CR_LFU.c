@@ -52,6 +52,7 @@ cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
   cache->evict = CR_LFU_evict;
   cache->remove = CR_LFU_remove;
   cache->to_evict = CR_LFU_to_evict;
+  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->per_obj_metadata_size = 16;

@@ -44,6 +44,7 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
   cache->evict = Cacheus_evict;
   cache->remove = Cacheus_remove;
   cache->to_evict = Cacheus_to_evict;
+  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->per_obj_metadata_size =

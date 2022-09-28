@@ -28,6 +28,7 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
   cache->evict = LRU_evict;
   cache->remove = LRU_remove;
   cache->to_evict = LRU_to_evict;
+  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->per_obj_metadata_size = 8 * 2;

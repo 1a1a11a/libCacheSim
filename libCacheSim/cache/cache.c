@@ -232,7 +232,7 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, const request_t *req) {
  * @param req
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
-  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
+  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size + cache->per_obj_metadata_size);
   cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
   hashtable_delete(cache->hashtable, obj);

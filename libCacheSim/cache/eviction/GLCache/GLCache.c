@@ -114,8 +114,6 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   cache->hashtable->external_obj = true;
   cache->init_params = cache_specific_params;
 
-  // GLCache_init_params_t init_params;
-
   GLCache_params_t *params = my_malloc(GLCache_params_t);
   memset(params, 0, sizeof(GLCache_params_t));
   cache->eviction_params = params;
@@ -131,14 +129,22 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
 
   switch (params->type) {
     case LOGCACHE_LOG_ORACLE:
+      params->obj_score_type = OBJ_SCORE_AGE_BYTE;
+      memcpy(cache->cache_name, "GLCache-logOracle", 17);
+      break;
     case LOGCACHE_LEARNED:
       params->obj_score_type = OBJ_SCORE_AGE_BYTE;
       break;
     case LOGCACHE_ITEM_ORACLE:
+      memcpy(cache->cache_name, "GLCache-itemOracle", 17);
+      params->obj_score_type = OBJ_SCORE_ORACLE;
+      break;
     case LOGCACHE_TWO_ORACLE:
+      memcpy(cache->cache_name, "GLCache-twoOracle", 17);
       params->obj_score_type = OBJ_SCORE_ORACLE;
       break;
     default:
+      ERROR("Unknown type %d\n", params->type);
       abort();
   };
 
@@ -155,6 +161,7 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   cache->insert = GLCache_insert;
   cache->evict = GLCache_evict;
   cache->remove = GLCache_remove;
+  cache->init_params = cache_specific_params;
 
   INFO(
       "%s, %.0lfMB, segment_size %d, training_interval %d, source %d, "

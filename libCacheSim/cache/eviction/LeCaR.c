@@ -214,6 +214,7 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   cache->evict = LeCaR_evict;
   cache->remove = LeCaR_remove;
   cache->to_evict = LeCaR_to_evict;
+  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->per_obj_metadata_size =
