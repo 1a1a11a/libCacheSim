@@ -2,10 +2,13 @@
 
 ### libCacheSim Modules 
 Currently there are four main modules in libCacheSim, 
-* **traceReader**, which provides trace parsing and reading, currently supports csv, txt, and binary trace. 
-* **traceStat**, which provides statistics about trace such as popularity, size distribution. 
-* **cache**, which provides a set of cache eviction algorithms such as LRU, LFU, FIFO, MRU, SLRU, LHD. 
-* **profiler**, which provides fast LRU miss ratio computation, reuse distance computation, a pre-built simulator.   
+* **bin**: a set of binary tools including cachesim, traceConv, etc.
+* **traceReader**: a module providing trace parsing and reading, currently supports csv, txt, and binary traces. 
+* **cache**: it includes three modules --- eviction, admission and prefetching. 
+  * **eviction**: provides a set of cache eviction algorithms such as LRU, LFU, FIFO, CLOCK, ARC, LFUDA (LFU with dynamic aging), SLRU, Hyperbolic, LHD, LeCaR, Cacheus, GLCache, etc. 
+  * **admission**: provides a set of admission algorithms including size, bloomFilter, adaptSize.
+  * **prefetch**: provides various prefetch algorithms, currently it is not used. 
+
 ---
 
 ### Common APIs 

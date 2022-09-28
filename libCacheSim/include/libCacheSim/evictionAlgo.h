@@ -12,7 +12,6 @@
 #include "evictionAlgo/LRUv0.h"
 #include "evictionAlgo/MRU.h"
 #include "evictionAlgo/Random.h"
-// #include "evictionAlgo/MClock.h"
 
 #include "evictionAlgo/Belady.h"
 #include "evictionAlgo/BeladySize.h"

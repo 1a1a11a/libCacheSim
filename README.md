@@ -1,19 +1,19 @@
-## libCacheSim - a library for cache simulation, profiling, and analysis 
+# libCacheSim - building and running cache simulations
 
 
-[![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/cmake.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
+[![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
 [![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
 [![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim)
 ![visitors](https://visitor-badge.glitch.me/badge?page_id=1a1a11a.libCacheSim)
 
 
-### What is libCacheSim
+## What is libCacheSim
+* a high-performance cache simulator binary for running cache simulations. 
 * a high-performance library for building cache simulators. 
-* a cache trace profiler supporting fast LRU miss ratio/reuse distance computation. 
-* a tool for gathering statistics of cache traces. 
+
 ---
 
-### libCacheSim features 
+## libCacheSim features 
 * [**high performance**](performance.md) - over 20M requests/sec for a realistic trace replay. 
 * [**high memory efficiency**](performance.md) - predictable and small memory footprint ~36 bytes memory per cached object. 
 * [**performance and memory mode**](performance.md) - run the simulator in performance mode with larger memory footprint, or run it in slower low-memory mode.  
@@ -24,11 +24,11 @@
 * **wide trace formats support** - support txt, csv/tsv, binary, vscsi trace formats. 
 ---
 
-### Build and Install 
-libCacheSim uses [camke](https://cmake.org/) build system and has two dependencies - 
+## Build and Install 
+libCacheSim uses [camke](https://cmake.org/) build system and has two dependencies: 
 [GNOME glib](https://developer.gnome.org/glib/) and [Google tcmalloc](https://github.com/google/tcmalloc).
 
-#### Install dependency
+### Install dependency
 Mac (using [homebrew](https://brew.sh/) as an example)
 ```
 brew install glib google-perftools
@@ -39,32 +39,40 @@ Linux (using Ubuntu as an example)
 sudo apt install libglib2.0-dev libgoogle-perftools-dev
 ```
 
-Install XGBoost (Linux):
+[Optional] Install XGBoost (Linux):
 ```
 git clone --recursive https://github.com/dmlc/xgboost
-cd xgboost
-mkdir build
-cd build
-cmake ..
-make -j4
-sudo make install
+pushd xgboost;
+mkdir build && cd build;
+cmake .. && make -j; 
+sudo make install; 
+popd
 ```
 
-#### Build libCacheSim
+### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```
 git clone https://github.com/1a1a11a/libCacheSim 
-mkdir _build
-cd _build
-cmake ..
-make -j
-[sudo] make install
+pushd libCachesim;
+mkdir _build && cd _build;
+cmake .. && make -j;
+sudo make install;
+popd;
 ```
 
-#### Test
-```
-make test
-```
+
+## Usage
+### Quickstart (cachesim binary)
+
+
+More usages in [quick start cachesim](quickstart_cachesim.md) for a tutorial. 
+
+
+
+
+### Quickstart (libCacheSim library)
+
+
 
 #### Linking with libCacheSim
 linking can be done in cmake or use pkg-config  
@@ -133,12 +141,6 @@ if you get `error while loading shared libraries`, run `sudo ldconfig`
 Please join the Google group https://groups.google.com/g/libcachesim and ask questions.
 
 
----
-### Update and Roadmap
-* June 2020: v0.1 finalized APIs, performance tuning, ready for internal use 
-* Aug 2020:  v0.2 alpha version for public 
-
-  
 ---  
 ### Contributions 
 ```
