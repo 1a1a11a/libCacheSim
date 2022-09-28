@@ -1,6 +1,6 @@
 traceReader:
 typedef struct {
-  int real_time_field;
+  int time_field;
   int obj_id_field;
   int obj_size_field;
   int op_field;

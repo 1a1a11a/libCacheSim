@@ -92,7 +92,7 @@ static reader_t *setup_binary_reader(void) {
   strcpy(init_params_bin->binary_fmt, "<3I2H2Q");
   init_params_bin->obj_size_field = 2;
   init_params_bin->obj_id_field = 6;
-  init_params_bin->real_time_field = 7;
+  init_params_bin->time_field = 7;
   reader_t *reader_bin_l =
       setup_reader(data_path, BIN_TRACE, OBJ_ID_NUM, init_params_bin);
   g_free(init_params_bin);
@@ -104,7 +104,7 @@ static reader_t *setup_csv_reader_obj_str(void) {
   _detect_data_path(data_path, "trace.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
   init_params_csv->delimiter = ',';
-  init_params_csv->real_time_field = 2;
+  init_params_csv->time_field = 2;
   init_params_csv->obj_id_field = 5;
   init_params_csv->obj_size_field = 4;
   init_params_csv->has_header = TRUE;
@@ -119,7 +119,7 @@ static reader_t *setup_csv_reader_obj_num(void) {
   _detect_data_path(data_path, "trace.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
   init_params_csv->delimiter = ',';
-  init_params_csv->real_time_field = 2;
+  init_params_csv->time_field = 2;
   init_params_csv->obj_id_field = 5;
   init_params_csv->obj_size_field = 4;
   init_params_csv->has_header = TRUE;

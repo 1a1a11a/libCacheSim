@@ -111,15 +111,15 @@ int binaryReader_setup(reader_t *const reader) {
       params->op_type = *fmt_str;
     }
 
-    if (init_params->real_time_field != 0 && params->real_time_len == 0 &&
-        init_params->real_time_field <= count_sum) {
-      params->real_time_field =
+    if (init_params->time_field != 0 && params->time_len == 0 &&
+        init_params->time_field <= count_sum) {
+      params->time_field =
           (int)reader->item_size +
-          size * (init_params->real_time_field - last_count_sum - 1);
-      params->real_time_len = *fmt_str == 's' ? count : 1;
-      if (params->real_time_len > 4)
+          size * (init_params->time_field - last_count_sum - 1);
+      params->time_len = *fmt_str == 's' ? count : 1;
+      if (params->time_len > 4)
         WARN("only support timestamp in uint32_t\n");
-      params->real_time_type = *fmt_str;
+      params->time_type = *fmt_str;
     }
 
     if (init_params->obj_size_field != 0 && params->obj_size_len == 0 &&
@@ -172,7 +172,7 @@ int binaryReader_setup(reader_t *const reader) {
   }
 
   INFO("binary fmt %s, time_field %d, obj_id_field %d, size_field %d\n",
-       params->fmt, params->real_time_field, params->obj_id_field,
+       params->fmt, params->time_field, params->obj_id_field,
        params->obj_size_field);
 
   reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
@@ -253,9 +253,9 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
     binary_extract(record, params->obj_id_field, params->obj_id_len,
                    params->obj_id_type, &(req->obj_id));
   }
-  if (params->real_time_type) {
-    binary_extract(record, params->real_time_field, params->real_time_len,
-                   params->real_time_type, &(req->real_time));
+  if (params->time_type) {
+    binary_extract(record, params->time_field, params->time_len,
+                   params->time_type, &(req->real_time));
   }
   if (params->obj_size_type) {
     binary_extract(record, params->obj_size_field, params->obj_size_len,

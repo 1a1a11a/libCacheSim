@@ -27,9 +27,9 @@ typedef struct {
   uint32_t op_len;
   char op_type;
 
-  int32_t real_time_field;
-  uint32_t real_time_len;
-  char real_time_type;
+  int32_t time_field;
+  uint32_t time_len;
+  char time_type;
 
   int32_t obj_size_field;
   uint32_t obj_size_len;

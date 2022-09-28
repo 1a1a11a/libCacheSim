@@ -23,7 +23,7 @@ obj_id_type can be `OBJ_ID_NUM` or `OBJ_ID_STR`, if the object id is a number th
 ##### Setup a csv reader 
 ```c
 reader_init_param_t init_params_csv = 
-    {.delimiter=',', .real_time_field=2, .obj_id_field=6, .obj_size_field=4, .has_header=FALSE}; 
+    {.delimiter=',', .time_field=2, .obj_id_field=6, .obj_size_field=4, .has_header=FALSE}; 
 reader_t *reader_csv_c = open_trace("data/trace.csv", CSV_TRACE, OBJ_ID_STR, &init_params_csv);
 ```
 

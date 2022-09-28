@@ -74,6 +74,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->n_read_req = 0;
   reader->mmap_offset = 0;
   reader->ignore_size_zero_req = TRUE;
+  reader->ignore_obj_size = false;
   reader->cloned = false;
   reader->item_size = 0;
   if (reader_init_param != NULL) {

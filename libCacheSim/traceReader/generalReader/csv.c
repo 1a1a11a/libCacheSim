@@ -46,7 +46,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
       req->obj_id = (uint64_t)g_quark_from_string(obj_id_str);
     }
     params->already_got_req = true;
-  } else if (params->current_field_counter == init_params->real_time_field) {
+  } else if (params->current_field_counter == init_params->time_field) {
     // this does not work, because s is not null terminated
     uint64_t ts = (uint64_t)atof((char *)s);
     // we only support 32-bit ts

@@ -36,7 +36,7 @@ extern "C" {
 /* this provides the info about each field or col in csv and binary trace
  * the field index start with 1 */
 typedef struct {
-  int real_time_field;
+  int time_field;
   int obj_id_field;
   int obj_size_field;
   int op_field;
@@ -58,15 +58,23 @@ typedef struct reader {
   char *mapped_file; /* mmap the file, this should not change during runtime */
   uint64_t mmap_offset;
 
+  struct zstd_reader *zstd_reader_p;
+  bool is_zstd_file;
+
+  bool ignore_size_zero_req;
+  /* if true, ignore the obj_size in the trace, and use size one */
+  bool ignore_obj_size;
+
   /* this is used when the reader splits a large req into multiple chunked
    * requests */
   int n_chunked_req_left;
   int64_t chunked_req_clock_time;
 
-  struct zstd_reader *zstd_reader_p;
-  bool is_zstd_file;
+  char csv_delimiter;
+  bool csv_has_header;
 
-  bool ignore_size_zero_req;
+  /* whether the object id is hashed */
+  bool obj_id_is_num;
 
   FILE *file;
   size_t file_size;
@@ -75,7 +83,7 @@ typedef struct reader {
   trace_format_e trace_format;
   obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
-  size_t item_size; /* the size of one record, used to
+  size_t item_size; /* the size of one request in binary trace, used to
                      * locate the memory location of next element,
                      * when used in vscsiReaser and binaryReader,
                      * it is a const value,
@@ -109,7 +117,7 @@ typedef struct reader {
  *  used by CSV_TRACE and PLAIN_TXT_TRACE, whether the obj_id in the trace is a
  *  number or not, if it is not a number then we will map it to uint64_t
  * @param reader_init_param some initialization parameters used by csv and
- * binary traces these include real_time_field, obj_id_field, obj_size_field,
+ * binary traces these include time_field, obj_id_field, obj_size_field,
  * op_field, ttl_field, has_header, delimiter, binary_fmt
  *
  * @return a pointer to reader_t struct, the returned reader needs to be
