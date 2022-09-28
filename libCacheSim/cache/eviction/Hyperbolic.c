@@ -2,7 +2,6 @@
 
 #include "../include/libCacheSim/evictionAlgo/Hyperbolic.h"
 
-#include "../../dataStructure/pqueue.h"
 #include "../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
@@ -10,13 +9,14 @@ extern "C" {
 #endif
 
 typedef struct Hyperbolic_params {
-  pqueue_t *pq;
+  int n_sample;
 } Hyperbolic_params_t;
+
+const char *Hyperbolic_default_params(void) { return "n_sample=64"; }
 
 void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj);
 
 cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
-                         __attribute__((unused))
                          const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("Hyperbolic", ccache_params);
   cache->cache_init = Hyperbolic_init;
@@ -28,11 +28,31 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
   cache->remove = Hyperbolic_remove;
   cache->to_evict = Hyperbolic_to_evict;
 
+  Hyperbolic_params_t *params = my_malloc(Hyperbolic_params_t);
+  params->n_sample = 64;
+  cache->eviction_params = params;
+
   if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
+    char *params_str = strdup(cache_specific_params);
+
+    while (params_str != NULL && params_str[0] != '\0') {
+      char *key = strsep((char **)&params_str, "=");
+      char *value = strsep((char **)&params_str, ";");
+      while (params_str != NULL && *params_str == ' ') {
+        params_str++;
+      }
+      if (strcasecmp(key, "n_sample") == 0) {
+        params->n_sample = atoi(value);
+      } else {
+        ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
+              key, Hyperbolic_default_params());
+        exit(1);
+      }
+    }
+
+    free(params_str);
   }
+
   if (ccache_params.consider_obj_metadata) {
     // freq + age
     cache->per_obj_metadata_size = 8 + 8;
@@ -40,45 +60,26 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
     cache->per_obj_metadata_size = 0;
   }
 
-  Hyperbolic_params_t *params = my_malloc(Hyperbolic_params_t);
-  cache->eviction_params = params;
-
-  params->pq = pqueue_init((unsigned long)8e6);
   return cache;
 }
 
 void Hyperbolic_free(cache_t *cache) {
   Hyperbolic_params_t *params = cache->eviction_params;
-  pq_node_t *node = pqueue_pop(params->pq);
-  while (node) {
-    my_free(sizeof(pq_node_t), node);
-    node = pqueue_pop(params->pq);
-  }
-  pqueue_free(params->pq);
-
+  my_free(sizeof(Hyperbolic_params_t), params);
   cache_struct_free(cache);
 }
 
 cache_ck_res_e Hyperbolic_check(cache_t *cache, const request_t *req,
                                 const bool update_cache) {
-  Hyperbolic_params_t *params = cache->eviction_params;
   cache_obj_t *cached_obj;
   cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cached_obj);
 
   if (!update_cache) return ret;
 
   if (ret == cache_ck_hit) {
-    pqueue_pri_t pri;
-    int64_t age = cache->n_req - cached_obj->hyperbolic.vtime_enter_cache;
-    pri.pri = (double)age / (double)(++cached_obj->hyperbolic.freq);
-    pqueue_change_priority(params->pq, pri,
-                           (pq_node_t *)(cached_obj->hyperbolic.pq_node));
+    cached_obj->hyperbolic.freq++;
 
     return cache_ck_hit;
-  } else if (ret == cache_ck_expired) {
-    Hyperbolic_remove_obj(cache, cached_obj);
-
-    return cache_ck_expired;
   }
 
   return cache_ck_miss;
@@ -91,54 +92,47 @@ cache_ck_res_e Hyperbolic_get(cache_t *cache, const request_t *req) {
 }
 
 void Hyperbolic_insert(cache_t *cache, const request_t *req) {
-  Hyperbolic_params_t *params = cache->eviction_params;
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    return;
+  }
 
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
   cached_obj->hyperbolic.freq = 1;
   cached_obj->hyperbolic.vtime_enter_cache = cache->n_req;
-
-  pq_node_t *node = my_malloc(pq_node_t);
-  node->obj_id = req->obj_id;
-  node->pri.pri = (double)req->obj_size;
-  pqueue_insert(params->pq, (void *)node);
-  cached_obj->hyperbolic.pq_node = node;
 }
 
 cache_obj_t *Hyperbolic_to_evict(cache_t *cache) {
   Hyperbolic_params_t *params = cache->eviction_params;
-  pq_node_t *node = (pq_node_t *)pqueue_peek(params->pq);
+  cache_obj_t *best_candidate = NULL, *sampled_obj;
+  double best_candidate_score = 1.0e16, sampled_obj_score;
+  for (int i = 0; i < params->n_sample; i++) {
+    // printf("%ld %d\n", cache->n_req, i);
+    sampled_obj = hashtable_rand_obj(cache->hashtable);
+    double age =
+        (double)(cache->n_req - sampled_obj->hyperbolic.vtime_enter_cache);
+    sampled_obj_score = 1.0e8 * (double)sampled_obj->hyperbolic.freq / age;
+    if (best_candidate_score > sampled_obj_score) {
+      best_candidate = sampled_obj;
+      best_candidate_score = sampled_obj_score;
+    }
+  }
 
-  return cache_get_obj_by_id(cache, node->obj_id);
+  DEBUG_ASSERT(best_candidate != NULL);
+  return best_candidate;
 }
 
 void Hyperbolic_evict(cache_t *cache,
                       __attribute__((unused)) const request_t *req,
-                      __attribute__((unused)) cache_obj_t *evicted_obj) {
-  Hyperbolic_params_t *params = cache->eviction_params;
-  pq_node_t *node = (pq_node_t *)pqueue_pop(params->pq);
+                      cache_obj_t *evicted_obj) {
+  cache_obj_t *obj_to_evict = Hyperbolic_to_evict(cache);
+  if (evicted_obj != NULL) {
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  }
 
-  cache_obj_t *cached_obj = cache_get_obj_by_id(cache, node->obj_id);
-  DEBUG_ASSERT(node == cached_obj->hyperbolic.pq_node);
-
-  cached_obj->hyperbolic.pq_node = NULL;
-  my_free(sizeof(pq_node_t), node);
-
-  Hyperbolic_remove_obj(cache, cached_obj);
+  cache_remove_obj_base(cache, obj_to_evict);
 }
 
 void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
-  Hyperbolic_params_t *params = cache->eviction_params;
-
-  DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj) == obj);
-  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
-
-  if (obj->hyperbolic.pq_node != NULL) {
-    /* if it is NULL, it means we have deleted the entry in pq before this */
-    pqueue_remove(params->pq, obj->hyperbolic.pq_node);
-    my_free(sizeof(pq_node_t), obj->hyperbolic.pq_node);
-    obj->hyperbolic.pq_node = NULL;
-  }
-
   cache_remove_obj_base(cache, obj);
 }
 

@@ -396,6 +396,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cc_params.hashpower -= 4;
     cache = BeladySize_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
+    cc_params.hashpower -= 4;
     cache = Hyperbolic_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lecar") == 0) {
     cache = LeCaR_init(cc_params, args->eviction_params);
