@@ -80,6 +80,9 @@ reader_t *setup_reader(const char *const trace_path,
   if (reader_init_param != NULL) {
     memcpy(&reader->init_params, reader_init_param,
            sizeof(reader_init_param_t));
+    reader->ignore_obj_size = reader_init_param->ignore_obj_size;
+    reader->ignore_size_zero_req = reader_init_param->ignore_size_zero_req;
+    reader->obj_id_is_num = reader_init_param->obj_id_is_num;
   }
 
   if (strlen(trace_path) > MAX_FILE_PATH_LEN - 1) {
@@ -370,6 +373,11 @@ int read_one_req(reader_t *const reader, request_t *const req) {
           reader->trace_type);
       exit(1);
   }
+
+  if (reader->ignore_obj_size) {
+    req->obj_size = 1;
+  }
+
   return status;
 }
 

@@ -36,6 +36,10 @@ extern "C" {
 /* this provides the info about each field or col in csv and binary trace
  * the field index start with 1 */
 typedef struct {
+  bool ignore_obj_size;
+  bool ignore_size_zero_req;
+  bool obj_id_is_num;
+
   int time_field;
   int obj_id_field;
   int obj_size_field;
