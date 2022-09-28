@@ -171,8 +171,10 @@ static inline double belady_metric(cache_t *cache, cache_obj_t *cache_obj) {
 }
 
 static inline double freq_metric(cache_t *cache, cache_obj_t *cache_obj) {
-  /* 1e-2 is to distinguish objects with frequency 0 */
-  return 1.0e6 * ((double)cache_obj->FIFO_Merge.freq + 1e-2) /
+  /* we add a small rand number to distinguish objects with frequency 0 or same
+   * frequency */
+  double r = (double)(next_rand() % 1000) / 10000.0;
+  return 1.0e6 * ((double)cache_obj->FIFO_Merge.freq + r) /
          (double)cache_obj->obj_size;
 }
 
