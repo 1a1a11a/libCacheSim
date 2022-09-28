@@ -263,8 +263,8 @@ void FIFO_Merge_evict(cache_t *cache, const request_t *req,
   }
 
   for (int i = n_evict; i < params->n_exam_obj; i++) {
-    params->metric_list[i].cache_obj->FIFO_Merge.freq =
-        (params->metric_list[i].cache_obj->FIFO_Merge.freq + 1) / 2;
+    cache_obj = params->metric_list[i].cache_obj;
+    cache_obj->FIFO_Merge.freq = (cache_obj->FIFO_Merge.freq + 1) / 2;
   }
 }
 

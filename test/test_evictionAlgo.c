@@ -91,6 +91,28 @@ static void test_FIFO(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_FIFO_Merge(gconstpointer user_data) {
+  uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
+  uint64_t miss_cnt_true[] = {91243, 87077, 82766, 78182,
+                              71638, 69212, 66147, 62359};
+  uint64_t miss_byte_true[] = {3996508672, 3823320576, 3620353024, 3395847680,
+                               3108824576, 2997791232, 2782127616, 2656834560};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {
+      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("FIFO_Merge", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
+
+  // print_results(cache, res);
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
 static void test_Belady(gconstpointer user_data) {
   /* the request byte is different from others because the oracleGeneral
    * trace removes all object size changes (and use the size of last appearance
@@ -272,12 +294,6 @@ static void test_LeCaR(gconstpointer user_data) {
       4038078976, 3744889344, 3612951040, 3607336960,
       3072626688, 2939962368, 3031271936, 2857521152,
   };
-  // uint64_t miss_cnt_true[] = {93081, 85767, 81649, 81366,
-  //                             72035, 68266, 67224, 68577};
-  // uint64_t miss_byte_true[] = {4032769024, 3756328960, 3597538304,
-  // 3609532928,
-  //                              3059255808, 2920182272, 2832361984,
-  //                              2857644032};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
@@ -473,6 +489,8 @@ int main(int argc, char *argv[]) {
 
   reader = setup_csv_reader_obj_num();
   //  reader = setup_vscsi_reader();
+  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO_Merge", reader, test_FIFO_Merge);
+
   g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
