@@ -1,7 +1,6 @@
 
-
-#include <inttypes.h>
-#include <string.h>
+#include "internal.h"
+#include <stdbool.h>
 
 /******* script to generate the code ********/
 /**
@@ -84,4 +83,47 @@ static uint64_t get_msr_wss(char *trace_path) {
   }
 
   return wss_byte;
+}
+
+bool set_hard_code_cache_size(struct arguments *args) {
+  if (strstr(args->trace_path, "cphy") != NULL) {
+    uint64_t s[10] = {500,   1000,  2000,  4000,  8000,
+                      12000, 16000, 24000, 32000, 64000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+  } else if (strstr(args->trace_path, "msr") != NULL) {
+    uint64_t wss_byte = get_msr_wss(args->trace_path);
+    double s[12] = {0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005,
+                    0.01,   0.02,   0.05,   0.1,   0.2,   0.5};
+    int pos = 0;
+    for (int i = 0; i < sizeof(s) / sizeof(double); i++) {
+      if (wss_byte * s[i] > 20 * MiB) {
+        args->cache_sizes[pos++] = wss_byte * s[i];
+      }
+    }
+
+    args->n_cache_size = pos;
+  } else if (strstr(args->trace_path, "wiki") != NULL) {
+    uint64_t s[12] = {10,  20,   50,   100,  200,  400,
+                      800, 1200, 1600, 2400, 3200, 6400};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = s[i] * 1024 * MiB;
+    }
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+  } else if (strstr(args->trace_path, "cluster") != NULL) {
+    uint64_t s[9] = {64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+  } else {
+    printf("cannot detect trace name\n");
+    uint64_t s[8] = {50, 100, 400, 1000, 2000, 4000, 8000, 16000};
+    for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
+      args->cache_sizes[i] = MiB * s[i];
+    }
+    args->n_cache_size = sizeof(s) / sizeof(uint64_t);
+  }
 }

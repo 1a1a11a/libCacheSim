@@ -34,7 +34,7 @@ typedef enum {
 typedef struct {
   int64_t slab_size;
   slab_automove_t slab_move_strategy;
-  int8_t per_obj_overhead;
+  int8_t per_obj_metadata_size;
 } slab_init_params_t;
 
 typedef struct {
@@ -62,7 +62,7 @@ typedef struct {
   uint64_t n_total_slabs;
   uint64_t n_allocated_slabs;
   GQueue *global_slab_q;       /* slab queue for slabLRC and slabLRU */
-  uint8_t per_obj_overhead; // memcached on 64-bit system has 48/56 byte
+  uint8_t per_obj_metadata_size; // memcached on 64-bit system has 48/56 byte
                                // metadata (no cas/cas)
   slab_automove_t slab_move_strategy;
 } slab_params_t;

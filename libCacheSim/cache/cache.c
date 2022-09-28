@@ -28,7 +28,6 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->cache_size = params.cache_size;
   cache->eviction_params = NULL;
   cache->default_ttl = params.default_ttl;
-  cache->per_obj_overhead = params.per_obj_overhead;
   cache->n_req = 0;
   cache->stat.cache_size = cache->cache_size;
 
@@ -66,7 +65,9 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
       .cache_size = new_size,
       .hashpower = old_cache->hashtable->hashpower,
       .default_ttl = old_cache->default_ttl,
-      .per_obj_overhead = old_cache->per_obj_overhead};
+      .consider_obj_metadata =
+          old_cache->per_obj_metadata_size == 0 ? false : true,
+  };
   assert(sizeof(cc_params) == 24);
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   return cache;
@@ -158,7 +159,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
   }
 #endif
 
-  if (req->obj_size + cache->per_obj_overhead > cache->cache_size) {
+  if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
     static __thread bool has_printed = false;
     if (!has_printed) {
       has_printed = true;
@@ -170,7 +171,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
   }
 
   if (cache_check == cache_ck_miss) {
-    while (cache->occupied_size + req->obj_size + cache->per_obj_overhead >
+    while (cache->occupied_size + req->obj_size + cache->per_obj_metadata_size >
            cache->cache_size)
       cache->evict(cache, req, NULL);
 
@@ -189,7 +190,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
-  cache->occupied_size += cache_obj->obj_size + cache->per_obj_overhead;
+  cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
   cache->n_obj += 1;
 
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
@@ -232,7 +233,7 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, const request_t *req) {
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
+  cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
   hashtable_delete(cache->hashtable, obj);
 }

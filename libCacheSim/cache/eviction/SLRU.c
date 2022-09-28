@@ -34,6 +34,12 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   cache->to_evict = SLRU_to_evict;
   cache->init_params = cache_specific_params;
 
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 8 * 2;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   cache->eviction_params = (SLRU_params_t *)malloc(sizeof(SLRU_params_t));
   SLRU_params_t *SLRU_params = (SLRU_params_t *)(cache->eviction_params);
   SLRU_params->n_seg = 4;
@@ -44,6 +50,10 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
     while (params_str != NULL && params_str[0] != '\0') {
       char *key = strsep((char **)&params_str, "=");
       char *value = strsep((char **)&params_str, ";");
+      while (params_str != NULL && *params_str == ' ') {
+        params_str++;
+      }
+
       if (strcasecmp(key, "n_seg") == 0) {
         SLRU_params->n_seg = atoi(value);
       } else {
@@ -94,7 +104,7 @@ void SLRU_cool(cache_t *cache, int i) {
 
   // If lower LRUs are full
   while (SLRU_params->LRUs[i - 1]->occupied_size + evicted_obj.obj_size +
-             cache->per_obj_overhead >
+             cache->per_obj_metadata_size >
          SLRU_params->LRUs[i - 1]->cache_size)
     SLRU_cool(cache, i - 1);
 
@@ -121,7 +131,7 @@ cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
 
         // If the upper LRU is full;
         while (SLRU_params->LRUs[i + 1]->occupied_size + req->obj_size +
-                   cache->per_obj_overhead >
+                   cache->per_obj_metadata_size >
                SLRU_params->LRUs[i + 1]->cache_size)
           SLRU_cool(cache, i + 1);
 
@@ -142,7 +152,7 @@ cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req) {
   ret = SLRU_check(cache, req, true);
 
   if (ret == cache_ck_miss || ret == cache_ck_expired) {
-    if (req->obj_size + cache->per_obj_overhead > cache->cache_size) {
+    if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
       return ret;
     }
     SLRU_insert(cache, req);
@@ -158,7 +168,7 @@ void SLRU_insert(cache_t *cache, const request_t *req) {
   // Find the lowest LRU with space for insertion
   for (i = 0; i < SLRU_params->n_seg; i++) {
     if (SLRU_params->LRUs[i]->occupied_size + req->obj_size +
-            cache->per_obj_overhead <=
+            cache->per_obj_metadata_size <=
         SLRU_params->LRUs[i]->cache_size) {
       LRU_insert(SLRU_params->LRUs[i], req);
       return;
@@ -168,7 +178,7 @@ void SLRU_insert(cache_t *cache, const request_t *req) {
   // If all LRUs are filled, evict an obj from the lowest LRU.
   if (i == SLRU_params->n_seg) {
     while (SLRU_params->LRUs[0]->occupied_size + req->obj_size +
-               cache->per_obj_overhead >
+               cache->per_obj_metadata_size >
            SLRU_params->LRUs[0]->cache_size) {
       SLRU_evict(cache, req, NULL);
     }

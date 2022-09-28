@@ -34,6 +34,11 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->insert = LHD_insert;
   cache->evict = LHD_evict;
   cache->remove = LHD_remove;
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 8 * 3 + 1; // two age, one time stamp
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
 
   auto *params = my_malloc(LHD_params_t);
   memset(params, 0, sizeof(LHD_params_t));
@@ -95,7 +100,7 @@ void LHD_insert(cache_t *cache, const request_t *req) {
   lhd->sizeMap[id] = req->obj_size;
   lhd->update(id, req);
 
-  cache->occupied_size += req->obj_size + cache->per_obj_overhead;
+  cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
   cache->n_obj += 1;
 }
 
@@ -114,7 +119,7 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   lhd->replaced(victim);
   lhd->sizeMap.erase(victimItr);
   DEBUG_ASSERT(cache->occupied_size >= victimItr->second);
-  cache->occupied_size -= (victimItr->second + cache->per_obj_overhead);
+  cache->occupied_size -= (victimItr->second + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
 
   if (evicted_obj != nullptr) {
@@ -135,7 +140,7 @@ void LHD_remove(cache_t *cache, const obj_id_t obj_id) {
     return;
   }
 
-  cache->occupied_size -= (itr->second + cache->per_obj_overhead);
+  cache->occupied_size -= (itr->second + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
   lhd->sizeMap.erase(itr);
   auto idx = lhd->indices[id];

@@ -90,7 +90,7 @@ cache_ck_res_e ARC2_check(cache_t *cache, const request_t *req,
         // remove ghost object
         params->ghost_list1_n_obj -= 1;
         params->ghost_list1_occupied_size -=
-            cache_obj->obj_size + cache->per_obj_overhead;
+            cache_obj->obj_size + cache->per_obj_metadata_size;
 
         if (cache_obj == params->lru1_ghost_tail) {
           params->lru1_ghost_tail = cache_obj->queue.prev;
@@ -105,7 +105,7 @@ cache_ck_res_e ARC2_check(cache_t *cache, const request_t *req,
         // remove ghost object
         params->ghost_list2_n_obj -= 1;
         params->ghost_list2_occupied_size -=
-            cache_obj->obj_size + cache->per_obj_overhead;
+            cache_obj->obj_size + cache->per_obj_metadata_size;
 
         if (cache_obj == params->lru2_ghost_tail) {
           params->lru2_ghost_tail = cache_obj->queue.prev;
@@ -255,7 +255,7 @@ void ARC2_evict(cache_t *cache, const request_t *req,
     DEBUG_ASSERT(obj_to_evict->ARC2.lru_id == 1);
 
     params->ghost_list1_occupied_size +=
-        obj_to_evict->obj_size + cache->per_obj_overhead;
+        obj_to_evict->obj_size + cache->per_obj_metadata_size;
     params->ghost_list1_n_obj += 1;
     if (params->lru1_ghost_tail == NULL) params->lru1_ghost_tail = obj_to_evict;
     printf("%ld size %ld-%ld evict lru1 %lu - %lu\n", cache->n_req,
@@ -270,7 +270,7 @@ void ARC2_evict(cache_t *cache, const request_t *req,
       cache_obj_t *ghost_to_evict = params->lru1_ghost_tail;
       DEBUG_ASSERT(ghost_to_evict != NULL && ghost_to_evict->ARC2.ghost);
       params->ghost_list1_occupied_size -=
-          ghost_to_evict->obj_size + cache->per_obj_overhead;
+          ghost_to_evict->obj_size + cache->per_obj_metadata_size;
       params->ghost_list1_n_obj -= 1;
       params->lru1_ghost_tail = ghost_to_evict->queue.prev;
       hashtable_delete(cache->hashtable, ghost_to_evict);
@@ -284,7 +284,7 @@ void ARC2_evict(cache_t *cache, const request_t *req,
     DEBUG_ASSERT(obj_to_evict->ARC2.lru_id == 2);
 
     params->ghost_list2_occupied_size +=
-        obj_to_evict->obj_size + cache->per_obj_overhead;
+        obj_to_evict->obj_size + cache->per_obj_metadata_size;
     params->ghost_list2_n_obj += 1;
     if (params->lru2_ghost_tail == NULL) params->lru2_ghost_tail = obj_to_evict;
     printf("%ld size %ld-%ld evict lru2 %lu - %lu\n", cache->n_req,
@@ -299,7 +299,7 @@ void ARC2_evict(cache_t *cache, const request_t *req,
       cache_obj_t *ghost_to_evict = params->lru2_ghost_tail;
       DEBUG_ASSERT(ghost_to_evict != NULL && ghost_to_evict->ARC2.ghost);
       params->ghost_list2_occupied_size -=
-          ghost_to_evict->obj_size + cache->per_obj_overhead;
+          ghost_to_evict->obj_size + cache->per_obj_metadata_size;
       params->ghost_list2_n_obj -= 1;
       params->lru2_ghost_tail = ghost_to_evict->queue.prev;
       hashtable_delete(cache->hashtable, ghost_to_evict);
@@ -312,7 +312,7 @@ void ARC2_evict(cache_t *cache, const request_t *req,
   }
 
   obj_to_evict->ARC2.ghost = true;
-  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_overhead);
+  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
 
   verify_lru(params->lru2_head, params->lru2_tail, params->lru2_n_obj);
@@ -325,7 +325,7 @@ void ARC2_remove(cache_t *cache, const obj_id_t obj_id) {
 
   if (obj != NULL) {
     if (!obj->ARC2.ghost) {
-      cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
+      cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
       cache->n_obj -= 1;
     }
 

@@ -54,7 +54,7 @@ static void test_simulator(gconstpointer user_data) {
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
                                      .default_ttl = 0,
                                      .hashpower = 16,
-                                     .per_obj_overhead = 0};
+                                     .consider_obj_metadata = false};
   cache_t *cache = LRU_init(cc_params, NULL);
   g_assert_true(cache != NULL);
 

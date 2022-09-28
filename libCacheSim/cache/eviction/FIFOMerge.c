@@ -45,6 +45,11 @@ typedef struct FIFOMerge_init_params {
 cache_t *FIFOMerge_init(const common_cache_params_t ccache_params,
                         const char *init_params) {
   cache_t *cache = cache_struct_init("FIFOMerge", ccache_params);
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 2;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
 
   FIFOMerge_params_t *params = my_malloc(FIFOMerge_params_t);
   if (init_params != NULL) {

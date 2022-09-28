@@ -32,7 +32,7 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
                req->obj_id, req->obj_size, cache->cache_size);
         }
 
-        while (cache->occupied_size + req->obj_size + cache->per_obj_overhead >
+        while (cache->occupied_size + req->obj_size + cache->per_obj_metadata_size >
                cache->cache_size)
           cache->evict(cache, req, NULL);
 

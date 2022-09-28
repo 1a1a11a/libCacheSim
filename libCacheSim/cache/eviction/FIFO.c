@@ -28,6 +28,7 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
   cache->evict = FIFO_evict;
   cache->remove = FIFO_remove;
   cache->to_evict = FIFO_to_evict;
+  cache->per_obj_metadata_size = 0;
 
   if (cache_specific_params != NULL) {
     ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,

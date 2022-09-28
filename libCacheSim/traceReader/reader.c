@@ -228,6 +228,13 @@ reader_t *setup_reader(const char *const trace_path,
   return reader;
 }
 
+/**
+ * @brief read one request from trace file
+ * 
+ * @param reader 
+ * @param req 
+ * @return 0 if success, 1 if end of file
+ */
 int read_one_req(reader_t *const reader, request_t *const req) {
   if (reader->mmap_offset >= reader->file_size - 1) {
     req->valid = FALSE;

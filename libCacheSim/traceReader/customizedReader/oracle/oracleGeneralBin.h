@@ -16,7 +16,6 @@ extern "C" {
  *
  */
 
-#include "../../../bin/cachesim/cachesim.h"
 #include "../../../include/libCacheSim/reader.h"
 
 static inline int oracleGeneralBin_setup(reader_t *reader) {

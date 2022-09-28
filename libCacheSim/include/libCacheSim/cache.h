@@ -27,7 +27,7 @@ typedef struct {
   uint64_t cache_size;
   uint64_t default_ttl;
   int32_t hashpower;
-  int32_t per_obj_overhead;
+  bool consider_obj_metadata;
 } common_cache_params_t;
 
 typedef cache_t *(*cache_init_func_ptr)(const common_cache_params_t,
@@ -99,7 +99,7 @@ struct cache {
 
   uint64_t cache_size;
   uint64_t default_ttl;
-  int32_t per_obj_overhead;
+  int32_t per_obj_metadata_size;
 
   /* cache stat is not updated automatically, it is popped up only in
    * some situations */

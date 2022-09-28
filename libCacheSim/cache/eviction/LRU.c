@@ -29,6 +29,12 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
   cache->remove = LRU_remove;
   cache->to_evict = LRU_to_evict;
 
+  if (ccache_params.consider_obj_metadata) {
+    cache->per_obj_metadata_size = 8 * 2;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   if (cache_specific_params != NULL) {
     ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
           cache_specific_params);

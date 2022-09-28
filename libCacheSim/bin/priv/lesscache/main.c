@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
   common_cache_params_t cc_params = {.cache_size = cache_size_in_mb * MiB,
                                      .hashpower = 28,
                                      .default_ttl = 86400 * 300,
-                                     .per_obj_overhead = 0};
+                                     .consider_obj_metadata = false};
   cache_t *cache;
 
 #ifdef SAMPLING_RATIO

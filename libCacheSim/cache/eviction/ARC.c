@@ -45,6 +45,13 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   cache->to_evict = ARC_to_evict;
   cache->init_params = cache_specific_params;
 
+  if (ccache_params.consider_obj_metadata) {
+    // two pointer + one history
+    cache->per_obj_metadata_size = 8 * 3;
+  } else {
+    cache->per_obj_metadata_size = 0;
+  }
+
   cache->eviction_params = my_malloc_n(ARC_params_t, 1);
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   params->ghost_list_factor = 1;
@@ -55,6 +62,9 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
     while (params_str != NULL && params_str[0] != '\0') {
       char *key = strsep((char **)&params_str, "=");
       char *value = strsep((char **)&params_str, ";");
+      while (params_str != NULL && *params_str == ' ') {
+        params_str++;
+      }
       if (strcasecmp(key, "ghost_list_factor") == 0) {
         params->ghost_list_factor = atof(value);
       } else {
@@ -160,7 +170,7 @@ void ARC_insert(cache_t *cache, const request_t *req) {
 
   params->LRU1->insert(params->LRU1, req);
 
-  cache->occupied_size += req->obj_size + cache->per_obj_overhead;
+  cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
   cache->n_obj += 1;
   DEBUG_ASSERT(cache->occupied_size ==
                params->LRU1->occupied_size + params->LRU2->occupied_size);
@@ -205,7 +215,7 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   copy_cache_obj_to_request(req_local, &obj);
   cache_ck_res_e ck = cache_evict_ghost->get(cache_evict_ghost, req_local);
   DEBUG_ASSERT(ck == cache_ck_miss);
-  cache->occupied_size -= (obj.obj_size + cache->per_obj_overhead);
+  cache->occupied_size -= (obj.obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
 }
 
@@ -224,7 +234,7 @@ void ARC_remove(cache_t *cache, const obj_id_t obj_id) {
     }
   }
 
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_overhead);
+  cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
 }
 
