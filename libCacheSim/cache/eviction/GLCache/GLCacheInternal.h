@@ -42,7 +42,6 @@ typedef struct {
 
 typedef struct learner {
   int64_t last_train_rtime;
-  int retrain_intvl;
 
   BoosterHandle booster;   // model
   DMatrixHandle train_dm;  // training data
@@ -170,14 +169,22 @@ typedef struct seg_sel {
 
 /* parameters and state related to cache */
 typedef struct {
+  /* user parameters */
   int segment_size; /* in temrs of number of objects */
   int n_merge;
-  /* retain n objects from each seg, total retain n_retain * n_merge objects */
-  int n_retain_per_seg;
   // whether we merge consecutive segments (with the first segment has the
   // lowest utility) or we merge non-consecutive segments based on ranking
   bool merge_consecutive_segs;
+  int retrain_intvl;
   train_source_e train_source_y;
+  GLCache_type_e type;
+  double rank_intvl;
+
+  /* calculated parameters */
+  /* retain n objects from each seg, total retain n_retain * n_merge objects */
+  int n_retain_per_seg;
+  /* object selection related parameters */
+  obj_score_type_e obj_score_type;
 
   // cache state
   int32_t n_in_use_segs;
@@ -206,43 +213,87 @@ typedef struct {
 
   cache_state_t cache_state;
 
-  /* cache type */
-  GLCache_type_e type;
-
-  /* object selection related parameters */
-  obj_score_type_e obj_score_type;
-
-  // //  int64_t last_hit_prob_compute_rtime;
-  // int64_t last_hit_prob_compute_vtime; /* LHD selection */
-
-  // int64_t last_hit_prob_compute_rtime; /* LHD selection */
-
-  /* in number of evictions */
-  double rank_intvl;
 } GLCache_params_t;
 
-typedef struct {
-  // how many objects in one segment
-  int segment_size;
-  // how many segments to merge (n_merge segments merge to one segment)
-  int n_merge;
-  double rank_intvl;  // how often to rank, in terms of fraction of total
-                      // segments (0.0 - 1.0)
-  // whether we merge consecutive segments (with the first segment has the
-  // lowest utility) or we merge non-consecutive segments based on ranking
-  bool merge_consecutive_segs;
-
-  int retrain_intvl;
-
-  train_source_e train_source_y;
-  GLCache_type_e type;
-} GLCache_init_params_t;
-
+/********************** init ********************/
 void init_global_params();
 void deinit_global_params();
-void check_init_params(GLCache_init_params_t *init_params);
+void check_params(GLCache_params_t *init_params);
 void init_seg_sel(cache_t *cache);
 void init_obj_sel(cache_t *cache);
-void init_learner(cache_t *cache, int retrain_intvl);
+void init_learner(cache_t *cache);
 void init_cache_state(cache_t *cache);
-void init_learner(cache_t *cache, int retrain_intvl);
+
+/********************** bucket ********************/
+/* append a segment to the end of bucket */
+void append_seg_to_bucket(GLCache_params_t *params, bucket_t *bucket,
+                          segment_t *segment);
+
+void remove_seg_from_bucket(GLCache_params_t *params, bucket_t *bucket,
+                            segment_t *segment);
+
+void print_bucket(cache_t *cache);
+
+/********************** segment ********************/
+segment_t *allocate_new_seg(cache_t *cache, int bucket_id);
+
+void link_new_seg_before_seg(GLCache_params_t *params, bucket_t *bucket,
+                             segment_t *old_seg, segment_t *new_seg);
+
+double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type,
+                   segment_t **segs, int n_segs, int n_retain);
+
+double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel);
+
+int clean_one_seg(cache_t *cache, segment_t *seg);
+
+void print_seg(cache_t *cache, segment_t *seg, int log_level);
+
+/********************** seg sel ********************/
+bucket_t *select_segs_fifo(cache_t *cache, segment_t **segs);
+
+bucket_t *select_segs_weighted_fifo(cache_t *cache, segment_t **segs);
+
+bucket_t *select_segs_rand(cache_t *cache, segment_t **segs);
+
+bucket_t *select_segs_learned(cache_t *cache, segment_t **segs);
+
+bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs);
+
+void rank_segs(cache_t *cache);
+
+/********************** eviction ********************/
+bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs);
+
+void GLCache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs);
+
+int evict_one_seg(cache_t *cache, segment_t *seg);
+
+/************* feature *****************/
+void seg_hit_update(GLCache_params_t *params, cache_obj_t *cache_obj);
+
+/************* learning *****************/
+void train(cache_t *cache);
+
+void inference(cache_t *cache);
+
+/************* data preparation *****************/
+void snapshot_segs_to_training_data(cache_t *cache);
+
+void update_train_y(GLCache_params_t *params, cache_obj_t *cache_obj);
+
+void prepare_training_data(cache_t *cache);
+
+bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool training_data,
+                     feature_t *x, train_y_t *y);
+
+/********************** helper ********************/
+#define safe_call(call)                                                      \
+  {                                                                          \
+    int err = (call);                                                        \
+    if (err != 0) {                                                          \
+      fprintf(stderr, "%s:%d: error in %s: %s\n", __FILE__, __LINE__, #call, \
+              XGBGetLastError());                                            \
+      exit(1);                                                               \
+    }                                                                        \
+  }

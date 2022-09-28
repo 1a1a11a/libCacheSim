@@ -1,12 +1,8 @@
 
-#include "eviction.h"
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "GLCacheInternal.h"
-#include "bucket.h"
 #include "const.h"
-#include "learned.h"
-#include "segSel.h"
-#include "segment.h"
+#include "obj.h"
 
 /* choose which segment to evict */
 bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {

@@ -4,11 +4,7 @@
 
 #include "../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "GLCacheInternal.h"
-#include "bucket.h"
-#include "learnInternal.h"
-#include "learned.h"
 #include "obj.h"
-#include "segment.h"
 #include "utils.h"
 
 static void debug_print_feature_matrix(const DMatrixHandle handle, int print_n_row) {

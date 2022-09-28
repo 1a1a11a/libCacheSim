@@ -2,10 +2,7 @@
    it uses FIFO, weighted FIFO, rand, ranking to choose segments 
  */
 
-#include "segSel.h"
 #include "../../../utils/include/mymath.h"
-#include "learned.h"
-#include "segment.h"
 #include "utils.h"
 
 static inline int cmp_seg(const void *p1, const void *p2) {
@@ -17,6 +14,27 @@ static inline int cmp_seg(const void *p1, const void *p2) {
   if (seg1->pred_utility < seg2->pred_utility) return -1;
   else
     return 1;
+}
+
+// check whether there are min_evictable segments to evict
+// consecutive indicates the merge eviction uses consecutive segments in the
+// chain if not, it usees segments in ranked order and may not be consecutive
+static bool is_seg_evictable(segment_t *seg, int min_evictable,
+                                    bool consecutive) {
+  if (seg == NULL) return false;
+
+  int n_evictable = 0;
+  while (seg != NULL && seg->next_seg != NULL) {
+    n_evictable += 1;
+    if (n_evictable >= min_evictable) return true;
+
+    if (consecutive) {
+      seg = seg->next_seg;
+    } else {
+      seg = seg->next_ranked_seg;
+    }
+  }
+  return n_evictable >= min_evictable;
 }
 
 // #define DEBUG_CODE

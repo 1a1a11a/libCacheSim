@@ -3,7 +3,8 @@
 #include "GLCacheInternal.h"
 
 /* append a segment to the end of bucket */
-void append_seg_to_bucket(GLCache_params_t *params, bucket_t *bucket, segment_t *segment) {
+void append_seg_to_bucket(GLCache_params_t *params, bucket_t *bucket,
+                          segment_t *segment) {
   /* because the last segment may not be full, so we link before it */
   if (bucket->last_seg == NULL) {
     DEBUG_ASSERT(bucket->first_seg == NULL);
@@ -27,7 +28,8 @@ void append_seg_to_bucket(GLCache_params_t *params, bucket_t *bucket, segment_t 
   }
 }
 
-void remove_seg_from_bucket(GLCache_params_t *params, bucket_t *bucket, segment_t *segment) {
+void remove_seg_from_bucket(GLCache_params_t *params, bucket_t *bucket,
+                            segment_t *segment) {
   if (bucket->first_seg == segment) {
     bucket->first_seg = segment->next_seg;
   }
@@ -50,64 +52,6 @@ void remove_seg_from_bucket(GLCache_params_t *params, bucket_t *bucket, segment_
     params->n_used_buckets -= 1;
   }
 }
-
-int find_bucket_idx(GLCache_params_t *params, request_t *req) {
-  // const double log_base = log(2);
-
-  return 0;
-
-  // if (params->bucket_type == NO_BUCKET) {
-  //   return 0;
-  // } else if (params->bucket_type == SIZE_BUCKET) {
-  //   return sizeof(unsigned int) * 8 - 1 - __builtin_clz(req->obj_size);
-  // } else if (params->bucket_type == CUSTOMER_BUCKET) {
-  //   return req->tenant_id % 8;
-  // } else if (params->bucket_type == BUCKET_ID_BUCKET) {
-  //   return req->ns % 8;
-  // } else if (params->bucket_type == CONTENT_TYPE_BUCKET) {
-  //   return req->content_type;
-  // } else {
-  //   printf("unknown bucket type %d\n", params->bucket_type);
-  //   abort();
-  // }
-}
-
-#ifdef USE_LHD
-void update_hit_prob_cdf(bucket_t *bkt) {
-
-  for (int cl = 0; cl < HIT_PROB_CLASSES; cl ++){
-    hitProb_t *hb = bkt->hit_prob;
-    int64_t n_hit_sum = hb->n_hit[cl][HIT_PROB_MAX_AGE - 1];
-    int64_t n_event_sum = n_hit_sum + hb->n_evict[cl][HIT_PROB_MAX_AGE - 1];
-    int64_t lifetime_uncond = n_event_sum;
-
-    for (int i = HIT_PROB_MAX_AGE - 2; i >= 0; i--) {
-
-      n_hit_sum += hb->n_hit[cl][i];
-      n_event_sum += hb->n_hit[cl][i] + hb->n_evict[cl][i];
-      lifetime_uncond += n_event_sum;
-
-      hb->n_hit[cl][i] *= LHD_EWMA;
-      hb->n_evict[cl][i] *= LHD_EWMA;
-
-      if (n_event_sum > 0) {
-        hb->hit_density[cl][i] = (double) n_hit_sum * 1e10 / lifetime_uncond;
-      } else {
-        hb->hit_density[cl][i] = 1e-8;
-      }
-    }
-
-    static int last_overflow = 0;
-    if (bkt->hit_prob->n_overflow > 0) {
-      if (bkt->hit_prob->n_overflow > last_overflow) {
-        DEBUG("bucket %d overflow %ld\n", bkt->bucket_id, (long) bkt->hit_prob->n_overflow);
-        last_overflow = bkt->hit_prob->n_overflow;
-      }
-      bkt->hit_prob->n_overflow = 0;
-    }
-  }
-}
-#endif 
 
 void print_bucket(cache_t *cache) {
   GLCache_params_t *params = cache->eviction_params;

@@ -4,7 +4,6 @@
 #define N_TRAIN_ITER 20
 #define N_MAX_VALIDATION 1000
 #define N_MAX_TRAINING_DATA 8192
-// #define N_MAX_TRAINING_DATA 16384
 #define N_INFERENCE_DATA 2048000    // large enough to not sample 
 
 /* GLCache uses cache state features, so we need to track cache states 
@@ -22,6 +21,7 @@
 /* whether the segment utility considers retain */
 #define EVICTION_CONSIDER_RETAIN 1
 
+/* used in LTR */
 #define USE_DISTINCT_CUTOFF 0
 
 /* training objective, regression or ranking */
@@ -35,12 +35,10 @@
 // #define DUMP_INFERENCE_DATA
 // #define DUMP_INFERENCE
 
-#define AGE_SHIFT_FACTOR 0
 // #define SCALE_AGE
 #define NORMALIZE_Y
 // #define RANDOMIZE_MERGE
 // #define STANDARDIZE_Y
-// #define BYTE_MISS_RATIO
 // #define TRAIN_KEEP_HALF
 // #define LOG_UTILITY
 
@@ -48,19 +46,6 @@
 /* if this is turned on, dump the online and offline calculated segment utility */
 // #define COMPARE_TRAINING_Y 1
 extern FILE *ofile_cmp_y;       // keep this even if COMPARE_TRAINING_Y is off
-
-// #define USE_LHD
-/* LHD parameters */
-/* whether we use vtime instead of rtime to determine for hit probability compute interval */
-#define LHD_USE_VTIME 0
-#define HIT_PROB_MAX_AGE 86400
-#define HIT_PROB_CLASSES 1
-//#define HIT_PROB_MAX_AGE 172800
-/* enable this on i5 slows down by two times */
-//#define HIT_PROB_MAX_AGE 864000    /* 10 day for akamai */
-#define HIT_PROB_COMPUTE_INTVL 1000000
-#define HIT_PROB_COMPUTE_INTVLR 86400
-#define LHD_EWMA 0.9
 
 // used to detect overflow
 #define MAGIC 1234567890

@@ -6,7 +6,7 @@
 
 
 /* update the cache state */
-static inline void update_cache_state(cache_t *cache, const request_t *req, cache_ck_res_e ck) {
+static void update_cache_state(cache_t *cache, const request_t *req, cache_ck_res_e ck) {
   GLCache_params_t *params = cache->eviction_params;
   cache_state_t *state = &params->cache_state;
   if (unlikely(params->start_rtime == -1)) {

@@ -1,36 +1,14 @@
 
 
-#include "segment.h"
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "const.h"
 #include "obj.h"
 #include "utils.h"
 #include "../../include/libCacheSim/mem.h"
 
-void seg_feature_shift(GLCache_params_t *params, segment_t *seg);
-
-void seg_hit_update(GLCache_params_t *params, cache_obj_t *cache_obj) {
-
-  segment_t *segment = cache_obj->GLCache.segment;
-  segment->n_hit += 1;
-
-  if (params->curr_rtime - segment->feature.last_min_window_ts >= 60) {
-    seg_feature_shift(params, segment);
-  }
-
-  segment->feature.n_hit_per_min[0] += 1;
-  segment->feature.n_hit_per_ten_min[0] += 1;
-  segment->feature.n_hit_per_hour[0] += 1;
-
-  if (cache_obj->GLCache.active == 0) {
-    segment->n_active += 1;
-    cache_obj->GLCache.active = 1;
-  }
-}
-
 /* because we use windowed feature, we need to shift the feature
  * when the window moves */
-void seg_feature_shift(GLCache_params_t *params, segment_t *seg) {
+static void seg_feature_shift(GLCache_params_t *params, segment_t *seg) {
 
   int64_t shift;
 
@@ -62,6 +40,24 @@ void seg_feature_shift(GLCache_params_t *params, segment_t *seg) {
   seg->feature.last_hour_window_ts = params->curr_rtime;
 }
 
+void seg_hit_update(GLCache_params_t *params, cache_obj_t *cache_obj) {
+  segment_t *segment = cache_obj->GLCache.segment;
+  segment->n_hit += 1;
+
+  if (params->curr_rtime - segment->feature.last_min_window_ts >= 60) {
+    seg_feature_shift(params, segment);
+  }
+
+  segment->feature.n_hit_per_min[0] += 1;
+  segment->feature.n_hit_per_ten_min[0] += 1;
+  segment->feature.n_hit_per_hour[0] += 1;
+
+  if (cache_obj->GLCache.active == 0) {
+    segment->n_active += 1;
+    cache_obj->GLCache.active = 1;
+  }
+}
+
 /* this function removes objects from hash table, but not update the cache state */
 int clean_one_seg(cache_t *cache, segment_t *seg) {
   GLCache_params_t *params = cache->eviction_params;
@@ -79,6 +75,7 @@ int clean_one_seg(cache_t *cache, segment_t *seg) {
   return n_cleaned;
 }
 
+/* deprecated */
 void clear_dynamic_features(cache_t *cache) {
   GLCache_params_t *params = cache->eviction_params;
   segment_t *curr_seg = NULL; 
@@ -142,16 +139,6 @@ void link_new_seg_before_seg(GLCache_params_t *params, bucket_t *bucket, segment
 
   params->n_in_use_segs += 1;
   bucket->n_in_use_segs += 1;
-}
-
-int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
-  int n = 0;
-  for (int i = 0; i < seg->n_obj; i++) {
-    if (seg->objs[i].GLCache.next_access_vtime > 0) {
-      n += 1;
-    }
-  }
-  return n;
 }
 
 /* find the cutoff object score to retain objects, this is used in merging multiple segments into one */
@@ -219,6 +206,16 @@ double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel) {
   }
 
   return utility;
+}
+
+static int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
+  int n = 0;
+  for (int i = 0; i < seg->n_obj; i++) {
+    if (seg->objs[i].GLCache.next_access_vtime > 0) {
+      n += 1;
+    }
+  }
+  return n;
 }
 
 void print_seg(cache_t *cache, segment_t *seg, int log_level) {

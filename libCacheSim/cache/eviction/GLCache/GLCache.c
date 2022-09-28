@@ -10,14 +10,9 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "GLCacheInternal.h"
-#include "bucket.h"
 #include "cacheState.h"
 #include "const.h"
-#include "eviction.h"
-#include "learned.h"
 #include "obj.h"
-#include "segSel.h"
-#include "segment.h"
 #include "utils.h"
 
 #ifdef __cplusplus
@@ -27,14 +22,17 @@ extern "C" {
 /* output file for comparing online and offline calculated segment utility */
 FILE *ofile_cmp_y = NULL;
 
-static void set_default_init_params(GLCache_init_params_t *init_params) {
-  init_params->segment_size = 100;
-  init_params->n_merge = 2;
-  init_params->rank_intvl = 0.02;
-  init_params->merge_consecutive_segs = true;
-  init_params->retrain_intvl = 86400;
-  init_params->train_source_y = TRAIN_Y_FROM_ONLINE;
-  init_params->type = LOGCACHE_LEARNED;
+static void set_default_params(GLCache_params_t *params) {
+  params->segment_size = 100;
+  params->n_merge = 2;
+  params->rank_intvl = 0.02;
+  params->merge_consecutive_segs = true;
+  params->retrain_intvl = 86400;
+  params->train_source_y = TRAIN_Y_FROM_ONLINE;
+  params->type = LOGCACHE_LEARNED;
+
+  params->curr_evict_bucket_idx = 0;
+  params->start_rtime = -1;
 }
 
 const char *GLCache_default_params(void) {
@@ -45,7 +43,7 @@ const char *GLCache_default_params(void) {
 }
 
 static void parse_init_params(const char *cache_specific_params,
-                              GLCache_init_params_t *params) {
+                              GLCache_params_t *params) {
   char *params_str = strdup(cache_specific_params);
 
   while (params_str != NULL && params_str[0] != '\0') {
@@ -100,29 +98,21 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("GLCache", ccache_params);
 
+  // tells hash table that the cache_obj does not need to be free when removed
+  // from the hash table
   cache->hashtable->external_obj = true;
   cache->init_params = cache_specific_params;
 
-  GLCache_init_params_t init_params;
-  set_default_init_params(&init_params);
-  parse_init_params(cache_specific_params, &init_params);
-  check_init_params(&init_params);
+  // GLCache_init_params_t init_params;
 
   GLCache_params_t *params = my_malloc(GLCache_params_t);
   memset(params, 0, sizeof(GLCache_params_t));
   cache->eviction_params = params;
+  set_default_params(params);
+  parse_init_params(cache_specific_params, params);
+  check_params(params);
 
-  params->curr_evict_bucket_idx = 0;
-  params->start_rtime = -1;
-
-  params->type = init_params.type;
-  params->train_source_y = init_params.train_source_y;
-
-  params->merge_consecutive_segs = init_params.merge_consecutive_segs;
-  params->segment_size = init_params.segment_size;
-  params->n_merge = init_params.n_merge;
   params->n_retain_per_seg = params->segment_size / params->n_merge;
-  params->rank_intvl = init_params.rank_intvl;
 
   switch (params->type) {
     case LOGCACHE_LOG_ORACLE:
@@ -140,7 +130,7 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   init_global_params();
   init_seg_sel(cache);
   init_obj_sel(cache);
-  init_learner(cache, init_params.retrain_intvl);
+  init_learner(cache);
   init_cache_state(cache);
 
   cache->cache_init = GLCache_init;
@@ -156,9 +146,7 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
       "rank interval %.2lf, merge consecutive segments %d, "
       "merge %d segments\n",
       GLCache_type_names[params->type], (double)cache->cache_size / 1048576.0,
-      // obj_score_type_names[params->obj_score_type],
-      // bucket_type_names[params->bucket_type],
-      params->learner.retrain_intvl, params->train_source_y, params->rank_intvl,
+      params->retrain_intvl, params->train_source_y, params->rank_intvl,
       params->merge_consecutive_segs, params->n_merge);
   return cache;
 }
@@ -284,7 +272,7 @@ cache_ck_res_e GLCache_get(cache_t *cache, const request_t *req) {
         l->last_train_rtime = params->curr_rtime;
         l->n_train = 0;
       } else if (params->curr_rtime - l->last_train_rtime >=
-                 l->retrain_intvl + 1) {
+                 params->retrain_intvl + 1) {
         train(cache);
         snapshot_segs_to_training_data(cache);
       }
@@ -361,24 +349,6 @@ void GLCache_evict(cache_t *cache, const request_t *req,
   params->n_evictions += 1;
 
   GLCache_merge_segs(cache, bucket, params->obj_sel.segs_to_evict);
-
-#ifdef USE_LHD
-  if (params->obj_score_type == OBJ_SCORE_HIT_DENSITY
-#if LHD_USE_VTIME
-      && params->curr_vtime - params->last_hit_prob_compute_vtime >
-             HIT_PROB_COMPUTE_INTVL) {
-#else
-      && params->curr_rtime - params->last_hit_prob_compute_rtime >
-             HIT_PROB_COMPUTE_INTVLR) {
-#endif
-    /* update hit prob for all buckets */
-    for (int i = 0; i < MAX_N_BUCKET; i++) {
-      update_hit_prob_cdf(&params->buckets[i]);
-    }
-    params->last_hit_prob_compute_vtime = params->curr_vtime;
-    params->last_hit_prob_compute_rtime = params->curr_rtime;
-  }
-#endif
 }
 
 void GLCache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

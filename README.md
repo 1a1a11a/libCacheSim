@@ -50,17 +50,6 @@ make -j4
 sudo make install
 ```
 
-Install LightBGM (Linux):
-```
-git clone --recursive https://github.com/microsoft/LightGBM
-cd LightGBM
-mkdir build
-cd build
-cmake ..
-make -j4
-sudo make install
-```
-
 #### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```

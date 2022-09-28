@@ -2,13 +2,28 @@
 
 #include "../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "GLCacheInternal.h"
-#include "bucket.h"
 #include "const.h"
-#include "learnInternal.h"
-#include "learned.h"
 #include "obj.h"
-#include "segment.h"
 #include "utils.h"
+
+static inline void resize_matrix(GLCache_params_t *params, feature_t **x_p,
+                                 pred_t **y_p, int32_t *size_p,
+                                 int64_t new_size) {
+  learner_t *learner = &params->learner;
+  if ((*size_p) != 0) {
+    // free previously allocated memory
+    // TODO: use realloc instead of free
+    DEBUG_ASSERT(*x_p != NULL);
+    my_free(sizeof(feature_t) * (*size_p) * learner->n_feature, *x_p);
+    my_free(sizeof(pred_t) * (*size_p), *y_p);
+  }
+
+  *x_p = my_malloc_n(feature_t, new_size * learner->n_feature);
+  memset(*x_p, 0, sizeof(feature_t) * new_size * learner->n_feature);
+  *y_p = my_malloc_n(pred_t, new_size);
+  memset(*y_p, 0, sizeof(pred_t) * new_size);
+  *size_p = new_size;
+}
 
 /* calculate the ranking of all segments for eviction */
 /* TODO: can sample some segments to improve throughput */
@@ -76,28 +91,6 @@ void inference_xgboost(cache_t *cache) {
   // TODO: use XGBoosterPredictFromDense to avoid copy https://github.com/dmlc/xgboost/blob/36346f8f563ef79bae94604e60483fb0bf4c2661/demo/c-api/inference/inference.c 
   safe_call(XGBoosterPredict(learner->booster, learner->inf_dm, 0, 0, 0, &out_len, &pred));
   DEBUG_ASSERT(out_len == n_segs);
-
-  // this is slower than using XGBoosterPredict
-  // char const config[] = "{\"type\": 0, \"iteration_begin\": 0, "
-  //                       "\"iteration_end\": 0, \"strict_shape\": true, "
-  //                       "\"cache_id\": 0, \"missing\": NaN}";
-  // static __thread char array_interface[128]; 
-  // snprintf(array_interface, 128, "{\"data\": [%lu, true], \"shape\": [%d, %d], "
-  //                       "\"typestr\": \"<f4\", \"version\": 3}", 
-  //                       (size_t) learner->inference_x, n_segs, learner->n_feature);
-  // uint64_t const *out_shape;
-  // uint64_t out_dim;
-
-  // safe_call(XGBoosterPredictFromDense(learner->booster, array_interface, config, NULL,
-  //                                         &out_shape, &out_dim, &pred));
-
-  // if (out_dim != 2 || out_shape[0] != n_segs || out_shape[1] != 1) {
-  //   fprintf(stderr,
-  //           "Regression model should output prediction as vector, %lu, %lu",
-  //           out_dim, out_shape[0]);
-  //   exit(-1);
-  // }
-
 
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
 
