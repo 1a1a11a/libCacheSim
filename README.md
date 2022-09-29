@@ -8,15 +8,15 @@
 
 
 ## What is libCacheSim
-* a high-performance cache simulator binary for running cache simulations. 
-* a high-performance library for building cache simulators. 
+* a high-performance **cache simulator** binary for running cache simulations. 
+* a high-performance **library** for building cache simulators. 
 
 ---
 
 ## libCacheSim features 
-* [**high performance**](performance.md) - over 20M requests/sec for a realistic trace replay. 
-* [**high memory efficiency**](performance.md) - predictable and small memory footprint ~36 bytes memory per cached object. 
-* [**performance and memory mode**](performance.md) - run the simulator in performance mode with larger memory footprint, or run it in slower low-memory mode.  
+* [**high performance**](doc/performance.md) - over 20M requests/sec for a realistic trace replay. 
+* [**high memory efficiency**](doc/performance.md) - predictable and small memory footprint ~36 bytes memory per cached object. 
+* [**performance and memory mode**](doc/performance.md) - run the simulator in performance mode with larger memory footprint, or run it in slower low-memory mode.  
 * **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation. 
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc.
 * **extensible** - easy to add traceReader or eviction algorithms either in source or load using plugin systems.    
@@ -65,7 +65,7 @@ popd;
 ### Quickstart (cachesim binary)
 
 
-More usages in [quick start cachesim](quickstart_cachesim.md) for a tutorial. 
+More usages in [quick start cachesim](doc/quickstart_cachesim.md) for a tutorial. 
 
 
 
@@ -130,11 +130,14 @@ if you get `error while loading shared libraries`, run `sudo ldconfig`
 
 ---
 ### Documentation 
-* see [quick start](quickstart.md) for a quickstart tutorial. 
-* see [API.md](API.md) for common APIs.  
+* see [quick start](doc/quickstart.md) for a quickstart tutorial. 
+* see [API.md](doc/API.md) for common APIs.  
 * see [http://mimircache.info](http://mimircache.info) for full doc. 
   
   
+### Example usages 
+* simulate a cache cluster with consistent hashing, see [example/consistent_hashing](example/consistent_hashing)
+
 
 ---
 ### Questions? 
