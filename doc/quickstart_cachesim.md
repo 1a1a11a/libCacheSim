@@ -1,5 +1,5 @@
 
-# cachesim use guide 
+# cachesim user guide 
 cachesim is a tool provided by libCacheSim to quick run some cache simulations, it supports 
 * a variety of eviction algorithms such as FIFO, LRU, LFU, ARC, SLRU, LeCaR, Cacheus, Hyperbolic, LHD, TinyLFU, Belady, and GLCache. 
 * a variety of admission algorithms such as size, bloomFilter and adaptSize. 
@@ -11,7 +11,7 @@ Meanwhile, cachesim has high-performance with low resource usages.
 ---
 
 ## Installation
-After building libCacheSim, `cachesim` should be in the build directory. 
+First, [build libCacheSim](../README.md). After building libCacheSim, `cachesim` should be in the build directory. 
 
 ---
 
@@ -40,7 +40,7 @@ Run the example vscsi trace with LRU eviction algorithm and 1GB cache size.
 ./cachesim ../data/trace.vscsi vscsi lru "1mb, 16mb, 256mb, 8gb"
 ``` 
 
-### Use auto detected cache sizes
+### Auto detect cache sizes
 cachesim can detect the working set of the trace and automatically generate cache sizes at 0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3 of the working set size. 
 You can enable this feature by setting cache size to 0 or auto.
 
@@ -70,6 +70,9 @@ You can just use the algorithm name as the eviction algorithm parameter.
 
 ```bash
 ./cachesim ../data/trace.vscsi vscsi lecar auto
+./cachesim ../data/trace.vscsi vscsi hyperbolic auto
+./cachesim ../data/trace.vscsi vscsi lhd auto
+./cachesim ../data/trace.vscsi vscsi glcache auto
 ```
 
 

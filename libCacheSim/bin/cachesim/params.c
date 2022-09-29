@@ -119,7 +119,6 @@ bool set_hard_code_cache_size(struct arguments *args) {
     }
     args->n_cache_size = sizeof(s) / sizeof(uint64_t);
   } else {
-    printf("cannot detect trace name\n");
     uint64_t s[8] = {50, 100, 400, 1000, 2000, 4000, 8000, 16000};
     for (int i = 0; i < sizeof(s) / sizeof(uint64_t); i++) {
       args->cache_sizes[i] = MiB * s[i];

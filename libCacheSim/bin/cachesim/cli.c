@@ -169,7 +169,6 @@ static void init_arg(struct arguments *args) {
   args->eviction_params = NULL;
   args->admission_algo = NULL;
   args->admission_params = NULL;
-  args->cache_size = 0;
   args->trace_type_str = NULL;
   args->trace_type_params = NULL;
   args->verbose = true;
@@ -179,6 +178,11 @@ static void init_arg(struct arguments *args) {
   args->n_thread = n_cores();
   args->warmup_sec = 0;
   args->ofilepath = NULL;
+
+  for (int i = 0; i < N_MAX_CACHE_SIZE; i++) {
+    args->cache_sizes[i] = 0;
+  }
+  args->n_cache_size = 0;
 }
 
 /**
@@ -188,7 +192,11 @@ static void init_arg(struct arguments *args) {
  * @param cache_size_str
  * @return unsigned long
  */
-static unsigned long conv_size_to_byte(char *cache_size_str) {
+static unsigned long conv_size_str_to_byte_ul(char *cache_size_str) {
+  if (strcasecmp(cache_size_str, "auto") == 0) {
+    return 0;
+  }
+
   if (strcasestr(cache_size_str, "kb") != NULL ||
       cache_size_str[strlen(cache_size_str) - 1] == 'k' ||
       cache_size_str[strlen(cache_size_str) - 1] == 'K') {
@@ -211,6 +219,31 @@ static unsigned long conv_size_to_byte(char *cache_size_str) {
   cache_size = cache_size == -1 ? 0 : cache_size;
 
   return (unsigned long)cache_size;
+}
+
+/** @brief convert the cache size string to byte,
+ * example input1: 1024,2048,4096,8192
+ * example input2: 1GB,2GB,4GB,8GB
+ * example input3: 1024
+ * example input4: 0
+ *
+ * @param cache_size_str
+ * @param args
+ * @return int
+ */
+static int conv_cache_sizes(char *cache_size_str, struct arguments *args) {
+  char *token = strtok(cache_size_str, ",");
+  args->n_cache_size = 0;
+  while (token != NULL) {
+    args->cache_sizes[args->n_cache_size++] = conv_size_str_to_byte_ul(token);
+    token = strtok(NULL, ",");
+  }
+
+  if (args->n_cache_size == 1 && args->cache_sizes[0] == 0) {
+    args->n_cache_size = 0;
+  }
+
+  return args->n_cache_size;
 }
 
 /**
@@ -250,10 +283,17 @@ static void trace_type_str_to_enum(struct arguments *args) {
  * @param args
  */
 static void print_parsed_args(struct arguments *args) {
+  char cache_size_str[1024];
+  int n = 0;
+  for (int i = 0; i < args->n_cache_size; i++) {
+    n += snprintf(cache_size_str+n, 1023 - n, "%lu,", args->cache_sizes[i]);
+    assert(n < 1024);
+  }
+
   printf(
-      "trace path: %s, trace_type %s, cache size %lu, eviction %s, ofilepath "
+      "trace path: %s, trace_type %s, cache size %s eviction %s, ofilepath "
       "%s, %d threads, warmup %lu sec",
-      args->trace_path, trace_type_str[args->trace_type], args->cache_size,
+      args->trace_path, trace_type_str[args->trace_type], cache_size_str,
       args->eviction_algo, args->ofilepath, args->n_thread, args->warmup_sec);
   if (args->trace_type_params != NULL)
     printf(", trace_type_params: %s", args->trace_type_params);
@@ -313,8 +353,10 @@ static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
 }
 
 static void set_cache_size(struct arguments *args, reader_t *reader) {
-  if (args->cache_size == 0) {
+#define N_AUTO_CACHE_SIZE 8
+  if (args->n_cache_size == 0) {
     if (set_hard_code_cache_size(args)) {
+      /* find the hard-coded cache size */
       return;
     }
 
@@ -325,10 +367,7 @@ static void set_cache_size(struct arguments *args, reader_t *reader) {
     for (int i = 0; i < N_AUTO_CACHE_SIZE; i++) {
       args->cache_sizes[i] = (long)(wss * s[i]);
     }
-  } else {
-    // use the specified cache size
-    args->cache_sizes[0] = args->cache_size;
-    args->n_cache_size = 1;
+    args->n_cache_size = N_AUTO_CACHE_SIZE;
   }
 }
 
@@ -354,7 +393,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_path = args->args[0];
   args->trace_type_str = args->args[1];
   args->eviction_algo = args->args[2];
-  args->cache_size = conv_size_to_byte(args->args[3]);
+  conv_cache_sizes(args->args[3], args);
+  // args->cache_size = conv_size_to_byte(args->args[3]);
   assert(N_ARGS == 4);
 
   if (args->ofilepath == NULL) {
@@ -369,8 +409,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   /* verify the trace type is correct */
   verify_trace_type(args);
 
-  print_parsed_args(args);
-
   reader_init_param_t reader_init_params = {
       .ignore_obj_size = args->ignore_obj_size,
       .ignore_size_zero_req = true,
@@ -381,7 +419,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   set_cache_size(args, args->reader);
 
   common_cache_params_t cc_params = {
-      .cache_size = args->cache_size,
+      .cache_size = args->cache_sizes[0],
       .hashpower = 24,
       .default_ttl = 86400 * 300,
       .consider_obj_metadata = args->consider_obj_metadata,
@@ -431,4 +469,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   }
 
   args->cache = cache;
+
+  print_parsed_args(args);
 }

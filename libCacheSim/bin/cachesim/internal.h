@@ -9,7 +9,6 @@
 
 #define N_ARGS 4
 #define N_MAX_CACHE_SIZE 128
-#define N_AUTO_CACHE_SIZE 8
 
 /* This structure is used to communicate with parse_opt. */
 struct arguments {
@@ -18,7 +17,8 @@ struct arguments {
   char *trace_path;
   char *eviction_algo;
   char *admission_algo;
-  unsigned long cache_size;
+  uint64_t cache_sizes[N_MAX_CACHE_SIZE];
+  int n_cache_size;
   unsigned long warmup_sec;
 
   char *ofilepath;
@@ -37,8 +37,6 @@ struct arguments {
   /* arguments generated */
   reader_t *reader;
   cache_t *cache;
-  uint64_t cache_sizes[N_MAX_CACHE_SIZE];
-  int n_cache_size;
 };
 
 void parse_cmd(int argc, char *argv[], struct arguments *args);
