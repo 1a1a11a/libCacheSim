@@ -52,7 +52,7 @@ void Simulator::output_mrc(string &algo, vector<uint64_t> cache_sizes, string &t
   uint64_t cache_size_array[cache_sizes.size()];
   std::copy(cache_sizes.begin(), cache_sizes.end(), cache_size_array);
 
-  auto mrc = get_miss_ratio_curve(reader, cache, cache_sizes.size(), cache_size_array, 0,
+  auto mrc = simulate_at_multi_sizes(reader, cache, cache_sizes.size(), cache_size_array, 0,
                                   std::thread::hardware_concurrency());
 
   std::ofstream mrc_ofs(mrc_output_path);

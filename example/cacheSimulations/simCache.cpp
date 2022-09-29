@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     cache_t *cache = create_cache(argv[4], cc_params, NULL); 
 
     /* see libCacheSim/include/simulator.h for sim_res_t */
-    sim_res_t *result = get_miss_ratio_curve(reader, cache, N_SIM_PTS, cache_sizes, NULL, 0, static_cast<int>(std::thread::hardware_concurrency())); 
+    sim_res_t *result = simulate_at_multi_sizes(reader, cache, N_SIM_PTS, cache_sizes, NULL, 0, static_cast<int>(std::thread::hardware_concurrency())); 
     
     FILE *ofile = fopen(argv[2], "wb"); 
     fprintf(ofile, "size hit\n"); 

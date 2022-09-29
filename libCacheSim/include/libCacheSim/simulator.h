@@ -38,7 +38,7 @@ extern "C" {
  * @return
  */
 cache_stat_t *
-get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
+simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
                      int num_of_sizes, const uint64_t *cache_sizes,
                      reader_t *warmup_reader, double warmup_frac,
                      int warmup_sec, 
@@ -64,7 +64,7 @@ get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
  * @return an array of cache_stat_t, each corresponds to one simulation
  */
 
-cache_stat_t *get_miss_ratio_curve_with_step_size(reader_t *reader_in,
+cache_stat_t *simulate_at_multi_sizes_with_step_size(reader_t *reader_in,
                                                   const cache_t *cache_in,
                                                   uint64_t step_size,
                                                   reader_t *warmup_reader,

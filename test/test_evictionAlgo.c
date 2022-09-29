@@ -40,7 +40,7 @@ static void test_LRU(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("LRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -61,7 +61,7 @@ static void test_Clock(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("Clock", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -82,7 +82,7 @@ static void test_FIFO(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -103,7 +103,7 @@ static void test_FIFO_Merge(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("FIFO_Merge", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -124,7 +124,7 @@ static void test_FIFO_Reinsertion(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("FIFO_Reinsertion", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   // print_results(cache, res);
@@ -149,7 +149,7 @@ static void test_Belady(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("Belady", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -173,7 +173,7 @@ static void test_BeladySize(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("BeladySize", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
@@ -193,7 +193,7 @@ static void test_Random(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 12, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("Random", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -214,7 +214,7 @@ static void test_LFU(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("LFU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -235,7 +235,7 @@ static void test_LFUCpp(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("LFU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -256,7 +256,7 @@ static void test_GDSF(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("GDSF", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -277,7 +277,7 @@ static void test_LHD(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("LHD", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -298,7 +298,7 @@ static void test_Hyperbolic(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 18, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("Hyperbolic", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -321,7 +321,7 @@ static void test_LeCaR(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("LeCaR", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -342,7 +342,7 @@ static void test_Cacheus(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("Cacheus", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -363,7 +363,7 @@ static void test_SR_LRU(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("SR_LRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -384,7 +384,7 @@ static void test_CR_LFU(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("CR_LFU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -405,7 +405,7 @@ static void test_LFUDA(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("LFUDA", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -427,7 +427,7 @@ static void test_MRU(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("MRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -449,7 +449,7 @@ static void test_LRU_K(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("FIFO", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -470,7 +470,7 @@ static void test_ARC(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("ARC", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
@@ -491,7 +491,7 @@ static void test_SLRU(gconstpointer user_data) {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("SLRU", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);

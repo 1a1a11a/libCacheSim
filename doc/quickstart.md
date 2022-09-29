@@ -11,6 +11,10 @@ Currently there are four main modules in libCacheSim,
 
 ---
 
+use cases:
+ cache hierarchy
+ 
+
 ### Common APIs 
 #### traceReader 
 There are mostly three APIs related to readers, *open_trace*, *close_trace*, *read_one_req*, let's take a look how
@@ -69,17 +73,17 @@ There are two components under profiler, one is the simulator for calculating mi
 *Simulator*
 ```c
 sim_res_t *
-get_miss_ratio_curve(reader_t reader*, cache_t *cache, int num_of_sizes, uint64_t *cache_sizes,
+simulate_at_multi_sizes(reader_t reader*, cache_t *cache, int num_of_sizes, uint64_t *cache_sizes,
                      reader_t *warmup_reader, double warmup_perc, int num_of_threads);
 
 sim_res_t *
-get_miss_ratio_curve_with_step_size(reader_t *reader, cache_t *cache, uint64_t step_size, 
+simulate_at_multi_sizes_with_step_size(reader_t *reader, cache_t *cache, uint64_t step_size, 
                      reader_t *warmup_reader, double warmup_perc, int num_of_threads);
 ```
 warmup_reader and warmup_perc is optional, if you do not need to warmup your cache, just pass `NULL` and 0
 . 
-`get_miss_ratio_curve` allows you to pass in an array of `cache_sizes` to simulate; 
-`get_miss_ratio_curve_with_step_size` allows you to specify the step size to simulate, the simulations will run at
+`simulate_at_multi_sizes` allows you to pass in an array of `cache_sizes` to simulate; 
+`simulate_at_multi_sizes_with_step_size` allows you to specify the step size to simulate, the simulations will run at
 cache sizes `step_size, step_size*2, step_size*3 .. cache->cache_size`. 
 
 The return result is an array of simulation results, the users are responsible for free the array. 

@@ -66,7 +66,7 @@
 //   n_threads = num_of_sizes = 4;
 //   guint64 cache_sizes[] = {268435456, 268435456, 268435456, 268435456};
 
-//   cache_stat_t *res = get_miss_ratio_curve(reader, cache, num_of_sizes,
+//   cache_stat_t *res = simulate_at_multi_sizes(reader, cache, num_of_sizes,
 //   cache_sizes, NULL, 0, n_threads);
 
 //   for (int i=0; i<num_of_sizes; i++){

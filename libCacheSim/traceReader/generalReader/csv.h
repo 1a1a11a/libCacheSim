@@ -34,15 +34,11 @@ typedef struct {
 
 } csv_params_t;
 
-// char csv_detect_delimiter(reader_t *const reader);
-
-bool csv_detect_header(reader_t *const reader);
-
 bool csv_detect_obj_id_is_num(reader_t *const reader);
 
 void csv_setup_reader(reader_t *const reader);
 
-int csv_read_one_element(reader_t *const, request_t *const);
+int csv_read_one_req(reader_t *const, request_t *const);
 
 uint64_t csv_skip_N_elements(reader_t *const reader, const uint64_t N);
 

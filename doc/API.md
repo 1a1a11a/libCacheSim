@@ -135,7 +135,7 @@ static inline void print_request(request_t *req);
 
 simulator:
 sim_res_t *
-get_miss_ratio_curve(reader_t *const reader,
+simulate_at_multi_sizes(reader_t *const reader,
                      const cache_t *const cache,
                      const gint num_of_sizes,
                      const guint64 *const cache_sizes,
@@ -145,7 +145,7 @@ get_miss_ratio_curve(reader_t *const reader,
 
 
 sim_res_t *
-get_miss_ratio_curve_with_step_size(reader_t *const reader_in,
+simulate_at_multi_sizes_with_step_size(reader_t *const reader_in,
                                     const cache_t *const cache_in,
                                     const guint64 step_size,
                                     reader_t *const warmup_reader,

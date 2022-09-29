@@ -251,7 +251,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
   size_t line_len;
   switch (reader->trace_type) {
     case CSV_TRACE:
-      status = csv_read_one_element(reader, req);
+      status = csv_read_one_req(reader, req);
       break;
     case PLAIN_TXT_TRACE:;
       //       ############ new ############

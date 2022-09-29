@@ -32,7 +32,7 @@ typedef struct simulator_multithreading_params {
   gpointer other_data;
 } sim_mt_params_t;
 
-static void get_mrc_thread(gpointer data, gpointer user_data) {
+static void _simulate(gpointer data, gpointer user_data) {
   sim_mt_params_t *params = (sim_mt_params_t *)user_data;
   int idx = GPOINTER_TO_UINT(data) - 1;
   set_rand_seed(0);
@@ -123,7 +123,7 @@ static void get_mrc_thread(gpointer data, gpointer user_data) {
   local_cache->cache_free(local_cache);
 }
 
-cache_stat_t *get_miss_ratio_curve_with_step_size(
+cache_stat_t *simulate_at_multi_sizes_with_step_size(
     reader_t *const reader, const cache_t *cache, uint64_t step_size,
     reader_t *warmup_reader, double warmup_frac, int warmup_sec,
     int num_of_threads) {
@@ -134,7 +134,7 @@ cache_stat_t *get_miss_ratio_curve_with_step_size(
     cache_sizes[i] = step_size * (i + 1);
   }
 
-  cache_stat_t *res = get_miss_ratio_curve(
+  cache_stat_t *res = simulate_at_multi_sizes(
       reader, cache, num_of_sizes, cache_sizes, warmup_reader, warmup_frac,
       warmup_sec, num_of_threads);
   my_free(sizeof(uint64_t) * num_of_sizes, cache_sizes);
@@ -156,7 +156,7 @@ cache_stat_t *get_miss_ratio_curve_with_step_size(
  * note that warmup_reader, warmup_frac and warmup_sec are mutually exclusive
  *
  */
-cache_stat_t *get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
+cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
                                    int num_of_sizes,
                                    const uint64_t *cache_sizes,
                                    reader_t *warmup_reader, double warmup_frac,
@@ -179,7 +179,7 @@ cache_stat_t *get_miss_ratio_curve(reader_t *reader, const cache_t *cache,
 
   // build the thread pool
   GThreadPool *gthread_pool = g_thread_pool_new(
-      (GFunc)get_mrc_thread, (gpointer)params, num_of_threads, TRUE, NULL);
+      (GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
   ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
 
   // start computation

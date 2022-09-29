@@ -19,7 +19,14 @@
 extern "C" {
 #endif
 
-static int count_occurrence(char *str, char c) {
+/**
+ * @brief count the number of times char c appears in string str
+ *
+ * @param str
+ * @param c
+ * @return int
+ */
+static int count_occurrence(const char *str, const char c) {
   int count = 0;
   for (int i = 0; i < strlen(str); i++) {
     if (str[i] == c) count++;
@@ -27,7 +34,17 @@ static int count_occurrence(char *str, char c) {
   return count;
 }
 
-static int read_first_line(reader_t *reader, char *in_buf, size_t in_buf_size) {
+/**
+ * @brief read the first line of the trace without changing the state of the
+ * reader
+ *
+ * @param reader
+ * @param in_buf
+ * @param in_buf_size
+ * @return int
+ */
+static int read_first_line(const reader_t *reader, char *in_buf,
+                           const size_t in_buf_size) {
   FILE *ifile = fopen(reader->trace_path, "r");
   char *buf = NULL;
   size_t n = 0;
@@ -50,19 +67,28 @@ static int read_first_line(reader_t *reader, char *in_buf, size_t in_buf_size) {
   return n;
 }
 
-char csv_detect_delimiter(reader_t *reader) {
+/**
+ * @brief detect delimiter in the csv trace
+ * it uses a simple algorithm: count the occurrence of each possible delimiter
+ * in the first line, the delimiter with the most occurrence is the delimiter
+ * we support 5 possible delimiters: '\t', ',', '|', ':'
+ *
+ * @param reader
+ * @return char
+ */
+static char csv_detect_delimiter(const reader_t *reader) {
   char first_line[1024];
   int _buf_size = read_first_line(reader, first_line, 1024);
 
-  char possible_delims[5] = {'\t', ',', ';', '|', ':'};
-  int possible_delim_counts[5] = {0, 0, 0, 0, 0};
+  char possible_delims[4] = {'\t', ',', '|', ':'};
+  int possible_delim_counts[4] = {0, 0, 0, 0};
   int max_count = 0;
   char delimiter = 0;
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     // (5-i) account for the commonality of the delimiters
     possible_delim_counts[i] =
-        count_occurrence(first_line, possible_delims[i]) * (5 - i);
+        count_occurrence(first_line, possible_delims[i]) * (4 - i);
     if (possible_delim_counts[i] > max_count) {
       max_count = possible_delim_counts[i];
       delimiter = possible_delims[i];
@@ -70,12 +96,26 @@ char csv_detect_delimiter(reader_t *reader) {
   }
 
   assert(delimiter != 0);
-  INFO("detect csv delimiter %c\n", delimiter);
+  static bool has_printed = false;
+  if (!has_printed) {
+    INFO("detect csv delimiter %c\n", delimiter);
+    has_printed = true;
+  }
 
   return delimiter;
 }
 
-bool csv_detect_header(reader_t *const reader) {
+/**
+ * @brief detect whether the csv trace has header,
+ * it uses a simple algorithm: compare the number of digits and letters in the
+ * first line, if there are more digits than letters, then the first line is not
+ * header, otherwise, the first line is header
+ *
+ * @param reader
+ * @return true
+ * @return false
+ */
+static bool csv_detect_header(const reader_t *reader) {
   char first_line[1024];
   int buf_size = read_first_line(reader, first_line, 1024);
 
@@ -103,7 +143,11 @@ bool csv_detect_header(reader_t *const reader) {
     has_header = true;
   }
 
-  INFO("detect csv trace has header %d\n", has_header);
+  static bool has_printed = false;
+  if (!has_printed) {
+    INFO("detect csv trace has header %d\n", has_header);
+    has_printed = true;
+  }
 
   return has_header;
 }
@@ -217,7 +261,7 @@ void csv_setup_reader(reader_t *const reader) {
   }
 }
 
-int csv_read_one_element(reader_t *const reader, request_t *const req) {
+int csv_read_one_req(reader_t *const reader, request_t *const req) {
   csv_params_t *params = reader->reader_params;
 
   params->req_pointer = req;

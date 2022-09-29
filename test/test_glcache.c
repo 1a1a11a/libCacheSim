@@ -44,7 +44,7 @@ static void test_GLCache_ORACLE_LOG(gconstpointer user_data) {
   cache_t *cache =
       create_test_cache("GLCache-OracleLog", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, GLCache_STEP_SIZE, NULL, 0, 0, _n_cores());
   print_results(cache, res);
   _verify_profiler_results(res, GLCache_CACHE_SIZE / GLCache_STEP_SIZE,
@@ -65,7 +65,7 @@ static void test_GLCache_ORACLE_ITEM(gconstpointer user_data) {
   cache_t *cache =
       create_test_cache("GLCache-OracleItem", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, GLCache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res);
@@ -90,7 +90,7 @@ static void test_GLCache_ORACLE_BOTH(gconstpointer user_data) {
   cache_t *cache =
       create_test_cache("GLCache-OracleBoth", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, GLCache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res);
@@ -112,7 +112,7 @@ static void test_GLCache_LEARNED_TRUE_Y(gconstpointer user_data) {
   cache_t *cache =
       create_test_cache("GLCache-LearnedTrueY", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, GLCache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res);
@@ -136,7 +136,7 @@ static void test_GLCache_LEARNED_ONLINE(gconstpointer user_data) {
   cache_t *cache =
       create_test_cache("GLCache-LearnedOnline", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  cache_stat_t *res = get_miss_ratio_curve_with_step_size(
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, GLCache_STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res);
