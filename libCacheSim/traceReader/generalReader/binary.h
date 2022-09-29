@@ -39,15 +39,7 @@ typedef struct {
   uint32_t ttl_len;
   char ttl_type;
 
-  //  int32_t extra_field1;
-  //  uint32_t extra_len1;
-  //  char extra_type1;
-
-  //  int32_t extra_field2;
-  //  uint32_t extra_len2;
-  //  char extra_type2;
-
-  char fmt[MAX_BIN_FMT_STR_LEN];
+  char *fmt;
   uint32_t num_of_fields;
 } binary_params_t;
 

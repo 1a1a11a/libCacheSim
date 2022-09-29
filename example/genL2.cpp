@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     reader_init_param_t init_parms;
     init_parms.obj_id_field = 1; 
     init_parms.obj_size_field=2; 
-    strcpy(init_parms.binary_fmt, "QI"); 
+    init_parms.binary_fmt = "QI"; 
     reader_t *reader = open_trace(argv[1], BIN_TRACE, OBJ_ID_NUM, &init_parms);
     reader_t *reader = open_trace(argv[1], TWR_TRACE, OBJ_ID_NUM, NULL); 
 

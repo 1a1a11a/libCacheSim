@@ -57,7 +57,7 @@ typedef struct {
   char delimiter;
 
   // binary reader
-  char binary_fmt[MAX_BIN_FMT_STR_LEN];
+  char *binary_fmt;
 } reader_init_param_t;
 
 struct zstd_reader;
@@ -101,7 +101,7 @@ typedef struct reader {
   uint64_t n_read_req;
   uint64_t n_total_req; /* number of requests in the trace */
 
-  char trace_path[MAX_FILE_PATH_LEN];
+  char *trace_path;
   reader_init_param_t init_params;
 
   void *reader_params;

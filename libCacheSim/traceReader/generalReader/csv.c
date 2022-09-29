@@ -48,23 +48,24 @@ static int read_first_line(const reader_t *reader, char *in_buf,
   FILE *ifile = fopen(reader->trace_path, "r");
   char *buf = NULL;
   size_t n = 0;
-  getline(&buf, &n, ifile);
+  size_t read_size = getline(&buf, &n, ifile);
 
-  if (in_buf_size < n) {
+  if (in_buf_size < read_size) {
     WARN(
         "in_buf_size %zu is smaller than the first line size %zu, "
         "the first line will be truncated",
-        in_buf_size, n);
+        in_buf_size, read_size);
   }
 
-  n = n > in_buf_size ? in_buf_size : n;
+  read_size = read_size > in_buf_size ? in_buf_size : read_size;
 
-  memcpy(in_buf, buf, n);
+  /* + 1 to copy the null terminator */
+  memcpy(in_buf, buf, read_size + 1);
 
   fclose(ifile);
   free(buf);
 
-  return n;
+  return read_size;
 }
 
 /**
@@ -77,7 +78,7 @@ static int read_first_line(const reader_t *reader, char *in_buf,
  * @return char
  */
 static char csv_detect_delimiter(const reader_t *reader) {
-  char first_line[1024];
+  char first_line[1024] = {0};
   int _buf_size = read_first_line(reader, first_line, 1024);
 
   char possible_delims[4] = {'\t', ',', '|', ':'};
@@ -116,8 +117,9 @@ static char csv_detect_delimiter(const reader_t *reader) {
  * @return false
  */
 static bool csv_detect_header(const reader_t *reader) {
-  char first_line[1024];
+  char first_line[1024] = {0};
   int buf_size = read_first_line(reader, first_line, 1024);
+  assert(buf_size < 1024);
 
   bool has_header = true;
 
@@ -163,9 +165,9 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   reader_t *reader = (reader_t *)data;
   csv_params_t *params = reader->reader_params;
   reader_init_param_t *init_params = &reader->init_params;
-  request_t *req = params->req_pointer;
+  request_t *req = params->request;
 
-  if (params->current_field_counter == init_params->obj_id_field) {
+  if (params->curr_field_idx == init_params->obj_id_field) {
     if (reader->obj_id_type == OBJ_ID_NUM) {
       // len is not correct for the last request for some reason
       // req->obj_id = str_to_obj_id((char *) s, len);
@@ -183,19 +185,19 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
       req->obj_id = (uint64_t)g_quark_from_string(obj_id_str);
     }
     params->already_got_req = true;
-  } else if (params->current_field_counter == init_params->time_field) {
+  } else if (params->curr_field_idx == init_params->time_field) {
     // this does not work, because s is not null terminated
     uint64_t ts = (uint64_t)atof((char *)s);
     // we only support 32-bit ts
     assert(ts < UINT32_MAX);
     req->real_time = ts;
-  } else if (params->current_field_counter == init_params->op_field) {
+  } else if (params->curr_field_idx == init_params->op_field) {
     fprintf(stderr, "currently operation column is not supported\n");
-  } else if (params->current_field_counter == init_params->obj_size_field) {
+  } else if (params->curr_field_idx == init_params->obj_size_field) {
     req->obj_size = (uint64_t)atoll((char *)s);
   }
 
-  params->current_field_counter++;
+  params->curr_field_idx++;
 }
 
 static inline void csv_cb2(int c, void *data) {
@@ -203,7 +205,7 @@ static inline void csv_cb2(int c, void *data) {
 
   reader_t *reader = (reader_t *)data;
   csv_params_t *params = reader->reader_params;
-  params->current_field_counter = 1;
+  params->curr_field_idx = 1;
 
   /* move the following code to csv_cb1 after detecting obj_id,
    * because putting here will cause a bug when there is no new line at the
@@ -219,7 +221,7 @@ void csv_setup_reader(reader_t *const reader) {
   reader->reader_params = (csv_params_t *)malloc(sizeof(csv_params_t));
   csv_params_t *params = reader->reader_params;
 
-  params->current_field_counter = 1;
+  params->curr_field_idx = 1;
   params->already_got_req = false;
   params->reader_end = false;
 
@@ -264,7 +266,7 @@ void csv_setup_reader(reader_t *const reader) {
 int csv_read_one_req(reader_t *const reader, request_t *const req) {
   csv_params_t *params = reader->reader_params;
 
-  params->req_pointer = req;
+  params->request = req;
   params->already_got_req = false;
 
   if (params->reader_end) {

@@ -18,17 +18,21 @@ extern "C" {
 #include "../../include/libCacheSim/reader.h"
 
 typedef struct {
-  bool has_header;
-  unsigned char delimiter;
   struct csv_parser *csv_parser;
 
-  int current_field_counter;
+  FILE *ifile;
+  char *line_buf;
+
+  /* used in cb1, each time a field is read, curr_field_idx incr */
+  int curr_field_idx;
 
   int time_field_idx;
   int obj_id_field_idx;
   int size_field_idx;
+  bool has_header;
+  unsigned char delimiter;
 
-  void *req_pointer;
+  void *request;
   bool already_got_req;
   bool reader_end;
 

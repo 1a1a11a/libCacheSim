@@ -78,18 +78,18 @@ reader_t *setup_reader(const char *const trace_path,
   if (reader_init_param != NULL) {
     memcpy(&reader->init_params, reader_init_param,
            sizeof(reader_init_param_t));
+    if (reader_init_param->binary_fmt != NULL)
+      reader->init_params.binary_fmt = strdup(reader_init_param->binary_fmt);
+
     reader->ignore_obj_size = reader_init_param->ignore_obj_size;
     reader->ignore_size_zero_req = reader_init_param->ignore_size_zero_req;
     reader->obj_id_is_num = reader_init_param->obj_id_is_num;
+  } else {
+    memset(&reader->init_params, 0, sizeof(reader_init_param_t));
   }
 
-  if (strlen(trace_path) > MAX_FILE_PATH_LEN - 1) {
-    ERROR("file name/path is too long(>%d), please use a shorter name\n",
-          MAX_FILE_PATH_LEN);
-    exit(1);
-  } else {
-    strcpy(reader->trace_path, trace_path);
-  }
+  assert(trace_path != NULL);
+  reader->trace_path = strdup(trace_path);
 
   // set up mmap region
   if ((fd = open(trace_path, O_RDONLY)) < 0) {
@@ -571,18 +571,28 @@ int close_reader(reader_t *const reader) {
     fclose(reader->file);
     csv_free(params->csv_parser);
     free(params->csv_parser);
+    free(params->line_buf);
   } else if (reader->trace_type == PLAIN_TXT_TRACE) {
     fclose(reader->file);
-  }
+  } else if (reader->trace_type == BIN_TRACE) {
+    binary_params_t *params = reader->reader_params;
+    if (params != NULL && params->fmt != NULL) {
+      free(params->fmt);
+    }
+  } 
 
 #ifdef SUPPORT_ZSTD_TRACE
   if (reader->is_zstd_file) {
     free_zstd_reader(reader->zstd_reader_p);
   }
 #endif
+  if (reader->init_params.binary_fmt != NULL) {
+    free(reader->init_params.binary_fmt);
+  }
 
   if (!reader->cloned) munmap(reader->mapped_file, reader->file_size);
   if (reader->reader_params) free(reader->reader_params);
+  free(reader->trace_path);
   free(reader);
   return 0;
 }

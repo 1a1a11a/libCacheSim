@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     reader_init_param_t init_parms;
     init_parms.obj_id_field = 1; 
     init_parms.obj_size_field=2; 
-    strcpy(init_parms.binary_fmt, "QI"); 
+    init_parms.binary_fmt = "QI"; 
 
 
     /* open trace, see quickstart.md for opening csv and binary trace */

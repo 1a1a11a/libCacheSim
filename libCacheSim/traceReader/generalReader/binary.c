@@ -7,6 +7,7 @@
 //
 
 #include "binary.h"
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,7 +22,7 @@ int binaryReader_setup(reader_t *const reader) {
   memset(reader->reader_params, 0, sizeof(binary_params_t));
   reader_init_param_t *init_params = &reader->init_params;
   binary_params_t *params = (binary_params_t *)reader->reader_params;
-  strcpy(params->fmt, init_params->binary_fmt);
+  params->fmt = strdup(init_params->binary_fmt);
 
   /* begin parsing input params and fmt */
   const char *fmt_str = reader->init_params.binary_fmt;
