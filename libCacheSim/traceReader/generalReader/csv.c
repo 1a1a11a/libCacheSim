@@ -19,12 +19,103 @@
 extern "C" {
 #endif
 
-bool find_line_ending(reader_t *const reader, char **next_line,
-                      size_t *const line_len);
+static int count_occurrence(char *str, char c) {
+  int count = 0;
+  for (int i = 0; i < strlen(str); i++) {
+    if (str[i] == c) count++;
+  }
+  return count;
+}
 
+static int read_first_line(reader_t *reader, char *in_buf, size_t in_buf_size) {
+  FILE *ifile = fopen(reader->trace_path, "r");
+  char *buf = NULL;
+  size_t n = 0;
+  getline(&buf, &n, ifile);
+
+  if (in_buf_size < n) {
+    WARN(
+        "in_buf_size %zu is smaller than the first line size %zu, "
+        "the first line will be truncated",
+        in_buf_size, n);
+  }
+
+  n = n > in_buf_size ? in_buf_size : n;
+
+  memcpy(in_buf, buf, n);
+
+  fclose(ifile);
+  free(buf);
+
+  return n;
+}
+
+char csv_detect_delimiter(reader_t *reader) {
+  char first_line[1024];
+  int _buf_size = read_first_line(reader, first_line, 1024);
+
+  char possible_delims[5] = {'\t', ',', ';', '|', ':'};
+  int possible_delim_counts[5] = {0, 0, 0, 0, 0};
+  int max_count = 0;
+  char delimiter = 0;
+
+  for (int i = 0; i < 5; i++) {
+    // (5-i) account for the commonality of the delimiters
+    possible_delim_counts[i] =
+        count_occurrence(first_line, possible_delims[i]) * (5 - i);
+    if (possible_delim_counts[i] > max_count) {
+      max_count = possible_delim_counts[i];
+      delimiter = possible_delims[i];
+    }
+  }
+
+  assert(delimiter != 0);
+  INFO("detect csv delimiter %c\n", delimiter);
+
+  return delimiter;
+}
+
+bool csv_detect_header(reader_t *const reader) {
+  char first_line[1024];
+  int buf_size = read_first_line(reader, first_line, 1024);
+
+  bool has_header = true;
+
+  int n_digit = 0, n_af = 0, n_letter = 0;
+  for (int i = 0; i < buf_size; i++) {
+    if (isdigit(first_line[i])) {
+      n_digit += 1;
+    } else if (isalpha(first_line[i])) {
+      n_letter += 1;
+      if ((first_line[i] <= 'f' && first_line[i] >= 'a') ||
+          (first_line[i] <= 'F' && first_line[i] >= 'A')) {
+        /* a-f can be hex number */
+        n_af += 1;
+      }
+    } else {
+      ;
+    }
+  }
+
+  if (n_digit > n_letter) {
+    has_header = false;
+  } else if (n_digit < n_letter - n_af) {
+    has_header = true;
+  }
+
+  INFO("detect csv trace has header %d\n", has_header);
+
+  return has_header;
+}
+
+/**
+ * @brief   call back for csv field end
+ *
+ * @param s     the string of the field
+ * @param len   length of the string
+ * @param data  user passed data: reader_t*
+ */
 static inline void csv_cb1(void *s, size_t len, void *data) {
-  /* call back for csv field end */
-
   reader_t *reader = (reader_t *)data;
   csv_params_t *params = reader->reader_params;
   reader_init_param_t *init_params = &reader->init_params;
@@ -78,12 +169,21 @@ static inline void csv_cb2(int c, void *data) {
 
 void csv_setup_reader(reader_t *const reader) {
   unsigned char options = CSV_APPEND_NULL;
+  reader->trace_format = TXT_TRACE_FORMAT;
+  reader_init_param_t *init_params = &reader->init_params;
+
   reader->reader_params = (csv_params_t *)malloc(sizeof(csv_params_t));
   csv_params_t *params = reader->reader_params;
-  reader_init_param_t *init_params = &reader->init_params;
-  reader->trace_format = TXT_TRACE_FORMAT;
 
+  params->current_field_counter = 1;
+  params->already_got_req = false;
+  params->reader_end = false;
+
+  params->time_field_idx = init_params->time_field;
+  params->obj_id_field_idx = init_params->obj_id_field;
+  params->size_field_idx = init_params->obj_size_field;
   params->csv_parser = (struct csv_parser *)malloc(sizeof(struct csv_parser));
+
   if (csv_init(params->csv_parser, options) != 0) {
     fprintf(stderr, "Failed to initialize csv parser\n");
     exit(1);
@@ -95,22 +195,25 @@ void csv_setup_reader(reader_t *const reader) {
     exit(1);
   }
 
-  params->current_field_counter = 1;
-  params->already_got_req = false;
-  params->reader_end = false;
-
   /* if we setup something here, then we must setup in the reset_reader func */
-  if (init_params->delimiter) {
-    csv_set_delim(params->csv_parser, init_params->delimiter);
-    params->delim = init_params->delimiter;
+  if (init_params->delimiter == '\0') {
+    char delim = csv_detect_delimiter(reader);
+    params->delimiter = delim;
+  } else {
+    params->delimiter = init_params->delimiter;
   }
+  csv_set_delim(params->csv_parser, params->delimiter);
 
-  if (init_params->has_header) {
+  if (!init_params->has_header_set) {
+    params->has_header = csv_detect_header(reader);
+  } else {
+    params->has_header = init_params->has_header;
+  }
+  if (params->has_header) {
     char *line_end = NULL;
     size_t line_len = 0;
     find_end_of_line(reader, &line_end, &line_len);
     reader->mmap_offset = (char *)line_end - reader->mapped_file;
-    params->has_header = init_params->has_header;
   }
 }
 
@@ -162,7 +265,7 @@ uint64_t csv_skip_N_elements(reader_t *const reader, const uint64_t N) {
   csv_free(params->csv_parser);
   csv_init(params->csv_parser, CSV_APPEND_NULL);
 
-  if (params->delim) csv_set_delim(params->csv_parser, params->delim);
+  if (params->delimiter) csv_set_delim(params->csv_parser, params->delimiter);
 
   params->reader_end = false;
   return 0;
@@ -175,7 +278,7 @@ void csv_reset_reader(reader_t *reader) {
 
   csv_free(params->csv_parser);
   csv_init(params->csv_parser, CSV_APPEND_NULL);
-  if (params->delim) csv_set_delim(params->csv_parser, params->delim);
+  if (params->delimiter) csv_set_delim(params->csv_parser, params->delimiter);
 
   if (params->has_header) {
     char *line_end = NULL;

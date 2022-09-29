@@ -19,16 +19,26 @@ extern "C" {
 
 typedef struct {
   bool has_header;
-  unsigned char delim;
+  unsigned char delimiter;
   struct csv_parser *csv_parser;
 
   int current_field_counter;
+
+  int time_field_idx;
+  int obj_id_field_idx;
+  int size_field_idx;
 
   void *req_pointer;
   bool already_got_req;
   bool reader_end;
 
 } csv_params_t;
+
+// char csv_detect_delimiter(reader_t *const reader);
+
+bool csv_detect_header(reader_t *const reader);
+
+bool csv_detect_obj_id_is_num(reader_t *const reader);
 
 void csv_setup_reader(reader_t *const reader);
 

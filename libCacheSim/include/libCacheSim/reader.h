@@ -51,6 +51,9 @@ typedef struct {
 
   // csv reader
   bool has_header;
+  // whether the has_header is set because false could indicate
+  // it is not set or it does not has a header
+  bool has_header_set;
   char delimiter;
 
   // binary reader
