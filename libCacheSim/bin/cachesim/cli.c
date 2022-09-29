@@ -286,7 +286,7 @@ static void print_parsed_args(struct arguments *args) {
   char cache_size_str[1024];
   int n = 0;
   for (int i = 0; i < args->n_cache_size; i++) {
-    n += snprintf(cache_size_str+n, 1023 - n, "%lu,", args->cache_sizes[i]);
+    n += snprintf(cache_size_str + n, 1023 - n, "%lu,", args->cache_sizes[i]);
     assert(n < 1024);
   }
 
@@ -373,9 +373,6 @@ static void set_cache_size(struct arguments *args, reader_t *reader) {
 
 // void detect_csv_format()
 
-#define CACHE_INIT(EVICTION, cc_params, eviction_params) \
-#EVICTION##_init(cc_params, eviction_params)
-#define CACHE_DEFAULT_PARAMS(EVICTION) #EVICTION##_default_params()
 
 /**
  * @brief parse the command line arguments
@@ -441,6 +438,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LHD_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfu") == 0) {
     cache = LFU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "gdsf") == 0) {
+    cache = GDSF_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfuda") == 0) {
     cache = LFUDA_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {

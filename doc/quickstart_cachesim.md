@@ -24,7 +24,8 @@ use `./cachesim --help` to get more information.
 
 ### Run a single cache simulation
 
-Run the example vscsi trace with LRU eviction algorithm and 1GB cache size.
+Run the example vscsi trace with LRU eviction algorithm and 1GB cache size. 
+Note that vscsi is a trace format, we also support csv traces. 
 
 ```bash
 # Note that no space between the cache size and the unit, unit is not case sensitive
@@ -66,7 +67,7 @@ cachesim supports the following algorithms:
 [Belady](../libCacheSim/libCacheSim/cache/eviction/Belady.c), 
 [BeladySize](../libCacheSim/libCacheSim/cache/eviction/BeladySize.c), 
 
-You can just use the algorithm name as the eviction algorithm parameter. 
+You can just use the algorithm name as the eviction algorithm parameter, for example  
 
 ```bash
 ./cachesim ../data/trace.vscsi vscsi lecar auto
@@ -77,17 +78,73 @@ You can just use the algorithm name as the eviction algorithm parameter.
 
 
 ### Use different trace types 
+We have demonstrated the use of cachesim with vscsi trace. We also support csv traces.
+To use a csv trace, we need to provide the column of *time*, *obj_id*, and *obj_size*. 
+Both time and size are optional, but many algorithms rely on time and size to work properly.
+The column starts from 1, the first column is 1, the second is 2, etc.
+Besides the column information, a csv reader also requires the delimiter and whether the csv file has a header. 
+cachesim builds in a simple delimiter and header detector, if the detected result is not correct, you can provide the correct information using `dlimiter=,`, `has_header=true`.
 
+
+```bash
+# note that the parameters are separated by colon and quoted
+./cachesim ../data/trace.csv csv lru 1gb
+
+# note that csv trace does not support UTF-8 encoding, only ASCII encoding is supported
+# because we separate parameters by colon, we do not support using colon as the csv delimiter
+
+
+# oracleGeneral is a binary format that stores time, obj_id, size, next_access_time (in reference count)
+./cachesim ../data/trace.oracleGeneral.bin oracleGeneral lru 1gb
+
+```
 
 
 
 ## Advanced usage
 
-### Ignore object size
+cachesim supports many advanced features, you can use `./cachesim --help` to get more information.
+Here we give some examples. 
+
+### Setting parameters for eviction algorithms
+Some eviction algorithms have parameters, you can set the parameters by using `-e k1=v1;k2=v2` or `--eviction_params k1=v1;k2=v2` format.
+```bash
+# run SLRU with 4 segments
+./cachesim ../data/trace.vscsi vscsi slru 1gb -e n_seg=4
+
+# print the default parameters for SLRU
+./cachesim ../data/trace.vscsi vscsi slru 1gb -e print
+```
 
 
-### Ignore object metadata size 
+### Admission algorithm
+cachesim supports the following admission algorithms: size, probabilistic, bloomFilter, adaptSize.
+You can use `-a` or `--admission_algo` to set the admission algorithm. 
+```bash
+# add a bloom filter to filter out objects on first access
+./cachesim ../data/trace.vscsi vscsi lru 1gb -a bloomFilter
+```
 
-### Use TTL
 
-### Set parameters for eviction algorithms
+### Advanced features 
+```bash
+# change output 
+./cachesim ../data/trace.vscsi vscsi lru 1gb -o my_output
+
+# ignore object size, each object has size one
+./cachesim ../data/trace.vscsi vscsi lru 1gb --ignore_obj_size=true
+
+# ignore object metadata size, different algorithms have different metadata size, this option will ignore the metadata size
+./cachesim ../data/trace.vscsi vscsi lru 1gb --consider_obj_metadata=false
+
+# use part of the trace to warm up the cache
+./cachesim ../data/trace.vscsi vscsi lru 1gb --warmup_sec=86400
+
+# Use TTL
+./cachesim ../data/trace.vscsi vscsi lru 1gb --use_ttl=true
+
+```
+
+
+
+

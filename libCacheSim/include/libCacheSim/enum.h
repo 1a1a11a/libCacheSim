@@ -12,6 +12,14 @@ extern "C" {
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 
 typedef enum {
+  my_false = 0,
+  my_true = 1, 
+  my_unknown = 2
+} my_bool;
+
+static const char *my_bool_str[] = {"false", "true", "unknown"};
+
+typedef enum {
   BINARY_TRACE_FORMAT,
   TXT_TRACE_FORMAT,
 

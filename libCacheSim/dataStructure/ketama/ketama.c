@@ -223,11 +223,11 @@ file_modtime( char* filename )
 static serverinfo
 read_server_line( char* line )
 {
-    char* delim = "\t ";
+    char* delimiter = "\t ";
     serverinfo server;
     server.memory = 0;
 
-    char* tok = strtok( line, delim );
+    char* tok = strtok( line, delimiter );
     if ( ( strlen( tok ) - 1 ) < 23 )
     {
         char* mem = 0;
@@ -236,7 +236,7 @@ read_server_line( char* line )
         strncpy( server.addr, tok, strlen( tok ) );
         server.addr[ strlen( tok ) ] = '\0';
 
-        tok = strtok( 0, delim );
+        tok = strtok( 0, delimiter );
         /* We do not check for a NULL return earlier because strtok will
          * always return at least the first token; hence never return NULL.
          */

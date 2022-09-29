@@ -9,9 +9,11 @@
 #include "csv.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <stdlib.h>
 
 #include "libcsv.h"
+#include "readerInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,7 +108,7 @@ void csv_setup_reader(reader_t *const reader) {
   if (init_params->has_header) {
     char *line_end = NULL;
     size_t line_len = 0;
-    find_line_ending(reader, &line_end, &line_len);
+    find_end_of_line(reader, &line_end, &line_len);
     reader->mmap_offset = (char *)line_end - reader->mapped_file;
     params->has_header = init_params->has_header;
   }
@@ -125,7 +127,7 @@ int csv_read_one_element(reader_t *const reader, request_t *const req) {
 
   char *line_end = NULL;
   size_t line_len;
-  bool end = find_line_ending(reader, &line_end, &line_len);
+  bool end = find_end_of_line(reader, &line_end, &line_len);
   line_len++;  // because line_len does not include LFCR
 
   if ((size_t)csv_parse(params->csv_parser,
@@ -142,9 +144,8 @@ int csv_read_one_element(reader_t *const reader, request_t *const req) {
     if (params->reader_end)
       csv_fini(params->csv_parser, csv_cb1, csv_cb2, reader);
     else {
-      ERROR("parsing csv file, current mmap_offset %lu, next string %s\n",
-            (unsigned long)reader->mmap_offset,
-            (char *)(reader->mapped_file + reader->mmap_offset));
+      ERROR("parsing csv file, current mmap_offset %lu, file size %zu\n",
+            (unsigned long)reader->mmap_offset, reader->file_size);
       abort();
     }
   }
@@ -179,7 +180,7 @@ void csv_reset_reader(reader_t *reader) {
   if (params->has_header) {
     char *line_end = NULL;
     size_t line_len = 0;
-    find_line_ending(reader, &line_end, &line_len);
+    find_end_of_line(reader, &line_end, &line_len);
     reader->mmap_offset = (char *)line_end - reader->mapped_file;
   }
   params->reader_end = false;

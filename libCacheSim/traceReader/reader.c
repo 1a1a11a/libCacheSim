@@ -25,6 +25,7 @@
 #include "generalReader/binary.h"
 #include "generalReader/csv.h"
 #include "generalReader/libcsv.h"
+#include "generalReader/readerInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,9 +37,6 @@ extern "C" {
 #define FILE_LF 0x0a
 #define FILE_COMMA 0x2c
 #define FILE_QUOTE 0x22
-
-bool find_line_ending(reader_t *const reader, char **next_line,
-                      size_t *const line_len);
 
 reader_t *setup_reader(const char *const trace_path,
                        const trace_type_e trace_type,
@@ -234,9 +232,9 @@ reader_t *setup_reader(const char *const trace_path,
 
 /**
  * @brief read one request from trace file
- * 
- * @param reader 
- * @param req 
+ *
+ * @param reader
+ * @param req
  * @return 0 if success, 1 if end of file
  */
 int read_one_req(reader_t *const reader, request_t *const req) {
@@ -258,7 +256,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     case PLAIN_TXT_TRACE:;
       //       ############ new ############
       //       char obj_id_str[MAX_OBJ_ID_LEN];
-      //       find_line_ending(reader, &line_end, &line_len);
+      //       find_end_of_line(reader, &line_end, &line_len);
       //       if (reader->obj_id_type == OBJ_ID_NUM) {
       //         req->obj_id = str_to_obj_id(
       //             (char *) (reader->mapped_file + reader->mmap_offset),
@@ -280,7 +278,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
       //       break;
       //       ############ new finish ############
       static __thread char obj_id_str[MAX_OBJ_ID_LEN];
-      find_line_ending(reader, &line_end, &line_len);
+      find_end_of_line(reader, &line_end, &line_len);
       if (reader->obj_id_type == OBJ_ID_NUM) {
         // req->obj_id = str_to_obj_id((reader->mapped_file +
         // reader->mmap_offset), line_len);
@@ -455,7 +453,7 @@ uint64_t skip_n_req_txt(reader_t *reader, uint64_t N) {
   bool end = false;
   size_t line_len;
   for (uint64_t i = 0; i < N; i++) {
-    end = find_line_ending(reader, &line_end, &line_len);
+    end = find_end_of_line(reader, &line_end, &line_len);
     reader->mmap_offset = (char *)line_end - reader->mapped_file;
     if (end) {
       if (reader->trace_type == CSV_TRACE) {
@@ -520,7 +518,7 @@ uint64_t get_num_of_req(reader_t *const reader) {
       reader->trace_type == PLAIN_TXT_TRACE) {
     char *line_end = NULL;
     size_t line_len;
-    while (!find_line_ending(reader, &line_end, &line_len)) {
+    while (!find_end_of_line(reader, &line_end, &line_len)) {
       reader->mmap_offset = (char *)line_end - reader->mapped_file;
       n_req++;
     }
@@ -629,8 +627,7 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
  * @param line_len  len of current line (does not include CRLF)
  * @return true, if end of file return false else
  */
-bool find_line_ending(reader_t *const reader, char **next_line,
-                      size_t *const line_len) {
+bool find_end_of_line(reader_t *reader, char **next_line, size_t *line_len) {
   size_t size =
       MIN(MAX_LINE_LEN, (long)reader->file_size - reader->mmap_offset);
   void *start_pos =
