@@ -163,7 +163,7 @@ static void init_arg(struct arguments *args) {
   args->ignore_obj_size = false;
   args->consider_obj_metadata = true;
   args->n_thread = n_cores();
-  args->warmup_sec = 0;
+  args->warmup_sec = -1;
   args->ofilepath = NULL;
 
   for (int i = 0; i < N_MAX_CACHE_SIZE; i++) {

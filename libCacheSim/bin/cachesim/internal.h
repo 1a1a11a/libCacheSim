@@ -19,7 +19,7 @@ struct arguments {
   char *admission_algo;
   uint64_t cache_sizes[N_MAX_CACHE_SIZE];
   int n_cache_size;
-  unsigned long warmup_sec;
+  int warmup_sec;
 
   char *ofilepath;
   char *trace_type_str;

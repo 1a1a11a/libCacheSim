@@ -183,7 +183,7 @@ void print_parsed_args(struct arguments *args) {
   n = snprintf(
       output_str, OUTPUT_STR_LEN - 1,
       "trace path: %s, trace_type %s, cache size %s eviction %s, ofilepath "
-      "%s, %d threads, warmup %lu sec",
+      "%s, %d threads, warmup %d sec",
       args->trace_path, trace_type_str[args->trace_type], cache_size_str,
       args->eviction_algo, args->ofilepath, args->n_thread, args->warmup_sec);
 
