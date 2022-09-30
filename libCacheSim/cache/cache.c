@@ -256,7 +256,13 @@ void cache_evict_LRU(cache_t *cache,
   DEBUG_ASSERT(cache->q_tail != NULL);
   DEBUG_ASSERT(cache->q_tail != cache->q_tail->queue.prev);
   cache->q_tail = cache->q_tail->queue.prev;
-  if (likely(cache->q_tail != NULL)) cache->q_tail->queue.next = NULL;
+  if (likely(cache->q_tail != NULL)) {
+    cache->q_tail->queue.next = NULL;
+  } else {
+    /* cache->n_obj has not been updated */
+    DEBUG_ASSERT(cache->n_obj == 1);
+    cache->q_head = NULL;
+  }
 
   cache_remove_obj_base(cache, obj_to_evict);
   DEBUG_ASSERT(cache->q_tail == NULL ||

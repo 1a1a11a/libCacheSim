@@ -32,6 +32,33 @@ typedef struct ARC_params {
 
 const char *ARC_default_init_params(void) { return "ghost_list_factor=1.0;"; }
 
+static void ARC_parse_params(cache_t *cache,
+                             const char *cache_specific_params) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ";");
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+    if (strcasecmp(key, "ghost_list_factor") == 0) {
+      params->ghost_list_factor = atof(value);
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("default parameters: %s\n", ARC_default_init_params());
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+
+  free(old_params_str);
+}
+
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("ARC", ccache_params);
@@ -57,24 +84,7 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   params->ghost_list_factor = 1;
 
   if (cache_specific_params != NULL) {
-    char *params_str = strdup(cache_specific_params);
-    char *old_params_str = params_str;
-
-    while (params_str != NULL && params_str[0] != '\0') {
-      char *key = strsep((char **)&params_str, "=");
-      char *value = strsep((char **)&params_str, ";");
-      while (params_str != NULL && *params_str == ' ') {
-        params_str++;
-      }
-      if (strcasecmp(key, "ghost_list_factor") == 0) {
-        params->ghost_list_factor = atof(value);
-      } else {
-        ERROR("%s does not have parameter %s\n", cache->cache_name, key);
-        exit(1);
-      }
-    }
-
-    free(old_params_str);
+    ARC_parse_params(cache, cache_specific_params);
   }
 
   /* the two LRU are initialized with cache_size, but they will not be full */
@@ -108,9 +118,6 @@ void _verify(cache_t *cache, const request_t *req) {
   if (hit1 == cache_ck_hit) DEBUG_ASSERT(hit2 != cache_ck_hit);
 
   if (hit2 == cache_ck_hit) DEBUG_ASSERT(hit1 != cache_ck_hit);
-
-  //  printf("%llu obj %llu %s %s\n", req->n_req, req->obj_id,
-  //  CACHE_CK_STATUS_STR[hit1], CACHE_CK_STATUS_STR[hit2]);
 }
 
 cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
@@ -119,6 +126,9 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
   if (req_local == NULL) req_local = new_request();
 
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+
+  int64_t old_size_lru1 = params->LRU1->occupied_size;
+  int64_t old_size_lru2 = params->LRU2->occupied_size;
 
   cache_ck_res_e hit1, hit2, hit1g = cache_ck_invalid, hit2g = cache_ck_invalid;
   /* LRU1 does not update because if it is a hit, we will move it to LRU2 */
@@ -151,11 +161,16 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
     DEBUG_ASSERT(hit2 != cache_ck_hit);
     params->LRU1->remove(params->LRU1, req->obj_id);
     params->LRU2->insert(params->LRU2, req);
+    // printf("promote to LRU2 %p %p\n", params->LRU2->q_head, params->LRU2->q_tail);
   } else if (hit2 == cache_ck_hit) {
     /* moving to the head of LRU2 has already been done */
   }
+
+  int64_t size_change_lru1 = params->LRU1->occupied_size - old_size_lru1;
+  int64_t size_change_lru2 = params->LRU2->occupied_size - old_size_lru2;
+
   cache->occupied_size =
-      params->LRU1->occupied_size + params->LRU2->occupied_size;
+      cache->occupied_size + size_change_lru1 + size_change_lru2;
   DEBUG_ASSERT(cache->n_obj == params->LRU1->n_obj + params->LRU2->n_obj);
 
   return hit;
@@ -173,8 +188,9 @@ void ARC_insert(cache_t *cache, const request_t *req) {
 
   cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
   cache->n_obj += 1;
-  DEBUG_ASSERT(cache->occupied_size ==
-               params->LRU1->occupied_size + params->LRU2->occupied_size);
+  DEBUG_ASSERT(cache->per_obj_metadata_size != 0 ||
+               cache->occupied_size ==
+                   params->LRU1->occupied_size + params->LRU2->occupied_size);
 }
 
 cache_obj_t *ARC_to_evict(cache_t *cache) {
