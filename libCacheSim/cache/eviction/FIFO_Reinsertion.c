@@ -59,6 +59,54 @@ typedef struct FIFO_Reinsertion_params {
   retain_policy_t retain_policy;
 } FIFO_Reinsertion_params_t;
 
+const char *FIFO_Reinsertion_default_init_params(void) {
+  return "n_exam_obj=100;n_keep_obj=50;retain_policy=frequency";
+}
+
+static void FIFO_Reinsertion_parse_params(cache_t *cache, const char *cache_specific_params) {
+  FIFO_Reinsertion_params_t *params = (FIFO_Reinsertion_params_t *) cache->eviction_params;
+
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ";");
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+    if (strcasecmp(key, "retain_policy") == 0) {
+      if (strcasecmp(value, "freq") == 0 || strcasecmp(value, "frequency") == 0)
+        params->retain_policy = RETAIN_POLICY_FREQUENCY;
+      else if (strcasecmp(value, "recency") == 0)
+        params->retain_policy = RETAIN_POLICY_RECENCY;
+      else if (strcasecmp(value, "belady") == 0 ||
+               strcasecmp(value, "optimal") == 0)
+        params->retain_policy = RETAIN_POLICY_BELADY;
+      else if (strcasecmp(value, "none") == 0) {
+        params->retain_policy = RETAIN_NONE;
+        params->n_keep_obj = 0;
+      } else {
+        ERROR("unknown retain_policy %s\n", value);
+        exit(1);
+      }
+    } else if (strcasecmp(key, "n_exam") == 0) {
+      params->n_exam_obj = atoi(value);
+    } else if (strcasecmp(key, "n_keep") == 0) {
+      params->n_keep_obj = atoi(value);
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("%s default parameters: %s\n", cache->cache_name,
+             FIFO_Reinsertion_default_init_params());
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+
+  free(old_params_str);
+}
+
 cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
                                const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("FIFO_Reinsertion", ccache_params);
@@ -88,42 +136,7 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
   params->next_to_merge = NULL;
 
   if (cache_specific_params != NULL) {
-    char *params_str = strdup(cache_specific_params);
-    char *old_params_str = params_str;
-
-    while (params_str != NULL && params_str[0] != '\0') {
-      char *key = strsep((char **)&params_str, "=");
-      char *value = strsep((char **)&params_str, ";");
-      while (params_str != NULL && *params_str == ' ') {
-        params_str++;
-      }
-      if (strcasecmp(key, "retain_policy") == 0) {
-        if (strcasecmp(value, "freq") == 0 ||
-            strcasecmp(value, "frequency") == 0)
-          params->retain_policy = RETAIN_POLICY_FREQUENCY;
-        else if (strcasecmp(value, "recency") == 0)
-          params->retain_policy = RETAIN_POLICY_RECENCY;
-        else if (strcasecmp(value, "belady") == 0 ||
-                 strcasecmp(value, "optimal") == 0)
-          params->retain_policy = RETAIN_POLICY_BELADY;
-        else if (strcasecmp(value, "none") == 0) {
-          params->retain_policy = RETAIN_NONE;
-          params->n_keep_obj = 0;
-        } else {
-          ERROR("unknown retain_policy %s\n", value);
-          exit(1);
-        }
-      } else if (strcasecmp(key, "n_exam") == 0) {
-        params->n_exam_obj = atoi(value);
-      } else if (strcasecmp(key, "n_keep") == 0) {
-        params->n_keep_obj = atoi(value);
-      } else {
-        ERROR("%s does not have parameter %s\n", cache->cache_name, key);
-        exit(1);
-      }
-    }
-
-    free(old_params_str);
+    FIFO_Reinsertion_parse_params(cache, cache_specific_params);
   }
 
   assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);
@@ -223,15 +236,6 @@ void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
   FIFO_Reinsertion_params_t *params =
       (FIFO_Reinsertion_params_t *)cache->eviction_params;
 
-  if (cache->n_obj <= params->n_exam_obj) {
-    // just evict one object
-    cache_obj_t *cache_obj = params->next_to_merge->queue.prev;
-    FIFO_Reinsertion_remove_obj(cache, params->next_to_merge);
-    params->next_to_merge = cache_obj;
-
-    return;
-  }
-
   // collect metric for n_exam obj, we will keep objects with larger metric
   int n_loop = 0;
   cache_obj_t *cache_obj = params->next_to_merge;
@@ -239,6 +243,15 @@ void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
     params->next_to_merge = cache->q_tail;
     cache_obj = cache->q_tail;
     n_loop = 1;
+  }
+
+  if (cache->n_obj <= params->n_exam_obj) {
+    // just evict one object
+    cache_obj_t *cache_obj = params->next_to_merge->queue.prev;
+    FIFO_Reinsertion_remove_obj(cache, params->next_to_merge);
+    params->next_to_merge = cache_obj;
+
+    return;
   }
 
   for (int i = 0; i < params->n_exam_obj; i++) {
