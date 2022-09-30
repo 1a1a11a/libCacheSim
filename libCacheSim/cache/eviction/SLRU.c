@@ -59,6 +59,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
         SLRU_params->n_seg = atoi(value);
       } else if (strcasecmp(key, "print") == 0) {
         printf("default parameters: %s\n", SLRU_default_init_params());
+        exit(0);
       } else {
         ERROR("%s does not have parameter %s\n", cache->cache_name, key);
         exit(1);
