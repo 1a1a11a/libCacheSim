@@ -70,6 +70,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->ignore_obj_size = false;
   reader->cloned = false;
   reader->item_size = 0;
+  reader->obj_id_is_num = false;
   reader->mapped_file = NULL;
   reader->mmap_offset = 0;
   if (reader_init_param != NULL) {

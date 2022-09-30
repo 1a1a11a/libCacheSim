@@ -25,5 +25,6 @@ int txt_read_one_req(reader_t *const reader, request_t *const req) {
     }
     req->obj_id = (uint64_t)g_quark_from_string(reader->line_buf);
   }
+  return 0;
 }
 

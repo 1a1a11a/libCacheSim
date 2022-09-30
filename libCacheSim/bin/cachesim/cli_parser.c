@@ -64,6 +64,7 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
   params->obj_size_field = -1;
   params->op_field = -1;
   params->ttl_field = -1;
+  params->obj_id_is_num = false;
 
   if (reader_params_str == NULL) return;
   char *params_str = strdup(reader_params_str);
@@ -86,6 +87,8 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
                strcasecmp(key, "size_col") == 0 ||
                strcasecmp(key, "size_field") == 0) {
       params->obj_size_field = atoi(value);
+    } else if (strcasecmp(key, "obj_id_is_num") == 0) {
+      params->obj_id_is_num = is_true(value);
     } else if (strcasecmp(key, "header") == 0 ||
                strcasecmp(key, "has_header") == 0) {
       params->has_header = is_true(value);
