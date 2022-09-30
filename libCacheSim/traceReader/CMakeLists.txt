@@ -2,6 +2,7 @@
 set(source 
     generalReader/binary.c 
     generalReader/csv.c 
+    generalReader/txt.c 
     generalReader/libcsv.c 
     reader.c)
 

@@ -159,8 +159,8 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
   }
 #endif
 
+  static bool has_printed = false;
   if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
-    static __thread bool has_printed = false;
     if (!has_printed) {
       has_printed = true;
       WARN("req %" PRIu64 ": obj size %" PRIu32

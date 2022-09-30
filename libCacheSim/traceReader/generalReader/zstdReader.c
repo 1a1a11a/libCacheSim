@@ -12,7 +12,6 @@
 #include <zstd.h>
 
 #include "../include/libCacheSim/logging.h"
-#include "csv.h"
 
 #define LINE_DELIM '\n'
 

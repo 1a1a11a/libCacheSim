@@ -223,10 +223,7 @@ int skip_n_req(reader_t *reader, int N);
 
 int read_one_req_above(reader_t *reader, request_t *c);
 
-// Jason: need to get rid of this, this is to change csv reader
-void set_no_eof(reader_t *reader);
-
-int go_back_one_line(reader_t *reader);
+int go_back_one_req(reader_t *reader);
 
 void reader_set_read_pos(reader_t *reader, double pos);
 

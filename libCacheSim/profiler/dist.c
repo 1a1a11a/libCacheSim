@@ -95,9 +95,8 @@ gint64 *get_future_stack_dist(reader_t *reader) {
   sTree *splay_tree = NULL;
 
   reader_set_read_pos(reader, 1.0);
-  go_back_one_line(reader);
+  go_back_one_req(reader);
   read_one_req(reader, req);
-  set_no_eof(reader);
   while (req->valid) {
     if (ts == get_num_of_req(reader)) break;
 
@@ -140,10 +139,9 @@ static gint64 *_get_last_access_dist(reader_t *reader,
     read_one_req(reader, req);
   } else if (funcPtr == read_one_req_above) {
     reader_set_read_pos(reader, 1.0);
-    if (go_back_one_line(reader) != 0)
+    if (go_back_one_req(reader) != 0)
       ERROR("error when going back one line\n");
     read_one_req(reader, req);
-    set_no_eof(reader);
   } else {
     ERROR("unknown function pointer received in %s\n", __func__);
     abort();

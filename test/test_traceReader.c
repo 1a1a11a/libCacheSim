@@ -92,7 +92,7 @@ void test_reader_more1(gconstpointer user_data) {
   // check reader rewind
   g_assert_true(skip_n_req(reader, 4) == 4);
 
-  go_back_one_line(reader);
+  go_back_one_req(reader);
   read_one_req(reader, req);
   verify_req(reader, req, 3);
 
@@ -107,7 +107,7 @@ void test_reader_more1(gconstpointer user_data) {
 
   reader_set_read_pos(reader, 1.0);
   for (i = 0; i < trace_length; i++) {
-    if (go_back_one_line(reader) != 0) break;
+    if (go_back_one_req(reader) != 0) break;
   }
   read_one_req(reader, req);
   verify_req(reader, req, 0);

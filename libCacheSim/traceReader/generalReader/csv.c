@@ -6,8 +6,6 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "csv.h"
-
 #include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -297,28 +295,6 @@ int csv_read_one_req(reader_t *const reader, request_t *const req) {
   return 0;
 }
 
-// uint64_t csv_skip_N_elements(reader_t *reader, const uint64_t N) {
-//   /* this function skips the next N requests,
-//    * on success, return N,
-//    * on failure, return the number of requests skipped
-//    */
-//   csv_params_t *csv_params = reader->reader_params;
-
-//   for (int i = 0; i < N; i++) {
-//     if (getline(&reader->line_buf, &reader->line_buf_size, reader->file) ==
-//     0) {
-//       return i;
-//     }
-//   }
-//   // csv_free(csv_params->csv_parser);
-//   // csv_init(csv_params->csv_parser, CSV_APPEND_NULL);
-
-//   // if (csv_params->delimiter)
-//   //   csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
-
-//   return 0;
-// }
-
 void csv_reset_reader(reader_t *reader) {
   csv_params_t *csv_params = reader->reader_params;
 
@@ -334,9 +310,6 @@ void csv_reset_reader(reader_t *reader) {
   }
 }
 
-void csv_set_no_eof(reader_t *reader) {
-  csv_params_t *csv_params = reader->reader_params;
-}
 
 #ifdef __cplusplus
 }

@@ -31,19 +31,6 @@ extern "C" {
 
 #define MEM_ALIGN_SIZE 128
 
-#define MAX_OBJ_ID_LEN 1024
-#define MAX_FILE_PATH_LEN 1024
-#define MAX_LINE_LEN (1024 * 8)
-#define MAX_BIN_FMT_STR_LEN 128
-
-#ifndef FALSE
-#define FALSE (0)
-#endif
-
-#ifndef TRUE
-#define TRUE (!FALSE)
-#endif
-
 #define NORMAL "\x1B[0m"
 #define RED "\x1B[31m"
 #define GREEN "\x1B[32m"
