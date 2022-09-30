@@ -158,7 +158,7 @@ static bool is_obj_id_num(reader_t *reader) {
   request_t *req = new_request();
 
   for (int i = 0; i < N_TEST; i++) {
-
+    
   }
 
 #undef N_TEST
@@ -181,8 +181,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     if (reader->obj_id_is_num) {
       req->obj_id = strtoull((char *)s, &end, 0);
       if (req->obj_id == 0 && s == end) {
-        ERROR("object id is not numeric %s\n", (char *) s);
-
+        ERROR("object id is not numeric %s\n", (char *)s);
       }
     } else {
       req->obj_id = (uint64_t)g_quark_from_string(s);
@@ -259,7 +258,8 @@ void csv_setup_reader(reader_t *const reader) {
     csv_params->has_header = init_params->has_header;
   }
   if (csv_params->has_header) {
-    getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    int _read_size =
+        getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
 
@@ -309,7 +309,8 @@ void csv_reset_reader(reader_t *reader) {
     csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
   if (csv_params->has_header) {
-    getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    int _read_size =
+        getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
 

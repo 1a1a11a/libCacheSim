@@ -368,7 +368,7 @@ int go_back_one_req(reader_t *const reader) {
                ftell(reader->file), move_size);
       fseek(reader->file, -move_size, SEEK_CUR);
       /* do not read the current pos */
-      fread(reader->line_buf, move_size - 1, 1, reader->file);
+      int _read_size = fread(reader->line_buf, move_size - 1, 1, reader->file);
       reader->line_buf[move_size - 1] = 0;
       char *last_line_end = strrchr(reader->line_buf, '\n');
       if (last_line_end == NULL) {

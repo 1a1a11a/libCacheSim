@@ -210,7 +210,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
       .ignore_size_zero_req = true,
       .obj_id_is_num = true};
   parse_reader_params(args->trace_type_params, &reader_init_params);
-  if (reader_init_params.obj_size_field == -1) {
+  if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
+      reader_init_params.obj_size_field == -1) {
     args->consider_obj_metadata = false;
     args->ignore_obj_size = true;
   }

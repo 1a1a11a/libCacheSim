@@ -74,6 +74,9 @@ You can just use the algorithm name as the eviction algorithm parameter, for exa
 ./cachesim ../data/trace.vscsi vscsi hyperbolic auto
 ./cachesim ../data/trace.vscsi vscsi lhd auto
 ./cachesim ../data/trace.vscsi vscsi glcache auto
+
+# belady and beladySize require oracle trace
+./cachesim ../data/trace.oracleGeneral oracleGeneral beladySize auto
 ```
 
 
@@ -99,13 +102,15 @@ cachesim builds in a simple delimiter and header detector, if the detected resul
 ./cachesim ../data/trace.csv csv lru 1gb -t "time_col=2; obj_id_col=5; obj_size_col=4; delimiter=,; has_header=true;"
 ```
 
-Besides csv trace, we also support txt trace and binary trace.
+Besides csv trace, we also support txt trace and binary trace. 
 ```bash
+# txt trace is a simple format that stores obj_id in each line
 ./cachesim ../data/trace.txt txt lru 1gb
 
 # oracleGeneral is a binary format that stores time, obj_id, size, next_access_time (in reference count)
 ./cachesim ../data/trace.oracleGeneral.bin oracleGeneral lru 1gb
 ```
+**We recommend using binary trace because it can be a few times faster than csv trace and uses less DRAM resources.**
 
 
 

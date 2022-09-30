@@ -188,26 +188,27 @@ void print_parsed_args(struct arguments *args) {
       args->eviction_algo, args->ofilepath, args->n_thread, args->warmup_sec);
 
   if (args->trace_type_params != NULL)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", trace_type_params: %s",
-                  args->trace_type_params);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", trace_type_params: %s", args->trace_type_params);
 
   if (args->admission_algo != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", admission: %s",
                   args->admission_algo);
 
   if (args->admission_params != NULL)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", admission_params: %s",
-                  args->admission_params);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", admission_params: %s", args->admission_params);
 
   if (args->eviction_params != NULL)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", eviction_params: %s",
-                  args->eviction_params);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", eviction_params: %s", args->eviction_params);
 
   if (args->use_ttl)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", use ttl");
 
   if (args->ignore_obj_size)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", ignore object size");
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", ignore object size");
 
   if (args->consider_obj_metadata)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
@@ -216,6 +217,8 @@ void print_parsed_args(struct arguments *args) {
   snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, "\n");
 
   INFO("%s", output_str);
+
+#undef OUTPUT_STR_LEN
 }
 
 /**
