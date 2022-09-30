@@ -62,11 +62,40 @@ typedef struct {
 
 struct zstd_reader;
 typedef struct reader {
+  /************* common fields *************/
+  uint64_t n_read_req;
+  uint64_t n_total_req; /* number of requests in the trace */
+  char *trace_path;
+  size_t file_size;
+  reader_init_param_t init_params;
+  void *reader_params;
+  trace_type_e trace_type; /* possible types see trace_type_t  */
+  trace_format_e trace_format;
+  int ver;
+  bool cloned;  // true if this is a cloned reader, else false
+
+  /************* used by binary trace *************/
   char *mapped_file; /* mmap the file, this should not change during runtime */
   uint64_t mmap_offset;
-
   struct zstd_reader *zstd_reader_p;
   bool is_zstd_file;
+  size_t item_size; /* the size of one request in binary trace, used to
+                     * locate the memory location of next element,
+                     * when used in vscsiReaser and binaryReader,
+                     * it is a const value,
+                     * when it is used in plainReader or csvReader,
+                     * it is the size of last record, it does not
+                     * include LFCR or \0 */
+
+  /************* used by txt trace *************/
+  FILE *file;
+  char *line_buf;
+  size_t line_buf_size;
+  char csv_delimiter;
+  bool csv_has_header;
+  /* whether the object id is hashed */
+  bool obj_id_is_num;
+  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
   bool ignore_size_zero_req;
   /* if true, ignore the obj_size in the trace, and use size one */
@@ -77,41 +106,8 @@ typedef struct reader {
   int n_chunked_req_left;
   int64_t chunked_req_clock_time;
 
-  char csv_delimiter;
-  bool csv_has_header;
-
-  /* whether the object id is hashed */
-  bool obj_id_is_num;
-
-  FILE *file;
-  size_t file_size;
-
-  trace_type_e trace_type; /* possible types see trace_type_t  */
-  trace_format_e trace_format;
-  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
-
-  size_t item_size; /* the size of one request in binary trace, used to
-                     * locate the memory location of next element,
-                     * when used in vscsiReaser and binaryReader,
-                     * it is a const value,
-                     * when it is used in plainReader or csvReader,
-                     * it is the size of last record, it does not
-                     * include LFCR or \0 */
-
-  uint64_t n_read_req;
-  uint64_t n_total_req; /* number of requests in the trace */
-
-  char *trace_path;
-  reader_init_param_t init_params;
-
-  void *reader_params;
-  void *other_params; /* currently not used */
 
   trace_sampling_func sampling_func; /* used for sampling */
-
-  int ver;
-
-  bool cloned;  // true if this is a cloned reader, else false
 
 } reader_t;
 
@@ -223,7 +219,7 @@ void read_first_req(reader_t *reader, request_t *req);
 
 void read_last_req(reader_t *reader, request_t *req);
 
-uint64_t skip_n_req(reader_t *reader, guint64 N);
+int skip_n_req(reader_t *reader, int N);
 
 int read_one_req_above(reader_t *reader, request_t *c);
 

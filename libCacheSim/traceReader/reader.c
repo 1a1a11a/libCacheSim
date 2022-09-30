@@ -91,7 +91,6 @@ reader_t *setup_reader(const char *const trace_path,
   assert(trace_path != NULL);
   reader->trace_path = strdup(trace_path);
 
-  // set up mmap region
   if ((fd = open(trace_path, O_RDONLY)) < 0) {
     ERROR("Unable to open '%s', %s\n", trace_path, strerror(errno));
     exit(1);
@@ -104,34 +103,43 @@ reader_t *setup_reader(const char *const trace_path,
   }
   reader->file_size = st.st_size;
 
-  reader->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-#ifdef MADV_HUGEPAGE
-  if (!_info_printed) {
-    VERBOSE("use hugepage\n");
-  }
-  madvise(reader->mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
-#endif
-  _info_printed = true;
+  if (reader->trace_type == CSV_TRACE ||
+      reader->trace_type == PLAIN_TXT_TRACE) {
+    reader->file = fopen(reader->trace_path, "rb");
+    if (reader->file == 0) {
+      ERROR("Failed to open %s: %s\n", reader->trace_path, strerror(errno));
+      exit(1);
+    }
 
-  if ((reader->mapped_file) == MAP_FAILED) {
-    close(fd);
-    reader->mapped_file = NULL;
-    ERROR("Unable to allocate %llu bytes of memory, %s\n",
-          (unsigned long long)st.st_size, strerror(errno));
-    abort();
+    reader->line_buf_size = MAX_LINE_LEN;
+    reader->line_buf = (char *)malloc(reader->line_buf_size);
+  } else {
+    // set up mmap region
+    reader->mapped_file = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+#ifdef MADV_HUGEPAGE
+    if (!_info_printed) {
+      VERBOSE("use hugepage\n");
+    }
+    madvise(reader->mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
+#endif
+    _info_printed = true;
+
+    if ((reader->mapped_file) == MAP_FAILED) {
+      close(fd);
+      reader->mapped_file = NULL;
+      ERROR("Unable to allocate %llu bytes of memory, %s\n",
+            (unsigned long long)st.st_size, strerror(errno));
+      abort();
+    }
   }
 
   switch (trace_type) {
     case CSV_TRACE:
+      reader->trace_format = TXT_TRACE_FORMAT;
       csv_setup_reader(reader);
       break;
     case PLAIN_TXT_TRACE:
       reader->trace_format = TXT_TRACE_FORMAT;
-      reader->file = fopen(trace_path, "r");
-      if (reader->file == NULL) {
-        ERROR("open trace file %s failed: %s\n", trace_path, strerror(errno));
-        exit(1);
-      }
       break;
     case BIN_TRACE:
       binaryReader_setup(reader);
@@ -204,7 +212,7 @@ reader_t *setup_reader(const char *const trace_path,
       break;
     default:
       ERROR("cannot recognize trace type: %c\n", reader->trace_type);
-      exit(1);
+      abort();
   }
 
   if (reader->trace_format == BINARY_TRACE_FORMAT && !reader->is_zstd_file &&
@@ -243,6 +251,8 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     return 1;
   }
 
+  size_t offset_before_read = reader->mmap_offset;
+
   int status;
   reader->n_read_req += 1;
   req->hv = 0;
@@ -251,50 +261,29 @@ int read_one_req(reader_t *const reader, request_t *const req) {
   size_t line_len;
   switch (reader->trace_type) {
     case CSV_TRACE:
+      offset_before_read = ftell(reader->file);
       status = csv_read_one_req(reader, req);
       break;
     case PLAIN_TXT_TRACE:;
-      //       ############ new ############
-      //       char obj_id_str[MAX_OBJ_ID_LEN];
-      //       find_end_of_line(reader, &line_end, &line_len);
-      //       if (reader->obj_id_type == OBJ_ID_NUM) {
-      //         req->obj_id = str_to_obj_id(
-      //             (char *) (reader->mapped_file + reader->mmap_offset),
-      //             line_len);
-      //       } else {
-      //         if (line_len >= MAX_OBJ_ID_LEN) {
-      //           line_len = MAX_OBJ_ID_LEN - 1;
-      //           ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n",
-      //                 line_len, MAX_OBJ_ID_LEN);
-      //           abort();
-      //         }
-      //         memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset,
-      //         line_len); obj_id_str[line_len] = 0; ERROR("do not support
-      //         csv\n"); abort();
-      // //        req->obj_id = (uint64_t) g_quark_from_string(obj_id_str);
-      //       }
-      //       reader->mmap_offset = (char *) line_end - reader->mapped_file;
-      //       status = 0;
-      //       break;
-      //       ############ new finish ############
-      static __thread char obj_id_str[MAX_OBJ_ID_LEN];
-      find_end_of_line(reader, &line_end, &line_len);
+      offset_before_read = ftell(reader->file);
+      int read_size = getline((char **)&reader->line_buf,
+                              &reader->line_buf_size, reader->file);
+      if (read_size == -1) {
+        req->valid = FALSE;
+        return 1;
+      }
       if (reader->obj_id_type == OBJ_ID_NUM) {
-        // req->obj_id = str_to_obj_id((reader->mapped_file +
-        // reader->mmap_offset), line_len);
-        req->obj_id = atoll(reader->mapped_file + reader->mmap_offset);
-      } else {
-        if (line_len >= MAX_OBJ_ID_LEN) {
-          ERROR("obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n", line_len,
-                MAX_OBJ_ID_LEN);
+        char *end;
+        req->obj_id = strtoull(reader->line_buf, &end, 0);
+        if (req->obj_id == 0 && end == reader->line_buf) {
+          ERROR("invalid object id: %s\n", reader->line_buf);
           abort();
         }
-        memcpy(obj_id_str, reader->mapped_file + reader->mmap_offset, line_len);
-        obj_id_str[line_len] = 0;
-        req->obj_id = (uint64_t)g_quark_from_string(obj_id_str);
+      } else {
+        if (reader->line_buf[read_size - 1] == '\n')
+          reader->line_buf[read_size - 1] = 0;
+        req->obj_id = (uint64_t)g_quark_from_string(reader->line_buf);
       }
-      reader->mmap_offset = (char *)line_end - reader->mapped_file;
-      status = 0;
       break;
     case BIN_TRACE:
       status = binary_read_one_req(reader, req);
@@ -369,33 +358,69 @@ int read_one_req(reader_t *const reader, request_t *const req) {
       ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
           reader->trace_type);
-      exit(1);
+      abort();
   }
 
   if (reader->ignore_obj_size) {
     req->obj_size = 1;
   }
 
+  VERBOSE("read one req: time %lu, obj_id %lu, size %u at offset %zu\n", req->real_time,
+           req->obj_id, req->obj_size, offset_before_read);
+
   return status;
 }
 
+/**
+ * @brief from current line/request, go back one, the next read will
+ * get the current request
+ *
+ * @param reader
+ * @return int
+ */
 int go_back_one_line(reader_t *const reader) {
   switch (reader->trace_format) {
-    case TXT_TRACE_FORMAT:
-      if (reader->mmap_offset == 0) return 1;
-
-      const char *cp = reader->mapped_file + reader->mmap_offset - 1;
-      while (isspace(*cp)) {
-        if (--cp < reader->mapped_file) return 1;
+    case TXT_TRACE_FORMAT:;
+      size_t curr_offset = ftell(reader->file);
+      size_t move_size =
+          MAX_LINE_LEN - 1 > curr_offset ? curr_offset : MAX_LINE_LEN - 1;
+      VVERBOSE("go back one line prev pos %ld, move size %zu\n",
+               ftell(reader->file), move_size);
+      fseek(reader->file, -move_size, SEEK_CUR);
+      /* do not read the current pos */
+      fread(reader->line_buf, move_size - 1, 1, reader->file);
+      reader->line_buf[move_size - 1] = 0;
+      char *last_line_end = strrchr(reader->line_buf, '\n');
+      if (last_line_end == NULL) {
+        if (move_size < MAX_LINE_LEN - 1) {
+          fseek(reader->file, 0, SEEK_SET);
+          printf("go back one line cannot find new line, set offset to %zu\n",
+                 ftell(reader->file));
+        }
+        return 1;
       }
-      /** cp now points to either the last non-CRLF of current line */
-      while (cp >= reader->mapped_file && !isspace(*cp)) {
-        cp--;
-      }
-      /* cp now points to CRLF of last line or beginning of the file - 1 */
-      reader->mmap_offset = cp + 1 - reader->mapped_file;
+      int pos = last_line_end + 2 - reader->line_buf;
+      fseek(reader->file, -(move_size - pos), SEEK_CUR);
 
+      VVERBOSE("go back one line after pos %ld\n", ftell(reader->file));
       return 0;
+      // fread(&c, 1, 1, reader->file);
+      // abort();
+
+      // if (reader->mmap_offset == 0) return 1;
+
+      // const char *cp = reader->mapped_file + reader->mmap_offset - 1;
+      // while (isspace(*cp)) {
+      //   if (--cp < reader->mapped_file) return 1;
+      // }
+      // /** cp now points to either the last non-CRLF of current line */
+      // while (cp >= reader->mapped_file && !isspace(*cp)) {
+      //   cp--;
+      // }
+      // /* cp now points to CRLF of last line or beginning of the file - 1 */
+      // reader->mmap_offset = cp + 1 - reader->mapped_file;
+
+      // return 0;
 
     case BINARY_TRACE_FORMAT:
       if (reader->mmap_offset >= reader->item_size) {
@@ -442,46 +467,22 @@ int read_one_req_above(reader_t *const reader, request_t *req) {
 }
 
 /**
- * skip n request for txt trace
- * @param reader
- * @param N
- * @return
- */
-uint64_t skip_n_req_txt(reader_t *reader, uint64_t N) {
-  char *line_end = NULL;
-  uint64_t count = N;
-  bool end = false;
-  size_t line_len;
-  for (uint64_t i = 0; i < N; i++) {
-    end = find_end_of_line(reader, &line_end, &line_len);
-    reader->mmap_offset = (char *)line_end - reader->mapped_file;
-    if (end) {
-      if (reader->trace_type == CSV_TRACE) {
-        csv_params_t *params = reader->reader_params;
-        params->reader_end = true;
-      }
-      count = i + 1;
-      break;
-    }
-  }
-
-  return count;
-}
-
-/**
  * skip the next following N elements in the trace,
  * @param reader
  * @param N
  * @return the number of elements that are actually skipped
  */
-uint64_t skip_n_req(reader_t *reader, uint64_t N) {
-  uint64_t count = N;
+int skip_n_req(reader_t *reader, const int N) {
+  int count = N;
 
   if (reader->trace_format == TXT_TRACE_FORMAT) {
-    if (reader->trace_type == CSV_TRACE) {
-      csv_skip_N_elements(reader, N);
+    for (int i = 0; i < N; i++) {
+      if (getline(&reader->line_buf, &reader->line_buf_size, reader->file) ==
+          -1) {
+        WARN("try to skip %d requests, but only %d requests left\n", N, i);
+        return i;
+      }
     }
-    count = skip_n_req_txt(reader, N);
   } else if (reader->trace_format == BINARY_TRACE_FORMAT) {
     if (reader->mmap_offset + N * reader->item_size <= reader->file_size) {
       reader->mmap_offset = reader->mmap_offset + N * reader->item_size;
@@ -496,15 +497,23 @@ uint64_t skip_n_req(reader_t *reader, uint64_t N) {
     abort();
   }
 
+  VERBOSE("skip %d requests\n", count);
+
   return count;
 }
 
 void reset_reader(reader_t *const reader) {
   /* rewind the reader back to beginning */
   reader->mmap_offset = 0;
+  if (reader->trace_type == PLAIN_TXT_TRACE) {
+    fseek(reader->file, 0, SEEK_SET);
+  }
   if (reader->trace_type == CSV_TRACE) {
+    fseek(reader->file, 0, SEEK_SET);
     csv_reset_reader(reader);
   }
+
+  VERBOSE("reset reader\n");
 }
 
 uint64_t get_num_of_req(reader_t *const reader) {
@@ -516,20 +525,29 @@ uint64_t get_num_of_req(reader_t *const reader) {
 
   if (reader->trace_type == CSV_TRACE ||
       reader->trace_type == PLAIN_TXT_TRACE) {
-    char *line_end = NULL;
-    size_t line_len;
-    while (!find_end_of_line(reader, &line_end, &line_len)) {
-      reader->mmap_offset = (char *)line_end - reader->mapped_file;
+    // char *line_end = NULL;
+    // size_t line_len;
+    // while (!find_end_of_line(reader, &line_end, &line_len)) {
+    //   reader->mmap_offset = (char *)line_end - reader->mapped_file;
+    //   n_req++;
+    // }
+
+    // n_req++;
+
+    size_t old_pos = ftell(reader->file);
+
+    fseek(reader->file, 0, SEEK_SET);
+    while (getline(&reader->line_buf, &reader->line_buf_size, reader->file) >
+           0) {
       n_req++;
     }
-
-    n_req++;
-
     /* if the trace is csv with_header, it needs to reduce by 1  */
     if (reader->trace_type == CSV_TRACE &&
         ((csv_params_t *)(reader->reader_params))->has_header) {
       n_req--;
     }
+
+    fseek(reader->file, old_pos, SEEK_SET);
   } else if (reader->is_zstd_file) {
     request_t *req = new_request();
     while (read_one_req(reader, req) == 0) {
@@ -566,20 +584,21 @@ int close_reader(reader_t *const reader) {
    indicate the error.  In either case no further
    access to the stream is possible.*/
 
-  if (reader->trace_type == CSV_TRACE) {
-    csv_params_t *params = reader->reader_params;
+  if (reader->trace_type == PLAIN_TXT_TRACE) {
     fclose(reader->file);
-    csv_free(params->csv_parser);
-    free(params->csv_parser);
-    free(params->line_buf);
-  } else if (reader->trace_type == PLAIN_TXT_TRACE) {
+    free(reader->line_buf);
+  } else if (reader->trace_type == CSV_TRACE) {
+    csv_params_t *csv_params = reader->reader_params;
     fclose(reader->file);
+    free(reader->line_buf);
+    csv_free(csv_params->csv_parser);
+    free(csv_params->csv_parser);
   } else if (reader->trace_type == BIN_TRACE) {
     binary_params_t *params = reader->reader_params;
     if (params != NULL && params->fmt != NULL) {
       free(params->fmt);
     }
-  } 
+  }
 
 #ifdef SUPPORT_ZSTD_TRACE
   if (reader->is_zstd_file) {
@@ -614,84 +633,85 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
    */
   if (pos > 1) pos = 1;
 
-  reader->mmap_offset = (long)((double)reader->file_size * pos);
-  if (reader->trace_type == CSV_TRACE ||
-      reader->trace_type == PLAIN_TXT_TRACE) {
-    reader->item_size = 0;
-    /* for plain and csv file, if it points to the end, we need to rewind by 1,
-     * because mapped_file+file_size-1 is the last byte
-     */
-    if ((pos > 1 && pos - 1 < 0.0001) || (pos < 1 && 1 - pos < 0.0001))
-      reader->mmap_offset--;
-  }
-}
-
-/**
- *  find the closest end of line (CRLF)
- *  next_line is set to point to the first character of next line
- *  line_len is the length of current line, does not include CRLF, nor \0
- *  return true, if end of file return false else
- *
- * @param reader
- * @param next_line returns the position of first char of next line
- * @param line_len  len of current line (does not include CRLF)
- * @return true, if end of file return false else
- */
-bool find_end_of_line(reader_t *reader, char **next_line, size_t *line_len) {
-  size_t size =
-      MIN(MAX_LINE_LEN, (long)reader->file_size - reader->mmap_offset);
-  void *start_pos =
-      (void *)((char *)(reader->mapped_file) + reader->mmap_offset);
-  *next_line = NULL;
-
-  while (*next_line == NULL) {
-    *next_line = (char *)memchr(start_pos, CSV_LF, size);
-    if (*next_line == NULL)
-      *next_line = (char *)memchr(start_pos, CSV_CR, size);
-
-    if (*next_line == NULL) {
-      /* the line is too long or end of file */
-      if (size == MAX_LINE_LEN) {
-        WARN("line length exceeds %d characters\n", MAX_LINE_LEN);
-        abort();
-      } else {
-        /*  end of trace
-         *  if file ending has no CRLF,
-         *  then we set next_line points to end of file,
-         *  and return true;
-         *  if file ending has one or more CRLF, it will not arrive here,
-         *  instead it goes to the next while,
-         *  then file_end points to end of file, and return true
-         */
-        *next_line = (char *)(reader->mapped_file) + reader->file_size;
-        *line_len = size;
-        reader->item_size = *line_len;
-        return true;
-      }
+  size_t offset = (double)reader->file_size * pos;
+  if (reader->trace_format == TXT_TRACE_FORMAT) {
+    fseek(reader->file, offset, SEEK_SET);
+    if (offset != 0 && offset != reader->file_size) {
+      go_back_one_line(reader);
     }
+  } else {
+    reader->mmap_offset = offset;
+    reader->mmap_offset -= reader->mmap_offset % reader->item_size;
   }
-  // currently next_line points to LFCR
-  *line_len = *next_line - ((char *)start_pos);
-
-#define MMAP_POS(cp) ((long)((char *)(cp) - (char *)(reader->mapped_file)))
-#define BEFORE_END_OF_FILE(cp) (MMAP_POS(cp) + 1 <= (long)(reader->file_size))
-#define IS_END_OF_FILE(cp) (MMAP_POS(cp) + 1 == (long)(reader->file_size))
-
-  while (BEFORE_END_OF_FILE(*next_line + 1) && isspace(*(*next_line + 1))) {
-    (*next_line)++;
-  }
-  /* end of file */
-  if (IS_END_OF_FILE(*next_line)) {
-    reader->item_size = *line_len;
-    return true;
-  }
-
-  /* not end of file, points next_line to the first character of next line */
-  (*next_line)++;
-  reader->item_size = *line_len;
-
-  return false;
 }
+
+// /**
+//  *  find the closest end of line (CRLF)
+//  *  next_line is set to point to the first character of next line
+//  *  line_len is the length of current line, does not include CRLF, nor \0
+//  *  return true, if end of file return false else
+//  *
+//  * @param reader
+//  * @param next_line returns the position of first char of next line
+//  * @param line_len  len of current line (does not include CRLF)
+//  * @return true, if end of file return false else
+//  */
+// bool find_end_of_line(reader_t *reader, char **next_line, size_t *line_len) {
+//   size_t size =
+//       MIN(MAX_LINE_LEN, (long)reader->file_size - reader->mmap_offset);
+//   void *start_pos =
+//       (void *)((char *)(reader->mapped_file) + reader->mmap_offset);
+//   *next_line = NULL;
+
+//   while (*next_line == NULL) {
+//     *next_line = (char *)memchr(start_pos, CSV_LF, size);
+//     if (*next_line == NULL)
+//       *next_line = (char *)memchr(start_pos, CSV_CR, size);
+
+//     if (*next_line == NULL) {
+//       /* the line is too long or end of file */
+//       if (size == MAX_LINE_LEN) {
+//         WARN("line length exceeds %d characters\n", MAX_LINE_LEN);
+//         abort();
+//       } else {
+//         /*  end of trace
+//          *  if file ending has no CRLF,
+//          *  then we set next_line points to end of file,
+//          *  and return true;
+//          *  if file ending has one or more CRLF, it will not arrive here,
+//          *  instead it goes to the next while,
+//          *  then file_end points to end of file, and return true
+//          */
+//         *next_line = (char *)(reader->mapped_file) + reader->file_size;
+//         *line_len = size;
+//         reader->item_size = *line_len;
+//         return true;
+//       }
+//     }
+//   }
+//   // currently next_line points to LFCR
+//   *line_len = *next_line - ((char *)start_pos);
+
+// #define MMAP_POS(cp) ((long)((char *)(cp) - (char *)(reader->mapped_file)))
+// #define BEFORE_END_OF_FILE(cp) (MMAP_POS(cp) + 1 <=
+// (long)(reader->file_size)) #define IS_END_OF_FILE(cp) (MMAP_POS(cp) + 1 ==
+// (long)(reader->file_size))
+
+//   while (BEFORE_END_OF_FILE(*next_line + 1) && isspace(*(*next_line + 1))) {
+//     (*next_line)++;
+//   }
+//   /* end of file */
+//   if (IS_END_OF_FILE(*next_line)) {
+//     reader->item_size = *line_len;
+//     return true;
+//   }
+
+//   /* not end of file, points next_line to the first character of next line */
+//   (*next_line)++;
+//   reader->item_size = *line_len;
+
+//   return false;
+// }
 
 void read_first_req(reader_t *reader, request_t *req) {
   uint64_t offset = reader->mmap_offset;

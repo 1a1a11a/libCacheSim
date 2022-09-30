@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#include "../../libCacheSim/include/libCacheSim/macro.h"
 #include "libcsv.h"
 #include "readerInternal.h"
 
@@ -163,11 +164,11 @@ static bool csv_detect_header(const reader_t *reader) {
  */
 static inline void csv_cb1(void *s, size_t len, void *data) {
   reader_t *reader = (reader_t *)data;
-  csv_params_t *params = reader->reader_params;
-  reader_init_param_t *init_params = &reader->init_params;
-  request_t *req = params->request;
+  csv_params_t *csv_params = reader->reader_params;
+  request_t *req = csv_params->request;
+  char *end;
 
-  if (params->curr_field_idx == init_params->obj_id_field) {
+  if (csv_params->curr_field_idx == csv_params->obj_id_field_idx) {
     if (reader->obj_id_type == OBJ_ID_NUM) {
       // len is not correct for the last request for some reason
       // req->obj_id = str_to_obj_id((char *) s, len);
@@ -184,160 +185,157 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
       obj_id_str[len] = 0;
       req->obj_id = (uint64_t)g_quark_from_string(obj_id_str);
     }
-    params->already_got_req = true;
-  } else if (params->curr_field_idx == init_params->time_field) {
+  } else if (csv_params->curr_field_idx == csv_params->time_field_idx) {
     // this does not work, because s is not null terminated
     uint64_t ts = (uint64_t)atof((char *)s);
+    // uint64_t ts = (uint64_t)strtod((char *)s, &end);
     // we only support 32-bit ts
     assert(ts < UINT32_MAX);
     req->real_time = ts;
-  } else if (params->curr_field_idx == init_params->op_field) {
-    fprintf(stderr, "currently operation column is not supported\n");
-  } else if (params->curr_field_idx == init_params->obj_size_field) {
-    req->obj_size = (uint64_t)atoll((char *)s);
+  } else if (csv_params->curr_field_idx == csv_params->obj_size_field_idx) {
+    req->obj_size = (uint32_t)strtoul((char *)s, &end, 0);
+    if (req->obj_size == 0 && end == s) {
+      ERROR("csvReader obj_size is not a number: %s\n", (char *)s);
+      abort();
+    }
   }
 
-  params->curr_field_idx++;
+  // printf("cb1 %d '%s'\n", csv_params->curr_field_idx, (char *)s);
+  csv_params->curr_field_idx++;
 }
 
+/**
+ * @brief   call back for csv row end
+ *
+ * @param c     the character that ends the row
+ * @param data  user passed data: reader_t*
+ */
 static inline void csv_cb2(int c, void *data) {
-  /* call back for csv row end */
-
   reader_t *reader = (reader_t *)data;
-  csv_params_t *params = reader->reader_params;
-  params->curr_field_idx = 1;
+  csv_params_t *csv_params = reader->reader_params;
+  csv_params->curr_field_idx = 1;
 
-  /* move the following code to csv_cb1 after detecting obj_id,
-   * because putting here will cause a bug when there is no new line at the
-   * end of file, then the last line will have an incorrect reference number
-   */
+  // printf("cb2 %d '%c'\n", csv_params->curr_field_idx, c);
 }
 
+/**
+ * @brief setup a csv reader
+ *
+ * @param reader
+ */
 void csv_setup_reader(reader_t *const reader) {
   unsigned char options = CSV_APPEND_NULL;
   reader->trace_format = TXT_TRACE_FORMAT;
   reader_init_param_t *init_params = &reader->init_params;
 
   reader->reader_params = (csv_params_t *)malloc(sizeof(csv_params_t));
-  csv_params_t *params = reader->reader_params;
+  csv_params_t *csv_params = reader->reader_params;
+  csv_params->curr_field_idx = 1;
 
-  params->curr_field_idx = 1;
-  params->already_got_req = false;
-  params->reader_end = false;
+  csv_params->time_field_idx = init_params->time_field;
+  csv_params->obj_id_field_idx = init_params->obj_id_field;
+  csv_params->obj_size_field_idx = init_params->obj_size_field;
+  csv_params->csv_parser =
+      (struct csv_parser *)malloc(sizeof(struct csv_parser));
 
-  params->time_field_idx = init_params->time_field;
-  params->obj_id_field_idx = init_params->obj_id_field;
-  params->size_field_idx = init_params->obj_size_field;
-  params->csv_parser = (struct csv_parser *)malloc(sizeof(struct csv_parser));
-
-  if (csv_init(params->csv_parser, options) != 0) {
+  if (csv_init(csv_params->csv_parser, options) != 0) {
     fprintf(stderr, "Failed to initialize csv parser\n");
-    exit(1);
-  }
-
-  reader->file = fopen(reader->trace_path, "rb");
-  if (reader->file == 0) {
-    ERROR("Failed to open %s: %s\n", reader->trace_path, strerror(errno));
     exit(1);
   }
 
   /* if we setup something here, then we must setup in the reset_reader func */
   if (init_params->delimiter == '\0') {
     char delim = csv_detect_delimiter(reader);
-    params->delimiter = delim;
+    csv_params->delimiter = delim;
   } else {
-    params->delimiter = init_params->delimiter;
+    csv_params->delimiter = init_params->delimiter;
   }
-  csv_set_delim(params->csv_parser, params->delimiter);
+  csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
   if (!init_params->has_header_set) {
-    params->has_header = csv_detect_header(reader);
+    csv_params->has_header = csv_detect_header(reader);
   } else {
-    params->has_header = init_params->has_header;
+    csv_params->has_header = init_params->has_header;
   }
-  if (params->has_header) {
-    char *line_end = NULL;
-    size_t line_len = 0;
-    find_end_of_line(reader, &line_end, &line_len);
-    reader->mmap_offset = (char *)line_end - reader->mapped_file;
+  if (csv_params->has_header) {
+    getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
 
+/**
+ * @brief read one request from a csv file
+ *
+ * @param reader
+ * @param req
+ * @return int
+ */
 int csv_read_one_req(reader_t *const reader, request_t *const req) {
-  csv_params_t *params = reader->reader_params;
+  csv_params_t *csv_params = reader->reader_params;
+  struct csv_parser *csv_parser = csv_params->csv_parser;
+  char **line_buf_ptr = &reader->line_buf;
+  size_t *line_buf_size_ptr = &reader->line_buf_size;
 
-  params->request = req;
-  params->already_got_req = false;
+  csv_params->request = req;
+  DEBUG_ASSERT(csv_params->curr_field_idx == 1);
 
-  if (params->reader_end) {
+  size_t offset_before_read = ftell(reader->file);
+  int read_size = getline(line_buf_ptr, line_buf_size_ptr, reader->file);
+  if (read_size == -1) {
     req->valid = false;
     return 1;
   }
 
-  char *line_end = NULL;
-  size_t line_len;
-  bool end = find_end_of_line(reader, &line_end, &line_len);
-  line_len++;  // because line_len does not include LFCR
-
-  if ((size_t)csv_parse(params->csv_parser,
-                        reader->mapped_file + reader->mmap_offset, line_len,
-                        csv_cb1, csv_cb2, reader) != line_len)
+  // printf("line %s read %d byte\n", *line_buf_ptr, read_size);
+  if ((size_t)csv_parse(csv_parser, *line_buf_ptr, read_size, csv_cb1, csv_cb2,
+                        reader) != read_size) {
     WARN("parsing csv file error: %s\n",
-         csv_strerror(csv_error(params->csv_parser)));
-
-  reader->mmap_offset = (char *)line_end - reader->mapped_file;
-
-  if (end) params->reader_end = true;
-
-  if (!params->already_got_req) {  // didn't read in trace obj_id
-    if (params->reader_end)
-      csv_fini(params->csv_parser, csv_cb1, csv_cb2, reader);
-    else {
-      ERROR("parsing csv file, current mmap_offset %lu, file size %zu\n",
-            (unsigned long)reader->mmap_offset, reader->file_size);
-      abort();
-    }
+         csv_strerror(csv_error(csv_params->csv_parser)));
   }
+
+  csv_fini(csv_params->csv_parser, csv_cb1, csv_cb2, reader);
+
   return 0;
 }
 
-uint64_t csv_skip_N_elements(reader_t *const reader, const uint64_t N) {
-  /* this function skips the next N requests,
-   * on success, return N,
-   * on failure, return the number of requests skipped
-   */
-  csv_params_t *params = reader->reader_params;
+// uint64_t csv_skip_N_elements(reader_t *reader, const uint64_t N) {
+//   /* this function skips the next N requests,
+//    * on success, return N,
+//    * on failure, return the number of requests skipped
+//    */
+//   csv_params_t *csv_params = reader->reader_params;
 
-  csv_free(params->csv_parser);
-  csv_init(params->csv_parser, CSV_APPEND_NULL);
+//   for (int i = 0; i < N; i++) {
+//     if (getline(&reader->line_buf, &reader->line_buf_size, reader->file) ==
+//     0) {
+//       return i;
+//     }
+//   }
+//   // csv_free(csv_params->csv_parser);
+//   // csv_init(csv_params->csv_parser, CSV_APPEND_NULL);
 
-  if (params->delimiter) csv_set_delim(params->csv_parser, params->delimiter);
+//   // if (csv_params->delimiter)
+//   //   csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
-  params->reader_end = false;
-  return 0;
-}
+//   return 0;
+// }
 
 void csv_reset_reader(reader_t *reader) {
-  csv_params_t *params = reader->reader_params;
+  csv_params_t *csv_params = reader->reader_params;
 
   fseek(reader->file, 0L, SEEK_SET);
 
-  csv_free(params->csv_parser);
-  csv_init(params->csv_parser, CSV_APPEND_NULL);
-  if (params->delimiter) csv_set_delim(params->csv_parser, params->delimiter);
+  csv_free(csv_params->csv_parser);
+  csv_init(csv_params->csv_parser, CSV_APPEND_NULL);
+  if (csv_params->delimiter)
+    csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
-  if (params->has_header) {
-    char *line_end = NULL;
-    size_t line_len = 0;
-    find_end_of_line(reader, &line_end, &line_len);
-    reader->mmap_offset = (char *)line_end - reader->mapped_file;
+  if (csv_params->has_header) {
+    getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
-  params->reader_end = false;
 }
 
 void csv_set_no_eof(reader_t *reader) {
-  csv_params_t *params = reader->reader_params;
-  params->reader_end = false;
+  csv_params_t *csv_params = reader->reader_params;
 }
 
 #ifdef __cplusplus

@@ -20,22 +20,16 @@ extern "C" {
 typedef struct {
   struct csv_parser *csv_parser;
 
-  FILE *ifile;
-  char *line_buf;
-
   /* used in cb1, each time a field is read, curr_field_idx incr */
   int curr_field_idx;
 
   int time_field_idx;
   int obj_id_field_idx;
-  int size_field_idx;
+  int obj_size_field_idx;
   bool has_header;
   unsigned char delimiter;
 
   void *request;
-  bool already_got_req;
-  bool reader_end;
-
 } csv_params_t;
 
 bool csv_detect_obj_id_is_num(reader_t *const reader);

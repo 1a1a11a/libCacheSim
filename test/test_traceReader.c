@@ -48,7 +48,7 @@ void verify_req(reader_t *reader, request_t *req, int req_idx) {
 
 void test_reader_basic(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
-  gint i;
+  int i;
   request_t *req = new_request();
 
   g_assert_true(get_num_of_req(reader) == trace_length);
@@ -106,7 +106,9 @@ void test_reader_more1(gconstpointer user_data) {
   g_assert_true(get_num_of_req(reader) == trace_length);
 
   reader_set_read_pos(reader, 1.0);
-  for (i = 0; i < trace_length; i++) go_back_one_line(reader);
+  for (i = 0; i < trace_length; i++) {
+    if (go_back_one_line(reader) != 0) break;
+  }
   read_one_req(reader, req);
   verify_req(reader, req, 0);
 
