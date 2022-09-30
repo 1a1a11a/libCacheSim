@@ -29,14 +29,28 @@ int main(int argc, char **argv) {
   create_dir("result/");
   sprintf(output_filename, "result/%s", rindex(args.trace_path, '/') + 1);
   FILE *output_file = fopen(output_filename, "a");
+
+  uint64_t size_unit = 1;
+  char *size_unit_str = "";
+  if (args.cache_sizes[0] > GiB) {
+    size_unit = GiB;
+    size_unit_str = "GB";
+  } else if (args.cache_sizes[0] > MiB) {
+    size_unit = MiB;
+    size_unit_str = "MB";
+  } else if (args.cache_sizes[0] > KiB) {
+    size_unit = KiB;
+    size_unit_str = "KB";
+  }
+
   for (int i = 0; i < args.n_cache_size; i++) {
     snprintf(output_str, 1024,
-             "%s %s, cache size %16" PRIu64 "MiB : miss/n_req %16" PRIu64
+             "%s %s, cache size %16" PRIu64 "%s : miss/n_req %16" PRIu64
              "/%16" PRIu64
              " (%.4lf), "
              "byte miss ratio %.4lf\n",
              output_filename, args.cache->cache_name,
-             result[i].cache_size / (uint64_t)MiB, result[i].n_miss,
+             result[i].cache_size / size_unit, size_unit_str, result[i].n_miss,
              result[i].n_req,
              (double)result[i].n_miss / (double)result[i].n_req,
              (double)result[i].n_miss_byte / (double)result[i].n_req_byte);

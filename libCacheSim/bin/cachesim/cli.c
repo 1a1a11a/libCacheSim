@@ -210,6 +210,11 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
       .ignore_size_zero_req = true,
       .obj_id_is_num = true};
   parse_reader_params(args->trace_type_params, &reader_init_params);
+  if (reader_init_params.obj_size_field == -1) {
+    args->consider_obj_metadata = false;
+    args->ignore_obj_size = true;
+  }
+
   args->reader = setup_reader(args->trace_path, args->trace_type, OBJ_ID_NUM,
                               &reader_init_params);
 
