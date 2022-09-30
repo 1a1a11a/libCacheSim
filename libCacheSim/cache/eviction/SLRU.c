@@ -46,6 +46,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
 
   if (cache_specific_params != NULL) {
     char *params_str = strdup(cache_specific_params);
+    char *old_params_str = params_str;
 
     while (params_str != NULL && params_str[0] != '\0') {
       char *key = strsep((char **)&params_str, "=");
@@ -63,7 +64,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
         exit(1);
       }
     }
-    free(params_str);
+    free(old_params_str);
   }
 
   SLRU_params->LRUs =

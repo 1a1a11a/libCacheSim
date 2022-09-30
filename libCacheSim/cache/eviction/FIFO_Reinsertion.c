@@ -89,6 +89,7 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
 
   if (cache_specific_params != NULL) {
     char *params_str = strdup(cache_specific_params);
+    char *old_params_str = params_str;
 
     while (params_str != NULL && params_str[0] != '\0') {
       char *key = strsep((char **)&params_str, "=");
@@ -122,7 +123,7 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
       }
     }
 
-    free(params_str);
+    free(old_params_str);
   }
 
   assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);

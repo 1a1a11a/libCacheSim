@@ -68,6 +68,7 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
 
   if (reader_params_str == NULL) return;
   char *params_str = strdup(reader_params_str);
+  char *old_params_str = params_str;
 
   while (params_str != NULL && params_str[0] != '\0') {
     char *key = strsep((char **)&params_str, "=");
@@ -101,7 +102,7 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
     }
   }
 
-  free(params_str);
+  free(old_params_str);
 }
 /**
  * @brief convert cache size string to byte, e.g., 100MB -> 100 * 1024 * 1024

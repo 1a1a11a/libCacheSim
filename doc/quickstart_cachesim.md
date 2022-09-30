@@ -88,15 +88,23 @@ cachesim builds in a simple delimiter and header detector, if the detected resul
 
 ```bash
 # note that the parameters are separated by colon and quoted
-./cachesim ../data/trace.csv csv lru 1gb
+./cachesim ../data/trace.csv csv lru 1gb -t "time_col=2; obj_id_col=5; obj_size_col=4;"
+
+# if object id is numeric, then we can pass obj_id_is_num=true to speed up
+./cachesim ../data/trace.csv csv lru 1gb -t "time_col=2; obj_id_col=5; obj_size_col=4; obj_id_is_num=true;"
+
 
 # note that csv trace does not support UTF-8 encoding, only ASCII encoding is supported
 # because we separate parameters by colon, we do not support using colon as the csv delimiter
+./cachesim ../data/trace.csv csv lru 1gb -t "time_col=2; obj_id_col=5; obj_size_col=4; delimiter=,; has_header=true;"
+```
 
+Besides csv trace, we also support txt trace and binary trace.
+```bash
+./cachesim ../data/trace.txt txt lru 1gb
 
 # oracleGeneral is a binary format that stores time, obj_id, size, next_access_time (in reference count)
 ./cachesim ../data/trace.oracleGeneral.bin oracleGeneral lru 1gb
-
 ```
 
 
