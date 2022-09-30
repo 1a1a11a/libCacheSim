@@ -95,12 +95,12 @@ static char *trace_type_str[UNKNOWN_TRACE + 2] = {
 };
 
 // obj_id type
-typedef enum {
-  OBJ_ID_NUM = 'l',
-  OBJ_ID_STR = 'c',
+// typedef enum {
+//   OBJ_ID_NUM = 'l',
+//   OBJ_ID_STR = 'c',
 
-  UNKNOWN_OBJ_ID,
-} __attribute__((__packed__)) obj_id_type_e;
+//   UNKNOWN_OBJ_ID,
+// } __attribute__((__packed__)) obj_id_type_e;
 
 typedef enum {
   OP_NOP = 0,

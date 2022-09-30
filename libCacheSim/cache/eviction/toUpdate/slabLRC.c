@@ -29,8 +29,7 @@ cache_t *slabLRC_init(common_cache_params_t ccache_params,
   memset(cache->eviction_params, 0, sizeof(slabLRC_params_t));
   slabLRC_params_t *slabLRC_params = (slabLRC_params_t *)(cache->eviction_params);
   slab_params_t *slab_params = &slabLRC_params->slab_params;
-  slabLRC_params->hashtable = create_hash_table_with_obj_id_type(
-      OBJ_ID_NUM, NULL, free_slab_cache_obj, g_free, free_slab_cache_obj);
+  slabLRC_params->hashtable = g_hash_table_new_full(g_int64_hash, g_direct_equal, NULL, NULL));
   slab_params->global_slab_q = g_queue_new();
   slab_params->slab_size = MiB;
   slab_params->n_total_slabs =

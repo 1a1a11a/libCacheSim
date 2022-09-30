@@ -12,6 +12,10 @@ extern "C" {
 #define MAX_LINE_LEN (1024 * 1)
 #define MAX_OBJ_ID_LEN 256
 
+
+/**************** common ****************/
+bool is_str_num(const char *str);
+
 /**************** csv ****************/
 typedef struct {
   struct csv_parser *csv_parser;

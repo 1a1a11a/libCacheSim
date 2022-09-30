@@ -36,6 +36,7 @@ static inline int oracleSimTwrBin_setup(reader_t *reader) {
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 28;
   reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
+  reader->obj_id_is_num = true;
 
   /* all oracle twr traces are oracle twrNS traces */
   ERROR("this struct is not correct, need update\n");

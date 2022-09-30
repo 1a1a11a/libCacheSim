@@ -64,8 +64,6 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
   params->obj_size_field = -1;
   params->op_field = -1;
   params->ttl_field = -1;
-  params->extra_field1 = -1;
-  params->extra_field2 = -1;
 
   if (reader_params_str == NULL) return;
   char *params_str = strdup(reader_params_str);

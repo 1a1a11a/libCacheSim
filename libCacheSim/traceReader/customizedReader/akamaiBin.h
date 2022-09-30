@@ -28,6 +28,7 @@ static inline int akamaiReader_setup(reader_t *reader) {
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 22; /* IqIhhh */
   reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
+  reader->obj_id_is_num = true;
   return 0;
 }
 

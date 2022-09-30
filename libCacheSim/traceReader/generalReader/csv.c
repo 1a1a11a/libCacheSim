@@ -153,6 +153,17 @@ static bool csv_detect_header(const reader_t *reader) {
   return has_header;
 }
 
+static bool is_obj_id_num(reader_t *reader) {
+#define N_TEST 1000
+  request_t *req = new_request();
+
+  for (int i = 0; i < N_TEST; i++) {
+
+  }
+
+#undef N_TEST
+}
+
 /**
  * @brief   call back for csv field end
  *
@@ -167,21 +178,14 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   char *end;
 
   if (csv_params->curr_field_idx == csv_params->obj_id_field_idx) {
-    if (reader->obj_id_type == OBJ_ID_NUM) {
-      // len is not correct for the last request for some reason
-      // req->obj_id = str_to_obj_id((char *) s, len);
-      req->obj_id = atoll((char *)s);
-    } else {
-      if (len >= MAX_OBJ_ID_LEN) {
-        len = MAX_OBJ_ID_LEN - 1;
-        ERROR("csvReader obj_id len %zu larger than MAX_OBJ_ID_LEN %d\n", len,
-              MAX_OBJ_ID_LEN);
-        abort();
+    if (reader->obj_id_is_num) {
+      req->obj_id = strtoull((char *)s, &end, 0);
+      if (req->obj_id == 0 && s == end) {
+        ERROR("object id is not numeric %s\n", (char *) s);
+
       }
-      char obj_id_str[MAX_OBJ_ID_LEN];
-      memcpy(obj_id_str, (char *)s, len);
-      obj_id_str[len] = 0;
-      req->obj_id = (uint64_t)g_quark_from_string(obj_id_str);
+    } else {
+      req->obj_id = (uint64_t)g_quark_from_string(s);
     }
   } else if (csv_params->curr_field_idx == csv_params->time_field_idx) {
     // this does not work, because s is not null terminated
@@ -198,7 +202,6 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     }
   }
 
-  // printf("cb1 %d '%s'\n", csv_params->curr_field_idx, (char *)s);
   csv_params->curr_field_idx++;
 }
 
@@ -309,7 +312,6 @@ void csv_reset_reader(reader_t *reader) {
     getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
-
 
 #ifdef __cplusplus
 }

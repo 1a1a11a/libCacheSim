@@ -101,7 +101,7 @@ int binaryReader_setup(reader_t *const reader) {
       params->obj_id_len = *fmt_str == 's' ? count : 1;
       params->obj_id_type = *fmt_str;
       // important! update data obj_id_type here
-      reader->obj_id_type = *fmt_str == 's' ? OBJ_ID_STR : OBJ_ID_NUM;
+      reader->obj_id_is_num = *fmt_str != 's' ? true : false;
     }
 
     if (init_params->op_field != 0 && params->op_len == 0 &&

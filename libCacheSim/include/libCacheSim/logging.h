@@ -66,7 +66,7 @@ extern pthread_mutex_t log_mtx;
 #endif
 
 #if LOGLEVEL <= SEVERE_LEVEL
-#define ERROR(FMT, ...) LOGGING(SEVERE_LEVEL, FMT, ##__VA_ARGS__)
+#define ERROR(FMT, ...) {LOGGING(SEVERE_LEVEL, FMT, ##__VA_ARGS__); abort();}
 #else
 #define ERROR(FMT, ...)
 #endif

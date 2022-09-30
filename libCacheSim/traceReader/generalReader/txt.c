@@ -13,16 +13,16 @@ int txt_read_one_req(reader_t *const reader, request_t *const req) {
     req->valid = FALSE;
     return 1;
   }
-  if (reader->obj_id_type == OBJ_ID_NUM) {
+  if (reader->obj_id_is_num) {
     char *end;
     req->obj_id = strtoull(reader->line_buf, &end, 0);
     if (req->obj_id == 0 && end == reader->line_buf) {
       ERROR("invalid object id: %s\n", reader->line_buf);
-      abort();
     }
   } else {
-    if (reader->line_buf[read_size - 1] == '\n')
+    if (reader->line_buf[read_size - 1] == '\n') {
       reader->line_buf[read_size - 1] = 0;
+    }
     req->obj_id = (uint64_t)g_quark_from_string(reader->line_buf);
   }
 }

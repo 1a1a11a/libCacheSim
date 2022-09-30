@@ -28,7 +28,8 @@ cache_t *TTL_FIFO_init(common_cache_params_t ccache_params, void *cache_specific
   cache_t *cache = cache_struct_init("TTL_FIFO", ccache_params);
   cache->cache_params = g_new0(TTL_FIFO_params_t, 1);
   TTL_FIFO_params_t *TTL_FIFO_params = (TTL_FIFO_params_t *) (cache->cache_params);
-  TTL_FIFO_params->hashtable = create_hash_table_with_obj_id_type(ccache_params.obj_id_type, NULL, NULL, g_free, NULL);
+  TTL_FIFO_params->hashtable =
+      g_hash_table_new_full(g_int64_hash, g_direct_equal, NULL, NULL);
   for (gint32 i=0; i<MAX_TTL; i++)
     TTL_FIFO_params->exp_time_array[i] = g_queue_new();
   TTL_FIFO_params->cur_ttl_evict_pos = 0;

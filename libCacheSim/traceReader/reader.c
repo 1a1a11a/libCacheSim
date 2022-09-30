@@ -38,7 +38,6 @@ extern "C" {
 
 reader_t *setup_reader(const char *const trace_path,
                        const trace_type_e trace_type,
-                       const obj_id_type_e obj_id_type,
                        const reader_init_param_t *const reader_init_param) {
   static bool _info_printed = false;
 
@@ -63,7 +62,6 @@ reader_t *setup_reader(const char *const trace_path,
   }
 #endif
 
-  reader->obj_id_type = obj_id_type;
   reader->trace_format = INVALID_TRACE_FORMAT;
   reader->trace_type = trace_type;
   reader->n_total_req = 0;
@@ -515,9 +513,8 @@ uint64_t get_num_of_req(reader_t *const reader) {
 }
 
 reader_t *clone_reader(const reader_t *const reader_in) {
-  reader_t *reader =
-      setup_reader(reader_in->trace_path, reader_in->trace_type,
-                   reader_in->obj_id_type, &reader_in->init_params);
+  reader_t *reader = setup_reader(reader_in->trace_path, reader_in->trace_type,
+                                  &reader_in->init_params);
   reader->n_total_req = reader_in->n_total_req;
 
   if (reader->trace_format != TXT_TRACE_FORMAT) {
@@ -610,6 +607,15 @@ void read_last_req(reader_t *reader, request_t *req) {
   read_one_req(reader, req);
 
   reader->mmap_offset = offset;
+}
+
+bool is_str_num(const char *str) {
+  for (int i = 0; i < strlen(str); i++) {
+    if (!(isdigit(str[i]) || (str[i] >= 'a' && str[i] <= 'f') ||
+          (str[i] >= 'A' && str[i] <= 'F')))
+      return false;
+  }
+  return true;
 }
 
 #ifdef __cplusplus

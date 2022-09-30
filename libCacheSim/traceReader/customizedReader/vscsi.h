@@ -97,7 +97,7 @@ static inline int vscsiReader_setup(reader_t *const reader) {
   vscsi_params_t *params = malloc(sizeof(vscsi_params_t));
   reader->reader_params = params;
   reader->trace_format = BINARY_TRACE_FORMAT;
-  reader->obj_id_type = OBJ_ID_NUM;
+  reader->obj_id_is_num = true;
 
   /* Version 2 records are the bigger of the two */
   if ((unsigned long long)reader->file_size <

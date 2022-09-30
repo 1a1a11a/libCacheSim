@@ -54,7 +54,7 @@ cache_t *LRUv0_init(const common_cache_params_t ccache_params,
   cache->eviction_params = g_new0(LRUv0_params_t, 1);
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   LRUv0_params->hashtable =
-      create_hash_table_with_obj_id_type(OBJ_ID_NUM, NULL, NULL, g_free, NULL);
+      g_hash_table_new_full(g_int64_hash, g_direct_equal, NULL, NULL);
   LRUv0_params->list = g_queue_new();
   return cache;
 }
@@ -150,7 +150,8 @@ void LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
     return;
   }
   cache_obj_t *cache_obj = (cache_obj_t *)(node->data);
-  assert(cache->occupied_size >= cache_obj->obj_size + cache->per_obj_metadata_size);
+  assert(cache->occupied_size >=
+         cache_obj->obj_size + cache->per_obj_metadata_size);
   cache->occupied_size -=
       (((cache_obj_t *)(node->data))->obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;

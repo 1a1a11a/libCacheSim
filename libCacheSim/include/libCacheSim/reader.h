@@ -46,12 +46,9 @@ typedef struct {
   int op_field;
   int ttl_field;
 
-  int extra_field1;
-  int extra_field2;
-
   // csv reader
   bool has_header;
-  // whether the has_header is set because false could indicate
+  // whether the has_header is set, because false could indicate
   // it is not set or it does not has a header
   bool has_header_set;
   char delimiter;
@@ -95,7 +92,6 @@ typedef struct reader {
   bool csv_has_header;
   /* whether the object id is hashed */
   bool obj_id_is_num;
-  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
   bool ignore_size_zero_req;
   /* if true, ignore the obj_size in the trace, and use size one */
@@ -105,7 +101,6 @@ typedef struct reader {
    * requests */
   int n_chunked_req_left;
   int64_t chunked_req_clock_time;
-
 
   trace_sampling_func sampling_func; /* used for sampling */
 
@@ -127,14 +122,12 @@ typedef struct reader {
  * explicitly closed by calling close_reader or close_trace
  */
 reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
-                       obj_id_type_e obj_id_type,
                        const reader_init_param_t *reader_init_param);
 
 /* this is the same function as setup_reader */
 static inline reader_t *open_trace(const char *path, const trace_type_e type,
-                                   const obj_id_type_e obj_id_type,
                                    reader_init_param_t *reader_init_param) {
-  return setup_reader(path, type, obj_id_type, reader_init_param);
+  return setup_reader(path, type, reader_init_param);
 }
 
 /**
@@ -165,12 +158,12 @@ static inline trace_type_e get_trace_type(const reader_t *const reader) {
 }
 
 /**
- * get the obj_id type, it can be OBJ_ID_NUM or OBJ_ID_STR
+ * whether the object id is numeric (only applies to txt and csv traces)
  * @param reader
  * @return
  */
-static inline obj_id_type_e get_obj_id_type(const reader_t *const reader) {
-  return reader->obj_id_type;
+static inline bool obj_id_is_num(const reader_t *const reader) {
+  return reader->obj_id_is_num;
 }
 
 /**

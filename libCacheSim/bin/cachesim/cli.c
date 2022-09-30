@@ -215,8 +215,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     args->ignore_obj_size = true;
   }
 
-  args->reader = setup_reader(args->trace_path, args->trace_type, OBJ_ID_NUM,
-                              &reader_init_params);
+  args->reader =
+      setup_reader(args->trace_path, args->trace_type, &reader_init_params);
 
   set_cache_size(args, args->reader);
 

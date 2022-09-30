@@ -24,16 +24,16 @@ char *trace_end_req_s = "42936150";
 
 void verify_req(reader_t *reader, request_t *req, int req_idx) {
   if (req_idx == -1) {
-    if (get_obj_id_type(reader) == OBJ_ID_NUM)
+    if (obj_id_is_num(reader))
       g_assert_true(req->obj_id == trace_end_req_d);
-    else if (get_obj_id_type(reader) == OBJ_ID_STR)
+    else
       g_assert_cmpstr(g_quark_to_string(req->obj_id), ==, trace_end_req_s);
     return;
   }
 
-  if (get_obj_id_type(reader) == OBJ_ID_NUM)
+  if (obj_id_is_num(reader))
     g_assert_true(req->obj_id == trace_start_req_d[req_idx]);
-  else if (get_obj_id_type(reader) == OBJ_ID_STR)
+  else
     g_assert_cmpstr(g_quark_to_string(req->obj_id), ==,
                     trace_start_req_s[req_idx]);
 
@@ -134,8 +134,7 @@ void test_reader_more2(gconstpointer user_data) {
 }
 
 void test_twr(gconstpointer user_data) {
-  reader_t *reader =
-      setup_reader("/Users/junchengy/twr.sbin", TWR_TRACE, OBJ_ID_NUM, NULL);
+  reader_t *reader = setup_reader("/Users/junchengy/twr.sbin", TWR_TRACE, NULL);
   gint64 n_req = get_num_of_req(reader);
   gint64 n_obj = 0;
   request_t *req = new_request();

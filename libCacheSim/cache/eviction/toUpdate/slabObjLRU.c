@@ -64,7 +64,7 @@ cache_t *slabObjLRU_init(common_cache_params_t ccache_params,
       (slabObjLRU_params_t *) (cache->eviction_params);
   slab_params_t *slab_params = &slabObjLRU_params->slab_params;
   slabObjLRU_params->hashtable =
-      create_hash_table_with_obj_id_type(OBJ_ID_NUM, NULL, NULL, g_free, NULL);
+      g_hash_table_new_full(g_int64_hash, g_direct_equal, NULL, NULL);
   slab_params->global_slab_q = g_queue_new();
   slab_params->slab_size = MiB;
   slab_params->n_total_slabs =

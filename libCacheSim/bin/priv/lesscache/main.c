@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   int cache_size_in_mb = atoi(argv[3]);
 
   reader_t *reader =
-      setup_reader(trace_path, ORACLE_SYS_TWRNS_TRACE, OBJ_ID_NUM, NULL);
+      setup_reader(trace_path, ORACLE_SYS_TWRNS_TRACE, NULL);
 
   common_cache_params_t cc_params = {.cache_size = cache_size_in_mb * MiB,
                                      .hashpower = 28,
