@@ -229,6 +229,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   };
   cache_t *cache;
 
+  /* the trace provided is small */
+  if (strcasestr(args->trace_path, "data/trace.") != NULL)
+    cc_params.hashpower -= 8;
+
   if (strcasecmp(args->eviction_algo, "lru") == 0) {
     cache = LRU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "fifo") == 0) {
