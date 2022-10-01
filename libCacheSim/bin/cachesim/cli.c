@@ -38,8 +38,8 @@ static struct argp_option options[] = {
     // {"trace_type", 't', 0, 0,
     //  "Specify the type of the input trace:
     //  txt/csv/twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin", 2},
-    {"trace_type_params", OPTION_TRACE_TYPE_PARAMS, "delimiter=,", 0,
-     "Parameters used for csv trace, e.g., \"delimiter=,,header=true\".", 2},
+    {"trace_type_params", OPTION_TRACE_TYPE_PARAMS, "obj_id_col=1", 0,
+     "Parameters used for csv trace, e.g., \"obj_id_col=1;delimiter=,\".", 2},
 
     // {"eviction", 'e', 0, 0, "Eviction algorithm: LRU/FIFO/LFU", 3},
     {"eviction_params", OPTION_EVICTION_PARAMS, "n_seg=4", 0,
@@ -110,16 +110,18 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->warmup_sec = atoi(arg);
       break;
     case ARGP_KEY_ARG:
-      if (state->arg_num >= 4) {
+      if (state->arg_num >= N_ARGS) {
         printf("found too many arguments, current %s\n", arg);
         argp_usage(state);
+        exit(1);
       }
       arguments->args[state->arg_num] = arg;
       break;
     case ARGP_KEY_END:
-      if (state->arg_num < 4) {
+      if (state->arg_num < N_ARGS) {
         printf("not enough arguments found\n");
         argp_usage(state);
+        exit(1);
       }
       break;
     default:
