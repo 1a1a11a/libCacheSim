@@ -8,8 +8,8 @@
 
 #include "../../include/libCacheSim/const.h"
 #include "../../utils/include/mysys.h"
-#include "internal.h"
 #include "../cli_utils.h"
+#include "internal.h"
 
 const char *argp_program_version = "cachesim 0.0.1";
 const char *argp_program_bug_address = "google group";
@@ -39,8 +39,9 @@ static struct argp_option options[] = {
     // {"trace_type", 't', 0, 0,
     //  "Specify the type of the input trace:
     //  txt/csv/twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin", 2},
-    {"trace_type_params", OPTION_TRACE_TYPE_PARAMS, "obj_id_col=1", 0,
-     "Parameters used for csv trace, e.g., \"obj_id_col=1;delimiter=,\".", 2},
+    {"trace_type_params", OPTION_TRACE_TYPE_PARAMS,
+     "\"obj_id_col=1;delimiter=,\"", 0,
+     "Parameters used for csv trace, e.g., \"obj_id_col=1;delimiter=,\"", 2},
 
     // {"eviction", 'e', 0, 0, "Eviction algorithm: LRU/FIFO/LFU", 3},
     {"eviction_params", OPTION_EVICTION_PARAMS, "n_seg=4", 0,
@@ -203,7 +204,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   }
 
   /* convert trace type string to enum */
-  args->trace_type = trace_type_str_to_enum(args->trace_type_str, args->trace_path);
+  args->trace_type =
+      trace_type_str_to_enum(args->trace_type_str, args->trace_path);
 
   reader_init_param_t reader_init_params = {
       .ignore_obj_size = args->ignore_obj_size,
