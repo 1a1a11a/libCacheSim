@@ -203,10 +203,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   }
 
   /* convert trace type string to enum */
-  args->trace_type = trace_type_str_to_enum(args->trace_type_str);
-
-  /* verify the trace type is correct */
-  verify_trace_type(args->trace_path, args->trace_type_str);
+  args->trace_type = trace_type_str_to_enum(args->trace_type_str, args->trace_path);
 
   reader_init_param_t reader_init_params = {
       .ignore_obj_size = args->ignore_obj_size,
