@@ -9,3 +9,6 @@ bool is_true(const char *arg);
 void parse_reader_params(char *reader_params_str, reader_init_param_t *params);
 
 void verify_trace_type(const char *trace_path, const char *trace_type_str);
+
+trace_type_e detect_trace_type(const char *trace_path);
+
