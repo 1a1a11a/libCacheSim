@@ -205,9 +205,9 @@ reader_t *setup_reader(const char *const trace_path,
     case ORACLE_WIKI19u_TRACE:
       oracleWiki2019uReader_setup(reader);
       break;
-    case ORACLE_WIKI19t_TRACE:
-      oracleWiki2019tReader_setup(reader);
-      break;
+    // case ORACLE_WIKI19t_TRACE:
+    //   oracleWiki2019tReader_setup(reader);
+    //   break;
     default:
       ERROR("cannot recognize trace type: %c\n", reader->trace_type);
       abort();
@@ -331,9 +331,9 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     case ORACLE_WIKI19u_TRACE:
       status = oracleWiki2019u_read_one_req(reader, req);
       break;
-    case ORACLE_WIKI19t_TRACE:
-      status = oracleWiki2019t_read_one_req(reader, req);
-      break;
+    // case ORACLE_WIKI19t_TRACE:
+    //   status = oracleWiki2019t_read_one_req(reader, req);
+    //   break;
     default:
       ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",

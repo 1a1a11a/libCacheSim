@@ -58,7 +58,7 @@ typedef enum {
   ORACLE_AKAMAI_TRACE,
   ORACLE_WIKI16u_TRACE,
   ORACLE_WIKI19u_TRACE,
-  ORACLE_WIKI19t_TRACE,
+  // ORACLE_WIKI19t_TRACE,
 
   UNKNOWN_TRACE,
 } __attribute__((__packed__)) trace_type_e;
@@ -90,7 +90,7 @@ static char *trace_type_str[UNKNOWN_TRACE + 2] = {
     "ORACLE_AKAMAI_TRACE",
     "ORACLE_WIKI16u_TRACE",
     "ORACLE_WIKI19u_TRACE",
-    "ORACLE_WIKI19t_TRACE",
+    // "ORACLE_WIKI19t_TRACE",
     "UNKNOWN_TRACE",
 };
 
