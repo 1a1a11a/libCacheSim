@@ -28,6 +28,10 @@ if __name__ == "__main__":
 
 **/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief retrieve the working set size (in bytes)
  * of the msr trace
@@ -130,9 +134,6 @@ bool set_hard_code_cache_size(struct arguments *args) {
   return true;
 }
 
-
-
-
-
-
-
+#ifdef __cplusplus
+}
+#endif

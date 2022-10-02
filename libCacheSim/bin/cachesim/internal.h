@@ -44,8 +44,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args);
 void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
               char *ofilepath);
 
-void trace_type_str_to_enum(struct arguments *args);
-
 bool set_hard_code_cache_size(struct arguments *args);
 
 void parse_reader_params(char *reader_params_str, reader_init_param_t *params);
@@ -53,8 +51,6 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params);
 int conv_cache_sizes(char *cache_size_str, struct arguments *args);
 
 void print_parsed_args(struct arguments *args);
-
-void verify_trace_type(struct arguments *args);
 
 void set_cache_size(struct arguments *args, reader_t *reader);
 

@@ -7,18 +7,26 @@
 #include "../include/libCacheSim/reader.h"
 #include "cli_utils.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief convert the trace type string to enum
  *
  * @param args
  */
 trace_type_e trace_type_str_to_enum(const char *trace_type_str) {
-  if (strcasecmp(trace_type_str, "txt") == 0) {
+  if (strcasecmp(trace_type_str, "auto") == 0) {
+    return detect_trace_type(trace_type_str);
+  } else if (strcasecmp(trace_type_str, "txt") == 0) {
     return PLAIN_TXT_TRACE;
   } else if (strcasecmp(trace_type_str, "csv") == 0) {
     return CSV_TRACE;
   } else if (strcasecmp(trace_type_str, "twr") == 0) {
     return TWR_TRACE;
+  } else if (strcasecmp(trace_type_str, "twrNS") == 0) {
+    return TWRNS_TRACE;
   } else if (strcasecmp(trace_type_str, "vscsi") == 0) {
     return VSCSI_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleGeneralBin") == 0 ||
@@ -117,3 +125,37 @@ void verify_trace_type(const char *trace_path, const char *trace_type_str) {
     ;
   }
 }
+
+trace_type_e detect_trace_type(const char *trace_path) {
+  if (strcasestr(trace_path, "oracleGeneralBin") != NULL ||
+      strcasestr(trace_path, "oracleGeneral.bin") != NULL||
+      strcasestr(trace_path, "bin.oracleGeneral") != NULL||
+      strcasestr(trace_path, "oracleGeneral.zst") != NULL || 
+      strcasecmp(trace_path + strlen(trace_path) - 13, "oracleGeneral") == 0) {
+    return ORACLE_GENERAL_TRACE;
+  } else if (strcasestr(trace_path, ".vscsi.") != NULL) {
+    return VSCSI_TRACE;
+  } else if (strcasestr(trace_path, "oracleGeneralOpNS") != NULL) {
+    return ORACLE_GENERALOPNS_TRACE;
+  } else if (strcasestr(trace_path, "oracleCF1") != NULL) {
+    return ORACLE_CF1_TRACE;
+  } else if (strcasestr(trace_path, "oracleAkamai") != NULL) {
+    return ORACLE_AKAMAI_TRACE;
+  } else if (strcasestr(trace_path, "oracleWiki16u") != NULL) {
+    return ORACLE_WIKI16u_TRACE;
+  } else if (strcasestr(trace_path, "oracleWiki19u") != NULL) {
+    return ORACLE_WIKI19u_TRACE;
+  } else if (strcasestr(trace_path, ".twr.") != NULL) {
+    return TWR_TRACE;
+  } else if (strcasestr(trace_path, ".twrNS.") != NULL) {
+    return TWRNS_TRACE;
+  } else if (strcasestr(trace_path, "oracleSysTwrNS") != NULL) {
+    return ORACLE_SYS_TWRNS_TRACE;
+  } else {
+    ERROR("cannot detect trace type: %s\n", trace_path);
+  }
+}
+
+#ifdef __cplusplus
+}
+#endif

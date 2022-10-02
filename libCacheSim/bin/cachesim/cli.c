@@ -9,6 +9,7 @@
 #include "../../include/libCacheSim/const.h"
 #include "../../utils/include/mysys.h"
 #include "internal.h"
+#include "../cli_utils.h"
 
 const char *argp_program_version = "cachesim 0.0.1";
 const char *argp_program_bug_address = "google group";
@@ -202,16 +203,17 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   }
 
   /* convert trace type string to enum */
-  trace_type_str_to_enum(args);
+  args->trace_type = trace_type_str_to_enum(args->trace_type_str);
 
   /* verify the trace type is correct */
-  verify_trace_type(args);
+  verify_trace_type(args->trace_path, args->trace_type_str);
 
   reader_init_param_t reader_init_params = {
       .ignore_obj_size = args->ignore_obj_size,
       .ignore_size_zero_req = true,
       .obj_id_is_num = true};
   parse_reader_params(args->trace_type_params, &reader_init_params);
+
   if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
       reader_init_params.obj_size_field == -1) {
     args->consider_obj_metadata = false;

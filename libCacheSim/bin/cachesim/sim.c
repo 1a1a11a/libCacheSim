@@ -5,6 +5,10 @@
 #include "../../utils/include/mymath.h"
 #include "../../utils/include/mysys.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define REPORT_INTERVAL (24 * 3600)
 void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
               char *ofilepath) {
@@ -76,3 +80,8 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
   fprintf(output_file, "%s\n", output_str);
   fclose(output_file);
 }
+
+#ifdef __cplusplus
+}
+#endif
+
