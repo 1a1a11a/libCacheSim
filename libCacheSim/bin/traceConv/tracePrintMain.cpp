@@ -7,7 +7,7 @@
 
 #include "../../include/libCacheSim/reader.h"
 #include "internal.hpp"
-#include "traceConv.hpp"
+
 
 int main(int argc, char *argv[]) {
   struct arguments args;
