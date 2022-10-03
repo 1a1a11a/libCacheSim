@@ -26,7 +26,8 @@ enum argp_option_short {
   OPTION_WARMUP_SEC = 0x104,
   OPTION_VERBOSE = 'v',
   OPTION_CONSIDER_OBJ_METADATA = 0x105,
-  OPTION_NUM_THREAD = 0x106
+  OPTION_NUM_THREAD = 0x106,
+  OPTION_SAMPLE_RATIO = 's',
 };
 
 /*
@@ -53,6 +54,8 @@ static struct argp_option options[] = {
      "Admission algorithm: size/bloomFilter/probabilistic", 4},
     {"admission_params", OPTION_ADMISSION_PARAMS, 0, 0,
      "params for admission algorithm", 4},
+    {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
+     "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 5},
 
     {"output_path", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
     {"num_thread", OPTION_NUM_THREAD, "16", 0,

@@ -19,7 +19,6 @@ struct arguments {
   trace_type_e trace_type;
   char *trace_type_params;
   double sample_ratio;
-  int sample_ratio_inv;  // sample one out of sample_ratio_inv objects
 
   bool ignore_obj_size;
   bool output_txt;

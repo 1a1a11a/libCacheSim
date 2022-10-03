@@ -1,7 +1,8 @@
 /* a temporal sampler that samples every 1 / sampling_ratio requests */
 
+#include <stdbool.h>
+
 #include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/mem.h"
 #include "../../include/libCacheSim/sampling.h"
 
 #ifdef __cplusplus
@@ -12,7 +13,7 @@ typedef struct temporal_sampler_params {
   int n_samples;
 } temporal_sampler_params_t;
 
-bool temporal_sample(sampler_t *sampler, const request_t *req) {
+bool temporal_sample(sampler_t *sampler, request_t *req) {
   temporal_sampler_params_t *params = sampler->other_params;
 
   if (++params->n_samples == sampler->sampling_ratio_inv) {
@@ -23,9 +24,9 @@ bool temporal_sample(sampler_t *sampler, const request_t *req) {
   return false;
 }
 
-sampler_t *clone_temporal_sampler(sampler_t *sampler) {
+sampler_t *clone_temporal_sampler(const sampler_t *sampler) {
   sampler_t *cloned_sampler = my_malloc(sampler_t);
-  memcpy(cloned_sampler, cloned_sampler, sizeof(sampler_t));
+  memcpy(cloned_sampler, sampler, sizeof(sampler_t));
   cloned_sampler->other_params = my_malloc(temporal_sampler_params_t);
   ((temporal_sampler_params_t *)cloned_sampler->other_params)->n_samples = 0;
 
@@ -42,7 +43,7 @@ sampler_t *create_temporal_sampler(double sampling_ratio) {
     ERROR("sampling ratio range error get %lf (should be 0-1)\n",
           sampling_ratio);
   } else if (sampling_ratio == 1) {
-    WARNING("temporal sampler ratio 1 means no sampling\n");
+    WARN("temporal sampler ratio 1 means no sampling\n");
     return NULL;
   }
 

@@ -73,6 +73,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->obj_id_is_num = false;
   reader->mapped_file = NULL;
   reader->mmap_offset = 0;
+  reader->sampler = NULL;
   if (reader_init_param != NULL) {
     memcpy(&reader->init_params, reader_init_param,
            sizeof(reader_init_param_t));
@@ -83,7 +84,10 @@ reader_t *setup_reader(const char *const trace_path,
     reader->ignore_size_zero_req = reader_init_param->ignore_size_zero_req;
     reader->obj_id_is_num = reader_init_param->obj_id_is_num;
     reader->cap_at_n_req = reader_init_param->cap_at_n_req;
-  } else {
+    if (reader_init_param->sampler != NULL)
+      reader->sampler = reader_init_param->sampler->clone(reader_init_param->sampler);
+  }
+  else {
     memset(&reader->init_params, 0, sizeof(reader_init_param_t));
   }
 
@@ -347,6 +351,15 @@ int read_one_req(reader_t *const reader, request_t *const req) {
       abort();
   }
 
+  if (reader->sampler != NULL) {
+    if (!reader->sampler->sample(reader->sampler, req)) {
+      VVERBOSE("skip one req: time %lu, obj_id %lu, size %u at offset %zu\n",
+               req->real_time, req->obj_id, req->obj_size, offset_before_read);
+
+      return read_one_req(reader, req);
+    }
+  }
+
   if (reader->ignore_obj_size) {
     req->obj_size = 1;
   }
@@ -565,12 +578,23 @@ int close_reader(reader_t *const reader) {
   }
 #endif
 
-  if (!reader->cloned && reader->mapped_file != NULL) {
-    munmap(reader->mapped_file, reader->file_size);
-  }
+  if (!reader->cloned) {
+    if (reader->mapped_file != NULL) {
+      munmap(reader->mapped_file, reader->file_size);
+    }
+    if (reader->init_params.sampler != NULL) {
+      reader->init_params.sampler->free(reader->init_params.sampler);
+    }
+  } 
+
   if (reader->reader_params != NULL) {
     free(reader->reader_params);
   }
+
+  if (reader->sampler != NULL) {
+    free(reader->sampler);
+  }
+
   free(reader->trace_path);
   free(reader);
 

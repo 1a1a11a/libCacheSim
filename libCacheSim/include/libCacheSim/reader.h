@@ -137,15 +137,6 @@ static inline reader_t *open_trace(const char *path, const trace_type_e type,
 }
 
 /**
- * add a sampler to the reader, the requests from the reader will be sampled
- * @param reader
- * @param sampler
- */
-static inline void add_sampler(reader_t *reader, sampler_t *sampler) {
-  reader->sampler = sampler;
-}
-
-/**
  * get the number of requests from the trace
  * @param reader
  * @return
@@ -223,13 +214,6 @@ int read_one_req_above(reader_t *reader, request_t *c);
 int go_back_one_req(reader_t *reader);
 
 void reader_set_read_pos(reader_t *reader, double pos);
-
-// static inline uint64_t str_to_obj_id(char *s, size_t len) {
-//   return (uint64_t) atoll(s);
-//   ERROR("not supported yet\n");
-//   abort();
-//   return 0;
-// }
 
 #ifdef __cplusplus
 }

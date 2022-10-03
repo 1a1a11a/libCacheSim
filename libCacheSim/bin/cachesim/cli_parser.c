@@ -77,25 +77,18 @@ int conv_cache_sizes(char *cache_size_str, struct arguments *args) {
  * @param args
  */
 void print_parsed_args(struct arguments *args) {
-  char cache_size_str[1024];
-  int n = 0;
-  for (int i = 0; i < args->n_cache_size; i++) {
-    n += snprintf(cache_size_str + n, 1023 - n, "%lu,", args->cache_sizes[i]);
-    assert(n < 1024);
-  }
-
-#define OUTPUT_STR_LEN (1024 * 4)
+#define OUTPUT_STR_LEN 1024
   char output_str[OUTPUT_STR_LEN];
-  n = snprintf(
+  int n = snprintf(
       output_str, OUTPUT_STR_LEN - 1,
-      "trace path: %s, trace_type %s, cache size %s eviction %s, ofilepath "
+      "trace path: %s, trace_type %s, eviction %s, ofilepath "
       "%s, %d threads, warmup %d sec",
-      args->trace_path, trace_type_str[args->trace_type], cache_size_str,
+      args->trace_path, trace_type_str[args->trace_type], // cache_size_str,
       args->eviction_algo, args->ofilepath, args->n_thread, args->warmup_sec);
 
   if (args->trace_type_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
-                  ", trace_type_params: %s", args->trace_type_params);
+                  ", trace-type-params: %s", args->trace_type_params);
 
   if (args->admission_algo != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", admission: %s",
@@ -103,11 +96,11 @@ void print_parsed_args(struct arguments *args) {
 
   if (args->admission_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
-                  ", admission_params: %s", args->admission_params);
+                  ", admission-params: %s", args->admission_params);
 
   if (args->eviction_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
-                  ", eviction_params: %s", args->eviction_params);
+                  ", eviction-params: %s", args->eviction_params);
 
   if (args->use_ttl)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", use ttl");
@@ -162,6 +155,7 @@ void set_cache_size(struct arguments *args, reader_t *reader) {
     }
 
     // detect cache size from the trace
+    reset_reader(reader);
     long wss = cal_working_set_size(reader, args->ignore_obj_size);
     double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003,
                                    0.01,   0.03,   0.1,   0.3};
@@ -169,6 +163,8 @@ void set_cache_size(struct arguments *args, reader_t *reader) {
       args->cache_sizes[i] = (long)(wss * s[i]);
     }
     args->n_cache_size = N_AUTO_CACHE_SIZE;
+
+    reset_reader(reader);
   }
 }
 

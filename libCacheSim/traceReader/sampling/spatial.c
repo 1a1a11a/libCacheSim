@@ -3,7 +3,6 @@
  **/
 
 #include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/mem.h"
 #include "../../include/libCacheSim/sampling.h"
 #include "../dataStructure/hash/hash.h"
 
@@ -21,9 +20,11 @@ bool spatial_sample(sampler_t *sampler, request_t *req) {
   return hash_value % sampler->sampling_ratio_inv == 0;
 }
 
-sampler_t *clone_spatial_sampler(sampler_t *sampler) {
+sampler_t *clone_spatial_sampler(const sampler_t *sampler) {
   sampler_t *cloned_sampler = my_malloc(sampler_t);
-  memcpy(cloned_sampler, cloned_sampler, sizeof(sampler_t));
+  memcpy(cloned_sampler, sampler, sizeof(sampler_t));
+
+  VVERBOSE("clone spatial sampler\n");
   return cloned_sampler;
 }
 
@@ -34,7 +35,7 @@ sampler_t *create_spatial_sampler(double sampling_ratio) {
     ERROR("sampling ratio range error get %lf (should be 0-1)\n",
           sampling_ratio);
   } else if (sampling_ratio == 1) {
-    WARNING("spatial sampler ratio 1 means no sampling\n");
+    WARN("spatial sampler ratio 1 means no sampling\n");
     return NULL;
   }
 
@@ -47,6 +48,10 @@ sampler_t *create_spatial_sampler(double sampling_ratio) {
   s->free = free_spatial_sampler;
   s->type = SPATIAL_SAMPLER;
   // s->sampling_boundary = (uint64_t)(ratio * UINT64_MAX);
+
+  print_sampler(s);
+
+  VVERBOSE("create spatial sampler with ratio %lf\n", sampling_ratio);
   return s;
 }
 

@@ -27,6 +27,7 @@ struct arguments {
   char *trace_type_params;
   char *eviction_params;
   char *admission_params;
+  double sample_ratio;
   int n_thread;
   int64_t n_req;    /* number of requests to process */
 

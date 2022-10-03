@@ -86,10 +86,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_SAMPLE_RATIO:
       arguments->sample_ratio = atof(arg);
       if (arguments->sample_ratio < 0 || arguments->sample_ratio > 1) {
-        printf("sample ratio should be in (0, 1]\n");
-        arguments->sample_ratio = 1;
+        ERROR("sample ratio should be in (0, 1]\n");
       }
-      arguments->sample_ratio_inv = (int) (1.0 / arguments->sample_ratio);
       break;
     case OPTION_NUM_REQ:
       arguments->n_req = atoll(arg);
@@ -141,7 +139,6 @@ static void init_arg(struct arguments *args) {
   args->trace_type_params = NULL;
   args->ignore_obj_size = false;
   args->sample_ratio = 1.0;
-  args->sample_ratio_inv = 1;
   args->ofilepath = NULL;
   args->output_txt = false;
   args->remove_size_change = false;
@@ -156,23 +153,23 @@ static void print_parsed_arg(struct arguments *args) {
 
   if (args->trace_type_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
-                  ", trace_type_params: %s", args->trace_type_params);
+                  ", trace type params: %s", args->trace_type_params);
 
-  if (args->sample_ratio_inv != 1)
+  if (args->sample_ratio < 1.0)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", sample ratio: %lf",
                   args->sample_ratio);
 
   if (args->n_req != -1)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
-                  ", num requests to process: %ld", (long) args->n_req);
+                  ", num requests to process: %ld", (long)args->n_req);
 
   if (args->output_txt)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
-                  ", output_txt trace: true");
+                  ", output txt trace: true");
 
   if (args->remove_size_change)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
-                  ", remove_size_change during traceConv");
+                  ", remove size change during traceConv");
 
   if (args->ignore_obj_size)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
@@ -206,23 +203,29 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_type =
       trace_type_str_to_enum(args->trace_type_str, args->trace_path);
 
-  reader_init_param_t reader_init_params = {
-      .ignore_obj_size = args->ignore_obj_size,
-      .ignore_size_zero_req = true,
-      .obj_id_is_num = true, 
-      .cap_at_n_req = args->n_req
-      };
+  reader_init_param_t reader_init_params;
+  memset(&reader_init_params, 0, sizeof(reader_init_params));
+  reader_init_params.ignore_obj_size = args->ignore_obj_size;
+  reader_init_params.ignore_size_zero_req = true;
+  reader_init_params.obj_id_is_num = true;
+  reader_init_params.cap_at_n_req = args->n_req;
+  reader_init_params.sampler = NULL;
+
+  if (args->sample_ratio > 0 && args->sample_ratio < 1 - 1e-6) {
+    sampler_t *sampler = create_spatial_sampler(args->sample_ratio);
+    reader_init_params.sampler = sampler;
+  }
 
   parse_reader_params(args->trace_type_params, &reader_init_params);
   if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
       reader_init_params.obj_size_field == -1) {
     args->ignore_obj_size = true;
+    reader_init_params.ignore_obj_size = true;
   }
-
-  print_parsed_arg(args);
 
   args->reader =
       setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+
+  print_parsed_arg(args);
 }
 }  // namespace cli
-
