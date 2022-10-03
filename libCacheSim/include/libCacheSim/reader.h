@@ -46,6 +46,7 @@ typedef struct {
   int obj_size_field;
   int op_field;
   int ttl_field;
+  int next_access_vtime_field;
 
   // csv reader
   bool has_header;
@@ -55,7 +56,7 @@ typedef struct {
   char delimiter;
 
   // binary reader
-  char *binary_fmt;
+  char *binary_fmt_str;
 
   // sample some requests in the trace
   sampler_t *sampler;
@@ -120,7 +121,7 @@ typedef struct reader {
  *  number or not, if it is not a number then we will map it to uint64_t
  * @param reader_init_param some initialization parameters used by csv and
  * binary traces these include time_field, obj_id_field, obj_size_field,
- * op_field, ttl_field, has_header, delimiter, binary_fmt
+ * op_field, ttl_field, has_header, delimiter, binary_fmt_str
  *
  * @return a pointer to reader_t struct, the returned reader needs to be
  * explicitly closed by calling close_reader or close_trace

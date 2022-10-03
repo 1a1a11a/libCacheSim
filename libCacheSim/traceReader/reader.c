@@ -78,8 +78,8 @@ reader_t *setup_reader(const char *const trace_path,
   if (reader_init_param != NULL) {
     memcpy(&reader->init_params, reader_init_param,
            sizeof(reader_init_param_t));
-    if (reader_init_param->binary_fmt != NULL)
-      reader->init_params.binary_fmt = strdup(reader_init_param->binary_fmt);
+    if (reader_init_param->binary_fmt_str != NULL)
+      reader->init_params.binary_fmt_str = strdup(reader_init_param->binary_fmt_str);
 
     reader->ignore_obj_size = reader_init_param->ignore_obj_size;
     reader->ignore_size_zero_req = reader_init_param->ignore_size_zero_req;
@@ -596,11 +596,11 @@ int close_reader(reader_t *const reader) {
     free(csv_params->csv_parser);
   } else if (reader->trace_type == BIN_TRACE) {
     binary_params_t *params = reader->reader_params;
-    if (params != NULL && params->fmt != NULL) {
-      free(params->fmt);
+    if (params != NULL && params->fmt_str != NULL) {
+      free(params->fmt_str);
     }
-    if (reader->init_params.binary_fmt != NULL) {
-      free(reader->init_params.binary_fmt);
+    if (reader->init_params.binary_fmt_str != NULL) {
+      free(reader->init_params.binary_fmt_str);
     }
   }
 
@@ -652,10 +652,10 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
     if (offset == reader->file_size) {
       char c;
       fseek(reader->file, -1, SEEK_CUR);
-      fread(&c, 1, 1, reader->file);
+      int _v = fread(&c, 1, 1, reader->file);
       while (isspace(c)) {
         fseek(reader->file, -2, SEEK_CUR);
-        fread(&c, 1, 1, reader->file);
+        _v = fread(&c, 1, 1, reader->file);
       }
     }
   } else {

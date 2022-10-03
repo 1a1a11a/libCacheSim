@@ -12,7 +12,6 @@ extern "C" {
 #define MAX_LINE_LEN (1024 * 1)
 #define MAX_OBJ_ID_LEN 256
 
-
 /**************** common ****************/
 bool is_str_num(const char *str);
 
@@ -53,28 +52,33 @@ int txt_read_one_req(reader_t *const reader, request_t *const req);
 
 /**************** binary ****************/
 typedef struct {
-  int32_t obj_id_field;  // the beginning bytes in the struct
-  uint32_t obj_id_len;   // the size of obj_id
-  char obj_id_type;
+  int32_t time_offset;
+  int8_t time_field_idx;
+  char time_format;
 
-  int32_t op_field;
-  uint32_t op_len;
-  char op_type;
+  int32_t obj_id_offset;
+  int8_t obj_id_field_idx;
+  char obj_id_format;
 
-  int32_t time_field;
-  uint32_t time_len;
-  char time_type;
+  int32_t op_offset;
+  int8_t op_field_idx;
+  char op_format;
 
-  int32_t obj_size_field;
-  uint32_t obj_size_len;
-  char obj_size_type;
+  int32_t ttl_offset;
+  int8_t ttl_field_idx;
+  char ttl_format;
 
-  int32_t ttl_field;
-  uint32_t ttl_len;
-  char ttl_type;
+  int32_t next_access_vtime_offset;
+  int8_t next_access_vtime_field_idx;
+  char next_access_vtime_format;
 
-  char *fmt;
-  uint32_t num_of_fields;
+  int32_t obj_size_offset;
+  int8_t obj_size_field_idx;
+  char obj_size_format;
+
+  int32_t n_fields;
+  int32_t item_size;
+  char *fmt_str;
 } binary_params_t;
 
 /* function to setup binary reader */
