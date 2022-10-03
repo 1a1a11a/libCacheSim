@@ -27,7 +27,7 @@ int txt_read_one_req(reader_t *const reader, request_t *const req) {
     char *end;
     req->obj_id = strtoull(reader->line_buf, &end, 0);
     if (req->obj_id == 0 && end == reader->line_buf) {
-      ERROR("invalid object id, line: \"%s\", read size %d\n", reader->line_buf,
+      ERROR("invalid object id, line: \"%s\", read size %ld\n", reader->line_buf,
             read_size);
     }
   } else {

@@ -5,7 +5,7 @@
 #include "common.h"
 
 // defined in reader.c file, not in public interface
-int go_back_two_lines(reader_t *const reader);
+int go_back_two_req(reader_t *const reader);
 
 // TRUE DATA
 size_t trace_length = 113872;
@@ -96,7 +96,7 @@ void test_reader_more1(gconstpointer user_data) {
   read_one_req(reader, req);
   verify_req(reader, req, 3);
 
-  go_back_two_lines(reader);
+  go_back_two_req(reader);
   read_one_req(reader, req);
   verify_req(reader, req, 2);
 

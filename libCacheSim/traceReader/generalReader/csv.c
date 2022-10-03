@@ -214,8 +214,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
   } else if (csv_params->curr_field_idx == csv_params->obj_size_field_idx) {
     req->obj_size = (uint32_t)strtoul((char *)s, &end, 0);
     if (req->obj_size == 0 && end == s) {
-      ERROR("csvReader obj_size is not a number: %s\n", (char *)s);
-      abort();
+      ERROR("csvReader obj_size is not a number: \"%s\"\n", (char *)s);
     }
   }
 
@@ -276,8 +275,9 @@ void csv_setup_reader(reader_t *const reader) {
     csv_params->has_header = init_params->has_header;
   }
   if (csv_params->has_header) {
-    ssize_t _read_size =
+    ssize_t read_size =
         getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    reader->trace_start_offset = read_size;
   }
 }
 
@@ -297,14 +297,12 @@ int csv_read_one_req(reader_t *const reader, request_t *const req) {
   csv_params->request = req;
   DEBUG_ASSERT(csv_params->curr_field_idx == 1);
 
-  size_t offset_before_read = ftell(reader->file);
   ssize_t read_size = getline(line_buf_ptr, line_buf_size_ptr, reader->file);
   if (read_size == -1) {
     req->valid = false;
     return 1;
   }
 
-  // printf("line %s read %d byte\n", *line_buf_ptr, read_size);
   if ((size_t)csv_parse(csv_parser, *line_buf_ptr, read_size, csv_cb1, csv_cb2,
                         reader) != read_size) {
     WARN("parsing csv file error: %s\n",

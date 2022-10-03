@@ -132,7 +132,7 @@ static gint64 *_get_last_access_dist(reader_t *reader,
   GHashTable *hash_table =
       create_hash_table(reader, NULL, NULL, (GDestroyNotify)g_free, NULL);
 
-  gint64 ts = 0;
+  gint64 vtime = 0;
   gint64 dist, max_dist = 0;
 
   if (funcPtr == read_one_req) {
@@ -148,15 +148,16 @@ static gint64 *_get_last_access_dist(reader_t *reader,
   }
 
   while (req->valid) {
-    dist = _get_last_dist_add_req(req, hash_table, ts);
+    dist = _get_last_dist_add_req(req, hash_table, vtime);
     if (dist > max_dist) max_dist = dist;
     if (funcPtr == read_one_req) {
-      dist_array[ts] = dist;
+      dist_array[vtime] = dist;
     } else if (funcPtr == read_one_req_above) {
-      if ((gint64)(n_req - 1 - ts) < 0) {
+      // printf("%ld vtime: %ld, dist: %ld\n", n_req,(long) vtime, (long)dist);
+      if ((gint64)(n_req - 1 - vtime) < 0) {
         if (get_trace_type(reader) == CSV_TRACE) {
           funcPtr(reader, req);
-          ts++;
+          vtime++;
           continue;
         } else {
           ERROR(
@@ -165,10 +166,10 @@ static gint64 *_get_last_access_dist(reader_t *reader,
           abort();
         }
       }
-      dist_array[n_req - 1 - ts] = dist;
+      dist_array[n_req - 1 - vtime] = dist;
     }
     funcPtr(reader, req);
-    ts++;
+    vtime++;
   }
 
   // clean up

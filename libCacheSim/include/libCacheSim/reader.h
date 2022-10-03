@@ -77,23 +77,21 @@ typedef struct reader {
   int64_t cap_at_n_req;
 
   /************* used by binary trace *************/
-  char *mapped_file; /* mmap the file, this should not change during runtime
-                      */
+  /* mmap the file, this should not change during runtime */
+  char *mapped_file;
   uint64_t mmap_offset;
   struct zstd_reader *zstd_reader_p;
   bool is_zstd_file;
-  size_t item_size; /* the size of one request in binary trace, used to
-                     * locate the memory location of next element,
-                     * when used in vscsiReaser and binaryReader,
-                     * it is a const value,
-                     * when it is used in plainReader or csvReader,
-                     * it is the size of last record, it does not
-                     * include LFCR or \0 */
+  /* the size of one request in binary trace */
+  size_t item_size;
 
   /************* used by txt trace *************/
   FILE *file;
   char *line_buf;
   size_t line_buf_size;
+  /* the offset of the first request in the trace, it should be 0 for txt trace
+   * and csv trace with no header, this is used when reading reversely */
+  int trace_start_offset;
   char csv_delimiter;
   bool csv_has_header;
   /* whether the object id is hashed */

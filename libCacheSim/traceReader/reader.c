@@ -74,6 +74,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->mapped_file = NULL;
   reader->mmap_offset = 0;
   reader->sampler = NULL;
+  reader->trace_start_offset = 0;
   if (reader_init_param != NULL) {
     memcpy(&reader->init_params, reader_init_param,
            sizeof(reader_init_param_t));
@@ -384,28 +385,37 @@ int read_one_req(reader_t *const reader, request_t *const req) {
 int go_back_one_req(reader_t *const reader) {
   switch (reader->trace_format) {
     case TXT_TRACE_FORMAT:;
-      size_t curr_offset = ftell(reader->file);
-      size_t move_size =
-          MAX_LINE_LEN - 1 > curr_offset ? curr_offset : MAX_LINE_LEN - 1;
-      VVERBOSE("go_back_one_req prev pos %ld, move size %zu\n",
-               ftell(reader->file), move_size);
-      fseek(reader->file, -move_size, SEEK_CUR);
+      ssize_t curr_offset = ftell(reader->file);
+      if (curr_offset <= reader->trace_start_offset) {
+        // we are at the start of the file
+        return 1;
+      }
+
+      ssize_t seek_size =
+          MAX_LINE_LEN - 1 > curr_offset - reader->trace_start_offset
+              ? curr_offset - reader->trace_start_offset
+              : MAX_LINE_LEN - 1;
+      VVERBOSE("go_back_one_req prev pos %ld, seek size %zu\n",
+               ftell(reader->file), seek_size);
+
+      fseek(reader->file, -seek_size, SEEK_CUR);
       /* do not read the current pos */
-      int _read_size = fread(reader->line_buf, move_size - 1, 1, reader->file);
-      reader->line_buf[move_size - 1] = 0;
+      int _read_size = fread(reader->line_buf, seek_size - 1, 1, reader->file);
+      reader->line_buf[seek_size - 1] = 0;
       char *last_line_end = strrchr(reader->line_buf, '\n');
       if (last_line_end == NULL) {
-        if (move_size < MAX_LINE_LEN - 1) {
-          fseek(reader->file, 0, SEEK_SET);
+        if (seek_size < MAX_LINE_LEN - 1) {
+          fseek(reader->file, reader->trace_start_offset, SEEK_SET);
         }
-        if (curr_offset == 0) {
+        if (curr_offset == reader->trace_start_offset) {
           /* this happens when reverse reading reaches the start of the file */
-          DEBUG("go_back_one_req cannot find new line, set offset to %zu\n",
-                ftell(reader->file));
+          DEBUG(
+              "go_back_one_req cannot find the request above, set offset to "
+              "trace start %zu\n",
+              ftell(reader->file));
 
-          // if curr_offset is 0, we were at the start of the file before we
-          // seek, so we return 1; otherwise, we return 0 because we seek to the
-          // start
+          // if curr_offset is 0, we were at the start of the file before seek,
+          // so we return 1; otherwise, we return 0 because we seek to the start
           return 1;
         } else {
           return 0;
@@ -413,7 +423,7 @@ int go_back_one_req(reader_t *const reader) {
         return curr_offset == 0 ? 1 : 0;
       }
       int pos = last_line_end + 2 - reader->line_buf;
-      fseek(reader->file, -(move_size - pos), SEEK_CUR);
+      fseek(reader->file, -(seek_size - pos), SEEK_CUR);
 
       VVERBOSE("go_back_one_req after pos %ld\n", ftell(reader->file));
       return 0;
@@ -500,16 +510,18 @@ int skip_n_req(reader_t *reader, const int N) {
 
 void reset_reader(reader_t *const reader) {
   /* rewind the reader back to beginning */
+  long curr_offset = 0;
   if (reader->trace_type == PLAIN_TXT_TRACE) {
     fseek(reader->file, 0, SEEK_SET);
+    curr_offset = ftell(reader->file);
   } else if (reader->trace_type == CSV_TRACE) {
-    fseek(reader->file, 0, SEEK_SET);
     csv_reset_reader(reader);
+    curr_offset = ftell(reader->file);
   } else {
     reader->mmap_offset = 0;
   }
 
-  DEBUG("reset reader\n");
+  DEBUG("reset reader current offset %ld\n", curr_offset);
 }
 
 uint64_t get_num_of_req(reader_t *const reader) {
