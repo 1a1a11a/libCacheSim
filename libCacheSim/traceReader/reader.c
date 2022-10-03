@@ -24,6 +24,7 @@
 #include "customizedReader/wikiBin.h"
 #include "generalReader/libcsv.h"
 #include "generalReader/readerInternal.h"
+#include "generalReader/lcs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +39,7 @@ extern "C" {
 
 reader_t *setup_reader(const char *const trace_path,
                        const trace_type_e trace_type,
-                       const reader_init_param_t *const reader_init_param) {
+                       const reader_init_param_t *const init_params) {
   static bool _info_printed = false;
 
   int fd;
@@ -75,19 +76,17 @@ reader_t *setup_reader(const char *const trace_path,
   reader->mmap_offset = 0;
   reader->sampler = NULL;
   reader->trace_start_offset = 0;
-  if (reader_init_param != NULL) {
-    memcpy(&reader->init_params, reader_init_param,
-           sizeof(reader_init_param_t));
-    if (reader_init_param->binary_fmt_str != NULL)
-      reader->init_params.binary_fmt_str = strdup(reader_init_param->binary_fmt_str);
+  if (init_params != NULL) {
+    memcpy(&reader->init_params, init_params, sizeof(reader_init_param_t));
+    if (init_params->binary_fmt_str != NULL)
+      reader->init_params.binary_fmt_str = strdup(init_params->binary_fmt_str);
 
-    reader->ignore_obj_size = reader_init_param->ignore_obj_size;
-    reader->ignore_size_zero_req = reader_init_param->ignore_size_zero_req;
-    reader->obj_id_is_num = reader_init_param->obj_id_is_num;
-    reader->cap_at_n_req = reader_init_param->cap_at_n_req;
-    if (reader_init_param->sampler != NULL)
-      reader->sampler =
-          reader_init_param->sampler->clone(reader_init_param->sampler);
+    reader->ignore_obj_size = init_params->ignore_obj_size;
+    reader->ignore_size_zero_req = init_params->ignore_size_zero_req;
+    reader->obj_id_is_num = init_params->obj_id_is_num;
+    reader->cap_at_n_req = init_params->cap_at_n_req;
+    if (init_params->sampler != NULL)
+      reader->sampler = init_params->sampler->clone(init_params->sampler);
   } else {
     memset(&reader->init_params, 0, sizeof(reader_init_param_t));
   }
@@ -141,9 +140,9 @@ reader_t *setup_reader(const char *const trace_path,
     case CSV_TRACE:
       reader->trace_format = TXT_TRACE_FORMAT;
       csv_setup_reader(reader);
-      if (!check_delimiter(reader, reader_init_param->delimiter)) {
+      if (!check_delimiter(reader, init_params->delimiter)) {
         ERROR("The trace does not use delimiter '%c', please check\n",
-              reader_init_param->delimiter);
+              init_params->delimiter);
       }
       break;
     case PLAIN_TXT_TRACE:
@@ -215,9 +214,9 @@ reader_t *setup_reader(const char *const trace_path,
     case ORACLE_WIKI19u_TRACE:
       oracleWiki2019uReader_setup(reader);
       break;
-    // case ORACLE_WIKI19t_TRACE:
-    //   oracleWiki2019tReader_setup(reader);
-    //   break;
+    case LCS_TRACE:
+      LCSReader_setup(reader);
+      break;
     default:
       ERROR("cannot recognize trace type: %c\n", reader->trace_type);
       abort();
@@ -429,7 +428,7 @@ int go_back_one_req(reader_t *const reader) {
       return 0;
 
     case BINARY_TRACE_FORMAT:
-      if (reader->mmap_offset >= reader->item_size) {
+      if (reader->mmap_offset >= reader->trace_start_offset + reader->item_size) {
         reader->mmap_offset -= (reader->item_size);
         return 0;
       } else {
@@ -518,7 +517,7 @@ void reset_reader(reader_t *const reader) {
     csv_reset_reader(reader);
     curr_offset = ftell(reader->file);
   } else {
-    reader->mmap_offset = 0;
+    reader->mmap_offset = reader->trace_start_offset;
   }
 
   DEBUG("reset reader current offset %ld\n", curr_offset);
@@ -574,6 +573,7 @@ reader_t *clone_reader(const reader_t *const reader_in) {
     reader->mapped_file = reader_in->mapped_file;
   }
   reader->cloned = true;
+  reader->trace_start_offset = reader_in->trace_start_offset;
   return reader;
 }
 

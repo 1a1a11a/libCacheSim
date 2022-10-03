@@ -33,6 +33,7 @@ typedef enum {
   PLAIN_TXT_TRACE,
   STANDARD_IQQ_TRACE,
   ORACLE_GENERAL_TRACE,
+  LCS_TRACE,    // libCacheSim format
 
   /* special trace */
   VSCSI_TRACE,

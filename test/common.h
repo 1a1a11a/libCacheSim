@@ -87,7 +87,7 @@ static reader_t *setup_binary_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "trace.vscsi");
   reader_init_param_t *init_params_bin = g_new0(reader_init_param_t, 1);
-  init_params_bin->binary_fmt = "<3I2H2Q";
+  init_params_bin->binary_fmt_str = "<IIIHHQQ";
   init_params_bin->obj_size_field = 2;
   init_params_bin->obj_id_field = 6;
   init_params_bin->time_field = 7;

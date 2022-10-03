@@ -33,6 +33,9 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return CSV_TRACE;
   } else if (strcasecmp(trace_type_str, "binary") == 0) {
     return BIN_TRACE;
+  } else if (strcasecmp(trace_type_str, "lcs") == 0) {
+    // libCacheSim trace
+    return LCS_TRACE;
   } else if (strcasecmp(trace_type_str, "twr") == 0) {
     return TWR_TRACE;
   } else if (strcasecmp(trace_type_str, "twrNS") == 0) {

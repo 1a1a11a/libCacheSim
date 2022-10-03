@@ -44,7 +44,7 @@
 // //  if (argc >= 3)
 // //    n_threads = atoi(argv[2]);
 
-// //  reader_init_param_t init_params = {.binary_fmt="III", .time_field=1,
+// //  reader_init_param_t init_params = {.binary_fmt_str="III", .time_field=1,
 // .obj_id_field=2, .obj_size_field=3};
 // //  reader_t *reader = setup_reader(trace_path, TWR_BIN_TRACE, OBJ_ID_NUM,
 // NULL);

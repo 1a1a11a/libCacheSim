@@ -76,6 +76,15 @@ typedef struct reader {
   int ver;
   bool cloned;  // true if this is a cloned reader, else false
   int64_t cap_at_n_req;
+  /* the offset of the first request in the trace, it should be 0 for 
+   *    txt trace
+   *    csv trace with no header
+   *    customized binary traces
+   * but may not be 0 for 
+   *    csv trace with header
+   *    LCS trace
+   * this is used when cloning reader and reading reversely */
+  int trace_start_offset;
 
   /************* used by binary trace *************/
   /* mmap the file, this should not change during runtime */
@@ -90,9 +99,6 @@ typedef struct reader {
   FILE *file;
   char *line_buf;
   size_t line_buf_size;
-  /* the offset of the first request in the trace, it should be 0 for txt trace
-   * and csv trace with no header, this is used when reading reversely */
-  int trace_start_offset;
   char csv_delimiter;
   bool csv_has_header;
   /* whether the object id is hashed */
@@ -110,6 +116,30 @@ typedef struct reader {
   /* used for trace sampling */
   sampler_t *sampler;
 } reader_t;
+
+static inline void set_default_reader_init_params(reader_init_param_t *params) {
+  memset(params, 0, sizeof(reader_init_param_t));
+
+  params->ignore_obj_size = false;
+  params->ignore_size_zero_req = true;
+  params->obj_id_is_num = true;
+  params->cap_at_n_req = -1;
+
+  params->time_field = 0;
+  params->obj_id_field = 0;
+  params->obj_size_field = 0;
+  params->op_field = 0;
+  params->ttl_field = 0;
+  params->next_access_vtime_field = 0;
+
+  params->has_header = false;
+  params->has_header_set = false;
+  params->delimiter = ',';
+
+  params->binary_fmt_str = NULL;
+
+  params->sampler = NULL;
+}
 
 /**
  * setup a reader for reading trace
