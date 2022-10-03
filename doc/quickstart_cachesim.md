@@ -106,6 +106,9 @@ Besides csv trace, we also support txt trace and binary trace.
 # txt trace is a simple format that stores obj-id in each line
 ./cachesim ../data/trace.txt txt lru 1gb
 
+# binary trace, format is specified using format string similar to Python struct
+./cachesim ../data/trace.vscsi binary lru 1gb -t "format=<IIIHHQQ,obj-id-col=6,obj-size-col=2"
+
 # oracleGeneral is a binary format that stores time, obj-id, size, next-access-time (in reference count)
 ./cachesim ../data/trace.oracleGeneral.bin oracleGeneral lru 1gb
 ```

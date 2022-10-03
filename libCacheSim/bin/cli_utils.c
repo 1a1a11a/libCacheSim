@@ -31,6 +31,8 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return PLAIN_TXT_TRACE;
   } else if (strcasecmp(trace_type_str, "csv") == 0) {
     return CSV_TRACE;
+  } else if (strcasecmp(trace_type_str, "binary") == 0) {
+    return BIN_TRACE;
   } else if (strcasecmp(trace_type_str, "twr") == 0) {
     return TWR_TRACE;
   } else if (strcasecmp(trace_type_str, "twrNS") == 0) {
@@ -111,12 +113,19 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
       params->obj_size_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2)
         ERROR("param parsing error, find string \"%s\" after number\n", end);
+    } else if (strcasecmp(key, "next-access-col") == 0 ||
+               strcasecmp(key, "next-access-field") == 0) {
+      params->next_access_vtime_field = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2)
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
     } else if (strcasecmp(key, "obj-id-is-num") == 0) {
       params->obj_id_is_num = is_true(value);
     } else if (strcasecmp(key, "header") == 0 ||
                strcasecmp(key, "has-header") == 0) {
       params->has_header = is_true(value);
       params->has_header_set = true;
+    } else if (strcasecmp(key, "format") == 0) {
+      params->binary_fmt_str = strdup(value);
     } else if (strcasecmp(key, "delimiter") == 0) {
       /* user input: k1=v1, delimiter=;, k2=v2 */
       params->delimiter = value[0];
