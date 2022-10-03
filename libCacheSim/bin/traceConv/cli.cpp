@@ -34,8 +34,8 @@ enum argp_option_short {
 static struct argp_option options[] = {
     {0, 0, 0, 0, "Options used by all the utilities:"},
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
-     "\"obj-id-col=1;header=true\"", 0,
-     "Parameters used for csv trace, e.g., \"obj-id-col=1;header=true\"", 2},
+     "\"obj-id-col=1,header=true\"", 0,
+     "Parameters used for csv trace, e.g., \"obj-id-col=1,header=true\"", 2},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Number of requests to process, -1 means all requests in the trace", 2},
 

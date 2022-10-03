@@ -397,11 +397,20 @@ int go_back_one_req(reader_t *const reader) {
       if (last_line_end == NULL) {
         if (move_size < MAX_LINE_LEN - 1) {
           fseek(reader->file, 0, SEEK_SET);
+        }
+        if (curr_offset == 0) {
           /* this happens when reverse reading reaches the start of the file */
           DEBUG("go_back_one_req cannot find new line, set offset to %zu\n",
                 ftell(reader->file));
+
+          // if curr_offset is 0, we were at the start of the file before we
+          // seek, so we return 1; otherwise, we return 0 because we seek to the
+          // start
+          return 1;
+        } else {
+          return 0;
         }
-        return 1;
+        return curr_offset == 0 ? 1 : 0;
       }
       int pos = last_line_end + 2 - reader->line_buf;
       fseek(reader->file, -(move_size - pos), SEEK_CUR);
