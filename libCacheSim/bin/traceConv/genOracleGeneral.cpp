@@ -104,8 +104,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
     if (n_req_curr % 100000000 == 0) {
       INFO(
           "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
-          "object, %lld B"
-          "(%.2lf GB)\n",
+          "object, %lld B (%.2lf GB)\n",
           reader->trace_path, (long)(n_req_curr / 1e6),
           (double)total_bytes / GiB, req->real_time - start_ts,
           (long long)n_obj, (long long)unique_bytes,
@@ -120,6 +119,12 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
 
   free_request(req);
   ofile_temp.close();
+
+  INFO("%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
+       "object, %lld B (%.2lf GB), reversing output...\n",
+       reader->trace_path, (long)(n_req_curr / 1e6),
+       (double)total_bytes / GiB, req->real_time - start_ts, (long long)n_obj,
+       (long long)unique_bytes, (double)unique_bytes / GiB);
 
   _reverse_file(ofilepath, n_req_curr, n_obj, output_txt, remove_size_change);
 }
@@ -221,5 +226,7 @@ static void _reverse_file(std::string ofilepath, int64_t n_total_req,
   assert(n_req == n_total_req);
 
   remove((ofilepath + ".reverse").c_str());
+
+  INFO("trace conversion finished, output %s\n", ofilepath.c_str());
 }
 }  // namespace oracleGeneral

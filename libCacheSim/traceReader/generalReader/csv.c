@@ -47,7 +47,7 @@ static int read_first_line(const reader_t *reader, char *in_buf,
   FILE *ifile = fopen(reader->trace_path, "r");
   char *buf = NULL;
   size_t n = 0;
-  size_t read_size = getline(&buf, &n, ifile);
+  ssize_t read_size = getline(&buf, &n, ifile);
 
   if (in_buf_size < read_size) {
     WARN(
@@ -167,7 +167,7 @@ bool check_delimiter(const reader_t *reader, char delimiter) {
   bool is_delimiter_correct = true;
   size_t n = 0;
 
-  size_t read_size = getline(&buf, &n, ifile);
+  ssize_t read_size = getline(&buf, &n, ifile);
 #define N_TEST 1024
   for (int i = 0; i < N_TEST; i++) {
     if (strchr(buf, delimiter) == NULL) {
@@ -276,7 +276,7 @@ void csv_setup_reader(reader_t *const reader) {
     csv_params->has_header = init_params->has_header;
   }
   if (csv_params->has_header) {
-    int _read_size =
+    ssize_t _read_size =
         getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
@@ -298,7 +298,7 @@ int csv_read_one_req(reader_t *const reader, request_t *const req) {
   DEBUG_ASSERT(csv_params->curr_field_idx == 1);
 
   size_t offset_before_read = ftell(reader->file);
-  int read_size = getline(line_buf_ptr, line_buf_size_ptr, reader->file);
+  ssize_t read_size = getline(line_buf_ptr, line_buf_size_ptr, reader->file);
   if (read_size == -1) {
     req->valid = false;
     return 1;
@@ -327,7 +327,7 @@ void csv_reset_reader(reader_t *reader) {
     csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
   if (csv_params->has_header) {
-    int _read_size =
+    ssize_t _read_size =
         getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }

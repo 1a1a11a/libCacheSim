@@ -431,7 +431,7 @@ int go_back_one_req(reader_t *const reader) {
   }
 }
 
-int go_back_two_lines(reader_t *const reader) {
+int go_back_two_req(reader_t *const reader) {
   /* go back two requests
    return 0 on successful, non-zero otherwise
    */
@@ -454,7 +454,7 @@ int go_back_two_lines(reader_t *const reader) {
  * @return 0 on success
  */
 int read_one_req_above(reader_t *const reader, request_t *req) {
-  if (go_back_two_lines(reader) == 0) {
+  if (go_back_two_req(reader) == 0) {
     return read_one_req(reader, req);
   } else {
     req->valid = false;
@@ -470,11 +470,12 @@ int read_one_req_above(reader_t *const reader, request_t *req) {
  */
 int skip_n_req(reader_t *reader, const int N) {
   int count = N;
+  char **buf = &reader->line_buf;
+  size_t *buf_size_ptr = &reader->line_buf_size;
 
   if (reader->trace_format == TXT_TRACE_FORMAT) {
     for (int i = 0; i < N; i++) {
-      if (getline(&reader->line_buf, &reader->line_buf_size, reader->file) ==
-          -1) {
+      if (getline(buf, buf_size_ptr, reader->file) == -1) {
         WARN("try to skip %d requests, but only %d requests left\n", N, i);
         return i;
       }
@@ -518,10 +519,15 @@ uint64_t get_num_of_req(reader_t *const reader) {
 
   if (reader->trace_format == TXT_TRACE_FORMAT) {
     size_t old_pos = ftell(reader->file);
+    char **buf = (char **)&reader->line_buf;
+    size_t *buf_size = &reader->line_buf_size;
+
     fseek(reader->file, 0, SEEK_SET);
-    while (getline(&reader->line_buf, &reader->line_buf_size, reader->file) >
-           0) {
-      n_req++;
+    ssize_t read_size = getline(buf, buf_size, reader->file);
+    while (read_size > 0) {
+      if (read_size > 1 || !isspace(reader->line_buf[0])) n_req++;
+
+      read_size = getline(buf, buf_size, reader->file);
     }
     /* if the trace is csv with_header, it needs to reduce by 1  */
     if (reader->trace_type == CSV_TRACE &&
@@ -630,6 +636,15 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
     fseek(reader->file, offset, SEEK_SET);
     if (offset != 0 && offset != reader->file_size) {
       go_back_one_req(reader);
+    }
+    if (offset == reader->file_size) {
+      char c;
+      fseek(reader->file, -1, SEEK_CUR);
+      fread(&c, 1, 1, reader->file);
+      while (isspace(c)) {
+        fseek(reader->file, -2, SEEK_CUR);
+        fread(&c, 1, 1, reader->file);
+      }
     }
   } else {
     reader->mmap_offset = offset;
