@@ -78,7 +78,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
   struct arguments *arguments = state->input;
 
   switch (key) {
-    case OPTION_N_THREAD:
+    case OPTION_NUM_THREAD:
       arguments->n_thread = atoi(arg);
       if (arguments->n_thread == 0 || arguments->n_thread == -1) {
         arguments->n_thread = n_cores();
