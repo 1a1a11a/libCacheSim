@@ -28,6 +28,7 @@ struct arguments {
   char *eviction_params;
   char *admission_params;
   int n_thread;
+  int64_t n_req;    /* number of requests to process */
 
   bool verbose;
   bool ignore_obj_size;

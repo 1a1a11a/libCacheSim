@@ -82,6 +82,7 @@ reader_t *setup_reader(const char *const trace_path,
     reader->ignore_obj_size = reader_init_param->ignore_obj_size;
     reader->ignore_size_zero_req = reader_init_param->ignore_size_zero_req;
     reader->obj_id_is_num = reader_init_param->obj_id_is_num;
+    reader->cap_at_n_req = reader_init_param->cap_at_n_req;
   } else {
     memset(&reader->init_params, 0, sizeof(reader_init_param_t));
   }
@@ -245,6 +246,11 @@ reader_t *setup_reader(const char *const trace_path,
  */
 int read_one_req(reader_t *const reader, request_t *const req) {
   if (reader->mmap_offset >= reader->file_size - 1) {
+    req->valid = FALSE;
+    return 1;
+  }
+
+  if (reader->cap_at_n_req > 1 && reader->n_read_req >= reader->cap_at_n_req) {
     req->valid = FALSE;
     return 1;
   }

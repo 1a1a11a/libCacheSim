@@ -20,12 +20,13 @@ enum argp_option_short {
   OPTION_ADMISSION_ALGO = 'a',
   OPTION_ADMISSION_PARAMS = 0x100,
   OPTION_OUTPUT_PATH = 'o',
-  OPTION_N_THREAD = 'n',
+  OPTION_NUM_REQ = 'n',
   OPTION_IGNORE_OBJ_SIZE = 0x101,
   OPTION_USE_TTL = 0x102,
   OPTION_WARMUP_SEC = 0x104,
   OPTION_VERBOSE = 'v',
   OPTION_CONSIDER_OBJ_METADATA = 0x105,
+  OPTION_NUM_THREAD = 0x106
 };
 
 /*
@@ -42,6 +43,8 @@ static struct argp_option options[] = {
     {"trace_type_params", OPTION_TRACE_TYPE_PARAMS,
      "\"obj_id_col=1;delimiter=,\"", 0,
      "Parameters used for csv trace, e.g., \"obj_id_col=1;delimiter=,\"", 2},
+    {"num_req", OPTION_NUM_REQ, "-1", 0,
+     "Num of requests to process, default -1 means all requests in the trace"},
 
     // {"eviction", 'e', 0, 0, "Eviction algorithm: LRU/FIFO/LFU", 3},
     {"eviction_params", OPTION_EVICTION_PARAMS, "n_seg=4", 0,
@@ -52,7 +55,7 @@ static struct argp_option options[] = {
      "params for admission algorithm", 4},
 
     {"output_path", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
-    {"n_thread", OPTION_N_THREAD, "16", 0,
+    {"num_thread", OPTION_NUM_THREAD, "16", 0,
      "Number of threads if running when using default cache sizes", 5},
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output"},
 
@@ -169,6 +172,7 @@ static void init_arg(struct arguments *args) {
   args->n_thread = n_cores();
   args->warmup_sec = -1;
   args->ofilepath = NULL;
+  args->n_req = -1;
 
   for (int i = 0; i < N_MAX_CACHE_SIZE; i++) {
     args->cache_sizes[i] = 0;
@@ -210,7 +214,9 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   reader_init_param_t reader_init_params = {
       .ignore_obj_size = args->ignore_obj_size,
       .ignore_size_zero_req = true,
-      .obj_id_is_num = true};
+      .obj_id_is_num = true,
+      .cap_at_n_req = args->n_req,
+  };
   parse_reader_params(args->trace_type_params, &reader_init_params);
 
   if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
