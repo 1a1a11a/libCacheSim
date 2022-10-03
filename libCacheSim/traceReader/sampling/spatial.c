@@ -1,42 +1,55 @@
+/**
+ * a spatial sampler that samples sampling_ratio of objects from the trace
+ **/
+
 #include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/mem.h"
 #include "../../include/libCacheSim/sampling.h"
 #include "../dataStructure/hash/hash.h"
 
-struct spatial_sampler {
-  double sampling_ratio;
-  uint64_t sampling_boundary;
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-bool spatial_sample(void *sampler, request_t *req) {
-  struct spatial_sampler *s = sampler;
+bool spatial_sample(sampler_t *sampler, request_t *req) {
   uint64_t hash_value = req->hv;
   if (hash_value == 0) {
     hash_value = get_hash_value_int_64(&(req->obj_id));
     req->hv = hash_value;
   }
 
-  if (hash_value <= s->sampling_boundary) return true;
-
-  return false;
+  return hash_value % sampler->sampling_ratio_inv == 0;
 }
 
-void *create_spatial_sampler(double ratio) {
-  struct spatial_sampler *s = my_malloc(struct spatial_sampler);
-  memset(s, 0, sizeof(struct spatial_sampler));
-  if (ratio > 1 || ratio <= 0) {
-    ERROR("spatial sampler ratio range error get %lf (should be 0-1)\n", ratio);
-    abort();
-  } else if (ratio == 1) {
-    WARNING("spatial sampler ratio 1\n");
+sampler_t *clone_spatial_sampler(sampler_t *sampler) {
+  sampler_t *cloned_sampler = my_malloc(sampler_t);
+  memcpy(cloned_sampler, cloned_sampler, sizeof(sampler_t));
+  return cloned_sampler;
+}
+
+sampler_t *free_spatial_sampler(sampler_t *sampler) { free(sampler); }
+
+sampler_t *create_spatial_sampler(double sampling_ratio) {
+  if (sampling_ratio > 1 || sampling_ratio <= 0) {
+    ERROR("sampling ratio range error get %lf (should be 0-1)\n",
+          sampling_ratio);
+  } else if (sampling_ratio == 1) {
+    WARNING("spatial sampler ratio 1 means no sampling\n");
+    return NULL;
   }
 
-  s->sampling_ratio = ratio;
-  s->sampling_boundary = (uint64_t)(ratio * UINT64_MAX);
-
+  sampler_t *s = my_malloc(sampler_t);
+  memset(s, 0, sizeof(sampler_t));
+  s->sampling_ratio = sampling_ratio;
+  s->sampling_ratio_inv = (int)(1.0 / sampling_ratio);
+  s->sample = spatial_sample;
+  s->clone = clone_spatial_sampler;
+  s->free = free_spatial_sampler;
+  s->type = SPATIAL_SAMPLER;
+  // s->sampling_boundary = (uint64_t)(ratio * UINT64_MAX);
   return s;
 }
 
-void free_spatial_sampler(void *s) {
-  my_free(sizeof(struct spatial_sampler), s);
+#ifdef __cplusplus
 }
+#endif

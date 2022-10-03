@@ -1,41 +1,66 @@
+/* a temporal sampler that samples every 1 / sampling_ratio requests */
+
 #include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/mem.h"
 #include "../../include/libCacheSim/sampling.h"
 
-struct temporal_sampler {
-  double sampling_ratio;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct temporal_sampler_params {
   int n_samples;
-  int sampling_every_n;
-};
+} temporal_sampler_params_t;
 
-bool temporal_sample(void *sampler, request_t *req) {
-  struct temporal_sampler *s = sampler;
+bool temporal_sample(sampler_t *sampler, const request_t *req) {
+  temporal_sampler_params_t *params = sampler->other_params;
 
-  if (++s->n_samples == s->sampling_every_n) {
-    s->n_samples = 0;
+  if (++params->n_samples == sampler->sampling_ratio_inv) {
+    params->n_samples = 0;
     return true;
   }
 
   return false;
 }
 
-void *create_temporal_sampler(double ratio) {
-  struct temporal_sampler *s = my_malloc(struct temporal_sampler);
-  memset(s, 0, sizeof(struct temporal_sampler));
-  if (ratio > 1 || ratio <= 0) {
-    ERROR("spatial sampler ratio range error get %lf (should be 0-1)\n", ratio);
-    abort();
-  } else if (ratio == 1) {
-    WARNING("spatial sampler ratio 1\n");
+sampler_t *clone_temporal_sampler(sampler_t *sampler) {
+  sampler_t *cloned_sampler = my_malloc(sampler_t);
+  memcpy(cloned_sampler, cloned_sampler, sizeof(sampler_t));
+  cloned_sampler->other_params = my_malloc(temporal_sampler_params_t);
+  ((temporal_sampler_params_t *)cloned_sampler->other_params)->n_samples = 0;
+
+  return cloned_sampler;
+}
+
+sampler_t *free_temporal_sampler(sampler_t *sampler) {
+  free(sampler->other_params);
+  free(sampler);
+}
+
+sampler_t *create_temporal_sampler(double sampling_ratio) {
+  if (sampling_ratio > 1 || sampling_ratio <= 0) {
+    ERROR("sampling ratio range error get %lf (should be 0-1)\n",
+          sampling_ratio);
+  } else if (sampling_ratio == 1) {
+    WARNING("temporal sampler ratio 1 means no sampling\n");
+    return NULL;
   }
 
-  s->sampling_ratio = ratio;
-  s->n_samples = 0;
-  s->sampling_every_n = (int)(1.0 / ratio);
+  sampler_t *s = my_malloc(sampler_t);
+  memset(s, 0, sizeof(sampler_t));
+  s->sampling_ratio = sampling_ratio;
+  s->sampling_ratio_inv = (int)(1.0 / sampling_ratio);
+  s->sample = temporal_sample;
+  s->clone = clone_temporal_sampler;
+  s->free = free_temporal_sampler;
+  s->type = TEMPORAL_SAMPLER;
+
+  s->other_params = my_malloc(temporal_sampler_params_t);
+  ((temporal_sampler_params_t *)s->other_params)->n_samples = 0;
 
   return s;
 }
 
-void free_temporal_sampler(void *s) {
-  my_free(sizeof(struct temporal_sampler), s);
+#ifdef __cplusplus
 }
+#endif

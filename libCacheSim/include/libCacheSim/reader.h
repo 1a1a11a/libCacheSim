@@ -39,6 +39,7 @@ typedef struct {
   bool ignore_obj_size;
   bool ignore_size_zero_req;
   bool obj_id_is_num;
+  int64_t cap_at_n_req;  // only process at most n_req requests
 
   int time_field;
   int obj_id_field;
@@ -55,6 +56,9 @@ typedef struct {
 
   // binary reader
   char *binary_fmt;
+
+  // sample some requests in the trace
+  sampler_t *sampler;
 } reader_init_param_t;
 
 struct zstd_reader;
@@ -70,9 +74,11 @@ typedef struct reader {
   trace_format_e trace_format;
   int ver;
   bool cloned;  // true if this is a cloned reader, else false
+  int64_t cap_at_n_req;
 
   /************* used by binary trace *************/
-  char *mapped_file; /* mmap the file, this should not change during runtime */
+  char *mapped_file; /* mmap the file, this should not change during runtime
+                      */
   uint64_t mmap_offset;
   struct zstd_reader *zstd_reader_p;
   bool is_zstd_file;
@@ -102,8 +108,8 @@ typedef struct reader {
   int n_chunked_req_left;
   int64_t chunked_req_clock_time;
 
-  trace_sampling_func sampling_func; /* used for sampling */
-
+  /* used for trace sampling */
+  sampler_t *sampler;
 } reader_t;
 
 /**
@@ -131,14 +137,12 @@ static inline reader_t *open_trace(const char *path, const trace_type_e type,
 }
 
 /**
- * add a sampling_func to the reader, the requests from the reader will be
- * sampled
+ * add a sampler to the reader, the requests from the reader will be sampled
  * @param reader
- * @param sampling_func
+ * @param sampler
  */
-static inline void add_sampling(reader_t *reader,
-                                trace_sampling_func sampling_func) {
-  reader->sampling_func = sampling_func;
+static inline void add_sampler(reader_t *reader, sampler_t *sampler) {
+  reader->sampler = sampler;
 }
 
 /**
