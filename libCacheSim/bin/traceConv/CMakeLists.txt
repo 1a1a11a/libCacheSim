@@ -13,7 +13,7 @@ set_target_properties(tracePrint
         )
 
 
-add_executable(traceConv traceConvMain.cpp genOracleGeneral.cpp cli.cpp)
+add_executable(traceConv traceConvMain.cpp traceConv.cpp cli.cpp)
 target_link_libraries(traceConv cli_utils ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(traceConv
         PROPERTIES

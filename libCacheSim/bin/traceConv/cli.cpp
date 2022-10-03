@@ -208,7 +208,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
       trace_type_str_to_enum(args->trace_type_str, args->trace_path);
 
   reader_init_param_t reader_init_params;
-  memset(&reader_init_params, 0, sizeof(reader_init_params));
+  set_default_reader_init_params(&reader_init_params);
   reader_init_params.ignore_obj_size = args->ignore_obj_size;
   reader_init_params.ignore_size_zero_req = true;
   reader_init_params.obj_id_is_num = true;

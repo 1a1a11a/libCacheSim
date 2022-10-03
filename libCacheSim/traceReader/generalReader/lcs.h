@@ -11,7 +11,7 @@
 #define LCS_TRACE_START_MAGIC 0x123456789abcdef0
 #define LCS_TRACE_END_MAGIC 0x123456789abcdef0
 
-// 512 bytes
+// 1024 bytes
 typedef struct lcs_trace_header {
   uint64_t start_magic;
   // format string, following Python struct module, starts
@@ -37,6 +37,16 @@ typedef struct lcs_trace_header {
   unsigned char tenant_field;
   unsigned char content_type_field;
   unsigned char reserved[231];
+
+  /* trace stat */
+  struct {
+    int64_t n_req; // number of requests
+    int64_t n_obj; // number of objects
+    int64_t n_req_byte; // number of bytes requested
+    int64_t n_obj_byte; // number of bytes of objects
+
+    int64_t unused[60];
+  };
   // the number of fields
   uint32_t n_fields;
   // the size of each request
@@ -47,6 +57,7 @@ typedef struct lcs_trace_header {
 
 int LCSReader_setup(reader_t *reader);
 
+bool verify_LCS_trace_header(lcs_trace_header_t *header); 
 
 #ifdef __cplusplus
 }

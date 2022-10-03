@@ -34,10 +34,21 @@ namespace cli {
 void parse_cmd(int argc, char *argv[], struct arguments *args);
 }
 
-namespace oracleGeneral {
+namespace traceConv {
 
+/**
+ * @brief convert the trace to oracleGeneral format
+ *
+ * 
+ * @param reader 
+ * @param ofilepath 
+ * @param sample_ratio 
+ * @param output_txt    whether also output a txt trace 
+ * @param remove_size_change whether remove object size change during traceConv
+ * @param use_lcs_format whether use lcs format 
+ */
 void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
                               int sample_ratio, bool output_txt,
-                              bool remove_size_change);
+                              bool remove_size_change, bool use_lcs_format);
 
 }  // namespace oracleGeneral

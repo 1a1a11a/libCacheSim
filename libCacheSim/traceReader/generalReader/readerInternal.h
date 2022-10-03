@@ -51,6 +51,30 @@ bool check_delimiter(const reader_t *reader, char delimiter);
 int txt_read_one_req(reader_t *const reader, request_t *const req);
 
 /**************** binary ****************/
+static inline int format_to_size(char format) {
+  switch (format) {
+    case 'c':
+    case 'b':
+    case 'B':
+      return 1;
+    case 'h':
+    case 'H':
+      return 2;
+    case 'i':
+    case 'I':
+    case 'l':
+    case 'L':
+    case 'f':
+      return 4;
+    case 'q':
+    case 'Q':
+    case 'd':
+      return 8;
+    default:
+      ERROR("unknown format '%c'\n", format);
+  }
+}
+
 typedef struct {
   int32_t time_offset;
   int8_t time_field_idx;

@@ -54,6 +54,9 @@ typedef struct {
   // it is not set or it does not has a header
   bool has_header_set;
   char delimiter;
+  // read the trace from the offset, this is used by some binary trace
+  // which stores metadata at the start of the trace
+  ssize_t trace_start_offset;
 
   // binary reader
   char *binary_fmt_str;
@@ -76,11 +79,11 @@ typedef struct reader {
   int ver;
   bool cloned;  // true if this is a cloned reader, else false
   int64_t cap_at_n_req;
-  /* the offset of the first request in the trace, it should be 0 for 
+  /* the offset of the first request in the trace, it should be 0 for
    *    txt trace
    *    csv trace with no header
    *    customized binary traces
-   * but may not be 0 for 
+   * but may not be 0 for
    *    csv trace with header
    *    LCS trace
    * this is used when cloning reader and reading reversely */
@@ -124,6 +127,7 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->ignore_size_zero_req = true;
   params->obj_id_is_num = true;
   params->cap_at_n_req = -1;
+  params->trace_start_offset = 0;
 
   params->time_field = 0;
   params->obj_id_field = 0;
@@ -133,6 +137,7 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->next_access_vtime_field = 0;
 
   params->has_header = false;
+  /* whether the user has specified the has_header params */
   params->has_header_set = false;
   params->delimiter = ',';
 
@@ -243,6 +248,21 @@ int read_one_req_above(reader_t *reader, request_t *c);
 int go_back_one_req(reader_t *reader);
 
 void reader_set_read_pos(reader_t *reader, double pos);
+
+static inline void print_reader(reader_t *reader) {
+  printf(
+      "trace_type: %s, trace_path: %s, trace_start_offset: %d, mmap_offset: "
+      "%lu, is_zstd_file: %d, item_size: %zu, file: %p, line_buf: "
+      "%p, line_buf_size: %zu, csv_delimiter: %c, csv_has_header: %d, "
+      "obj_id_is_num: %d, ignore_size_zero_req: %d, ignore_obj_size: %d, "
+      "n_chunked_req_left: %d, chunked_req_clock_time: %ld\n",
+      trace_type_str[reader->trace_type], reader->trace_path,
+      reader->trace_start_offset, reader->mmap_offset, reader->is_zstd_file,
+      reader->item_size, reader->file, reader->line_buf, reader->line_buf_size,
+      reader->csv_delimiter, reader->csv_has_header, reader->obj_id_is_num,
+      reader->ignore_size_zero_req, reader->ignore_obj_size,
+      reader->n_chunked_req_left, reader->chunked_req_clock_time);
+}
 
 #ifdef __cplusplus
 }

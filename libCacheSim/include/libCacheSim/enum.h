@@ -70,6 +70,7 @@ static char *trace_type_str[UNKNOWN_TRACE + 2] = {
     "PLAIN_TXT_TRACE",
     "STANDARD_IQI_TRACE",
     "ORACLE_GENERAL_TRACE",
+    "LCS_TRACE",
 
     "VSCSI_TRACE",
     "TWR_TRACE",

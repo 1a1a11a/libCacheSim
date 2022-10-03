@@ -72,15 +72,7 @@ bool is_true(const char *arg) {
 }
 
 void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
-  params->has_header = false;
-  /* whether the user has specified the has_header params */
-  params->has_header_set = false;
   params->delimiter = '\0';
-  params->time_field = -1;
-  params->obj_id_field = -1;
-  params->obj_size_field = -1;
-  params->op_field = -1;
-  params->ttl_field = -1;
   params->obj_id_is_num = false;
 
   if (reader_params_str == NULL) return;

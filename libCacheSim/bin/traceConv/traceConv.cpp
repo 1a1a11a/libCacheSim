@@ -9,8 +9,9 @@
 
 #include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/reader.h"
+#include "../../traceReader/generalReader/lcs.h"
 
-namespace oracleGeneral {
+namespace traceConv {
 typedef struct oracleGeneral_req {
   uint32_t real_time;
   uint64_t obj_id;
@@ -24,28 +25,16 @@ typedef struct oracleGeneral_req {
   }
 } __attribute__((packed)) oracleGeneral_req_t;
 
-static void _reverse_file(std::string ofilepath, int64_t n_total_req,
-                          int64_t n_total_obj, bool output_txt,
-                          bool remove_size_change);
+struct trace_stat {
+  int64_t n_req;
+  int64_t n_obj;
+  int64_t n_req_byte;
+  int64_t n_obj_byte;
+};
 
-// void convert_to_oracleGeneral(reader_t *reader, char *ofilepath) {
-//   assert(sizeof(oracleGeneral_req_t) == 24);
-//   request_t *req = new_request();
-//   FILE *ofile = fopen(ofilepath, "wb");
-//   oracleGeneral_req_t oreq;
-
-//   while (read_one_req(reader, req) == 0) {
-//     oreq.real_time = req->real_time;
-//     oreq.obj_id = req->obj_id;
-//     oreq.obj_size = req->obj_size;
-//     oreq.next_access_vtime = req->next_access_vtime;
-
-//     fwrite(&oreq, sizeof(oracleGeneral_req_t), 1, ofile);
-//   }
-
-//   fclose(ofile);
-//   close_reader(reader);
-// }
+static void _reverse_file(std::string ofilepath, struct trace_stat stat,
+                          bool output_txt, bool remove_size_change,
+                          bool use_lcs_format);
 
 /**
  * @brief Convert a trace to oracleGeneral format, which is a binary format
@@ -61,7 +50,7 @@ static void _reverse_file(std::string ofilepath, int64_t n_total_req,
  */
 void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
                               int sample_ratio, bool output_txt,
-                              bool remove_size_change) {
+                              bool remove_size_change, bool use_lcs_format) {
   request_t *req = new_request();
   std::ofstream ofile_temp(ofilepath + ".reverse",
                            std::ios::out | std::ios::binary | std::ios::trunc);
@@ -120,13 +109,21 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   free_request(req);
   ofile_temp.close();
 
-  INFO("%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
-       "object, %lld B (%.2lf GB), reversing output...\n",
-       reader->trace_path, (long)(n_req_curr / 1e6),
-       (double)total_bytes / GiB, req->real_time - start_ts, (long long)n_obj,
-       (long long)unique_bytes, (double)unique_bytes / GiB);
+  INFO(
+      "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
+      "object, %lld B (%.2lf GB), reversing output...\n",
+      reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB,
+      req->real_time - start_ts, (long long)n_obj, (long long)unique_bytes,
+      (double)unique_bytes / GiB);
 
-  _reverse_file(ofilepath, n_req_curr, n_obj, output_txt, remove_size_change);
+  struct trace_stat stat;
+  stat.n_req = n_req_curr;
+  stat.n_obj = n_obj;
+  stat.n_req_byte = total_bytes;
+  stat.n_obj_byte = unique_bytes;
+
+  _reverse_file(ofilepath, stat, output_txt, remove_size_change,
+                use_lcs_format);
 }
 
 static void *_setup_mmap(const std::string &file_path, size_t *size) {
@@ -168,9 +165,9 @@ static void *_setup_mmap(const std::string &file_path, size_t *size) {
   return mapped_file;
 }
 
-static void _reverse_file(std::string ofilepath, int64_t n_total_req,
-                          int64_t n_total_obj, bool output_txt,
-                          bool remove_size_change) {
+static void _reverse_file(std::string ofilepath, struct trace_stat stat,
+                          bool output_txt, bool remove_size_change,
+                          bool use_lcs_format) {
   int64_t n_req = 0;
   size_t file_size;
   char *mapped_file =
@@ -179,6 +176,27 @@ static void _reverse_file(std::string ofilepath, int64_t n_total_req,
 
   std::ofstream ofile(ofilepath,
                       std::ios::out | std::ios::binary | std::ios::trunc);
+  if (use_lcs_format) {
+    lcs_trace_header_t lcs_header;
+    lcs_header.start_magic = LCS_TRACE_START_MAGIC;
+    lcs_header.end_magic = LCS_TRACE_END_MAGIC;
+    lcs_header.n_req = stat.n_req;
+    lcs_header.n_obj = stat.n_obj;
+    lcs_header.n_req_byte = stat.n_req_byte;
+    lcs_header.n_obj_byte = stat.n_obj_byte;
+    lcs_header.time_field = 1;
+    lcs_header.obj_id_field = 2;
+    lcs_header.obj_size_field = 3;
+    lcs_header.next_access_vtime_field = 4;
+    lcs_header.item_size = sizeof(oracleGeneral_req_t);
+    lcs_header.n_fields = 4;
+    memcpy(lcs_header.format, "<IQIQ", 5);
+
+    verify_LCS_trace_header(&lcs_header);
+    ofile.write(reinterpret_cast<char *>(&lcs_header),
+                sizeof(lcs_trace_header_t));
+  }
+
   std::ofstream ofile_txt;
   if (output_txt)
     ofile_txt.open(ofilepath + ".txt", std::ios::out | std::ios::trunc);
@@ -186,7 +204,7 @@ static void _reverse_file(std::string ofilepath, int64_t n_total_req,
   /* we remove object size change because some of the systems do not allow
    * object size change */
   std::unordered_map<uint64_t, uint32_t> last_obj_size;
-  last_obj_size.reserve(n_total_obj);
+  last_obj_size.reserve(stat.n_obj);
 
   oracleGeneral_req_t og_req;
   size_t req_entry_size = sizeof(oracleGeneral_req_t);
@@ -196,7 +214,7 @@ static void _reverse_file(std::string ofilepath, int64_t n_total_req,
     memcpy(&og_req, mapped_file + pos, req_entry_size);
     if (og_req.next_access_vtime != -1) {
       /* re.next_access_vtime is the vtime start from the end */
-      og_req.next_access_vtime = n_total_req - og_req.next_access_vtime;
+      og_req.next_access_vtime = stat.n_req - og_req.next_access_vtime;
     }
 
     if (remove_size_change) {
@@ -223,10 +241,11 @@ static void _reverse_file(std::string ofilepath, int64_t n_total_req,
   ofile.close();
   if (output_txt) ofile_txt.close();
 
-  assert(n_req == n_total_req);
+  assert(n_req == stat.n_req);
 
   remove((ofilepath + ".reverse").c_str());
 
-  INFO("trace conversion finished, output %s\n", ofilepath.c_str());
+  INFO("trace conversion finished, %ld requests %ld objects, output %s\n",
+       n_req, stat.n_obj, ofilepath.c_str());
 }
-}  // namespace oracleGeneral
+}  // namespace traceConv

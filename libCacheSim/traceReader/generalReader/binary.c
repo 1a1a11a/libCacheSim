@@ -23,30 +23,6 @@
 extern "C" {
 #endif
 
-static uint8_t format_to_size(char format) {
-  switch (format) {
-    case 'c':
-    case 'b':
-    case 'B':
-      return 1;
-    case 'h':
-    case 'H':
-      return 2;
-    case 'i':
-    case 'I':
-    case 'l':
-    case 'L':
-    case 'f':
-      return 4;
-    case 'q':
-    case 'Q':
-    case 'd':
-      return 8;
-    default:
-      ERROR("unknown format %c\n", format);
-  }
-}
-
 static int cal_offset(const char *format_str, int field_idx) {
   int offset = 0;
   for (int i = 0; i < field_idx - 1; i++) {
@@ -138,22 +114,31 @@ int binaryReader_setup(reader_t *const reader) {
   }
 
   reader->item_size = cal_offset(fmt_str, params->n_fields + 1);
-
-  if (reader->file_size % reader->item_size != 0) {
-    WARN("trace file size %lu is not multiple of item size %lu, mod %lu\n",
-         (unsigned long)reader->file_size, (unsigned long)reader->item_size,
-         (unsigned long)reader->file_size % reader->item_size);
+  params->item_size = reader->item_size;
+  if (reader->item_size == 0) {
+    ERROR("binaryReader_setup: item_size is 0, fmt \"%s\", %d fields\n",
+          fmt_str, params->n_fields);
   }
 
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
+  ssize_t data_region_size = reader->file_size - reader->trace_start_offset;
+  if (data_region_size % reader->item_size != 0) {
+    WARN(
+        "trace file size %lu - %lu is not multiple of item size %lu, mod %lu\n",
+        (unsigned long)reader->file_size,
+        (unsigned long)reader->trace_start_offset,
+        (unsigned long)reader->item_size,
+        (unsigned long)reader->file_size % reader->item_size);
+  }
+
+  reader->n_total_req = (uint64_t)data_region_size / (reader->item_size);
 
   char output[1024];
-  int n =
-      snprintf(output, 1024,
-               "binary fmt %s, item size %d, "
-               "obj_id_field_idx %d, size %d, offset %d",
-               params->fmt_str, params->item_size, params->obj_id_field_idx,
-               format_to_size(params->obj_id_format), params->obj_id_offset);
+  int n = snprintf(
+      output, 1024,
+      "binary fmt %s, item size %d, "
+      "obj_id_field_idx %d, size %d, offset %d",
+      params->fmt_str, (int)reader->item_size, params->obj_id_field_idx,
+      format_to_size(params->obj_id_format), params->obj_id_offset);
 
   if (params->time_field_idx > 0) {
     n += snprintf(output + n, 1024 - n,
@@ -185,7 +170,7 @@ int binaryReader_setup(reader_t *const reader) {
                   format_to_size(params->next_access_vtime_format),
                   params->next_access_vtime_offset);
   }
-  INFO("%s\n", output);
+  DEBUG("%s\n", output);
 
   return 0;
 }

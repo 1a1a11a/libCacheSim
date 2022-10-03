@@ -22,9 +22,9 @@
 #include "customizedReader/twrNSBin.h"
 #include "customizedReader/vscsi.h"
 #include "customizedReader/wikiBin.h"
+#include "generalReader/lcs.h"
 #include "generalReader/libcsv.h"
 #include "generalReader/readerInternal.h"
-#include "generalReader/lcs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +76,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->mmap_offset = 0;
   reader->sampler = NULL;
   reader->trace_start_offset = 0;
+
   if (init_params != NULL) {
     memcpy(&reader->init_params, init_params, sizeof(reader_init_param_t));
     if (init_params->binary_fmt_str != NULL)
@@ -84,6 +85,8 @@ reader_t *setup_reader(const char *const trace_path,
     reader->ignore_obj_size = init_params->ignore_obj_size;
     reader->ignore_size_zero_req = init_params->ignore_size_zero_req;
     reader->obj_id_is_num = init_params->obj_id_is_num;
+    reader->trace_start_offset = init_params->trace_start_offset;
+    reader->mmap_offset = init_params->trace_start_offset;
     reader->cap_at_n_req = init_params->cap_at_n_req;
     if (init_params->sampler != NULL)
       reader->sampler = init_params->sampler->clone(init_params->sampler);
@@ -222,10 +225,19 @@ reader_t *setup_reader(const char *const trace_path,
       abort();
   }
 
-  if (reader->trace_format == BINARY_TRACE_FORMAT && !reader->is_zstd_file &&
-      reader->item_size != 0 && reader->file_size % reader->item_size != 0) {
-    WARN("trace file size %zu is not multiple of record size %zu\n",
-         reader->file_size, reader->item_size);
+  if (reader->trace_format == BINARY_TRACE_FORMAT && !reader->is_zstd_file) {
+    ssize_t data_region_size = reader->file_size - reader->trace_start_offset;
+    if (data_region_size % reader->item_size != 0) {
+      WARN(
+          "trace file size %lu - %lu is not multiple of item size %lu, mod "
+          "%lu\n",
+          (unsigned long)reader->file_size,
+          (unsigned long)reader->trace_start_offset,
+          (unsigned long)reader->item_size,
+          (unsigned long)reader->file_size % reader->item_size);
+    }
+
+    reader->n_total_req = (uint64_t)data_region_size / (reader->item_size);
   }
 
   if (reader->trace_format == INVALID_TRACE_FORMAT) {
@@ -428,7 +440,8 @@ int go_back_one_req(reader_t *const reader) {
       return 0;
 
     case BINARY_TRACE_FORMAT:
-      if (reader->mmap_offset >= reader->trace_start_offset + reader->item_size) {
+      if (reader->mmap_offset >=
+          reader->trace_start_offset + reader->item_size) {
         reader->mmap_offset -= (reader->item_size);
         return 0;
       } else {
@@ -518,6 +531,7 @@ void reset_reader(reader_t *const reader) {
     curr_offset = ftell(reader->file);
   } else {
     reader->mmap_offset = reader->trace_start_offset;
+    curr_offset = reader->mmap_offset;
   }
 
   DEBUG("reset reader current offset %ld\n", curr_offset);
@@ -573,7 +587,6 @@ reader_t *clone_reader(const reader_t *const reader_in) {
     reader->mapped_file = reader_in->mapped_file;
   }
   reader->cloned = true;
-  reader->trace_start_offset = reader_in->trace_start_offset;
   return reader;
 }
 
