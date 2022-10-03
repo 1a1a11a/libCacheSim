@@ -33,23 +33,12 @@ static inline int akamaiReader_setup(reader_t *reader) {
 }
 
 static inline int akamai_read_one_req(reader_t *reader, request_t *req) {
-  char *record = NULL;
+  char *record = read_bytes(reader);
 
   if (record == NULL) {
-    req->valid = FALSE;
+    req->valid = false;
     return 1;
   }
-
-  //  if (reader->cnt >= 1) {
-  //    reader->cnt -= 1;
-  //    if (reader->leftover_size > MAX_OBJ_SIZE)
-  //      req->obj_size = MAX_OBJ_SIZE;
-  //    else
-  //      req->obj_size = reader->leftover_size;
-  //    reader->leftover_size -= req->obj_size;
-  //    req->obj_id += 1;
-  //    return 0;
-  //  }
 
   req->real_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
@@ -57,14 +46,6 @@ static inline int akamai_read_one_req(reader_t *reader, request_t *req) {
   req->tenant_id = *(uint16_t *)(record + 16);
   req->bucket_id = *(uint16_t *)(record + 18);
   req->content_type = *(uint16_t *)(record + 20);
-
-  //  if (req->obj_size > MAX_OBJ_SIZE) {
-  //    reader->cnt = ceil((double)req->obj_size/MAX_OBJ_SIZE) - 1;
-  //    reader->leftover_size = req->obj_size - MAX_OBJ_SIZE;
-  //    req->obj_size = MAX_OBJ_SIZE;
-  //  } else {
-  //    reader->cnt = 0;
-  //  }
 
   if (req->obj_size == 0 && reader->ignore_size_zero_req)
     return akamai_read_one_req(reader, req);

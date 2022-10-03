@@ -387,7 +387,7 @@ int go_back_one_req(reader_t *const reader) {
       size_t curr_offset = ftell(reader->file);
       size_t move_size =
           MAX_LINE_LEN - 1 > curr_offset ? curr_offset : MAX_LINE_LEN - 1;
-      VVERBOSE("go back one line prev pos %ld, move size %zu\n",
+      VVERBOSE("go_back_one_req prev pos %ld, move size %zu\n",
                ftell(reader->file), move_size);
       fseek(reader->file, -move_size, SEEK_CUR);
       /* do not read the current pos */
@@ -397,15 +397,16 @@ int go_back_one_req(reader_t *const reader) {
       if (last_line_end == NULL) {
         if (move_size < MAX_LINE_LEN - 1) {
           fseek(reader->file, 0, SEEK_SET);
-          printf("go back one line cannot find new line, set offset to %zu\n",
-                 ftell(reader->file));
+          /* this happens when reverse reading reaches the start of the file */
+          DEBUG("go_back_one_req cannot find new line, set offset to %zu\n",
+                ftell(reader->file));
         }
         return 1;
       }
       int pos = last_line_end + 2 - reader->line_buf;
       fseek(reader->file, -(move_size - pos), SEEK_CUR);
 
-      VVERBOSE("go back one line after pos %ld\n", ftell(reader->file));
+      VVERBOSE("go_back_one_req after pos %ld\n", ftell(reader->file));
       return 0;
 
     case BINARY_TRACE_FORMAT:

@@ -186,19 +186,19 @@ static cache_t *create_test_cache(const char *alg_name,
   } else if (strncasecmp(alg_name, "GLCache", 7) == 0) {
     const char *init_params;
     if (strcasecmp(alg_name, "GLCache-OracleLog") == 0) {
-      init_params = "type=logOracle; rank_intvl=0.05; retrain_intvl=172800";
+      init_params = "type=logOracle, rank-intvl=0.05, retrain-intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-OracleItem") == 0) {
-      init_params = "type=itemOracle; rank_intvl=0.05; retrain_intvl=172800";
+      init_params = "type=itemOracle, rank-intvl=0.05, retrain-intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-OracleBoth") == 0) {
-      init_params = "type=twoOracle; rank_intvl=0.05; retrain_intvl=172800";
+      init_params = "type=twoOracle, rank-intvl=0.05, retrain-intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-LearnedTrueY") == 0) {
       init_params =
-          "type=learned;"
-          "train_source_y=oracle; rank_intvl=0.05; retrain_intvl=172800";
+          "type=learned, "
+          "train-source-y=oracle, rank-intvl=0.05, retrain-intvl=172800";
     } else if (strcasecmp(alg_name, "GLCache-LearnedOnline") == 0) {
       init_params =
-          "type=learned;"
-          "train_source_y=online; rank_intvl=0.05; retrain_intvl=172800";
+          "type=learned, "
+          "train-source-y=online, rank-intvl=0.05, retrain-intvl=172800";
     }
     cache = GLCache_init(cc_params, init_params);
 #endif
@@ -215,7 +215,7 @@ static cache_t *create_test_cache(const char *alg_name,
   } else if (strcasecmp(alg_name, "CR_LFU") == 0) {
     cache = CR_LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "SLRU") == 0) {
-    cache = SLRU_init(cc_params, "n_seg=5");
+    cache = SLRU_init(cc_params, "n-seg=5");
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

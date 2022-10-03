@@ -43,7 +43,7 @@ static int cf1_read_one_req(reader_t *reader, request_t *req) {
   char *record = read_bytes(reader);
 
   if (record == NULL) {
-    req->valid = FALSE;
+    req->valid = false;
     return 1;
   }
 
@@ -60,13 +60,9 @@ static int cf1_read_one_req(reader_t *reader, request_t *req) {
   req->method = *(uint8_t *)(record + 39);
   req->colo = *(uint8_t *)(record + 40);
 
-  //  printf("read %d %ld %d %d\n", req->real_time, req->obj_id, req->obj_size,
-  //  req->ttl);
-
-  /* CF trace has a size 0 object, enabling this will cause read from the end to
-   * have an infinite loop */
   if (req->obj_size == 0 && reader->ignore_size_zero_req)
     return cf1_read_one_req(reader, req);
+
   return 0;
 }
 
