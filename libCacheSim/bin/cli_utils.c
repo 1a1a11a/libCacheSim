@@ -185,6 +185,25 @@ trace_type_e detect_trace_type(const char *trace_path) {
   return trace_type;
 }
 
+#define N_TEST 1024
+bool should_disable_obj_metadata(reader_t *reader) {
+  bool disable_obj_metadata = true;
+  request_t *req = new_request();
+  for (int i = 0; i < N_TEST; i++) {
+    if (read_one_req(reader, req) != 0) break;
+
+    if (req->obj_size > 1) {
+      disable_obj_metadata = false;
+      break;
+    }
+  }
+  free_request(req);
+  reset_reader(reader);
+  
+  return disable_obj_metadata;
+}
+#undef N_TEST
+
 #ifdef __cplusplus
 }
 #endif

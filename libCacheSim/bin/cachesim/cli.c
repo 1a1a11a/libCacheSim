@@ -183,7 +183,7 @@ static void init_arg(struct arguments *args) {
   args->ofilepath = NULL;
   args->n_req = -1;
   args->sample_ratio = 1.0;
-  
+
   for (int i = 0; i < N_MAX_CACHE_SIZE; i++) {
     args->cache_sizes[i] = 0;
   }
@@ -245,6 +245,12 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   args->reader =
       setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+
+  if (args->consider_obj_metadata &&
+      should_disable_obj_metadata(args->reader)) {
+    INFO("disable object metadata\n");
+    args->consider_obj_metadata = false;
+  }
 
   set_cache_size(args, args->reader);
 

@@ -14,6 +14,8 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params);
 
 trace_type_e detect_trace_type(const char *trace_path);
 
+bool should_disable_obj_metadata(reader_t *reader); 
+
 #ifdef __cplusplus
 }
 #endif
