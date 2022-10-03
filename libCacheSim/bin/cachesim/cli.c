@@ -41,34 +41,34 @@ static struct argp_option options[] = {
     // {"trace_type", 't', 0, 0,
     //  "Specify the type of the input trace:
     //  txt/csv/twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin", 2},
-    {"trace_type_params", OPTION_TRACE_TYPE_PARAMS,
-     "\"obj_id_col=1;delimiter=,\"", 0,
-     "Parameters used for csv trace, e.g., \"obj_id_col=1;delimiter=,\"", 2},
-    {"num_req", OPTION_NUM_REQ, "-1", 0,
+    {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
+     "\"obj-id-col=1;delimiter=,\"", 0,
+     "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\"", 2},
+    {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Num of requests to process, default -1 means all requests in the trace"},
 
     // {"eviction", 'e', 0, 0, "Eviction algorithm: LRU/FIFO/LFU", 3},
-    {"eviction_params", OPTION_EVICTION_PARAMS, "n_seg=4", 0,
-     "optional params for each eviction algorithm, e.g., n_seg=4", 3},
-    {"admission", OPTION_ADMISSION_ALGO, "bloomFilter", 0,
-     "Admission algorithm: size/bloomFilter/probabilistic", 4},
-    {"admission_params", OPTION_ADMISSION_PARAMS, 0, 0,
+    {"eviction=params", OPTION_EVICTION_PARAMS, "n-seg=4", 0,
+     "optional params for each eviction algorithm, e.g., n-seg=4", 3},
+    {"admission", OPTION_ADMISSION_ALGO, "bloom-filter", 0,
+     "Admission algorithm: size/bloom-filter/probabilistic", 4},
+    {"admission-params", OPTION_ADMISSION_PARAMS, 0, 0,
      "params for admission algorithm", 4},
     {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
      "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 5},
 
-    {"output_path", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
-    {"num_thread", OPTION_NUM_THREAD, "16", 0,
+    {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
+    {"num-thread", OPTION_NUM_THREAD, "16", 0,
      "Number of threads if running when using default cache sizes", 5},
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output"},
 
     {0, 0, 0, 0, "Other less used options:"},
-    {"ignore_obj_size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
+    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
      "specify to ignore the object size from the trace", 10},
-    {"warmup_sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
-    {"use_ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
+    {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
+    {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
      11},
-    {"consider_obj_metadata", OPTION_CONSIDER_OBJ_METADATA, "true", 0,
+    {"consider-obj-metadata", OPTION_CONSIDER_OBJ_METADATA, "true", 0,
      "Whether consider per object metadata size in the simulated cache", 10},
 
     {0}};
@@ -107,6 +107,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case OPTION_USE_TTL:
       arguments->use_ttl = is_true(arg) ? true : false;
+      break;
+    case OPTION_SAMPLE_RATIO:
+      arguments->sample_ratio = atof(arg);
+      if (arguments->sample_ratio < 0 || arguments->sample_ratio > 1) {
+        ERROR("sample ratio should be in (0, 1]\n");
+      }
       break;
     case OPTION_IGNORE_OBJ_SIZE:
       arguments->ignore_obj_size = is_true(arg) ? true : false;
@@ -176,7 +182,8 @@ static void init_arg(struct arguments *args) {
   args->warmup_sec = -1;
   args->ofilepath = NULL;
   args->n_req = -1;
-
+  args->sample_ratio = 1.0;
+  
   for (int i = 0; i < N_MAX_CACHE_SIZE; i++) {
     args->cache_sizes[i] = 0;
   }
@@ -214,18 +221,26 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_type =
       trace_type_str_to_enum(args->trace_type_str, args->trace_path);
 
-  reader_init_param_t reader_init_params = {
-      .ignore_obj_size = args->ignore_obj_size,
-      .ignore_size_zero_req = true,
-      .obj_id_is_num = true,
-      .cap_at_n_req = args->n_req,
-  };
+  reader_init_param_t reader_init_params;
+  memset(&reader_init_params, 0, sizeof(reader_init_params));
+  reader_init_params.ignore_obj_size = args->ignore_obj_size;
+  reader_init_params.ignore_size_zero_req = true;
+  reader_init_params.obj_id_is_num = true;
+  reader_init_params.cap_at_n_req = args->n_req;
+  reader_init_params.sampler = NULL;
+
   parse_reader_params(args->trace_type_params, &reader_init_params);
+
+  if (args->sample_ratio > 0 && args->sample_ratio < 1 - 1e-6) {
+    sampler_t *sampler = create_spatial_sampler(args->sample_ratio);
+    reader_init_params.sampler = sampler;
+  }
 
   if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
       reader_init_params.obj_size_field == -1) {
     args->consider_obj_metadata = false;
     args->ignore_obj_size = true;
+    reader_init_params.ignore_obj_size = true;
   }
 
   args->reader =

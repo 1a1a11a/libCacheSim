@@ -33,21 +33,25 @@ enum argp_option_short {
 */
 static struct argp_option options[] = {
     {0, 0, 0, 0, "Options used by all the utilities:"},
-    {"trace_type_params", OPTION_TRACE_TYPE_PARAMS,
-     "\"obj_id_col=1;header=true\"", 0,
-     "Parameters used for csv trace, e.g., \"obj_id_col=1;header=true\"", 2},
-    {"num_req", OPTION_NUM_REQ, "-1", 0,
+    {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
+     "\"obj-id-col=1;header=true\"", 0,
+     "Parameters used for csv trace, e.g., \"obj-id-col=1;header=true\"", 2},
+    {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Number of requests to process, -1 means all requests in the trace", 2},
 
     {0, 0, 0, 0, "traceConv options:"},
-    {"output_path", OPTION_OUTPUT_PATH, "/path/output", 0,
-     "Path to write output", 5},
-    {"sample_ratio", OPTION_SAMPLE_RATIO, "1", 0,
+    {"output", OPTION_OUTPUT_PATH, "/path/output", 0, "Path to write output",
+     5},
+    {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
      "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 5},
-    {"ignore_obj_size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
+    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
      "specify to ignore the object size from the trace", 10},
-    {"output_txt", OPTION_OUTPUT_TXT, "false", 0,
+    {"output-txt", OPTION_OUTPUT_TXT, "false", 0,
      "output trace in txt format in addition to binary format", 10},
+    {"remove-size-change", OPTION_REMOVE_SIZE_CHANGE, "false", 0,
+     "whether remove object size change, if true, objects with changed size "
+     "are updated to the old size",
+     10},
 
     // {0, 0, 0, 0, "Other less used options:"},
     // {"warmup_sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
@@ -123,7 +127,7 @@ static char args_doc[] = "trace_path trace_type";
 /* Program documentation. */
 static char doc[] =
     "example: ./cachesim /trace/path csv -o /path/new_trace.oracleGeneral -t "
-    "\"obj_id_col=5; time_col=2; obj_size_col=4\"\n\n";
+    "\"obj-id-col=5; time-col=2; obj-size-col=4\"\n\n";
 
 /**
  * @brief initialize the arguments

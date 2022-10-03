@@ -40,6 +40,14 @@ int csv_read_one_req(reader_t *const, request_t *const);
 
 void csv_reset_reader(reader_t *reader);
 
+/**
+ * check whether the trace uses the given delimiter
+ * @param reader
+ * @param delimiter
+ * @return
+ */
+bool check_delimiter(const reader_t *reader, char delimiter);
+
 /**************** txt ****************/
 int txt_read_one_req(reader_t *const reader, request_t *const req);
 

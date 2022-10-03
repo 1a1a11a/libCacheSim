@@ -81,33 +81,66 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
   if (reader_params_str == NULL) return;
   char *params_str = strdup(reader_params_str);
   char *old_params_str = params_str;
+  char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by '=' */
     char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ";");
-    while (params_str != NULL && *params_str == ' ') {
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space and comma
+    while (params_str != NULL && (*params_str == ' ' || *params_str == ',')) {
       params_str++;
     }
 
-    if (strcasecmp(key, "time_col") == 0 ||
-        strcasecmp(key, "time_field") == 0) {
-      params->time_field = atoi(value);
-    } else if (strcasecmp(key, "obj_id_col") == 0 ||
-               strcasecmp(key, "obj_id_field") == 0) {
-      params->obj_id_field = atoi(value);
-    } else if (strcasecmp(key, "obj_size_col") == 0 ||
-               strcasecmp(key, "obj_size_field") == 0 ||
-               strcasecmp(key, "size_col") == 0 ||
-               strcasecmp(key, "size_field") == 0) {
-      params->obj_size_field = atoi(value);
-    } else if (strcasecmp(key, "obj_id_is_num") == 0) {
+    if (strcasecmp(key, "time-col") == 0 ||
+        strcasecmp(key, "time-field") == 0) {
+      params->time_field = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2)
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+    } else if (strcasecmp(key, "obj-id-col") == 0 ||
+               strcasecmp(key, "obj-id-field") == 0) {
+      params->obj_id_field = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2)
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+    } else if (strcasecmp(key, "obj-size-col") == 0 ||
+               strcasecmp(key, "obj-size-field") == 0 ||
+               strcasecmp(key, "size-col") == 0 ||
+               strcasecmp(key, "size-field") == 0) {
+      params->obj_size_field = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2)
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+    } else if (strcasecmp(key, "obj-id-is-num") == 0) {
       params->obj_id_is_num = is_true(value);
     } else if (strcasecmp(key, "header") == 0 ||
-               strcasecmp(key, "has_header") == 0) {
+               strcasecmp(key, "has-header") == 0) {
       params->has_header = is_true(value);
       params->has_header_set = true;
     } else if (strcasecmp(key, "delimiter") == 0) {
+      /* user input: k1=v1, delimiter=;, k2=v2 */
       params->delimiter = value[0];
+      if (value[0] == '\0') {
+        /* user input: k1=v1, delimiter=,, k2=v2*/
+        params->delimiter = ',';
+      } else if (value[0] == '\\') {
+        if (strlen(value) == 1) {
+          /* user input: k1=v1, delimiter=\,, k2=v2*/
+          params->delimiter = ',';
+        } else if (strlen(value) == 2) {
+          if (value[1] == 't') {
+            /* user input: k1=v1, delimiter=\t, k2=v2*/
+            params->delimiter = '\t';
+          } else if (value[1] == ',') {
+            ERROR("can I reach here?\n");
+            params->delimiter = ',';
+          } else {
+            ERROR("unsupported delimiter: '%s'\n", value);
+          }
+        } else {
+          ERROR("unsupported delimiter: '%s'\n", value);
+        }
+      }
     } else {
       ERROR("cache does not support trace parameter %s\n", key);
       exit(1);
@@ -116,7 +149,6 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
 
   free(old_params_str);
 }
-
 
 trace_type_e detect_trace_type(const char *trace_path) {
   trace_type_e trace_type = UNKNOWN_TRACE;

@@ -85,9 +85,9 @@ reader_t *setup_reader(const char *const trace_path,
     reader->obj_id_is_num = reader_init_param->obj_id_is_num;
     reader->cap_at_n_req = reader_init_param->cap_at_n_req;
     if (reader_init_param->sampler != NULL)
-      reader->sampler = reader_init_param->sampler->clone(reader_init_param->sampler);
-  }
-  else {
+      reader->sampler =
+          reader_init_param->sampler->clone(reader_init_param->sampler);
+  } else {
     memset(&reader->init_params, 0, sizeof(reader_init_param_t));
   }
 
@@ -140,6 +140,10 @@ reader_t *setup_reader(const char *const trace_path,
     case CSV_TRACE:
       reader->trace_format = TXT_TRACE_FORMAT;
       csv_setup_reader(reader);
+      if (!check_delimiter(reader, reader_init_param->delimiter)) {
+        ERROR("The trace does not use delimiter '%c', please check\n",
+              reader_init_param->delimiter);
+      }
       break;
     case PLAIN_TXT_TRACE:
       reader->trace_format = TXT_TRACE_FORMAT;
@@ -585,7 +589,7 @@ int close_reader(reader_t *const reader) {
     if (reader->init_params.sampler != NULL) {
       reader->init_params.sampler->free(reader->init_params.sampler);
     }
-  } 
+  }
 
   if (reader->reader_params != NULL) {
     free(reader->reader_params);

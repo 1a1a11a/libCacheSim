@@ -26,11 +26,12 @@ typedef struct ARC_params {
   int evict_lru;             // which LRU list the eviction should come from
 } ARC_params_t;
 
-// typedef struct ARC_init_params {
-//   double ghost_list_factor;
-// } ARC_init_params_t;
-
-const char *ARC_default_init_params(void) { return "ghost_list_factor=1.0;"; }
+static const char *ARC_current_params(ARC_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "ghost-list-size-factor=%lf\n",
+           params->ghost_list_factor);
+  return params_str;
+}
 
 static void ARC_parse_params(cache_t *cache,
                              const char *cache_specific_params) {
@@ -38,17 +39,26 @@ static void ARC_parse_params(cache_t *cache,
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
+  char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
     char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ";");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
     while (params_str != NULL && *params_str == ' ') {
       params_str++;
     }
-    if (strcasecmp(key, "ghost_list_factor") == 0) {
-      params->ghost_list_factor = atof(value);
+
+    if (strcasecmp(key, "ghost-list-size-factor") == 0) {
+      params->ghost_list_factor = (int)strtod(value, &end);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
     } else if (strcasecmp(key, "print") == 0) {
-      printf("default parameters: %s\n", ARC_default_init_params());
+      printf("parameters: %s\n", ARC_current_params(params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
@@ -161,7 +171,8 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
     DEBUG_ASSERT(hit2 != cache_ck_hit);
     params->LRU1->remove(params->LRU1, req->obj_id);
     params->LRU2->insert(params->LRU2, req);
-    // printf("promote to LRU2 %p %p\n", params->LRU2->q_head, params->LRU2->q_tail);
+    // printf("promote to LRU2 %p %p\n", params->LRU2->q_head,
+    // params->LRU2->q_tail);
   } else if (hit2 == cache_ck_hit) {
     /* moving to the head of LRU2 has already been done */
   }

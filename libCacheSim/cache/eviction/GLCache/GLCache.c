@@ -36,10 +36,10 @@ static void set_default_params(GLCache_params_t *params) {
 }
 
 const char *GLCache_default_params(void) {
-  return "segment_size=100; n_merge=2; "
-         "type=learned; rank_intvl=0.02;"
-         "merge_consecutive_segs=true; train_source_y=online;"
-         "retrain_intvl=86400;";
+  return "segment-size=100, n-merge=2, "
+         "type=learned, rank-intvl=0.02,"
+         "merge-consecutive-segs=true, train-source-y=online,"
+         "retrain-intvl=86400";
 }
 
 static void parse_init_params(const char *cache_specific_params,
@@ -48,27 +48,27 @@ static void parse_init_params(const char *cache_specific_params,
 
   while (params_str != NULL && params_str[0] != '\0') {
     char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ";");
+    char *value = strsep((char **)&params_str, ",");
     while (params_str != NULL && *params_str == ' ') {
       params_str++;
     }
-    if (strcasecmp(key, "segment_size") == 0) {
+    if (strcasecmp(key, "segment-size") == 0) {
       params->segment_size = atoi(value);
-    } else if (strcasecmp(key, "n_merge") == 0) {
+    } else if (strcasecmp(key, "n-merge") == 0) {
       params->n_merge = atoi(value);
-    } else if (strcasecmp(key, "rank_intvl") == 0) {
+    } else if (strcasecmp(key, "rank-intvl") == 0) {
       params->rank_intvl = atof(value);
-    } else if (strcasecmp(key, "merge_consecutive_segs") == 0) {
+    } else if (strcasecmp(key, "merge-consecutive-segs") == 0) {
       params->merge_consecutive_segs = atoi(value);
-    } else if (strcasecmp(key, "retrain_intvl") == 0) {
+    } else if (strcasecmp(key, "retrain-intvl") == 0) {
       params->retrain_intvl = atoi(value);
-    } else if (strcasecmp(key, "train_source_y") == 0) {
+    } else if (strcasecmp(key, "train-source-y") == 0) {
       if (strcasecmp(value, "online") == 0) {
         params->train_source_y = TRAIN_Y_FROM_ONLINE;
       } else if (strcasecmp(value, "oracle") == 0) {
         params->train_source_y = TRAIN_Y_FROM_ORACLE;
       } else {
-        ERROR("Unknown train_source_y %s, support online/oracle\n", value);
+        ERROR("Unknown train-source-y %s, support online/oracle\n", value);
         exit(1);
       }
     } else if (strcasecmp(key, "type") == 0) {

@@ -21,7 +21,46 @@ typedef struct {
   int n_sample;
 } BeladySize_params_t; /* BeladySize parameters */
 
-const char *BeladySize_default_params(void) { return "n_sample=128"; }
+static const char *BeladySize_current_params(BeladySize_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "n-sample=%d\n", params->n_sample);
+  return params_str;
+}
+
+static void BeladySize_parse_params(cache_t *cache, const char *cache_specific_params) {
+  BeladySize_params_t *params = (BeladySize_params_t *)cache->eviction_params;
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+  char *end;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by '=' */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "n-sample") == 0) {
+      params->n_sample = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", BeladySize_current_params(params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
+            key, BeladySize_current_params(params));
+      exit(1);
+    }
+  }
+
+  free(old_params_str);
+}
 
 cache_t *BeladySize_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params) {
@@ -42,25 +81,7 @@ cache_t *BeladySize_init(const common_cache_params_t ccache_params,
   cache->eviction_params = params;
 
   if (cache_specific_params != NULL) {
-    char *params_str = strdup(cache_specific_params);
-    char *old_params_str = params_str;
-
-    while (params_str != NULL && params_str[0] != '\0') {
-      char *key = strsep((char **)&params_str, "=");
-      char *value = strsep((char **)&params_str, ";");
-      while (params_str != NULL && *params_str == ' ') {
-        params_str++;
-      }
-      if (strcasecmp(key, "n_sample") == 0) {
-        params->n_sample = atoi(value);
-      } else {
-        ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
-              key, BeladySize_default_params());
-        exit(1);
-      }
-    }
-
-    free(old_params_str);
+    BeladySize_parse_params(cache, cache_specific_params);
   }
 
   return cache;

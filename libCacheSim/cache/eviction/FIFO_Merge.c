@@ -59,8 +59,12 @@ typedef struct FIFO_Merge_params {
   retain_policy_t retain_policy;
 } FIFO_Merge_params_t;
 
-const char *FIFO_Merge_default_init_params(void) {
-  return "n_exam=100;n_keep=50;retain_policy=frequency";
+static const char *FIFO_Merge_current_params(FIFO_Merge_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "n-exam=%d, n-keep=%d, retain-policy=%s",
+           params->n_exam_obj, params->n_keep_obj,
+           retain_policy_names[params->retain_policy]);
+  return params_str;
 }
 
 static void FIFO_Merge_parse_params(cache_t *cache,
@@ -69,14 +73,19 @@ static void FIFO_Merge_parse_params(cache_t *cache,
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
+  char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
     char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ";");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
     while (params_str != NULL && *params_str == ' ') {
       params_str++;
     }
-    if (strcasecmp(key, "retain_policy") == 0) {
+    if (strcasecmp(key, "retain-policy") == 0) {
       if (strcasecmp(value, "freq") == 0 || strcasecmp(value, "frequency") == 0)
         params->retain_policy = RETAIN_POLICY_FREQUENCY;
       else if (strcasecmp(value, "recency") == 0)
@@ -88,18 +97,22 @@ static void FIFO_Merge_parse_params(cache_t *cache,
         params->retain_policy = RETAIN_NONE;
         params->n_keep_obj = 0;
       } else {
-        ERROR("unknown retain_policy %s\n", value);
+        ERROR("unknown retain-policy %s\n", value);
         exit(1);
       }
-    } else if (strcasecmp(key, "n_exam") == 0 ||
-               strcasecmp(key, "n_exam_obj") == 0) {
-      params->n_exam_obj = atoi(value);
-    } else if (strcasecmp(key, "n_keep") == 0 ||
-               strcasecmp(key, "n_keep_obj") == 0) {
-      params->n_keep_obj = atoi(value);
+    } else if (strcasecmp(key, "n-exam") == 0) {
+      params->n_exam_obj = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+    } else if (strcasecmp(key, "n-keep") == 0) {
+      params->n_keep_obj = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
     } else if (strcasecmp(key, "print") == 0) {
-      printf("%s default parameters: %s\n", cache->cache_name,
-             FIFO_Merge_default_init_params());
+      printf("%s parameters: %s\n", cache->cache_name,
+             FIFO_Merge_current_params(params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

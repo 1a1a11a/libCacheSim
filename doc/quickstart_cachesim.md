@@ -82,32 +82,31 @@ You can just use the algorithm name as the eviction algorithm parameter, for exa
 
 ### Use different trace types 
 We have demonstrated the use of cachesim with vscsi trace. We also support csv traces.
-To use a csv trace, we need to provide the column of *time*, *obj_id*, and *obj_size*. 
+To use a csv trace, we need to provide the column of *time*, *obj-id*, and *obj-size*. 
 Both time and size are optional, but many algorithms rely on time and size to work properly.
 The column starts from 1, the first column is 1, the second is 2, etc.
 Besides the column information, a csv reader also requires the delimiter and whether the csv file has a header. 
-cachesim builds in a simple delimiter and header detector, if the detected result is not correct, you can provide the correct information using `dlimiter=,`, `has_header=true`.
+cachesim builds in a simple delimiter and header detector, if the detected result is not correct, you can provide the correct information using `dlimiter=,`, `has-header=true`.
 
 
 ```bash
-# note that the parameters are separated by colon and quoted
-./cachesim ../data/trace.csv csv lru 1gb -t "time_col=2; obj_id_col=5; obj_size_col=4;"
+# note that the parameters are separated by comma and quoted
+./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
 
-# if object id is numeric, then we can pass obj_id_is_num=true to speed up
-./cachesim ../data/trace.csv csv lru 1gb -t "time_col=2; obj_id_col=5; obj_size_col=4; obj_id_is_num=true;"
+# if object id is numeric, then we can pass obj-id-is-num=true to speed up
+./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true"
 
 
 # note that csv trace does not support UTF-8 encoding, only ASCII encoding is supported
-# because we separate parameters by colon, we do not support using colon as the csv delimiter
-./cachesim ../data/trace.csv csv lru 1gb -t "time_col=2; obj_id_col=5; obj_size_col=4; delimiter=,; has_header=true;"
+./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
 ```
 
 Besides csv trace, we also support txt trace and binary trace. 
 ```bash
-# txt trace is a simple format that stores obj_id in each line
+# txt trace is a simple format that stores obj-id in each line
 ./cachesim ../data/trace.txt txt lru 1gb
 
-# oracleGeneral is a binary format that stores time, obj_id, size, next_access_time (in reference count)
+# oracleGeneral is a binary format that stores time, obj-id, size, next-access-time (in reference count)
 ./cachesim ../data/trace.oracleGeneral.bin oracleGeneral lru 1gb
 ```
 **We recommend using binary trace because it can be a few times faster than csv trace and uses less DRAM resources.**
@@ -120,10 +119,10 @@ cachesim supports many advanced features, you can use `./cachesim --help` to get
 Here we give some examples. 
 
 ### Setting parameters for eviction algorithms
-Some eviction algorithms have parameters, you can set the parameters by using `-e k1=v1;k2=v2` or `--eviction_params k1=v1;k2=v2` format.
+Some eviction algorithms have parameters, you can set the parameters by using `-e "k1=v1,k2=v2"` or `--eviction-params "k1=v1,k2=v2"` format.
 ```bash
 # run SLRU with 4 segments
-./cachesim ../data/trace.vscsi vscsi slru 1gb -e n_seg=4
+./cachesim ../data/trace.vscsi vscsi slru 1gb -e n-seg=4
 
 # print the default parameters for SLRU
 ./cachesim ../data/trace.vscsi vscsi slru 1gb -e print
@@ -132,7 +131,7 @@ Some eviction algorithms have parameters, you can set the parameters by using `-
 
 ### Admission algorithm
 cachesim supports the following admission algorithms: size, probabilistic, bloomFilter, adaptSize.
-You can use `-a` or `--admission_algo` to set the admission algorithm. 
+You can use `-a` or `--admission-algo` to set the admission algorithm. 
 ```bash
 # add a bloom filter to filter out objects on first access
 ./cachesim ../data/trace.vscsi vscsi lru 1gb -a bloomFilter
@@ -142,25 +141,25 @@ You can use `-a` or `--admission_algo` to set the admission algorithm.
 ### Advanced features 
 ```bash
 # change number of threads 
-./cachesim ../data/trace.vscsi vscsi lru 1gb --num_thread=4
+./cachesim ../data/trace.vscsi vscsi lru 1gb --num-thread=4
 
 # cap the number of requests raed from the trace
-./cachesim ../data/trace.vscsi vscsi lru 1gb --num_req=1000000
+./cachesim ../data/trace.vscsi vscsi lru 1gb --num-req=1000000
 
 # change output 
-./cachesim ../data/trace.vscsi vscsi lru 1gb -o my_output
+./cachesim ../data/trace.vscsi vscsi lru 1gb -o my-output
 
 # ignore object size, each object has size one
-./cachesim ../data/trace.vscsi vscsi lru 1gb --ignore_obj_size=true
+./cachesim ../data/trace.vscsi vscsi lru 1gb --ignore-obj-size=true
 
 # ignore object metadata size, different algorithms have different metadata size, this option will ignore the metadata size
-./cachesim ../data/trace.vscsi vscsi lru 1gb --consider_obj_metadata=false
+./cachesim ../data/trace.vscsi vscsi lru 1gb --consider-obj-metadata=false
 
 # use part of the trace to warm up the cache
-./cachesim ../data/trace.vscsi vscsi lru 1gb --warmup_sec=86400
+./cachesim ../data/trace.vscsi vscsi lru 1gb --warmup-sec=86400
 
 # Use TTL
-./cachesim ../data/trace.vscsi vscsi lru 1gb --use_ttl=true
+./cachesim ../data/trace.vscsi vscsi lru 1gb --use-ttl=true
 
 ```
 

@@ -19,7 +19,46 @@ typedef struct SLRU_params {
   int n_seg;
 } SLRU_params_t;
 
-const char *SLRU_default_init_params(void) { return "n_seg=4;"; }
+static const char *SLRU_current_params(SLRU_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "n-seg=%d\n", params->n_seg);
+  return params_str;
+}
+
+static void SLRU_parse_params(cache_t *cache,
+                              const char *cache_specific_params) {
+  SLRU_params_t *params = (SLRU_params_t *)cache->eviction_params;
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+  char *end;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "n-seg") == 0) {
+      params->n_seg = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", SLRU_current_params(params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+  free(old_params_str);
+}
 
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
@@ -45,27 +84,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   SLRU_params->n_seg = 4;
 
   if (cache_specific_params != NULL) {
-    char *params_str = strdup(cache_specific_params);
-    char *old_params_str = params_str;
-
-    while (params_str != NULL && params_str[0] != '\0') {
-      char *key = strsep((char **)&params_str, "=");
-      char *value = strsep((char **)&params_str, ";");
-      while (params_str != NULL && *params_str == ' ') {
-        params_str++;
-      }
-
-      if (strcasecmp(key, "n_seg") == 0) {
-        SLRU_params->n_seg = atoi(value);
-      } else if (strcasecmp(key, "print") == 0) {
-        printf("default parameters: %s\n", SLRU_default_init_params());
-        exit(0);
-      } else {
-        ERROR("%s does not have parameter %s\n", cache->cache_name, key);
-        exit(1);
-      }
-    }
-    free(old_params_str);
+    SLRU_parse_params(cache, cache_specific_params);
   }
 
   SLRU_params->LRUs =

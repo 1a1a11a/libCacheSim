@@ -153,17 +153,35 @@ static bool csv_detect_header(const reader_t *reader) {
   return has_header;
 }
 
-static bool is_obj_id_num(reader_t *reader) {
-#define N_TEST 1000
-  request_t *req = new_request();
+/**
+ * @brief check whether the trace uses the given delimiter by making sure 
+ *        the delimiter is in each line
+ *
+ * @param reader
+ * @param delimiter
+ * @return bool
+ */
+bool check_delimiter(const reader_t *reader, char delimiter) {
+  FILE *ifile = fopen(reader->trace_path, "r");
+  char *buf = NULL;
+  bool is_delimiter_correct = true;
+  size_t n = 0;
 
+  size_t read_size = getline(&buf, &n, ifile);
+#define N_TEST 1024
   for (int i = 0; i < N_TEST; i++) {
-    
+    if (strchr(buf, delimiter) == NULL) {
+      is_delimiter_correct = false;
+      break;
+    }
   }
-
 #undef N_TEST
-}
 
+  fclose(ifile);
+  free(buf);
+
+  return is_delimiter_correct;
+}
 /**
  * @brief   call back for csv field end
  *
@@ -181,7 +199,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     if (reader->obj_id_is_num) {
       req->obj_id = strtoull((char *)s, &end, 0);
       if (req->obj_id == 0 && s == end) {
-        ERROR("object id is not numeric %s\n", (char *)s);
+        WARN("object id is not numeric %s\n", (char *)s);
       }
     } else {
       req->obj_id = (uint64_t)g_quark_from_string(s);
