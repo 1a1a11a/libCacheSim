@@ -23,11 +23,11 @@
  * cache so objects are inserted with frequency 1
  */
 
-#include "../include/libCacheSim/evictionAlgo/LFU.h"
+#include "../../include/libCacheSim/evictionAlgo/LFU.h"
 
 #include <glib.h>
 
-#include "../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <zstd.h>
 
-#include "../include/libCacheSim/logging.h"
+#include "../../include/libCacheSim/logging.h"
 
 #define LINE_DELIM '\n'
 

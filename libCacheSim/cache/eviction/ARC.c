@@ -6,12 +6,12 @@
 //  Copyright © 2020 Juncheng. All rights reserved.
 //
 
-#include "../include/libCacheSim/evictionAlgo/ARC.h"
+#include "../../include/libCacheSim/evictionAlgo/ARC.h"
 
 #include <string.h>
 
-#include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/LRU.h"
 
 #ifdef __cplusplus
 extern "C" {

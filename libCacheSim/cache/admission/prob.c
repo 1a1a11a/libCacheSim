@@ -2,8 +2,8 @@
 // Created by Juncheng on 5/29/21.
 //
 
-#include "../include/libCacheSim/admissionAlgo.h"
-#include "../utils/include/mymath.h"
+#include "../../include/libCacheSim/admissionAlgo.h"
+#include "../../utils/include/mymath.h"
 
 #ifdef __cplusplus
 extern "C" {

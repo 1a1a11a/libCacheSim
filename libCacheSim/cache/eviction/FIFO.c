@@ -9,9 +9,9 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../include/libCacheSim/evictionAlgo/FIFO.h"
+#include "../../include/libCacheSim/evictionAlgo/FIFO.h"
 
-#include "../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {

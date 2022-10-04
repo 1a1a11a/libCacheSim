@@ -151,13 +151,11 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
     return cache_check;
   }
 
-  bool admit = true;
+  // bool admit = true;
 
-#if defined(SUPPORT_ADMISSION) && SUPPORT_ADMISSION == 1
   if (cache->admit != NULL && !cache->admit(cache, req)) {
     return cache_check;
   }
-#endif
 
   static bool has_printed = false;
   if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {

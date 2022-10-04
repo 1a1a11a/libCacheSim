@@ -3,12 +3,12 @@
 //
 //
 
-#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
 
 #include <assert.h>
 #include <stdbool.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
 #include "GLCacheInternal.h"
 #include "cacheState.h"
 #include "const.h"

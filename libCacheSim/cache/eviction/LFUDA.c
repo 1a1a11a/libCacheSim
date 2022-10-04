@@ -6,11 +6,11 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../include/libCacheSim/evictionAlgo/LFUDA.h"
+#include "../../include/libCacheSim/evictionAlgo/LFUDA.h"
 
 #include <glib.h>
 
-#include "../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {

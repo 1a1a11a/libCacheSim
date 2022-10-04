@@ -6,16 +6,16 @@
  *
  * */
 
-#include "../include/libCacheSim/evictionAlgo/LeCaR.h"
+#include "../../include/libCacheSim/evictionAlgo/LeCaR.h"
 
 #include <assert.h>
 #include <glib.h>
 #include <math.h>
 
-#include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/evictionAlgo/LFU.h"
-#include "../include/libCacheSim/evictionAlgo/LRU.h"
-#include "../include/libCacheSim/logging.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/LFU.h"
+#include "../../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../include/libCacheSim/logging.h"
 
 #ifdef __cplusplus
 extern "C" {

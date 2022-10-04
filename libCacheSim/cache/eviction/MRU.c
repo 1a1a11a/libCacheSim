@@ -8,9 +8,9 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../include/libCacheSim/evictionAlgo/MRU.h"
+#include "../../include/libCacheSim/evictionAlgo/MRU.h"
 
-#include "../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/hashtable/hashtable.h"
 
 #ifdef _cplusplus
 extern "C" {

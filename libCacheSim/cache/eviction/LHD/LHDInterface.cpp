@@ -2,8 +2,8 @@
 
 #include <assert.h>
 
-#include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/evictionAlgo/LHD.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/evictionAlgo/LHD.h"
 #include "lhd.hpp"
 #include "repl.hpp"
 

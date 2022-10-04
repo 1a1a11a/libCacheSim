@@ -1,14 +1,14 @@
 /* Cacheus: FAST'21 */
 
-#include "../include/libCacheSim/evictionAlgo/Cacheus.h"
+#include "../../include/libCacheSim/evictionAlgo/Cacheus.h"
 
 #include <assert.h>
 #include <math.h>
 
-#include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/evictionAlgo/CR_LFU.h"
-#include "../include/libCacheSim/evictionAlgo/LRU.h"
-#include "../include/libCacheSim/evictionAlgo/SR_LRU.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/CR_LFU.h"
+#include "../../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../include/libCacheSim/evictionAlgo/SR_LRU.h"
 
 #ifdef __cplusplus
 extern "C" {

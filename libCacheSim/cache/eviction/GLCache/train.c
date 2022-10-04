@@ -2,7 +2,7 @@
 #include <math.h>
 #include <xgboost/c_api.h>
 
-#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "GLCacheInternal.h"
 #include "obj.h"
 #include "utils.h"

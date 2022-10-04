@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "../../libCacheSim/include/libCacheSim/macro.h"
+#include "../../../libCacheSim/include/libCacheSim/macro.h"
 #include "libcsv.h"
 #include "readerInternal.h"
 

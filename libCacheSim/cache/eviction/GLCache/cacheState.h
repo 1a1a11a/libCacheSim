@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "const.h"
 #include "GLCacheInternal.h"
 

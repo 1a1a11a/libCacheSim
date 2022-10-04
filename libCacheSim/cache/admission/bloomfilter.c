@@ -4,7 +4,7 @@
 
 #include <glib.h>
 
-#include "../include/libCacheSim/admissionAlgo.h"
+#include "../../include/libCacheSim/admissionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {

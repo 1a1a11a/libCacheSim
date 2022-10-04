@@ -1,8 +1,8 @@
 /* Hyperbolic caching */
 
-#include "../include/libCacheSim/evictionAlgo/Hyperbolic.h"
+#include "../../include/libCacheSim/evictionAlgo/Hyperbolic.h"
 
-#include "../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {

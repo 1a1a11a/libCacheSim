@@ -9,10 +9,10 @@
 // Created by Juncheng Yang on 3/30/21.
 //
 
-#include "../include/libCacheSim/evictionAlgo/Belady.h"
+#include "../../include/libCacheSim/evictionAlgo/Belady.h"
 
-#include "../dataStructure/hashtable/hashtable.h"
-#include "../dataStructure/pqueue.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/pqueue.h"
 
 #ifdef __cplusplus
 extern "C" {

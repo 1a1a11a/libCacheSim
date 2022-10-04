@@ -7,9 +7,9 @@
 //
 /* todo: change to BeladySize */
 
-#include "../include/libCacheSim/evictionAlgo/BeladySize.h"
+#include "../../include/libCacheSim/evictionAlgo/BeladySize.h"
 
-#include "../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/hashtable/hashtable.h"
 
 #ifdef __cplusplus
 extern "C" {

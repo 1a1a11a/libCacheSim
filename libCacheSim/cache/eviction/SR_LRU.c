@@ -1,8 +1,8 @@
 
-#include "../include/libCacheSim/evictionAlgo/SR_LRU.h"
+#include "../../include/libCacheSim/evictionAlgo/SR_LRU.h"
 
-#include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/LRU.h"
 // SR_LRU is used by Cacheus.
 
 #ifdef __cplusplus

@@ -1,10 +1,10 @@
 
 
-#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/mem.h"
 #include "const.h"
 #include "obj.h"
 #include "utils.h"
-#include "../../include/libCacheSim/mem.h"
 
 /* because we use windowed feature, we need to shift the feature
  * when the window moves */
