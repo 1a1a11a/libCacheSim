@@ -265,13 +265,16 @@ reader_t *setup_reader(const char *const trace_path,
  * @return 0 if success, 1 if end of file
  */
 int read_one_req(reader_t *const reader, request_t *const req) {
-  if (reader->mmap_offset >= reader->file_size - 1) {
-    req->valid = FALSE;
+  if (reader->mmap_offset >= reader->file_size) {
+    DEBUG("read_one_req: end of file\n");
+    req->valid = false;
     return 1;
   }
 
   if (reader->cap_at_n_req > 1 && reader->n_read_req >= reader->cap_at_n_req) {
-    req->valid = FALSE;
+    DEBUG("read_one_req: processed %ld requests capped by the user\n",
+          reader->n_read_req);
+    req->valid = false;
     return 1;
   }
 

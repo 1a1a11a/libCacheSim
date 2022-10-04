@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
   request_t *req = new_request();
   read_one_req(args.reader, req);
-
+  
   bool trace_has_next_access_vtime = req->next_access_vtime != -2;
 
   if (trace_has_next_access_vtime) {

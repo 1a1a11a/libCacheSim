@@ -141,31 +141,28 @@ int binaryReader_setup(reader_t *const reader) {
       format_to_size(params->obj_id_format), params->obj_id_offset);
 
   if (params->time_field_idx > 0) {
-    n += snprintf(output + n, 1024 - n,
-                  ", time_field_idx %d, size %d, offset %d",
+    n += snprintf(output + n, 1024 - n, ", time_field %d,%d,%d",
                   params->time_field_idx, format_to_size(params->time_format),
                   params->time_offset);
   }
   if (params->obj_size_field_idx > 0) {
-    n += snprintf(
-        output + n, 1024 - n, ", obj_size_field_idx %d, size %d, offset %d",
-        params->obj_size_field_idx, format_to_size(params->obj_size_format),
-        params->obj_size_offset);
+    n += snprintf(output + n, 1024 - n, ", obj_size_field %d,%d,%d",
+                  params->obj_size_field_idx,
+                  format_to_size(params->obj_size_format),
+                  params->obj_size_offset);
   }
   if (params->op_field_idx > 0) {
-    n += snprintf(output + n, 1024 - n, ", op_field_idx %d, size %d, offset %d",
+    n += snprintf(output + n, 1024 - n, ", op_field %d,%d,%d",
                   params->op_field_idx, format_to_size(params->op_format),
                   params->op_offset);
   }
   if (params->ttl_field_idx > 0) {
-    n +=
-        snprintf(output + n, 1024 - n, ", ttl_field_idx %d, size %d, offset %d",
-                 params->ttl_field_idx, format_to_size(params->ttl_format),
-                 params->ttl_offset);
+    n += snprintf(output + n, 1024 - n, ", ttl_field %d,%d,%d",
+                  params->ttl_field_idx, format_to_size(params->ttl_format),
+                  params->ttl_offset);
   }
   if (params->next_access_vtime_field_idx > 0) {
-    n += snprintf(output + n, 1024 - n,
-                  ", next_access_vtime_field_idx %d, size %d, offset %d",
+    n += snprintf(output + n, 1024 - n, ", next_access_vtime_field %d,%d,%d",
                   params->next_access_vtime_field_idx,
                   format_to_size(params->next_access_vtime_format),
                   params->next_access_vtime_offset);
@@ -213,11 +210,6 @@ static inline int64_t read_data(char *src, char format) {
 }
 
 int binary_read_one_req(reader_t *reader, request_t *req) {
-  if (reader->mmap_offset >= reader->n_total_req * reader->item_size) {
-    req->valid = false;
-    return 1;
-  }
-
   binary_params_t *params = (binary_params_t *)reader->reader_params;
 
   char *start = (reader->mapped_file + reader->mmap_offset);
