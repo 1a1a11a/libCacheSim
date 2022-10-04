@@ -6,7 +6,7 @@
  *
  */
 
-#include "libCacheSim/evictionAlgo/LFU.h"
+#include "../../../include/libCacheSim/evictionAlgo/LFU.h"
 
 #include <cassert>
 

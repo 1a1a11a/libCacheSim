@@ -3,12 +3,12 @@
  *
  **/
 
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/simulator.h"
-#include "../../utils/include/mymath.h"
-#include "../../utils/include/mysys.h"
+#include "../../../include/libCacheSim/cache.h"
+#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "../../../include/libCacheSim/reader.h"
+#include "../../../include/libCacheSim/simulator.h"
+#include "../../../utils/include/mymath.h"
+#include "../../../utils/include/mysys.h"
 
 // #define ADD_METADATA
 // #define NO_FRAGMENTATION

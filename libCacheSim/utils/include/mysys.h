@@ -10,6 +10,7 @@
 #define UTILS_h
 
 #include <pthread.h>
+#include <sys/resource.h>
 
 int set_thread_affinity(pthread_t tid);
 

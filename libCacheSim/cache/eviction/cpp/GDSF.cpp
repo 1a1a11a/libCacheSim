@@ -1,6 +1,6 @@
 /* GDSF: greedy dual frequency size */
 
-#include "libCacheSim/evictionAlgo/GDSF.h"
+#include "../../../include/libCacheSim/evictionAlgo/GDSF.h"
 
 #include <cassert>
 

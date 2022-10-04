@@ -213,8 +213,19 @@ message(STATUS "============= Status of optional features ==============")
 message(STATUS "========================================================")
 
 
+
+########################################
+# library compilation  #
+########################################
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(ALL_MODULES cachelib admission eviction traceReader profiler dataStructure ds_hash utils)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
+
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/dataStructure)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/traceReader)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/profiler)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/bin)
 
 
 ########################################
@@ -277,13 +288,13 @@ configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BI
 # configure_file(${PROJECT_SOURCE_DIR}/libCacheSim/include/config.h.in ${PROJECT_SOURCE_DIR}/libCacheSim/include/config.h @ONLY)
 
 
-install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CONF_LIB_DIRS})
-install(
-        TARGETS ${PROJECT_NAME}
-        ARCHIVE DESTINATION lib
-        LIBRARY DESTINATION lib
-        COMPONENT library
-)
+# install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CONF_LIB_DIRS})
+# install(
+#         TARGETS ${PROJECT_NAME}
+#         ARCHIVE DESTINATION lib
+#         LIBRARY DESTINATION lib
+#         COMPONENT library
+# )
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION include)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
 install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
@@ -305,13 +316,7 @@ else ()
     message(STATUS "Building without test")
 endif ()
 
-add_executable(debug test/debug.c)
-target_link_libraries(debug ${ALL_MODULES})
+# add_executable(debug test/debug.c)
+# target_link_libraries(debug ${ALL_MODULES})
 
-
-# Example Usages:
-# mkdir _build;
-# cd _build && rm -r *;
-# cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON .. && make -j
-# ctest
 

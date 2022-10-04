@@ -120,7 +120,6 @@ void print_resource_usage(void) {
       (double)r_usage.ru_maxrss / (1024.0), r_usage.ru_minflt,
       r_usage.ru_majflt, r_usage.ru_inblock, r_usage.ru_oublock,
       r_usage.ru_nvcsw, r_usage.ru_nivcsw);
-  return 0;
 }
 
 void print_rusage_diff(struct rusage *r1, struct rusage *r2) {

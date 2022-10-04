@@ -4,7 +4,7 @@
 
 #include "../../include/libCacheSim/logging.h"
 #include "../../include/libCacheSim/sampling.h"
-#include "../dataStructure/hash/hash.h"
+#include "../../dataStructure/hash/hash.h"
 
 #ifdef __cplusplus
 extern "C" {
