@@ -2,8 +2,7 @@
 
 
 add_subdirectory(cachesim)
-add_subdirectory(benchmark)
-add_subdirectory(traceWriter)
+# add_subdirectory(traceWriter)
 add_subdirectory(traceConv)
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/priv)

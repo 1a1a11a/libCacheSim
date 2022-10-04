@@ -166,7 +166,7 @@ reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
 
 /* this is the same function as setup_reader */
 static inline reader_t *open_trace(const char *path, const trace_type_e type,
-                                   reader_init_param_t *reader_init_param) {
+                                   const reader_init_param_t *reader_init_param) {
   return setup_reader(path, type, reader_init_param);
 }
 

@@ -25,4 +25,9 @@ void create_dir(char *dir_path);
 
 void print_glib_ver(void);
 
+void print_resource_usage(void);
+
+void print_rusage_diff(struct rusage *r1, struct rusage *r2);
+
+
 #endif /* UTILS_h */
