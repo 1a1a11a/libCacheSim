@@ -7,13 +7,6 @@
 #include <stdlib.h>
 
 #include "libCacheSim.h"
-// #include "libCacheSim/cache.h"
-// #include "libCacheSim/reader.h"
-
-// gcc cacheSimulator.c -I ../libCacheSim/include/ $(pkg-config --cflags
-// glib-2.0) -ldl -L. -l:libCacheSim.so gcc cacheSimulator.c -I
-// ../libCacheSim/include/ $(pkg-config --cflags glib-2.0) -ldl -L.
-// -llibCacheSim $(pkg-config --libs glib-2.0) -ldl -lm
 
 int main(int argc, char **argv) {
   /* setup reader */

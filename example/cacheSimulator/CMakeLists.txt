@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8)
-project (libCacheSimExample)
-set(CMAKE_BUILD_TYPE Debug)
+project (cacheSimulator)
+# set(CMAKE_BUILD_TYPE Debug)
 
 message("****************** this example only works after libCacheSim has been installed ******************")
 
