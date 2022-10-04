@@ -37,17 +37,16 @@ else()
 endif()
 
 
-# set(LOG_LEVEL "debug")
+# set(LOG_LEVEL "vverbose")
+# set(LOG_LEVEL debug)
 
 ########################################
 # define options #
 ########################################
 option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
 option(ENABLE_TESTS "whether enable test" ON)
-option(ENABLE_GLCACHE "enable group-learned cache" ON)
+option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
-option(SUPPORT_ADMISSION "whether support cache admission" OFF)
-option(SUPPORT_TRACE_SAMPLING "whether support trace sampling" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
@@ -57,18 +56,6 @@ if (SUPPORT_TTL)
 else()
     add_compile_definitions(SUPPORT_TTL=0)
 endif(SUPPORT_TTL)
-
-if (SUPPORT_ADMISSION)
-    add_compile_definitions(SUPPORT_ADMISSION=1)
-else()
-    add_compile_definitions(SUPPORT_ADMISSION=0)
-endif()
-
-if (SUPPORT_TRACE_SAMPLING)
-    add_compile_definitions(SUPPORT_TRACE_SAMPLING=1)
-else()
-    add_compile_definitions(SUPPORT_TRACE_SAMPLING=0)
-endif(SUPPORT_TRACE_SAMPLING)
 
 if (USE_HUGEPAGE)
     add_compile_definitions(USE_HUGEPAGE=1)
@@ -101,7 +88,7 @@ elseif (LOG_LEVEL MATCHES severe)
 endif()
 
 
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, SUPPORT_ADMISSION ${SUPPORT_ADMISSION}, SUPPORT_TRACE_SAMPLING ${SUPPORT_TRACE_SAMPLING}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCache ${ENABLE_GLCache}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCache ${ENABLE_GLCache}")
 
 # add_compile_options(-fsanitize=address)
 # add_link_options(-fsanitize=address)
@@ -194,7 +181,7 @@ if (ENABLE_GLCACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
     link_libraries(xgboost::xgboost)
-    message(STATUS "${XGBOOST_INCLUDE_DIR} ${LIGHTGBM_LIB} ${LIGHTGBM_INCLUDE_DIR}")
+    message(STATUS "${XGBOOST_INCLUDE_DIR}")
 endif()
 
 
@@ -233,37 +220,72 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
 ########################################
 # library install  #
 ########################################
-file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*/*.c)
-file(GLOB hashtable ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hashtable/*.c)
-file(GLOB hash ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hash/*.c)
-set(LIB_SOURCE ${LIB_SOURCE} ${hashtable} ${hash})
+file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*.c)
 
-set (EXCLUDE_DIR "/bin/")
-foreach (TMP_PATH ${LIB_SOURCE})
-    string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
-    if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
-        list (REMOVE_ITEM LIB_SOURCE ${TMP_PATH})
-    endif ()
-endforeach(TMP_PATH)
+file(GLOB cache_source 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/*.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/*.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LHD/*.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/*.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/admission/*.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/prefetch/*.c
+    )
+
+if (ENABLE_GLCACHE)
+    set (cache_source
+        ${cache_source}
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/GLCache/*.c 
+    )
+endif(ENABLE_GLCACHE)
+
+file(GLOB traceReader_source 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/*.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/*.c 
+    )
+file(GLOB dataStructure_source
+        ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/*.c
+        ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hashtable/*.c
+        ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hash/*.c
+    )
+
+file(GLOB profiler_source
+        ${PROJECT_SOURCE_DIR}/libCacheSim/profiler/*.c
+    )
+
+file(GLOB utils_source
+        ${PROJECT_SOURCE_DIR}/libCacheSim/utils/*.c
+    )
+    
+set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${traceReader_source} ${dataStructure_source} ${profiler_source} ${utils_source})
+
+# set (EXCLUDE_DIR "/bin/")
+# foreach (TMP_PATH ${LIB_SOURCE})
+#     string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
+#     if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
+#         list (REMOVE_ITEM LIB_SOURCE ${TMP_PATH})
+#     endif ()
+# endforeach(TMP_PATH)
+
 
 add_library(${PROJECT_NAME} ${LIB_SOURCE})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
-configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake
-        @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake @ONLY)
+# this overwrites the default config.h
+# configure_file(${PROJECT_SOURCE_DIR}/libCacheSim/include/config.h.in ${PROJECT_SOURCE_DIR}/libCacheSim/include/config.h @ONLY)
 
 
-#install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CONF_LIB_DIRS})
-INSTALL(
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CONF_LIB_DIRS})
+install(
         TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         COMPONENT library
 )
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION include)
-install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CONF_LIB_DIRS}/pkgconfig)
+install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
 install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
 
 
