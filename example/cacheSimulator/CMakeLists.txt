@@ -5,10 +5,6 @@ set(CMAKE_BUILD_TYPE Debug)
 message("****************** this example only works after libCacheSim has been installed ******************")
 
 
-####
-## export C_INCLUDE_PATH=/usr/local/include
-## export CPLUS_INCLUDE_PATH=/usr/local/include
-
 # clear an error when using cmake in macOS
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_MACOSX_RPATH 1)
@@ -20,7 +16,7 @@ endif()
 
 find_library(libMC libCacheSim)
 find_path(libMCInclude libCacheSim)
-message(STATUS "libMC" ${libMC} ${libMCInclude})
+message(STATUS "libCacheSim found? ${libMC} ${libMCInclude}")
 
 #find_package (libCacheSim)
 #if (libCacheSim_FOUND)
@@ -30,27 +26,12 @@ message(STATUS "libMC" ${libMC} ${libMCInclude})
 #endif (libCacheSim_FOUND)
 
 
-
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-# find libglib2.0-dev
 find_package(GLib "2.40" REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
-message(STATUS "glib found? " ${GLib_FOUND} ", GLIB = " ${GLib_LIBRARY} ", header = " ${GLib_INCLUDE_DIRS})
+message(STATUS "glib found? ${GLib_FOUND}, lib = ${GLib_LIBRARY}, header = ${GLib_INCLUDE_DIRS}")
 
 
-################ this mode compiles the external cache replacement algorithm together with the simulator ############
-#message(STATUS "project_source dir = " ${PROJECT_SOURCE_DIR})
-file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.c)
-message(STATUS "all sources " ${ALL_SRC})
-add_executable(cacheSimulator ${ALL_SRC})
+add_executable(cacheSimulator main.c)
 target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY} -lpthread -ldl)
-
-
-################ this mode compiles the external cache replacement algorithm as shared library ################
-################ and then loaded by the simulator, note that the shared library must be in the same dir as simulator ############
-#add_library(myLRU SHARED ${PROJECT_SOURCE_DIR}/myLRU.c)
-#set_target_properties(myLRU PROPERTIES LINKER_LANGUAGE C)
-
-#add_executable(cacheSimulator ${PROJECT_SOURCE_DIR}/cacheSimulator.c)
-#target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY} -lpthread -ldl)
 
