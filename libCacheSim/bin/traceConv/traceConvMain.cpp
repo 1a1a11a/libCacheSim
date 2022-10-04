@@ -21,5 +21,7 @@ int main(int argc, char *argv[]) {
 
   traceConv::convert_to_oracleGeneral(args.reader, args.ofilepath,
                                       args.sample_ratio, args.output_txt,
-                                      args.remove_size_change, true);
+                                      args.remove_size_change, false);
 }
+
+
