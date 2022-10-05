@@ -83,10 +83,8 @@ typedef struct {
   int16_t active : 2;  // whether this object has been acccessed
   int16_t in_cache : 2;
   int16_t seen_after_snapshot : 2;
-  //      int16_t n_merged : 12;  /* how many times it has been merged */
 } GLCache_obj_metadata_t;
 
-#define DEBUG_MODE
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {

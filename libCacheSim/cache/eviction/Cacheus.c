@@ -35,7 +35,11 @@ typedef struct Cacheus_params {
 
 cache_t *Cacheus_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Cacheus", ccache_params);
+  common_cache_params_t updated_cc_params = ccache_params;
+  /* reduce the hash table size */
+  updated_cc_params.hashpower -= 2;
+
+  cache_t *cache = cache_struct_init("Cacheus", updated_cc_params);
   cache->cache_init = Cacheus_init;
   cache->cache_free = Cacheus_free;
   cache->get = Cacheus_get;
@@ -62,7 +66,6 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
   cache->eviction_params = my_malloc_n(Cacheus_params_t, 1);
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   params->ghost_list_factor = 1;
-
   params->update_interval = ccache_params.cache_size;  // From paper
   // learning rate chooses randomly between 10-3 & 1
   // LR will be reset after 10 consecutive decreases. Whether reset to the same
@@ -84,7 +87,7 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
       (CR_LFU_params_t *)(params->LFU->eviction_params);
   CR_LFU_params->other_cache = params->LRU;
 
-  common_cache_params_t ccache_params_g = ccache_params;
+  common_cache_params_t ccache_params_g = updated_cc_params;
   /* set ghost_list_factor to 2 can reduce miss ratio anomaly */
   ccache_params_g.cache_size = (uint64_t)((double)ccache_params.cache_size / 2 *
                                           params->ghost_list_factor);
