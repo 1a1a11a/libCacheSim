@@ -2,10 +2,6 @@
 // Created by Juncheng Yang on 11/15/19.
 //
 
-#include <dlfcn.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "libCacheSim.h"
 
 int main(int argc, char **argv) {
@@ -18,6 +14,7 @@ int main(int argc, char **argv) {
   init_params.has_header = true;
   init_params.delimiter = ',';
 
+  /* we can also use open_trace with the same parameters */
   reader_t *reader =
       setup_reader("../../../data/trace.csv", CSV_TRACE, &init_params);
 
@@ -45,6 +42,7 @@ int main(int argc, char **argv) {
 
   free_request(req);
   lru->cache_free(lru);
+  close_reader(reader);
 
   return 0;
 }

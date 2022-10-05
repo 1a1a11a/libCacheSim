@@ -161,13 +161,13 @@ endif(SUPPORT_ZSTD_TRACE)
 
 
 # libgoogle-perftools-dev google-perftools
+# tcmalloc causes trouble with valgrind https://github.com/gperftools/gperftools/issues/792
 find_package(Tcmalloc)
 if ("${Tcmalloc_LIBRARY}" STREQUAL "")
     message(STATUS "!!! cannot find tcmalloc")
 else ()
     set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-#    set(LIBS ${LIBS} "tcmalloc")
 endif ()
 
 find_package(Threads)

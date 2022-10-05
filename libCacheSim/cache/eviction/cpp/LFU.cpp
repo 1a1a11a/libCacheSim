@@ -23,7 +23,7 @@ class LFUCpp : public abstractRank {
 cache_t *LFUCpp_init(common_cache_params_t ccache_params,
                      const char *init_params) {
   cache_t *cache = cache_struct_init("LFUCpp", ccache_params);
-  auto *lfu = new eviction::LFUCpp;
+  auto *lfu = new eviction::LFUCpp();
   cache->eviction_params = lfu;
 
   cache->cache_init = LFUCpp_init;

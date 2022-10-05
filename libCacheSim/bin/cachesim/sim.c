@@ -70,7 +70,7 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
            "requests, miss ratio %.4lf, "
            "throughput %.2lf MQPS\n",
            (double)req->real_time / 3600.0, reader->trace_path,
-           (int)(cache->cache_size / 1024 / 1024), cache->cache_name,
+           (int)(cache->cache_size), cache->cache_name,
            (unsigned long)req_cnt, (double)miss_cnt / req_cnt,
            (double)req_cnt / 1000000.0 / runtime);
 #pragma GCC diagnostic pop
