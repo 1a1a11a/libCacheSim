@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
                                      .has_header = true,
                                      .delimiter = ','};
   reader_t *reader =
-      setup_reader("../../data/trace.csv", CSV_TRACE, &init_params);
+      setup_reader("../../../data/trace.csv", CSV_TRACE, &init_params);
 
   /* set up a request */
   request_t *req = new_request();

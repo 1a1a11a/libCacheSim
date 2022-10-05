@@ -1,71 +1,60 @@
-
-
-#include <cstdio>
-#include <cstdlib>
-#include <unistd.h>
-#include <inttypes.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <ctime>
-
-#include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <iostream>
-#include <iomanip>
-#include <thread>
-
-
-
 #include <libCacheSim.h>
 
-#define million 1000000
+#include <thread>
 
-
-/* gcc $(pkg-config --cflags --libs libCacheSim glib-2.0) -O2 -lm -ldl simCache.cpp -lstdc++ -o test */
-
-
-#define N_SIM_PTS 2000
+#define NUM_SIZES 8
 
 int main(int argc, char *argv[]) {
-    if (argc != 5) {
-        printf("usage: %s input_path output_path size algo\n", argv[0]); 
-        exit(1); 
-    }
+  uint64_t cache_sizes[8] = {100, 200, 400, 800, 1600, 3200, 6400, 12800};
+  for (int i = 0; i < NUM_SIZES; i++) {
+    cache_sizes[i] = cache_sizes[i] * MiB;
+  }
 
-    uint64_t cache_size = atoll(argv[3]); 
-    uint64_t cache_sizes[N_SIM_PTS]; 
-    for (int i=0; i<N_SIM_PTS; i++) 
-        cache_sizes[i] = cache_size * (i+1) / N_SIM_PTS; 
+  reader_init_param_t init_params;
+  set_default_reader_init_params(&init_params);
+  /* the first column is the time, the second is the object id, the third is the
+   * object size */
+  init_params.time_field = 2;
+  init_params.obj_id_field = 5;
+  init_params.obj_size_field = 4;
 
-    reader_t *reader = open_trace(argv[1], PLAIN_TXT_TRACE, OBJ_ID_NUM, NULL); 
+  /* the trace has a header */
+  init_params.has_header = true;
+  init_params.has_header_set = true;
 
-    common_cache_params_t cc_params;
-    cc_params.cache_size = cache_size; 
-    cc_params.hashpower = 20; 
-    cache_t *cache = create_cache(argv[4], cc_params, NULL); 
+  /* the trace uses comma as the delimiter */
+  init_params.delimiter = ',';
 
-    /* see libCacheSim/include/simulator.h for sim_res_t */
-    sim_res_t *result = simulate_at_multi_sizes(reader, cache, N_SIM_PTS, cache_sizes, NULL, 0, static_cast<int>(std::thread::hardware_concurrency())); 
-    
-    FILE *ofile = fopen(argv[2], "wb"); 
-    fprintf(ofile, "size hit\n"); 
-    for (int i=0; i<N_SIM_PTS; i++) {
-        fprintf(ofile, "%lu %lu %lu %.4lf\n", cache_size * (i+1) / N_SIM_PTS, 
-                result[i].req_cnt, result[i].req_cnt - result[i].miss_cnt, 
-                (double) (result[i].req_cnt - result[i].miss_cnt) / result[i].req_cnt); 
-    }
+  /* object id in the trace is numeric */
+  init_params.obj_id_is_num = true;
 
+  reader_t *reader =
+      open_trace("../../../data/trace.csv", CSV_TRACE, &init_params);
 
-    close_trace(reader);
-    cache->cache_free(cache);
-    fclose(ofile); 
+  common_cache_params_t cc_params;
+  cc_params.cache_size = 1 * GiB;  // any size should work
+  cache_t *cache = LHD_init(cc_params, nullptr);
+
+  /* see libCacheSim/include/simulator.h
+     run several concurrent simulations with different cache sizes
+     parameters: reader, cache, cache size, num_sizes, cache_sizes,
+     warmup_reader, warmup_frac, warmup_sec, num_threads
+   */
+  cache_stat_t *result = simulate_at_multi_sizes(
+      reader, cache, NUM_SIZES, cache_sizes, nullptr, 0.0, 0,
+      static_cast<int>(std::thread::hardware_concurrency()));
+
+  printf(
+      "      cache size           num_miss        num_req        miss ratio    "
+      "  byte miss ratio\n");
+  for (int i = 0; i < NUM_SIZES; i++) {
+    printf("%16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_size,
+           result[i].n_miss, result[i].n_req,
+           (double)(result[i].n_miss) / (double)result[i].n_req,
+           (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
+  }
+
+  close_trace(reader);
+  cache->cache_free(cache);
+  free(result);
 }
-
-
-
-
-
-
