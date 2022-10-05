@@ -106,7 +106,7 @@ struct cache {
   /* cache stat is not updated automatically, it is popped up only in
    * some situations */
   cache_stat_t stat;
-  char cache_name[32];
+  char cache_name[MAX_CACHE_NAME_LEN];
   const char *init_params;
 };
 

@@ -10,12 +10,14 @@
 
 int main(int argc, char **argv) {
   /* setup reader */
-  reader_init_param_t init_params = {.obj_id_field = 5,
-                                     .obj_size_field = 4,
-                                     .time_field = 4,
-                                     .has_header_set = true,
-                                     .has_header = true,
-                                     .delimiter = ','};
+  reader_init_param_t init_params = default_reader_init_params();
+  init_params.obj_id_field = 5;
+  init_params.obj_size_field = 4;
+  init_params.time_field = 4;
+  init_params.has_header_set = true;
+  init_params.has_header = true;
+  init_params.delimiter = ',';
+
   reader_t *reader =
       setup_reader("../../../data/trace.csv", CSV_TRACE, &init_params);
 

@@ -22,10 +22,10 @@ void run_one_cache_multiple_sizes(cache_t *cache, reader_t *reader) {
       static_cast<int>(std::thread::hardware_concurrency()));
 
   printf(
-      "cache name          cache size           num_miss        num_req        "
-      "miss ratio      byte miss ratio\n");
+      "      cache name        cache size           num_miss        num_req"
+      "        miss ratio      byte miss ratio\n");
   for (int i = 0; i < NUM_SIZES; i++) {
-    printf("%16s, %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
+    printf("%16s %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
            result[i].cache_size, result[i].n_miss, result[i].n_req,
            (double)(result[i].n_miss) / (double)result[i].n_req,
            (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
@@ -38,24 +38,30 @@ void run_one_cache_multiple_sizes(cache_t *cache, reader_t *reader) {
 void run_multiple_caches(reader_t *reader) {
   reset_reader(reader);
 
-  common_cache_params_t cc_params;
-  cc_params.cache_size = 1 * GiB;  // any size should work
+  common_cache_params_t cc_params = default_common_cache_params();
+  cc_params.cache_size = 1 * GiB;
+  cc_params.hashpower = 16;
 
   cache_t *caches[8] = {
-      LRU_init(cc_params, nullptr),   LFU_init(cc_params, nullptr),
-      FIFO_init(cc_params, nullptr),  SLRU_init(cc_params, nullptr),
-      LHD_init(cc_params, nullptr),   Hyperbolic_init(cc_params, nullptr),
-      LeCaR_init(cc_params, nullptr), ARC_init(cc_params, nullptr)};
+      LRU_init(cc_params, nullptr),  LFU_init(cc_params, nullptr),
+      FIFO_init(cc_params, nullptr), SLRU_init(cc_params, nullptr),
+      LHD_init(cc_params, nullptr),  LeCaR_init(cc_params, nullptr),
+      ARC_init(cc_params, nullptr),  NULL};
+
+  // Hyperbolic samples eviction candidates from the cache,
+  // so the hash table needs to be small
+  cc_params.hashpower = 12;
+  caches[7] = Hyperbolic_init(cc_params, nullptr);
 
   cache_stat_t *result = simulate_with_multi_caches(
       reader, caches, 8, nullptr, 0.0, 0,
       static_cast<int>(std::thread::hardware_concurrency()));
 
   printf(
-      "cache name          cache size           num_miss        num_req        "
-      "miss ratio      byte miss ratio\n");
+      "      cache name        cache size           num_miss        num_req"
+      "        miss ratio      byte miss ratio\n");
   for (int i = 0; i < NUM_SIZES; i++) {
-    printf("%16s, %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
+    printf("%16s %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
            result[i].cache_size, result[i].n_miss, result[i].n_req,
            (double)(result[i].n_miss) / (double)result[i].n_req,
            (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
@@ -67,8 +73,7 @@ void run_multiple_caches(reader_t *reader) {
 }
 
 int main(int argc, char *argv[]) {
-  reader_init_param_t init_params;
-  set_default_reader_init_params(&init_params);
+  reader_init_param_t init_params = default_reader_init_params();
   /* the first column is the time, the second is the object id, the third is the
    * object size */
   init_params.time_field = 2;
@@ -87,7 +92,7 @@ int main(int argc, char *argv[]) {
 
   reader_t *reader = open_trace(TRACE_PATH, CSV_TRACE, &init_params);
 
-  common_cache_params_t cc_params;
+  common_cache_params_t cc_params = default_common_cache_params();
   cc_params.cache_size = 1 * GiB;  // any size should work
   cache_t *cache = LRU_init(cc_params, nullptr);
 
