@@ -3,13 +3,70 @@
 #include <thread>
 
 #define NUM_SIZES 8
+const char *TRACE_PATH = "../../../data/trace.csv";
 
-int main(int argc, char *argv[]) {
-  uint64_t cache_sizes[8] = {100, 200, 400, 800, 1600, 3200, 6400, 12800};
+void run_one_cache_multiple_sizes(cache_t *cache, reader_t *reader) {
+  uint64_t cache_sizes[NUM_SIZES] = {100,  200,  400,  800,
+                                     1600, 3200, 6400, 12800};
   for (int i = 0; i < NUM_SIZES; i++) {
     cache_sizes[i] = cache_sizes[i] * MiB;
   }
 
+  /* see libCacheSim/include/simulator.h
+     run several concurrent simulations with different cache sizes
+     parameters: reader, cache, cache size, num_sizes, cache_sizes,
+     warmup_reader, warmup_frac, warmup_sec, num_threads
+   */
+  cache_stat_t *result = simulate_at_multi_sizes(
+      reader, cache, NUM_SIZES, cache_sizes, nullptr, 0.0, 0,
+      static_cast<int>(std::thread::hardware_concurrency()));
+
+  printf(
+      "cache name          cache size           num_miss        num_req        "
+      "miss ratio      byte miss ratio\n");
+  for (int i = 0; i < NUM_SIZES; i++) {
+    printf("%16s, %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
+           result[i].cache_size, result[i].n_miss, result[i].n_req,
+           (double)(result[i].n_miss) / (double)result[i].n_req,
+           (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
+  }
+
+  cache->cache_free(cache);
+  free(result);
+}
+
+void run_multiple_caches(reader_t *reader) {
+  reset_reader(reader);
+
+  common_cache_params_t cc_params;
+  cc_params.cache_size = 1 * GiB;  // any size should work
+
+  cache_t *caches[8] = {
+      LRU_init(cc_params, nullptr),   LFU_init(cc_params, nullptr),
+      FIFO_init(cc_params, nullptr),  SLRU_init(cc_params, nullptr),
+      LHD_init(cc_params, nullptr),   Hyperbolic_init(cc_params, nullptr),
+      LeCaR_init(cc_params, nullptr), ARC_init(cc_params, nullptr)};
+
+  cache_stat_t *result = simulate_with_multi_caches(
+      reader, caches, 8, nullptr, 0.0, 0,
+      static_cast<int>(std::thread::hardware_concurrency()));
+
+  printf(
+      "cache name          cache size           num_miss        num_req        "
+      "miss ratio      byte miss ratio\n");
+  for (int i = 0; i < NUM_SIZES; i++) {
+    printf("%16s, %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
+           result[i].cache_size, result[i].n_miss, result[i].n_req,
+           (double)(result[i].n_miss) / (double)result[i].n_req,
+           (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
+  }
+  free(result);
+  for (int i = 0; i < 8; i++) {
+    caches[i]->cache_free(caches[i]);
+  }
+}
+
+int main(int argc, char *argv[]) {
   reader_init_param_t init_params;
   set_default_reader_init_params(&init_params);
   /* the first column is the time, the second is the object id, the third is the
@@ -28,33 +85,18 @@ int main(int argc, char *argv[]) {
   /* object id in the trace is numeric */
   init_params.obj_id_is_num = true;
 
-  reader_t *reader =
-      open_trace("../../../data/trace.csv", CSV_TRACE, &init_params);
+  reader_t *reader = open_trace(TRACE_PATH, CSV_TRACE, &init_params);
 
   common_cache_params_t cc_params;
   cc_params.cache_size = 1 * GiB;  // any size should work
-  cache_t *cache = LHD_init(cc_params, nullptr);
+  cache_t *cache = LRU_init(cc_params, nullptr);
 
-  /* see libCacheSim/include/simulator.h
-     run several concurrent simulations with different cache sizes
-     parameters: reader, cache, cache size, num_sizes, cache_sizes,
-     warmup_reader, warmup_frac, warmup_sec, num_threads
-   */
-  cache_stat_t *result = simulate_at_multi_sizes(
-      reader, cache, NUM_SIZES, cache_sizes, nullptr, 0.0, 0,
-      static_cast<int>(std::thread::hardware_concurrency()));
+  printf("==== run one cache at different sizes ====\n");
+  run_one_cache_multiple_sizes(cache, reader);
 
-  printf(
-      "      cache size           num_miss        num_req        miss ratio    "
-      "  byte miss ratio\n");
-  for (int i = 0; i < NUM_SIZES; i++) {
-    printf("%16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_size,
-           result[i].n_miss, result[i].n_req,
-           (double)(result[i].n_miss) / (double)result[i].n_req,
-           (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
-  }
+  /* a different example of concurrent simulations */
+  printf("==== run multiple caches ====\n");
+  run_multiple_caches(reader);
 
   close_trace(reader);
-  cache->cache_free(cache);
-  free(result);
 }

@@ -36,7 +36,7 @@ typedef struct simulator_multithreading_params {
 static void _simulate(gpointer data, gpointer user_data) {
   sim_mt_params_t *params = (sim_mt_params_t *)user_data;
   int idx = GPOINTER_TO_UINT(data) - 1;
-  // set_rand_seed(0);
+  set_rand_seed(0);
 
   cache_stat_t *result = params->result;
   reader_t *cloned_reader = clone_reader(params->reader);
@@ -188,9 +188,10 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   // start computation
   params->caches = my_malloc_n(cache_t *, num_of_sizes);
   for (int i = 1; i < num_of_sizes + 1; i++) {
-    result[i - 1].cache_size = cache_sizes[i - 1];
     params->caches[i - 1] =
         create_cache_with_new_size(cache, cache_sizes[i - 1]);
+    result[i - 1].cache_size = cache_sizes[i - 1];
+    strncpy(result[i - 1].cache_name, cache->cache_name, MAX_CACHE_NAME_LEN);
 
     ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
                 "cannot push data into thread_pool in get_miss_ratio\n");
@@ -220,21 +221,22 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   my_free(sizeof(cache_t *) * num_of_sizes, params->caches);
   my_free(sizeof(sim_mt_params_t), params);
 
+  printf("%s\n", result[0].cache_name);
   // user is responsible for free-ing the result
   return result;
 }
 
 /**
  * @brief run multiple simulations in parallel
- * 
- * @param reader 
- * @param caches 
- * @param num_of_caches 
- * @param warmup_reader 
- * @param warmup_frac 
- * @param warmup_sec 
- * @param num_of_threads 
- * @return cache_stat_t* 
+ *
+ * @param reader
+ * @param caches
+ * @param num_of_caches
+ * @param warmup_reader
+ * @param warmup_frac
+ * @param warmup_sec
+ * @param num_of_threads
+ * @return cache_stat_t*
  */
 cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
                                          int num_of_caches,
@@ -265,6 +267,8 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
   // start computation
   for (i = 1; i < num_of_caches + 1; i++) {
     result[i - 1].cache_size = caches[i - 1]->cache_size;
+    strncpy(result[i - 1].cache_name, caches[i - 1]->cache_name,
+            MAX_CACHE_NAME_LEN);
 
     ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
                 "cannot push data into thread_pool in get_miss_ratio\n");
