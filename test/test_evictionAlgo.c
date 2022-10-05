@@ -525,7 +525,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+  // g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
