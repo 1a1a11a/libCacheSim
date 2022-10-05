@@ -123,10 +123,7 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
     std::cerr << "Couldn't find victim: " << victim << std::endl;
   }
   assert(victimItr != lhd->sizeMap.end());
-  //  printf("evict %llu size %u\n", victimItr->first.id, victimItr->second);
 
-  lhd->replaced(victim);
-  lhd->sizeMap.erase(victimItr);
   DEBUG_ASSERT(cache->occupied_size >= victimItr->second);
   cache->occupied_size -= (victimItr->second + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
@@ -136,6 +133,9 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
     evicted_obj->obj_size = victimItr->second;
     evicted_obj->obj_id = victim.id;
   }
+
+  lhd->replaced(victim);
+  lhd->sizeMap.erase(victimItr);
 }
 
 void LHD_remove(cache_t *cache, const obj_id_t obj_id) {

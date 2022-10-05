@@ -146,6 +146,13 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->sampler = NULL;
 }
 
+static inline reader_init_param_t default_reader_init_params(void) {
+  reader_init_param_t init_params;
+  set_default_reader_init_params(&init_params);
+
+  return init_params;
+}
+
 /**
  * setup a reader for reading trace
  * @param trace_path path to the trace

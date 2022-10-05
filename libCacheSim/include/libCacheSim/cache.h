@@ -52,6 +52,7 @@ typedef void (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
 typedef bool (*cache_admission_func_ptr)(cache_t *, const request_t *);
 
 #define MAX_EVICTION_AGE_ARRAY_SZE 64
+#define MAX_CACHE_NAME_LEN 64
 typedef struct {
   uint64_t n_warmup_req;
   uint64_t n_req;
@@ -72,6 +73,7 @@ typedef struct {
   uint64_t curr_rtime;
   uint64_t expired_obj_cnt;
   uint64_t expired_bytes;
+  char cache_name[MAX_CACHE_NAME_LEN];
 } cache_stat_t;
 
 struct hashtable;
@@ -107,6 +109,15 @@ struct cache {
   char cache_name[32];
   const char *init_params;
 };
+
+static inline common_cache_params_t default_common_cache_params(void) {
+  common_cache_params_t params;
+  params.cache_size = 1 * GiB;
+  params.default_ttl = 364 * 86400;
+  params.hashpower = 20;
+  params.consider_obj_metadata = false;
+  return params;
+}
 
 /**
  * initialize the cache struct, must be called in all cache_init functions
