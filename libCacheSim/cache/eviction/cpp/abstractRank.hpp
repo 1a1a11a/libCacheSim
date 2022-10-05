@@ -17,22 +17,37 @@ using namespace std;
 namespace eviction {
 
 /* cache_obj, priority, request_vtime
- * we use request_vtime to order objects with the same priority, currently it is
- *FIFO
- *
- **/
-using pq_node_type = tuple<cache_obj_t *, double, int64_t>;
-const pq_node_type INVALID_PQ_PAIR{nullptr, 0, -1};
-struct cmp_pq_node {
-  bool operator()(const pq_node_type &p1, const pq_node_type &p2) const {
-    if (fabs(get<1>(p1) / get<1>(p2) - 1) < 0.0001) {
+ * we use request_vtime to order objects with the same priority (FIFO) **/
+// using pq_node_type = tuple<cache_obj_t *, double, int64_t>;
+// const pq_node_type INVALID_PQ_PAIR{nullptr, 0, -1};
+
+struct pq_node_type {
+  cache_obj_t *obj;
+  double priority;
+  int64_t last_request_vtime;
+
+  pq_node_type(cache_obj_t *obj, double priority, int64_t last_request_vtime)
+      : obj(obj), priority(priority), last_request_vtime(last_request_vtime){};
+
+  void print() const {
+    printf("obj %lu, priority %f, last_request_vtime %ld\n", obj->obj_id,
+           priority, last_request_vtime);
+  }
+
+  bool operator<(const pq_node_type &rhs) const {
+    if (this->priority == rhs.priority) {
       /* use FIFO when objects have the same priority */
-      return get<2>(p1) < get<2>(p2);
+      return this->last_request_vtime < rhs.last_request_vtime;
     }
-    return get<1>(p1) < get<1>(p2);
+
+    return this->priority < rhs.priority;
+  }
+
+  bool operator==(const pq_node_type &n) {
+    return this->obj->obj_id == n.obj->obj_id;
   }
 };
-typedef set<pq_node_type, cmp_pq_node> pq_type;
+
 
 class abstractRank {
   /* ranking based eviction algorithm */
@@ -43,7 +58,8 @@ class abstractRank {
   inline pq_node_type pick_lowest_score() {
     auto p = pq.begin();
     pq_node_type p_copy(*p);
-    itr_map.erase(get<0>(*p));
+    // itr_map.erase(get<0>(*p));
+    itr_map.erase(p->obj);
     pq.erase(p);
 
     return std::move(p_copy);
@@ -59,14 +75,14 @@ class abstractRank {
   inline void remove(cache_t *cache, obj_id_t obj_id) {
     cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
     if (obj == nullptr) {
-      WARN("obj is not in the cache\n");
+      PRINT_ONCE("obj is not in the cache\n");
       return;
     }
     remove_obj(cache, obj);
   }
 
-  pq_type pq{};
-  unordered_map<cache_obj_t *, pq_type::iterator> itr_map{};
+  std::set<pq_node_type> pq{};
+  std::unordered_map<cache_obj_t *, std::set<pq_node_type>::iterator> itr_map{};
 
  private:
 };

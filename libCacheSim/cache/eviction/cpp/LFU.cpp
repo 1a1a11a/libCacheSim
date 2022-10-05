@@ -81,7 +81,7 @@ void LFUCpp_evict(cache_t *cache, const request_t *req,
                   cache_obj_t *evicted_obj) {
   auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   eviction::pq_node_type p = lfu->pick_lowest_score();
-  cache_obj_t *obj = get<0>(p);
+  cache_obj_t *obj = p.obj;
   if (evicted_obj != nullptr) memcpy(evicted_obj, obj, sizeof(cache_obj_t));
 
   cache_remove_obj_base(cache, obj);

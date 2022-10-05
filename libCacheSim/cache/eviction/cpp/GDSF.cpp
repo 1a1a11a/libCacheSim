@@ -30,15 +30,15 @@ cache_t *GDSF_init(const common_cache_params_t ccache_params,
   cache->remove = GDSF_remove;
 
   if (ccache_params.consider_obj_metadata) {
-    // frequency
+    // freq + priority
     cache->per_obj_metadata_size = 8;
   } else {
     cache->per_obj_metadata_size = 0;
   }
 
   if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n",
-           cache->cache_name, cache_specific_params);
+    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
+          cache_specific_params);
     abort();
   }
 
@@ -57,13 +57,13 @@ cache_ck_res_e GDSF_check(cache_t *cache, const request_t *req,
   auto res = cache_check_base(cache, req, update_cache, &obj);
   /* this does not consider object size change */
   if (obj != nullptr && update_cache) {
+    /* update frequency */
     obj->lfu.freq += 1;
 
     auto itr = gdsf->itr_map[obj];
     gdsf->pq.erase(itr);
 
-    double pri =
-        gdsf->pri_last_evict + (double)(obj->lfu.freq + 1) / obj->obj_size;
+    double pri = gdsf->pri_last_evict + (double)(obj->lfu.freq) * 1.0e6 / obj->obj_size;
     itr = gdsf->pq.emplace(obj, pri, cache->n_req).first;
     gdsf->itr_map[obj] = itr;
   }
@@ -77,7 +77,8 @@ void GDSF_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->lfu.freq = 1;
 
-  double pri = gdsf->pri_last_evict + 1.0 / obj->obj_size;
+  double pri = gdsf->pri_last_evict + 1.0e6 / obj->obj_size;
+
   auto itr = gdsf->pq.emplace(obj, pri, cache->n_req).first;
   gdsf->itr_map[obj] = itr;
 }
@@ -86,12 +87,12 @@ void GDSF_evict(cache_t *cache, const request_t *req,
                 cache_obj_t *evicted_obj) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
   eviction::pq_node_type p = gdsf->pick_lowest_score();
-  cache_obj_t *obj = get<0>(p);
+  cache_obj_t *obj = p.obj;
   if (evicted_obj != nullptr) {
     memcpy(evicted_obj, obj, sizeof(cache_obj_t));
   }
 
-  gdsf->pri_last_evict = get<1>(p);
+  gdsf->pri_last_evict = p.priority;
   cache_remove_obj_base(cache, obj);
 }
 
