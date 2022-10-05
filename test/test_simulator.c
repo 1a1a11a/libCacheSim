@@ -72,7 +72,25 @@ static void test_simulator(gconstpointer user_data) {
   uint64_t cache_sizes[] = {STEP_SIZE, STEP_SIZE * 2, STEP_SIZE * 4,
                             STEP_SIZE * 7};
   res = simulate_at_multi_sizes(reader, cache, 4, cache_sizes, NULL, 0, 0,
-                             _n_cores());
+                                _n_cores());
+  g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
+  g_assert_cmpuint(res[1].n_req_byte, ==, req_byte_true);
+  g_assert_cmpuint(res[3].n_req, ==, req_cnt_true);
+  g_assert_cmpuint(res[0].n_miss_byte, ==, miss_byte_true[0]);
+  g_assert_cmpuint(res[2].n_miss, ==, miss_cnt_true[3]);
+  g_assert_cmpuint(res[3].n_miss_byte, ==, miss_byte_true[6]);
+  g_free(res);
+
+  cache->cache_free(cache);
+
+  cache_t *caches[4];
+  for (int i = 0; i < 4; i++) {
+    cc_params.cache_size = cache_sizes[i];
+    caches[i] = LRU_init(cc_params, NULL);
+    g_assert_true(caches[i] != NULL);
+  }
+
+  res = simulate_with_multi_caches(reader, caches, 4, NULL, 0, 0, _n_cores());
   g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
   g_assert_cmpuint(res[1].n_req_byte, ==, req_byte_true);
   g_assert_cmpuint(res[3].n_req, ==, req_cnt_true);

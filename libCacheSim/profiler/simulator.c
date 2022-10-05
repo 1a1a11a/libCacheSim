@@ -22,7 +22,8 @@ extern "C" {
 
 typedef struct simulator_multithreading_params {
   reader_t *reader;
-  cache_t *cache;
+  ssize_t n_caches;
+  cache_t **caches;
   uint64_t n_warmup_req; /* num of requests used for warming up cache */
   reader_t *warmup_reader;
   int warmup_sec; /* num of seconds of requests used for warming up cache */
@@ -35,13 +36,14 @@ typedef struct simulator_multithreading_params {
 static void _simulate(gpointer data, gpointer user_data) {
   sim_mt_params_t *params = (sim_mt_params_t *)user_data;
   int idx = GPOINTER_TO_UINT(data) - 1;
-  set_rand_seed(0);
+  // set_rand_seed(0);
 
   cache_stat_t *result = params->result;
   reader_t *cloned_reader = clone_reader(params->reader);
   request_t *req = new_request();
-  cache_t *local_cache =
-      create_cache_with_new_size(params->cache, result[idx].cache_size);
+  cache_t *local_cache = params->caches[idx];
+  // cache_t *local_cache =
+  //     create_cache_with_new_size(params->cache, result[idx].cache_size);
 
   /* warm up using warmup_reader */
   if (params->warmup_reader) {
@@ -120,7 +122,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   // clean up
   free_request(req);
   close_reader(cloned_reader);
-  local_cache->cache_free(local_cache);
+  // local_cache->cache_free(local_cache);
 }
 
 cache_stat_t *simulate_at_multi_sizes_with_step_size(
@@ -157,11 +159,12 @@ cache_stat_t *simulate_at_multi_sizes_with_step_size(
  *
  */
 cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
-                                   int num_of_sizes,
-                                   const uint64_t *cache_sizes,
-                                   reader_t *warmup_reader, double warmup_frac,
-                                   int warmup_sec, int num_of_threads) {
-  int i, progress = 0;
+                                      int num_of_sizes,
+                                      const uint64_t *cache_sizes,
+                                      reader_t *warmup_reader,
+                                      double warmup_frac, int warmup_sec,
+                                      int num_of_threads) {
+  int progress = 0;
 
   cache_stat_t *result = my_malloc_n(cache_stat_t, num_of_sizes);
 
@@ -170,7 +173,7 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   params->reader = reader;
   params->warmup_reader = warmup_reader;
   params->warmup_sec = warmup_sec;
-  params->cache = (cache_t *)cache;
+  params->n_caches = num_of_sizes;
   params->n_warmup_req =
       (uint64_t)((double)get_num_of_req(reader) * warmup_frac);
   params->result = result;
@@ -183,8 +186,12 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
 
   // start computation
-  for (i = 1; i < num_of_sizes + 1; i++) {
+  params->caches = my_malloc_n(cache_t *, num_of_sizes);
+  for (int i = 1; i < num_of_sizes + 1; i++) {
     result[i - 1].cache_size = cache_sizes[i - 1];
+    params->caches[i - 1] =
+        create_cache_with_new_size(cache, cache_sizes[i - 1]);
+
     ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
@@ -207,7 +214,83 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   // clean up
   g_thread_pool_free(gthread_pool, FALSE, TRUE);
   g_mutex_clear(&(params->mtx));
+  for (int i = 0; i < num_of_sizes; i++) {
+    params->caches[i]->cache_free(params->caches[i]);
+  }
+  my_free(sizeof(cache_t *) * num_of_sizes, params->caches);
   my_free(sizeof(sim_mt_params_t), params);
+
+  // user is responsible for free-ing the result
+  return result;
+}
+
+/**
+ * @brief run multiple simulations in parallel
+ * 
+ * @param reader 
+ * @param caches 
+ * @param num_of_caches 
+ * @param warmup_reader 
+ * @param warmup_frac 
+ * @param warmup_sec 
+ * @param num_of_threads 
+ * @return cache_stat_t* 
+ */
+cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
+                                         int num_of_caches,
+                                         reader_t *warmup_reader,
+                                         double warmup_frac, int warmup_sec,
+                                         int num_of_threads) {
+  int i, progress = 0;
+
+  cache_stat_t *result = my_malloc_n(cache_stat_t, num_of_caches);
+
+  // build parameters and send to thread pool
+  sim_mt_params_t *params = my_malloc(sim_mt_params_t);
+  params->reader = reader;
+  params->caches = caches;
+  params->warmup_reader = warmup_reader;
+  params->warmup_sec = warmup_sec;
+  params->n_warmup_req =
+      (uint64_t)((double)get_num_of_req(reader) * warmup_frac);
+  params->result = result;
+  params->progress = &progress;
+  g_mutex_init(&(params->mtx));
+
+  // build the thread pool
+  GThreadPool *gthread_pool = g_thread_pool_new(
+      (GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
+  ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
+
+  // start computation
+  for (i = 1; i < num_of_caches + 1; i++) {
+    result[i - 1].cache_size = caches[i - 1]->cache_size;
+
+    ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
+                "cannot push data into thread_pool in get_miss_ratio\n");
+  }
+
+  char start_cache_size[64], end_cache_size[64];
+  convert_size_to_str(result[0].cache_size, start_cache_size);
+  convert_size_to_str(result[num_of_caches - 1].cache_size, end_cache_size);
+
+  INFO(
+      "%s starts computation, num_warmup_req %lld, start cache %s size %s, "
+      "end cache %s size %s, %d sizes, %d threads, please wait\n",
+      __func__, (long long)(params->n_warmup_req), caches[0]->cache_name,
+      start_cache_size, caches[num_of_caches - 1]->cache_name, end_cache_size,
+      num_of_caches, num_of_threads);
+
+  // wait for all simulations to finish
+  while (progress < (uint64_t)num_of_caches - 1) {
+    print_progress((double)progress / (double)(num_of_caches - 1) * 100);
+  }
+
+  // clean up
+  g_thread_pool_free(gthread_pool, FALSE, TRUE);
+  g_mutex_clear(&(params->mtx));
+  my_free(sizeof(sim_mt_params_t), params);
+
   // user is responsible for free-ing the result
   return result;
 }
