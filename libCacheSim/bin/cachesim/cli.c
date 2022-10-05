@@ -289,11 +289,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = SLRU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfu") == 0) {
     cache = LFU_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "belady") == 0) {
-    cache = Belady_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
-    cc_params.hashpower -= 4;
-    cache = BeladySize_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower -= 4;
     cache = Hyperbolic_init(cc_params, args->eviction_params);
@@ -301,6 +296,13 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LeCaR_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "cacheus") == 0) {
     cache = Cacheus_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lfucpp") == 0) {
+    cache = LFUCpp_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "belady") == 0) {
+    cache = Belady_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
+    cc_params.hashpower -= 4;
+    cache = BeladySize_init(cc_params, args->eviction_params);
 #if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0) {
     cache = GLCache_init(cc_params, args->eviction_params);
