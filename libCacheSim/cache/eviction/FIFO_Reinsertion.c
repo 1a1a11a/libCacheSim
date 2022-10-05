@@ -59,10 +59,6 @@ typedef struct FIFO_Reinsertion_params {
   retain_policy_t retain_policy;
 } FIFO_Reinsertion_params_t;
 
-// const char *FIFO_Reinsertion_default_params(void) {
-//   return "n-exam=100, n-keep=50, retain-policy=frequency";
-// }
-
 static const char *FIFO_Reinsertion_current_params(FIFO_Reinsertion_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-exam=%d, n-keep=%d, retain-policy=%s",

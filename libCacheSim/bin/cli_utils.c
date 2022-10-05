@@ -24,7 +24,7 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     if (trace_type == UNKNOWN_TRACE) {
       ERROR(
           "cannot detect trace type from trace path %s, "
-          "please specify the trace type manually",
+          "please specify the trace type manually\n",
           trace_path);
     }
   } else if (strcasecmp(trace_type_str, "txt") == 0) {
@@ -163,7 +163,7 @@ trace_type_e detect_trace_type(const char *trace_path) {
       strcasestr(trace_path, "oracleGeneral.zst") != NULL ||
       strcasecmp(trace_path + strlen(trace_path) - 13, "oracleGeneral") == 0) {
     trace_type = ORACLE_GENERAL_TRACE;
-  } else if (strcasestr(trace_path, ".vscsi.") != NULL) {
+  } else if (strcasestr(trace_path, ".vscsi") != NULL) {
     trace_type = VSCSI_TRACE;
   } else if (strcasestr(trace_path, "oracleGeneralOpNS") != NULL) {
     trace_type = ORACLE_GENERALOPNS_TRACE;

@@ -21,3 +21,7 @@ set_target_properties(traceConv
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
         )
+install(TARGETS traceConv RUNTIME DESTINATION bin)
+install(TARGETS tracePrint RUNTIME DESTINATION bin)
+
+

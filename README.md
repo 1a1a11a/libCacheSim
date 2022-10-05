@@ -99,7 +99,7 @@ request_t *req = new_request();
 
 /* create a LRU cache */
 common_cache_params_t cc_params = {.cache_size=1024*1024U}; 
-cache_t *cache = create_cache("LRU", cc_params, NULL); 
+cache_t *cache = LRU_init(cc_params, NULL); 
 
 /* counters */
 uint64_t req_byte = 0, miss_byte = 0;

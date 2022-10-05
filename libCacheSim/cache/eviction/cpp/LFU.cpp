@@ -6,33 +6,33 @@
  *
  */
 
-#include "../../../include/libCacheSim/evictionAlgo/LFU.h"
-
 #include <cassert>
 
+#include "../../../include/libCacheSim/evictionAlgo/LFUCpp.h"
 #include "abstractRank.hpp"
 #include "hashtable.h"
 
 namespace eviction {
-class LFU : public abstractRank {
+class LFUCpp : public abstractRank {
  public:
-  LFU() = default;
+  LFUCpp() = default;
   ;
 };
 }  // namespace eviction
 
-cache_t *LFU_init(common_cache_params_t ccache_params, void *init_params) {
-  cache_t *cache = cache_struct_init("LFU", ccache_params);
-  auto *lfu = new eviction::LFU;
+cache_t *LFUCpp_init(common_cache_params_t ccache_params,
+                     const char *init_params) {
+  cache_t *cache = cache_struct_init("LFUCpp", ccache_params);
+  auto *lfu = new eviction::LFUCpp;
   cache->eviction_params = lfu;
 
-  cache->cache_init = LFU_init;
-  cache->cache_free = LFU_free;
-  cache->get = LFU_get;
-  cache->check = LFU_check;
-  cache->insert = LFU_insert;
-  cache->evict = LFU_evict;
-  cache->remove = LFU_remove;
+  cache->cache_init = LFUCpp_init;
+  cache->cache_free = LFUCpp_free;
+  cache->get = LFUCpp_get;
+  cache->check = LFUCpp_check;
+  cache->insert = LFUCpp_insert;
+  cache->evict = LFUCpp_evict;
+  cache->remove = LFUCpp_remove;
 
   if (ccache_params.consider_obj_metadata) {
     // freq
@@ -44,14 +44,15 @@ cache_t *LFU_init(common_cache_params_t ccache_params, void *init_params) {
   return cache;
 }
 
-void LFU_free(cache_t *cache) {
-  auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
+void LFUCpp_free(cache_t *cache) {
+  auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   delete lfu;
   cache_struct_free(cache);
 }
 
-cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
-  auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
+cache_ck_res_e LFUCpp_check(cache_t *cache, const request_t *req,
+                            const bool update_cache) {
+  auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   cache_obj_t *obj;
   auto res = cache_check_base(cache, req, update_cache, &obj);
   if (obj != nullptr && update_cache) {
@@ -65,8 +66,8 @@ cache_ck_res_e LFU_check(cache_t *cache, request_t *req, bool update_cache) {
   return res;
 }
 
-void LFU_insert(cache_t *cache, request_t *req) {
-  auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
+void LFUCpp_insert(cache_t *cache, const request_t *req) {
+  auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->lfu.freq = 1;
@@ -76,8 +77,9 @@ void LFU_insert(cache_t *cache, request_t *req) {
   DEBUG_ASSERT(lfu->itr_map.size() == cache->n_obj);
 }
 
-void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
-  auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
+void LFUCpp_evict(cache_t *cache, const request_t *req,
+                  cache_obj_t *evicted_obj) {
+  auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   eviction::pq_node_type p = lfu->pick_lowest_score();
   cache_obj_t *obj = get<0>(p);
   if (evicted_obj != nullptr) memcpy(evicted_obj, obj, sizeof(cache_obj_t));
@@ -85,16 +87,21 @@ void LFU_evict(cache_t *cache, request_t *req, cache_obj_t *evicted_obj) {
   cache_remove_obj_base(cache, obj);
 }
 
-cache_ck_res_e LFU_get(cache_t *cache, request_t *req) {
+cache_ck_res_e LFUCpp_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LFU_remove_obj(cache_t *cache, cache_obj_t *obj) {
-  auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
+void LFUCpp_remove_obj(cache_t *cache, cache_obj_t *obj) {
+  auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   lfu->remove_obj(cache, obj);
 }
 
-void LFU_remove(cache_t *cache, obj_id_t obj_id) {
-  auto *lfu = static_cast<eviction::LFU *>(cache->eviction_params);
+void LFUCpp_remove(cache_t *cache, const obj_id_t obj_id) {
+  auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   lfu->remove(cache, obj_id);
 }
+
+
+
+
+

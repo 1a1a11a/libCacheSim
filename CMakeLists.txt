@@ -186,7 +186,7 @@ endif()
 
 
 link_libraries("-lpthread -ldl -lm ${LIBS}")
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+# set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")
@@ -227,17 +227,17 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/bin)
 
-
 ########################################
 # library install  #
 ########################################
+# compile a single library
 file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*.c)
 
 file(GLOB cache_source 
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/*.c 
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/*.c 
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LHD/*.c 
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/*.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LHD/*
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/* 
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/admission/*.c 
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/prefetch/*.c
     )
@@ -269,18 +269,14 @@ file(GLOB utils_source
     
 set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${traceReader_source} ${dataStructure_source} ${profiler_source} ${utils_source})
 
-# set (EXCLUDE_DIR "/bin/")
-# foreach (TMP_PATH ${LIB_SOURCE})
-#     string (FIND ${TMP_PATH} ${EXCLUDE_DIR} EXCLUDE_DIR_FOUND)
-#     if (NOT ${EXCLUDE_DIR_FOUND} EQUAL -1)
-#         list (REMOVE_ITEM LIB_SOURCE ${TMP_PATH})
-#     endif ()
-# endforeach(TMP_PATH)
 
+# https://stackoverflow.com/questions/32469953/why-is-cmake-designed-so-that-it-removes-runtime-path-when-installing
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-add_library(${PROJECT_NAME} ${LIB_SOURCE})
+add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/libCacheSim/include/libCacheSim.h)
 
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake @ONLY)
@@ -299,10 +295,13 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION include
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
 install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
 
+install(TARGETS ${PROJECT_NAME}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 
 
-#target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
+    #target_compile_definitions(binBenchmark PRIVATE HASH=0xb2)
 #add_executable(binBenchmark libCacheSim/benchmark/main.c)
 #target_link_libraries(binBenchmark benchmark cachelib evictionAlgos traceReader profiler dataStructure utils
 #        ${LIBS})

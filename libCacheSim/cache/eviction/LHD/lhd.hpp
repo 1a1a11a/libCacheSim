@@ -5,7 +5,7 @@
 #include <limits>
 #include <vector>
 
-#include "../../include/libCacheSim/cache.h"
+#include "../../../include/libCacheSim/cache.h"
 #include "repl.hpp"
 
 namespace repl {
