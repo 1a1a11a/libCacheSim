@@ -246,10 +246,10 @@ static void test_LFUCpp(gconstpointer user_data) {
 
 static void test_GDSF(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {86056, 82265, 77939, 68727,
-                              67636, 63616, 58678, 58465};
-  uint64_t miss_byte_true[] = {3863223808, 3707204608, 3552397312, 3267907584,
-                               3198254592, 2966758400, 2666385408, 2652331008};
+  uint64_t miss_cnt_true[] = {86662, 82460, 73830, 69225,
+                              67001, 63626, 61068, 58452};
+  uint64_t miss_byte_true[] = {3868808704, 3706169856, 3526420992, 3294936576,
+                               3153427968, 2958772224, 2814412288, 2645863424};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
