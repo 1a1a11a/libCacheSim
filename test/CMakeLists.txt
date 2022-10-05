@@ -1,6 +1,4 @@
 
-# message(STATUS "ALL_MODULES = ${ALL_MODULES}")
-# set(ALL_MODULES cachelib admission eviction traceReader profiler dataStructure utils)
 set(coreLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -ldl)
 
 add_executable(testReader test_traceReader.c)

@@ -332,10 +332,14 @@ static void test_LeCaR(gconstpointer user_data) {
 
 static void test_Cacheus(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {89422, 83826, 80091, 72648,
-                              69286, 67883, 67476, 66501};
-  uint64_t miss_byte_true[] = {3907576320, 3663195136, 3441767424, 3147611648,
-                               2962097152, 2885015040, 2864854528, 2807194112};
+  // uint64_t miss_cnt_true[] = {89422, 83826, 80091, 72648,
+  //                             69286, 67883, 67476, 66501};
+  // uint64_t miss_byte_true[] = {3907576320, 3663195136, 3441767424, 3147611648,
+  //                              2962097152, 2885015040, 2864854528, 2807194112};
+  uint64_t miss_cnt_true[] = {89628, 82684, 80034, 72740,
+                              69192, 67763, 67477, 67048};
+  uint64_t miss_byte_true[] = {3902360064, 3654431232, 3440451072, 3151679488,
+                               2955547648, 2879830016, 2864226304, 2836520448};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
@@ -345,6 +349,7 @@ static void test_Cacheus(gconstpointer user_data) {
   cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
+  // print_results(cache, res);
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
@@ -525,7 +530,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
