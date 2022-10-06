@@ -9,40 +9,90 @@
 extern "C" {
 #endif
 
-struct prob_admissioner {
-  double admission_probability;
-  int admit_every_n;
-};
+#define MAX_MODULE 10000000
 
-bool prob_admit(void *prob_admissioner, request_t *req) {
-  struct prob_admissioner *pa = prob_admissioner;
-  if (next_rand() % pa->admit_every_n == 0) {
+typedef struct prob_admissioner {
+  double admission_probability;
+  int admission_probability_int;
+} prob_admission_params_t;
+
+bool prob_admit(admissioner_t *admissioner, const request_t *req) {
+  prob_admission_params_t *pa = (prob_admission_params_t *)admissioner->params;
+  if (next_rand() % MAX_MODULE < pa->admission_probability_int) {
     return true;
   }
 
   return false;
 }
 
-void *create_prob_admissioner(double ratio) {
-  if (ratio > 1 || ratio <= 0) {
-    ERROR("prob admissioner ratio range error get %lf (should be 0-1)\n",
-          ratio);
-    abort();
-  } else if (ratio == 1) {
-    WARN("prob admission ratio 1\n");
+static void prob_admissioner_parse_params(const char *init_params,
+                                          prob_admission_params_t *pa) {
+  if (init_params == NULL) {
+    pa->admission_probability = 0.5;
+    INFO("use default admission probability: %f", pa->admission_probability);
+  } else {
+    char *params_str = strdup(init_params);
+    char *old_params_str = params_str;
+    char *end;
+
+    while (params_str != NULL && params_str[0] != '\0') {
+      /* different parameters are separated by comma,
+       * key and value are separated by = */
+      char *key = strsep((char **)&params_str, "=");
+      char *value = strsep((char **)&params_str, ",");
+
+      // skip the white space
+      while (params_str != NULL && *params_str == ' ') {
+        params_str++;
+      }
+
+      if (strcasecmp(key, "prob") == 0) {
+        pa->admission_probability = strtod(value, &end);
+        if (strlen(end) > 2) {
+          ERROR("param parsing error, find string \"%s\" after number\n", end);
+        }
+      } else {
+        ERROR("probabilistic admission does not have parameter %s\n", key);
+      }
+    }
+    free(old_params_str);
   }
+  pa->admission_probability_int = pa->admission_probability * MAX_MODULE;
 
-  struct prob_admissioner *s = my_malloc(struct prob_admissioner);
-  memset(s, 0, sizeof(struct prob_admissioner));
-
-  s->admission_probability = ratio;
-  s->admit_every_n = (int)(1.0 / ratio);
-
-  return s;
+  if (pa->admission_probability > 1 || pa->admission_probability <= 0) {
+    ERROR("prob admissioner probability error get %lf (should be 0-1)\n",
+          pa->admission_probability);
+  } else if (pa->admission_probability == 1) {
+    WARN("prob admission probability 1\n");
+  }
 }
 
-void free_prob_admissioner(void *s) {
-  my_free(sizeof(struct prob_admissioner), s);
+admissioner_t *clone_prob_admissioner(admissioner_t *admissioner) {
+  return create_prob_admissioner(admissioner->init_params);
+}
+
+void free_prob_admissioner(admissioner_t *admissioner) {
+  prob_admission_params_t *pa = admissioner->params;
+
+  free(pa);
+  free(admissioner);
+}
+
+admissioner_t *create_prob_admissioner(const char *init_params) {
+  prob_admission_params_t *pa =
+      (prob_admission_params_t *)malloc(sizeof(prob_admission_params_t));
+  memset(pa, 0, sizeof(prob_admission_params_t));
+  prob_admissioner_parse_params(init_params, pa);
+
+  admissioner_t *admissioner = (admissioner_t *)malloc(sizeof(admissioner_t));
+  memset(admissioner, 0, sizeof(admissioner_t));
+  admissioner->params = pa;
+  admissioner->admit = prob_admit;
+  admissioner->free = free_prob_admissioner;
+  admissioner->clone = clone_prob_admissioner;
+  if (init_params != NULL) admissioner->init_params = strdup(init_params);
+
+  return admissioner;
 }
 
 #ifdef __cplusplus

@@ -15,6 +15,7 @@
 #include "logging.h"
 #include "macro.h"
 #include "request.h"
+#include "admissionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +50,6 @@ typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
 
 typedef void (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
 
-typedef bool (*cache_admission_func_ptr)(cache_t *, const request_t *);
 
 #define MAX_EVICTION_AGE_ARRAY_SZE 64
 #define MAX_CACHE_NAME_LEN 64
@@ -79,21 +79,22 @@ typedef struct {
 struct hashtable;
 struct cache {
   struct hashtable *hashtable;
-  cache_obj_t *q_head;  // for LRU and FIFO
-  cache_obj_t *q_tail;  // for LRU and FIFO
-
-  void *eviction_params;
-  void *admission_params;
 
   cache_get_func_ptr get;
   cache_check_func_ptr check;
   cache_insert_func_ptr insert;
   cache_evict_func_ptr evict;
   cache_remove_func_ptr remove;
-  cache_admission_func_ptr admit;
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
   cache_to_evict_func_ptr to_evict;
+
+  admissioner_t *admissioner;
+
+  cache_obj_t *q_head;  // for LRU and FIFO
+  cache_obj_t *q_tail;  // for LRU and FIFO
+
+  void *eviction_params;
 
   int64_t n_req; /* number of requests (used by some eviction algo) */
   uint64_t n_obj;

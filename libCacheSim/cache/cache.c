@@ -27,6 +27,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   strncpy(cache->cache_name, cache_name, 31);
   cache->cache_size = params.cache_size;
   cache->eviction_params = NULL;
+  cache->admissioner = NULL;
   cache->default_ttl = params.default_ttl;
   cache->n_req = 0;
   cache->stat.cache_size = cache->cache_size;
@@ -48,6 +49,7 @@ cache_t *cache_struct_init(const char *const cache_name,
  */
 void cache_struct_free(cache_t *cache) {
   free_hashtable(cache->hashtable);
+  if (cache->admissioner != NULL) cache->admissioner->free(cache->admissioner);
   my_free(sizeof(cache_t), cache);
 }
 
@@ -151,20 +153,22 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
     return cache_check;
   }
 
-  // bool admit = true;
-
-  if (cache->admit != NULL && !cache->admit(cache, req)) {
-    return cache_check;
+  if (cache->admissioner != NULL) {
+    admissioner_t *admissioner = cache->admissioner;
+    if (admissioner->admit(admissioner, req) == false) {
+      DEBUG_ONCE(
+          "admission algorith is on: req %ld, obj %lu, size %lu is not "
+          "admitted into cache\n",
+          cache->n_req, (unsigned long)req->obj_id,
+          (unsigned long)req->obj_size);
+      return cache_check;
+    }
   }
 
-  static bool has_printed = false;
   if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
-    if (!has_printed) {
-      has_printed = true;
-      WARN("req %" PRIu64 ": obj size %" PRIu32
-           " larger than cache size %" PRIu64 "\n",
-           req->obj_id, req->obj_size, cache->cache_size);
-    }
+    WARN_ONCE("%ld req, obj %lu, size %lu larger than cache size %lu\n",
+              cache->n_req, (unsigned long)req->obj_id,
+              (unsigned long)req->obj_size, (unsigned long)cache->cache_size);
     return cache_check;
   }
 

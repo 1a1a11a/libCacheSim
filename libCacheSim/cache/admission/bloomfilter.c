@@ -3,6 +3,7 @@
 //
 
 #include <glib.h>
+#include <stdbool.h>
 
 #include "../../include/libCacheSim/admissionAlgo.h"
 
@@ -10,34 +11,54 @@
 extern "C" {
 #endif
 
-struct bloomfilter_admissioner {
+typedef struct bloomfilter_admission {
   GHashTable *seen_times;
-};
+} bf_admission_params_t;
 
-bool bloomfilter_admit(void *bloomfilter_admissioner, request_t *req) {
-  struct bloomfilter_admissioner *ba = bloomfilter_admissioner;
+bool bloomfilter_admit(admissioner_t *admissioner, const request_t *req) {
+  bf_admission_params_t *bf = admissioner->params;
   gpointer key = GINT_TO_POINTER(req->obj_id);
-  gpointer n_times = g_hash_table_lookup(ba->seen_times, key);
-  bool admit = (n_times == NULL);
-  g_hash_table_replace(ba->seen_times, key,
-                       GINT_TO_POINTER(GPOINTER_TO_INT(n_times) + 1));
-
-  return admit;
+  gpointer n_times = g_hash_table_lookup(bf->seen_times, GSIZE_TO_POINTER(req->obj_id));
+  if (n_times == NULL) {
+    g_hash_table_insert(bf->seen_times, key, GINT_TO_POINTER(1));
+    return false;
+  } else {
+    g_hash_table_insert(bf->seen_times, key,
+                        GINT_TO_POINTER(GPOINTER_TO_INT(n_times) + 1));
+    return true;
+  }
 }
 
-void *create_bloomfilter_admissioner() {
-  struct bloomfilter_admissioner *ba =
-      my_malloc(struct bloomfilter_admissioner);
-  memset(ba, 0, sizeof(struct bloomfilter_admissioner));
-  ba->seen_times = g_hash_table_new(g_int64_hash, g_int64_equal);
-
-  return ba;
+admissioner_t *clone_bloomfilter_admissioner(admissioner_t *admissioner) {
+  return create_bloomfilter_admissioner(admissioner->init_params);
 }
 
-void free_bloomfilter_admissioner(void *s) {
-  struct bloomfilter_admissioner *ba = s;
-  g_hash_table_destroy(ba->seen_times);
-  my_free(sizeof(struct bloomfilter_admissioner), s);
+void free_bloomfilter_admissioner(admissioner_t *admissioner) {
+  struct bloomfilter_admission *bf = admissioner->params;
+  g_hash_table_destroy(bf->seen_times);
+  free(bf);
+  free(admissioner);
+}
+
+admissioner_t *create_bloomfilter_admissioner(const char *init_params) {
+  if (init_params != NULL) {
+    ERROR("bloomfilter admission does not take any parameters");
+  }
+
+  admissioner_t *admissioner = (admissioner_t *)malloc(sizeof(admissioner_t));
+  admissioner->init_params = NULL;
+
+  bf_admission_params_t *bf_params =
+      (bf_admission_params_t *)malloc(sizeof(bf_admission_params_t));
+  memset(bf_params, 0, sizeof(struct bloomfilter_admission));
+  bf_params->seen_times = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+  admissioner->params = bf_params;
+  admissioner->clone = clone_bloomfilter_admissioner;
+  admissioner->free = free_bloomfilter_admissioner;
+  admissioner->admit = bloomfilter_admit;
+
+  return admissioner;
 }
 
 #ifdef __cplusplus

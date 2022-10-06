@@ -1,21 +1,48 @@
 #pragma once
 
-#include "cache.h"
+#include "request.h"
 
-static inline void add_admission_algo(cache_t *cache, void *admissioner,
-                                      cache_admission_func_ptr admission_func) {
-  cache->admission_params = admissioner;
-  cache->admit = admission_func;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct admissioner;
+typedef struct admissioner *(*admissioner_create_func_ptr)(const char *);
+typedef struct admissioner *(*admissioner_clone_func_ptr)(struct admissioner *);
+typedef bool (*cache_admit_func_ptr)(struct admissioner*, const request_t *);
+typedef void (*admissioner_free_func_ptr)(struct admissioner *);
+
+typedef struct admissioner {
+  cache_admit_func_ptr admit;
+  void *params;
+  admissioner_clone_func_ptr clone;
+  admissioner_free_func_ptr free;
+  void *init_params;
+} admissioner_t;
+
+admissioner_t *create_bloomfilter_admissioner(const char *init_params);
+admissioner_t *create_prob_admissioner(const char *init_params);
+admissioner_t *create_size_admissioner(const char *init_params);
+admissioner_t *create_adaptsize_admissioner(const char *init_params);
+
+static inline admissioner_t *create_admissioner(const char *admission_algo,
+                                                const char *admission_params) {
+  admissioner_t *admissioner = NULL;
+  if (strcasecmp(admission_algo, "bloomfilter") == 0) {
+    admissioner = create_bloomfilter_admissioner(admission_params);
+  } else if (strcasecmp(admission_algo, "prob") == 0) {
+    admissioner = create_prob_admissioner(admission_params);
+  } else if (strcasecmp(admission_algo, "size") == 0) {
+    admissioner = create_size_admissioner(admission_params);
+  } else if (strcasecmp(admission_algo, "adaptsize") == 0) {
+    admissioner = create_adaptsize_admissioner(admission_params);
+  } else {
+    ERROR("admission algo %s not supported\n", admission_algo);
+  }
+
+  return admissioner;
 }
 
-bool bloomfilter_admit(void *bloomfilter_admissioner, request_t *req);
-void *create_bloomfilter_admissioner();
-void free_bloomfilter_admissioner(void *s);
-
-bool prob_admit(void *prob_admissioner, request_t *req);
-void *create_prob_admissioner(double ratio);
-void free_prob_admissioner(void *s);
-
-bool size_admit(void *size_admissioner, request_t *req);
-void *create_size_admissioner(uint64_t size_threshold);
-void free_size_admissioner(void *s);
+#ifdef __cplusplus
+}
+#endif

@@ -6,6 +6,7 @@
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
 #include "../../include/libCacheSim/reader.h"
+#include "../../include/libCacheSim/admissionAlgo.h"
 
 #define N_ARGS 4
 #define N_MAX_CACHE_SIZE 128

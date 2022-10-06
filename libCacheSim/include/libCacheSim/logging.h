@@ -1,14 +1,14 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
-#include "../config.h"
-#include "const.h"
 #include <pthread.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#include <unistd.h>
 
+#include "../config.h"
+#include "const.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,16 +18,15 @@ static inline void log_header(int level, const char *file, int line);
 void print_stack_trace(void);
 extern pthread_mutex_t log_mtx;
 
-#define LOGGING(level, FMT, ...)                                               \
-  do {                                                                         \
-    pthread_mutex_lock(&log_mtx);                                              \
-    log_header(level, __FILE__, __LINE__);                                    \
-    printf(FMT, ##__VA_ARGS__);                                                \
-    printf("%s", NORMAL);                                                      \
-    fflush(stdout);                                                            \
-    pthread_mutex_unlock(&log_mtx);                                            \
+#define LOGGING(level, FMT, ...)           \
+  do {                                     \
+    pthread_mutex_lock(&log_mtx);          \
+    log_header(level, __FILE__, __LINE__); \
+    printf(FMT, ##__VA_ARGS__);            \
+    printf("%s", NORMAL);                  \
+    fflush(stdout);                        \
+    pthread_mutex_unlock(&log_mtx);        \
   } while (0)
-
 
 #if LOGLEVEL <= VVVERBOSE_LEVEL
 #define VVVERBOSE(FMT, ...) LOGGING(VVVERBOSE_LEVEL, FMT, ##__VA_ARGS__)
@@ -66,34 +65,75 @@ extern pthread_mutex_t log_mtx;
 #endif
 
 #if LOGLEVEL <= SEVERE_LEVEL
-#define ERROR(FMT, ...) {LOGGING(SEVERE_LEVEL, FMT, ##__VA_ARGS__); abort();}
+#define ERROR(FMT, ...)                        \
+  {                                            \
+    LOGGING(SEVERE_LEVEL, FMT, ##__VA_ARGS__); \
+    abort();                                   \
+  }
 #else
 #define ERROR(FMT, ...)
 #endif
 
+#define WARN_ONCE(FMT, ...)      \
+  do {                           \
+    static bool printed = false; \
+    if (!printed) {              \
+      WARN(FMT, ##__VA_ARGS__);  \
+      printed = true;            \
+      fflush(stdout);            \
+    }                            \
+  } while (0)
+
+#define DEBUG_ONCE(FMT, ...)     \
+  do {                           \
+    static bool printed = false; \
+    if (!printed) {              \
+      WARN(FMT, ##__VA_ARGS__);  \
+      printed = true;            \
+      fflush(stdout);            \
+    }                            \
+  } while (0)
+
+#define INFO_ONCE(FMT, ...)      \
+  do {                           \
+    static bool printed = false; \
+    if (!printed) {              \
+      WARN(FMT, ##__VA_ARGS__);  \
+      printed = true;            \
+      fflush(stdout);            \
+    }                            \
+  } while (0)
 
 static inline void log_header(int level, const char *file, int line) {
-//  if (level < LOGLEVEL) {
-//    return 0;
-//  }
+  //  if (level < LOGLEVEL) {
+  //    return 0;
+  //  }
 
   switch (level) {
-  case VVVERBOSE_LEVEL:printf("%s[VVV]   ", CYAN);
-    break;
-  case VVERBOSE_LEVEL:printf("%s[VV]    ", CYAN);
-    break;
-  case VERBOSE_LEVEL:printf("%s[VERB]  ", MAGENTA);
-    break;
-  case DEBUG_LEVEL:printf("%s[DEBUG] ", CYAN);
-    break;
-  case INFO_LEVEL:printf("%s[INFO]  ", GREEN);
-    break;
-  case WARN_LEVEL:printf("%s[WARN]  ", YELLOW);
-    break;
-  case SEVERE_LEVEL:printf("%s[ERROR] ", RED);
-    break;
-  default:printf("in logging should not be here\n");
-    break;
+    case VVVERBOSE_LEVEL:
+      printf("%s[VVV]   ", CYAN);
+      break;
+    case VVERBOSE_LEVEL:
+      printf("%s[VV]    ", CYAN);
+      break;
+    case VERBOSE_LEVEL:
+      printf("%s[VERB]  ", MAGENTA);
+      break;
+    case DEBUG_LEVEL:
+      printf("%s[DEBUG] ", CYAN);
+      break;
+    case INFO_LEVEL:
+      printf("%s[INFO]  ", GREEN);
+      break;
+    case WARN_LEVEL:
+      printf("%s[WARN]  ", YELLOW);
+      break;
+    case SEVERE_LEVEL:
+      printf("%s[ERROR] ", RED);
+      break;
+    default:
+      printf("in logging should not be here\n");
+      break;
   }
 
   char buffer[30];
@@ -105,9 +145,8 @@ static inline void log_header(int level, const char *file, int line) {
   strftime(buffer, 30, "%m-%d-%Y %T", localtime(&curtime));
 
   printf("%s %8s:%-4d ", buffer, strrchr(file, '/') + 1, line);
-  printf("(tid=%zu): ", (unsigned long) pthread_self());
+  printf("(tid=%zu): ", (unsigned long)pthread_self());
 }
-
 
 #ifdef __cplusplus
 }

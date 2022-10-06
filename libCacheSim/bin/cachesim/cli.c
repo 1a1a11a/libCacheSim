@@ -35,24 +35,17 @@ enum argp_option_short {
    Order of fields: {NAME, KEY, ARG, FLAGS, DOC}.
 */
 static struct argp_option options[] = {
-    // {"trace_path", 'i', 0, 0, "The path to the trace file", 0},
-    // {"cache_size", 'c', 0, 0,
-    //  "Cache size in bytes, set size to 0 to uses default cache size", 1},
-    // {"trace_type", 't', 0, 0,
-    //  "Specify the type of the input trace:
-    //  txt/csv/twr/vscsi/bin/oracleTwrNS/oracleAkamaiBin/oracleGeneralBin", 2},
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
      "\"obj-id-col=1;delimiter=,\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\"", 2},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Num of requests to process, default -1 means all requests in the trace"},
 
-    // {"eviction", 'e', 0, 0, "Eviction algorithm: LRU/FIFO/LFU", 3},
-    {"eviction=params", OPTION_EVICTION_PARAMS, "n-seg=4", 0,
+    {"eviction-params", OPTION_EVICTION_PARAMS, "\"n-seg=\"4", 0,
      "optional params for each eviction algorithm, e.g., n-seg=4", 3},
     {"admission", OPTION_ADMISSION_ALGO, "bloom-filter", 0,
-     "Admission algorithm: size/bloom-filter/probabilistic", 4},
-    {"admission-params", OPTION_ADMISSION_PARAMS, 0, 0,
+     "Admission algorithm: size/bloom-filter/prob", 4},
+    {"admission-params", OPTION_ADMISSION_PARAMS, "\"prob=0.8\"", 0,
      "params for admission algorithm", 4},
     {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
      "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 5},
@@ -313,6 +306,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   }
 
   args->cache = cache;
+  if (args->admission_algo != NULL) {
+    admissioner_t *admissioner = create_admissioner(args->admission_algo, args->admission_params);
+    args->cache->admissioner = admissioner;
+  }
 
   print_parsed_args(args);
 }

@@ -21,8 +21,8 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
 
       bool admit = true;
 
-      if (cache->admit != NULL && !!cache->admit(cache, req)) {
-        admit = false;
+      if (cache->admissioner != NULL) {
+        admit = cache->admissioner->admit(cache->admissioner, req);
       }
 
       if (admit) {
