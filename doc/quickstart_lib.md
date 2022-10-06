@@ -22,6 +22,18 @@ First, [build libCacheSim](../README.md). After building libCacheSim, `cachesim`
 
 ## examples 
 ### Design a new cache eviction algorithm
+libCacheSim supports developing new algorithms in C and C++, however, for the best performance, C is preferred.
+
+add the header file to [evictionALgo.h](../libCacheSim/include/libCacheSim/evictionAlgo.h) and implement the functions. 
+add the source file to [CMakeLists.txt](../libCacheSim/cache/eviction/CMakeLists.txt) 
+add the algorithm to [cachesim](../libCacheSim/bin/cachesim/cli.c) 
+
+
+#### C example
+
+
+#### C++ example
+and implement the functions.
 
 
 ### Build a cache hierarchy with multiple layers

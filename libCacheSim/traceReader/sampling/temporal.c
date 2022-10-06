@@ -42,6 +42,8 @@ sampler_t *create_temporal_sampler(double sampling_ratio) {
   if (sampling_ratio > 1 || sampling_ratio <= 0) {
     ERROR("sampling ratio range error get %lf (should be 0-1)\n",
           sampling_ratio);
+  } else if (sampling_ratio > 0.5) {
+    ERROR("currently we only support sampling ratio no more than 0.5\n");
   } else if (sampling_ratio == 1) {
     WARN("temporal sampler ratio 1 means no sampling\n");
     return NULL;
