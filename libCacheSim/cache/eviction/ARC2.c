@@ -188,7 +188,7 @@ void ARC2_insert(cache_t *cache, const request_t *req) {
   /* first time add, then it should be add to LRU1 */
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
   cache_obj->ARC2.lru_id = 1;
-  cache_obj->magic = 1248;
+  // cache_obj->magic = 1248;
 
   cache_obj->queue.prev = NULL;
   if (unlikely(params->lru1_head == NULL)) {
