@@ -3,7 +3,6 @@ set(sourceC
         Random.c
         LFU.c
         LFUDA.c
-        ARC2.c
         ARC.c
         FIFO.c
         Clock.c

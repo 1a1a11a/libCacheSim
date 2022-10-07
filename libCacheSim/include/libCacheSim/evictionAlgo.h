@@ -1,7 +1,6 @@
 #pragma once
 
 #include "evictionAlgo/ARC.h"
-#include "evictionAlgo/ARC2.h"
 #include "evictionAlgo/Belady.h"
 #include "evictionAlgo/BeladySize.h"
 #include "evictionAlgo/CR_LFU.h"
