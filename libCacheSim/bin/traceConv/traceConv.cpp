@@ -95,12 +95,14 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
           "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
           "object, %lld B (%.2lf GB)\n",
           reader->trace_path, (long)(n_req_curr / 1e6),
-          (double)total_bytes / GiB, req->real_time - start_ts,
+          (double)total_bytes / GiB, start_ts - req->real_time,
           (long long)n_obj, (long long)unique_bytes,
           (double)unique_bytes / GiB);
     }
 
-    if (read_one_req_above(reader, req) != 0) break;
+    if (read_one_req_above(reader, req) != 0) {
+      break;
+    }
     og_req.init(req);
   }
 

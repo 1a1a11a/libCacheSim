@@ -21,5 +21,4 @@ void print_stack_trace(void) {
   // print out all the frames to stderr
   fprintf(stderr, "stack trace: \n");
   backtrace_symbols_fd(array, size, STDERR_FILENO);
-  exit(1);
 }

@@ -8,7 +8,6 @@
 #include "../../include/libCacheSim/reader.h"
 #include "internal.hpp"
 
-// # zstd trace
 
 int main(int argc, char *argv[]) {
   struct arguments args;
@@ -23,5 +22,6 @@ int main(int argc, char *argv[]) {
                                       args.sample_ratio, args.output_txt,
                                       args.remove_size_change, false);
 }
+
 
 
