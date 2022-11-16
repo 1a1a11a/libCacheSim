@@ -50,6 +50,11 @@ static int oracleCF1_read_one_req(reader_t *reader, request_t *req) {
   req->real_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint64_t *)(record + 12);
+  if (req->obj_size > UINT32_MAX) {
+    if (req->obj_size > 0xFFFFFFFF00000000)
+      req->obj_size -= 0xFFFFFFFF00000000;
+  }
+
   req->ttl = *(int32_t *)(record + 20);
   req->age = *(uint32_t *)(record + 24);
   req->hostname = *(uint32_t *)(record + 28);
