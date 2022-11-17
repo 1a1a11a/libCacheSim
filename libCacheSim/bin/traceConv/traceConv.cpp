@@ -118,7 +118,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
       "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
       "object, %lld B (%.2lf GB), reversing output...\n",
       reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB,
-      req->real_time - start_ts, (long long)n_obj, (long long)unique_bytes,
+      start_ts - req->real_time, (long long)n_obj, (long long)unique_bytes,
       (double)unique_bytes / GiB);
 
   struct trace_stat stat;

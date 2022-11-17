@@ -267,7 +267,7 @@ reader_t *setup_reader(const char *const trace_path,
  */
 int read_one_req(reader_t *const reader, request_t *const req) {
   if (reader->mmap_offset >= reader->file_size) {
-    DEBUG("read_one_req: end of file, current mmap_offset %zu, file size %zu\n", 
+    DEBUG("read_one_req: end of file, current mmap_offset %zu, file size %zu\n",
           reader->mmap_offset, reader->file_size);
     req->valid = false;
     return 1;
@@ -370,15 +370,24 @@ int read_one_req(reader_t *const reader, request_t *const req) {
   }
 
   if (reader->sampler != NULL) {
-    if (!reader->sampler->sample(reader->sampler, req)) {
+    /* we use this complex solution rather than simply recursive calls
+       because recursive calls can lead to stack overflow */
+    sampler_t *sampler = reader->sampler;
+    reader->sampler = NULL;
+    while (!sampler->sample(sampler, req)) {
       VVERBOSE("skip one req: time %lu, obj_id %lu, size %u at offset %zu\n",
                req->real_time, req->obj_id, req->obj_size, offset_before_read);
       if (reader->read_direction == READ_FORWARD) {
-        return read_one_req(reader, req);
+        status = read_one_req(reader, req);
       } else {
-        return read_one_req_above(reader, req);
+        status = read_one_req_above(reader, req);
+      }
+      if (status != 0) {
+        reader->sampler = sampler;
+        return status;
       }
     }
+    reader->sampler = sampler;
   }
 
   if (reader->ignore_obj_size) {
