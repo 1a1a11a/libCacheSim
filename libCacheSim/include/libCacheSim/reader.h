@@ -65,6 +65,11 @@ typedef struct {
   sampler_t *sampler;
 } reader_init_param_t;
 
+enum read_direction {
+  READ_FORWARD = 0,
+  READ_BACKWARD = 1,
+};
+
 struct zstd_reader;
 typedef struct reader {
   /************* common fields *************/
@@ -118,6 +123,7 @@ typedef struct reader {
 
   /* used for trace sampling */
   sampler_t *sampler;
+  enum read_direction read_direction;
 } reader_t;
 
 static inline void set_default_reader_init_params(reader_init_param_t *params) {

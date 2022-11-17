@@ -76,6 +76,7 @@ reader_t *setup_reader(const char *const trace_path,
   reader->mmap_offset = 0;
   reader->sampler = NULL;
   reader->trace_start_offset = 0;
+  reader->read_direction = READ_FORWARD;
 
   if (init_params != NULL) {
     memcpy(&reader->init_params, init_params, sizeof(reader_init_param_t));
@@ -266,7 +267,8 @@ reader_t *setup_reader(const char *const trace_path,
  */
 int read_one_req(reader_t *const reader, request_t *const req) {
   if (reader->mmap_offset >= reader->file_size) {
-    DEBUG("read_one_req: end of file\n");
+    DEBUG("read_one_req: end of file, current mmap_offset %zu, file size %zu\n", 
+          reader->mmap_offset, reader->file_size);
     req->valid = false;
     return 1;
   }
@@ -360,9 +362,6 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     case ORACLE_WIKI19u_TRACE:
       status = oracleWiki2019u_read_one_req(reader, req);
       break;
-    // case ORACLE_WIKI19t_TRACE:
-    //   status = oracleWiki2019t_read_one_req(reader, req);
-    //   break;
     default:
       ERROR(
           "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
@@ -374,8 +373,11 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     if (!reader->sampler->sample(reader->sampler, req)) {
       VVERBOSE("skip one req: time %lu, obj_id %lu, size %u at offset %zu\n",
                req->real_time, req->obj_id, req->obj_size, offset_before_read);
-
-      return read_one_req(reader, req);
+      if (reader->read_direction == READ_FORWARD) {
+        return read_one_req(reader, req);
+      } else {
+        return read_one_req_above(reader, req);
+      }
     }
   }
 

@@ -63,6 +63,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   INFO("%s: %.2f M requests in total\n", reader->trace_path,
        (double)n_req_total / 1.0e6);
 
+  reader->read_direction = READ_BACKWARD;
   reader_set_read_pos(reader, 1.0);
   go_back_one_req(reader);
   read_one_req(reader, req);
@@ -106,7 +107,9 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
     og_req.init(req);
   }
 
-  assert(n_req_curr == get_num_of_req(reader));
+  if (reader->sampler == nullptr) {
+    assert(n_req_curr == get_num_of_req(reader));
+  }
 
   free_request(req);
   ofile_temp.close();

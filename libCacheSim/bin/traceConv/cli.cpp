@@ -126,8 +126,12 @@ static char args_doc[] = "trace_path trace_type";
 
 /* Program documentation. */
 static char doc[] =
-    "example: ./cachesim /trace/path csv -o /path/new_trace.oracleGeneral -t "
-    "\"obj-id-col=5; time-col=2; obj-size-col=4\"\n\n";
+    "\n"
+    "tracePrint: utility to print binary trace in human-readable format\n"
+    "traceConv: utility to convert a trace to oracleGeneral format\n\n"
+    "example usage: ./traceConv /trace/path csv -o "
+    "/path/new_trace.oracleGeneral -t \"obj-id-col=5, time-col=2, "
+    "obj-size-col=4\"\n\n";
 
 /**
  * @brief initialize the arguments
