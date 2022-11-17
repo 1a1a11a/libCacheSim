@@ -42,6 +42,12 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return TWRNS_TRACE;
   } else if (strcasecmp(trace_type_str, "vscsi") == 0) {
     return VSCSI_TRACE;
+  } else if (strcasecmp(trace_type_str, "CF1") == 0) {
+    return CF1_TRACE;
+  } else if (strcasecmp(trace_type_str, "oracleWiki16u") == 0) {
+    return ORACLE_WIKI16u_TRACE;
+  } else if (strcasecmp(trace_type_str, "oracleWiki19u") == 0) {
+    return ORACLE_WIKI19u_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleGeneralBin") == 0 ||
              strcasecmp(trace_type_str, "oracleGeneral") == 0) {
     return ORACLE_GENERAL_TRACE;
