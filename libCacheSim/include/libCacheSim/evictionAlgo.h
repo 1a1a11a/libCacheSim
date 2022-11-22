@@ -23,6 +23,8 @@
 #include "evictionAlgo/Random.h"
 #include "evictionAlgo/SLRU.h"
 #include "evictionAlgo/SR_LRU.h"
+#include "evictionAlgo/SFIFO.h"
+
 
 #if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
 #include "evictionAlgo/GLCache.h"

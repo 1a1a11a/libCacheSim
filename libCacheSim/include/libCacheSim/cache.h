@@ -41,6 +41,8 @@ typedef cache_ck_res_e (*cache_get_func_ptr)(cache_t *, const request_t *);
 typedef cache_ck_res_e (*cache_check_func_ptr)(cache_t *, const request_t *,
                                                const bool);
 
+typedef bool (*cache_can_insert_func_ptr)(cache_t *cache, const request_t *req);
+
 typedef cache_obj_t *(*cache_insert_func_ptr)(cache_t *, const request_t *);
 
 typedef void (*cache_evict_func_ptr)(cache_t *, const request_t *,
@@ -82,6 +84,7 @@ struct cache {
 
   cache_get_func_ptr get;
   cache_check_func_ptr check;
+  cache_can_insert_func_ptr can_insert;
   cache_insert_func_ptr insert;
   cache_evict_func_ptr evict;
   cache_remove_func_ptr remove;
@@ -165,8 +168,18 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
 cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req);
 
 /**
- * a common cache insert function
- * it updates LRU list, used by all algorithms that need to use LRU list
+ * @brief check whether the object can be inserted into the cache
+ * 
+ * @param cache 
+ * @param req 
+ * @return true 
+ * @return false 
+ */
+bool cache_can_insert_default(cache_t *cache, const request_t *req);
+
+/**
+ * this function is called by all caches to
+ * insert an object into the cache, update the hash table and cache metadata 
  * @param cache
  * @param req
  * @return
@@ -174,8 +187,8 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req);
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req);
 
 /**
- * insert for LRU/FIFO, first call cache_insert_base then
- * update LRU, used by all algorithms that need to use LRU list
+ * insert used by LRU/FIFO, first call cache_insert_base then
+ * update LRU, all algorithms using LRU list should call this
  * @param cache
  * @param req
  * @return

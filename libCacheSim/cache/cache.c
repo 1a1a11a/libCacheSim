@@ -2,9 +2,8 @@
 // Created by Juncheng Yang on 6/20/20.
 //
 
-#include "../include/libCacheSim/cache.h"
-
 #include "../dataStructure/hashtable/hashtable.h"
+#include "../include/libCacheSim/cache.h"
 
 /** this file contains both base function, which should be called by all
  *eviction algorithms, and the queue related functions, which should be called
@@ -30,6 +29,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->admissioner = NULL;
   cache->default_ttl = params.default_ttl;
   cache->n_req = 0;
+  cache->can_insert = cache_can_insert_default;
   cache->stat.cache_size = cache->cache_size;
 
   int hash_power = HASH_POWER_DEFAULT;
@@ -73,6 +73,36 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
   assert(sizeof(cc_params) == 24);
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   return cache;
+}
+
+/**
+ * @brief whether the request can be inserted into cache
+ *
+ * @param cache
+ * @param req
+ * @return true
+ * @return false
+ */
+bool cache_can_insert_default(cache_t *cache, const request_t *req) {
+  if (cache->admissioner != NULL) {
+    admissioner_t *admissioner = cache->admissioner;
+    if (admissioner->admit(admissioner, req) == false) {
+      DEBUG_ONCE(
+          "admission algorithm does not admit: req %ld, obj %lu, size %lu\n",
+          cache->n_req, (unsigned long)req->obj_id,
+          (unsigned long)req->obj_size);
+      return false;
+    }
+  }
+
+  if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
+    WARN_ONCE("%ld req, obj %lu, size %lu larger than cache size %lu\n",
+              cache->n_req, (unsigned long)req->obj_id,
+              (unsigned long)req->obj_size, (unsigned long)cache->cache_size);
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -153,22 +183,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
     return cache_check;
   }
 
-  if (cache->admissioner != NULL) {
-    admissioner_t *admissioner = cache->admissioner;
-    if (admissioner->admit(admissioner, req) == false) {
-      DEBUG_ONCE(
-          "admission algorith is on: req %ld, obj %lu, size %lu is not "
-          "admitted into cache\n",
-          cache->n_req, (unsigned long)req->obj_id,
-          (unsigned long)req->obj_size);
-      return cache_check;
-    }
-  }
-
-  if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
-    WARN_ONCE("%ld req, obj %lu, size %lu larger than cache size %lu\n",
-              cache->n_req, (unsigned long)req->obj_id,
-              (unsigned long)req->obj_size, (unsigned long)cache->cache_size);
+  if (cache->can_insert(cache, req) == false) {
     return cache_check;
   }
 
@@ -185,7 +200,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
 
 /**
  * @brief this function is called by all caches to
- * insert an object into the cache, update the cache metadata
+ * insert an object into the cache, update the hash table and cache metadata
  *
  * @param cache
  * @param req

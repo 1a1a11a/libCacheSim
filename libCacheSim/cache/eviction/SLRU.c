@@ -6,9 +6,8 @@
 //
 //
 
-#include "../../include/libCacheSim/evictionAlgo/SLRU.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/SLRU.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +59,14 @@ static void SLRU_parse_params(cache_t *cache,
   free(old_params_str);
 }
 
+/* SLRU cannot an object larger than segment size */
+bool SLRU_can_insert(cache_t *cache, const request_t *req) {
+  SLRU_params_t *params = (SLRU_params_t *)cache->eviction_params;
+  bool can_insert = cache_can_insert_default(cache, req);
+  return can_insert && (req->obj_size + cache->per_obj_metadata_size <=
+                        params->LRUs[0]->cache_size);
+}
+
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("SLRU", ccache_params);
@@ -72,6 +79,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   cache->remove = SLRU_remove;
   cache->to_evict = SLRU_to_evict;
   cache->init_params = cache_specific_params;
+  cache->can_insert = SLRU_can_insert;
 
   if (ccache_params.consider_obj_metadata) {
     cache->per_obj_metadata_size = 8 * 2;
@@ -170,18 +178,7 @@ cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
 }
 
 cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req) {
-  cache_obj_t *cache_obj;
-  SLRU_params_t *SLRU_params = (SLRU_params_t *)(cache->eviction_params);
-  cache_ck_res_e ret;
-  ret = SLRU_check(cache, req, true);
-
-  if (ret == cache_ck_miss || ret == cache_ck_expired) {
-    if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
-      return ret;
-    }
-    SLRU_insert(cache, req);
-  }
-  return ret;
+  return cache_get_base(cache, req);
 }
 
 cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
@@ -239,5 +236,6 @@ void SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
 }
 
 #ifdef __cplusplus
-extern "C" }
+extern "C"
+}
 #endif

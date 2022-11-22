@@ -60,6 +60,21 @@ static void SFIFO_parse_params(cache_t *cache,
   free(old_params_str);
 }
 
+/**
+ * @brief SLRU cannot insert an object larger than segment size
+ * 
+ * @param cache 
+ * @param req 
+ * @return true 
+ * @return false 
+ */
+bool SFIFO_can_insert(cache_t *cache, const request_t *req) {
+  SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
+  bool can_insert = cache_can_insert_default(cache, req);
+  return can_insert && (req->obj_size + cache->per_obj_metadata_size <=
+                        params->FIFOs[0]->cache_size);
+}
+
 cache_t *SFIFO_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("SFIFO", ccache_params);
@@ -71,6 +86,7 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
   cache->evict = SFIFO_evict;
   cache->remove = SFIFO_remove;
   cache->to_evict = SFIFO_to_evict;
+  cache->can_insert = SFIFO_can_insert;
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
@@ -87,13 +103,6 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
   if (cache_specific_params != NULL) {
     SFIFO_parse_params(cache, cache_specific_params);
   }
-
-  /* we do not insert objects larger than segment size, to do this, we use an
-   * admissioner */
-  char temp_str[128];
-  snprintf(temp_str, 128, "size=%ld",
-           ccache_params.cache_size / SFIFO_params->n_seg);
-  cache->admissioner = create_size_admissioner(temp_str);
 
   SFIFO_params->FIFOs =
       (cache_t **)malloc(sizeof(cache_t *) * SFIFO_params->n_seg);
