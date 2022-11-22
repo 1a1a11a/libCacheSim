@@ -167,6 +167,7 @@ trace_type_e detect_trace_type(const char *trace_path) {
       strcasestr(trace_path, "oracleGeneral.bin") != NULL ||
       strcasestr(trace_path, "bin.oracleGeneral") != NULL ||
       strcasestr(trace_path, "oracleGeneral.zst") != NULL ||
+      strcasestr(trace_path, "oracleGeneral.") != NULL ||
       strcasecmp(trace_path + strlen(trace_path) - 13, "oracleGeneral") == 0) {
     trace_type = ORACLE_GENERAL_TRACE;
   } else if (strcasestr(trace_path, ".vscsi") != NULL) {
