@@ -170,7 +170,7 @@ static void init_arg(struct arguments *args) {
   args->verbose = true;
   args->use_ttl = false;
   args->ignore_obj_size = false;
-  args->consider_obj_metadata = true;
+  args->consider_obj_metadata = false;
   args->n_thread = n_cores();
   args->warmup_sec = -1;
   args->ofilepath = NULL;
@@ -280,6 +280,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LFUDA_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
+    cache = SFIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfu") == 0) {
     cache = LFU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {

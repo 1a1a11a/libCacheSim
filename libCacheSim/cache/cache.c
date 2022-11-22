@@ -184,8 +184,8 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief this function is called by all eviction algorithms to
- * insert an object into the cache, update thee cache metadata
+ * @brief this function is called by all caches to
+ * insert an object into the cache, update the cache metadata
  *
  * @param cache
  * @param req
@@ -204,7 +204,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief this function is called by eviction algorithms that use
+ * @brief this function is called by caches that use
  * a single queue to order objects, such as LRU, FIFO, etc.
  * it inserts an object to the head of queue
  *
