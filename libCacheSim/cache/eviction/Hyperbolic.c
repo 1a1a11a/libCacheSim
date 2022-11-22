@@ -114,9 +114,6 @@ cache_ck_res_e Hyperbolic_get(cache_t *cache, const request_t *req) {
 }
 
 void Hyperbolic_insert(cache_t *cache, const request_t *req) {
-  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-    return;
-  }
 
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
   cached_obj->hyperbolic.freq = 1;
