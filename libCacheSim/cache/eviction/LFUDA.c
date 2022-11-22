@@ -156,7 +156,7 @@ cache_ck_res_e LFUDA_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LFUDA_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *LFUDA_insert(cache_t *cache, const request_t *req) {
   LFUDA_params_t *params = (LFUDA_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
   cache_obj->lfu.freq = params->min_freq + 1;
@@ -185,6 +185,8 @@ void LFUDA_insert(cache_t *cache, const request_t *req) {
   }
   new_node->last_obj = cache_obj;
   if (new_node->first_obj == NULL) new_node->first_obj = cache_obj;
+
+  return cache_obj;
 }
 
 cache_obj_t *LFUDA_to_evict(cache_t *cache) {

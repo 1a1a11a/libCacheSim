@@ -71,7 +71,7 @@ cache_ck_res_e GDSF_check(cache_t *cache, const request_t *req,
   return res;
 }
 
-void GDSF_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
 
   cache_obj_t *obj = cache_insert_base(cache, req);
@@ -81,6 +81,8 @@ void GDSF_insert(cache_t *cache, const request_t *req) {
 
   auto itr = gdsf->pq.emplace(obj, pri, cache->n_req).first;
   gdsf->itr_map[obj] = itr;
+
+  return obj;
 }
 
 void GDSF_evict(cache_t *cache, const request_t *req,

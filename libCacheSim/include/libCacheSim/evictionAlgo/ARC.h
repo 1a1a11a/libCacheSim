@@ -26,7 +26,7 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e ARC_get(cache_t *cache, const request_t *req);
 
-void ARC_insert(cache_t *ARC, const request_t *req);
+cache_obj_t *ARC_insert(cache_t *ARC, const request_t *req);
 
 cache_obj_t *ARC_to_evict(cache_t *cache);
 

@@ -229,11 +229,13 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
   }
 }
 
-void FIFO_Merge_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *FIFO_Merge_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
   cache_obj->FIFO_Merge.freq = 0;
   cache_obj->FIFO_Merge.last_access_vtime = cache->n_req;
   cache_obj->FIFO_Merge.next_access_vtime = req->next_access_vtime;
+
+  return cache_obj;
 }
 
 cache_obj_t *FIFO_Merge_to_evict(cache_t *cache) {

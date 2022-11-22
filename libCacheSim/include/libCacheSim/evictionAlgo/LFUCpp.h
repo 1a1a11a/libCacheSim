@@ -27,7 +27,7 @@ cache_ck_res_e LFUCpp_get(cache_t *cache, const request_t *req);
 
 void LFUCpp_remove(cache_t *cache, const obj_id_t obj_id);
 
-void LFUCpp_insert(cache_t *LFUCpp, const request_t *req);
+cache_obj_t *LFUCpp_insert(cache_t *LFUCpp, const request_t *req);
 
 cache_obj_t *LFUCpp_to_evict(cache_t *cache);
 

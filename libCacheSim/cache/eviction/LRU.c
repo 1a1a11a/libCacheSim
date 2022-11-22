@@ -63,8 +63,8 @@ cache_ck_res_e LRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LRU_insert(cache_t *cache, const request_t *req) {
-  cache_insert_LRU(cache, req);
+cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
+  return cache_insert_LRU(cache, req);
 }
 
 cache_obj_t *LRU_to_evict(cache_t *cache) { return cache->q_tail; }

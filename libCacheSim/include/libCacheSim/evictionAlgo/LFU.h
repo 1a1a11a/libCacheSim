@@ -34,7 +34,7 @@ cache_ck_res_e LFU_get(cache_t *cache, const request_t *req);
 
 void LFU_remove(cache_t *cache, const obj_id_t obj_id);
 
-void LFU_insert(cache_t *LFU, const request_t *req);
+cache_obj_t *LFU_insert(cache_t *LFU, const request_t *req);
 
 cache_obj_t *LFU_to_evict(cache_t *cache);
 

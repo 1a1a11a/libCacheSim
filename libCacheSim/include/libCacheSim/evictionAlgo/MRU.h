@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-void MRU_insert(cache_t *cache, const request_t *req);
+cache_obj_t *MRU_insert(cache_t *cache, const request_t *req);
 
 cache_ck_res_e MRU_check(cache_t *cache, const request_t *req,
                          const bool update_cache);

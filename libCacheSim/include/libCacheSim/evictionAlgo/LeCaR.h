@@ -17,7 +17,7 @@ cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e LeCaR_get(cache_t *cache, const request_t *req);
 
-void LeCaR_insert(cache_t *LeCaR, const request_t *req);
+cache_obj_t *LeCaR_insert(cache_t *LeCaR, const request_t *req);
 
 cache_obj_t *LeCaR_to_evict(cache_t *cache);
 

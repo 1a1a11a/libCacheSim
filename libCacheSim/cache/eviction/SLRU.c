@@ -92,6 +92,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size /= SLRU_params->n_seg;
+  ccache_params_local.hashpower /= MIN(16, ccache_params_local.hashpower - 4);
   for (int i = 0; i < SLRU_params->n_seg; i++) {
     SLRU_params->LRUs[i] = LRU_init(ccache_params_local, NULL);
   }
@@ -183,7 +184,7 @@ cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req) {
   return ret;
 }
 
-void SLRU_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *)(cache->eviction_params);
 
   int i;
@@ -193,8 +194,7 @@ void SLRU_insert(cache_t *cache, const request_t *req) {
     if (SLRU_params->LRUs[i]->occupied_size + req->obj_size +
             cache->per_obj_metadata_size <=
         SLRU_params->LRUs[i]->cache_size) {
-      LRU_insert(SLRU_params->LRUs[i], req);
-      return;
+      return LRU_insert(SLRU_params->LRUs[i], req);
     }
   }
 
@@ -205,7 +205,7 @@ void SLRU_insert(cache_t *cache, const request_t *req) {
            SLRU_params->LRUs[0]->cache_size) {
       SLRU_evict(cache, req, NULL);
     }
-    LRU_insert(SLRU_params->LRUs[0], req);
+    return LRU_insert(SLRU_params->LRUs[0], req);
   }
 }
 
@@ -239,5 +239,5 @@ void SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
 }
 
 #ifdef __cplusplus
-extern "C" {
+extern "C" }
 #endif

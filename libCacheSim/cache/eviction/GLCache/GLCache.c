@@ -307,7 +307,7 @@ cache_ck_res_e GLCache_get(cache_t *cache, const request_t *req) {
   return ret;
 }
 
-void GLCache_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req) {
   GLCache_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[0];
   segment_t *seg = bucket->last_seg;
@@ -339,6 +339,8 @@ void GLCache_insert(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(cache->n_obj > (params->n_in_use_segs - params->n_used_buckets) *
                                   params->segment_size);
   DEBUG_ASSERT(cache->n_obj <= params->n_in_use_segs * params->segment_size);
+
+  return cache_obj;
 }
 
 void GLCache_evict(cache_t *cache, const request_t *req,

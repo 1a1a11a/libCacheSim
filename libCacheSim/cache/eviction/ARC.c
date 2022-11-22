@@ -191,17 +191,19 @@ cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void ARC_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
   /* first time add, then it should be add to LRU1 */
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  params->LRU1->insert(params->LRU1, req);
+  cache_obj_t *obj = params->LRU1->insert(params->LRU1, req);
 
   cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
   cache->n_obj += 1;
   DEBUG_ASSERT(cache->per_obj_metadata_size != 0 ||
                cache->occupied_size ==
                    params->LRU1->occupied_size + params->LRU2->occupied_size);
+
+  return obj;
 }
 
 cache_obj_t *ARC_to_evict(cache_t *cache) {

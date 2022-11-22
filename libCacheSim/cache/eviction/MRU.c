@@ -40,8 +40,8 @@ cache_t *MRU_init(const common_cache_params_t ccache_params,
 
 void MRU_free(cache_t *cache) { cache_struct_free(cache); }
 
-void MRU_insert(cache_t *cache, const request_t *req) {
-  cache_insert_LRU(cache, req);
+cache_obj_t *MRU_insert(cache_t *cache, const request_t *req) {
+  return cache_insert_LRU(cache, req);
 }
 
 cache_ck_res_e MRU_check(cache_t *cache, const request_t *req,

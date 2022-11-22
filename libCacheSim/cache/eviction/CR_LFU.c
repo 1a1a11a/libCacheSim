@@ -172,7 +172,7 @@ cache_ck_res_e CR_LFU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void CR_LFU_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
   cache_obj->lfu.freq = 1;
@@ -258,6 +258,8 @@ void CR_LFU_insert(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(min_freq_node != NULL);
   DEBUG_ASSERT(min_freq_node->last_obj != NULL);
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
+
+  return cache_obj;
 }
 
 cache_obj_t *CR_LFU_to_evict(cache_t *cache) {

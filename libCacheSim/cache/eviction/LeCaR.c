@@ -360,7 +360,7 @@ cache_ck_res_e LeCaR_get(cache_t *cache, const request_t *req) {
   return ck;
 }
 
-void LeCaR_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *LeCaR_insert(cache_t *cache, const request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   VVERBOSE("insert object %lu into cache\n", (unsigned long)req->obj_id);
@@ -389,6 +389,8 @@ void LeCaR_insert(cache_t *cache, const request_t *req) {
     freq_one_node->first_obj = cache_obj;
   }
   freq_one_node->last_obj = cache_obj;
+
+  return cache_obj;
 }
 
 #ifdef LECAR_USE_BELADY

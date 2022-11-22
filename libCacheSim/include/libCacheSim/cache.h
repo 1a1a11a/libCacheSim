@@ -41,7 +41,7 @@ typedef cache_ck_res_e (*cache_get_func_ptr)(cache_t *, const request_t *);
 typedef cache_ck_res_e (*cache_check_func_ptr)(cache_t *, const request_t *,
                                                const bool);
 
-typedef void (*cache_insert_func_ptr)(cache_t *, const request_t *);
+typedef cache_obj_t *(*cache_insert_func_ptr)(cache_t *, const request_t *);
 
 typedef void (*cache_evict_func_ptr)(cache_t *, const request_t *,
                                      cache_obj_t *);

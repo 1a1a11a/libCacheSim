@@ -153,7 +153,7 @@ cache_ck_res_e SR_LRU_get(cache_t *cache, const request_t *req) {
   return ret;
 }
 
-void SR_LRU_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   // SR_LRU_insert covers the cases where hit in history or does not hit
   // anything.
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
@@ -254,6 +254,8 @@ void SR_LRU_insert(cache_t *cache, const request_t *req) {
   cache->n_obj = params->SR_list->n_obj + params->R_list->n_obj;
   cache->occupied_size =
       params->SR_list->occupied_size + params->R_list->occupied_size;
+
+  return NULL;
 }
 
 cache_obj_t *SR_LRU_to_evict(cache_t *cache) {

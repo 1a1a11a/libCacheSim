@@ -16,7 +16,7 @@ cache_ck_res_e Clock_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e Clock_get(cache_t *cache, const request_t *req);
 
-void Clock_insert(cache_t *Clock, const request_t *req);
+cache_obj_t *Clock_insert(cache_t *Clock, const request_t *req);
 
 cache_obj_t *Clock_to_evict(cache_t *cache);
 

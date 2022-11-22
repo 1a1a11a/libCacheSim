@@ -60,9 +60,11 @@ cache_ck_res_e Clock_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void Clock_insert(cache_t *cache, const request_t *req) {
-  cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
-  cache_obj->clock.visited = false;
+cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
+  cache_obj_t *cached_obj = cache_insert_LRU(cache, req);
+  cached_obj->clock.visited = false;
+
+  return cached_obj;
 }
 
 cache_obj_t *Clock_to_evict(cache_t *cache) {

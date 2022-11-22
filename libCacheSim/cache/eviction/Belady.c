@@ -101,11 +101,11 @@ cache_ck_res_e Belady_get(cache_t *cache, const request_t *req) {
   return ret;
 }
 
-void Belady_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
   Belady_params_t *params = cache->eviction_params;
 
   if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-    return;
+    return NULL;
   }
 
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
@@ -119,6 +119,8 @@ void Belady_insert(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(
       ((pq_node_t *)cache_get_obj(cache, req)->Belady.pq_node)->pri.pri ==
       req->next_access_vtime);
+    
+  return cached_obj;
 }
 
 cache_obj_t *Belady_to_evict(cache_t *cache) {

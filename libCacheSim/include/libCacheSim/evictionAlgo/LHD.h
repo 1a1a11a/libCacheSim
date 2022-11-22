@@ -16,7 +16,7 @@ cache_ck_res_e LHD_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e LHD_get(cache_t *cache, const request_t *req);
 
-void LHD_insert(cache_t *LHD, const request_t *req);
+cache_obj_t *LHD_insert(cache_t *LHD, const request_t *req);
 
 void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj);
 

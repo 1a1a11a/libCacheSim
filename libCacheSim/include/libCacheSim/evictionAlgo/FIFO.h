@@ -25,7 +25,7 @@ cache_ck_res_e FIFO_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e FIFO_get(cache_t *cache, const request_t *req);
 
-void FIFO_insert(cache_t *FIFO, const request_t *req);
+cache_obj_t *FIFO_insert(cache_t *FIFO, const request_t *req);
 
 cache_obj_t *FIFO_to_evict(cache_t *cache);
 

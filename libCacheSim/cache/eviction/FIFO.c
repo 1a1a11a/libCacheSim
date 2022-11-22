@@ -51,8 +51,8 @@ cache_ck_res_e FIFO_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void FIFO_insert(cache_t *cache, const request_t *req) {
-  cache_insert_LRU(cache, req);
+cache_obj_t *FIFO_insert(cache_t *cache, const request_t *req) {
+  return cache_insert_LRU(cache, req);
 }
 
 cache_obj_t *FIFO_to_evict(cache_t *cache) { return cache->to_evict(cache); }

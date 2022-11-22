@@ -19,7 +19,7 @@ cache_t *Belady_init(const common_cache_params_t ccache_params,
 
 void Belady_free(cache_t *cache);
 
-void Belady_insert(cache_t *Belady, const request_t *req);
+cache_obj_t *Belady_insert(cache_t *Belady, const request_t *req);
 
 cache_ck_res_e Belady_check(cache_t *cache, const request_t *req,
                             const bool update_cache);

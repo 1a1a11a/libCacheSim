@@ -15,7 +15,7 @@ cache_t *BeladySize_init(const common_cache_params_t ccache_params,
 
 void BeladySize_free(cache_t *cache);
 
-void BeladySize_insert(cache_t *BeladySize, const request_t *req);
+cache_obj_t *BeladySize_insert(cache_t *BeladySize, const request_t *req);
 
 cache_ck_res_e BeladySize_check(cache_t *cache, const request_t *req,
                                 const bool update_cache);

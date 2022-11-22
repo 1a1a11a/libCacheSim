@@ -102,7 +102,7 @@ cache_ck_res_e LRUv0_get(cache_t *cache, const request_t *req) {
   return cache_check;
 }
 
-void LRUv0_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *LRUv0_insert(cache_t *cache, const request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
   cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
@@ -114,6 +114,8 @@ void LRUv0_insert(cache_t *cache, const request_t *req) {
   g_queue_push_tail_link(LRUv0_params->list, node);
   g_hash_table_insert(LRUv0_params->hashtable,
                       GSIZE_TO_POINTER(cache_obj->obj_id), (gpointer)node);
+
+  return cache_obj;
 }
 
 cache_obj_t *LRUv0_get_cached_obj(cache_t *cache, const request_t *req) {

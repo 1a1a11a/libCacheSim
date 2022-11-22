@@ -29,7 +29,7 @@ cache_ck_res_e LRU_get(cache_t *cache, const request_t *req);
 
 void LRU_remove(cache_t *cache, const obj_id_t obj_id);
 
-void LRU_insert(cache_t *cache, const request_t *req);
+cache_obj_t *LRU_insert(cache_t *cache, const request_t *req);
 
 cache_obj_t *LRU_to_evict(cache_t *cache);
 

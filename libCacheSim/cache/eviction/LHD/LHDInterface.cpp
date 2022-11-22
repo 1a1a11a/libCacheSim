@@ -101,7 +101,7 @@ cache_ck_res_e LHD_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LHD_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   auto id = repl::candidate_t::make(req);
@@ -111,6 +111,8 @@ void LHD_insert(cache_t *cache, const request_t *req) {
 
   cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
   cache->n_obj += 1;
+
+  return NULL;
 }
 
 void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {

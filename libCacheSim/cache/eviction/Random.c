@@ -52,8 +52,8 @@ cache_ck_res_e Random_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void Random_insert(cache_t *cache, const request_t *req) {
-  cache_insert_base(cache, req);
+cache_obj_t *Random_insert(cache_t *cache, const request_t *req) {
+  return cache_insert_base(cache, req);
 }
 
 cache_obj_t *Random_to_evict(cache_t *cache) {

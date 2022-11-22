@@ -111,13 +111,15 @@ cache_ck_res_e BeladySize_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void BeladySize_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *BeladySize_insert(cache_t *cache, const request_t *req) {
   if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-    return;
+    return NULL;
   }
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->Belady.next_access_vtime = req->next_access_vtime;
+
+  return obj;
 }
 
 #ifdef EXACT_Belady

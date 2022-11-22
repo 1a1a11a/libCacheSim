@@ -20,7 +20,7 @@ cache_t *Random_init(const common_cache_params_t ccache_params,
 
 void Random_free(cache_t *cache);
 
-void Random_insert(cache_t *Random, const request_t *req);
+cache_obj_t *Random_insert(cache_t *Random, const request_t *req);
 
 cache_ck_res_e Random_check(cache_t *cache, const request_t *req,
                             const bool update_cache);

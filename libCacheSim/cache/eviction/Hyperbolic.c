@@ -113,11 +113,12 @@ cache_ck_res_e Hyperbolic_get(cache_t *cache, const request_t *req) {
   return ret;
 }
 
-void Hyperbolic_insert(cache_t *cache, const request_t *req) {
-
+cache_obj_t *Hyperbolic_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
   cached_obj->hyperbolic.freq = 1;
   cached_obj->hyperbolic.vtime_enter_cache = cache->n_req;
+
+  return cached_obj;
 }
 
 cache_obj_t *Hyperbolic_to_evict(cache_t *cache) {

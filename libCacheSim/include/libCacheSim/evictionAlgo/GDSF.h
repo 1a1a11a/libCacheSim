@@ -16,7 +16,7 @@ cache_ck_res_e GDSF_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e GDSF_get(cache_t *cache, const request_t *req);
 
-void GDSF_insert(cache_t *GDSF, const request_t *req);
+cache_obj_t *GDSF_insert(cache_t *GDSF, const request_t *req);
 
 void GDSF_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj);
 

@@ -161,7 +161,7 @@ cache_ck_res_e LeCaRv0_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void LeCaRv0_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req) {
   LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
   params->LRU->insert(params->LRU, req);
@@ -169,6 +169,8 @@ void LeCaRv0_insert(cache_t *cache, const request_t *req) {
 
   cache->occupied_size = params->LRU->occupied_size;
   cache->n_obj += 1;
+
+  return NULL;
 }
 
 cache_obj_t *LeCaRv0_to_evict(cache_t *cache) {

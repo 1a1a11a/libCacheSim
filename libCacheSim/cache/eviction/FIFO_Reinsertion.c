@@ -233,11 +233,13 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
   }
 }
 
-void FIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
   cache_obj->FIFO_Reinsertion.freq = 0;
   cache_obj->FIFO_Reinsertion.last_access_vtime = cache->n_req;
   cache_obj->FIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
+
+  return cache_obj;
 }
 
 cache_obj_t *FIFO_Reinsertion_to_evict(cache_t *cache) {
