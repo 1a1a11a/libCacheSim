@@ -85,6 +85,9 @@ typedef struct {
   int16_t seen_after_snapshot : 2;
 } GLCache_obj_metadata_t;
 
+typedef struct {
+  bool has_accessed;
+} SFIFO_obj_metadata_t;
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {
@@ -116,6 +119,7 @@ typedef struct cache_obj {
     Belady_obj_metadata_t Belady;
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
+    SFIFO_obj_metadata_t SFIFO;
 #if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
     GLCache_obj_metadata_t GLCache;
 #endif
