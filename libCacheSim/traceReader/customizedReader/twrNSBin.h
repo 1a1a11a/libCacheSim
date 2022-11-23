@@ -58,7 +58,8 @@ static inline int twrNS_read_one_req(reader_t *reader, request_t *req) {
   req->ttl = (int32_t)ttl;
 
   if (req->val_size == 0 && reader->ignore_size_zero_req &&
-      (req->op == OP_GET || req->op == OP_GETS))
+      (req->op == OP_GET || req->op == OP_GETS) &&
+      reader->read_direction == READ_FORWARD)
     return twrNS_read_one_req(reader, req);
 
   return 0;

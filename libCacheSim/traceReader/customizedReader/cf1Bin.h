@@ -60,7 +60,8 @@ static int cf1_read_one_req(reader_t *reader, request_t *req) {
   req->method = *(uint8_t *)(record + 39);
   req->colo = *(uint8_t *)(record + 40);
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req)
+  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
+      reader->read_direction == READ_FORWARD)
     return cf1_read_one_req(reader, req);
 
   return 0;

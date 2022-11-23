@@ -47,7 +47,8 @@ static inline int akamai_read_one_req(reader_t *reader, request_t *req) {
   req->bucket_id = *(uint16_t *)(record + 18);
   req->content_type = *(uint16_t *)(record + 20);
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req)
+  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
+      reader->read_direction == READ_FORWARD)
     return akamai_read_one_req(reader, req);
 
   return 0;

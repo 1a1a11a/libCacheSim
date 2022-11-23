@@ -63,7 +63,8 @@ static inline int oracleSimTwrBin_read_one_req(reader_t *reader,
   }
 
   if (req->val_size == 0 && reader->ignore_size_zero_req &&
-      (req->op == OP_GET || req->op == OP_GETS))
+      (req->op == OP_GET || req->op == OP_GETS) &&
+      reader->read_direction == READ_FORWARD)
     return oracleSimTwrBin_read_one_req(reader, req);
 
   return 0;
@@ -104,7 +105,8 @@ static inline int oracleSysTwrBin_read_one_req(reader_t *reader,
   }
 
   if (req->val_size == 0 && reader->ignore_size_zero_req &&
-      (req->op == OP_GET || req->op == OP_GETS))
+      (req->op == OP_GET || req->op == OP_GETS) &&
+      reader->read_direction == READ_FORWARD)
     return oracleSimTwrBin_read_one_req(reader, req);
 
   return 0;

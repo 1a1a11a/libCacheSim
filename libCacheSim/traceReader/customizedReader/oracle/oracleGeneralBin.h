@@ -44,8 +44,10 @@ static inline int oracleGeneralBin_read_one_req(reader_t *reader,
     req->next_access_vtime = INT64_MAX;
   }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req)
+  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
+      reader->read_direction == READ_FORWARD) {
     return oracleGeneralBin_read_one_req(reader, req);
+  }
   return 0;
 }
 
@@ -77,8 +79,10 @@ static inline int oracleGeneralOpNS_read_one_req(reader_t *reader,
     req->next_access_vtime = INT64_MAX;
   }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req)
-    return oracleGeneralBin_read_one_req(reader, req);
+  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
+      reader->read_direction == READ_FORWARD) {
+    return oracleGeneralOpNS_read_one_req(reader, req);
+  }
   return 0;
 }
 
