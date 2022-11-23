@@ -10,6 +10,7 @@
 
 #define N_ARGS 4
 #define N_MAX_CACHE_SIZE 128
+#define OFILEPATH_LEN 128
 
 /* This structure is used to communicate with parse_opt. */
 struct arguments {
@@ -22,7 +23,7 @@ struct arguments {
   int n_cache_size;
   int warmup_sec;
 
-  char *ofilepath;
+  char ofilepath[OFILEPATH_LEN];
   char *trace_type_str;
   trace_type_e trace_type;
   char *trace_type_params;

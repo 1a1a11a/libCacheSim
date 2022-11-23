@@ -93,7 +93,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->admission_params = arg;
       break;
     case OPTION_OUTPUT_PATH:
-      arguments->ofilepath = arg;
+      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
       break;
     case OPTION_VERBOSE:
       arguments->verbose = is_true(arg) ? true : false;
@@ -173,7 +173,7 @@ static void init_arg(struct arguments *args) {
   args->consider_obj_metadata = false;
   args->n_thread = n_cores();
   args->warmup_sec = -1;
-  args->ofilepath = NULL;
+  memset(args->ofilepath, 0, OFILEPATH_LEN);
   args->n_req = -1;
   args->sample_ratio = 1.0;
 
@@ -204,10 +204,11 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   conv_cache_sizes(args->args[3], args);
   assert(N_ARGS == 4);
 
-  if (args->ofilepath == NULL) {
-    char *trace_filename = strrchr(args->trace_path, '/');
-    args->ofilepath =
-        trace_filename == NULL ? args->trace_path : trace_filename + 1;
+  if (args->ofilepath[0] == '\0') {
+    // char *trace_filename = strrchr(args->trace_path, '/');
+    // snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim",
+    //          trace_filename == NULL ? args->trace_path : trace_filename + 1);
+    snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim", rindex(args->trace_path, '/') + 1);
   }
 
   /* convert trace type string to enum */
@@ -309,7 +310,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   args->cache = cache;
   if (args->admission_algo != NULL) {
-    admissioner_t *admissioner = create_admissioner(args->admission_algo, args->admission_params);
+    admissioner_t *admissioner =
+        create_admissioner(args->admission_algo, args->admission_params);
     args->cache->admissioner = admissioner;
   }
 

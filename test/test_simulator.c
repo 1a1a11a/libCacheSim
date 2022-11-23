@@ -99,7 +99,9 @@ static void test_simulator(gconstpointer user_data) {
   g_assert_cmpuint(res[3].n_miss_byte, ==, miss_byte_true[6]);
   g_free(res);
 
-  cache->cache_free(cache);
+  for (int i = 0; i < 4; i++) {
+    caches[i]->cache_free(caches[i]);
+  }
 }
 
 /**

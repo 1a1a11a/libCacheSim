@@ -55,7 +55,7 @@ static void _simulate(gpointer data, gpointer user_data) {
     close_reader(warmup_cloned_reader);
     INFO("cache %s (size %" PRIu64
          ") finishes warm up using warmup reader "
-         "with %" PRIu64 "requests\n",
+         "with %" PRIu64 " requests\n",
          local_cache->cache_name, local_cache->cache_size,
          result[idx].n_warmup_req);
   }
@@ -165,6 +165,7 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   int progress = 0;
 
   cache_stat_t *result = my_malloc_n(cache_stat_t, num_of_sizes);
+  memset(result, 0, sizeof(cache_stat_t) * num_of_sizes);
 
   // build parameters and send to thread pool
   sim_mt_params_t *params = my_malloc(sim_mt_params_t);
@@ -241,6 +242,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
   int i, progress = 0;
 
   cache_stat_t *result = my_malloc_n(cache_stat_t, num_of_caches);
+  memset(result, 0, sizeof(cache_stat_t) * num_of_caches);
 
   // build parameters and send to thread pool
   sim_mt_params_t *params = my_malloc(sim_mt_params_t);
