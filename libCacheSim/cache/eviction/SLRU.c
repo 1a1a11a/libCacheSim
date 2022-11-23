@@ -178,6 +178,10 @@ cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
 }
 
 cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req) {
+  /* because this field cannot be updated in time since segment LRUs are updated, 
+   * so we should not use this field */
+  DEBUG_ASSERT(cache->occupied_size == 0);
+
   return cache_get_base(cache, req);
 }
 
@@ -211,9 +215,6 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
     cache_obj = LRU_insert(SLRU_params->LRUs[0], req);
   }
 
-  cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
-  cache->n_obj += 1;
-
   return cache_obj;
 }
 
@@ -236,10 +237,6 @@ void SLRU_evict(cache_t *cache, const request_t *req,
 #endif
 
   DEBUG_ASSERT(cache->occupied_size >= SLRU_params->LRUs[0]->occupied_size);
-
-  cache_obj_t *obj = SLRU_params->LRUs[0]->q_tail;
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
-  cache->n_obj -= 1;
 
   cache_evict_LRU(SLRU_params->LRUs[0], req, evicted_obj);
 }

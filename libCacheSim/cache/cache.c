@@ -285,10 +285,10 @@ void cache_evict_LRU(cache_t *cache,
   DEBUG_ASSERT(cache->q_tail != cache->q_tail->queue.prev);
 
 #ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, (int)(req->real_time - obj_to_evict->create_time));
+  record_eviction_age(cache, req->real_time - obj_to_evict->create_time);
 #endif
 #ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, (int)(cache->n_req - obj_to_evict->create_time));
+  record_eviction_age(cache, cache->n_req - obj_to_evict->create_time);
 #endif
 
   cache->q_tail = cache->q_tail->queue.prev;

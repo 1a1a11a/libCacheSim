@@ -142,10 +142,10 @@ void Belady_evict(cache_t *cache, __attribute__((unused)) const request_t *req,
   DEBUG_ASSERT(node == obj_to_evict->Belady.pq_node);
 
 #ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, (int)(req->real_time - obj_to_evict->create_time));
+  record_eviction_age(cache, req->real_time - obj_to_evict->create_time);
 #endif
 #ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, (int)(cache->n_req - obj_to_evict->create_time));
+  record_eviction_age(cache, cache->n_req - obj_to_evict->create_time);
 #endif
 
   obj_to_evict->Belady.pq_node = NULL;

@@ -261,10 +261,9 @@ static inline void record_log2_eviction_age(cache_t *cache, const int age) {
 #undef LOG2
 }
 
-static inline void record_eviction_age(cache_t *cache, const int age) {
-  static double log_base = log(EVICTION_AGE_LOG_BASE);
-
-  int age_log = age == 0 ? 0 : (int)ceil(log(age) / log_base);
+static inline void record_eviction_age(cache_t *cache, const int64_t age) {
+  double log_base = log(EVICTION_AGE_LOG_BASE);
+  int age_log = age == 0 ? 0 : (int)ceil(log((double)age) / log_base);
   cache->log_eviction_age_cnt[age_log] += 1;
 }
 

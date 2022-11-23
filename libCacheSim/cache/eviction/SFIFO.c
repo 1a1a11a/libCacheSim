@@ -184,6 +184,10 @@ cache_ck_res_e SFIFO_check(cache_t *cache, const request_t *req,
 }
 
 cache_ck_res_e SFIFO_get(cache_t *cache, const request_t *req) {
+  /* because this field cannot be updated in time since segment LRUs are
+   * updated, so we should not use this field */
+  DEBUG_ASSERT(cache->occupied_size == 0);
+
   return cache_get_base(cache, req);
 }
 
@@ -216,9 +220,6 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
     cache_obj = FIFO_insert(SFIFO_params->FIFOs[0], req);
   }
 
-  cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
-  cache->n_obj += 1;
-
   return cache_obj;
 }
 
@@ -232,15 +233,11 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
   SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
 
 #ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, (int)(req->real_time - SFIFO_params->FIFOs[0]->q_tail->create_time));
+  record_eviction_age(cache, req->real_time - SFIFO_params->FIFOs[0]->q_tail->create_time);
 #endif
 #ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, (int)(cache->n_req - SFIFO_params->FIFOs[0]->q_tail->create_time));
+  record_eviction_age(cache, cache->n_req - SFIFO_params->FIFOs[0]->q_tail->create_time);
 #endif
-
-  cache_obj_t *obj = SFIFO_params->FIFOs[0]->q_tail;
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
-  cache->n_obj -= 1;
 
   cache_evict_LRU(SFIFO_params->FIFOs[0], req, evicted_obj);
 }
