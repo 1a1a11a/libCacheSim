@@ -42,8 +42,6 @@ static void _simulate(gpointer data, gpointer user_data) {
   reader_t *cloned_reader = clone_reader(params->reader);
   request_t *req = new_request();
   cache_t *local_cache = params->caches[idx];
-  cache_stat_t stat;
-  memset(&stat, 0, sizeof(cache_stat_t));
 
   /* warm up using warmup_reader */
   if (params->warmup_reader) {
@@ -51,7 +49,7 @@ static void _simulate(gpointer data, gpointer user_data) {
     read_one_req(warmup_cloned_reader, req);
     while (req->valid) {
       cache_ck_res_e ck = local_cache->get(local_cache, req);
-      stat.n_warmup_req += 1;
+      result[idx].n_warmup_req += 1;
       read_one_req(warmup_cloned_reader, req);
     }
     close_reader(warmup_cloned_reader);
@@ -59,7 +57,7 @@ static void _simulate(gpointer data, gpointer user_data) {
          ") finishes warm up using warmup reader "
          "with %" PRIu64 "requests\n",
          local_cache->cache_name, local_cache->cache_size,
-         stat.n_warmup_req);
+         result[idx].n_warmup_req);
   }
 
   read_one_req(cloned_reader, req);
@@ -75,7 +73,7 @@ static void _simulate(gpointer data, gpointer user_data) {
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }
-    stat.n_warmup_req += n_warmup;
+    result[idx].n_warmup_req += n_warmup;
     INFO("cache %s (size %" PRIu64
          ") finishes warm up using "
          "with %" PRIu64 " requests, %.2lf hour trace time\n",
@@ -84,13 +82,13 @@ static void _simulate(gpointer data, gpointer user_data) {
   }
 
   while (req->valid) {
-    stat.n_req++;
-    stat.n_req_byte += req->obj_size;
+    result[idx].n_req++;
+    result[idx].n_req_byte += req->obj_size;
 
     req->real_time -= start_ts;
     if (local_cache->get(local_cache, req) != cache_ck_hit) {
-      stat.n_miss++;
-      stat.n_miss_byte += req->obj_size;
+      result[idx].n_miss++;
+      result[idx].n_miss_byte += req->obj_size;
     }
     read_one_req(cloned_reader, req);
   }
@@ -105,15 +103,14 @@ static void _simulate(gpointer data, gpointer user_data) {
 
     assert(local_cache->occupied_size == temp_stat.occupied_size);
     assert(local_cache->n_obj == temp_stat.n_obj);
-    stat.expired_obj_cnt = temp_stat.expired_obj_cnt;
-    stat.expired_bytes = temp_stat.expired_bytes;
+    result[idx].expired_obj_cnt = temp_stat.expired_obj_cnt;
+    result[idx].expired_bytes = temp_stat.expired_bytes;
   }
 #endif
 
-  stat.curr_rtime = req->real_time;
-  stat.n_obj = local_cache->n_obj;
-  stat.occupied_size = local_cache->occupied_size;
-  result[idx] = stat;
+  result[idx].curr_rtime = req->real_time;
+  result[idx].n_obj = local_cache->n_obj;
+  result[idx].occupied_size = local_cache->occupied_size;
   strncpy(result[idx].cache_name, local_cache->cache_name, CACHE_NAME_ARRAY_LEN);
 
   // report progress
