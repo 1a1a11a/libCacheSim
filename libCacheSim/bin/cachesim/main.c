@@ -20,9 +20,17 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  cache_stat_t *result = simulate_at_multi_sizes(
-      args.reader, args.cache, args.n_cache_size, args.cache_sizes, NULL, 0,
-      args.warmup_sec, args.n_thread);
+  // cache_stat_t *result = simulate_at_multi_sizes(
+  //     args.reader, args.cache, args.n_cache_size, args.cache_sizes, NULL, 0,
+  //     args.warmup_sec, args.n_thread);
+
+  cache_t **caches = malloc(sizeof(cache_t *) * args.n_cache_size);
+  for (int i = 0; i < args.n_cache_size; i++) {
+    caches[i] = create_cache_with_new_size(args.cache, args.cache_sizes[i]);
+  }
+  cache_stat_t *result =
+      simulate_with_multi_caches(args.reader, caches, args.n_cache_size, NULL,
+                                 0, args.warmup_sec, args.n_thread);
 
   char output_str[1024];
   char output_filename[128];
@@ -59,8 +67,19 @@ int main(int argc, char **argv) {
   }
   fclose(output_file);
 
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  sprintf(output_filename, "result/%s.evictionAge",
+          rindex(args.trace_path, '/') + 1);
+  for (int i = 0; i < args.n_cache_size; i++) {
+    dump_eviction_age(caches[i], output_filename);
+  }
+#endif
+
   close_reader(args.reader);
   args.cache->cache_free(args.cache);
+  for (int i = 0; i < args.n_cache_size; i++) {
+    caches[i]->cache_free(caches[i]);
+  }
 
   return 0;
 }

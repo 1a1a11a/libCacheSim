@@ -185,13 +185,19 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *)(cache->eviction_params);
 
   int i;
+  cache_obj_t *cache_obj = NULL;
+
+  // this is used by eviction age tracking
+  SLRU_params->LRUs[0]->n_req = cache->n_req;
 
   // Find the lowest LRU with space for insertion
   for (i = 0; i < SLRU_params->n_seg; i++) {
     if (SLRU_params->LRUs[i]->occupied_size + req->obj_size +
             cache->per_obj_metadata_size <=
         SLRU_params->LRUs[i]->cache_size) {
-      return LRU_insert(SLRU_params->LRUs[i], req);
+      
+      cache_obj = LRU_insert(SLRU_params->LRUs[i], req);
+      break;
     }
   }
 
@@ -202,8 +208,13 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
            SLRU_params->LRUs[0]->cache_size) {
       SLRU_evict(cache, req, NULL);
     }
-    return LRU_insert(SLRU_params->LRUs[0], req);
+    cache_obj = LRU_insert(SLRU_params->LRUs[0], req);
   }
+
+  cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
+  cache->n_obj += 1;
+
+  return cache_obj;
 }
 
 cache_obj_t *SLRU_to_evict(cache_t *cache) {
@@ -214,6 +225,22 @@ cache_obj_t *SLRU_to_evict(cache_t *cache) {
 void SLRU_evict(cache_t *cache, const request_t *req,
                 cache_obj_t *evicted_obj) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *)(cache->eviction_params);
+
+#ifdef TRACK_EVICTION_R_AGE
+  record_eviction_age(
+      cache, req->real_time - SLRU_params->LRUs[0]->q_tail->create_time);
+#endif
+#ifdef TRACK_EVICTION_V_AGE
+  record_eviction_age(
+      cache, cache->n_req - SLRU_params->LRUs[0]->q_tail->create_time);
+#endif
+
+  DEBUG_ASSERT(cache->occupied_size >= SLRU_params->LRUs[0]->occupied_size);
+
+  cache_obj_t *obj = SLRU_params->LRUs[0]->q_tail;
+  cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
+  cache->n_obj -= 1;
+
   cache_evict_LRU(SLRU_params->LRUs[0], req, evicted_obj);
 }
 

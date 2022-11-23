@@ -508,60 +508,67 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
                  cache_obj_t *evicted_obj) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
-  cache_obj_t *cache_obj = NULL;
+  cache_obj_t *obj_to_evict = NULL;
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     // evict from LRU
-    cache_obj = cache->q_tail;
-    VVERBOSE("evict object %lu from LRU\n", (unsigned long)cache_obj);
+    obj_to_evict = cache->q_tail;
+    VVERBOSE("evict object %lu from LRU\n", (unsigned long)obj_to_evict);
 
     // mark as ghost object
-    cache_obj->LeCaR.ghost_evicted_by_lru = true;
-    cache_obj->LeCaR.ghost_evicted_by_lfu = false;
+    obj_to_evict->LeCaR.ghost_evicted_by_lru = true;
+    obj_to_evict->LeCaR.ghost_evicted_by_lfu = false;
 
   } else {
     // evict from LFU
     freq_node_t *min_freq_node = get_min_freq_node(params);
-    cache_obj = min_freq_node->first_obj;
-    VVERBOSE("evict object %lu from LFU\n", (unsigned long)cache_obj);
+    obj_to_evict = min_freq_node->first_obj;
+    VVERBOSE("evict object %lu from LFU\n", (unsigned long)obj_to_evict);
 
     // mark as ghost object
-    cache_obj->LeCaR.ghost_evicted_by_lfu = true;
-    cache_obj->LeCaR.ghost_evicted_by_lru = false;
+    obj_to_evict->LeCaR.ghost_evicted_by_lfu = true;
+    obj_to_evict->LeCaR.ghost_evicted_by_lru = false;
   }
 
-  cache_obj->LeCaR.eviction_vtime = cache->n_req;
+  obj_to_evict->LeCaR.eviction_vtime = cache->n_req;
+
+#ifdef TRACK_EVICTION_R_AGE
+  record_eviction_age(cache, (int)(req->real_time - obj_to_evict->create_time));
+#endif
+#ifdef TRACK_EVICTION_V_AGE
+  record_eviction_age(cache, (int)(cache->n_req - obj_to_evict->create_time));
+#endif
 
   if (evicted_obj != NULL) {
     // return evicted object to caller
-    memcpy(evicted_obj, cache_obj, sizeof(cache_obj_t));
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
 
   // update LRU chain state
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
+  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_evict);
 
   // update LFU chain state
-  remove_obj_from_freq_node(params, cache_obj);
+  remove_obj_from_freq_node(params, obj_to_evict);
 
   // update cache state
-  DEBUG_ASSERT(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_metadata_size);
+  DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
+  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
 
   // update history
   if (unlikely(params->ghost_lru_head == NULL)) {
-    params->ghost_lru_head = cache_obj;
-    params->ghost_lru_tail = cache_obj;
+    params->ghost_lru_head = obj_to_evict;
+    params->ghost_lru_tail = obj_to_evict;
   } else {
-    params->ghost_lru_head->queue.prev = cache_obj;
-    cache_obj->queue.next = params->ghost_lru_head;
+    params->ghost_lru_head->queue.prev = obj_to_evict;
+    obj_to_evict->queue.next = params->ghost_lru_head;
   }
-  params->ghost_lru_head = cache_obj;
+  params->ghost_lru_head = obj_to_evict;
   VVERBOSE("insert to ghost history, update ghost lru head to %p\n",
            params->ghost_lru_head);
 
   params->ghost_entry_used_size +=
-      cache_obj->obj_size + cache->per_obj_metadata_size;
+      obj_to_evict->obj_size + cache->per_obj_metadata_size;
   // evict ghost entries if its full
   while (params->ghost_entry_used_size > cache->cache_size) {
     cache_obj_t *ghost_to_evict = params->ghost_lru_tail;

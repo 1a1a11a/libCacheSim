@@ -85,9 +85,6 @@ typedef struct {
   int16_t seen_after_snapshot : 2;
 } GLCache_obj_metadata_t;
 
-typedef struct {
-  bool has_accessed;
-} SFIFO_obj_metadata_t;
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {
@@ -104,6 +101,11 @@ typedef struct cache_obj {
 #if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
   uint32_t exp_time;
 #endif
+/* age is defined as the time since the object entered the cache */
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  int64_t last_access_time;
+  int64_t create_time;
+#endif
   union {
     struct {
       int64_t freq;
@@ -119,7 +121,6 @@ typedef struct cache_obj {
     Belady_obj_metadata_t Belady;
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
-    SFIFO_obj_metadata_t SFIFO;
 #if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
     GLCache_obj_metadata_t GLCache;
 #endif

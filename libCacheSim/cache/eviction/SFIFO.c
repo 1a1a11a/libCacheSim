@@ -191,13 +191,18 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
 
   int i;
+  cache_obj_t *cache_obj = NULL;
+
+  // this is used by eviction age tracking
+  SFIFO_params->FIFOs[0]->n_req = cache->n_req;
 
   // Find the lowest FIFO with space for insertion
   for (i = 0; i < SFIFO_params->n_seg; i++) {
     if (SFIFO_params->FIFOs[i]->occupied_size + req->obj_size +
             cache->per_obj_metadata_size <=
         SFIFO_params->FIFOs[i]->cache_size) {
-      return FIFO_insert(SFIFO_params->FIFOs[i], req);
+      cache_obj = FIFO_insert(SFIFO_params->FIFOs[i], req);
+      break;
     }
   }
 
@@ -208,8 +213,13 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
            SFIFO_params->FIFOs[0]->cache_size) {
       SFIFO_evict(cache, req, NULL);
     }
-    return FIFO_insert(SFIFO_params->FIFOs[0], req);
+    cache_obj = FIFO_insert(SFIFO_params->FIFOs[0], req);
   }
+
+  cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
+  cache->n_obj += 1;
+
+  return cache_obj;
 }
 
 cache_obj_t *SFIFO_to_evict(cache_t *cache) {
@@ -220,6 +230,18 @@ cache_obj_t *SFIFO_to_evict(cache_t *cache) {
 void SFIFO_evict(cache_t *cache, const request_t *req,
                  cache_obj_t *evicted_obj) {
   SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
+
+#ifdef TRACK_EVICTION_R_AGE
+  record_eviction_age(cache, (int)(req->real_time - SFIFO_params->FIFOs[0]->q_tail->create_time));
+#endif
+#ifdef TRACK_EVICTION_V_AGE
+  record_eviction_age(cache, (int)(cache->n_req - SFIFO_params->FIFOs[0]->q_tail->create_time));
+#endif
+
+  cache_obj_t *obj = SFIFO_params->FIFOs[0]->q_tail;
+  cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
+  cache->n_obj -= 1;
+
   cache_evict_LRU(SFIFO_params->FIFOs[0], req, evicted_obj);
 }
 

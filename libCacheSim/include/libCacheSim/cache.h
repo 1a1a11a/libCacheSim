@@ -9,13 +9,15 @@
 #ifndef CACHE_H
 #define CACHE_H
 
+#include <math.h>
+
 #include "../config.h"
+#include "admissionAlgo.h"
 #include "cacheObj.h"
 #include "const.h"
 #include "logging.h"
 #include "macro.h"
 #include "request.h"
-#include "admissionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,8 +54,9 @@ typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
 
 typedef void (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
 
-
-#define EVICTION_AGE_ARRAY_SZE 40
+// #define EVICTION_AGE_ARRAY_SZE 40
+#define EVICTION_AGE_ARRAY_SZE 320
+#define EVICTION_AGE_LOG_BASE 1.08
 #define CACHE_NAME_ARRAY_LEN 64
 typedef struct {
   uint64_t n_warmup_req;
@@ -108,7 +111,7 @@ struct cache {
   char cache_name[CACHE_NAME_ARRAY_LEN];
   const char *init_params;
 
-  int64_t log2_eviction_age_cnt[EVICTION_AGE_ARRAY_SZE];
+  int64_t log_eviction_age_cnt[EVICTION_AGE_ARRAY_SZE];
 };
 
 static inline common_cache_params_t default_common_cache_params(void) {
@@ -166,17 +169,17 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req);
 
 /**
  * @brief check whether the object can be inserted into the cache
- * 
- * @param cache 
- * @param req 
- * @return true 
- * @return false 
+ *
+ * @param cache
+ * @param req
+ * @return true
+ * @return false
  */
 bool cache_can_insert_default(cache_t *cache, const request_t *req);
 
 /**
  * this function is called by all caches to
- * insert an object into the cache, update the hash table and cache metadata 
+ * insert an object into the cache, update the hash table and cache metadata
  * @param cache
  * @param req
  * @return
@@ -230,9 +233,9 @@ cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req);
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id);
 
 /**
- * @brief print cache 
- * 
- * @param cache 
+ * @brief print cache
+ *
+ * @param cache
  */
 static inline void print_cache(cache_t *cache) {
   printf("%s cache size %" PRIu64 ", occupied size %" PRIu64 ", n_req %" PRIu64
@@ -249,12 +252,20 @@ static inline void print_cache(cache_t *cache) {
  * @param cache
  * @param age
  */
-static inline void record_eviction_age(cache_t *cache, const int age) {
+static inline void record_log2_eviction_age(cache_t *cache, const int age) {
 #define LOG2(X) \
   ((unsigned)(8 * sizeof(unsigned long long) - __builtin_clzll((X))))
 
   int age_log2 = age == 0 ? 0 : LOG2(age);
-  cache->log2_eviction_age_cnt[age_log2] += 1;
+  cache->log_eviction_age_cnt[age_log2] += 1;
+#undef LOG2
+}
+
+static inline void record_eviction_age(cache_t *cache, const int age) {
+  static double log_base = log(EVICTION_AGE_LOG_BASE);
+
+  int age_log = age == 0 ? 0 : (int)ceil(log(age) / log_base);
+  cache->log_eviction_age_cnt[age_log] += 1;
 }
 
 /**
@@ -263,6 +274,14 @@ static inline void record_eviction_age(cache_t *cache, const int age) {
  * @param cache
  */
 void print_eviction_age(const cache_t *cache);
+
+/**
+ * @brief dump the eviction age to the file
+ *
+ * @param cache
+ * @param ofilepath
+ */
+bool dump_eviction_age(const cache_t *cache, const char *ofilepath);
 
 #ifdef __cplusplus
 }
