@@ -53,8 +53,8 @@ typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
 typedef void (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
 
 
-#define MAX_EVICTION_AGE_ARRAY_SZE 64
-#define MAX_CACHE_NAME_LEN 64
+#define EVICTION_AGE_ARRAY_SZE 40
+#define CACHE_NAME_ARRAY_LEN 64
 typedef struct {
   uint64_t n_warmup_req;
   uint64_t n_req;
@@ -66,16 +66,11 @@ typedef struct {
   uint64_t occupied_size;
   uint64_t cache_size;
 
-  /* eviction age in wall clock time */
-  int log2_eviction_rage[MAX_EVICTION_AGE_ARRAY_SZE];
-  /* eviction age in virtual time/num of requests */
-  int log2_eviction_vage[MAX_EVICTION_AGE_ARRAY_SZE];
-
   /* current trace time, used to determine obj expiration */
   uint64_t curr_rtime;
   uint64_t expired_obj_cnt;
   uint64_t expired_bytes;
-  char cache_name[MAX_CACHE_NAME_LEN];
+  char cache_name[CACHE_NAME_ARRAY_LEN];
 } cache_stat_t;
 
 struct hashtable;
@@ -109,9 +104,11 @@ struct cache {
 
   /* cache stat is not updated automatically, it is popped up only in
    * some situations */
-  cache_stat_t stat;
-  char cache_name[MAX_CACHE_NAME_LEN];
+  // cache_stat_t stat;
+  char cache_name[CACHE_NAME_ARRAY_LEN];
   const char *init_params;
+
+  int64_t log2_eviction_age_cnt[EVICTION_AGE_ARRAY_SZE];
 };
 
 static inline common_cache_params_t default_common_cache_params(void) {
@@ -257,7 +254,7 @@ static inline void record_eviction_age(cache_t *cache, const int age) {
   ((unsigned)(8 * sizeof(unsigned long long) - __builtin_clzll((X))))
 
   int age_log2 = age == 0 ? 0 : LOG2(age);
-  cache->stat.log2_eviction_rage[age_log2] += 1;
+  cache->log2_eviction_age_cnt[age_log2] += 1;
 }
 
 /**

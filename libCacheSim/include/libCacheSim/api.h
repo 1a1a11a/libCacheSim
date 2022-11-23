@@ -10,14 +10,16 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
   read_one_req(reader, req);
   int64_t start_ts = (int64_t)req->real_time;
   req->real_time -= start_ts;
+  cache_stat_t stat;
+  memset(&stat, 0, sizeof(stat));
 
   while (req->valid) {
-    cache->stat.n_req++;
-    cache->stat.n_req_byte += req->obj_size;
+    stat.n_req++;
+    stat.n_req_byte += req->obj_size;
 
     if (cache->check(cache, req, true) != cache_ck_hit) {
-      cache->stat.n_miss++;
-      cache->stat.n_miss_byte += req->obj_size;
+      stat.n_miss++;
+      stat.n_miss_byte += req->obj_size;
 
       bool admit = true;
 
@@ -43,7 +45,7 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
     req->real_time -= start_ts;
   }
 
-  cache->stat.n_obj = cache->n_obj;
-  cache->stat.occupied_size = cache->occupied_size;
-  return cache->stat;
+  stat.n_obj = cache->n_obj;
+  stat.occupied_size = cache->occupied_size;
+  return stat;
 }

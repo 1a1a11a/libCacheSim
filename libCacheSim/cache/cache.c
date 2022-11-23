@@ -30,7 +30,6 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->default_ttl = params.default_ttl;
   cache->n_req = 0;
   cache->can_insert = cache_can_insert_default;
-  cache->stat.cache_size = cache->cache_size;
 
   int hash_power = HASH_POWER_DEFAULT;
   if (params.hashpower > 0 && params.hashpower < 40)
@@ -316,15 +315,15 @@ cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id) {
  * @param cache
  */
 void print_eviction_age(const cache_t *cache) {
-  printf("eviction age %d:%d, ", 0, cache->stat.log2_eviction_rage[0]);
-  for (int i = 1; i < MAX_EVICTION_AGE_ARRAY_SZE; i++) {
-    if (cache->stat.log2_eviction_rage[i] > 0) {
-      if (cache->stat.log2_eviction_rage[i] > 1000000)
+  printf("eviction age %d:%ld, ", 0, (long) cache->log2_eviction_age_cnt[0]);
+  for (int i = 1; i < EVICTION_AGE_ARRAY_SZE; i++) {
+    if (cache->log2_eviction_age_cnt[i] > 0) {
+      if (cache->log2_eviction_age_cnt[i] > 1000000)
         printf("%d:%.1lfm, ", 1u << (i - 1),
-               (double)cache->stat.log2_eviction_rage[i] / 1000000);
-      else if (cache->stat.log2_eviction_rage[i] > 1000)
+               (double)cache->log2_eviction_age_cnt[i] / 1000000);
+      else if (cache->log2_eviction_age_cnt[i] > 1000)
         printf("%d:%.1lfk, ", 1u << (i - 1),
-               (double)cache->stat.log2_eviction_rage[i] / 1000);
+               (double)cache->log2_eviction_age_cnt[i] / 1000);
     }
   }
   printf("\n");
