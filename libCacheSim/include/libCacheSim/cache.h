@@ -54,6 +54,10 @@ typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
 
 typedef void (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
 
+typedef int64_t (*cache_get_occupied_byte_func_ptr)(const cache_t *);
+
+typedef int64_t (*cache_get_n_obj_func_ptr)(const cache_t *);
+
 // #define EVICTION_AGE_ARRAY_SZE 40
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
@@ -89,6 +93,8 @@ struct cache {
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
   cache_to_evict_func_ptr to_evict;
+  cache_get_occupied_byte_func_ptr get_occupied_byte;
+  cache_get_n_obj_func_ptr get_n_obj;
 
   admissioner_t *admissioner;
 
@@ -233,6 +239,28 @@ cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req);
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id);
 
 /**
+ * @brief get the number of bytes occupied, this is the default
+ * for most algorithms, but some algorithms may have different implementation
+ * for example, SLRU and SFIFO
+ *
+ * @param cache
+ */
+static inline int64_t cache_get_occupied_byte_default(const cache_t *cache) {
+  return cache->occupied_size;
+}
+
+/**
+ * @brief get the number of objects in the cache, this is the default
+ * for most algorithms, but some algorithms may have different implementation
+ * for example, SLRU and SFIFO
+ *
+ * @param cache
+ */
+static inline int64_t cache_get_n_obj_default(const cache_t *cache) {
+  return cache->n_obj;
+}
+
+/**
  * @brief print cache
  *
  * @param cache
@@ -279,8 +307,20 @@ void print_eviction_age(const cache_t *cache);
  *
  * @param cache
  * @param ofilepath
+ * @return whether the dump is successful
  */
 bool dump_eviction_age(const cache_t *cache, const char *ofilepath);
+
+/**
+ * @brief dump the ages of the cached objects via forcing evictions
+ *
+ * @param cache
+ * @param req used to provide the current time
+ * @param ofilepath
+ * @return whether the dump is successful
+ */
+bool dump_cached_obj_age(cache_t *cache, const request_t *req,
+                         const char *ofilepath);
 
 #ifdef __cplusplus
 }

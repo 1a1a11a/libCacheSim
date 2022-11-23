@@ -36,8 +36,8 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->remove = LHD_remove;
   cache->init_params = cache_specific_params;
   if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n",
-           cache->cache_name, cache_specific_params);
+    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
+          cache_specific_params);
     abort();
   }
 
@@ -106,6 +106,13 @@ cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   auto id = repl::candidate_t::make(req);
 
+#ifdef TRACK_EVICTION_R_AGE
+  id.create_time = req->real_time;
+#endif
+#ifdef TRACK_EVICTION_V_AGE
+  id.create_time = cache->n_req;
+#endif
+
   lhd->sizeMap[id] = req->obj_size;
   lhd->update(id, req);
 
@@ -129,6 +136,13 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   DEBUG_ASSERT(cache->occupied_size >= victimItr->second);
   cache->occupied_size -= (victimItr->second + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
+
+#ifdef TRACK_EVICTION_R_AGE
+  record_eviction_age(cache, req->real_time - victim.create_time);
+#endif
+#ifdef TRACK_EVICTION_V_AGE
+  record_eviction_age(cache, cache->n_req - victim.create_time);
+#endif
 
   if (evicted_obj != nullptr) {
     // return evicted object to caller

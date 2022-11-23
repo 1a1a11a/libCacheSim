@@ -67,6 +67,24 @@ bool SLRU_can_insert(cache_t *cache, const request_t *req) {
                         params->LRUs[0]->cache_size);
 }
 
+int64_t SLRU_get_occupied_byte(const cache_t *cache) {
+  SLRU_params_t *params = (SLRU_params_t *)cache->eviction_params;
+  int64_t occupied_byte = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    occupied_byte += params->LRUs[i]->occupied_size;
+  }
+  return occupied_byte;
+}
+
+int64_t SLRU_get_n_obj(const cache_t *cache) {
+  SLRU_params_t *params = (SLRU_params_t *)cache->eviction_params;
+  int64_t n_obj = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    n_obj += params->LRUs[i]->n_obj;
+  }
+  return n_obj;
+}
+
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("SLRU", ccache_params);
@@ -80,6 +98,8 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   cache->to_evict = SLRU_to_evict;
   cache->init_params = cache_specific_params;
   cache->can_insert = SLRU_can_insert;
+  cache->get_occupied_byte = SLRU_get_occupied_byte;
+  cache->get_n_obj = SLRU_get_n_obj;
 
   if (ccache_params.consider_obj_metadata) {
     cache->per_obj_metadata_size = 8 * 2;
@@ -220,25 +240,37 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
 
 cache_obj_t *SLRU_to_evict(cache_t *cache) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *)(cache->eviction_params);
-  return SLRU_params->LRUs[0]->to_evict(SLRU_params->LRUs[0]);
+  for (int i = 0; i < SLRU_params->n_seg; i++) {
+    if (SLRU_params->LRUs[i]->occupied_size > 0) {
+      return LRU_to_evict(SLRU_params->LRUs[i]);
+    }
+  }
 }
 
 void SLRU_evict(cache_t *cache, const request_t *req,
                 cache_obj_t *evicted_obj) {
   SLRU_params_t *SLRU_params = (SLRU_params_t *)(cache->eviction_params);
 
+  int nth_seg_to_evict = 0;
+  for (int i = 0; i < SLRU_params->n_seg; i++) {
+    if (SLRU_params->LRUs[i]->occupied_size > 0) {
+      nth_seg_to_evict = i;
+      break;
+    }
+  }
+
 #ifdef TRACK_EVICTION_R_AGE
   record_eviction_age(
-      cache, req->real_time - SLRU_params->LRUs[0]->q_tail->create_time);
+      cache, req->real_time - SLRU_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
 #endif
 #ifdef TRACK_EVICTION_V_AGE
   record_eviction_age(
-      cache, cache->n_req - SLRU_params->LRUs[0]->q_tail->create_time);
+      cache, cache->n_req - SLRU_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
 #endif
 
-  DEBUG_ASSERT(cache->occupied_size >= SLRU_params->LRUs[0]->occupied_size);
+  DEBUG_ASSERT(cache->occupied_size >= SLRU_params->LRUs[nth_seg_to_evict]->occupied_size);
 
-  cache_evict_LRU(SLRU_params->LRUs[0], req, evicted_obj);
+  cache_evict_LRU(SLRU_params->LRUs[nth_seg_to_evict], req, evicted_obj);
 }
 
 void SLRU_remove(cache_t *cache, const obj_id_t obj_id) {

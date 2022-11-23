@@ -30,6 +30,8 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->default_ttl = params.default_ttl;
   cache->n_req = 0;
   cache->can_insert = cache_can_insert_default;
+  cache->get_occupied_byte = cache_get_occupied_byte_default;
+  cache->get_n_obj = cache_get_n_obj_default;
 
   int hash_power = HASH_POWER_DEFAULT;
   if (params.hashpower > 0 && params.hashpower < 40)
@@ -358,7 +360,7 @@ void print_eviction_age(const cache_t *cache) {
   printf("eviction age %d:%ld, ", 1, (long)cache->log_eviction_age_cnt[0]);
   for (int i = 1; i < EVICTION_AGE_ARRAY_SZE; i++) {
     if (cache->log_eviction_age_cnt[i] > 1000000)
-      printf("%lld:%.1lfm, ", (long long) (pow(EVICTION_AGE_LOG_BASE, i)),
+      printf("%lld:%.1lfm, ", (long long)(pow(EVICTION_AGE_LOG_BASE, i)),
              (double)cache->log_eviction_age_cnt[i] / 1000000.0);
     else if (cache->log_eviction_age_cnt[i] > 1000)
       printf("%lld:%.1lfk, ", (long long)(pow(EVICTION_AGE_LOG_BASE, i)),
@@ -400,6 +402,14 @@ bool dump_log2_eviction_age(const cache_t *cache, const char *ofilepath) {
   return true;
 }
 
+/**
+ * @brief dump the eviction age distribution to a file
+ *
+ * @param cache
+ * @param ofilepath
+ * @return true
+ * @return false
+ */
 bool dump_eviction_age(const cache_t *cache, const char *ofilepath) {
   FILE *ofile = fopen(ofilepath, "a");
   if (ofile == NULL) {
@@ -407,10 +417,10 @@ bool dump_eviction_age(const cache_t *cache, const char *ofilepath) {
     return false;
   }
 
-  fprintf(ofile, "%s, cache size: %lu, ", cache->cache_name,
+  /* dump the objects' ages at eviction */
+  fprintf(ofile, "%s, eviction age, cache size: %lu, ", cache->cache_name,
           (unsigned long)cache->cache_size);
-  fprintf(ofile, "%d:%ld, ", 1, (long)cache->log_eviction_age_cnt[0]);
-  for (int i = 1; i < EVICTION_AGE_ARRAY_SZE; i++) {
+  for (int i = 0; i < EVICTION_AGE_ARRAY_SZE; i++) {
     if (cache->log_eviction_age_cnt[i] == 0) {
       continue;
     }
@@ -418,6 +428,58 @@ bool dump_eviction_age(const cache_t *cache, const char *ofilepath) {
             (long)cache->log_eviction_age_cnt[i]);
   }
   fprintf(ofile, "\n");
+
+  fclose(ofile);
+  return true;
+}
+
+/**
+ * @brief dump the age distribution of cached objects to a file
+ *
+ * WARNNING: this function obtain the age via evicting the cached objects
+ * so the cache state will change after calling this function
+ *
+ * @param cache
+ * @param req used to provide the current time
+ * @param ofilepath
+ * @return true
+ * @return false
+ */
+bool dump_cached_obj_age(cache_t *cache, const request_t *req, const char *ofilepath) {
+  FILE *ofile = fopen(ofilepath, "a");
+  if (ofile == NULL) {
+    perror("fopen failed");
+    return false;
+  }
+
+  /* clear/reset eviction age counters */
+  for (int i = 0; i < EVICTION_AGE_ARRAY_SZE; i++) {
+    cache->log_eviction_age_cnt[i] = 0;
+  }
+
+  int64_t n_cached_obj = cache->get_n_obj(cache);
+  int64_t n_evicted_obj = 0;
+  /* evict all the objects */
+  while (cache->get_occupied_byte(cache) > 0) {
+    cache->evict(cache, req, NULL);
+    n_evicted_obj++;
+  }
+  assert(n_cached_obj == n_evicted_obj);
+
+  int64_t n_ages = 0;
+  /* dump the cached objects' ages */
+  fprintf(ofile, "%s, cached_obj age, cache size: %lu, ", cache->cache_name,
+          (unsigned long)cache->cache_size);
+  for (int i = 0; i < EVICTION_AGE_ARRAY_SZE; i++) {
+    if (cache->log_eviction_age_cnt[i] == 0) {
+      continue;
+    }
+    n_ages += cache->log_eviction_age_cnt[i];
+    fprintf(ofile, "%lld:%ld, ", (long long)pow(EVICTION_AGE_LOG_BASE, i),
+            (long)cache->log_eviction_age_cnt[i]);
+  }
+  fprintf(ofile, "\n");
+  assert(n_ages == n_cached_obj);
 
   fclose(ofile);
   return true;

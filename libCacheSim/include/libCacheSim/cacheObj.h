@@ -103,8 +103,10 @@ typedef struct cache_obj {
 #endif
 /* age is defined as the time since the object entered the cache */
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  int64_t last_access_time;
-  int64_t create_time;
+  union {
+    int64_t last_access_time;
+    int64_t create_time;
+  };
 #endif
   union {
     struct {
