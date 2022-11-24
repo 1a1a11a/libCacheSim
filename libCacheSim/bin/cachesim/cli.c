@@ -7,12 +7,14 @@
 #include <string.h>
 
 #include "../../include/libCacheSim/const.h"
+#include "../../utils/include/mystr.h"
 #include "../../utils/include/mysys.h"
 #include "../cli_utils.h"
 #include "internal.h"
 
 const char *argp_program_version = "cachesim 0.0.1";
-const char *argp_program_bug_address = "google group";
+const char *argp_program_bug_address =
+    "https://groups.google.com/g/libcachesim";
 
 enum argp_option_short {
   OPTION_TRACE_TYPE_PARAMS = 't',
@@ -84,13 +86,17 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->trace_type_params = arg;
       break;
     case OPTION_EVICTION_PARAMS:
-      arguments->eviction_params = arg;
+      arguments->eviction_params = strdup(arg);
+      replace_char(arguments->eviction_params, ';', ',');
+      replace_char(arguments->eviction_params, '_', '-');
       break;
     case OPTION_ADMISSION_ALGO:
       arguments->admission_algo = arg;
       break;
     case OPTION_ADMISSION_PARAMS:
-      arguments->admission_params = arg;
+      arguments->admission_params = strdup(arg);
+      replace_char(arguments->admission_params, ';', ',');
+      replace_char(arguments->admission_params, '_', '-');
       break;
     case OPTION_OUTPUT_PATH:
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);

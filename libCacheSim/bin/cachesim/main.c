@@ -88,6 +88,13 @@ int main(int argc, char **argv) {
     caches[i]->cache_free(caches[i]);
   }
 
+  if (args.eviction_params != NULL) {
+    free(args.eviction_params);
+  }
+  if (args.admission_params != NULL) {
+    free(args.admission_params);
+  }
+
   return 0;
 }
 

@@ -12,21 +12,25 @@ void test_distUtils_basic(gconstpointer user_data) {
   // int32_t next_dist_true[N_TEST] = {11, 59, 79, -1, 8, -1};
   int32_t next_dist_true[N_TEST] = {12, 60, 80, -1, 9, -1};
   int32_t* dist;
+  int64_t array_size;
 
   reader_t* reader = (reader_t*)user_data;
   long i, j;
 
-  dist = get_stack_dist(reader, STACK_DIST);
+  dist = get_stack_dist(reader, STACK_DIST, &array_size);
+  g_assert_cmpint(array_size, ==, get_num_of_req(reader));
   for (i = (long)get_num_of_req(reader) - 1, j = 0; j < N_TEST; i--, j++) {
     g_assert_cmpint(dist[i], ==, rd_true[j]);
   }
 
-  dist = get_stack_dist(reader, FUTURE_STACK_DIST);
+  dist = get_stack_dist(reader, FUTURE_STACK_DIST, &array_size);
+  g_assert_cmpint(array_size, ==, get_num_of_req(reader));
   for (i = 6, j = 0; j < N_TEST; i++, j++) {
     g_assert_cmpint(dist[i], ==, frd_true[j]);
   }
 
-  dist = get_access_dist(reader, DIST_SINCE_LAST_ACCESS);
+  dist = get_access_dist(reader, DIST_SINCE_LAST_ACCESS, &array_size);
+  g_assert_cmpint(array_size, ==, get_num_of_req(reader));
   for (i = (long)get_num_of_req(reader) - 1, j = 0; j < N_TEST; i--, j++) {
     g_assert_cmpint(dist[i], ==, last_dist_true[j]);
   }
@@ -40,15 +44,17 @@ void test_distUtils_basic(gconstpointer user_data) {
 void test_distUtils_more1(gconstpointer user_data) {
   int32_t rd_true[N_TEST] = {-1, -1, -1, 7, -1, 86};
   reader_t* reader = (reader_t*)user_data;
-  int32_t* rd = get_stack_dist(reader, STACK_DIST);
+  int64_t array_size = 0;
+  int32_t* rd = get_stack_dist(reader, STACK_DIST, &array_size);
   long i, j;
   for (i = (long)get_num_of_req(reader) - 1, j = 0; j < N_TEST; i--, j++) {
     g_assert_cmpint(rd[i], ==, rd_true[j]);
   }
 
-  save_dist(reader, rd, "rd.save", STACK_DIST);
+  save_dist(reader, rd, array_size, "rd.save", STACK_DIST);
   g_free(rd);
-  rd = load_dist(reader, "rd.save.STACK_DIST");
+  rd = load_dist(reader, "rd.save.STACK_DIST", &array_size);
+  g_assert_cmpint(array_size, ==, get_num_of_req(reader));
   for (i = (long)get_num_of_req(reader) - 1, j = 0; j < N_TEST; i--, j++) {
     g_assert_cmpint(rd[i], ==, rd_true[j]);
   }

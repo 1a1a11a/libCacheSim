@@ -1,12 +1,12 @@
 
 
 #define _GNU_SOURCE
-#include "cli_utils.h"
-
 #include <assert.h>
 #include <string.h>
 
+#include "../utils/include/mystr.h"
 #include "../include/libCacheSim/reader.h"
+#include "cli_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,6 +96,8 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
     while (params_str != NULL && (*params_str == ' ' || *params_str == ',')) {
       params_str++;
     }
+
+    key = replace_char(key, '_', '-');
 
     if (strcasecmp(key, "time-col") == 0 ||
         strcasecmp(key, "time-field") == 0) {

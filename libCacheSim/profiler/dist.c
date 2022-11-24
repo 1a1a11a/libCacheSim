@@ -108,11 +108,13 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
  * @param reader
  * @return
  */
-int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type) {
+int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
+                        int64_t *array_size) {
   int64_t curr_ts = 0;
   int64_t last_access_ts = 0;
   int64_t stack_dist = 0;
   request_t *req = new_request();
+  *array_size = get_num_of_req(reader);
 
   int32_t *stack_dist_array = malloc(sizeof(int32_t) * get_num_of_req(reader));
   if (dist_type == FUTURE_STACK_DIST) {
@@ -130,7 +132,7 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type) {
   read_one_req(reader, req);
   while (req->valid) {
     stack_dist = get_stack_dist_add_req(req, &splay_tree, hash_table, curr_ts,
-                                         &last_access_ts);
+                                        &last_access_ts);
     if (stack_dist > (int64_t)UINT32_MAX) {
       ERROR("stack distance %ld is larger than UINT32_MAX\n", stack_dist);
       abort();
@@ -157,10 +159,11 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type) {
   return stack_dist_array;
 }
 
-int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type) {
+int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type, int64_t *array_size) {
   int64_t curr_ts = 0;
   int64_t dist = 0;
   request_t *req = new_request();
+  *array_size = get_num_of_req(reader);
   int32_t *dist_array = malloc(sizeof(int32_t) * get_num_of_req(reader));
 
   GHashTable *hash_table =
@@ -189,7 +192,8 @@ int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type) {
 }
 
 void save_dist(reader_t *const reader, const int32_t *dist_array,
-               const char *const ofilepath, const dist_type_e dist_type) {
+               int64_t array_size, const char *const ofilepath,
+               const dist_type_e dist_type) {
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
   sprintf(file_path, "%s.%s", ofilepath, dist_type_str[dist_type]);
   FILE *file = fopen(file_path, "wb");
@@ -198,12 +202,15 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
   free(file_path);
 }
 
-int32_t *load_dist(reader_t *const reader, const char *const ifilepath) {
+int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
+                   int64_t *array_size) {
   FILE *file = fopen(ifilepath, "rb");
   if (file == NULL) {
     perror(ifilepath);
     abort();
   }
+
+  *array_size = get_num_of_req(reader);
 
   int fd = fileno(file);
   struct stat buf;
@@ -220,9 +227,9 @@ int32_t *load_dist(reader_t *const reader, const char *const ifilepath) {
   return dist_array;
 }
 
-void cnt_dist(const int32_t *dist_array, int64_t n_req,
+void cnt_dist(const int32_t *dist_array, const int64_t array_size,
               GHashTable *hash_table) {
-  for (uint64_t i = 0; i < n_req; i++) {
+  for (uint64_t i = 0; i < array_size; i++) {
     int64_t dist = dist_array[i] == -1 ? INT64_MAX : dist_array[i];
     gpointer gp_dist = GSIZE_TO_POINTER((gsize)dist);
     int64_t old_cnt = (int64_t)g_hash_table_lookup(hash_table, gp_dist);

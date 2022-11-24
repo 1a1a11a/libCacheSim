@@ -35,7 +35,8 @@ static char *dist_type_str[] = {
  *
  * @return an array of int32_t with size of n_req
  */
-int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type);
+int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
+                        int64_t *array_size);
 
 /***********************************************************
  * get the distance since last/first access
@@ -45,7 +46,8 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type);
  *
  * @return an array of int32_t with size of n_req
  */
-int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type);
+int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type,
+                         int64_t *array_size);
 
 /***********************************************************
  * save the distance array to file to avoid future computation
@@ -57,7 +59,8 @@ int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type);
  * @return
  */
 void save_dist(reader_t *const reader, const int32_t *dist_array,
-               const char *const ofilepath, const dist_type_e dist_type);
+               const int64_t array_size, const char *const ofilepath,
+               const dist_type_e dist_type);
 
 /***********************************************************
  * this function is used for loading distance from the input file
@@ -66,7 +69,8 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
  * @param dist_type             type of distance
  * @return                      distance array in int32_t array
  */
-int32_t *load_dist(reader_t *const reader, const char *const ifilepath);
+int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
+                   int64_t *array_size);
 
 void save_dist_as_cnt(reader_t *const reader, const int32_t *dist_array,
                       const int64_t array_size, const char *const ofilepath,
