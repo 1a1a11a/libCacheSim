@@ -10,12 +10,11 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/LRUv0.h"
-
 #include <assert.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../utils/include/utilsInternal.h"
+#include "../../include/libCacheSim/evictionAlgo/LRUv0.h"
+#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {
