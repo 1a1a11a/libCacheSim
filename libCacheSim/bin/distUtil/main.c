@@ -6,8 +6,8 @@
 #include <assert.h>
 
 #include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/dist.h"
+#include "../../include/libCacheSim/reader.h"
 #include "../../utils/include/mysys.h"
 #include "internal.h"
 
@@ -17,12 +17,16 @@ int main(int argc, char **argv) {
 
   int32_t *dist_array = NULL;
   int64_t array_size = 0;
-  if (args.dist_type == STACK_DIST) {
+  if (args.dist_type == STACK_DIST || args.dist_type == FUTURE_STACK_DIST) {
     dist_array = get_stack_dist(args.reader, args.dist_type, &array_size);
-    save_dist_as_cnt(args.reader, dist_array, get_num_of_req(args.reader), args.ofilepath, args.dist_type);
+  } else if (args.dist_type == DIST_SINCE_LAST_ACCESS ||
+             args.dist_type == DIST_SINCE_FIRST_ACCESS) {
+    dist_array = get_access_dist(args.reader, args.dist_type, &array_size);
+  } else {
+    ERROR("Unknown distance type %d\n", args.dist_type);
   }
+
+  save_dist_as_cnt(args.reader, dist_array, array_size, args.ofilepath,
+                   args.dist_type);
   return 0;
 }
-
-
-
