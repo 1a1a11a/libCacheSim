@@ -7,9 +7,8 @@
 //
 /* todo: change to BeladySize */
 
-#include "../../include/libCacheSim/evictionAlgo/BeladySize.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/BeladySize.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,7 +26,8 @@ static const char *BeladySize_current_params(BeladySize_params_t *params) {
   return params_str;
 }
 
-static void BeladySize_parse_params(cache_t *cache, const char *cache_specific_params) {
+static void BeladySize_parse_params(cache_t *cache,
+                                    const char *cache_specific_params) {
   BeladySize_params_t *params = (BeladySize_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
@@ -175,6 +175,13 @@ cache_obj_t *BeladySize_to_evict(cache_t *cache) {
       obj_to_evict_score = sampled_obj_score;
     }
   }
+  if (obj_to_evict == NULL) {
+    WARN(
+        "BeladySize_to_evict: obj_to_evict is NULL, "
+        "maybe cache size is too small or hash power too large\n");
+    return BeladySize_to_evict(cache);
+  }
+
   return obj_to_evict;
 }
 #endif
