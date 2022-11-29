@@ -59,14 +59,6 @@ cache_ck_res_e LRU_Belady_check(cache_t *cache, const request_t *req,
   }
 
   if (cache_obj && likely(update_cache)) {
-    /* LRU_Belady_head is the newest, move cur obj to LRU_Belady_head */
-    // if (cache->n_req < 80)
-    // //     printf("%ld %ld %d %ld\n", cache->n_req, req->obj_id, cache->future_stack_dist[cache->n_req-1], cache->cache_size);
-    // printf("%ld %ld %d %ld %d %d\n", cache->n_req, req->obj_id,
-    //        cache->future_stack_dist[cache->n_req - 1], cache->cache_size,
-    //        cache->future_stack_dist[cache->n_req - 1] != -1,
-    //            cache->future_stack_dist[cache->n_req - 1] < cache->cache_size);
-
     if (cache->future_stack_dist[cache->n_req - 1] != -1 && cache
             ->future_stack_dist[cache->n_req - 1] < cache->cache_size) {
       move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);

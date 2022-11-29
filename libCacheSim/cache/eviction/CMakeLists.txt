@@ -19,6 +19,9 @@ set(sourceC
         FIFO_Reinsertion.c
         SFIFO.c
 
+        LRU_Belady.c
+        SFIFO_Belady.c
+
         LRUv0.c
         LeCaRv0.c
         )
