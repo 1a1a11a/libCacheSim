@@ -9,9 +9,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/FIFO.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/FIFO.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +54,7 @@ cache_obj_t *FIFO_insert(cache_t *cache, const request_t *req) {
   return cache_insert_LRU(cache, req);
 }
 
-cache_obj_t *FIFO_to_evict(cache_t *cache) { return cache->to_evict(cache); }
+cache_obj_t *FIFO_to_evict(cache_t *cache) { return cache->q_tail; }
 
 void FIFO_evict(cache_t *cache, const request_t *req,
                 cache_obj_t *evicted_obj) {
