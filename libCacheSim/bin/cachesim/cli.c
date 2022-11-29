@@ -11,6 +11,8 @@
 #include "../../utils/include/mysys.h"
 #include "../cli_utils.h"
 #include "internal.h"
+#include "../../include/libCacheSim/dist.h"
+
 
 const char *argp_program_version = "cachesim 0.0.1";
 const char *argp_program_bug_address =
@@ -302,6 +304,28 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LFUCpp_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "belady") == 0) {
     cache = Belady_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
+    if (strstr(args->trace_path, ".zst") != NULL) {
+      ERROR("lru-belady only supports uncompressed trace files\n");
+    }
+    reader_t *reader = clone_reader(args->reader);
+    cache = LRU_Belady_init(cc_params, args->eviction_params);
+    cache->future_stack_dist = get_stack_dist(
+        reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
+    assert(get_num_of_req(reader) == cache->future_stack_dist_array_size); 
+    close_reader(reader);
+
+  } else if (strcasecmp(args->eviction_algo, "sfifo-belady") == 0) {
+    if (strstr(args->trace_path, ".zst") != NULL) {
+      ERROR("sfifo-belady only supports uncompressed trace files\n");
+    }
+    reader_t *reader = clone_reader(args->reader);
+    cache = SFIFO_Belady_init(cc_params, args->eviction_params);
+    cache->future_stack_dist = get_stack_dist(
+        reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
+    assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
+    close_reader(reader);
+
   } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
     cc_params.hashpower -= 4;
     cache = BeladySize_init(cc_params, args->eviction_params);

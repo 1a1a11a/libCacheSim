@@ -26,7 +26,10 @@ int main(int argc, char **argv) {
     ERROR("Unknown distance type %d\n", args.dist_type);
   }
 
-  save_dist_as_cnt(args.reader, dist_array, array_size, args.ofilepath,
+  save_dist(args.reader, dist_array, array_size, args.ofilepath,
                    args.dist_type);
+
+  // save_dist_as_cnt(args.reader, dist_array, array_size, args.ofilepath,
+  //                  args.dist_type);
   return 0;
 }

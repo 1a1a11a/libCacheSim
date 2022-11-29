@@ -116,6 +116,10 @@ struct cache {
   // cache_stat_t stat;
   char cache_name[CACHE_NAME_ARRAY_LEN];
   const char *init_params;
+  
+  /* not used by most algorithms */
+  int32_t *future_stack_dist;
+  int64_t future_stack_dist_array_size;
 
   int64_t log_eviction_age_cnt[EVICTION_AGE_ARRAY_SZE];
 };

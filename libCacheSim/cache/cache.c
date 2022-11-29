@@ -27,6 +27,8 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->cache_size = params.cache_size;
   cache->eviction_params = NULL;
   cache->admissioner = NULL;
+  cache->future_stack_dist = NULL;
+  cache->future_stack_dist_array_size = 0;
   cache->default_ttl = params.default_ttl;
   cache->n_req = 0;
   cache->can_insert = cache_can_insert_default;
@@ -73,6 +75,8 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
   };
   assert(sizeof(cc_params) == 24);
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
+  cache->future_stack_dist = old_cache->future_stack_dist;
+  cache->future_stack_dist_array_size = old_cache->future_stack_dist_array_size;
   return cache;
 }
 
