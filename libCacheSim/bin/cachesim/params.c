@@ -1,6 +1,7 @@
 
-#include "internal.h"
 #include <stdbool.h>
+
+#include "internal.h"
 
 /******* script to generate the code ********/
 /**
@@ -90,6 +91,10 @@ static uint64_t get_msr_wss(char *trace_path) {
 }
 
 bool set_hard_code_cache_size(struct arguments *args) {
+  if (args->ignore_obj_size) {
+    return false;
+  }
+  
   if (strstr(args->trace_path, "cphy") != NULL) {
     uint64_t s[10] = {500,   1000,  2000,  4000,  8000,
                       12000, 16000, 24000, 32000, 64000};

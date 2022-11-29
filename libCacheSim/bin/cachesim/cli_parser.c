@@ -148,7 +148,7 @@ static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
 
 void set_cache_size(struct arguments *args, reader_t *reader) {
 #define N_AUTO_CACHE_SIZE 8
-  if (args->n_cache_size == 0 && !args->ignore_obj_size) {
+  if (args->n_cache_size == 0) {
     if (set_hard_code_cache_size(args)) {
       /* find the hard-coded cache size */
       return;
