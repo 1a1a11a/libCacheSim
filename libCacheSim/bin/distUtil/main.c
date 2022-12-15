@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
 
   save_dist(args.reader, dist_array, array_size, args.ofilepath,
                    args.dist_type);
+  // save_dist_txt(args.reader, dist_array, array_size, args.ofilepath,
+  //                  args.dist_type);
 
   // save_dist_as_cnt(args.reader, dist_array, array_size, args.ofilepath,
   //                  args.dist_type);

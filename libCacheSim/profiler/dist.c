@@ -202,6 +202,19 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
   free(file_path);
 }
 
+void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
+               int64_t array_size, const char *const ofilepath,
+               const dist_type_e dist_type) {
+  char *file_path = (char *)malloc(strlen(ofilepath) + 128);
+  sprintf(file_path, "%s.%s.txt", ofilepath, dist_type_str[dist_type]);
+  FILE *file = fopen(file_path, "w");
+  for (int i = 0; i < array_size; i++) {
+    fprintf(file, "%d\n", dist_array[i]);
+  }
+  fclose(file);
+  free(file_path);
+}
+
 int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
                    int64_t *array_size) {
   FILE *file = fopen(ifilepath, "rb");

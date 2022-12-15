@@ -180,10 +180,6 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
            cache->n_req, req->obj_id, req->obj_size, cache->occupied_size,
            cache->cache_size);
 
-  // request_t *req = clone_request(req0);
-  // req->obj_size = 1;
-  // req->obj_id = cache->n_req;
-
   cache_ck_res_e cache_check = cache->check(cache, req, true);
 
   if (cache_check == cache_ck_hit) {
