@@ -99,15 +99,15 @@ bool prepare_one_row(cache_t *cache, segment_t *curr_seg, bool is_training_data,
   GLCache_params_t *params = cache->eviction_params;
   learner_t *learner = &params->learner;
 
-  // x[1] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
-  // x[2] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
-
   x[0] = (feature_t)params->curr_rtime - curr_seg->create_rtime;
   x[1] = (feature_t)curr_seg->n_byte / curr_seg->n_obj;
   x[2] = (feature_t)curr_seg->n_hit;
   x[3] = (feature_t)curr_seg->n_active;
   x[4] = (feature_t)curr_seg->req_rate;
   x[5] = (feature_t)curr_seg->miss_ratio;
+  // drop write rate because it is the same as request rate * miss ratio
+  // x[6] = (feature_t) ((curr_seg->create_rtime / 3600) % 24);
+  // x[7] = (feature_t) ((curr_seg->create_rtime / 60) % 60);
 
 #ifdef SCALE_AGE
   x[0] = (feature_t)x[3] / ((feature_t)params->curr_rtime);

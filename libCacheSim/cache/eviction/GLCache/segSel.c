@@ -11,7 +11,12 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 
   DEBUG_ASSERT(seg1->magic == MAGIC);
 
-  if (seg1->pred_utility < seg2->pred_utility) return -1;
+  if (seg1->pred_utility == seg2->pred_utility) {
+    return seg1->create_rtime - seg2->create_rtime;
+  }
+  // cannot return seg1->pred_utility - seg2->pred_utility because result may be less than 1
+  if (seg1->pred_utility < seg2->pred_utility)
+    return -1;
   else
     return 1;
 }
