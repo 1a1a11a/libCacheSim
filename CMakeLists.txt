@@ -42,12 +42,18 @@ endif()
 
 ########################################
 # define options #
+# options are cached variables https://stackoverflow.com/questions/35744647/disabling-cmake-option-has-no-effect
 ########################################
-option(USE_HUGEPAGE "use transparent huge page, can provide % improvement, do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`" ON)
+# echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
+option(USE_HUGEPAGE "use transparent hugepage" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
-option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
+option(SUPPORT_ZSTD_TRACE "whether support zstd trace" OFF)
+
+set(LOG_LEVEL INFO CACHE STRING "Enable SOMETHING support")  #
+set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE BBERBOSE VVVERBOSE)
+
 
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 
@@ -64,31 +70,30 @@ else()
 endif(USE_HUGEPAGE)
 
 if (ENABLE_GLCACHE)
-    add_compile_definitions(ENABLE_GLCache=1)
-    set(ENABLE_GLCACHE ON)
+    add_compile_definitions(ENABLE_GLCACHE=1)
 else()
-    remove_definitions(ENABLE_GLCache)
-    set(ENABLE_GLCACHE OFF)
+    remove_definitions(ENABLE_GLCACHE)
 endif(ENABLE_GLCACHE)
 
-if (LOG_LEVEL MATCHES vvverbose)
+string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
+if (LOG_LEVEL_LOWER STREQUAL "vvverbose")
     add_compile_definitions(LOGLEVEL=3)
-elseif (LOG_LEVEL MATCHES vverbose)
+elseif (LOG_LEVEL_LOWER STREQUAL "vverbose")
     add_compile_definitions(LOGLEVEL=4)
-elseif (LOG_LEVEL MATCHES verbose)
+elseif (LOG_LEVEL_LOWER STREQUAL "verbose")
     add_compile_definitions(LOGLEVEL=5)
-elseif (LOG_LEVEL MATCHES debug)
+elseif (LOG_LEVEL_LOWER STREQUAL "debug")
     add_compile_definitions(LOGLEVEL=6)
-elseif (LOG_LEVEL MATCHES info)
+elseif (LOG_LEVEL_LOWER STREQUAL "info")
     add_compile_definitions(LOGLEVEL=7)
-elseif (LOG_LEVEL MATCHES warning)
+elseif (LOG_LEVEL_LOWER STREQUAL "warn")
     add_compile_definitions(LOGLEVEL=8)
-elseif (LOG_LEVEL MATCHES severe)
+elseif (LOG_LEVEL_LOWER STREQUAL "severe")
     add_compile_definitions(LOGLEVEL=9)
 endif()
 
 
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCache ${ENABLE_GLCache}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}")
 
 # add_compile_options(-fsanitize=address)
 # add_link_options(-fsanitize=address)
@@ -106,14 +111,13 @@ set(CFLAGS "$ENV{CFLAGS} "
         "-std=gnu99 ${CMAKE_ENABLE_C99} "
         "-Wall -Wshadow -Winline "
         "-Wno-unused "
-#                "-Wstrict-prototypes -Wmissing-prototypes "
-#                "-Wmissing-declarations "
+        "-Wstrict-prototypes -Wmissing-prototypes "
+        "-Wmissing-declarations "
         "-Wredundant-decls "
-#        "-Wl,--export-dynamic "
-#                "-Wunused-value -Wunused-variable "
-#                "-Wunused-function "
-#            -std=c11
-#           "-fno-strict-aliasing "
+        "-Wunused-value -Wunused-variable "
+        # "-Wunused-function "
+        "-std=c11 "
+        "-fno-strict-aliasing "
         )
 
 
@@ -126,7 +130,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS} ${LOCAL_CFLAGS}")
 
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -ggdb3")     # -DLOGLEVEL=5
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -ggdb3")
 else ()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
 endif ()
@@ -181,7 +185,7 @@ if (ENABLE_GLCACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
     link_libraries(xgboost::xgboost)
-    message(STATUS "${XGBOOST_INCLUDE_DIR}")
+    message(STATUS "XGBOOST_INCLUDE_DIR=${XGBOOST_INCLUDE_DIR}")
 endif()
 
 
@@ -245,13 +249,14 @@ file(GLOB cache_source
     )
 
 if (ENABLE_GLCACHE)
+    file(GLOB GLCache_source
+            ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/GLCache/*.c)
     set (cache_source
-        ${cache_source}
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/GLCache/*.c 
-    )
+            ${cache_source} ${GLCache_source}
+        )
 endif(ENABLE_GLCACHE)
 
-file(GLOB traceReader_source 
+file(GLOB reader_source 
         ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/*.c 
         ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/*.c 
     )
@@ -269,7 +274,7 @@ file(GLOB utils_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/utils/*.c
     )
     
-set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${traceReader_source} ${dataStructure_source} ${profiler_source} ${utils_source})
+set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${reader_source} ${dataStructure_source} ${profiler_source} ${utils_source})
 
 
 # https://stackoverflow.com/questions/32469953/why-is-cmake-designed-so-that-it-removes-runtime-path-when-installing

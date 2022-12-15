@@ -29,7 +29,7 @@
 #include "evictionAlgo/SFIFO_Belady.h"
 
 
-#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
 #include "evictionAlgo/GLCache.h"
 #endif
 

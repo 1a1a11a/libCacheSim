@@ -123,7 +123,7 @@ typedef struct cache_obj {
     Belady_obj_metadata_t Belady;
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
-#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;
 #endif
   };

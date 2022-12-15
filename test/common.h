@@ -182,7 +182,7 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = GDSF_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "ARC") == 0) {
     cache = ARC_init(cc_params, NULL);
-#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
   } else if (strncasecmp(alg_name, "GLCache", 7) == 0) {
     const char *init_params;
     if (strcasecmp(alg_name, "GLCache-OracleLog") == 0) {

@@ -329,7 +329,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
     cc_params.hashpower -= 4;
     cache = BeladySize_init(cc_params, args->eviction_params);
-#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0) {
     cache = GLCache_init(cc_params, args->eviction_params);
 #endif

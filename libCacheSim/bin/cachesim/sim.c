@@ -74,7 +74,7 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
            (unsigned long)req_cnt, (double)miss_cnt / req_cnt,
            (double)req_cnt / 1000000.0 / runtime);
 #pragma GCC diagnostic pop
-  INFO("%s", output_str);
+  printf("%s", output_str);
 
   FILE *output_file = fopen(ofilepath, "a");
   fprintf(output_file, "%s\n", output_str);

@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   srand(0);  // for reproducibility
   reader_t *reader;
 
-#if defined(ENABLE_GLCache) && ENABLE_GLCache == 1
+#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
   reader = setup_GLCacheTestData_reader();
   g_test_add_data_func("/libCacheSim/cacheAlgo_GLCache_LEARNED_TRUE_Y", reader,
                        test_GLCache_LEARNED_TRUE_Y);
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);
-#endif /* ENABLE_GLCache */
+#endif /* ENABLE_GLCACHE */
 
   return g_test_run();
 }
