@@ -6,9 +6,9 @@
 #include "const.h"
 
 typedef enum {
-  LOGCACHE_TWO_ORACLE = 1,
-  LOGCACHE_LOG_ORACLE = 2,
-  LOGCACHE_ITEM_ORACLE = 3,  // FIFO for seg selection
+  LOGCACHE_TWO_ORACLE = 1,   // oralce to select group and object
+  LOGCACHE_LOG_ORACLE = 2,   // oracle to select group, obj_score to select obj
+  LOGCACHE_ITEM_ORACLE = 3,  // FIFO for seg selection, oracle for obj selection
   LOGCACHE_LEARNED = 4,
 } GLCache_type_e;
 
