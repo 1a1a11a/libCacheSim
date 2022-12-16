@@ -8,6 +8,7 @@
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/simulator.h"
+#include "../../utils/include/mystr.h"
 #include "../../utils/include/mysys.h"
 #include "internal.h"
 
@@ -42,24 +43,22 @@ int main(int argc, char **argv) {
   char *size_unit_str = "";
   if (args.cache_sizes[0] > GiB) {
     size_unit = GiB;
-    size_unit_str = "GB";
+    size_unit_str = "GiB";
   } else if (args.cache_sizes[0] > MiB) {
     size_unit = MiB;
-    size_unit_str = "MB";
+    size_unit_str = "MiB";
   } else if (args.cache_sizes[0] > KiB) {
     size_unit = KiB;
-    size_unit_str = "KB";
+    size_unit_str = "KiB";
   }
 
   for (int i = 0; i < args.n_cache_size; i++) {
     snprintf(output_str, 1024,
-             "%s %s, cache size %16" PRIu64 "%s : miss/n_req %16" PRIu64
-             "/%16" PRIu64
-             " (%.4lf), "
-             "byte miss ratio %.4lf\n",
+             "%s %s cache size %8ld%s, %lld req, miss ratio %.4lf, byte miss "
+             "ratio %.4lf\n",
              output_filename, args.cache->cache_name,
-             result[i].cache_size / size_unit, size_unit_str, result[i].n_miss,
-             result[i].n_req,
+             (long) result[i].cache_size / size_unit, size_unit_str,
+             (long long)result[i].n_req,
              (double)result[i].n_miss / (double)result[i].n_req,
              (double)result[i].n_miss_byte / (double)result[i].n_req_byte);
     printf("%s", output_str);
@@ -97,6 +96,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-
-
-

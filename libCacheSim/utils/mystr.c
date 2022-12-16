@@ -19,13 +19,13 @@ extern "C" {
  */
 void convert_size_to_str(unsigned long long size, char *str) {
   if (size >= TiB) {
-    sprintf(str, "%.0lf TiB", (double)size / TiB);
+    sprintf(str, "%.0lfTiB", (double)size / TiB);
   } else if (size >= GiB) {
-    sprintf(str, "%.0lf GiB", (double)size / GiB);
+    sprintf(str, "%.0lfGiB", (double)size / GiB);
   } else if (size >= MiB) {
-    sprintf(str, "%.0lf MiB", (double)size / MiB);
+    sprintf(str, "%.0lfMiB", (double)size / MiB);
   } else if (size >= KiB) {
-    sprintf(str, "%.0lf KiB", (double)size / KiB);
+    sprintf(str, "%.0lfKiB", (double)size / KiB);
   } else {
     sprintf(str, "%lld", size);
   }
