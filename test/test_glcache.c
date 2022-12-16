@@ -55,7 +55,8 @@ static void test_GLCache_ORACLE_LOG(gconstpointer user_data) {
 
 static void test_GLCache_ORACLE_ITEM(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {2002142, 1367698, 1226807, 1138180};
+  // uint64_t miss_cnt_true[] = {2002142, 1367698, 1226807, 1138180};
+  uint64_t miss_cnt_true[] = {1966381, 1310825, 1198366, 1127507};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = GLCache_CACHE_SIZE,
@@ -102,7 +103,8 @@ static void test_GLCache_ORACLE_BOTH(gconstpointer user_data) {
 
 static void test_GLCache_LEARNED_TRUE_Y(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
-  uint64_t miss_cnt_true[] = {2073551, 1363620, 1150011, 1027232};
+  // uint64_t miss_cnt_true[] = {2073551, 1363620, 1150011, 1027232};
+  uint64_t miss_cnt_true[] = {2021753, 1314854, 1093074, 1034222};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = GLCache_CACHE_SIZE,
@@ -126,7 +128,8 @@ static void test_GLCache_LEARNED_ONLINE(gconstpointer user_data) {
   uint64_t req_cnt_true = 8875971, req_byte_true = 160011631104;
 
   // uint64_t miss_cnt_true[] = {2484031, 1593598, 1260100, 1163184};
-  uint64_t miss_cnt_true[] = {2107759, 1385318, 1165780, 1031401};
+  // uint64_t miss_cnt_true[] = {2107759, 1385318, 1165780, 1031401};
+  uint64_t miss_cnt_true[] = {2187591, 1375970, 1113121, 1046752};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = GLCache_CACHE_SIZE,

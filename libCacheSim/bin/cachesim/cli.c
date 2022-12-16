@@ -65,7 +65,7 @@ static struct argp_option options[] = {
     {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
     {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
      11},
-    {"consider-obj-metadata", OPTION_CONSIDER_OBJ_METADATA, "true", 0,
+    {"consider-obj-metadata", OPTION_CONSIDER_OBJ_METADATA, "false", 0,
      "Whether consider per object metadata size in the simulated cache", 10},
 
     {0}};
