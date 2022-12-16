@@ -3,12 +3,11 @@
 //
 //
 
-#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
-
 #include <assert.h>
 #include <stdbool.h>
 
 #include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "GLCacheInternal.h"
 #include "cacheState.h"
 #include "const.h"
@@ -168,9 +167,8 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
       "rank interval %.2lf, merge consecutive segments %d, "
       "merge %d segments\n",
       GLCache_type_names[params->type], (double)cache->cache_size / 1048576.0,
-      params->segment_size,
-      params->retrain_intvl, params->train_source_y, params->rank_intvl,
-      params->merge_consecutive_segs, params->n_merge);
+      params->segment_size, params->retrain_intvl, params->train_source_y,
+      params->rank_intvl, params->merge_consecutive_segs, params->n_merge);
   return cache;
 }
 
@@ -289,16 +287,10 @@ cache_ck_res_e GLCache_get(cache_t *cache, const request_t *req) {
       params->type == LOGCACHE_ITEM_ORACLE) {
     /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
-    if (params->curr_rtime > 86400) {
-      if (l->n_train == -1) {
-        snapshot_segs_to_training_data(cache);
-        l->last_train_rtime = params->curr_rtime;
-        l->n_train = 0;
-      } else if (params->curr_rtime - l->last_train_rtime >=
-                 params->retrain_intvl + 1) {
-        train(cache);
-        snapshot_segs_to_training_data(cache);
-      }
+    if (l->last_train_rtime > 0 && params->curr_rtime - l->last_train_rtime >=
+        params->retrain_intvl + 1) {
+      train(cache);
+      snapshot_segs_to_training_data(cache);
     }
   }
 
@@ -347,6 +339,12 @@ void GLCache_evict(cache_t *cache, const request_t *req,
                    cache_obj_t *evicted_obj) {
   GLCache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
+
+  if (l->n_train == -1) {
+    snapshot_segs_to_training_data(cache);
+    l->last_train_rtime = params->curr_rtime;
+    l->n_train = 0;
+  }
 
   bucket_t *bucket = select_segs_to_evict(cache, params->obj_sel.segs_to_evict);
   if (bucket == NULL) {
