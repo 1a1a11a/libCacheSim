@@ -257,7 +257,7 @@ void _write_dist_cnt(gpointer key, gpointer value, gpointer user_data) {
   fprintf(file, "%ld:%ld, ", dist, cnt);
 }
 
-void save_dist_as_cnt(reader_t *const reader, const int32_t *dist_array,
+void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
                       const int64_t array_size, const char *const ofilepath,
                       const dist_type_e dist_type) {
   assert(get_num_of_req(reader) == array_size);

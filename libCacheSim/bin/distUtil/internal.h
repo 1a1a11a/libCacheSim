@@ -18,6 +18,7 @@ struct arguments {
   char *args[N_ARGS];
   char *trace_path;
   char ofilepath[OFILEPATH_LEN];
+  char output_type[8];
   trace_type_e trace_type;
   dist_type_e dist_type;
   char *trace_type_params;

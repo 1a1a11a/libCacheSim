@@ -26,12 +26,17 @@ int main(int argc, char **argv) {
     ERROR("Unknown distance type %d\n", args.dist_type);
   }
 
-  save_dist(args.reader, dist_array, array_size, args.ofilepath,
-                   args.dist_type);
-  // save_dist_txt(args.reader, dist_array, array_size, args.ofilepath,
-  //                  args.dist_type);
+  if (strcasecmp(args.output_type, "binary") == 0) {
+    save_dist(args.reader, dist_array, array_size, args.ofilepath,
+              args.dist_type);
 
-  // save_dist_as_cnt(args.reader, dist_array, array_size, args.ofilepath,
-  //                  args.dist_type);
+  } else if (strcasecmp(args.output_type, "txt") == 0) {
+    save_dist_txt(args.reader, dist_array, array_size, args.ofilepath,
+                  args.dist_type);
+  } else if (strcasecmp(args.output_type, "cntTxt") == 0) {
+    save_dist_as_cnt_txt(args.reader, dist_array, array_size, args.ofilepath,
+                         args.dist_type);
+  }
+
   return 0;
 }

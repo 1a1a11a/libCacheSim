@@ -18,7 +18,7 @@ const char *argp_program_bug_address =
 
 enum argp_option_short {
   OPTION_TRACE_TYPE_PARAMS = 't',
-  OPTION_OUTPUT_PATH = 'o',
+  // OPTION_OUTPUT_PATH = 'o',
   OPTION_NUM_REQ = 'n',
   OPTION_VERBOSE = 'v',
 };
@@ -34,7 +34,7 @@ static struct argp_option options[] = {
     {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Num of requests to process, default -1 means all requests in the trace"},
 
-    {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
+    // {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output"},
 
     {0}};
@@ -50,8 +50,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_TRACE_TYPE_PARAMS:
       arguments->trace_type_params = arg;
       break;
-    case OPTION_OUTPUT_PATH:
-      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
+    // case OPTION_OUTPUT_PATH:
+    //   strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
+    //   break;
+    case OPTION_NUM_REQ:
+      arguments->n_req = atoi(arg);
       break;
     case OPTION_VERBOSE:
       arguments->verbose = is_true(arg) ? true : false;
@@ -82,16 +85,21 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
    A description of the non-option command-line arguments
      that we accept.
 */
-static char args_doc[] = "trace_path trace_type dist_type";
+static char args_doc[] = "trace_path trace_type dist_type output_type output_path";
 
 /* Program documentation. */
 static char doc[] =
     "example: ./cachesim /trace/path csv stack_dist\n\n"
-    "trace can be zstd compressed\n"
-    "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin...\n"
-    "supported dist_type: "
-    "stack_dist/future_stack_dist/dist_since_last_access/"
-    "dist_since_first_access\n";
+    "trace_type: txt/csv/twr/vscsi/oracleGeneralBin and more\n"
+    "if using csv trace, considering specifying -t obj-id-is-num=true\n\n"
+    "dist_type: stack_dist/future_stack_dist/dist_since_last_access/"
+    "dist_since_first_access\n\n"
+    "output_type: binary/txt/cntTxt, "
+    "binary and txt compute and store the dist of each request, "
+    "binary uses 4B for each request, total 4 * n_req bytes, "
+    "txt stores a dist in one line, "
+    "cntTxt counts and stores the number of dist, note that -1 means no "
+    "reuse\n\n";
 
 /**
  * @brief initialize the arguments
@@ -124,8 +132,9 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_path = args->args[0];
   const char* trace_type_str = args->args[1];
   const char* dist_type_str = args->args[2];
-
-  assert(N_ARGS == 3);
+  strncasecmp(args->output_type, args->args[3], 7);
+  strncasecmp(args->ofilepath, args->args[4], OFILEPATH_LEN);
+  assert(N_ARGS == 5);
 
   if (args->ofilepath[0] == '\0') {
     snprintf(args->ofilepath, OFILEPATH_LEN, "%s.dist",
