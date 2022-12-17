@@ -49,7 +49,7 @@ option(USE_HUGEPAGE "use transparent hugepage" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_GLCACHE "enable group-learned cache" ON)
 option(SUPPORT_TTL "whether support TTL" OFF)
-option(SUPPORT_ZSTD_TRACE "whether support zstd trace" OFF)
+option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 
 set(LOG_LEVEL INFO CACHE STRING "Enable SOMETHING support")  #
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE BBERBOSE VVVERBOSE)
