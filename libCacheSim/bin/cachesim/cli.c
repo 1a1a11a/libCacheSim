@@ -103,6 +103,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_OUTPUT_PATH:
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
       break;
+    case OPTION_NUM_REQ:
+      arguments->n_req = atoi(arg);
+      break;
     case OPTION_VERBOSE:
       arguments->verbose = is_true(arg) ? true : false;
       break;
