@@ -1,5 +1,5 @@
 //
-//  a FIFO module that supports different obj size
+//  first in first out
 //
 //
 //  FIFO.c

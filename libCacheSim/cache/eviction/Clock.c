@@ -1,8 +1,7 @@
 
 
-#include "../../include/libCacheSim/evictionAlgo/Clock.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/Clock.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,13 +18,17 @@ extern "C" {
 
 // ############## per object metadata used in eviction algorithm cache obj
 typedef struct {
+  int32_t freq;
+} LFU_obj_metadata_t; 
+
+typedef struct {
   bool visited;
-} Clock_obj_params_t;
+} Clock_obj_metadata_t;
 
 typedef struct {
   int lru_id;
   bool ghost;
-} ARC_obj_params_t;
+} ARC_obj_metadata_t;
 
 typedef struct {
   int64_t eviction_vtime;
@@ -34,21 +38,21 @@ typedef struct {
   int32_t freq;
   bool ghost_evicted_by_lru;
   bool ghost_evicted_by_lfu;
-} LeCaR_obj_params_t;
+} LeCaR_obj_metadata_t;
 
 typedef struct {
   int64_t last_access_vtime;
-} Cacheus_obj_params_t;
+} Cacheus_obj_metadata_t;
 
 typedef struct {
   bool demoted;
   bool new_obj;
-} SR_LRU_obj_params_t;
+} SR_LRU_obj_metadata_t;
 
 typedef struct {
   int64_t last_access_vtime;
   int64_t freq;
-} CR_LFU_obj_params_t;
+} CR_LFU_obj_metadata_t;
 
 typedef struct {
   int64_t freq;
@@ -85,12 +89,20 @@ typedef struct {
   int16_t seen_after_snapshot : 2;
 } GLCache_obj_metadata_t;
 
+typedef struct {
+  int64_t last_access_vtime;
+} SFIFO_obj_metadata_t;
+
+typedef struct {
+  int32_t freq;
+  int32_t last_access_vtime;
+  int64_t next_access_vtime;
+  int32_t last_access_rtime;
+} misc_metadata_t;
+
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {
-#ifdef DEBUG_MODE
-  int32_t magic;
-#endif
   struct cache_obj *hash_next;
   obj_id_t obj_id;
   uint32_t obj_size;
@@ -109,20 +121,20 @@ typedef struct cache_obj {
   };
 #endif
   union {
-    struct {
-      int64_t freq;
-    } lfu;  // for LFU
-
-    Clock_obj_params_t clock;      // for Clock
-    ARC_obj_params_t ARC2;         // for ARC
-    LeCaR_obj_params_t LeCaR;      // for LeCaR
-    Cacheus_obj_params_t Cacheus;  // for Cacheus
-    SR_LRU_obj_params_t SR_LRU;
-    CR_LFU_obj_params_t CR_LFU;
+    LFU_obj_metadata_t lfu;  // for LFU
+    Clock_obj_metadata_t clock;      // for Clock
+    ARC_obj_metadata_t ARC2;         // for ARC
+    LeCaR_obj_metadata_t LeCaR;      // for LeCaR
+    Cacheus_obj_metadata_t Cacheus;  // for Cacheus
+    SR_LRU_obj_metadata_t SR_LRU;
+    CR_LFU_obj_metadata_t CR_LFU;
     Hyperbolic_obj_metadata_t hyperbolic;
     Belady_obj_metadata_t Belady;
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
+    SFIFO_obj_metadata_t SFIFO;
+    misc_metadata_t misc;
+
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;
 #endif

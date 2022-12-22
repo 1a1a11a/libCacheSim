@@ -41,17 +41,20 @@ int main(int argc, char **argv) {
 
   uint64_t size_unit = 1;
   char *size_unit_str = "";
-  if (args.cache_sizes[0] > GiB) {
-    size_unit = GiB;
-    size_unit_str = "GiB";
-  } else if (args.cache_sizes[0] > MiB) {
-    size_unit = MiB;
-    size_unit_str = "MiB";
-  } else if (args.cache_sizes[0] > KiB) {
-    size_unit = KiB;
-    size_unit_str = "KiB";
+  if (! args.ignore_obj_size) {
+    if (args.cache_sizes[0] > GiB) {
+      size_unit = GiB;
+      size_unit_str = "GiB";
+    } else if (args.cache_sizes[0] > MiB) {
+      size_unit = MiB;
+      size_unit_str = "MiB";
+    } else if (args.cache_sizes[0] > KiB) {
+      size_unit = KiB;
+      size_unit_str = "KiB";
+    }
   }
 
+  printf("\n");
   for (int i = 0; i < args.n_cache_size; i++) {
     snprintf(output_str, 1024,
              "%s %s cache size %8ld%s, %lld req, miss ratio %.4lf, byte miss "

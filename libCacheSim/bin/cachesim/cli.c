@@ -275,6 +275,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LRU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "fifo") == 0) {
     cache = FIFO_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "clock") == 0) {
+    cache = Clock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "arc") == 0) {
     cache = ARC_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "fifomerge") == 0 ||
@@ -307,6 +309,13 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LFUCpp_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "belady") == 0) {
     cache = Belady_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
+    cc_params.hashpower -= 4;
+    cache = BeladySize_init(cc_params, args->eviction_params);
+#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
+  } else if (strcasecmp(args->eviction_algo, "GLCache") == 0) {
+    cache = GLCache_init(cc_params, args->eviction_params);
+#endif
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {
       ERROR("lru-belady only supports uncompressed trace files\n");
@@ -315,7 +324,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LRU_Belady_init(cc_params, args->eviction_params);
     cache->future_stack_dist = get_stack_dist(
         reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
-    assert(get_num_of_req(reader) == cache->future_stack_dist_array_size); 
+    assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
     close_reader(reader);
 
   } else if (strcasecmp(args->eviction_algo, "sfifo-belady") == 0) {
