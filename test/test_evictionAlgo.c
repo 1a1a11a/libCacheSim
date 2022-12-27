@@ -122,7 +122,8 @@ static void test_FIFO_Reinsertion(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("FIFO_Reinsertion", cc_params, reader, NULL);
+  cache_t *cache =
+      create_test_cache("FIFO_Reinsertion", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
@@ -334,8 +335,10 @@ static void test_Cacheus(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
   // uint64_t miss_cnt_true[] = {89422, 83826, 80091, 72648,
   //                             69286, 67883, 67476, 66501};
-  // uint64_t miss_byte_true[] = {3907576320, 3663195136, 3441767424, 3147611648,
-  //                              2962097152, 2885015040, 2864854528, 2807194112};
+  // uint64_t miss_byte_true[] = {3907576320, 3663195136, 3441767424,
+  // 3147611648,
+  //                              2962097152, 2885015040, 2864854528,
+  //                              2807194112};
   uint64_t miss_cnt_true[] = {89628, 82684, 80034, 72740,
                               69192, 67763, 67477, 67048};
   uint64_t miss_byte_true[] = {3902360064, 3654431232, 3440451072, 3151679488,
@@ -465,10 +468,10 @@ static void test_LRU_K(gconstpointer user_data) {
 
 static void test_ARC(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {93798, 87602, 84471, 83216,
-                              73606, 68674, 72144, 72726};
-  uint64_t miss_byte_true[] = {4037066752, 3814765056, 3722742784, 3637225984,
-                               3158606848, 2914956800, 3077340160, 3112387584};
+  uint64_t miss_cnt_true[] = {89235, 83574, 77549, 73712,
+                              66455, 64818, 64378, 64374};
+  uint64_t miss_byte_true[] = {3894400512, 3641736704, 3439684096, 3235433984,
+                               2802633728, 2717956096, 2690736640, 2690956800};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
@@ -516,8 +519,11 @@ int main(int argc, char *argv[]) {
 
   reader = setup_csv_reader_obj_num();
   //  reader = setup_vscsi_reader();
-  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO_Merge", reader, test_FIFO_Merge);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO_Reinsertion", reader, test_FIFO_Reinsertion);
+
+  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO_Merge", reader,
+                       test_FIFO_Merge);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO_Reinsertion", reader,
+                       test_FIFO_Reinsertion);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
