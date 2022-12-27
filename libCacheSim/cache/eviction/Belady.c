@@ -63,6 +63,19 @@ void Belady_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+/* cache check + evict and insert on miss */
+cache_ck_res_e Belady_get(cache_t *cache, const request_t *req) {
+  /* -2 means the trace does not have next_access ts information */
+  DEBUG_ASSERT(req->next_access_vtime != -2);
+  Belady_params_t *params = cache->eviction_params;
+
+  DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
+  cache_ck_res_e ret = cache_get_base(cache, req);
+
+  return ret;
+}
+
+/* check whether an object is in the cache */
 cache_ck_res_e Belady_check(cache_t *cache, const request_t *req,
                             const bool update_cache) {
   Belady_params_t *params = cache->eviction_params;
@@ -90,28 +103,21 @@ cache_ck_res_e Belady_check(cache_t *cache, const request_t *req,
   return cache_ck_miss;
 }
 
-cache_ck_res_e Belady_get(cache_t *cache, const request_t *req) {
-  /* -2 means the trace does not have next_access ts information */
-  DEBUG_ASSERT(req->next_access_vtime != -2);
-  Belady_params_t *params = cache->eviction_params;
-
-  DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
-  cache_ck_res_e ret = cache_get_base(cache, req);
-
-  return ret;
-}
-
 cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
   Belady_params_t *params = cache->eviction_params;
 
-  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-    record_eviction_age(cache, 0);
-#endif
+  // if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+// #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+//     record_eviction_age(cache, 0);
+// #endif
 
-    return NULL;
+//     return NULL;
+  // }
+
+  if (req->next_access_vtime == -1) {
+    ERROR("next access time is -1, please use INT64_MAX instead\n");
   }
-
+  
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
 
   pq_node_t *node = my_malloc(pq_node_t);

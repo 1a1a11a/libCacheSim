@@ -20,7 +20,7 @@ extern "C" {
 /* need to optimize this for CPU cacheline */
 typedef struct request {
   int64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
-  uint64_t hv;        /* hash value, used when offloading hash to reader */
+  uint64_t hv;       /* hash value, used when offloading hash to reader */
   obj_id_t obj_id;
   uint32_t obj_size;
   int32_t ttl;
@@ -28,6 +28,10 @@ typedef struct request {
 
   uint64_t n_req;
   int64_t next_access_vtime;
+  /* carry necessary data between the multiple functions of serving one request
+   */
+  void *eviction_algo_data;
+
   struct {
     uint64_t key_size : 16;
     uint64_t val_size : 48;

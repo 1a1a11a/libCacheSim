@@ -194,9 +194,9 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
 
   if (cache_check == cache_ck_miss) {
     while (cache->occupied_size + req->obj_size + cache->per_obj_metadata_size >
-           cache->cache_size)
+           cache->cache_size){
       cache->evict(cache, req, NULL);
-
+    }
     cache->insert(cache, req);
   }
 

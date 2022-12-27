@@ -123,7 +123,7 @@ typedef struct cache_obj {
   union {
     LFU_obj_metadata_t lfu;  // for LFU
     Clock_obj_metadata_t clock;      // for Clock
-    ARC_obj_metadata_t ARC2;         // for ARC
+    ARC_obj_metadata_t ARC;         // for ARC
     LeCaR_obj_metadata_t LeCaR;      // for LeCaR
     Cacheus_obj_metadata_t Cacheus;  // for Cacheus
     SR_LRU_obj_metadata_t SR_LRU;

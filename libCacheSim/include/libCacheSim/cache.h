@@ -63,20 +63,20 @@ typedef int64_t (*cache_get_n_obj_func_ptr)(const cache_t *);
 #define EVICTION_AGE_LOG_BASE 1.08
 #define CACHE_NAME_ARRAY_LEN 64
 typedef struct {
-  uint64_t n_warmup_req;
-  uint64_t n_req;
-  uint64_t n_req_byte;
-  uint64_t n_miss;
-  uint64_t n_miss_byte;
+  int64_t n_warmup_req;
+  int64_t n_req;
+  int64_t n_req_byte;
+  int64_t n_miss;
+  int64_t n_miss_byte;
 
-  uint64_t n_obj;
-  uint64_t occupied_size;
-  uint64_t cache_size;
+  int64_t n_obj;
+  int64_t occupied_size;
+  int64_t cache_size;
 
   /* current trace time, used to determine obj expiration */
-  uint64_t curr_rtime;
-  uint64_t expired_obj_cnt;
-  uint64_t expired_bytes;
+  int64_t curr_rtime;
+  int64_t expired_obj_cnt;
+  int64_t expired_bytes;
   char cache_name[CACHE_NAME_ARRAY_LEN];
 } cache_stat_t;
 
@@ -104,11 +104,11 @@ struct cache {
   void *eviction_params;
 
   int64_t n_req; /* number of requests (used by some eviction algo) */
-  uint64_t n_obj;
-  uint64_t occupied_size;
+  int64_t n_obj;
+  int64_t occupied_size;
 
-  uint64_t cache_size;
-  uint64_t default_ttl;
+  int64_t cache_size;
+  int64_t default_ttl;
   int32_t per_obj_metadata_size;
 
   /* cache stat is not updated automatically, it is popped up only in

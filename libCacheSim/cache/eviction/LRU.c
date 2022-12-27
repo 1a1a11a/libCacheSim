@@ -47,6 +47,10 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
 
 void LRU_free(cache_t *cache) { cache_struct_free(cache); }
 
+cache_ck_res_e LRU_get(cache_t *cache, const request_t *req) {
+  return cache_get_base(cache, req);
+}
+
 cache_ck_res_e LRU_check(cache_t *cache, const request_t *req,
                          const bool update_cache) {
   cache_obj_t *cache_obj;
@@ -57,10 +61,6 @@ cache_ck_res_e LRU_check(cache_t *cache, const request_t *req,
     move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
   }
   return ret;
-}
-
-cache_ck_res_e LRU_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
 }
 
 cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {

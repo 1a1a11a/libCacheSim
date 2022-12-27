@@ -55,11 +55,11 @@ cache_obj_t *create_cache_obj_from_request(const request_t *req) {
  */
 void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail,
                           cache_obj_t *cache_obj) {
-  if (cache_obj == *head) {
+  if (head != NULL && cache_obj == *head) {
     *head = cache_obj->queue.next;
     if (cache_obj->queue.next != NULL) cache_obj->queue.next->queue.prev = NULL;
   }
-  if (cache_obj == *tail) {
+  if (tail != NULL && cache_obj == *tail) {
     *tail = cache_obj->queue.prev;
     if (cache_obj->queue.prev != NULL) cache_obj->queue.prev->queue.next = NULL;
   }
