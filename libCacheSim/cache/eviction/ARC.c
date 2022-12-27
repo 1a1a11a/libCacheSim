@@ -2,6 +2,8 @@
 //  ARC cache replacement algorithm
 //  https://www.usenix.org/conference/fast-03/arc-self-tuning-low-overhead-replacement-cache
 //
+//  cross checked with https://github.com/trauzti/cache/blob/master/ARC.py
+//
 //
 //  libCacheSim
 //
@@ -119,33 +121,33 @@ static inline void _ARC_sanity_check(cache_t *cache, const request_t *req) {
 
   DEBUG_ASSERT(params->L1_data_size + params->L2_data_size ==
                cache->occupied_size);
-  DEBUG_ASSERT(params->L1_data_size + params->L2_data_size +
-                   params->L1_ghost_size + params->L2_ghost_size <=
-               cache->cache_size * 2);
+  // DEBUG_ASSERT(params->L1_data_size + params->L2_data_size +
+  //                  params->L1_ghost_size + params->L2_ghost_size <=
+  //              cache->cache_size * 2);
   DEBUG_ASSERT(cache->occupied_size <= cache->cache_size);
 }
 
 static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
                                           bool last) {
-  if (cache->n_req < 25260000) return;
+  if (cache->n_req < 13200000) return;
 
   _ARC_sanity_check(cache, req);
 
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  int n_L1_data_obj = 0, n_L2_data_obj = 0, n_L1_ghost_obj = 0,
-      n_L2_ghost_obj = 0;
+  int64_t L1_data_byte = 0, L2_data_byte = 0;
+  int64_t L1_ghost_byte = 0, L2_ghost_byte = 0;
 
   cache_obj_t *obj = params->L1_data_head;
   cache_obj_t *last_obj = NULL;
   while (obj != NULL) {
     DEBUG_ASSERT(obj->ARC.lru_id == 1);
     DEBUG_ASSERT(!obj->ARC.ghost);
-    n_L1_data_obj++;
+    L1_data_byte += obj->obj_size;
     last_obj = obj;
     obj = obj->queue.next;
   }
-  DEBUG_ASSERT(n_L1_data_obj == params->L1_data_size);
+  DEBUG_ASSERT(L1_data_byte == params->L1_data_size);
   DEBUG_ASSERT(last_obj == params->L1_data_tail);
 
   obj = params->L1_ghost_head;
@@ -153,11 +155,11 @@ static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
   while (obj != NULL) {
     DEBUG_ASSERT(obj->ARC.lru_id == 1);
     DEBUG_ASSERT(obj->ARC.ghost);
-    n_L1_ghost_obj++;
+    L1_ghost_byte += obj->obj_size;
     last_obj = obj;
     obj = obj->queue.next;
   }
-  DEBUG_ASSERT(n_L1_ghost_obj == params->L1_ghost_size);
+  DEBUG_ASSERT(L1_ghost_byte == params->L1_ghost_size);
   DEBUG_ASSERT(last_obj == params->L1_ghost_tail);
 
   obj = params->L2_data_head;
@@ -165,11 +167,11 @@ static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
   while (obj != NULL) {
     DEBUG_ASSERT(obj->ARC.lru_id == 2);
     DEBUG_ASSERT(!obj->ARC.ghost);
-    n_L2_data_obj++;
+    L2_data_byte += obj->obj_size;
     last_obj = obj;
     obj = obj->queue.next;
   }
-  DEBUG_ASSERT(n_L2_data_obj == params->L2_data_size);
+  DEBUG_ASSERT(L2_data_byte == params->L2_data_size);
   DEBUG_ASSERT(last_obj == params->L2_data_tail);
 
   obj = params->L2_ghost_head;
@@ -177,11 +179,11 @@ static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
   while (obj != NULL) {
     DEBUG_ASSERT(obj->ARC.lru_id == 2);
     DEBUG_ASSERT(obj->ARC.ghost);
-    n_L2_ghost_obj++;
+    L2_ghost_byte += obj->obj_size;
     last_obj = obj;
     obj = obj->queue.next;
   }
-  DEBUG_ASSERT(n_L2_ghost_obj == params->L2_ghost_size);
+  DEBUG_ASSERT(L2_ghost_byte == params->L2_ghost_size);
   DEBUG_ASSERT(last_obj == params->L2_ghost_tail);
 
   if (last) {
@@ -240,7 +242,7 @@ void ARC_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
+cache_ck_res_e ARC_get_debug(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   // cache_ck_res_e cache_check = cache_get_base(cache, req);
 
@@ -266,12 +268,6 @@ cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
   while (cache->occupied_size + req->obj_size + cache->per_obj_metadata_size >
          cache->cache_size) {
     cache->evict(cache, req, NULL);
-    // printf("evict %ld %ld %ld, %s %ld + %ld + %ld + %ld = %ld\n", cache->n_req,
-    //        cache->n_obj, req->obj_id, ((char *)(cache->last_request_metadata)),
-    //        params->L1_data_size, params->L2_data_size, params->L1_ghost_size,
-    //        params->L2_ghost_size,
-    //        params->L1_data_size + params->L2_data_size + params->L1_ghost_size +
-    //            params->L2_ghost_size);
   }
 
   _ARC_sanity_check_full(cache, req, false);
@@ -281,6 +277,14 @@ cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
   _ARC_sanity_check_full(cache, req, true);
 
   return cache_check;
+}
+
+cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+
+  return cache_get_base(cache, req);
+
+  // return ARC_get_debug(cache, req);
 }
 
 cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
@@ -343,9 +347,6 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
       params->L2_data_size += req->obj_size + cache->per_obj_metadata_size;
     } else {
       // move to LRU2 head
-      // printf("%ld L2 hit, L2 data head %p tail %p, ghost tail %p\n",
-      //        cache->n_req, params->L2_data_head, params->L2_data_tail,
-      //        params->L2_ghost_tail);
       move_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
       params->L2_data_size += size_change;
     }
@@ -425,12 +426,13 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   if (params->L1_data_size + params->L1_ghost_size + incoming_size >
       cache->cache_size) {
     // case A: L1 = T1 U B1 has exactly c pages
-    if (params->L1_data_size < cache->cache_size) {
-      // if T1 < c, delete the LRU end of the L1 ghost, and replace
+    // if (params->L1_data_size < cache->cache_size) {
+    if (params->L1_ghost_size > 0) {
+      // if T1 < c (ghost is not empty), delete LRU of the L1 ghost, and replace
       cache_obj_t *obj = params->L1_ghost_tail;
-      int64_t sz = obj->obj_size + cache->per_obj_metadata_size;
       DEBUG_ASSERT(obj != NULL);
       DEBUG_ASSERT(obj->ARC.ghost);
+      int64_t sz = obj->obj_size + cache->per_obj_metadata_size;
       params->L1_ghost_size -= sz;
       remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
       hashtable_delete(cache->hashtable, obj);
