@@ -1,10 +1,10 @@
 
 
-#include "../include/libCacheSim/cacheObj.h"
-
 #include <assert.h>
 #include <gmodule.h>
 
+#include "../include/libCacheSim/cacheObj.h"
+#include "../include/libCacheSim/macro.h"
 #include "../include/libCacheSim/request.h"
 
 /**
@@ -128,7 +128,9 @@ void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
  */
 void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
                       cache_obj_t *cache_obj) {
-  if (*head == *tail) {
+  assert(head != NULL);
+
+  if (tail != NULL && *head == *tail) {
     // the list only has one element
     assert(cache_obj == *head);
     assert(cache_obj->queue.next == NULL);
@@ -138,10 +140,10 @@ void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
   if (cache_obj == *head) {
     return;
   }
-  if (cache_obj == *tail) {
+  if (tail != NULL && cache_obj == *tail) {
     // change tail
+    cache_obj->queue.prev->queue.next = cache_obj->queue.next;
     *tail = cache_obj->queue.prev;
-    cache_obj->queue.prev->queue.next = NULL;
 
     // move to head
     (*head)->queue.prev = cache_obj;
@@ -163,5 +165,33 @@ void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
   cache_obj->queue.next = *head;
 
   // handle head
+  *head = cache_obj;
+}
+
+/**
+ * prepend the object to the head of the doubly linked list
+ * the object is not in the list, otherwise, use move_obj_to_head
+ * @param head
+ * @param tail
+ * @param cache_obj
+ */
+void prepend_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
+                         cache_obj_t *cache_obj) {
+  assert(head != NULL);
+
+  cache_obj->queue.prev = NULL;
+  cache_obj->queue.next = *head;
+
+  if (tail != NULL && *tail == NULL) {
+    // the list is empty
+    DEBUG_ASSERT(*head == NULL);
+    *tail = cache_obj;
+  }
+
+  if (*head != NULL) {
+    // the list has at least one element
+    (*head)->queue.prev = cache_obj;
+  }
+  
   *head = cache_obj;
 }

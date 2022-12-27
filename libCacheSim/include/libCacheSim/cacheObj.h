@@ -19,7 +19,7 @@ extern "C" {
 // ############## per object metadata used in eviction algorithm cache obj
 typedef struct {
   int32_t freq;
-} LFU_obj_metadata_t; 
+} LFU_obj_metadata_t;
 
 typedef struct {
   bool visited;
@@ -121,9 +121,9 @@ typedef struct cache_obj {
   };
 #endif
   union {
-    LFU_obj_metadata_t lfu;  // for LFU
+    LFU_obj_metadata_t lfu;          // for LFU
     Clock_obj_metadata_t clock;      // for Clock
-    ARC_obj_metadata_t ARC;         // for ARC
+    ARC_obj_metadata_t ARC;          // for ARC
     LeCaR_obj_metadata_t LeCaR;      // for LeCaR
     Cacheus_obj_metadata_t Cacheus;  // for Cacheus
     SR_LRU_obj_metadata_t SR_LRU;
@@ -209,6 +209,16 @@ void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
 void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
                       cache_obj_t *cache_obj);
 
+/**
+ * prepend the object to the head of the doubly linked list
+ * the object is not in the list, otherwise, use move_obj_to_head
+ * @param head
+ * @param tail
+ * @param cache_obj
+ */
+void prepend_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
+                         cache_obj_t *cache_obj);
+                         
 /**
  * free cache_obj, this is only used when the cache_obj is explicitly malloced
  * @param cache_obj

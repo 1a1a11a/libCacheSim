@@ -102,6 +102,7 @@ struct cache {
   cache_obj_t *q_tail;  // for LRU and FIFO
 
   void *eviction_params;
+  void *last_request_metadata;
 
   int64_t n_req; /* number of requests (used by some eviction algo) */
   int64_t n_obj;
