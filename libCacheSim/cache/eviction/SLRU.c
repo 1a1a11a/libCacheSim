@@ -198,8 +198,8 @@ cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
 }
 
 cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req) {
-  /* because this field cannot be updated in time since segment LRUs are updated, 
-   * so we should not use this field */
+  /* because this field cannot be updated in time since segment LRUs are
+   * updated, so we should not use this field */
   DEBUG_ASSERT(cache->occupied_size == 0);
 
   return cache_get_base(cache, req);
@@ -219,7 +219,6 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
     if (SLRU_params->LRUs[i]->occupied_size + req->obj_size +
             cache->per_obj_metadata_size <=
         SLRU_params->LRUs[i]->cache_size) {
-      
       cache_obj = LRU_insert(SLRU_params->LRUs[i], req);
       break;
     }
@@ -261,14 +260,14 @@ void SLRU_evict(cache_t *cache, const request_t *req,
 
 #ifdef TRACK_EVICTION_R_AGE
   record_eviction_age(
-      cache, req->real_time - SLRU_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
+      cache, req->real_time -
+                 SLRU_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
 #endif
 #ifdef TRACK_EVICTION_V_AGE
   record_eviction_age(
-      cache, cache->n_req - SLRU_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
+      cache,
+      cache->n_req - SLRU_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
 #endif
-
-  DEBUG_ASSERT(cache->occupied_size >= SLRU_params->LRUs[nth_seg_to_evict]->occupied_size);
 
   cache_evict_LRU(SLRU_params->LRUs[nth_seg_to_evict], req, evicted_obj);
 }
