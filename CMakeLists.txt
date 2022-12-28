@@ -37,9 +37,6 @@ else()
 endif()
 
 
-# set(LOG_LEVEL "vverbose")
-# set(LOG_LEVEL debug)
-
 ########################################
 # define options #
 # options are cached variables https://stackoverflow.com/questions/35744647/disabling-cmake-option-has-no-effect
@@ -48,7 +45,7 @@ endif()
 option(USE_HUGEPAGE "use transparent hugepage" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 option(INCLUDE_PRIV "whether include priv" ON)
-option(ENABLE_GLCACHE "enable group-learned cache" ON)
+option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 
@@ -61,7 +58,7 @@ configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 if (SUPPORT_TTL)
     add_compile_definitions(SUPPORT_TTL=1)
 else()
-    add_compile_definitions(SUPPORT_TTL=0)
+    remove_definitions(SUPPORT_TTL)
 endif(SUPPORT_TTL)
 
 if (USE_HUGEPAGE)
@@ -75,6 +72,12 @@ if (ENABLE_GLCACHE)
 else()
     remove_definitions(ENABLE_GLCACHE)
 endif(ENABLE_GLCACHE)
+
+if (INCLUDE_PRIV)
+    add_compile_definitions(INCLUDE_PRIV=1)
+else()
+    remove_definitions(INCLUDE_PRIV)
+endif(INCLUDE_PRIV)
 
 string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
 if (LOG_LEVEL_LOWER STREQUAL "vvverbose")
@@ -93,6 +96,10 @@ elseif (LOG_LEVEL_LOWER STREQUAL "error")
     add_compile_definitions(LOGLEVEL=9)
 endif()
 
+# message(STATUS ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+# message(STATUS ${CMAKE_CXX_FLAGS_RELEASE})
+# message(STATUS ${CMAKE_CXX_FLAGS_DEBUG})
+# string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
 message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}")
 
@@ -128,13 +135,6 @@ endif ()
 
 string(REPLACE "" "" LOCAL_CFLAGS ${CFLAGS})
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS} ${LOCAL_CFLAGS}")
-
-
-if (CMAKE_BUILD_TYPE MATCHES Debug)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0 -g -ggdb3")
-else ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-endif ()
 
 
 ########################################
@@ -325,8 +325,5 @@ if (ENABLE_TESTS)
 else ()
     message(STATUS "Building without test")
 endif ()
-
-# add_executable(debug test/debug.c)
-# target_link_libraries(debug ${ALL_MODULES})
 
 

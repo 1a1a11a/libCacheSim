@@ -199,25 +199,12 @@ cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
     return cache_ck_hit;
   }
 
-  if (cache->can_insert(cache, req) == false) {
-    // if the object size changes and is too large now
-    // do not remove the object for now to be
-    // consistent with other algorithms
-    return cache_ck_hit;
-  }
-
   if (obj->SLRU.lru_id == params->n_seg - 1) {
     move_obj_to_head(&params->lru_heads[params->n_seg - 1],
                      &params->lru_tails[params->n_seg - 1], obj);
   } else {
     SLRU_promote_to_next_seg(cache, req, obj);
   }
-
-  /* object size may change over time */
-  int64_t size_change = req->obj_size - obj->obj_size;
-  cache->occupied_size += size_change;
-  params->lru_n_bytes[obj->SLRU.lru_id] += size_change;
-  obj->obj_size = req->obj_size;
 
   while (cache->occupied_size > cache->cache_size) {
     // if the LRU is full

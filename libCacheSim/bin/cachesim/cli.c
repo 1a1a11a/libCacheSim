@@ -218,11 +218,9 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   assert(N_ARGS == 4);
 
   if (args->ofilepath[0] == '\0') {
-    // char *trace_filename = strrchr(args->trace_path, '/');
-    // snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim",
-    //          trace_filename == NULL ? args->trace_path : trace_filename + 1);
+    char *trace_filename = rindex(args->trace_path, '/');
     snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim",
-             rindex(args->trace_path, '/') + 1);
+             trace_filename == NULL ? args->trace_path : trace_filename + 1);
   }
 
   /* convert trace type string to enum */
@@ -295,12 +293,14 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = GDSF_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfuda") == 0) {
     cache = LFUDA_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
-    cache = SLRU_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
-    cache = SFIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfu") == 0) {
     cache = LFU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
+    cache = SLRU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "slruv0") == 0) {
+    cache = SLRUv0_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
+    cache = SFIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower -= 4;
     cache = Hyperbolic_init(cc_params, args->eviction_params);

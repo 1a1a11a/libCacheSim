@@ -131,7 +131,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
   if (cache_obj == NULL) {
     ret = cache_ck_miss;
   } else {
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+#ifdef SUPPORT_TTL
     if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->real_time) {
       ret = cache_ck_expired;
     }
@@ -147,24 +147,28 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
 
   if (likely(update_cache)) {
     if (ret == cache_ck_hit) {
-      if (unlikely(cache_obj->obj_size != req->obj_size)) {
-        VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size,
-                 req->obj_size);
-        if (cache->can_insert(cache, req)) {
-          cache->occupied_size -= cache_obj->obj_size;
-          cache->occupied_size += req->obj_size;
-          cache_obj->obj_size = req->obj_size;
+      // no longer considers object size change over time, 
+      // the trace should not have such behavior
+      ;
+      // if (unlikely(cache_obj->obj_size != req->obj_size)) {
+      //   VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size,
+      //            req->obj_size);
+      //   if (cache->can_insert(cache, req)) {
+      //     cache->occupied_size -= cache_obj->obj_size;
+      //     cache->occupied_size += req->obj_size;
+      //     cache_obj->obj_size = req->obj_size;
 
-          while (cache->occupied_size > cache->cache_size) {
-            cache->evict(cache, req, NULL);
-          }
-        } else {
-          // TODO: should we remove the object? 
-          // but theoretically object size should not change 
-        }
-      }
+      // //     // while (cache->occupied_size > cache->cache_size) {
+      // //     //   cache->evict(cache, req, NULL);
+      // //     // }
+      // //   } else {
+      // //     // TODO: should we remove the object? 
+      // //     // but theoretically object size should not change 
+      //   }
+      // }
     } else if (ret == cache_ck_expired) {
       cache->remove(cache, cache_obj->obj_id);
+      *cache_obj_ret = NULL;
     }
   }
 
@@ -224,9 +228,9 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
   cache->n_obj += 1;
 
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+#ifdef SUPPORT_TTL
   if (cache->default_ttl != 0 && req->ttl == 0) {
-    cache_obj->ttl = (int32_t)cache->default_ttl;
+    cache_obj->exp_time = (int32_t)cache->default_ttl + req->real_time;
   }
 #endif
 

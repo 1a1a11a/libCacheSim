@@ -26,11 +26,11 @@ void copy_cache_obj_to_request(request_t *req_dest,
  */
 void copy_request_to_cache_obj(cache_obj_t *cache_obj, const request_t *req) {
   cache_obj->obj_size = req->obj_size;
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+#ifdef SUPPORT_TTL
   if (req->ttl != 0)
     cache_obj->exp_time = req->real_time + req->ttl;
   else
-    cache_obj->exp_time = UINT32_MAX;
+    cache_obj->exp_time = 0;
 #endif
   cache_obj->obj_id = req->obj_id;
 }

@@ -629,8 +629,6 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader,
                        test_Hyperbolic);
-  g_test_add_data_func_full("/libCacheSim/free_reader", reader, empty_test,
-                            test_teardown);
 
   /* Belady requires reader that has next access information, note that
    * oracleGeneral trace removes all object size changes */
