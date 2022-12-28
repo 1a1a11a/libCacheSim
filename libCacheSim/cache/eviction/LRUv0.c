@@ -11,10 +11,10 @@
 //
 
 #include <assert.h>
+#include <glib.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo/LRUv0.h"
-#include <glib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,15 +141,15 @@ void LRUv0_evict(cache_t *cache, const request_t *req,
   free_cache_obj(cache_obj);
 }
 
-void LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
+bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
   GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
                                              (gconstpointer)obj_id);
-  if (!node) {
-    PRINT_ONCE("obj to remove is not in the cache\n");
-    return;
+  if (node == NULL) {
+    return false;
   }
+
   cache_obj_t *cache_obj = (cache_obj_t *)(node->data);
   assert(cache->occupied_size >=
          cache_obj->obj_size + cache->per_obj_metadata_size);
@@ -160,6 +160,8 @@ void LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
   g_queue_delete_link(LRUv0_params->list, (GList *)node);
   g_hash_table_remove(LRUv0_params->hashtable, (gconstpointer)obj_id);
   free_cache_obj(cache_obj);
+
+  return true;
 }
 
 #ifdef __cplusplus

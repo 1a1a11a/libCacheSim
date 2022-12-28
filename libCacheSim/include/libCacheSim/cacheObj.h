@@ -90,6 +90,10 @@ typedef struct {
 } GLCache_obj_metadata_t;
 
 typedef struct {
+  int lru_id;
+} SLRU_obj_metadata_t;
+
+typedef struct {
   int64_t last_access_vtime;
 } SFIFO_obj_metadata_t;
 
@@ -110,7 +114,7 @@ typedef struct cache_obj {
     struct cache_obj *prev;
     struct cache_obj *next;
   } queue;  // for LRU, FIFO, etc.
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+#ifdef SUPPORT_TTL
   uint32_t exp_time;
 #endif
 /* age is defined as the time since the object entered the cache */
@@ -133,6 +137,7 @@ typedef struct cache_obj {
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
     SFIFO_obj_metadata_t SFIFO;
+    SLRU_obj_metadata_t SLRU;
     misc_metadata_t misc;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
@@ -218,7 +223,7 @@ void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
  */
 void prepend_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
                          cache_obj_t *cache_obj);
-                         
+
 /**
  * free cache_obj, this is only used when the cache_obj is explicitly malloced
  * @param cache_obj

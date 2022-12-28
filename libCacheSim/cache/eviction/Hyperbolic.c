@@ -1,8 +1,7 @@
 /* Hyperbolic caching */
 
-#include "../../include/libCacheSim/evictionAlgo/Hyperbolic.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/Hyperbolic.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,14 +154,15 @@ void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {
   cache_remove_obj_base(cache, obj);
 }
 
-void Hyperbolic_remove(cache_t *cache, const obj_id_t obj_id) {
+bool Hyperbolic_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    PRINT_ONCE("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
 
   Hyperbolic_remove_obj(cache, obj);
+
+  return true;
 }
 
 #ifdef __cplusplus

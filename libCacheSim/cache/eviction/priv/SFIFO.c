@@ -278,7 +278,7 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
   cache_evict_LRU(SFIFO_params->FIFOs[nth_seg_to_evict], req, evicted_obj);
 }
 
-void SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
+bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
   SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
   cache_obj_t *obj;
   for (int i = 0; i < SFIFO_params->n_seg; i++) {
@@ -287,12 +287,12 @@ void SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
       remove_obj_from_list(&(SFIFO_params->FIFOs[i])->q_head,
                            &(SFIFO_params->FIFOs[i])->q_tail, obj);
       cache_remove_obj_base(SFIFO_params->FIFOs[i], obj);
-      return;
+      return true;
     }
   }
+
   if (obj == NULL) {
-    WARN("obj (%" PRIu64 ") to remove is not in the cache\n", obj_id);
-    return;
+    return false;
   }
 }
 

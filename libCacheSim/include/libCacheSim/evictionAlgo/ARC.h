@@ -32,7 +32,7 @@ cache_obj_t *ARC_to_evict(cache_t *cache);
 
 void ARC_evict(cache_t *ARC, const request_t *req, cache_obj_t *cache_obj);
 
-void ARC_remove(cache_t *cache, obj_id_t const obj_id);
+bool ARC_remove(cache_t *cache, obj_id_t const obj_id);
 
 #ifdef __cplusplus
 }

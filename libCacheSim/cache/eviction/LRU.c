@@ -73,14 +73,15 @@ void LRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   cache_evict_LRU(cache, req, evicted_obj);
 }
 
-void LRU_remove(cache_t *cache, const obj_id_t obj_id) {
+bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    PRINT_ONCE("obj (%" PRIu64 ") to remove is not in the cache\n", obj_id);
-    return;
+    return false;
   }
   remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
   cache_remove_obj_base(cache, obj);
+
+  return true;
 }
 
 #ifdef __cplusplus

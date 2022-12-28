@@ -26,7 +26,7 @@ void Cacheus_evict(cache_t *cache, const request_t *req,
 
 void Cacheus_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
 
-void Cacheus_remove(cache_t *cache, const obj_id_t obj_id);
+bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

@@ -18,10 +18,6 @@ extern "C" {
 #define _GNU_SOURCE /* for sched in utils.h */
 #endif
 
-//#ifndef LOGLEVEL
-//#define LOGLEVEL INFO_LEVEL
-//#endif
-
 #ifndef HEAP_ALLOCATOR
 #define HEAP_ALLOCATOR HEAP_ALLOCATOR_MALLOC
 #endif

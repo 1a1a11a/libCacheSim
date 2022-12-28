@@ -23,7 +23,7 @@ cache_obj_t *Clock_to_evict(cache_t *cache);
 void Clock_evict(cache_t *cache, const request_t *req,
                  cache_obj_t *evicted_obj);
 
-void Clock_remove(cache_t *cache, const obj_id_t obj_id);
+bool Clock_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

@@ -225,7 +225,7 @@ void LeCaRv0_evict(cache_t *cache, const request_t *req,
   cache->n_obj -= 1;
 }
 
-void LeCaRv0_remove(cache_t *cache, obj_id_t obj_id) {
+bool LeCaRv0_remove(cache_t *cache, obj_id_t obj_id) {
   LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(params->LRU, obj_id);
   if (obj == NULL) {
@@ -236,11 +236,14 @@ void LeCaRv0_remove(cache_t *cache, obj_id_t obj_id) {
   obj = cache_get_obj_by_id(params->LFU, obj_id);
   if (obj == NULL) {
     ERROR("remove object %" PRIu64 "that is not cached in LFU\n", obj_id);
+    return false;
   }
   params->LFU->remove(params->LFU, obj_id);
 
   cache->occupied_size = params->LRU->occupied_size;
   cache->n_obj -= 1;
+
+  return true;
 }
 
 #ifdef __cplusplus

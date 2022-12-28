@@ -23,13 +23,13 @@ cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req);
 
-void SLRU_remove(cache_t *cache, const obj_id_t obj_id);
-
 cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req);
 
 cache_obj_t *SLRU_to_evict(cache_t *cache);
 
 void SLRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj);
+
+bool SLRU_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

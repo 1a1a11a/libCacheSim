@@ -98,12 +98,7 @@ void LFUCpp_remove_obj(cache_t *cache, cache_obj_t *obj) {
   lfu->remove_obj(cache, obj);
 }
 
-void LFUCpp_remove(cache_t *cache, const obj_id_t obj_id) {
+bool LFUCpp_remove(cache_t *cache, const obj_id_t obj_id) {
   auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
-  lfu->remove(cache, obj_id);
+  return lfu->remove(cache, obj_id);
 }
-
-
-
-
-

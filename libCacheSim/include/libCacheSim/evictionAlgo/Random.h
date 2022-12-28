@@ -32,7 +32,7 @@ void Random_evict(cache_t *Random, const request_t *req,
 
 cache_ck_res_e Random_get(cache_t *cache, const request_t *req);
 
-void Random_remove(cache_t *cache, const obj_id_t obj_id);
+bool Random_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

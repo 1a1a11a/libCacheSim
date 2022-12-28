@@ -20,7 +20,7 @@ cache_obj_t *LHD_insert(cache_t *LHD, const request_t *req);
 
 void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj);
 
-void LHD_remove(cache_t *cache, const obj_id_t obj_id);
+bool LHD_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

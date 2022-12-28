@@ -75,13 +75,15 @@ void lazyFIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-void lazyFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
+bool lazyFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    PRINT_ONCE("remove object %" PRIu64 "that is not cached\n", obj_id);
-    return;
+    return false;
   }
+
   lazyFIFO_remove_obj(cache, obj);
+
+  return true;
 }
 
 void lazyFIFO_free(cache_t *cache) { cache_struct_free(cache); }

@@ -35,7 +35,7 @@ void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
 
 void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
 
-void FIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id);
+bool FIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

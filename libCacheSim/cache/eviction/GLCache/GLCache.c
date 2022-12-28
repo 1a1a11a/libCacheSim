@@ -287,8 +287,8 @@ cache_ck_res_e GLCache_get(cache_t *cache, const request_t *req) {
       params->type == LOGCACHE_ITEM_ORACLE) {
     /* generate training data by taking a snapshot */
     learner_t *l = &params->learner;
-    if (l->last_train_rtime > 0 && params->curr_rtime - l->last_train_rtime >=
-        params->retrain_intvl + 1) {
+    if (l->last_train_rtime > 0 &&
+        params->curr_rtime - l->last_train_rtime >= params->retrain_intvl + 1) {
       train(cache);
       snapshot_segs_to_training_data(cache);
     }
@@ -379,7 +379,10 @@ void GLCache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   abort();
 }
 
-void GLCache_remove(cache_t *cache, const obj_id_t obj_id) { abort(); }
+bool GLCache_remove(cache_t *cache, const obj_id_t obj_id) {
+  abort();
+  return true;
+}
 
 #ifdef __cplusplus
 }

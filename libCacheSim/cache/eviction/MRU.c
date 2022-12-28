@@ -8,9 +8,8 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/MRU.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/MRU.h"
 
 #ifdef _cplusplus
 extern "C" {
@@ -72,14 +71,15 @@ cache_ck_res_e MRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-void MRU_remove(cache_t *cache, const obj_id_t obj_id) {
+bool MRU_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    PRINT_ONCE("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
   remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
   cache_remove_obj_base(cache, obj);
+
+  return true;
 }
 
 #ifdef _cplusplus

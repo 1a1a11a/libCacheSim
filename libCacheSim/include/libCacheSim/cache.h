@@ -52,7 +52,7 @@ typedef void (*cache_evict_func_ptr)(cache_t *, const request_t *,
 
 typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
 
-typedef void (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
+typedef bool (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
 
 typedef int64_t (*cache_get_occupied_byte_func_ptr)(const cache_t *);
 
@@ -117,7 +117,7 @@ struct cache {
   // cache_stat_t stat;
   char cache_name[CACHE_NAME_ARRAY_LEN];
   const char *init_params;
-  
+
   /* not used by most algorithms */
   int32_t *future_stack_dist;
   int64_t future_stack_dist_array_size;

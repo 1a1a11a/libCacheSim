@@ -154,15 +154,14 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   lhd->sizeMap.erase(victimItr);
 }
 
-void LHD_remove(cache_t *cache, const obj_id_t obj_id) {
+bool LHD_remove(cache_t *cache, const obj_id_t obj_id) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   repl::candidate_t id{DEFAULT_APP_ID, (int64_t)obj_id};
 
   auto itr = lhd->sizeMap.find(id);
   if (itr == lhd->sizeMap.end()) {
-    PRINT_ONCE("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
 
   cache->occupied_size -= (itr->second + cache->per_obj_metadata_size);
@@ -176,4 +175,6 @@ void LHD_remove(cache_t *cache, const obj_id_t obj_id) {
   if (idx < lhd->tags.size()) {
     lhd->indices[lhd->tags[idx].id] = idx;
   }
+
+  return true;
 }

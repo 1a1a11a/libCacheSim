@@ -180,7 +180,8 @@ void SFIFO_Belady_cool(cache_t *cache, int i) {
     SFIFO_Belady_cool(cache, i - 1);
 
   copy_cache_obj_to_request(SFIFO_Belady_params->temp_req, &evicted_obj);
-  cache_obj_t *cached_obj = FIFO_insert(SFIFO_Belady_params->FIFOs[i - 1], SFIFO_Belady_params->temp_req);
+  cache_obj_t *cached_obj = FIFO_insert(SFIFO_Belady_params->FIFOs[i - 1],
+                                        SFIFO_Belady_params->temp_req);
   cached_obj->SFIFO.last_access_vtime = evicted_obj.SFIFO.last_access_vtime;
 }
 
@@ -191,8 +192,8 @@ cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
 
   cache_obj_t *cached_obj = NULL;
   for (int i = 0; i < SFIFO_Belady_params->n_seg; i++) {
-    cache_ck_res_e ret =
-        cache_check_base(SFIFO_Belady_params->FIFOs[i], req, update_cache, &cached_obj);
+    cache_ck_res_e ret = cache_check_base(SFIFO_Belady_params->FIFOs[i], req,
+                                          update_cache, &cached_obj);
 
     if (ret == cache_ck_hit) {
       // printf("%ld %ld\n", cache->cache_size, cache->n_obj);
@@ -313,7 +314,7 @@ void SFIFO_Belady_evict(cache_t *cache, const request_t *req,
                   evicted_obj);
 }
 
-void SFIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
+bool SFIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
   SFIFO_Belady_params_t *SFIFO_Belady_params =
       (SFIFO_Belady_params_t *)(cache->eviction_params);
   cache_obj_t *obj;
@@ -323,12 +324,12 @@ void SFIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
       remove_obj_from_list(&(SFIFO_Belady_params->FIFOs[i])->q_head,
                            &(SFIFO_Belady_params->FIFOs[i])->q_tail, obj);
       cache_remove_obj_base(SFIFO_Belady_params->FIFOs[i], obj);
-      return;
+      return true;
     }
   }
+
   if (obj == NULL) {
-    WARN("obj (%" PRIu64 ") to remove is not in the cache\n", obj_id);
-    return;
+    return false;
   }
 }
 

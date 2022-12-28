@@ -1,12 +1,11 @@
 /* Cacheus: FAST'21 */
 
-#include "../../include/libCacheSim/evictionAlgo/Cacheus.h"
-
 #include <assert.h>
 #include <math.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo/CR_LFU.h"
+#include "../../include/libCacheSim/evictionAlgo/Cacheus.h"
 #include "../../include/libCacheSim/evictionAlgo/LRU.h"
 #include "../../include/libCacheSim/evictionAlgo/SR_LRU.h"
 
@@ -259,7 +258,8 @@ cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
     }
 
     else if (ret == cache_ck_miss) {
-      while (cache->occupied_size + req->obj_size + cache->per_obj_metadata_size >
+      while (cache->occupied_size + req->obj_size +
+                 cache->per_obj_metadata_size >
              cache->cache_size)
         cache->evict(cache, req, NULL);
 
@@ -355,7 +355,7 @@ void Cacheus_evict(cache_t *cache, const request_t *req,
   DEBUG_ASSERT(params->LRU->n_obj == params->LFU->n_obj);
 }
 
-void Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
+bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(params->LRU, obj_id);
   if (obj == NULL) {
@@ -366,11 +366,13 @@ void Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
   obj = cache_get_obj_by_id(params->LFU, obj_id);
   if (obj == NULL) {
     PRINT_ONCE("remove object %" PRIu64 "that is not cached in LFU\n", obj_id);
+    return false;
   }
   params->LFU->remove(params->LFU, obj_id);
 
   cache->occupied_size = params->LRU->occupied_size;
   cache->n_obj -= 1;
+  return true;
 }
 
 #ifdef __cplusplus

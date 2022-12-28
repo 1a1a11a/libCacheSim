@@ -31,7 +31,7 @@ void MRU_free(cache_t *cache);
 cache_t *MRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_init_params);
 
-void MRU_remove(cache_t *cache, const obj_id_t obj_id);
+bool MRU_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

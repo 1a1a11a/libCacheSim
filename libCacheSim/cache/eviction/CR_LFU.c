@@ -1,10 +1,9 @@
 
-#include "../../include/libCacheSim/evictionAlgo/CR_LFU.h"
-
 #include <glib.h>
 #include <math.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/CR_LFU.h"
 #include "../../include/libCacheSim/evictionAlgo/SR_LRU.h"
 // CR_LFU is used by Cacheus.
 
@@ -335,13 +334,12 @@ void CR_LFU_evict(cache_t *cache, const request_t *req,
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
 }
 
-void CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
+bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 
   if (obj == NULL) {
-    WARN("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
 
   if (params->other_cache) {
@@ -394,6 +392,8 @@ void CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
   DEBUG_ASSERT(min_freq_node != NULL);
   DEBUG_ASSERT(min_freq_node->last_obj != NULL);
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
+
+  return true;
 }
 
 #ifdef __cplusplus

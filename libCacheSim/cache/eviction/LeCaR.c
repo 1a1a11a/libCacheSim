@@ -586,11 +586,11 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
 }
 #endif
 
-void LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
+bool LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    PRINT_ONCE("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
+    return false;
   }
 
   // remove from LRU list
@@ -601,6 +601,8 @@ void LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
 
   // remove from hash table and update cache state
   cache_remove_obj_base(cache, obj);
+
+  return true;
 }
 
 #ifdef __cplusplus

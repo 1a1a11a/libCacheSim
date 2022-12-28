@@ -31,7 +31,7 @@ void Belady_evict(cache_t *Belady, __attribute__((unused)) const request_t *req,
 
 cache_ck_res_e Belady_get(cache_t *cache, const request_t *req);
 
-void Belady_remove(cache_t *cache, const obj_id_t obj_id);
+bool Belady_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

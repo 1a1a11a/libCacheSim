@@ -11,8 +11,8 @@
 
 #include <assert.h>
 
-#include "../../../include/libCacheSim/evictionAlgo/FIFO_Merge.h"
 #include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/evictionAlgo/FIFO_Merge.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -309,13 +309,15 @@ void FIFO_Merge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-void FIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id) {
+bool FIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    PRINT_ONCE("remove object %" PRIu64 "that is not cached\n", obj_id);
-    return;
+    return false;
   }
+
   FIFO_Merge_remove_obj(cache, obj);
+
+  return true;
 }
 
 #ifdef __cplusplus

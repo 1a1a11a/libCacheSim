@@ -318,6 +318,7 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
   if (ck == cache_ck_miss) {
     // cache miss
     if (params->curr_obj_in_L1_ghost) {
+      // case II: x in L1_ghost 
       DEBUG_ASSERT(params->L1_ghost_size >= 1);
       int delta = MAX(params->L2_ghost_size / params->L1_ghost_size, 1);
       params->p = MIN(params->p + delta, cache->cache_size);
@@ -326,6 +327,7 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
       remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
     }
     if (params->curr_obj_in_L2_ghost) {
+      // case III: x in L2_ghost
       DEBUG_ASSERT(params->L2_ghost_size >= 1);
       int delta = MAX(params->L1_ghost_size / params->L2_ghost_size, 1);
       params->p = MAX(params->p - delta, 0);
@@ -335,7 +337,7 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
     }
     hashtable_delete(cache->hashtable, obj);
   } else {
-    // cache hit
+    // cache hit, case I: x in L1_data or L2_data
     int32_t size_change = (int64_t)req->obj_size - (int64_t)obj->obj_size;
     if (lru_id == 1) {
       // move to LRU2
@@ -467,13 +469,12 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   }
 }
 
-void ARC_remove(cache_t *cache, const obj_id_t obj_id) {
+bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 
   if (obj == NULL) {
-    PRINT_ONCE("remove object %" PRIu64 "that is not cached\n", obj_id);
-    return;
+    return false;
   }
 
   if (obj->ARC.ghost) {
@@ -496,6 +497,8 @@ void ARC_remove(cache_t *cache, const obj_id_t obj_id) {
     cache->n_obj -= 1;
     hashtable_delete(cache->hashtable, obj);
   }
+
+  return true;
 }
 
 #ifdef __cplusplus

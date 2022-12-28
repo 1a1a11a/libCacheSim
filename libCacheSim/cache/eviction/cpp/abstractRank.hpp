@@ -12,6 +12,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "../../../include/libCacheSim/cache.h"
+#include "../../../include/libCacheSim/cacheObj.h"
+
 using namespace std;
 
 namespace eviction {
@@ -48,7 +51,6 @@ struct pq_node_type {
   }
 };
 
-
 class abstractRank {
   /* ranking based eviction algorithm */
 
@@ -72,13 +74,14 @@ class abstractRank {
     cache_remove_obj_base(cache, obj);
   }
 
-  inline void remove(cache_t *cache, obj_id_t obj_id) {
+  inline bool remove(cache_t *cache, obj_id_t obj_id) {
     cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
     if (obj == nullptr) {
-      PRINT_ONCE("obj is not in the cache\n");
-      return;
+      return false;
     }
     remove_obj(cache, obj);
+
+    return true;
   }
 
   std::set<pq_node_type> pq{};

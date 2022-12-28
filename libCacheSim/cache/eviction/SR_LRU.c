@@ -1,8 +1,7 @@
 
-#include "../../include/libCacheSim/evictionAlgo/SR_LRU.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../include/libCacheSim/evictionAlgo/SR_LRU.h"
 // SR_LRU is used by Cacheus.
 
 #ifdef __cplusplus
@@ -145,7 +144,8 @@ cache_ck_res_e SR_LRU_get(cache_t *cache, const request_t *req) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
 
   if (ret == cache_ck_miss) {
-    if (req->obj_size + cache->per_obj_metadata_size > params->SR_list->cache_size) {
+    if (req->obj_size + cache->per_obj_metadata_size >
+        params->SR_list->cache_size) {
       return ret;
     }
     SR_LRU_insert(cache, req);
@@ -306,7 +306,7 @@ void SR_LRU_evict(cache_t *cache, const request_t *req,
       params->SR_list->occupied_size + params->R_list->occupied_size;
 }
 
-void SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
+bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
@@ -356,9 +356,10 @@ void SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   }
 
   if (obj == NULL) {
-    WARN("obj (%" PRIu64 ") to remove is not in the cache\n", obj_id);
-    return;
+    return false;
   }
+
+  return true;
 }
 
 #ifdef __cplusplus

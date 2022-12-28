@@ -27,7 +27,7 @@ void BeladySize_evict(cache_t *BeladySize, const request_t *req,
 
 cache_ck_res_e BeladySize_get(cache_t *cache, const request_t *req);
 
-void BeladySize_remove(cache_t *cache, const obj_id_t obj_id);
+bool BeladySize_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

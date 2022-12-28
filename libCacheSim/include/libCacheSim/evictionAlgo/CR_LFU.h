@@ -28,14 +28,14 @@ cache_ck_res_e CR_LFU_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e CR_LFU_get(cache_t *cache, const request_t *req);
 
-void CR_LFU_remove(cache_t *cache, const obj_id_t obj_id);
-
 cache_obj_t *CR_LFU_insert(cache_t *CR_LFU, const request_t *req);
 
 cache_obj_t *CR_LFU_to_evict(cache_t *cache);
 
 void CR_LFU_evict(cache_t *CR_LFU, const request_t *req,
                   cache_obj_t *cache_obj);
+
+bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

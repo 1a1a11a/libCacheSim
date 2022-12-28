@@ -26,13 +26,13 @@ cache_ck_res_e LFUDA_check(cache_t *cache, const request_t *req,
 
 cache_ck_res_e LFUDA_get(cache_t *cache, const request_t *req);
 
-void LFUDA_remove(cache_t *cache, const obj_id_t obj_id);
-
 cache_obj_t *LFUDA_insert(cache_t *LFUDA, const request_t *req);
 
 cache_obj_t *LFUDA_to_evict(cache_t *cache);
 
 void LFUDA_evict(cache_t *LFUDA, const request_t *req, cache_obj_t *cache_obj);
+
+bool LFUDA_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

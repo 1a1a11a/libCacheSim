@@ -23,11 +23,10 @@
  * cache so objects are inserted with frequency 1
  */
 
-#include "../../include/libCacheSim/evictionAlgo/LFU.h"
-
 #include <glib.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/LFU.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -252,12 +251,11 @@ void LFU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
-void LFU_remove(cache_t *cache, obj_id_t obj_id) {
+bool LFU_remove(cache_t *cache, obj_id_t obj_id) {
   LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    WARN("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
 
   freq_node_t *freq_node =
@@ -274,6 +272,8 @@ void LFU_remove(cache_t *cache, obj_id_t obj_id) {
     /* update min freq */
     update_min_freq(params);
   }
+
+  return true;
 }
 
 #ifdef __cplusplus

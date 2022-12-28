@@ -23,7 +23,7 @@ cache_obj_t *lazyFIFO_to_evict(cache_t *cache);
 void lazyFIFO_evict(cache_t *cache, const request_t *req,
                     cache_obj_t *evicted_obj);
 
-void lazyFIFO_remove(cache_t *cache, const obj_id_t obj_id);
+bool lazyFIFO_remove(cache_t *cache, const obj_id_t obj_id);
 
 cache_t *lazyFIFOv2_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params);
@@ -42,7 +42,7 @@ cache_obj_t *lazyFIFOv2_to_evict(cache_t *cache);
 void lazyFIFOv2_evict(cache_t *cache, const request_t *req,
                     cache_obj_t *evicted_obj);
 
-void lazyFIFOv2_remove(cache_t *cache, const obj_id_t obj_id);
+bool lazyFIFOv2_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }

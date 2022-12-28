@@ -8,9 +8,8 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/Random.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/Random.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,13 +67,14 @@ void Random_evict(cache_t *cache, const request_t *req,
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
-void Random_remove(cache_t *cache, const obj_id_t obj_id) {
+bool Random_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
-    PRINT_ONCE("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
   cache_remove_obj_base(cache, obj);
+
+  return true;
 }
 
 #ifdef __cplusplus

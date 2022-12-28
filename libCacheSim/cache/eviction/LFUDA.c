@@ -6,11 +6,10 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/LFUDA.h"
-
 #include <glib.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/LFUDA.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -248,12 +247,11 @@ void LFUDA_evict(cache_t *cache, const request_t *req,
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
-void LFUDA_remove(cache_t *cache, const obj_id_t obj_id) {
+bool LFUDA_remove(cache_t *cache, const obj_id_t obj_id) {
   LFUDA_params_t *params = (LFUDA_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    WARN("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
 
   freq_node_t *freq_node =
@@ -265,6 +263,8 @@ void LFUDA_remove(cache_t *cache, const obj_id_t obj_id) {
   remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, obj);
 
   cache_remove_obj_base(cache, obj);
+
+  return true;
 }
 
 #ifdef __cplusplus

@@ -9,10 +9,9 @@
 // Created by Juncheng Yang on 3/30/21.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/Belady.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../dataStructure/pqueue.h"
+#include "../../include/libCacheSim/evictionAlgo/Belady.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -107,17 +106,17 @@ cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
   Belady_params_t *params = cache->eviction_params;
 
   // if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-// #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-//     record_eviction_age(cache, 0);
-// #endif
+  // #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  //     record_eviction_age(cache, 0);
+  // #endif
 
-//     return NULL;
+  //     return NULL;
   // }
 
   if (req->next_access_vtime == -1) {
     ERROR("next access time is -1, please use INT64_MAX instead\n");
   }
-  
+
   cache_obj_t *cached_obj = cache_insert_base(cache, req);
 
   pq_node_t *node = my_malloc(pq_node_t);
@@ -129,7 +128,7 @@ cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(
       ((pq_node_t *)cache_get_obj(cache, req)->Belady.pq_node)->pri.pri ==
       req->next_access_vtime);
-    
+
   return cached_obj;
 }
 
@@ -176,14 +175,14 @@ void Belady_remove_obj(cache_t *cache, cache_obj_t *obj) {
   cache_remove_obj_base(cache, obj);
 }
 
-void Belady_remove(cache_t *cache, const obj_id_t obj_id) {
+bool Belady_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
-    WARN("obj to remove is not in the cache\n");
-    return;
+    return false;
   }
 
   Belady_remove_obj(cache, obj);
+  return true;
 }
 
 #ifdef __cplusplus
