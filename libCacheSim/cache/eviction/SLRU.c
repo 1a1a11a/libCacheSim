@@ -79,25 +79,25 @@ static void _SLRU_verify_lru_size(cache_t *cache) {
   }
 }
 
-cache_ck_res_e SLRU_get_debug(cache_t *cache, const request_t *req) {
+bool SLRU_get_debug(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  cache_ck_res_e cache_check = cache->check(cache, req, true);
+  bool cache_hit = cache->check(cache, req, true);
 
-  if (cache_check == cache_ck_hit) {
+  if (cache_hit) {
     DEBUG_PRINT_CACHE(cache, params);
-    return cache_check;
+    return cache_hit;
   }
 
   if (cache->can_insert(cache, req) == false) {
     DEBUG_PRINT_CACHE(cache, params);
-    return cache_check;
+    return cache_hit;
   }
 
-  if (cache_check == cache_ck_miss) {
+  if (!cache_hit) {
     while (cache->occupied_size + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req, NULL);
@@ -108,7 +108,7 @@ cache_ck_res_e SLRU_get_debug(cache_t *cache, const request_t *req) {
 
   DEBUG_PRINT_CACHE(cache, params);
 
-  return cache_check;
+  return cache_hit;
 }
 
 // ######################## internal function ###########################
@@ -172,11 +172,11 @@ static void SLRU_promote_to_next_seg(cache_t *cache, const request_t *req,
 }
 
 // ######################## external function ###########################
-cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req) {
+bool SLRU_get(cache_t *cache, const request_t *req) {
 #ifdef DEBUG_MODE
   return SLRU_get_debug(cache, req);
 #else
-  cache_ck_res_e ck = cache_get_base(cache, req);
+  bool ck = cache_get_base(cache, req);
 #endif
 }
 
@@ -184,19 +184,18 @@ cache_ck_res_e SLRU_get(cache_t *cache, const request_t *req) {
  * @brief check whether an object is in the cache,
  * promote to the next segment if update_cache is true
  */
-cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
-                          const bool update_cache) {
+bool SLRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
   cache_obj_t *obj = cache_get_obj(cache, req);
 
   if (obj == NULL) {
-    return cache_ck_miss;
+    return false;
   }
 
   if (!update_cache) {
-    return cache_ck_hit;
+    return true;
   }
 
   if (obj->SLRU.lru_id == params->n_seg - 1) {
@@ -211,7 +210,7 @@ cache_ck_res_e SLRU_check(cache_t *cache, const request_t *req,
     SLRU_cool(cache, req, obj->SLRU.lru_id);
   }
 
-  return cache_ck_hit;
+  return true;
 }
 
 cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {

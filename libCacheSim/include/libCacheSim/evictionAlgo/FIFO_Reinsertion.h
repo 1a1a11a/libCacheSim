@@ -20,10 +20,10 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
 
 void FIFO_Reinsertion_free(cache_t *cache);
 
-cache_ck_res_e FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
-                                      const bool update_cache);
+bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
+                            const bool update_cache);
 
-cache_ck_res_e FIFO_Reinsertion_get(cache_t *cache, const request_t *req);
+bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *FIFO_Reinsertion_insert(cache_t *FIFO_Reinsertion,
                                      const request_t *req);

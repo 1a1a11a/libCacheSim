@@ -11,10 +11,10 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
 
 void Hyperbolic_free(cache_t *cache);
 
-cache_ck_res_e Hyperbolic_check(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+bool Hyperbolic_check(cache_t *cache, const request_t *req,
+                      const bool update_cache);
 
-cache_ck_res_e Hyperbolic_get(cache_t *cache, const request_t *req);
+bool Hyperbolic_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *Hyperbolic_insert(cache_t *Hyperbolic, const request_t *req);
 

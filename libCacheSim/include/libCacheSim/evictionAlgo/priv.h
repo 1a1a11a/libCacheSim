@@ -11,10 +11,10 @@ cache_t *lazyFIFO_init(const common_cache_params_t ccache_params,
 
 void lazyFIFO_free(cache_t *cache);
 
-cache_ck_res_e lazyFIFO_check(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+bool lazyFIFO_check(cache_t *cache, const request_t *req,
+                    const bool update_cache);
 
-cache_ck_res_e lazyFIFO_get(cache_t *cache, const request_t *req);
+bool lazyFIFO_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *lazyFIFO_insert(cache_t *lazyFIFO, const request_t *req);
 
@@ -26,25 +26,24 @@ void lazyFIFO_evict(cache_t *cache, const request_t *req,
 bool lazyFIFO_remove(cache_t *cache, const obj_id_t obj_id);
 
 cache_t *lazyFIFOv2_init(const common_cache_params_t ccache_params,
-                       const char *cache_specific_params);
+                         const char *cache_specific_params);
 
 void lazyFIFOv2_free(cache_t *cache);
 
-cache_ck_res_e lazyFIFOv2_check(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+bool lazyFIFOv2_check(cache_t *cache, const request_t *req,
+                      const bool update_cache);
 
-cache_ck_res_e lazyFIFOv2_get(cache_t *cache, const request_t *req);
+bool lazyFIFOv2_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *lazyFIFOv2_insert(cache_t *lazyFIFOv2, const request_t *req);
 
 cache_obj_t *lazyFIFOv2_to_evict(cache_t *cache);
 
 void lazyFIFOv2_evict(cache_t *cache, const request_t *req,
-                    cache_obj_t *evicted_obj);
+                      cache_obj_t *evicted_obj);
 
 bool lazyFIFOv2_remove(cache_t *cache, const obj_id_t obj_id);
 
 #ifdef __cplusplus
 }
 #endif
-

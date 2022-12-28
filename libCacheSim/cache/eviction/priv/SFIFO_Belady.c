@@ -74,8 +74,8 @@ bool SFIFO_Belady_can_insert(cache_t *cache, const request_t *req) {
   SFIFO_Belady_params_t *params =
       (SFIFO_Belady_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
-  return can_insert && (req->obj_size + cache->obj_md_size <=
-                        params->FIFOs[0]->cache_size);
+  return can_insert &&
+         (req->obj_size + cache->obj_md_size <= params->FIFOs[0]->cache_size);
 }
 
 int64_t SFIFO_Belady_get_occupied_byte(const cache_t *cache) {
@@ -185,17 +185,17 @@ void SFIFO_Belady_cool(cache_t *cache, int i) {
   cached_obj->SFIFO.last_access_vtime = evicted_obj.SFIFO.last_access_vtime;
 }
 
-cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
-                                  const bool update_cache) {
+bool SFIFO_Belady_check(cache_t *cache, const request_t *req,
+                        const bool update_cache) {
   SFIFO_Belady_params_t *SFIFO_Belady_params =
       (SFIFO_Belady_params_t *)(cache->eviction_params);
 
   cache_obj_t *cached_obj = NULL;
   for (int i = 0; i < SFIFO_Belady_params->n_seg; i++) {
-    cache_ck_res_e ret = cache_check_base(SFIFO_Belady_params->FIFOs[i], req,
-                                          update_cache, &cached_obj);
+    bool cache_hit = cache_check_base(SFIFO_Belady_params->FIFOs[i], req,
+                                      update_cache, &cached_obj);
 
-    if (ret == cache_ck_hit) {
+    if (cache_hit) {
       // printf("%ld %ld\n", cache->cache_size, cache->n_obj);
 
       // bump object from lower segment to upper segment;
@@ -223,14 +223,13 @@ cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
       //   cached_obj->SFIFO.last_access_vtime = cache->n_req;
       // }
 
-      return cache_ck_hit;
-    } else if (ret == cache_ck_expired)
-      return cache_ck_expired;
+      return cache_hit;
+    }
   }
-  return cache_ck_miss;
+  return false;
 }
 
-cache_ck_res_e SFIFO_Belady_get(cache_t *cache, const request_t *req) {
+bool SFIFO_Belady_get(cache_t *cache, const request_t *req) {
   /* because this field cannot be updated in time since segment LRUs are
    * updated, so we should not use this field */
   DEBUG_ASSERT(cache->occupied_size == 0);

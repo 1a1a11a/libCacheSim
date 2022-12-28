@@ -20,10 +20,10 @@ cache_t *FIFO_Merge_init(const common_cache_params_t ccache_params,
 
 void FIFO_Merge_free(cache_t *cache);
 
-cache_ck_res_e FIFO_Merge_check(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+bool FIFO_Merge_check(cache_t *cache, const request_t *req,
+                      const bool update_cache);
 
-cache_ck_res_e FIFO_Merge_get(cache_t *cache, const request_t *req);
+bool FIFO_Merge_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *FIFO_Merge_insert(cache_t *FIFO_Merge, const request_t *req);
 

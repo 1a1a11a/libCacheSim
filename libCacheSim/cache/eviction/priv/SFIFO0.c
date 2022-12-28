@@ -71,8 +71,8 @@ static void SFIFO_parse_params(cache_t *cache,
 bool SFIFO_can_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
-  return can_insert && (req->obj_size + cache->obj_md_size <=
-                        params->FIFOs[0]->cache_size);
+  return can_insert &&
+         (req->obj_size + cache->obj_md_size <= params->FIFOs[0]->cache_size);
 }
 
 int64_t SFIFO_get_occupied_byte(const cache_t *cache) {
@@ -174,16 +174,16 @@ void SFIFO_cool(cache_t *cache, int i) {
   FIFO_insert(SFIFO_params->FIFOs[i - 1], SFIFO_params->temp_req);
 }
 
-cache_ck_res_e SFIFO_check(cache_t *cache, const request_t *req,
-                           const bool update_cache) {
+bool SFIFO_check(cache_t *cache, const request_t *req,
+                 const bool update_cache) {
   SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
 
   for (int i = 0; i < SFIFO_params->n_seg; i++) {
-    cache_ck_res_e ret = FIFO_check(SFIFO_params->FIFOs[i], req, update_cache);
+    bool cache_hit = FIFO_check(SFIFO_params->FIFOs[i], req, update_cache);
 
     /* TODO: should we bump now or wait till a later time, if we bump later, the
      * bump will trigger cool down, which may trigger another bump */
-    if (ret == cache_ck_hit) {
+    if (cache_hit) {
       // bump object from lower segment to upper segment;
       if (i != SFIFO_params->n_seg - 1) {
         FIFO_remove(SFIFO_params->FIFOs[i], req->obj_id);
@@ -196,14 +196,13 @@ cache_ck_res_e SFIFO_check(cache_t *cache, const request_t *req,
 
         FIFO_insert(SFIFO_params->FIFOs[i + 1], req);
       }
-      return cache_ck_hit;
-    } else if (ret == cache_ck_expired)
-      return cache_ck_expired;
+      return cache_hit;
+    }
   }
-  return cache_ck_miss;
+  return false;
 }
 
-cache_ck_res_e SFIFO_get(cache_t *cache, const request_t *req) {
+bool SFIFO_get(cache_t *cache, const request_t *req) {
   /* because this field cannot be updated in time since segment LRUs are
    * updated, so we should not use this field */
   DEBUG_ASSERT(cache->occupied_size == 0);

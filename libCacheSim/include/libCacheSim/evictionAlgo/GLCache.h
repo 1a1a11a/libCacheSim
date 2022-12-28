@@ -19,10 +19,10 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
 
 void GLCache_free(cache_t *cache);
 
-cache_ck_res_e GLCache_check(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+bool GLCache_check(cache_t *cache, const request_t *req,
+                   const bool update_cache);
 
-cache_ck_res_e GLCache_get(cache_t *cache, const request_t *req);
+bool GLCache_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *GLCache_insert(cache_t *GLCache, const request_t *req);
 

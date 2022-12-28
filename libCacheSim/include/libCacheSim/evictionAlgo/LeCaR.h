@@ -12,10 +12,9 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
 
 void LeCaR_free(cache_t *cache);
 
-cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
-                           const bool update_cache);
+bool LeCaR_check(cache_t *cache, const request_t *req, const bool update_cache);
 
-cache_ck_res_e LeCaR_get(cache_t *cache, const request_t *req);
+bool LeCaR_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *LeCaR_insert(cache_t *LeCaR, const request_t *req);
 

@@ -42,12 +42,12 @@ cache_t *Random_init(const common_cache_params_t ccache_params,
 
 void Random_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e Random_check(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+bool Random_check(cache_t *cache, const request_t *req,
+                  const bool update_cache) {
   return cache_check_base(cache, req, update_cache, NULL);
 }
 
-cache_ck_res_e Random_get(cache_t *cache, const request_t *req) {
+bool Random_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 

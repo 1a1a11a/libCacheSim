@@ -9,9 +9,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/LRU.h"
-
 #include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/LRU.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,14 +46,13 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
 
 void LRU_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e LRU_get(cache_t *cache, const request_t *req) {
+bool LRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-cache_ck_res_e LRU_check(cache_t *cache, const request_t *req,
-                         const bool update_cache) {
+bool LRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
     /* lru_head is the newest, move cur obj to lru_head */

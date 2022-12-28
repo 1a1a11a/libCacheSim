@@ -272,15 +272,14 @@ static void update_weight(cache_t *cache, int64_t t, double *w_update,
   *w_no_update = (*w_no_update + 1e-10) / s;
 }
 
-cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
-                           bool update_cache) {
+bool LeCaR_check(cache_t *cache, const request_t *req, bool update_cache) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache_obj_t *cache_obj = NULL;
-  cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj == NULL) {
-    return ck;
+    return cache_hit;
   }
 
   bool is_ghost = cache_obj->LeCaR.ghost_evicted_by_lru ||
@@ -288,9 +287,9 @@ cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
 
   if (!update_cache) {
     if (is_ghost) {
-      return cache_ck_miss;
+      return false;
     } else {
-      return ck;
+      return cache_hit;
     }
   }
 
@@ -305,7 +304,7 @@ cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
     params->ghost_entry_used_size -= (cache_obj->obj_size + cache->obj_md_size);
     hashtable_delete(cache->hashtable, cache_obj);
 
-    return cache_ck_miss;
+    return false;
 
   } else if (cache_obj->LeCaR.ghost_evicted_by_lfu) {
     params->n_hit_lfu_history++;
@@ -317,7 +316,7 @@ cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
     params->ghost_entry_used_size -= (cache_obj->obj_size + cache->obj_md_size);
     hashtable_delete(cache->hashtable, cache_obj);
 
-    return cache_ck_miss;
+    return false;
 
   } else {
     // if it is an cached object, update cache state
@@ -347,12 +346,12 @@ cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
 #endif
   }
 
-  return ck;
+  return cache_hit;
 }
 
-cache_ck_res_e LeCaR_get(cache_t *cache, const request_t *req) {
+bool LeCaR_get(cache_t *cache, const request_t *req) {
   // LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
-  cache_ck_res_e ck = cache_get_base(cache, req);
+  bool ck = cache_get_base(cache, req);
   return ck;
 }
 

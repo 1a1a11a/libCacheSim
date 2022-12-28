@@ -16,20 +16,20 @@ extern "C" {
 #endif
 
 cache_t *LFUCpp_init(const common_cache_params_t ccache_params,
-                  const char *cache_specific_params);
+                     const char *cache_specific_params);
 
 void LFUCpp_free(cache_t *cache);
 
-cache_ck_res_e LFUCpp_check(cache_t *cache, const request_t *req,
-                         const bool update);
+bool LFUCpp_check(cache_t *cache, const request_t *req, const bool update);
 
-cache_ck_res_e LFUCpp_get(cache_t *cache, const request_t *req);
+bool LFUCpp_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *LFUCpp_insert(cache_t *LFUCpp, const request_t *req);
 
 cache_obj_t *LFUCpp_to_evict(cache_t *cache);
 
-void LFUCpp_evict(cache_t *LFUCpp, const request_t *req, cache_obj_t *cache_obj);
+void LFUCpp_evict(cache_t *LFUCpp, const request_t *req,
+                  cache_obj_t *cache_obj);
 
 bool LFUCpp_remove(cache_t *cache, const obj_id_t obj_id);
 

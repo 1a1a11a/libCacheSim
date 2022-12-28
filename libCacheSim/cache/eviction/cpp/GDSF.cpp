@@ -49,11 +49,10 @@ void GDSF_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e GDSF_check(cache_t *cache, const request_t *req,
-                          const bool update_cache) {
+bool GDSF_check(cache_t *cache, const request_t *req, const bool update_cache) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
   cache_obj_t *obj;
-  auto res = cache_check_base(cache, req, update_cache, &obj);
+  auto cache_hit = cache_check_base(cache, req, update_cache, &obj);
   /* this does not consider object size change */
   if (obj != nullptr && update_cache) {
     /* update frequency */
@@ -68,7 +67,7 @@ cache_ck_res_e GDSF_check(cache_t *cache, const request_t *req,
     gdsf->itr_map[obj] = itr;
   }
 
-  return res;
+  return cache_hit;
 }
 
 cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req) {

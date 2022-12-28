@@ -57,35 +57,33 @@ void SR_LRU_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e SR_LRU_check(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+bool SR_LRU_check(cache_t *cache, const request_t *req,
+                  const bool update_cache) {
   // SR_LRU_check will cover cases where:
   // Hit in Cache (R) and hit in Cache (SR) and does not hit anything
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
-  cache_ck_res_e ck_R = params->R_list->check(params->R_list, req, false);
-  cache_ck_res_e ck_sr = params->SR_list->check(params->SR_list, req, false);
+  bool cache_hit_R = params->R_list->check(params->R_list, req, false);
+  bool cache_hit_sr = params->SR_list->check(params->SR_list, req, false);
 
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }
-  DEBUG_ASSERT(
-      (ck_R == cache_ck_hit ? 1 : 0) + (ck_sr == cache_ck_hit ? 1 : 0) <= 1);
+  DEBUG_ASSERT((cache_hit_R ? 1 : 0) + (cache_hit_sr ? 1 : 0) <= 1);
   // On a cache hit where requested obj is in R, x is moved to the MRU position
   // of R.
-  if (ck_R == cache_ck_hit) {
+  if (cache_hit_R) {
     params->R_list->check(params->R_list, req, update_cache);
   }
 
   // On a cache hit where x is in SR, requested obj is moved to the MRU position
   // of R
-  else if (ck_sr == cache_ck_hit && likely(update_cache)) {
+  else if (cache_hit_sr && likely(update_cache)) {
     // Move hit obj from SR to R.
     params->SR_list->remove(params->SR_list, req->obj_id);
 
     // If R list is full, move obj from R to SR.
-    while (params->R_list->occupied_size + req->obj_size +
-               cache->obj_md_size >
+    while (params->R_list->occupied_size + req->obj_size + cache->obj_md_size >
            params->R_list->cache_size) {
       DEBUG_ASSERT(params->R_list->occupied_size != 0);
       cache_obj_t evicted_obj;
@@ -107,7 +105,7 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, const request_t *req,
   // If req is demoted from R before
   // alg infers that the size of R is too small and needs to be increased.
   cache_obj_t *obj = cache_get_obj_by_id(params->R_list, req->obj_id);
-  if (ck_sr == cache_ck_hit && obj->SR_LRU.demoted && likely(update_cache)) {
+  if (cache_hit_sr && obj->SR_LRU.demoted && likely(update_cache)) {
     double delta;
     DEBUG_ASSERT(params->C_demoted >= 1);
 
@@ -128,36 +126,34 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, const request_t *req,
     params->C_demoted -= 1;
   }
 
-  if (ck_R == cache_ck_hit || ck_sr == cache_ck_hit) {
+  if (cache_hit_R || cache_hit_sr) {
     // Update cache_size
     cache->n_obj = params->SR_list->n_obj + params->R_list->n_obj;
     cache->occupied_size =
         params->SR_list->occupied_size + params->R_list->occupied_size;
-    return cache_ck_hit;
+    return true;
   }
-  return ck_R;
+  return cache_hit_R;
 }
 
-cache_ck_res_e SR_LRU_get(cache_t *cache, const request_t *req) {
-  cache_ck_res_e ret;
-  ret = SR_LRU_check(cache, req, true);
+bool SR_LRU_get(cache_t *cache, const request_t *req) {
+  bool cache_hit = SR_LRU_check(cache, req, true);
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
 
-  if (ret == cache_ck_miss) {
-    if (req->obj_size + cache->obj_md_size >
-        params->SR_list->cache_size) {
-      return ret;
+  if (!cache_hit) {
+    if (req->obj_size + cache->obj_md_size > params->SR_list->cache_size) {
+      return cache_hit;
     }
     SR_LRU_insert(cache, req);
   }
-  return ret;
+  return cache_hit;
 }
 
 cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   // SR_LRU_insert covers the cases where hit in history or does not hit
   // anything.
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
-  cache_ck_res_e ck_hist = params->H_list->check(params->H_list, req, false);
+  bool ck_hist = params->H_list->check(params->H_list, req, false);
   static __thread request_t *req_local = NULL;
   DEBUG_ASSERT(req->obj_size + cache->obj_md_size <
                params->SR_list->cache_size);
@@ -165,13 +161,12 @@ cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
     req_local = new_request();
   }
   // If history hit
-  if (ck_hist == cache_ck_hit) {
+  if (ck_hist) {
     // On a cache miss where x is in H, x is moved to the MRU position of R.
     params->H_list->remove(params->H_list, req->obj_id);
 
     // If R list is full, move obj from R to SR.
-    while (params->R_list->occupied_size + req->obj_size +
-               cache->obj_md_size >
+    while (params->R_list->occupied_size + req->obj_size + cache->obj_md_size >
            params->R_list->cache_size) {
       DEBUG_ASSERT(params->R_list->occupied_size != 0);
 

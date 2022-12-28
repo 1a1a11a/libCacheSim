@@ -41,12 +41,11 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
 
 void FIFO_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e FIFO_get(cache_t *cache, const request_t *req) {
+bool FIFO_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-cache_ck_res_e FIFO_check(cache_t *cache, const request_t *req,
-                          const bool update_cache) {
+bool FIFO_check(cache_t *cache, const request_t *req, const bool update_cache) {
   return cache_check_base(cache, req, update_cache, NULL);
 }
 

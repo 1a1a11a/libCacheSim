@@ -41,7 +41,7 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
 
     req_cnt++;
     req_byte += req->obj_size;
-    if (cache->get(cache, req) != cache_ck_hit) {
+    if (cache->get(cache, req) == false) {
       miss_cnt++;
       miss_byte += req->obj_size;
     }

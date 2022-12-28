@@ -43,10 +43,9 @@ cache_obj_t *MRU_insert(cache_t *cache, const request_t *req) {
   return cache_insert_LRU(cache, req);
 }
 
-cache_ck_res_e MRU_check(cache_t *cache, const request_t *req,
-                         const bool update_cache) {
+bool MRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
     move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
@@ -67,7 +66,7 @@ void MRU_evict(cache_t *cache, const request_t *req, cache_obj_t *cache_obj) {
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
-cache_ck_res_e MRU_get(cache_t *cache, const request_t *req) {
+bool MRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 

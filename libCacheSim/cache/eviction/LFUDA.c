@@ -99,10 +99,10 @@ void LFUDA_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e LFUDA_check(cache_t *cache, const request_t *req,
-                           const bool update_cache) {
+bool LFUDA_check(cache_t *cache, const request_t *req,
+                 const bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool ret = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
     LFUDA_params_t *LFUDA_params = (LFUDA_params_t *)(cache->eviction_params);
@@ -151,7 +151,7 @@ cache_ck_res_e LFUDA_check(cache_t *cache, const request_t *req,
   return ret;
 }
 
-cache_ck_res_e LFUDA_get(cache_t *cache, const request_t *req) {
+bool LFUDA_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 

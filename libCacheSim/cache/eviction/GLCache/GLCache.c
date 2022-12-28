@@ -220,14 +220,14 @@ void GLCache_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e GLCache_check(cache_t *cache, const request_t *req,
-                             const bool update_cache) {
+bool GLCache_check(cache_t *cache, const request_t *req,
+                   const bool update_cache) {
   GLCache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
   if (cache_obj == NULL) {
-    return cache_ck_miss;
+    return false;
   }
 
   if (!update_cache) {
@@ -275,13 +275,13 @@ cache_ck_res_e GLCache_check(cache_t *cache, const request_t *req,
 
   DEBUG_ASSERT(n_in_cache <= 1);
 
-  return cache_ck_hit;
+  return true;
 }
 
-cache_ck_res_e GLCache_get(cache_t *cache, const request_t *req) {
+bool GLCache_get(cache_t *cache, const request_t *req) {
   GLCache_params_t *params = cache->eviction_params;
 
-  cache_ck_res_e ret = cache_get_base(cache, req);
+  bool ret = cache_get_base(cache, req);
 
   if (params->type == LOGCACHE_LEARNED ||
       params->type == LOGCACHE_ITEM_ORACLE) {

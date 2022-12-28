@@ -72,8 +72,7 @@ void LHD_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e LHD_check(cache_t *cache, const request_t *req,
-                         const bool update_cache) {
+bool LHD_check(cache_t *cache, const request_t *req, const bool update_cache) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
 
@@ -82,7 +81,7 @@ cache_ck_res_e LHD_check(cache_t *cache, const request_t *req,
   bool hit = (itr != lhd->sizeMap.end());
 
   if (!hit) {
-    return cache_ck_miss;
+    return hit;
   }
 
   if (update_cache) {
@@ -94,10 +93,10 @@ cache_ck_res_e LHD_check(cache_t *cache, const request_t *req,
     lhd->update(id, req);
   }
 
-  return cache_ck_hit;
+  return hit;
 }
 
-cache_ck_res_e LHD_get(cache_t *cache, const request_t *req) {
+bool LHD_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 

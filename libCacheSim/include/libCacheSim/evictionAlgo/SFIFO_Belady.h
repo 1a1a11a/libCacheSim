@@ -20,10 +20,10 @@ cache_t *SFIFO_Belady_init(const common_cache_params_t ccache_params,
 
 void SFIFO_Belady_free(cache_t *cache);
 
-cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
-                                  const bool update);
+bool SFIFO_Belady_check(cache_t *cache, const request_t *req,
+                        const bool update);
 
-cache_ck_res_e SFIFO_Belady_get(cache_t *cache, const request_t *req);
+bool SFIFO_Belady_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *SFIFO_Belady_insert(cache_t *cache, const request_t *req);
 

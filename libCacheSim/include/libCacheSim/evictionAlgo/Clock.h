@@ -11,10 +11,9 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
 
 void Clock_free(cache_t *cache);
 
-cache_ck_res_e Clock_check(cache_t *cache, const request_t *req,
-                           const bool update_cache);
+bool Clock_check(cache_t *cache, const request_t *req, const bool update_cache);
 
-cache_ck_res_e Clock_get(cache_t *cache, const request_t *req);
+bool Clock_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *Clock_insert(cache_t *Clock, const request_t *req);
 

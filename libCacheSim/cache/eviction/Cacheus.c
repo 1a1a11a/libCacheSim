@@ -107,18 +107,16 @@ void Cacheus_free(cache_t *cache) {
 
 static void update_weight(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  cache_ck_res_e ck_lru_g, ck_lfu_g;
+  bool cache_hit_lru_g, cache_hit_lfu_g;
 
-  ck_lru_g = params->LRU_g->check(params->LRU_g, req, false);
-  ck_lfu_g = params->LFU_g->check(params->LFU_g, req, false);
+  cache_hit_lru_g = params->LRU_g->check(params->LRU_g, req, false);
+  cache_hit_lfu_g = params->LFU_g->check(params->LFU_g, req, false);
   /* can only be evicted by one of the two experts, but is this true? (TODO) */
-  DEBUG_ASSERT((ck_lru_g == cache_ck_hit ? 1 : 0) +
-                   (ck_lfu_g == cache_ck_hit ? 1 : 0) <=
-               1);
+  DEBUG_ASSERT((cache_hit_lru_g ? 1 : 0) + (cache_hit_lfu_g ? 1 : 0) <= 1);
 
-  if (ck_lru_g == cache_ck_hit) {
+  if (cache_hit_lru_g) {
     params->w_lru = params->w_lru * exp(-params->lr);  // decrease weight_LRU
-  } else if (ck_lfu_g == cache_ck_hit) {
+  } else if (cache_hit_lfu_g) {
     params->w_lfu = params->w_lfu * exp(-params->lr);  // decrease weight_LFU
   }
   // normalize
@@ -175,41 +173,38 @@ static void update_lr(cache_t *cache, const request_t *req) {
 static void check_and_update_history(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
 
-  cache_ck_res_e ck_lru_g, ck_lfu_g;
+  bool cache_hit_lru_g, cache_hit_lfu_g;
 
-  ck_lru_g = params->LRU_g->check(params->LRU_g, req, false);
-  ck_lfu_g = params->LFU_g->check(params->LFU_g, req, false);
-  DEBUG_ASSERT((ck_lru_g == cache_ck_hit ? 1 : 0) +
-                   (ck_lfu_g == cache_ck_hit ? 1 : 0) <=
-               1);
+  cache_hit_lru_g = params->LRU_g->check(params->LRU_g, req, false);
+  cache_hit_lfu_g = params->LFU_g->check(params->LFU_g, req, false);
+  DEBUG_ASSERT((cache_hit_lru_g ? 1 : 0) + (cache_hit_lfu_g ? 1 : 0) <= 1);
 
   update_weight(cache, req);
 
-  if (ck_lru_g == cache_ck_hit) {
+  if (cache_hit_lru_g) {
     cache_obj_t *obj = cache_get_obj(params->LRU_g, req);
     params->LRU_g->remove(params->LRU_g, req->obj_id);
-  } else if (ck_lfu_g == cache_ck_hit) {
+  } else if (cache_hit_lfu_g) {
     cache_obj_t *obj = cache_get_obj(params->LFU_g, req);
     params->LFU_g->remove(params->LFU_g, req->obj_id);
   }
 }
 
-cache_ck_res_e Cacheus_check(cache_t *cache, const request_t *req,
-                             bool update_cache) {
+bool Cacheus_check(cache_t *cache, const request_t *req, bool update_cache) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
 
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
-  cache_ck_res_e ck_lru, ck_lfu;
-  ck_lru = params->LRU->check(params->LRU, req, update_cache);
-  ck_lfu = params->LFU->check(params->LFU, req, update_cache);
-  DEBUG_ASSERT(ck_lru == ck_lfu);
+  bool cache_hit_lru, cache_hit_lfu;
+  cache_hit_lru = params->LRU->check(params->LRU, req, update_cache);
+  cache_hit_lfu = params->LFU->check(params->LFU, req, update_cache);
+  DEBUG_ASSERT(cache_hit_lru == cache_hit_lfu);
   if (!update_cache) {
-    return ck_lru;
+    return cache_hit_lru;
   }
 
-  if (ck_lru != cache_ck_hit) {
+  if (!cache_hit_lru) {
     /* cache miss */
     check_and_update_history(cache, req);
   } else {
@@ -221,10 +216,10 @@ cache_ck_res_e Cacheus_check(cache_t *cache, const request_t *req,
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
   cache->occupied_size = params->LRU->occupied_size;
-  return ck_lru;
+  return cache_hit_lru;
 }
 
-cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
+bool Cacheus_get(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
@@ -232,9 +227,9 @@ cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(params->LRU->occupied_size == cache->occupied_size);
 
   cache->n_req += 1;
-  cache_ck_res_e ret = cache->check(cache, req, true);
+  bool cache_hit = cache->check(cache, req, true);
 
-  if (ret != cache_ck_hit) {
+  if (!cache_hit) {
     SR_LRU_params_t *params_LRU =
         (SR_LRU_params_t *)(params->LRU->eviction_params);
     if (req->obj_size + cache->obj_md_size > cache->cache_size ||
@@ -255,7 +250,7 @@ cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
       }
     }
 
-    else if (ret == cache_ck_miss) {
+    else if (!cache_hit) {
       while (cache->occupied_size + req->obj_size + cache->obj_md_size >
              cache->cache_size)
         cache->evict(cache, req, NULL);
@@ -263,13 +258,13 @@ cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
       cache->insert(cache, req);
     }
   }
-  // cache_ck_res_e ret = cache_get_base(cache, req);
+  // bool ret = cache_get_base(cache, req);
 
   DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
   if (cache->n_req % params->update_interval == 0) update_lr(cache, req);
-  return ret;
+  return cache_hit;
 }
 
 cache_obj_t *Cacheus_insert(cache_t *cache, const request_t *req) {
@@ -322,8 +317,7 @@ void Cacheus_evict(cache_t *cache, const request_t *req,
     params->LRU->evict(params->LRU, req, &obj);
     params->LFU->remove(params->LFU, obj.obj_id);
     copy_cache_obj_to_request(req_local, &obj);
-    DEBUG_ASSERT(params->LRU_g->check(params->LRU_g, req_local, false) ==
-                 cache_ck_miss);
+    DEBUG_ASSERT(!params->LRU_g->check(params->LRU_g, req_local, false));
     if (req_local->obj_size < params->LRU_g->cache_size) {
       params->LRU_g->get(params->LRU_g, req_local);
     }
@@ -335,8 +329,7 @@ void Cacheus_evict(cache_t *cache, const request_t *req,
                         params->LFU->to_evict(params->LFU)->obj_id);
     params->LFU->evict(params->LFU, req, &obj);
     copy_cache_obj_to_request(req_local, &obj);
-    DEBUG_ASSERT(params->LFU_g->check(params->LFU_g, req_local, false) ==
-                 cache_ck_miss);
+    DEBUG_ASSERT(!params->LFU_g->check(params->LFU_g, req_local, false));
     if (req_local->obj_size < params->LRU_g->cache_size) {
       params->LFU_g->get(params->LFU_g, req_local);
     }

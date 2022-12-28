@@ -10,13 +10,12 @@
 extern "C" {
 #endif
 
-#include "../include/libCacheSim/simulator.h"
-
 #include <math.h>
 
 #include "../cache/cacheUtils.h"
 #include "../include/libCacheSim/evictionAlgo.h"
 #include "../include/libCacheSim/plugin.h"
+#include "../include/libCacheSim/simulator.h"
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
 
@@ -48,7 +47,7 @@ static void _simulate(gpointer data, gpointer user_data) {
     reader_t *warmup_cloned_reader = clone_reader(params->warmup_reader);
     read_one_req(warmup_cloned_reader, req);
     while (req->valid) {
-      cache_ck_res_e ck = local_cache->get(local_cache, req);
+      bool ck = local_cache->get(local_cache, req);
       result[idx].n_warmup_req += 1;
       read_one_req(warmup_cloned_reader, req);
     }
@@ -69,7 +68,7 @@ static void _simulate(gpointer data, gpointer user_data) {
     while (req->valid && (n_warmup < params->n_warmup_req ||
                           req->real_time - start_ts < params->warmup_sec)) {
       req->real_time -= start_ts;
-      cache_ck_res_e ck = local_cache->get(local_cache, req);
+      bool ck = local_cache->get(local_cache, req);
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }
@@ -86,7 +85,7 @@ static void _simulate(gpointer data, gpointer user_data) {
     result[idx].n_req_byte += req->obj_size;
 
     req->real_time -= start_ts;
-    if (local_cache->get(local_cache, req) != cache_ck_hit) {
+    if (local_cache->get(local_cache, req) == false) {
       result[idx].n_miss++;
       result[idx].n_miss_byte += req->obj_size;
     }
@@ -94,7 +93,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   }
 
   /* get expiration information */
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+#ifdef SUPPORT_TTL
   if (local_cache->hashtable->n_obj != 0) {
     cache_stat_t temp_stat;
     memset(&temp_stat, 0, sizeof(cache_stat_t));
@@ -111,7 +110,8 @@ static void _simulate(gpointer data, gpointer user_data) {
   result[idx].curr_rtime = req->real_time;
   result[idx].n_obj = local_cache->n_obj;
   result[idx].occupied_size = local_cache->occupied_size;
-  strncpy(result[idx].cache_name, local_cache->cache_name, CACHE_NAME_ARRAY_LEN);
+  strncpy(result[idx].cache_name, local_cache->cache_name,
+          CACHE_NAME_ARRAY_LEN);
 
   // report progress
   g_mutex_lock(&(params->mtx));

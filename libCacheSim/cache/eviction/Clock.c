@@ -46,16 +46,16 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
 
 void Clock_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e Clock_check(cache_t *cache, const request_t *req,
-                           const bool update_cache) {
+bool Clock_check(cache_t *cache, const request_t *req,
+                 const bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e res = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
   if (cache_obj != NULL) cache_obj->clock.visited = true;
 
-  return res;
+  return cache_hit;
 }
 
-cache_ck_res_e Clock_get(cache_t *cache, const request_t *req) {
+bool Clock_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 

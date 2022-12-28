@@ -63,27 +63,27 @@ void Belady_free(cache_t *cache) {
 }
 
 /* cache check + evict and insert on miss */
-cache_ck_res_e Belady_get(cache_t *cache, const request_t *req) {
+bool Belady_get(cache_t *cache, const request_t *req) {
   /* -2 means the trace does not have next_access ts information */
   DEBUG_ASSERT(req->next_access_vtime != -2);
   Belady_params_t *params = cache->eviction_params;
 
   DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
-  cache_ck_res_e ret = cache_get_base(cache, req);
+  bool ret = cache_get_base(cache, req);
 
   return ret;
 }
 
 /* check whether an object is in the cache */
-cache_ck_res_e Belady_check(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+bool Belady_check(cache_t *cache, const request_t *req,
+                  const bool update_cache) {
   Belady_params_t *params = cache->eviction_params;
   cache_obj_t *cached_obj;
-  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cached_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
 
-  if (!update_cache) return ret;
+  if (!update_cache) return cache_hit;
 
-  if (ret == cache_ck_hit) {
+  if (cache_hit) {
     /* update next access ts, we use INT64_MAX - 10 because we reserve the
      * largest elements for immediate delete */
     if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
@@ -96,10 +96,10 @@ cache_ck_res_e Belady_check(cache_t *cache, const request_t *req,
           ((pq_node_t *)cache_get_obj(cache, req)->Belady.pq_node)->pri.pri ==
           req->next_access_vtime);
     }
-    return cache_ck_hit;
+    return true;
   }
 
-  return cache_ck_miss;
+  return false;
 }
 
 cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {

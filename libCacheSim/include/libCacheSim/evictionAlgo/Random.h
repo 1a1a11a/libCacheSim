@@ -22,15 +22,15 @@ void Random_free(cache_t *cache);
 
 cache_obj_t *Random_insert(cache_t *Random, const request_t *req);
 
-cache_ck_res_e Random_check(cache_t *cache, const request_t *req,
-                            const bool update_cache);
+bool Random_check(cache_t *cache, const request_t *req,
+                  const bool update_cache);
 
 cache_obj_t *Random_to_evict(cache_t *cache);
 
 void Random_evict(cache_t *Random, const request_t *req,
                   cache_obj_t *cache_obj);
 
-cache_ck_res_e Random_get(cache_t *cache, const request_t *req);
+bool Random_get(cache_t *cache, const request_t *req);
 
 bool Random_remove(cache_t *cache, const obj_id_t obj_id);
 

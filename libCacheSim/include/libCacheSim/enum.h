@@ -129,16 +129,16 @@ static char *req_op_str[OP_INVALID + 2] = {
     "nop",     "get",    "gets", "set",  "add",  "cas",   "replace", "append",
     "prepend", "delete", "incr", "decr", "read", "write", "update",  "invalid"};
 
-typedef enum {
-  cache_ck_hit = 0,
-  cache_ck_miss = 1,
-  cache_ck_expired = 2,
+// typedef enum {
+//   cache_ck_hit = 0,
+//   cache_ck_miss = 1,
+//   cache_ck_expired = 2,
 
-  cache_ck_invalid,
-} __attribute__((__packed__)) cache_ck_res_e;
+//   cache_ck_invalid,
+// } __attribute__((__packed__)) bool;
 
-static char *cache_ck_res_str[cache_ck_invalid + 1] = {"hit", "miss", "expired",
-                                                       "invalid"};
+// static char *cache_ck_res_str[cache_ck_invalid + 1] = {"hit", "miss", "expired",
+//                                                        "invalid"};
 
 typedef enum { ERR, OK, MY_EOF } rstatus;
 static char *rstatus_str[3] = {"ERR", "OK", "MY_EOF"};

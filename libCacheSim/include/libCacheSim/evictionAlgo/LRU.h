@@ -22,10 +22,9 @@ void *LRU_params_parser(char *params);
 
 void LRU_free(cache_t *cache);
 
-cache_ck_res_e LRU_check(cache_t *cache, const request_t *req,
-                         const bool update);
+bool LRU_check(cache_t *cache, const request_t *req, const bool update);
 
-cache_ck_res_e LRU_get(cache_t *cache, const request_t *req);
+bool LRU_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *LRU_insert(cache_t *cache, const request_t *req);
 

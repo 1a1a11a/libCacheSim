@@ -77,7 +77,7 @@ void run_cache(reader_t *reader, cache_t *cache) {
       cache->remove(cache, req->obj_id);
     } else {
       req_cnt++;
-      if (cache->get(cache, req) != cache_ck_hit) {
+      if (cache->get(cache, req) == false) {
         miss_cnt++;
       }
     }

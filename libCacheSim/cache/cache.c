@@ -119,59 +119,59 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
  *  if true, the number of requests increases by 1,
  *  the object size will be updated,
  *  and if the object is expired, it is removed from the cache
- * @return cache_ck_hit, cache_ck_miss, cache_ck_expired
+ * @return true on hit, false on miss
  */
-cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
-                                const bool update_cache,
-                                cache_obj_t **cache_obj_ret) {
-  cache_ck_res_e ret = cache_ck_hit;
+bool cache_check_base(cache_t *cache, const request_t *req,
+                      const bool update_cache, cache_obj_t **cache_obj_ret) {
+  bool cache_hit = true;
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
   if (cache_obj == NULL) {
-    ret = cache_ck_miss;
+    cache_hit = false;
   } else {
 #ifdef SUPPORT_TTL
     if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->real_time) {
-      ret = cache_ck_expired;
+      cache_hit = false;
+
+      if (update_cache) {
+        cache_remove_obj_base(cache, cache_obj);
+      }
     }
 #endif
   }
 
   if (cache_obj_ret != NULL) {
-    if (ret == cache_ck_hit) {
+    if (cache_hit) {
       *cache_obj_ret = cache_obj;
     } else
       *cache_obj_ret = NULL;
   }
 
-  if (likely(update_cache)) {
-    if (ret == cache_ck_hit) {
-      // no longer considers object size change over time,
-      // the trace should not have such behavior
-      ;
-      // if (unlikely(cache_obj->obj_size != req->obj_size)) {
-      //   VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size,
-      //            req->obj_size);
-      //   if (cache->can_insert(cache, req)) {
-      //     cache->occupied_size -= cache_obj->obj_size;
-      //     cache->occupied_size += req->obj_size;
-      //     cache_obj->obj_size = req->obj_size;
+  // if (likely(update_cache)) {
+  //   if (cache_hit) {
+  // no longer considers object size change over time,
+  // the trace should not have such behavior
+  ;
+  // if (unlikely(cache_obj->obj_size != req->obj_size)) {
+  //   VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size,
+  //            req->obj_size);
+  //   if (cache->can_insert(cache, req)) {
+  //     cache->occupied_size -= cache_obj->obj_size;
+  //     cache->occupied_size += req->obj_size;
+  //     cache_obj->obj_size = req->obj_size;
 
-      // //     // while (cache->occupied_size > cache->cache_size) {
-      // //     //   cache->evict(cache, req, NULL);
-      // //     // }
-      // //   } else {
-      // //     // TODO: should we remove the object?
-      // //     // but theoretically object size should not change
-      //   }
-      // }
-    } else if (ret == cache_ck_expired) {
-      cache->remove(cache, cache_obj->obj_id);
-      *cache_obj_ret = NULL;
-    }
-  }
+  // //     // while (cache->occupied_size > cache->cache_size) {
+  // //     //   cache->evict(cache, req, NULL);
+  // //     // }
+  // //   } else {
+  // //     // TODO: should we remove the object?
+  // //     // but theoretically object size should not change
+  //   }
+  // }
+  // }
+  // }
 
-  return ret;
+  return cache_hit;
 }
 
 /**
@@ -182,9 +182,9 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
  *
  * @param cache
  * @param req
- * @return cache_ck_hit, cache_ck_miss, cache_ck_expired
+ * @return true if cache hit, false if cache miss
  */
-cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
+bool cache_get_base(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
   VVERBOSE("******* req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
@@ -192,19 +192,19 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
            cache->n_req, req->obj_id, req->obj_size, cache->occupied_size,
            cache->cache_size);
 
-  cache_ck_res_e cache_check = cache->check(cache, req, true);
+  bool cache_hit = cache->check(cache, req, true);
 
-  if (cache_check == cache_ck_hit) {
+  if (cache_hit) {
     VVERBOSE("req %" PRIu64 ", obj %" PRIu64 " --- cache hit\n", cache->n_req,
              req->obj_id);
-    return cache_check;
+    return cache_hit;
   }
 
   if (cache->can_insert(cache, req) == false) {
-    return cache_check;
+    return cache_hit;
   }
 
-  if (cache_check == cache_ck_miss) {
+  if (!cache_hit) {
     while (cache->occupied_size + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req, NULL);
@@ -212,7 +212,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
     cache->insert(cache, req);
   }
 
-  return cache_check;
+  return cache_hit;
 }
 
 /**

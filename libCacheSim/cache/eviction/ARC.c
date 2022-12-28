@@ -242,7 +242,7 @@ void ARC_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e ARC_get_debug(cache_t *cache, const request_t *req) {
+bool ARC_get_debug(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   cache->n_req += 1;
@@ -250,18 +250,14 @@ cache_ck_res_e ARC_get_debug(cache_t *cache, const request_t *req) {
 
   _ARC_sanity_check_full(cache, req, false);
 
-  cache_ck_res_e cache_check = cache->check(cache, req, true);
+  bool cache_hit = cache->check(cache, req, true);
 
-  if (cache_check == cache_ck_hit) {
-    cache->last_request_metadata = (void *)"hit";
-  } else {
-    cache->last_request_metadata = (void *)"miss";
-  }
+  cache->last_request_metadata = cache_hit ? (void *) "hit" : (void *) "miss";
 
   _ARC_sanity_check_full(cache, req, false);
 
-  if (cache_check == cache_ck_hit) {
-    return cache_check;
+  if (cache_hit) {
+    return cache_hit;
   }
 
   while (cache->occupied_size + req->obj_size + cache->obj_md_size >
@@ -275,10 +271,10 @@ cache_ck_res_e ARC_get_debug(cache_t *cache, const request_t *req) {
 
   _ARC_sanity_check_full(cache, req, true);
 
-  return cache_check;
+  return cache_hit;
 }
 
-cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
+bool ARC_get(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   return cache_get_base(cache, req);
@@ -286,13 +282,13 @@ cache_ck_res_e ARC_get(cache_t *cache, const request_t *req) {
   // return ARC_get_debug(cache, req);
 }
 
-cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
+bool ARC_check(cache_t *cache, const request_t *req,
                          const bool update_cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   params->curr_obj_in_L1_ghost = false;
   params->curr_obj_in_L2_ghost = false;
 
-  cache_ck_res_e ck = cache_ck_miss;
+  bool cache_hit = false;
   int lru_id = -1;
   cache_obj_t *obj = cache_get_obj(cache, req);
   if (obj != NULL) {
@@ -306,16 +302,16 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
       }
     } else {
       // data hit
-      ck = cache_ck_hit;
+      cache_hit = true;
     }
   } else {
     // cache miss
-    return cache_ck_miss;
+    return false;
   }
 
-  if (!update_cache) return ck;
+  if (!update_cache) return cache_hit;
 
-  if (ck == cache_ck_miss) {
+  if (!cache_hit) {
     // cache miss
     if (params->curr_obj_in_L1_ghost) {
       // case II: x in L1_ghost
@@ -338,7 +334,6 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
     hashtable_delete(cache->hashtable, obj);
   } else {
     // cache hit, case I: x in L1_data or L2_data
-    int32_t size_change = (int64_t)req->obj_size - (int64_t)obj->obj_size;
     if (lru_id == 1) {
       // move to LRU2
       obj->ARC.lru_id = 2;
@@ -349,13 +344,10 @@ cache_ck_res_e ARC_check(cache_t *cache, const request_t *req,
     } else {
       // move to LRU2 head
       move_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
-      params->L2_data_size += size_change;
     }
-
-    cache->occupied_size += size_change;
   }
 
-  return ck;
+  return cache_hit;
 }
 
 cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {

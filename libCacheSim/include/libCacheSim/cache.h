@@ -38,10 +38,9 @@ typedef cache_t *(*cache_init_func_ptr)(const common_cache_params_t,
 
 typedef void (*cache_free_func_ptr)(cache_t *);
 
-typedef cache_ck_res_e (*cache_get_func_ptr)(cache_t *, const request_t *);
+typedef bool (*cache_get_func_ptr)(cache_t *, const request_t *);
 
-typedef cache_ck_res_e (*cache_check_func_ptr)(cache_t *, const request_t *,
-                                               const bool);
+typedef bool (*cache_check_func_ptr)(cache_t *, const request_t *, const bool);
 
 typedef bool (*cache_can_insert_func_ptr)(cache_t *cache, const request_t *req);
 
@@ -166,9 +165,8 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
  * @param cache_obj_ret
  * @return
  */
-cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
-                                const bool update_cache,
-                                cache_obj_t **cache_obj_ret);
+bool cache_check_base(cache_t *cache, const request_t *req,
+                      const bool update_cache, cache_obj_t **cache_obj_ret);
 
 /**
  * a common cache get function
@@ -176,7 +174,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
  * @param req
  * @return
  */
-cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req);
+bool cache_get_base(cache_t *cache, const request_t *req);
 
 /**
  * @brief check whether the object can be inserted into the cache

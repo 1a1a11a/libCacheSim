@@ -21,10 +21,9 @@ cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
 
 void SR_LRU_free(cache_t *cache);
 
-cache_ck_res_e SR_LRU_check(cache_t *cache, const request_t *req,
-                            const bool update);
+bool SR_LRU_check(cache_t *cache, const request_t *req, const bool update);
 
-cache_ck_res_e SR_LRU_get(cache_t *cache, const request_t *req);
+bool SR_LRU_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req);
 

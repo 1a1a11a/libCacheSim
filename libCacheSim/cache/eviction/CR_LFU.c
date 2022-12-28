@@ -93,10 +93,10 @@ void CR_LFU_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e CR_LFU_check(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+bool CR_LFU_check(cache_t *cache, const request_t *req,
+                  const bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e ret = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
     CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
@@ -164,10 +164,10 @@ cache_ck_res_e CR_LFU_check(cache_t *cache, const request_t *req,
       DEBUG_ASSERT(params->min_freq > old_min_freq);
     }
   }
-  return ret;
+  return cache_hit;
 }
 
-cache_ck_res_e CR_LFU_get(cache_t *cache, const request_t *req) {
+bool CR_LFU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 

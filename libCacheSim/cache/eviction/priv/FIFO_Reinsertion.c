@@ -175,21 +175,21 @@ void FIFO_Reinsertion_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
-                                      const bool update_cache) {
+bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
+                            const bool update_cache) {
   cache_obj_t *cache_obj;
-  cache_ck_res_e res = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
 
-  if (res == cache_ck_hit) {
+  if (cache_hit) {
     cache_obj->FIFO_Reinsertion.freq++;
     cache_obj->FIFO_Reinsertion.last_access_vtime = cache->n_req;
     cache_obj->FIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
   }
 
-  return res;
+  return cache_hit;
 }
 
-cache_ck_res_e FIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
+bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 

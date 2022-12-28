@@ -22,10 +22,9 @@ void *LRU_Belady_params_parser(char *params);
 
 void LRU_Belady_free(cache_t *cache);
 
-cache_ck_res_e LRU_Belady_check(cache_t *cache, const request_t *req,
-                                const bool update);
+bool LRU_Belady_check(cache_t *cache, const request_t *req, const bool update);
 
-cache_ck_res_e LRU_Belady_get(cache_t *cache, const request_t *req);
+bool LRU_Belady_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *LRU_Belady_insert(cache_t *cache, const request_t *req);
 

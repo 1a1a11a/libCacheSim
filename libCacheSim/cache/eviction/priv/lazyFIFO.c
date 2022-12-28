@@ -16,14 +16,14 @@
 extern "C" {
 #endif
 
-cache_ck_res_e lazyFIFO_get(cache_t *cache, const request_t *req) {
+bool lazyFIFO_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-cache_ck_res_e lazyFIFO_check(cache_t *cache, const request_t *req,
-                              const bool update_cache) {
+bool lazyFIFO_check(cache_t *cache, const request_t *req,
+                    const bool update_cache) {
   cache_obj_t *cached_obj = NULL;
-  cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &cached_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
   if (cached_obj != NULL) {
     cached_obj->misc.freq += 1;
     cached_obj->misc.last_access_rtime = req->real_time;
@@ -31,7 +31,7 @@ cache_ck_res_e lazyFIFO_check(cache_t *cache, const request_t *req,
     cached_obj->misc.next_access_vtime = req->next_access_vtime;
   }
 
-  return ck;
+  return cache_hit;
 }
 
 cache_obj_t *lazyFIFO_insert(cache_t *cache, const request_t *req) {

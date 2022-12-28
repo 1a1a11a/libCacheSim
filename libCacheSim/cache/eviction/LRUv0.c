@@ -65,14 +65,14 @@ void LRUv0_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-cache_ck_res_e LRUv0_check(cache_t *cache, const request_t *req,
-                           const bool update_cache) {
+bool LRUv0_check(cache_t *cache, const request_t *req,
+                 const bool update_cache) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
                                              GSIZE_TO_POINTER(req->obj_id));
-  if (node == NULL) return cache_ck_miss;
+  if (node == NULL) return false;
 
-  if (!update_cache) return cache_ck_hit;
+  if (!update_cache) return true;
 
   cache_obj_t *cache_obj = node->data;
   if (likely(update_cache)) {
@@ -84,13 +84,13 @@ cache_ck_res_e LRUv0_check(cache_t *cache, const request_t *req,
   }
   g_queue_unlink(LRUv0_params->list, node);
   g_queue_push_tail_link(LRUv0_params->list, node);
-  return cache_ck_hit;
+  return true;
 }
 
-cache_ck_res_e LRUv0_get(cache_t *cache, const request_t *req) {
-  cache_ck_res_e cache_check = LRUv0_check(cache, req, true);
+bool LRUv0_get(cache_t *cache, const request_t *req) {
+  bool cache_hit = LRUv0_check(cache, req, true);
   if (req->obj_size <= cache->cache_size) {
-    if (cache_check == cache_ck_miss) LRUv0_insert(cache, req);
+    if (!cache_hit) LRUv0_insert(cache, req);
 
     while (cache->occupied_size > cache->cache_size)
       LRUv0_evict(cache, req, NULL);
@@ -98,7 +98,7 @@ cache_ck_res_e LRUv0_get(cache_t *cache, const request_t *req) {
     WARN("req %lld: obj size %ld larger than cache size %ld\n",
          (long long)req->obj_id, (long)req->obj_size, (long)cache->cache_size);
   }
-  return cache_check;
+  return cache_hit;
 }
 
 cache_obj_t *LRUv0_insert(cache_t *cache, const request_t *req) {
@@ -151,8 +151,7 @@ bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
   }
 
   cache_obj_t *cache_obj = (cache_obj_t *)(node->data);
-  assert(cache->occupied_size >=
-         cache_obj->obj_size + cache->obj_md_size);
+  assert(cache->occupied_size >= cache_obj->obj_size + cache->obj_md_size);
   cache->occupied_size -=
       (((cache_obj_t *)(node->data))->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;

@@ -89,19 +89,19 @@ cache_t *BeladySize_init(const common_cache_params_t ccache_params,
 
 void BeladySize_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_ck_res_e BeladySize_get(cache_t *cache, const request_t *req) {
+bool BeladySize_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
 /* whether an object is in the cache */
-cache_ck_res_e BeladySize_check(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+bool BeladySize_check(cache_t *cache, const request_t *req,
+                      const bool update_cache) {
   cache_obj_t *obj;
-  cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &obj);
 
-  if (!update_cache) return ck;
+  if (!update_cache) return cache_hit;
 
-  if (update_cache && ck == cache_ck_hit) {
+  if (update_cache && cache_hit) {
     if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
       BeladySize_remove(cache, obj->obj_id);
     } else {
@@ -109,7 +109,7 @@ cache_ck_res_e BeladySize_check(cache_t *cache, const request_t *req,
     }
   }
 
-  return ck;
+  return cache_hit;
 }
 
 cache_obj_t *BeladySize_insert(cache_t *cache, const request_t *req) {

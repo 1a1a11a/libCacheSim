@@ -11,10 +11,9 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
 
 void LHD_free(cache_t *cache);
 
-cache_ck_res_e LHD_check(cache_t *cache, const request_t *req,
-                         const bool update_cache);
+bool LHD_check(cache_t *cache, const request_t *req, const bool update_cache);
 
-cache_ck_res_e LHD_get(cache_t *cache, const request_t *req);
+bool LHD_get(cache_t *cache, const request_t *req);
 
 cache_obj_t *LHD_insert(cache_t *LHD, const request_t *req);
 

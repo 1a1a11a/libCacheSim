@@ -21,15 +21,15 @@ void Belady_free(cache_t *cache);
 
 cache_obj_t *Belady_insert(cache_t *Belady, const request_t *req);
 
-cache_ck_res_e Belady_check(cache_t *cache, const request_t *req,
-                            const bool update_cache);
+bool Belady_check(cache_t *cache, const request_t *req,
+                  const bool update_cache);
 
 cache_obj_t *Belady_to_evict(cache_t *cache);
 
 void Belady_evict(cache_t *Belady, __attribute__((unused)) const request_t *req,
                   __attribute__((unused)) cache_obj_t *cache_obj);
 
-cache_ck_res_e Belady_get(cache_t *cache, const request_t *req);
+bool Belady_get(cache_t *cache, const request_t *req);
 
 bool Belady_remove(cache_t *cache, const obj_id_t obj_id);
 

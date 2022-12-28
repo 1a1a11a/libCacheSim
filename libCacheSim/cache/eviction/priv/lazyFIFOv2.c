@@ -16,14 +16,14 @@
 extern "C" {
 #endif
 
-cache_ck_res_e lazyFIFOv2_get(cache_t *cache, const request_t *req) {
+bool lazyFIFOv2_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-cache_ck_res_e lazyFIFOv2_check(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+bool lazyFIFOv2_check(cache_t *cache, const request_t *req,
+                      const bool update_cache) {
   cache_obj_t *cached_obj = NULL;
-  cache_ck_res_e ck = cache_check_base(cache, req, update_cache, &cached_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
   if (cached_obj != NULL) {
     cached_obj->misc.freq += 1;
     cached_obj->misc.last_access_rtime = req->real_time;
@@ -31,7 +31,7 @@ cache_ck_res_e lazyFIFOv2_check(cache_t *cache, const request_t *req,
     cached_obj->misc.next_access_vtime = req->next_access_vtime;
   }
 
-  return ck;
+  return cache_hit;
 }
 
 cache_obj_t *lazyFIFOv2_insert(cache_t *cache, const request_t *req) {
@@ -56,7 +56,7 @@ cache_obj_t *lazyFIFOv2_to_evict(cache_t *cache) {
 }
 
 void lazyFIFOv2_evict(cache_t *cache, const request_t *req,
-                    cache_obj_t *evicted_obj) {
+                      cache_obj_t *evicted_obj) {
   cache_obj_t *obj_to_evict = lazyFIFOv2_to_evict(cache);
   if (evicted_obj != NULL) {
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));

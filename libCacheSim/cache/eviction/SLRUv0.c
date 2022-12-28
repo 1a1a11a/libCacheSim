@@ -176,8 +176,8 @@ void SLRUv0_cool(cache_t *cache, int i) {
   LRU_insert(SLRUv0_params->LRUs[i - 1], req_local);
 }
 
-cache_ck_res_e SLRUv0_check(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+bool SLRUv0_check(cache_t *cache, const request_t *req,
+                  const bool update_cache) {
   SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
@@ -185,12 +185,12 @@ cache_ck_res_e SLRUv0_check(cache_t *cache, const request_t *req,
   }
 
   for (int i = 0; i < SLRUv0_params->n_seg; i++) {
-    cache_ck_res_e ret = LRU_check(SLRUv0_params->LRUs[i], req, false);
+    bool cache_hit = LRU_check(SLRUv0_params->LRUs[i], req, false);
 
-    if (ret == cache_ck_hit) {
+    if (cache_hit) {
       if (cache->can_insert(cache, req) == false) {
         // if the new object is too large
-        return cache_ck_hit;
+        return true;
       }
 
       // bump object from lower segment to upper segment;
@@ -210,19 +210,18 @@ cache_ck_res_e SLRUv0_check(cache_t *cache, const request_t *req,
 
       LRU_insert(SLRUv0_params->LRUs[dest_id], req);
 
-      return cache_ck_hit;
-    } else if (ret == cache_ck_expired)
-      return cache_ck_expired;
+      return true;
+    }
   }
-  return cache_ck_miss;
+  return false;
 }
 
-cache_ck_res_e SLRUv0_get(cache_t *cache, const request_t *req) {
+bool SLRUv0_get(cache_t *cache, const request_t *req) {
   /* because this field cannot be updated in time since segment LRUs are
    * updated, so we should not use this field */
   DEBUG_ASSERT(cache->occupied_size == 0);
 
-  cache_ck_res_e ck = cache_get_base(cache, req);
+  bool ck = cache_get_base(cache, req);
 
   // SLRUv0_print_cache(cache);
 

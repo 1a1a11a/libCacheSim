@@ -17,14 +17,13 @@ extern "C" {
 
 cache_obj_t *MRU_insert(cache_t *cache, const request_t *req);
 
-cache_ck_res_e MRU_check(cache_t *cache, const request_t *req,
-                         const bool update_cache);
+bool MRU_check(cache_t *cache, const request_t *req, const bool update_cache);
 
 cache_obj_t *MRU_to_evict(cache_t *cache);
 
 void MRU_evict(cache_t *cache, const request_t *req, cache_obj_t *cache_obj);
 
-cache_ck_res_e MRU_get(cache_t *cache, const request_t *req);
+bool MRU_get(cache_t *cache, const request_t *req);
 
 void MRU_free(cache_t *cache);
 

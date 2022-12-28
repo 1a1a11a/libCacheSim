@@ -67,8 +67,8 @@ static void SFIFO_parse_params(cache_t *cache,
 bool SFIFO_can_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
-  return can_insert && (req->obj_size + cache->obj_md_size <=
-                        params->per_seg_max_size);
+  return can_insert &&
+         (req->obj_size + cache->obj_md_size <= params->per_seg_max_size);
 }
 
 /**
@@ -115,8 +115,7 @@ static void SFIFO_promote_to_next_seg(cache_t *cache, const request_t *req,
                       &params->lru_tails[seg_id + 1], obj);
   obj->SFIFO.lru_id += 1;
   params->lru_n_bytes[seg_id] -= obj->obj_size + cache->obj_md_size;
-  params->lru_n_bytes[seg_id + 1] +=
-      obj->obj_size + cache->obj_md_size;
+  params->lru_n_bytes[seg_id + 1] += obj->obj_size + cache->obj_md_size;
   params->lru_n_objs[seg_id]--;
   params->lru_n_objs[seg_id + 1]++;
 
@@ -138,8 +137,8 @@ static void _SFIFO_print_cache(cache_t *cache) {
   printf("\n");
 }
 
-cache_ck_res_e SFIFO_get(cache_t *cache, const request_t *req) {
-  cache_ck_res_e ck = cache_get_base(cache, req);
+bool SFIFO_get(cache_t *cache, const request_t *req) {
+  bool ck = cache_get_base(cache, req);
 
   // _SFIFO_print_cache(cache);
 
@@ -150,13 +149,13 @@ cache_ck_res_e SFIFO_get(cache_t *cache, const request_t *req) {
  * @brief check whether an object is in the cache,
  * promote to the next segment if update_cache is true
  */
-cache_ck_res_e SFIFO_check(cache_t *cache, const request_t *req,
-                           const bool update_cache) {
+bool SFIFO_check(cache_t *cache, const request_t *req,
+                 const bool update_cache) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_get_obj(cache, req);
 
   if (obj == NULL) {
-    return cache_ck_miss;
+    return false;
   }
 
   if (obj->SFIFO.lru_id == params->n_seg - 1) {
@@ -170,7 +169,7 @@ cache_ck_res_e SFIFO_check(cache_t *cache, const request_t *req,
   cache->occupied_size += size_change;
   params->lru_n_bytes[obj->SFIFO.lru_id] += size_change;
 
-  return cache_ck_hit;
+  return true;
 }
 
 cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
