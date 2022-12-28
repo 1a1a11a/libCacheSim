@@ -74,7 +74,7 @@ bool SFIFO_Belady_can_insert(cache_t *cache, const request_t *req) {
   SFIFO_Belady_params_t *params =
       (SFIFO_Belady_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
-  return can_insert && (req->obj_size + cache->per_obj_metadata_size <=
+  return can_insert && (req->obj_size + cache->obj_md_size <=
                         params->FIFOs[0]->cache_size);
 }
 
@@ -115,9 +115,9 @@ cache_t *SFIFO_Belady_init(const common_cache_params_t ccache_params,
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 8 * 2;
+    cache->obj_md_size = 8 * 2;
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   cache->eviction_params =
@@ -175,7 +175,7 @@ void SFIFO_Belady_cool(cache_t *cache, int i) {
 
   // If lower FIFOs are full
   while (SFIFO_Belady_params->FIFOs[i - 1]->occupied_size +
-             evicted_obj.obj_size + cache->per_obj_metadata_size >
+             evicted_obj.obj_size + cache->obj_md_size >
          SFIFO_Belady_params->FIFOs[i - 1]->cache_size)
     SFIFO_Belady_cool(cache, i - 1);
 
@@ -210,7 +210,7 @@ cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
 
         // If the upper FIFO is full;
         while (SFIFO_Belady_params->FIFOs[i + 1]->occupied_size +
-                   req->obj_size + cache->per_obj_metadata_size >
+                   req->obj_size + cache->obj_md_size >
                SFIFO_Belady_params->FIFOs[i + 1]->cache_size)
           SFIFO_Belady_cool(cache, i + 1);
 
@@ -251,7 +251,7 @@ cache_obj_t *SFIFO_Belady_insert(cache_t *cache, const request_t *req) {
   // Find the lowest FIFO with space for insertion
   for (i = 0; i < SFIFO_Belady_params->n_seg; i++) {
     if (SFIFO_Belady_params->FIFOs[i]->occupied_size + req->obj_size +
-            cache->per_obj_metadata_size <=
+            cache->obj_md_size <=
         SFIFO_Belady_params->FIFOs[i]->cache_size) {
       cache_obj = FIFO_insert(SFIFO_Belady_params->FIFOs[i], req);
       break;
@@ -262,7 +262,7 @@ cache_obj_t *SFIFO_Belady_insert(cache_t *cache, const request_t *req) {
   // If all FIFOs are filled, evict an obj from the lowest FIFO.
   if (i == SFIFO_Belady_params->n_seg) {
     while (SFIFO_Belady_params->FIFOs[0]->occupied_size + req->obj_size +
-               cache->per_obj_metadata_size >
+               cache->obj_md_size >
            SFIFO_Belady_params->FIFOs[0]->cache_size) {
       SFIFO_Belady_evict(cache, req, NULL);
     }

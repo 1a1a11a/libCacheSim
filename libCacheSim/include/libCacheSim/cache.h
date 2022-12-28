@@ -110,7 +110,7 @@ struct cache {
 
   int64_t cache_size;
   int64_t default_ttl;
-  int32_t per_obj_metadata_size;
+  int32_t obj_md_size;
 
   /* cache stat is not updated automatically, it is popped up only in
    * some situations */
@@ -275,8 +275,7 @@ static inline void print_cache(cache_t *cache) {
          ", n_obj %" PRIu64 ", default TTL %" PRIu64
          ", per_obj_metadata_size %" PRIi32 "\n",
          cache->cache_name, cache->cache_size, cache->occupied_size,
-         cache->n_req, cache->n_obj, cache->default_ttl,
-         cache->per_obj_metadata_size);
+         cache->n_req, cache->n_obj, cache->default_ttl, cache->obj_md_size);
 }
 
 /**

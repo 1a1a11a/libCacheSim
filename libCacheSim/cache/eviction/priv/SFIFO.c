@@ -1,22 +1,25 @@
 //
-//  a FIFO module that supports different obj size
+//  segmented LRU
 //
 //  SFIFO.c
 //  libCacheSim
 //
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo/SFIFO.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/SFIFO.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct SFIFO_params {
-  cache_t **FIFOs;
+  cache_obj_t **lru_heads;
+  cache_obj_t **lru_tails;
+  int64_t *lru_n_bytes;
+  int64_t *lru_n_objs;
+  int64_t per_seg_max_size;
   int n_seg;
-  request_t *temp_req;
 } SFIFO_params_t;
 
 static const char *SFIFO_current_params(SFIFO_params_t *params) {
@@ -60,37 +63,207 @@ static void SFIFO_parse_params(cache_t *cache,
   free(old_params_str);
 }
 
-/**
- * @brief SLRU cannot insert an object larger than segment size
- *
- * @param cache
- * @param req
- * @return true
- * @return false
- */
+/* SFIFO cannot insert an object larger than segment size */
 bool SFIFO_can_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
-  return can_insert && (req->obj_size + cache->per_obj_metadata_size <=
-                        params->FIFOs[0]->cache_size);
+  return can_insert && (req->obj_size + cache->obj_md_size <=
+                        params->per_seg_max_size);
 }
 
-int64_t SFIFO_get_occupied_byte(const cache_t *cache) {
-  SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
-  int64_t occupied_byte = 0;
-  for (int i = 0; i < params->n_seg; i++) {
-    occupied_byte += params->FIFOs[i]->occupied_size;
+/**
+ * @brief move an object from ith LRU into (i-1)th LRU, cool
+ * (i-1)th LRU if it is full, where the n_seg th LRU is the most recent
+ *
+ * @param cache
+ * @param i
+ */
+static void SFIFO_cool(cache_t *cache, const request_t *req, const int i) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+
+  if (i == 0) return SFIFO_evict(cache, req, NULL);
+
+  cache_obj_t *obj = params->lru_tails[i];
+  DEBUG_ASSERT(obj != NULL);
+  DEBUG_ASSERT(obj->SFIFO.lru_id == i);
+  remove_obj_from_list(&params->lru_heads[i], &params->lru_tails[i], obj);
+  prepend_obj_to_head(&params->lru_heads[i - 1], &params->lru_tails[i - 1],
+                      obj);
+  obj->SFIFO.lru_id = i - 1;
+  params->lru_n_bytes[i] -= obj->obj_size;
+  params->lru_n_bytes[i - 1] += obj->obj_size;
+  params->lru_n_objs[i]--;
+  params->lru_n_objs[i - 1]++;
+
+  // If lower LRUs are full
+  while (params->lru_n_bytes[i - 1] > params->per_seg_max_size) {
+    SFIFO_cool(cache, req, i - 1);
   }
-  return occupied_byte;
 }
 
-int64_t SFIFO_get_n_obj(const cache_t *cache) {
-  SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
-  int64_t n_obj = 0;
-  for (int i = 0; i < params->n_seg; i++) {
-    n_obj += params->FIFOs[i]->n_obj;
+/**
+ * @brief promote the object from the current segment to the next (i+1) segment
+ */
+static void SFIFO_promote_to_next_seg(cache_t *cache, const request_t *req,
+                                      cache_obj_t *obj) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+
+  int seg_id = obj->SFIFO.lru_id;
+  remove_obj_from_list(&params->lru_heads[seg_id], &params->lru_tails[seg_id],
+                       obj);
+  prepend_obj_to_head(&params->lru_heads[seg_id + 1],
+                      &params->lru_tails[seg_id + 1], obj);
+  obj->SFIFO.lru_id += 1;
+  params->lru_n_bytes[seg_id] -= obj->obj_size + cache->obj_md_size;
+  params->lru_n_bytes[seg_id + 1] +=
+      obj->obj_size + cache->obj_md_size;
+  params->lru_n_objs[seg_id]--;
+  params->lru_n_objs[seg_id + 1]++;
+
+  while (params->lru_n_bytes[seg_id + 1] > params->per_seg_max_size) {
+    SFIFO_cool(cache, req, seg_id + 1);
   }
-  return n_obj;
+}
+
+static void _SFIFO_print_cache(cache_t *cache) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  for (int i = 0; i < params->n_seg; i++) {
+    cache_obj_t *obj = params->lru_heads[i];
+    while (obj != NULL) {
+      printf("%lu->", obj->obj_id);
+      obj = obj->queue.next;
+    }
+    printf(" | ");
+  }
+  printf("\n");
+}
+
+cache_ck_res_e SFIFO_get(cache_t *cache, const request_t *req) {
+  cache_ck_res_e ck = cache_get_base(cache, req);
+
+  // _SFIFO_print_cache(cache);
+
+  return ck;
+}
+
+/**
+ * @brief check whether an object is in the cache,
+ * promote to the next segment if update_cache is true
+ */
+cache_ck_res_e SFIFO_check(cache_t *cache, const request_t *req,
+                           const bool update_cache) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = cache_get_obj(cache, req);
+
+  if (obj == NULL) {
+    return cache_ck_miss;
+  }
+
+  if (obj->SFIFO.lru_id == params->n_seg - 1) {
+    move_obj_to_head(&params->lru_heads[params->n_seg - 1],
+                     &params->lru_tails[params->n_seg - 1], obj);
+  } else {
+    SFIFO_promote_to_next_seg(cache, req, obj);
+  }
+
+  int64_t size_change = req->obj_size - obj->obj_size;
+  cache->occupied_size += size_change;
+  params->lru_n_bytes[obj->SFIFO.lru_id] += size_change;
+
+  return cache_ck_hit;
+}
+
+cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+
+  cache_obj_t *obj = hashtable_insert(cache->hashtable, req);
+
+  // Find the lowest LRU with space for insertion
+  for (int i = 0; i < params->n_seg; i++) {
+    if (params->lru_n_bytes[i] + req->obj_size + cache->obj_md_size <=
+        params->per_seg_max_size) {
+      prepend_obj_to_head(&params->lru_heads[i], &params->lru_tails[i], obj);
+      obj->SFIFO.lru_id = i;
+      params->lru_n_bytes[i] += req->obj_size + cache->obj_md_size;
+      params->lru_n_objs[i]++;
+
+      break;
+    }
+  }
+  cache->n_obj += 1;
+  cache->occupied_size += req->obj_size + cache->obj_md_size;
+
+  return obj;
+}
+
+cache_obj_t *SFIFO_to_evict(cache_t *cache) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  for (int i = 0; i < params->n_seg; i++) {
+    if (params->lru_n_bytes[i] > 0) {
+      return params->lru_tails[i];
+    }
+  }
+}
+
+void SFIFO_evict(cache_t *cache, const request_t *req,
+                 cache_obj_t *evicted_obj) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+
+  int nth_seg = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    if (params->lru_n_bytes[i] > 0) {
+      nth_seg = i;
+      break;
+    }
+  }
+
+  cache_obj_t *obj = params->lru_tails[nth_seg];
+#ifdef TRACK_EVICTION_R_AGE
+  record_eviction_age(cache, req->real_time - obj->create_rtime);
+#endif
+#ifdef TRACK_EVICTION_V_AGE
+  record_eviction_age(cache, cache->n_req - obj->create_vtime);
+#endif
+
+  cache->n_obj -= 1;
+  cache->occupied_size -= obj->obj_size + cache->obj_md_size;
+  params->lru_n_bytes[nth_seg] -= obj->obj_size + cache->obj_md_size;
+  params->lru_n_objs[nth_seg]--;
+
+  if (evicted_obj != NULL) {
+    memcpy(evicted_obj, obj, sizeof(cache_obj_t));
+  }
+
+  DEBUG_ASSERT(obj != NULL);
+  remove_obj_from_list(&params->lru_heads[nth_seg], &params->lru_tails[nth_seg],
+                       obj);
+  hashtable_delete(cache->hashtable, obj);
+}
+
+bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
+
+  if (obj == NULL) {
+    return false;
+  }
+
+  cache->occupied_size -= (obj->obj_size + cache->obj_md_size);
+  cache->n_obj -= 1;
+  remove_obj_from_list(&(params->lru_heads[obj->SFIFO.lru_id]),
+                       &(params->lru_tails[obj->SFIFO.lru_id]), obj);
+  hashtable_delete(cache->hashtable, obj);
+
+  return true;
+}
+
+void SFIFO_free(cache_t *cache) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  free(params->lru_heads);
+  free(params->lru_tails);
+  free(params->lru_n_objs);
+  free(params->lru_n_bytes);
+  cache_struct_free(cache);
 }
 
 cache_t *SFIFO_init(const common_cache_params_t ccache_params,
@@ -104,196 +277,44 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
   cache->evict = SFIFO_evict;
   cache->remove = SFIFO_remove;
   cache->to_evict = SFIFO_to_evict;
-  cache->can_insert = SFIFO_can_insert;
-  cache->get_occupied_byte = SFIFO_get_occupied_byte;
-  cache->get_n_obj = SFIFO_get_n_obj;
   cache->init_params = cache_specific_params;
+  // cache->can_insert = cache_can_insert_default;
+  cache->get_occupied_byte = cache_get_occupied_byte_default;
+  cache->get_n_obj = cache_get_n_obj_default;
+  cache->can_insert = SFIFO_can_insert;
+  // cache->get_occupied_byte = SFIFO_get_occupied_byte;
+  // cache->get_n_obj = SFIFO_get_n_obj;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 8 * 2;
+    cache->obj_md_size = 8 * 2;
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   cache->eviction_params = (SFIFO_params_t *)malloc(sizeof(SFIFO_params_t));
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-  SFIFO_params->n_seg = 4;
-  SFIFO_params->temp_req = new_request();
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  params->n_seg = 4;
 
   if (cache_specific_params != NULL) {
     SFIFO_parse_params(cache, cache_specific_params);
   }
 
-  SFIFO_params->FIFOs =
-      (cache_t **)malloc(sizeof(cache_t *) * SFIFO_params->n_seg);
+  params->per_seg_max_size = ccache_params.cache_size / params->n_seg;
+  params->lru_heads =
+      (cache_obj_t **)malloc(sizeof(cache_obj_t *) * params->n_seg);
+  params->lru_tails =
+      (cache_obj_t **)malloc(sizeof(cache_obj_t *) * params->n_seg);
+  params->lru_n_objs = (int64_t *)malloc(sizeof(int64_t) * params->n_seg);
+  params->lru_n_bytes = (int64_t *)malloc(sizeof(int64_t) * params->n_seg);
 
-  common_cache_params_t ccache_params_local = ccache_params;
-
-  ccache_params_local.cache_size /= SFIFO_params->n_seg;
-  ccache_params_local.hashpower /= MIN(16, ccache_params_local.hashpower - 4);
-  for (int i = 0; i < SFIFO_params->n_seg; i++) {
-    SFIFO_params->FIFOs[i] = FIFO_init(ccache_params_local, NULL);
+  for (int i = 0; i < params->n_seg; i++) {
+    params->lru_heads[i] = NULL;
+    params->lru_tails[i] = NULL;
+    params->lru_n_objs[i] = 0;
+    params->lru_n_bytes[i] = 0;
   }
 
   return cache;
-}
-
-void SFIFO_free(cache_t *cache) {
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-  free_request(SFIFO_params->temp_req);
-  for (int i = 0; i < SFIFO_params->n_seg; i++) {
-    FIFO_free(SFIFO_params->FIFOs[i]);
-  }
-  free(SFIFO_params->FIFOs);
-  cache_struct_free(cache);
-}
-
-/**
- * @brief move an object from ith FIFO into (i-1)th FIFO, cool
- * (i-1)th FIFO if it is full
- * the index of the FIFO is ordered from the least recent being 0
- * to the most recent being n_seg-1
- *
- * @param cache
- * @param i
- */
-void SFIFO_cool(cache_t *cache, int i) {
-  cache_obj_t evicted_obj;
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-  FIFO_evict(SFIFO_params->FIFOs[i], NULL, &evicted_obj);
-
-  if (i == 0) return;
-
-  // If lower FIFOs are full
-  while (SFIFO_params->FIFOs[i - 1]->occupied_size + evicted_obj.obj_size +
-             cache->per_obj_metadata_size >
-         SFIFO_params->FIFOs[i - 1]->cache_size)
-    SFIFO_cool(cache, i - 1);
-
-  copy_cache_obj_to_request(SFIFO_params->temp_req, &evicted_obj);
-  FIFO_insert(SFIFO_params->FIFOs[i - 1], SFIFO_params->temp_req);
-}
-
-cache_ck_res_e SFIFO_check(cache_t *cache, const request_t *req,
-                           const bool update_cache) {
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-
-  for (int i = 0; i < SFIFO_params->n_seg; i++) {
-    cache_ck_res_e ret = FIFO_check(SFIFO_params->FIFOs[i], req, update_cache);
-
-    /* TODO: should we bump now or wait till a later time, if we bump later, the
-     * bump will trigger cool down, which may trigger another bump */
-    if (ret == cache_ck_hit) {
-      // bump object from lower segment to upper segment;
-      if (i != SFIFO_params->n_seg - 1) {
-        FIFO_remove(SFIFO_params->FIFOs[i], req->obj_id);
-
-        // If the upper FIFO is full;
-        while (SFIFO_params->FIFOs[i + 1]->occupied_size + req->obj_size +
-                   cache->per_obj_metadata_size >
-               SFIFO_params->FIFOs[i + 1]->cache_size)
-          SFIFO_cool(cache, i + 1);
-
-        FIFO_insert(SFIFO_params->FIFOs[i + 1], req);
-      }
-      return cache_ck_hit;
-    } else if (ret == cache_ck_expired)
-      return cache_ck_expired;
-  }
-  return cache_ck_miss;
-}
-
-cache_ck_res_e SFIFO_get(cache_t *cache, const request_t *req) {
-  /* because this field cannot be updated in time since segment LRUs are
-   * updated, so we should not use this field */
-  DEBUG_ASSERT(cache->occupied_size == 0);
-
-  return cache_get_base(cache, req);
-}
-
-cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-
-  int i;
-  cache_obj_t *cache_obj = NULL;
-
-  // this is used by eviction age tracking
-  SFIFO_params->FIFOs[0]->n_req = cache->n_req;
-
-  // Find the lowest FIFO with space for insertion
-  for (i = 0; i < SFIFO_params->n_seg; i++) {
-    if (SFIFO_params->FIFOs[i]->occupied_size + req->obj_size +
-            cache->per_obj_metadata_size <=
-        SFIFO_params->FIFOs[i]->cache_size) {
-      cache_obj = FIFO_insert(SFIFO_params->FIFOs[i], req);
-      break;
-    }
-  }
-
-  // If all FIFOs are filled, evict an obj from the lowest FIFO.
-  if (i == SFIFO_params->n_seg) {
-    while (SFIFO_params->FIFOs[0]->occupied_size + req->obj_size +
-               cache->per_obj_metadata_size >
-           SFIFO_params->FIFOs[0]->cache_size) {
-      SFIFO_evict(cache, req, NULL);
-    }
-    cache_obj = FIFO_insert(SFIFO_params->FIFOs[0], req);
-  }
-
-  return cache_obj;
-}
-
-cache_obj_t *SFIFO_to_evict(cache_t *cache) {
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-  for (int i = 0; i < SFIFO_params->n_seg; i++) {
-    if (SFIFO_params->FIFOs[i]->occupied_size > 0) {
-      return FIFO_to_evict(SFIFO_params->FIFOs[i]);
-    }
-  }
-}
-
-void SFIFO_evict(cache_t *cache, const request_t *req,
-                 cache_obj_t *evicted_obj) {
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-
-  int nth_seg_to_evict = 0;
-  for (int i = 0; i < SFIFO_params->n_seg; i++) {
-    if (SFIFO_params->FIFOs[i]->occupied_size > 0) {
-      nth_seg_to_evict = i;
-      break;
-    }
-  }
-
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(
-      cache, req->real_time -
-                 SFIFO_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(
-      cache, cache->n_req -
-                 SFIFO_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
-#endif
-
-  cache_evict_LRU(SFIFO_params->FIFOs[nth_seg_to_evict], req, evicted_obj);
-}
-
-bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
-  SFIFO_params_t *SFIFO_params = (SFIFO_params_t *)(cache->eviction_params);
-  cache_obj_t *obj;
-  for (int i = 0; i < SFIFO_params->n_seg; i++) {
-    obj = cache_get_obj_by_id(SFIFO_params->FIFOs[i], obj_id);
-    if (obj) {
-      remove_obj_from_list(&(SFIFO_params->FIFOs[i])->q_head,
-                           &(SFIFO_params->FIFOs[i])->q_tail, obj);
-      cache_remove_obj_base(SFIFO_params->FIFOs[i], obj);
-      return true;
-    }
-  }
-
-  if (obj == NULL) {
-    return false;
-  }
 }
 
 #ifdef __cplusplus

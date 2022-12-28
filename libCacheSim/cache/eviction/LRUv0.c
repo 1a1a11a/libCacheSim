@@ -39,9 +39,9 @@ cache_t *LRUv0_init(const common_cache_params_t ccache_params,
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 8 * 2;
+    cache->obj_md_size = 8 * 2;
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   if (cache_specific_params != NULL) {
@@ -104,7 +104,7 @@ cache_ck_res_e LRUv0_get(cache_t *cache, const request_t *req) {
 cache_obj_t *LRUv0_insert(cache_t *cache, const request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
-  cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
+  cache->occupied_size += req->obj_size + cache->obj_md_size;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
   // TODO: use SList should be more memory efficient than queue which uses
   // doubly-linklist under the hood
@@ -135,7 +135,7 @@ void LRUv0_evict(cache_t *cache, const request_t *req,
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = LRUv0_to_evict(cache);
   assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_metadata_size);
+  cache->occupied_size -= (cache_obj->obj_size + cache->obj_md_size);
   g_hash_table_remove(LRUv0_params->hashtable,
                       (gconstpointer)cache_obj->obj_id);
   free_cache_obj(cache_obj);
@@ -152,9 +152,9 @@ bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
 
   cache_obj_t *cache_obj = (cache_obj_t *)(node->data);
   assert(cache->occupied_size >=
-         cache_obj->obj_size + cache->per_obj_metadata_size);
+         cache_obj->obj_size + cache->obj_md_size);
   cache->occupied_size -=
-      (((cache_obj_t *)(node->data))->obj_size + cache->per_obj_metadata_size);
+      (((cache_obj_t *)(node->data))->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 
   g_queue_delete_link(LRUv0_params->list, (GList *)node);

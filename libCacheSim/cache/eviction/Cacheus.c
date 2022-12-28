@@ -50,10 +50,9 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size =
-        8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
+    cache->obj_md_size = 8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   if (cache_specific_params != NULL) {
@@ -238,17 +237,16 @@ cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
   if (ret != cache_ck_hit) {
     SR_LRU_params_t *params_LRU =
         (SR_LRU_params_t *)(params->LRU->eviction_params);
-    if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size ||
-        req->obj_size + cache->per_obj_metadata_size >
-            params_LRU->SR_list->cache_size) {
+    if (req->obj_size + cache->obj_md_size > cache->cache_size ||
+        req->obj_size + cache->obj_md_size > params_LRU->SR_list->cache_size) {
       static __thread bool has_printed = false;
       if (!has_printed) {
         has_printed = true;
-        if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
+        if (req->obj_size + cache->obj_md_size > cache->cache_size) {
           WARN("req %" PRIu64 ": obj size %" PRIu32
                " larger than cache size %" PRIu64 "\n",
                req->obj_id, req->obj_size, cache->cache_size);
-        } else if (req->obj_size + cache->per_obj_metadata_size >
+        } else if (req->obj_size + cache->obj_md_size >
                    params_LRU->SR_list->cache_size) {
           WARN("req %" PRIu64 ": obj size %" PRIu32
                " larger than SR-LRU - SR size %" PRIu64 "\n",
@@ -258,8 +256,7 @@ cache_ck_res_e Cacheus_get(cache_t *cache, const request_t *req) {
     }
 
     else if (ret == cache_ck_miss) {
-      while (cache->occupied_size + req->obj_size +
-                 cache->per_obj_metadata_size >
+      while (cache->occupied_size + req->obj_size + cache->obj_md_size >
              cache->cache_size)
         cache->evict(cache, req, NULL);
 

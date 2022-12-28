@@ -62,7 +62,7 @@ static void verify_ghost_lru_integrity(cache_t *cache, LeCaR_params_t *params) {
   int64_t ghost_entry_size = 0;
   cache_obj_t *cur = params->ghost_lru_head;
   while (cur != NULL) {
-    ghost_entry_size += (cur->obj_size + cache->per_obj_metadata_size);
+    ghost_entry_size += (cur->obj_size + cache->obj_md_size);
     if (cur->queue.next == NULL) {
       assert(cur == params->ghost_lru_tail);
     } else {
@@ -216,10 +216,9 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size =
-        8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
+    cache->obj_md_size = 8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   if (cache_specific_params != NULL) {
@@ -303,8 +302,7 @@ cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
 
     remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
                          cache_obj);
-    params->ghost_entry_used_size -=
-        (cache_obj->obj_size + cache->per_obj_metadata_size);
+    params->ghost_entry_used_size -= (cache_obj->obj_size + cache->obj_md_size);
     hashtable_delete(cache->hashtable, cache_obj);
 
     return cache_ck_miss;
@@ -316,8 +314,7 @@ cache_ck_res_e LeCaR_check(cache_t *cache, const request_t *req,
 
     remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
                          cache_obj);
-    params->ghost_entry_used_size -=
-        (cache_obj->obj_size + cache->per_obj_metadata_size);
+    params->ghost_entry_used_size -= (cache_obj->obj_size + cache->obj_md_size);
     hashtable_delete(cache->hashtable, cache_obj);
 
     return cache_ck_miss;
@@ -551,8 +548,7 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
 
   // update cache state
   DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
-  cache->occupied_size -=
-      (obj_to_evict->obj_size + cache->per_obj_metadata_size);
+  cache->occupied_size -= (obj_to_evict->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 
   // update history
@@ -567,8 +563,7 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
   VVERBOSE("insert to ghost history, update ghost lru head to %p\n",
            params->ghost_lru_head);
 
-  params->ghost_entry_used_size +=
-      obj_to_evict->obj_size + cache->per_obj_metadata_size;
+  params->ghost_entry_used_size += obj_to_evict->obj_size + cache->obj_md_size;
   // evict ghost entries if its full
   while (params->ghost_entry_used_size > cache->cache_size) {
     cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
@@ -576,7 +571,7 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
              params->ghost_entry_used_size);
     assert(ghost_to_evict != NULL);
     params->ghost_entry_used_size -=
-        (ghost_to_evict->obj_size + cache->per_obj_metadata_size);
+        (ghost_to_evict->obj_size + cache->obj_md_size);
     params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
     if (likely(params->ghost_lru_tail != NULL))
       params->ghost_lru_tail->queue.next = NULL;

@@ -42,9 +42,9 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   }
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 8 * 3 + 1;  // two age, one time stamp
+    cache->obj_md_size = 8 * 3 + 1;  // two age, one time stamp
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   auto *params = my_malloc(LHD_params_t);
@@ -116,7 +116,7 @@ cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   lhd->sizeMap[id] = req->obj_size;
   lhd->update(id, req);
 
-  cache->occupied_size += req->obj_size + cache->per_obj_metadata_size;
+  cache->occupied_size += req->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
   return NULL;
@@ -134,7 +134,7 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   assert(victimItr != lhd->sizeMap.end());
 
   DEBUG_ASSERT(cache->occupied_size >= victimItr->second);
-  cache->occupied_size -= (victimItr->second + cache->per_obj_metadata_size);
+  cache->occupied_size -= (victimItr->second + cache->obj_md_size);
   cache->n_obj -= 1;
 
 #ifdef TRACK_EVICTION_R_AGE
@@ -164,7 +164,7 @@ bool LHD_remove(cache_t *cache, const obj_id_t obj_id) {
     return false;
   }
 
-  cache->occupied_size -= (itr->second + cache->per_obj_metadata_size);
+  cache->occupied_size -= (itr->second + cache->obj_md_size);
   cache->n_obj -= 1;
   lhd->sizeMap.erase(itr);
   auto idx = lhd->indices[id];

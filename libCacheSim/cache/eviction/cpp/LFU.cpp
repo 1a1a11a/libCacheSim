@@ -36,9 +36,9 @@ cache_t *LFUCpp_init(common_cache_params_t ccache_params,
 
   if (ccache_params.consider_obj_metadata) {
     // freq
-    cache->per_obj_metadata_size = 8;
+    cache->obj_md_size = 8;
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   return cache;

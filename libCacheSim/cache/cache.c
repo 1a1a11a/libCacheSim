@@ -70,8 +70,7 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
       .cache_size = new_size,
       .hashpower = old_cache->hashtable->hashpower,
       .default_ttl = old_cache->default_ttl,
-      .consider_obj_metadata =
-          old_cache->per_obj_metadata_size == 0 ? false : true,
+      .consider_obj_metadata = old_cache->obj_md_size == 0 ? false : true,
   };
   assert(sizeof(cc_params) == 24);
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
@@ -100,7 +99,7 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
     }
   }
 
-  if (req->obj_size + cache->per_obj_metadata_size > cache->cache_size) {
+  if (req->obj_size + cache->obj_md_size > cache->cache_size) {
     WARN_ONCE("%ld req, obj %lu, size %lu larger than cache size %lu\n",
               cache->n_req, (unsigned long)req->obj_id,
               (unsigned long)req->obj_size, (unsigned long)cache->cache_size);
@@ -147,7 +146,7 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
 
   if (likely(update_cache)) {
     if (ret == cache_ck_hit) {
-      // no longer considers object size change over time, 
+      // no longer considers object size change over time,
       // the trace should not have such behavior
       ;
       // if (unlikely(cache_obj->obj_size != req->obj_size)) {
@@ -162,8 +161,8 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
       // //     //   cache->evict(cache, req, NULL);
       // //     // }
       // //   } else {
-      // //     // TODO: should we remove the object? 
-      // //     // but theoretically object size should not change 
+      // //     // TODO: should we remove the object?
+      // //     // but theoretically object size should not change
       //   }
       // }
     } else if (ret == cache_ck_expired) {
@@ -206,8 +205,8 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
   }
 
   if (cache_check == cache_ck_miss) {
-    while (cache->occupied_size + req->obj_size + cache->per_obj_metadata_size >
-           cache->cache_size){
+    while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+           cache->cache_size) {
       cache->evict(cache, req, NULL);
     }
     cache->insert(cache, req);
@@ -225,7 +224,7 @@ cache_ck_res_e cache_get_base(cache_t *cache, const request_t *req) {
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
-  cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
+  cache->occupied_size += cache_obj->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
 #ifdef SUPPORT_TTL
@@ -275,9 +274,8 @@ cache_obj_t *cache_insert_LRU(cache_t *cache, const request_t *req) {
  * @param req
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
-  DEBUG_ASSERT(cache->occupied_size >=
-               obj->obj_size + cache->per_obj_metadata_size);
-  cache->occupied_size -= (obj->obj_size + cache->per_obj_metadata_size);
+  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size + cache->obj_md_size);
+  cache->occupied_size -= (obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
   hashtable_delete(cache->hashtable, obj);
 }
@@ -458,7 +456,8 @@ bool dump_eviction_age(const cache_t *cache, const char *ofilepath) {
  * @return true
  * @return false
  */
-bool dump_cached_obj_age(cache_t *cache, const request_t *req, const char *ofilepath) {
+bool dump_cached_obj_age(cache_t *cache, const request_t *req,
+                         const char *ofilepath) {
   FILE *ofile = fopen(ofilepath, "a");
   if (ofile == NULL) {
     perror("fopen failed");

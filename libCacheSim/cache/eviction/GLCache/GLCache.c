@@ -103,9 +103,9 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   cache_t *cache = cache_struct_init("GLCache", ccache_params);
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 2 + 1 + 8;  // freq, bool, history
+    cache->obj_md_size = 2 + 1 + 8;  // freq, bool, history
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   // tells hash table that the cache_obj does not need to be free when removed
@@ -323,9 +323,9 @@ cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req) {
   obj_init(cache, req, cache_obj, seg);
   hashtable_insert_obj(cache->hashtable, cache_obj);
 
-  seg->n_byte += cache_obj->obj_size + cache->per_obj_metadata_size;
+  seg->n_byte += cache_obj->obj_size + cache->obj_md_size;
   seg->n_obj += 1;
-  cache->occupied_size += cache_obj->obj_size + cache->per_obj_metadata_size;
+  cache->occupied_size += cache_obj->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
   DEBUG_ASSERT(cache->n_obj > (params->n_in_use_segs - params->n_used_buckets) *

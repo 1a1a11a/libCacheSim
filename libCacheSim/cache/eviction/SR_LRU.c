@@ -27,9 +27,9 @@ cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
     abort();
   }
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 2;
+    cache->obj_md_size = 2;
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   cache->eviction_params = my_malloc_n(SR_LRU_params_t, 1);
@@ -85,7 +85,7 @@ cache_ck_res_e SR_LRU_check(cache_t *cache, const request_t *req,
 
     // If R list is full, move obj from R to SR.
     while (params->R_list->occupied_size + req->obj_size +
-               cache->per_obj_metadata_size >
+               cache->obj_md_size >
            params->R_list->cache_size) {
       DEBUG_ASSERT(params->R_list->occupied_size != 0);
       cache_obj_t evicted_obj;
@@ -144,7 +144,7 @@ cache_ck_res_e SR_LRU_get(cache_t *cache, const request_t *req) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
 
   if (ret == cache_ck_miss) {
-    if (req->obj_size + cache->per_obj_metadata_size >
+    if (req->obj_size + cache->obj_md_size >
         params->SR_list->cache_size) {
       return ret;
     }
@@ -159,7 +159,7 @@ cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
   cache_ck_res_e ck_hist = params->H_list->check(params->H_list, req, false);
   static __thread request_t *req_local = NULL;
-  DEBUG_ASSERT(req->obj_size + cache->per_obj_metadata_size <
+  DEBUG_ASSERT(req->obj_size + cache->obj_md_size <
                params->SR_list->cache_size);
   if (req_local == NULL) {
     req_local = new_request();
@@ -171,7 +171,7 @@ cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
 
     // If R list is full, move obj from R to SR.
     while (params->R_list->occupied_size + req->obj_size +
-               cache->per_obj_metadata_size >
+               cache->obj_md_size >
            params->R_list->cache_size) {
       DEBUG_ASSERT(params->R_list->occupied_size != 0);
 

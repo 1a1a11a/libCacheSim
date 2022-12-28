@@ -31,9 +31,9 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 8 * 2;
+    cache->obj_md_size = 8 * 2;
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   if (cache_specific_params != NULL) {

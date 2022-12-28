@@ -138,9 +138,9 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->per_obj_metadata_size = 4;
+    cache->obj_md_size = 4;
   } else {
-    cache->per_obj_metadata_size = 0;
+    cache->obj_md_size = 0;
   }
 
   FIFO_Reinsertion_params_t *params = my_malloc(FIFO_Reinsertion_params_t);
