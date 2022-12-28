@@ -244,7 +244,6 @@ void ARC_free(cache_t *cache) {
 
 cache_ck_res_e ARC_get_debug(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  // cache_ck_res_e cache_check = cache_get_base(cache, req);
 
   cache->n_req += 1;
   cache->last_request_metadata = (void *)"None";
@@ -426,9 +425,11 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   if (params->L1_data_size + params->L1_ghost_size + incoming_size >
       cache->cache_size) {
     // case A: L1 = T1 U B1 has exactly c pages
-    // if (params->L1_data_size < cache->cache_size) {
     if (params->L1_ghost_size > 0) {
-      // if T1 < c (ghost is not empty), delete LRU of the L1 ghost, and replace
+      // if T1 < c (ghost is not empty), 
+      // delete the LRU of the L1 ghost, and replace
+      // we do not use params->L1_data_size < cache->cache_size 
+      // because it does not work for variable size objects
       cache_obj_t *obj = params->L1_ghost_tail;
       DEBUG_ASSERT(obj != NULL);
       DEBUG_ASSERT(obj->ARC.ghost);
