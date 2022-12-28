@@ -150,9 +150,18 @@ cache_ck_res_e cache_check_base(cache_t *cache, const request_t *req,
       if (unlikely(cache_obj->obj_size != req->obj_size)) {
         VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size,
                  req->obj_size);
-        cache->occupied_size -= cache_obj->obj_size;
-        cache->occupied_size += req->obj_size;
-        cache_obj->obj_size = req->obj_size;
+        if (cache->can_insert(cache, req)) {
+          cache->occupied_size -= cache_obj->obj_size;
+          cache->occupied_size += req->obj_size;
+          cache_obj->obj_size = req->obj_size;
+
+          while (cache->occupied_size > cache->cache_size) {
+            cache->evict(cache, req, NULL);
+          }
+        } else {
+          // TODO: should we remove the object? 
+          // but theoretically object size should not change 
+        }
       }
     } else if (ret == cache_ck_expired) {
       cache->remove(cache, cache_obj->obj_id);

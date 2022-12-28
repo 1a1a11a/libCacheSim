@@ -22,7 +22,7 @@ typedef struct request {
   int64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
   uint64_t hv;       /* hash value, used when offloading hash to reader */
   obj_id_t obj_id;
-  uint32_t obj_size;
+  int32_t obj_size;
   int32_t ttl;
   req_op_e op;
 

@@ -95,6 +95,7 @@ typedef struct {
 
 typedef struct {
   int64_t last_access_vtime;
+  int lru_id;
 } SFIFO_obj_metadata_t;
 
 typedef struct {
@@ -109,7 +110,7 @@ struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
   obj_id_t obj_id;
-  uint32_t obj_size;
+  int32_t obj_size;
   struct {
     struct cache_obj *prev;
     struct cache_obj *next;

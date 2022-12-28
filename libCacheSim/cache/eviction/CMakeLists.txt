@@ -8,6 +8,7 @@ set(sourceC
         Clock.c
         LRU.c
         SLRU.c
+        SLRUv0.c
         CR_LFU.c
         SR_LRU.c
         Belady.c

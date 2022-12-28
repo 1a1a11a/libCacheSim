@@ -31,7 +31,6 @@ static inline unsigned int _n_cores() {
                : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
                : "0"(eax), "2"(ecx)
                :);
-
   //  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
   return ebx;
 }
@@ -74,6 +73,16 @@ static reader_t *setup_GLCacheTestData_reader(void) {
   reader_t *reader_oracle =
       setup_reader(".w68.oracleGeneral.bin.zst", ORACLE_GENERAL_TRACE, NULL);
   return reader_oracle;
+}
+
+static reader_t *setup_vscsi_reader_with_ignored_obj_size(void) {
+  char data_path[1024];
+  reader_init_param_t *init_params = g_new0(reader_init_param_t, 1);
+  init_params->ignore_obj_size = true;
+  _detect_data_path(data_path, "trace.vscsi");
+  reader_t *reader_vscsi = setup_reader(data_path, VSCSI_TRACE, init_params);
+  g_free(init_params);
+  return reader_vscsi;
 }
 
 static reader_t *setup_vscsi_reader(void) {

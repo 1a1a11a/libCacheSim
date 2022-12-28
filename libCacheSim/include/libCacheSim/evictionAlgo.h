@@ -20,6 +20,7 @@
 #include "evictionAlgo/MRU.h"
 #include "evictionAlgo/Random.h"
 #include "evictionAlgo/SLRU.h"
+#include "evictionAlgo/SLRUv0.h"
 #include "evictionAlgo/SR_LRU.h"
 
 #ifdef INCLUDE_PRIV
@@ -34,4 +35,3 @@
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
 #include "evictionAlgo/GLCache.h"
 #endif
-
