@@ -6,8 +6,8 @@
 //
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/SFIFO.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/evictionAlgo/SFIFO.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,11 +62,11 @@ static void SFIFO_parse_params(cache_t *cache,
 
 /**
  * @brief SLRU cannot insert an object larger than segment size
- * 
- * @param cache 
- * @param req 
- * @return true 
- * @return false 
+ *
+ * @param cache
+ * @param req
+ * @return true
+ * @return false
  */
 bool SFIFO_can_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
@@ -265,10 +265,14 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
   }
 
 #ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, req->real_time - SFIFO_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
+  record_eviction_age(
+      cache, req->real_time -
+                 SFIFO_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
 #endif
 #ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, cache->n_req - SFIFO_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
+  record_eviction_age(
+      cache, cache->n_req -
+                 SFIFO_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
 #endif
 
   cache_evict_LRU(SFIFO_params->FIFOs[nth_seg_to_evict], req, evicted_obj);

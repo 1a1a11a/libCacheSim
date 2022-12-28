@@ -15,16 +15,22 @@ set(sourceC
         Hyperbolic.c
         LeCaR.c
         Cacheus.c
-        FIFO_Merge.c
-        FIFO_Reinsertion.c
-        SFIFO.c
-
-        LRU_Belady.c
-        SFIFO_Belady.c
 
         LRUv0.c
         LeCaRv0.c
         )
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
+    set(sourceC ${sourceC} 
+                priv/FIFO_Merge.c
+                priv/FIFO_Reinsertion.c
+                priv/lazyFIFO.c
+                priv/lazyFIFOv2.c
+                priv/LRU_Belady.c
+                priv/SFIFO.c
+                priv/SFIFO_Belady.c
+                )
+endif()
 
 set(sourceCPP
         cpp/LFU.cpp

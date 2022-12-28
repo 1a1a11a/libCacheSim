@@ -9,11 +9,10 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../include/libCacheSim/evictionAlgo/FIFO_Reinsertion.h"
-
 #include <assert.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/evictionAlgo/FIFO_Reinsertion.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +58,8 @@ typedef struct FIFO_Reinsertion_params {
   retain_policy_t retain_policy;
 } FIFO_Reinsertion_params_t;
 
-static const char *FIFO_Reinsertion_current_params(FIFO_Reinsertion_params_t *params) {
+static const char *FIFO_Reinsertion_current_params(
+    FIFO_Reinsertion_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-exam=%d, n-keep=%d, retain-policy=%s",
            params->n_exam_obj, params->n_keep_obj,

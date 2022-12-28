@@ -6,8 +6,6 @@
  *
  * */
 
-#include "../../include/libCacheSim/evictionAlgo/LeCaR.h"
-
 #include <assert.h>
 #include <glib.h>
 #include <math.h>
@@ -15,6 +13,7 @@
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo/LFU.h"
 #include "../../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../include/libCacheSim/evictionAlgo/LeCaR.h"
 #include "../../include/libCacheSim/logging.h"
 
 #ifdef __cplusplus
@@ -552,7 +551,8 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
 
   // update cache state
   DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
-  cache->occupied_size -= (obj_to_evict->obj_size + cache->per_obj_metadata_size);
+  cache->occupied_size -=
+      (obj_to_evict->obj_size + cache->per_obj_metadata_size);
   cache->n_obj -= 1;
 
   // update history

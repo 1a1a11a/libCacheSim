@@ -7,8 +7,6 @@
 #include "evictionAlgo/Cacheus.h"
 #include "evictionAlgo/Clock.h"
 #include "evictionAlgo/FIFO.h"
-#include "evictionAlgo/FIFO_Merge.h"
-#include "evictionAlgo/FIFO_Reinsertion.h"
 #include "evictionAlgo/GDSF.h"
 #include "evictionAlgo/Hyperbolic.h"
 #include "evictionAlgo/LFU.h"
@@ -23,11 +21,15 @@
 #include "evictionAlgo/Random.h"
 #include "evictionAlgo/SLRU.h"
 #include "evictionAlgo/SR_LRU.h"
-#include "evictionAlgo/SFIFO.h"
 
+#ifdef INCLUDE_PRIV
+#include "evictionAlgo/FIFO_Merge.h"
+#include "evictionAlgo/FIFO_Reinsertion.h"
 #include "evictionAlgo/LRU_Belady.h"
+#include "evictionAlgo/SFIFO.h"
 #include "evictionAlgo/SFIFO_Belady.h"
-
+#include "evictionAlgo/priv.h"
+#endif
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
 #include "evictionAlgo/GLCache.h"

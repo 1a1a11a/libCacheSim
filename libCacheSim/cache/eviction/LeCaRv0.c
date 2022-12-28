@@ -9,13 +9,12 @@
  *
  * */
 
-#include "../../include/libCacheSim/evictionAlgo/LeCaRv0.h"
-
 #include <math.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo/LFU.h"
 #include "../../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../include/libCacheSim/evictionAlgo/LeCaRv0.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -47,6 +47,7 @@ endif()
 # echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 option(USE_HUGEPAGE "use transparent hugepage" ON)
 option(ENABLE_TESTS "whether enable test" ON)
+option(INCLUDE_PRIV "whether include priv" ON)
 option(ENABLE_GLCACHE "enable group-learned cache" ON)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)

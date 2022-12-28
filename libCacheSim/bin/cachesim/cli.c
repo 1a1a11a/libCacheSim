@@ -7,12 +7,14 @@
 #include <string.h>
 
 #include "../../include/libCacheSim/const.h"
+#ifdef INCLUDE_PRIV
+#include "../../include/libCacheSim/evictionAlgo/priv.h"
+#endif
+#include "../../include/libCacheSim/dist.h"
 #include "../../utils/include/mystr.h"
 #include "../../utils/include/mysys.h"
 #include "../cli_utils.h"
 #include "internal.h"
-#include "../../include/libCacheSim/dist.h"
-
 
 const char *argp_program_version = "cachesim 0.0.1";
 const char *argp_program_bug_address =
@@ -219,7 +221,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     // char *trace_filename = strrchr(args->trace_path, '/');
     // snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim",
     //          trace_filename == NULL ? args->trace_path : trace_filename + 1);
-    snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim", rindex(args->trace_path, '/') + 1);
+    snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim",
+             rindex(args->trace_path, '/') + 1);
   }
 
   /* convert trace type string to enum */
@@ -316,6 +319,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0) {
     cache = GLCache_init(cc_params, args->eviction_params);
 #endif
+#ifdef INCLUDE_PRIV
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {
       ERROR("lru-belady only supports uncompressed trace files\n");
@@ -337,13 +341,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
         reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
     assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
     close_reader(reader);
-
-  } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
-    cc_params.hashpower -= 4;
-    cache = BeladySize_init(cc_params, args->eviction_params);
-#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
-  } else if (strcasecmp(args->eviction_algo, "GLCache") == 0) {
-    cache = GLCache_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lazy-fifo") == 0) {
+    cache = lazyFIFO_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lazy-fifov2") == 0) {
+    cache = lazyFIFOv2_init(cc_params, args->eviction_params);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", args->eviction_algo);

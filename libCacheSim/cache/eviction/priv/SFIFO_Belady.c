@@ -6,9 +6,9 @@
 //
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/dist.h"
-#include "../../include/libCacheSim/evictionAlgo/SFIFO_Belady.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/dist.h"
+#include "../../../include/libCacheSim/evictionAlgo/SFIFO_Belady.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -180,7 +180,8 @@ void SFIFO_Belady_cool(cache_t *cache, int i) {
     SFIFO_Belady_cool(cache, i - 1);
 
   copy_cache_obj_to_request(SFIFO_Belady_params->temp_req, &evicted_obj);
-  FIFO_insert(SFIFO_Belady_params->FIFOs[i - 1], SFIFO_Belady_params->temp_req);
+  cache_obj_t *cached_obj = FIFO_insert(SFIFO_Belady_params->FIFOs[i - 1], SFIFO_Belady_params->temp_req);
+  cached_obj->SFIFO.last_access_vtime = evicted_obj.SFIFO.last_access_vtime;
 }
 
 cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
@@ -188,15 +189,22 @@ cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
   SFIFO_Belady_params_t *SFIFO_Belady_params =
       (SFIFO_Belady_params_t *)(cache->eviction_params);
 
+  cache_obj_t *cached_obj = NULL;
   for (int i = 0; i < SFIFO_Belady_params->n_seg; i++) {
     cache_ck_res_e ret =
-        FIFO_check(SFIFO_Belady_params->FIFOs[i], req, update_cache);
+        cache_check_base(SFIFO_Belady_params->FIFOs[i], req, update_cache, &cached_obj);
 
     if (ret == cache_ck_hit) {
+      // printf("%ld %ld\n", cache->cache_size, cache->n_obj);
+
       // bump object from lower segment to upper segment;
       if (i != SFIFO_Belady_params->n_seg - 1 &&
-          cache->future_stack_dist[cache->n_req - 1] != -1 &&
-          cache->future_stack_dist[cache->n_req - 1] < cache->cache_size) {
+          cached_obj->SFIFO.last_access_vtime != -1 &&
+          cache->n_req - cached_obj->SFIFO.last_access_vtime >
+              cache->cache_size / SFIFO_Belady_params->n_seg
+          // cache->future_stack_dist[cache->n_req - 1] != -1 &&
+          // cache->future_stack_dist[cache->n_req - 1] < cache->cache_size
+      ) {
         FIFO_remove(SFIFO_Belady_params->FIFOs[i], req->obj_id);
 
         // If the upper FIFO is full;
@@ -205,8 +213,15 @@ cache_ck_res_e SFIFO_Belady_check(cache_t *cache, const request_t *req,
                SFIFO_Belady_params->FIFOs[i + 1]->cache_size)
           SFIFO_Belady_cool(cache, i + 1);
 
-        FIFO_insert(SFIFO_Belady_params->FIFOs[i + 1], req);
+        cached_obj = FIFO_insert(SFIFO_Belady_params->FIFOs[i + 1], req);
+        // cached_obj->SFIFO.last_access_vtime = -1;
+        cached_obj->SFIFO.last_access_vtime = cache->n_req;
       }
+
+      // if ( cached_obj->SFIFO.last_access_vtime == -1) {
+      //   cached_obj->SFIFO.last_access_vtime = cache->n_req;
+      // }
+
       return cache_ck_hit;
     } else if (ret == cache_ck_expired)
       return cache_ck_expired;
@@ -242,6 +257,7 @@ cache_obj_t *SFIFO_Belady_insert(cache_t *cache, const request_t *req) {
     }
   }
 
+  // because SFIFO->occupied_size == 0, eviction is triggered by insert func
   // If all FIFOs are filled, evict an obj from the lowest FIFO.
   if (i == SFIFO_Belady_params->n_seg) {
     while (SFIFO_Belady_params->FIFOs[0]->occupied_size + req->obj_size +
@@ -251,6 +267,8 @@ cache_obj_t *SFIFO_Belady_insert(cache_t *cache, const request_t *req) {
     }
     cache_obj = FIFO_insert(SFIFO_Belady_params->FIFOs[0], req);
   }
+
+  cache_obj->SFIFO.last_access_vtime = cache->n_req;
 
   return cache_obj;
 }
