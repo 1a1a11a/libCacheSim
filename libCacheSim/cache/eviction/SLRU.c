@@ -378,12 +378,9 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   cache->remove = SLRU_remove;
   cache->to_evict = SLRU_to_evict;
   cache->init_params = cache_specific_params;
-  // cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
   cache->can_insert = SLRU_can_insert;
-  // cache->get_occupied_byte = SLRU_get_occupied_byte;
-  // cache->get_n_obj = SLRU_get_n_obj;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2;

@@ -7,7 +7,7 @@
 //
 
 #include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo/SFIFO.h"
+#include "../../../include/libCacheSim/evictionAlgo/priv/SFIFO.h"
 
 #ifdef __cplusplus
 extern "C" {

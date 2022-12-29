@@ -24,12 +24,12 @@
 #include "evictionAlgo/SR_LRU.h"
 
 #ifdef INCLUDE_PRIV
-#include "evictionAlgo/FIFO_Merge.h"
-#include "evictionAlgo/FIFO_Reinsertion.h"
-#include "evictionAlgo/LRU_Belady.h"
-#include "evictionAlgo/SFIFO.h"
-#include "evictionAlgo/SFIFO_Belady.h"
-#include "evictionAlgo/priv.h"
+#include "evictionAlgo/priv/SFIFO_Merge.h"
+#include "evictionAlgo/priv/SFIFO_Reinsertion.h"
+#include "evictionAlgo/priv/LRU_Belady.h"
+#include "evictionAlgo/priv/SFIFO.h"
+#include "evictionAlgo/priv/SFIFO_Belady.h"
+#include "evictionAlgo/priv/priv.h"
 #endif
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1

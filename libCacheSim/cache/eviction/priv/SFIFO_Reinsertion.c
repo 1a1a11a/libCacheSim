@@ -1,8 +1,8 @@
 //
-//  FIFO_Reinsertion scans N objects and retains M objects, evict the rest
+//  SFIFO_Reinsertion scans N objects and retains M objects, evict the rest
 //
 //
-//  FIFO_Reinsertion.c
+//  SFIFO_Reinsertion.c
 //  libCacheSim
 //
 //  Created by Juncheng on 12/20/21.
@@ -12,7 +12,7 @@
 #include <assert.h>
 
 #include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo/FIFO_Reinsertion.h"
+#include "../../../include/libCacheSim/evictionAlgo/priv/SFIFO_Reinsertion.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,7 +45,7 @@ typedef enum {
 
 static char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY", "None"};
 
-typedef struct FIFO_Reinsertion_params {
+typedef struct SFIFO_Reinsertion_params {
   // points to the eviction position
   cache_obj_t *next_to_merge;
   // the number of object to examine at each eviction
@@ -56,10 +56,10 @@ typedef struct FIFO_Reinsertion_params {
   struct sort_list_node *metric_list;
   // the policy to determine the n_keep_obj objects
   retain_policy_t retain_policy;
-} FIFO_Reinsertion_params_t;
+} SFIFO_Reinsertion_params_t;
 
-static const char *FIFO_Reinsertion_current_params(
-    FIFO_Reinsertion_params_t *params) {
+static const char *SFIFO_Reinsertion_current_params(
+    SFIFO_Reinsertion_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-exam=%d, n-keep=%d, retain-policy=%s",
            params->n_exam_obj, params->n_keep_obj,
@@ -67,10 +67,10 @@ static const char *FIFO_Reinsertion_current_params(
   return params_str;
 }
 
-static void FIFO_Reinsertion_parse_params(cache_t *cache,
+static void SFIFO_Reinsertion_parse_params(cache_t *cache,
                                           const char *cache_specific_params) {
-  FIFO_Reinsertion_params_t *params =
-      (FIFO_Reinsertion_params_t *)cache->eviction_params;
+  SFIFO_Reinsertion_params_t *params =
+      (SFIFO_Reinsertion_params_t *)cache->eviction_params;
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
@@ -113,7 +113,7 @@ static void FIFO_Reinsertion_parse_params(cache_t *cache,
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("%s parameters: %s\n", cache->cache_name,
-             FIFO_Reinsertion_current_params(params));
+             SFIFO_Reinsertion_current_params(params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
@@ -124,17 +124,17 @@ static void FIFO_Reinsertion_parse_params(cache_t *cache,
   free(old_params_str);
 }
 
-cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
+cache_t *SFIFO_Reinsertion_init(const common_cache_params_t ccache_params,
                                const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("FIFO_Reinsertion", ccache_params);
-  cache->cache_init = FIFO_Reinsertion_init;
-  cache->cache_free = FIFO_Reinsertion_free;
-  cache->get = FIFO_Reinsertion_get;
-  cache->check = FIFO_Reinsertion_check;
-  cache->insert = FIFO_Reinsertion_insert;
-  cache->evict = FIFO_Reinsertion_evict;
-  cache->remove = FIFO_Reinsertion_remove;
-  cache->to_evict = FIFO_Reinsertion_to_evict;
+  cache_t *cache = cache_struct_init("SFIFO_Reinsertion", ccache_params);
+  cache->cache_init = SFIFO_Reinsertion_init;
+  cache->cache_free = SFIFO_Reinsertion_free;
+  cache->get = SFIFO_Reinsertion_get;
+  cache->check = SFIFO_Reinsertion_check;
+  cache->insert = SFIFO_Reinsertion_insert;
+  cache->evict = SFIFO_Reinsertion_evict;
+  cache->remove = SFIFO_Reinsertion_remove;
+  cache->to_evict = SFIFO_Reinsertion_to_evict;
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
@@ -143,8 +143,8 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  FIFO_Reinsertion_params_t *params = my_malloc(FIFO_Reinsertion_params_t);
-  memset(params, 0, sizeof(FIFO_Reinsertion_params_t));
+  SFIFO_Reinsertion_params_t *params = my_malloc(SFIFO_Reinsertion_params_t);
+  memset(params, 0, sizeof(SFIFO_Reinsertion_params_t));
   cache->eviction_params = params;
 
   params->n_exam_obj = 100;
@@ -153,52 +153,52 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
   params->next_to_merge = NULL;
 
   if (cache_specific_params != NULL) {
-    FIFO_Reinsertion_parse_params(cache, cache_specific_params);
+    SFIFO_Reinsertion_parse_params(cache, cache_specific_params);
   }
 
   assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);
   assert(params->n_keep_obj <= params->n_exam_obj);
 
-  snprintf(cache->cache_name, 32, "FIFO_Reinsertion_%s",
+  snprintf(cache->cache_name, 32, "SFIFO_Reinsertion_%s",
            retain_policy_names[params->retain_policy]);
   params->metric_list = my_malloc_n(struct sort_list_node, params->n_exam_obj);
 
   return cache;
 }
 
-void FIFO_Reinsertion_free(cache_t *cache) {
-  FIFO_Reinsertion_params_t *params =
-      (FIFO_Reinsertion_params_t *)cache->eviction_params;
+void SFIFO_Reinsertion_free(cache_t *cache) {
+  SFIFO_Reinsertion_params_t *params =
+      (SFIFO_Reinsertion_params_t *)cache->eviction_params;
   my_free(sizeof(struct sort_list_node) * params->n_exam_obj,
           params->metric_list);
-  my_free(sizeof(FIFO_Reinsertion_params_t), params);
+  my_free(sizeof(SFIFO_Reinsertion_params_t), params);
   cache_struct_free(cache);
 }
 
-bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
+bool SFIFO_Reinsertion_check(cache_t *cache, const request_t *req,
                             const bool update_cache) {
   cache_obj_t *cache_obj;
   bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_hit) {
-    cache_obj->FIFO_Reinsertion.freq++;
-    cache_obj->FIFO_Reinsertion.last_access_vtime = cache->n_req;
-    cache_obj->FIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
+    cache_obj->SFIFO_Reinsertion.freq++;
+    cache_obj->SFIFO_Reinsertion.last_access_vtime = cache->n_req;
+    cache_obj->SFIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
   }
 
   return cache_hit;
 }
 
-bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
+bool SFIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
 static inline double belady_metric(cache_t *cache, cache_obj_t *cache_obj) {
-  if (cache_obj->FIFO_Reinsertion.next_access_vtime == -1 ||
-      cache_obj->FIFO_Reinsertion.next_access_vtime == INT64_MAX)
+  if (cache_obj->SFIFO_Reinsertion.next_access_vtime == -1 ||
+      cache_obj->SFIFO_Reinsertion.next_access_vtime == INT64_MAX)
     return -1;
   return 1.0e12 /
-         (cache_obj->FIFO_Reinsertion.next_access_vtime - cache->n_req) /
+         (cache_obj->SFIFO_Reinsertion.next_access_vtime - cache->n_req) /
          (double)cache_obj->obj_size;
 }
 
@@ -206,20 +206,20 @@ static inline double freq_metric(cache_t *cache, cache_obj_t *cache_obj) {
   /* we add a small rand number to distinguish objects with frequency 0 or same
    * frequency */
   double r = (double)(next_rand() % 1000) / 10000.0;
-  return 1.0e6 * ((double)cache_obj->FIFO_Merge.freq + r) /
+  return 1.0e6 * ((double)cache_obj->SFIFO_Merge.freq + r) /
          (double)cache_obj->obj_size;
 }
 
 static inline double recency_metric(cache_t *cache, cache_obj_t *cache_obj) {
   return 1.0e12 /
          (double)(cache->n_req -
-                  cache_obj->FIFO_Reinsertion.last_access_vtime) /
+                  cache_obj->SFIFO_Reinsertion.last_access_vtime) /
          (double)cache_obj->obj_size;
 }
 
 static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
-  FIFO_Reinsertion_params_t *params =
-      (FIFO_Reinsertion_params_t *)cache->eviction_params;
+  SFIFO_Reinsertion_params_t *params =
+      (SFIFO_Reinsertion_params_t *)cache->eviction_params;
 
   switch (params->retain_policy) {
     case RETAIN_POLICY_FREQUENCY:
@@ -233,27 +233,27 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
   }
 }
 
-cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *SFIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
-  cache_obj->FIFO_Reinsertion.freq = 0;
-  cache_obj->FIFO_Reinsertion.last_access_vtime = cache->n_req;
-  cache_obj->FIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
+  cache_obj->SFIFO_Reinsertion.freq = 0;
+  cache_obj->SFIFO_Reinsertion.last_access_vtime = cache->n_req;
+  cache_obj->SFIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
 
   return cache_obj;
 }
 
-cache_obj_t *FIFO_Reinsertion_to_evict(cache_t *cache) {
+cache_obj_t *SFIFO_Reinsertion_to_evict(cache_t *cache) {
   ERROR("Undefined! Multiple objs will be evicted\n");
   abort();
   return NULL;
 }
 
-void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
+void SFIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
                             cache_obj_t *evicted_obj) {
   assert(evicted_obj == NULL);
 
-  FIFO_Reinsertion_params_t *params =
-      (FIFO_Reinsertion_params_t *)cache->eviction_params;
+  SFIFO_Reinsertion_params_t *params =
+      (SFIFO_Reinsertion_params_t *)cache->eviction_params;
 
   // collect metric for n_exam obj, we will keep objects with larger metric
   int n_loop = 0;
@@ -267,7 +267,7 @@ void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
   if (cache->n_obj <= params->n_exam_obj) {
     // just evict one object
     cache_obj_t *cache_obj = params->next_to_merge->queue.prev;
-    FIFO_Reinsertion_remove_obj(cache, params->next_to_merge);
+    SFIFO_Reinsertion_remove_obj(cache, params->next_to_merge);
     params->next_to_merge = cache_obj;
 
     return;
@@ -296,18 +296,18 @@ void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
   int n_evict = params->n_exam_obj - params->n_keep_obj;
   for (int i = 0; i < n_evict; i++) {
     cache_obj = params->metric_list[i].cache_obj;
-    FIFO_Reinsertion_remove_obj(cache, cache_obj);
+    SFIFO_Reinsertion_remove_obj(cache, cache_obj);
   }
 
   for (int i = n_evict; i < params->n_exam_obj; i++) {
     cache_obj = params->metric_list[i].cache_obj;
     move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
-    cache_obj->FIFO_Reinsertion.freq =
-        (cache_obj->FIFO_Reinsertion.freq + 1) / 2;
+    cache_obj->SFIFO_Reinsertion.freq =
+        (cache_obj->SFIFO_Reinsertion.freq + 1) / 2;
   }
 }
 
-void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
+void SFIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   if (obj_to_remove == NULL) {
     ERROR("remove NULL from cache\n");
     abort();
@@ -317,13 +317,13 @@ void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-bool FIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id) {
+bool SFIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;
   }
 
-  FIFO_Reinsertion_remove_obj(cache, obj);
+  SFIFO_Reinsertion_remove_obj(cache, obj);
 
   return true;
 }

@@ -12,8 +12,7 @@
 extern "C" {
 #endif
 
-#include "../cache.h"
-#include "FIFO.h"
+#include "../../cache.h"
 
 cache_t *SFIFO_Belady_init(const common_cache_params_t ccache_params,
                            const char *cache_specific_params);

@@ -23,8 +23,8 @@ set(sourceC
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
     set(sourceC ${sourceC} 
-                priv/FIFO_Merge.c
-                priv/FIFO_Reinsertion.c
+                priv/SFIFO_Merge.c
+                priv/SFIFO_Reinsertion.c
                 priv/lazyFIFO.c
                 priv/lazyFIFOv2.c
                 priv/LRU_Belady.c

@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "../cache.h"
+#include "../../cache.h"
 
 cache_t *LRU_Belady_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params);

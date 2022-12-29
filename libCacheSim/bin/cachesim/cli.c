@@ -7,9 +7,6 @@
 #include <string.h>
 
 #include "../../include/libCacheSim/const.h"
-#ifdef INCLUDE_PRIV
-#include "../../include/libCacheSim/evictionAlgo/priv.h"
-#endif
 #include "../../include/libCacheSim/dist.h"
 #include "../../utils/include/mystr.h"
 #include "../../utils/include/mysys.h"
@@ -280,11 +277,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = Clock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "arc") == 0) {
     cache = ARC_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "fifomerge") == 0 ||
-             strcasecmp(args->eviction_algo, "fifo-merge") == 0) {
-    cache = FIFO_Merge_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0) {
-    cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lhd") == 0) {
     cache = LHD_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfu") == 0) {
@@ -345,6 +337,11 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = lazyFIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lazy-fifov2") == 0) {
     cache = lazyFIFOv2_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "sfifomerge") == 0 ||
+             strcasecmp(args->eviction_algo, "sfifo-merge") == 0) {
+    cache = SFIFO_Merge_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "sfifo-reinsertion") == 0) {
+    cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", args->eviction_algo);

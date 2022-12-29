@@ -8,7 +8,8 @@
 
 #include "../../../dataStructure/hashtable/hashtable.h"
 #include "../../../include/libCacheSim/dist.h"
-#include "../../../include/libCacheSim/evictionAlgo/SFIFO_Belady.h"
+#include "../../../include/libCacheSim/evictionAlgo/priv/SFIFO_Belady.h"
+#include "../../../include/libCacheSim/evictionAlgo/FIFO.h"
 
 #ifdef __cplusplus
 extern "C" {
