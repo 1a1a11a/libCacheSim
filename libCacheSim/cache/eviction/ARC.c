@@ -2,7 +2,11 @@
 //  ARC cache replacement algorithm
 //  https://www.usenix.org/conference/fast-03/arc-self-tuning-low-overhead-replacement-cache
 //
+//
 //  cross checked with https://github.com/trauzti/cache/blob/master/ARC.py
+//  one thing not clear in the paper is whether delta and p is int or float,
+//  we used int as first,
+//  but the implemnetation above used float, so we have changed to use float
 //
 //
 //  libCacheSim
@@ -20,6 +24,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define DEBUG_MODE
+#undef DEBUG_MODE
 
 typedef struct ARC_params {
   // L1_data is T1 in the paper, L1_ghost is B1 in the paper
@@ -41,53 +48,52 @@ typedef struct ARC_params {
   cache_obj_t *L2_ghost_head;
   cache_obj_t *L2_ghost_tail;
 
-  int64_t p;
+  double p;
   bool curr_obj_in_L1_ghost;
   bool curr_obj_in_L2_ghost;
   request_t *req_local;
 } ARC_params_t;
 
-static const char *ARC_current_params(ARC_params_t *params) {
-  static __thread char params_str[128];
-  snprintf(params_str, 128, "\n");
-  return params_str;
-}
 
-static void ARC_parse_params(cache_t *cache,
-                             const char *cache_specific_params) {
+// ########################## Debug functions ###############################
+static void _ARC_print_cache_content(cache_t *cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  char *params_str = strdup(cache_specific_params);
-  char *old_params_str = params_str;
-  char *end;
-
-  while (params_str != NULL && params_str[0] != '\0') {
-    /* different parameters are separated by comma,
-     * key and value are separated by = */
-    char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ",");
-
-    // skip the white space
-    while (params_str != NULL && *params_str == ' ') {
-      params_str++;
-    }
-
-    if (strcasecmp(key, "print") == 0) {
-      printf("parameters: %s\n", ARC_current_params(params));
-      exit(0);
-    } else {
-      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
-      exit(1);
-    }
+  printf("p: %lf\n", params->p);
+  cache_obj_t *obj = params->L1_data_head;
+  printf("L1_data: ");
+  while (obj != NULL) {
+    printf("%ld ", obj->obj_id);
+    obj = obj->queue.next;
   }
+  printf("\n");
 
-  free(old_params_str);
+  obj = params->L1_ghost_head;
+  printf("L1_ghost: ");
+  while (obj != NULL) {
+    printf("%ld ", obj->obj_id);
+    obj = obj->queue.next;
+  }
+  printf("\n");
+
+  obj = params->L2_data_head;
+  printf("L2_data: ");
+  while (obj != NULL) {
+    printf("%ld ", obj->obj_id);
+    obj = obj->queue.next;
+  }
+  printf("\n");
+
+  obj = params->L2_ghost_head;
+  printf("L2_ghost: ");
+  while (obj != NULL) {
+    printf("%ld ", obj->obj_id);
+    obj = obj->queue.next;
+  }
+  printf("\n");
 }
 
-static void _ARC_replace(cache_t *cache, const request_t *req,
-                         cache_obj_t *evicted_obj);
-
-static inline void _ARC_sanity_check(cache_t *cache, const request_t *req) {
+static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   printf("%ld %ld %ld, %s %ld + %ld + %ld + %ld = %ld\n", cache->n_req,
@@ -191,6 +197,84 @@ static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
   }
 }
 
+bool ARC_get_debug(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+
+  cache->n_req += 1;
+  cache->last_request_metadata = (void *)"None";
+
+  _ARC_sanity_check_full(cache, req, false);
+
+  bool cache_hit = cache->check(cache, req, true);
+
+  cache->last_request_metadata = cache_hit ? (void *)"hit" : (void *)"miss";
+
+  _ARC_sanity_check_full(cache, req, false);
+
+  if (cache_hit) {
+    _ARC_print_cache_content(cache);
+    return cache_hit;
+  }
+
+  while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+         cache->cache_size) {
+    cache->evict(cache, req, NULL);
+  }
+
+  _ARC_sanity_check_full(cache, req, false);
+
+  cache->insert(cache, req);
+
+  _ARC_sanity_check_full(cache, req, true);
+
+  _ARC_print_cache_content(cache);
+  return cache_hit;
+}
+
+// ########################## parameter functions
+// ###############################
+static const char *ARC_current_params(ARC_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "\n");
+  return params_str;
+}
+
+// ########################## internal functions ###############################
+static void ARC_parse_params(cache_t *cache,
+                             const char *cache_specific_params) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+  char *end;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "print") == 0) {
+      printf("parameters: %s\n", ARC_current_params(params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+
+  free(old_params_str);
+}
+
+static void _ARC_replace(cache_t *cache, const request_t *req,
+                         cache_obj_t *evicted_obj);
+
+// ########################## external functions ###############################
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("ARC", ccache_params);
@@ -242,48 +326,17 @@ void ARC_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-bool ARC_get_debug(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  cache->n_req += 1;
-  cache->last_request_metadata = (void *)"None";
-
-  _ARC_sanity_check_full(cache, req, false);
-
-  bool cache_hit = cache->check(cache, req, true);
-
-  cache->last_request_metadata = cache_hit ? (void *) "hit" : (void *) "miss";
-
-  _ARC_sanity_check_full(cache, req, false);
-
-  if (cache_hit) {
-    return cache_hit;
-  }
-
-  while (cache->occupied_size + req->obj_size + cache->obj_md_size >
-         cache->cache_size) {
-    cache->evict(cache, req, NULL);
-  }
-
-  _ARC_sanity_check_full(cache, req, false);
-
-  cache->insert(cache, req);
-
-  _ARC_sanity_check_full(cache, req, true);
-
-  return cache_hit;
-}
-
 bool ARC_get(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
+#ifdef DEBUG_MODE
+  return ARC_get_debug(cache, req);
+#else
   return cache_get_base(cache, req);
-
-  // return ARC_get_debug(cache, req);
+#endif
 }
 
-bool ARC_check(cache_t *cache, const request_t *req,
-                         const bool update_cache) {
+bool ARC_check(cache_t *cache, const request_t *req, const bool update_cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   params->curr_obj_in_L1_ghost = false;
   params->curr_obj_in_L2_ghost = false;
@@ -316,7 +369,8 @@ bool ARC_check(cache_t *cache, const request_t *req,
     if (params->curr_obj_in_L1_ghost) {
       // case II: x in L1_ghost
       DEBUG_ASSERT(params->L1_ghost_size >= 1);
-      int delta = MAX(params->L2_ghost_size / params->L1_ghost_size, 1);
+      double delta =
+          MAX((double)params->L2_ghost_size / params->L1_ghost_size, 1);
       params->p = MIN(params->p + delta, cache->cache_size);
       _ARC_replace(cache, req, NULL);
       params->L1_ghost_size -= obj->obj_size + cache->obj_md_size;
@@ -325,7 +379,8 @@ bool ARC_check(cache_t *cache, const request_t *req,
     if (params->curr_obj_in_L2_ghost) {
       // case III: x in L2_ghost
       DEBUG_ASSERT(params->L2_ghost_size >= 1);
-      int delta = MAX(params->L1_ghost_size / params->L2_ghost_size, 1);
+      double delta =
+          MAX((double)params->L1_ghost_size / params->L2_ghost_size, 1);
       params->p = MAX(params->p - delta, 0);
       _ARC_replace(cache, req, NULL);
       params->L2_ghost_size -= obj->obj_size + cache->obj_md_size;
