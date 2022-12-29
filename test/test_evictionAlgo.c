@@ -609,6 +609,8 @@ int main(int argc, char *argv[]) {
                        test_FIFO_Reinsertion);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+
   g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
@@ -619,7 +621,6 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
@@ -630,9 +631,8 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader,
                        test_Hyperbolic);
 
-  /* Belady requires reader that has next access information, note that
-   * oracleGeneral trace removes all object size changes */
-  // reader = setup_oracleGeneralBin_reader();
+  /* Belady requires reader that has next access information and can only use
+   * oracleGeneral trace */
   g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
                        test_BeladySize);

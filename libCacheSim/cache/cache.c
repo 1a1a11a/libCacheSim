@@ -134,7 +134,7 @@ bool cache_check_base(cache_t *cache, const request_t *req,
       cache_hit = false;
 
       if (update_cache) {
-        cache_remove_obj_base(cache, cache_obj);
+        cache->remove(cache, cache_obj->obj_id);
       }
     }
 #endif

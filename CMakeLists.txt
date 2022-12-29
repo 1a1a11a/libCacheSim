@@ -11,6 +11,22 @@ set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}
 
 
 ########################################
+# define options #
+# options are cached variables https://stackoverflow.com/questions/35744647/disabling-cmake-option-has-no-effect
+########################################
+# echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
+option(USE_HUGEPAGE "use transparent hugepage" ON)
+option(ENABLE_TESTS "whether enable test" ON)
+option(INCLUDE_PRIV "whether include priv" ON)
+option(ENABLE_GLCACHE "enable group-learned cache" OFF)
+option(SUPPORT_TTL "whether support TTL" OFF)
+option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
+
+set(LOG_LEVEL INFO CACHE STRING "Enable SOMETHING support")  #
+set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE BBERBOSE VVVERBOSE)
+
+
+########################################
 # detect platform #
 ########################################
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -28,29 +44,14 @@ endif ()
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
-    set(LOG_LEVEL info)
+    set(LOG_LEVEL INFO)
 elseif (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     # log level: verbose, debug, info, warning, severe
-    set(LOG_LEVEL debug)
+    set(LOG_LEVEL DEBUG)
+    message(STATUS "set log level to debug")
 else()
-    set(LOG_LEVEL debug)
+    set(LOG_LEVEL DEBUG)
 endif()
-
-
-########################################
-# define options #
-# options are cached variables https://stackoverflow.com/questions/35744647/disabling-cmake-option-has-no-effect
-########################################
-# echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
-option(USE_HUGEPAGE "use transparent hugepage" ON)
-option(ENABLE_TESTS "whether enable test" ON)
-option(INCLUDE_PRIV "whether include priv" ON)
-option(ENABLE_GLCACHE "enable group-learned cache" OFF)
-option(SUPPORT_TTL "whether support TTL" OFF)
-option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
-
-set(LOG_LEVEL INFO CACHE STRING "Enable SOMETHING support")  #
-set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE BBERBOSE VVVERBOSE)
 
 
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)

@@ -92,16 +92,22 @@ static void _simulate(gpointer data, gpointer user_data) {
     read_one_req(cloned_reader, req);
   }
 
+/* disabled due to ARC and LeCaR use ghost entries in the hash table */
+#if defined(SUPPORT_TTL) && defined(ENABLE_SCAN)
   /* get expiration information */
-#ifdef SUPPORT_TTL
   if (local_cache->hashtable->n_obj != 0) {
     cache_stat_t temp_stat;
     memset(&temp_stat, 0, sizeof(cache_stat_t));
     temp_stat.curr_rtime = req->real_time;
     get_cache_state(local_cache, &temp_stat);
 
-    assert(local_cache->occupied_size == temp_stat.occupied_size);
-    assert(local_cache->n_obj == temp_stat.n_obj);
+    if (local_cache->occupied_size != temp_stat.occupied_size) {
+      WARN(
+          "occupied_size not match, %ld vs %ld, maybe the "
+          "cache uses a ghost list, in which case, the expired "
+          "object count may not be accurate",
+          local_cache->occupied_size, temp_stat.occupied_size);
+    }
     result[idx].expired_obj_cnt = temp_stat.expired_obj_cnt;
     result[idx].expired_bytes = temp_stat.expired_bytes;
   }

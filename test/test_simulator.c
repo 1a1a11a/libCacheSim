@@ -71,8 +71,8 @@ static void test_simulator(gconstpointer user_data) {
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
   // for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
   //   printf(
-  //       "cache size: %lu, n_req: %lu, n_req_byte: %lu, n_miss: %8lu %16lu\n ",
-  //       res[i].cache_size, res[i].n_req, res[i].n_req_byte, res[i].n_miss,
+  //       "cache size: %lu, n_req: %lu, n_req_byte: %lu, n_miss: %8lu %16lu\n
+  //       ", res[i].cache_size, res[i].n_req, res[i].n_req_byte, res[i].n_miss,
   //       res[i].n_miss_byte);
   // }
 
@@ -190,10 +190,10 @@ static void test_simulator_with_warmup2(gconstpointer user_data) {
 
 static void test_simulator_with_ttl(gconstpointer user_data) {
   uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-  uint64_t miss_cnt_true[] = {93316, 87969, 83348, 81824,
-                              72795, 72441, 72334, 72441};
-  uint64_t miss_byte_true[] = {4036282368, 3842483712, 3663417856, 3616012288,
-                               3092867072, 3085415424, 3080776704, 3088318464};
+  uint64_t miss_cnt_true[] = {93240, 87890, 83268, 81743,
+                              72649, 72284, 72165, 72086};
+  uint64_t miss_byte_true[] = {4035856384, 3842041344, 3662972928, 3615563264,
+                               3090454016, 3082932736, 3078236672, 3075259904};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE,
@@ -205,10 +205,9 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-    // printf(
-    //     "cache size: %lu, n_req: %lu, n_req_byte: %lu, n_miss: %8lu %16lu\n
-    //     ", res[i].cache_size, res[i].n_req, res[i].n_req_byte, res[i].n_miss,
-    //     res[i].n_miss_byte);
+    printf("cache size: %lu, n_req: %lu, n_req_byte: %lu, n_miss: %8lu %16lu\n",
+           res[i].cache_size, res[i].n_req, res[i].n_req_byte, res[i].n_miss,
+           res[i].n_miss_byte);
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
     g_assert_cmpuint(res[i].n_req, ==, req_cnt_true);
     g_assert_cmpuint(res[i].n_req_byte, ==, req_byte_true);

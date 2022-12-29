@@ -224,7 +224,7 @@ bool SLRUv0_get(cache_t *cache, const request_t *req) {
   bool ck = cache_get_base(cache, req);
 
   // SLRUv0_print_cache(cache);
-
+  
   return ck;
 }
 

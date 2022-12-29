@@ -19,7 +19,7 @@ typedef struct {
 
 cache_t *LHD_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-#if defined(SUPPORT_TTL) && SUPPORT_TTL == 1
+#ifdef SUPPORT_TTL 
   if (ccache_params.default_ttl < 30 * 86400) {
     ERROR("LHD does not support expiration\n");
     abort();
