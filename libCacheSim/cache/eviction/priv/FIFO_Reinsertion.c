@@ -1,8 +1,13 @@
 //
-//  a lazyFIFO module that supports different obj size
+//  lazy LRU - does not promote until eviction time 
+//  this is FIFO with re-insertion 
+//
+//  it is different from both Clock and segmented FIFO with re-insertion
+//  compare to Clock, old objects are mixed with new objects upon re-insertion
+//  compare to segmented FIFO-Reinsertion, this can promote as many objects as needed
 //
 //
-//  lazyFIFO.c
+//  FIFO_Reinsertion.c
 //  libCacheSim
 //
 //  Created by Juncheng on 12/4/18.
@@ -16,11 +21,11 @@
 extern "C" {
 #endif
 
-bool lazyFIFO_get(cache_t *cache, const request_t *req) {
+bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-bool lazyFIFO_check(cache_t *cache, const request_t *req,
+bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
                     const bool update_cache) {
   cache_obj_t *cached_obj = NULL;
   bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
@@ -34,7 +39,7 @@ bool lazyFIFO_check(cache_t *cache, const request_t *req,
   return cache_hit;
 }
 
-cache_obj_t *lazyFIFO_insert(cache_t *cache, const request_t *req) {
+cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_LRU(cache, req);
   obj->misc.freq = 1;
   obj->misc.last_access_rtime = req->real_time;
@@ -44,7 +49,7 @@ cache_obj_t *lazyFIFO_insert(cache_t *cache, const request_t *req) {
   return obj;
 }
 
-cache_obj_t *lazyFIFO_to_evict(cache_t *cache) {
+cache_obj_t *FIFO_Reinsertion_to_evict(cache_t *cache) {
   cache_obj_t *obj_to_evict = cache->q_tail;
   while (obj_to_evict->misc.freq > 1) {
     obj_to_evict->misc.freq = 1;
@@ -55,9 +60,9 @@ cache_obj_t *lazyFIFO_to_evict(cache_t *cache) {
   return obj_to_evict;
 }
 
-void lazyFIFO_evict(cache_t *cache, const request_t *req,
+void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
                     cache_obj_t *evicted_obj) {
-  cache_obj_t *obj_to_evict = lazyFIFO_to_evict(cache);
+  cache_obj_t *obj_to_evict = FIFO_Reinsertion_to_evict(cache);
   if (evicted_obj != NULL) {
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
@@ -65,7 +70,7 @@ void lazyFIFO_evict(cache_t *cache, const request_t *req,
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
-void lazyFIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
+void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   if (obj_to_remove == NULL) {
     ERROR("remove NULL from cache\n");
     abort();
@@ -75,30 +80,30 @@ void lazyFIFO_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
-bool lazyFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
+bool FIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;
   }
 
-  lazyFIFO_remove_obj(cache, obj);
+  FIFO_Reinsertion_remove_obj(cache, obj);
 
   return true;
 }
 
-void lazyFIFO_free(cache_t *cache) { cache_struct_free(cache); }
+void FIFO_Reinsertion_free(cache_t *cache) { cache_struct_free(cache); }
 
-cache_t *lazyFIFO_init(const common_cache_params_t ccache_params,
+cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("lazyFIFO", ccache_params);
-  cache->cache_init = lazyFIFO_init;
-  cache->cache_free = lazyFIFO_free;
-  cache->get = lazyFIFO_get;
-  cache->check = lazyFIFO_check;
-  cache->insert = lazyFIFO_insert;
-  cache->evict = lazyFIFO_evict;
-  cache->remove = lazyFIFO_remove;
-  cache->to_evict = lazyFIFO_to_evict;
+  cache_t *cache = cache_struct_init("FIFO_Reinsertion", ccache_params);
+  cache->cache_init = FIFO_Reinsertion_init;
+  cache->cache_free = FIFO_Reinsertion_free;
+  cache->get = FIFO_Reinsertion_get;
+  cache->check = FIFO_Reinsertion_check;
+  cache->insert = FIFO_Reinsertion_insert;
+  cache->evict = FIFO_Reinsertion_evict;
+  cache->remove = FIFO_Reinsertion_remove;
+  cache->to_evict = FIFO_Reinsertion_to_evict;
   cache->init_params = cache_specific_params;
   cache->obj_md_size = 0;
 

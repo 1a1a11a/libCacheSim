@@ -312,6 +312,19 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = GLCache_init(cc_params, args->eviction_params);
 #endif
 #ifdef INCLUDE_PRIV
+  } else if (strcasecmp(args->eviction_algo, "sfifomerge") == 0 ||
+             strcasecmp(args->eviction_algo, "sfifo-merge") == 0) {
+    cache = SFIFO_Merge_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "sfifo-reinsertion") == 0) {
+    cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
+
+  } else if (strcasecmp(args->eviction_algo, "fifo-resertion") == 0) {
+    cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {
+    cache = LRU_Prob_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lazy-fifov2") == 0) {
+    cache = lazyFIFOv2_init(cc_params, args->eviction_params);
+
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {
       ERROR("lru-belady only supports uncompressed trace files\n");
@@ -333,15 +346,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
         reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
     assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
     close_reader(reader);
-  } else if (strcasecmp(args->eviction_algo, "lazy-fifo") == 0) {
-    cache = lazyFIFO_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lazy-fifov2") == 0) {
-    cache = lazyFIFOv2_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifomerge") == 0 ||
-             strcasecmp(args->eviction_algo, "sfifo-merge") == 0) {
-    cache = SFIFO_Merge_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifo-reinsertion") == 0) {
-    cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", args->eviction_algo);

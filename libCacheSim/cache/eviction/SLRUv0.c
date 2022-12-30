@@ -188,11 +188,6 @@ bool SLRUv0_check(cache_t *cache, const request_t *req,
     bool cache_hit = LRU_check(SLRUv0_params->LRUs[i], req, false);
 
     if (cache_hit) {
-      if (cache->can_insert(cache, req) == false) {
-        // if the new object is too large
-        return true;
-      }
-
       // bump object from lower segment to upper segment;
       int src_id = i;
       int dest_id = i + 1;
