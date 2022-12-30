@@ -8,7 +8,7 @@
 //
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/priv/SFIFO.h"
+#include "../../include/libCacheSim/evictionAlgo/SFIFO.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,15 +61,11 @@ typedef struct SFIFO_params {
 
 static void _SFIFO_verify_lru_size(cache_t *cache) {
   SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
-  bool find_3365727 = false;
   for (int i = 0; i < params->n_seg; i++) {
     int64_t n_objs = 0;
     int64_t n_bytes = 0;
     cache_obj_t *obj = params->lru_heads[i];
     while (obj != NULL) {
-      if (obj->obj_id == 3365727) {
-        find_3365727 = true;
-      }
       n_objs += 1;
       n_bytes += obj->obj_size;
       obj = obj->queue.next;
@@ -203,11 +199,12 @@ bool SFIFO_check(cache_t *cache, const request_t *req, const bool update_cache) 
                      &params->lru_tails[params->n_seg - 1], obj);
   } else {
     SFIFO_promote_to_next_seg(cache, req, obj);
-  }
 
-  while (cache->occupied_size > cache->cache_size) {
-    // if the LRU is full
-    SFIFO_cool(cache, req, obj->SFIFO.lru_id);
+    while (params->lru_n_bytes[obj->SFIFO.lru_id] > params->per_seg_max_size) {
+      // if the LRU is full
+      SFIFO_cool(cache, req, obj->SFIFO.lru_id);
+    }
+    DEBUG_ASSERT(cache->occupied_size <= cache->cache_size);
   }
 
   return true;
@@ -216,10 +213,6 @@ bool SFIFO_check(cache_t *cache, const request_t *req, const bool update_cache) 
 cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
-
-  if (cache->can_insert(cache, req) == false) {
-    return NULL;
-  }
 
   cache_obj_t *obj = hashtable_insert(cache->hashtable, req);
 
@@ -235,8 +228,8 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
 
   if (nth_seg == -1) {
     // No space for insertion
-    while (params->lru_n_bytes[0] + req->obj_size + cache->obj_md_size >
-           params->per_seg_max_size) {
+    while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+           cache->cache_size) {
       cache->evict(cache, req, NULL);
     }
     nth_seg = 0;
@@ -276,6 +269,7 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
   }
 
   cache_obj_t *obj = params->lru_tails[nth_seg];
+
 #ifdef TRACK_EVICTION_R_AGE
   record_eviction_age(cache, req->real_time - obj->create_time);
 #endif
@@ -378,12 +372,9 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
   cache->remove = SFIFO_remove;
   cache->to_evict = SFIFO_to_evict;
   cache->init_params = cache_specific_params;
-  // cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
   cache->can_insert = SFIFO_can_insert;
-  // cache->get_occupied_byte = SFIFO_get_occupied_byte;
-  // cache->get_n_obj = SFIFO_get_n_obj;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2;
