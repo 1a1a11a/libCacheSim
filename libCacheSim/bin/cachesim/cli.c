@@ -318,7 +318,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "sfifo-reinsertion") == 0) {
     cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
 
-  } else if (strcasecmp(args->eviction_algo, "fifo-resertion") == 0) {
+  } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0) {
     cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, args->eviction_params);

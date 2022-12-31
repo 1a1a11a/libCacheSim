@@ -83,7 +83,7 @@ void print_parsed_args(struct arguments *args) {
       output_str, OUTPUT_STR_LEN - 1,
       "trace path: %s, trace_type %s, eviction %s, ofilepath "
       "%s, %d threads, warmup %d sec",
-      args->trace_path, trace_type_str[args->trace_type], // cache_size_str,
+      args->trace_path, trace_type_str[args->trace_type],  // cache_size_str,
       args->eviction_algo, args->ofilepath, args->n_thread, args->warmup_sec);
 
   if (args->trace_type_params != NULL)
@@ -120,7 +120,6 @@ void print_parsed_args(struct arguments *args) {
 #undef OUTPUT_STR_LEN
 }
 
-
 static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
   long wss = 0;
   request_t *req = new_request();
@@ -147,7 +146,7 @@ static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
 }
 
 void set_cache_size(struct arguments *args, reader_t *reader) {
-#define N_AUTO_CACHE_SIZE 8
+#define N_AUTO_CACHE_SIZE 12
   if (args->n_cache_size == 0) {
     if (set_hard_code_cache_size(args)) {
       /* find the hard-coded cache size */
@@ -157,8 +156,8 @@ void set_cache_size(struct arguments *args, reader_t *reader) {
     // detect cache size from the trace
     reset_reader(reader);
     long wss = cal_working_set_size(reader, args->ignore_obj_size);
-    double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003,
-                                   0.01,   0.03,   0.1,   0.3};
+    double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
+                                   0.1,    0.2,    0.3,   0.4,   0.6,  0.8};
     for (int i = 0; i < N_AUTO_CACHE_SIZE; i++) {
       args->cache_sizes[i] = (long)(wss * s[i]);
     }
