@@ -100,6 +100,13 @@ typedef struct {
 
 typedef struct {
   int32_t freq;
+  int32_t last_access_time;
+  int32_t cache_id; // 1: fifo, 2: clock, 3: fifo_ghost
+  bool visited;
+} LPQD_obj_metadata_t;
+
+typedef struct {
+  int32_t freq;
   int32_t last_access_vtime;
   int64_t next_access_vtime;
   int32_t last_access_rtime;
@@ -139,6 +146,7 @@ typedef struct cache_obj {
     SFIFO_Reinsertion_obj_metadata_t SFIFO_Reinsertion;
     SFIFO_obj_metadata_t SFIFO;
     SLRU_obj_metadata_t SLRU;
+    LPQD_obj_metadata_t LPQD;
     misc_metadata_t misc;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
