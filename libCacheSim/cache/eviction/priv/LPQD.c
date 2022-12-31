@@ -17,6 +17,26 @@
 extern "C" {
 #endif
 
+#define DEBUG_MODE
+#undef DEBUG_MODE
+#ifdef DEBUG_MODE
+#define PRINT_CACHE_STATE(cache, params)                               \
+  printf("cache size %ld + %ld + %ld, %ld %ld \t", params->n_fifo_byte, \
+         params->n_fifo_ghost_byte, params->n_clock_byte,              \
+         cache->occupied_size, cache->cache_size);                     \
+  // j
+#define DEBUG_PRINT(FMT, ...)         \
+  do {                                \
+    PRINT_CACHE_STATE(cache, params); \
+    printf(FMT, ##__VA_ARGS__);       \
+    printf("%s", NORMAL);             \
+    fflush(stdout);                   \
+  } while (0)
+
+#else
+#define DEBUG_PRINT(FMT, ...)
+#endif
+
 typedef struct {
   cache_obj_t *fifo_head;
   cache_obj_t *fifo_tail;
@@ -28,26 +48,35 @@ typedef struct {
   cache_obj_t *clock_tail;
   int64_t n_fifo_obj;
   int64_t n_fifo_byte;
+  int64_t n_fifo_ghost_obj;
+  int64_t n_fifo_ghost_byte;
   int64_t n_clock_obj;
   int64_t n_clock_byte;
   // the user specified size
   double fifo_ratio;
   int64_t fifo_size;
   int64_t clock_size;
+  int64_t fifo_ghost_size;
   cache_obj_t *clock_pointer;
+  int64_t vtime_last_check_is_ghost;
 } LPQD_params_t;
 
 void LPQD_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
 
-void LPQD_clock_evict(cache_t *cache, const request_t *req);
+void LPQD_clock_evict(cache_t *cache, const request_t *req,
+                      cache_obj_t *evicted_obj);
 
 bool LPQD_check(cache_t *cache, const request_t *req, const bool update_cache) {
+  LPQD_params_t *params = cache->eviction_params;
   cache_obj_t *cache_obj;
-  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
+  cache_check_base(cache, req, update_cache, &cache_obj);
+  bool cache_hit = (cache_obj != NULL && cache_obj->LPQD.cache_id != 3);
+  DEBUG_PRINT("%ld LPQD_check %s\n", cache->n_req, cache_hit ? "hit" : "miss");
+
   if (cache_obj != NULL && update_cache) {
     if (cache_obj->LPQD.cache_id == 1) {
       // FIFO cache, promote to clock cache
-      LPQD_params_t *params = cache->eviction_params;
+      DEBUG_PRINT("%ld LPQD_check promote to clock\n", cache->n_req);
       remove_obj_from_list(&params->fifo_head, &params->fifo_tail, cache_obj);
       params->n_fifo_obj--;
       params->n_fifo_byte -= cache_obj->obj_size + cache->obj_md_size;
@@ -55,14 +84,20 @@ bool LPQD_check(cache_t *cache, const request_t *req, const bool update_cache) {
       params->n_clock_obj++;
       params->n_clock_byte += cache_obj->obj_size + cache->obj_md_size;
       cache_obj->LPQD.cache_id = 2;
-      if (params->n_clock_byte > params->clock_size) {
+      while (params->n_clock_byte > params->clock_size) {
         // clock cache is full, evict from clock cache
-        LPQD_clock_evict(cache, req);
+        LPQD_clock_evict(cache, req, NULL);
       }
-
     } else if (cache_obj->LPQD.cache_id == 2) {
       // clock cache
+      DEBUG_PRINT("%ld LPQD_check hit on clock\n", cache->n_req);
       cache_obj->LPQD.visited = true;
+    } else if (cache_obj->LPQD.cache_id == 3) {
+      // FIFO ghost
+      DEBUG_PRINT("%ld LPQD_check ghost\n", cache->n_req);
+      DEBUG_ASSERT(cache_hit == false);
+      params->vtime_last_check_is_ghost = cache->n_req;
+      LPQD_remove_obj(cache, cache_obj);
     } else {
       ERROR("cache_obj->LPQD.cache_id = %d", cache_obj->LPQD.cache_id);
     }
@@ -72,26 +107,42 @@ bool LPQD_check(cache_t *cache, const request_t *req, const bool update_cache) {
 }
 
 bool LPQD_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
+  LPQD_params_t *params = cache->eviction_params;
+  DEBUG_PRINT("%ld LPQD_get1\n", cache->n_req);
+  DEBUG_ASSERT(params->n_fifo_obj + params->n_clock_obj == cache->n_obj);
+  DEBUG_ASSERT(params->n_fifo_byte + params->n_clock_byte ==
+               cache->occupied_size);
+  bool cache_hit = cache_get_base(cache, req);
+  DEBUG_PRINT("%ld LPQD_get2\n", cache->n_req);
+  DEBUG_ASSERT(params->n_fifo_obj + params->n_clock_obj == cache->n_obj);
+  DEBUG_ASSERT(params->n_fifo_byte + params->n_clock_byte ==
+               cache->occupied_size);
+
+  return cache_hit;
 }
 
 cache_obj_t *LPQD_insert(cache_t *cache, const request_t *req) {
   LPQD_params_t *params = cache->eviction_params;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
-  if (params->fifo_head == NULL) {
-    DEBUG_ASSERT(params->fifo_tail == NULL);
-    params->fifo_tail = obj;
-  } else {
-    params->fifo_head->queue.prev = obj;
-    obj->queue.next = params->fifo_head;
-  }
-
-  params->fifo_head = obj;
-  params->n_fifo_obj++;
-  params->n_fifo_byte += obj->obj_size + cache->obj_md_size;
-  obj->LPQD.cache_id = 1;
   obj->LPQD.visited = false;
+
+  if (cache->n_req == params->vtime_last_check_is_ghost) {
+    // insert to Clock
+    DEBUG_PRINT("%ld LPQD_insert to clock\n", cache->n_req);
+    prepend_obj_to_head(&params->clock_head, &params->clock_tail, obj);
+    params->n_clock_obj++;
+    params->n_clock_byte += obj->obj_size + cache->obj_md_size;
+    obj->LPQD.cache_id = 2;
+
+  } else {
+    // insert to FIFO
+    DEBUG_PRINT("%ld LPQD_insert to fifo\n", cache->n_req);
+    prepend_obj_to_head(&params->fifo_head, &params->fifo_tail, obj);
+    params->n_fifo_obj++;
+    params->n_fifo_byte += obj->obj_size + cache->obj_md_size;
+    obj->LPQD.cache_id = 1;
+  }
 
   return obj;
 }
@@ -106,12 +157,15 @@ cache_obj_t *LPQD_to_evict(cache_t *cache) {
   }
 }
 
-void LPQD_clock_evict(cache_t *cache, const request_t *req) {
+void LPQD_clock_evict(cache_t *cache, const request_t *req,
+                      cache_obj_t *evicted_obj) {
   LPQD_params_t *params = cache->eviction_params;
   cache_obj_t *moving_clock_pointer = params->clock_pointer;
 
   /* if we have run one full around or first eviction */
-  if (moving_clock_pointer == NULL) moving_clock_pointer = params->clock_tail;
+  if (moving_clock_pointer == NULL) {
+    moving_clock_pointer = params->clock_tail;
+  }
 
   /* find the first untouched */
   while (moving_clock_pointer != NULL && moving_clock_pointer->LPQD.visited) {
@@ -129,20 +183,51 @@ void LPQD_clock_evict(cache_t *cache, const request_t *req) {
   }
 
   params->clock_pointer = moving_clock_pointer->queue.prev;
+  if (evicted_obj != NULL) {
+    // return evicted object to caller
+    memcpy(evicted_obj, moving_clock_pointer, sizeof(cache_obj_t));
+  }
+
   LPQD_remove_obj(cache, moving_clock_pointer);
 }
 
 void LPQD_evict(cache_t *cache, const request_t *req,
                 cache_obj_t *evicted_obj) {
   LPQD_params_t *params = cache->eviction_params;
-  cache_obj_t *obj_to_evict = params->fifo_tail;
 
-  if (evicted_obj != NULL) {
-    // return evicted object to caller
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  if (params->n_fifo_byte > params->fifo_size) {
+    DEBUG_PRINT("%ld LPQD_evict_fifo\n", cache->n_req);
+    cache_obj_t *obj_to_evict = params->fifo_tail;
+    DEBUG_ASSERT(obj_to_evict != NULL);
+
+    if (evicted_obj != NULL) {
+      // return evicted object to caller
+      memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+    }
+
+    // LPQD_remove_obj(cache, obj_to_evict);
+
+    remove_obj_from_list(&params->fifo_head, &params->fifo_tail, obj_to_evict);
+    params->n_fifo_obj--;
+    params->n_fifo_byte -= obj_to_evict->obj_size + cache->obj_md_size;
+    cache->n_obj--;
+    cache->occupied_size -= obj_to_evict->obj_size + cache->obj_md_size;
+
+    prepend_obj_to_head(&params->fifo_ghost_head, &params->fifo_ghost_tail,
+                        obj_to_evict);
+    params->n_fifo_ghost_obj++;
+    params->n_fifo_ghost_byte += obj_to_evict->obj_size + cache->obj_md_size;
+    obj_to_evict->LPQD.cache_id = 3;
+    if (params->n_fifo_ghost_byte > params->fifo_ghost_size) {
+      // clock cache is full, evict from clock cache
+      LPQD_remove_obj(cache, params->fifo_ghost_tail);
+    }
+  } else {
+    DEBUG_PRINT("%ld LPQD_evict_clock\n", cache->n_req);
+    // evict from clock cache, this can happen because we insert to the clock
+    // when the object hit on the ghost
+    LPQD_clock_evict(cache, req, evicted_obj);
   }
-
-  LPQD_remove_obj(cache, obj_to_evict);
 }
 
 void LPQD_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
@@ -154,14 +239,22 @@ void LPQD_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
     remove_obj_from_list(&params->fifo_head, &params->fifo_tail, obj_to_remove);
     params->n_fifo_obj--;
     params->n_fifo_byte -= obj_to_remove->obj_size + cache->obj_md_size;
+    cache_remove_obj_base(cache, obj_to_remove);
   } else if (obj_to_remove->LPQD.cache_id == 2) {
     // clock cache
-    remove_obj_from_list(&params->clock_head, &params->clock_tail, obj_to_remove);
+    remove_obj_from_list(&params->clock_head, &params->clock_tail,
+                         obj_to_remove);
     params->n_clock_obj--;
     params->n_clock_byte -= obj_to_remove->obj_size + cache->obj_md_size;
+    cache_remove_obj_base(cache, obj_to_remove);
+  } else if (obj_to_remove->LPQD.cache_id == 3) {
+    // fifo ghost
+    remove_obj_from_list(&params->fifo_ghost_head, &params->fifo_ghost_tail,
+                         obj_to_remove);
+    params->n_fifo_ghost_obj--;
+    params->n_fifo_ghost_byte -= obj_to_remove->obj_size + cache->obj_md_size;
+    hashtable_delete(cache->hashtable, obj_to_remove);
   }
-
-  cache_remove_obj_base(cache, obj_to_remove);
 }
 
 bool LPQD_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -242,6 +335,8 @@ cache_t *LPQD_init(const common_cache_params_t ccache_params,
   params->fifo_ratio = 0.2;
   params->n_fifo_obj = 0;
   params->n_fifo_byte = 0;
+  params->n_fifo_ghost_obj = 0;
+  params->n_fifo_ghost_byte = 0;
   params->n_clock_obj = 0;
   params->n_clock_byte = 0;
   params->fifo_head = NULL;
@@ -250,6 +345,7 @@ cache_t *LPQD_init(const common_cache_params_t ccache_params,
   params->clock_tail = NULL;
   params->fifo_ghost_head = NULL;
   params->fifo_ghost_tail = NULL;
+  params->vtime_last_check_is_ghost = -1;
 
   if (cache_specific_params != NULL) {
     LPQD_parse_params(cache, cache_specific_params);
@@ -257,6 +353,7 @@ cache_t *LPQD_init(const common_cache_params_t ccache_params,
 
   params->fifo_size = cache->cache_size * params->fifo_ratio;
   params->clock_size = cache->cache_size - params->fifo_size;
+  params->fifo_ghost_size = params->clock_size;
 
   return cache;
 }
