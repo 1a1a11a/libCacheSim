@@ -95,7 +95,7 @@ typedef struct {
 
 typedef struct {
   int64_t last_access_vtime;
-  int lru_id;
+  int fifo_id;
 } SFIFO_obj_metadata_t;
 
 typedef struct {

@@ -322,6 +322,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, args->eviction_params);
+
   } else if (strcasecmp(args->eviction_algo, "lazy-fifov2") == 0) {
     cache = lazyFIFOv2_init(cc_params, args->eviction_params);
 
