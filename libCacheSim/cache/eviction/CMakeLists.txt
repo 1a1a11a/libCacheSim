@@ -32,6 +32,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/lazyFIFOv2.c
                 priv/LRU_Belady.c
                 priv/SFIFO.c
+                priv/LPQD.c
                 priv/SFIFO_Belady.c
                 )
 endif()

@@ -50,7 +50,7 @@ bool Clock_check(cache_t *cache, const request_t *req,
                  const bool update_cache) {
   cache_obj_t *cache_obj;
   bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
-  if (cache_obj != NULL) cache_obj->clock.visited = true;
+  if (cache_obj != NULL && update_cache) cache_obj->clock.visited = true;
 
   return cache_hit;
 }
