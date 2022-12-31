@@ -27,6 +27,7 @@
 #include "evictionAlgo/priv/SFIFO_Merge.h"
 #include "evictionAlgo/priv/SFIFO_Reinsertion.h"
 #include "evictionAlgo/priv/LRU_Belady.h"
+#include "evictionAlgo/priv/LRU_Prob.h"
 #include "evictionAlgo/priv/LPQD.h"
 #include "evictionAlgo/priv/SFIFO.h"
 #include "evictionAlgo/priv/SFIFO_Belady.h"

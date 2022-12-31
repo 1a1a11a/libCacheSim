@@ -1,5 +1,5 @@
 //
-//  LRU with Probabilistic promotion
+//  LRU with probabilistic promotion
 //
 //
 //  LRU_Prob.c
