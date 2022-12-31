@@ -566,10 +566,14 @@ static void test_ARC(gconstpointer user_data) {
 }
 
 static void test_SLRU(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {91204, 87638, 84193, 80995,
-                              77838, 70264, 61030, 56838};
-  uint64_t miss_byte_true[] = {4135969280, 3895592448, 3680328192, 3460513280,
-                               3255544832, 2785475584, 2508606976, 2340679680};
+  // uint64_t miss_cnt_true[] = {91204, 87638, 84193, 80995,
+  //                             77838, 70264, 61030, 56838};
+  // uint64_t miss_byte_true[] = {4135969280, 3895592448, 3680328192, 3460513280,
+  //                              3255544832, 2785475584, 2508606976, 2340679680};
+  uint64_t miss_cnt_true[] = {89624, 86725, 82781, 80203,
+                              75388, 65645, 59035, 56063};
+  uint64_t miss_byte_true[] = {4123085312, 3915534848, 3690704896, 3493027840,
+                               3174708736, 2661464064, 2507604992, 2439981056};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
