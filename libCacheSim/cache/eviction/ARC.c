@@ -54,7 +54,6 @@ typedef struct ARC_params {
   request_t *req_local;
 } ARC_params_t;
 
-
 // ########################## Debug functions ###############################
 static void _ARC_print_cache_content(cache_t *cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);

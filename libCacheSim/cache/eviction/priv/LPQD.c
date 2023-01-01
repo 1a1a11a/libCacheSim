@@ -20,10 +20,10 @@ extern "C" {
 #define DEBUG_MODE
 #undef DEBUG_MODE
 #ifdef DEBUG_MODE
-#define PRINT_CACHE_STATE(cache, params)                               \
+#define PRINT_CACHE_STATE(cache, params)                                \
   printf("cache size %ld + %ld + %ld, %ld %ld \t", params->n_fifo_byte, \
-         params->n_fifo_ghost_byte, params->n_clock_byte,              \
-         cache->occupied_size, cache->cache_size);                     \
+         params->n_fifo_ghost_byte, params->n_clock_byte,               \
+         cache->occupied_size, cache->cache_size);                      \
   // j
 #define DEBUG_PRINT(FMT, ...)         \
   do {                                \
@@ -354,6 +354,8 @@ cache_t *LPQD_init(const common_cache_params_t ccache_params,
   params->fifo_size = cache->cache_size * params->fifo_ratio;
   params->clock_size = cache->cache_size - params->fifo_size;
   params->fifo_ghost_size = params->clock_size;
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LPQD-%.4lf",
+           params->fifo_ratio);
 
   return cache;
 }

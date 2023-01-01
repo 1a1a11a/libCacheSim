@@ -14,7 +14,6 @@ typedef struct {
   cache_obj_t *pointer;
 } Clock_params_t;
 
-void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
 
 cache_t *Clock_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
