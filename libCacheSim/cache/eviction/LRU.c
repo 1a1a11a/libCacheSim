@@ -41,6 +41,11 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
     abort();
   }
 
+  LRU_params_t *params = malloc(sizeof(LRU_params_t));
+  params->q_head = NULL;
+  params->q_tail = NULL;
+  cache->eviction_params = params;
+
   return cache;
 }
 
@@ -51,24 +56,55 @@ bool LRU_get(cache_t *cache, const request_t *req) {
 }
 
 bool LRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
+  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
   cache_obj_t *cache_obj;
-  bool ret = cache_check_base(cache, req, update_cache, &cache_obj);
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache_obj && likely(update_cache)) {
     /* lru_head is the newest, move cur obj to lru_head */
-    move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
+    move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   }
-  return ret;
+  return cache_hit;
 }
 
 cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
-  return cache_insert_LRU(cache, req);
+  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
+
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
+
+  return obj;
 }
 
-cache_obj_t *LRU_to_evict(cache_t *cache) { return cache->q_tail; }
+cache_obj_t *LRU_to_evict(cache_t *cache) {
+  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
+  return params->q_tail;
+}
 
 void LRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
-  cache_evict_LRU(cache, req, evicted_obj);
+  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
+  cache_obj_t *obj_to_evict = params->q_tail;
+  DEBUG_ASSERT(params->q_tail != NULL);
+
+  if (evicted_obj != NULL) {
+    // return evicted object to caller
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  }
+
+  // we can simply call remove_obj_from_list here, but for the best performance,
+  // we chose to do it manually
+  // remove_obj_from_list(&params->q_head, &params->q_tail, obj)
+
+  params->q_tail = params->q_tail->queue.prev;
+  if (likely(params->q_tail != NULL)) {
+    params->q_tail->queue.next = NULL;
+  } else {
+    /* cache->n_obj has not been updated */
+    DEBUG_ASSERT(cache->n_obj == 1);
+    params->q_head = NULL;
+  }
+
+  cache_evict_obj_base(cache, obj_to_evict);
 }
 
 bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -76,10 +112,10 @@ bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   if (obj == NULL) {
     return false;
   }
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
-  cache_remove_obj_base(cache, obj);
+  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
 
-  return true;
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj);
+  cache_remove_obj_base(cache, obj);
 }
 
 #ifdef __cplusplus

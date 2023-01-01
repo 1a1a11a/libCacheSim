@@ -97,9 +97,6 @@ struct cache {
 
   admissioner_t *admissioner;
 
-  cache_obj_t *q_head;  // for LRU and FIFO
-  cache_obj_t *q_tail;  // for LRU and FIFO
-
   void *eviction_params;
   void *last_request_metadata;
 
@@ -195,36 +192,30 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req);
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req);
 
-/**
- * insert used by LRU/FIFO, first call cache_insert_base then
- * update LRU, all algorithms using LRU list should call this
- * @param cache
- * @param req
- * @return
- */
-cache_obj_t *cache_insert_LRU(cache_t *cache, const request_t *req);
 
 /**
- * remove object from the cache, this function handles the cache metadata
- * and removing from hash table
+ * @brief this function is called by all eviction algorithms that
+ * need to remove an object from the cache, it updates the cache metadata,
+ * because it frees the object struct, it needs to be called at the end of
+ * the eviction function.
  *
- * @param cache
- * @param obj
+ * @param cache the cache
+ * @param obj the object to be removed
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj);
 
 /**
- * @brief evict an object using LRU algorithm
+ * @brief this function is called by all eviction algorithms in the eviction
+ * function, it updates the cache metadata. Because it frees the object struct,
+ * it needs to be called at the end of the eviction function.
  *
- * @param cache
- * @param req
- * @param evicted_obj
+ * @param cache the cache
+ * @param obj the object to be removed
  */
-void cache_evict_LRU(cache_t *cache, const request_t *req,
-                     cache_obj_t *evicted_obj);
+void cache_evict_obj_base(cache_t *cache, cache_obj_t *obj);
 
 /**
- * @brief get an object from the cache using request object id
+ * @brief get an object from the cache using a request 
  *
  * @param cache
  * @param req

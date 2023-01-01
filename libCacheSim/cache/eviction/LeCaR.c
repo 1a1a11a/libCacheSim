@@ -23,7 +23,8 @@ extern "C" {
 // #define LECAR_USE_BELADY
 
 typedef struct LeCaR_params {
-  // LRU chain pointers are part of cache_t struct
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
 
   // used for LFU
   freq_node_t *freq_one_node;
@@ -49,6 +50,7 @@ static void free_freq_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
 }
 
+// ##################### debug ####################
 static void verify_ghost_lru_integrity(cache_t *cache, LeCaR_params_t *params) {
   if (params->ghost_lru_head == NULL) {
     assert(params->ghost_lru_tail == NULL);
@@ -238,6 +240,7 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   params->n_hit_lru_history = params->n_hit_lfu_history = 0;
 
   params->ghost_lru_head = params->ghost_lru_tail = NULL;
+  params->q_head = params->q_tail = NULL;
 
   // LFU parameters
   params->min_freq = 1;
@@ -321,7 +324,7 @@ bool LeCaR_check(cache_t *cache, const request_t *req, bool update_cache) {
   } else {
     // if it is an cached object, update cache state
     // update LRU chain
-    move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
+    move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
 
     // update LFU state
     remove_obj_from_freq_node(params, cache_obj);
@@ -361,7 +364,8 @@ cache_obj_t *LeCaR_insert(cache_t *cache, const request_t *req) {
   VVERBOSE("insert object %lu into cache\n", (unsigned long)req->obj_id);
 
   // LRU and hash table insert
-  cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
+  cache_obj_t *cache_obj = cache_insert_base(cache, req);
+  prepend_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   cache_obj->LeCaR.freq = 1;
   cache_obj->LeCaR.eviction_vtime = 0;
   cache_obj->LeCaR.ghost_evicted_by_lru = false;
@@ -492,7 +496,7 @@ cache_obj_t *LeCaR_to_evict(cache_t *cache) {
 
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
-    return cache->q_tail;
+    return params->q_tail;
   } else {
     freq_node_t *min_freq_node = get_min_freq_node(params);
     return min_freq_node->first_obj;
@@ -507,7 +511,7 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     // evict from LRU
-    obj_to_evict = cache->q_tail;
+    obj_to_evict = params->q_tail;
     VVERBOSE("evict object %lu from LRU\n", (unsigned long)obj_to_evict);
 
     // mark as ghost object
@@ -527,20 +531,13 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
 
   obj_to_evict->LeCaR.eviction_vtime = cache->n_req;
 
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, req->real_time - obj_to_evict->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, cache->n_req - obj_to_evict->create_time);
-#endif
-
   if (evicted_obj != NULL) {
     // return evicted object to caller
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
 
   // update LRU chain state
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_evict);
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
 
   // update LFU chain state
   remove_obj_from_freq_node(params, obj_to_evict);
@@ -568,7 +565,7 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
     cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
     VVERBOSE("remove ghost %p, ghost cache size (before) %ld\n", ghost_to_evict,
              params->ghost_entry_used_size);
-    assert(ghost_to_evict != NULL);
+    DEBUG_ASSERT(ghost_to_evict != NULL);
     params->ghost_entry_used_size -=
         (ghost_to_evict->obj_size + cache->obj_md_size);
     params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
@@ -588,7 +585,7 @@ bool LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
   }
 
   // remove from LRU list
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj);
 
   // remove from LFU
   remove_obj_from_freq_node(params, obj);

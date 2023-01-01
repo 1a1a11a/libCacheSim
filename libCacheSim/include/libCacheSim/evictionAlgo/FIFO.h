@@ -15,6 +15,11 @@
 extern "C" {
 #endif
 
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+} FIFO_params_t;
+
 cache_t *FIFO_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 

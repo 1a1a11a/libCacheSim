@@ -9,84 +9,17 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/cache.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo/priv/priv.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool lazyFIFOv2_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
-}
-
-bool lazyFIFOv2_check(cache_t *cache, const request_t *req,
-                      const bool update_cache) {
-  cache_obj_t *cached_obj = NULL;
-  bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
-  if (cached_obj != NULL) {
-    cached_obj->misc.freq += 1;
-    cached_obj->misc.last_access_rtime = req->real_time;
-    cached_obj->misc.last_access_vtime = cache->n_req;
-    cached_obj->misc.next_access_vtime = req->next_access_vtime;
-  }
-
-  return cache_hit;
-}
-
-cache_obj_t *lazyFIFOv2_insert(cache_t *cache, const request_t *req) {
-  cache_obj_t *obj = cache_insert_LRU(cache, req);
-  obj->misc.freq = 1;
-  obj->misc.last_access_rtime = req->real_time;
-  obj->misc.last_access_vtime = cache->n_req;
-  obj->misc.next_access_vtime = req->next_access_vtime;
-
-  return obj;
-}
-
-cache_obj_t *lazyFIFOv2_to_evict(cache_t *cache) {
-  cache_obj_t *obj_to_evict = cache->q_tail;
-  while (obj_to_evict->misc.freq > 1) {
-    obj_to_evict->misc.freq = 1;
-    move_obj_to_head(&cache->q_head, &cache->q_tail, obj_to_evict);
-    obj_to_evict = cache->q_tail;
-  }
-
-  return obj_to_evict;
-}
-
-void lazyFIFOv2_evict(cache_t *cache, const request_t *req,
-                      cache_obj_t *evicted_obj) {
-  cache_obj_t *obj_to_evict = lazyFIFOv2_to_evict(cache);
-  if (evicted_obj != NULL) {
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
-  }
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_evict);
-  cache_remove_obj_base(cache, obj_to_evict);
-}
-
-void lazyFIFOv2_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  if (obj_to_remove == NULL) {
-    ERROR("remove NULL from cache\n");
-    abort();
-  }
-
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_remove);
-  cache_remove_obj_base(cache, obj_to_remove);
-}
-
-bool lazyFIFOv2_remove(cache_t *cache, const obj_id_t obj_id) {
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-  if (obj == NULL) {
-    return false;
-  }
-
-  lazyFIFOv2_remove_obj(cache, obj);
-
-  return true;
-}
-
-void lazyFIFOv2_free(cache_t *cache) { cache_struct_free(cache); }
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+} lazyFIFOv2_params_t;
 
 cache_t *lazyFIFOv2_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params) {
@@ -100,7 +33,12 @@ cache_t *lazyFIFOv2_init(const common_cache_params_t ccache_params,
   cache->remove = lazyFIFOv2_remove;
   cache->to_evict = lazyFIFOv2_to_evict;
   cache->init_params = cache_specific_params;
-  cache->obj_md_size = 0;
+
+  if (ccache_params.consider_obj_metadata) {
+    cache->obj_md_size = 8 * 2;
+  } else {
+    cache->obj_md_size = 0;
+  }
 
   if (cache_specific_params != NULL) {
     ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
@@ -108,7 +46,83 @@ cache_t *lazyFIFOv2_init(const common_cache_params_t ccache_params,
     abort();
   }
 
+  lazyFIFOv2_params_t *params = malloc(sizeof(lazyFIFOv2_params_t));
+  params->q_head = NULL;
+  params->q_tail = NULL;
+  cache->eviction_params = params;
+
   return cache;
+}
+
+void lazyFIFOv2_free(cache_t *cache) { cache_struct_free(cache); }
+
+bool lazyFIFOv2_get(cache_t *cache, const request_t *req) {
+  return cache_get_base(cache, req);
+}
+
+bool lazyFIFOv2_check(cache_t *cache, const request_t *req,
+                      const bool update_cache) {
+  lazyFIFOv2_params_t *params = (lazyFIFOv2_params_t *)cache->eviction_params;
+  cache_obj_t *cache_obj;
+  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
+
+  if (cache_obj && likely(update_cache)) {
+    /* lazyFIFOv2_head is the newest, move cur obj to lazyFIFOv2_head */
+    move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
+  }
+  return cache_hit;
+}
+
+cache_obj_t *lazyFIFOv2_insert(cache_t *cache, const request_t *req) {
+  lazyFIFOv2_params_t *params = (lazyFIFOv2_params_t *)cache->eviction_params;
+
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
+
+  return obj;
+}
+
+cache_obj_t *lazyFIFOv2_to_evict(cache_t *cache) {
+  lazyFIFOv2_params_t *params = (lazyFIFOv2_params_t *)cache->eviction_params;
+  return params->q_tail;
+}
+
+void lazyFIFOv2_evict(cache_t *cache, const request_t *req,
+                      cache_obj_t *evicted_obj) {
+  lazyFIFOv2_params_t *params = (lazyFIFOv2_params_t *)cache->eviction_params;
+  cache_obj_t *obj_to_evict = params->q_tail;
+  DEBUG_ASSERT(params->q_tail != NULL);
+
+  if (evicted_obj != NULL) {
+    // return evicted object to caller
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  }
+
+  // we can simply call remove_obj_from_list here, but for the best performance,
+  // we chose to do it manually
+  // remove_obj_from_list(&params->q_head, &params->q_tail, obj)
+
+  params->q_tail = params->q_tail->queue.prev;
+  if (likely(params->q_tail != NULL)) {
+    params->q_tail->queue.next = NULL;
+  } else {
+    /* cache->n_obj has not been updated */
+    DEBUG_ASSERT(cache->n_obj == 1);
+    params->q_head = NULL;
+  }
+
+  cache_evict_obj_base(cache, obj_to_evict);
+}
+
+bool lazyFIFOv2_remove(cache_t *cache, const obj_id_t obj_id) {
+  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
+  if (obj == NULL) {
+    return false;
+  }
+  lazyFIFOv2_params_t *params = (lazyFIFOv2_params_t *)cache->eviction_params;
+
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj);
+  cache_remove_obj_base(cache, obj);
 }
 
 #ifdef __cplusplus

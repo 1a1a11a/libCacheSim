@@ -46,6 +46,9 @@ typedef enum {
 static char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY", "None"};
 
 typedef struct SFIFO_Merge_params {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+
   // points to the eviction position
   cache_obj_t *next_to_merge;
   // the number of object to examine at each eviction
@@ -67,7 +70,7 @@ static const char *SFIFO_Merge_current_params(SFIFO_Merge_params_t *params) {
 }
 
 static void SFIFO_Merge_parse_params(cache_t *cache,
-                                    const char *cache_specific_params) {
+                                     const char *cache_specific_params) {
   SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
 
   char *params_str = strdup(cache_specific_params);
@@ -123,7 +126,7 @@ static void SFIFO_Merge_parse_params(cache_t *cache,
 }
 
 cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
-                         const char *cache_specific_params) {
+                          const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("SFIFO_Merge", ccache_params);
   cache->cache_init = SFIFO_Merge_init;
   cache->cache_free = SFIFO_Merge_free;
@@ -174,7 +177,7 @@ void SFIFO_Merge_free(cache_t *cache) {
 }
 
 bool SFIFO_Merge_check(cache_t *cache, const request_t *req,
-                      const bool update_cache) {
+                       const bool update_cache) {
   cache_obj_t *cache_obj;
   bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
 
@@ -229,7 +232,10 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
 }
 
 cache_obj_t *SFIFO_Merge_insert(cache_t *cache, const request_t *req) {
-  cache_obj_t *cache_obj = cache_insert_LRU(cache, req);
+  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+
+  cache_obj_t *cache_obj = cache_insert_base(cache, req);
+  prepend_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   cache_obj->SFIFO_Merge.freq = 0;
   cache_obj->SFIFO_Merge.last_access_vtime = cache->n_req;
   cache_obj->SFIFO_Merge.next_access_vtime = req->next_access_vtime;
@@ -244,7 +250,7 @@ cache_obj_t *SFIFO_Merge_to_evict(cache_t *cache) {
 }
 
 void SFIFO_Merge_evict(cache_t *cache, const request_t *req,
-                      cache_obj_t *evicted_obj) {
+                       cache_obj_t *evicted_obj) {
   assert(evicted_obj == NULL);
 
   SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
@@ -253,8 +259,8 @@ void SFIFO_Merge_evict(cache_t *cache, const request_t *req,
   int n_loop = 0;
   cache_obj_t *cache_obj = params->next_to_merge;
   if (cache_obj == NULL) {
-    params->next_to_merge = cache->q_tail;
-    cache_obj = cache->q_tail;
+    params->next_to_merge = params->q_tail;
+    cache_obj = params->q_tail;
     n_loop = 1;
   }
 
@@ -276,7 +282,7 @@ void SFIFO_Merge_evict(cache_t *cache, const request_t *req,
     //  TODO: wrap back to the head of the list early before reaching the end of
     //  the list
     if (cache_obj == NULL) {
-      cache_obj = cache->q_tail;
+      cache_obj = params->q_tail;
       DEBUG_ASSERT(n_loop++ <= 2);
     }
   }
@@ -300,12 +306,9 @@ void SFIFO_Merge_evict(cache_t *cache, const request_t *req,
 }
 
 void SFIFO_Merge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  if (obj_to_remove == NULL) {
-    ERROR("remove NULL from cache\n");
-    abort();
-  }
-
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_remove);
+  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+  DEBUG_ASSERT(obj_to_remove != NULL);
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_remove);
   cache_remove_obj_base(cache, obj_to_remove);
 }
 

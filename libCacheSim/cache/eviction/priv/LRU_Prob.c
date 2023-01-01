@@ -18,6 +18,9 @@ extern "C" {
 #endif
 
 typedef struct LRU_Prob_params {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+
   double prob;
   int threshold;
 } LRU_Prob_params_t;
@@ -39,7 +42,7 @@ bool LRU_Prob_check(cache_t *cache, const request_t *req,
     cached_obj->misc.next_access_vtime = req->next_access_vtime;
 
     if (next_rand() % params->threshold == 0) {
-      move_obj_to_head(&cache->q_head, &cache->q_tail, cached_obj);
+      move_obj_to_head(&params->q_head, &params->q_tail, cached_obj);
     }
   }
 
@@ -47,48 +50,40 @@ bool LRU_Prob_check(cache_t *cache, const request_t *req,
 }
 
 cache_obj_t *LRU_Prob_insert(cache_t *cache, const request_t *req) {
-  cache_obj_t *obj = cache_insert_LRU(cache, req);
-  obj->misc.freq = 1;
-  obj->misc.last_access_rtime = req->real_time;
-  obj->misc.last_access_vtime = cache->n_req;
-  obj->misc.next_access_vtime = req->next_access_vtime;
+  LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
   return obj;
 }
 
 cache_obj_t *LRU_Prob_to_evict(cache_t *cache) {
-  cache_obj_t *obj_to_evict = cache->q_tail;
-  // while (obj_to_evict->misc.freq > 1) {
-  //   obj_to_evict->misc.freq = 1;
-  //   move_obj_to_head(&cache->q_head, &cache->q_tail, obj_to_evict);
-  //   obj_to_evict = cache->q_tail;
-  // }
-
+  LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
+  cache_obj_t *obj_to_evict = params->q_tail;
   return obj_to_evict;
 }
 
 void LRU_Prob_evict(cache_t *cache, const request_t *req,
                     cache_obj_t *evicted_obj) {
-  cache_obj_t *obj_to_evict = LRU_Prob_to_evict(cache);
+  LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
+  cache_obj_t *obj_to_evict = params->q_tail;
   if (evicted_obj != NULL) {
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_evict);
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
   cache_remove_obj_base(cache, obj_to_evict);
 }
 
 void LRU_Prob_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  if (obj_to_remove == NULL) {
-    ERROR("remove NULL from cache\n");
-    abort();
-  }
+  DEBUG_ASSERT(obj_to_remove != NULL);
+  LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
 
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_remove);
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_remove);
   cache_remove_obj_base(cache, obj_to_remove);
 }
 
 bool LRU_Prob_remove(cache_t *cache, const obj_id_t obj_id) {
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
+  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
   if (obj == NULL) {
     return false;
   }

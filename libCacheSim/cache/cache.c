@@ -147,30 +147,6 @@ bool cache_check_base(cache_t *cache, const request_t *req,
       *cache_obj_ret = NULL;
   }
 
-  // if (likely(update_cache)) {
-  //   if (cache_hit) {
-  // no longer considers object size change over time,
-  // the trace should not have such behavior
-  ;
-  // if (unlikely(cache_obj->obj_size != req->obj_size)) {
-  //   VVERBOSE("object size change from %u to %u\n", cache_obj->obj_size,
-  //            req->obj_size);
-  //   if (cache->can_insert(cache, req)) {
-  //     cache->occupied_size -= cache_obj->obj_size;
-  //     cache->occupied_size += req->obj_size;
-  //     cache_obj->obj_size = req->obj_size;
-
-  // //     // while (cache->occupied_size > cache->cache_size) {
-  // //     //   cache->evict(cache, req, NULL);
-  // //     // }
-  // //   } else {
-  // //     // TODO: should we remove the object?
-  // //     // but theoretically object size should not change
-  //   }
-  // }
-  // }
-  // }
-
   return cache_hit;
 }
 
@@ -233,45 +209,36 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   }
 #endif
 
-#ifdef TRACK_EVICTION_R_AGE
-  cache_obj->create_time = (int64_t)req->real_time;
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  cache_obj->create_time = (int64_t)cache->n_req;
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 
   return cache_obj;
 }
 
 /**
- * @brief this function is called by caches that use
- * a single queue to order objects, such as LRU, FIFO, etc.
- * it inserts an object to the head of queue
+ * @brief this function is called by all eviction algorithms in the eviction
+ * function, it updates the cache metadata. Because it frees the object struct,
+ * it needs to be called at the end of the eviction function.
  *
- * @param cache
- * @param req
+ * @param cache the cache
+ * @param obj the object to be removed
  */
-cache_obj_t *cache_insert_LRU(cache_t *cache, const request_t *req) {
-  cache_obj_t *cache_obj = cache_insert_base(cache, req);
-
-  if (unlikely(cache->q_head == NULL)) {
-    // an empty list, this is the first insert
-    cache->q_head = cache_obj;
-    cache->q_tail = cache_obj;
-  } else {
-    cache->q_head->queue.prev = cache_obj;
-    cache_obj->queue.next = cache->q_head;
-  }
-  cache->q_head = cache_obj;
-  return cache_obj;
+void cache_evict_obj_base(cache_t *cache, cache_obj_t *obj) {
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  record_eviction_age(cache, CURR_TIME(cache, req) - obj_to_evict->create_time);
+#endif
+  cache_remove_obj_base(cache, obj);
 }
 
 /**
  * @brief this function is called by all eviction algorithms that
- * need to remove an object from the cache, it updates the cache metadata.
+ * need to remove an object from the cache, it updates the cache metadata,
+ * because it frees the object struct, it needs to be called at the end of
+ * the eviction function.
  *
- * @param cache
- * @param req
+ * @param cache the cache
+ * @param obj the object to be removed
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size + cache->obj_md_size);
@@ -281,48 +248,7 @@ void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
 }
 
 /**
- * @brief eviction an object using LRU
- *
- * @param cache
- * @param evicted_obj
- */
-void cache_evict_LRU(cache_t *cache,
-                     __attribute__((unused)) const request_t *req,
-                     cache_obj_t *evicted_obj) {
-  cache_obj_t *obj_to_evict = cache->q_tail;
-  if (evicted_obj != NULL) {
-    // return evicted object to caller
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
-  }
-  DEBUG_ASSERT(cache->q_tail != NULL);
-  DEBUG_ASSERT(cache->q_tail != cache->q_tail->queue.prev);
-
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, req->real_time - obj_to_evict->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, cache->n_req - obj_to_evict->create_time);
-#endif
-
-  cache->q_tail = cache->q_tail->queue.prev;
-  if (likely(cache->q_tail != NULL)) {
-    cache->q_tail->queue.next = NULL;
-  } else {
-    /* cache->n_obj has not been updated */
-    DEBUG_ASSERT(cache->n_obj == 1);
-    cache->q_head = NULL;
-  }
-
-  cache_remove_obj_base(cache, obj_to_evict);
-  DEBUG_ASSERT(cache->q_tail == NULL ||
-               cache->q_tail != cache->q_tail->queue.prev);
-  /** obj_to_evict is not freed or returned to hashtable, if you have
-   * extra_metadata allocated with obj_to_evict, you need to free them now,
-   * otherwise, there will be memory leakage **/
-}
-
-/**
- * @brief this function is a helper when we need the actual object
+ * @brief get an object from the cache using a request
  *
  * @param cache
  * @param req
@@ -333,10 +259,11 @@ cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief this function is a helper when we need the actual object
+ * @brief get an object from the cache using object id
  *
  * @param cache
- * @param obj_id_t
+ * @param id
+ * @return cache_obj_t*
  */
 cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id) {
   return hashtable_find_obj_id(cache->hashtable, id);

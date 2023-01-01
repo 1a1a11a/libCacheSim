@@ -311,14 +311,15 @@ bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = cache_get_obj_by_id(params->SR_list, obj_id);
   bool remove_from_SR = false;
   if (obj) {
-    remove_obj_from_list(&(params->SR_list)->q_head, &(params->SR_list)->q_tail,
-                         obj);
+    LRU_params_t *lru_params =
+        (LRU_params_t *)(params->SR_list->eviction_params);
+    remove_obj_from_list(&lru_params->q_head, &lru_params->q_tail, obj);
     remove_from_SR = true;
   } else {
     obj = cache_get_obj_by_id(params->R_list, obj_id);
-    DEBUG_ASSERT(obj != NULL);
-    remove_obj_from_list(&(params->R_list)->q_head, &(params->R_list)->q_tail,
-                         obj);
+    LRU_params_t *lru_params =
+        (LRU_params_t *)(params->R_list->eviction_params);
+    remove_obj_from_list(&lru_params->q_head, &lru_params->q_tail, obj);
     remove_from_SR = false;
   }
 

@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+} LRU_Belady_params_t;
+
 cache_t *LRU_Belady_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("LRU_Belady", ccache_params);
@@ -51,6 +56,7 @@ void LRU_Belady_free(cache_t *cache) { cache_struct_free(cache); }
 bool LRU_Belady_check(cache_t *cache, const request_t *req,
                       const bool update_cache) {
   cache_obj_t *cache_obj;
+  LRU_Belady_params_t *params = (LRU_Belady_params_t *)cache->eviction_params;
   bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
 
   if (cache->n_req > cache->future_stack_dist_array_size) {
@@ -63,7 +69,7 @@ bool LRU_Belady_check(cache_t *cache, const request_t *req,
   if (cache_obj && likely(update_cache)) {
     if (cache->future_stack_dist[cache->n_req - 1] != -1 &&
         cache->future_stack_dist[cache->n_req - 1] < cache->cache_size) {
-      move_obj_to_head(&cache->q_head, &cache->q_tail, cache_obj);
+      move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
     }
   }
   return cache_hit;
@@ -74,14 +80,31 @@ bool LRU_Belady_get(cache_t *cache, const request_t *req) {
 }
 
 cache_obj_t *LRU_Belady_insert(cache_t *cache, const request_t *req) {
-  return cache_insert_LRU(cache, req);
+  LRU_Belady_params_t *params = (LRU_Belady_params_t *)cache->eviction_params;
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
+
+  return obj;
 }
 
-cache_obj_t *LRU_Belady_to_evict(cache_t *cache) { return cache->q_tail; }
+cache_obj_t *LRU_Belady_to_evict(cache_t *cache) {
+  LRU_Belady_params_t *params = (LRU_Belady_params_t *)cache->eviction_params;
+  return params->q_tail;
+}
 
 void LRU_Belady_evict(cache_t *cache, const request_t *req,
                       cache_obj_t *evicted_obj) {
-  cache_evict_LRU(cache, req, evicted_obj);
+  LRU_Belady_params_t *params = (LRU_Belady_params_t *)cache->eviction_params;
+  cache_obj_t *obj_to_evict = params->q_tail;
+  DEBUG_ASSERT(params->q_tail != NULL);
+
+  if (evicted_obj != NULL) {
+    // return evicted object to caller
+    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
+  }
+
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
+  cache_evict_obj_base(cache, obj_to_evict);
 }
 
 bool LRU_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -90,7 +113,8 @@ bool LRU_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
     return false;
   }
 
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj);
+  LRU_Belady_params_t *params = (LRU_Belady_params_t *)cache->eviction_params;
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj);
   cache_remove_obj_base(cache, obj);
 
   return true;

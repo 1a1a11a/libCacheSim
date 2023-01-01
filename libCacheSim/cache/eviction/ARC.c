@@ -540,9 +540,7 @@ bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
       params->L2_data_size -= obj->obj_size + cache->obj_md_size;
       remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
     }
-    cache->occupied_size -= obj->obj_size + cache->obj_md_size;
-    cache->n_obj -= 1;
-    hashtable_delete(cache->hashtable, obj);
+    cache_remove_obj_base(cache, obj);
   }
 
   return true;

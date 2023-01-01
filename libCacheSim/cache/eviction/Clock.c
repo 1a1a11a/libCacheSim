@@ -8,6 +8,9 @@ extern "C" {
 #endif
 
 typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+
   cache_obj_t *pointer;
 } Clock_params_t;
 
@@ -40,6 +43,8 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
 
   cache->eviction_params = my_malloc(Clock_params_t);
   ((Clock_params_t *)(cache->eviction_params))->pointer = NULL;
+  ((Clock_params_t *)(cache->eviction_params))->q_head = NULL;
+  ((Clock_params_t *)(cache->eviction_params))->q_tail = NULL;
 
   return cache;
 }
@@ -60,10 +65,12 @@ bool Clock_get(cache_t *cache, const request_t *req) {
 }
 
 cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
-  cache_obj_t *cached_obj = cache_insert_LRU(cache, req);
-  cached_obj->clock.visited = false;
+  Clock_params_t *params = cache->eviction_params;
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
+  obj->clock.visited = false;
 
-  return cached_obj;
+  return obj;
 }
 
 cache_obj_t *Clock_to_evict(cache_t *cache) {
@@ -71,7 +78,7 @@ cache_obj_t *Clock_to_evict(cache_t *cache) {
   cache_obj_t *moving_pointer = params->pointer;
 
   /* if we have run one full around or first eviction */
-  if (moving_pointer == NULL) moving_pointer = cache->q_tail;
+  if (moving_pointer == NULL) moving_pointer = params->q_tail;
 
   /* find the first untouched */
   while (moving_pointer != NULL && moving_pointer->clock.visited) {
@@ -81,7 +88,7 @@ cache_obj_t *Clock_to_evict(cache_t *cache) {
 
   /* if we have finished one around, start from the tail */
   if (moving_pointer == NULL) {
-    moving_pointer = cache->q_tail;
+    moving_pointer = params->q_tail;
     while (moving_pointer != NULL && moving_pointer->clock.visited) {
       moving_pointer->clock.visited = false;
       moving_pointer = moving_pointer->queue.prev;
@@ -101,15 +108,14 @@ void Clock_evict(cache_t *cache, const request_t *req,
   }
 
   params->pointer = moving_pointer->queue.prev;
-  Clock_remove_obj(cache, moving_pointer);
+  remove_obj_from_list(&params->q_head, &params->q_tail, moving_pointer);
+  cache_evict_obj_base(cache, moving_pointer);
 }
 
 void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
-  if (obj_to_remove == NULL) {
-    ERROR("remove NULL from cache\n");
-    abort();
-  }
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, obj_to_remove);
+  DEBUG_ASSERT(obj_to_remove != NULL);
+  Clock_params_t *params = cache->eviction_params;
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_remove);
   cache_remove_obj_base(cache, obj_to_remove);
 }
 

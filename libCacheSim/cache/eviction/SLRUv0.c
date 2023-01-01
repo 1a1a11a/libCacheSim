@@ -87,7 +87,8 @@ int64_t SLRUv0_get_n_obj(const cache_t *cache) {
 static void SLRUv0_print_cache(cache_t *cache) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
   for (int i = params->n_seg - 1; i >= 0; i--) {
-    cache_obj_t *obj = params->LRUs[i]->q_head;
+    cache_obj_t *obj =
+        ((LRU_params_t *)params->LRUs[i]->eviction_params)->q_head;
     while (obj) {
       printf("%ld(%u)->", obj->obj_id, obj->obj_size);
       obj = obj->queue.next;
@@ -219,7 +220,7 @@ bool SLRUv0_get(cache_t *cache, const request_t *req) {
   bool ck = cache_get_base(cache, req);
 
   // SLRUv0_print_cache(cache);
-  
+
   return ck;
 }
 
@@ -276,35 +277,17 @@ void SLRUv0_evict(cache_t *cache, const request_t *req,
     }
   }
 
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(
-      cache, req->real_time -
-                 SLRUv0_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(
-      cache, cache->n_req -
-                 SLRUv0_params->LRUs[nth_seg_to_evict]->q_tail->create_time);
-#endif
-
-  cache_evict_LRU(SLRUv0_params->LRUs[nth_seg_to_evict], req, evicted_obj);
+  LRU_evict(SLRUv0_params->LRUs[nth_seg_to_evict], req, evicted_obj);
 }
 
 bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-  cache_obj_t *obj;
-  for (int i = 0; i < SLRUv0_params->n_seg; i++) {
-    obj = cache_get_obj_by_id(SLRUv0_params->LRUs[i], obj_id);
-    if (obj) {
-      remove_obj_from_list(&(SLRUv0_params->LRUs[i])->q_head,
-                           &(SLRUv0_params->LRUs[i])->q_tail, obj);
-      cache_remove_obj_base(SLRUv0_params->LRUs[i], obj);
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+  for (int i = 0; i < params->n_seg; i++) {
+    if (LRU_remove(cache, obj_id)) {
       return true;
     }
   }
-  if (obj == NULL) {
-    return false;
-  }
+  return false;
 }
 
 #ifdef __cplusplus

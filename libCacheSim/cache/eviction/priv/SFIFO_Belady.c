@@ -8,8 +8,8 @@
 
 #include "../../../dataStructure/hashtable/hashtable.h"
 #include "../../../include/libCacheSim/dist.h"
-#include "../../../include/libCacheSim/evictionAlgo/priv/SFIFO_Belady.h"
 #include "../../../include/libCacheSim/evictionAlgo/FIFO.h"
+#include "../../../include/libCacheSim/evictionAlgo/priv/SFIFO_Belady.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -297,21 +297,7 @@ void SFIFO_Belady_evict(cache_t *cache, const request_t *req,
     }
   }
 
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(
-      cache,
-      req->real_time -
-          SFIFO_Belady_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(
-      cache,
-      cache->n_req -
-          SFIFO_Belady_params->FIFOs[nth_seg_to_evict]->q_tail->create_time);
-#endif
-
-  cache_evict_LRU(SFIFO_Belady_params->FIFOs[nth_seg_to_evict], req,
-                  evicted_obj);
+  FIFO_evict(SFIFO_Belady_params->FIFOs[nth_seg_to_evict], req, evicted_obj);
 }
 
 bool SFIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -321,8 +307,9 @@ bool SFIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
   for (int i = 0; i < SFIFO_Belady_params->n_seg; i++) {
     obj = cache_get_obj_by_id(SFIFO_Belady_params->FIFOs[i], obj_id);
     if (obj) {
-      remove_obj_from_list(&(SFIFO_Belady_params->FIFOs[i])->q_head,
-                           &(SFIFO_Belady_params->FIFOs[i])->q_tail, obj);
+      FIFO_params_t *FIFO_params =
+          (FIFO_params_t *)(SFIFO_Belady_params->FIFOs[i]->eviction_params);
+      remove_obj_from_list(&(FIFO_params->q_head), &(FIFO_params->q_tail), obj);
       cache_remove_obj_base(SFIFO_Belady_params->FIFOs[i], obj);
       return true;
     }
