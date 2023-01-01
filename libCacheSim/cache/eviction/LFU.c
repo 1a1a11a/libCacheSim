@@ -247,7 +247,7 @@ void LFU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
     obj_to_evict->queue.next->queue.prev = NULL;
   }
 
-  cache_remove_obj_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 bool LFU_remove(cache_t *cache, obj_id_t obj_id) {

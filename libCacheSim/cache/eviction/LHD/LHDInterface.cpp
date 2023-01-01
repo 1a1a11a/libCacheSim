@@ -105,11 +105,8 @@ cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   auto id = repl::candidate_t::make(req);
 
-#ifdef TRACK_EVICTION_R_AGE
-  id.create_time = req->real_time;
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  id.create_time = cache->n_req;
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  id->create_time = CURR_TIME(cache, req);
 #endif
 
   lhd->sizeMap[id] = req->obj_size;
@@ -136,11 +133,8 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   cache->occupied_size -= (victimItr->second + cache->obj_md_size);
   cache->n_obj -= 1;
 
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, req->real_time - victim.create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, cache->n_req - victim.create_time);
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  record_eviction_age(cache, CURR_TIME(cache, req) - victim.create_time);
 #endif
 
   if (evicted_obj != nullptr) {

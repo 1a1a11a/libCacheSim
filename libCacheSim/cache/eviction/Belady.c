@@ -105,14 +105,6 @@ bool Belady_check(cache_t *cache, const request_t *req,
 cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
   Belady_params_t *params = cache->eviction_params;
 
-  // if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-  // #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  //     record_eviction_age(cache, 0);
-  // #endif
-
-  //     return NULL;
-  // }
-
   if (req->next_access_vtime == -1) {
     ERROR("next access time is -1, please use INT64_MAX instead\n");
   }
@@ -146,24 +138,15 @@ void Belady_evict(cache_t *cache, __attribute__((unused)) const request_t *req,
   cache_obj_t *obj_to_evict = cache_get_obj_by_id(cache, node->obj_id);
   DEBUG_ASSERT(node == obj_to_evict->Belady.pq_node);
 
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, req->real_time - obj_to_evict->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, cache->n_req - obj_to_evict->create_time);
-#endif
-
   obj_to_evict->Belady.pq_node = NULL;
   my_free(sizeof(pq_node_t), node);
 
-  Belady_remove_obj(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 void Belady_remove_obj(cache_t *cache, cache_obj_t *obj) {
   Belady_params_t *params = cache->eviction_params;
-
-  DEBUG_ASSERT(hashtable_find_obj(cache->hashtable, obj) == obj);
-  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size);
+  DEBUG_ASSERT(obj != NULL);
 
   if (obj->Belady.pq_node != NULL) {
     /* if it is NULL, it means we have deleted the entry in pq before this */

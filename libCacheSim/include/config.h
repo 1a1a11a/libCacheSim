@@ -48,9 +48,13 @@ extern "C" {
 #undef USE_HUGEPAGE
 #endif
 
-//#define TRACK_EVICTION_AGE
+// #define TRACK_EVICTION_V_AGE
 
-//#define SUPPORT_TTL
+#if defined(TRACK_EVICTION_V_AGE)
+#define CURR_TIME(cache, req) (cache->n_req)
+#elif defined(TRACK_EVICTION_R_AGE)
+#define CURR_TIME(cache, req) (req->clock_time)
+#endif
 
 #include <stdint.h>
 typedef uint64_t obj_id_t;

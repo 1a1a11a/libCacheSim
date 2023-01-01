@@ -193,7 +193,7 @@ void BeladySize_evict(cache_t *cache, const request_t *req,
   if (cache_obj != NULL) {
     memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
   }
-  cache_remove_obj_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 bool BeladySize_remove(cache_t *cache, const obj_id_t obj_id) {

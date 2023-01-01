@@ -269,27 +269,18 @@ void SLRU_evict(cache_t *cache, const request_t *req,
   }
 
   cache_obj_t *obj = params->lru_tails[nth_seg];
-
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, req->real_time - obj->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, cache->n_req - obj->create_time);
-#endif
-
-  cache->n_obj -= 1;
-  cache->occupied_size -= obj->obj_size + cache->obj_md_size;
-  params->lru_n_bytes[nth_seg] -= obj->obj_size + cache->obj_md_size;
-  params->lru_n_objs[nth_seg]--;
+  DEBUG_ASSERT(obj != NULL);
 
   if (evicted_obj != NULL) {
     memcpy(evicted_obj, obj, sizeof(cache_obj_t));
   }
 
-  DEBUG_ASSERT(obj != NULL);
+  params->lru_n_bytes[nth_seg] -= obj->obj_size + cache->obj_md_size;
+  params->lru_n_objs[nth_seg]--;
+
   remove_obj_from_list(&params->lru_heads[nth_seg], &params->lru_tails[nth_seg],
                        obj);
-  hashtable_delete(cache->hashtable, obj);
+  cache_evict_base(cache, obj);
 }
 
 bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {

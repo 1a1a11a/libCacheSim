@@ -82,7 +82,7 @@ void MRU_evict(cache_t *cache, const request_t *req, cache_obj_t *cache_obj) {
   }
   params->q_head = params->q_head->queue.next;
   params->q_head->queue.prev = NULL;
-  cache_evict_obj_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 bool MRU_get(cache_t *cache, const request_t *req) {

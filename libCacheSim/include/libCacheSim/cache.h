@@ -212,7 +212,7 @@ void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj);
  * @param cache the cache
  * @param obj the object to be removed
  */
-void cache_evict_obj_base(cache_t *cache, cache_obj_t *obj);
+void cache_evict_base(cache_t *cache, cache_obj_t *obj);
 
 /**
  * @brief get an object from the cache using a request 

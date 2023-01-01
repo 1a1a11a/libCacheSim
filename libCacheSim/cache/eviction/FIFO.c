@@ -91,7 +91,7 @@ void FIFO_evict(cache_t *cache, const request_t *req,
     params->q_head = NULL;
   }
 
-  cache_evict_obj_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 bool FIFO_remove(cache_t *cache, const obj_id_t obj_id) {

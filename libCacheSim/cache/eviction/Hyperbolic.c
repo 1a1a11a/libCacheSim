@@ -147,7 +147,7 @@ void Hyperbolic_evict(cache_t *cache,
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
 
-  cache_remove_obj_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 void Hyperbolic_remove_obj(cache_t *cache, cache_obj_t *obj) {

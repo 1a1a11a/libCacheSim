@@ -224,7 +224,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @param obj the object to be removed
  */
-void cache_evict_obj_base(cache_t *cache, cache_obj_t *obj) {
+void cache_evict_base(cache_t *cache, cache_obj_t *obj) {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   record_eviction_age(cache, CURR_TIME(cache, req) - obj_to_evict->create_time);
 #endif

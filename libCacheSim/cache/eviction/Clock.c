@@ -108,7 +108,7 @@ void Clock_evict(cache_t *cache, const request_t *req,
 
   params->pointer = moving_pointer->queue.prev;
   remove_obj_from_list(&params->q_head, &params->q_tail, moving_pointer);
-  cache_evict_obj_base(cache, moving_pointer);
+  cache_evict_base(cache, moving_pointer);
 }
 
 void Clock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

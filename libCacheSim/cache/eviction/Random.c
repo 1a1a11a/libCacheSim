@@ -64,7 +64,7 @@ void Random_evict(cache_t *cache, const request_t *req,
   cache_obj_t *obj_to_evict = Random_to_evict(cache);
   DEBUG_ASSERT(obj_to_evict->obj_size != 0);
   if (cache_obj != NULL) memcpy(cache_obj, obj_to_evict, sizeof(cache_obj_t));
-  cache_remove_obj_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 bool Random_remove(cache_t *cache, const obj_id_t obj_id) {

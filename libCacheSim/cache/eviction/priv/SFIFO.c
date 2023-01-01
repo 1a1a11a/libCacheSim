@@ -266,16 +266,8 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
   }
 
   cache_obj_t *obj = params->fifo_tails[nth_seg];
+  DEBUG_ASSERT(obj != NULL);
 
-#ifdef TRACK_EVICTION_R_AGE
-  record_eviction_age(cache, req->real_time - obj->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE
-  record_eviction_age(cache, cache->n_req - obj->create_time);
-#endif
-
-  cache->n_obj -= 1;
-  cache->occupied_size -= obj->obj_size + cache->obj_md_size;
   params->fifo_n_bytes[nth_seg] -= obj->obj_size + cache->obj_md_size;
   params->fifo_n_objs[nth_seg]--;
 
@@ -283,10 +275,9 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
     memcpy(evicted_obj, obj, sizeof(cache_obj_t));
   }
 
-  DEBUG_ASSERT(obj != NULL);
   remove_obj_from_list(&params->fifo_heads[nth_seg], &params->fifo_tails[nth_seg],
                        obj);
-  hashtable_delete(cache->hashtable, obj);
+  cache_evict_base(cache, obj);
 }
 
 bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {

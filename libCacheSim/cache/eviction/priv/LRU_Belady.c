@@ -104,7 +104,7 @@ void LRU_Belady_evict(cache_t *cache, const request_t *req,
   }
 
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
-  cache_evict_obj_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict);
 }
 
 bool LRU_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
