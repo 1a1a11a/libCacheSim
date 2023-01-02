@@ -121,12 +121,25 @@ void print_parsed_args(struct arguments *args) {
 }
 
 static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
-  long wss = 0;
+  int64_t wss = 0;
   request_t *req = new_request();
   GHashTable *obj_table = g_hash_table_new(g_direct_hash, g_direct_equal);
 
+  // sample the object space in case there are too many objects
+  // which can cause a crash
+  int scaling_factor = 1;
+  if (reader->file_size > 5 * GiB) {
+    scaling_factor = 101;
+  } else if (reader->file_size > 1 * GiB) {
+    scaling_factor = 11;
+  }
+
   INFO("calculating working set size...\n");
   while (read_one_req(reader, req) == 0) {
+    if (scaling_factor > 1 && req->obj_id % scaling_factor != 0) {
+      continue;
+    }
+
     if (g_hash_table_contains(obj_table, (gconstpointer)req->obj_id)) {
       continue;
     }
@@ -139,9 +152,11 @@ static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
       wss += req->obj_size;
     }
   }
+  wss *= scaling_factor;
   INFO("working set size: %ld %s\n", wss,
        ignore_obj_size ? "objects" : "bytes");
 
+  free_request(req);
   return wss;
 }
 
@@ -154,14 +169,17 @@ void set_cache_size(struct arguments *args, reader_t *reader) {
     }
 
     // detect cache size from the trace
+    int n_cache_sizes = 0;
     reset_reader(reader);
     long wss = cal_working_set_size(reader, args->ignore_obj_size);
     double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
                                    0.1,    0.2,    0.3,   0.4,   0.6,  0.8};
     for (int i = 0; i < N_AUTO_CACHE_SIZE; i++) {
-      args->cache_sizes[i] = (long)(wss * s[i]);
+      if ((long) (wss * s[i]) > 1) {
+        args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
+      }
     }
-    args->n_cache_size = N_AUTO_CACHE_SIZE;
+    args->n_cache_size = n_cache_sizes;
 
     reset_reader(reader);
   }
