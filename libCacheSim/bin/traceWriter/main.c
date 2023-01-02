@@ -30,22 +30,22 @@ void fix_msr_oracleGeneral_trace(char *trace_path) {
   sprintf(ofilepath, "%s.new", trace_path);
   FILE *ofile = fopen(ofilepath, "wb");
   read_one_req(reader, req);
-  uint64_t start_ts = req->real_time;
+  uint64_t start_ts = req->clock_time;
 
   while (req->valid) {
-    req->real_time = (req->real_time - start_ts) / 10;
+    req->clock_time = (req->clock_time - start_ts) / 10;
     if (req->next_access_vtime == INT64_MAX) {
       req->next_access_vtime = -1;
     }
 
-    fwrite(&req->real_time, 4, 1, ofile);
+    fwrite(&req->clock_time, 4, 1, ofile);
     fwrite(&req->obj_id, 8, 1, ofile);
     fwrite(&req->obj_size, 4, 1, ofile);
     fwrite(&req->next_access_vtime, 8, 1, ofile);
 
     read_one_req(reader, req);
   }
-  printf("%s trace time %lu hour\n", trace_path, req->real_time / 3600);
+  printf("%s trace time %lu hour\n", trace_path, req->clock_time / 3600);
 
   fclose(ofile);
 }
@@ -62,10 +62,10 @@ void fix_msr_oracleGeneralOpNS_trace(char *trace_path) {
   // sprintf(ofilepath2, "%s.new.txt", trace_path);
   // FILE *ofile2 = fopen(ofilepath2, "w");
   read_one_req(reader, req);
-  uint64_t start_ts = req->real_time;
+  uint64_t start_ts = req->clock_time;
 
   while (req->valid) {
-    // req->real_time = (req->real_time - start_ts) / 10;
+    // req->clock_time = (req->clock_time - start_ts) / 10;
     // if (req->next_access_vtime == INT64_MAX) {
     //   req->next_access_vtime = -1;
     // }
@@ -73,19 +73,19 @@ void fix_msr_oracleGeneralOpNS_trace(char *trace_path) {
     uint8_t op = req->op;
     uint16_t ns = req->ns;
 
-    fwrite(&req->real_time, 4, 1, ofile);
+    fwrite(&req->clock_time, 4, 1, ofile);
     fwrite(&req->obj_id, 8, 1, ofile);
     fwrite(&req->obj_size, 4, 1, ofile);
     fwrite(&op, 1, 1, ofile);
     fwrite(&ns, 2, 1, ofile);
     fwrite(&req->next_access_vtime, 8, 1, ofile);
 
-    // fprintf(ofile2, "%lu %lu %u %lu %u %u\n", req->real_time, req->obj_id,
+    // fprintf(ofile2, "%lu %lu %u %lu %u %u\n", req->clock_time, req->obj_id,
     // req->obj_size, req->next_access_vtime, op, ns);
 
     read_one_req(reader, req);
   }
-  printf("%s trace time %lu hour\n", trace_path, req->real_time / 3600);
+  printf("%s trace time %lu hour\n", trace_path, req->clock_time / 3600);
 
   fclose(ofile);
 }
@@ -103,20 +103,20 @@ void convert_wiki16_trace(char *trace_path) {
   read_one_req(reader, req);
 
   while (req->valid) {
-    req->real_time = (int)((double)n / (double)n_total_req * 3600 * 168);
+    req->clock_time = (int)((double)n / (double)n_total_req * 3600 * 168);
     if (req->next_access_vtime == INT64_MAX) {
       req->next_access_vtime = -1;
     }
 
     n += 1;
-    fwrite(&req->real_time, 4, 1, ofile);
+    fwrite(&req->clock_time, 4, 1, ofile);
     fwrite(&req->obj_id, 8, 1, ofile);
     fwrite(&req->obj_size, 4, 1, ofile);
     fwrite(&req->next_access_vtime, 8, 1, ofile);
 
     read_one_req(reader, req);
   }
-  printf("%s trace time %lu hour\n", trace_path, req->real_time / 3600);
+  printf("%s trace time %lu hour\n", trace_path, req->clock_time / 3600);
 
   fclose(ofile);
 }

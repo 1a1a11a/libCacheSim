@@ -63,11 +63,11 @@ gboolean TTL_FIFO_check(cache_t* cache, request_t *req){
 void _TTL_FIFO_insert(cache_t *cache, request_t *req) {
   TTL_FIFO_params_t *TTL_FIFO_params = (TTL_FIFO_params_t *) (cache->cache_params);
   if (TTL_FIFO_params->start_ts == -1)
-    TTL_FIFO_params->start_ts = req->real_time;
+    TTL_FIFO_params->start_ts = req->clock_time;
 
   cache->used_size += req->obj_size;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
-  gint32 idx = _get_idx(req->real_time+req->ttl - TTL_FIFO_params->start_ts);
+  gint32 idx = _get_idx(req->clock_time+req->ttl - TTL_FIFO_params->start_ts);
   if (idx < TTL_FIFO_params->cur_ttl_evict_pos)
     TTL_FIFO_params->cur_ttl_evict_pos = idx;
 
@@ -118,11 +118,11 @@ cache_check_result_t TTL_FIFO_check_and_update_with_ttl(cache_t *cache, request_
   GList *node = (GList *) g_hash_table_lookup(TTL_FIFO_params->hashtable, req->obj_id_ptr);
   if (node != NULL) {
     cache_obj_t *cache_obj = node->data;
-    if (cache_obj->exp_time < req->real_time) {
+    if (cache_obj->exp_time < req->clock_time) {
       /* obj is expired */
       result = expired_e;
       gint32 old_idx = _get_idx(cache_obj->exp_time-TTL_FIFO_params->start_ts);
-      cache_obj->exp_time = req->real_time + req->ttl;
+      cache_obj->exp_time = req->clock_time + req->ttl;
       gint32 new_idx = _get_idx(cache_obj->exp_time-TTL_FIFO_params->start_ts);
       g_queue_unlink(TTL_FIFO_params->exp_time_array[old_idx], (GList *) node);
       g_queue_push_tail_link(TTL_FIFO_params->exp_time_array[new_idx], (GList *) node);

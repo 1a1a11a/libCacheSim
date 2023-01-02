@@ -47,7 +47,7 @@ static int cf1_read_one_req(reader_t *reader, request_t *req) {
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint64_t *)(record + 12);
   req->ttl = *(int32_t *)(record + 20);

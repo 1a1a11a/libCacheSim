@@ -54,7 +54,7 @@ static inline int oracleWiki2016u_read_one_req(reader_t *reader,
     return 1;
   }
 
-  req->real_time = 0;
+  req->clock_time = 0;
   req->obj_id = *(uint64_t *)(record);
   req->obj_size = *(uint32_t *)(record + 8);
   req->content_type = *(uint16_t *)(record + 12);
@@ -85,7 +85,7 @@ static inline int oracleWiki2019u_read_one_req(reader_t *reader,
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 12);
   req->content_type = *(uint16_t *)(record + 16);

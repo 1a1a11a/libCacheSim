@@ -279,7 +279,7 @@ extern "C"
             binary_params_t* params = reader->reader_params;
             if (params->real_time_pos == 0){
                 ERROR("get_bp_rtime needs you to provide "
-                      "real_time parameter for binary reader\n");
+                      "clock_time parameter for binary reader\n");
                 exit(1);
             }
         }
@@ -310,7 +310,7 @@ extern "C"
 
         reset_reader(reader);
         read_one_element(reader, req);
-        previous_time = req->real_time;
+        previous_time = req->clock_time;
         g_array_append_val(break_points, num);
 
 
@@ -318,16 +318,16 @@ extern "C"
         if (num_of_piexls != -1 && time_interval == -1){
             reader_set_read_pos(reader, 1);
             read_one_element_above(reader, req);
-            time_interval = (gint64) ceil( (double)(req->real_time - previous_time) /num_of_piexls + 1);
+            time_interval = (gint64) ceil( (double)(req->clock_time - previous_time) /num_of_piexls + 1);
             reader_set_read_pos(reader, 0);
             read_one_element(reader, req);
         }
 
 
         while (req->valid){
-            if (req->real_time - previous_time > (guint64)time_interval){
+            if (req->clock_time - previous_time > (guint64)time_interval){
                 g_array_append_val(break_points, num);
-                previous_time = req->real_time;
+                previous_time = req->clock_time;
             }
             read_one_element(reader, req);
             num++;

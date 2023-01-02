@@ -49,7 +49,7 @@ static int oracleSimTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 12);
   req->ttl = *(int32_t *)(record + 16);
@@ -85,7 +85,7 @@ static int oracleSysTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->key_size = *(uint16_t *)(record + 12);
   req->val_size = *(uint32_t *)(record + 14);

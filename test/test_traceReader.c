@@ -40,8 +40,8 @@ void verify_req(reader_t *reader, request_t *req, int req_idx) {
   if (get_trace_type(reader) == CSV_TRACE ||
       get_trace_type(reader) == BIN_TRACE ||
       get_trace_type(reader) == VSCSI_TRACE) {
-    g_assert_true(req->real_time == trace_start_req_time[req_idx] ||
-                  req->real_time == trace_start_req_time[req_idx] / 1000000);
+    g_assert_true(req->clock_time == trace_start_req_time[req_idx] ||
+                  req->clock_time == trace_start_req_time[req_idx] / 1000000);
     g_assert_true(req->obj_size == trace_start_req_size[req_idx]);
   }
 }

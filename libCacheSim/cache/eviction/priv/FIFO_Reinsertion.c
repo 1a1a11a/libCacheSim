@@ -37,7 +37,7 @@ bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
   bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
   if (cached_obj != NULL) {
     cached_obj->misc.freq += 1;
-    cached_obj->misc.last_access_rtime = req->real_time;
+    cached_obj->misc.last_access_rtime = req->clock_time;
     cached_obj->misc.last_access_vtime = cache->n_req;
     cached_obj->misc.next_access_vtime = req->next_access_vtime;
   }
@@ -53,7 +53,7 @@ cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
   obj->misc.freq = 1;
-  obj->misc.last_access_rtime = req->real_time;
+  obj->misc.last_access_rtime = req->clock_time;
   obj->misc.last_access_vtime = cache->n_req;
   obj->misc.next_access_vtime = req->next_access_vtime;
 

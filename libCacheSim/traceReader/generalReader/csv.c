@@ -210,7 +210,7 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     // uint64_t ts = (uint64_t)strtod((char *)s, &end);
     // we only support 32-bit ts
     assert(ts < UINT32_MAX);
-    req->real_time = ts;
+    req->clock_time = ts;
   } else if (csv_params->curr_field_idx == csv_params->obj_size_field_idx) {
     req->obj_size = (uint32_t)strtoul((char *)s, &end, 0);
     if (req->obj_size == 0 && end == s) {

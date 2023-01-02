@@ -10,9 +10,9 @@ static void update_cache_state(cache_t *cache, const request_t *req,
   GLCache_params_t *params = cache->eviction_params;
   cache_state_t *state = &params->cache_state;
   if (unlikely(params->start_rtime == -1)) {
-    params->start_rtime = req->real_time;
+    params->start_rtime = req->clock_time;
   }
-  params->curr_rtime = req->real_time;
+  params->curr_rtime = req->clock_time;
   params->curr_vtime++;
 
   if (!cache_hit) {

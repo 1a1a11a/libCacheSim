@@ -219,7 +219,7 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
 
   /* read time */
   if (params->time_field_idx > 0) {
-    req->real_time =
+    req->clock_time =
         read_data(start + params->time_offset, params->time_format);
   }
 

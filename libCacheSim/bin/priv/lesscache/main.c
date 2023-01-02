@@ -37,12 +37,12 @@ void run_cache(reader_t *reader, cache_t *cache) {
   uint64_t last_req_cnt = 0, last_miss_cnt = 0;
 
   read_one_req(reader, req);
-  uint64_t start_ts = (uint64_t)req->real_time;
-  uint64_t last_report_ts = req->real_time - start_ts;
+  uint64_t start_ts = (uint64_t)req->clock_time;
+  uint64_t last_report_ts = req->clock_time - start_ts;
 
   double start_time = gettime();
   while (req->valid) {
-    req->real_time -= start_ts;
+    req->clock_time -= start_ts;
 
 #ifdef FIFO_REDUCE_METADATA
     req->obj_size -= 12;
@@ -82,16 +82,16 @@ void run_cache(reader_t *reader, cache_t *cache) {
       }
     }
 
-    if (req->real_time - last_report_ts >= 3600 * 24 && req->real_time != 0) {
+    if (req->clock_time - last_report_ts >= 3600 * 24 && req->clock_time != 0) {
       INFO(
           "%.2lf hour: %lu requests, miss ratio %.4lf, interval miss ratio "
           "%.4lf\n",
-          (double)req->real_time / 3600, (unsigned long)req_cnt,
+          (double)req->clock_time / 3600, (unsigned long)req_cnt,
           (double)miss_cnt / req_cnt,
           (double)(miss_cnt - last_miss_cnt) / (req_cnt - last_req_cnt));
       last_miss_cnt = miss_cnt;
       last_req_cnt = req_cnt;
-      last_report_ts = (int64_t)req->real_time;
+      last_report_ts = (int64_t)req->clock_time;
     }
 
     read_one_req(reader, req);
@@ -102,7 +102,7 @@ void run_cache(reader_t *reader, cache_t *cache) {
       "%.2lf hour: %s, cache size %d, %lu "
       "requests, miss ratio %.4lf, "
       "throughput %.2lf MQPS\n",
-      (double)req->real_time / 3600.0, reader->trace_path,
+      (double)req->clock_time / 3600.0, reader->trace_path,
       (int)(cache->cache_size / 1024 / 1024), (unsigned long)req_cnt,
       (double)miss_cnt / req_cnt,
       //  (double) miss_byte/req_byte,

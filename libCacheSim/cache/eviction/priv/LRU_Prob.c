@@ -37,7 +37,7 @@ bool LRU_Prob_check(cache_t *cache, const request_t *req,
   bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
   if (cached_obj != NULL && likely(update_cache)) {
     cached_obj->misc.freq += 1;
-    cached_obj->misc.last_access_rtime = req->real_time;
+    cached_obj->misc.last_access_rtime = req->clock_time;
     cached_obj->misc.last_access_vtime = cache->n_req;
     cached_obj->misc.next_access_vtime = req->next_access_vtime;
 

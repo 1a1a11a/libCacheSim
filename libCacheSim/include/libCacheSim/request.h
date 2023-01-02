@@ -19,7 +19,7 @@ extern "C" {
 
 /* need to optimize this for CPU cacheline */
 typedef struct request {
-  int64_t real_time; /* use uint64_t because vscsi uses microsec timestamp */
+  int64_t clock_time; /* use uint64_t because vscsi uses microsec timestamp */
   uint64_t hv;       /* hash value, used when offloading hash to reader */
   obj_id_t obj_id;
   int32_t obj_size;
@@ -65,7 +65,7 @@ static inline request_t *new_request() {
   req->op = OP_INVALID;
   req->valid = true;
   req->obj_id = 0;
-  req->real_time = 0;
+  req->clock_time = 0;
   req->hv = 0;
   req->next_access_vtime = -2;
   return req;
@@ -104,7 +104,7 @@ static inline void print_request(request_t *req) {
        (long)req->obj_size, (long)req->ttl, req_op_str[req->op], req->valid);
 #else
   printf("req real_time %lu, id %llu, size %ld, op %s, valid %d\n",
-         (unsigned long)req->real_time, (unsigned long long)req->obj_id,
+         (unsigned long)req->clock_time, (unsigned long long)req->obj_id,
          (long)req->obj_size, req_op_str[req->op], req->valid);
 #endif
 }

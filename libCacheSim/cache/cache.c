@@ -130,7 +130,7 @@ bool cache_check_base(cache_t *cache, const request_t *req,
     cache_hit = false;
   } else {
 #ifdef SUPPORT_TTL
-    if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->real_time) {
+    if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->clock_time) {
       cache_hit = false;
 
       if (update_cache) {
@@ -205,7 +205,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 
 #ifdef SUPPORT_TTL
   if (cache->default_ttl != 0 && req->ttl == 0) {
-    cache_obj->exp_time = (int32_t)cache->default_ttl + req->real_time;
+    cache_obj->exp_time = (int32_t)cache->default_ttl + req->clock_time;
   }
 #endif
 

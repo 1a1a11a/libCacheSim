@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   }
 
   while (req->valid) {
-    printf("%ld, %lu, %d", (long)req->real_time, (unsigned long)req->obj_id,
+    printf("%ld, %lu, %d", (long)req->clock_time, (unsigned long)req->obj_id,
            (int)req->obj_size);
     if (trace_has_next_access_vtime) {
       printf(", %ld\n", (long)req->next_access_vtime);

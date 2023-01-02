@@ -8,8 +8,8 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
   request_t *req = new_request();
 
   read_one_req(reader, req);
-  int64_t start_ts = (int64_t)req->real_time;
-  req->real_time -= start_ts;
+  int64_t start_ts = (int64_t)req->clock_time;
+  req->clock_time -= start_ts;
   cache_stat_t stat;
   memset(&stat, 0, sizeof(stat));
 
@@ -42,7 +42,7 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
       }
     }
     read_one_req(reader, req);
-    req->real_time -= start_ts;
+    req->clock_time -= start_ts;
   }
 
   stat.n_obj = cache->n_obj;

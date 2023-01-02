@@ -13,13 +13,13 @@
 
 namespace traceConv {
 typedef struct oracleGeneral_req {
-  uint32_t real_time;
+  uint32_t clock_time;
   uint64_t obj_id;
   uint32_t obj_size;
   int64_t next_access_vtime;
 
   void init(request_t *req) {
-    this->real_time = req->real_time;
+    this->clock_time = req->clock_time;
     this->obj_id = req->obj_id;
     this->obj_size = req->obj_size;
   }
@@ -68,7 +68,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   go_back_one_req(reader);
   read_one_req(reader, req);
 
-  int64_t start_ts = req->real_time;
+  int64_t start_ts = req->clock_time;
 
   oracleGeneral_req_t og_req;
   og_req.init(req);
@@ -96,7 +96,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
           "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
           "object, %lld B (%.2lf GB)\n",
           reader->trace_path, (long)(n_req_curr / 1e6),
-          (double)total_bytes / GiB, start_ts - req->real_time,
+          (double)total_bytes / GiB, start_ts - req->clock_time,
           (long long)n_obj, (long long)unique_bytes,
           (double)unique_bytes / GiB);
     }
@@ -118,7 +118,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
       "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
       "object, %lld B (%.2lf GB), reversing output...\n",
       reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB,
-      start_ts - req->real_time, (long long)n_obj, (long long)unique_bytes,
+      start_ts - req->clock_time, (long long)n_obj, (long long)unique_bytes,
       (double)unique_bytes / GiB);
 
   struct trace_stat stat;
@@ -233,7 +233,7 @@ static void _reverse_file(std::string ofilepath, struct trace_stat stat,
 
     ofile.write(reinterpret_cast<char *>(&og_req), req_entry_size);
     if (output_txt) {
-      ofile_txt << og_req.real_time << "," << og_req.obj_id << ","
+      ofile_txt << og_req.clock_time << "," << og_req.obj_id << ","
                 << og_req.obj_size << "," << og_req.next_access_vtime << "\n";
     }
 

@@ -127,7 +127,7 @@ static inline int vscsi_read_ver1(reader_t *reader, request_t *req) {
   trace_v1_record_t *record =
       (trace_v1_record_t *)(reader->mapped_file + reader->mmap_offset);
   // trace uses microsec change to sec
-  req->real_time = record->ts / 1000000;
+  req->clock_time = record->ts / 1000000;
   req->obj_size = record->len;
   /* need to parse this */
   req->op = record->cmd;
@@ -139,7 +139,7 @@ static inline int vscsi_read_ver1(reader_t *reader, request_t *req) {
 static inline int vscsi_read_ver2(reader_t *reader, request_t *req) {
   trace_v2_record_t *record =
       (trace_v2_record_t *)(reader->mapped_file + reader->mmap_offset);
-  req->real_time = record->ts / 1000000;
+  req->clock_time = record->ts / 1000000;
   req->obj_size = record->len;
   req->op = record->cmd;
   req->obj_id = record->lbn;

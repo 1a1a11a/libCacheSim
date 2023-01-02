@@ -60,14 +60,14 @@ static void _simulate(gpointer data, gpointer user_data) {
   }
 
   read_one_req(cloned_reader, req);
-  int64_t start_ts = (int64_t)req->real_time;
+  int64_t start_ts = (int64_t)req->clock_time;
 
   /* using warmup_frac or warmup_sec of requests from reader to warm up */
   if (params->n_warmup_req > 0 || params->warmup_sec > 0) {
     uint64_t n_warmup = 0;
     while (req->valid && (n_warmup < params->n_warmup_req ||
-                          req->real_time - start_ts < params->warmup_sec)) {
-      req->real_time -= start_ts;
+                          req->clock_time - start_ts < params->warmup_sec)) {
+      req->clock_time -= start_ts;
       bool ck = local_cache->get(local_cache, req);
       n_warmup += 1;
       read_one_req(cloned_reader, req);
@@ -77,14 +77,14 @@ static void _simulate(gpointer data, gpointer user_data) {
          ") finishes warm up using "
          "with %" PRIu64 " requests, %.2lf hour trace time\n",
          local_cache->cache_name, local_cache->cache_size, n_warmup,
-         (double)(req->real_time - start_ts) / 3600.0);
+         (double)(req->clock_time - start_ts) / 3600.0);
   }
 
   while (req->valid) {
     result[idx].n_req++;
     result[idx].n_req_byte += req->obj_size;
 
-    req->real_time -= start_ts;
+    req->clock_time -= start_ts;
     if (local_cache->get(local_cache, req) == false) {
       result[idx].n_miss++;
       result[idx].n_miss_byte += req->obj_size;
@@ -113,7 +113,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   }
 #endif
 
-  result[idx].curr_rtime = req->real_time;
+  result[idx].curr_rtime = req->clock_time;
   result[idx].n_obj = local_cache->n_obj;
   result[idx].occupied_size = local_cache->occupied_size;
   strncpy(result[idx].cache_name, local_cache->cache_name,

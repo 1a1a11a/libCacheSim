@@ -44,7 +44,7 @@ static inline int standardBinIQQ_read_one_req(reader_t *reader,
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 12);
 
@@ -69,7 +69,7 @@ static inline int standardBinIQI_read_one_req(reader_t *reader,
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 12);
 
@@ -94,7 +94,7 @@ static inline int standardBinIII_read_one_req(reader_t *reader,
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 8);
 
@@ -119,7 +119,7 @@ static inline int standardBinIQIBH_read_one_req(reader_t *reader,
     return 1;
   }
 
-  req->real_time = *(uint32_t *)record;
+  req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 12);
   req->op = *(uint8_t *)(record + 16);

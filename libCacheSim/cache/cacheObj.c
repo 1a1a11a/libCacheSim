@@ -28,7 +28,7 @@ void copy_request_to_cache_obj(cache_obj_t *cache_obj, const request_t *req) {
   cache_obj->obj_size = req->obj_size;
 #ifdef SUPPORT_TTL
   if (req->ttl != 0)
-    cache_obj->exp_time = req->real_time + req->ttl;
+    cache_obj->exp_time = req->clock_time + req->ttl;
   else
     cache_obj->exp_time = 0;
 #endif

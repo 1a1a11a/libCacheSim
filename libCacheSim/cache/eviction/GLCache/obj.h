@@ -9,7 +9,7 @@ static inline void obj_init(cache_t *cache, const request_t *req,
   GLCache_params_t *params = cache->eviction_params;
   copy_request_to_cache_obj(cache_obj, req);
   cache_obj->GLCache.freq = 0;
-  cache_obj->GLCache.last_access_rtime = req->real_time;
+  cache_obj->GLCache.last_access_rtime = req->clock_time;
   cache_obj->GLCache.last_access_vtime = params->curr_vtime;
   cache_obj->GLCache.in_cache = 1;
   cache_obj->GLCache.seen_after_snapshot = 0;

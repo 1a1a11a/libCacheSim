@@ -23,13 +23,13 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
   uint64_t req_byte = 0, miss_byte = 0;
 
   read_one_req(reader, req);
-  uint64_t start_ts = (uint64_t)req->real_time;
+  uint64_t start_ts = (uint64_t)req->clock_time;
   uint64_t last_report_ts = warmup_sec;
 
   double start_time = -1;
   while (req->valid) {
-    req->real_time -= start_ts;
-    if (req->real_time <= warmup_sec) {
+    req->clock_time -= start_ts;
+    if (req->clock_time <= warmup_sec) {
       cache->get(cache, req);
       read_one_req(reader, req);
       continue;
@@ -44,18 +44,21 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
     if (cache->get(cache, req) == false) {
       miss_cnt++;
       miss_byte += req->obj_size;
+      // printf("############### %ld miss - %ld\n", req->obj_id, miss_cnt);
+    } else {
+      // printf("############### %ld hit  - %ld\n", req->obj_id, miss_cnt);
     }
-    if (req->real_time - last_report_ts >= REPORT_INTERVAL &&
-        req->real_time != 0) {
+    if (req->clock_time - last_report_ts >= REPORT_INTERVAL &&
+        req->clock_time != 0) {
       INFO(
           "%.2lf hour: %lu requests, miss ratio %.4lf, interval miss ratio "
           "%.4lf\n",
-          (double)req->real_time / 3600, (unsigned long)req_cnt,
+          (double)req->clock_time / 3600, (unsigned long)req_cnt,
           (double)miss_cnt / req_cnt,
           (double)(miss_cnt - last_miss_cnt) / (req_cnt - last_req_cnt));
       last_miss_cnt = miss_cnt;
       last_req_cnt = req_cnt;
-      last_report_ts = (int64_t)req->real_time;
+      last_report_ts = (int64_t)req->clock_time;
     }
 
     read_one_req(reader, req);
