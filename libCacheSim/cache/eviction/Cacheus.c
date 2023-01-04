@@ -238,12 +238,12 @@ bool Cacheus_get(cache_t *cache, const request_t *req) {
       if (!has_printed) {
         has_printed = true;
         if (req->obj_size + cache->obj_md_size > cache->cache_size) {
-          WARN("req %" PRIu64 ": obj size %" PRIu32
+          WARN("req %" PRIu64 ": obj size %lu"
                " larger than cache size %" PRIu64 "\n",
                req->obj_id, req->obj_size, cache->cache_size);
         } else if (req->obj_size + cache->obj_md_size >
                    params_LRU->SR_list->cache_size) {
-          WARN("req %" PRIu64 ": obj size %" PRIu32
+          WARN("req %" PRIu64 ": obj size %ld"
                " larger than SR-LRU - SR size %" PRIu64 "\n",
                req->obj_id, req->obj_size, params_LRU->SR_list->cache_size);
         }
