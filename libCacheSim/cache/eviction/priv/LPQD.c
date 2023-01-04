@@ -198,7 +198,7 @@ void LPQD_evict(cache_t *cache, const request_t *req,
                 cache_obj_t *evicted_obj) {
   LPQD_params_t *params = cache->eviction_params;
 
-  if (params->n_fifo_byte > params->fifo_size) {
+  if (params->n_fifo_byte > params->fifo_size || params->n_clock_obj == 0) {
     DEBUG_PRINT("%ld LPQD_evict_fifo\n", cache->n_req);
     cache_obj_t *obj_to_evict = params->fifo_tail;
     DEBUG_ASSERT(obj_to_evict != NULL);
