@@ -323,7 +323,7 @@ void SFIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj) {
       (SFIFO_Reinsertion_params_t *)cache->eviction_params;
 
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 }
 
 bool SFIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id) {

@@ -309,7 +309,7 @@ void SFIFO_Merge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
   DEBUG_ASSERT(obj_to_remove != NULL);
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_remove);
-  cache_remove_obj_base(cache, obj_to_remove);
+  cache_remove_obj_base(cache, obj_to_remove, true);
 }
 
 bool SFIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id) {

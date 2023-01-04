@@ -71,7 +71,7 @@ class abstractRank {
     auto itr = itr_map[obj];
     pq.erase(itr);
     itr_map.erase(obj);
-    cache_remove_obj_base(cache, obj);
+    cache_remove_obj_base(cache, obj, true);
   }
 
   inline bool remove(cache_t *cache, obj_id_t obj_id) {

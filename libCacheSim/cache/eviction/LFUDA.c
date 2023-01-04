@@ -244,7 +244,7 @@ void LFUDA_evict(cache_t *cache, const request_t *req,
     obj_to_evict->queue.next->queue.prev = NULL;
   }
 
-  cache_evict_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict, true);
 }
 
 bool LFUDA_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -262,7 +262,7 @@ bool LFUDA_remove(cache_t *cache, const obj_id_t obj_id) {
   freq_node->n_obj--;
   remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, obj);
 
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 
   return true;
 }

@@ -94,7 +94,7 @@ void GDSF_evict(cache_t *cache, const request_t *req,
   }
 
   gdsf->pri_last_evict = p.priority;
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 }
 
 void GDSF_remove_obj(cache_t *cache, cache_obj_t *obj) {

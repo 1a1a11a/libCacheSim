@@ -247,7 +247,7 @@ void LFU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
     obj_to_evict->queue.next->queue.prev = NULL;
   }
 
-  cache_evict_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict, true);
 }
 
 bool LFU_remove(cache_t *cache, obj_id_t obj_id) {
@@ -265,7 +265,7 @@ bool LFU_remove(cache_t *cache, obj_id_t obj_id) {
   freq_node->n_obj--;
   remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, obj);
 
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 
   if (freq_node->freq == params->min_freq && freq_node->n_obj == 0) {
     /* update min freq */

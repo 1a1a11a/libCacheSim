@@ -224,11 +224,15 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @param obj the object to be removed
  */
-void cache_evict_base(cache_t *cache, cache_obj_t *obj) {
+void cache_evict_base(cache_t *cache, cache_obj_t *obj, bool remove_from_hashtable) {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  record_eviction_age(cache, CURR_TIME(cache, req) - obj_to_evict->create_time);
+  record_eviction_age(cache, CURR_TIME(cache, req) - obj->create_time);
+  if (obj->obj_id % 11 == 0) {
+    printf("ea: %ld %ld\n", obj->obj_id,
+           CURR_TIME(cache, req) - obj->create_time);
+  }
 #endif
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, remove_from_hashtable);
 }
 
 /**
@@ -240,11 +244,14 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj) {
  * @param cache the cache
  * @param obj the object to be removed
  */
-void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj) {
+void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj,
+                           bool remove_from_hashtable) {
   DEBUG_ASSERT(cache->occupied_size >= obj->obj_size + cache->obj_md_size);
   cache->occupied_size -= (obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
-  hashtable_delete(cache->hashtable, obj);
+  if (remove_from_hashtable) {
+    hashtable_delete(cache->hashtable, obj);
+  }
 }
 
 /**

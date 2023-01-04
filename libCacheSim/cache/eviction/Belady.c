@@ -141,7 +141,7 @@ void Belady_evict(cache_t *cache, __attribute__((unused)) const request_t *req,
   obj_to_evict->Belady.pq_node = NULL;
   my_free(sizeof(pq_node_t), node);
 
-  cache_evict_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict, true);
 }
 
 void Belady_remove_obj(cache_t *cache, cache_obj_t *obj) {
@@ -155,7 +155,7 @@ void Belady_remove_obj(cache_t *cache, cache_obj_t *obj) {
     obj->Belady.pq_node = NULL;
   }
 
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 }
 
 bool Belady_remove(cache_t *cache, const obj_id_t obj_id) {

@@ -104,7 +104,7 @@ void LRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
     params->q_head = NULL;
   }
 
-  cache_evict_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict, true);
 }
 
 bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -115,7 +115,7 @@ bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
 
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 }
 
 #ifdef __cplusplus

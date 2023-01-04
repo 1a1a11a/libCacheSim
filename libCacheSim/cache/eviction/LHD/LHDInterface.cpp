@@ -106,7 +106,7 @@ cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   auto id = repl::candidate_t::make(req);
 
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  id->create_time = CURR_TIME(cache, req);
+  id.create_time = CURR_TIME(cache, req);
 #endif
 
   lhd->sizeMap[id] = req->obj_size;

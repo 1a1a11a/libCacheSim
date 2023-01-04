@@ -82,7 +82,7 @@ void MRU_evict(cache_t *cache, const request_t *req, cache_obj_t *cache_obj) {
   }
   params->q_head = params->q_head->queue.next;
   params->q_head->queue.prev = NULL;
-  cache_evict_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict, true);
 }
 
 bool MRU_get(cache_t *cache, const request_t *req) {
@@ -96,7 +96,7 @@ bool MRU_remove(cache_t *cache, const obj_id_t obj_id) {
     return false;
   }
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 
   return true;
 }

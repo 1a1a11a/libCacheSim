@@ -84,7 +84,7 @@ void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req,
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
-  cache_evict_base(cache, obj_to_evict);
+  cache_evict_base(cache, obj_to_evict, true);
 }
 
 void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj) {
@@ -93,7 +93,7 @@ void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj) {
 
   DEBUG_ASSERT(obj != NULL);
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 }
 
 bool FIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id) {

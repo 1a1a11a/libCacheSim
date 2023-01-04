@@ -277,7 +277,7 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
 
   remove_obj_from_list(&params->fifo_heads[nth_seg], &params->fifo_tails[nth_seg],
                        obj);
-  cache_evict_base(cache, obj);
+  cache_evict_base(cache, obj, true);
 }
 
 bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {

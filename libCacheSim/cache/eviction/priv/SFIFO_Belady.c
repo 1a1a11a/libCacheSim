@@ -310,7 +310,7 @@ bool SFIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
       FIFO_params_t *FIFO_params =
           (FIFO_params_t *)(SFIFO_Belady_params->FIFOs[i]->eviction_params);
       remove_obj_from_list(&(FIFO_params->q_head), &(FIFO_params->q_tail), obj);
-      cache_remove_obj_base(SFIFO_Belady_params->FIFOs[i], obj);
+      cache_remove_obj_base(SFIFO_Belady_params->FIFOs[i], obj, true);
       return true;
     }
   }

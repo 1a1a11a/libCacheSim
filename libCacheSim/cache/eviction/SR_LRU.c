@@ -338,9 +338,9 @@ bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   }
 
   if (remove_from_SR) {
-    cache_remove_obj_base(params->SR_list, obj);
+    cache_remove_obj_base(params->SR_list, obj, true);
   } else {
-    cache_remove_obj_base(params->R_list, obj);
+    cache_remove_obj_base(params->R_list, obj, true);
   }
   cache->n_obj = params->SR_list->n_obj + params->R_list->n_obj;
   cache->occupied_size =

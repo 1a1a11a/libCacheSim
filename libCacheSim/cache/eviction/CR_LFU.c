@@ -325,7 +325,7 @@ void CR_LFU_evict(cache_t *cache, const request_t *req,
     min_freq_node->last_obj = obj_to_evict->queue.prev;
     obj_to_evict->queue.prev->queue.next = NULL;
   }
-  cache_remove_obj_base(cache, obj_to_evict);
+  cache_remove_obj_base(cache, obj_to_evict, true);
 
   min_freq_node =
       g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));
@@ -363,7 +363,7 @@ bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
   freq_node->n_obj--;
   remove_obj_from_list(&freq_node->first_obj, &freq_node->last_obj, obj);
 
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 
   freq_node_t *min_freq_node =
       g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));

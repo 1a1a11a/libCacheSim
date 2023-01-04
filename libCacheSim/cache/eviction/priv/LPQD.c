@@ -188,7 +188,10 @@ void LPQD_clock_evict(cache_t *cache, const request_t *req,
     memcpy(evicted_obj, moving_clock_pointer, sizeof(cache_obj_t));
   }
 
-  LPQD_remove_obj(cache, moving_clock_pointer);
+  remove_obj_from_list(&params->clock_head, &params->clock_tail, moving_clock_pointer);
+  params->n_clock_obj--;
+  params->n_clock_byte -= moving_clock_pointer->obj_size + cache->obj_md_size;
+  cache_evict_base(cache, moving_clock_pointer, true);
 }
 
 void LPQD_evict(cache_t *cache, const request_t *req,
@@ -204,14 +207,11 @@ void LPQD_evict(cache_t *cache, const request_t *req,
       // return evicted object to caller
       memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
     }
-
-    // LPQD_remove_obj(cache, obj_to_evict);
-
+    // remove from FIFO and insert to FIFO ghost
     remove_obj_from_list(&params->fifo_head, &params->fifo_tail, obj_to_evict);
     params->n_fifo_obj--;
     params->n_fifo_byte -= obj_to_evict->obj_size + cache->obj_md_size;
-    cache->n_obj--;
-    cache->occupied_size -= obj_to_evict->obj_size + cache->obj_md_size;
+    cache_evict_base(cache, obj_to_evict, false);
 
     prepend_obj_to_head(&params->fifo_ghost_head, &params->fifo_ghost_tail,
                         obj_to_evict);
@@ -239,14 +239,14 @@ void LPQD_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
     remove_obj_from_list(&params->fifo_head, &params->fifo_tail, obj_to_remove);
     params->n_fifo_obj--;
     params->n_fifo_byte -= obj_to_remove->obj_size + cache->obj_md_size;
-    cache_remove_obj_base(cache, obj_to_remove);
+    cache_remove_obj_base(cache, obj_to_remove, true);
   } else if (obj_to_remove->LPQD.cache_id == 2) {
     // clock cache
     remove_obj_from_list(&params->clock_head, &params->clock_tail,
                          obj_to_remove);
     params->n_clock_obj--;
     params->n_clock_byte -= obj_to_remove->obj_size + cache->obj_md_size;
-    cache_remove_obj_base(cache, obj_to_remove);
+    cache_remove_obj_base(cache, obj_to_remove, true);
   } else if (obj_to_remove->LPQD.cache_id == 3) {
     // fifo ghost
     remove_obj_from_list(&params->fifo_ghost_head, &params->fifo_ghost_tail,

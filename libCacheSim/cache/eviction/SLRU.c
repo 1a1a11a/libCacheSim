@@ -214,7 +214,7 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  cache_obj_t *obj = hashtable_insert(cache->hashtable, req);
+  cache_obj_t *obj = cache_insert_base(cache, req);
 
   // Find the lowest LRU with space for insertion
   int nth_seg = -1;
@@ -240,8 +240,6 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
   obj->SLRU.lru_id = nth_seg;
   params->lru_n_bytes[nth_seg] += req->obj_size + cache->obj_md_size;
   params->lru_n_objs[nth_seg]++;
-  cache->n_obj += 1;
-  cache->occupied_size += req->obj_size + cache->obj_md_size;
 
   return obj;
 }
@@ -280,7 +278,7 @@ void SLRU_evict(cache_t *cache, const request_t *req,
 
   remove_obj_from_list(&params->lru_heads[nth_seg], &params->lru_tails[nth_seg],
                        obj);
-  cache_evict_base(cache, obj);
+  cache_evict_base(cache, obj, true);
 }
 
 bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -291,11 +289,10 @@ bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
     return false;
   }
 
-  cache->occupied_size -= (obj->obj_size + cache->obj_md_size);
-  cache->n_obj -= 1;
   remove_obj_from_list(&(params->lru_heads[obj->SLRU.lru_id]),
                        &(params->lru_tails[obj->SLRU.lru_id]), obj);
-  hashtable_delete(cache->hashtable, obj);
+
+  cache_remove_obj_base(cache, obj, true);
 
   return true;
 }

@@ -86,7 +86,7 @@ void LFUCpp_evict(cache_t *cache, const request_t *req,
   cache_obj_t *obj = p.obj;
   if (evicted_obj != nullptr) memcpy(evicted_obj, obj, sizeof(cache_obj_t));
 
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 }
 
 bool LFUCpp_get(cache_t *cache, const request_t *req) {

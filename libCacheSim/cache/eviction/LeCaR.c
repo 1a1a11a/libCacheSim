@@ -591,7 +591,7 @@ bool LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
   remove_obj_from_freq_node(params, obj);
 
   // remove from hash table and update cache state
-  cache_remove_obj_base(cache, obj);
+  cache_remove_obj_base(cache, obj, true);
 
   return true;
 }
