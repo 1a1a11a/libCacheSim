@@ -37,7 +37,20 @@ brew install glib google-perftools
 Linux (using Ubuntu as an example)
 ```
 sudo apt install libglib2.0-dev libgoogle-perftools-dev
+
+# [source installation] zstd
+cd /tmp/
+wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz
+tar xvf zstd-1.5.0.tar.gz
+cd zstd-1.5.0/build/cmake/
+mkdir _build
+cd _build/
+cmake ..
+make -j
+sudo make install
 ```
+
+Note that cmake version is required to be no less than 3.12.
 
 [Optional] Install XGBoost (Linux):
 ```
