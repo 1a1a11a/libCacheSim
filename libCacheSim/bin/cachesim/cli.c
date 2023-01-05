@@ -308,7 +308,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cc_params.hashpower -= 4;
     cache = BeladySize_init(cc_params, args->eviction_params);
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
-  } else if (strcasecmp(args->eviction_algo, "GLCache") == 0) {
+  } else if (strcasecmp(args->eviction_algo, "GLCache") == 0 ||
+             strcasecmp(args->eviction_algo, "gl-cache") == 0) {
     cache = GLCache_init(cc_params, args->eviction_params);
 #endif
 #ifdef INCLUDE_PRIV
@@ -317,7 +318,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = SFIFO_Merge_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifo-reinsertion") == 0) {
     cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
-
   } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0) {
     cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {

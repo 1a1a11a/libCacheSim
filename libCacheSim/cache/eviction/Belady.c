@@ -84,18 +84,12 @@ bool Belady_check(cache_t *cache, const request_t *req,
   if (!update_cache) return cache_hit;
 
   if (cache_hit) {
-    /* update next access ts, we use INT64_MAX - 10 because we reserve the
-     * largest elements for immediate delete */
-    if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-      Belady_remove_obj(cache, cached_obj);
-    } else {
-      pqueue_pri_t pri = {.pri = req->next_access_vtime};
-      pqueue_change_priority(params->pq, pri,
-                             (pq_node_t *)(cached_obj->Belady.pq_node));
-      DEBUG_ASSERT(
-          ((pq_node_t *)cache_get_obj(cache, req)->Belady.pq_node)->pri.pri ==
-          req->next_access_vtime);
-    }
+    pqueue_pri_t pri = {.pri = req->next_access_vtime};
+    pqueue_change_priority(params->pq, pri,
+                           (pq_node_t *)(cached_obj->Belady.pq_node));
+    DEBUG_ASSERT(
+        ((pq_node_t *)cache_get_obj(cache, req)->Belady.pq_node)->pri.pri ==
+        req->next_access_vtime);
     return true;
   }
 
