@@ -16,6 +16,7 @@ set(sourceC
         Hyperbolic.c
         LeCaR.c
         Cacheus.c
+        FIFO_Reinsertion.c
 
         LRUv0.c
         LeCaRv0.c
@@ -26,10 +27,9 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/SFIFO_Merge.c
                 priv/SFIFO_Reinsertion.c
 
-                priv/FIFO_Reinsertion.c
                 priv/LRU_Prob.c
 
-                priv/lazyFIFOv2.c
+                priv/LPv1.c
                 priv/LRU_Belady.c
                 priv/SFIFO.c
                 priv/LPQD.c

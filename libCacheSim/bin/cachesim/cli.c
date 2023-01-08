@@ -307,6 +307,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
     cc_params.hashpower -= 4;
     cache = BeladySize_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0) {
+    cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0 ||
              strcasecmp(args->eviction_algo, "gl-cache") == 0) {
@@ -318,15 +320,15 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = SFIFO_Merge_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifo-reinsertion") == 0) {
     cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0) {
-    cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lpqd") == 0) {
     cache = LPQD_init(cc_params, args->eviction_params);
 
-  } else if (strcasecmp(args->eviction_algo, "lazy-fifov2") == 0) {
-    cache = lazyFIFOv2_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "LPv1") == 0) {
+    cache = LPv1_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "LPv2") == 0) {
+    cache = LPv2_init(cc_params, args->eviction_params);
 
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {

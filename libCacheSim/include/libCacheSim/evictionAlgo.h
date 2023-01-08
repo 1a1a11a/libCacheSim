@@ -22,6 +22,7 @@
 #include "evictionAlgo/SLRU.h"
 #include "evictionAlgo/SLRUv0.h"
 #include "evictionAlgo/SR_LRU.h"
+#include "evictionAlgo/FIFO_Reinsertion.h"
 
 #ifdef INCLUDE_PRIV
 #include "evictionAlgo/priv/SFIFO_Merge.h"
