@@ -18,7 +18,7 @@ extern "C" {
 
 // ############## per object metadata used in eviction algorithm cache obj
 typedef struct {
-  int32_t freq;
+  int64_t freq;
 } LFU_obj_metadata_t;
 
 typedef struct {

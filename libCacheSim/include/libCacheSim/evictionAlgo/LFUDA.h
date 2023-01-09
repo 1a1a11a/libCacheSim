@@ -10,7 +10,6 @@
 #define LFUDA_H
 
 #include "../cache.h"
-#include "LFU.h"
 
 #ifdef __cplusplus
 extern "C" {

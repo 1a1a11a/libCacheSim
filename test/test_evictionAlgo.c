@@ -497,10 +497,10 @@ static void test_CR_LFU(gconstpointer user_data) {
 }
 
 static void test_LFUDA(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {92100, 88062, 81473, 79459,
-                              73869, 69448, 68984, 66185};
-  uint64_t miss_byte_true[] = {4174408192, 3966416896, 3641486336, 3540448256,
-                               3213380608, 2955176960, 2944822784, 2810384896};
+  uint64_t miss_cnt_true[] = {92637, 88601, 82001, 80240,
+                              73214, 71386, 70415, 71128};
+  uint64_t miss_byte_true[] = {4200012288, 3993467904, 3673375232, 3579174400,
+                               3164476928, 3046658048, 2998682624, 3027994112};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {

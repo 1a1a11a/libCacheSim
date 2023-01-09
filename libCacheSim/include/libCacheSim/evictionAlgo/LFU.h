@@ -16,10 +16,10 @@ extern "C" {
 #endif
 
 typedef struct freq_node {
-  uint32_t freq;
-  uint32_t n_obj;
+  int64_t freq;
   cache_obj_t *first_obj;
   cache_obj_t *last_obj;
+  uint32_t n_obj;
 } freq_node_t;
 
 cache_t *LFU_init(const common_cache_params_t ccache_params,

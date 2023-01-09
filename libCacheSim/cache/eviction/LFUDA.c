@@ -10,6 +10,7 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo/LFUDA.h"
+#include "../../include/libCacheSim/evictionAlgo/LFU.h"
 
 #ifdef __cplusplus
 extern "C" {
