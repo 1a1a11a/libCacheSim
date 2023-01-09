@@ -39,7 +39,14 @@ Note that vscsi is a trace format, we also support csv traces.
 
 # Or you can quote the cache sizes
 ./cachesim ../data/trace.vscsi vscsi lru "1mb, 16mb, 256mb, 8gb"
+
+# besides absolute cache size, you can also use fraction of working set size
+./cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
+
+# besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
+./cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore obj-size 1
 ``` 
+
 
 ### Auto detect cache sizes
 cachesim can detect the working set of the trace and automatically generate cache sizes at 0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3 of the working set size. 
