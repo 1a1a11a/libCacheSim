@@ -548,6 +548,12 @@ void reset_reader(reader_t *const reader) {
     curr_offset = reader->mmap_offset;
   }
 
+#ifdef SUPPORT_ZSTD_TRACE
+  if (reader->is_zstd_file) {
+    fseek(reader->zstd_reader_p->ifile, 0, SEEK_SET);
+  }
+#endif
+
   DEBUG("reset reader current offset %ld\n", curr_offset);
 }
 
