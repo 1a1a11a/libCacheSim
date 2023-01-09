@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#define USE_BELADY
+// #define USE_BELADY
 #define SLRU_MAX_N_SEG 16
 #define DEBUG_MODE
 #undef DEBUG_MODE

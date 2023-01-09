@@ -27,7 +27,7 @@ extern "C" {
 
 #define DEBUG_MODE
 #undef DEBUG_MODE
-#define USE_BELADY
+// #define USE_BELADY
 
 typedef struct ARC_params {
   // L1_data is T1 in the paper, L1_ghost is B1 in the paper
