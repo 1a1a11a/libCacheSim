@@ -192,6 +192,34 @@ void prepend_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
     // the list has at least one element
     (*head)->queue.prev = cache_obj;
   }
-  
+
   *head = cache_obj;
+}
+
+/**
+ * append the object to the tail of the doubly linked list
+ * the object is not in the list, otherwise, use move_obj_to_tail
+ * @param head
+ * @param tail
+ * @param cache_obj
+ */
+void append_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
+                        cache_obj_t *cache_obj) {
+
+  cache_obj->queue.next = NULL;
+  cache_obj->queue.prev = *tail;
+
+  if (head != NULL && *head == NULL) {
+    // the list is empty
+    DEBUG_ASSERT(*tail == NULL);
+    *head = cache_obj;
+  }
+
+  if (*tail != NULL) {
+    // the list has at least one element
+    (*tail)->queue.next = cache_obj;
+  }
+
+
+  *tail = cache_obj;
 }

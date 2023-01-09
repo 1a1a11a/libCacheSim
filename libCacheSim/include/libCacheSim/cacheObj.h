@@ -101,7 +101,7 @@ typedef struct {
 typedef struct {
   int32_t freq;
   int32_t last_access_time;
-  int32_t cache_id; // 1: fifo, 2: clock, 3: fifo_ghost
+  int32_t cache_id;  // 1: fifo, 2: clock, 3: fifo_ghost
   bool visited;
 } LPQD_obj_metadata_t;
 
@@ -110,6 +110,7 @@ typedef struct {
   int32_t last_access_vtime;
   int64_t next_access_vtime;
   int32_t last_access_rtime;
+  int32_t q_id;
 } misc_metadata_t;
 
 // ############################## cache obj ###################################
@@ -225,7 +226,7 @@ void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
 
 /**
  * prepend the object to the head of the doubly linked list
- * the object is not in the list, otherwise, use move_obj_to_head
+ * the object should not be in the list, otherwise, use move_obj_to_head
  * @param head
  * @param tail
  * @param cache_obj
@@ -234,7 +235,17 @@ void prepend_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
                          cache_obj_t *cache_obj);
 
 /**
- * free cache_obj, this is only used when the cache_obj is explicitly malloced
+ * append the object to the tail of the doubly linked list
+ * the object should not be in the list, otherwise, use move_obj_to_tail
+ * @param head
+ * @param tail
+ * @param cache_obj
+ */
+void append_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
+                        cache_obj_t *cache_obj);
+/**
+ * free cache_obj, this is only used when the cache_obj is explicitly
+ * malloced
  * @param cache_obj
  */
 static inline void free_cache_obj(cache_obj_t *cache_obj) {
