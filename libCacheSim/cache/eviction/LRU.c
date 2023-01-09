@@ -16,6 +16,9 @@
 extern "C" {
 #endif
 
+// #define USE_BELADY
+
+// ****************** end user facing functions *******************
 cache_t *LRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("LRU", ccache_params);
@@ -41,6 +44,10 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
     abort();
   }
 
+#ifdef USE_BELADY
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LRU_Reinsertion_Belady");
+#endif
+
   LRU_params_t *params = malloc(sizeof(LRU_params_t));
   params->q_head = NULL;
   params->q_tail = NULL;
@@ -55,6 +62,7 @@ bool LRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
+// *********** developer facing APIs (used by cache developer) ***********
 bool LRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
   cache_obj_t *cache_obj;
@@ -62,6 +70,9 @@ bool LRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
 
   if (cache_obj && likely(update_cache)) {
     /* lru_head is the newest, move cur obj to lru_head */
+#ifdef USE_BELADY
+    if (req->next_access_vtime != INT64_MAX)
+#endif
     move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   }
   return cache_hit;

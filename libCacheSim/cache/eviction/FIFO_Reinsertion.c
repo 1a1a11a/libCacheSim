@@ -77,10 +77,13 @@ bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
 // *********** developer facing APIs (used by cache developer) ***********
 bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
                             const bool update_cache) {
-  cache_obj_t *cached_obj = NULL;
-  bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
-  if (cached_obj != NULL) {
-    cached_obj->lfu.freq += 1;
+  cache_obj_t *obj = NULL;
+  bool cache_hit = cache_check_base(cache, req, update_cache, &obj);
+  if (obj != NULL && update_cache) {
+    obj->lfu.freq += 1;
+#ifdef USE_BELADY
+    obj->next_access_vtime = req->next_access_vtime;
+#endif
   }
 
   return cache_hit;
@@ -94,6 +97,9 @@ cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
   obj->lfu.freq = 1;
+#ifdef USE_BELADY
+  obj->next_access_vtime = req->next_access_vtime;
+#endif
 
   return obj;
 }
@@ -104,7 +110,8 @@ cache_obj_t *FIFO_Reinsertion_to_evict(cache_t *cache) {
 
   cache_obj_t *obj_to_evict = params->q_tail;
 #ifdef USE_BELADY
-  while (obj_to_evict->lfu.freq > 1 && obj_to_evict->next_access_vtime != INT64_MAX) {
+  while (obj_to_evict->lfu.freq > 1 &&
+         obj_to_evict->next_access_vtime != INT64_MAX) {
     obj_to_evict->lfu.freq = 1;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
