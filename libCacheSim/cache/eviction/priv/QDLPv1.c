@@ -13,6 +13,7 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/cache.h"
+#include "../../include/libCacheSim/evictionAlgo/priv/priv.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,10 +35,59 @@ typedef struct {
 
 } QDLPv1_params_t;
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ***********************************************************************
+
+void QDLPv1_free(cache_t *cache) { cache_struct_free(cache); }
+
+cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("QDLPv1", ccache_params);
+  cache->cache_init = QDLPv1_init;
+  cache->cache_free = QDLPv1_free;
+  cache->get = QDLPv1_get;
+  cache->check = QDLPv1_check;
+  cache->insert = QDLPv1_insert;
+  cache->evict = QDLPv1_evict;
+  cache->remove = QDLPv1_remove;
+  cache->to_evict = QDLPv1_to_evict;
+  cache->init_params = cache_specific_params;
+  cache->obj_md_size = 0;
+
+  if (cache_specific_params != NULL) {
+    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
+          cache_specific_params);
+    abort();
+  }
+
+  cache->eviction_params = malloc(sizeof(QDLPv1_params_t));
+  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  params->fifo1_head = NULL;
+  params->fifo1_tail = NULL;
+  params->fifo2_head = NULL;
+  params->fifo2_tail = NULL;
+  params->n_fifo1_obj = 0;
+  params->n_fifo2_obj = 0;
+  params->n_fifo1_byte = 0;
+  params->n_fifo2_byte = 0;
+  params->fifo1_max_size = (int64_t)ccache_params.cache_size * 0.2;
+  params->fifo2_max_size = ccache_params.cache_size - params->fifo1_max_size;
+
+  return cache;
+}
+
 bool QDLPv1_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
 bool QDLPv1_check(cache_t *cache, const request_t *req,
                   const bool update_cache) {
   cache_obj_t *cached_obj = NULL;
@@ -137,44 +187,6 @@ bool QDLPv1_remove(cache_t *cache, const obj_id_t obj_id) {
   QDLPv1_remove_obj(cache, obj);
 
   return true;
-}
-
-void QDLPv1_free(cache_t *cache) { cache_struct_free(cache); }
-
-cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("QDLPv1", ccache_params);
-  cache->cache_init = QDLPv1_init;
-  cache->cache_free = QDLPv1_free;
-  cache->get = QDLPv1_get;
-  cache->check = QDLPv1_check;
-  cache->insert = QDLPv1_insert;
-  cache->evict = QDLPv1_evict;
-  cache->remove = QDLPv1_remove;
-  cache->to_evict = QDLPv1_to_evict;
-  cache->init_params = cache_specific_params;
-  cache->obj_md_size = 0;
-
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
-
-  cache->eviction_params = malloc(sizeof(QDLPv1_params_t));
-  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
-  params->fifo1_head = NULL;
-  params->fifo1_tail = NULL;
-  params->fifo2_head = NULL;
-  params->fifo2_tail = NULL;
-  params->n_fifo1_obj = 0;
-  params->n_fifo2_obj = 0;
-  params->n_fifo1_byte = 0;
-  params->n_fifo2_byte = 0;
-  params->fifo1_max_size = (int64_t)ccache_params.cache_size * 0.2;
-  params->fifo2_max_size = ccache_params.cache_size - params->fifo1_max_size;
-
-  return cache;
 }
 
 #ifdef __cplusplus

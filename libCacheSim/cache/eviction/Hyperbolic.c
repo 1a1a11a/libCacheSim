@@ -11,48 +11,14 @@ typedef struct Hyperbolic_params {
   int n_sample;
 } Hyperbolic_params_t;
 
-static const char *Hyperbolic_current_params(Hyperbolic_params_t *params) {
-  static __thread char params_str[128];
-  snprintf(params_str, 128, "n-sample=%d\n", params->n_sample);
-  return params_str;
-}
-
 static void Hyperbolic_parse_params(cache_t *cache,
-                                    const char *cache_specific_params) {
-  char *end;
-  Hyperbolic_params_t *params = (Hyperbolic_params_t *)cache->eviction_params;
-  char *params_str = strdup(cache_specific_params);
-  char *old_params_str = params_str;
+                                    const char *cache_specific_params);
 
-  while (params_str != NULL && params_str[0] != '\0') {
-    /* different parameters are separated by comma,
-     * key and value are separated by = */
-    char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ",");
-
-    // skip the white space
-    while (params_str != NULL && *params_str == ' ') {
-      params_str++;
-    }
-
-    if (strcasecmp(key, "n-sample") == 0) {
-      params->n_sample = (int)strtol(value, &end, 0);
-      if (strlen(end) > 2) {
-        ERROR("param parsing error, find string \"%s\" after number\n", end);
-      }
-    } else if (strcasecmp(key, "print") == 0) {
-      printf("parameters: %s\n", Hyperbolic_current_params(params));
-      exit(0);
-    } else {
-      ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
-            key, Hyperbolic_current_params(params));
-      exit(1);
-    }
-  }
-
-  free(old_params_str);
-}
-
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ***********************************************************************
 cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("Hyperbolic", ccache_params);
@@ -90,26 +56,31 @@ void Hyperbolic_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+bool Hyperbolic_get(cache_t *cache, const request_t *req) {
+  bool ret = cache_get_base(cache, req);
+
+  return ret;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
 bool Hyperbolic_check(cache_t *cache, const request_t *req,
                       const bool update_cache) {
   cache_obj_t *cached_obj;
   bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
 
-  if (!update_cache) return cache_hit;
+  if (!update_cache) {
+    return cache_hit;
+  }
 
   if (cache_hit) {
     cached_obj->hyperbolic.freq++;
-
-    return true;
   }
 
-  return false;
-}
-
-bool Hyperbolic_get(cache_t *cache, const request_t *req) {
-  bool ret = cache_get_base(cache, req);
-
-  return ret;
+  return cache_hit;
 }
 
 cache_obj_t *Hyperbolic_insert(cache_t *cache, const request_t *req) {
@@ -163,6 +134,48 @@ bool Hyperbolic_remove(cache_t *cache, const obj_id_t obj_id) {
   Hyperbolic_remove_obj(cache, obj);
 
   return true;
+}
+
+static const char *Hyperbolic_current_params(Hyperbolic_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "n-sample=%d\n", params->n_sample);
+  return params_str;
+}
+
+static void Hyperbolic_parse_params(cache_t *cache,
+                                    const char *cache_specific_params) {
+  char *end;
+  Hyperbolic_params_t *params = (Hyperbolic_params_t *)cache->eviction_params;
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "n-sample") == 0) {
+      params->n_sample = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("parameters: %s\n", Hyperbolic_current_params(params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
+            key, Hyperbolic_current_params(params));
+      exit(1);
+    }
+  }
+
+  free(old_params_str);
 }
 
 #ifdef __cplusplus

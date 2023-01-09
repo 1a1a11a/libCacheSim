@@ -303,7 +303,6 @@ static void SLRU_parse_params(cache_t *cache,
       while (v != NULL) {
         seg_size_array[n_seg++] = (int64_t)strtol(v, &end, 0);
         seg_size_sum += seg_size_array[n_seg - 1];
-        printf("%s %d\n", v, seg_size_array[n_seg - 1]);
         v = strsep((char **)&value, ":");
       }
       params->n_seg = n_seg;
