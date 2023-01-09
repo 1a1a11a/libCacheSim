@@ -21,7 +21,7 @@
 #include "evictionAlgo/SLRU.h"
 #include "evictionAlgo/SLRUv0.h"
 #include "evictionAlgo/SR_LRU.h"
-#include "evictionAlgo/FIFO_Reinsertion.h"
+#include "evictionAlgo/Clock.h"
 
 #ifdef INCLUDE_PRIV
 #include "evictionAlgo/priv/MyClock.h"

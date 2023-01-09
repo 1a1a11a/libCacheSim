@@ -6,6 +6,7 @@ set(sourceC
         ARC.c
         FIFO.c
         LRU.c
+        Clock.c
         SLRU.c
         SLRUv0.c
         CR_LFU.c
@@ -15,7 +16,6 @@ set(sourceC
         Hyperbolic.c
         LeCaR.c
         Cacheus.c
-        FIFO_Reinsertion.c
 
         LRUv0.c
         LeCaRv0.c

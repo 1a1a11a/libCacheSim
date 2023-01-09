@@ -316,7 +316,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0 ||
              strcasecmp(args->eviction_algo, "clock") == 0 ||
              strcasecmp(args->eviction_algo, "second-chance") == 0) {
-    cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
+    cache = Clock_init(cc_params, args->eviction_params);
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0 ||
              strcasecmp(args->eviction_algo, "gl-cache") == 0) {
