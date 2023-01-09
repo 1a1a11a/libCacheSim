@@ -77,8 +77,8 @@ bool LRUv0_check(cache_t *cache, const request_t *req,
   cache_obj_t *cache_obj = node->data;
   if (likely(update_cache)) {
     if (unlikely(cache_obj->obj_size != req->obj_size)) {
-      cache->occupied_size -= cache_obj->obj_size;
-      cache->occupied_size += req->obj_size;
+      cache->occupied_byte -= cache_obj->obj_size;
+      cache->occupied_byte += req->obj_size;
       cache_obj->obj_size = req->obj_size;
     }
   }
@@ -92,7 +92,7 @@ bool LRUv0_get(cache_t *cache, const request_t *req) {
   if (req->obj_size <= cache->cache_size) {
     if (!cache_hit) LRUv0_insert(cache, req);
 
-    while (cache->occupied_size > cache->cache_size)
+    while (cache->occupied_byte > cache->cache_size)
       LRUv0_evict(cache, req, NULL);
   } else {
     WARN("req %lld: obj size %ld larger than cache size %ld\n",
@@ -104,7 +104,7 @@ bool LRUv0_get(cache_t *cache, const request_t *req) {
 cache_obj_t *LRUv0_insert(cache_t *cache, const request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
-  cache->occupied_size += req->obj_size + cache->obj_md_size;
+  cache->occupied_byte += req->obj_size + cache->obj_md_size;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
   // TODO: use SList should be more memory efficient than queue which uses
   // doubly-linklist under the hood
@@ -134,8 +134,8 @@ void LRUv0_evict(cache_t *cache, const request_t *req,
                  cache_obj_t *evicted_obj) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = LRUv0_to_evict(cache);
-  assert(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= (cache_obj->obj_size + cache->obj_md_size);
+  assert(cache->occupied_byte >= cache_obj->obj_size);
+  cache->occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
   g_hash_table_remove(LRUv0_params->hashtable,
                       (gconstpointer)cache_obj->obj_id);
   free_cache_obj(cache_obj);
@@ -151,8 +151,8 @@ bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
   }
 
   cache_obj_t *cache_obj = (cache_obj_t *)(node->data);
-  assert(cache->occupied_size >= cache_obj->obj_size + cache->obj_md_size);
-  cache->occupied_size -=
+  assert(cache->occupied_byte >= cache_obj->obj_size + cache->obj_md_size);
+  cache->occupied_byte -=
       (((cache_obj_t *)(node->data))->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 

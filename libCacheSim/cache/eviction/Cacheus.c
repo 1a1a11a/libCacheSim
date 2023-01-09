@@ -193,7 +193,7 @@ static void check_and_update_history(cache_t *cache, const request_t *req) {
 bool Cacheus_check(cache_t *cache, const request_t *req, bool update_cache) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
 
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
   bool cache_hit_lru, cache_hit_lfu;
@@ -212,19 +212,19 @@ bool Cacheus_check(cache_t *cache, const request_t *req, bool update_cache) {
     params->num_hit += 1;
   }
 
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
   return cache_hit_lru;
 }
 
 bool Cacheus_get(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
-  DEBUG_ASSERT(params->LRU->occupied_size == cache->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
+  DEBUG_ASSERT(params->LRU->occupied_byte == cache->occupied_byte);
 
   cache->n_req += 1;
   bool cache_hit = cache->check(cache, req, true);
@@ -251,7 +251,7 @@ bool Cacheus_get(cache_t *cache, const request_t *req) {
     }
 
     else if (!cache_hit) {
-      while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+      while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
              cache->cache_size)
         cache->evict(cache, req, NULL);
 
@@ -260,7 +260,7 @@ bool Cacheus_get(cache_t *cache, const request_t *req) {
   }
   // bool ret = cache_get_base(cache, req);
 
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
   if (cache->n_req % params->update_interval == 0) update_lr(cache, req);
@@ -269,16 +269,16 @@ bool Cacheus_get(cache_t *cache, const request_t *req) {
 
 cache_obj_t *Cacheus_insert(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
   // LFU must be first because it may load frequency stored in lRU history
   params->LFU->insert(params->LFU, req);
   params->LRU->insert(params->LRU, req);
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
   cache->n_obj = params->LRU->n_obj;
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == params->LFU->n_obj);
 
   /* the cached obj is stored twice */
@@ -303,7 +303,7 @@ void Cacheus_evict(cache_t *cache, const request_t *req,
   }
 
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
   cache_obj_t obj;
   double r = ((double)(next_rand() % 100)) / 100.0;
@@ -339,9 +339,9 @@ void Cacheus_evict(cache_t *cache, const request_t *req,
     memcpy(evicted_obj, &obj, sizeof(cache_obj_t));
   }
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
   cache->n_obj = params->LRU->n_obj;
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == params->LFU->n_obj);
 }
 
@@ -360,7 +360,7 @@ bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
   }
   params->LFU->remove(params->LFU, obj_id);
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
   cache->n_obj -= 1;
   return true;
 }

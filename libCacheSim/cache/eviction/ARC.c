@@ -125,11 +125,11 @@ static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
   }
 
   DEBUG_ASSERT(params->L1_data_size + params->L2_data_size ==
-               cache->occupied_size);
+               cache->occupied_byte);
   // DEBUG_ASSERT(params->L1_data_size + params->L2_data_size +
   //                  params->L1_ghost_size + params->L2_ghost_size <=
   //              cache->cache_size * 2);
-  DEBUG_ASSERT(cache->occupied_size <= cache->cache_size);
+  DEBUG_ASSERT(cache->occupied_byte <= cache->cache_size);
 }
 
 static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
@@ -215,7 +215,7 @@ bool ARC_get_debug(cache_t *cache, const request_t *req) {
     return cache_hit;
   }
 
-  while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+  while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
          cache->cache_size) {
     cache->evict(cache, req, NULL);
   }
@@ -423,7 +423,7 @@ cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
   params->curr_obj_in_L1_ghost = false;
   params->curr_obj_in_L2_ghost = false;
 
-  cache->occupied_size += req->obj_size + cache->obj_md_size;
+  cache->occupied_byte += req->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
   return obj;
@@ -459,7 +459,7 @@ static void _ARC_replace(cache_t *cache, const request_t *req,
     prepend_obj_to_head(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
   }
   obj->ARC.ghost = true;
-  cache->occupied_size -= obj->obj_size + cache->obj_md_size;
+  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
   cache->n_obj -= 1;
 }
 
@@ -493,7 +493,7 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
       cache_obj_t *obj = params->L1_data_tail;
       int64_t sz = obj->obj_size + cache->obj_md_size;
       params->L1_data_size -= sz;
-      cache->occupied_size -= sz;
+      cache->occupied_byte -= sz;
       cache->n_obj -= 1;
       remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
       DEBUG_ASSERT(params->L1_data_tail != NULL);

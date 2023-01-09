@@ -165,7 +165,7 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
 
   VVERBOSE("******* req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
            ", cache size %" PRIu64 "/%" PRIu64 "\n",
-           cache->n_req, req->obj_id, req->obj_size, cache->occupied_size,
+           cache->n_req, req->obj_id, req->obj_size, cache->occupied_byte,
            cache->cache_size);
 
   bool cache_hit = cache->check(cache, req, true);
@@ -181,7 +181,7 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
   }
 
   if (!cache_hit) {
-    while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req, NULL);
     }
@@ -200,7 +200,7 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
-  cache->occupied_size += cache_obj->obj_size + cache->obj_md_size;
+  cache->occupied_byte += cache_obj->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
 #ifdef SUPPORT_TTL
@@ -246,8 +246,8 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj, bool remove_from_hashtab
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj,
                            bool remove_from_hashtable) {
-  DEBUG_ASSERT(cache->occupied_size >= obj->obj_size + cache->obj_md_size);
-  cache->occupied_size -= (obj->obj_size + cache->obj_md_size);
+  DEBUG_ASSERT(cache->occupied_byte >= obj->obj_size + cache->obj_md_size);
+  cache->occupied_byte -= (obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
   if (remove_from_hashtable) {
     hashtable_delete(cache->hashtable, obj);

@@ -20,7 +20,7 @@ static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,
                                             gpointer user_data) {
   cache_stat_t *cache_state = user_data;
   cache_state->n_obj += 1;
-  cache_state->occupied_size += cache_obj->obj_size;
+  cache_state->occupied_byte += cache_obj->obj_size;
 #ifdef SUPPORT_TTL
   if (cache_obj->exp_time < cache_state->curr_rtime) {
     cache_state->expired_obj_cnt += 1;

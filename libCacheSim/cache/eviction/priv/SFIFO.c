@@ -94,7 +94,7 @@ bool SFIFO_get_debug(cache_t *cache, const request_t *req) {
   }
 
   if (!cache_hit) {
-    while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req, NULL);
     }
@@ -201,7 +201,7 @@ bool SFIFO_check(cache_t *cache, const request_t *req, const bool update_cache) 
       // if the fifo is full
       SFIFO_cool(cache, req, obj->SFIFO.fifo_id);
     }
-    DEBUG_ASSERT(cache->occupied_size <= cache->cache_size);
+    DEBUG_ASSERT(cache->occupied_byte <= cache->cache_size);
   }
 
   return true;
@@ -225,7 +225,7 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
 
   if (nth_seg == -1) {
     // No space for insertion
-    while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req, NULL);
     }
@@ -238,7 +238,7 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
   params->fifo_n_bytes[nth_seg] += req->obj_size + cache->obj_md_size;
   params->fifo_n_objs[nth_seg]++;
   cache->n_obj += 1;
-  cache->occupied_size += req->obj_size + cache->obj_md_size;
+  cache->occupied_byte += req->obj_size + cache->obj_md_size;
 
   return obj;
 }
@@ -288,7 +288,7 @@ bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
     return false;
   }
 
-  cache->occupied_size -= (obj->obj_size + cache->obj_md_size);
+  cache->occupied_byte -= (obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
   remove_obj_from_list(&(params->fifo_heads[obj->SFIFO.fifo_id]),
                        &(params->fifo_tails[obj->SFIFO.fifo_id]), obj);

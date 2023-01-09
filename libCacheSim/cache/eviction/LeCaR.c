@@ -543,8 +543,8 @@ void LeCaR_evict(cache_t *cache, const request_t *req,
   remove_obj_from_freq_node(params, obj_to_evict);
 
   // update cache state
-  DEBUG_ASSERT(cache->occupied_size >= obj_to_evict->obj_size);
-  cache->occupied_size -= (obj_to_evict->obj_size + cache->obj_md_size);
+  DEBUG_ASSERT(cache->occupied_byte >= obj_to_evict->obj_size);
+  cache->occupied_byte -= (obj_to_evict->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 
   // update history

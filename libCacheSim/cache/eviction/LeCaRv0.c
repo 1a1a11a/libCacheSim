@@ -144,10 +144,10 @@ bool LeCaRv0_check(cache_t *cache, const request_t *req, bool update_cache) {
     check_and_update_history(cache, req);
   }
 
-  DEBUG_ASSERT(params->LRU->occupied_size == params->LFU->occupied_size);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
   DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
 
   return cache_hit_lru;
 }
@@ -162,7 +162,7 @@ cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req) {
   params->LRU->insert(params->LRU, req);
   params->LFU->insert(params->LFU, req);
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
   cache->n_obj += 1;
 
   return NULL;
@@ -215,7 +215,7 @@ void LeCaRv0_evict(cache_t *cache, const request_t *req,
     memcpy(evicted_obj, &obj, sizeof(cache_obj_t));
   }
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
   cache->n_obj -= 1;
 }
 
@@ -234,7 +234,7 @@ bool LeCaRv0_remove(cache_t *cache, obj_id_t obj_id) {
   }
   params->LFU->remove(params->LFU, obj_id);
 
-  cache->occupied_size = params->LRU->occupied_size;
+  cache->occupied_byte = params->LRU->occupied_byte;
   cache->n_obj -= 1;
 
   return true;

@@ -86,8 +86,8 @@ bool LHD_check(cache_t *cache, const request_t *req, const bool update_cache) {
 
   if (update_cache) {
     if (itr->second != req->obj_size) {
-      cache->occupied_size -= itr->second;
-      cache->occupied_size += req->obj_size;
+      cache->occupied_byte -= itr->second;
+      cache->occupied_byte += req->obj_size;
       itr->second = req->obj_size;
     }
     lhd->update(id, req);
@@ -112,7 +112,7 @@ cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   lhd->sizeMap[id] = req->obj_size;
   lhd->update(id, req);
 
-  cache->occupied_size += req->obj_size + cache->obj_md_size;
+  cache->occupied_byte += req->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
   return NULL;
@@ -129,8 +129,8 @@ void LHD_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
   }
   assert(victimItr != lhd->sizeMap.end());
 
-  DEBUG_ASSERT(cache->occupied_size >= victimItr->second);
-  cache->occupied_size -= (victimItr->second + cache->obj_md_size);
+  DEBUG_ASSERT(cache->occupied_byte >= victimItr->second);
+  cache->occupied_byte -= (victimItr->second + cache->obj_md_size);
   cache->n_obj -= 1;
 
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
@@ -157,7 +157,7 @@ bool LHD_remove(cache_t *cache, const obj_id_t obj_id) {
     return false;
   }
 
-  cache->occupied_size -= (itr->second + cache->obj_md_size);
+  cache->occupied_byte -= (itr->second + cache->obj_md_size);
   cache->n_obj -= 1;
   lhd->sizeMap.erase(itr);
   auto idx = lhd->indices[id];

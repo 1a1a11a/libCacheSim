@@ -27,10 +27,47 @@ typedef struct {
   cache_obj_t *q_tail;
 } FIFO_Reinsertion_params_t;
 
+// ****************** end user facing functions *******************
+cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
+                               const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("FIFO_Reinsertion", ccache_params);
+  cache->cache_init = FIFO_Reinsertion_init;
+  cache->cache_free = FIFO_Reinsertion_free;
+  cache->get = FIFO_Reinsertion_get;
+  cache->check = FIFO_Reinsertion_check;
+  cache->insert = FIFO_Reinsertion_insert;
+  cache->evict = FIFO_Reinsertion_evict;
+  cache->remove = FIFO_Reinsertion_remove;
+  cache->to_evict = FIFO_Reinsertion_to_evict;
+  cache->can_insert = cache_can_insert_default;
+  cache->get_occupied_byte = cache_get_occupied_byte_default;
+  cache->get_n_obj = cache_get_n_obj_default;
+
+  cache->init_params = cache_specific_params;
+  cache->obj_md_size = 0;
+
+  if (cache_specific_params != NULL) {
+    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
+          cache_specific_params);
+    abort();
+  }
+
+  cache->eviction_params = malloc(sizeof(FIFO_Reinsertion_params_t));
+  FIFO_Reinsertion_params_t *params =
+      (FIFO_Reinsertion_params_t *)cache->eviction_params;
+  params->q_head = NULL;
+  params->q_tail = NULL;
+
+  return cache;
+}
+
+void FIFO_Reinsertion_free(cache_t *cache) { cache_struct_free(cache); }
+
 bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
+// *********** developer facing APIs (used by cache developer) ***********
 bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
                             const bool update_cache) {
   cache_obj_t *cached_obj = NULL;
@@ -105,37 +142,6 @@ bool FIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id) {
   FIFO_Reinsertion_remove_obj(cache, obj);
 
   return true;
-}
-
-void FIFO_Reinsertion_free(cache_t *cache) { cache_struct_free(cache); }
-
-cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
-                               const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("FIFO_Reinsertion", ccache_params);
-  cache->cache_init = FIFO_Reinsertion_init;
-  cache->cache_free = FIFO_Reinsertion_free;
-  cache->get = FIFO_Reinsertion_get;
-  cache->check = FIFO_Reinsertion_check;
-  cache->insert = FIFO_Reinsertion_insert;
-  cache->evict = FIFO_Reinsertion_evict;
-  cache->remove = FIFO_Reinsertion_remove;
-  cache->to_evict = FIFO_Reinsertion_to_evict;
-  cache->init_params = cache_specific_params;
-  cache->obj_md_size = 0;
-
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
-
-  cache->eviction_params = malloc(sizeof(FIFO_Reinsertion_params_t));
-  FIFO_Reinsertion_params_t *params =
-      (FIFO_Reinsertion_params_t *)cache->eviction_params;
-  params->q_head = NULL;
-  params->q_tail = NULL;
-
-  return cache;
 }
 
 #ifdef __cplusplus

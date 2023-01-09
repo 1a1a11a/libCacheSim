@@ -325,7 +325,7 @@ cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req) {
 
   seg->n_byte += cache_obj->obj_size + cache->obj_md_size;
   seg->n_obj += 1;
-  cache->occupied_size += cache_obj->obj_size + cache->obj_md_size;
+  cache->occupied_byte += cache_obj->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
   DEBUG_ASSERT(cache->n_obj > (params->n_in_use_segs - params->n_used_buckets) *

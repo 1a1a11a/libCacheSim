@@ -114,7 +114,7 @@ void GLCache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
         new_seg->n_byte += cache_obj->obj_size;
       } else {
         cache->n_obj -= 1;
-        cache->occupied_size -= (cache_obj->obj_size + cache->obj_md_size);
+        cache->occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
       }
       obj_evict_update(cache, cache_obj);
       cache_obj->GLCache.in_cache = 0;
@@ -138,7 +138,7 @@ void GLCache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
 // different from clean_one_seg becausee this function also updates cache state
 int evict_one_seg(cache_t *cache, segment_t *seg) {
   VVERBOSE("req %lu, evict one seg id %d occupied size %lu/%lu\n", cache->n_req, seg->seg_id,
-           cache->occupied_size, cache->cache_size);
+           cache->occupied_byte, cache->cache_size);
   GLCache_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[seg->bucket_id];
 
@@ -154,7 +154,7 @@ int evict_one_seg(cache_t *cache, segment_t *seg) {
 
       n_cleaned += 1;
       cache->n_obj -= 1;
-      cache->occupied_size -= (cache_obj->obj_size + cache->obj_md_size);
+      cache->occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
     }
 
     if (seg->selected_for_training && cache_obj->GLCache.seen_after_snapshot == 1) {

@@ -94,7 +94,7 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req) {
   }
 
   if (!cache_hit) {
-    while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req, NULL);
     }
@@ -204,7 +204,7 @@ bool SLRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
       // if the LRU is full
       SLRU_cool(cache, req, obj->SLRU.lru_id);
     }
-    DEBUG_ASSERT(cache->occupied_size <= cache->cache_size);
+    DEBUG_ASSERT(cache->occupied_byte <= cache->cache_size);
   }
 
   return true;
@@ -226,7 +226,7 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
 
   if (nth_seg == -1) {
     // No space for insertion
-    while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req, NULL);
     }

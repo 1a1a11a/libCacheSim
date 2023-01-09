@@ -243,7 +243,7 @@ void LHD::dumpClassRanks(Class& cl) {
 
   // float objectAvgSize = cl.sizeAccumulator / cl.totalHits; // +
   // cl.totalEvictions);
-  float objectAvgSize = 1. * cache->occupied_size / sizeMap.size();
+  float objectAvgSize = 1. * cache->occupied_byte / sizeMap.size();
   rank_t left;
 
   left = cl.totalHits + cl.totalEvictions;

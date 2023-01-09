@@ -102,7 +102,7 @@ struct cache {
 
   int64_t n_req; /* number of requests (used by some eviction algo) */
   int64_t n_obj;
-  int64_t occupied_size;
+  int64_t occupied_byte;
 
   int64_t cache_size;
   int64_t default_ttl;
@@ -242,7 +242,7 @@ cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id);
  * @param cache
  */
 static inline int64_t cache_get_occupied_byte_default(const cache_t *cache) {
-  return cache->occupied_size;
+  return cache->occupied_byte;
 }
 
 /**
@@ -265,7 +265,7 @@ static inline void print_cache(cache_t *cache) {
   printf("%s cache size %" PRIu64 ", occupied size %" PRIu64 ", n_req %" PRIu64
          ", n_obj %" PRIu64 ", default TTL %" PRIu64
          ", per_obj_metadata_size %" PRIi32 "\n",
-         cache->cache_name, cache->cache_size, cache->occupied_size,
+         cache->cache_name, cache->cache_size, cache->occupied_byte,
          cache->n_req, cache->n_obj, cache->default_ttl, cache->obj_md_size);
 }
 

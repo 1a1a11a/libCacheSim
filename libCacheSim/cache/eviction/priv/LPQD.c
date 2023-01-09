@@ -111,12 +111,12 @@ bool LPQD_get(cache_t *cache, const request_t *req) {
   DEBUG_PRINT("%ld LPQD_get1\n", cache->n_req);
   DEBUG_ASSERT(params->n_fifo_obj + params->n_clock_obj == cache->n_obj);
   DEBUG_ASSERT(params->n_fifo_byte + params->n_clock_byte ==
-               cache->occupied_size);
+               cache->occupied_byte);
   bool cache_hit = cache_get_base(cache, req);
   DEBUG_PRINT("%ld LPQD_get2\n", cache->n_req);
   DEBUG_ASSERT(params->n_fifo_obj + params->n_clock_obj == cache->n_obj);
   DEBUG_ASSERT(params->n_fifo_byte + params->n_clock_byte ==
-               cache->occupied_size);
+               cache->occupied_byte);
 
   return cache_hit;
 }
