@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 
+#define USE_BELADY
 #define SLRU_MAX_N_SEG 16
 #define DEBUG_MODE
 #undef DEBUG_MODE
@@ -69,7 +70,18 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req);
 #define DEBUG_PRINT_CACHE(cache, params)
 #endif
 
-// ######################## end user facing function ###########################
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief initialize a LRU cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params LRU specific parameters, should be NULL
+ */
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("SLRU", ccache_params);
@@ -132,9 +144,20 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   }
   snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ")");
 
+#ifdef USE_BELADY
+  char *tmp = strdup(cache->cache_name);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "%s_Belady", tmp);
+  free(tmp);
+#endif
+
   return cache;
 }
 
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
 void SLRU_free(cache_t *cache) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   free(params->lru_max_n_bytes);
@@ -145,6 +168,25 @@ void SLRU_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
 bool SLRU_get(cache_t *cache, const request_t *req) {
 #ifdef DEBUG_MODE
   return SLRU_get_debug(cache, req);
@@ -170,6 +212,13 @@ bool SLRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
   if (!update_cache) {
     return true;
   }
+
+#ifdef USE_BELADY
+  obj->next_access_vtime = req->next_access_vtime;
+  if (obj->next_access_vtime == INT64_MAX) {
+    return true;
+  }
+#endif
 
   if (obj->SLRU.lru_id == params->n_seg - 1) {
     move_obj_to_head(&params->lru_heads[params->n_seg - 1],
@@ -212,6 +261,10 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
   }
 
   cache_obj_t *obj = cache_insert_base(cache, req);
+
+#ifdef USE_BELADY
+  obj->next_access_vtime = req->next_access_vtime;
+#endif
 
   prepend_obj_to_head(&params->lru_heads[nth_seg], &params->lru_tails[nth_seg],
                       obj);
@@ -265,10 +318,22 @@ bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
   return true;
 }
 
-// ######################## setup function ###########################
-static const char *SLRU_current_params(SLRU_params_t *params) {
+// ***********************************************************************
+// ****                                                               ****
+// ****                  parameter set up functions                   ****
+// ****                                                               ****
+// ***********************************************************************
+static const char *SLRU_current_params(cache_t *cache, SLRU_params_t *params) {
   static __thread char params_str[128];
-  snprintf(params_str, 128, "n-seg=%d\n", params->n_seg);
+  int n = snprintf(params_str, 128, "n-seg=%d;seg-size=%d\n", params->n_seg,
+      (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
+
+  for (int i = 1; i < params->n_seg; i++) {
+    n += snprintf(params_str + n, 128 - n, ":%d",
+                  (int)(params->lru_max_n_bytes[i] * 100 / cache->cache_size));
+  }
+  snprintf(cache->cache_name + n, 128 - n, ")");
+
   return params_str;
 }
 
@@ -312,7 +377,7 @@ static void SLRU_parse_params(cache_t *cache,
             (double)seg_size_array[i] / seg_size_sum * cache->cache_size);
       }
     } else if (strcasecmp(key, "print") == 0) {
-      printf("current parameters: %s\n", SLRU_current_params(params));
+      printf("current parameters: %s\n", SLRU_current_params(cache, params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
@@ -322,7 +387,11 @@ static void SLRU_parse_params(cache_t *cache,
   free(old_params_str);
 }
 
-// ######################## internal function ###########################
+// ***********************************************************************
+// ****                                                               ****
+// ****                       internal functions                      ****
+// ****                                                               ****
+// ***********************************************************************
 /* SLRU cannot insert an object larger than segment size */
 bool SLRU_can_insert(cache_t *cache, const request_t *req) {
   SLRU_params_t *params = (SLRU_params_t *)cache->eviction_params;
