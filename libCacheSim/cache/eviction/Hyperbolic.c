@@ -106,7 +106,6 @@ cache_obj_t *Hyperbolic_to_evict(cache_t *cache) {
     }
   }
 
-  DEBUG_ASSERT(best_candidate != NULL);
   return best_candidate;
 }
 
@@ -114,6 +113,11 @@ void Hyperbolic_evict(cache_t *cache,
                       __attribute__((unused)) const request_t *req,
                       cache_obj_t *evicted_obj) {
   cache_obj_t *obj_to_evict = Hyperbolic_to_evict(cache);
+  if (obj_to_evict == NULL) {
+    DEBUG_ASSERT(cache->n_obj == 0);
+    WARN("no object can be evicted\n");
+  }
+
   if (evicted_obj != NULL) {
     memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
   }

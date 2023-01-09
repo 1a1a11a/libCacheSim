@@ -239,7 +239,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 void cache_evict_base(cache_t *cache, cache_obj_t *obj, bool remove_from_hashtable) {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   record_eviction_age(cache, CURR_TIME(cache, req) - obj->create_time);
-  if (obj->obj_id % 11 == 0) {
+  if (obj->obj_id % 101 == 0) {
     printf("ea: %ld %ld\n", obj->obj_id,
            CURR_TIME(cache, req) - obj->create_time);
   }
