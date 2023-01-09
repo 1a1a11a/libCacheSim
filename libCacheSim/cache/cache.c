@@ -151,11 +151,20 @@ bool cache_check_base(cache_t *cache, const request_t *req,
 }
 
 /**
- * @brief this function is called by all eviction algorithms to
- * check whether an object is in the cache,
- * if not, it will insert the object into the cache
- * basically, this is check -> return if hit, insert if miss -> evict if needed
+ * @brief this function is called by all eviction algorithms
+ * it performs the following logic
  *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ * 
  * @param cache
  * @param req
  * @return true if cache hit, false if cache miss
@@ -194,9 +203,12 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
 /**
  * @brief this function is called by all caches to
  * insert an object into the cache, update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * and eviction is not part of this function
  *
  * @param cache
  * @param req
+ * @return the inserted object
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
