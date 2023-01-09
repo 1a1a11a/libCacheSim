@@ -211,7 +211,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_path = args->args[0];
   args->trace_type_str = args->args[1];
   args->eviction_algo = args->args[2];
-  conv_cache_sizes(args->args[3], args);
+  /* the third parameter is the cache size, but we cannot parse it now
+   * because we allow user to specify the cache size as fraction of the
+   * working set size, and the working set size can only be calculated
+   * after we set up the reader */
   assert(N_ARGS == 4);
 
   if (args->ofilepath[0] == '\0') {
@@ -255,7 +258,12 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     args->consider_obj_metadata = false;
   }
 
-  set_cache_size(args, args->reader);
+  /** convert the cache sizes from string to int,
+   * if the user specifies 0 or auto, we use 12 cache sizes as fraction of
+   * the working set size
+   * if the user specifies float number, we use the number as the fraction of
+   * the working set size **/
+  conv_cache_sizes(args->args[3], args);
 
   common_cache_params_t cc_params = {
       .cache_size = args->cache_sizes[0],
@@ -333,8 +341,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LPv2_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "QDLPv1") == 0) {
     cache = QDLPv1_init(cc_params, args->eviction_params);
-  // } else if (strcasecmp(args->eviction_algo, "QDLPv2") == 0) {
-  //   cache = QDLPv2_init(cc_params, args->eviction_params);
+    // } else if (strcasecmp(args->eviction_algo, "QDLPv2") == 0) {
+    //   cache = QDLPv2_init(cc_params, args->eviction_params);
 
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {

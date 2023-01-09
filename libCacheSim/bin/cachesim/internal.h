@@ -56,6 +56,4 @@ int conv_cache_sizes(char *cache_size_str, struct arguments *args);
 
 void print_parsed_args(struct arguments *args);
 
-void set_cache_size(struct arguments *args, reader_t *reader);
-
 bool is_true(const char *arg); 

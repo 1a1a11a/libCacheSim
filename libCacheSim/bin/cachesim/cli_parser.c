@@ -10,6 +10,9 @@
 extern "C" {
 #endif
 
+static long cal_working_set_size(reader_t *reader, bool ignore_obj_size);
+static void set_cache_size(struct arguments *args, reader_t *reader);
+
 /**
  * @brief convert cache size string to byte, e.g., 100MB -> 100 * 1024 * 1024
  * the cache size can be an integer or a string with suffix KB/MB/GB
@@ -58,14 +61,24 @@ static unsigned long conv_size_str_to_byte_ul(char *cache_size_str) {
  */
 int conv_cache_sizes(char *cache_size_str, struct arguments *args) {
   char *token = strtok(cache_size_str, ",");
+  long wss = 0;
   args->n_cache_size = 0;
   while (token != NULL) {
-    args->cache_sizes[args->n_cache_size++] = conv_size_str_to_byte_ul(token);
+    if (strchr(token, '.') != NULL) {
+      // input is a float
+      if (wss == 0) {
+        wss = cal_working_set_size(args->reader, args->ignore_obj_size);
+      }
+      args->cache_sizes[args->n_cache_size++] = (uint64_t)(wss * atof(token));
+    } else {
+      args->cache_sizes[args->n_cache_size++] = conv_size_str_to_byte_ul(token);
+    }
+
     token = strtok(NULL, ",");
   }
 
   if (args->n_cache_size == 1 && args->cache_sizes[0] == 0) {
-    args->n_cache_size = 0;
+    set_cache_size(args, args->reader);
   }
 
   return args->n_cache_size;
@@ -160,29 +173,27 @@ static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
   return wss;
 }
 
-void set_cache_size(struct arguments *args, reader_t *reader) {
+static void set_cache_size(struct arguments *args, reader_t *reader) {
 #define N_AUTO_CACHE_SIZE 12
-  if (args->n_cache_size == 0) {
-    if (set_hard_code_cache_size(args)) {
-      /* find the hard-coded cache size */
-      return;
-    }
+  // if (set_hard_code_cache_size(args)) {
+  //   /* find the hard-coded cache size */
+  //   return;
+  // }
 
-    // detect cache size from the trace
-    int n_cache_sizes = 0;
-    reset_reader(reader);
-    long wss = cal_working_set_size(reader, args->ignore_obj_size);
-    double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
-                                   0.1,    0.2,    0.3,   0.4,   0.6,  0.8};
-    for (int i = 0; i < N_AUTO_CACHE_SIZE; i++) {
-      if ((long) (wss * s[i]) > 1) {
-        args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
-      }
+  // detect cache size from the trace
+  int n_cache_sizes = 0;
+  reset_reader(reader);
+  long wss = cal_working_set_size(reader, args->ignore_obj_size);
+  double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
+                                 0.1,    0.2,    0.3,   0.4,   0.6,  0.8};
+  for (int i = 0; i < N_AUTO_CACHE_SIZE; i++) {
+    if ((long)(wss * s[i]) > 1) {
+      args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
     }
-    args->n_cache_size = n_cache_sizes;
-
-    reset_reader(reader);
   }
+  args->n_cache_size = n_cache_sizes;
+
+  reset_reader(reader);
 }
 
 #ifdef __cplusplus
