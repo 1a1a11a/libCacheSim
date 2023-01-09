@@ -30,6 +30,8 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/LRU_Prob.c
 
                 priv/LPv1.c
+                priv/LPv2.c
+                priv/QDLPv1.c
                 priv/LRU_Belady.c
                 priv/SFIFO.c
                 priv/LPQD.c
