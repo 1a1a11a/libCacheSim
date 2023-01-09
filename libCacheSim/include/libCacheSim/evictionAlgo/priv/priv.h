@@ -49,7 +49,22 @@ bool LPv2_remove(cache_t *cache, const obj_id_t obj_id);
 cache_t *LPv2_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 
+void QDLPv1_free(cache_t *cache);
 
+bool QDLPv1_check(cache_t *cache, const request_t *req, const bool update_cache);
+
+bool QDLPv1_get(cache_t *cache, const request_t *req);
+
+cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req);
+
+cache_obj_t *QDLPv1_to_evict(cache_t *cache);
+
+void QDLPv1_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj);
+
+bool QDLPv1_remove(cache_t *cache, const obj_id_t obj_id);
+
+cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
 
 #ifdef __cplusplus
 }

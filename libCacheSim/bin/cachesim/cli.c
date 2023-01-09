@@ -329,6 +329,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LPv1_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "LPv2") == 0) {
     cache = LPv2_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "QDLPv1") == 0) {
+    cache = QDLPv1_init(cc_params, args->eviction_params);
+  // } else if (strcasecmp(args->eviction_algo, "QDLPv2") == 0) {
+  //   cache = QDLPv2_init(cc_params, args->eviction_params);
 
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {
