@@ -5,7 +5,6 @@ set(sourceC
         LFUDA.c
         ARC.c
         FIFO.c
-        Clock.c
         LRU.c
         SLRU.c
         SLRUv0.c
@@ -28,6 +27,8 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/SFIFO_Reinsertion.c
 
                 priv/LRU_Prob.c
+
+                priv/MyClock.c
 
                 priv/LPv1.c
                 priv/LPv2.c

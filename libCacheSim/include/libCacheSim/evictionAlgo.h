@@ -5,7 +5,6 @@
 #include "evictionAlgo/BeladySize.h"
 #include "evictionAlgo/CR_LFU.h"
 #include "evictionAlgo/Cacheus.h"
-#include "evictionAlgo/Clock.h"
 #include "evictionAlgo/FIFO.h"
 #include "evictionAlgo/GDSF.h"
 #include "evictionAlgo/Hyperbolic.h"
@@ -25,13 +24,14 @@
 #include "evictionAlgo/FIFO_Reinsertion.h"
 
 #ifdef INCLUDE_PRIV
-#include "evictionAlgo/priv/SFIFO_Merge.h"
-#include "evictionAlgo/priv/SFIFO_Reinsertion.h"
+#include "evictionAlgo/priv/MyClock.h"
+#include "evictionAlgo/priv/LPQD.h"
 #include "evictionAlgo/priv/LRU_Belady.h"
 #include "evictionAlgo/priv/LRU_Prob.h"
-#include "evictionAlgo/priv/LPQD.h"
 #include "evictionAlgo/priv/SFIFO.h"
 #include "evictionAlgo/priv/SFIFO_Belady.h"
+#include "evictionAlgo/priv/SFIFO_Merge.h"
+#include "evictionAlgo/priv/SFIFO_Reinsertion.h"
 #include "evictionAlgo/priv/priv.h"
 #endif
 

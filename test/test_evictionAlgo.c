@@ -621,7 +621,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_CR_LFU", reader, test_CR_LFU);
 
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
+  // g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);

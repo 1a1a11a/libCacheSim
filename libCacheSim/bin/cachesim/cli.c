@@ -273,8 +273,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LRU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "fifo") == 0) {
     cache = FIFO_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "clock") == 0) {
-    cache = Clock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "arc") == 0) {
     cache = ARC_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lhd") == 0) {
@@ -307,7 +305,9 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
     cc_params.hashpower -= 4;
     cache = BeladySize_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0) {
+  } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0 ||
+             strcasecmp(args->eviction_algo, "clock") == 0 ||
+             strcasecmp(args->eviction_algo, "second-chance") == 0) {
     cache = FIFO_Reinsertion_init(cc_params, args->eviction_params);
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0 ||
@@ -315,6 +315,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = GLCache_init(cc_params, args->eviction_params);
 #endif
 #ifdef INCLUDE_PRIV
+  } else if (strcasecmp(args->eviction_algo, "myclock") == 0) {
+    cache = MyClock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifomerge") == 0 ||
              strcasecmp(args->eviction_algo, "sfifo-merge") == 0) {
     cache = SFIFO_Merge_init(cc_params, args->eviction_params);

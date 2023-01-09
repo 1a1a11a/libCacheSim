@@ -161,8 +161,8 @@ static cache_t *create_test_cache(const char *alg_name,
   cache_t *cache;
   if (strcasecmp(alg_name, "LRU") == 0) {
     cache = LRU_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "Clock") == 0) {
-    cache = Clock_init(cc_params, NULL);
+  // } else if (strcasecmp(alg_name, "Clock") == 0) {
+  //   cache = Clock_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO") == 0) {
     cache = FIFO_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "SFIFO_Merge") == 0) {
