@@ -188,7 +188,7 @@ bool SFIFO_Reinsertion_check(cache_t *cache, const request_t *req,
   if (cache_hit) {
     cache_obj->SFIFO_Reinsertion.freq++;
     cache_obj->SFIFO_Reinsertion.last_access_vtime = cache->n_req;
-    cache_obj->SFIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
+    cache_obj->next_access_vtime = req->next_access_vtime;
   }
 
   return cache_hit;
@@ -199,11 +199,11 @@ bool SFIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
 }
 
 static inline double belady_metric(cache_t *cache, cache_obj_t *cache_obj) {
-  if (cache_obj->SFIFO_Reinsertion.next_access_vtime == -1 ||
-      cache_obj->SFIFO_Reinsertion.next_access_vtime == INT64_MAX)
+  if (cache_obj->next_access_vtime == -1 ||
+      cache_obj->next_access_vtime == INT64_MAX)
     return -1;
   return 1.0e12 /
-         (cache_obj->SFIFO_Reinsertion.next_access_vtime - cache->n_req) /
+         (cache_obj->next_access_vtime - cache->n_req) /
          (double)cache_obj->obj_size;
 }
 
@@ -247,7 +247,7 @@ cache_obj_t *SFIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
 
   obj->SFIFO_Reinsertion.freq = 0;
   obj->SFIFO_Reinsertion.last_access_vtime = cache->n_req;
-  obj->SFIFO_Reinsertion.next_access_vtime = req->next_access_vtime;
+  obj->next_access_vtime = req->next_access_vtime;
 
   return obj;
 }

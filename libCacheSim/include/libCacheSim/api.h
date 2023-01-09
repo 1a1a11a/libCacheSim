@@ -34,7 +34,7 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
                req->obj_id, req->obj_size, cache->cache_size);
         }
 
-        while (cache->occupied_size + req->obj_size + cache->obj_md_size >
+        while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
                cache->cache_size)
           cache->evict(cache, req, NULL);
 
@@ -46,6 +46,6 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
   }
 
   stat.n_obj = cache->n_obj;
-  stat.occupied_size = cache->occupied_size;
+  stat.occupied_byte = cache->occupied_byte;
   return stat;
 }

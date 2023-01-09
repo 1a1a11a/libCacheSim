@@ -69,7 +69,7 @@ typedef struct {
   int64_t n_miss_byte;
 
   int64_t n_obj;
-  int64_t occupied_size;
+  int64_t occupied_byte;
   int64_t cache_size;
 
   /* current trace time, used to determine obj expiration */

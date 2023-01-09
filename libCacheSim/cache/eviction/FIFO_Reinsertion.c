@@ -17,10 +17,13 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/cache.h"
+#include "../../include/libCacheSim/evictionAlgo/FIFO_Reinsertion.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// #define USE_BELADY
 
 typedef struct {
   cache_obj_t *q_head;
@@ -52,6 +55,10 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
     abort();
   }
 
+#ifdef USE_BELADY
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO_Reinsertion_Belady");
+#endif
+
   cache->eviction_params = malloc(sizeof(FIFO_Reinsertion_params_t));
   FIFO_Reinsertion_params_t *params =
       (FIFO_Reinsertion_params_t *)cache->eviction_params;
@@ -73,10 +80,7 @@ bool FIFO_Reinsertion_check(cache_t *cache, const request_t *req,
   cache_obj_t *cached_obj = NULL;
   bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
   if (cached_obj != NULL) {
-    cached_obj->misc.freq += 1;
-    cached_obj->misc.last_access_rtime = req->clock_time;
-    cached_obj->misc.last_access_vtime = cache->n_req;
-    cached_obj->misc.next_access_vtime = req->next_access_vtime;
+    cached_obj->lfu.freq += 1;
   }
 
   return cache_hit;
@@ -89,10 +93,7 @@ cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
-  obj->misc.freq = 1;
-  obj->misc.last_access_rtime = req->clock_time;
-  obj->misc.last_access_vtime = cache->n_req;
-  obj->misc.next_access_vtime = req->next_access_vtime;
+  obj->lfu.freq = 1;
 
   return obj;
 }
@@ -102,12 +103,21 @@ cache_obj_t *FIFO_Reinsertion_to_evict(cache_t *cache) {
       (FIFO_Reinsertion_params_t *)cache->eviction_params;
 
   cache_obj_t *obj_to_evict = params->q_tail;
-  while (obj_to_evict->misc.freq > 1) {
-    obj_to_evict->misc.freq = 1;
+#ifdef USE_BELADY
+  while (obj_to_evict->lfu.freq > 1 && obj_to_evict->next_access_vtime != INT64_MAX) {
+    obj_to_evict->lfu.freq = 1;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
   }
 
+#else
+  while (obj_to_evict->lfu.freq > 1) {
+    obj_to_evict->lfu.freq = 1;
+    move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
+    obj_to_evict = params->q_tail;
+  }
+
+#endif
   return obj_to_evict;
 }
 

@@ -184,7 +184,7 @@ bool SFIFO_Merge_check(cache_t *cache, const request_t *req,
   if (cache_hit) {
     cache_obj->SFIFO_Merge.freq++;
     cache_obj->SFIFO_Merge.last_access_vtime = cache->n_req;
-    cache_obj->SFIFO_Merge.next_access_vtime = req->next_access_vtime;
+    cache_obj->next_access_vtime = req->next_access_vtime;
   }
 
   return cache_hit;
@@ -195,10 +195,10 @@ bool SFIFO_Merge_get(cache_t *cache, const request_t *req) {
 }
 
 static inline double belady_metric(cache_t *cache, cache_obj_t *cache_obj) {
-  if (cache_obj->SFIFO_Merge.next_access_vtime == -1 ||
-      cache_obj->SFIFO_Merge.next_access_vtime == INT64_MAX)
+  if (cache_obj->next_access_vtime == -1 ||
+      cache_obj->next_access_vtime == INT64_MAX)
     return -1;
-  return 1.0e12 / (cache_obj->SFIFO_Merge.next_access_vtime - cache->n_req) /
+  return 1.0e12 / (cache_obj->next_access_vtime - cache->n_req) /
          (double)cache_obj->obj_size;
 }
 
@@ -238,7 +238,7 @@ cache_obj_t *SFIFO_Merge_insert(cache_t *cache, const request_t *req) {
   prepend_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   cache_obj->SFIFO_Merge.freq = 0;
   cache_obj->SFIFO_Merge.last_access_vtime = cache->n_req;
-  cache_obj->SFIFO_Merge.next_access_vtime = req->next_access_vtime;
+  cache_obj->next_access_vtime = req->next_access_vtime;
 
   return cache_obj;
 }

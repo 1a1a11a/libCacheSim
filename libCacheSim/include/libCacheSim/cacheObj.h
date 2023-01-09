@@ -32,7 +32,6 @@ typedef struct {
 
 typedef struct {
   int64_t eviction_vtime;
-  int64_t next_access_vtime;
   void *lfu_next;
   void *lfu_prev;
   int32_t freq;
@@ -68,18 +67,15 @@ typedef struct Belady_obj_metadata {
 typedef struct FIFOMerge_obj_metadata {
   int32_t freq;
   int32_t last_access_vtime;
-  int64_t next_access_vtime;
 } SFIFO_Merge_obj_metadata_t;
 
 typedef struct {
   int32_t freq;
   int32_t last_access_vtime;
-  int64_t next_access_vtime;
 } SFIFO_Reinsertion_obj_metadata_t;
 
 typedef struct {
   void *segment;
-  int64_t next_access_vtime;
   int32_t freq;
   int32_t last_access_rtime;
   int32_t last_access_vtime;
@@ -108,7 +104,6 @@ typedef struct {
 typedef struct {
   int32_t freq;
   int32_t last_access_vtime;
-  int64_t next_access_vtime;
   int32_t last_access_rtime;
   int32_t q_id;
 } misc_metadata_t;
@@ -133,6 +128,9 @@ typedef struct cache_obj {
     int64_t create_time;
   };
 #endif
+  // used by belady related algorithsm
+  int64_t next_access_vtime;
+
   union {
     LFU_obj_metadata_t lfu;          // for LFU
     Clock_obj_metadata_t clock;      // for Clock

@@ -46,7 +46,7 @@ bool QDLPv1_check(cache_t *cache, const request_t *req,
     cached_obj->misc.freq += 1;
     cached_obj->misc.last_access_rtime = req->clock_time;
     cached_obj->misc.last_access_vtime = cache->n_req;
-    cached_obj->misc.next_access_vtime = req->next_access_vtime;
+    cached_obj->next_access_vtime = req->next_access_vtime;
   }
 
   return cache_hit;
