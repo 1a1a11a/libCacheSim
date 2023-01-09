@@ -74,6 +74,11 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
     Clock_parse_params(cache, cache_specific_params);
   }
 
+  if (params->n_bit_counter != 1) {
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Clock-%d",
+             params->n_bit_counter);
+  }
+
   return cache;
 }
 
@@ -299,7 +304,7 @@ static void Clock_parse_params(cache_t *cache,
 
     if (strcasecmp(key, "n-bit-counter") == 0) {
       params->n_bit_counter = (int)strtol(value, &end, 0);
-      params->max_freq = 1 << (params->n_bit_counter - 1);
+      params->max_freq = (1 << params->n_bit_counter) - 1;
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
       }
