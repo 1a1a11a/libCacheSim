@@ -245,6 +245,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
                                          reader_t *warmup_reader,
                                          double warmup_frac, int warmup_sec,
                                          int num_of_threads) {
+  assert(num_of_caches > 0);
   int i, progress = 0;
 
   cache_stat_t *result = my_malloc_n(cache_stat_t, num_of_caches);

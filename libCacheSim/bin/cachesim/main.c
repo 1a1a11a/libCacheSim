@@ -15,6 +15,10 @@
 int main(int argc, char **argv) {
   struct arguments args;
   parse_cmd(argc, argv, &args);
+  if (args.n_cache_size == 0) {
+    WARN("no cache size found\n");
+    exit(0);
+  }
 
   if (args.n_cache_size == 1) {
     simulate(args.reader, args.cache, args.warmup_sec, args.ofilepath);
@@ -41,7 +45,7 @@ int main(int argc, char **argv) {
 
   uint64_t size_unit = 1;
   char *size_unit_str = "";
-  if (! args.ignore_obj_size) {
+  if (!args.ignore_obj_size) {
     if (args.cache_sizes[0] > GiB) {
       size_unit = GiB;
       size_unit_str = "GiB";
@@ -60,7 +64,7 @@ int main(int argc, char **argv) {
              "%s %s cache size %8ld%s, %lld req, miss ratio %.4lf, byte miss "
              "ratio %.4lf\n",
              output_filename, args.cache->cache_name,
-             (long) result[i].cache_size / size_unit, size_unit_str,
+             (long)result[i].cache_size / size_unit, size_unit_str,
              (long long)result[i].n_req,
              (double)result[i].n_miss / (double)result[i].n_req,
              (double)result[i].n_miss_byte / (double)result[i].n_req_byte);

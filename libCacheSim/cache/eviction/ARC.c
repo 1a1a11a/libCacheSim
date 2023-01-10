@@ -25,8 +25,8 @@
 extern "C" {
 #endif
 
-#define DEBUG_MODE
-#undef DEBUG_MODE
+// #define DEBUG_MODE
+// #undef DEBUG_MODE
 // #define USE_BELADY
 
 typedef struct ARC_params {
@@ -187,6 +187,9 @@ bool ARC_check(cache_t *cache, const request_t *req, const bool update_cache) {
   params->curr_obj_in_L1_ghost = false;
   params->curr_obj_in_L2_ghost = false;
 
+  // cache->last_request_metadata = (void *)"check1";
+  // _ARC_sanity_check_full(cache, req, false);
+
   bool cache_hit = false;
   int lru_id = -1;
   cache_obj_t *obj = cache_get_obj(cache, req);
@@ -215,7 +218,7 @@ bool ARC_check(cache_t *cache, const request_t *req, const bool update_cache) {
 #endif
 
   if (!cache_hit) {
-    // cache miss
+    // cache miss, but hit on thost
     if (params->curr_obj_in_L1_ghost) {
       // case II: x in L1_ghost
       DEBUG_ASSERT(params->L1_ghost_size >= 1);
@@ -430,11 +433,12 @@ static void _ARC_replace(cache_t *cache, const request_t *req,
 
   cache_obj_t *obj = NULL;
 
-  if ((params->L1_data_size > 0) &&
+  if (params->L1_data_size > 0 &&
       (params->L1_data_size > params->p ||
        (params->L1_data_size == params->p && params->curr_obj_in_L2_ghost))) {
     // delete the LRU in L1 data, move to L1_ghost
     obj = params->L1_data_tail;
+    DEBUG_ASSERT(obj != NULL);
     params->L1_data_size -= obj->obj_size + cache->obj_md_size;
     params->L1_ghost_size += obj->obj_size + cache->obj_md_size;
     remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
@@ -442,6 +446,7 @@ static void _ARC_replace(cache_t *cache, const request_t *req,
   } else {
     // delete the item in L2 data, move to L2_ghost
     obj = params->L2_data_tail;
+    DEBUG_ASSERT(obj != NULL);
     params->L2_data_size -= obj->obj_size + cache->obj_md_size;
     params->L2_ghost_size += obj->obj_size + cache->obj_md_size;
     remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
@@ -578,7 +583,7 @@ static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
 
 static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
                                           bool last) {
-  if (cache->n_req < 13200000) return;
+  // if (cache->n_req < 13200000) return;
 
   _ARC_sanity_check(cache, req);
 
@@ -655,7 +660,7 @@ bool ARC_get_debug(cache_t *cache, const request_t *req) {
   _ARC_sanity_check_full(cache, req, false);
 
   if (cache_hit) {
-    _ARC_print_cache_content(cache);
+    // _ARC_print_cache_content(cache);
     return cache_hit;
   }
 
@@ -670,7 +675,7 @@ bool ARC_get_debug(cache_t *cache, const request_t *req) {
 
   _ARC_sanity_check_full(cache, req, true);
 
-  _ARC_print_cache_content(cache);
+  // _ARC_print_cache_content(cache);
   return cache_hit;
 }
 
