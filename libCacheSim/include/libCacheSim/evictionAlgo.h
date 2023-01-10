@@ -24,10 +24,10 @@
 #include "evictionAlgo/Clock.h"
 
 #ifdef INCLUDE_PRIV
-#include "evictionAlgo/priv/MyClock.h"
-#include "evictionAlgo/priv/LPQD.h"
 #include "evictionAlgo/priv/LRU_Belady.h"
 #include "evictionAlgo/priv/LRU_Prob.h"
+#include "evictionAlgo/priv/MyClock.h"
+#include "evictionAlgo/priv/QDLP.h"
 #include "evictionAlgo/priv/SFIFO.h"
 #include "evictionAlgo/priv/SFIFO_Belady.h"
 #include "evictionAlgo/priv/SFIFO_Merge.h"

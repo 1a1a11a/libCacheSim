@@ -37,7 +37,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
 
                 priv/LRU_Belady.c
                 priv/SFIFO.c
-                priv/LPQD.c
+                priv/QDLP.c
                 priv/SFIFO_Belady.c
                 )
 endif()

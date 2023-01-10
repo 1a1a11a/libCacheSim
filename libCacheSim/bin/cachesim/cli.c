@@ -333,7 +333,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lpqd") == 0) {
-    cache = LPQD_init(cc_params, args->eviction_params);
+    cache = QDLP_init(cc_params, args->eviction_params);
 
   } else if (strcasecmp(args->eviction_algo, "LPv1") == 0) {
     cache = LPv1_init(cc_params, args->eviction_params);
