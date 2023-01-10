@@ -40,7 +40,6 @@ extern "C" {
 #endif
 // *********************************************************************** //
 
-
 typedef struct {
   cache_obj_t *fifo_head;
   cache_obj_t *fifo_tail;
@@ -63,14 +62,16 @@ typedef struct {
   int64_t fifo_ghost_size;
   cache_obj_t *clock_pointer;
   int64_t vtime_last_check_is_ghost;
+
+  bool lazy_promotion;
 } QDLP_params_t;
 
 void QDLP_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
 
 void QDLP_clock_evict(cache_t *cache, const request_t *req,
-                        cache_obj_t *evicted_obj);
+                      cache_obj_t *evicted_obj);
 static void QDLP_parse_params(cache_t *cache,
-                                const char *cache_specific_params);
+                              const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -84,7 +85,7 @@ static void QDLP_parse_params(cache_t *cache,
  * @param cache_specific_params LRU specific parameters, should be NULL
  */
 cache_t *QDLP_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params) {
+                   const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("QDLP", ccache_params);
   cache->cache_init = QDLP_init;
   cache->cache_free = QDLP_free;
@@ -107,6 +108,8 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   memset(cache->eviction_params, 0, sizeof(QDLP_params_t));
   params->clock_pointer = NULL;
   params->fifo_ratio = 0.2;
+  params->lazy_promotion = true;
+
   params->n_fifo_obj = 0;
   params->n_fifo_byte = 0;
   params->n_fifo_ghost_obj = 0;
@@ -128,8 +131,13 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   params->fifo_size = cache->cache_size * params->fifo_ratio;
   params->clock_size = cache->cache_size - params->fifo_size;
   params->fifo_ghost_size = params->clock_size;
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLP-%.4lf",
-           params->fifo_ratio);
+  if (params->lazy_promotion) {
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLP-%.4lf-lazy",
+             params->fifo_ratio);
+  } else {
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLP-%.4lf",
+             params->fifo_ratio);
+  }
 
   return cache;
 }
@@ -186,30 +194,31 @@ bool QDLP_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return true on hit, false on miss
  */
-bool QDLP_check(cache_t *cache, const request_t *req,
-                  const bool update_cache) {
+bool QDLP_check(cache_t *cache, const request_t *req, const bool update_cache) {
   QDLP_params_t *params = cache->eviction_params;
   cache_obj_t *cache_obj;
   cache_check_base(cache, req, update_cache, &cache_obj);
   bool cache_hit = (cache_obj != NULL && cache_obj->QDLP.cache_id != 3);
-  DEBUG_PRINT("%ld QDLP_check %s\n", cache->n_req,
-              cache_hit ? "hit" : "miss");
+  DEBUG_PRINT("%ld QDLP_check %s\n", cache->n_req, cache_hit ? "hit" : "miss");
 
   if (cache_obj != NULL && update_cache) {
     if (cache_obj->QDLP.cache_id == 1) {
-      // FIFO cache, promote to clock cache
-      DEBUG_PRINT("%ld QDLP_check promote to clock\n", cache->n_req);
-      remove_obj_from_list(&params->fifo_head, &params->fifo_tail, cache_obj);
-      params->n_fifo_obj--;
-      params->n_fifo_byte -= cache_obj->obj_size + cache->obj_md_size;
-      prepend_obj_to_head(&params->clock_head, &params->clock_tail, cache_obj);
-      params->n_clock_obj++;
-      params->n_clock_byte += cache_obj->obj_size + cache->obj_md_size;
-      cache_obj->QDLP.cache_id = 2;
-      cache_obj->QDLP.freq = 0;
-      while (params->n_clock_byte > params->clock_size) {
-        // clock cache is full, evict from clock cache
-        QDLP_clock_evict(cache, req, NULL);
+      cache_obj->QDLP.freq += 1;
+      if (!params->lazy_promotion) {
+        /* FIFO cache, promote to clock cache */
+        remove_obj_from_list(&params->fifo_head, &params->fifo_tail, cache_obj);
+        params->n_fifo_obj--;
+        params->n_fifo_byte -= cache_obj->obj_size + cache->obj_md_size;
+        prepend_obj_to_head(&params->clock_head, &params->clock_tail,
+                            cache_obj);
+        params->n_clock_obj++;
+        params->n_clock_byte += cache_obj->obj_size + cache->obj_md_size;
+        cache_obj->QDLP.cache_id = 2;
+        cache_obj->QDLP.freq = 0;
+        while (params->n_clock_byte > params->clock_size) {
+          // clock cache is full, evict from clock cache
+          QDLP_clock_evict(cache, req, NULL);
+        }
       }
     } else if (cache_obj->QDLP.cache_id == 2) {
       // clock cache
@@ -300,7 +309,7 @@ cache_obj_t *QDLP_to_evict(cache_t *cache) {
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
 void QDLP_clock_evict(cache_t *cache, const request_t *req,
-                        cache_obj_t *evicted_obj) {
+                      cache_obj_t *evicted_obj) {
   QDLP_params_t *params = cache->eviction_params;
   cache_obj_t *pointer = params->clock_pointer;
 
@@ -343,32 +352,42 @@ void QDLP_clock_evict(cache_t *cache, const request_t *req,
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
 void QDLP_evict(cache_t *cache, const request_t *req,
-                  cache_obj_t *evicted_obj) {
+                cache_obj_t *evicted_obj) {
   QDLP_params_t *params = cache->eviction_params;
+  DEBUG_ASSERT(evicted_obj == NULL);
 
   if (params->n_fifo_byte > params->fifo_size || params->n_clock_obj == 0) {
     DEBUG_PRINT("%ld QDLP_evict_fifo\n", cache->n_req);
     cache_obj_t *obj_to_evict = params->fifo_tail;
     DEBUG_ASSERT(obj_to_evict != NULL);
 
-    if (evicted_obj != NULL) {
-      // return evicted object to caller
-      memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
-    }
-    // remove from FIFO and insert to FIFO ghost
+    // remove from FIFO
     remove_obj_from_list(&params->fifo_head, &params->fifo_tail, obj_to_evict);
     params->n_fifo_obj--;
     params->n_fifo_byte -= obj_to_evict->obj_size + cache->obj_md_size;
-    cache_evict_base(cache, obj_to_evict, false);
 
-    prepend_obj_to_head(&params->fifo_ghost_head, &params->fifo_ghost_tail,
-                        obj_to_evict);
-    params->n_fifo_ghost_obj++;
-    params->n_fifo_ghost_byte += obj_to_evict->obj_size + cache->obj_md_size;
-    obj_to_evict->QDLP.cache_id = 3;
-    if (params->n_fifo_ghost_byte > params->fifo_ghost_size) {
-      // clock cache is full, evict from clock cache
-      QDLP_remove_obj(cache, params->fifo_ghost_tail);
+    if (params->lazy_promotion && obj_to_evict->QDLP.freq > 0) {
+      prepend_obj_to_head(&params->clock_head, &params->clock_tail,
+                          obj_to_evict);
+      params->n_clock_obj++;
+      params->n_clock_byte += obj_to_evict->obj_size + cache->obj_md_size;
+      obj_to_evict->QDLP.cache_id = 2;
+      obj_to_evict->QDLP.freq = 0;
+      while (params->n_clock_byte > params->clock_size) {
+        // clock cache is full, evict from clock cache
+        QDLP_clock_evict(cache, req, NULL);
+      }
+    } else {
+      cache_evict_base(cache, obj_to_evict, false);
+      prepend_obj_to_head(&params->fifo_ghost_head, &params->fifo_ghost_tail,
+                          obj_to_evict);
+      params->n_fifo_ghost_obj++;
+      params->n_fifo_ghost_byte += obj_to_evict->obj_size + cache->obj_md_size;
+      obj_to_evict->QDLP.cache_id = 3;
+      while (params->n_fifo_ghost_byte > params->fifo_ghost_size) {
+        // clock cache is full, evict from clock cache
+        QDLP_remove_obj(cache, params->fifo_ghost_tail);
+      }
     }
   } else {
     DEBUG_PRINT("%ld QDLP_evict_clock\n", cache->n_req);
@@ -423,7 +442,7 @@ static const char *QDLP_current_params(QDLP_params_t *params) {
 }
 
 static void QDLP_parse_params(cache_t *cache,
-                                const char *cache_specific_params) {
+                              const char *cache_specific_params) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
