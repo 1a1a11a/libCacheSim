@@ -15,9 +15,44 @@ extern "C" {
 #endif
 
 // #define DEBUG_MODE
-// #undef DEBUG_MODE
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                    debug macros                               ****
+// ****                                                               ****
+// ***********************************************************************
+#ifdef DEBUG_MODE
+#define DEBUG_PRINT_CACHE_STATE(cache, params, req)                   \
+  do {                                                                \
+    if (cache->n_req > 0) {                                          \
+      printf("%ld %ld %s: %s: ", cache->n_req, req->obj_id, __func__, \
+             (char *)cache->last_request_metadata);                   \
+      for (int i = 0; i < params->n_seg; i++) {                       \
+        printf("%ld/%ld/%p/%p, ", params->fifo_n_objs[i],             \
+               params->fifo_n_bytes[i], params->fifo_heads[i],        \
+               params->fifo_tails[i]);                                \
+      }                                                               \
+      printf("\n");                                                   \
+      _SFIFO_verify_fifo_size(cache);                                 \
+    }                                                                 \
+  } while (0)
+
+#define DEBUG_PRINT_CACHE(cache, params)                 \
+  do {                                                   \
+    for (int i = params->n_seg - 1; i >= 0; i--) {       \
+      cache_obj_t *obj = params->fifo_heads[i];          \
+      while (obj != NULL) {                              \
+        printf("%lu(%u)->", obj->obj_id, obj->obj_size); \
+        obj = obj->queue.next;                           \
+      }                                                  \
+      printf(" | ");                                     \
+    }                                                    \
+    printf("\n");                                        \
+  } while (0)
+#else
 #define DEBUG_PRINT_CACHE_STATE(cache, params, req)
 #define DEBUG_PRINT_CACHE(cache, params)
+#endif
 
 typedef struct SFIFO_params {
   cache_obj_t **fifo_heads;
@@ -28,15 +63,27 @@ typedef struct SFIFO_params {
   int n_seg;
 } SFIFO_params_t;
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
 static void SFIFO_parse_params(cache_t *cache,
                                const char *cache_specific_params);
 bool SFIFO_can_insert(cache_t *cache, const request_t *req);
 static void SFIFO_promote_to_next_seg(cache_t *cache, const request_t *req,
                                       cache_obj_t *obj);
+static void SFIFO_demote_to_prev_seg(cache_t *cache, const request_t *req,
+                                     cache_obj_t *obj);
 static void SFIFO_cool(cache_t *cache, const request_t *req, const int id);
 
 static void _SFIFO_verify_fifo_size(cache_t *cache);
 bool SFIFO_get_debug(cache_t *cache, const request_t *req);
+
+static inline bool seg_too_large(cache_t *cache, int seg_id) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  return params->fifo_n_bytes[seg_id] > params->per_seg_max_size;
+}
 
 // ***********************************************************************
 // ****                                                               ****
@@ -52,6 +99,12 @@ void SFIFO_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+/**
+ * @brief initialize a SFIFO cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params SFIFO specific parameters, e.g., "n-seg=4"
+ */
 cache_t *SFIFO_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("SFIFO", ccache_params);
@@ -100,6 +153,25 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
   return cache;
 }
 
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
 bool SFIFO_get(cache_t *cache, const request_t *req) {
 #ifdef DEBUG_MODE
   return SFIFO_get_debug(cache, req);
@@ -132,15 +204,10 @@ bool SFIFO_check(cache_t *cache, const request_t *req,
     return true;
   }
 
-  if (obj->SFIFO.fifo_id != params->n_seg - 1) {
-    SFIFO_promote_to_next_seg(cache, req, obj);
-
-    while (params->fifo_n_bytes[obj->SFIFO.fifo_id] >
-           params->per_seg_max_size) {
-      // if the fifo is full
-      SFIFO_cool(cache, req, obj->SFIFO.fifo_id);
-    }
-    DEBUG_ASSERT(cache->occupied_byte <= cache->cache_size);
+  obj->SFIFO.freq++;
+  SFIFO_promote_to_next_seg(cache, req, obj);
+  while (params->fifo_n_bytes[obj->SFIFO.fifo_id] > params->per_seg_max_size) {
+    SFIFO_cool(cache, req, obj->SFIFO.fifo_id);
   }
 
   return true;
@@ -149,8 +216,6 @@ bool SFIFO_check(cache_t *cache, const request_t *req,
 cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
-
-  cache_obj_t *obj = hashtable_insert(cache->hashtable, req);
 
   // Find the lowest fifo with space for insertion
   int nth_seg = -1;
@@ -171,13 +236,16 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
     nth_seg = 0;
   }
 
+  // cache_obj_t *obj = hashtable_insert(cache->hashtable, req);
+  cache_obj_t *obj = cache_insert_base(cache, req);
+  obj->SFIFO.freq = 0;
+  obj->SFIFO.fifo_id = nth_seg;
+  obj->SFIFO.last_access_vtime = cache->n_req;
+
   prepend_obj_to_head(&params->fifo_heads[nth_seg],
                       &params->fifo_tails[nth_seg], obj);
-  obj->SFIFO.fifo_id = nth_seg;
   params->fifo_n_bytes[nth_seg] += req->obj_size + cache->obj_md_size;
   params->fifo_n_objs[nth_seg]++;
-  cache->n_obj += 1;
-  cache->occupied_byte += req->obj_size + cache->obj_md_size;
 
   return obj;
 }
@@ -196,9 +264,9 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  int nth_seg = 0;
+  int nth_seg = -1;
   for (int i = 0; i < params->n_seg; i++) {
-    if (params->fifo_n_bytes[i] > 0) {
+    if (params->fifo_tails[i] != NULL) {
       nth_seg = i;
       break;
     }
@@ -309,21 +377,41 @@ static void SFIFO_cool(cache_t *cache, const request_t *req, const int id) {
   if (id == 0) return SFIFO_evict(cache, req, NULL);
 
   cache_obj_t *obj = params->fifo_tails[id];
-  DEBUG_ASSERT(obj != NULL);
-  DEBUG_ASSERT(obj->SFIFO.fifo_id == id);
+  DEBUG_ASSERT(obj != NULL && obj->SFIFO.fifo_id == id);
   remove_obj_from_list(&params->fifo_heads[id], &params->fifo_tails[id], obj);
   prepend_obj_to_head(&params->fifo_heads[id - 1], &params->fifo_tails[id - 1],
                       obj);
   obj->SFIFO.fifo_id = id - 1;
+  obj->SFIFO.freq = 0;
   params->fifo_n_bytes[id] -= obj->obj_size;
-  params->fifo_n_bytes[id - 1] += obj->obj_size;
   params->fifo_n_objs[id]--;
+  params->fifo_n_bytes[id - 1] += obj->obj_size;
   params->fifo_n_objs[id - 1]++;
 
   // If lower fifos are full
   while (params->fifo_n_bytes[id - 1] > params->per_seg_max_size) {
     SFIFO_cool(cache, req, id - 1);
   }
+}
+
+static void SFIFO_demote_to_prev_seg(cache_t *cache, const request_t *req,
+                                     cache_obj_t *obj) {
+  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  assert(obj->SFIFO.fifo_id > 0);
+  DEBUG_ASSERT(obj->SFIFO.freq == 0);
+
+  int id = obj->SFIFO.fifo_id;
+  int new_id = id - 1;
+  remove_obj_from_list(&params->fifo_heads[id], &params->fifo_tails[id], obj);
+  params->fifo_n_bytes[id] -= obj->obj_size;
+  params->fifo_n_bytes[new_id] += obj->obj_size;
+
+  obj->SFIFO.fifo_id = new_id;
+  obj->SFIFO.freq = 0;
+  prepend_obj_to_head(&params->fifo_heads[new_id], &params->fifo_tails[new_id],
+                      obj);
+  params->fifo_n_objs[id]--;
+  params->fifo_n_objs[new_id]++;
 }
 
 /**
@@ -334,12 +422,15 @@ static void SFIFO_promote_to_next_seg(cache_t *cache, const request_t *req,
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
+  if (obj->SFIFO.fifo_id == params->n_seg - 1) return;
+
   int id = obj->SFIFO.fifo_id;
   remove_obj_from_list(&params->fifo_heads[id], &params->fifo_tails[id], obj);
   params->fifo_n_bytes[id] -= obj->obj_size + cache->obj_md_size;
   params->fifo_n_objs[id]--;
 
   obj->SFIFO.fifo_id += 1;
+  obj->SFIFO.freq = 0;
   prepend_obj_to_head(&params->fifo_heads[id + 1], &params->fifo_tails[id + 1],
                       obj);
   params->fifo_n_bytes[id + 1] += obj->obj_size + cache->obj_md_size;
@@ -351,36 +442,6 @@ static void SFIFO_promote_to_next_seg(cache_t *cache, const request_t *req,
 // ****                   debug functions                             ****
 // ****                                                               ****
 // ***********************************************************************
-#ifdef DEBUG_MODE
-#undef DEBUG_PRINT_CACHE_STATE
-#undef DEBUG_PRINT_CACHE
-#define DEBUG_PRINT_CACHE_STATE(cache, params, req)              \
-  do {                                                           \
-    printf("%ld %ld %s: ", cache->n_req, req->obj_id, __func__); \
-    for (int i = 0; i < params->n_seg; i++) {                    \
-      printf("%ld/%ld/%p/%p, ", params->fifo_n_objs[i],          \
-             params->fifo_n_bytes[i], params->fifo_heads[i],     \
-             params->fifo_tails[i]);                             \
-    }                                                            \
-    printf("\n");                                                \
-    _SFIFO_verify_fifo_size(cache);                              \
-  } while (0)
-
-#define DEBUG_PRINT_CACHE(cache, params)                 \
-  do {                                                   \
-    for (int i = params->n_seg - 1; i >= 0; i--) {       \
-      cache_obj_t *obj = params->fifo_heads[i];          \
-      while (obj != NULL) {                              \
-        printf("%lu(%u)->", obj->obj_id, obj->obj_size); \
-        obj = obj->queue.next;                           \
-      }                                                  \
-      printf(" | ");                                     \
-    }                                                    \
-    printf("\n");                                        \
-  } while (0)
-
-#endif
-
 static void _SFIFO_verify_fifo_size(cache_t *cache) {
   SFIFO_params_t *params = (SFIFO_params_t *)cache->eviction_params;
   for (int i = 0; i < params->n_seg; i++) {
@@ -401,17 +462,22 @@ bool SFIFO_get_debug(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  cache->last_request_metadata = "none";
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
   bool cache_hit = cache->check(cache, req, true);
+  if (cache_hit) {
+    cache->last_request_metadata = "hit";
+  } else {
+    cache->last_request_metadata = "miss";
+  }
+  DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
   if (cache_hit) {
-    DEBUG_PRINT_CACHE(cache, params);
     return cache_hit;
   }
 
   if (cache->can_insert(cache, req) == false) {
-    DEBUG_PRINT_CACHE(cache, params);
     return cache_hit;
   }
 
@@ -424,7 +490,7 @@ bool SFIFO_get_debug(cache_t *cache, const request_t *req) {
     cache->insert(cache, req);
   }
 
-  DEBUG_PRINT_CACHE(cache, params);
+  DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
   return cache_hit;
 }
