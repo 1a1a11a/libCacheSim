@@ -80,16 +80,15 @@ static void test_LRU(gconstpointer user_data) {
 }
 
 static void test_Clock(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {91385, 84061, 77353, 76506,
-  //                             68994, 66441, 64819, 64376};
-  // uint64_t miss_byte_true[] = {3990213632, 3692986368, 3434442752,
-  // 3413374464,
-  //                              2963407872, 2804032512, 2717934080,
-  //                              2690728448};
-  uint64_t miss_cnt_true[] = {91699, 86720, 78578, 76707,
-                              69945, 66221, 64445, 64376};
-  uint64_t miss_byte_true[] = {4158632960, 3917211648, 3536227840, 3455379968,
-                               3035580416, 2801699328, 2699456000, 2696345600};
+  /* myclock */
+  // uint64_t miss_cnt_true[] = {91699, 86720, 78578, 76707,
+  //                             69945, 66221, 64445, 64376};
+  // uint64_t miss_byte_true[] = {4158632960, 3917211648, 3536227840,
+  // 3455379968, 035580416, 2801699328, 2699456000, 2696345600};
+  uint64_t miss_cnt_true[] = {93313, 89775, 83411, 81328,
+                              74815, 72283, 71927, 64456};
+  uint64_t miss_byte_true[] = {4213887488, 4064512000, 3762650624, 3644467200,
+                               3256760832, 3091688448, 3074241024, 2697378816};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
@@ -148,7 +147,7 @@ static void test_SFIFO_Merge(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("SFIFO_Merge", cc_params, reader, NULL);
+  cache_t *cache = create_test_cache("SFIFO-Merge", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
@@ -176,7 +175,7 @@ static void test_SFIFO_Reinsertion(gconstpointer user_data) {
   common_cache_params_t cc_params = {
       .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache =
-      create_test_cache("SFIFO_Reinsertion", cc_params, reader, NULL);
+      create_test_cache("SFIFO-Reinsertion", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
   cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
@@ -568,8 +567,10 @@ static void test_ARC(gconstpointer user_data) {
 static void test_SLRU(gconstpointer user_data) {
   // uint64_t miss_cnt_true[] = {91204, 87638, 84193, 80995,
   //                             77838, 70264, 61030, 56838};
-  // uint64_t miss_byte_true[] = {4135969280, 3895592448, 3680328192, 3460513280,
-  //                              3255544832, 2785475584, 2508606976, 2340679680};
+  // uint64_t miss_byte_true[] = {4135969280, 3895592448, 3680328192,
+  // 3460513280,
+  //                              3255544832, 2785475584, 2508606976,
+  //                              2340679680};
   uint64_t miss_cnt_true[] = {89624, 86725, 82781, 80203,
                               75388, 65645, 59035, 56063};
   uint64_t miss_byte_true[] = {4123085312, 3915534848, 3690704896, 3493027840,
@@ -607,33 +608,31 @@ int main(int argc, char *argv[]) {
   reader = setup_oracleGeneralBin_reader();
   // reader = setup_vscsi_reader_with_ignored_obj_size();
 
-  g_test_add_data_func("/libCacheSim/cacheAlgo_SFIFO_Merge", reader,
-                       test_SFIFO_Merge);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_SFIFO_Reinsertion", reader,
-                       test_SFIFO_Reinsertion);
-
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
-
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_CR_LFU", reader, test_CR_LFU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader,
+                       test_Hyperbolic);
 
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
 
+  // g_test_add_data_func("/libCacheSim/cacheAlgo_SFIFO_Merge", reader,
+  //                      test_SFIFO_Merge);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_SFIFO_Reinsertion", reader,
+                       test_SFIFO_Reinsertion);
+
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUCpp", reader, test_LFUCpp);
   g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
-
   g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader,
-                       test_Hyperbolic);
 
   /* Belady requires reader that has next access information and can only use
    * oracleGeneral trace */

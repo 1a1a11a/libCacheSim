@@ -13,30 +13,41 @@
 //
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/evictionAlgo/ARC.h"
-#include "../../include/libCacheSim/evictionAlgo/priv/priv.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct {
-  cache_obj_t *fifo1_head;
-  cache_obj_t *fifo1_tail;
-  // cache_obj_t *fifo2_head;
-  // cache_obj_t *fifo2_tail;
+  cache_t *fifo;
+  cache_t *fifo_ghost;
   cache_t *main_cache;
-
-  int64_t n_fifo1_obj;
-  // int64_t n_fifo2_obj;
-  int64_t n_fifo1_byte;
-  // int64_t n_fifo2_byte;
-
-  int64_t fifo1_max_size;
-  int64_t main_cache_max_size;
-
+  request_t *req_local;
+  bool hit_on_ghost;
 } QDLPv1_params_t;
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
+cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+static void QDLPv1_free(cache_t *cache);
+static bool QDLPv1_get(cache_t *cache, const request_t *req);
+
+static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
+                                const bool update_cache);
+static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *QDLPv1_to_evict(cache_t *cache, const request_t *req);
+static void QDLPv1_evict(cache_t *cache, const request_t *req);
+static bool QDLPv1_remove(cache_t *cache, const obj_id_t obj_id);
+static inline int64_t QDLPv1_get_occupied_byte(const cache_t *cache);
+static inline int64_t QDLPv1_get_n_obj(const cache_t *cache);
+static inline bool QDLPv1_can_insert(cache_t *cache, const request_t *req);
+
 
 // ***********************************************************************
 // ****                                                               ****
@@ -44,20 +55,22 @@ typedef struct {
 // ****                                                               ****
 // ***********************************************************************
 
-void QDLPv1_free(cache_t *cache) { cache_struct_free(cache); }
-
 cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("QDLPv1", ccache_params);
   cache->cache_init = QDLPv1_init;
   cache->cache_free = QDLPv1_free;
   cache->get = QDLPv1_get;
-  cache->check = QDLPv1_check;
+  cache->find = QDLPv1_find;
   cache->insert = QDLPv1_insert;
   cache->evict = QDLPv1_evict;
   cache->remove = QDLPv1_remove;
   cache->to_evict = QDLPv1_to_evict;
   cache->init_params = cache_specific_params;
+  cache->get_occupied_byte = QDLPv1_get_occupied_byte;
+  cache->get_n_obj = QDLPv1_get_n_obj;
+  cache->can_insert = QDLPv1_can_insert;
+
   cache->obj_md_size = 0;
 
   if (cache_specific_params != NULL) {
@@ -68,24 +81,58 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
 
   cache->eviction_params = malloc(sizeof(QDLPv1_params_t));
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
-  params->fifo1_head = NULL;
-  params->fifo1_tail = NULL;
-  params->n_fifo1_obj = 0;
-  params->n_fifo1_byte = 0;
-  params->fifo1_max_size = (int64_t)ccache_params.cache_size * 0.25;
-  params->main_cache_max_size =
-      ccache_params.cache_size - params->fifo1_max_size;
+  params->req_local = new_request();
+  int64_t fifo_cache_size = (int64_t)ccache_params.cache_size * 0.20;
+  int64_t main_cache_size = ccache_params.cache_size - fifo_cache_size;
+  int64_t fifo_ghost_cache_size = main_cache_size;
 
-  common_cache_params_t ccache_params_arc = ccache_params;
-  ccache_params_arc.cache_size = params->main_cache_max_size;
-  params->main_cache = ARC_init(ccache_params_arc, NULL);
+  common_cache_params_t ccache_params_local = ccache_params;
+  ccache_params_local.cache_size = fifo_cache_size;
+  params->fifo = FIFO_init(ccache_params_local, NULL);
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.2lf", 0.25);
+  ccache_params_local.cache_size = fifo_ghost_cache_size;
+  params->fifo_ghost = FIFO_init(ccache_params_local, NULL);
+
+  ccache_params_local.cache_size = main_cache_size;
+  params->main_cache = ARC_init(ccache_params_local, NULL);
+
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.2lf-ghost", 0.20);
 
   return cache;
 }
 
-bool QDLPv1_get(cache_t *cache, const request_t *req) {
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
+static void QDLPv1_free(cache_t *cache) {
+  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  free_request(params->req_local);
+  free(cache->eviction_params);
+  cache_struct_free(cache);
+}
+
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
+static bool QDLPv1_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -94,116 +141,160 @@ bool QDLPv1_get(cache_t *cache, const request_t *req) {
 // ****       developer facing APIs (used by cache developer)         ****
 // ****                                                               ****
 // ***********************************************************************
-bool QDLPv1_check(cache_t *cache, const request_t *req,
-                  const bool update_cache) {
+/**
+ * @brief find an object in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return the object or NULL if not found
+ */
+static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
+                                const bool update_cache) {
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
-  cache_obj_t *cached_obj = NULL;
-  bool cache_hit = cache_check_base(cache, req, update_cache, &cached_obj);
+  params->hit_on_ghost = false;
+  cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
 
-  if (cached_obj != NULL) {
-    cached_obj->misc.freq += 1;
-    cached_obj->misc.last_access_rtime = req->clock_time;
-    cached_obj->misc.last_access_vtime = cache->n_req;
-    cached_obj->next_access_vtime = req->next_access_vtime;
-  } else {
-    cache_hit = params->main_cache->check(params->main_cache, req, false);
-    if (cache_hit) {
-      params->main_cache->check(params->main_cache, req, update_cache);
+  if (obj != NULL) {
+    if (update_cache) {
+      obj->misc.freq = 1;
     }
+    return obj;
   }
 
-  return cache_hit;
-}
+  cache_obj_t *obj_ghost =
+      params->fifo_ghost->find(params->fifo_ghost, req, false);
+  if (obj_ghost != NULL) {
+    params->hit_on_ghost = true;
+    params->fifo_ghost->remove(params->fifo_ghost, req->obj_id);
+  }
 
-cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
-  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  obj = params->main_cache->find(params->main_cache, req, false);
+  bool main_cache_hit = obj != NULL;
 
-  cache_obj_t *obj = cache_insert_base(cache, req);
-  prepend_obj_to_head(&params->fifo1_head, &params->fifo1_tail, obj);
-  params->n_fifo1_obj += 1;
-  params->n_fifo1_byte += req->obj_size + cache->obj_md_size;
-
-  obj->misc.freq = 0;
-  obj->misc.q_id = 1;
+  if (main_cache_hit && update_cache) {
+    params->main_cache->find(params->main_cache, req, true);
+  }
 
   return obj;
 }
 
-cache_obj_t *QDLPv1_to_evict(cache_t *cache) {
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * eviction should be
+ * performed before calling this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
+static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
+  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  cache_obj_t *obj = NULL;
+
+  if (params->hit_on_ghost) {
+    /* insert into the ARC */
+    obj = params->main_cache->insert(params->main_cache, req);
+    obj->misc.q_id = 2;
+  } else {
+    /* insert into the fifo */
+    obj = params->fifo->insert(params->main_cache, req);
+    obj->misc.q_id = 1;
+  }
+  obj->misc.freq = 0;
+  return obj;
+}
+
+/**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
+static cache_obj_t *QDLPv1_to_evict(cache_t *cache, const request_t *req) {
   assert(false);
   return NULL;
 }
 
-void QDLPv1_evict(cache_t *cache, const request_t *req,
-                  cache_obj_t *evicted_obj) {
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ * @param evicted_obj if not NULL, return the evicted object to caller
+ */
+static void QDLPv1_evict(cache_t *cache, const request_t *req) {
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
-  }
 
-  cache_obj_t *obj = params->fifo1_tail;
-  params->fifo1_tail = obj->queue.prev;
-  if (params->fifo1_tail != NULL) {
-    params->fifo1_tail->queue.next = NULL;
-  } else {
-    params->fifo1_head = NULL;
-  }
-  DEBUG_ASSERT(obj->misc.q_id == 1);
-  params->n_fifo1_obj -= 1;
-  params->n_fifo1_byte -= obj->obj_size + cache->obj_md_size;
+  // evict from FIFO
+  cache_obj_t *obj = params->fifo->to_evict(params->fifo, req);
+  // need to copy the object before it is evicted
+  copy_cache_obj_to_request(params->req_local, obj);
 
   if (obj->misc.freq > 0) {
     // promote to main cache
-    copy_cache_obj_to_request(req_local, obj);
-    DEBUG_ASSERT(params->main_cache->check(params->main_cache, req_local,
-                                           false) == false);
-    params->main_cache->get(params->main_cache, req_local);
-    hashtable_delete(cache->hashtable, obj);  // remove from fifo1
-    cache->occupied_byte =
-        params->n_fifo1_byte + params->main_cache->occupied_byte;
-    cache->n_obj = params->n_fifo1_obj + params->main_cache->n_obj;
+    // get will insert to and evict from main cache
+    params->main_cache->get(params->main_cache, params->req_local);
+    // remove from fifo1, but do not update stat
+    params->fifo->evict(params->fifo, req);
   } else {
-    // evict from fifo1
-    cache_evict_base(cache, obj, true);
+    // evict from fifo1 and insert to ghost
+    params->fifo->evict(params->fifo, req);
+    params->fifo_ghost->get(params->fifo_ghost, params->req_local);
   }
 }
 
-void QDLPv1_remove_obj(cache_t *cache, cache_obj_t *obj) {
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
+static bool QDLPv1_remove(cache_t *cache, const obj_id_t obj_id) {
+  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  bool removed = false;
+  removed = removed || params->fifo->remove(params->fifo, obj_id);
+  removed = removed || params->fifo_ghost->remove(params->fifo_ghost, obj_id);
+  removed = removed || params->main_cache->remove(params->main_cache, obj_id);
+
+  return removed;
+}
+
+static inline int64_t QDLPv1_get_occupied_byte(const cache_t *cache) {
+  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  return params->fifo->get_occupied_byte(params->fifo) +
+         params->main_cache->get_occupied_byte(params->main_cache);
+}
+
+static inline int64_t QDLPv1_get_n_obj(const cache_t *cache) {
+  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  return params->fifo->get_n_obj(params->fifo) +
+         params->main_cache->get_n_obj(params->main_cache);
+}
+
+static inline bool QDLPv1_can_insert(cache_t *cache, const request_t *req) {
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
 
-  DEBUG_ASSERT(obj != NULL);
-  if (obj->misc.q_id == 1) {
-    params->n_fifo1_obj -= 1;
-    params->n_fifo1_byte -= obj->obj_size + cache->obj_md_size;
-    remove_obj_from_list(&params->fifo1_head, &params->fifo1_tail, obj);
-    cache_remove_obj_base(cache, obj, true);
-  } else {
-    bool removed = params->main_cache->remove(params->main_cache, obj->obj_id);
-    assert(removed == true);
-    cache_remove_obj_base(cache, obj, false);
-  }
+  return req->obj_size <= params->fifo->cache_size;
 }
 
-bool QDLPv1_remove(cache_t *cache, const obj_id_t obj_id) {
-  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
-
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-  if (obj == NULL) {
-    bool removed = params->main_cache->remove(params->main_cache, obj->obj_id);
-    if (removed) {
-      cache_remove_obj_base(cache, obj, false);
-    }
-    return removed;
-  } else {
-    assert(obj->misc.q_id == 1);
-    params->n_fifo1_obj -= 1;
-    params->n_fifo1_byte -= obj->obj_size + cache->obj_md_size;
-    remove_obj_from_list(&params->fifo1_head, &params->fifo1_tail, obj);
-    cache_remove_obj_base(cache, obj, true);
-    return true;
-  }
-}
 
 #ifdef __cplusplus
 }

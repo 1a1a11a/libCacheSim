@@ -10,7 +10,7 @@
 //
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,10 +20,25 @@ extern "C" {
 
 // ***********************************************************************
 // ****                                                               ****
-// ****                   end user facing functions                   ****
+// ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
 
+static void LRU_free(cache_t *cache);
+static bool LRU_get(cache_t *cache, const request_t *req);
+static cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
+                             const bool update_cache);
+static cache_obj_t *LRU_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req);
+static void LRU_evict(cache_t *cache, const request_t *req);
+static bool LRU_remove(cache_t *cache, const obj_id_t obj_id);
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ****                       init, free, get                         ****
+// ***********************************************************************
 /**
  * @brief initialize a LRU cache
  *
@@ -36,7 +51,7 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
   cache->cache_init = LRU_init;
   cache->cache_free = LRU_free;
   cache->get = LRU_get;
-  cache->check = LRU_check;
+  cache->find = LRU_find;
   cache->insert = LRU_insert;
   cache->evict = LRU_evict;
   cache->remove = LRU_remove;
@@ -72,7 +87,7 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-void LRU_free(cache_t *cache) { cache_struct_free(cache); }
+static void LRU_free(cache_t *cache) { cache_struct_free(cache); }
 
 /**
  * @brief this function is the user facing API
@@ -93,7 +108,7 @@ void LRU_free(cache_t *cache) { cache_struct_free(cache); }
  * @param req
  * @return true if cache hit, false if cache miss
  */
-bool LRU_get(cache_t *cache, const request_t *req) {
+static bool LRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -113,10 +128,10 @@ bool LRU_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return true on hit, false on miss
  */
-bool LRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
+                            const bool update_cache) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
-  cache_obj_t *cache_obj;
-  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
+  cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && likely(update_cache)) {
     /* lru_head is the newest, move cur obj to lru_head */
@@ -125,7 +140,7 @@ bool LRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
 #endif
       move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   }
-  return cache_hit;
+  return cache_obj;
 }
 
 /**
@@ -138,7 +153,7 @@ bool LRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
  * @param req
  * @return the inserted object
  */
-cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
+static cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
@@ -157,7 +172,7 @@ cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-cache_obj_t *LRU_to_evict(cache_t *cache) {
+static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
   return params->q_tail;
 }
@@ -169,17 +184,11 @@ cache_obj_t *LRU_to_evict(cache_t *cache) {
  *
  * @param cache
  * @param req not used
- * @param evicted_obj if not NULL, return the evicted object to caller
  */
-void LRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
+static void LRU_evict(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = params->q_tail;
   DEBUG_ASSERT(params->q_tail != NULL);
-
-  if (evicted_obj != NULL) {
-    // return evicted object to caller
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
-  }
 
   // we can simply call remove_obj_from_list here, but for the best performance,
   // we chose to do it manually
@@ -212,7 +221,7 @@ void LRU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
  * @param cache
  * @param obj
  */
-void LRU_remove_obj(cache_t *cache, cache_obj_t *obj) {
+static void LRU_remove_obj(cache_t *cache, cache_obj_t *obj) {
   assert(obj != NULL);
 
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
@@ -234,8 +243,8 @@ void LRU_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
-  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
+static bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
+  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;
   }

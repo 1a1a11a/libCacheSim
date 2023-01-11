@@ -1,32 +1,25 @@
 #pragma once
 
+#include <glib.h>
+
 #include "../cache.h"
+#include "inttypes.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct SR_LRU_params {
+  cache_t *SR_list;    // Scan Resistant list
+  cache_t *R_list;     // Churn Resistant List
+  cache_t *H_list;     // History
+  uint64_t C_demoted;  // count of demoted object in cache
+  uint64_t C_new;      // count of new item in history
+  cache_t *other_cache;
+  request_t *req_local;
+} SR_LRU_params_t;
 
-cache_t *Cacheus_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
-
-void Cacheus_free(cache_t *cache);
-
-bool Cacheus_check(cache_t *cache, const request_t *req,
-                   const bool update_cache);
-
-bool Cacheus_get(cache_t *cache, const request_t *req);
-
-cache_obj_t *Cacheus_insert(cache_t *Cacheus, const request_t *req);
-
-cache_obj_t *Cacheus_to_evict(cache_t *cache);
-
-void Cacheus_evict(cache_t *cache, const request_t *req,
-                   cache_obj_t *evicted_obj);
-
-void Cacheus_remove_obj(cache_t *cache, cache_obj_t *cache_obj);
-
-bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id);
-
-#ifdef __cplusplus
-}
-#endif
+typedef struct CR_LFU_params {
+  freq_node_t *freq_one_node;
+  GHashTable *freq_map;
+  uint64_t min_freq;
+  uint64_t max_freq;
+  cache_t *other_cache;
+  request_t *req_local;
+} CR_LFU_params_t;

@@ -12,9 +12,7 @@
 #include <math.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/LFU.h"
-#include "../../include/libCacheSim/evictionAlgo/LRU.h"
-#include "../../include/libCacheSim/evictionAlgo/LeCaRv0.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,17 +32,65 @@ typedef struct LeCaRv0_params {
   int64_t n_hit_lfu_history;
 } LeCaRv0_params_t;
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
+static void LeCaRv0_free(cache_t *cache);
+static bool LeCaRv0_get(cache_t *cache, const request_t *req);
+static cache_obj_t *LeCaRv0_find(cache_t *cache, const request_t *req,
+                                 const bool update_cache);
+static cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *LeCaRv0_to_evict(cache_t *cache, const request_t *req);
+static void LeCaRv0_evict(cache_t *cache, const request_t *req);
+static bool LeCaRv0_remove(cache_t *cache, const obj_id_t obj_id);
+static void LeCaRv0_remove_obj(cache_t *cache, cache_obj_t *obj);
+
+/* internal functions */
+static void update_weight(cache_t *cache, int64_t t, double *w_update,
+                          double *w_no_update);
+static void check_and_update_history(cache_t *cache, const request_t *req);
+
+static inline int64_t LeCaRv0_get_n_obj(const cache_t *cache) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
+  DEBUG_ASSERT(params->LRU->get_n_obj(params->LRU) ==
+               params->LFU->get_n_obj(params->LFU));
+  return params->LRU->get_n_obj(params->LRU);
+}
+
+static inline int64_t LeCaRv0_get_occupied_byte(const cache_t *cache) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
+  DEBUG_ASSERT(params->LRU->get_occupied_byte(params->LRU) ==
+               params->LFU->get_occupied_byte(params->LFU));
+  return params->LRU->get_occupied_byte(params->LRU);
+}
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ****                       init, free, get                         ****
+// ***********************************************************************
+/**
+ * @brief initialize the cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params cache specific parameters, should be NULL
+ */
 cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("LeCaRv0", ccache_params);
   cache->cache_init = LeCaRv0_init;
   cache->cache_free = LeCaRv0_free;
   cache->get = LeCaRv0_get;
-  cache->check = LeCaRv0_check;
+  cache->find = LeCaRv0_find;
   cache->insert = LeCaRv0_insert;
   cache->evict = LeCaRv0_evict;
   cache->remove = LeCaRv0_remove;
   cache->to_evict = LeCaRv0_to_evict;
+  cache->get_n_obj = LeCaRv0_get_n_obj;
+  cache->get_occupied_byte = LeCaRv0_get_occupied_byte;
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
@@ -81,7 +127,12 @@ cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
   return cache;
 }
 
-void LeCaRv0_free(cache_t *cache) {
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
+static void LeCaRv0_free(cache_t *cache) {
   LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
   params->LRU->cache_free(params->LRU);
   params->LRU_g->cache_free(params->LRU_g);
@@ -91,6 +142,194 @@ void LeCaRv0_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
+
+static bool LeCaRv0_get(cache_t *cache, const request_t *req) {
+  /* occupied bytes and n_obj are maintained by LRU and LFU
+   * see get_n_obj and get_occupied_byte */
+  DEBUG_ASSERT(cache->occupied_byte == 0);
+
+  return cache_get_base(cache, req);
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief find an object in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return the object or NULL if not found
+ */
+static cache_obj_t *LeCaRv0_find(cache_t *cache, const request_t *req,
+                                  bool update_cache) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
+
+  cache_obj_t *obj_lru, *obj_lfu;
+  obj_lru = params->LRU->find(params->LRU, req, update_cache);
+  obj_lfu = params->LFU->find(params->LFU, req, update_cache);
+  DEBUG_ASSERT((obj_lru == NULL && NULL == obj_lfu) ||
+               (obj_lru != NULL && NULL != obj_lfu));
+
+  if (!update_cache) {
+    return obj_lru;
+  }
+
+  if (obj_lru == NULL) {
+    /* cache miss */
+    check_and_update_history(cache, req);
+  }
+
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
+  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
+
+  cache->occupied_byte = params->LRU->occupied_byte;
+
+  return obj_lru;
+}
+
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * and eviction is not part of this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
+cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
+
+  params->LRU->insert(params->LRU, req);
+  params->LFU->insert(params->LFU, req);
+
+  cache->occupied_byte = params->LRU->occupied_byte;
+  cache->n_obj += 1;
+
+  return NULL;
+}
+
+/**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
+static cache_obj_t *LeCaRv0_to_evict(cache_t *cache, const request_t *req) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
+  double r = ((double)(next_rand() % 100)) / 100.0;
+  if (r < params->w_lru) {
+    return params->LRU->to_evict(params->LRU, req);
+  } else {
+    params->LFU->to_evict(params->LFU, req);
+  }
+}
+
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ */
+static void LeCaRv0_evict(cache_t *cache, const request_t *req) {
+  static __thread request_t *req_local = NULL;
+  if (req_local == NULL) {
+    req_local = new_request();
+  }
+
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
+
+  cache_obj_t *obj;
+  double r = ((double)(next_rand() % 100)) / 100.0;
+  if (r < params->w_lru) {
+    obj = params->LRU->to_evict(params->LRU, req);
+    copy_cache_obj_to_request(req_local, obj);
+    params->LFU->remove(params->LFU, obj->obj_id);
+    params->LRU->evict(params->LRU, req);
+    DEBUG_ASSERT(params->LRU_g->find(params->LRU_g, req_local, false) == NULL);
+    params->LRU_g->get(params->LRU_g, req_local);
+    obj = hashtable_find(params->LRU_g->hashtable, req_local);
+    obj->LeCaR.eviction_vtime = cache->n_req;
+  } else {
+    obj = params->LFU->to_evict(params->LFU, req);
+    copy_cache_obj_to_request(req_local, obj);
+    params->LRU->remove(params->LRU, obj->obj_id);
+    params->LFU->evict(params->LFU, req);
+    DEBUG_ASSERT(params->LFU_g->find(params->LFU_g, req_local, false) == NULL);
+    params->LFU_g->get(params->LFU_g, req_local);
+    obj = hashtable_find(params->LRU_g->hashtable, req_local);
+    obj->LeCaR.eviction_vtime = cache->n_req;
+  }
+}
+
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
+static bool LeCaRv0_remove(cache_t *cache, obj_id_t obj_id) {
+  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = hashtable_find_obj_id(params->LRU->hashtable, obj_id);
+  if (obj == NULL) {
+    ERROR("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
+  }
+  params->LRU->remove(params->LRU, obj_id);
+
+  obj = hashtable_find_obj_id(params->LFU->hashtable, obj_id);
+  if (obj == NULL) {
+    ERROR("remove object %" PRIu64 "that is not cached in LFU\n", obj_id);
+    return false;
+  }
+  params->LFU->remove(params->LFU, obj_id);
+
+  return true;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                         internal functions                    ****
+// ****                                                               ****
+// ***********************************************************************
 static void update_weight(cache_t *cache, int64_t t, double *w_update,
                           double *w_no_update) {
   DEBUG_ASSERT(fabs(*w_update + *w_no_update - 1.0) < 0.0001);
@@ -108,136 +347,23 @@ static void check_and_update_history(cache_t *cache, const request_t *req) {
 
   bool cache_hit_lru_g, cache_hit_lfu_g;
 
-  cache_hit_lru_g = params->LRU_g->check(params->LRU_g, req, false);
-  cache_hit_lfu_g = params->LFU_g->check(params->LFU_g, req, false);
+  cache_hit_lru_g = params->LRU_g->find(params->LRU_g, req, false) != NULL;
+  cache_hit_lfu_g = params->LFU_g->find(params->LFU_g, req, false) != NULL;
   DEBUG_ASSERT((cache_hit_lru_g ? 1 : 0) + (cache_hit_lfu_g ? 1 : 0) <= 1);
 
   if (cache_hit_lru_g) {
     params->n_hit_lru_history++;
-    cache_obj_t *obj = cache_get_obj(params->LRU_g, req);
+    cache_obj_t *obj = hashtable_find(params->LRU_g->hashtable, req);
     int64_t t = cache->n_req - obj->LeCaR.eviction_vtime;
     update_weight(cache, t, &params->w_lru, &params->w_lfu);
     params->LRU_g->remove(params->LRU_g, req->obj_id);
   } else if (cache_hit_lfu_g) {
     params->n_hit_lfu_history++;
-    cache_obj_t *obj = cache_get_obj(params->LFU_g, req);
+    cache_obj_t *obj = hashtable_find(params->LFU_g->hashtable, req);
     int64_t t = cache->n_req - obj->LeCaR.eviction_vtime;
     update_weight(cache, t, &params->w_lfu, &params->w_lru);
     params->LFU_g->remove(params->LFU_g, req->obj_id);
   }
-}
-
-bool LeCaRv0_check(cache_t *cache, const request_t *req, bool update_cache) {
-  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
-
-  bool cache_hit_lru, cache_hit_lfu;
-  cache_hit_lru = params->LRU->check(params->LRU, req, update_cache);
-  cache_hit_lfu = params->LFU->check(params->LFU, req, update_cache);
-  DEBUG_ASSERT(cache_hit_lru == cache_hit_lfu);
-
-  if (!update_cache) {
-    return cache_hit_lru;
-  }
-
-  if (!cache_hit_lru) {
-    /* cache miss */
-    check_and_update_history(cache, req);
-  }
-
-  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
-  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
-
-  cache->occupied_byte = params->LRU->occupied_byte;
-
-  return cache_hit_lru;
-}
-
-bool LeCaRv0_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
-}
-
-cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req) {
-  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
-
-  params->LRU->insert(params->LRU, req);
-  params->LFU->insert(params->LFU, req);
-
-  cache->occupied_byte = params->LRU->occupied_byte;
-  cache->n_obj += 1;
-
-  return NULL;
-}
-
-cache_obj_t *LeCaRv0_to_evict(cache_t *cache) {
-  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
-  double r = ((double)(next_rand() % 100)) / 100.0;
-  if (r < params->w_lru) {
-    return params->LRU->to_evict(params->LRU);
-  } else {
-    params->LFU->to_evict(params->LFU);
-  }
-}
-
-void LeCaRv0_evict(cache_t *cache, const request_t *req,
-                   cache_obj_t *evicted_obj) {
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
-  }
-
-  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
-
-  cache_obj_t obj;
-  double r = ((double)(next_rand() % 100)) / 100.0;
-  if (r < params->w_lru) {
-    params->LRU->evict(params->LRU, req, &obj);
-    params->LFU->remove(params->LFU, obj.obj_id);
-    copy_cache_obj_to_request(req_local, &obj);
-    DEBUG_ASSERT(!params->LRU_g->check(params->LRU_g, req_local, false));
-    if (req_local->obj_size < params->LRU_g->cache_size) {
-      params->LRU_g->get(params->LRU_g, req_local);
-      cache_get_obj(params->LRU_g, req_local)->LeCaR.eviction_vtime =
-          cache->n_req;
-    }
-  } else {
-    params->LFU->evict(params->LFU, req, &obj);
-    params->LRU->remove(params->LRU, obj.obj_id);
-    copy_cache_obj_to_request(req_local, &obj);
-    DEBUG_ASSERT(!params->LFU_g->check(params->LFU_g, req_local, false));
-    if (req_local->obj_size < params->LFU_g->cache_size) {
-      params->LFU_g->get(params->LFU_g, req_local);
-      cache_get_obj(params->LFU_g, req_local)->LeCaR.eviction_vtime =
-          cache->n_req;
-    }
-  }
-
-  if (evicted_obj != NULL) {
-    memcpy(evicted_obj, &obj, sizeof(cache_obj_t));
-  }
-
-  cache->occupied_byte = params->LRU->occupied_byte;
-  cache->n_obj -= 1;
-}
-
-bool LeCaRv0_remove(cache_t *cache, obj_id_t obj_id) {
-  LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = cache_get_obj_by_id(params->LRU, obj_id);
-  if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached in LRU\n", obj_id);
-  }
-  params->LRU->remove(params->LRU, obj_id);
-
-  obj = cache_get_obj_by_id(params->LFU, obj_id);
-  if (obj == NULL) {
-    ERROR("remove object %" PRIu64 "that is not cached in LFU\n", obj_id);
-    return false;
-  }
-  params->LFU->remove(params->LFU, obj_id);
-
-  cache->occupied_byte = params->LRU->occupied_byte;
-  cache->n_obj -= 1;
-
-  return true;
 }
 
 #ifdef __cplusplus

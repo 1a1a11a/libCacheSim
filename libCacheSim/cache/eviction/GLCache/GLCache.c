@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "../../../include/libCacheSim/evictionAlgo.h"
 #include "GLCacheInternal.h"
 #include "cacheState.h"
 #include "const.h"
@@ -20,6 +20,21 @@ extern "C" {
 
 /* output file for comparing online and offline calculated segment utility */
 FILE *ofile_cmp_y = NULL;
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
+static void GLCache_free(cache_t *cache);
+static bool GLCache_get(cache_t *cache, const request_t *req);
+static cache_obj_t *GLCache_find(cache_t *cache, const request_t *req,
+                                 const bool update_cache);
+static cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *GLCache_to_evict(cache_t *cache, const request_t *req);
+static void GLCache_evict(cache_t *cache, const request_t *req);
+static bool GLCache_remove(cache_t *cache, const obj_id_t obj_id);
 
 static void set_default_params(GLCache_params_t *params) {
   params->segment_size = 100;
@@ -41,8 +56,8 @@ const char *GLCache_default_params(void) {
          "retrain-intvl=86400";
 }
 
-static void parse_init_params(const char *cache_specific_params,
-                              GLCache_params_t *params) {
+static void GLCache_parse_init_params(const char *cache_specific_params,
+                                      GLCache_params_t *params) {
   char *params_str = strdup(cache_specific_params);
 
   while (params_str != NULL && params_str[0] != '\0') {
@@ -98,6 +113,19 @@ static void parse_init_params(const char *cache_specific_params,
   }
 }
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ****                       init, free, get                         ****
+// ***********************************************************************
+
+/**
+ * @brief initialize cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params cache specific parameters, see parse_params
+ */
 cache_t *GLCache_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("GLCache", ccache_params);
@@ -120,7 +148,7 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   set_default_params(params);
 
   if (cache_specific_params != NULL)
-    parse_init_params(cache_specific_params, params);
+    GLCache_parse_init_params(cache_specific_params, params);
 
   check_params(params);
 
@@ -156,8 +184,9 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   cache->cache_init = GLCache_init;
   cache->cache_free = GLCache_free;
   cache->get = GLCache_get;
-  cache->check = GLCache_check;
+  cache->find = GLCache_find;
   cache->insert = GLCache_insert;
+  cache->to_evict = NULL;
   cache->evict = GLCache_evict;
   cache->remove = GLCache_remove;
   cache->init_params = cache_specific_params;
@@ -172,7 +201,12 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   return cache;
 }
 
-void GLCache_free(cache_t *cache) {
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
+static void GLCache_free(cache_t *cache) {
   GLCache_params_t *params = cache->eviction_params;
   bucket_t *bkt = &params->train_bucket;
   segment_t *seg = bkt->first_seg, *next_seg;
@@ -220,14 +254,70 @@ void GLCache_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-bool GLCache_check(cache_t *cache, const request_t *req,
-                   const bool update_cache) {
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
+static bool GLCache_get(cache_t *cache, const request_t *req) {
+  GLCache_params_t *params = cache->eviction_params;
+
+  bool ret = cache_get_base(cache, req);
+
+  if (params->type == LOGCACHE_LEARNED ||
+      params->type == LOGCACHE_ITEM_ORACLE) {
+    /* generate training data by taking a snapshot */
+    learner_t *l = &params->learner;
+    if (l->last_train_rtime > 0 &&
+        params->curr_rtime - l->last_train_rtime >= params->retrain_intvl + 1) {
+      train(cache);
+      snapshot_segs_to_training_data(cache);
+    }
+  }
+
+  update_cache_state(cache, req, ret);
+
+  return ret;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief find an object in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return the object or NULL if not found
+ */
+static cache_obj_t *GLCache_find(cache_t *cache, const request_t *req,
+                                 const bool update_cache) {
   GLCache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
   if (cache_obj == NULL) {
-    return false;
+    return cache_obj;
   }
 
   if (!update_cache) {
@@ -275,31 +365,21 @@ bool GLCache_check(cache_t *cache, const request_t *req,
 
   DEBUG_ASSERT(n_in_cache <= 1);
 
-  return true;
+  return cache_obj;
 }
 
-bool GLCache_get(cache_t *cache, const request_t *req) {
-  GLCache_params_t *params = cache->eviction_params;
-
-  bool ret = cache_get_base(cache, req);
-
-  if (params->type == LOGCACHE_LEARNED ||
-      params->type == LOGCACHE_ITEM_ORACLE) {
-    /* generate training data by taking a snapshot */
-    learner_t *l = &params->learner;
-    if (l->last_train_rtime > 0 &&
-        params->curr_rtime - l->last_train_rtime >= params->retrain_intvl + 1) {
-      train(cache);
-      snapshot_segs_to_training_data(cache);
-    }
-  }
-
-  update_cache_state(cache, req, ret);
-
-  return ret;
-}
-
-cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req) {
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * eviction should be
+ * performed before calling this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
+static cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req) {
   GLCache_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[0];
   segment_t *seg = bucket->last_seg;
@@ -335,8 +415,16 @@ cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req) {
   return cache_obj;
 }
 
-void GLCache_evict(cache_t *cache, const request_t *req,
-                   cache_obj_t *evicted_obj) {
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ * @param evicted_obj if not NULL, return the evicted object to caller
+ */
+static void GLCache_evict(cache_t *cache, const request_t *req) {
   GLCache_params_t *params = cache->eviction_params;
   learner_t *l = &params->learner;
 

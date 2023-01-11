@@ -26,7 +26,7 @@
 #include <glib.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/LFU.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,18 +39,46 @@ typedef struct LFU_params {
   uint64_t max_freq;
 } LFU_params_t;
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
+static void LFU_free(cache_t *cache);
+static bool LFU_get(cache_t *cache, const request_t *req);
+static cache_obj_t *LFU_find(cache_t *cache, const request_t *req,
+                                const bool update_cache);
+static cache_obj_t *LFU_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *LFU_to_evict(cache_t *cache, const request_t *req);
+static void LFU_evict(cache_t *cache, const request_t *req);
+static bool LFU_remove(cache_t *cache, const obj_id_t obj_id);
+static void LFU_remove_obj(cache_t *cache, cache_obj_t *obj);
+
+/* internal functions */
 static inline void free_freq_node(void *list_node);
 static inline freq_node_t *get_min_freq_node(LFU_params_t *params);
 static inline void update_min_freq(LFU_params_t *params);
 
-// ****************** end user facing functions *******************
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ****                       init, free, get                         ****
+// ***********************************************************************
+/**
+ * @brief initialize a LFU cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params LFU specific parameters, should be NULL
+ */
 cache_t *LFU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("LFU", ccache_params);
   cache->cache_init = LFU_init;
   cache->cache_free = LFU_free;
   cache->get = LFU_get;
-  cache->check = LFU_check;
+  cache->find = LFU_find;
   cache->insert = LFU_insert;
   cache->evict = LFU_evict;
   cache->remove = LFU_remove;
@@ -90,7 +118,12 @@ cache_t *LFU_init(const common_cache_params_t ccache_params,
   return cache;
 }
 
-void LFU_free(cache_t *cache) {
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
+static void LFU_free(cache_t *cache) {
   LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
   g_hash_table_destroy(params->freq_map);
   my_free(sizeof(LFU_params_t), params);
@@ -98,24 +131,47 @@ void LFU_free(cache_t *cache) {
 }
 
 /**
- * high level user API
- * check whether an object is in the cache, update the meatadata
- * if not in the cache, insert it, and evict an object if necessary
+ * @brief this function is the user facing API
+ * it performs the following logic
  *
- * @return true if the object is in the cache, false otherwise
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
  */
-bool LFU_get(cache_t *cache, const request_t *req) {
+static bool LFU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-// *********** developer facing APIs (used by cache developer) ***********
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
+
 /**
- * @brief check whether an object is in the cache, update the meatadata
- * if update_cache is true
+ * @brief find an object in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return the object or NULL if not found
  */
-bool LFU_check(cache_t *cache, const request_t *req, const bool update_cache) {
-  cache_obj_t *cache_obj;
-  bool ret = cache_check_base(cache, req, update_cache, &cache_obj);
+static cache_obj_t* LFU_find(cache_t *cache, const request_t *req,
+                            const bool update_cache) {
+  cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && likely(update_cache)) {
     LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
@@ -160,15 +216,20 @@ bool LFU_check(cache_t *cache, const request_t *req, const bool update_cache) {
       update_min_freq(params);
     }
   }
-  return ret;
+  return cache_obj;
 }
 
 /**
- * @brief insert an object into LFUDA cache, this assumes that
- * the cache has enough space for this object, eviction should
- * perform before calling this function
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * and eviction is not part of this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
  */
-cache_obj_t *LFU_insert(cache_t *cache, const request_t *req) {
+static cache_obj_t *LFU_insert(cache_t *cache, const request_t *req) {
   LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
   params->min_freq = 1;
   freq_node_t *freq_one_node = params->freq_one_node;
@@ -183,22 +244,37 @@ cache_obj_t *LFU_insert(cache_t *cache, const request_t *req) {
   return cache_obj;
 }
 
-cache_obj_t *LFU_to_evict(cache_t *cache) {
+/**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
+static cache_obj_t *LFU_to_evict(cache_t *cache, const request_t *req) {
   LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
   freq_node_t *min_freq_node = get_min_freq_node(params);
   return min_freq_node->first_obj;
 }
 
-void LFU_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ */
+static void LFU_evict(cache_t *cache, const request_t *req) {
   LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
 
   freq_node_t *min_freq_node = get_min_freq_node(params);
   min_freq_node->n_obj--;
 
   cache_obj_t *obj_to_evict = min_freq_node->first_obj;
-  if (evicted_obj != NULL) {
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
-  }
 
   remove_obj_from_list(&min_freq_node->first_obj, &min_freq_node->last_obj,
                        obj_to_evict);
@@ -234,6 +310,19 @@ void LFU_remove_obj(cache_t *cache, cache_obj_t *obj) {
   }
 }
 
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
 bool LFU_remove(cache_t *cache, obj_id_t obj_id) {
   LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
@@ -246,7 +335,11 @@ bool LFU_remove(cache_t *cache, obj_id_t obj_id) {
   return true;
 }
 
-// ***************** internal functions *****************
+// ***********************************************************************
+// ****                                                               ****
+// ****                  cache internal functions                     ****
+// ****                                                               ****
+// ***********************************************************************
 static inline void free_freq_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
 }

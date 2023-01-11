@@ -40,18 +40,22 @@ typedef void (*cache_free_func_ptr)(cache_t *);
 
 typedef bool (*cache_get_func_ptr)(cache_t *, const request_t *);
 
-typedef bool (*cache_check_func_ptr)(cache_t *, const request_t *, const bool);
+typedef cache_obj_t *(*cache_find_func_ptr)(cache_t *, const request_t *,
+                                            const bool);
 
 typedef bool (*cache_can_insert_func_ptr)(cache_t *cache, const request_t *req);
 
 typedef cache_obj_t *(*cache_insert_func_ptr)(cache_t *, const request_t *);
 
-typedef void (*cache_evict_func_ptr)(cache_t *, const request_t *,
-                                     cache_obj_t *);
+typedef bool (*cache_need_eviction_func_ptr)(cache_t *, const request_t *);
 
-typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *);
+typedef void (*cache_evict_func_ptr)(cache_t *, const request_t *);
+
+typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *, const request_t *);
 
 typedef bool (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
+
+typedef void (*cache_remove_obj_func_ptr)(cache_t *, cache_obj_t *obj);
 
 typedef int64_t (*cache_get_occupied_byte_func_ptr)(const cache_t *);
 
@@ -83,14 +87,16 @@ struct hashtable;
 struct cache {
   struct hashtable *hashtable;
 
-  cache_get_func_ptr get;
-  cache_check_func_ptr check;
-  cache_can_insert_func_ptr can_insert;
-  cache_insert_func_ptr insert;
-  cache_evict_func_ptr evict;
-  cache_remove_func_ptr remove;
   cache_init_func_ptr cache_init;
   cache_free_func_ptr cache_free;
+  cache_get_func_ptr get;
+
+  cache_find_func_ptr find;
+  cache_can_insert_func_ptr can_insert;
+  cache_insert_func_ptr insert;
+  cache_need_eviction_func_ptr need_eviction;
+  cache_evict_func_ptr evict;
+  cache_remove_func_ptr remove;
   cache_to_evict_func_ptr to_evict;
   cache_get_occupied_byte_func_ptr get_occupied_byte;
   cache_get_n_obj_func_ptr get_n_obj;
@@ -98,12 +104,29 @@ struct cache {
   admissioner_t *admissioner;
 
   void *eviction_params;
-  void *last_request_metadata;
 
+  // other name: logical_time, virtual_time, reference_count
   int64_t n_req; /* number of requests (used by some eviction algo) */
-  int64_t n_obj;
-  int64_t occupied_byte;
 
+  /**************** private fields *****************/
+  // use cache->get_n_obj to obtain the number of objects in the cache
+  // do not use this variable directly
+  int64_t n_obj;
+  // use cache->get_occupied_byte to obtain the number of objects in the cache
+  // do not use this variable directly
+  int64_t occupied_byte;
+  /************ end of private fields *************/
+
+  // because some algorithms choose different candidates 
+  // each time we want to evict, but we want to make sure 
+  // that the object returned from to_evict will be evicted
+  // the next time evicion is called, so we record here
+  cache_obj_t *obj_to_evict;
+  // we keep track when the candidate was generated, so that 
+  // old candidate is not used
+  int64_t obj_to_evict_gen_vtime;
+
+  // const 
   int64_t cache_size;
   int64_t default_ttl;
   int32_t obj_md_size;
@@ -113,6 +136,8 @@ struct cache {
   // cache_stat_t stat;
   char cache_name[CACHE_NAME_ARRAY_LEN];
   const char *init_params;
+
+  void *last_request_metadata;
 
   /* not used by most algorithms */
   int32_t *future_stack_dist;
@@ -155,15 +180,16 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
                                     const uint64_t new_size);
 
 /**
- * a common cache check function
+ * a function that finds object from the cache, it is used by
+ * all eviction algorithms that directly use the hashtable
+ *
  * @param cache
  * @param req
  * @param update_cache
- * @param cache_obj_ret
  * @return
  */
-bool cache_check_base(cache_t *cache, const request_t *req,
-                      const bool update_cache, cache_obj_t **cache_obj_ret);
+cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
+                             const bool update_cache);
 
 /**
  * a common cache get function
@@ -192,7 +218,6 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req);
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req);
 
-
 /**
  * @brief this function is called by all eviction algorithms that
  * need to remove an object from the cache, it updates the cache metadata,
@@ -217,24 +242,6 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj,
                       bool remove_from_hashtable);
 
 /**
- * @brief get an object from the cache using a request 
- *
- * @param cache
- * @param req
- * @return cache_obj_t*
- */
-cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req);
-
-/**
- * @brief get an object from the cache using object id
- *
- * @param cache
- * @param id
- * @return cache_obj_t*
- */
-cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id);
-
-/**
  * @brief get the number of bytes occupied, this is the default
  * for most algorithms, but some algorithms may have different implementation
  * for example, SLRU and SFIFO
@@ -254,6 +261,18 @@ static inline int64_t cache_get_occupied_byte_default(const cache_t *cache) {
  */
 static inline int64_t cache_get_n_obj_default(const cache_t *cache) {
   return cache->n_obj;
+}
+
+static inline int64_t cache_get_reference_time(const cache_t *cache) {
+  return cache->n_req;
+}
+
+static inline int64_t cache_get_logical_time(const cache_t *cache) {
+  return cache->n_req;
+}
+
+static inline int64_t cache_get_virtual_time(const cache_t *cache) {
+  return cache->n_req;
 }
 
 /**

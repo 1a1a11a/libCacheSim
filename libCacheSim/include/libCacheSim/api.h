@@ -17,7 +17,7 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
     stat.n_req++;
     stat.n_req_byte += req->obj_size;
 
-    if (cache->check(cache, req, true) == false) {
+    if (cache->find(cache, req, true) == false) {
       stat.n_miss++;
       stat.n_miss_byte += req->obj_size;
 
@@ -36,7 +36,7 @@ static inline cache_stat_t go(cache_t *cache, reader_t *reader) {
 
         while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
                cache->cache_size)
-          cache->evict(cache, req, NULL);
+          cache->evict(cache, req);
 
         cache->insert(cache, req);
       }

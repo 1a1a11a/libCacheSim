@@ -8,7 +8,7 @@
 //
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/priv/SFIFO.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,6 +70,16 @@ typedef struct SFIFO_params {
 // ***********************************************************************
 static void SFIFO_parse_params(cache_t *cache,
                                const char *cache_specific_params);
+static void SFIFO_parse_params(cache_t *cache, const char *cache_specific_params);
+static void SFIFO_free(cache_t *cache);
+static bool SFIFO_get(cache_t *cache, const request_t *req);
+static cache_obj_t *SFIFO_find(cache_t *cache, const request_t *req,
+                             const bool update_cache);
+static cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *SFIFO_to_evict(cache_t *cache, const request_t *req);
+static void SFIFO_evict(cache_t *cache, const request_t *req);
+static bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id);
+
 bool SFIFO_can_insert(cache_t *cache, const request_t *req);
 static void SFIFO_promote_to_next_seg(cache_t *cache, const request_t *req,
                                       cache_obj_t *obj);
@@ -90,7 +100,7 @@ static inline bool seg_too_large(cache_t *cache, int seg_id) {
 // ****                   end user facing functions                   ****
 // ****                                                               ****
 // ***********************************************************************
-void SFIFO_free(cache_t *cache) {
+static void SFIFO_free(cache_t *cache) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   free(params->fifo_heads);
   free(params->fifo_tails);
@@ -111,7 +121,7 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
   cache->cache_init = SFIFO_init;
   cache->cache_free = SFIFO_free;
   cache->get = SFIFO_get;
-  cache->check = SFIFO_check;
+  cache->find = SFIFO_find;
   cache->insert = SFIFO_insert;
   cache->evict = SFIFO_evict;
   cache->remove = SFIFO_remove;
@@ -172,7 +182,7 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
  * @param req
  * @return true if cache hit, false if cache miss
  */
-bool SFIFO_get(cache_t *cache, const request_t *req) {
+static bool SFIFO_get(cache_t *cache, const request_t *req) {
 #ifdef DEBUG_MODE
   return SFIFO_get_debug(cache, req);
 #else
@@ -186,22 +196,24 @@ bool SFIFO_get(cache_t *cache, const request_t *req) {
 // ****                                                               ****
 // ***********************************************************************
 /**
- * @brief check whether an object is in the cache,
- * promote to the next segment if update_cache is true
+ * @brief find an object in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return the object or NULL if not found
  */
-bool SFIFO_check(cache_t *cache, const request_t *req,
-                 const bool update_cache) {
+static cache_obj_t *SFIFO_find(cache_t *cache, const request_t *req,
+                                const bool update_cache) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  cache_obj_t *obj = cache_get_obj(cache, req);
+  cache_obj_t *obj = hashtable_find(cache->hashtable, req);
 
-  if (obj == NULL) {
-    return false;
-  }
-
-  if (!update_cache) {
-    return true;
+  if (obj == NULL || !update_cache) {
+    return obj;
   }
 
   obj->SFIFO.freq++;
@@ -210,9 +222,20 @@ bool SFIFO_check(cache_t *cache, const request_t *req,
     SFIFO_cool(cache, req, obj->SFIFO.fifo_id);
   }
 
-  return true;
+  return obj;
 }
 
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * eviction should be
+ * performed before calling this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
 cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
@@ -231,7 +254,7 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
     // No space for insertion
     while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
-      cache->evict(cache, req, NULL);
+      cache->evict(cache, req);
     }
     nth_seg = 0;
   }
@@ -250,7 +273,17 @@ cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req) {
   return obj;
 }
 
-cache_obj_t *SFIFO_to_evict(cache_t *cache) {
+/**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
+static cache_obj_t *SFIFO_to_evict(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   for (int i = 0; i < params->n_seg; i++) {
     if (params->fifo_n_bytes[i] > 0) {
@@ -259,8 +292,16 @@ cache_obj_t *SFIFO_to_evict(cache_t *cache) {
   }
 }
 
-void SFIFO_evict(cache_t *cache, const request_t *req,
-                 cache_obj_t *evicted_obj) {
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ * @param evicted_obj if not NULL, return the evicted object to caller
+ */
+static void SFIFO_evict(cache_t *cache, const request_t *req) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
@@ -278,18 +319,27 @@ void SFIFO_evict(cache_t *cache, const request_t *req,
   params->fifo_n_bytes[nth_seg] -= obj->obj_size + cache->obj_md_size;
   params->fifo_n_objs[nth_seg]--;
 
-  if (evicted_obj != NULL) {
-    memcpy(evicted_obj, obj, sizeof(cache_obj_t));
-  }
-
   remove_obj_from_list(&params->fifo_heads[nth_seg],
                        &params->fifo_tails[nth_seg], obj);
   cache_evict_base(cache, obj, true);
 }
 
-bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
+static bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
+  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 
   if (obj == NULL) {
     return false;
@@ -374,7 +424,7 @@ static void SFIFO_cool(cache_t *cache, const request_t *req, const int id) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  if (id == 0) return SFIFO_evict(cache, req, NULL);
+  if (id == 0) return SFIFO_evict(cache, req);
 
   cache_obj_t *obj = params->fifo_tails[id];
   DEBUG_ASSERT(obj != NULL && obj->SFIFO.fifo_id == id);
@@ -465,7 +515,7 @@ bool SFIFO_get_debug(cache_t *cache, const request_t *req) {
   cache->last_request_metadata = "none";
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  bool cache_hit = cache->check(cache, req, true);
+  bool cache_hit = cache->find(cache, req, true) != NULL;
   if (cache_hit) {
     cache->last_request_metadata = "hit";
   } else {
@@ -484,7 +534,7 @@ bool SFIFO_get_debug(cache_t *cache, const request_t *req) {
   if (!cache_hit) {
     while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
-      cache->evict(cache, req, NULL);
+      cache->evict(cache, req);
     }
 
     cache->insert(cache, req);

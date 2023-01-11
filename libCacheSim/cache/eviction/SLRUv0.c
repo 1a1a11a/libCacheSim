@@ -7,7 +7,7 @@
 //
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/SLRUv0.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,8 +16,310 @@ extern "C" {
 typedef struct SLRUv0_params {
   cache_t **LRUs;
   int n_seg;
+  // a temporary request used to move object between LRUs
+  request_t *req_local;
 } SLRUv0_params_t;
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
+static void SLRUv0_parse_params(cache_t *cache,
+                                const char *cache_specific_params);
+static void SLRUv0_free(cache_t *cache);
+static bool SLRUv0_get(cache_t *cache, const request_t *req);
+static cache_obj_t *SLRUv0_find(cache_t *cache, const request_t *req,
+                                const bool update_cache);
+static cache_obj_t *SLRUv0_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *SLRUv0_to_evict(cache_t *cache, const request_t *req);
+static void SLRUv0_evict(cache_t *cache, const request_t *req);
+static bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id);
+static void SLRUv0_cool(cache_t *cache, const request_t *req, int i);
+
+/* SLRUv0 cannot an object larger than segment size */
+static inline bool SLRUv0_can_insert(cache_t *cache, const request_t *req) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
+  bool can_insert = cache_can_insert_default(cache, req);
+  return can_insert &&
+         (req->obj_size + cache->obj_md_size <= params->LRUs[0]->cache_size);
+}
+
+static inline int64_t SLRUv0_get_occupied_byte(const cache_t *cache) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
+  int64_t occupied_byte = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    occupied_byte += params->LRUs[i]->occupied_byte;
+  }
+  return occupied_byte;
+}
+
+static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
+  int64_t n_obj = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    n_obj += params->LRUs[i]->n_obj;
+  }
+  return n_obj;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ****                       init, free, get                         ****
+// ***********************************************************************
+static const char *DEFAULT_CACHE_PARAMS = "n-seg=4";
+
+/**
+ * @brief initialize the cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params cache specific parameters, see parse_params
+ * function or use -e "print" with the cachesim binary
+ */
+cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("SLRUv0", ccache_params);
+  cache->cache_init = SLRUv0_init;
+  cache->cache_free = SLRUv0_free;
+  cache->get = SLRUv0_get;
+  cache->find = SLRUv0_find;
+  cache->insert = SLRUv0_insert;
+  cache->evict = SLRUv0_evict;
+  cache->remove = SLRUv0_remove;
+  cache->to_evict = SLRUv0_to_evict;
+  cache->init_params = cache_specific_params;
+  cache->can_insert = SLRUv0_can_insert;
+  cache->get_occupied_byte = SLRUv0_get_occupied_byte;
+  cache->get_n_obj = SLRUv0_get_n_obj;
+
+  if (ccache_params.consider_obj_metadata) {
+    cache->obj_md_size = 8 * 2;
+  } else {
+    cache->obj_md_size = 0;
+  }
+
+  cache->eviction_params = (SLRUv0_params_t *)malloc(sizeof(SLRUv0_params_t));
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+
+  SLRUv0_parse_params(cache, cache_specific_params ? cache_specific_params
+                                                   : DEFAULT_CACHE_PARAMS);
+
+  params->LRUs = (cache_t **)malloc(sizeof(cache_t *) * params->n_seg);
+
+  common_cache_params_t ccache_params_local = ccache_params;
+  ccache_params_local.cache_size /= params->n_seg;
+  ccache_params_local.hashpower /= MIN(16, ccache_params_local.hashpower - 4);
+  for (int i = 0; i < params->n_seg; i++) {
+    params->LRUs[i] = LRU_init(ccache_params_local, NULL);
+  }
+  params->req_local = new_request();
+
+  return cache;
+}
+
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
+static void SLRUv0_free(cache_t *cache) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+  free_request(params->req_local);
+  for (int i = 0; i < params->n_seg; i++)
+    params->LRUs[i]->cache_free(params->LRUs[i]);
+  free(params->LRUs);
+  cache_struct_free(cache);
+}
+
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
+static bool SLRUv0_get(cache_t *cache, const request_t *req) {
+  /* because this field cannot be updated in time since segment LRUs are
+   * updated, so we should not use this field */
+  DEBUG_ASSERT(cache->occupied_byte == 0);
+
+  bool ck = cache_get_base(cache, req);
+
+  return ck;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief find an object in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return the object or NULL if not found
+ */
+static cache_obj_t *SLRUv0_find(cache_t *cache, const request_t *req,
+                                const bool update_cache) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+
+  cache_obj_t *obj = NULL;
+  for (int i = 0; i < params->n_seg; i++) {
+    obj = params->LRUs[i]->find(params->LRUs[i], req, false);
+    bool cache_hit = obj != NULL;
+
+    if (cache_hit) {
+      // bump object from lower segment to upper segment;
+      int src_id = i;
+      int dest_id = i + 1;
+      if (i == params->n_seg - 1) {
+        dest_id = i;
+      }
+
+      params->LRUs[src_id]->remove(params->LRUs[src_id], req->obj_id);
+
+      // If the upper LRU is full;
+      while (params->LRUs[dest_id]->occupied_byte + req->obj_size +
+                 cache->obj_md_size >
+             params->LRUs[dest_id]->cache_size)
+        SLRUv0_cool(cache, req, dest_id);
+
+      params->LRUs[dest_id]->insert(params->LRUs[dest_id], req);
+
+      return obj;
+    }
+  }
+  return NULL;
+}
+
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * eviction should be
+ * performed before calling this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
+static cache_obj_t *SLRUv0_insert(cache_t *cache, const request_t *req) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+
+  // this is used by eviction age tracking
+  params->LRUs[0]->n_req = cache->n_req;
+
+  // Find the lowest LRU with space for insertion
+  for (int i = 0; i < params->n_seg; i++) {
+    cache_t *lru = params->LRUs[i];
+    if (lru->get_occupied_byte(lru) + req->obj_size + cache->obj_md_size <=
+        lru->cache_size) {
+      return lru->insert(lru, req);
+    }
+  }
+
+  // If all LRUs are filled, evict an obj from the lowest LRU.
+  cache_t *lru = params->LRUs[0];
+  while (lru->get_occupied_byte(lru) + req->obj_size + cache->obj_md_size >
+         lru->cache_size) {
+    SLRUv0_evict(cache, req);
+  }
+  return lru->insert(lru, req);
+}
+
+/**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
+static cache_obj_t *SLRUv0_to_evict(cache_t *cache, const request_t *req) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+  for (int i = 0; i < params->n_seg; i++) {
+    cache_t *lru = params->LRUs[i];
+    if (lru->get_occupied_byte(lru) > 0) {
+      return lru->to_evict(lru, req);
+    }
+  }
+}
+
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ * @param evicted_obj if not NULL, return the evicted object to caller
+ */
+static void SLRUv0_evict(cache_t *cache, const request_t *req) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+
+  int nth_seg_to_evict = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    if (params->LRUs[i]->occupied_byte > 0) {
+      nth_seg_to_evict = i;
+      break;
+    }
+  }
+
+  cache_t *lru = params->LRUs[nth_seg_to_evict];
+  lru->evict(lru, req);
+}
+
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
+static bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+  for (int i = 0; i < params->n_seg; i++) {
+    cache_t *lru = params->LRUs[i];
+    if (lru->remove(lru, obj_id)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                parameter set up functions                     ****
+// ****                                                               ****
+// ***********************************************************************
 static const char *SLRUv0_current_params(SLRUv0_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-seg=%d\n", params->n_seg);
@@ -59,31 +361,49 @@ static void SLRUv0_parse_params(cache_t *cache,
   free(old_params_str);
 }
 
-/* SLRUv0 cannot an object larger than segment size */
-bool SLRUv0_can_insert(cache_t *cache, const request_t *req) {
-  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
-  bool can_insert = cache_can_insert_default(cache, req);
-  return can_insert &&
-         (req->obj_size + cache->obj_md_size <= params->LRUs[0]->cache_size);
+// ***********************************************************************
+// ****                                                               ****
+// ****              cache internal functions                         ****
+// ****                                                               ****
+// ***********************************************************************
+/**
+ * @brief move an object from ith LRU into (i-1)th LRU, cool
+ * (i-1)th LRU if it is full
+ *
+ * @param cache
+ * @param i
+ */
+static void SLRUv0_cool(cache_t *cache, const request_t *req, int i) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+
+  cache_t *lru = params->LRUs[i];
+  // the last LRU is evict-only, do not move to a lower lru
+  if (i == 0) {
+    lru->evict(lru, NULL);
+    return;
+  };
+
+  // the evicted object move to lower lru
+  cache_obj_t *obj_evicted = lru->to_evict(lru, req);
+  copy_cache_obj_to_request(params->req_local, obj_evicted);
+  lru->evict(lru, NULL);
+
+  // If lower LRUs are full
+  cache_t *next_lru = params->LRUs[i - 1];
+  int64_t required_size =
+      next_lru->cache_size - params->req_local->obj_size - cache->obj_md_size;
+  while (next_lru->get_occupied_byte(next_lru) > required_size) {
+    SLRUv0_cool(cache, req, i - 1);
+  }
+
+  next_lru->insert(next_lru, params->req_local);
 }
 
-int64_t SLRUv0_get_occupied_byte(const cache_t *cache) {
-  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
-  int64_t occupied_byte = 0;
-  for (int i = 0; i < params->n_seg; i++) {
-    occupied_byte += params->LRUs[i]->occupied_byte;
-  }
-  return occupied_byte;
-}
-
-int64_t SLRUv0_get_n_obj(const cache_t *cache) {
-  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
-  int64_t n_obj = 0;
-  for (int i = 0; i < params->n_seg; i++) {
-    n_obj += params->LRUs[i]->n_obj;
-  }
-  return n_obj;
-}
+// ***********************************************************************
+// ****                                                               ****
+// ****                       debug functions                         ****
+// ****                                                               ****
+// ***********************************************************************
 static void SLRUv0_print_cache(cache_t *cache) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
   for (int i = params->n_seg - 1; i >= 0; i--) {
@@ -96,198 +416,6 @@ static void SLRUv0_print_cache(cache_t *cache) {
     printf(" | ");
   }
   printf("\n");
-}
-
-cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SLRUv0", ccache_params);
-  cache->cache_init = SLRUv0_init;
-  cache->cache_free = SLRUv0_free;
-  cache->get = SLRUv0_get;
-  cache->check = SLRUv0_check;
-  cache->insert = SLRUv0_insert;
-  cache->evict = SLRUv0_evict;
-  cache->remove = SLRUv0_remove;
-  cache->to_evict = SLRUv0_to_evict;
-  cache->init_params = cache_specific_params;
-  cache->can_insert = SLRUv0_can_insert;
-  cache->get_occupied_byte = SLRUv0_get_occupied_byte;
-  cache->get_n_obj = SLRUv0_get_n_obj;
-
-  if (ccache_params.consider_obj_metadata) {
-    cache->obj_md_size = 8 * 2;
-  } else {
-    cache->obj_md_size = 0;
-  }
-
-  cache->eviction_params = (SLRUv0_params_t *)malloc(sizeof(SLRUv0_params_t));
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-  SLRUv0_params->n_seg = 4;
-
-  if (cache_specific_params != NULL) {
-    SLRUv0_parse_params(cache, cache_specific_params);
-  }
-
-  SLRUv0_params->LRUs =
-      (cache_t **)malloc(sizeof(cache_t *) * SLRUv0_params->n_seg);
-
-  common_cache_params_t ccache_params_local = ccache_params;
-  ccache_params_local.cache_size /= SLRUv0_params->n_seg;
-  ccache_params_local.hashpower /= MIN(16, ccache_params_local.hashpower - 4);
-  for (int i = 0; i < SLRUv0_params->n_seg; i++) {
-    SLRUv0_params->LRUs[i] = LRU_init(ccache_params_local, NULL);
-  }
-
-  return cache;
-}
-
-void SLRUv0_free(cache_t *cache) {
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-  int i;
-  for (i = 0; i < SLRUv0_params->n_seg; i++) LRU_free(SLRUv0_params->LRUs[i]);
-  free(SLRUv0_params->LRUs);
-  cache_struct_free(cache);
-}
-
-/**
- * @brief move an object from ith LRU into (i-1)th LRU, cool
- * (i-1)th LRU if it is full
- *
- * @param cache
- * @param i
- */
-void SLRUv0_cool(cache_t *cache, int i) {
-  cache_obj_t evicted_obj;
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
-  }
-  LRU_evict(SLRUv0_params->LRUs[i], NULL, &evicted_obj);
-
-  if (i == 0) return;
-
-  // If lower LRUs are full
-  while (SLRUv0_params->LRUs[i - 1]->occupied_byte + evicted_obj.obj_size +
-             cache->obj_md_size >
-         SLRUv0_params->LRUs[i - 1]->cache_size)
-    SLRUv0_cool(cache, i - 1);
-
-  copy_cache_obj_to_request(req_local, &evicted_obj);
-  LRU_insert(SLRUv0_params->LRUs[i - 1], req_local);
-}
-
-bool SLRUv0_check(cache_t *cache, const request_t *req,
-                  const bool update_cache) {
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
-  }
-
-  for (int i = 0; i < SLRUv0_params->n_seg; i++) {
-    bool cache_hit = LRU_check(SLRUv0_params->LRUs[i], req, false);
-
-    if (cache_hit) {
-      // bump object from lower segment to upper segment;
-      int src_id = i;
-      int dest_id = i + 1;
-      if (i == SLRUv0_params->n_seg - 1) {
-        dest_id = i;
-      }
-
-      LRU_remove(SLRUv0_params->LRUs[src_id], req->obj_id);
-
-      // If the upper LRU is full;
-      while (SLRUv0_params->LRUs[dest_id]->occupied_byte + req->obj_size +
-                 cache->obj_md_size >
-             SLRUv0_params->LRUs[dest_id]->cache_size)
-        SLRUv0_cool(cache, dest_id);
-
-      LRU_insert(SLRUv0_params->LRUs[dest_id], req);
-
-      return true;
-    }
-  }
-  return false;
-}
-
-bool SLRUv0_get(cache_t *cache, const request_t *req) {
-  /* because this field cannot be updated in time since segment LRUs are
-   * updated, so we should not use this field */
-  DEBUG_ASSERT(cache->occupied_byte == 0);
-
-  bool ck = cache_get_base(cache, req);
-
-  // SLRUv0_print_cache(cache);
-
-  return ck;
-}
-
-cache_obj_t *SLRUv0_insert(cache_t *cache, const request_t *req) {
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-
-  int i;
-  cache_obj_t *cache_obj = NULL;
-
-  // this is used by eviction age tracking
-  SLRUv0_params->LRUs[0]->n_req = cache->n_req;
-
-  // Find the lowest LRU with space for insertion
-  for (i = 0; i < SLRUv0_params->n_seg; i++) {
-    if (SLRUv0_params->LRUs[i]->occupied_byte + req->obj_size +
-            cache->obj_md_size <=
-        SLRUv0_params->LRUs[i]->cache_size) {
-      cache_obj = LRU_insert(SLRUv0_params->LRUs[i], req);
-      break;
-    }
-  }
-
-  // If all LRUs are filled, evict an obj from the lowest LRU.
-  if (i == SLRUv0_params->n_seg) {
-    while (SLRUv0_params->LRUs[0]->occupied_byte + req->obj_size +
-               cache->obj_md_size >
-           SLRUv0_params->LRUs[0]->cache_size) {
-      SLRUv0_evict(cache, req, NULL);
-    }
-    cache_obj = LRU_insert(SLRUv0_params->LRUs[0], req);
-  }
-
-  return cache_obj;
-}
-
-cache_obj_t *SLRUv0_to_evict(cache_t *cache) {
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-  for (int i = 0; i < SLRUv0_params->n_seg; i++) {
-    if (SLRUv0_params->LRUs[i]->occupied_byte > 0) {
-      return LRU_to_evict(SLRUv0_params->LRUs[i]);
-    }
-  }
-}
-
-void SLRUv0_evict(cache_t *cache, const request_t *req,
-                  cache_obj_t *evicted_obj) {
-  SLRUv0_params_t *SLRUv0_params = (SLRUv0_params_t *)(cache->eviction_params);
-
-  int nth_seg_to_evict = 0;
-  for (int i = 0; i < SLRUv0_params->n_seg; i++) {
-    if (SLRUv0_params->LRUs[i]->occupied_byte > 0) {
-      nth_seg_to_evict = i;
-      break;
-    }
-  }
-
-  LRU_evict(SLRUv0_params->LRUs[nth_seg_to_evict], req, evicted_obj);
-}
-
-bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
-  SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
-  for (int i = 0; i < params->n_seg; i++) {
-    if (LRU_remove(cache, obj_id)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 #ifdef __cplusplus

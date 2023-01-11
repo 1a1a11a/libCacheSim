@@ -31,6 +31,9 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->future_stack_dist_array_size = 0;
   cache->default_ttl = params.default_ttl;
   cache->n_req = 0;
+  cache->obj_to_evict = NULL;
+  cache->obj_to_evict_gen_vtime = -1;
+
   cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
@@ -110,8 +113,8 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief this function is called by all eviction algorithms to
- * check whether an object is in the cache
+ * @brief this function is called by eviction algorithms that use
+ * the hash table to find whether an object is in the cache
  *
  * @param cache
  * @param req
@@ -119,19 +122,17 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
  *  if true, the number of requests increases by 1,
  *  the object size will be updated,
  *  and if the object is expired, it is removed from the cache
- * @return true on hit, false on miss
+ * @return the found cache_obj_t* or NULL if not found
  */
-bool cache_check_base(cache_t *cache, const request_t *req,
-                      const bool update_cache, cache_obj_t **cache_obj_ret) {
-  bool cache_hit = true;
+cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
+                             const bool update_cache) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
+  cache_obj_t *ret = cache_obj;
 
-  if (cache_obj == NULL) {
-    cache_hit = false;
-  } else {
+  if (cache_obj != NULL) {
 #ifdef SUPPORT_TTL
     if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->clock_time) {
-      cache_hit = false;
+      ret = NULL;
 
       if (update_cache) {
         cache->remove(cache, cache_obj->obj_id);
@@ -140,14 +141,7 @@ bool cache_check_base(cache_t *cache, const request_t *req,
 #endif
   }
 
-  if (cache_obj_ret != NULL) {
-    if (cache_hit) {
-      *cache_obj_ret = cache_obj;
-    } else
-      *cache_obj_ret = NULL;
-  }
-
-  return cache_hit;
+  return ret;
 }
 
 /**
@@ -164,7 +158,7 @@ bool cache_check_base(cache_t *cache, const request_t *req,
  *    insert the object
  *    return false
  * ```
- * 
+ *
  * @param cache
  * @param req
  * @return true if cache hit, false if cache miss
@@ -177,27 +171,25 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
            cache->n_req, req->obj_id, req->obj_size, cache->occupied_byte,
            cache->cache_size);
 
-  bool cache_hit = cache->check(cache, req, true);
+  cache_obj_t *obj = cache->find(cache, req, true);
 
-  if (cache_hit) {
+  if (obj != NULL) {
     VVERBOSE("req %" PRIu64 ", obj %" PRIu64 " --- cache hit\n", cache->n_req,
              req->obj_id);
-    return cache_hit;
+    return true;
   }
 
   if (cache->can_insert(cache, req) == false) {
-    return cache_hit;
+    return false;
   }
 
-  if (!cache_hit) {
-    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
-           cache->cache_size) {
-      cache->evict(cache, req, NULL);
-    }
-    cache->insert(cache, req);
+  while (cache->get_occupied_byte(cache) + req->obj_size + cache->obj_md_size >
+         cache->cache_size) {
+    cache->evict(cache, req);
   }
+  cache->insert(cache, req);
 
-  return cache_hit;
+  return false;
 }
 
 /**
@@ -236,7 +228,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @param obj the object to be removed
  */
-void cache_evict_base(cache_t *cache, cache_obj_t *obj, bool remove_from_hashtable) {
+void cache_evict_base(cache_t *cache, cache_obj_t *obj,
+                      bool remove_from_hashtable) {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   record_eviction_age(cache, CURR_TIME(cache, req) - obj->create_time);
   if (obj->obj_id % 101 == 0) {
@@ -266,27 +259,27 @@ void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj,
   }
 }
 
-/**
- * @brief get an object from the cache using a request
- *
- * @param cache
- * @param req
- * @return cache_obj_t*
- */
-cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req) {
-  return hashtable_find(cache->hashtable, req);
-}
+// /**
+//  * @brief get an object from the cache using a request
+//  *
+//  * @param cache
+//  * @param req
+//  * @return cache_obj_t*
+//  */
+// cache_obj_t *cache_get_obj(cache_t *cache, const request_t *req) {
+//   return hashtable_find(cache->hashtable, req);
+// }
 
-/**
- * @brief get an object from the cache using object id
- *
- * @param cache
- * @param id
- * @return cache_obj_t*
- */
-cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id) {
-  return hashtable_find_obj_id(cache->hashtable, id);
-}
+// /**
+//  * @brief get an object from the cache using object id
+//  *
+//  * @param cache
+//  * @param id
+//  * @return cache_obj_t*
+//  */
+// cache_obj_t *cache_get_obj_by_id(cache_t *cache, const obj_id_t id) {
+//   return hashtable_find_obj_id(cache->hashtable, id);
+// }
 
 /**
  * @brief print the recorded eviction age
@@ -419,7 +412,7 @@ bool dump_cached_obj_age(cache_t *cache, const request_t *req,
   int64_t n_evicted_obj = 0;
   /* evict all the objects */
   while (cache->get_occupied_byte(cache) > 0) {
-    cache->evict(cache, req, NULL);
+    cache->evict(cache, req);
     n_evicted_obj++;
   }
   assert(n_cached_obj == n_evicted_obj);

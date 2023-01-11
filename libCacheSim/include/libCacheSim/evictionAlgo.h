@@ -1,40 +1,127 @@
 #pragma once
 
-#include "evictionAlgo/ARC.h"
-#include "evictionAlgo/Belady.h"
-#include "evictionAlgo/BeladySize.h"
-#include "evictionAlgo/CR_LFU.h"
-#include "evictionAlgo/Cacheus.h"
-#include "evictionAlgo/FIFO.h"
-#include "evictionAlgo/GDSF.h"
-#include "evictionAlgo/Hyperbolic.h"
-#include "evictionAlgo/LFU.h"
-#include "evictionAlgo/LFUCpp.h"
-#include "evictionAlgo/LFUDA.h"
-#include "evictionAlgo/LHD.h"
-#include "evictionAlgo/LRU.h"
-#include "evictionAlgo/LRUv0.h"
-#include "evictionAlgo/LeCaR.h"
-#include "evictionAlgo/LeCaRv0.h"
-#include "evictionAlgo/MRU.h"
-#include "evictionAlgo/Random.h"
-#include "evictionAlgo/SLRU.h"
-#include "evictionAlgo/SLRUv0.h"
-#include "evictionAlgo/SR_LRU.h"
-#include "evictionAlgo/Clock.h"
+#include "cache.h"
+
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+} FIFO_params_t;
+
+/* used by LFU related */
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+} LRU_params_t;
+
+/* used by LFU related */
+typedef struct freq_node {
+  int64_t freq;
+  cache_obj_t *first_obj;
+  cache_obj_t *last_obj;
+  uint32_t n_obj;
+} freq_node_t;
+
+cache_t *ARC_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params);
+
+cache_t *Belady_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *BeladySize_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+
+cache_t *Cacheus_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params);
+
+cache_t *Clock_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
+
+cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *FIFO_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
+
+cache_t *GDSF_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
+
+cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+
+cache_t *LeCaR_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
+
+cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params);
+
+cache_t *LFU_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params);
+
+cache_t *LFUCpp_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *LFUDA_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
+
+cache_t *LHD_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params);
+
+cache_t *LRU_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params);
+
+cache_t *LRUv0_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
+
+cache_t *MRU_init(const common_cache_params_t ccache_params,
+                  const char *cache_specific_params);
+
+cache_t *Random_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *SLRU_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
+
+cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
 
 #ifdef INCLUDE_PRIV
-#include "evictionAlgo/priv/LRU_Belady.h"
-#include "evictionAlgo/priv/LRU_Prob.h"
-#include "evictionAlgo/priv/MyClock.h"
-#include "evictionAlgo/priv/QDLP.h"
-#include "evictionAlgo/priv/SFIFO.h"
-#include "evictionAlgo/priv/SFIFO_Belady.h"
-#include "evictionAlgo/priv/SFIFO_Merge.h"
-#include "evictionAlgo/priv/SFIFO_Reinsertion.h"
-#include "evictionAlgo/priv/priv.h"
+cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
+                       const char *cache_specific_params);
+
+cache_t *LPv1_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
+
+cache_t *LPv2_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
+
+cache_t *MyClock_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params);
+
+cache_t *QDLP_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
+
+cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
+                          const char *cache_specific_params);
+
+cache_t *SFIFO_Reinsertion_init(const common_cache_params_t ccache_params,
+                                const char *cache_specific_params);
+
+cache_t *SFIFO_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
 #endif
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
-#include "evictionAlgo/GLCache.h"
+
+cache_t *GLCache_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params);
+
 #endif

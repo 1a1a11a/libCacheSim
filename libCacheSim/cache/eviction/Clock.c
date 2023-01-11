@@ -11,8 +11,7 @@
 //
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/evictionAlgo/Clock.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,8 +28,22 @@ typedef struct {
   int max_freq;
 } Clock_params_t;
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
 static void Clock_parse_params(cache_t *cache,
                                const char *cache_specific_params);
+static void Clock_free(cache_t *cache);
+static bool Clock_get(cache_t *cache, const request_t *req);
+static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
+                               const bool update_cache);
+static cache_obj_t *Clock_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req);
+static void Clock_evict(cache_t *cache, const request_t *req);
+static bool Clock_remove(cache_t *cache, const obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -50,7 +63,7 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
   cache->cache_init = Clock_init;
   cache->cache_free = Clock_free;
   cache->get = Clock_get;
-  cache->check = Clock_check;
+  cache->find = Clock_find;
   cache->insert = Clock_insert;
   cache->evict = Clock_evict;
   cache->remove = Clock_remove;
@@ -87,7 +100,10 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-void Clock_free(cache_t *cache) { cache_struct_free(cache); }
+static void Clock_free(cache_t *cache) {
+  free(cache->eviction_params);
+  cache_struct_free(cache);
+}
 
 /**
  * @brief this function is the user facing API
@@ -108,7 +124,7 @@ void Clock_free(cache_t *cache) { cache_struct_free(cache); }
  * @param req
  * @return true if cache hit, false if cache miss
  */
-bool Clock_get(cache_t *cache, const request_t *req) {
+static bool Clock_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -128,11 +144,10 @@ bool Clock_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return true on hit, false on miss
  */
-bool Clock_check(cache_t *cache, const request_t *req,
-                 const bool update_cache) {
+static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
+                               const bool update_cache) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
-  cache_obj_t *obj = NULL;
-  bool cache_hit = cache_check_base(cache, req, update_cache, &obj);
+  cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
     if (obj->lfu.freq < params->max_freq) {
       obj->lfu.freq += 1;
@@ -142,7 +157,7 @@ bool Clock_check(cache_t *cache, const request_t *req,
 #endif
   }
 
-  return cache_hit;
+  return obj;
 }
 
 /**
@@ -155,7 +170,7 @@ bool Clock_check(cache_t *cache, const request_t *req,
  * @param req
  * @return the inserted object
  */
-cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
+static cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
@@ -179,7 +194,7 @@ cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-cache_obj_t *Clock_to_evict(cache_t *cache) {
+static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
   cache_obj_t *obj_to_evict = params->q_tail;
@@ -211,14 +226,10 @@ cache_obj_t *Clock_to_evict(cache_t *cache) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-void Clock_evict(cache_t *cache, const request_t *req,
-                 cache_obj_t *evicted_obj) {
+static void Clock_evict(cache_t *cache, const request_t *req) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
-  cache_obj_t *obj_to_evict = Clock_to_evict(cache);
-  if (evicted_obj != NULL) {
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
-  }
+  cache_obj_t *obj_to_evict = Clock_to_evict(cache, req);
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
   cache_evict_base(cache, obj_to_evict, true);
 }
@@ -238,7 +249,7 @@ void Clock_evict(cache_t *cache, const request_t *req,
  * @param cache
  * @param obj
  */
-void Clock_remove_obj(cache_t *cache, cache_obj_t *obj) {
+static void Clock_remove_obj(cache_t *cache, cache_obj_t *obj) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
   DEBUG_ASSERT(obj != NULL);
@@ -259,7 +270,7 @@ void Clock_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-bool Clock_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool Clock_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

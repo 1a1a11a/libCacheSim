@@ -161,13 +161,16 @@ static cache_t *create_test_cache(const char *alg_name,
   cache_t *cache;
   if (strcasecmp(alg_name, "LRU") == 0) {
     cache = LRU_init(cc_params, NULL);
-  // } else if (strcasecmp(alg_name, "Clock") == 0) {
-  //   cache = Clock_init(cc_params, NULL);
+    // } else if (strcasecmp(alg_name, "Clock") == 0) {
+    //   cache = Clock_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO") == 0) {
     cache = FIFO_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "SFIFO_Merge") == 0) {
+  } else if (strcasecmp(alg_name, "FIFO-Reinsertion") == 0 ||
+             strcasecmp(alg_name, "Clock") == 0) {
+    cache = Clock_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "SFIFO-Merge") == 0) {
     cache = SFIFO_Merge_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "SFIFO_Reinsertion") == 0) {
+  } else if (strcasecmp(alg_name, "SFIFO-Reinsertion") == 0) {
     cache = SFIFO_Reinsertion_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Belady") == 0) {
     cache = Belady_init(cc_params, NULL);

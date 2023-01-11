@@ -8,7 +8,7 @@
 //
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/SLRU.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,6 +28,22 @@ typedef struct SLRU_params {
   int n_seg;
 } SLRU_params_t;
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
+static void SLRU_free(cache_t *cache);
+static bool SLRU_get(cache_t *cache, const request_t *req);
+static cache_obj_t *SLRU_find(cache_t *cache, const request_t *req,
+                             const bool update_cache);
+static cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *SLRU_to_evict(cache_t *cache, const request_t *req);
+static void SLRU_evict(cache_t *cache, const request_t *req);
+static bool SLRU_remove(cache_t *cache, const obj_id_t obj_id);
+
+/* internal function */
 static void SLRU_promote_to_next_seg(cache_t *cache, const request_t *req,
                                      cache_obj_t *obj);
 static void SLRU_cool(cache_t *cache, const request_t *req, const int id);
@@ -35,8 +51,11 @@ bool SLRU_can_insert(cache_t *cache, const request_t *req);
 static void SLRU_parse_params(cache_t *cache,
                               const char *cache_specific_params);
 
-// ############################## debug functions ##############################
-
+// ***********************************************************************
+// ****                                                               ****
+// ****                       debug functions                         ****
+// ****                                                               ****
+// ***********************************************************************
 #ifdef DEBUG_MODE
 #define DEBUG_PRINT_CACHE_STATE(cache, params, req)                            \
   do {                                                                         \
@@ -75,7 +94,6 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req);
 // ****                   end user facing functions                   ****
 // ****                                                               ****
 // ***********************************************************************
-
 /**
  * @brief initialize a LRU cache
  *
@@ -88,7 +106,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   cache->cache_init = SLRU_init;
   cache->cache_free = SLRU_free;
   cache->get = SLRU_get;
-  cache->check = SLRU_check;
+  cache->find = SLRU_find;
   cache->insert = SLRU_insert;
   cache->evict = SLRU_evict;
   cache->remove = SLRU_remove;
@@ -158,7 +176,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-void SLRU_free(cache_t *cache) {
+static void SLRU_free(cache_t *cache) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   free(params->lru_max_n_bytes);
   free(params->lru_heads);
@@ -187,7 +205,7 @@ void SLRU_free(cache_t *cache) {
  * @param req
  * @return true if cache hit, false if cache miss
  */
-bool SLRU_get(cache_t *cache, const request_t *req) {
+static bool SLRU_get(cache_t *cache, const request_t *req) {
 #ifdef DEBUG_MODE
   return SLRU_get_debug(cache, req);
 #else
@@ -199,24 +217,21 @@ bool SLRU_get(cache_t *cache, const request_t *req) {
  * @brief check whether an object is in the cache,
  * promote to the next segment if update_cache is true
  */
-bool SLRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *SLRU_find(cache_t *cache, const request_t *req,
+                            const bool update_cache) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  cache_obj_t *obj = cache_get_obj(cache, req);
+  cache_obj_t *obj = hashtable_find(cache->hashtable, req);
 
-  if (obj == NULL) {
-    return false;
-  }
-
-  if (!update_cache) {
-    return true;
+  if (obj == NULL || !update_cache) {
+    return obj;
   }
 
 #ifdef USE_BELADY
   obj->next_access_vtime = req->next_access_vtime;
   if (obj->next_access_vtime == INT64_MAX) {
-    return true;
+    return obj;
   }
 #endif
 
@@ -234,10 +249,21 @@ bool SLRU_check(cache_t *cache, const request_t *req, const bool update_cache) {
     DEBUG_ASSERT(cache->occupied_byte <= cache->cache_size);
   }
 
-  return true;
+  return obj;
 }
 
-cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * eviction should be
+ * performed before calling this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
+static cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
@@ -255,7 +281,7 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
     // No space for insertion
     while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
-      cache->evict(cache, req, NULL);
+      cache->evict(cache, req);
     }
     nth_seg = 0;
   }
@@ -275,7 +301,17 @@ cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
   return obj;
 }
 
-cache_obj_t *SLRU_to_evict(cache_t *cache) {
+/**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
+static cache_obj_t *SLRU_to_evict(cache_t *cache, const request_t *req) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
   for (int i = 0; i < params->n_seg; i++) {
@@ -285,15 +321,19 @@ cache_obj_t *SLRU_to_evict(cache_t *cache) {
   }
 }
 
-void SLRU_evict(cache_t *cache, const request_t *req,
-                cache_obj_t *evicted_obj) {
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ * @param evicted_obj if not NULL, return the evicted object to caller
+ */
+static void SLRU_evict(cache_t *cache, const request_t *req) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
 
-  cache_obj_t *obj = SLRU_to_evict(cache);
-
-  if (evicted_obj != NULL) {
-    memcpy(evicted_obj, obj, sizeof(cache_obj_t));
-  }
+  cache_obj_t *obj = SLRU_to_evict(cache, req);
 
   params->lru_n_bytes[obj->SLRU.lru_id] -= obj->obj_size + cache->obj_md_size;
   params->lru_n_objs[obj->SLRU.lru_id]--;
@@ -303,9 +343,22 @@ void SLRU_evict(cache_t *cache, const request_t *req,
   cache_evict_base(cache, obj, true);
 }
 
-bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
+static bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = cache_get_obj_by_id(cache, obj_id);
+  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 
   if (obj == NULL) {
     return false;
@@ -411,7 +464,7 @@ static void SLRU_cool(cache_t *cache, const request_t *req, const int id) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  if (id == 0) return SLRU_evict(cache, req, NULL);
+  if (id == 0) return SLRU_evict(cache, req);
 
   cache_obj_t *obj = params->lru_tails[id];
   DEBUG_ASSERT(obj != NULL);
@@ -475,7 +528,7 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  bool cache_hit = cache->check(cache, req, true);
+  bool cache_hit = cache->find(cache, req, true) != NULL;
 
   if (cache_hit) {
     DEBUG_PRINT_CACHE(cache, params);
@@ -490,7 +543,7 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req) {
   if (!cache_hit) {
     while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
            cache->cache_size) {
-      cache->evict(cache, req, NULL);
+      cache->evict(cache, req);
     }
 
     cache->insert(cache, req);

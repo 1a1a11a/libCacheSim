@@ -18,8 +18,7 @@
 #include <string.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/ARC.h"
-#include "../../include/libCacheSim/evictionAlgo/LRU.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,30 +51,44 @@ typedef struct ARC_params {
   request_t *req_local;
 } ARC_params_t;
 
-static void ARC_parse_params(cache_t *cache, const char *cache_specific_params);
-static void _ARC_replace(cache_t *cache, const request_t *req,
-                         cache_obj_t *evicted_obj);
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
 
-static void _ARC_replace(cache_t *cache, const request_t *req,
-                         cache_obj_t *evicted_obj);
+static void ARC_parse_params(cache_t *cache, const char *cache_specific_params);
+static void ARC_free(cache_t *cache);
+static bool ARC_get(cache_t *cache, const request_t *req);
+static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
+                             const bool update_cache);
+static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *ARC_to_evict(cache_t *cache, const request_t *req);
+static void ARC_evict(cache_t *cache, const request_t *req);
+static bool ARC_remove(cache_t *cache, const obj_id_t obj_id);
+
+/* internal functions */
+static void _ARC_replace(cache_t *cache, const request_t *req);
 
 static void _ARC_print_cache_content(cache_t *cache);
 static void _ARC_sanity_check(cache_t *cache, const request_t *req);
 static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
                                           bool last);
-bool ARC_get_debug(cache_t *cache, const request_t *req);
+static bool ARC_get_debug(cache_t *cache, const request_t *req);
 
 // ***********************************************************************
 // ****                                                               ****
 // ****                   end user facing functions                   ****
 // ****                                                               ****
+// ****                       init, free, get                         ****
 // ***********************************************************************
 
 /**
- * @brief initialize a ARC cache
+ * @brief initialize the cache
  *
  * @param ccache_params some common cache parameters
- * @param cache_specific_params ARC specific parameters, should be NULL
+ * @param cache_specific_params cache specific parameters, see parse_params
+ * function or use -e "print" with the cachesim binary
  */
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
@@ -83,7 +96,7 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   cache->cache_init = ARC_init;
   cache->cache_free = ARC_free;
   cache->get = ARC_get;
-  cache->check = ARC_check;
+  cache->find = ARC_find;
   cache->insert = ARC_insert;
   cache->evict = ARC_evict;
   cache->remove = ARC_remove;
@@ -130,7 +143,7 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-void ARC_free(cache_t *cache) {
+static void ARC_free(cache_t *cache) {
   ARC_params_t *ARC_params = (ARC_params_t *)(cache->eviction_params);
   free_request(ARC_params->req_local);
   my_free(sizeof(ARC_params_t), ARC_params);
@@ -156,7 +169,7 @@ void ARC_free(cache_t *cache) {
  * @param req
  * @return true if cache hit, false if cache miss
  */
-bool ARC_get(cache_t *cache, const request_t *req) {
+static bool ARC_get(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
 #ifdef DEBUG_MODE
@@ -173,51 +186,50 @@ bool ARC_get(cache_t *cache, const request_t *req) {
 // ***********************************************************************
 
 /**
- * @brief check whether an object is in the cache
+ * @brief find an object in the cache
  *
  * @param cache
  * @param req
  * @param update_cache whether to update the cache,
  *  if true, the object is promoted
  *  and if the object is expired, it is removed from the cache
- * @return true on hit, false on miss
+ * @return the object or NULL if not found
  */
-bool ARC_check(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
+                             const bool update_cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   params->curr_obj_in_L1_ghost = false;
   params->curr_obj_in_L2_ghost = false;
 
-  // cache->last_request_metadata = (void *)"check1";
-  // _ARC_sanity_check_full(cache, req, false);
-
-  bool cache_hit = false;
-  int lru_id = -1;
-  cache_obj_t *obj = cache_get_obj(cache, req);
-  if (obj != NULL) {
-    lru_id = obj->ARC.lru_id;
-    if (obj->ARC.ghost) {
-      // ghost hit
-      if (obj->ARC.lru_id == 1) {
-        params->curr_obj_in_L1_ghost = true;
-      } else {
-        params->curr_obj_in_L2_ghost = true;
-      }
-    } else {
-      // data hit
-      cache_hit = true;
-    }
-  } else {
-    // cache miss
-    return false;
+  cache_obj_t *obj = hashtable_find(cache->hashtable, req);
+  if (obj == NULL) {
+    return NULL;
   }
 
-  if (!update_cache) return cache_hit;
+  if (!update_cache) {
+    if (obj->ARC.ghost)
+      return NULL;
+    else
+      return obj;
+  }
+
+  int lru_id = obj->ARC.lru_id;
+  cache_obj_t *ret = obj;
+  if (obj->ARC.ghost) {
+    ret = NULL;
+    // ghost hit
+    if (obj->ARC.lru_id == 1) {
+      params->curr_obj_in_L1_ghost = true;
+    } else {
+      params->curr_obj_in_L2_ghost = true;
+    }
+  }
 
 #ifdef USE_BELADY
   obj->next_access_vtime = req->next_access_vtime;
 #endif
 
-  if (!cache_hit) {
+  if (obj->ARC.ghost) {
     // cache miss, but hit on thost
     if (params->curr_obj_in_L1_ghost) {
       // case II: x in L1_ghost
@@ -225,7 +237,7 @@ bool ARC_check(cache_t *cache, const request_t *req, const bool update_cache) {
       double delta =
           MAX((double)params->L2_ghost_size / params->L1_ghost_size, 1);
       params->p = MIN(params->p + delta, cache->cache_size);
-      _ARC_replace(cache, req, NULL);
+      _ARC_replace(cache, req);
       params->L1_ghost_size -= obj->obj_size + cache->obj_md_size;
       remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
     }
@@ -235,7 +247,7 @@ bool ARC_check(cache_t *cache, const request_t *req, const bool update_cache) {
       double delta =
           MAX((double)params->L1_ghost_size / params->L2_ghost_size, 1);
       params->p = MAX(params->p - delta, 0);
-      _ARC_replace(cache, req, NULL);
+      _ARC_replace(cache, req);
       params->L2_ghost_size -= obj->obj_size + cache->obj_md_size;
       remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
     }
@@ -261,20 +273,21 @@ bool ARC_check(cache_t *cache, const request_t *req, const bool update_cache) {
     }
   }
 
-  return cache_hit;
+  return ret;
 }
 
 /**
  * @brief insert an object into the cache,
  * update the hash table and cache metadata
  * this function assumes the cache has enough space
- * and eviction is not part of this function
+ * eviction should be
+ * performed before calling this function
  *
  * @param cache
  * @param req
  * @return the inserted object
  */
-cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
+static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj = hashtable_insert(cache->hashtable, req);
@@ -312,7 +325,7 @@ cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-cache_obj_t *ARC_to_evict(cache_t *cache) {
+static cache_obj_t *ARC_to_evict(cache_t *cache, const request_t *req) {
   // does not support to_evict
   DEBUG_ASSERT(false);
 }
@@ -326,11 +339,8 @@ cache_obj_t *ARC_to_evict(cache_t *cache) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
+static void ARC_evict(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  // do not support as of now
-  DEBUG_ASSERT(evicted_obj == NULL);
 
   int64_t incoming_size = +req->obj_size + cache->obj_md_size;
   if (params->L1_data_size + params->L1_ghost_size + incoming_size >
@@ -349,7 +359,7 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
       remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
       hashtable_delete(cache->hashtable, obj);
 
-      return _ARC_replace(cache, req, evicted_obj);
+      return _ARC_replace(cache, req);
     } else {
       // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
       // data
@@ -374,7 +384,7 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
       remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
       hashtable_delete(cache->hashtable, obj);
     }
-    return _ARC_replace(cache, req, evicted_obj);
+    return _ARC_replace(cache, req);
   }
 }
 
@@ -391,7 +401,7 @@ void ARC_evict(cache_t *cache, const request_t *req, cache_obj_t *evicted_obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 
@@ -427,8 +437,7 @@ bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
 // ****                                                               ****
 // ***********************************************************************
 /* the REPLACE function in the paper */
-static void _ARC_replace(cache_t *cache, const request_t *req,
-                         cache_obj_t *evicted_obj) {
+static void _ARC_replace(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj = NULL;
@@ -645,7 +654,7 @@ static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
   }
 }
 
-bool ARC_get_debug(cache_t *cache, const request_t *req) {
+static bool ARC_get_debug(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   cache->n_req += 1;
@@ -653,20 +662,20 @@ bool ARC_get_debug(cache_t *cache, const request_t *req) {
 
   _ARC_sanity_check_full(cache, req, false);
 
-  bool cache_hit = cache->check(cache, req, true);
+  cache_obj_t *obj = cache->find(cache, req, true);
 
-  cache->last_request_metadata = cache_hit ? (void *)"hit" : (void *)"miss";
+  cache->last_request_metadata = obj != NULL ? (void *)"hit" : (void *)"miss";
 
   _ARC_sanity_check_full(cache, req, false);
 
-  if (cache_hit) {
+  if (obj != NULL) {
     // _ARC_print_cache_content(cache);
-    return cache_hit;
+    return true;
   }
 
   while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
          cache->cache_size) {
-    cache->evict(cache, req, NULL);
+    cache->evict(cache, req);
   }
 
   _ARC_sanity_check_full(cache, req, false);
@@ -676,7 +685,7 @@ bool ARC_get_debug(cache_t *cache, const request_t *req) {
   _ARC_sanity_check_full(cache, req, true);
 
   // _ARC_print_cache_content(cache);
-  return cache_hit;
+  return false;
 }
 
 #ifdef __cplusplus

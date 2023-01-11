@@ -3,50 +3,54 @@
 #include <math.h>
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/CR_LFU.h"
-#include "../../include/libCacheSim/evictionAlgo/SR_LRU.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
+#include "../../include/libCacheSim/evictionAlgo/Cacheus.h"
 // CR_LFU is used by Cacheus.
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+
+static void CR_LFU_parse_params(cache_t *cache,
+                                const char *cache_specific_params);
+static void CR_LFU_free(cache_t *cache);
+static bool CR_LFU_get(cache_t *cache, const request_t *req);
+static cache_obj_t *CR_LFU_find(cache_t *cache, const request_t *req,
+                                const bool update_cache);
+static cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *CR_LFU_to_evict(cache_t *cache, const request_t *req);
+static void CR_LFU_evict(cache_t *cache, const request_t *req);
+static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id);
+
 static void free_list_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
 }
 
-static int _verify(cache_t *cache) {
-  CR_LFU_params_t *CR_LFUDA_params =
-      (CR_LFU_params_t *)(cache->eviction_params);
-  cache_obj_t *cache_obj, *prev_obj;
-  /* update min freq */
-  for (uint64_t freq = 1; freq <= CR_LFUDA_params->max_freq; freq++) {
-    freq_node_t *freq_node =
-        g_hash_table_lookup(CR_LFUDA_params->freq_map, GSIZE_TO_POINTER(freq));
-    if (freq_node != NULL) {
-      uint32_t n_obj = 0;
-      cache_obj = freq_node->first_obj;
-      prev_obj = NULL;
-      while (cache_obj != NULL) {
-        n_obj++;
-        DEBUG_ASSERT(cache_obj->lfu.freq == freq);
-        DEBUG_ASSERT(cache_obj->queue.prev == prev_obj);
-        prev_obj = cache_obj;
-        cache_obj = cache_obj->queue.next;
-      }
-      DEBUG_ASSERT(freq_node->n_obj == n_obj);
-    }
-  }
-  return 0;
-}
-
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ****                       init, free, get                         ****
+// ***********************************************************************
+/**
+ * @brief initialize cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params cache specific parameters, should be NULL
+ */
 cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("CR_LFU", ccache_params);
   cache->cache_init = CR_LFU_init;
   cache->cache_free = CR_LFU_free;
   cache->get = CR_LFU_get;
-  cache->check = CR_LFU_check;
+  cache->find = CR_LFU_find;
   cache->insert = CR_LFU_insert;
   cache->evict = CR_LFU_evict;
   cache->remove = CR_LFU_remove;
@@ -67,6 +71,7 @@ cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
 
   CR_LFU_params_t *params = my_malloc_n(CR_LFU_params_t, 1);
   cache->eviction_params = params;
+  params->req_local = new_request();
 
   params->min_freq = 1;
   params->max_freq = 1;
@@ -86,17 +91,61 @@ cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
   return cache;
 }
 
-void CR_LFU_free(cache_t *cache) {
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
+static void CR_LFU_free(cache_t *cache) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
+  free_request(params->req_local);
   g_hash_table_destroy(params->freq_map);
   my_free(sizeof(CR_LFU_params_t), params);
   cache_struct_free(cache);
 }
 
-bool CR_LFU_check(cache_t *cache, const request_t *req,
-                  const bool update_cache) {
-  cache_obj_t *cache_obj;
-  bool cache_hit = cache_check_base(cache, req, update_cache, &cache_obj);
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
+static bool CR_LFU_get(cache_t *cache, const request_t *req) {
+  return cache_get_base(cache, req);
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief find an object in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return the object or NULL if not found
+ */
+static cache_obj_t *CR_LFU_find(cache_t *cache, const request_t *req,
+                                const bool update_cache) {
+  cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && likely(update_cache)) {
     CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
@@ -164,31 +213,30 @@ bool CR_LFU_check(cache_t *cache, const request_t *req,
       DEBUG_ASSERT(params->min_freq > old_min_freq);
     }
   }
-  return cache_hit;
+  return cache_obj;
 }
 
-bool CR_LFU_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
-}
-
-cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req) {
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * and eviction is not part of this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
+static cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
   cache_obj->lfu.freq = 1;
 
   if (params->other_cache) {
     // Check if the requested obj is present in SR-LRU's history
-    cache_obj_t *obj_other_cache = cache_get_obj_by_id(
-        ((SR_LRU_params_t *)params->other_cache->eviction_params)->H_list,
-        cache_obj->obj_id);
-    DEBUG_ASSERT(
-        cache_get_obj_by_id(
-            ((SR_LRU_params_t *)params->other_cache->eviction_params)->R_list,
-            cache_obj->obj_id) == NULL);
-    DEBUG_ASSERT(
-        cache_get_obj_by_id(
-            ((SR_LRU_params_t *)params->other_cache->eviction_params)->SR_list,
-            cache_obj->obj_id) == NULL);
+    SR_LRU_params_t *p = params->other_cache->eviction_params;
+    cache_obj_t *obj_other_cache = p->H_list->find(p->H_list, req, false);
+    DEBUG_ASSERT(p->R_list->find(p->R_list, req, false) == NULL);
+    DEBUG_ASSERT(p->SR_list->find(p->SR_list, req, false) == NULL);
     if (obj_other_cache != NULL) {
       DEBUG_ASSERT(obj_other_cache->CR_LFU.freq >= 1);
       // Load the obj frequency into the current CR-LFU
@@ -213,7 +261,6 @@ cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req) {
     DEBUG_ASSERT(freq_one_node->first_obj != NULL);
   } else {
     // find the new freq_node this object should move to
-
     DEBUG_ASSERT(params->other_cache != NULL);
     freq_node_t *new_node = g_hash_table_lookup(
         params->freq_map, GSIZE_TO_POINTER(cache_obj->lfu.freq));
@@ -261,7 +308,7 @@ cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req) {
   return cache_obj;
 }
 
-cache_obj_t *CR_LFU_to_evict(cache_t *cache) {
+static cache_obj_t *CR_LFU_to_evict(cache_t *cache, const request_t *req) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
 
   freq_node_t *min_freq_node =
@@ -270,36 +317,34 @@ cache_obj_t *CR_LFU_to_evict(cache_t *cache) {
   DEBUG_ASSERT(min_freq_node->last_obj != NULL);
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
 
-  return min_freq_node->last_obj;
+  cache->obj_to_evict = min_freq_node->last_obj;
+  cache->obj_to_evict_gen_vtime = cache->n_req;
+
+  return cache->obj_to_evict;
 }
 
-void CR_LFU_evict(cache_t *cache, const request_t *req,
-                  cache_obj_t *evicted_obj) {
+static void CR_LFU_evict(cache_t *cache, const request_t *req) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
 
   freq_node_t *min_freq_node =
       g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));
   DEBUG_ASSERT(min_freq_node != NULL);
   DEBUG_ASSERT(min_freq_node->last_obj != NULL);
-
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
-  min_freq_node->n_obj--;
 
+  min_freq_node->n_obj--;
   cache_obj_t *obj_to_evict = min_freq_node->last_obj;
+  copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
   if (params->other_cache) {
     // Before evicting the object, "offload" the obj frequency to history in
     // SR-LRU In case in the future history hit, LFU can load that frequency
     // again.
-    cache_obj_t *obj_other_cache = cache_get_obj_by_id(
-        ((SR_LRU_params_t *)params->other_cache->eviction_params)->H_list,
-        obj_to_evict->obj_id);
+    SR_LRU_params_t *p = params->other_cache->eviction_params;
+    cache_obj_t *obj_other_cache = p->H_list->find(p->H_list, params->req_local, false);
     DEBUG_ASSERT(obj_other_cache != NULL);
     obj_other_cache->CR_LFU.freq = obj_to_evict->lfu.freq;
   }
-
-  if (evicted_obj != NULL)
-    memcpy(evicted_obj, obj_to_evict, sizeof(cache_obj_t));
 
   if (obj_to_evict->queue.prev == NULL) {
     /* the only obj of curr freq */
@@ -334,21 +379,22 @@ void CR_LFU_evict(cache_t *cache, const request_t *req,
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
 }
 
-bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
+
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 
   if (obj == NULL) {
     return false;
   }
 
+  copy_cache_obj_to_request(params->req_local, obj);
   if (params->other_cache) {
     // Before evicting the object, "offload" the obj frequency to history in
     // SR-LRU In case in the future history hit, LFU can load that frequency
     // again.
-    cache_obj_t *obj_other_cache = cache_get_obj_by_id(
-        ((SR_LRU_params_t *)params->other_cache->eviction_params)->H_list,
-        obj->obj_id);
+    SR_LRU_params_t *p = params->other_cache->eviction_params;
+    cache_obj_t *obj_other_cache = p->H_list->find(p->H_list, params->req_local, false);
     // Since we call SR_LRU evict before CR_LFU remove, the obj has to be either
     // in H
     DEBUG_ASSERT(obj_other_cache != NULL);
@@ -394,6 +440,36 @@ bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
 
   return true;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                         debug functions                       ****
+// ****                                                               ****
+// ***********************************************************************
+static int _verify(cache_t *cache) {
+  CR_LFU_params_t *CR_LFUDA_params =
+      (CR_LFU_params_t *)(cache->eviction_params);
+  cache_obj_t *cache_obj, *prev_obj;
+  /* update min freq */
+  for (uint64_t freq = 1; freq <= CR_LFUDA_params->max_freq; freq++) {
+    freq_node_t *freq_node =
+        g_hash_table_lookup(CR_LFUDA_params->freq_map, GSIZE_TO_POINTER(freq));
+    if (freq_node != NULL) {
+      uint32_t n_obj = 0;
+      cache_obj = freq_node->first_obj;
+      prev_obj = NULL;
+      while (cache_obj != NULL) {
+        n_obj++;
+        DEBUG_ASSERT(cache_obj->lfu.freq == freq);
+        DEBUG_ASSERT(cache_obj->queue.prev == prev_obj);
+        prev_obj = cache_obj;
+        cache_obj = cache_obj->queue.next;
+      }
+      DEBUG_ASSERT(freq_node->n_obj == n_obj);
+    }
+  }
+  return 0;
 }
 
 #ifdef __cplusplus

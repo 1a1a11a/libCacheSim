@@ -11,7 +11,7 @@
  */
 
 #include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo/priv/QDLP.h"
+#include "../../include/libCacheSim/cache.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,10 +66,27 @@ typedef struct {
   bool lazy_promotion;
 } QDLP_params_t;
 
-void QDLP_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
 
-void QDLP_clock_evict(cache_t *cache, const request_t *req,
-                      cache_obj_t *evicted_obj);
+static void QDLP_parse_params(cache_t *cache,
+                              const char *cache_specific_params);
+static void QDLP_free(cache_t *cache);
+static bool QDLP_get(cache_t *cache, const request_t *req);
+static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
+                              const bool update_cache);
+static cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *QDLP_to_evict(cache_t *cache, const request_t *req);
+static void QDLP_evict(cache_t *cache, const request_t *req);
+static bool QDLP_remove(cache_t *cache, const obj_id_t obj_id);
+
+/* internal functions */
+static void QDLP_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
+
+static void QDLP_clock_evict(cache_t *cache, const request_t *req);
 static void QDLP_parse_params(cache_t *cache,
                               const char *cache_specific_params);
 
@@ -79,10 +96,10 @@ static void QDLP_parse_params(cache_t *cache,
 // ****                                                               ****
 // ***********************************************************************
 /**
- * @brief initialize a LRU cache
+ * @brief initialize a QDLP cache
  *
  * @param ccache_params some common cache parameters
- * @param cache_specific_params LRU specific parameters, should be NULL
+ * @param cache_specific_params QDLP specific parameters, should be NULL
  */
 cache_t *QDLP_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
@@ -90,7 +107,7 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   cache->cache_init = QDLP_init;
   cache->cache_free = QDLP_free;
   cache->get = QDLP_get;
-  cache->check = QDLP_check;
+  cache->find = QDLP_find;
   cache->insert = QDLP_insert;
   cache->evict = QDLP_evict;
   cache->remove = QDLP_remove;
@@ -147,7 +164,10 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-void QDLP_free(cache_t *cache) { cache_struct_free(cache); }
+static void QDLP_free(cache_t *cache) {
+  free(cache->eviction_params);
+  cache_struct_free(cache);
+}
 
 /**
  * @brief this function is the user facing API
@@ -168,7 +188,7 @@ void QDLP_free(cache_t *cache) { cache_struct_free(cache); }
  * @param req
  * @return true if cache hit, false if cache miss
  */
-bool QDLP_get(cache_t *cache, const request_t *req) {
+static bool QDLP_get(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = cache->eviction_params;
   bool cache_hit = cache_get_base(cache, req);
   DEBUG_PRINT("%ld QDLP_get2\n", cache->n_req);
@@ -194,12 +214,13 @@ bool QDLP_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return true on hit, false on miss
  */
-bool QDLP_check(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
+                              const bool update_cache) {
   QDLP_params_t *params = cache->eviction_params;
-  cache_obj_t *cache_obj;
-  cache_check_base(cache, req, update_cache, &cache_obj);
+  cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
+  cache_obj_t *ret = cache_obj;
   bool cache_hit = (cache_obj != NULL && cache_obj->QDLP.cache_id != 3);
-  DEBUG_PRINT("%ld QDLP_check %s\n", cache->n_req, cache_hit ? "hit" : "miss");
+  DEBUG_PRINT("%ld QDLP_find %s\n", cache->n_req, cache_hit ? "hit" : "miss");
 
   if (cache_obj != NULL && update_cache) {
     if (cache_obj->QDLP.cache_id == 1) {
@@ -217,12 +238,12 @@ bool QDLP_check(cache_t *cache, const request_t *req, const bool update_cache) {
         cache_obj->QDLP.freq = 0;
         while (params->n_clock_byte > params->clock_size) {
           // clock cache is full, evict from clock cache
-          QDLP_clock_evict(cache, req, NULL);
+          QDLP_clock_evict(cache, req);
         }
       }
     } else if (cache_obj->QDLP.cache_id == 2) {
       // clock cache
-      DEBUG_PRINT("%ld QDLP_check hit on clock\n", cache->n_req);
+      DEBUG_PRINT("%ld QDLP_find hit on clock\n", cache->n_req);
       if (cache_obj->QDLP.freq < 1) {
         // using one-bit, using multi-bit reduce miss ratio most of the time
         cache_obj->QDLP.freq += 1;
@@ -238,7 +259,10 @@ bool QDLP_check(cache_t *cache, const request_t *req, const bool update_cache) {
     }
   }
 
-  return cache_hit;
+  if (cache_hit)
+    return ret;
+  else
+    return NULL;
 }
 
 /**
@@ -251,7 +275,7 @@ bool QDLP_check(cache_t *cache, const request_t *req, const bool update_cache) {
  * @param req
  * @return the inserted object
  */
-cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req) {
+static cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = cache->eviction_params;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
@@ -289,7 +313,7 @@ cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-cache_obj_t *QDLP_to_evict(cache_t *cache) {
+static cache_obj_t *QDLP_to_evict(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = cache->eviction_params;
   if (params->fifo_tail != NULL) {
     return params->fifo_tail;
@@ -308,8 +332,7 @@ cache_obj_t *QDLP_to_evict(cache_t *cache) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-void QDLP_clock_evict(cache_t *cache, const request_t *req,
-                      cache_obj_t *evicted_obj) {
+static void QDLP_clock_evict(cache_t *cache, const request_t *reqj) {
   QDLP_params_t *params = cache->eviction_params;
   cache_obj_t *pointer = params->clock_pointer;
 
@@ -331,11 +354,6 @@ void QDLP_clock_evict(cache_t *cache, const request_t *req,
   }
 
   params->clock_pointer = pointer->queue.prev;
-  if (evicted_obj != NULL) {
-    // return evicted object to caller
-    memcpy(evicted_obj, pointer, sizeof(cache_obj_t));
-  }
-
   remove_obj_from_list(&params->clock_head, &params->clock_tail, pointer);
   params->n_clock_obj--;
   params->n_clock_byte -= pointer->obj_size + cache->obj_md_size;
@@ -351,10 +369,8 @@ void QDLP_clock_evict(cache_t *cache, const request_t *req,
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-void QDLP_evict(cache_t *cache, const request_t *req,
-                cache_obj_t *evicted_obj) {
+static void QDLP_evict(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = cache->eviction_params;
-  DEBUG_ASSERT(evicted_obj == NULL);
 
   if (params->n_fifo_byte > params->fifo_size || params->n_clock_obj == 0) {
     DEBUG_PRINT("%ld QDLP_evict_fifo\n", cache->n_req);
@@ -375,7 +391,7 @@ void QDLP_evict(cache_t *cache, const request_t *req,
       obj_to_evict->QDLP.freq = 0;
       while (params->n_clock_byte > params->clock_size) {
         // clock cache is full, evict from clock cache
-        QDLP_clock_evict(cache, req, NULL);
+        QDLP_clock_evict(cache, req);
       }
     } else {
       cache_evict_base(cache, obj_to_evict, false);
@@ -393,11 +409,11 @@ void QDLP_evict(cache_t *cache, const request_t *req,
     DEBUG_PRINT("%ld QDLP_evict_clock\n", cache->n_req);
     // evict from clock cache, this can happen because we insert to the clock
     // when the object hit on the ghost
-    QDLP_clock_evict(cache, req, evicted_obj);
+    QDLP_clock_evict(cache, req);
   }
 }
 
-void QDLP_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
+static void QDLP_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   DEBUG_ASSERT(obj_to_remove != NULL);
   QDLP_params_t *params = cache->eviction_params;
 
@@ -424,7 +440,20 @@ void QDLP_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   }
 }
 
-bool QDLP_remove(cache_t *cache, const obj_id_t obj_id) {
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
+static bool QDLP_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;
@@ -434,7 +463,11 @@ bool QDLP_remove(cache_t *cache, const obj_id_t obj_id) {
   return true;
 }
 
-// ######################## setup function ###########################
+// ***********************************************************************
+// ****                                                               ****
+// ****                parameter set up functions                     ****
+// ****                                                               ****
+// ***********************************************************************
 static const char *QDLP_current_params(QDLP_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "fifo-ratio=%.4lf\n", params->fifo_ratio);
