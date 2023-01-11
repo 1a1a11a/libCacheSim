@@ -35,10 +35,8 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/QDLPv1.c
                 priv/QDLPv2.c
 
-                priv/LRU_Belady.c
                 priv/SFIFO.c
                 priv/QDLP.c
-                priv/SFIFO_Belady.c
                 )
 endif()
 
@@ -76,13 +74,13 @@ set_target_properties(evictionCPP
         CXX_EXTENSIONS NO
         )
 
-set (evictionLib
-        evictionC
-        evictionCPP
-        )
+# set (evictionLib
+#         evictionC
+#         evictionCPP
+#         )
 
 
         
-add_library(eviction INTERFACE)
-target_link_libraries(eviction INTERFACE ${evictionLib})
+# add_library(eviction INTERFACE)
+# target_link_libraries(eviction INTERFACE ${evictionLib})
 

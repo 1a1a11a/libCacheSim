@@ -2,6 +2,7 @@
 //  Quick demotion + lazy promoition v1
 //
 //  20% FIFO + ARC
+//  insert to ARC when evicting from FIFO
 //
 //
 //  QDLPv1.c

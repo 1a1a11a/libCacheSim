@@ -1,7 +1,7 @@
 //
 //  Quick demotion + lazy promoition v2
 //
-//  20% FIFO + 80% 2-bit clock
+//  20% FIFO + 80% 2-bit clock, promote when evicting from FIFO
 //
 //
 //  QDLPv2.c

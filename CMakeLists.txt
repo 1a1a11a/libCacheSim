@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.2)
 project(libCacheSim)
 set(DESCRIPTION "a high performance cache simulation library")
 set(PROJECT_WEB "http://cachesim.com")
@@ -225,7 +225,7 @@ message(STATUS "========================================================")
 # library compilation  #
 ########################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(ALL_MODULES cachelib admission eviction traceReader profiler dataStructure ds_hash utils)
+set(ALL_MODULES cachelib admission evictionC evictionCPP traceReader profiler dataStructure ds_hash utils)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/dataStructure)

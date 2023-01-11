@@ -348,23 +348,25 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     if (strstr(args->trace_path, ".zst") != NULL) {
       ERROR("lru-belady only supports uncompressed trace files\n");
     }
-    reader_t *reader = clone_reader(args->reader);
-    cache = LRU_Belady_init(cc_params, args->eviction_params);
-    cache->future_stack_dist = get_stack_dist(
-        reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
-    assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
-    close_reader(reader);
+    ERROR("not implemented\n");
+    // reader_t *reader = clone_reader(args->reader);
+    cache = LRU_init(cc_params, args->eviction_params);
+    // cache->future_stack_dist = get_stack_dist(
+    //     reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
+    // assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
+    // close_reader(reader);
 
   } else if (strcasecmp(args->eviction_algo, "sfifo-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {
       ERROR("sfifo-belady only supports uncompressed trace files\n");
     }
-    reader_t *reader = clone_reader(args->reader);
-    cache = SFIFO_Belady_init(cc_params, args->eviction_params);
-    cache->future_stack_dist = get_stack_dist(
-        reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
-    assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
-    close_reader(reader);
+    ERROR("not implemented\n");
+    // reader_t *reader = clone_reader(args->reader);
+    cache = SFIFO_init(cc_params, args->eviction_params);
+    // cache->future_stack_dist = get_stack_dist(
+    //     reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
+    // assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
+    // close_reader(reader);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", args->eviction_algo);
