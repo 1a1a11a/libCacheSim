@@ -2,8 +2,12 @@
 
 #include <xgboost/c_api.h>
 
-#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
+#include "../../../include/libCacheSim/cache.h"
 #include "const.h"
+
+typedef float feature_t;
+typedef float pred_t;
+typedef float train_y_t;
 
 typedef enum {
   LOGCACHE_TWO_ORACLE = 1,   // oralce to select group and object

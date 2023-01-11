@@ -1,5 +1,4 @@
 
-#include "../../../include/libCacheSim/evictionAlgo/GLCache.h"
 #include "GLCacheInternal.h"
 
 /* append a segment to the end of bucket */
