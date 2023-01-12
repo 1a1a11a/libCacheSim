@@ -23,16 +23,21 @@ typedef struct {
   cache_t *fifo;
   cache_t *fifo_ghost;
   cache_t *main_cache;
-  request_t *req_local;
   bool hit_on_ghost;
+
+  double fifo_size_ratio;
+  char main_cache_type[32];
+
+  request_t *req_local;
 } QDLPv1_params_t;
+
+static const char *DEFAULT_CACHE_PARAMS = "fifo-size-ratio=0.2,main-cache=ARC";
 
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-
 cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 static void QDLPv1_free(cache_t *cache);
@@ -47,7 +52,8 @@ static bool QDLPv1_remove(cache_t *cache, const obj_id_t obj_id);
 static inline int64_t QDLPv1_get_occupied_byte(const cache_t *cache);
 static inline int64_t QDLPv1_get_n_obj(const cache_t *cache);
 static inline bool QDLPv1_can_insert(cache_t *cache, const request_t *req);
-
+static void QDLPv1_parse_params(cache_t *cache,
+                                const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -67,22 +73,25 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
   cache->remove = QDLPv1_remove;
   cache->to_evict = QDLPv1_to_evict;
   cache->init_params = cache_specific_params;
-  cache->get_occupied_byte = QDLPv1_get_occupied_byte;
   cache->get_n_obj = QDLPv1_get_n_obj;
+  cache->get_occupied_byte = QDLPv1_get_occupied_byte;
   cache->can_insert = QDLPv1_can_insert;
 
   cache->obj_md_size = 0;
 
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
-
   cache->eviction_params = malloc(sizeof(QDLPv1_params_t));
+  memset(cache->eviction_params, 0, sizeof(QDLPv1_params_t));
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
   params->req_local = new_request();
-  int64_t fifo_cache_size = (int64_t)ccache_params.cache_size * 0.20;
+  params->hit_on_ghost = false;
+
+  QDLPv1_parse_params(cache, DEFAULT_CACHE_PARAMS);
+  if (cache_specific_params != NULL) {
+    QDLPv1_parse_params(cache, cache_specific_params);
+  }
+
+  int64_t fifo_cache_size =
+      (int64_t)ccache_params.cache_size * params->fifo_size_ratio;
   int64_t main_cache_size = ccache_params.cache_size - fifo_cache_size;
   int64_t fifo_ghost_cache_size = main_cache_size;
 
@@ -94,9 +103,28 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
   params->fifo_ghost = FIFO_init(ccache_params_local, NULL);
 
   ccache_params_local.cache_size = main_cache_size;
-  params->main_cache = ARC_init(ccache_params_local, NULL);
+  if (strcasecmp(params->main_cache_type, "ARC") == 0) {
+    params->main_cache = ARC_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "LHD") == 0) {
+    params->main_cache = LHD_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "clock") == 0) {
+    params->main_cache = Clock_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "myclock") == 0) {
+    params->main_cache = MyClock_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "LRU") == 0) {
+    params->main_cache = LRU_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "LeCaR") == 0) {
+    params->main_cache = LeCaR_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "Cacheus") == 0) {
+    params->main_cache = Cacheus_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "Hyperbolic") == 0) {
+    params->main_cache = Hyperbolic_init(ccache_params_local, NULL);
+  } else {
+    ERROR("QDLPv1 does not support %s \n", params->main_cache_type);
+  }
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.2lf-ghost", 0.20);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.2lf-ghost-%s",
+           params->fifo_size_ratio, params->main_cache_type);
 
   return cache;
 }
@@ -109,6 +137,9 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
 static void QDLPv1_free(cache_t *cache) {
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
   free_request(params->req_local);
+  params->fifo->cache_free(params->fifo);
+  params->fifo_ghost->cache_free(params->fifo_ghost);
+  params->main_cache->cache_free(params->main_cache);
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
@@ -133,7 +164,12 @@ static void QDLPv1_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool QDLPv1_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
+  QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+  DEBUG_ASSERT(params->fifo->get_occupied_byte(params->fifo) +
+                   params->main_cache->get_occupied_byte(params->main_cache) <=
+               cache->cache_size);
+  bool cache_hit = cache_get_base(cache, req);
+  return cache_hit;
 }
 
 // ***********************************************************************
@@ -154,29 +190,37 @@ static bool QDLPv1_get(cache_t *cache, const request_t *req) {
 static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
                                 const bool update_cache) {
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+
+  // if update cache is false, we only check the fifo and main caches
+  if (!update_cache) {
+    cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
+    if (obj != NULL) {
+      return obj;
+    }
+    obj = params->main_cache->find(params->main_cache, req, false);
+    if (obj != NULL) {
+      return obj;
+    }
+    return NULL;
+  }
+
+  /* update cache is true from now */
   params->hit_on_ghost = false;
   cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
-
   if (obj != NULL) {
-    if (update_cache) {
-      obj->misc.freq = 1;
-    }
+    // we can use misc field because FIFO does not use any
+    DEBUG_ASSERT(obj->misc.q_id == 1);
+    obj->misc.freq = 1;
+
     return obj;
   }
 
-  cache_obj_t *obj_ghost =
-      params->fifo_ghost->find(params->fifo_ghost, req, false);
-  if (obj_ghost != NULL) {
+  if (params->fifo_ghost->remove(params->fifo_ghost, req->obj_id)) {
+    // if object in fifo_ghost, remove will return true
     params->hit_on_ghost = true;
-    params->fifo_ghost->remove(params->fifo_ghost, req->obj_id);
   }
 
-  obj = params->main_cache->find(params->main_cache, req, false);
-  bool main_cache_hit = obj != NULL;
-
-  if (main_cache_hit && update_cache) {
-    params->main_cache->find(params->main_cache, req, true);
-  }
+  obj = params->main_cache->find(params->main_cache, req, update_cache);
 
   return obj;
 }
@@ -198,14 +242,13 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
 
   if (params->hit_on_ghost) {
     /* insert into the ARC */
-    obj = params->main_cache->insert(params->main_cache, req);
-    obj->misc.q_id = 2;
+    params->hit_on_ghost = false;
+    params->main_cache->get(params->main_cache, req);
   } else {
     /* insert into the fifo */
-    obj = params->fifo->insert(params->main_cache, req);
-    obj->misc.q_id = 1;
+    obj = params->fifo->insert(params->fifo, req);
+    obj->misc.q_id = 1;  // 1 is fifo cache
   }
-  obj->misc.freq = 0;
   return obj;
 }
 
@@ -236,21 +279,33 @@ static cache_obj_t *QDLPv1_to_evict(cache_t *cache, const request_t *req) {
 static void QDLPv1_evict(cache_t *cache, const request_t *req) {
   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
 
+  cache_t *fifo = params->fifo;
+  cache_t *ghost = params->fifo_ghost;
+  cache_t *main = params->main_cache;
+
+  if (fifo->get_occupied_byte(fifo) == 0) {
+    assert(main->get_occupied_byte(main) > main->cache_size);
+    assert(main->get_occupied_byte(main) <= cache->cache_size);
+    // evict from main cache
+    main->evict(main, req);
+    return;
+  }
+
   // evict from FIFO
-  cache_obj_t *obj = params->fifo->to_evict(params->fifo, req);
+  cache_obj_t *obj = fifo->to_evict(fifo, req);
+  assert(obj != NULL);
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
+  // remove from fifo1, but do not update stat
+  fifo->evict(fifo, req);
 
   if (obj->misc.freq > 0) {
     // promote to main cache
     // get will insert to and evict from main cache
     params->main_cache->get(params->main_cache, params->req_local);
-    // remove from fifo1, but do not update stat
-    params->fifo->evict(params->fifo, req);
   } else {
-    // evict from fifo1 and insert to ghost
-    params->fifo->evict(params->fifo, req);
-    params->fifo_ghost->get(params->fifo_ghost, params->req_local);
+    // insert to ghost
+    ghost->get(ghost, params->req_local);
   }
 }
 
@@ -295,6 +350,52 @@ static inline bool QDLPv1_can_insert(cache_t *cache, const request_t *req) {
   return req->obj_size <= params->fifo->cache_size;
 }
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                parameter set up functions                     ****
+// ****                                                               ****
+// ***********************************************************************
+static const char *QDLPv1_current_params(QDLPv1_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "fifo-size-ratio=%.4lf,main-cache=%s\n",
+           params->fifo_size_ratio, params->main_cache->cache_name);
+  return params_str;
+}
+
+static void QDLPv1_parse_params(cache_t *cache,
+                                const char *cache_specific_params) {
+  QDLPv1_params_t *params = (QDLPv1_params_t *)(cache->eviction_params);
+
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+  char *end;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "fifo-size-ratio") == 0) {
+      params->fifo_size_ratio = strtod(value, NULL);
+    } else if (strcasecmp(key, "main-cache") == 0) {
+      strncpy(params->main_cache_type, value, 30);
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("parameters: %s\n", QDLPv1_current_params(params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+
+  free(old_params_str);
+}
 
 #ifdef __cplusplus
 }
