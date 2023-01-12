@@ -10,7 +10,7 @@ int txt_read_one_req(reader_t *const reader, request_t *const req) {
   char **buf_ptr = (char **)&reader->line_buf;
   size_t *buf_size_ptr = &reader->line_buf_size;
   ssize_t read_size = getline(buf_ptr, buf_size_ptr, reader->file);
-  VVERBOSE("read \"%s\", first char %d, read size %d, curr pos %zu\n", reader->line_buf, reader->line_buf[0], read_size, ftell(reader->file));
+  VVERBOSE("read \"%s\", first char %d, read size %zu, curr pos %zu\n", reader->line_buf, reader->line_buf[0], read_size, ftell(reader->file));
 
   while (read_size == 1 && reader->line_buf[0] == '\n') {
     // empty line

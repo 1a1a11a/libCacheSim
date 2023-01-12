@@ -20,6 +20,8 @@ typedef struct SLRUv0_params {
   request_t *req_local;
 } SLRUv0_params_t;
 
+static const char *DEFAULT_CACHE_PARAMS = "n-seg=4";
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
@@ -39,30 +41,9 @@ static bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id);
 static void SLRUv0_cool(cache_t *cache, const request_t *req, int i);
 
 /* SLRUv0 cannot an object larger than segment size */
-static inline bool SLRUv0_can_insert(cache_t *cache, const request_t *req) {
-  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
-  bool can_insert = cache_can_insert_default(cache, req);
-  return can_insert &&
-         (req->obj_size + cache->obj_md_size <= params->LRUs[0]->cache_size);
-}
-
-static inline int64_t SLRUv0_get_occupied_byte(const cache_t *cache) {
-  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
-  int64_t occupied_byte = 0;
-  for (int i = 0; i < params->n_seg; i++) {
-    occupied_byte += params->LRUs[i]->occupied_byte;
-  }
-  return occupied_byte;
-}
-
-static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) {
-  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
-  int64_t n_obj = 0;
-  for (int i = 0; i < params->n_seg; i++) {
-    n_obj += params->LRUs[i]->n_obj;
-  }
-  return n_obj;
-}
+static inline bool SLRUv0_can_insert(cache_t *cache, const request_t *req) ;
+static inline int64_t SLRUv0_get_occupied_byte(const cache_t *cache) ;
+static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) ;
 
 // ***********************************************************************
 // ****                                                               ****
@@ -70,8 +51,6 @@ static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) {
 // ****                                                               ****
 // ****                       init, free, get                         ****
 // ***********************************************************************
-static const char *DEFAULT_CACHE_PARAMS = "n-seg=4";
-
 /**
  * @brief initialize the cache
  *
@@ -314,6 +293,33 @@ static bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
   }
   return false;
 }
+
+/* SLRUv0 cannot an object larger than segment size */
+static inline bool SLRUv0_can_insert(cache_t *cache, const request_t *req) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
+  bool can_insert = cache_can_insert_default(cache, req);
+  return can_insert &&
+         (req->obj_size + cache->obj_md_size <= params->LRUs[0]->cache_size);
+}
+
+static inline int64_t SLRUv0_get_occupied_byte(const cache_t *cache) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
+  int64_t occupied_byte = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    occupied_byte += params->LRUs[i]->occupied_byte;
+  }
+  return occupied_byte;
+}
+
+static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) {
+  SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
+  int64_t n_obj = 0;
+  for (int i = 0; i < params->n_seg; i++) {
+    n_obj += params->LRUs[i]->n_obj;
+  }
+  return n_obj;
+}
+
 
 // ***********************************************************************
 // ****                                                               ****

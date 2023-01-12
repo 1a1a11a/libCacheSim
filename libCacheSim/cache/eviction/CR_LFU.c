@@ -173,8 +173,6 @@ static cache_obj_t *CR_LFU_find(cache_t *cache, const request_t *req,
       new_node->freq = cache_obj->lfu.freq;
       g_hash_table_insert(params->freq_map,
                           GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
-      VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj,
-               new_node->first_obj, new_node->last_obj);
     } else {
       // it could be new_node is empty
       DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
@@ -270,8 +268,6 @@ static cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req) {
       new_node->freq = cache_obj->lfu.freq;
       g_hash_table_insert(params->freq_map,
                           GSIZE_TO_POINTER(cache_obj->lfu.freq), new_node);
-      VVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj,
-               new_node->first_obj, new_node->last_obj);
     } else {
       // it could be new_node is empty
       DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);

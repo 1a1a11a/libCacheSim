@@ -332,7 +332,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lpqd") == 0) {
+  } else if (strcasecmp(args->eviction_algo, "qdlp") == 0) {
     cache = QDLP_init(cc_params, args->eviction_params);
 
   } else if (strcasecmp(args->eviction_algo, "LPv1") == 0) {

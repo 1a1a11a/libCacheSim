@@ -42,7 +42,11 @@ static bool Hyperbolic_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Hyperbolic", ccache_params);
+  // reduce hash table size to make sampling faster
+  common_cache_params_t ccache_params_local = ccache_params;
+  ccache_params_local.hashpower = MAX(12, ccache_params_local.hashpower - 8);
+
+  cache_t *cache = cache_struct_init("Hyperbolic", ccache_params_local);
   cache->cache_init = Hyperbolic_init;
   cache->cache_free = Hyperbolic_free;
   cache->get = Hyperbolic_get;

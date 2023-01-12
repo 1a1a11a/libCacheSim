@@ -10,6 +10,7 @@
 
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
+#include "../../include/libCacheSim/macro.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,9 +45,9 @@ static bool Random_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *Random_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  if (ccache_params.hashpower == HASH_POWER_DEFAULT) {
-    INFO("Please set hashpower parameter for Random to operate efficiently\n");
-  }
+  common_cache_params_t ccache_params_copy = ccache_params;
+  ccache_params_copy.hashpower = MAX(12, ccache_params_copy.hashpower - 8);
+
   cache_t *cache = cache_struct_init("Random", ccache_params);
   cache->cache_init = Random_init;
   cache->cache_free = Random_free;

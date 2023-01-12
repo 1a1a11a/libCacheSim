@@ -166,20 +166,20 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
 bool cache_get_base(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
-  VVERBOSE("******* req %" PRIu64 ", obj %" PRIu64 ", obj_size %" PRIu32
-           ", cache size %" PRIu64 "/%" PRIu64 "\n",
-           cache->n_req, req->obj_id, req->obj_size, cache->occupied_byte,
-           cache->cache_size);
+  VERBOSE("******* req %ld, obj %ld, obj_size %ld, cache size %ld/%ld\n",
+           cache->n_req, req->obj_id, req->obj_size,
+           cache->get_occupied_byte(cache), cache->cache_size);
 
   cache_obj_t *obj = cache->find(cache, req, true);
 
   if (obj != NULL) {
-    VVERBOSE("req %" PRIu64 ", obj %" PRIu64 " --- cache hit\n", cache->n_req,
-             req->obj_id);
+    VVERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
     return true;
   }
 
   if (cache->can_insert(cache, req) == false) {
+    VVERBOSE("req %ld, obj %ld --- cache miss cannot insert\n", cache->n_req,
+             req->obj_id);
     return false;
   }
 

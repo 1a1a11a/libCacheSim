@@ -22,7 +22,7 @@ option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 set(LOG_LEVEL INFO CACHE STRING "Enable SOMETHING support") 
-set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE BBERBOSE VVVERBOSE)
+set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
 
 
 ########################################
@@ -46,8 +46,10 @@ if (NOT CMAKE_BUILD_TYPE)
     set(LOG_LEVEL INFO)
 elseif (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     # log level: verbose, debug, info, warning, severe
-    set(LOG_LEVEL DEBUG)
-    message(STATUS "set log level to debug")
+    if (NOT LOG_LEVEL)
+        set(LOG_LEVEL DEBUG)
+        message(STATUS "set log level to debug")
+    endif()
 else()
     set(LOG_LEVEL DEBUG)
 endif()

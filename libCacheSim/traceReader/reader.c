@@ -375,7 +375,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     sampler_t *sampler = reader->sampler;
     reader->sampler = NULL;
     while (!sampler->sample(sampler, req)) {
-      VVERBOSE("skip one req: time %lu, obj_id %lu, size %u at offset %zu\n",
+      VVERBOSE("skip one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
                req->clock_time, req->obj_id, req->obj_size, offset_before_read);
       if (reader->read_direction == READ_FORWARD) {
         status = read_one_req(reader, req);
@@ -394,7 +394,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     req->obj_size = 1;
   }
 
-  VERBOSE("read one req: time %lu, obj_id %lu, size %u at offset %zu\n",
+  VVERBOSE("read one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
           req->clock_time, req->obj_id, req->obj_size, offset_before_read);
 
   return status;

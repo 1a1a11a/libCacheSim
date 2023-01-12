@@ -616,7 +616,7 @@ static inline void remove_obj_from_freq_node(LeCaR_params_t *params,
   DEBUG_ASSERT(freq_node != NULL);
   DEBUG_ASSERT(freq_node->freq == cache_obj->LeCaR.freq);
   DEBUG_ASSERT(freq_node->n_obj > 0);
-  VVERBOSE("remove object from freq node %p (freq %d, %d obj)\n", freq_node,
+  VVERBOSE("remove object from freq node %p (freq %ld, %u obj)\n", freq_node,
            freq_node->freq, freq_node->n_obj);
   freq_node->n_obj--;
 
@@ -661,17 +661,9 @@ static inline void insert_obj_info_freq_node(LeCaR_params_t *params,
     new_node->freq = cache_obj->LeCaR.freq;
     g_hash_table_insert(params->freq_map,
                         GSIZE_TO_POINTER(cache_obj->LeCaR.freq), new_node);
-    VVERBOSE(
-        "create new freq node (%d): %d object, first obj %p, last object "
-        "%p\n",
-        new_node->freq, new_node->n_obj, new_node->first_obj,
-        new_node->last_obj);
   } else {
     DEBUG_ASSERT(new_node->freq == cache_obj->LeCaR.freq);
   }
-
-  VVERBOSE("insert obj into freq node (freq %u, %u obj)\n", new_node->freq,
-           new_node->n_obj);
 
   /* add to tail of the list */
   if (new_node->last_obj != NULL) {
