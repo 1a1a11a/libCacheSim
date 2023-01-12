@@ -137,9 +137,12 @@ void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
     DEBUG_ASSERT(cache_obj->queue.prev == NULL);
     return;
   }
+
   if (cache_obj == *head) {
+    // already at head
     return;
   }
+
   if (tail != NULL && cache_obj == *tail) {
     // change tail
     cache_obj->queue.prev->queue.next = cache_obj->queue.next;

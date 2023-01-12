@@ -41,9 +41,9 @@ static bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id);
 static void SLRUv0_cool(cache_t *cache, const request_t *req, int i);
 
 /* SLRUv0 cannot an object larger than segment size */
-static inline bool SLRUv0_can_insert(cache_t *cache, const request_t *req) ;
-static inline int64_t SLRUv0_get_occupied_byte(const cache_t *cache) ;
-static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) ;
+static inline bool SLRUv0_can_insert(cache_t *cache, const request_t *req);
+static inline int64_t SLRUv0_get_occupied_byte(const cache_t *cache);
+static inline int64_t SLRUv0_get_n_obj(const cache_t *cache);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -83,8 +83,10 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
   cache->eviction_params = (SLRUv0_params_t *)malloc(sizeof(SLRUv0_params_t));
   SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
 
-  SLRUv0_parse_params(cache, cache_specific_params ? cache_specific_params
-                                                   : DEFAULT_CACHE_PARAMS);
+  SLRUv0_parse_params(cache, DEFAULT_CACHE_PARAMS);
+  if (cache_specific_params != NULL) {
+    SLRUv0_parse_params(cache, cache_specific_params);
+  }
 
   params->LRUs = (cache_t **)malloc(sizeof(cache_t *) * params->n_seg);
 
@@ -319,7 +321,6 @@ static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) {
   }
   return n_obj;
 }
-
 
 // ***********************************************************************
 // ****                                                               ****
