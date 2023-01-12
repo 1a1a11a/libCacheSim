@@ -361,16 +361,10 @@ static void test_LHD(gconstpointer user_data) {
 }
 
 static void test_Hyperbolic(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {92693, 87661, 82511, 80761,
-  //                             74171, 71339, 69257, 65394};
-  // uint64_t miss_byte_true[] = {4034421248, 3844452352, 3651789824,
-  // 3582822400,
-  //                              3211801600, 3040467456, 2936043520,
-  //                              2761336320};
-  uint64_t miss_cnt_true[] = {92904, 89464, 83622, 81002,
-                              74508, 71437, 69556, 65220};
-  uint64_t miss_byte_true[] = {4212533248, 4064380928, 3768431104, 3630879744,
-                               3243378176, 3050633728, 2942699008, 2752167424};
+  uint64_t miss_cnt_true[] = {92836, 89281, 84407, 80420,
+                              76299, 71843, 68884, 65654};
+  uint64_t miss_byte_true[] = {4210119680, 4050535424, 3806349824, 3578494976,
+                               3352331264, 3092705792, 2910994944, 2769552384};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
@@ -544,10 +538,14 @@ static void test_MRU(gconstpointer user_data) {
 }
 
 static void test_ARC(gconstpointer user_data) {
-  int64_t miss_cnt_true[] = {90291, 86747, 78133, 74297,
-                             67381, 65685, 64443, 64775};
-  uint64_t miss_byte_true[] = {4070830592, 3842613248, 3525521408, 3296890368,
-                               2868538880, 2771180032, 2699746816, 2713581056};
+  // int64_t miss_cnt_true[] = {90291, 86747, 78133, 74297,
+  //                            67381, 65685, 64443, 64775};
+  // uint64_t miss_byte_true[] = {4070830592, 3842613248, 3525521408, 3296890368,
+  //                              2868538880, 2771180032, 2699746816, 2713581056};
+  uint64_t miss_cnt_true[] = {90252, 85861, 78168, 74297,
+                              67381, 65685, 64439, 64772};
+  uint64_t miss_byte_true[] = {4068098560, 3821026816, 3525644800, 3296890368,
+                               2868538880, 2771180032, 2699484672, 2712971264};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
