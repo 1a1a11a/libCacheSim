@@ -349,6 +349,8 @@ static void Cacheus_evict(cache_t *cache, const request_t *req) {
   cache->n_obj = lru->n_obj;
   DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
   DEBUG_ASSERT(lru->get_n_obj(lru) == lfu->get_n_obj(lfu));
+
+  cache->to_evict_candidate_gen_vtime = -1;
 }
 
 static bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {

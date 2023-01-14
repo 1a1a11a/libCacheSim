@@ -536,6 +536,7 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
 
     hashtable_delete(cache->hashtable, ghost_to_evict);
   }
+  cache->to_evict_candidate_gen_vtime = -1;
 }
 #endif
 

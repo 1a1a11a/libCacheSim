@@ -367,6 +367,7 @@ static void ARC_evict(cache_t *cache, const request_t *req) {
   } else {
     _ARC_evict_miss_on_all_queues(cache, req);
   }
+  cache->to_evict_candidate_gen_vtime = -1;
 }
 
 /**
