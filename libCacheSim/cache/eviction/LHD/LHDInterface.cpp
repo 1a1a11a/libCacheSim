@@ -18,6 +18,7 @@ typedef struct {
   int associativity;
   int admission;
 
+  candidate_t to_evict_candidate;
 } LHD_params_t;
 
 // ***********************************************************************
@@ -32,6 +33,7 @@ static bool LHD_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LHD_find(cache_t *cache, const request_t *req,
                              const bool update_cache);
 static cache_obj_t *LHD_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *LHD_to_evict(cache_t *cache, const request_t *req);
 static void LHD_evict(cache_t *cache, const request_t *req);
 static bool LHD_remove(cache_t *cache, const obj_id_t obj_id);
 
@@ -65,9 +67,11 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->find = LHD_find;
   cache->insert = LHD_insert;
   cache->evict = LHD_evict;
+  cache->to_evict = LHD_to_evict;
   cache->remove = LHD_remove;
   cache->to_evict = NULL;
   cache->init_params = cache_specific_params;
+  cache->to_evict_candidate = static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
   if (cache_specific_params != NULL) {
     ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
           cache_specific_params);
@@ -106,6 +110,7 @@ static void LHD_free(cache_t *cache) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   delete lhd;
+  free(cache->to_evict_candidate);
   my_free(sizeof(LHD_params_t), params);
   cache_struct_free(cache);
 }
@@ -204,6 +209,35 @@ static cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
 }
 
 /**
+ * @brief find an eviction candidate, but do not evict from the cache,
+ * and do not update the cache metadata
+ * note that eviction must evicts this object, so if we implment this function
+ * and it uses random number, we must make sure that the same object is evicted
+ * when we call evict
+ *
+ * @param cache
+ * @param req
+ * @return cache_obj_t*
+ */
+static cache_obj_t *LHD_to_evict(cache_t *cache, const request_t *req) {
+  auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
+  auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
+
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
+
+  repl::candidate_t victim = lhd->rank(req);
+  auto victimItr = lhd->sizeMap.find(victim);
+  assert(victimItr != lhd->sizeMap.end());
+
+  params->to_evict_candidate = victim;
+
+  cache->to_evict_candidate->obj_id = victim.id;
+  cache->to_evict_candidate->obj_size = victimItr->second;
+
+  return cache->to_evict_candidate;
+}
+
+/**
  * @brief evict an object from the cache
  * it needs to call cache_evict_base before returning
  * which updates some metadata such as n_obj, occupied size, and hash table
@@ -216,7 +250,14 @@ static void LHD_evict(cache_t *cache, const request_t *req) {
   auto *params = static_cast<LHD_params_t *>(cache->eviction_params);
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
 
-  repl::candidate_t victim = lhd->rank(req);
+  repl::candidate_t victim;
+  if (cache->to_evict_candidate_gen_vtime == cache->n_req) {
+    victim = params->to_evict_candidate;
+    cache->to_evict_candidate_gen_vtime = -1;
+  } else {
+    victim = lhd->rank(req);
+  }
+
   auto victimItr = lhd->sizeMap.find(victim);
   if (victimItr == lhd->sizeMap.end()) {
     std::cerr << "Couldn't find victim: " << victim << std::endl;
