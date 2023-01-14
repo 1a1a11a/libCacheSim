@@ -57,6 +57,9 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
   cache->evict = FIFO_evict;
   cache->remove = FIFO_remove;
   cache->to_evict = FIFO_to_evict;
+  cache->get_occupied_byte = cache_get_occupied_byte_default;
+  cache->get_n_obj = cache_get_n_obj_default;
+  cache->can_insert = cache_can_insert_default;
   cache->init_params = cache_specific_params;
   cache->obj_md_size = 0;
 

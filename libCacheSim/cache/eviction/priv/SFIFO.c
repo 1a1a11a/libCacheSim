@@ -80,13 +80,15 @@ static cache_obj_t *SFIFO_to_evict(cache_t *cache, const request_t *req);
 static void SFIFO_evict(cache_t *cache, const request_t *req);
 static bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id);
 
-bool SFIFO_can_insert(cache_t *cache, const request_t *req);
+/* internal functions */
+static bool SFIFO_can_insert(cache_t *cache, const request_t *req);
 static void SFIFO_promote_to_next_seg(cache_t *cache, const request_t *req,
                                       cache_obj_t *obj);
 static void SFIFO_demote_to_prev_seg(cache_t *cache, const request_t *req,
                                      cache_obj_t *obj);
 static void SFIFO_cool(cache_t *cache, const request_t *req, const int id);
 
+/* debug functions */
 static void _SFIFO_verify_fifo_size(cache_t *cache);
 bool SFIFO_get_debug(cache_t *cache, const request_t *req);
 
@@ -186,7 +188,7 @@ static bool SFIFO_get(cache_t *cache, const request_t *req) {
 #ifdef DEBUG_MODE
   return SFIFO_get_debug(cache, req);
 #else
-  bool ck = cache_get_base(cache, req);
+  return cache_get_base(cache, req);
 #endif
 }
 

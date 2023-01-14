@@ -56,6 +56,9 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
   cache->evict = LRU_evict;
   cache->remove = LRU_remove;
   cache->to_evict = LRU_to_evict;
+  cache->get_occupied_byte = cache_get_occupied_byte_default;
+  cache->can_insert = cache_can_insert_default;
+  cache->get_n_obj = cache_get_n_obj_default;
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
