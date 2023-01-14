@@ -87,6 +87,9 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
 cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
+cache_t *TwoQ_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
+
 #ifdef INCLUDE_PRIV
 cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params);

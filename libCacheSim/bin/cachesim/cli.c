@@ -291,8 +291,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = GDSF_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfuda") == 0) {
     cache = LFUDA_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lfu") == 0) {
-    cache = LFU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "twoq") == 0) {
+    cache = TwoQ_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slruv0") == 0) {

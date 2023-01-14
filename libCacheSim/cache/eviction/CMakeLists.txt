@@ -16,7 +16,8 @@ set(sourceC
         Hyperbolic.c
         LeCaR.c
         Cacheus.c
-
+        TwoQ.c
+        
         LRUv0.c
         LeCaRv0.c
         )
