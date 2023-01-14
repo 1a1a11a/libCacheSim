@@ -450,7 +450,7 @@ static cache_obj_t *LeCaR_to_evict(cache_t *cache, const request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache->to_evict_candidate_gen_vtime = cache->n_req;
-  
+
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     cache->to_evict_candidate = params->q_tail;
@@ -478,18 +478,24 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
   } else {
     obj_to_evict = LeCaR_to_evict(cache, req);
   }
+    cache->to_evict_candidate_gen_vtime = -1;
 
   if (obj_to_evict == params->q_tail) {
     // evicted from LRU
-    VVERBOSE("evict object %lu from LRU\n", (unsigned long)obj_to_evict);
+    VVERBOSE("evict object %lu from LRU\n",
+             (unsigned long)obj_to_evict->obj_id);
 
     // mark as ghost object
     obj_to_evict->LeCaR.ghost_evicted_by_lru = true;
     obj_to_evict->LeCaR.ghost_evicted_by_lfu = false;
 
   } else {
+    freq_node_t *min_freq_node = get_min_freq_node(params);
+    obj_to_evict = min_freq_node->first_obj;
+
     // evict from LFU
-    VVERBOSE("evict object %lu from LFU\n", (unsigned long)obj_to_evict);
+    VVERBOSE("evict object %lu from LFU\n",
+             (unsigned long)obj_to_evict->obj_id);
 
     // mark as ghost object
     obj_to_evict->LeCaR.ghost_evicted_by_lfu = true;
@@ -518,9 +524,6 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
     obj_to_evict->queue.next = params->ghost_lru_head;
   }
   params->ghost_lru_head = obj_to_evict;
-  VVERBOSE("insert to ghost history, update ghost lru head to %p\n",
-           params->ghost_lru_head);
-
   params->ghost_entry_used_size += obj_to_evict->obj_size + cache->obj_md_size;
   // evict ghost entries if its full
   while (params->ghost_entry_used_size > cache->cache_size) {
@@ -536,7 +539,6 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
 
     hashtable_delete(cache->hashtable, ghost_to_evict);
   }
-  cache->to_evict_candidate_gen_vtime = -1;
 }
 #endif
 
