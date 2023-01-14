@@ -449,6 +449,8 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
 static cache_obj_t *LeCaR_to_evict(cache_t *cache, const request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
+  
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
     cache->to_evict_candidate = params->q_tail;
@@ -471,10 +473,14 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_to_evict = NULL;
-  double r = ((double)(next_rand() % 100)) / 100.0;
-  if (r < params->w_lru) {
-    // evict from LRU
-    obj_to_evict = params->q_tail;
+  if (cache->to_evict_candidate_gen_vtime == cache->n_req) {
+    obj_to_evict = cache->to_evict_candidate;
+  } else {
+    obj_to_evict = LeCaR_to_evict(cache, req);
+  }
+
+  if (obj_to_evict == params->q_tail) {
+    // evicted from LRU
     VVERBOSE("evict object %lu from LRU\n", (unsigned long)obj_to_evict);
 
     // mark as ghost object
@@ -483,8 +489,6 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
 
   } else {
     // evict from LFU
-    freq_node_t *min_freq_node = get_min_freq_node(params);
-    obj_to_evict = min_freq_node->first_obj;
     VVERBOSE("evict object %lu from LFU\n", (unsigned long)obj_to_evict);
 
     // mark as ghost object

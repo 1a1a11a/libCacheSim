@@ -49,6 +49,12 @@ static bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id);
 static inline int64_t Cacheus_get_occupied_byte(const cache_t *cache);
 static inline int64_t Cacheus_get_n_obj(const cache_t *cache);
 
+/* internal functions */
+static void update_weight(cache_t *cache, const request_t *req);
+static void update_lr(cache_t *cache, const request_t *req);
+static void check_and_update_history(cache_t *cache, const request_t *req);
+
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   end user facing functions                   ****
@@ -140,6 +146,246 @@ static void Cacheus_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
+static bool Cacheus_get(cache_t *cache, const request_t *req) {
+  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
+  cache_t *lru = params->LRU;
+  cache_t *lfu = params->LFU;
+  SR_LRU_params_t *params_LRU = (SR_LRU_params_t *)(lru->eviction_params);
+  DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
+  DEBUG_ASSERT(lru->get_n_obj(lru) == cache->get_n_obj(cache));
+  DEBUG_ASSERT(lru->get_occupied_byte(lru) == cache->get_occupied_byte(cache));
+
+  cache->n_req += 1;
+  cache_obj_t *obj = Cacheus_find(cache, req, true);
+
+  if (obj == NULL) {
+    if (cache->can_insert(cache, req)) {
+      while (cache->get_occupied_byte(cache) + req->obj_size +
+                 cache->obj_md_size >
+             cache->cache_size) {
+        cache->evict(cache, req);
+      }
+      cache->insert(cache, req);
+    }
+    return false;
+  }
+
+  DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
+  DEBUG_ASSERT(lru->get_n_obj(lru) == cache->get_n_obj(cache));
+  DEBUG_ASSERT(lru->get_occupied_byte(lru) == cache->get_occupied_byte(cache));
+
+  if (cache->n_req % params->update_interval == 0) {
+    update_lr(cache, req);
+  }
+  return true;
+}
+
+
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief check whether an object is in the cache
+ *
+ * @param cache
+ * @param req
+ * @param update_cache whether to update the cache,
+ *  if true, the object is promoted
+ *  and if the object is expired, it is removed from the cache
+ * @return true on hit, false on miss
+ */
+static cache_obj_t *Cacheus_find(cache_t *cache, const request_t *req,
+                                 bool update_cache) {
+  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
+
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
+  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
+
+  cache_obj_t *obj_lru, *obj_lfu;
+  obj_lru = params->LRU->find(params->LRU, req, update_cache);
+  obj_lfu = params->LFU->find(params->LFU, req, update_cache);
+  bool hit_lru = obj_lru != NULL;
+  bool hit_lfu = obj_lfu != NULL;
+  DEBUG_ASSERT((hit_lru == hit_lfu));
+
+  if (!update_cache) {
+    // TODO: this is weird because the object is in two caches
+    return obj_lru;
+  }
+
+  if (!hit_lru) {
+    /* cache miss */
+    check_and_update_history(cache, req);
+  } else {
+    // If hit, update the data structure and increment num_hit counter
+    params->num_hit += 1;
+  }
+
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
+  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
+
+  cache->occupied_byte = params->LRU->occupied_byte;
+  // TODO: this is weird because the object is in two caches
+  return obj_lru;
+}
+
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * and eviction is not part of this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
+static cache_obj_t *Cacheus_insert(cache_t *cache, const request_t *req) {
+  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
+  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
+
+  // LFU must be first because it may load frequency stored in lRU history
+  params->LFU->insert(params->LFU, req);
+  params->LRU->insert(params->LRU, req);
+
+  cache->occupied_byte = params->LRU->occupied_byte;
+  cache->n_obj = params->LRU->n_obj;
+  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
+  DEBUG_ASSERT(params->LRU->n_obj == params->LFU->n_obj);
+
+  /* the cached obj is stored twice */
+  return NULL;
+}
+
+// TODO(jason): this function may not work
+static cache_obj_t *Cacheus_to_evict(cache_t *cache, const request_t *req) {
+  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
+  // update the candidate gen time
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
+
+  double r = ((double)(next_rand() % 100)) / 100.0;
+  if (r < params->w_lru) {
+    cache->to_evict_candidate = params->LRU->to_evict(params->LRU, req);
+  } else {
+    cache->to_evict_candidate = params->LFU->to_evict(params->LFU, req);
+  }
+  return cache->to_evict_candidate;
+}
+
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ */
+static void Cacheus_evict(cache_t *cache, const request_t *req) {
+  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
+  cache_t *lru = params->LRU;
+  cache_t *lfu = params->LFU;
+  cache_t *lru_g = params->LRU_g;
+  cache_t *lfu_g = params->LFU_g;
+  SR_LRU_params_t *params_LRU = (SR_LRU_params_t *)(lru->eviction_params);
+
+  // If two voters decide the same:
+  cache_obj_t *lru_to_evict = lru->to_evict(lru, req);
+  cache_obj_t *lfu_to_evict = lfu->to_evict(lfu, req);
+
+  cache_obj_t *obj_to_evict = NULL;
+  if (cache->to_evict_candidate_gen_vtime == cache->n_req) {
+    obj_to_evict = cache->to_evict_candidate;
+  } else {
+    obj_to_evict = Cacheus_to_evict(cache, req);
+  }
+
+  if (lru_to_evict->obj_id == lfu_to_evict->obj_id) {
+    lru->evict(lru, req);
+    lfu->evict(lfu, req);
+  } else if (obj_to_evict == lru_to_evict) {
+    copy_cache_obj_to_request(params->req_local, obj_to_evict);
+    lru->evict(lru, req);
+    bool removed = lfu->remove(lfu, obj_to_evict->obj_id);
+    DEBUG_ASSERT(removed);
+    // insert into ghost
+    bool ghost_hit = lru_g->get(lru_g, params->req_local);
+    DEBUG_ASSERT(!ghost_hit);
+  } else {
+    // Remove first because LFU needs to offload the freq to obj in LRU
+    // history
+    copy_cache_obj_to_request(params->req_local, obj_to_evict);
+    // LRU remove needs to before LFU evict
+    bool removed = lru->remove(lru, obj_to_evict->obj_id);
+    DEBUG_ASSERT(removed);
+    lfu->evict(lfu, req);
+    // insert into ghost
+    bool ghost_hit = lfu_g->get(lfu_g, params->req_local);
+    DEBUG_ASSERT(!ghost_hit);
+  }
+
+  cache->occupied_byte = lru->occupied_byte;
+  cache->n_obj = lru->n_obj;
+  DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
+  DEBUG_ASSERT(lru->get_n_obj(lru) == lfu->get_n_obj(lfu));
+}
+
+static bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
+  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
+  params->req_local->obj_id = obj_id;
+  bool lru_removed = params->LRU->remove(params->LRU, obj_id);
+  bool lfu_removed = params->LFU->remove(params->LFU, obj_id);
+  DEBUG_ASSERT(lru_removed == lfu_removed);
+  if (lru_removed) {
+    cache->occupied_byte = params->LRU->occupied_byte;
+    cache->n_obj -= 1;
+  }
+  return lru_removed;
+}
+
+static inline int64_t Cacheus_get_occupied_byte(const cache_t *cache) {
+  Cacheus_params_t *params = (Cacheus_params_t *)cache->eviction_params;
+  int64_t occupied_byte = params->LRU->get_occupied_byte(params->LRU);
+  DEBUG_ASSERT(occupied_byte == params->LFU->get_occupied_byte(params->LFU));
+  return occupied_byte;
+}
+
+static inline int64_t Cacheus_get_n_obj(const cache_t *cache) {
+  Cacheus_params_t *params = (Cacheus_params_t *)cache->eviction_params;
+  int64_t n_obj = params->LRU->get_n_obj(params->LRU);
+  DEBUG_ASSERT(n_obj == params->LFU->get_n_obj(params->LFU));
+  return n_obj;
+}
+
+
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                    internal functions                         ****
+// ****                                                               ****
+// ***********************************************************************
+
 static void update_weight(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   bool cache_hit_lru_g, cache_hit_lfu_g;
@@ -218,182 +464,6 @@ static void check_and_update_history(cache_t *cache, const request_t *req) {
   params->LFU_g->remove(params->LFU_g, req->obj_id);
 }
 
-static cache_obj_t *Cacheus_find(cache_t *cache, const request_t *req,
-                                 bool update_cache) {
-  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-
-  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
-  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
-
-  cache_obj_t *obj_lru, *obj_lfu;
-  obj_lru = params->LRU->find(params->LRU, req, update_cache);
-  obj_lfu = params->LFU->find(params->LFU, req, update_cache);
-  bool hit_lru = obj_lru != NULL;
-  bool hit_lfu = obj_lfu != NULL;
-  DEBUG_ASSERT((hit_lru == hit_lfu));
-
-  if (!update_cache) {
-    // TODO: this is weird because the object is in two caches
-    return obj_lru;
-  }
-
-  if (!hit_lru) {
-    /* cache miss */
-    check_and_update_history(cache, req);
-  } else {
-    // If hit, update the data structure and increment num_hit counter
-    params->num_hit += 1;
-  }
-
-  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
-  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
-
-  cache->occupied_byte = params->LRU->occupied_byte;
-  // TODO: this is weird because the object is in two caches
-  return obj_lru;
-}
-
-static bool Cacheus_get(cache_t *cache, const request_t *req) {
-  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  cache_t *lru = params->LRU;
-  cache_t *lfu = params->LFU;
-  SR_LRU_params_t *params_LRU = (SR_LRU_params_t *)(lru->eviction_params);
-  DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
-  DEBUG_ASSERT(lru->get_n_obj(lru) == cache->get_n_obj(cache));
-  DEBUG_ASSERT(lru->get_occupied_byte(lru) == cache->get_occupied_byte(cache));
-
-  cache->n_req += 1;
-  cache_obj_t *obj = Cacheus_find(cache, req, true);
-
-  if (obj == NULL) {
-    if (cache->can_insert(cache, req)) {
-      while (cache->get_occupied_byte(cache) + req->obj_size +
-                 cache->obj_md_size >
-             cache->cache_size) {
-        cache->evict(cache, req);
-      }
-      cache->insert(cache, req);
-    }
-    return false;
-  }
-
-  DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
-  DEBUG_ASSERT(lru->get_n_obj(lru) == cache->get_n_obj(cache));
-  DEBUG_ASSERT(lru->get_occupied_byte(lru) == cache->get_occupied_byte(cache));
-
-  if (cache->n_req % params->update_interval == 0) {
-    update_lr(cache, req);
-  }
-  return true;
-}
-
-static cache_obj_t *Cacheus_insert(cache_t *cache, const request_t *req) {
-  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
-  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
-
-  // LFU must be first because it may load frequency stored in lRU history
-  params->LFU->insert(params->LFU, req);
-  params->LRU->insert(params->LRU, req);
-
-  cache->occupied_byte = params->LRU->occupied_byte;
-  cache->n_obj = params->LRU->n_obj;
-  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
-  DEBUG_ASSERT(params->LRU->n_obj == params->LFU->n_obj);
-
-  /* the cached obj is stored twice */
-  return NULL;
-}
-
-static cache_obj_t *Cacheus_to_evict(cache_t *cache, const request_t *req) {
-  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  assert(false);
-  
-  double r = ((double)(next_rand() % 100)) / 100.0;
-  if (r < params->w_lru) {
-    cache->to_evict_candidate = params->LRU->to_evict(params->LRU, req);
-  } else {
-    cache->to_evict_candidate = params->LFU->to_evict(params->LFU, req);
-  }
-  cache->to_evict_candidate_gen_vtime = cache->n_req;
-  return cache->to_evict_candidate;
-}
-
-static void Cacheus_evict(cache_t *cache, const request_t *req) {
-  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  cache_t *lru = params->LRU;
-  cache_t *lfu = params->LFU;
-  cache_t *lru_g = params->LRU_g;
-  cache_t *lfu_g = params->LFU_g;
-  SR_LRU_params_t *params_LRU = (SR_LRU_params_t *)(lru->eviction_params);
-
-  double r = ((double)(next_rand() % 100)) / 100.0;
-
-  // If two voters decide the same:
-  cache_obj_t *lru_to_evict = lru->to_evict(lru, req);
-  cache_obj_t *lfu_to_evict = lfu->to_evict(lfu, req);
-  DEBUG_ASSERT(lru_to_evict != NULL);
-  DEBUG_ASSERT(lfu_to_evict != NULL);
-  // cache_obj_t *obj_to_evict = cache->to_evict_candidate_gen_vtime == cache->n_req ? cache->obj_to_evict : NULL;
-
-  if (lru_to_evict->obj_id == lfu_to_evict->obj_id) {
-    lru->evict(lru, req);
-    lfu->evict(lfu, req);
-  } else if (r < params->w_lru) {
-    cache_obj_t *obj = lru->to_evict(lru, req);
-    copy_cache_obj_to_request(params->req_local, obj);
-    lru->evict(lru, req);
-    bool removed = lfu->remove(lfu, params->req_local->obj_id);
-    DEBUG_ASSERT(removed);
-    // insert into ghost
-    bool ghost_hit = lru_g->get(lru_g, params->req_local);
-    DEBUG_ASSERT(!ghost_hit);
-  } else {
-    // Remove first because LFU needs to offload the freq to obj in LRU
-    // history
-    cache_obj_t *obj = lfu->to_evict(lfu, req);
-    copy_cache_obj_to_request(params->req_local, obj);
-    // LRU remove needs to before LFU evict
-    bool removed = lru->remove(lru, obj->obj_id);
-    DEBUG_ASSERT(removed);
-    lfu->evict(lfu, req);
-    // insert into ghost
-    bool ghost_hit = lfu_g->get(lfu_g, params->req_local);
-    DEBUG_ASSERT(!ghost_hit);
-  }
-
-  cache->occupied_byte = lru->occupied_byte;
-  cache->n_obj = lru->n_obj;
-  DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
-  DEBUG_ASSERT(lru->get_n_obj(lru) == lfu->get_n_obj(lfu));
-}
-
-static bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
-  Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
-  params->req_local->obj_id = obj_id;
-  bool lru_removed = params->LRU->remove(params->LRU, obj_id);
-  bool lfu_removed = params->LFU->remove(params->LFU, obj_id);
-  DEBUG_ASSERT(lru_removed == lfu_removed);
-  if (lru_removed) {
-    cache->occupied_byte = params->LRU->occupied_byte;
-    cache->n_obj -= 1;
-  }
-  return lru_removed;
-}
-
-static inline int64_t Cacheus_get_occupied_byte(const cache_t *cache) {
-  Cacheus_params_t *params = (Cacheus_params_t *)cache->eviction_params;
-  int64_t occupied_byte = params->LRU->get_occupied_byte(params->LRU);
-  DEBUG_ASSERT(occupied_byte == params->LFU->get_occupied_byte(params->LFU));
-  return occupied_byte;
-}
-
-static inline int64_t Cacheus_get_n_obj(const cache_t *cache) {
-  Cacheus_params_t *params = (Cacheus_params_t *)cache->eviction_params;
-  int64_t n_obj = params->LRU->get_n_obj(params->LRU);
-  DEBUG_ASSERT(n_obj == params->LFU->get_n_obj(params->LFU));
-  return n_obj;
-}
 
 #ifdef __cplusplus
 }
