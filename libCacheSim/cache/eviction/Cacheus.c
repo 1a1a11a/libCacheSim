@@ -311,12 +311,12 @@ static cache_obj_t *Cacheus_to_evict(cache_t *cache, const request_t *req) {
   
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
-    cache->obj_to_evict = params->LRU->to_evict(params->LRU, req);
+    cache->to_evict_candidate = params->LRU->to_evict(params->LRU, req);
   } else {
-    cache->obj_to_evict = params->LFU->to_evict(params->LFU, req);
+    cache->to_evict_candidate = params->LFU->to_evict(params->LFU, req);
   }
-  cache->obj_to_evict_gen_vtime = cache->n_req;
-  return cache->obj_to_evict;
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
+  return cache->to_evict_candidate;
 }
 
 static void Cacheus_evict(cache_t *cache, const request_t *req) {
@@ -334,7 +334,7 @@ static void Cacheus_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *lfu_to_evict = lfu->to_evict(lfu, req);
   DEBUG_ASSERT(lru_to_evict != NULL);
   DEBUG_ASSERT(lfu_to_evict != NULL);
-  // cache_obj_t *obj_to_evict = cache->obj_to_evict_gen_vtime == cache->n_req ? cache->obj_to_evict : NULL;
+  // cache_obj_t *obj_to_evict = cache->to_evict_candidate_gen_vtime == cache->n_req ? cache->obj_to_evict : NULL;
 
   if (lru_to_evict->obj_id == lfu_to_evict->obj_id) {
     lru->evict(lru, req);

@@ -451,11 +451,12 @@ static cache_obj_t *LeCaR_to_evict(cache_t *cache, const request_t *req) {
 
   double r = ((double)(next_rand() % 100)) / 100.0;
   if (r < params->w_lru) {
-    return params->q_tail;
+    cache->to_evict_candidate = params->q_tail;
   } else {
     freq_node_t *min_freq_node = get_min_freq_node(params);
-    return min_freq_node->first_obj;
+    cache->to_evict_candidate = min_freq_node->first_obj;
   }
+  return cache->to_evict_candidate;
 }
 
 /**

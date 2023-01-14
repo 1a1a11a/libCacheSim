@@ -346,10 +346,10 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
  */
 static cache_obj_t *SR_LRU_to_evict(cache_t *cache, const request_t *req) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
-  cache->obj_to_evict = params->SR_list->to_evict(params->SR_list, req);
-  cache->obj_to_evict_gen_vtime = cache->n_req;
+  cache->to_evict_candidate = params->SR_list->to_evict(params->SR_list, req);
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
 
-  return cache->obj_to_evict;
+  return cache->to_evict_candidate;
 }
 
 /**

@@ -313,10 +313,10 @@ static cache_obj_t *CR_LFU_to_evict(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(min_freq_node->last_obj != NULL);
   DEBUG_ASSERT(min_freq_node->n_obj > 0);
 
-  cache->obj_to_evict = min_freq_node->last_obj;
-  cache->obj_to_evict_gen_vtime = cache->n_req;
+  cache->to_evict_candidate = min_freq_node->last_obj;
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
 
-  return cache->obj_to_evict;
+  return cache->to_evict_candidate;
 }
 
 static void CR_LFU_evict(cache_t *cache, const request_t *req) {

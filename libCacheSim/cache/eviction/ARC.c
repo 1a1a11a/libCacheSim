@@ -70,8 +70,11 @@ static bool ARC_remove(cache_t *cache, const obj_id_t obj_id);
 
 /* internal functions */
 /* this is the case IV in the paper */
-static void _ARC_evict_first_see(cache_t *cache, const request_t *req);
+static void _ARC_evict_miss_on_all_queues(cache_t *cache, const request_t *req);
 static void _ARC_replace(cache_t *cache, const request_t *req);
+static cache_obj_t *_ARC_to_evict_miss_on_all_queues(cache_t *cache,
+                                                     const request_t *req);
+static cache_obj_t *_ARC_to_replace(cache_t *cache, const request_t *req);
 
 /* debug functions */
 static void _ARC_print_cache_content(cache_t *cache);
@@ -336,8 +339,15 @@ static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
  * @return the object to be evicted
  */
 static cache_obj_t *ARC_to_evict(cache_t *cache, const request_t *req) {
-  // does not support to_evict
-  DEBUG_ASSERT(false);
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
+  if (params->vtime_last_req_in_ghost == cache->n_req &&
+      (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
+    cache->to_evict_candidate = _ARC_to_replace(cache, req);
+  } else {
+    cache->to_evict_candidate = _ARC_to_evict_miss_on_all_queues(cache, req);
+  }
+  return cache->to_evict_candidate;
 }
 
 /**
@@ -355,7 +365,7 @@ static void ARC_evict(cache_t *cache, const request_t *req) {
       (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
     _ARC_replace(cache, req);
   } else {
-    _ARC_evict_first_see(cache, req);
+    _ARC_evict_miss_on_all_queues(cache, req);
   }
 }
 
@@ -407,6 +417,25 @@ static bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
 // ****                  cache internal functions                     ****
 // ****                                                               ****
 // ***********************************************************************
+/* finding the eviction candidate in _ARC_replace but do not perform eviction */
+static cache_obj_t *_ARC_to_replace(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+
+  cache_obj_t *obj = NULL;
+
+  if (params->L1_data_size > 0 &&
+      (params->L1_data_size > params->p ||
+       (params->L1_data_size == params->p && params->curr_obj_in_L2_ghost))) {
+    // delete the LRU in L1 data, move to L1_ghost
+    obj = params->L1_data_tail;
+  } else {
+    // delete the item in L2 data, move to L2_ghost
+    obj = params->L2_data_tail;
+  }
+  DEBUG_ASSERT(obj != NULL);
+  return obj;
+}
+
 /* the REPLACE function in the paper */
 static void _ARC_replace(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
@@ -437,8 +466,31 @@ static void _ARC_replace(cache_t *cache, const request_t *req) {
   cache->n_obj -= 1;
 }
 
+/* finding the eviction candidate in _ARC_evict_miss_on_all_queues, but do not
+ * perform eviction */
+static cache_obj_t *_ARC_to_evict_miss_on_all_queues(cache_t *cache,
+                                                     const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+
+  int64_t incoming_size = +req->obj_size + cache->obj_md_size;
+  if (params->L1_data_size + params->L1_ghost_size + incoming_size >
+      cache->cache_size) {
+    // case A: L1 = T1 U B1 has exactly c pages
+    if (params->L1_ghost_size > 0) {
+      return _ARC_to_replace(cache, req);
+    } else {
+      // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
+      // data
+      return params->L1_data_tail;
+    }
+  } else {
+    return _ARC_to_replace(cache, req);
+  }
+}
+
 /* this is the case IV in the paper */
-static void _ARC_evict_first_see(cache_t *cache, const request_t *req) {
+static void _ARC_evict_miss_on_all_queues(cache_t *cache,
+                                          const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   int64_t incoming_size = +req->obj_size + cache->obj_md_size;

@@ -121,10 +121,10 @@ struct cache {
   // each time we want to evict, but we want to make sure 
   // that the object returned from to_evict will be evicted
   // the next time evicion is called, so we record here
-  cache_obj_t *obj_to_evict;
+  cache_obj_t *to_evict_candidate;
   // we keep track when the candidate was generated, so that 
   // old candidate is not used
-  int64_t obj_to_evict_gen_vtime;
+  int64_t to_evict_candidate_gen_vtime;
 
   // const 
   int64_t cache_size;

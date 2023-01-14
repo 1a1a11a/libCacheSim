@@ -31,8 +31,8 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->future_stack_dist_array_size = 0;
   cache->default_ttl = params.default_ttl;
   cache->n_req = 0;
-  cache->obj_to_evict = NULL;
-  cache->obj_to_evict_gen_vtime = -1;
+  cache->to_evict_candidate = NULL;
+  cache->to_evict_candidate_gen_vtime = -1;
 
   cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
