@@ -324,6 +324,8 @@ static cache_obj_t *GLCache_find(cache_t *cache, const request_t *req,
     assert(0);
   }
 
+  cache_obj_t *ret = NULL;
+
   int n_in_cache = 0;
   while (cache_obj != NULL) {
     /* a cache obj can be a cached object, or one of the objects on the evicted
@@ -338,6 +340,7 @@ static cache_obj_t *GLCache_find(cache_t *cache, const request_t *req,
     if (cache_obj->GLCache.in_cache == 1) {
       // update features
       n_in_cache++;
+      ret = cache_obj;
 
       /* seg_hit_update update segment state features */
       seg_hit_update(params, cache_obj);
@@ -365,7 +368,7 @@ static cache_obj_t *GLCache_find(cache_t *cache, const request_t *req,
 
   DEBUG_ASSERT(n_in_cache <= 1);
 
-  return cache_obj;
+  return ret;
 }
 
 /**
