@@ -69,7 +69,6 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->evict = LHD_evict;
   cache->to_evict = LHD_to_evict;
   cache->remove = LHD_remove;
-  cache->to_evict = NULL;
   cache->init_params = cache_specific_params;
   cache->to_evict_candidate = static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
   if (cache_specific_params != NULL) {
