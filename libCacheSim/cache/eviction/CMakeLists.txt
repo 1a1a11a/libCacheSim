@@ -33,7 +33,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/MyClock.c
 
                 priv/LPv1.c
-                priv/LPv2.c
+                priv/LP_TwoQ.c
                 priv/QDLPv1.c
                 priv/QDLPv2.c
 

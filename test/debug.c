@@ -89,7 +89,7 @@
 //   request_t *req = new_request();
 //   read_one_req(reader, req);
 //   while (req->valid) {
-//     cache_ck_res_e ck = cache->get(cache, req);
+//     bool ck = cache->get(cache, req);
 //     printf("req %ld hit %d\n", (long) req->obj_id, ck == cache_ck_hit);
 //     read_one_req(reader, req);
 //   }

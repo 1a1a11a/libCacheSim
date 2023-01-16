@@ -301,8 +301,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = SLRUv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
     cache = SFIFO_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lp-sfifo") == 0) {
-    cache = LP_SFIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower -= 4;
     cache = Hyperbolic_init(cc_params, args->eviction_params);
@@ -329,6 +327,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 #ifdef INCLUDE_PRIV
   } else if (strcasecmp(args->eviction_algo, "myclock") == 0) {
     cache = MyClock_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lp-sfifo") == 0) {
+    cache = LP_SFIFO_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lp-twoq") == 0) {
+    cache = LP_TwoQ_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifomerge") == 0 ||
              strcasecmp(args->eviction_algo, "sfifo-merge") == 0) {
     cache = SFIFO_Merge_init(cc_params, args->eviction_params);
@@ -341,8 +343,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   } else if (strcasecmp(args->eviction_algo, "LPv1") == 0) {
     cache = LPv1_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "LPv2") == 0) {
-    cache = LPv2_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "QDLPv1") == 0) {
     cache = QDLPv1_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "WTinyLFUv1") == 0) {

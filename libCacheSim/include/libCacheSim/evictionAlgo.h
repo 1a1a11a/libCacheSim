@@ -100,9 +100,6 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
 cache_t *LPv1_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 
-cache_t *LPv2_init(const common_cache_params_t ccache_params,
-                   const char *cache_specific_params);
-
 cache_t *MyClock_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
@@ -130,6 +127,8 @@ cache_t *WTinyLFUv1_init(const common_cache_params_t ccache_params,
 cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params);
 
+cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params);
 #endif
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1

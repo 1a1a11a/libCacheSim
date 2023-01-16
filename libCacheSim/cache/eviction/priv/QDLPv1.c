@@ -117,6 +117,8 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
     params->main_cache = LeCaR_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "Cacheus") == 0) {
     params->main_cache = Cacheus_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "FIFO") == 0) {
+    params->main_cache = FIFO_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "Hyperbolic") == 0) {
     params->main_cache = Hyperbolic_init(ccache_params_local, NULL);
   } else {
@@ -208,7 +210,7 @@ static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
   params->hit_on_ghost = false;
   cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
   if (obj != NULL) {
-    // we can use misc field because FIFO does not use any
+    // we can use misc field because FIFO does not use any metadata
     DEBUG_ASSERT(obj->misc.q_id == 1);
     obj->misc.freq = 1;
 
