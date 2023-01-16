@@ -9,6 +9,7 @@ set(sourceC
         Clock.c
         SLRU.c
         SLRUv0.c
+        WTinyLFUv0.c
         CR_LFU.c
         SR_LRU.c
         Belady.c
@@ -35,6 +36,8 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/LPv2.c
                 priv/QDLPv1.c
                 priv/QDLPv2.c
+
+                priv/WTinyLFUv1.c
 
                 priv/SFIFO.c
                 priv/LP_SFIFO.c

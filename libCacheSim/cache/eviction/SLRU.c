@@ -319,6 +319,11 @@ static cache_obj_t *SLRU_to_evict(cache_t *cache, const request_t *req) {
       return params->lru_tails[i];
     }
   }
+  // No object to evict
+  #ifdef DEBUG_MODE
+    printf("No object to evict, please check whether this is unexpected\n");
+  #endif
+  return NULL;
 }
 
 /**

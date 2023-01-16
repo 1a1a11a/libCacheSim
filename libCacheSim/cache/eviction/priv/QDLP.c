@@ -10,8 +10,8 @@
  * from the clock cache (not insert into the FIFO queue)
  */
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/cache.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/cache.h"
 
 #ifdef __cplusplus
 extern "C" {

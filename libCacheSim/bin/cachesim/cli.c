@@ -295,6 +295,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = TwoQ_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "WTinyLFUv0") == 0) {
+    cache = WTinyLFUv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slruv0") == 0) {
     cache = SLRUv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
@@ -343,7 +345,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LPv2_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "QDLPv1") == 0) {
     cache = QDLPv1_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "QDLPv2") == 0) {
+  } else if (strcasecmp(args->eviction_algo, "WTinyLFUv1") == 0) {
+    cache = WTinyLFUv1_init(cc_params, args->eviction_params);
+  }
+  else if (strcasecmp(args->eviction_algo, "QDLPv2") == 0) {
     cache = QDLPv2_init(cc_params, args->eviction_params);
 
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {

@@ -65,7 +65,7 @@ popd
 ### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```
-git clone https://github.com/1a1a11a/libCacheSim 
+git clone https://github.com/1a1a11a/libCacheSimPrv 
 pushd libCachesim;
 mkdir _build && cd _build;
 cmake .. && make -j;

@@ -589,6 +589,10 @@ static void test_SLRU(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_WTinyLFU(gconstpointer user_data) {
+  // TODO: to be implemented
+}
+
 static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {

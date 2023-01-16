@@ -89,6 +89,11 @@ typedef struct {
   int lru_id;
 } SLRU_obj_metadata_t;
 
+// TODO: check if this is correct
+// typedef struct {
+//   int lru_id;
+// } WTinyLFU_obj_metadata_t;
+
 typedef struct {
   int64_t last_access_vtime;
   int32_t freq;
