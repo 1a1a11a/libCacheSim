@@ -37,7 +37,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/QDLPv1.c
                 priv/QDLPv2.c
 
-                priv/WTinyLFUv1.c
+                priv/WTinyLFU.c
 
                 priv/SFIFO.c
                 priv/LP_SFIFO.c

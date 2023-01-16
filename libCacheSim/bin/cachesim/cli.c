@@ -295,8 +295,23 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = TwoQ_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "WTinyLFUv0") == 0) {
-    cache = WTinyLFUv0_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "tinyLFU") == 0) {
+    // if no window specified, we add window-size=0 to the eviction params
+    if (args->eviction_params == NULL) {
+      args->eviction_params = strdup("window-size=0");
+    } else {
+      char *window_size = strstr(args->eviction_params, "window-size=");
+      if (window_size == NULL) {
+        char *old_params = args->eviction_params;
+        char *new_params = malloc(strlen(args->eviction_params) + 20);
+        sprintf(new_params, "%s,window-size=0", args->eviction_params);
+        args->eviction_params = new_params;
+        free(old_params);
+      }
+    }
+    cache = WTinyLFU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "wtinyLFU") == 0) {
+    cache = WTinyLFU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slruv0") == 0) {
     cache = SLRUv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
@@ -340,17 +355,12 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LRU_Prob_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "qdlp") == 0) {
     cache = QDLP_init(cc_params, args->eviction_params);
-
   } else if (strcasecmp(args->eviction_algo, "LPv1") == 0) {
     cache = LPv1_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "QDLPv1") == 0) {
     cache = QDLPv1_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "WTinyLFUv1") == 0) {
-    cache = WTinyLFUv1_init(cc_params, args->eviction_params);
-  }
-  else if (strcasecmp(args->eviction_algo, "QDLPv2") == 0) {
-    cache = QDLPv2_init(cc_params, args->eviction_params);
-
+  // } else if (strcasecmp(args->eviction_algo, "QDv2") == 0) {
+  //   cache = WTinyLFU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {
       ERROR("lru-belady only supports uncompressed trace files\n");
