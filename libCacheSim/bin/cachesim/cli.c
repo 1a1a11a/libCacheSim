@@ -299,6 +299,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = SLRUv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
     cache = SFIFO_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lp-sfifo") == 0) {
+    cache = LP_SFIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower -= 4;
     cache = Hyperbolic_init(cc_params, args->eviction_params);
