@@ -36,6 +36,8 @@ static cache_obj_t *LHD_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LHD_to_evict(cache_t *cache, const request_t *req);
 static void LHD_evict(cache_t *cache, const request_t *req);
 static bool LHD_remove(cache_t *cache, const obj_id_t obj_id);
+static int64_t LHD_get_occupied_byte(const cache_t *cache);
+static int64_t LHD_get_n_obj(const cache_t *cache);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -69,6 +71,9 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->evict = LHD_evict;
   cache->to_evict = LHD_to_evict;
   cache->remove = LHD_remove;
+  cache->can_insert = cache_can_insert_default;
+  cache->get_occupied_byte = LHD_get_occupied_byte;
+  cache->get_n_obj = LHD_get_n_obj;
   cache->init_params = cache_specific_params;
   cache->to_evict_candidate = static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
   if (cache_specific_params != NULL) {
@@ -312,6 +317,15 @@ static bool LHD_remove(cache_t *cache, const obj_id_t obj_id) {
 
   return true;
 }
+
+static int64_t LHD_get_occupied_byte(cache_t *cache) {
+  return cache->occupied_byte;
+}
+
+static int64_t LHD_get_n_obj(cache_t *cache) {
+  return cache->n_obj;
+}
+
 
 #ifdef __cplusplus
 }
