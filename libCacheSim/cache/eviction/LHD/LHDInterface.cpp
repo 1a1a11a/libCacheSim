@@ -318,11 +318,11 @@ static bool LHD_remove(cache_t *cache, const obj_id_t obj_id) {
   return true;
 }
 
-static int64_t LHD_get_occupied_byte(cache_t *cache) {
+static int64_t LHD_get_occupied_byte(const cache_t *cache) {
   return cache->occupied_byte;
 }
 
-static int64_t LHD_get_n_obj(cache_t *cache) {
+static int64_t LHD_get_n_obj(const cache_t *cache) {
   return cache->n_obj;
 }
 
