@@ -304,6 +304,9 @@ static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
 #ifdef USE_BELADY
   obj->next_access_vtime = req->next_access_vtime;
 #endif
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  obj->create_time = CURR_TIME(cache, req);
+#endif
 
   if (params->vtime_last_req_in_ghost == cache->n_req &&
       (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
@@ -443,12 +446,21 @@ static void _ARC_replace(cache_t *cache, const request_t *req) {
 
   cache_obj_t *obj = NULL;
 
-  if (params->L1_data_size > 0 &&
-      (params->L1_data_size > params->p ||
-       (params->L1_data_size == params->p && params->curr_obj_in_L2_ghost))) {
+  bool cond1 = params->L1_data_size > 0;
+  bool cond2 = params->L1_data_size > params->p;
+  bool cond3 =
+      params->L1_data_size == params->p && params->curr_obj_in_L2_ghost;
+  bool cond4 = params->L2_data_size == 0;
+
+  if ((cond1 && (cond2 || cond3)) || cond4) {
     // delete the LRU in L1 data, move to L1_ghost
     obj = params->L1_data_tail;
     DEBUG_ASSERT(obj != NULL);
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+    record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+
     params->L1_data_size -= obj->obj_size + cache->obj_md_size;
     params->L1_ghost_size += obj->obj_size + cache->obj_md_size;
     remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
@@ -457,6 +469,10 @@ static void _ARC_replace(cache_t *cache, const request_t *req) {
     // delete the item in L2 data, move to L2_ghost
     obj = params->L2_data_tail;
     DEBUG_ASSERT(obj != NULL);
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+    record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+
     params->L2_data_size -= obj->obj_size + cache->obj_md_size;
     params->L2_ghost_size += obj->obj_size + cache->obj_md_size;
     remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
@@ -516,6 +532,10 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
       // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
       // data
       cache_obj_t *obj = params->L1_data_tail;
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+      record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+
       int64_t sz = obj->obj_size + cache->obj_md_size;
       params->L1_data_size -= sz;
       cache->occupied_byte -= sz;

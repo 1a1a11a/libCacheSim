@@ -303,7 +303,14 @@ static inline void record_log2_eviction_age(cache_t *cache, const int age) {
 #undef LOG2
 }
 
-static inline void record_eviction_age(cache_t *cache, const int64_t age) {
+static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj, const int64_t age) {
+#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
+  if (obj->obj_id % 101 == 0) {
+    printf("ea: %ld %ld\n", obj->obj_id,
+           CURR_TIME(cache, req) - obj->create_time);
+  }
+#endif
+
   double log_base = log(EVICTION_AGE_LOG_BASE);
   int age_log = age == 0 ? 0 : (int)ceil(log((double)age) / log_base);
   cache->log_eviction_age_cnt[age_log] += 1;

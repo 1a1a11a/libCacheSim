@@ -273,7 +273,12 @@ static void LHD_evict(cache_t *cache, const request_t *req) {
   cache->n_obj -= 1;
 
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  record_eviction_age(cache, CURR_TIME(cache, req) - victim.create_time);
+  {
+    cache_obj_t obj;
+    obj.obj_id = victim.id;
+    obj.create_time = victim.create_time;
+    record_eviction_age(cache, &obj, CURR_TIME(cache, req) - victim.create_time);
+  }
 #endif
 
   lhd->replaced(victim);

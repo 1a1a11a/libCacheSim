@@ -87,7 +87,7 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
 
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   while (cache->get_occupied_byte(cache) > 0) {
-    cache->evict(cache, req, NULL);
+    cache->evict(cache, req);
   }
 
 #endif

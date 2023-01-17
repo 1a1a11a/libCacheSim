@@ -298,6 +298,11 @@ cache_obj_t *LeCaR_insert(cache_t *cache, const request_t *req) {
 
   // LRU and hash table insert
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  cache_obj->create_time = CURR_TIME(cache, req);
+#endif
+
   prepend_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   cache_obj->LeCaR.freq = 1;
   cache_obj->LeCaR.eviction_vtime = 0;
@@ -503,6 +508,10 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
   }
 
   obj_to_evict->LeCaR.eviction_vtime = cache->n_req;
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+    record_eviction_age(cache, obj_to_evict, CURR_TIME(cache, req) - obj_to_evict->create_time);
+#endif
 
   // update LRU chain state
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
