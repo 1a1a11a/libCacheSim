@@ -225,24 +225,18 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
 
   int lru_id = obj->ARC.lru_id;
   cache_obj_t *ret = obj;
-  if (obj->ARC.ghost) {
-    ret = NULL;
-    // ghost hit
-    if (obj->ARC.lru_id == 1) {
-      params->curr_obj_in_L1_ghost = true;
-    } else {
-      params->curr_obj_in_L2_ghost = true;
-    }
-    params->vtime_last_req_in_ghost = cache->n_req;
-  }
 
 #ifdef USE_BELADY
   obj->next_access_vtime = req->next_access_vtime;
 #endif
 
   if (obj->ARC.ghost) {
+    // ghost hit
+    ret = NULL;
+    params->vtime_last_req_in_ghost = cache->n_req;
     // cache miss, but hit on thost
-    if (params->curr_obj_in_L1_ghost) {
+    if (obj->ARC.lru_id == 1) {
+      params->curr_obj_in_L1_ghost = true;
       // case II: x in L1_ghost
       DEBUG_ASSERT(params->L1_ghost_size >= 1);
       double delta =
@@ -250,8 +244,8 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
       params->p = MIN(params->p + delta, cache->cache_size);
       params->L1_ghost_size -= obj->obj_size + cache->obj_md_size;
       remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
-    }
-    if (params->curr_obj_in_L2_ghost) {
+    } else {
+      params->curr_obj_in_L2_ghost = true;
       // case III: x in L2_ghost
       DEBUG_ASSERT(params->L2_ghost_size >= 1);
       double delta =
@@ -440,6 +434,82 @@ static cache_obj_t *_ARC_to_replace(cache_t *cache, const request_t *req) {
   return obj;
 }
 
+static void _ARC_evict_L1_data(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = params->L1_data_tail;
+  DEBUG_ASSERT(obj != NULL);
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+
+  params->L1_data_size -= obj->obj_size + cache->obj_md_size;
+  params->L1_ghost_size += obj->obj_size + cache->obj_md_size;
+  remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
+  prepend_obj_to_head(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
+
+  obj->ARC.ghost = true;
+  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
+  cache->n_obj -= 1;
+}
+
+static void _ARC_evict_L1_data_no_ghost(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = params->L1_data_tail;
+  DEBUG_ASSERT(obj != NULL);
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+
+  params->L1_data_size -= obj->obj_size + cache->obj_md_size;
+  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
+  cache->n_obj -= 1;
+
+  hashtable_delete(cache->hashtable, obj);
+}
+
+static void _ARC_evict_L2_data(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = params->L2_data_tail;
+  DEBUG_ASSERT(obj != NULL);
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+
+  params->L2_data_size -= obj->obj_size + cache->obj_md_size;
+  params->L2_ghost_size += obj->obj_size + cache->obj_md_size;
+  remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
+  prepend_obj_to_head(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
+
+  obj->ARC.ghost = true;
+  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
+  cache->n_obj -= 1;
+}
+
+static void _ARC_evict_L1_ghost(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = params->L1_ghost_tail;
+  DEBUG_ASSERT(obj != NULL);
+  DEBUG_ASSERT(obj->ARC.ghost);
+  int64_t sz = obj->obj_size + cache->obj_md_size;
+  params->L1_ghost_size -= sz;
+  remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
+  hashtable_delete(cache->hashtable, obj);
+}
+
+static void _ARC_evict_L2_ghost(cache_t *cache, const request_t *req) {
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache_obj_t *obj = params->L2_ghost_tail;
+  DEBUG_ASSERT(obj != NULL);
+  DEBUG_ASSERT(obj->ARC.ghost);
+  int64_t sz = obj->obj_size + cache->obj_md_size;
+  params->L2_ghost_size -= sz;
+  remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
+  hashtable_delete(cache->hashtable, obj);
+}
+
 /* the REPLACE function in the paper */
 static void _ARC_replace(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
@@ -454,33 +524,11 @@ static void _ARC_replace(cache_t *cache, const request_t *req) {
 
   if ((cond1 && (cond2 || cond3)) || cond4) {
     // delete the LRU in L1 data, move to L1_ghost
-    obj = params->L1_data_tail;
-    DEBUG_ASSERT(obj != NULL);
-
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-    record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
-#endif
-
-    params->L1_data_size -= obj->obj_size + cache->obj_md_size;
-    params->L1_ghost_size += obj->obj_size + cache->obj_md_size;
-    remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
-    prepend_obj_to_head(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
+    _ARC_evict_L1_data(cache, req);
   } else {
     // delete the item in L2 data, move to L2_ghost
-    obj = params->L2_data_tail;
-    DEBUG_ASSERT(obj != NULL);
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-    record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
-#endif
-
-    params->L2_data_size -= obj->obj_size + cache->obj_md_size;
-    params->L2_ghost_size += obj->obj_size + cache->obj_md_size;
-    remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
-    prepend_obj_to_head(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
+    _ARC_evict_L2_data(cache, req);
   }
-  obj->ARC.ghost = true;
-  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
-  cache->n_obj -= 1;
 }
 
 /* finding the eviction candidate in _ARC_evict_miss_on_all_queues, but do not
@@ -519,30 +567,12 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
       // delete the LRU of the L1 ghost, and replace
       // we do not use params->L1_data_size < cache->cache_size
       // because it does not work for variable size objects
-      cache_obj_t *obj = params->L1_ghost_tail;
-      DEBUG_ASSERT(obj != NULL);
-      DEBUG_ASSERT(obj->ARC.ghost);
-      int64_t sz = obj->obj_size + cache->obj_md_size;
-      params->L1_ghost_size -= sz;
-      remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
-      hashtable_delete(cache->hashtable, obj);
-
+      _ARC_evict_L1_ghost(cache, req);
       return _ARC_replace(cache, req);
     } else {
       // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
       // data
-      cache_obj_t *obj = params->L1_data_tail;
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-      record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
-#endif
-
-      int64_t sz = obj->obj_size + cache->obj_md_size;
-      params->L1_data_size -= sz;
-      cache->occupied_byte -= sz;
-      cache->n_obj -= 1;
-      remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
-      DEBUG_ASSERT(params->L1_data_tail != NULL);
-      hashtable_delete(cache->hashtable, obj);
+      return _ARC_evict_L1_data_no_ghost(cache, req);
     }
   } else {
     DEBUG_ASSERT(params->L1_data_size + params->L1_ghost_size <
@@ -551,10 +581,7 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
             params->L2_ghost_size >=
         cache->cache_size * 2) {
       // delete the LRU end of the L2 ghost
-      cache_obj_t *obj = params->L2_ghost_tail;
-      params->L2_ghost_size -= obj->obj_size + cache->obj_md_size;
-      remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
-      hashtable_delete(cache->hashtable, obj);
+      _ARC_evict_L2_ghost(cache, req);
     }
     return _ARC_replace(cache, req);
   }
