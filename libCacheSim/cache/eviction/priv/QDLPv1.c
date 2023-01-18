@@ -101,6 +101,10 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
 
   ccache_params_local.cache_size = fifo_ghost_cache_size;
   params->fifo_ghost = FIFO_init(ccache_params_local, NULL);
+  snprintf(params->fifo_ghost->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO-ghost");
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  params->fifo_ghost->track_eviction_age = false;
+#endif
 
   ccache_params_local.cache_size = main_cache_size;
   if (strcasecmp(params->main_cache_type, "ARC") == 0) {

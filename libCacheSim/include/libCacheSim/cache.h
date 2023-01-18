@@ -117,16 +117,16 @@ struct cache {
   int64_t occupied_byte;
   /************ end of private fields *************/
 
-  // because some algorithms choose different candidates 
-  // each time we want to evict, but we want to make sure 
+  // because some algorithms choose different candidates
+  // each time we want to evict, but we want to make sure
   // that the object returned from to_evict will be evicted
   // the next time evicion is called, so we record here
   cache_obj_t *to_evict_candidate;
-  // we keep track when the candidate was generated, so that 
+  // we keep track when the candidate was generated, so that
   // old candidate is not used
   int64_t to_evict_candidate_gen_vtime;
 
-  // const 
+  // const
   int64_t cache_size;
   int64_t default_ttl;
   int32_t obj_md_size;
@@ -138,6 +138,9 @@ struct cache {
   const char *init_params;
 
   void *last_request_metadata;
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  bool track_eviction_age;
+#endif
 
   /* not used by most algorithms */
   int32_t *future_stack_dist;
@@ -303,7 +306,8 @@ static inline void record_log2_eviction_age(cache_t *cache, const int age) {
 #undef LOG2
 }
 
-static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj, const int64_t age) {
+static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj,
+                                       const int64_t age) {
 #if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
   if (obj->obj_id % 101 == 0) {
     printf("ea: %ld %ld\n", obj->obj_id,

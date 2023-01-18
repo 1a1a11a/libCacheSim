@@ -38,6 +38,12 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
 
+  /* this option works only when eviction age tracking 
+   * is on in config.h */
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  cache->track_eviction_age = true;
+#endif
+
   int hash_power = HASH_POWER_DEFAULT;
   if (params.hashpower > 0 && params.hashpower < 40)
     hash_power = params.hashpower;
@@ -231,7 +237,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 void cache_evict_base(cache_t *cache, cache_obj_t *obj,
                       bool remove_from_hashtable) {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+  if (cache->track_eviction_age)
+    record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
   cache_remove_obj_base(cache, obj, remove_from_hashtable);
 }
