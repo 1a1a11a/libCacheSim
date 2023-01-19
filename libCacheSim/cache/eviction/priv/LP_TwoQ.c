@@ -277,12 +277,12 @@ static void LP_TwoQ_evict(cache_t *cache, const request_t *req) {
     Aout->get(Aout, params->req_local);
     Ain->evict(Ain, req);
   } else {
-    // evict from Am and insert into Aout
-    cache_obj_t *obj = Am->to_evict(Ain, req);
-    assert(obj != NULL);
-    // need to copy the object before it is evicted
-    copy_cache_obj_to_request(params->req_local, obj);
-    Aout->get(Aout, params->req_local);
+    // // evict from Am and insert into Aout
+    // cache_obj_t *obj = Am->to_evict(Ain, req);
+    // assert(obj != NULL);
+    // // need to copy the object before it is evicted
+    // copy_cache_obj_to_request(params->req_local, obj);
+    // Aout->get(Aout, params->req_local);
     // evict from Am
     Am->evict(Am, req);
   }
