@@ -462,6 +462,7 @@ static void _ARC_evict_L1_data_no_ghost(cache_t *cache, const request_t *req) {
   record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
 
+  remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
   params->L1_data_size -= obj->obj_size + cache->obj_md_size;
   cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
   cache->n_obj -= 1;
