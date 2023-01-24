@@ -113,6 +113,10 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
     params->main_cache = LHD_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "clock") == 0) {
     params->main_cache = Clock_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "clock-2") == 0) {
+    params->main_cache = Clock_init(ccache_params_local, "n-bit-counter=2");
+  } else if (strcasecmp(params->main_cache_type, "clock-3") == 0) {
+    params->main_cache = Clock_init(ccache_params_local, "n-bit-counter=3");
   } else if (strcasecmp(params->main_cache_type, "myclock") == 0) {
     params->main_cache = MyClock_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "LRU") == 0) {
@@ -121,8 +125,12 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
     params->main_cache = LeCaR_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "Cacheus") == 0) {
     params->main_cache = Cacheus_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "twoQ") == 0) {
+    params->main_cache = TwoQ_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "FIFO") == 0) {
     params->main_cache = FIFO_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "LIRS") == 0) {
+    params->main_cache = LIRS_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "Hyperbolic") == 0) {
     params->main_cache = Hyperbolic_init(ccache_params_local, NULL);
   } else {

@@ -28,6 +28,8 @@ typedef struct {
   int max_freq;
 } Clock_params_t;
 
+static const char *DEFAULT_PARAMS = "n-bit-counter=1";
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
@@ -67,6 +69,9 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
   cache->insert = Clock_insert;
   cache->evict = Clock_evict;
   cache->remove = Clock_remove;
+  cache->can_insert = cache_can_insert_default;
+  cache->get_n_obj = cache_get_n_obj_default;
+  cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->to_evict = Clock_to_evict;
 
   cache->init_params = cache_specific_params;
@@ -83,6 +88,7 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
   params->n_bit_counter = 1;
   params->max_freq = 1;
 
+  Clock_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
     Clock_parse_params(cache, cache_specific_params);
   }
