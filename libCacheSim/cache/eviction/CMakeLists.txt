@@ -21,6 +21,7 @@ set(sourceC
         
         LRUv0.c
         LeCaRv0.c
+        LIRS.c
         )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")

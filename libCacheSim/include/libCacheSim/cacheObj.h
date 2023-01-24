@@ -109,6 +109,11 @@ typedef struct {
   int32_t q_id;
 } misc_metadata_t;
 
+typedef struct {
+  bool is_LIR;
+  bool in_cache;
+} LIRS_obj_metadata_t;
+
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {
@@ -148,6 +153,7 @@ typedef struct cache_obj {
     SLRU_obj_metadata_t SLRU;
     QDLP_obj_metadata_t QDLP;
     misc_metadata_t misc;
+    LIRS_obj_metadata_t LIRS;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;
