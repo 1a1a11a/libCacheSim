@@ -228,6 +228,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = CR_LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "SLRU") == 0) {
     cache = SLRU_init(cc_params, "n-seg=5");
+  } else if (strcasecmp(alg_name , "LIRS") == 0) {
+    cache = LIRS_init(cc_params, NULL);
   }
   // else if (strcasecmp(alg_name, "WTinyLFU") == 0) {
   //   cache = WTinyLFUv0_init(cc_params, NULL);

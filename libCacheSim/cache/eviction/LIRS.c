@@ -421,9 +421,10 @@ static void LIRS_prune(cache_t *cache) {
 
     // remove obj from LRU_nh
     if (obj_to_remove->LIRS.in_cache == false) {
-      // TODO: check if this is correct by directly using obj_id
-      params->LRU_nh->remove(params->LRU_nh, obj_to_remove->obj_id);
-      params->nonresident -= obj_to_remove->obj_size;
+      bool res = params->LRU_nh->remove(params->LRU_nh, obj_to_remove->obj_id);
+      if (res){
+        params->nonresident -= obj_to_remove->obj_size;
+      }
     }
     // remove the obj from stack S
     LRU_s->evict(LRU_s, NULL);
@@ -453,8 +454,10 @@ static cache_obj_t *hitHIRinLIRS(cache_t *cache,
     res = cache_obj_s;
   } else {
     // accessing non-resident HIR block in S (miss)
-    params->LRU_nh->remove(params->LRU_nh, cache_obj_s->obj_id);
-    params->nonresident -= cache_obj_s->obj_size;
+    bool res = params->LRU_nh->remove(params->LRU_nh, cache_obj_s->obj_id);
+    if (res){
+      params->nonresident -= cache_obj_s->obj_size;
+    }
     res = NULL;
   }
 
@@ -546,10 +549,13 @@ static void limitStack(cache_t *cache) {
 
   while (params->LRU_s->occupied_byte > (2 * cache->cache_size)) {
     cache_obj_t *obj_to_evict = params->LRU_nh->to_evict(params->LRU_nh, NULL);
-    params->nonresident -= obj_to_evict->obj_size;
-
-    params->LRU_s->remove(params->LRU_s, obj_to_evict->obj_id);
-    params->LRU_nh->evict(params->LRU_nh, NULL);
+    if (obj_to_evict) {
+      params->nonresident -= obj_to_evict->obj_size;
+      params->LRU_s->remove(params->LRU_s, obj_to_evict->obj_id);
+      params->LRU_nh->evict(params->LRU_nh, NULL);
+    } else{
+      break;
+    }
   }
 }
 

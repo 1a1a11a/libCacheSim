@@ -593,6 +593,34 @@ static void test_WTinyLFU(gconstpointer user_data) {
   // TODO: to be implemented
 }
 
+static void test_LIRS(gconstpointer user_data) {
+  // LIRS currently only support unique object size
+  // TODO: to update when supporting variable object size
+  uint64_t _cache_size = 40000;
+  uint64_t _step_size = 5000;
+
+  uint64_t miss_cnt_true[] = {85289, 74396, 64623, 58672,
+                              54249, 52871, 50742, 50518};
+  uint64_t miss_byte_true[] = {85289, 74396, 64623, 58672,
+                               54249, 52871, 50742, 50518};
+
+  reader_t *reader = (reader_t *)user_data;
+  reader = setup_vscsi_reader_with_ignored_obj_size();
+  uint64_t _req_byte_true = req_cnt_true;
+  common_cache_params_t cc_params = {
+      .cache_size = _cache_size, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("LIRS", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
+      reader, cache, _step_size, NULL, 0, 0, _n_cores());
+  print_results(cache, res);
+  _verify_profiler_results(res, _cache_size / _step_size, req_cnt_true,
+                           miss_cnt_true, _req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+
+}
+
 static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
@@ -619,6 +647,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader,
                        test_Hyperbolic);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);                      
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
