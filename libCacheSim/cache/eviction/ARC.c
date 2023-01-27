@@ -123,6 +123,7 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   cache->eviction_params = my_malloc_n(ARC_params_t, 1);
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   params->p = 0;
+  params->p = cache->cache_size;
 
   params->L1_data_size = 0;
   params->L2_data_size = 0;
@@ -182,7 +183,6 @@ static void ARC_free(cache_t *cache) {
  */
 static bool ARC_get(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
 #ifdef DEBUG_MODE
   return ARC_get_debug(cache, req);
 #else
@@ -260,7 +260,7 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
     // cache hit, case I: x in L1_data or L2_data
 #ifdef USE_BELADY
     if (obj->next_access_vtime == INT64_MAX) {
-      return cache_hit;
+      return ret;
     }
 #endif
 
@@ -559,7 +559,7 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
                                           const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  int64_t incoming_size = +req->obj_size + cache->obj_md_size;
+  int64_t incoming_size = req->obj_size + cache->obj_md_size;
   if (params->L1_data_size + params->L1_ghost_size + incoming_size >
       cache->cache_size) {
     // case A: L1 = T1 U B1 has exactly c pages
