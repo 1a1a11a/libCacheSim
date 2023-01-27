@@ -61,6 +61,8 @@ typedef int64_t (*cache_get_occupied_byte_func_ptr)(const cache_t *);
 
 typedef int64_t (*cache_get_n_obj_func_ptr)(const cache_t *);
 
+typedef void (*cache_print_cache_func_ptr)(const cache_t *);
+
 // #define EVICTION_AGE_ARRAY_SZE 40
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
@@ -100,6 +102,7 @@ struct cache {
   cache_to_evict_func_ptr to_evict;
   cache_get_occupied_byte_func_ptr get_occupied_byte;
   cache_get_n_obj_func_ptr get_n_obj;
+  cache_print_cache_func_ptr print_cache;
 
   admissioner_t *admissioner;
 
@@ -279,16 +282,17 @@ static inline int64_t cache_get_virtual_time(const cache_t *cache) {
 }
 
 /**
- * @brief print cache
+ * @brief print cache stat
  *
  * @param cache
  */
-static inline void print_cache(cache_t *cache) {
-  printf("%s cache size %" PRIu64 ", occupied size %" PRIu64 ", n_req %" PRIu64
-         ", n_obj %" PRIu64 ", default TTL %" PRIu64
-         ", per_obj_metadata_size %" PRIi32 "\n",
-         cache->cache_name, cache->cache_size, cache->occupied_byte,
-         cache->n_req, cache->n_obj, cache->default_ttl, cache->obj_md_size);
+static inline void print_cache_stat(const cache_t *cache) {
+  printf(
+      "%s cache size %ld, occupied size %ld, n_req %ld, n_obj %ld, default TTL "
+      "%ld, per_obj_metadata_size %d\n",
+      cache->cache_name, cache->cache_size, cache->get_occupied_byte(cache),
+      cache->n_req, cache->get_n_obj(cache), cache->default_ttl,
+      cache->obj_md_size);
 }
 
 /**

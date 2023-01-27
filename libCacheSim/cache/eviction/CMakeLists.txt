@@ -18,7 +18,7 @@ set(sourceC
         LeCaR.c
         Cacheus.c
         TwoQ.c
-        
+        ARCv0.c
         LRUv0.c
         LeCaRv0.c
         LIRS.c

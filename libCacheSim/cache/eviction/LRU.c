@@ -32,6 +32,7 @@ static cache_obj_t *LRU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req);
 static void LRU_evict(cache_t *cache, const request_t *req);
 static bool LRU_remove(cache_t *cache, const obj_id_t obj_id);
+static void LRU_print_cache(const cache_t *cache);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -59,6 +60,7 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->can_insert = cache_can_insert_default;
   cache->get_n_obj = cache_get_n_obj_default;
+  cache->print_cache = LRU_print_cache;
   cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
@@ -132,7 +134,7 @@ static bool LRU_get(cache_t *cache, const request_t *req) {
  * @return true on hit, false on miss
  */
 static cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+                             const bool update_cache) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
@@ -257,6 +259,21 @@ static bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_remove_obj_base(cache, obj, true);
 
   return true;
+}
+
+static void LRU_print_cache(const cache_t *cache) {
+  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
+  cache_obj_t *cur = params->q_head;
+  // print from the most recent to the least recent
+  if (cur == NULL) {
+    printf("empty\n");
+    return;
+  }
+  while (cur != NULL) {
+    printf("%lu->", cur->obj_id);
+    cur = cur->queue.next;
+  }
+  printf("END\n");
 }
 
 #ifdef __cplusplus
