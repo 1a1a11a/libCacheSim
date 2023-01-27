@@ -181,7 +181,6 @@ static void ARC_free(cache_t *cache) {
  */
 static bool ARC_get(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-// #define DEBUG_MODE
 #ifdef DEBUG_MODE
   return ARC_get_debug(cache, req);
 #else

@@ -26,7 +26,9 @@ extern "C" {
 
 // #define DEBUG_MODE
 // #undef DEBUG_MODE
-// #define USE_BELADY
+
+// #define LAZY_PROMOTION
+// #define QUICK_DEMOTION
 
 typedef struct ARCv0_params {
   // L1_data is T1 in the paper, L1_ghost is B1 in the paper
@@ -117,13 +119,25 @@ cache_t *ARCv0_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_local = ccache_params;
   params->T1 = LRU_init(ccache_params_local, NULL);
   params->B1 = LRU_init(ccache_params_local, NULL);
+#ifdef LAZY_PROMOTION
+  params->T2 = Clock_init(ccache_params_local, NULL);
+#else
   params->T2 = LRU_init(ccache_params_local, NULL);
+#endif
   params->B2 = LRU_init(ccache_params_local, NULL);
 
   params->curr_obj_in_L1_ghost = false;
   params->curr_obj_in_L2_ghost = false;
   params->vtime_last_req_in_ghost = -1;
   params->req_local = new_request();
+
+#if defined(LAZY_PROMOTION) && defined(QUICK_DEMOTION)
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "ARCv0-LP-QD");
+#elif defined(LAZY_PROMOTION)
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "ARCv0-LP");
+#elif defined(QUICK_DEMOTION)
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "ARCv0-QD");
+#endif
 
   return cache;
 }
@@ -166,7 +180,6 @@ static void ARCv0_free(cache_t *cache) {
  */
 static bool ARCv0_get(cache_t *cache, const request_t *req) {
   ARCv0_params_t *params = (ARCv0_params_t *)(cache->eviction_params);
-// #define DEBUG_MODE
 #ifdef DEBUG_MODE
   return ARCv0_get_debug(cache, req);
 #else
@@ -241,13 +254,19 @@ static cache_obj_t *ARCv0_find(cache_t *cache, const request_t *req,
       params->p = MAX(params->p - delta, 0);
       params->B2->remove(params->B2, obj_b2->obj_id);
     }
+#ifdef QUICK_DEMOTION
     // params->p = MIN(params->p, cache->cache_size/10);
+    params->p = cache->cache_size/10;
+#endif
   } else {
     // cache hit, case I: x in L1_data or L2_data
     if (obj_t1 != NULL) {
+      obj_t1->misc.freq = 1;
+#ifndef LAZY_PROMOTION
       // move to LRU2
       params->T1->remove(params->T1, obj_t1->obj_id);
       params->T2->get(params->T2, req);
+#endif
     } else {
       // move to LRU2 head
       params->T2->find(params->T2, req, true);
@@ -284,6 +303,7 @@ static cache_obj_t *ARCv0_insert(cache_t *cache, const request_t *req) {
   } else {
     // insert to L1 data head
     obj = params->T1->insert(params->T1, req);
+    obj->misc.freq = 0;
   }
 
   return obj;
@@ -406,8 +426,16 @@ static void _ARCv0_replace(cache_t *cache, const request_t *req) {
     cache_obj_t *obj = params->T1->to_evict(params->T1, req);
     DEBUG_ASSERT(obj != NULL);
     copy_cache_obj_to_request(params->req_local, obj);
-    params->T1->evict(params->T1, req);
+#ifdef LAZY_PROMOTION
+    if (obj->misc.freq > 0) {
+      params->T2->get(params->T2, params->req_local);
+    } else {
+      params->B1->get(params->B1, params->req_local);
+    }
+#else
     params->B1->get(params->B1, params->req_local);
+#endif
+    params->T1->evict(params->T1, req);
   } else {
     // delete the item in L2 data, move to L2_ghost
     cache_obj_t *obj = params->T2->to_evict(params->T2, req);
@@ -463,7 +491,17 @@ static void _ARCv0_evict_miss_on_all_queues(cache_t *cache,
     } else {
       // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
       // data
+#ifdef LAZY_PROMOTION
+      cache_obj_t *obj = params->T1->to_evict(params->T1, req);
+      DEBUG_ASSERT(obj != NULL);
+      copy_cache_obj_to_request(params->req_local, obj);
+      if (obj->misc.freq > 0) {
+        params->T2->get(params->T2, params->req_local);
+      }
       return params->T1->evict(params->T1, req);
+#else
+      return params->T1->evict(params->T1, req);
+#endif
     }
   } else {
     int64_t t2_size = params->T2->get_occupied_byte(params->T2);
