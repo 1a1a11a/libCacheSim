@@ -359,12 +359,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LRU_Prob_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "qdlp") == 0) {
     cache = QDLP_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "LPv1") == 0) {
-    cache = LPv1_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "QDLPv1") == 0) {
+  } else if (strcasecmp(args->eviction_algo, "qdlpv1") == 0) {
     cache = QDLPv1_init(cc_params, args->eviction_params);
-  // } else if (strcasecmp(args->eviction_algo, "QDv2") == 0) {
-  //   cache = WTinyLFU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "myMQv1") == 0) {
+    cache = myMQv1_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
     if (strstr(args->trace_path, ".zst") != NULL) {
       ERROR("lru-belady only supports uncompressed trace files\n");
@@ -372,18 +370,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     ERROR("not implemented\n");
     // reader_t *reader = clone_reader(args->reader);
     cache = LRU_init(cc_params, args->eviction_params);
-    // cache->future_stack_dist = get_stack_dist(
-    //     reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
-    // assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
-    // close_reader(reader);
-
-  } else if (strcasecmp(args->eviction_algo, "sfifo-belady") == 0) {
-    if (strstr(args->trace_path, ".zst") != NULL) {
-      ERROR("sfifo-belady only supports uncompressed trace files\n");
-    }
-    ERROR("not implemented\n");
-    // reader_t *reader = clone_reader(args->reader);
-    cache = SFIFO_init(cc_params, args->eviction_params);
     // cache->future_stack_dist = get_stack_dist(
     //     reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
     // assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);

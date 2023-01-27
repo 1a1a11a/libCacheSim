@@ -1,10 +1,12 @@
 //
-//  Quick demotion + lazy promoition v2
+//  multi queue 
+//  each queue has a specified size and a specified ghost size
+//  promotion upon hit
 //
 //  20% FIFO + 80% 2-bit clock, promote when evicting from FIFO
 //
 //
-//  QDLPv2.c
+//  myMQv1.c
 //  libCacheSim
 //
 //  Created by Juncheng on 12/4/18.
@@ -32,7 +34,7 @@ typedef struct {
   int64_t fifo1_max_size;
   int64_t fifo2_max_size;
 
-} QDLPv2_params_t;
+} myMQv1_params_t;
 
 // ***********************************************************************
 // ****                                                               ****
@@ -40,15 +42,15 @@ typedef struct {
 // ****                                                               ****
 // ***********************************************************************
 
-static void QDLPv2_parse_params(cache_t *cache, const char *cache_specific_params);
-static void QDLPv2_free(cache_t *cache);
-static bool QDLPv2_get(cache_t *cache, const request_t *req);
-static cache_obj_t *QDLPv2_find(cache_t *cache, const request_t *req,
+static void myMQv1_parse_params(cache_t *cache, const char *cache_specific_params);
+static void myMQv1_free(cache_t *cache);
+static bool myMQv1_get(cache_t *cache, const request_t *req);
+static cache_obj_t *myMQv1_find(cache_t *cache, const request_t *req,
                              const bool update_cache);
-static cache_obj_t *QDLPv2_insert(cache_t *cache, const request_t *req);
-static cache_obj_t *QDLPv2_to_evict(cache_t *cache, const request_t *req);
-static void QDLPv2_evict(cache_t *cache, const request_t *req);
-static bool QDLPv2_remove(cache_t *cache, const obj_id_t obj_id);
+static cache_obj_t *myMQv1_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *myMQv1_to_evict(cache_t *cache, const request_t *req);
+static void myMQv1_evict(cache_t *cache, const request_t *req);
+static bool myMQv1_remove(cache_t *cache, const obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -61,7 +63,7 @@ static bool QDLPv2_remove(cache_t *cache, const obj_id_t obj_id);
  *
  * @param cache
  */
-static void QDLPv2_free(cache_t *cache) {
+static void myMQv1_free(cache_t *cache) {
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
@@ -73,17 +75,17 @@ static void QDLPv2_free(cache_t *cache) {
  * @param cache_specific_params cache specific parameters, see parse_params
  * function or use -e "print" with the cachesim binary
  */
-cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
+cache_t *myMQv1_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("QDLPv2", ccache_params);
-  cache->cache_init = QDLPv2_init;
-  cache->cache_free = QDLPv2_free;
-  cache->get = QDLPv2_get;
-  cache->find = QDLPv2_find;
-  cache->insert = QDLPv2_insert;
-  cache->evict = QDLPv2_evict;
-  cache->remove = QDLPv2_remove;
-  cache->to_evict = QDLPv2_to_evict;
+  cache_t *cache = cache_struct_init("myMQv1", ccache_params);
+  cache->cache_init = myMQv1_init;
+  cache->cache_free = myMQv1_free;
+  cache->get = myMQv1_get;
+  cache->find = myMQv1_find;
+  cache->insert = myMQv1_insert;
+  cache->evict = myMQv1_evict;
+  cache->remove = myMQv1_remove;
+  cache->to_evict = myMQv1_to_evict;
   cache->init_params = cache_specific_params;
   cache->obj_md_size = 0;
 
@@ -93,8 +95,8 @@ cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
     abort();
   }
 
-  cache->eviction_params = malloc(sizeof(QDLPv2_params_t));
-  QDLPv2_params_t *params = (QDLPv2_params_t *)cache->eviction_params;
+  cache->eviction_params = malloc(sizeof(myMQv1_params_t));
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
   params->fifo1_head = NULL;
   params->fifo1_tail = NULL;
   params->fifo2_head = NULL;
@@ -106,7 +108,7 @@ cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
   params->fifo1_max_size = (int64_t)ccache_params.cache_size * 0.25;
   params->fifo2_max_size = ccache_params.cache_size - params->fifo1_max_size;
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv2-%.2lf", 0.25);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "myMQv1-%.2lf", 0.25);
   return cache;
 }
 
@@ -129,7 +131,7 @@ cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
  * @param req
  * @return true if cache hit, false if cache miss
  */
-bool QDLPv2_get(cache_t *cache, const request_t *req) {
+bool myMQv1_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -148,7 +150,7 @@ bool QDLPv2_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t *QDLPv2_find(cache_t *cache, const request_t *req,
+static cache_obj_t *myMQv1_find(cache_t *cache, const request_t *req,
                  const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
   if (cache_obj != NULL && update_cache) {
@@ -171,8 +173,8 @@ static cache_obj_t *QDLPv2_find(cache_t *cache, const request_t *req,
  * @param req
  * @return the inserted object
  */
-static cache_obj_t *QDLPv2_insert(cache_t *cache, const request_t *req) {
-  QDLPv2_params_t *params = (QDLPv2_params_t *)cache->eviction_params;
+static cache_obj_t *myMQv1_insert(cache_t *cache, const request_t *req) {
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->fifo1_head, &params->fifo1_tail, obj);
@@ -195,7 +197,7 @@ static cache_obj_t *QDLPv2_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *QDLPv2_to_evict(cache_t *cache, const request_t *req) {
+static cache_obj_t *myMQv1_to_evict(cache_t *cache, const request_t *req) {
   assert(false);
   return NULL;
 }
@@ -209,8 +211,8 @@ static cache_obj_t *QDLPv2_to_evict(cache_t *cache, const request_t *req) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-static void QDLPv2_evict(cache_t *cache, const request_t *req) {
-  QDLPv2_params_t *params = (QDLPv2_params_t *)cache->eviction_params;
+static void myMQv1_evict(cache_t *cache, const request_t *req) {
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
 
   cache_obj_t *obj = params->fifo1_tail;
   params->fifo1_tail = obj->queue.prev;
@@ -251,8 +253,8 @@ static void QDLPv2_evict(cache_t *cache, const request_t *req) {
   }
 }
 
-static void QDLPv2_remove_obj(cache_t *cache, cache_obj_t *obj) {
-  QDLPv2_params_t *params = (QDLPv2_params_t *)cache->eviction_params;
+static void myMQv1_remove_obj(cache_t *cache, cache_obj_t *obj) {
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
 
   DEBUG_ASSERT(obj != NULL);
   if (obj->misc.q_id == 1) {
@@ -281,13 +283,13 @@ static void QDLPv2_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool QDLPv2_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool myMQv1_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;
   }
 
-  QDLPv2_remove_obj(cache, obj);
+  myMQv1_remove_obj(cache, obj);
 
   return true;
 }

@@ -14,9 +14,9 @@
 //  Created by Ziyue on 14/1/2023.
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../dataStructure/minimalIncrementCBF.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../dataStructure/minimalIncrementCBF.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {

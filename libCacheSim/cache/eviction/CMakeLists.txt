@@ -9,7 +9,6 @@ set(sourceC
         Clock.c
         SLRU.c
         SLRUv0.c
-        WTinyLFUv0.c
         CR_LFU.c
         SR_LRU.c
         Belady.c
@@ -22,6 +21,7 @@ set(sourceC
         LRUv0.c
         LeCaRv0.c
         LIRS.c
+        WTinyLFU.c
         )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
@@ -32,17 +32,16 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/LRU_Prob.c
 
                 priv/MyClock.c
+                priv/QDLP.c
 
-                priv/LPv1.c
                 priv/LP_TwoQ.c
-                priv/QDLPv1.c
-                priv/QDLPv2.c
-
-                priv/WTinyLFU.c
-
                 priv/SFIFO.c
                 priv/LP_SFIFO.c
-                priv/QDLP.c
+
+                priv/QDLPv1.c
+
+                priv/myMQv1.c
+
                 )
 endif()
 
