@@ -77,10 +77,9 @@ static cache_obj_t *_ARC_to_evict_miss_on_all_queues(cache_t *cache,
 static cache_obj_t *_ARC_to_replace(cache_t *cache, const request_t *req);
 
 /* debug functions */
-static void _ARC_print_cache_content(cache_t *cache);
+static void print_cache(cache_t *cache);
 static void _ARC_sanity_check(cache_t *cache, const request_t *req);
-static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
-                                          bool last);
+static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req);
 static bool ARC_get_debug(cache_t *cache, const request_t *req);
 
 // ***********************************************************************
@@ -123,7 +122,6 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   cache->eviction_params = my_malloc_n(ARC_params_t, 1);
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   params->p = 0;
-  params->p = cache->cache_size;
 
   params->L1_data_size = 0;
   params->L2_data_size = 0;
@@ -183,6 +181,7 @@ static void ARC_free(cache_t *cache) {
  */
 static bool ARC_get(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+// #define DEBUG_MODE
 #ifdef DEBUG_MODE
   return ARC_get_debug(cache, req);
 #else
@@ -635,12 +634,11 @@ static void ARC_parse_params(cache_t *cache,
 // ****                       debug functions                         ****
 // ****                                                               ****
 // ***********************************************************************
-static void _ARC_print_cache_content(cache_t *cache) {
+static void print_cache(cache_t *cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  printf("p: %lf\n", params->p);
   cache_obj_t *obj = params->L1_data_head;
-  printf("L1_data: ");
+  printf("T1: ");
   while (obj != NULL) {
     printf("%ld ", obj->obj_id);
     obj = obj->queue.next;
@@ -648,7 +646,7 @@ static void _ARC_print_cache_content(cache_t *cache) {
   printf("\n");
 
   obj = params->L1_ghost_head;
-  printf("L1_ghost: ");
+  printf("B1: ");
   while (obj != NULL) {
     printf("%ld ", obj->obj_id);
     obj = obj->queue.next;
@@ -656,7 +654,7 @@ static void _ARC_print_cache_content(cache_t *cache) {
   printf("\n");
 
   obj = params->L2_data_head;
-  printf("L2_data: ");
+  printf("T2: ");
   while (obj != NULL) {
     printf("%ld ", obj->obj_id);
     obj = obj->queue.next;
@@ -664,7 +662,7 @@ static void _ARC_print_cache_content(cache_t *cache) {
   printf("\n");
 
   obj = params->L2_ghost_head;
-  printf("L2_ghost: ");
+  printf("B2: ");
   while (obj != NULL) {
     printf("%ld ", obj->obj_id);
     obj = obj->queue.next;
@@ -674,13 +672,6 @@ static void _ARC_print_cache_content(cache_t *cache) {
 
 static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  printf("%ld %ld %ld, %s %ld + %ld + %ld + %ld = %ld\n", cache->n_req,
-         cache->n_obj, req->obj_id, ((char *)(cache->last_request_metadata)),
-         params->L1_data_size, params->L2_data_size, params->L1_ghost_size,
-         params->L2_ghost_size,
-         params->L1_data_size + params->L2_data_size + params->L1_ghost_size +
-             params->L2_ghost_size);
 
   DEBUG_ASSERT(params->L1_data_size >= 0);
   DEBUG_ASSERT(params->L1_ghost_size >= 0);
@@ -712,8 +703,8 @@ static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(cache->occupied_byte <= cache->cache_size);
 }
 
-static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
-                                          bool last) {
+static inline void _ARC_sanity_check_full(cache_t *cache,
+                                          const request_t *req) {
   // if (cache->n_req < 13200000) return;
 
   _ARC_sanity_check(cache, req);
@@ -770,28 +761,23 @@ static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req,
   }
   DEBUG_ASSERT(L2_ghost_byte == params->L2_ghost_size);
   DEBUG_ASSERT(last_obj == params->L2_ghost_tail);
-
-  if (last) {
-    printf("***************************************\n");
-  }
 }
 
 static bool ARC_get_debug(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   cache->n_req += 1;
-  cache->last_request_metadata = (void *)"None";
 
-  _ARC_sanity_check_full(cache, req, false);
+  _ARC_sanity_check_full(cache, req);
+  printf("%ld obj_id %ld, p %.2lf\n", cache->n_req, req->obj_id, params->p);
+  print_cache(cache);
+  printf("***************************************\n");
 
   cache_obj_t *obj = cache->find(cache, req, true);
-
   cache->last_request_metadata = obj != NULL ? (void *)"hit" : (void *)"miss";
 
-  _ARC_sanity_check_full(cache, req, false);
-
   if (obj != NULL) {
-    // _ARC_print_cache_content(cache);
+    _ARC_sanity_check_full(cache, req);
     return true;
   }
 
@@ -800,13 +786,9 @@ static bool ARC_get_debug(cache_t *cache, const request_t *req) {
     cache->evict(cache, req);
   }
 
-  _ARC_sanity_check_full(cache, req, false);
-
   cache->insert(cache, req);
+  _ARC_sanity_check_full(cache, req);
 
-  _ARC_sanity_check_full(cache, req, true);
-
-  // _ARC_print_cache_content(cache);
   return false;
 }
 
