@@ -16,6 +16,9 @@ struct candidate_t {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   int64_t create_time;
 #endif
+#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+  int64_t last_access_time;
+#endif
 
   static candidate_t make(const request_t* req) {
     return candidate_t{DEFAULT_APP_ID, static_cast<int64_t>(req->obj_id)};

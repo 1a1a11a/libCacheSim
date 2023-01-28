@@ -73,21 +73,6 @@ int main(int argc, char **argv) {
   }
   fclose(output_file);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  sprintf(output_filename, "result/%s.evictionAge",
-          rindex(args.trace_path, '/') + 1);
-  request_t *req = new_request();
-  reader_set_read_pos(args.reader, 1.0);
-  read_one_req_above(args.reader, req);
-
-  for (int i = 0; i < args.n_cache_size; i++) {
-    dump_eviction_age(caches[i], output_filename);
-    dump_cached_obj_age(caches[i], req, output_filename);
-  }
-
-  free_request(req);
-#endif
-
   close_reader(args.reader);
   args.cache->cache_free(args.cache);
   for (int i = 0; i < args.n_cache_size; i++) {

@@ -148,17 +148,25 @@ static cache_obj_t *Belady_find(cache_t *cache, const request_t *req,
 
   if (!update_cache) return cached_obj;
 
-  if (cached_obj != NULL) {
-    pqueue_pri_t pri = {.pri = req->next_access_vtime};
-    pqueue_change_priority(params->pq, pri,
-                           (pq_node_t *)(cached_obj->Belady.pq_node));
-    DEBUG_ASSERT(
-        ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
-            ->pri.pri == req->next_access_vtime);
-    return cached_obj;
+  if (cached_obj == NULL) {
+    return NULL;
   }
 
-  return NULL;
+  cached_obj->next_access_vtime = req->next_access_vtime;
+  pqueue_pri_t pri = {.pri = req->next_access_vtime};
+  pqueue_change_priority(params->pq, pri,
+                         (pq_node_t *)(cached_obj->Belady.pq_node));
+  DEBUG_ASSERT(
+      ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
+          ->pri.pri == req->next_access_vtime);
+
+#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+  if (req->next_access_vtime == INT64_MAX) {
+    Belady_evict(cache, req);
+  }
+#endif
+
+  return cached_obj;
 }
 
 /**
@@ -185,10 +193,17 @@ static cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
   node->pri.pri = req->next_access_vtime;
   pqueue_insert(params->pq, (void *)node);
   cached_obj->Belady.pq_node = node;
+  cached_obj->next_access_vtime = req->next_access_vtime;
 
   DEBUG_ASSERT(
       ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
           ->pri.pri == req->next_access_vtime);
+
+#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+  if (req->next_access_vtime == INT64_MAX) {
+    Belady_evict(cache, req);
+  }
+#endif
 
   return cached_obj;
 }

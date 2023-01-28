@@ -141,7 +141,8 @@ struct cache {
   const char *init_params;
 
   void *last_request_metadata;
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE) || \
+    defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
   bool track_eviction_age;
 #endif
 
@@ -312,10 +313,10 @@ static inline void record_log2_eviction_age(cache_t *cache, const int age) {
 
 static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj,
                                        const int64_t age) {
-#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
+#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE) || \
+    defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
   if (obj->obj_id % 101 == 0) {
-    printf("ea: %ld %ld\n", obj->obj_id,
-           CURR_TIME(cache, req) - obj->create_time);
+    printf("ea: %lu %ld\n", obj->obj_id, age);
   }
 #endif
 

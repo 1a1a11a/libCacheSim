@@ -208,7 +208,7 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
                              const bool update_cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  cache_obj_t *obj = hashtable_find(cache->hashtable, req);
+  cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
   if (!update_cache) {
     return obj->ARC.ghost ? NULL : obj;
@@ -223,10 +223,6 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
 
   int lru_id = obj->ARC.lru_id;
   cache_obj_t *ret = obj;
-
-#ifdef USE_BELADY
-  obj->next_access_vtime = req->next_access_vtime;
-#endif
 
   if (obj->ARC.ghost) {
     // ghost hit
@@ -292,13 +288,7 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
 static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  cache_obj_t *obj = hashtable_insert(cache->hashtable, req);
-#ifdef USE_BELADY
-  obj->next_access_vtime = req->next_access_vtime;
-#endif
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  obj->create_time = CURR_TIME(cache, req);
-#endif
+  cache_obj_t *obj = cache_insert_base(cache, req);
 
   if (params->vtime_last_req_in_ghost == cache->n_req &&
       (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
@@ -316,9 +306,6 @@ static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
     prepend_obj_to_head(&params->L1_data_head, &params->L1_data_tail, obj);
     params->L1_data_size += req->obj_size + cache->obj_md_size;
   }
-
-  cache->occupied_byte += req->obj_size + cache->obj_md_size;
-  cache->n_obj += 1;
 
   return obj;
 }
@@ -437,18 +424,13 @@ static void _ARC_evict_L1_data(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = params->L1_data_tail;
   DEBUG_ASSERT(obj != NULL);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
-#endif
+  cache_evict_base(cache, obj, false);
 
   params->L1_data_size -= obj->obj_size + cache->obj_md_size;
   params->L1_ghost_size += obj->obj_size + cache->obj_md_size;
   remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
   prepend_obj_to_head(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
-
   obj->ARC.ghost = true;
-  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
-  cache->n_obj -= 1;
 }
 
 static void _ARC_evict_L1_data_no_ghost(cache_t *cache, const request_t *req) {
@@ -456,16 +438,10 @@ static void _ARC_evict_L1_data_no_ghost(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = params->L1_data_tail;
   DEBUG_ASSERT(obj != NULL);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
-#endif
-
   remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
   params->L1_data_size -= obj->obj_size + cache->obj_md_size;
-  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
-  cache->n_obj -= 1;
 
-  hashtable_delete(cache->hashtable, obj);
+  cache_evict_base(cache, obj, true);
 }
 
 static void _ARC_evict_L2_data(cache_t *cache, const request_t *req) {
@@ -473,18 +449,14 @@ static void _ARC_evict_L2_data(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = params->L2_data_tail;
   DEBUG_ASSERT(obj != NULL);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
-#endif
-
   params->L2_data_size -= obj->obj_size + cache->obj_md_size;
   params->L2_ghost_size += obj->obj_size + cache->obj_md_size;
   remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
   prepend_obj_to_head(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
 
   obj->ARC.ghost = true;
-  cache->occupied_byte -= obj->obj_size + cache->obj_md_size;
-  cache->n_obj -= 1;
+
+  cache_evict_base(cache, obj, false);
 }
 
 static void _ARC_evict_L1_ghost(cache_t *cache, const request_t *req) {

@@ -75,7 +75,8 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->get_occupied_byte = LHD_get_occupied_byte;
   cache->get_n_obj = LHD_get_n_obj;
   cache->init_params = cache_specific_params;
-  cache->to_evict_candidate = static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
+  cache->to_evict_candidate =
+      static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
   if (cache_specific_params != NULL) {
     ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
           cache_specific_params);
@@ -172,6 +173,9 @@ static cache_obj_t *LHD_find(cache_t *cache, const request_t *req,
   }
 
   if (update_cache) {
+#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+    id.last_access_time = CURR_TIME(cache, req);
+#endif
     if (itr->second != req->obj_size) {
       cache->occupied_byte -= itr->second;
       cache->occupied_byte += req->obj_size;
@@ -277,7 +281,18 @@ static void LHD_evict(cache_t *cache, const request_t *req) {
     cache_obj_t obj;
     obj.obj_id = victim.id;
     obj.create_time = victim.create_time;
-    record_eviction_age(cache, &obj, CURR_TIME(cache, req) - victim.create_time);
+    record_eviction_age(cache, &obj,
+                        CURR_TIME(cache, req) - victim.create_time);
+  }
+#endif
+
+#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+  {
+    cache_obj_t obj;
+    obj.obj_id = victim.id;
+    obj.last_access_time = victim.last_access_time;
+    record_eviction_age(cache, &obj,
+                        CURR_TIME(cache, req) - victim.last_access_time);
   }
 #endif
 
@@ -327,10 +342,7 @@ static int64_t LHD_get_occupied_byte(const cache_t *cache) {
   return cache->occupied_byte;
 }
 
-static int64_t LHD_get_n_obj(const cache_t *cache) {
-  return cache->n_obj;
-}
-
+static int64_t LHD_get_n_obj(const cache_t *cache) { return cache->n_obj; }
 
 #ifdef __cplusplus
 }

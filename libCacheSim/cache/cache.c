@@ -38,9 +38,10 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
 
-  /* this option works only when eviction age tracking 
+  /* this option works only when eviction age tracking
    * is on in config.h */
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE) || \
+    defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
   cache->track_eviction_age = true;
 #endif
 
@@ -133,21 +134,28 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
 cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
                              const bool update_cache) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
-  cache_obj_t *ret = cache_obj;
 
   if (cache_obj != NULL) {
+#if defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
+    cache_obj->last_access_time = CURR_TIME(cache, req);
+#endif
+
 #ifdef SUPPORT_TTL
     if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->clock_time) {
-      ret = NULL;
-
       if (update_cache) {
         cache->remove(cache, cache_obj->obj_id);
       }
+
+      cache_obj = NULL;
     }
 #endif
+
+    if (update_cache && req->next_access_vtime > 0) {
+      cache_obj->next_access_vtime = req->next_access_vtime;
+    }
   }
 
-  return ret;
+  return cache_obj;
 }
 
 /**
@@ -173,8 +181,8 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
   VERBOSE("******* req %ld, obj %ld, obj_size %ld, cache size %ld/%ld\n",
-           cache->n_req, req->obj_id, req->obj_size,
-           cache->get_occupied_byte(cache), cache->cache_size);
+          cache->n_req, req->obj_id, req->obj_size,
+          cache->get_occupied_byte(cache), cache->cache_size);
 
   cache_obj_t *obj = cache->find(cache, req, true);
 
@@ -223,7 +231,13 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 
-  return cache_obj;
+#if defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
+  cache_obj->last_access_time = CURR_TIME(cache, req);
+#endif
+
+  if (req->next_access_vtime > 0) {
+    cache_obj->next_access_vtime = req->next_access_vtime;
+  }
 }
 
 /**
@@ -239,6 +253,11 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj,
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   if (cache->track_eviction_age)
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+  if (cache->track_eviction_age)
+    record_eviction_age(cache, obj,
+                        CURR_TIME(cache, req) - obj->last_access_time);
 #endif
   cache_remove_obj_base(cache, obj, remove_from_hashtable);
 }
