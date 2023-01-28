@@ -238,6 +238,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   if (req->next_access_vtime > 0) {
     cache_obj->next_access_vtime = req->next_access_vtime;
   }
+
+  return cache_obj;
 }
 
 /**
