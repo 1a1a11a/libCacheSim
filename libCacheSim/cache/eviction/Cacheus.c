@@ -327,7 +327,7 @@ static void Cacheus_evict(cache_t *cache, const request_t *req) {
   } else if (obj_to_evict == lru_to_evict) {
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
     lru->evict(lru, req);
-    bool removed = lfu->remove(lfu, obj_to_evict->obj_id);
+    bool removed = lfu->remove(lfu, params->req_local->obj_id);
     DEBUG_ASSERT(removed);
     // insert into ghost
     bool ghost_hit = lru_g->get(lru_g, params->req_local);
@@ -337,7 +337,7 @@ static void Cacheus_evict(cache_t *cache, const request_t *req) {
     // history
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
     // LRU remove needs to before LFU evict
-    bool removed = lru->remove(lru, obj_to_evict->obj_id);
+    bool removed = lru->remove(lru, params->req_local->obj_id);
     DEBUG_ASSERT(removed);
     lfu->evict(lfu, req);
     // insert into ghost
