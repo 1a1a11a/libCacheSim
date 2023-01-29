@@ -192,7 +192,7 @@ static cache_obj_t *LFUCpp_to_evict(cache_t *cache, const request_t *req) {
  */
 static void LFUCpp_evict(cache_t *cache, const request_t *req) {
   auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
-  eviction::pq_node_type p = lfu->pick_lowest_score();
+  eviction::pq_node_type p = lfu->pop_lowest_score();
   cache_obj_t *obj = p.obj;
 
   cache_remove_obj_base(cache, obj, true);

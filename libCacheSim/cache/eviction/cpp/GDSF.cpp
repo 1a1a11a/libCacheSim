@@ -31,6 +31,7 @@ static bool GDSF_get(cache_t *cache, const request_t *req);
 static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req,
                               const bool update_cache);
 static cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *GDSF_to_evict(cache_t *cache, const request_t *req);
 static void GDSF_evict(cache_t *cache, const request_t *req);
 static bool GDSF_remove(cache_t *cache, const obj_id_t obj_id);
 
@@ -174,6 +175,23 @@ static cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req) {
 }
 
 /**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
+static cache_obj_t *GDSF_to_evict(cache_t *cache, const request_t *req) {
+  auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
+  eviction::pq_node_type p = gdsf->peek_lowest_score();
+  
+  return p.obj;
+}
+
+/**
  * @brief evict an object from the cache
  * it needs to call cache_evict_base before returning
  * which updates some metadata such as n_obj, occupied size, and hash table
@@ -184,7 +202,7 @@ static cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req) {
  */
 static void GDSF_evict(cache_t *cache, const request_t *req) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
-  eviction::pq_node_type p = gdsf->pick_lowest_score();
+  eviction::pq_node_type p = gdsf->pop_lowest_score();
   cache_obj_t *obj = p.obj;
 
   gdsf->pri_last_evict = p.priority;

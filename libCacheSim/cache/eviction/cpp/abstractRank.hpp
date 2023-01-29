@@ -58,7 +58,14 @@ class abstractRank {
  public:
   abstractRank() = default;
 
-  inline pq_node_type pick_lowest_score() {
+  inline pq_node_type peek_lowest_score() {
+    auto p = pq.begin();
+    pq_node_type p_copy(*p);
+
+    return std::move(p_copy);
+  }
+
+  inline pq_node_type pop_lowest_score() {
     auto p = pq.begin();
     pq_node_type p_copy(*p);
     // itr_map.erase(get<0>(*p));
