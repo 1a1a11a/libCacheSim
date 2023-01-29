@@ -188,11 +188,22 @@ static void set_cache_size(struct arguments *args, reader_t *reader) {
   double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
                                  0.1,    0.2,    0.3,   0.4,   0.6,  0.8};
   for (int i = 0; i < N_AUTO_CACHE_SIZE; i++) {
-    if ((long)(wss * s[i]) > 4) {
-      args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
+    if (args->ignore_obj_size) {
+      if ((long)(wss * s[i]) > 4) {
+        args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
+      }
+    } else {
+      if ((long)(wss * s[i]) >= 128 * MiB) {
+        args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
+      }
     }
   }
   args->n_cache_size = n_cache_sizes;
+
+  if (args->n_cache_size == 0) {
+    printf("working set %ld too small\n", wss);
+    exit(0);
+  }
 }
 
 #ifdef __cplusplus
