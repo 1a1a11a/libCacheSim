@@ -252,6 +252,7 @@ static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
     move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
 
     // update LFU state
+    // it is possible that this is the only object in the cache
     remove_obj_from_freq_node(params, cache_obj);
 
     /* freq incr and move to next freq node */
@@ -261,6 +262,9 @@ static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
     }
 
     insert_obj_info_freq_node(params, cache_obj);
+    if (cache->n_obj == 1) {
+      update_LFU_min_freq(params);
+    }
 
     /* it is possible that we update freq to a higher freq
      * when remove_obj_from_freq_node */
@@ -597,7 +601,8 @@ static inline void update_LFU_min_freq(LeCaR_params_t *params) {
   }
   VVERBOSE("update LFU min freq from %u to %u\n", (unsigned)old_min_freq,
            (unsigned)params->min_freq);
-  DEBUG_ASSERT(params->min_freq > old_min_freq);
+  // if the object is the only object in the cache, we may have min_freq == 1
+  DEBUG_ASSERT(params->min_freq > old_min_freq || params->q_head == params->q_tail);
 }
 
 static inline freq_node_t *get_min_freq_node(LeCaR_params_t *params) {
