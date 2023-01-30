@@ -10,7 +10,8 @@
 extern "C" {
 #endif
 
-static long cal_working_set_size(reader_t *reader, bool ignore_obj_size);
+static void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
+                                 int64_t *wss_byte);
 static void set_cache_size(struct arguments *args, reader_t *reader);
 
 /**
@@ -67,7 +68,9 @@ int conv_cache_sizes(char *cache_size_str, struct arguments *args) {
     if (strchr(token, '.') != NULL) {
       // input is a float
       if (wss == 0) {
-        wss = cal_working_set_size(args->reader, args->ignore_obj_size);
+        int64_t wss_obj = 0, wss_byte = 0;
+        cal_working_set_size(args->reader, &wss_obj, &wss_byte);
+        wss = args->ignore_obj_size ? wss_obj : wss_byte;
       }
       args->cache_sizes[args->n_cache_size++] = (uint64_t)(wss * atof(token));
     } else {
@@ -133,11 +136,13 @@ void print_parsed_args(struct arguments *args) {
 #undef OUTPUT_STR_LEN
 }
 
-static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
+static void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
+                                 int64_t *wss_byte) {
   reset_reader(reader);
-  int64_t wss = 0;
   request_t *req = new_request();
   GHashTable *obj_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+  *wss_obj = 0;
+  *wss_byte = 0;
 
   // sample the object space in case there are too many objects
   // which can cause a crash
@@ -160,19 +165,15 @@ static long cal_working_set_size(reader_t *reader, bool ignore_obj_size) {
 
     g_hash_table_add(obj_table, (gpointer)req->obj_id);
 
-    if (ignore_obj_size) {
-      wss += 1;
-    } else {
-      wss += req->obj_size;
-    }
+    *wss_obj += 1;
+    *wss_byte += req->obj_size;
   }
-  wss *= scaling_factor;
-  INFO("working set size: %ld %s\n", wss,
-       ignore_obj_size ? "objects" : "bytes");
+  *wss_obj *= scaling_factor;
+  *wss_byte *= scaling_factor;
+  INFO("working set size: %ld object %ld byte\n", *wss_obj, *wss_byte);
 
   free_request(req);
   reset_reader(reader);
-  return wss;
 }
 
 static void set_cache_size(struct arguments *args, reader_t *reader) {
@@ -184,16 +185,18 @@ static void set_cache_size(struct arguments *args, reader_t *reader) {
 
   // detect cache size from the trace
   int n_cache_sizes = 0;
-  long wss = cal_working_set_size(reader, args->ignore_obj_size);
+  int64_t wss_obj = 0, wss_byte = 0;
+  cal_working_set_size(reader, &wss_obj, &wss_byte);
+  int64_t wss = args->ignore_obj_size ? wss_obj : wss_byte;
   double s[N_AUTO_CACHE_SIZE] = {0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
                                  0.1,    0.2,    0.3,   0.4,   0.6,  0.8};
   for (int i = 0; i < N_AUTO_CACHE_SIZE; i++) {
     if (args->ignore_obj_size) {
-      if ((long)(wss * s[i]) > 4) {
+      if ((long)(wss_obj * s[i]) > 4) {
         args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
       }
     } else {
-      if ((long)(wss * s[i]) >= 128 * MiB) {
+      if ((long)(wss_obj * s[i]) >= 100) {
         args->cache_sizes[n_cache_sizes++] = (long)(wss * s[i]);
       }
     }
