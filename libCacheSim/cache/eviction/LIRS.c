@@ -21,11 +21,11 @@ typedef struct LIRS_params {
   cache_t *LRU_q;
   cache_t *LRU_nh;
   double hirs_ratio;
-  int32_t hirs_limit;
-  int32_t lirs_limit;
-  int32_t hirs_count;
-  int32_t lirs_count;
-  int32_t nonresident;
+  uint64_t hirs_limit;
+  uint64_t lirs_limit;
+  uint64_t hirs_count;
+  uint64_t lirs_count;
+  uint64_t nonresident;
 } LIRS_params_t;
 
 // ***********************************************************************
@@ -41,13 +41,15 @@ static cache_obj_t *LIRS_find(cache_t *cache, const request_t *req,
 static cache_obj_t *LIRS_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LIRS_to_evict(cache_t *cache, const request_t *req);
 static void LIRS_evict(cache_t *cache, const request_t *req);
-// static bool LIRS_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LIRS_remove(cache_t *cache, const obj_id_t obj_id);
 
 /* internal functions */
+bool LIRS_can_insert(cache_t *cache, const request_t *req);
 static void LIRS_prune(cache_t *cache);
-static cache_obj_t *hitHIRinLIRS(cache_t *cache,
-                         cache_obj_t *cache_obj_s, cache_obj_t *cache_obj_q);
-static cache_obj_t *hitHIRinQ(cache_t *cache, cache_obj_t *cache_obj);
+static cache_obj_t *hit_RD_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s,
+                                  cache_obj_t *cache_obj_q);
+static cache_obj_t *hit_NR_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s);
+static cache_obj_t *hit_RD_HIRinQ(cache_t *cache, cache_obj_t *cache_obj_q);
 static void evictLIR(cache_t *cache);
 static bool evictHIR(cache_t *cache);
 static void limitStack(cache_t *cache);
@@ -76,9 +78,10 @@ cache_t *LIRS_init(const common_cache_params_t ccache_params,
     cache->cache_free = LIRS_free;
     cache->get = LIRS_get;
     cache->find = LIRS_find;
+    cache->can_insert = LIRS_can_insert;
     cache->insert = LIRS_insert;
     cache->evict = LIRS_evict;
-    // cache->remove = LIRS_remove;
+    cache->remove = LIRS_remove;
     cache->to_evict = LIRS_to_evict;
     cache->init_params = cache_specific_params;
 
@@ -98,7 +101,7 @@ cache_t *LIRS_init(const common_cache_params_t ccache_params,
     LIRS_params_t * params = (LIRS_params_t *)(cache->eviction_params);
 
     params->hirs_ratio = 0.01;
-    params->hirs_limit = MAX(1, (int)(params->hirs_ratio * cache->cache_size));
+    params->hirs_limit = MAX(1, (uint64_t)(params->hirs_ratio * cache->cache_size));
     params->lirs_limit = cache->cache_size - params->hirs_limit;
     params->hirs_count = 0;
     params->lirs_count = 0;
@@ -160,7 +163,7 @@ static bool LIRS_get(cache_t *cache, const request_t *req) {
   #ifdef DEBUG_MODE
   LIRS_params_t * params = (LIRS_params_t *)(cache->eviction_params);
   cache_t *LRU_s = params->LRU_s;
-  if (cache->n_req >= 25) {
+  if (cache->n_req >= 2) {
     // printf("obj:%lu size:%ld ", req->obj_id, req->obj_size);
     // if (res) {
     //   printf("hit\n");
@@ -170,10 +173,11 @@ static bool LIRS_get(cache_t *cache, const request_t *req) {
     // LIRS_print_cache(cache);
     LIRS_print_cache_compared_to_cacheus(cache);
 
+    printf("number of requests:%ld \n", cache->n_req);
     printf("number of objects in S:%ld \n", LRU_s->n_obj);
-    printf("S stack cachesize:%ld %d\n", LRU_s->occupied_byte, params->lirs_count);
-    printf("Q: %ld %d \n", params->LRU_q->occupied_byte, params->hirs_count);
-    printf("NH: %ld %d \n", params->LRU_nh->occupied_byte, params->nonresident);
+    printf("S(%ld):%ld %ld\n", params->lirs_limit, LRU_s->occupied_byte, params->lirs_count);
+    printf("Q(%ld): %ld %ld \n", params->hirs_limit, params->LRU_q->occupied_byte, params->hirs_count);
+    printf("NH: %ld %ld \n", params->LRU_nh->occupied_byte, params->nonresident);
     printf("\n\n");
   }
   #endif
@@ -214,19 +218,27 @@ static cache_obj_t *LIRS_find(cache_t *cache, const request_t *req,
     if (obj_s->LIRS.is_LIR) {
       // accessing an LIR block (hit)
       LIRS_prune(cache);
-      res = obj_s;
+      return obj_s;
     } else {
       // accessing an HIR block in S (resident and non-resident)
-      // res = NULL when the HIR block is non-resident
-      res = hitHIRinLIRS(cache, obj_s, obj_q);
+      if (obj_s->LIRS.in_cache) {
+        return hit_RD_HIRinS(cache, obj_s, obj_q); //hit
+      } else {
+        return NULL;
+      }
     } 
   } else if (obj_q != NULL) {
     // accessing an HIR blocks in Q (resident)
     // LRU_q->find already did the movement
-    res = hitHIRinQ(cache, obj_q);
+    if (obj_q->LIRS.in_cache) {
+      return hit_RD_HIRinQ(cache, obj_q); //hit
+    } else {
+      assert(false);
+      return NULL;
+    }
+  } else {
+    return NULL; //miss
   }
-
-  return res;
 }
 
 /**
@@ -300,7 +312,6 @@ static cache_obj_t *LIRS_insert(cache_t *cache, const request_t *req) {
       params->hirs_count += inserted_obj_s->obj_size;
       cache->occupied_byte += inserted_obj_s->obj_size + cache->obj_md_size;
     } else {
-      // when both LIR and HIR block sets are full, 
       // the curcumstance is same as accessing an HIR non-resident not in S
       // insert the req into S and place it on the top of S
       cache_obj_t *inserted_obj_s = params->LRU_s->insert(params->LRU_s, req);
@@ -352,7 +363,7 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
   if (obj_s != NULL && obj_s->LIRS.is_LIR == false 
                     && obj_s->LIRS.in_cache == false) {
     //remove the HIR resident at the front of Q
-    if (params->hirs_count >= params->hirs_limit){
+    while (params->hirs_count >= params->hirs_limit){
       evictHIR(cache);
     }
 
@@ -364,7 +375,7 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
   // Upon accessing an HIR non-resident in Q
   if (obj_s == NULL && obj_q != NULL && obj_q->LIRS.in_cache == false) {
     //remove the HIR resident at the front of Q
-    if (params->hirs_count >= params->hirs_limit){
+    while (params->hirs_count >= params->hirs_limit){
       evictHIR(cache);
     }
   }
@@ -379,7 +390,6 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
       evictHIR(cache);
     }
   }
-
 }
 
 /**
@@ -396,15 +406,111 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
  * cache
  */
 
-// static bool LIRS_remove(cache_t *cache, obj_id_t obj_id) {
+static bool LIRS_remove(cache_t *cache, obj_id_t obj_id) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
-// }
+  cache_obj_t *obj_s = hashtable_find_obj_id(params->LRU_s->hashtable, obj_id);
+  cache_obj_t *obj_q = hashtable_find_obj_id(params->LRU_q->hashtable, obj_id);
+
+  // object in S stack (or in Q stack)
+  if (obj_s != NULL) {
+    if (obj_s->LIRS.is_LIR) {
+        params->LRU_s->remove(params->LRU_s, obj_id);
+        params->lirs_count -= obj_s->obj_size;
+        cache->occupied_byte -= obj_s->obj_size;
+        cache->n_obj--;
+        LIRS_prune(cache);
+    } else {
+      if (obj_s->LIRS.in_cache) {
+        params->LRU_s->remove(params->LRU_s, obj_id);
+        params->hirs_count -= obj_s->obj_size;
+        cache->occupied_byte -= obj_s->obj_size;
+        cache->n_obj--;
+      } else {
+        params->LRU_s->remove(params->LRU_s, obj_id);
+        params->nonresident -= obj_s->obj_size;
+      }
+      if (obj_q != NULL) {
+          params->LRU_q->remove(params->LRU_q, obj_id);
+      }
+    }
+  } else if (obj_q != NULL) {
+    // object only in Q stack
+    params->LRU_q->remove(params->LRU_q, obj_id);
+    if (obj_q->LIRS.in_cache) {
+      params->hirs_count -= obj_q->obj_size;
+      cache->occupied_byte -= obj_q->obj_size;
+      cache->n_obj--;
+    } else {
+      assert(false);
+      return false;
+    }
+  } else {
+    // object neither in S nor Q stack
+    return false;
+  }
+
+  return true;
+}
 
 // ***********************************************************************
 // ****                                                               ****
 // ****                         internal functions                    ****
 // ****                                                               ****
 // ***********************************************************************
+
+/* LIRS cannot insert an object larger than Q stack size.
+* This function also promise there will be enough space for the object
+* to be inserted into the cache.
+ */
+bool LIRS_can_insert(cache_t *cache, const request_t *req) {
+  
+  bool can_insert = cache_can_insert_default(cache, req);
+  if (can_insert == false) {
+    return false;
+  }
+  LIRS_params_t *params = (LIRS_params_t *)cache->eviction_params;
+  cache_obj_t *obj_s = params->LRU_s->find(params->LRU_s, req, false);
+  cache_obj_t *obj_q = params->LRU_q->find(params->LRU_q, req, false);
+
+  // accessing an HIR non-resident in S
+  if (obj_s != NULL && obj_s->LIRS.is_LIR == false 
+                    && obj_s->LIRS.in_cache == false) {
+    while (params->lirs_count + obj_s->obj_size > params->lirs_limit) {
+      evictLIR(cache);
+    }
+
+    bool res = params->LRU_nh->remove(params->LRU_nh, obj_s->obj_id);
+    if (res){
+      params->nonresident -= obj_s->obj_size;
+    }
+
+    return true;
+  }
+
+  // accessing blocks neither in S nor Q
+  if (obj_s == NULL && obj_q == NULL) {
+    if (req->obj_size > params->lirs_limit || req->obj_size > params->hirs_limit) {
+      WARN_ONCE("object size too large\n");
+      // printf("request num: %ld\n", cache->n_req);
+      return false;
+    }
+    if (params->lirs_count + req->obj_size > params->lirs_limit
+        && params->hirs_count + req->obj_size > params->hirs_limit) {
+      // when both LIR and HIR block sets are full,
+      // the curcumstance is same as accessing an HIR non-resident not in S
+      while (params->hirs_count + req->obj_size > params->hirs_limit) {
+        evictHIR(cache);
+      }
+      return true;
+    }
+    return true;
+  }
+
+  INFO("LIRS_can_insert: should not reach here. n_req = %ld\n", cache->n_req);
+  assert(false);
+}
+
 
 static void LIRS_prune(cache_t *cache) {
 
@@ -432,66 +538,61 @@ static void LIRS_prune(cache_t *cache) {
   }
 }
 
-static cache_obj_t *hitHIRinLIRS(cache_t *cache, 
-                         cache_obj_t *cache_obj_s, cache_obj_t *cache_obj_q) {
+static cache_obj_t *hit_RD_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s,
+                                  cache_obj_t *cache_obj_q) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
-  cache_obj_t *res = NULL;
-  // accessing resident HIR block in S (hit)
-  if (cache_obj_s->LIRS.in_cache) {
-    if (cache_obj_q != NULL){
-      params->hirs_count -= cache_obj_q->obj_size;
-      params->LRU_q->remove(params->LRU_q, cache_obj_q->obj_id);
-    }
-    
-    cache_obj_s->LIRS.is_LIR = true;
-    params->lirs_count += cache_obj_s->obj_size;
-
-    if (params->lirs_count >= params->lirs_limit) {
-      evictLIR(cache);
-    }
-    
-    res = cache_obj_s;
-  } else {
-    // accessing non-resident HIR block in S (miss)
-    bool res = params->LRU_nh->remove(params->LRU_nh, cache_obj_s->obj_id);
-    if (res){
-      params->nonresident -= cache_obj_s->obj_size;
-    }
-    res = NULL;
+  if (cache_obj_q != NULL) {
+    params->hirs_count -= cache_obj_q->obj_size;
+    params->LRU_q->remove(params->LRU_q, cache_obj_q->obj_id);
+    cache->occupied_byte -= cache_obj_q->obj_size;
+    cache->n_obj--;
   }
 
-  return res;
+  while (params->lirs_count + cache_obj_s->obj_size > params->lirs_limit) {
+    evictLIR(cache);
+  }
+  cache_obj_s->LIRS.is_LIR = true;
+  params->lirs_count += cache_obj_s->obj_size;
+
+  cache->occupied_byte += cache_obj_s->obj_size;
+  cache->n_obj++;
+
+  return cache_obj_s;
 }
 
-static cache_obj_t *hitHIRinQ(cache_t *cache, cache_obj_t *cache_obj){
+static cache_obj_t *hit_NR_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+  
+  bool res = params->LRU_nh->remove(params->LRU_nh, cache_obj_s->obj_id);
+  if (res){
+    params->nonresident -= cache_obj_s->obj_size;
+  }
+  return NULL;
+}
 
+static cache_obj_t *hit_RD_HIRinQ(cache_t *cache, cache_obj_t *cache_obj_q) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+  
   static __thread request_t *req_local = NULL;
   if (req_local == NULL) {
     req_local = new_request();
   }
-  copy_cache_obj_to_request(req_local, cache_obj);
-  params->LRU_s->insert(params->LRU_s, req_local);
+  copy_cache_obj_to_request(req_local, cache_obj_q);
 
-  cache_obj_t *res = NULL;
-  if (cache_obj->LIRS.in_cache) {
-    cache_obj_t *obj_to_update = params->LRU_s->find(params->LRU_s, req_local, false);
-    obj_to_update->LIRS.is_LIR = false;
-    obj_to_update->LIRS.in_cache = true;
-    res = cache_obj;
+  while (params->lirs_count + cache_obj_q->obj_size > params->lirs_limit) {
+    evictLIR(cache);
   }
+  params->LRU_s->insert(params->LRU_s, req_local);
+  cache_obj_t *obj_to_update = params->LRU_s->find(params->LRU_s, req_local, false);
+  obj_to_update->LIRS.is_LIR = false;
+  obj_to_update->LIRS.in_cache = true;
 
-  return res;
+  return obj_to_update;
 }
-
 
 static void evictLIR(cache_t *cache){
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
-  
-  // LRU_params_t *params_lru_s = (LRU_params_t *)(params->LRU_s->eviction_params);
-  // DEBUG_ASSERT(params_lru_s->q_tail->LIRS.is_LIR);
-
   cache_obj_t *obj_to_evict = params->LRU_s->to_evict(params->LRU_s, NULL);
 
   static __thread request_t *req_local = NULL;
@@ -502,16 +603,23 @@ static void evictLIR(cache_t *cache){
   params->lirs_count -= obj_to_evict->obj_size;
   params->LRU_s->evict(params->LRU_s, NULL);
 
-  if (params->hirs_count >= params->hirs_limit) {
-    evictHIR(cache);
+  cache->occupied_byte -= (req_local->obj_size + cache->obj_md_size);
+  cache->n_obj -= 1;
+
+  if (req_local->obj_size <= params->hirs_limit) {
+    while (params->hirs_count + req_local->obj_size > params->hirs_limit) {
+      evictHIR(cache);
+    }  
+    params->LRU_q->insert(params->LRU_q, req_local);
+    
+    cache_obj_t *obj_to_update = params->LRU_q->find(params->LRU_q, req_local, false);
+    obj_to_update->LIRS.is_LIR = false;
+    obj_to_update->LIRS.in_cache = true;
+
+    params->hirs_count += req_local->obj_size;
+    cache->occupied_byte += (req_local->obj_size + cache->obj_md_size);
+    cache->n_obj += 1;
   }
-
-  params->LRU_q->insert(params->LRU_q, req_local);
-  cache_obj_t *obj_to_update = params->LRU_q->find(params->LRU_q, req_local, false);
-  obj_to_update->LIRS.is_LIR = false;
-  obj_to_update->LIRS.in_cache = true;
-
-  params->hirs_count += req_local->obj_size;
 
   LIRS_prune(cache);
 }
@@ -558,7 +666,6 @@ static void limitStack(cache_t *cache) {
     }
   }
 }
-
 // ***********************************************************************
 // ****                                                               ****
 // ****                       debug functions                         ****
@@ -567,7 +674,7 @@ static void limitStack(cache_t *cache) {
 static void LIRS_print_cache(cache_t *cache) {
   LIRS_params_t *params = (LIRS_params_t *)cache->eviction_params;
 
-  printf("S Stack:  %u:%u %u:%u \n", 
+  printf("S Stack:  %lu:%lu %lu:%lu \n", 
                     params->lirs_limit, params->lirs_count, 
                     params->hirs_limit, params->hirs_count);
   cache_obj_t *obj =
