@@ -22,14 +22,16 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
     return select_segs_learned(cache, segs);
   }
 
-  if (params->type == LOGCACHE_TWO_ORACLE || params->type == LOGCACHE_LOG_ORACLE) {
+  if (params->type == LOGCACHE_TWO_ORACLE ||
+      params->type == LOGCACHE_LOG_ORACLE) {
     return select_segs_learned(cache, segs);
   }
 
-  assert(0);// should not reach here
+  assert(0);  // should not reach here
 }
 
-void transform_seg_to_training(cache_t *cache, bucket_t *bucket, segment_t *seg) {
+void transform_seg_to_training(cache_t *cache, bucket_t *bucket,
+                               segment_t *seg) {
   GLCache_params_t *params = cache->eviction_params;
   seg->become_train_seg_vtime = params->curr_vtime;
   seg->become_train_seg_rtime = params->curr_rtime;
@@ -83,22 +85,23 @@ void GLCache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
   link_new_seg_before_seg(params, bucket, segs[0], new_seg);
 
   cache_obj_t *cache_obj;
-  double cutoff =
-      find_cutoff(cache, params->obj_score_type, segs, params->n_merge, params->segment_size);
+  double cutoff = find_cutoff(cache, params->obj_score_type, segs,
+                              params->n_merge, params->segment_size);
 
-  #ifdef RANDOMIZE_MERGE
+#ifdef RANDOMIZE_MERGE
   int pos = 0;
-  #endif
+#endif
   for (int i = 0; i < params->n_merge; i++) {
     // merge n segments into one segment
     DEBUG_ASSERT(segs[i]->magic == MAGIC);
     for (int j = 0; j < segs[i]->n_obj; j++) {
       cache_obj = &segs[i]->objs[j];
-      #ifdef RANDOMIZE_MERGE
+#ifdef RANDOMIZE_MERGE
       double obj_score = params->obj_sel.score_array_offset[pos++];
-      #else 
-      double obj_score = cal_obj_score(params, params->obj_score_type, cache_obj);
-      #endif
+#else
+      double obj_score =
+          cal_obj_score(params, params->obj_score_type, cache_obj);
+#endif
       if (new_seg->n_obj < params->segment_size && obj_score >= cutoff) {
         cache_obj_t *new_obj = &new_seg->objs[new_seg->n_obj];
         memcpy(new_obj, cache_obj, sizeof(cache_obj_t));
@@ -137,8 +140,8 @@ void GLCache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
 // called when there is no segment can be merged due to fragmentation
 // different from clean_one_seg becausee this function also updates cache state
 int evict_one_seg(cache_t *cache, segment_t *seg) {
-  VVERBOSE("req %lu, evict one seg id %d occupied size %lu/%lu\n", cache->n_req, seg->seg_id,
-           cache->occupied_byte, cache->cache_size);
+  VVERBOSE("req %lu, evict one seg id %d occupied size %lu/%lu\n", cache->n_req,
+           seg->seg_id, cache->occupied_byte, cache->cache_size);
   GLCache_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[seg->bucket_id];
 
@@ -157,7 +160,8 @@ int evict_one_seg(cache_t *cache, segment_t *seg) {
       cache->occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
     }
 
-    if (seg->selected_for_training && cache_obj->GLCache.seen_after_snapshot == 1) {
+    if (seg->selected_for_training &&
+        cache_obj->GLCache.seen_after_snapshot == 1) {
       /* do not need to keep a ghost in the hashtable */
       hashtable_delete(cache->hashtable, cache_obj);
     }

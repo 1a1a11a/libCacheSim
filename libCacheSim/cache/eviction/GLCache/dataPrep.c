@@ -424,11 +424,9 @@ void prepare_training_data(cache_t *cache) {
     // TODO: optimize memcpy by splitting into train and valid in snapshot
     memcpy(x, &learner->train_x[i * n_feature], sizeof(feature_t) * n_feature);
 #if defined(NORMALIZE_Y)
-    if (max_y - min_y > 0)
-      *y = (learner->train_y[i] - min_y) / (max_y - min_y);
+    if (max_y - min_y > 0) *y = (learner->train_y[i] - min_y) / (max_y - min_y);
 #elif defined(STANDARDIZE_Y)
-    if (stdev != 0) 
-      *y = (learner->train_y[i] - average) / stdev;
+    if (stdev != 0) *y = (learner->train_y[i] - average) / stdev;
 #else
   *y = learner->train_y[i];
 #endif
