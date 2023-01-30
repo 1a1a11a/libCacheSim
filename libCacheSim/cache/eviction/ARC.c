@@ -552,7 +552,10 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
             params->L2_ghost_size >=
         cache->cache_size * 2) {
       // delete the LRU end of the L2 ghost
+      if (params->L2_ghost_size > 0) {
+        // it maybe empty if object size is variable
       _ARC_evict_L2_ghost(cache, req);
+      }
     }
     return _ARC_replace(cache, req);
   }

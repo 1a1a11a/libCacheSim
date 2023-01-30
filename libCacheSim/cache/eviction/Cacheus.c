@@ -169,25 +169,12 @@ static bool Cacheus_get(cache_t *cache, const request_t *req) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   cache_t *lru = params->LRU;
   cache_t *lfu = params->LFU;
-  SR_LRU_params_t *params_LRU = (SR_LRU_params_t *)(lru->eviction_params);
   DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
   DEBUG_ASSERT(lru->get_n_obj(lru) == cache->get_n_obj(cache));
   DEBUG_ASSERT(lru->get_occupied_byte(lru) == cache->get_occupied_byte(cache));
 
-  cache->n_req += 1;
-  cache_obj_t *obj = Cacheus_find(cache, req, true);
-
-  if (obj == NULL) {
-    if (cache->can_insert(cache, req)) {
-      while (cache->get_occupied_byte(cache) + req->obj_size +
-                 cache->obj_md_size >
-             cache->cache_size) {
-        cache->evict(cache, req);
-      }
-      cache->insert(cache, req);
-    }
-    return false;
-  }
+  lru->n_req = lfu->n_req = cache->n_req + 1;
+  bool ret = cache_get_base(cache, req);
 
   DEBUG_ASSERT(lru->get_occupied_byte(lru) == lfu->get_occupied_byte(lfu));
   DEBUG_ASSERT(lru->get_n_obj(lru) == cache->get_n_obj(cache));
@@ -196,7 +183,7 @@ static bool Cacheus_get(cache_t *cache, const request_t *req) {
   if (cache->n_req % params->update_interval == 0) {
     update_lr(cache, req);
   }
-  return true;
+  return ret;
 }
 
 
@@ -313,6 +300,8 @@ static void Cacheus_evict(cache_t *cache, const request_t *req) {
   // If two voters decide the same:
   cache_obj_t *lru_to_evict = lru->to_evict(lru, req);
   cache_obj_t *lfu_to_evict = lfu->to_evict(lfu, req);
+  DEBUG_ASSERT(lru_to_evict != NULL);
+  DEBUG_ASSERT(lfu_to_evict != NULL);
 
   cache_obj_t *obj_to_evict = NULL;
   if (cache->to_evict_candidate_gen_vtime == cache->n_req) {

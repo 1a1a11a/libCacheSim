@@ -179,6 +179,10 @@ static cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
  */
 static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
+
+  DEBUG_ASSERT(params->q_tail != NULL || cache->occupied_byte == 0);
+
+  cache->to_evict_candidate_gen_vtime = cache->n_req;
   return params->q_tail;
 }
 

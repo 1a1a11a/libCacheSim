@@ -234,12 +234,9 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   // SR_LRU_insert covers the cases where hit in history or does not hit
   // anything.
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
-  }
 
   bool ck_hist = params->H_list->find(params->H_list, req, false) != NULL;
+  // it may crash here if the cache size is too small
   DEBUG_ASSERT(req->obj_size + cache->obj_md_size <
                params->SR_list->cache_size);
   // If history hit
@@ -253,14 +250,14 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
       DEBUG_ASSERT(params->R_list->occupied_byte != 0);
 
       cache_obj_t *evicted_obj = params->R_list->to_evict(params->R_list, req);
-      copy_cache_obj_to_request(req_local, evicted_obj);
-      params->SR_list->insert(params->SR_list, req_local);
+      copy_cache_obj_to_request(params->req_local, evicted_obj);
+      params->SR_list->insert(params->SR_list, params->req_local);
 
       // Mark the obj as demoted
       if (!evicted_obj->SR_LRU.demoted) {
         params->C_demoted += 1;
         // evicted_obj.SR_LRU.demoted = true;
-        params->SR_list->find(params->SR_list, req_local, false)
+        params->SR_list->find(params->SR_list, params->req_local, false)
             ->SR_LRU.demoted = true;
       }
       params->R_list->evict(params->R_list, req);
@@ -303,21 +300,21 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   while (params->SR_list->occupied_byte > params->SR_list->cache_size) {
     // The LRU item of SR is evicted to H.
     cache_obj_t *obj_to_evict = params->SR_list->to_evict(params->SR_list, req);
-    copy_cache_obj_to_request(req_local, obj_to_evict);
-    params->H_list->insert(params->H_list, req_local);
+    copy_cache_obj_to_request(params->req_local, obj_to_evict);
+    params->H_list->insert(params->H_list, params->req_local);
 
     if (params->other_cache) {
       params->other_cache->remove(params->other_cache, obj_to_evict->obj_id);
     }
     if (obj_to_evict->SR_LRU.new_obj) {
       params->C_new += 1;  // increment the number of new objs in history
-      params->H_list->find(params->H_list, req_local, false)->SR_LRU.new_obj =
-          true;
+      params->H_list->find(params->H_list, params->req_local, false)
+          ->SR_LRU.new_obj = true;
     }
     if (obj_to_evict->SR_LRU.demoted) {
       // obj_to_evict.SR_LRU.demoted = false;
-      params->H_list->find(params->H_list, req_local, false)->SR_LRU.demoted =
-          false;
+      params->H_list->find(params->H_list, params->req_local, false)
+          ->SR_LRU.demoted = false;
       params->C_demoted -= 1;
     }
     params->SR_list->evict(params->SR_list, req);
@@ -346,8 +343,19 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
  */
 static cache_obj_t *SR_LRU_to_evict(cache_t *cache, const request_t *req) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
-  cache->to_evict_candidate = params->SR_list->to_evict(params->SR_list, req);
+  cache_t *lru = params->SR_list;
+  if (lru->get_occupied_byte(lru) == 0) {
+    // when object size is uniform, this should never happen
+    DEBUG_ASSERT(req->obj_size > 1);
+    lru = params->R_list;
+  }
+
+  cache->to_evict_candidate = lru->to_evict(lru, req);
   cache->to_evict_candidate_gen_vtime = cache->n_req;
+
+  if (cache->get_occupied_byte(cache) != 0) {
+    DEBUG_ASSERT(cache->to_evict_candidate != NULL);
+  }
 
   return cache->to_evict_candidate;
 }
@@ -382,7 +390,14 @@ static void SR_LRU_evict(cache_t *cache, const request_t *req) {
     obj_inserted->SR_LRU.demoted = true;
     // obj_to_evict->SR_LRU.demoted = false;
   }
-  SR->evict(SR, req);
+  if (SR->get_occupied_byte(SR) > 0) {
+    // this is the path when object size is uniform
+    SR->evict(SR, req);
+  } else {
+    // when object size is uniform, this should never happen
+    DEBUG_ASSERT(req->obj_size > 1);
+    R->evict(R, req);
+  }
 
   while (H->get_occupied_byte(H) >= H->cache_size) {
     H->evict(H, req);
@@ -452,55 +467,6 @@ static bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   }
 
   return true;
-
-  // cache_obj_t *obj = cache_get_obj_by_id(params->SR_list, obj_id);
-  // bool remove_from_SR = false;
-  // if (obj) {
-  //   LRU_params_t *lru_params =
-  //       (LRU_params_t *)(params->SR_list->eviction_params);
-  //   remove_obj_from_list(&lru_params->q_head, &lru_params->q_tail, obj);
-  //   remove_from_SR = true;
-  // } else {
-  //   obj = cache_get_obj_by_id(params->R_list, obj_id);
-  //   LRU_params_t *lru_params =
-  //       (LRU_params_t *)(params->R_list->eviction_params);
-  //   remove_obj_from_list(&lru_params->q_head, &lru_params->q_tail, obj);
-  //   remove_from_SR = false;
-  // }
-
-  // Remove should remove the obj and push it to history
-  // copy_cache_obj_to_request(params->req_local, obj);
-  // params->H_list->insert(params->H_list, params->req_local);
-  // cache_obj_t *obj_in_hist = cache_get_obj_by_id(params->H_list, obj_id);
-
-  // if (obj->SR_LRU.new_obj) {  // if evicted obj is new
-  //   params->C_new += 1;       // increment the number of new objs in hist
-  //   obj_in_hist->SR_LRU.new_obj = true;
-  // }
-  // if (obj->SR_LRU.demoted) {
-  //   params->C_demoted -= 1;  // decrement the number of demoted objs in cache
-  //   obj_in_hist->SR_LRU.demoted = false;
-  // }
-
-  // if (remove_from_SR) {
-  //   cache_remove_obj_base(params->SR_list, obj, true);
-  // } else {
-  //   cache_remove_obj_base(params->R_list, obj, true);
-  // }
-  // cache->n_obj = params->SR_list->n_obj + params->R_list->n_obj;
-  // cache->occupied_byte =
-  //     params->SR_list->occupied_byte + params->R_list->occupied_byte;
-
-  // while (params->H_list->occupied_byte >= params->H_list->cache_size) {
-  //   cache_obj_t evicted_obj;
-  //   params->H_list->evict(params->H_list, params->req_local, &evicted_obj);
-  // }
-
-  // if (obj == NULL) {
-  //   return false;
-  // }
-
-  // return true;
 }
 
 #ifdef __cplusplus
