@@ -15,6 +15,7 @@ extern "C" {
 #endif
 
 // #define EXACT_Belady 1
+static const char* DEFAULT_PARAMS = "n-sample=128";
 
 typedef struct {
   // how many samples to take at each eviction
@@ -67,9 +68,9 @@ cache_t *BeladySize_init(const common_cache_params_t ccache_params,
 
   BeladySize_params_t *params =
       (BeladySize_params_t *)malloc(sizeof(BeladySize_params_t));
-  params->n_sample = 128;
   cache->eviction_params = params;
 
+  BeladySize_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
     BeladySize_parse_params(cache, cache_specific_params);
   }

@@ -1,5 +1,5 @@
 //
-//  the Belady eviction algorithm (Belady) this is Belady for unit size object
+//  the Belady eviction algorithm (MIN)
 //
 //
 //  Belady.c
