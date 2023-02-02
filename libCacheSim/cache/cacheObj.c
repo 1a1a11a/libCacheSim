@@ -16,6 +16,7 @@ void copy_cache_obj_to_request(request_t *req_dest,
                                const cache_obj_t *cache_obj) {
   req_dest->obj_id = cache_obj->obj_id;
   req_dest->obj_size = cache_obj->obj_size;
+  req_dest->next_access_vtime = cache_obj->next_access_vtime;
   req_dest->valid = true;
 }
 

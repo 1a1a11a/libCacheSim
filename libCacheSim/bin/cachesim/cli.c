@@ -297,6 +297,21 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = TwoQ_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "slruv0") == 0) {
+    cache = SLRUv0_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
+    cache = SFIFO_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "sfifov0") == 0) {
+    cache = SFIFOv0_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
+    cc_params.hashpower -= 4;
+    cache = Hyperbolic_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lecar") == 0) {
+    cache = LeCaR_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "cacheus") == 0) {
+    cache = Cacheus_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lfucpp") == 0) {
+    cache = LFUCpp_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "tinyLFU") == 0) {
     // if no window specified, we add window-size=0 to the eviction params
     if (args->eviction_params == NULL) {
@@ -314,19 +329,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = WTinyLFU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "wtinyLFU") == 0) {
     cache = WTinyLFU_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "slruv0") == 0) {
-    cache = SLRUv0_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
-    cache = SFIFO_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
-    cc_params.hashpower -= 4;
-    cache = Hyperbolic_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lecar") == 0) {
-    cache = LeCaR_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "cacheus") == 0) {
-    cache = Cacheus_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lfucpp") == 0) {
-    cache = LFUCpp_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "belady") == 0) {
     cache = Belady_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
@@ -346,6 +348,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 #ifdef INCLUDE_PRIV
   } else if (strcasecmp(args->eviction_algo, "myclock") == 0) {
     cache = MyClock_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "mclock") == 0) {
+    cache = MClock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lp-sfifo") == 0) {
     cache = LP_SFIFO_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lp-twoq") == 0) {
