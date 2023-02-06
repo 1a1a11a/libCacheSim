@@ -304,7 +304,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "sfifov0") == 0) {
     cache = SFIFOv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
-    cc_params.hashpower -= 4;
+    cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = Hyperbolic_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lecar") == 0) {
     cache = LeCaR_init(cc_params, args->eviction_params);
@@ -332,7 +332,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   } else if (strcasecmp(args->eviction_algo, "belady") == 0) {
     cache = Belady_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "beladySize") == 0) {
-    cc_params.hashpower -= 4;
+    cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "fifo-reinsertion") == 0 ||
              strcasecmp(args->eviction_algo, "clock") == 0 ||
@@ -340,10 +340,14 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = Clock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, args->eviction_params);
-#if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
+#if defined(ENABLE_GLCACHE)
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0 ||
              strcasecmp(args->eviction_algo, "gl-cache") == 0) {
     cache = GLCache_init(cc_params, args->eviction_params);
+#endif
+#ifdef ENABLE_LRB
+  } else if (strcasecmp(args->eviction_algo, "lrb") == 0) {
+    cache = LRB_init(cc_params, args->eviction_params);
 #endif
 #ifdef INCLUDE_PRIV
   } else if (strcasecmp(args->eviction_algo, "myclock") == 0) {

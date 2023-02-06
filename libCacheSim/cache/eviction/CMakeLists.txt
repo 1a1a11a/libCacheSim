@@ -54,6 +54,13 @@ set(sourceCPP
         LHD/LHDInterface.cpp
         )
 
+if (ENABLE_LRB)
+    set (sourceCPP ${sourceCPP} 
+        LRB/lrb.cpp
+        LRB/LRB_interface.cpp
+        )
+endif()
+
 if (ENABLE_GLCACHE)
     set(sourceC 
         ${sourceC} 
