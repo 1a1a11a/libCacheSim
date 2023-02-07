@@ -26,6 +26,7 @@ typedef struct {
   cache_obj_t **hands;
   int n_hands;
   double *hand_pos;
+  int n_consider_obj;
 
   int last_eviction_hand;
 
@@ -33,8 +34,10 @@ typedef struct {
 
 } MClock_params_t;
 
-static const char *DEFAULT_PARAMS = "hand-pos=0:0.25:0.50:0.75:1.0";
-// static const char *DEFAULT_PARAMS = "hand-pos=0:0.10:0.20:0.30:0.40:0.50:0.60:0.70:0.80:0.90:1.0";
+static const char *DEFAULT_PARAMS =
+    "hand-pos=0:0.25:0.50:0.75:1.0,n-consider-obj=1";
+// static const char *DEFAULT_PARAMS =
+// "hand-pos=0:0.10:0.20:0.30:0.40:0.50:0.60:0.70:0.80:0.90:1.0";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -93,13 +96,15 @@ cache_t *MClock_init(const common_cache_params_t ccache_params,
 
   params->req_local = new_request();
 
+  // we must parse the default params because the user specified params
+  // may not have hand-pos and the hand_pos array will not be initialized
+  MClock_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
     MClock_parse_params(cache, cache_specific_params);
-  } else {
-    MClock_parse_params(cache, DEFAULT_PARAMS);
   }
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "MClock-10");
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "MClock-%d-%d",
+           params->n_hands, params->n_consider_obj);
 
   return cache;
 }
@@ -221,7 +226,8 @@ static void print_curr_hand_pos(cache_t *cache) {
   int64_t obj_idx = 0;
   while (obj != NULL) {
     if (obj == params->hands[hand_idx]) {
-      printf("hand %d: %ld %p %p %p\n", hand_idx, obj_idx, obj, obj->queue.prev, obj->queue.next);
+      printf("hand %d: %ld %p %p %p\n", hand_idx, obj_idx, obj, obj->queue.prev,
+             obj->queue.next);
       hand_idx++;
     }
     obj = obj->queue.next;
@@ -259,6 +265,45 @@ static cache_obj_t *MClock_to_evict(cache_t *cache, const request_t *req) {
   return best_obj;
 }
 
+static double calc_candidate_score1(cache_t *cache, cache_obj_t *obj) {
+  MClock_params_t *params = (MClock_params_t *)cache->eviction_params;
+
+  double score = 0;
+  int n_score = 0;
+  cache_obj_t *curr_obj = obj;
+
+  for (int i = 0; i < params->n_consider_obj; i++) {
+    if (curr_obj == NULL) {
+      break;
+    }
+    score += 1.0 / (curr_obj->misc.next_access_vtime - cache->n_req);
+    n_score++;
+    curr_obj = curr_obj->queue.prev;
+  }
+
+  if (n_score > 0) score = n_score / score;
+  return score;
+}
+
+static double calc_candidate_score(cache_t *cache, cache_obj_t *obj) {
+  MClock_params_t *params = (MClock_params_t *)cache->eviction_params;
+
+  double score = 0;
+  int n_score = 0;
+  cache_obj_t *curr_obj = obj;
+
+  for (int i = 0; i < params->n_consider_obj; i++) {
+    if (curr_obj == NULL) {
+      break;
+    }
+    score += 1.0 / (curr_obj->misc.next_access_vtime - cache->n_req);
+    n_score++;
+    curr_obj = curr_obj->queue.prev;
+  }
+
+  if (n_score > 0) score = n_score / score;
+  return score;
+}
 /**
  * @brief evict an object from the cache
  * it needs to call cache_evict_base before returning
@@ -280,23 +325,35 @@ static void MClock_evict(cache_t *cache, const request_t *req) {
 
   int best_obj_pos = params->n_hands - 1;
   cache_obj_t *best_obj = params->hands[params->n_hands - 1];
-  double best_obj_benefit = best_obj->next_access_vtime;
+  double score = calc_candidate_score(cache, best_obj);
+  double best_score = score;
+
   /* 0.0 is the head (most recently inserted),
    * 1.0 is the tail (least recently inserted) */
   for (int i = params->n_hands - 1; i >= 0; i--) {
-    if (params->hands[i]->next_access_vtime > best_obj_benefit) {
+    score = calc_candidate_score(cache, params->hands[i]);
+    if (score > best_score) {
       best_obj_pos = i;
       best_obj = params->hands[i];
-      best_obj_benefit = best_obj->next_access_vtime;
+      best_score = score;
     }
   }
 
-  // printf(
-  //     "%d %ld %ld %ld %ld %ld\n", best_obj_pos,
-  //     params->hands[0]->next_access_vtime, params->hands[1]->next_access_vtime,
-  //     params->hands[2]->next_access_vtime, params->hands[3]->next_access_vtime,
-  //     params->hands[4]->next_access_vtime);
-  // print_curr_hand_pos(cache);
+
+  // static __thread int *n_choice_per_hand;
+  // static __thread int n_evictions = 0;
+  // if (n_choice_per_hand == NULL) {
+  //   n_choice_per_hand = (int *)malloc(sizeof(int) * params->n_hands);
+  //   memset(n_choice_per_hand, 0, sizeof(int) * params->n_hands);
+  // }
+  // n_choice_per_hand[best_obj_pos]++;
+  // if (++n_evictions % 1000 == 0) {
+  //   for (int i = 0; i < params->n_hands; i++) {
+  //     printf("%d ", n_choice_per_hand[i]);
+  //     n_choice_per_hand[i] = 0;
+  //   }
+  //   printf("\n");
+  // }
 
   params->last_eviction_hand = best_obj_pos;
   params->hands[best_obj_pos] = best_obj->queue.next;
@@ -395,6 +452,12 @@ static void MClock_parse_params(cache_t *cache,
         v = strsep((char **)&value, ":");
       }
       params->n_hands = n_hands;
+      if (params->hands != NULL) {
+        free(params->hands);
+      }
+      if (params->hand_pos != NULL) {
+        free(params->hand_pos);
+      }
       params->hands = calloc(params->n_hands, sizeof(cache_obj_t *));
       params->hand_pos = calloc(params->n_hands, sizeof(double));
       for (int i = 0; i < n_hands; i++) {
@@ -402,6 +465,8 @@ static void MClock_parse_params(cache_t *cache,
       }
       assert(hand_pos[0] == 0);
       assert(hand_pos[n_hands - 1] == 1);
+    } else if (strcasecmp(key, "n-consider-obj") == 0) {
+      params->n_consider_obj = (int)strtol(value, &end, 10);
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", MClock_current_params(cache, params));
       exit(0);
