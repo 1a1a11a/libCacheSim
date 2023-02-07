@@ -103,10 +103,11 @@ typedef struct {
 } QDLP_obj_metadata_t;
 
 typedef struct {
-  int32_t freq;
-  int32_t last_access_vtime;
-  int32_t last_access_rtime;
-  int32_t q_id;
+  int64_t next_access_vtime;
+  // int32_t last_access_time;
+  int32_t freq:24;
+  int32_t q_id:8;
+  int32_t nth_obj;
 } misc_metadata_t;
 
 typedef struct {
@@ -135,7 +136,7 @@ typedef struct cache_obj {
   int64_t last_access_time;
 #endif
   // used by belady related algorithsm
-  int64_t next_access_vtime;
+  misc_metadata_t misc;
 
   union {
     LFU_obj_metadata_t lfu;          // for LFU
@@ -152,7 +153,6 @@ typedef struct cache_obj {
     SFIFO_obj_metadata_t SFIFO;
     SLRU_obj_metadata_t SLRU;
     QDLP_obj_metadata_t QDLP;
-    misc_metadata_t misc;
     LIRS_obj_metadata_t LIRS;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1

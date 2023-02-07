@@ -193,7 +193,7 @@ static cache_obj_t *SFIFO_Reinsertion_find(cache_t *cache, const request_t *req,
   if (cache_obj && update_cache) {
     cache_obj->SFIFO_Reinsertion.freq++;
     cache_obj->SFIFO_Reinsertion.last_access_vtime = cache->n_req;
-    cache_obj->next_access_vtime = req->next_access_vtime;
+    cache_obj->misc.next_access_vtime = req->next_access_vtime;
   }
 
   return cache_obj;
@@ -220,7 +220,7 @@ static cache_obj_t *SFIFO_Reinsertion_insert(cache_t *cache,
 
   obj->SFIFO_Reinsertion.freq = 0;
   obj->SFIFO_Reinsertion.last_access_vtime = cache->n_req;
-  obj->next_access_vtime = req->next_access_vtime;
+  obj->misc.next_access_vtime = req->next_access_vtime;
 
   return obj;
 }
@@ -430,10 +430,10 @@ static inline int cmp_list_node(const void *a0, const void *b0) {
 }
 
 static inline double belady_metric(cache_t *cache, cache_obj_t *cache_obj) {
-  if (cache_obj->next_access_vtime == -1 ||
-      cache_obj->next_access_vtime == INT64_MAX)
+  if (cache_obj->misc.next_access_vtime == -1 ||
+      cache_obj->misc.next_access_vtime == INT64_MAX)
     return -1;
-  return 1.0e12 / (cache_obj->next_access_vtime - cache->n_req) /
+  return 1.0e12 / (cache_obj->misc.next_access_vtime - cache->n_req) /
          (double)cache_obj->obj_size;
 }
 

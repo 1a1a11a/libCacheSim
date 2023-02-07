@@ -4,10 +4,14 @@
 //  cache hit promotes an object to the next FIFO
 //      no promotion if it is in the last FIFO
 //  cache miss inserts an object into the first FIFO
-//  if not use Belady, evict from the last FIFO
-//  else evictions happen from one of the FIFOs
-//  it does not work better than SFIFO without belady for some reasons
-//  it is also not as good as MClock
+//  if not use Belady,
+//      evict from the first FIFO
+//  else
+//      evict from one of the FIFOs based on distance to the next request
+//
+//
+//  we notice that adding belady is not helpful
+//  
 //
 //  libCacheSim
 //
@@ -189,9 +193,9 @@ static cache_obj_t *SFIFOv0_find(cache_t *cache, const request_t *req,
           SFIFOv0_cool(cache, req, i + 1);
 
         cache_obj_t *new_obj = next_fifo->insert(next_fifo, req);
-        new_obj->next_access_vtime = req->next_access_vtime;
+        new_obj->misc.next_access_vtime = req->next_access_vtime;
       } else {
-        obj->next_access_vtime = req->next_access_vtime;
+        obj->misc.next_access_vtime = req->next_access_vtime;
       }
 
       return obj;
@@ -220,7 +224,7 @@ static cache_obj_t *SFIFOv0_insert(cache_t *cache, const request_t *req) {
     if (fifo->get_occupied_byte(fifo) + req->obj_size + cache->obj_md_size <=
         fifo->cache_size) {
       cache_obj_t *obj = fifo->insert(fifo, req);
-      obj->next_access_vtime = req->next_access_vtime;
+      obj->misc.next_access_vtime = req->next_access_vtime;
       return obj;
     }
   }
@@ -228,7 +232,7 @@ static cache_obj_t *SFIFOv0_insert(cache_t *cache, const request_t *req) {
   // If all FIFOs are filled, insert into the lowest FIFO.
   cache_t *fifo = params->FIFOs[0];
   cache_obj_t *obj = fifo->insert(fifo, req);
-  obj->next_access_vtime = req->next_access_vtime;
+  obj->misc.next_access_vtime = req->next_access_vtime;
   return obj;
 }
 

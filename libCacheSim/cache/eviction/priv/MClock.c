@@ -2,8 +2,8 @@
 //  multi handed clock
 //  there are m hands, each points to i/m position of the clock
 //  there is no action on hit,
-//  on miss, one of the hands is selected to evict based on next access distance (Belady)
-//  then the hands are reset to correponding positions
+//  on miss, one of the hands is selected to evict based on next access distance
+//  (Belady) then the hands are reset to correponding positions
 //
 //
 //  mClock.c
@@ -244,12 +244,12 @@ static cache_obj_t *MClock_to_evict(cache_t *cache, const request_t *req) {
 
   int best_obj_pos = 0;
   cache_obj_t *best_obj = params->hands[0];
-  double best_obj_benefit = best_obj->next_access_vtime;
+  double best_obj_benefit = best_obj->misc.next_access_vtime;
   for (int i = 0; i < params->n_hands; i++) {
-    if (params->hands[i]->next_access_vtime > best_obj_benefit) {
+    if (params->hands[i]->misc.next_access_vtime > best_obj_benefit) {
       best_obj_pos = i;
       best_obj = params->hands[i];
-      best_obj_benefit = best_obj->next_access_vtime;
+      best_obj_benefit = best_obj->misc.next_access_vtime;
     }
   }
 

@@ -152,7 +152,7 @@ static cache_obj_t *Belady_find(cache_t *cache, const request_t *req,
     return NULL;
   }
 
-  cached_obj->next_access_vtime = req->next_access_vtime;
+  cached_obj->Belady.next_access_vtime = req->next_access_vtime;
   pqueue_pri_t pri = {.pri = req->next_access_vtime};
   pqueue_change_priority(params->pq, pri,
                          (pq_node_t *)(cached_obj->Belady.pq_node));
@@ -193,7 +193,7 @@ static cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
   node->pri.pri = req->next_access_vtime;
   pqueue_insert(params->pq, (void *)node);
   cached_obj->Belady.pq_node = node;
-  cached_obj->next_access_vtime = req->next_access_vtime;
+  cached_obj->Belady.next_access_vtime = req->next_access_vtime;
 
   DEBUG_ASSERT(
       ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
