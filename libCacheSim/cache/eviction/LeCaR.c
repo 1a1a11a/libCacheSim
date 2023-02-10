@@ -42,7 +42,10 @@ typedef struct LeCaR_params {
   double dr;  // discount rate
   int64_t n_hit_lru_history;
   int64_t n_hit_lfu_history;
+  bool update_weight;
 } LeCaR_params_t;
+
+static const char *DEFAULT_PARAMS = "update-weight=1,lru-weight=0.5";
 
 static void free_freq_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
@@ -114,12 +117,6 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
-
   cache->eviction_params = my_malloc_n(LeCaR_params_t, 1);
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
   memset(params, 0, sizeof(LeCaR_params_t));
@@ -128,10 +125,17 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   params->lr = 0.45;
   params->dr = pow(0.005, 1.0 / (double)ccache_params.cache_size);
   params->w_lru = params->w_lfu = 0.50;
+  params->update_weight = true;
   params->n_hit_lru_history = params->n_hit_lfu_history = 0;
 
   params->ghost_lru_head = params->ghost_lru_tail = NULL;
   params->q_head = params->q_tail = NULL;
+
+  if (cache_specific_params != NULL) {
+    LeCaR_parse_params(cache, cache_specific_params);
+  } else {
+    LeCaR_parse_params(cache, DEFAULT_PARAMS);
+  }
 
   // LFU parameters
   params->min_freq = 1;
@@ -143,6 +147,9 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   params->freq_map = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
                                            (GDestroyNotify)free_freq_node);
   g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(1), freq_node);
+
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LeCaR-%.2lflru",
+           params->w_lru);
 
   return cache;
 }
@@ -483,7 +490,7 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
   } else {
     obj_to_evict = LeCaR_to_evict(cache, req);
   }
-    cache->to_evict_candidate_gen_vtime = -1;
+  cache->to_evict_candidate_gen_vtime = -1;
 
   if (obj_to_evict == params->q_tail) {
     // evicted from LRU
@@ -579,6 +586,59 @@ bool LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
 
 // ***********************************************************************
 // ****                                                               ****
+// ****                  parameter set up functions                   ****
+// ****                                                               ****
+// ***********************************************************************
+static const char *LeCaR_current_params(cache_t *cache,
+                                        LeCaR_params_t *params) {
+  static __thread char params_str[128];
+  int n = snprintf(params_str, 128, "update-weight=%d,lru-weight=%.lf",
+                   params->update_weight, params->w_lru);
+
+  return params_str;
+}
+
+static void LeCaR_parse_params(cache_t *cache,
+                               const char *cache_specific_params) {
+  LeCaR_params_t *params = (LeCaR_params_t *)cache->eviction_params;
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+  char *end;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "update-weight") == 0) {
+      if ((int)strtol(value, &end, 0) == 1)
+        params->update_weight = true;
+      else
+        params->update_weight = false;
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+    } else if (strcasecmp(key, "lru-weight") == 0) {
+      params->w_lru = (double)strtod(value, &end);
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", LeCaR_current_params(cache, params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+  free(old_params_str);
+}
+
+// ***********************************************************************
+// ****                                                               ****
 // ****                         internal functions                    ****
 // ****                                                               ****
 // ***********************************************************************
@@ -602,7 +662,8 @@ static inline void update_LFU_min_freq(LeCaR_params_t *params) {
   VVERBOSE("update LFU min freq from %u to %u\n", (unsigned)old_min_freq,
            (unsigned)params->min_freq);
   // if the object is the only object in the cache, we may have min_freq == 1
-  DEBUG_ASSERT(params->min_freq > old_min_freq || params->q_head == params->q_tail);
+  DEBUG_ASSERT(params->min_freq > old_min_freq ||
+               params->q_head == params->q_tail);
 }
 
 static inline freq_node_t *get_min_freq_node(LeCaR_params_t *params) {
@@ -695,14 +756,15 @@ static inline void insert_obj_info_freq_node(LeCaR_params_t *params,
 
 static void update_weight(cache_t *cache, int64_t t, double *w_update,
                           double *w_no_update) {
-  DEBUG_ASSERT(fabs(*w_update + *w_no_update - 1.0) < 0.0001);
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
+  if (!params->update_weight) return;
 
   double r = pow(params->dr, (double)t);
   *w_update = *w_update * exp(-params->lr * r) + 1e-10; /* to avoid w was 0 */
   double s = *w_update + *w_no_update + +2e-10;
   *w_update = *w_update / s;
   *w_no_update = (*w_no_update + 1e-10) / s;
+  DEBUG_ASSERT(fabs(*w_update + *w_no_update - 1.0) < 0.0001);
 }
 
 // ***********************************************************************

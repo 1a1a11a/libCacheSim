@@ -383,14 +383,13 @@ static bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
 // ***********************************************************************
 static const char *SLRU_current_params(cache_t *cache, SLRU_params_t *params) {
   static __thread char params_str[128];
-  int n = snprintf(params_str, 128, "n-seg=%d;seg-size=%d", params->n_seg,
+  int n = snprintf(params_str, 128, "n-seg=%d,seg-size=%d", params->n_seg,
       (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
 
   for (int i = 1; i < params->n_seg; i++) {
     n += snprintf(params_str + n, 128 - n, ":%d",
                   (int)(params->lru_max_n_bytes[i] * 100 / cache->cache_size));
   }
-  snprintf(cache->cache_name + n, 128 - n, "\n");
 
   return params_str;
 }
