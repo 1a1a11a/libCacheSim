@@ -21,6 +21,7 @@ option(INCLUDE_PRIV "whether include priv" ON)
 option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
+option(ENABLE_LRB "enable LRB" OFF)
 set(LOG_LEVEL NONE CACHE STRING "Enable SOMETHING support") 
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
 
@@ -69,12 +70,6 @@ else()
     remove_definitions(USE_HUGEPAGE)
 endif(USE_HUGEPAGE)
 
-if (ENABLE_GLCACHE)
-    add_compile_definitions(ENABLE_GLCACHE=1)
-else()
-    remove_definitions(ENABLE_GLCACHE)
-endif(ENABLE_GLCACHE)
-
 if (INCLUDE_PRIV)
     add_compile_definitions(INCLUDE_PRIV=1)
 else()
@@ -110,11 +105,6 @@ message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEV
 
 # add_compile_options(-fsanitize=address)
 # add_link_options(-fsanitize=address)
-
-# set compiler flags
-# string concat is easier in 3.0, but older versions don't have the concat subcommand
-# so we are using list as input until we move to new version
-# add_definitions(-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64)
 
 
 ########################################
@@ -191,7 +181,27 @@ if (ENABLE_GLCACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
     link_libraries(xgboost::xgboost)
+    add_compile_definitions(ENABLE_GLCACHE=1)
     message(STATUS "XGBOOST_INCLUDE_DIR=${XGBOOST_INCLUDE_DIR}")
+else()
+    remove_definitions(ENABLE_GLCACHE)
+endif()
+
+if (ENABLE_LRB)
+    find_path(LIGHTGBM_PATH LightGBM)
+    if (NOT LIGHTGBM_PATH)
+        message(FATAL_ERROR "LIGHTGBM_PATH not found")
+    endif ()
+    include_directories(${LIGHTGBM_PATH})
+
+    find_library(LIGHTGBM_LIB _lightgbm)
+    if (NOT LIGHTGBM_LIB)
+        message(FATAL_ERROR "LIGHTGBM_LIB not found")
+    endif ()
+    link_libraries(${LIGHTGBM_LIB})
+    add_compile_definitions(ENABLE_LRB=1)
+else()
+    remove_definitions(ENABLE_LRB)
 endif()
 
 
