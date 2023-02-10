@@ -223,7 +223,7 @@ double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel) {
 static int count_n_obj_reuse(cache_t *cache, segment_t *seg) {
   int n = 0;
   for (int i = 0; i < seg->n_obj; i++) {
-    if (seg->objs[i].next_access_vtime > 0) {
+    if (seg->objs[i].misc.next_access_vtime > 0) {
       n += 1;
     }
   }
