@@ -107,7 +107,7 @@ typedef struct {
   // int32_t last_access_time;
   int32_t freq:24;
   int32_t q_id:8;
-  int32_t nth_obj;
+  // int32_t nth_obj;
 } misc_metadata_t;
 
 typedef struct {

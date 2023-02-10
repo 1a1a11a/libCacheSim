@@ -369,6 +369,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = QDLP_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "qdlpv1") == 0) {
     cache = QDLPv1_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "qdlpv2") == 0) {
+    cache = QDLPv2_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "myMQv1") == 0) {
     cache = myMQv1_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {

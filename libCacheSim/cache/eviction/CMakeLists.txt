@@ -40,6 +40,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/LP_SFIFO.c
 
                 priv/QDLPv1.c
+                priv/QDLPv2.c
 
                 priv/myMQv1.c
 
