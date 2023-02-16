@@ -10,3 +10,4 @@ build
 example/cacheSimulatorC/cmake-build-debug
 .vscode/*
 *.log
+fig/
