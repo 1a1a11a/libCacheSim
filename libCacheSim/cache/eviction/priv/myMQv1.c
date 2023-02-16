@@ -1,9 +1,7 @@
 //
-//  multi queue 
+//  multi queue
 //  each queue has a specified size and a specified ghost size
 //  promotion upon hit
-//
-//  20% FIFO + 80% 2-bit clock, promote when evicting from FIFO
 //
 //
 //  myMQv1.c
@@ -21,20 +19,19 @@ extern "C" {
 #endif
 
 typedef struct {
-  cache_obj_t *fifo1_head;
-  cache_obj_t *fifo1_tail;
-  cache_obj_t *fifo2_head;
-  cache_obj_t *fifo2_tail;
+  cache_t **caches;
+  cache_t **ghost_caches;
+  int64_t n_caches;
+  int64_t *cache_sizes;
+  int64_t *ghost_sizes;
 
-  int64_t n_fifo1_obj;
-  int64_t n_fifo2_obj;
-  int64_t n_fifo1_byte;
-  int64_t n_fifo2_byte;
-
-  int64_t fifo1_max_size;
-  int64_t fifo2_max_size;
+  request_t *req_local;
 
 } myMQv1_params_t;
+
+static const char *DEFAULT_PARAMS =
+    "cache_sizes=0.25,0.25,0.25,0.25;ghost_sizes=0.75,0.75,0.75,0.75";
+#define myMQv1_MAX_N_cache 16
 
 // ***********************************************************************
 // ****                                                               ****
@@ -42,15 +39,18 @@ typedef struct {
 // ****                                                               ****
 // ***********************************************************************
 
-static void myMQv1_parse_params(cache_t *cache, const char *cache_specific_params);
+static void myMQv1_parse_params(cache_t *cache,
+                                const char *cache_specific_params);
 static void myMQv1_free(cache_t *cache);
 static bool myMQv1_get(cache_t *cache, const request_t *req);
 static cache_obj_t *myMQv1_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                                const bool update_cache);
 static cache_obj_t *myMQv1_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *myMQv1_to_evict(cache_t *cache, const request_t *req);
 static void myMQv1_evict(cache_t *cache, const request_t *req);
 static bool myMQv1_remove(cache_t *cache, const obj_id_t obj_id);
+static int64_t myMQv1_get_occupied_byte(const cache_t *cache);
+static int64_t myMQv1_get_n_obj(const cache_t *cache);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -58,15 +58,6 @@ static bool myMQv1_remove(cache_t *cache, const obj_id_t obj_id);
 // ****                                                               ****
 // ***********************************************************************
 
-/**
- * free resources used by this cache
- *
- * @param cache
- */
-static void myMQv1_free(cache_t *cache) {
-  free(cache->eviction_params);
-  cache_struct_free(cache);
-}
 
 /**
  * @brief initialize the cache
@@ -86,30 +77,53 @@ cache_t *myMQv1_init(const common_cache_params_t ccache_params,
   cache->evict = myMQv1_evict;
   cache->remove = myMQv1_remove;
   cache->to_evict = myMQv1_to_evict;
+  cache->get_occupied_byte = myMQv1_get_occupied_byte;
+  cache->get_n_obj = myMQv1_get_n_obj;
+  cache->can_insert = cache_can_insert_default;
+
   cache->init_params = cache_specific_params;
   cache->obj_md_size = 0;
 
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
-
   cache->eviction_params = malloc(sizeof(myMQv1_params_t));
   myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
-  params->fifo1_head = NULL;
-  params->fifo1_tail = NULL;
-  params->fifo2_head = NULL;
-  params->fifo2_tail = NULL;
-  params->n_fifo1_obj = 0;
-  params->n_fifo2_obj = 0;
-  params->n_fifo1_byte = 0;
-  params->n_fifo2_byte = 0;
-  params->fifo1_max_size = (int64_t)ccache_params.cache_size * 0.25;
-  params->fifo2_max_size = ccache_params.cache_size - params->fifo1_max_size;
+  params->req_local = new_request();
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "myMQv1-%.2lf", 0.25);
+  if (cache_specific_params != NULL) {
+    myMQv1_parse_params(cache, cache_specific_params);
+  } else {
+    myMQv1_parse_params(cache, DEFAULT_PARAMS);
+  }
+
+  params->caches = malloc(sizeof(cache_t *) * params->n_caches);
+  params->ghost_caches = malloc(sizeof(cache_t *) * params->n_caches);
+  common_cache_params_t ccache_params_local = ccache_params;
+  for (int i = 0; i < params->n_caches; i++) {
+    ccache_params_local.cache_size = params->cache_sizes[i];
+    params->caches[i] = FIFO_init(ccache_params, NULL);
+    params->ghost_caches[i] = FIFO_init(ccache_params_local, NULL);
+  }
+
+  // snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "myMQv1", 0.25);
+
   return cache;
+}
+
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
+static void myMQv1_free(cache_t *cache) {
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
+  for (int i = 0; i < params->n_caches; i++) {
+    params->caches[i]->cache_free(params->caches[i]);
+    params->ghost_caches[i]->cache_free(params->ghost_caches[i]);
+  }
+  free(params->caches);
+  free(params->ghost_caches);
+  free(params->cache_sizes);
+  free(cache->eviction_params);
+  cache_struct_free(cache);
 }
 
 /**
@@ -151,13 +165,10 @@ bool myMQv1_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *myMQv1_find(cache_t *cache, const request_t *req,
-                 const bool update_cache) {
+                                const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
-  if (cache_obj != NULL && update_cache) {
-    if (cache_obj->misc.freq < 4) {
-        cache_obj->misc.freq += 1;
-    }
-  }
+  ERROR("todo");
+
 
   return cache_obj;
 }
@@ -177,12 +188,8 @@ static cache_obj_t *myMQv1_insert(cache_t *cache, const request_t *req) {
   myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
-  prepend_obj_to_head(&params->fifo1_head, &params->fifo1_tail, obj);
-  params->n_fifo1_obj += 1;
-  params->n_fifo1_byte += req->obj_size + cache->obj_md_size;
+  ERROR("todo");
 
-  obj->misc.freq = 0;
-  obj->misc.q_id = 1;
 
   return obj;
 }
@@ -214,60 +221,9 @@ static cache_obj_t *myMQv1_to_evict(cache_t *cache, const request_t *req) {
 static void myMQv1_evict(cache_t *cache, const request_t *req) {
   myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
 
-  cache_obj_t *obj = params->fifo1_tail;
-  params->fifo1_tail = obj->queue.prev;
-  if (params->fifo1_tail != NULL) {
-    params->fifo1_tail->queue.next = NULL;
-  } else {
-    params->fifo1_head = NULL;
-  }
-  DEBUG_ASSERT(obj->misc.q_id == 1);
-  params->n_fifo1_obj -= 1;
-  params->n_fifo1_byte -= obj->obj_size + cache->obj_md_size;
+  ERROR("todo");
 
-  if (obj->misc.freq > 0) {
-    // promote to clock
-    obj->misc.q_id = 2;
-    obj->misc.freq -= 1;
-    params->n_fifo2_obj += 1;
-    params->n_fifo2_byte += obj->obj_size + cache->obj_md_size;
-    prepend_obj_to_head(&params->fifo2_head, &params->fifo2_tail, obj);
-    while (params->n_fifo2_byte > params->fifo2_max_size) {
-      cache_obj_t *obj_to_evict = params->fifo2_tail;
-      if (obj_to_evict->misc.freq > 0) {
-        obj_to_evict->misc.freq -= 1;
-        move_obj_to_head(&params->fifo2_head, &params->fifo2_tail,
-                         obj_to_evict);
-        continue;
-      } else {
-        remove_obj_from_list(&params->fifo2_head, &params->fifo2_tail,
-                             obj_to_evict);
-        params->n_fifo2_obj -= 1;
-        params->n_fifo2_byte -= obj_to_evict->obj_size + cache->obj_md_size;
-        cache_evict_base(cache, obj_to_evict, true);
-      }
-    }
-  } else {
-    // evict from fifo1
-    cache_evict_base(cache, obj, true);
-  }
-}
 
-static void myMQv1_remove_obj(cache_t *cache, cache_obj_t *obj) {
-  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
-
-  DEBUG_ASSERT(obj != NULL);
-  if (obj->misc.q_id == 1) {
-    params->n_fifo1_obj -= 1;
-    params->n_fifo1_byte -= obj->obj_size + cache->obj_md_size;
-    remove_obj_from_list(&params->fifo1_head, &params->fifo1_tail, obj);
-  } else if (obj->misc.q_id == 2) {
-    params->n_fifo2_obj -= 1;
-    params->n_fifo2_byte -= obj->obj_size + cache->obj_md_size;
-    remove_obj_from_list(&params->fifo2_head, &params->fifo2_tail, obj);
-  }
-
-  cache_remove_obj_base(cache, obj, true);
 }
 
 /**
@@ -284,14 +240,133 @@ static void myMQv1_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * cache
  */
 static bool myMQv1_remove(cache_t *cache, const obj_id_t obj_id) {
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-  if (obj == NULL) {
-    return false;
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
+
+  for (int i = 0; i < params->n_caches; i++) {
+    if (params->caches[i]->remove(params->caches[i], obj_id)) {
+      return true;
+    }
   }
 
-  myMQv1_remove_obj(cache, obj);
-
   return true;
+}
+
+static int64_t myMQv1_get_occupied_byte(const cache_t *cache) {
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
+  int64_t occupied_byte = 0;
+  for (int i = 0; i < params->n_caches; i++) {
+    occupied_byte += params->caches[i]->get_occupied_byte(params->caches[i]);
+  }
+  return occupied_byte;
+}
+
+static int64_t myMQv1_get_n_obj(const cache_t *cache) {
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
+  int64_t n_obj = 0;
+  for (int i = 0; i < params->n_caches; i++) {
+    n_obj += params->caches[i]->get_n_obj(params->caches[i]);
+  }
+  return n_obj;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                  parameter set up functions                   ****
+// ****                                                               ****
+// ***********************************************************************
+static const char *myMQv1_current_params(cache_t *cache,
+                                         myMQv1_params_t *params) {
+  static __thread char params_str[128];
+  int n = snprintf(params_str, 128, "n-caches=%ld;cache-size-ratio=%d",
+                   params->n_caches,
+                   (int)(params->cache_sizes[0] * 100 / cache->cache_size));
+
+  for (int i = 1; i < params->n_caches; i++) {
+    n += snprintf(params_str + n, 128 - n, ":%d",
+                  (int)(params->cache_sizes[i] * 100 / cache->cache_size));
+  }
+  n += snprintf(params_str + n, 128 - n, ";ghost-size-ratio=%d",
+                (int)(params->ghost_sizes[0] * 100 / cache->cache_size));
+  for (int i = 1; i < params->n_caches; i++) {
+    n += snprintf(params_str + n, 128 - n, ":%d",
+                  (int)(params->ghost_sizes[i] * 100 / cache->cache_size));
+  }
+
+  snprintf(cache->cache_name + n, 128 - n, "\n");
+
+  return params_str;
+}
+
+static void myMQv1_parse_params(cache_t *cache,
+                                const char *cache_specific_params) {
+  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
+  char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
+  char *end;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "n-cache") == 0) {
+      params->n_caches = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+    } else if (strcasecmp(key, "cache-size-ratio") == 0) {
+      int n_caches = 0;
+      int64_t cache_size_sum = 0;
+      int64_t cache_size_array[myMQv1_MAX_N_cache];
+      char *v = strsep((char **)&value, ":");
+      while (v != NULL) {
+        cache_size_array[n_caches++] = (int64_t)strtol(v, &end, 0);
+        cache_size_sum += cache_size_array[n_caches - 1];
+        v = strsep((char **)&value, ":");
+      }
+      if (params->n_caches != 0 && params->n_caches != n_caches) {
+        ERROR("n-cache and n-ghost-cache must be the same\n");
+        exit(1);
+      }
+      params->n_caches = n_caches;
+      params->cache_sizes = calloc(params->n_caches, sizeof(int64_t));
+      for (int i = 0; i < n_caches; i++) {
+        params->cache_sizes[i] = (int64_t)((double)cache_size_array[i] /
+                                           cache_size_sum * cache->cache_size);
+      }
+    } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
+      int n_ghost_caches = 0;
+      int64_t cache_size_sum = 0;
+      int64_t ghost_size_array[myMQv1_MAX_N_cache];
+      char *v = strsep((char **)&value, ":");
+      while (v != NULL) {
+        ghost_size_array[n_ghost_caches++] = (int64_t)strtol(v, &end, 0);
+        v = strsep((char **)&value, ":");
+      }
+      if (params->n_caches != 0 && params->n_caches != n_ghost_caches) {
+        ERROR("n-cache and n-ghost-cache must be the same\n");
+        exit(1);
+      }
+      params->ghost_sizes = calloc(params->n_caches, sizeof(int64_t));
+      for (int i = 0; i < n_ghost_caches; i++) {
+        params->ghost_sizes[i] =
+            (int64_t)((double)ghost_size_array[i] / cache->cache_size);
+      }
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", myMQv1_current_params(cache, params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+  free(old_params_str);
 }
 
 #ifdef __cplusplus

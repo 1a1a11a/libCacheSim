@@ -116,6 +116,8 @@ cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
   // params->Am = LRU_init(ccache_params_local, NULL);
   params->Am = Clock_init(ccache_params_local, NULL);
 
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LP-TwoQ-Clock");
+
   return cache;
 }
 

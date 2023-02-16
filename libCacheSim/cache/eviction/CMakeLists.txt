@@ -24,6 +24,10 @@ set(sourceC
         LeCaRv0.c
         LIRS.c
         WTinyLFU.c
+
+        fifo/LP_SFIFO.c
+        fifo/LP_TwoQ.c
+        fifo/LP_ARC.c
         )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
@@ -35,9 +39,6 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
 
                 priv/MyClock.c
                 priv/QDLP.c
-
-                priv/LP_TwoQ.c
-                priv/LP_SFIFO.c
 
                 priv/QDLPv1.c
                 priv/QDLPv2.c

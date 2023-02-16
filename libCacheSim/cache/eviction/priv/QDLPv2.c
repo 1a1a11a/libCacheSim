@@ -42,7 +42,7 @@ typedef struct {
 } QDLPv2_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.2,main-cache=Clock";
+    "fifo-size-ratio=0.2,main-cache=Clock-2";
 
 // ***********************************************************************
 // ****                                                               ****

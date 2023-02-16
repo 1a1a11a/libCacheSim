@@ -92,6 +92,7 @@ cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.hashpower -= 2;
   params->fifos = malloc(sizeof(cache_t *) * params->n_seg);
+  
   for (int i = 0; i < params->n_seg; i++) {
     ccache_params_local.cache_size = params->per_seg_max_size[i];
     params->fifos[i] = FIFO_init(ccache_params_local, NULL);

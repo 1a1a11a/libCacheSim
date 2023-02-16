@@ -356,6 +356,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = MClock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lp-sfifo") == 0) {
     cache = LP_SFIFO_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lp-arc") == 0) {
+    cache = LP_ARC_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lp-twoq") == 0) {
     cache = LP_TwoQ_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "sfifomerge") == 0 ||
