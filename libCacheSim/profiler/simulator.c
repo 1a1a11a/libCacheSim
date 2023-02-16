@@ -30,6 +30,7 @@ typedef struct simulator_multithreading_params {
   GMutex mtx; /* prevent simultaneous write to progress */
   gint *progress;
   gpointer other_data;
+  bool free_cache;
 } sim_mt_params_t;
 
 static void _simulate(gpointer data, gpointer user_data) {
@@ -125,7 +126,9 @@ static void _simulate(gpointer data, gpointer user_data) {
   g_mutex_unlock(&(params->mtx));
 
   // clean up
-  local_cache->cache_free(local_cache);
+  if (params->free_cache) {
+    local_cache->cache_free(local_cache);
+  }
   free_request(req);
   close_reader(cloned_reader);
 }
@@ -183,6 +186,7 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   params->n_warmup_req =
       (uint64_t)((double)get_num_of_req(reader) * warmup_frac);
   params->result = result;
+  params->free_cache = true;
   params->progress = &progress;
   g_mutex_init(&(params->mtx));
 
@@ -258,6 +262,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
   params->n_warmup_req =
       (uint64_t)((double)get_num_of_req(reader) * warmup_frac);
   params->result = result;
+  params->free_cache = false;
   params->progress = &progress;
   g_mutex_init(&(params->mtx));
 
