@@ -220,6 +220,9 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
 static void MyClock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   DEBUG_ASSERT(obj_to_remove != NULL);
   MyClock_params_t *params = cache->eviction_params;
+  if (obj_to_remove == params->pointer) {
+    params->pointer = obj_to_remove->queue.prev;
+  }
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_remove);
   cache_remove_obj_base(cache, obj_to_remove, true);
 }
