@@ -198,7 +198,7 @@ static cache_obj_t* LFU_find(cache_t *cache, const request_t *req,
       memset(new_node, 0, sizeof(freq_node_t));
       new_node->freq = cache_obj->lfu.freq;
       g_hash_table_insert(params->freq_map, new_key, new_node);
-      VVVERBOSE("allocate new %d %d %p %p\n", new_node->freq, new_node->n_obj,
+      VVVERBOSE("allocate new %ld %d %p %p\n", new_node->freq, new_node->n_obj,
                 new_node->first_obj, new_node->last_obj);
     } else {
       // it could be new_node is empty

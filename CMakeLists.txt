@@ -94,6 +94,9 @@ elseif (LOG_LEVEL_LOWER STREQUAL "error")
 # default none is info
 elseif (LOG_LEVEL_LOWER STREQUAL "none")
     add_compile_definitions(LOGLEVEL=7)
+else()
+    message(WARNING "unknown log level ${LOG_LEVEL}, use INFO as default")
+    add_compile_definitions(LOGLEVEL=7)
 endif()
 
 # message(STATUS ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})

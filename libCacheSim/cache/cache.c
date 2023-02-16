@@ -180,8 +180,8 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
 bool cache_get_base(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
-  VERBOSE("******* req %ld, obj %ld, obj_size %ld, cache size %ld/%ld\n",
-          cache->n_req, req->obj_id, req->obj_size,
+  VERBOSE("******* %s req %ld, obj %ld, obj_size %ld, cache size %ld/%ld\n",
+          cache->cache_name, cache->n_req, req->obj_id, req->obj_size,
           cache->get_occupied_byte(cache), cache->cache_size);
 
   cache_obj_t *obj = cache->find(cache, req, true);
