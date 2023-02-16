@@ -13,6 +13,8 @@
 #include "internal.h"
 
 int main(int argc, char **argv) {
+  printf("cache_obj_t size: %zu\n", sizeof(cache_obj_t));
+  
   struct arguments args;
   parse_cmd(argc, argv, &args);
   if (args.n_cache_size == 0) {

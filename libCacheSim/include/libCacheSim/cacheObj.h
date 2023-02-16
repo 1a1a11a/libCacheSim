@@ -31,13 +31,13 @@ typedef struct {
 } ARC_obj_metadata_t;
 
 typedef struct {
-  int64_t eviction_vtime;
   void *lfu_next;
   void *lfu_prev;
-  int32_t freq;
-  bool ghost_evicted_by_lru;
-  bool ghost_evicted_by_lfu;
-} LeCaR_obj_metadata_t;
+  int64_t eviction_vtime:40;
+  int64_t freq:22;
+  int64_t ghost_evicted_by_lru:1;
+  int64_t ghost_evicted_by_lfu:1;
+} __attribute__((packed)) LeCaR_obj_metadata_t;
 
 typedef struct {
   int64_t last_access_vtime;
@@ -54,8 +54,8 @@ typedef struct {
 } CR_LFU_obj_metadata_t;
 
 typedef struct {
-  int64_t freq;
-  int64_t vtime_enter_cache;
+  int64_t vtime_enter_cache:40;
+  int64_t freq:24;
   void *pq_node;
 } Hyperbolic_obj_metadata_t;
 
@@ -103,12 +103,9 @@ typedef struct {
 } QDLP_obj_metadata_t;
 
 typedef struct {
-  int64_t next_access_vtime;
-  // int32_t last_access_time;
-  int32_t freq:24;
-  int32_t q_id:8;
-  // int32_t nth_obj;
-} misc_metadata_t;
+  int64_t next_access_vtime:40;
+  int64_t freq:24;
+} __attribute__((packed)) misc_metadata_t;
 
 typedef struct {
   bool is_LIR;

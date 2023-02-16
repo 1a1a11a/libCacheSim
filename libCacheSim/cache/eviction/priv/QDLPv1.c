@@ -223,7 +223,6 @@ static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
   cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
   if (obj != NULL) {
     // we can use misc field because FIFO does not use any metadata
-    DEBUG_ASSERT(obj->misc.q_id == 1);
     obj->misc.freq = 1;
 
     return obj;
@@ -261,7 +260,6 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
   } else {
     /* insert into the fifo */
     obj = params->fifo->insert(params->fifo, req);
-    obj->misc.q_id = 1;  // 1 is fifo cache
   }
   return obj;
 }
