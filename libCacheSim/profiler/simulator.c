@@ -125,6 +125,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   g_mutex_unlock(&(params->mtx));
 
   // clean up
+  local_cache->cache_free(local_cache);
   free_request(req);
   close_reader(cloned_reader);
 }
@@ -218,9 +219,6 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   // clean up
   g_thread_pool_free(gthread_pool, FALSE, TRUE);
   g_mutex_clear(&(params->mtx));
-  for (int i = 0; i < num_of_sizes; i++) {
-    params->caches[i]->cache_free(params->caches[i]);
-  }
   my_free(sizeof(cache_t *) * num_of_sizes, params->caches);
   my_free(sizeof(sim_mt_params_t), params);
 
