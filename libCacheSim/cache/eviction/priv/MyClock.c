@@ -34,6 +34,8 @@ static cache_obj_t *MyClock_to_evict(cache_t *cache, const request_t *req);
 static void MyClock_evict(cache_t *cache, const request_t *req);
 static bool MyClock_remove(cache_t *cache, const obj_id_t obj_id);
 
+static void MyClock_verify(cache_t *cache);
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   end user facing functions                   ****
@@ -135,7 +137,9 @@ static bool MyClock_get(cache_t *cache, const request_t *req) {
 static cache_obj_t *MyClock_find(cache_t *cache, const request_t *req,
                                  const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
-  if (cache_obj != NULL && update_cache) cache_obj->clock.visited = true;
+  if (cache_obj != NULL && update_cache) {
+    cache_obj->clock.visited = true;
+  }
 
   return cache_obj;
 }
@@ -180,22 +184,17 @@ static cache_obj_t *MyClock_to_evict(cache_t *cache, const request_t *req) {
 
   /* find the first untouched */
   while (pointer != NULL && pointer->clock.visited) {
-    params->n_scanned_obj++;
-    pointer->clock.visited = false;
     pointer = pointer->queue.prev;
   }
 
   /* if we have finished one around, start from the tail */
   if (pointer == NULL) {
-    // printf("%ld %ld\n", params->n_scanned_obj, params->n_written_obj);
     pointer = params->q_tail;
     while (pointer != NULL && pointer->clock.visited) {
-      pointer->clock.visited = false;
       pointer = pointer->queue.prev;
     }
   }
 
-  params->n_scanned_obj++;
   return pointer;
 }
 
@@ -210,11 +209,32 @@ static cache_obj_t *MyClock_to_evict(cache_t *cache, const request_t *req) {
  */
 static void MyClock_evict(cache_t *cache, const request_t *req) {
   MyClock_params_t *params = cache->eviction_params;
-  cache_obj_t *moving_pointer = MyClock_to_evict(cache, req);
+  cache_obj_t *obj = params->pointer;
 
-  params->pointer = moving_pointer->queue.prev;
-  remove_obj_from_list(&params->q_head, &params->q_tail, moving_pointer);
-  cache_evict_base(cache, moving_pointer, true);
+  /* if we have run one full around or first eviction */
+  if (obj == NULL) obj = params->q_tail;
+
+  /* find the first untouched */
+  while (obj != NULL && obj->clock.visited) {
+    params->n_scanned_obj++;
+    obj->clock.visited = false;
+    obj = obj->queue.prev;
+  }
+
+  /* if we have finished one around, start from the tail */
+  if (obj == NULL) {
+    obj = params->q_tail;
+    while (obj != NULL && obj->clock.visited) {
+      params->n_scanned_obj++;
+      obj->clock.visited = false;
+      obj = obj->queue.prev;
+    }
+  }
+
+  params->n_scanned_obj++;
+  params->pointer = obj->queue.prev;
+  remove_obj_from_list(&params->q_head, &params->q_tail, obj);
+  cache_evict_base(cache, obj, true);
 }
 
 static void MyClock_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
@@ -245,9 +265,27 @@ static bool MyClock_remove(cache_t *cache, const obj_id_t obj_id) {
   if (obj == NULL) {
     return false;
   }
+
   MyClock_remove_obj(cache, obj);
 
   return true;
+}
+
+
+static void MyClock_verify(cache_t *cache) {
+  MyClock_params_t *params = cache->eviction_params;
+  int64_t n_obj = 0, n_byte = 0;
+  cache_obj_t *obj = params->q_head;
+
+  while (obj != NULL) {
+    assert(hashtable_find_obj_id(cache->hashtable, obj->obj_id) != NULL);
+    n_obj++;
+    n_byte += obj->obj_size;
+    obj = obj->queue.next;
+  }
+
+  assert(n_obj == cache->get_n_obj(cache));
+  assert(n_byte == cache->get_occupied_byte(cache));
 }
 
 #ifdef __cplusplus

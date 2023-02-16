@@ -2,7 +2,7 @@
 //  LP_ARC cache replacement algorithm
 //  https://www.usenix.org/conference/fast-03/LP_ARC-self-tuning-low-overhead-replacement-cache
 //
-//  
+//
 //  the LRU queues are replaced with FIFO or others
 //
 //
@@ -42,11 +42,11 @@ typedef struct LP_ARC_params {
 // ***********************************************************************
 
 static void LP_ARC_parse_params(cache_t *cache,
-                               const char *cache_specific_params);
+                                const char *cache_specific_params);
 static void LP_ARC_free(cache_t *cache);
 static bool LP_ARC_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_ARC_find(cache_t *cache, const request_t *req,
-                               const bool update_cache);
+                                const bool update_cache);
 static cache_obj_t *LP_ARC_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_ARC_to_evict(cache_t *cache, const request_t *req);
 static void LP_ARC_evict(cache_t *cache, const request_t *req);
@@ -58,10 +58,10 @@ static int64_t LP_ARC_get_n_obj(const cache_t *cache);
 
 /* this is the case IV in the paper */
 static void _LP_ARC_evict_miss_on_all_queues(cache_t *cache,
-                                            const request_t *req);
+                                             const request_t *req);
 static void _LP_ARC_replace(cache_t *cache, const request_t *req);
 static cache_obj_t *_LP_ARC_to_evict_miss_on_all_queues(cache_t *cache,
-                                                       const request_t *req);
+                                                        const request_t *req);
 static cache_obj_t *_LP_ARC_to_replace(cache_t *cache, const request_t *req);
 
 static bool LP_ARC_get_debug(cache_t *cache, const request_t *req);
@@ -81,7 +81,7 @@ static bool LP_ARC_get_debug(cache_t *cache, const request_t *req);
  * function or use -e "print" with the cachesim binary
  */
 cache_t *LP_ARC_init(const common_cache_params_t ccache_params,
-                    const char *cache_specific_params) {
+                     const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("LP_ARC", ccache_params);
   cache->cache_init = LP_ARC_init;
   cache->cache_free = LP_ARC_free;
@@ -162,7 +162,8 @@ static void LP_ARC_free(cache_t *cache) {
 static bool LP_ARC_get(cache_t *cache, const request_t *req) {
   LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
-  return cache_get_base(cache, req);
+  return LP_ARC_get_debug(cache, req);
+  // return cache_get_base(cache, req);
 }
 
 // ***********************************************************************
@@ -182,7 +183,7 @@ static bool LP_ARC_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LP_ARC_find(cache_t *cache, const request_t *req,
-                               const bool update_cache) {
+                                const bool update_cache) {
   LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_t1 = params->T1->find(params->T1, req, false);
@@ -218,21 +219,26 @@ static cache_obj_t *LP_ARC_find(cache_t *cache, const request_t *req,
       // case II: x in L1_ghost
       double delta = MAX((double)b2_size / b1_size, 1);
       params->p = MIN(params->p + delta, cache->cache_size);
-      params->B1->remove(params->B1, obj_b1->obj_id);
+      bool removed = params->B1->remove(params->B1, obj_b1->obj_id);
+      DEBUG_ASSERT(removed);
     } else {
       params->curr_obj_in_L2_ghost = true;
       // case III: x in L2_ghost
       double delta = MAX((double)b1_size / b2_size, 1);
       params->p = MAX(params->p - delta, 0);
-      params->B2->remove(params->B2, obj_b2->obj_id);
+      bool removed = params->B2->remove(params->B2, obj_b2->obj_id);
+      DEBUG_ASSERT(removed);
     }
   } else {
     // cache hit, case I: x in L1_data or L2_data
     if (obj_t1 != NULL) {
-      obj_t1->misc.freq = 1;
+      params->T1->remove(params->T1, obj_t1->obj_id);
+      params->T2->get(params->T2, req);
+      DEBUG_ASSERT(params->B2->find(params->B2, req, false) == NULL);
     } else {
       // move to LRU2 head
-      params->T2->find(params->T2, req, true);
+      cache_obj_t *obj_tmp = params->T2->find(params->T2, req, true);
+      assert(obj_tmp == obj_t2);
     }
   }
 
@@ -259,6 +265,7 @@ static cache_obj_t *LP_ARC_insert(cache_t *cache, const request_t *req) {
       (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
     // insert to L2 data head
     obj = params->T2->insert(params->T2, req);
+    DEBUG_ASSERT(params->B2->find(params->B2, req, false) == NULL);
 
     params->curr_obj_in_L1_ghost = false;
     params->curr_obj_in_L2_ghost = false;
@@ -266,7 +273,6 @@ static cache_obj_t *LP_ARC_insert(cache_t *cache, const request_t *req) {
   } else {
     // insert to L1 data head
     obj = params->T1->insert(params->T1, req);
-    obj->misc.freq = 0;
   }
 
   return obj;
@@ -389,22 +395,24 @@ static void _LP_ARC_replace(cache_t *cache, const request_t *req) {
     cache_obj_t *obj = params->T1->to_evict(params->T1, req);
     DEBUG_ASSERT(obj != NULL);
     copy_cache_obj_to_request(params->req_local, obj);
-    params->B1->get(params->B1, params->req_local);
+    bool in_g = params->B1->get(params->B1, params->req_local);
+    DEBUG_ASSERT(in_g == false);
     params->T1->evict(params->T1, req);
   } else {
     // delete the item in L2 data, move to L2_ghost
     cache_obj_t *obj = params->T2->to_evict(params->T2, req);
     DEBUG_ASSERT(obj != NULL);
     copy_cache_obj_to_request(params->req_local, obj);
+    bool in_g = params->B2->get(params->B2, params->req_local);
+    DEBUG_ASSERT(in_g == false);
     params->T2->evict(params->T2, req);
-    params->B2->get(params->B2, params->req_local);
   }
 }
 
-/* finding the eviction candidate in _LP_ARC_evict_miss_on_all_queues, but do not
- * perform eviction */
+/* finding the eviction candidate in _LP_ARC_evict_miss_on_all_queues, but do
+ * not perform eviction */
 static cache_obj_t *_LP_ARC_to_evict_miss_on_all_queues(cache_t *cache,
-                                                       const request_t *req) {
+                                                        const request_t *req) {
   LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
   int64_t t1_size = params->T1->get_occupied_byte(params->T1);
@@ -427,7 +435,7 @@ static cache_obj_t *_LP_ARC_to_evict_miss_on_all_queues(cache_t *cache,
 
 /* this is the case IV in the paper */
 static void _LP_ARC_evict_miss_on_all_queues(cache_t *cache,
-                                            const request_t *req) {
+                                             const request_t *req) {
   LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
   int64_t t1_size = params->T1->get_occupied_byte(params->T1);
@@ -473,7 +481,7 @@ static const char *LP_ARC_current_params(LP_ARC_params_t *params) {
 }
 
 static void LP_ARC_parse_params(cache_t *cache,
-                               const char *cache_specific_params) {
+                                const char *cache_specific_params) {
   LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
   char *params_str = strdup(cache_specific_params);
@@ -525,9 +533,9 @@ static bool LP_ARC_get_debug(cache_t *cache, const request_t *req) {
 
   cache->n_req += 1;
 
-  printf("%ld obj_id %ld: p %.2lf\n", cache->n_req, req->obj_id, params->p);
-  print_cache(cache);
-  printf("==================================\n");
+  // printf("%ld obj_id %ld: p %.2lf\n", cache->n_req, req->obj_id, params->p);
+  // print_cache(cache);
+  // printf("==================================\n");
 
   cache_obj_t *obj = cache->find(cache, req, true);
 
