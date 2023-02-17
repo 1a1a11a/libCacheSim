@@ -18,10 +18,8 @@ extern "C" {
 
 #include <math.h>
 
-#include "../../include/libCacheSim/reader.h"
+#include "../include/libCacheSim/reader.h"
 #include "binaryUtils.h"
-
-#define MAX_OBJ_SIZE (1048576L * 4000L)
 
 static inline int akamaiReader_setup(reader_t *reader) {
   reader->trace_type = AKAMAI_TRACE;

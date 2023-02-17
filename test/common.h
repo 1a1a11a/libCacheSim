@@ -168,10 +168,6 @@ static cache_t *create_test_cache(const char *alg_name,
   } else if (strcasecmp(alg_name, "FIFO-Reinsertion") == 0 ||
              strcasecmp(alg_name, "Clock") == 0) {
     cache = Clock_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "SFIFO-Merge") == 0) {
-    cache = SFIFO_Merge_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "SFIFO-Reinsertion") == 0) {
-    cache = SFIFO_Reinsertion_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Belady") == 0) {
     cache = Belady_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "BeladySize") == 0) {

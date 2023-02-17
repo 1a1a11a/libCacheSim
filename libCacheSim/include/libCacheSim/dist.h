@@ -39,7 +39,7 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
                         int64_t *array_size);
 
 /***********************************************************
- * get the distance since last/first access
+ * get the distance (the num of requests) since last/first access
 
  * @param reader
  * @param dist_type DIST_SINCE_LAST_ACCESS or DIST_SINCE_FIRST_ACCESS

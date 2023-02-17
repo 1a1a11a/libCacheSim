@@ -53,13 +53,13 @@ set(sourceCPP
         cpp/LFU.cpp
         cpp/GDSF.cpp
         LHD/lhd.cpp
-        LHD/LHDInterface.cpp
+        LHD/LHD_Interface.cpp
         )
 
 if (ENABLE_LRB)
     set (sourceCPP ${sourceCPP} 
         LRB/lrb.cpp
-        LRB/LRB_interface.cpp
+        LRB/LRB_Interface.cpp
         )
 endif()
 
