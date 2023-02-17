@@ -222,7 +222,6 @@ static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
   params->hit_on_ghost = false;
   cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
   if (obj != NULL) {
-    // we can use misc field because FIFO does not use any metadata
     obj->misc.freq = 1;
 
     return obj;
