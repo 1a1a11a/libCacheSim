@@ -26,6 +26,10 @@ typedef struct {
 } Clock_obj_metadata_t;
 
 typedef struct {
+  void *pq_node;
+} Size_obj_metadata_t;
+
+typedef struct {
   int lru_id;
   bool ghost;
 } ARC_obj_metadata_t;
@@ -138,6 +142,7 @@ typedef struct cache_obj {
   union {
     LFU_obj_metadata_t lfu;          // for LFU
     Clock_obj_metadata_t clock;      // for Clock
+    Size_obj_metadata_t Size;        // for Size
     ARC_obj_metadata_t ARC;          // for ARC
     LeCaR_obj_metadata_t LeCaR;      // for LeCaR
     Cacheus_obj_metadata_t Cacheus;  // for Cacheus

@@ -22,12 +22,7 @@ set(sourceC
         LeCaRv0.c
         LIRS.c
         WTinyLFU.c
-
-        fifo/LP_SFIFO.c
-        fifo/LP_TwoQ.c
-        fifo/LP_ARC.c
-        fifo/SFIFO.c
-        fifo/SFIFOv0.c
+        Size.c
         )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
@@ -47,6 +42,16 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
 
                 priv/MClock.c
                 )
+endif()
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fifo")
+        set(sourceC ${sourceC} 
+        fifo/LP_SFIFO.c
+        fifo/LP_TwoQ.c
+        fifo/LP_ARC.c
+        fifo/SFIFO.c
+        fifo/SFIFOv0.c
+        )
 endif()
 
 set(sourceCPP

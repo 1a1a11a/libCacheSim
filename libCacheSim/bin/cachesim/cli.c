@@ -310,6 +310,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = LeCaR_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "cacheus") == 0) {
     cache = Cacheus_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "size") == 0) {
+    cache = Size_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lfucpp") == 0) {
     cache = LFUCpp_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "tinyLFU") == 0) {
