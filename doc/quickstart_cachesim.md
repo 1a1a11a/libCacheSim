@@ -1,10 +1,10 @@
 
 # cachesim user guide 
-cachesim is a tool provided by libCacheSim to quick run some cache simulations, it supports 
-* a variety of eviction algorithms such as FIFO, LRU, LFU, ARC, SLRU, LeCaR, Cacheus, Hyperbolic, LHD, TinyLFU, Belady, and GLCache. 
+cachesim is a tool provided by libCacheSim to quickly run some cache simulations, it supports 
+* a variety of eviction algorithms such as FIFO, LRU, LFU, ARC, SLRU, LeCaR, CACHEUS, Hyperbolic, LHD, TinyLFU, Belady, LRB and GLCache. 
 * a variety of admission algorithms such as size, bloomFilter and adaptSize. 
 * text, csv trace as well as binary traces. 
-* automatic multi-threaded evaluations. 
+* automatic multi-threaded simulations. 
 
 Meanwhile, cachesim has high-performance with low resource usages. 
 
@@ -176,34 +176,4 @@ You can use `-a` or `--admission-algo` to set the admission algorithm.
 
 
 
-## Other trace utilities
-We also provide some trace utilities to help you use the traces and debug applications. 
 
-### tracePrint
-Print requests from a trace.
-
-```bash
-# print 10 requests from a trace
-./tracePrint ../data/trace.vscsi vscsi -n 10
-```
-
-### traceStat
-
-
-### traceGen
-
-
-### traceConv
-Convert a trace to libCacheSim format so it has a smaller size and runs faster. 
-```bash
-./traceConv ../data/trace.vscsi vscsi ../data/trace.vscsi.bin
-```
-
-We can also sample a trace to reduce the size of the trace. 
-```bash
-# sample 1% of the trace
-./traceConv ../data/trace.vscsi vscsi ../data/trace.vscsi.bin -s 0.01
-```
-
-
-### traceFilter

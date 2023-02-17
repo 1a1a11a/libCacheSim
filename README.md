@@ -15,97 +15,106 @@
 
 ## libCacheSim features 
 * [**high performance**](doc/performance.md) - over 20M requests/sec for a realistic trace replay. 
-* [**high memory efficiency**](doc/performance.md) - predictable and small memory footprint ~36 bytes memory per cached object. 
-* [**performance and memory mode**](doc/performance.md) - run the simulator in performance mode with larger memory footprint, or run it in slower low-memory mode.  
+* [**high memory efficiency**](doc/performance.md) - predictable and small memory footprint. 
 * **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation. 
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc.
-* **extensible** - easy to add traceReader or eviction algorithms either in source or load using plugin systems.    
-* **Realistic simulator** - support object size, wall clock time, operations, etc. 
-* **wide trace formats support** - support txt, csv/tsv, binary, vscsi trace formats. 
+* **extensible** - easy to support new trace types or eviction algorithms.
 ---
 
-## Build and Install 
-libCacheSim uses [camke](https://cmake.org/) build system and has two dependencies: 
-[GNOME glib](https://developer.gnome.org/glib/) and [Google tcmalloc](https://github.com/google/tcmalloc).
+## Supported algorithms
+cachesim supports the following algorithms:
+[FIFO](../libCacheSim/libCacheSim/cache/eviction/FIFO.c), 
+[LRU](../libCacheSim/libCacheSim/cache/eviction/LRU.c), 
+[Clock](../libCacheSim/libCacheSim/cache/eviction/Clock.c),
+[LFU](../libCacheSim/libCacheSim/cache/eviction/LFU.c), 
+[LFU with dynamic aging](../libCacheSim/libCacheSim/cache/eviction/LFUDA.c), 
+[ARC](../libCacheSim/libCacheSim/cache/eviction/ARC.c), 
+[SLRU](../libCacheSim/libCacheSim/cache/eviction/SLRU.c), 
+[GDSF](../libCacheSim/libCacheSim/cache/eviction/cpp/GDSF.cpp),
+[TinyLFU](../libCacheSim/libCacheSim/cache/eviction/TinyLFU.c), 
+[LeCaR](../libCacheSim/libCacheSim/cache/eviction/LeCaR.c), 
+[Cacheus](../libCacheSim/libCacheSim/cache/eviction/Cacheus.c), 
+[Hyperbolic](../libCacheSim/libCacheSim/cache/eviction/Hyperbolic.c), 
+[LHD](../libCacheSim/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp), 
+[LRB](../libCacheSim/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp),
+[GLCache](../libCacheSim/libCacheSim/cache/eviction/GLCache/GLCache.c),
+[Belady](../libCacheSim/libCacheSim/cache/eviction/Belady.c), 
+[BeladySize](../libCacheSim/libCacheSim/cache/eviction/BeladySize.c),
 
+
+## Build and Install libCacheSim
 ### Install dependency
-Mac (using [homebrew](https://brew.sh/) as an example)
-```
-brew install glib google-perftools
-```
+libCacheSim uses [camke](https://cmake.org/) build system and has a few dependencies: 
+[GNOME glib](https://developer.gnome.org/glib/), 
+[Google tcmalloc](https://github.com/google/tcmalloc), 
+[Facebook ZSTD](https://github.com/facebook/zstd).
 
-Linux (using Ubuntu as an example)
-```
-sudo apt install libglib2.0-dev libgoogle-perftools-dev
+Please see [install.md](doc/install.md) for how to install the dependencies. 
 
-# [source installation] zstd
-cd /tmp/
-wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz
-tar xvf zstd-1.5.0.tar.gz
-cd zstd-1.5.0/build/cmake/
-mkdir _build
-cd _build/
-cmake ..
-make -j
-sudo make install
-```
-
-Note that cmake version is required to be no less than 3.12.
-
-[Optional] Install XGBoost (Linux):
-```
-git clone --recursive https://github.com/dmlc/xgboost
-pushd xgboost;
-mkdir build && cd build;
-cmake .. && make -j; 
-sudo make install; 
-popd
-```
 
 ### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```
-git clone https://github.com/1a1a11a/libCacheSimPrv 
-pushd libCachesim;
+git clone https://github.com/1a1a11a/libCacheSimPrv
+pushd libCachesimPrv;
 mkdir _build && cd _build;
 cmake .. && make -j;
-sudo make install;
+[sudo] make install;
 popd;
 ```
 
-
 ## Usage
-### Quickstart (cachesim binary)
-
-
-More usages in [quick start cachesim](doc/quickstart_cachesim.md) for a tutorial. 
-
-
-
-
-### Quickstart (libCacheSim library)
-
-
-
-#### Linking with libCacheSim
-linking can be done in cmake or use pkg-config  
-Such as at the _build directory:  
+### cachesim (a high-performance cache simulator)
+After building and installing libCacheSim, `cachesim` should be in the build directory. 
+#### basic usage
 ```
-export PKG_CONFIG_PATH=$PWD
+./cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
 ```
-#### Performance Optimizations 
-* hugepage - to turn on hugepage support, please do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
+
+use `./cachesim --help` to get more information.
+
+#### Run a single cache simulation
+Run the example traces with LRU eviction algorithm and 1GB cache size. 
+
+```bash
+# Note that no space between the cache size and the unit, unit is not case sensitive
+./cachesim ../data/trace.vscsi vscsi lru 1gb 
+```
+
+### Run multiple cache simulations with different cache sizes
+```bash
+# Note that no space between the cache sizes
+./cachesim ../data/trace.vscsi vscsi lru 1mb,16mb,256mb,8gb
+
+# besides absolute cache size, you can also use fraction of working set size
+./cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
+
+# besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
+./cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore obj-size 1
+
+# use a csv trace, note the qutation marks when you have multiple options
+./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
+
+# use a csv trace with more options
+./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
+``` 
+
+See [quick start cachesim](doc/quickstart_cachesim.md) for more usages. 
+
 
 
 ---
-### Quickstart  
-See [example folder](example) for more examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
-Here is a simplified example showing the most basic APIs. 
+
+### libCacheSim library 
+libCacheSim can be used as a library for building cache simulators. 
+For example, you can build a cache cluster with consistent hashing, or a multi-layer caching simulator.
+
+Here is a simplified example showing the basic APIs. 
 ```c 
 #include <libCacheSim.h>
 
-/* open trace, see quickstart.md for opening csv and binary trace */
-reader_t *reader = open_trace("data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
+/* open trace, see quickstart_lib.md for opening csv and binary trace */
+reader_t *reader = open_trace("../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
 
 /* craete a container for reading from trace */
 request_t *req = new_request();
@@ -116,21 +125,25 @@ cache_t *cache = LRU_init(cc_params, NULL);
 
 /* counters */
 uint64_t req_byte = 0, miss_byte = 0;
+uint64_t n_req = 0, n_miss = 0;
 
 /* loop through the trace */
 while (read_one_req(reader, req) == 0) {
     if (cache->get(cache, req) == cache_ck_miss) {
         miss_byte += req->obj_size;
+        n_miss++;
     }
     req_byte += req->obj_size; 
+    n_req++;
 }
+
+printf("miss ratio: %.4lf, byte miss ratio %.4lf\n", 
+        (double)n_miss / n_req, (double)miss_byte / req_byte);
 
 /* cleaning */
 close_trace(reader);
 free_request(req);
 cache->cache_free(cache);
-
-
 ```
 save this to `test.c` and compile with 
 ```
@@ -139,17 +152,46 @@ g++ $(pkg-config --cflags --libs libCacheSim glib-2.0) -IlibCacheSim/include -lm
 
 if you get `error while loading shared libraries`, run `sudo ldconfig`
 
+See [example folder](example) for more examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
+
+#### Linking with libCacheSim
+linking can be done in cmake or use pkg-config  
+Such as in the `_build` directory:  
+```
+export PKG_CONFIG_PATH=$PWD
+```
 
 
----
-### Documentation 
-* see [quick start](doc/quickstart.md) for a quickstart tutorial. 
-* see [API.md](doc/API.md) for common APIs.  
-* see [http://mimircache.info](http://mimircache.info) for full doc. 
-  
-  
-### Example usages 
-* simulate a cache cluster with consistent hashing, see [example/consistent_hashing](example/consistent_hashing)
+--
+### Extending libCacheSim 
+#### Adding new trace types
+libCacheSim supports txt, csv, and binary traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
+
+We also support zstd compressed traces with decompression first, this allows you to store the traces with less space.
+
+You should not need to add support to use a new trace if you follow the (cachesim quick start tutorial)[doc/quickstart_cachesim.md] and (libCacheSim quick start tutorial)[doc/quickstart_libcachesim].
+
+But if you ever need to add a new trace type, please see `libCacheSim/traceReader/customizedReader/akamaiBin.h` for an example reader.
+
+#### Adding new eviction algorithms
+Adding eviction algorithm is easy. 
+You can see `libCacheSim/cache/eviction/LRU.c` for an example.
+Besides implementing the a new eviction algorithm in `libCacheSim/cache/eviction/myCache.c`, you also need to perform the following tasks.
+1. Add the `myCache_init()` function to `libCacheSim/include/libCacheSim/evictionAlgo.h`.
+2. Add the mycache.c to `libCacheSim/cache/eviction/CMakeLists.txt` so that it can be compiled.
+3. Add the option to use mycache in `cachesim` in `libCacheSim/bin/cachesim/cli.c`.
+4. If you are creating a pull request, you would also need to add a test in `test/test_evictionAlgo.c` and add the algorithm to this README. 
+
+#### Adding new eviction algorithms in C++
+You can also write your eviction algorithm in C++ and use it in libCacheSim.
+You can see `libCacheSim/cache/eviction/cpp/LFU.cpp` for an example.
+
+For further reading on how to use libCacheSim, please see the [quick start libCacheSim](doc/quickstart_libcachesim.md).
+
+
+### Other 
+#### Performance Optimizations 
+* hugepage - to turn on hugepage support, please do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
 
 
 ---
@@ -170,15 +212,15 @@ This project adheres to Google's coding style. By participating, you are expecte
 #### Reference
 ```
 @inproceedings {libCacheSim,
-author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
-title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
-booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
-year = {2020},
-isbn = {978-1-939133-19-9},
-pages = {191--208},
-url = {https://www.usenix.org/conference/osdi20/presentation/yang},
-publisher = {USENIX Association},
-month = nov,
+    author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
+    title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
+    booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
+    year = {2020},
+    isbn = {978-1-939133-19-9},
+    pages = {191--208},
+    url = {https://www.usenix.org/conference/osdi20/presentation/yang},
+    publisher = {USENIX Association},
+    month = nov,
 }
 ```
 
