@@ -155,8 +155,8 @@ static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
-    if (obj->lfu.freq < params->max_freq) {
-      obj->lfu.freq += 1;
+    if (obj->misc.freq < params->max_freq) {
+      obj->misc.freq += 1;
     }
 #ifdef USE_BELADY
     obj->next_access_vtime = req->next_access_vtime;
@@ -182,7 +182,7 @@ static cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
-  obj->lfu.freq = 0;
+  obj->misc.freq = 0;
 #ifdef USE_BELADY
   obj->next_access_vtime = req->next_access_vtime;
 #endif
@@ -205,16 +205,16 @@ static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req) {
 
   cache_obj_t *obj_to_evict = params->q_tail;
 #ifdef USE_BELADY
-  while (obj_to_evict->lfu.freq >= 1 &&
+  while (obj_to_evict->misc.freq >= 1 &&
          obj_to_evict->next_access_vtime != INT64_MAX) {
-    obj_to_evict->lfu.freq -= 1;
+    obj_to_evict->misc.freq -= 1;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
   }
 
 #else
-  while (obj_to_evict->lfu.freq >= 1) {
-    obj_to_evict->lfu.freq -= 1;
+  while (obj_to_evict->misc.freq >= 1) {
+    obj_to_evict->misc.freq -= 1;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
   }
