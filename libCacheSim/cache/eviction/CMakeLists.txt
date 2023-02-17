@@ -9,8 +9,6 @@ set(sourceC
         Clock.c
         SLRU.c
         SLRUv0.c
-        SFIFO.c
-        SFIFOv0.c
         CR_LFU.c
         SR_LRU.c
         Belady.c
@@ -28,6 +26,8 @@ set(sourceC
         fifo/LP_SFIFO.c
         fifo/LP_TwoQ.c
         fifo/LP_ARC.c
+        fifo/SFIFO.c
+        fifo/SFIFOv0.c
         )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")

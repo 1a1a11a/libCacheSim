@@ -2,6 +2,8 @@
 //  multi queue
 //  each queue has a specified size and a specified ghost size
 //  promotion upon hit
+//  
+//  in progress, this is not finished 
 //
 //
 //  myMQv1.c
