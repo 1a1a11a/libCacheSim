@@ -25,22 +25,23 @@
 cachesim supports the following algorithms:
 * [FIFO](libCacheSim/cache/eviction/FIFO.c)
 * [LRU](libCacheSim/cache/eviction/LRU.c)
-* [Clock](libCacheSim/cache/eviction/Clock.c),
+* [Clock](libCacheSim/cache/eviction/Clock.c)
 * [LFU](libCacheSim/cache/eviction/LFU.c)
 * [LFU with dynamic aging](libCacheSim/cache/eviction/LFUDA.c)
 * [ARC](libCacheSim/cache/eviction/ARC.c)
 * [SLRU](libCacheSim/cache/eviction/SLRU.c)
-* [GDSF](libCacheSim/cache/eviction/cpp/GDSF.cpp),
+* [GDSF](libCacheSim/cache/eviction/cpp/GDSF.cpp)
 * [TinyLFU](libCacheSim/cache/eviction/TinyLFU.c)
 * [LeCaR](libCacheSim/cache/eviction/LeCaR.c)
 * [Cacheus](libCacheSim/cache/eviction/Cacheus.c)
 * [Hyperbolic](libCacheSim/cache/eviction/Hyperbolic.c)
 * [LHD](libCacheSim/cache/eviction/LHD/LHD_Interface.cpp)
-* [LRB](libCacheSim/cache/eviction/LRB/LRB_Interface.cpp),
-* [GLCache](libCacheSim/cache/eviction/GLCache/GLCache.c),
+* [LRB](libCacheSim/cache/eviction/LRB/LRB_Interface.cpp)
+* [GLCache](libCacheSim/cache/eviction/GLCache/GLCache.c)
 * [Belady](libCacheSim/cache/eviction/Belady.c)
 * [BeladySize](libCacheSim/cache/eviction/BeladySize.c)
---
+
+---
 
 
 ## Build and Install libCacheSim
@@ -48,7 +49,7 @@ cachesim supports the following algorithms:
 libCacheSim uses [camke](https://cmake.org/) build system and has a few dependencies: 
 [glib](https://developer.gnome.org/glib/)
 [tcmalloc](https://github.com/google/tcmalloc), 
-[ZSTD](https://github.com/facebook/zstd).
+[zstd](https://github.com/facebook/zstd).
 
 Please see [install.md](doc/install.md) for how to install the dependencies. 
 
@@ -63,7 +64,7 @@ cmake .. && make -j;
 [sudo] make install;
 popd;
 ```
---
+---
 
 ## Usage
 ### cachesim (a high-performance cache simulator)
@@ -107,7 +108,7 @@ See [quick start cachesim](doc/quickstart_cachesim.md) for more usages.
 
 ---
 
-### libCacheSim library 
+### Using libCacheSim as a library 
 libCacheSim can be used as a library for building cache simulators. 
 For example, you can build a cache cluster with consistent hashing, or a multi-layer caching simulator.
 
@@ -154,7 +155,8 @@ g++ $(pkg-config --cflags --libs libCacheSim glib-2.0) -IlibCacheSim/include -lm
 
 if you get `error while loading shared libraries`, run `sudo ldconfig`
 
-See [quickstart](doc/quickstart_lib.md) [example folder](example) for more examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
+See [quickstart](doc/quickstart_lib.md) for more details. 
+And see [example folder](example) for examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
 
 #### Linking with libCacheSim
 linking can be done in cmake or use pkg-config  
@@ -162,7 +164,7 @@ Such as in the `_build` directory:
 ```
 export PKG_CONFIG_PATH=$PWD
 ```
---
+---
 
 
 ### Extending libCacheSim 
@@ -203,7 +205,7 @@ This will let us give you advice on the proposed changes. If the changes are min
 This project adheres to Google's coding style. By participating, you are expected to uphold this code. 
 
 ---
-#### Reference
+### Reference
 ```
 @inproceedings {libCacheSim,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
@@ -219,7 +221,7 @@ This project adheres to Google's coding style. By participating, you are expecte
 ```
 ---
 
-#### Related
+### Related
 * [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated
 ---
 
