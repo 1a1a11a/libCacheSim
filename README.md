@@ -23,31 +23,32 @@
 
 ## Supported algorithms
 cachesim supports the following algorithms:
-[FIFO](../libCacheSim/libCacheSim/cache/eviction/FIFO.c), 
-[LRU](../libCacheSim/libCacheSim/cache/eviction/LRU.c), 
-[Clock](../libCacheSim/libCacheSim/cache/eviction/Clock.c),
-[LFU](../libCacheSim/libCacheSim/cache/eviction/LFU.c), 
-[LFU with dynamic aging](../libCacheSim/libCacheSim/cache/eviction/LFUDA.c), 
-[ARC](../libCacheSim/libCacheSim/cache/eviction/ARC.c), 
-[SLRU](../libCacheSim/libCacheSim/cache/eviction/SLRU.c), 
-[GDSF](../libCacheSim/libCacheSim/cache/eviction/cpp/GDSF.cpp),
-[TinyLFU](../libCacheSim/libCacheSim/cache/eviction/TinyLFU.c), 
-[LeCaR](../libCacheSim/libCacheSim/cache/eviction/LeCaR.c), 
-[Cacheus](../libCacheSim/libCacheSim/cache/eviction/Cacheus.c), 
-[Hyperbolic](../libCacheSim/libCacheSim/cache/eviction/Hyperbolic.c), 
-[LHD](../libCacheSim/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp), 
-[LRB](../libCacheSim/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp),
-[GLCache](../libCacheSim/libCacheSim/cache/eviction/GLCache/GLCache.c),
-[Belady](../libCacheSim/libCacheSim/cache/eviction/Belady.c), 
-[BeladySize](../libCacheSim/libCacheSim/cache/eviction/BeladySize.c),
+* [FIFO](libCacheSim/cache/eviction/FIFO.c)
+* [LRU](libCacheSim/cache/eviction/LRU.c)
+* [Clock](libCacheSim/cache/eviction/Clock.c),
+* [LFU](libCacheSim/cache/eviction/LFU.c)
+* [LFU with dynamic aging](libCacheSim/cache/eviction/LFUDA.c)
+* [ARC](libCacheSim/cache/eviction/ARC.c)
+* [SLRU](libCacheSim/cache/eviction/SLRU.c)
+* [GDSF](libCacheSim/cache/eviction/cpp/GDSF.cpp),
+* [TinyLFU](libCacheSim/cache/eviction/TinyLFU.c)
+* [LeCaR](libCacheSim/cache/eviction/LeCaR.c)
+* [Cacheus](libCacheSim/cache/eviction/Cacheus.c)
+* [Hyperbolic](libCacheSim/cache/eviction/Hyperbolic.c)
+* [LHD](libCacheSim/cache/eviction/LHD/LHD_Interface.cpp)
+* [LRB](libCacheSim/cache/eviction/LRB/LRB_Interface.cpp),
+* [GLCache](libCacheSim/cache/eviction/GLCache/GLCache.c),
+* [Belady](libCacheSim/cache/eviction/Belady.c)
+* [BeladySize](libCacheSim/cache/eviction/BeladySize.c)
+--
 
 
 ## Build and Install libCacheSim
 ### Install dependency
 libCacheSim uses [camke](https://cmake.org/) build system and has a few dependencies: 
-[GNOME glib](https://developer.gnome.org/glib/), 
-[Google tcmalloc](https://github.com/google/tcmalloc), 
-[Facebook ZSTD](https://github.com/facebook/zstd).
+[glib](https://developer.gnome.org/glib/)
+[tcmalloc](https://github.com/google/tcmalloc), 
+[ZSTD](https://github.com/facebook/zstd).
 
 Please see [install.md](doc/install.md) for how to install the dependencies. 
 
@@ -62,6 +63,7 @@ cmake .. && make -j;
 [sudo] make install;
 popd;
 ```
+--
 
 ## Usage
 ### cachesim (a high-performance cache simulator)
@@ -81,7 +83,7 @@ Run the example traces with LRU eviction algorithm and 1GB cache size.
 ./cachesim ../data/trace.vscsi vscsi lru 1gb 
 ```
 
-### Run multiple cache simulations with different cache sizes
+#### Run multiple cache simulations with different cache sizes
 ```bash
 # Note that no space between the cache sizes
 ./cachesim ../data/trace.vscsi vscsi lru 1mb,16mb,256mb,8gb
@@ -152,7 +154,7 @@ g++ $(pkg-config --cflags --libs libCacheSim glib-2.0) -IlibCacheSim/include -lm
 
 if you get `error while loading shared libraries`, run `sudo ldconfig`
 
-See [example folder](example) for more examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
+See [quickstart](doc/quickstart_lib.md) [example folder](example) for more examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
 
 #### Linking with libCacheSim
 linking can be done in cmake or use pkg-config  
@@ -160,9 +162,9 @@ Such as in the `_build` directory:
 ```
 export PKG_CONFIG_PATH=$PWD
 ```
-
-
 --
+
+
 ### Extending libCacheSim 
 #### Adding new trace types
 libCacheSim supports txt, csv, and binary traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
@@ -174,24 +176,18 @@ You should not need to add support to use a new trace if you follow the (cachesi
 But if you ever need to add a new trace type, please see `libCacheSim/traceReader/customizedReader/akamaiBin.h` for an example reader.
 
 #### Adding new eviction algorithms
-Adding eviction algorithm is easy. 
-You can see `libCacheSim/cache/eviction/LRU.c` for an example.
+Adding eviction algorithm is easy, you can see (`libCacheSim/cache/eviction/LRU.c`)[libCacheSim/cache/eviction/LRU.c] for an example.
 Besides implementing the a new eviction algorithm in `libCacheSim/cache/eviction/myCache.c`, you also need to perform the following tasks.
-1. Add the `myCache_init()` function to `libCacheSim/include/libCacheSim/evictionAlgo.h`.
-2. Add the mycache.c to `libCacheSim/cache/eviction/CMakeLists.txt` so that it can be compiled.
-3. Add the option to use mycache in `cachesim` in `libCacheSim/bin/cachesim/cli.c`.
-4. If you are creating a pull request, you would also need to add a test in `test/test_evictionAlgo.c` and add the algorithm to this README. 
+1. Add the `myCache_init()` function to (`libCacheSim/include/libCacheSim/evictionAlgo.h`)[libCacheSim/include/libCacheSim/evictionAlgo.h].
+2. Add the mycache.c to (`libCacheSim/cache/eviction/CMakeLists.txt`)[libCacheSim/cache/eviction/CMakeLists.txt] so that it can be compiled.
+3. Add the option to use mycache in `cachesim` in (`libCacheSim/bin/cachesim/cli.c`)[libCacheSim/bin/cachesim/cli.c].
+4. If you are creating a pull request, you would also need to add a test in (`test/test_evictionAlgo.c`)[test/test_evictionAlgo.c] and add the algorithm to this README. 
 
 #### Adding new eviction algorithms in C++
 You can also write your eviction algorithm in C++ and use it in libCacheSim.
 You can see `libCacheSim/cache/eviction/cpp/LFU.cpp` for an example.
 
 For further reading on how to use libCacheSim, please see the [quick start libCacheSim](doc/quickstart_libcachesim.md).
-
-
-### Other 
-#### Performance Optimizations 
-* hugepage - to turn on hugepage support, please do `echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled`
 
 
 ---
@@ -201,12 +197,10 @@ Please join the Google group https://groups.google.com/g/libcachesim and ask que
 
 ---  
 ### Contributions 
-```
 We gladly welcome pull requests.
 Before making any changes, we recommend opening an issue and discussing your proposed changes.  
 This will let us give you advice on the proposed changes. If the changes are minor, then feel free to make them without discussion. 
 This project adheres to Google's coding style. By participating, you are expected to uphold this code. 
-```
 
 ---
 #### Reference
@@ -223,10 +217,8 @@ This project adheres to Google's coding style. By participating, you are expecte
     month = nov,
 }
 ```
-
 ---
 
----
 #### Related
 * [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated
 ---

@@ -18,7 +18,7 @@ extern "C" {
 
 #include <math.h>
 
-#include "../include/libCacheSim/reader.h"
+#include "../../include/libCacheSim/reader.h"
 #include "binaryUtils.h"
 
 static inline int akamaiReader_setup(reader_t *reader) {
