@@ -1,9 +1,10 @@
 # libCacheSim - building and running cache simulations
 
-
-[![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
 <!-- [![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
 [![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim) -->
+
+
+[![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
 ![visitors](https://visitor-badge.glitch.me/badge?page_id=1a1a11a.libCacheSim)
 
 

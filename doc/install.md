@@ -20,7 +20,7 @@ tar xvf zstd-1.5.0.tar.gz;
 pushd zstd-1.5.0/build/cmake/;
 mkdir _build && cd _build/;
 cmake .. && make -j;
-[sudo] make install;
+sudo make install;
 popd;
 ```
 
@@ -30,7 +30,7 @@ git clone --recursive https://github.com/dmlc/xgboost;
 pushd xgboost;
 mkdir _build && cd _build;
 cmake .. && make -j; 
-[sudo] make install;
+sudo make install;
 popd;
 ```
 
@@ -40,7 +40,7 @@ git clone --recursive https://github.com/microsoft/LightGBM;
 pushd LightGBM;
 mkdir _build && cd _build;
 cmake .. && make -j;
-[sudo] make install
+sudo make install
 popd;
 ```
 
