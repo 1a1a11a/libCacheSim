@@ -1,8 +1,12 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <libCacheSim.h>
+
 
 int main(int argc, char *argv[]) {
   /* open trace, see quickstart.md for opening csv and binary trace */
-  reader_t *reader = open_trace("data/trace.vscsi", VSCSI_TRACE, NULL);
+  reader_t *reader = open_trace("../data/trace.vscsi", VSCSI_TRACE, NULL);
 
   /* craete a container for reading from trace */
   request_t *req = new_request();
@@ -30,3 +34,6 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+// compile with the following
+// gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out

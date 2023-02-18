@@ -2,6 +2,10 @@
 
 #include "cache.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
@@ -120,6 +124,12 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
 cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
+cache_t *ClockSize_init(const common_cache_params_t ccache_params,
+                        const char *cache_specific_params);
+
+cache_t *QDLPv1_Size_init(const common_cache_params_t ccache_params,
+                          const char *cache_specific_params);
+
 cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
@@ -156,4 +166,8 @@ cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
 cache_t *GLCache_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

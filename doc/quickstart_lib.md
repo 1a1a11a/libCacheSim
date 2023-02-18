@@ -220,7 +220,13 @@ int32_t *get_access_dist(reader_t *reader,
 ### Build a cache cluster with consistent hashing
 
 
-
+## FAQ 
+#### Linking with libCacheSim
+linking can be done in cmake or use pkg-config  
+Such as in the `_build` directory:  
+```
+export PKG_CONFIG_PATH=$PWD
+```
 
 ---
 

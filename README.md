@@ -117,7 +117,7 @@ Here is a simplified example showing the basic APIs.
 #include <libCacheSim.h>
 
 /* open trace, see quickstart_lib.md for opening csv and binary trace */
-reader_t *reader = open_trace("../data/trace.vscsi", VSCSI_TRACE, OBJ_ID_NUM, NULL);
+reader_t *reader = open_trace("../data/trace.vscsi", VSCSI_TRACE, NULL);
 
 /* craete a container for reading from trace */
 request_t *req = new_request();
@@ -150,20 +150,13 @@ cache->cache_free(cache);
 ```
 save this to `test.c` and compile with 
 ```
-g++ $(pkg-config --cflags --libs libCacheSim glib-2.0) -IlibCacheSim/include -lm -ldl test.c -o test.out
+gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out
 ```
 
 if you get `error while loading shared libraries`, run `sudo ldconfig`
 
 See [quickstart](doc/quickstart_lib.md) for more details. 
 And see [example folder](example) for examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
-
-#### Linking with libCacheSim
-linking can be done in cmake or use pkg-config  
-Such as in the `_build` directory:  
-```
-export PKG_CONFIG_PATH=$PWD
-```
 ---
 
 

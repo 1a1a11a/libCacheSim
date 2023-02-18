@@ -269,11 +269,6 @@ file(GLOB cache_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/*
     )
 
-# file(GLOB cpp_source
-#         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LHD/*
-#         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/* 
-# )
-
 if (ENABLE_GLCACHE)
     file(GLOB GLCache_source
             ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/GLCache/*.c)
