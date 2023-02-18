@@ -2,8 +2,8 @@
 
 
 [![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
-[![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
-[![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim)
+<!-- [![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
+[![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim) -->
 ![visitors](https://visitor-badge.glitch.me/badge?page_id=1a1a11a.libCacheSim)
 
 
@@ -14,8 +14,8 @@
 ---
 
 ## libCacheSim features 
-* [**high performance**](doc/performance.md) - over 20M requests/sec for a realistic trace replay. 
-* [**high memory efficiency**](doc/performance.md) - predictable and small memory footprint. 
+* **high performance** - over 20M requests/sec for a realistic trace replay. 
+* **high memory efficiency** - predictable and small memory footprint. 
 * **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation. 
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc.
 * **extensible** - easy to support new trace types or eviction algorithms.
@@ -157,6 +157,7 @@ if you get `error while loading shared libraries`, run `sudo ldconfig`
 
 See [quickstart](doc/quickstart_lib.md) for more details. 
 And see [example folder](example) for examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
+
 ---
 
 
@@ -213,6 +214,9 @@ This project adheres to Google's coding style. By participating, you are expecte
 }
 ```
 ---
+
+### License
+See [LICENSE](LICENSE) for details.
 
 ### Related
 * [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated
