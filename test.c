@@ -17,7 +17,7 @@ int main(int argc, char *argv[]) {
 
   /* loop through the trace */
   while (read_one_req(reader, req) == 0) {
-    if (cache->get(cache, req) == cache_ck_miss) {
+    if (cache->get(cache, req) == false) {
       miss_byte += req->obj_size;
     }
     req_byte += req->obj_size;

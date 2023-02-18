@@ -6,7 +6,6 @@
 #define libCacheSim_H
 
 #include "config.h"
-#include "libCacheSim/api.h"
 #include "libCacheSim/cache.h"
 #include "libCacheSim/cacheObj.h"
 #include "libCacheSim/const.h"

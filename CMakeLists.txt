@@ -266,7 +266,7 @@ file(GLOB cache_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/prefetch/*.c
 
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LHD/*
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/* 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/*
     )
 
 # file(GLOB cpp_source
@@ -281,6 +281,14 @@ if (ENABLE_GLCACHE)
             ${cache_source} ${GLCache_source}
     )
 endif(ENABLE_GLCACHE)
+
+if (ENABLE_LRB)
+    file(GLOB LRB_source
+            ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LRB/*.cpp)
+    set (cache_source
+            ${cache_source} ${LRB_source}
+    )
+endif(ENABLE_LRB)
 
 file(GLOB reader_source 
         ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/*.c 
