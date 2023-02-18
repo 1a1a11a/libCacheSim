@@ -25,35 +25,6 @@ set(sourceC
         Size.c
         )
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
-    set(sourceC ${sourceC} 
-                priv/SFIFO_Merge.c
-                priv/SFIFO_Reinsertion.c
-
-                priv/LRU_Prob.c
-
-                priv/MyClock.c
-                priv/QDLP.c
-
-                priv/QDLPv1.c
-                priv/QDLPv2.c
-
-                priv/myMQv1.c
-
-                priv/MClock.c
-                )
-endif()
-
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fifo")
-        set(sourceC ${sourceC} 
-        fifo/LP_SFIFO.c
-        fifo/LP_TwoQ.c
-        fifo/LP_ARC.c
-        fifo/SFIFO.c
-        fifo/SFIFOv0.c
-        )
-endif()
-
 set(sourceCPP
         cpp/LFU.cpp
         cpp/GDSF.cpp

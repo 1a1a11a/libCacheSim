@@ -299,10 +299,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = SLRU_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "slruv0") == 0) {
     cache = SLRUv0_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifo") == 0) {
-    cache = SFIFO_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifov0") == 0) {
-    cache = SFIFOv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = Hyperbolic_init(cc_params, args->eviction_params);
@@ -350,44 +346,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 #ifdef ENABLE_LRB
   } else if (strcasecmp(args->eviction_algo, "lrb") == 0) {
     cache = LRB_init(cc_params, args->eviction_params);
-#endif
-#ifdef INCLUDE_PRIV
-  } else if (strcasecmp(args->eviction_algo, "myclock") == 0) {
-    cache = MyClock_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "mclock") == 0) {
-    cache = MClock_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lp-sfifo") == 0) {
-    cache = LP_SFIFO_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lp-arc") == 0) {
-    cache = LP_ARC_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lp-twoq") == 0) {
-    cache = LP_TwoQ_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifomerge") == 0 ||
-             strcasecmp(args->eviction_algo, "sfifo-merge") == 0) {
-    cache = SFIFO_Merge_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "sfifo-reinsertion") == 0) {
-    cache = SFIFO_Reinsertion_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lru-prob") == 0) {
-    cache = LRU_Prob_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "qdlp") == 0) {
-    cache = QDLP_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "qdlpv1") == 0) {
-    cache = QDLPv1_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "qdlpv2") == 0) {
-    cache = QDLPv2_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "myMQv1") == 0) {
-    cache = myMQv1_init(cc_params, args->eviction_params);
-  } else if (strcasecmp(args->eviction_algo, "lru-belady") == 0) {
-    if (strstr(args->trace_path, ".zst") != NULL) {
-      ERROR("lru-belady only supports uncompressed trace files\n");
-    }
-    ERROR("not implemented\n");
-    // reader_t *reader = clone_reader(args->reader);
-    cache = LRU_init(cc_params, args->eviction_params);
-    // cache->future_stack_dist = get_stack_dist(
-    //     reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
-    // assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
-    // close_reader(reader);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", args->eviction_algo);
