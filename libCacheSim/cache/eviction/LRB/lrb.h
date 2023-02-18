@@ -24,19 +24,14 @@ using namespace std;
 using spp::sparse_hash_map;
 
 namespace lrb {
-    static uint32_t current_seq = -1;
-    static uint8_t max_n_past_timestamps = 32;
-    static uint8_t max_n_past_distances = 31;
-    static uint8_t base_edc_window = 10;
     static const uint8_t n_edc_feature = 10;
-    static vector<uint32_t> edc_windows;
-    static vector<double> hash_edc;
-    static uint32_t max_hash_edc_idx;
-    static uint32_t memory_window = 67108864;
-    static uint32_t n_extra_fields = 0;
-    static uint32_t batch_size = 131072;
     static const uint max_n_extra_feature = 4;
-    static uint32_t n_feature;
+    static const uint32_t n_extra_fields = 0;
+    static const uint8_t max_n_past_timestamps = 32;
+    static const uint8_t max_n_past_distances = 31;
+    static const uint8_t base_edc_window = 10;
+    static const uint32_t batch_size = 131072;
+
 
 struct MetaExtra {
     //vector overhead = 24 (8 pointer, 8 size, 8 allocation)
@@ -49,7 +44,11 @@ struct MetaExtra {
     //the next index to put the distance
     uint8_t _past_distance_idx = 1;
 
-    MetaExtra(const uint32_t &distance) {
+    MetaExtra(const uint32_t &distance,
+    uint32_t max_hash_edc_idx,
+    vector<uint32_t> &edc_windows,
+    const vector<double> &hash_edc
+    ) {
         _past_distances = vector<uint32_t>(1, distance);
         for (uint8_t i = 0; i < n_edc_feature; ++i) {
             uint32_t _distance_idx = min(uint32_t(distance / edc_windows[i]), max_hash_edc_idx);
@@ -57,7 +56,11 @@ struct MetaExtra {
         }
     }
 
-    void update(const uint32_t &distance) {
+    void update(const uint32_t &distance,
+        uint32_t max_hash_edc_idx,
+        vector<uint32_t> &edc_windows,
+        const vector<double> &hash_edc
+    ) {
         uint8_t distance_idx = _past_distance_idx % max_n_past_distances;
         if (_past_distances.size() < max_n_past_distances)
             _past_distances.emplace_back(distance);
@@ -84,7 +87,6 @@ public:
     MetaExtra *_extra = nullptr;
     vector<uint32_t> _sample_times;
 
-
     Meta(const uint64_t &key, const uint64_t &size, const uint64_t &past_timestamp,
             const vector<uint16_t> &extra_features) {
         _key = key;
@@ -104,14 +106,18 @@ public:
         delete _extra;
     }
 
-    void update(const uint32_t &past_timestamp) {
+    void update(const uint32_t &past_timestamp, uint32_t n_extra_fields,
+                uint32_t max_hash_edc_idx,
+                vector<uint32_t> &edc_windows,
+                const vector<double> &hash_edc
+    ) {
         //distance
         uint32_t _distance = past_timestamp - _past_timestamp;
         assert(_distance);
         if (!_extra) {
-            _extra = new MetaExtra(_distance);
+            _extra = new MetaExtra(_distance, max_hash_edc_idx, edc_windows, hash_edc);
         } else
-            _extra->update(_distance);
+            _extra->update(_distance, max_hash_edc_idx, edc_windows, hash_edc);
         //timestamp
         _past_timestamp = past_timestamp;
     }
@@ -174,16 +180,19 @@ public:
     vector<int32_t> indptr;
     vector<int32_t> indices;
     vector<double> data;
+    uint32_t memory_window;
 
-    TrainingData() {
+    TrainingData(uint32_t n_feature, uint32_t memory_window_) {
         labels.reserve(batch_size);
         indptr.reserve(batch_size + 1);
         indptr.emplace_back(0);
         indices.reserve(batch_size * n_feature);
         data.reserve(batch_size * n_feature);
+        memory_window = memory_window_;
     }
 
-    void emplace_back(Meta &meta, uint32_t &sample_timestamp, uint32_t &future_interval, const uint64_t &key) {
+    void emplace_back(Meta &meta, uint32_t &sample_timestamp, uint32_t &future_interval, const uint64_t &key,
+        uint32_t max_hash_edc_idx, vector<uint32_t> &edc_windows, vector<double> &hash_edc) {
         int32_t counter = indptr.back();
 
         indices.emplace_back(0);
@@ -262,6 +271,13 @@ struct KeyMapEntryT {
 
 class LRBCache : public Cache {
 public:
+    uint32_t current_seq = -1;
+    vector<uint32_t> edc_windows;
+    vector<double> hash_edc;
+    uint32_t max_hash_edc_idx;
+    uint32_t memory_window = 67108864;
+    uint32_t n_feature;
+
     //key -> (0/1 list, idx)
     sparse_hash_map<uint64_t, KeyMapEntryT> key_map;
     vector<InCacheMeta> in_cache_metas;
@@ -326,12 +342,6 @@ public:
                 sample_rate = stoul(it.second);
             } else if (it.first == "memory_window") {
                 memory_window = stoull(it.second);
-            } else if (it.first == "max_n_past_timestamps") {
-                max_n_past_timestamps = (uint8_t) stoi(it.second);
-            } else if (it.first == "batch_size") {
-                batch_size = stoull(it.second);
-            } else if (it.first == "n_extra_fields") {
-                n_extra_fields = stoull(it.second);
             } else if (it.first == "num_iterations") {
                 training_params["num_iterations"] = it.second;
             } else if (it.first == "learning_rate") {
@@ -363,7 +373,8 @@ public:
         }
 
         negative_candidate_queue = make_shared<sparse_hash_map<uint64_t, uint64_t>>(memory_window);
-        max_n_past_distances = max_n_past_timestamps - 1;
+        // max_n_past_distances = max_n_past_timestamps - 1;
+
         //init
         edc_windows = vector<uint32_t>(n_edc_feature);
         for (uint8_t i = 0; i < n_edc_feature; ++i) {
@@ -386,7 +397,7 @@ public:
             training_params["categorical_feature"] = categorical_feature;
         }
         inference_params = training_params;
-        training_data = new TrainingData();
+        training_data = new TrainingData(n_feature, memory_window);
     }
 
     string map_to_string(unordered_map<string, string> &map) {
@@ -417,7 +428,7 @@ public:
 
     void update_stat_periodic() override;
 
-    static void set_hash_edc() {
+    void set_hash_edc() {
         max_hash_edc_idx = (uint64_t) (memory_window / pow(2, base_edc_window)) - 1;
         hash_edc = vector<double>(max_hash_edc_idx + 1);
         for (int i = 0; i < hash_edc.size(); ++i)
@@ -454,7 +465,7 @@ public:
 
 };
 
-static Factory<LRBCache> factoryLRB("LRB");
+// static Factory<LRBCache> factoryLRB("LRB");
 
 }
 #endif //WEBCACHESIM_LRB_H

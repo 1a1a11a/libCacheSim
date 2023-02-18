@@ -150,7 +150,7 @@ bool LRBCache::lookup(const SimpleRequest &req) {
             for (auto &sample_time: meta._sample_times) {
                 //don't use label within the first forget window because the data is not static
                 uint32_t future_distance = current_seq - sample_time;
-                training_data->emplace_back(meta, sample_time, future_distance, meta._key);
+                training_data->emplace_back(meta, sample_time, future_distance, meta._key, max_hash_edc_idx, edc_windows, hash_edc);
                 ++training_data_distribution[1];
             }
             //batch_size ~>= batch_size
@@ -163,7 +163,7 @@ bool LRBCache::lookup(const SimpleRequest &req) {
         }
 
         //make this update after update training, otherwise the last timestamp will change
-        meta.update(current_seq);
+        meta.update(current_seq, n_extra_fields, max_hash_edc_idx, edc_windows, hash_edc);
         if (list_idx) {
             negative_candidate_queue->erase(forget_timestamp);
             negative_candidate_queue->insert({current_seq % memory_window, req.id});
@@ -209,7 +209,7 @@ void LRBCache::forget() {
             uint32_t future_distance = memory_window * 2;
             for (auto &sample_time: meta._sample_times) {
                 //don't use label within the first forget window because the data is not static
-                training_data->emplace_back(meta, sample_time, future_distance, meta._key);
+                training_data->emplace_back(meta, sample_time, future_distance, meta._key, max_hash_edc_idx, edc_windows, hash_edc);
                 ++training_data_distribution[0];
             }
             //batch_size ~>= batch_size
@@ -424,7 +424,7 @@ void LRBCache::evict_with_candidate(pair<uint64_t, uint32_t> &epair) {
             uint32_t future_distance = current_seq - meta._past_timestamp + memory_window;
             for (auto &sample_time: meta._sample_times) {
                 //don't use label within the first forget window because the data is not static
-                training_data->emplace_back(meta, sample_time, future_distance, meta._key);
+                training_data->emplace_back(meta, sample_time, future_distance, meta._key, max_hash_edc_idx, edc_windows, hash_edc);
                 ++training_data_distribution[0];
             }
             //batch_size ~>= batch_size
