@@ -295,10 +295,12 @@ pair<uint64_t, uint32_t> LRBCache::rank() {
     unsigned int idx_row = 0;
 
     auto n_new_sample = sample_rate - idx_row;
+    int n_trials = 0;
     while (idx_row != sample_rate) {
+        n_trials ++;
         uint32_t pos = _distribution(_generator) % in_cache_metas.size();
         auto &meta = in_cache_metas[pos];
-        if (key_set.find(meta._key) != key_set.end()) {
+        if (key_set.find(meta._key) != key_set.end() && n_trials < 200) {
             continue;
         } else {
             key_set.insert(meta._key);
