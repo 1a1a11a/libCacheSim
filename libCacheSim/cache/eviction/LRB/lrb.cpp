@@ -268,6 +268,7 @@ pair<uint64_t, uint32_t> LRBCache::rank() {
         //if not trained yet, or in_cache_lru past memory window, use LRU
         auto &candidate_key = in_cache_lru_queue.dq.back();
         auto it = key_map.find(candidate_key);
+        assert(it != key_map.end());
         auto pos = it->second.list_pos;
         auto &meta = in_cache_metas[pos];
         if ((!booster) || (memory_window <= current_seq - meta._past_timestamp)) {
