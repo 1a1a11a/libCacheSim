@@ -245,6 +245,7 @@ void LRBCache::admit(const SimpleRequest &req) {
         //first move meta data, then modify hash table
         uint32_t tail0_pos = in_cache_metas.size();
         auto &meta = out_cache_metas[it->second.list_pos];
+        meta._size = size;
         auto forget_timestamp = meta._past_timestamp % memory_window;
         negative_candidate_queue->erase(forget_timestamp);
         auto it_lru = in_cache_lru_queue.request(req.id);
