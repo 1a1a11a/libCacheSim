@@ -43,22 +43,9 @@ static void print_results(const cache_t *cache, const cache_stat_t *res) {
     printf(", %ld", res[i].n_miss_byte);
   }
   printf("};\n");
-
-  // for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-  //   printf("%s cache size %16" PRIu64 " req %" PRIu64 " miss %8" PRIu64
-  //          " req_bytes %" PRIu64 " miss_bytes %" PRIu64 "\n",
-  //          cache->cache_name, res[i].cache_size, res[i].n_req, res[i].n_miss,
-  //          res[i].n_req_byte, res[i].n_miss_byte);
-  // }
 }
 
 static void test_LRU(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {93161, 87794, 82945, 81433,
-  //                             72250, 72083, 71969, 71716};
-  // uint64_t miss_byte_true[] = {4036642816, 3838227968, 3664065536,
-  // 3611544064,
-  //                              3081624576, 3079594496, 3075357184,
-  //                              3060711936};
   uint64_t miss_cnt_true[] = {93374, 89783, 83572, 81722,
                               72494, 72104, 71972, 71704};
   uint64_t miss_byte_true[] = {4214303232, 4061242368, 3778040320, 3660569600,
@@ -81,10 +68,6 @@ static void test_LRU(gconstpointer user_data) {
 
 static void test_Clock(gconstpointer user_data) {
   /* myclock */
-  // uint64_t miss_cnt_true[] = {91699, 86720, 78578, 76707,
-  //                             69945, 66221, 64445, 64376};
-  // uint64_t miss_byte_true[] = {4158632960, 3917211648, 3536227840,
-  // 3455379968, 035580416, 2801699328, 2699456000, 2696345600};
   uint64_t miss_cnt_true[] = {93313, 89775, 83411, 81328,
                               74815, 72283, 71927, 64456};
   uint64_t miss_byte_true[] = {4213887488, 4064512000, 3762650624, 3644467200,
@@ -106,12 +89,6 @@ static void test_Clock(gconstpointer user_data) {
 }
 
 static void test_FIFO(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {93193, 87172, 84321, 83888,
-  //                             72331, 72230, 72181, 72141};
-  // uint64_t miss_byte_true[] = {4035451392, 3815613440, 3724681728,
-  // 3751948288,
-  //                              3083697664, 3081942528, 3081872384,
-  //                              3080036864};
   uint64_t miss_cnt_true[] = {93403, 89386, 84387, 84025,
                               72498, 72228, 72182, 72140};
   uint64_t miss_byte_true[] = {4213112832, 4052646400, 3829170176, 3807412736,
@@ -204,12 +181,6 @@ static void test_Random(gconstpointer user_data) {
 }
 
 static void test_LFU(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {91385, 84061, 77353, 76506,
-  //                             68994, 66441, 64819, 64376};
-  // uint64_t miss_byte_true[] = {3990213632, 3692986368, 3434442752,
-  // 3413374464,
-  //                              2963407872, 2804032512, 2717934080,
-  //                              2690728448};
   uint64_t miss_cnt_true[] = {91699, 86720, 78578, 76707,
                               69945, 66221, 64445, 64376};
   uint64_t miss_byte_true[] = {4158632960, 3917211648, 3536227840, 3455379968,
@@ -231,12 +202,6 @@ static void test_LFU(gconstpointer user_data) {
 }
 
 static void test_LFUCpp(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {91385, 84061, 77353, 76506,
-  //                             68994, 66441, 64819, 64376};
-  // uint64_t miss_byte_true[] = {3990213632, 3692986368, 3434442752,
-  // 3413374464,
-  //                              2963407872, 2804032512, 2717934080,
-  //                              2690728448};
   uint64_t miss_cnt_true[] = {91699, 86720, 78578, 76707,
                               69945, 66221, 64445, 64376};
   uint64_t miss_byte_true[] = {4158632960, 3917211648, 3536227840, 3455379968,
@@ -279,12 +244,6 @@ static void test_GDSF(gconstpointer user_data) {
 }
 
 static void test_LHD(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {88907, 84394, 80846, 76482,
-  //                             70960, 66571, 63627, 61156};
-  // uint64_t miss_byte_true[] = {3931543552, 3755170304, 3620246528,
-  // 3455476736,
-  //                              3240826880, 3055610368, 2918132736,
-  //                              2789520896};
   uint64_t miss_cnt_true[] = {90500, 86928, 82211, 77256,
                               71259, 67001, 63734, 61237};
   uint64_t miss_byte_true[] = {4209021952, 4060000768, 3824893440, 3594843136,
@@ -327,10 +286,6 @@ static void test_Hyperbolic(gconstpointer user_data) {
 }
 
 static void test_LeCaR(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {93396, 89787, 83637, 80677,
-  //                             72165, 68895, 67242, 68174};
-  // uint64_t miss_byte_true[] = {4215944192, 4062137344, 3776311808, 3596392448,
-  //                              3073327616, 2894902784, 2795203584, 2835615744};
   uint64_t miss_cnt_true[] = {93408, 89821, 83482, 80746,
                               72493, 68529, 65815, 65652};
   uint64_t miss_byte_true[] = {4217611264, 4063995904, 3771537408, 3601111040,
@@ -352,12 +307,6 @@ static void test_LeCaR(gconstpointer user_data) {
 }
 
 static void test_Cacheus(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {89628, 82684, 80034, 72740,
-  //                             69192, 67763, 67477, 67048};
-  // uint64_t miss_byte_true[] = {3902360064, 3654431232, 3440451072,
-  // 3151679488,
-  //                              2955547648, 2879830016, 2864226304,
-  //                              2836520448};
   uint64_t miss_cnt_true[] = {89419, 82885, 80096, 73107,
                               69773, 68192, 67629, 66960};
   uint64_t miss_byte_true[] = {4036696064, 3757154816, 3554868736, 3182398976,
@@ -379,12 +328,6 @@ static void test_Cacheus(gconstpointer user_data) {
 }
 
 static void test_SR_LRU(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {89493, 83770, 81321, 76521,
-  //                             72708, 71775, 67375, 65728};
-  // uint64_t miss_byte_true[] = {3925441024, 3711699456, 3518652928,
-  // 3296385024,
-  //                              3152901120, 3038793216, 2867397120,
-  //                              2769311232};
   uint64_t miss_cnt_true[] = {90043, 83978, 81481, 77724,
                               72611, 72058, 67837, 65739};
   uint64_t miss_byte_true[] = {4068758016, 3792818176, 3639694848, 3379471872,
@@ -406,12 +349,6 @@ static void test_SR_LRU(gconstpointer user_data) {
 }
 
 static void test_CR_LFU(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {92084, 88226, 84701, 80430,
-  //                             75909, 66138, 59767, 54763};
-  // uint64_t miss_byte_true[] = {3972743680, 3726964736, 3516974592,
-  // 3308064768,
-  //                              3078354432, 2621426176, 2372660736,
-  //                              2297313280};
   uint64_t miss_cnt_true[] = {92095, 88257, 84839, 81885,
                               78348, 69281, 61350, 54894};
   uint64_t miss_byte_true[] = {4141293056, 3900042240, 3686207488, 3481216000,
@@ -454,12 +391,6 @@ static void test_LFUDA(gconstpointer user_data) {
 }
 
 static void test_MRU(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {100096, 93466, 87001, 82124,
-  //                             77443,  71956, 68252, 64936};
-  // uint64_t miss_byte_true[] = {3929311744, 3599883264, 3304649728,
-  // 3097044480,
-  //                              2896690176, 2697243648, 2576163840,
-  //                              2439055360};
   uint64_t miss_cnt_true[] = {100738, 95058, 89580, 85544,
                               81725,  77038, 71070, 66919};
   uint64_t miss_byte_true[] = {4105477120, 3784799744, 3493475840, 3280475648,
@@ -481,12 +412,6 @@ static void test_MRU(gconstpointer user_data) {
 }
 
 static void test_ARC(gconstpointer user_data) {
-  // int64_t miss_cnt_true[] = {90291, 86747, 78133, 74297,
-  //                            67381, 65685, 64443, 64775};
-  // uint64_t miss_byte_true[] = {4070830592, 3842613248, 3525521408,
-  // 3296890368,
-  //                              2868538880, 2771180032, 2699746816,
-  //                              2713581056};
   uint64_t miss_cnt_true[] = {90252, 85861, 78168, 74297,
                               67381, 65685, 64439, 64772};
   uint64_t miss_byte_true[] = {4068098560, 3821026816, 3525644800, 3296890368,
@@ -508,12 +433,6 @@ static void test_ARC(gconstpointer user_data) {
 }
 
 static void test_SLRU(gconstpointer user_data) {
-  // uint64_t miss_cnt_true[] = {91204, 87638, 84193, 80995,
-  //                             77838, 70264, 61030, 56838};
-  // uint64_t miss_byte_true[] = {4135969280, 3895592448, 3680328192,
-  // 3460513280,
-  //                              3255544832, 2785475584, 2508606976,
-  //                              2340679680};
   uint64_t miss_cnt_true[] = {89624, 86725, 82781, 80203,
                               75388, 65645, 59035, 56063};
   uint64_t miss_byte_true[] = {4123085312, 3915534848, 3690704896, 3493027840,
@@ -534,13 +453,33 @@ static void test_SLRU(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_QDLP_FIFO(gconstpointer user_data) {
+  uint64_t miss_cnt_true[] = {89195, 80715, 77215, 73302,
+                              67381, 65685, 67252, 64387};
+  uint64_t miss_byte_true[] = {4029297664, 3632207872, 3393682944, 3177442816,
+                               2868547072, 2771180032, 2811603456, 2696484352};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {
+      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("QDLP-FIFO", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
+      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
+
+  print_results(cache, res);
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
+                           miss_cnt_true, req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
 static void test_WTinyLFU(gconstpointer user_data) {
   // TODO: to be implemented
 }
 
 static void test_LIRS(gconstpointer user_data) {
-
-  uint64_t miss_cnt_true[] = {89819, 79237, 73143, 70363, 
+  uint64_t miss_cnt_true[] = {89819, 79237, 73143, 70363,
                               68405, 64494, 58640, 53924};
   uint64_t miss_byte_true[] = {4060558336, 3525952512, 3199406080, 3011810816,
                                2848310272, 2580918784, 2361375744, 2288325120};
@@ -558,7 +497,6 @@ static void test_LIRS(gconstpointer user_data) {
                            miss_cnt_true, req_byte_true, miss_byte_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
-
 }
 
 static void empty_test(gconstpointer user_data) { ; }
@@ -577,6 +515,8 @@ int main(int argc, char *argv[]) {
 
   reader = setup_oracleGeneralBin_reader();
   // reader = setup_vscsi_reader_with_ignored_obj_size();
+  g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,
+                       test_QDLP_FIFO);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
@@ -587,7 +527,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader,
                        test_Hyperbolic);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);                      
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
