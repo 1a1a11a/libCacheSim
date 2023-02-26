@@ -244,8 +244,9 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 void cache_evict_base(cache_t *cache, cache_obj_t *obj,
                       bool remove_from_hashtable) {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  if (cache->track_eviction_age)
+  if (cache->track_eviction_age) {
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+  }
 #endif
   cache_remove_obj_base(cache, obj, remove_from_hashtable);
 }

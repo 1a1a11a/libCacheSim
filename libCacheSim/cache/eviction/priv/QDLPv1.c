@@ -102,9 +102,6 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
   ccache_params_local.cache_size = fifo_ghost_cache_size;
   params->fifo_ghost = FIFO_init(ccache_params_local, NULL);
   snprintf(params->fifo_ghost->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO-ghost");
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  params->fifo_ghost->track_eviction_age = false;
-#endif
 
   ccache_params_local.cache_size = main_cache_size;
   if (strcasecmp(params->main_cache_type, "ARC") == 0) {
@@ -136,6 +133,12 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
   } else {
     ERROR("QDLPv1 does not support %s \n", params->main_cache_type);
   }
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  params->fifo_ghost->track_eviction_age = false;
+  params->fifo->track_eviction_age = false;
+  params->main_cache->track_eviction_age = false;
+#endif
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.2lf-ghost-%s",
            params->fifo_size_ratio, params->main_cache_type);
@@ -256,10 +259,16 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
     /* insert into the ARC */
     params->hit_on_ghost = false;
     params->main_cache->get(params->main_cache, req);
+    obj = params->main_cache->find(params->main_cache, req, false);
   } else {
     /* insert into the fifo */
     obj = params->fifo->insert(params->fifo, req);
   }
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  obj->create_time = CURR_TIME(cache, req);
+#endif
+
   return obj;
 }
 
@@ -295,7 +304,11 @@ static void QDLPv1_evict(cache_t *cache, const request_t *req) {
   cache_t *main = params->main_cache;
 
   if (fifo->get_occupied_byte(fifo) == 0) {
-    assert(main->get_occupied_byte(main) > main->cache_size);
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+    cache_obj_t *obj = main->to_evict(main, req);
+    record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+#endif
+
     assert(main->get_occupied_byte(main) <= cache->cache_size);
     // evict from main cache
     main->evict(main, req);
@@ -307,17 +320,33 @@ static void QDLPv1_evict(cache_t *cache, const request_t *req) {
   assert(obj != NULL);
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
-  // remove from fifo1, but do not update stat
-  fifo->evict(fifo, req);
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+  if (obj->misc.freq > 0) {
+    // get will insert to and evict from main cache
+    params->main_cache->get(params->main_cache, params->req_local);
+    main->find(main, params->req_local, false)->create_time = obj->create_time;
+  } else {
+    record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+    // insert to ghost
+    ghost->get(ghost, params->req_local);
+  }
+
+  // remove from fifo, but do not update stat
+  bool removed = fifo->remove(fifo, params->req_local->obj_id);
+  assert(removed);
+#else
+  // remove from fifo, but do not update stat
+  fifo->remove(fifo, params->req_local->obj_id);
 
   if (obj->misc.freq > 0) {
-    // promote to main cache
     // get will insert to and evict from main cache
     params->main_cache->get(params->main_cache, params->req_local);
   } else {
     // insert to ghost
     ghost->get(ghost, params->req_local);
   }
+#endif
 }
 
 /**
