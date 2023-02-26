@@ -406,15 +406,20 @@ static cache_obj_t *_ARC_to_replace(cache_t *cache, const request_t *req) {
 
   cache_obj_t *obj = NULL;
 
-  if (params->L1_data_size > 0 &&
-      (params->L1_data_size > params->p ||
-       (params->L1_data_size == params->p && params->curr_obj_in_L2_ghost))) {
+  bool cond1 = params->L1_data_size > 0;
+  bool cond2 = params->L1_data_size > params->p;
+  bool cond3 =
+      params->L1_data_size == params->p && params->curr_obj_in_L2_ghost;
+  bool cond4 = params->L2_data_size == 0;
+
+  if ((cond1 && (cond2 || cond3)) || cond4) {
     // delete the LRU in L1 data, move to L1_ghost
     obj = params->L1_data_tail;
   } else {
     // delete the item in L2 data, move to L2_ghost
     obj = params->L2_data_tail;
   }
+
   DEBUG_ASSERT(obj != NULL);
   return obj;
 }
