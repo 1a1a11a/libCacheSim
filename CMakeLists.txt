@@ -17,7 +17,6 @@ set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}
 # echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 option(USE_HUGEPAGE "use transparent hugepage" ON)
 option(ENABLE_TESTS "whether enable test" ON)
-option(INCLUDE_PRIV "whether include priv" ON)
 option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
@@ -70,7 +69,7 @@ else()
     remove_definitions(USE_HUGEPAGE)
 endif(USE_HUGEPAGE)
 
-if (INCLUDE_PRIV)
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache/eviction/priv")
     add_compile_definitions(INCLUDE_PRIV=1)
 else()
     remove_definitions(INCLUDE_PRIV)
@@ -104,7 +103,7 @@ endif()
 # message(STATUS ${CMAKE_CXX_FLAGS_DEBUG})
 # string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}, ENABLE_LRB ${ENABLE_LRB}, SUPPORT_ZSTD_TRACE ${SUPPORT_ZSTD_TRACE}")
 
 # add_compile_options(-fsanitize=address)
 # add_link_options(-fsanitize=address)

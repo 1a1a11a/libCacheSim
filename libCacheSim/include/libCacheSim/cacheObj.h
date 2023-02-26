@@ -133,9 +133,6 @@ typedef struct cache_obj {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   int64_t create_time;
 #endif
-#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
-  int64_t last_access_time;
-#endif
   // used by belady related algorithsm
   misc_metadata_t misc;
 

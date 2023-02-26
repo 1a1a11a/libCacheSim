@@ -160,7 +160,7 @@ static cache_obj_t *Belady_find(cache_t *cache, const request_t *req,
       ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
           ->pri.pri == req->next_access_vtime);
 
-#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
   if (req->next_access_vtime == INT64_MAX) {
     Belady_evict(cache, req);
   }
@@ -199,7 +199,7 @@ static cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
       ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
           ->pri.pri == req->next_access_vtime);
 
-#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
+#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
   if (req->next_access_vtime == INT64_MAX) {
     Belady_evict(cache, req);
   }

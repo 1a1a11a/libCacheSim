@@ -29,6 +29,26 @@ static inline uint64_t next_rand() {
   return rand_seed;
 }
 
+static inline long long next_power_of_2(long long N) {
+    // if N is a power of two simply return it
+    if (!(N & (N - 1)))
+        return N;
+    // else set only the left bit of most significant bit
+    return 0x8000000000000000 >> (__builtin_clzll(N) - 1);
+}
+
+static inline uint64_t next_power_of_2_v2(uint64_t n) {
+    n--;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n |= n >> 32;
+    n++;
+    return n;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -40,8 +40,7 @@ cache_t *cache_struct_init(const char *const cache_name,
 
   /* this option works only when eviction age tracking
    * is on in config.h */
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE) || \
-    defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   cache->track_eviction_age = true;
 #endif
 
@@ -136,10 +135,6 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
   if (cache_obj != NULL) {
-#if defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
-    cache_obj->last_access_time = CURR_TIME(cache, req);
-#endif
-
 #ifdef SUPPORT_TTL
     if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->clock_time) {
       if (update_cache) {
@@ -231,10 +226,6 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 
-#if defined(TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST)
-  cache_obj->last_access_time = CURR_TIME(cache, req);
-#endif
-
   if (req->next_access_vtime > 0) {
     cache_obj->misc.next_access_vtime = req->next_access_vtime;
   }
@@ -255,11 +246,6 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj,
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   if (cache->track_eviction_age)
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
-#endif
-#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
-  if (cache->track_eviction_age)
-    record_eviction_age(cache, obj,
-                        CURR_TIME(cache, req) - obj->last_access_time);
 #endif
   cache_remove_obj_base(cache, obj, remove_from_hashtable);
 }

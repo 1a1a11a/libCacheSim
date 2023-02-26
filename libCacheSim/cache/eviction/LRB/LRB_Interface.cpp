@@ -173,10 +173,6 @@ static cache_obj_t *LRB_find(cache_t *cache, const request_t *req,
   params->lrb_req.reinit(cache->n_req, req->obj_id, req->obj_size, nullptr);
   bool is_hit = lrb->lookup(params->lrb_req);
 
-  // #ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
-  //     id.last_access_time = CURR_TIME(cache, req);
-  // #endif
-
   if (is_hit) {
     return reinterpret_cast<cache_obj_t *>(0x1);
   } else {

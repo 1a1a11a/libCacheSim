@@ -173,9 +173,6 @@ static cache_obj_t *LHD_find(cache_t *cache, const request_t *req,
   }
 
   if (update_cache) {
-#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
-    id.last_access_time = CURR_TIME(cache, req);
-#endif
     if (itr->second != req->obj_size) {
       cache->occupied_byte -= itr->second;
       cache->occupied_byte += req->obj_size;
@@ -286,15 +283,6 @@ static void LHD_evict(cache_t *cache, const request_t *req) {
   }
 #endif
 
-#ifdef TRACK_EVICTION_V_AGE_SINCE_LAST_REQUEST
-  {
-    cache_obj_t obj;
-    obj.obj_id = victim.id;
-    obj.last_access_time = victim.last_access_time;
-    record_eviction_age(cache, &obj,
-                        CURR_TIME(cache, req) - victim.last_access_time);
-  }
-#endif
 
   lhd->replaced(victim);
   lhd->sizeMap.erase(victimItr);
