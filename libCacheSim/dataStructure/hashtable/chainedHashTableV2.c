@@ -175,7 +175,7 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
   if (chain_len > 16 && chain_len > max_chain_len) {
     max_chain_len = chain_len;
     DEBUG(
-        "hashtable remove %lu max chain len %d, hashtable load %ld/%ld %lf\n ",
+        "hashtable remove %lu chain len %d, hashtable load %ld/%ld %lf\n ",
         (unsigned long)cache_obj->obj_id, max_chain_len, (long)hashtable->n_obj,
         (long)hashsize(hashtable->hashpower),
         (double)hashtable->n_obj / hashsize(hashtable->hashpower));

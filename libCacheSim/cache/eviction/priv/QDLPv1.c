@@ -31,7 +31,7 @@ typedef struct {
   request_t *req_local;
 } QDLPv1_params_t;
 
-static const char *DEFAULT_CACHE_PARAMS = "fifo-size-ratio=0.2,main-cache=ARC";
+static const char *DEFAULT_CACHE_PARAMS = "fifo-size-ratio=0.1,main-cache=ARC";
 
 // ***********************************************************************
 // ****                                                               ****
