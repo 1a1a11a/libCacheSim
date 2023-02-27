@@ -22,6 +22,8 @@ typedef struct Belady_params {
   pqueue_t *pq;
 } Belady_params_t;
 
+// #define EVICT_IMMEDIATELY_IF_NO_FUTURE_ACCESS 1
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
@@ -160,7 +162,7 @@ static cache_obj_t *Belady_find(cache_t *cache, const request_t *req,
       ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
           ->pri.pri == req->next_access_vtime);
 
-#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
+#if defined(EVICT_IMMEDIATELY_IF_NO_FUTURE_ACCESS)
   if (req->next_access_vtime == INT64_MAX) {
     Belady_evict(cache, req);
   }
@@ -199,7 +201,7 @@ static cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
       ((pq_node_t *)hashtable_find(cache->hashtable, req)->Belady.pq_node)
           ->pri.pri == req->next_access_vtime);
 
-#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
+#if defined(EVICT_IMMEDIATELY_IF_NO_FUTURE_ACCESS)
   if (req->next_access_vtime == INT64_MAX) {
     Belady_evict(cache, req);
   }
