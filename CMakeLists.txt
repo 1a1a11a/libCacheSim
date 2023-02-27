@@ -73,7 +73,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache/eviction/priv")
     add_compile_definitions(INCLUDE_PRIV=1)
 else()
     remove_definitions(INCLUDE_PRIV)
-endif(INCLUDE_PRIV)
+endif()
 
 string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
 if (LOG_LEVEL_LOWER STREQUAL "vvverbose")
