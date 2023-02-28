@@ -203,13 +203,18 @@ static cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
 static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
+  int n_round = 0;
   cache_obj_t *obj_to_evict = params->q_tail;
 #ifdef USE_BELADY
   while (obj_to_evict->next_access_vtime != INT64_MAX) {
 #else
-  while (obj_to_evict->misc.freq >= 1) {
+  while (obj_to_evict->misc.freq - n_round >= 1) {
 #endif
     obj_to_evict = obj_to_evict->queue.prev;
+    if (obj_to_evict == NULL) {
+      obj_to_evict = params->q_tail;
+      n_round += 1;
+    }
   }
 
   return obj_to_evict;
