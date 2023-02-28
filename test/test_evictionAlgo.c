@@ -454,10 +454,10 @@ static void test_SLRU(gconstpointer user_data) {
 }
 
 static void test_QDLP_FIFO(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {89195, 80715, 77215, 73302,
-                              67381, 65685, 67252, 64387};
-  uint64_t miss_byte_true[] = {4029297664, 3632207872, 3393682944, 3177442816,
-                               2868547072, 2771180032, 2811603456, 2696484352};
+  uint64_t miss_cnt_true[] = {88746, 80630, 76450, 71638,
+                              67380, 65680, 66125, 64417};
+  uint64_t miss_byte_true[] = {4008265728, 3625704960, 3330610176, 3099731456,
+                               2868538880, 2771098112, 2734977024, 2697751552};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
