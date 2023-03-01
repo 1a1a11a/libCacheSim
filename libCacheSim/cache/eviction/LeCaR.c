@@ -148,8 +148,10 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
                                            (GDestroyNotify)free_freq_node);
   g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(1), freq_node);
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LeCaR-%.2lflru",
-           params->w_lru);
+  if (!params->update_weight) {
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LeCaR-%.2lflru",
+             params->w_lru);
+  }
 
   return cache;
 }

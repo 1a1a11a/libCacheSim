@@ -140,7 +140,7 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
   params->main_cache->track_eviction_age = false;
 #endif
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.2lf-%s",
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.4lf-%s",
            params->fifo_size_ratio, params->main_cache_type);
 
   return cache;
