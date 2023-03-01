@@ -46,7 +46,6 @@ static cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LeCaRv0_to_evict(cache_t *cache, const request_t *req);
 static void LeCaRv0_evict(cache_t *cache, const request_t *req);
 static bool LeCaRv0_remove(cache_t *cache, const obj_id_t obj_id);
-static void LeCaRv0_remove_obj(cache_t *cache, cache_obj_t *obj);
 
 /* internal functions */
 static void update_weight(cache_t *cache, int64_t t, double *w_update,
@@ -205,11 +204,6 @@ static cache_obj_t *LeCaRv0_find(cache_t *cache, const request_t *req,
     check_and_update_history(cache, req);
   }
 
-  DEBUG_ASSERT(params->LRU->occupied_byte == params->LFU->occupied_byte);
-  DEBUG_ASSERT(params->LRU->n_obj == cache->n_obj);
-
-  cache->occupied_byte = params->LRU->occupied_byte;
-
   return obj_lru;
 }
 
@@ -229,7 +223,6 @@ cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req) {
   params->LRU->insert(params->LRU, req);
   params->LFU->insert(params->LFU, req);
 
-  cache->occupied_byte = params->LRU->occupied_byte;
   cache->n_obj += 1;
 
   return NULL;
@@ -289,7 +282,7 @@ static void LeCaRv0_evict(cache_t *cache, const request_t *req) {
     params->LFU->evict(params->LFU, req);
     DEBUG_ASSERT(params->LFU_g->find(params->LFU_g, req_local, false) == NULL);
     params->LFU_g->get(params->LFU_g, req_local);
-    obj = hashtable_find(params->LRU_g->hashtable, req_local);
+    obj = hashtable_find(params->LFU_g->hashtable, req_local);
     obj->LeCaR.eviction_vtime = cache->n_req;
   }
 }

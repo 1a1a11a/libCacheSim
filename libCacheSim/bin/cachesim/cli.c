@@ -308,6 +308,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = Hyperbolic_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lecar") == 0) {
     cache = LeCaR_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "lecarv0") == 0) {
+    cache = LeCaRv0_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "cacheus") == 0) {
     cache = Cacheus_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "size") == 0) {

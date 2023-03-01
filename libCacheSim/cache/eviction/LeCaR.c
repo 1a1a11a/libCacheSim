@@ -20,6 +20,8 @@ extern "C" {
 
 // #define LECAR_USE_BELADY
 
+static const char *DEFAULT_PARAMS = "update-weight=1,lru-weight=0.5";
+
 typedef struct LeCaR_params {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
@@ -44,8 +46,6 @@ typedef struct LeCaR_params {
   int64_t n_hit_lfu_history;
   bool update_weight;
 } LeCaR_params_t;
-
-static const char *DEFAULT_PARAMS = "update-weight=1,lru-weight=0.5";
 
 static void free_freq_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
@@ -149,7 +149,7 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   g_hash_table_insert(params->freq_map, GSIZE_TO_POINTER(1), freq_node);
 
   if (!params->update_weight) {
-    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LeCaR-%.2lflru",
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LeCaR-%.4lflru",
              params->w_lru);
   }
 
@@ -281,10 +281,6 @@ static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
       params->min_freq = cache_obj->LeCaR.freq;
       VVERBOSE("update min freq to %d\n", (int)params->min_freq);
     }
-
-#ifdef LECAR_USE_BELADY
-    cache_obj->LeCaR.next_access_vtime = req->next_access_vtime;
-#endif
   }
 
   if (cache_obj == NULL || is_ghost) {
@@ -317,9 +313,6 @@ cache_obj_t *LeCaR_insert(cache_t *cache, const request_t *req) {
   cache_obj->LeCaR.eviction_vtime = 0;
   cache_obj->LeCaR.ghost_evicted_by_lru = false;
   cache_obj->LeCaR.ghost_evicted_by_lfu = false;
-#ifdef LECAR_USE_BELADY
-  cache_obj->LeCaR.next_access_vtime = req->next_access_vtime;
-#endif
 
   // LFU insert
   params->min_freq = 1;
@@ -353,17 +346,19 @@ cache_obj_t *LeCaR_insert(cache_t *cache, const request_t *req) {
 static cache_obj_t *LeCaR_to_evict(cache_t *cache, const request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
-  cache_obj_t *lru_choice = cache->q_tail;
+  cache_obj_t *lru_choice = params->q_tail;
 
   freq_node_t *min_freq_node = get_min_freq_node(params);
   cache_obj_t *lfu_choice = min_freq_node->first_obj;
 
-  if (lru_choice->LeCaR.next_access_vtime == -1) {
-    return lru_choice;
-  } else if (lfu_choice->LeCaR.next_access_vtime == -1) {
-    return lfu_choice;
-  } else if (lru_choice->LeCaR.next_access_vtime >
-             lfu_choice->LeCaR.next_access_vtime) {
+  // we divide by 1,000,000 to avoid overflow when next_access_vtime is
+  // INT64_MAX
+  double lru_belady_metric = lru_choice->misc.next_access_vtime - cache->n_req;
+  lru_belady_metric = lru_belady_metric / 1000000.0 * lru_choice->obj_size;
+  double lfu_belady_metric = lfu_choice->misc.next_access_vtime - cache->n_req;
+  lfu_belady_metric = lfu_belady_metric / 1000000.0 * lfu_choice->obj_size;
+
+  if (lru_belady_metric > lfu_belady_metric) {
     return lru_choice;
   } else {
     return lfu_choice;
@@ -383,19 +378,18 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
 
   cache_obj_t *cache_obj = NULL;
 
-  cache_obj_t *lru_choice = cache->q_tail;
+  cache_obj_t *lru_choice = params->q_tail;
 
   freq_node_t *min_freq_node = get_min_freq_node(params);
   cache_obj_t *lfu_choice = min_freq_node->first_obj;
 
   // we divide by 1,000,000 to avoid overflow when next_access_vtime is
   // INT64_MAX
-  double lru_belady_metric =
-      (double)(lru_choice->LeCaR.next_access_vtime - cache->n_req) / 1000000.0 *
-      lru_choice->obj_size;
-  double lfu_belady_metric =
-      (double)(lfu_choice->LeCaR.next_access_vtime - cache->n_req) / 1000000.0 *
-      lfu_choice->obj_size;
+  double lru_belady_metric = lru_choice->misc.next_access_vtime - cache->n_req;
+  lru_belady_metric = lru_belady_metric / 1000000.0 * lru_choice->obj_size;
+  double lfu_belady_metric = lfu_choice->misc.next_access_vtime - cache->n_req;
+  lfu_belady_metric = lfu_belady_metric / 1000000.0 * lfu_choice->obj_size;
+
   if (lru_belady_metric > lfu_belady_metric) {
     cache_obj = lru_choice;
     cache_obj->LeCaR.ghost_evicted_by_lru = true;
@@ -409,14 +403,14 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
   cache_obj->LeCaR.eviction_vtime = cache->n_req;
 
   // update LRU chain state
-  remove_obj_from_list(&cache->q_head, &cache->q_tail, cache_obj);
+  remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
 
   // update LFU chain state
   remove_obj_from_freq_node(params, cache_obj);
 
   // update cache state
-  DEBUG_ASSERT(cache->occupied_size >= cache_obj->obj_size);
-  cache->occupied_size -= (cache_obj->obj_size + cache->per_obj_metadata_size);
+  DEBUG_ASSERT(cache->occupied_byte >= cache_obj->obj_size);
+  cache->occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 
   // update history
@@ -431,8 +425,7 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
   VVERBOSE("insert to ghost history, update ghost lru head to %p\n",
            params->ghost_lru_head);
 
-  params->ghost_entry_used_size +=
-      cache_obj->obj_size + cache->per_obj_metadata_size;
+  params->ghost_entry_used_size += cache_obj->obj_size + cache->obj_md_size;
   // evict ghost entries if its full
   while (params->ghost_entry_used_size > cache->cache_size) {
     cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
@@ -440,7 +433,7 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
              params->ghost_entry_used_size);
     assert(ghost_to_evict != NULL);
     params->ghost_entry_used_size -=
-        (ghost_to_evict->obj_size + cache->per_obj_metadata_size);
+        (ghost_to_evict->obj_size + cache->obj_md_size);
     params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
     if (likely(params->ghost_lru_tail != NULL))
       params->ghost_lru_tail->queue.next = NULL;
