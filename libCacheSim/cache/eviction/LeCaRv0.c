@@ -186,7 +186,7 @@ static bool LeCaRv0_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LeCaRv0_find(cache_t *cache, const request_t *req,
-                                  bool update_cache) {
+                                 bool update_cache) {
   LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_lru, *obj_lfu;
@@ -264,26 +264,32 @@ static void LeCaRv0_evict(cache_t *cache, const request_t *req) {
 
   LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
 
-  cache_obj_t *obj;
-  double r = ((double)(next_rand() % 100)) / 100.0;
-  if (r < params->w_lru) {
-    obj = params->LRU->to_evict(params->LRU, req);
-    copy_cache_obj_to_request(req_local, obj);
-    params->LFU->remove(params->LFU, obj->obj_id);
+  cache_obj_t *lru_candidate = params->LRU->to_evict(params->LRU, req);
+  cache_obj_t *lfu_candidate = params->LFU->to_evict(params->LFU, req);
+
+  if (lru_candidate->obj_id == lfu_candidate->obj_id) {
+    copy_cache_obj_to_request(req_local, lru_candidate);
+    params->LFU->remove(params->LFU, lru_candidate->obj_id);
     params->LRU->evict(params->LRU, req);
-    DEBUG_ASSERT(params->LRU_g->find(params->LRU_g, req_local, false) == NULL);
-    params->LRU_g->get(params->LRU_g, req_local);
-    obj = hashtable_find(params->LRU_g->hashtable, req_local);
-    obj->LeCaR.eviction_vtime = cache->n_req;
   } else {
-    obj = params->LFU->to_evict(params->LFU, req);
-    copy_cache_obj_to_request(req_local, obj);
-    params->LRU->remove(params->LRU, obj->obj_id);
-    params->LFU->evict(params->LFU, req);
-    DEBUG_ASSERT(params->LFU_g->find(params->LFU_g, req_local, false) == NULL);
-    params->LFU_g->get(params->LFU_g, req_local);
-    obj = hashtable_find(params->LFU_g->hashtable, req_local);
-    obj->LeCaR.eviction_vtime = cache->n_req;
+    double r = ((double)(next_rand() % 100)) / 100.0;
+    if (r < params->w_lru) {
+      copy_cache_obj_to_request(req_local, lru_candidate);
+      params->LFU->remove(params->LFU, lru_candidate->obj_id);
+      params->LRU->evict(params->LRU, req);
+      DEBUG_ASSERT(!params->LRU_g->find(params->LRU_g, req_local, false));
+      params->LRU_g->get(params->LRU_g, req_local);
+      cache_obj_t *obj = params->LRU_g->find(params->LRU_g, req_local, false);
+      obj->LeCaR.eviction_vtime = cache->n_req;
+    } else {
+      copy_cache_obj_to_request(req_local, lfu_candidate);
+      params->LRU->remove(params->LRU, lfu_candidate->obj_id);
+      params->LFU->evict(params->LFU, req);
+      DEBUG_ASSERT(!params->LFU_g->find(params->LFU_g, req_local, false));
+      params->LFU_g->get(params->LFU_g, req_local);
+      cache_obj_t *obj = params->LFU_g->find(params->LFU_g, req_local, false);
+      obj->LeCaR.eviction_vtime = cache->n_req;
+    }
   }
 }
 

@@ -35,7 +35,11 @@ typedef struct LeCaR_params {
   // eviction history
   cache_obj_t *ghost_lru_head;
   cache_obj_t *ghost_lru_tail;
-  int64_t ghost_entry_used_size;
+  int64_t lru_g_occupied_byte;
+
+  cache_obj_t *ghost_lfu_head;
+  cache_obj_t *ghost_lfu_tail;
+  int64_t lfu_g_occupied_byte;
 
   // LeCaR
   double w_lru;
@@ -129,6 +133,9 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   params->n_hit_lru_history = params->n_hit_lfu_history = 0;
 
   params->ghost_lru_head = params->ghost_lru_tail = NULL;
+  params->ghost_lfu_head = params->ghost_lfu_tail = NULL;
+  params->lru_g_occupied_byte = 0;
+  params->lfu_g_occupied_byte = 0;
   params->q_head = params->q_tail = NULL;
 
   if (cache_specific_params != NULL) {
@@ -219,11 +226,8 @@ static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
     return NULL;
   }
 
-  bool is_ghost = cache_obj->LeCaR.ghost_evicted_by_lru ||
-                  cache_obj->LeCaR.ghost_evicted_by_lfu;
-
   if (!update_cache) {
-    if (is_ghost) {
+    if (cache_obj->LeCaR.is_ghost) {
       return NULL;
     } else {
       return cache_obj;
@@ -231,30 +235,33 @@ static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
   }
 
   // if it is a ghost object, update its weight
-  if (cache_obj->LeCaR.ghost_evicted_by_lru) {
-    params->n_hit_lru_history++;
-    int64_t t = cache->n_req - cache_obj->LeCaR.eviction_vtime;
-    update_weight(cache, t, &params->w_lru, &params->w_lfu);
+  if (cache_obj->LeCaR.is_ghost) {
+    if (cache_obj->LeCaR.evict_expert == 1) {
+      // evicted by expert LRU
+      params->n_hit_lru_history++;
+      int64_t t = cache->n_req - cache_obj->LeCaR.eviction_vtime;
+      update_weight(cache, t, &params->w_lru, &params->w_lfu);
 
-    remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
-                         cache_obj);
-    params->ghost_entry_used_size -= (cache_obj->obj_size + cache->obj_md_size);
-    hashtable_delete(cache->hashtable, cache_obj);
+      remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
+                           cache_obj);
+      params->lru_g_occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
+      hashtable_delete(cache->hashtable, cache_obj);
+    } else if (cache_obj->LeCaR.evict_expert == 2) {
+      // evicted by expert LFU
+      params->n_hit_lfu_history++;
+      int64_t t = cache->n_req - cache_obj->LeCaR.eviction_vtime;
+      update_weight(cache, t, &params->w_lfu, &params->w_lru);
 
+      remove_obj_from_list(&params->ghost_lfu_head, &params->ghost_lfu_tail,
+                           cache_obj);
+      params->lfu_g_occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
+      hashtable_delete(cache->hashtable, cache_obj);
+    } else {
+      assert(cache_obj->LeCaR.evict_expert == -1);
+      // the two experts both pick this object, do nothing
+      ;
+    }
     return NULL;
-
-  } else if (cache_obj->LeCaR.ghost_evicted_by_lfu) {
-    params->n_hit_lfu_history++;
-    int64_t t = cache->n_req - cache_obj->LeCaR.eviction_vtime;
-    update_weight(cache, t, &params->w_lfu, &params->w_lru);
-
-    remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
-                         cache_obj);
-    params->ghost_entry_used_size -= (cache_obj->obj_size + cache->obj_md_size);
-    hashtable_delete(cache->hashtable, cache_obj);
-
-    return NULL;
-
   } else {
     // if it is an cached object, update cache state
     // update LRU chain
@@ -283,7 +290,7 @@ static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
     }
   }
 
-  if (cache_obj == NULL || is_ghost) {
+  if (cache_obj == NULL || cache_obj->LeCaR.is_ghost) {
     return NULL;
   } else {
     return cache_obj;
@@ -310,9 +317,9 @@ cache_obj_t *LeCaR_insert(cache_t *cache, const request_t *req) {
 
   prepend_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   cache_obj->LeCaR.freq = 1;
+  cache_obj->LeCaR.is_ghost = false;
+  cache_obj->LeCaR.evict_expert = 0;
   cache_obj->LeCaR.eviction_vtime = 0;
-  cache_obj->LeCaR.ghost_evicted_by_lru = false;
-  cache_obj->LeCaR.ghost_evicted_by_lfu = false;
 
   // LFU insert
   params->min_freq = 1;
@@ -392,14 +399,12 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
 
   if (lru_belady_metric > lfu_belady_metric) {
     cache_obj = lru_choice;
-    cache_obj->LeCaR.ghost_evicted_by_lru = true;
-    cache_obj->LeCaR.ghost_evicted_by_lfu = false;
   } else {
     cache_obj = lfu_choice;
-    cache_obj->LeCaR.ghost_evicted_by_lfu = true;
-    cache_obj->LeCaR.ghost_evicted_by_lru = false;
   }
 
+  cache_obj->LeCaR.is_ghost = true;
+  cache_obj->LeCaR.evict_expert = -1;
   cache_obj->LeCaR.eviction_vtime = cache->n_req;
 
   // update LRU chain state
@@ -412,34 +417,6 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(cache->occupied_byte >= cache_obj->obj_size);
   cache->occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
-
-  // update history
-  if (unlikely(params->ghost_lru_head == NULL)) {
-    params->ghost_lru_head = cache_obj;
-    params->ghost_lru_tail = cache_obj;
-  } else {
-    params->ghost_lru_head->queue.prev = cache_obj;
-    cache_obj->queue.next = params->ghost_lru_head;
-  }
-  params->ghost_lru_head = cache_obj;
-  VVERBOSE("insert to ghost history, update ghost lru head to %p\n",
-           params->ghost_lru_head);
-
-  params->ghost_entry_used_size += cache_obj->obj_size + cache->obj_md_size;
-  // evict ghost entries if its full
-  while (params->ghost_entry_used_size > cache->cache_size) {
-    cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
-    VVERBOSE("remove ghost %p, ghost cache size (before) %ld\n", ghost_to_evict,
-             params->ghost_entry_used_size);
-    assert(ghost_to_evict != NULL);
-    params->ghost_entry_used_size -=
-        (ghost_to_evict->obj_size + cache->obj_md_size);
-    params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
-    if (likely(params->ghost_lru_tail != NULL))
-      params->ghost_lru_tail->queue.next = NULL;
-
-    hashtable_delete(cache->hashtable, ghost_to_evict);
-  }
 }
 
 #else
@@ -479,36 +456,46 @@ static cache_obj_t *LeCaR_to_evict(cache_t *cache, const request_t *req) {
 void LeCaR_evict(cache_t *cache, const request_t *req) {
   LeCaR_params_t *params = (LeCaR_params_t *)(cache->eviction_params);
 
+  cache_obj_t *lru_candidate = cache->to_evict_candidate = params->q_tail;
+  cache_obj_t *lfu_candidate = get_min_freq_node(params)->first_obj;
+
   cache_obj_t *obj_to_evict = NULL;
+
   if (cache->to_evict_candidate_gen_vtime == cache->n_req) {
+    // we have generated a candidate in to_evict
     obj_to_evict = cache->to_evict_candidate;
+    cache->to_evict_candidate_gen_vtime = -1;
+
+    if (lru_candidate == lfu_candidate) {
+      assert(obj_to_evict == lru_candidate);
+      obj_to_evict->LeCaR.evict_expert = -1;
+
+    } else if (obj_to_evict == lru_candidate) {
+      // evicted from LRU
+      obj_to_evict->LeCaR.evict_expert = 1;
+
+    } else {
+      // mark as ghost object
+      obj_to_evict->LeCaR.evict_expert = 2;
+    }
+
   } else {
-    obj_to_evict = LeCaR_to_evict(cache, req);
-  }
-  cache->to_evict_candidate_gen_vtime = -1;
-
-  if (obj_to_evict == params->q_tail) {
-    // evicted from LRU
-    VVERBOSE("evict object %lu from LRU\n",
-             (unsigned long)obj_to_evict->obj_id);
-
-    // mark as ghost object
-    obj_to_evict->LeCaR.ghost_evicted_by_lru = true;
-    obj_to_evict->LeCaR.ghost_evicted_by_lfu = false;
-
-  } else {
-    freq_node_t *min_freq_node = get_min_freq_node(params);
-    obj_to_evict = min_freq_node->first_obj;
-
-    // evict from LFU
-    VVERBOSE("evict object %lu from LFU\n",
-             (unsigned long)obj_to_evict->obj_id);
-
-    // mark as ghost object
-    obj_to_evict->LeCaR.ghost_evicted_by_lfu = true;
-    obj_to_evict->LeCaR.ghost_evicted_by_lru = false;
+    if (lru_candidate == lfu_candidate) {
+      obj_to_evict = lru_candidate;
+      obj_to_evict->LeCaR.evict_expert = -1;
+    } else {
+      double r = ((double)(next_rand() % 100)) / 100.0;
+      if (r < params->w_lru) {
+        obj_to_evict = lru_candidate;
+        obj_to_evict->LeCaR.evict_expert = 1;
+      } else {
+        obj_to_evict = lfu_candidate;
+        obj_to_evict->LeCaR.evict_expert = 2;
+      }
+    }
   }
 
+  obj_to_evict->LeCaR.is_ghost = true;
   obj_to_evict->LeCaR.eviction_vtime = cache->n_req;
 
   // update LRU chain state
@@ -521,28 +508,38 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
   cache_evict_base(cache, obj_to_evict, false);
 
   // update history
-  if (unlikely(params->ghost_lru_head == NULL)) {
-    params->ghost_lru_head = obj_to_evict;
-    params->ghost_lru_tail = obj_to_evict;
-  } else {
-    params->ghost_lru_head->queue.prev = obj_to_evict;
-    obj_to_evict->queue.next = params->ghost_lru_head;
-  }
-  params->ghost_lru_head = obj_to_evict;
-  params->ghost_entry_used_size += obj_to_evict->obj_size + cache->obj_md_size;
-  // evict ghost entries if its full
-  while (params->ghost_entry_used_size > cache->cache_size) {
-    cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
-    VVERBOSE("remove ghost %p, ghost cache size (before) %ld\n", ghost_to_evict,
-             params->ghost_entry_used_size);
-    DEBUG_ASSERT(ghost_to_evict != NULL);
-    params->ghost_entry_used_size -=
-        (ghost_to_evict->obj_size + cache->obj_md_size);
-    params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
-    if (likely(params->ghost_lru_tail != NULL))
-      params->ghost_lru_tail->queue.next = NULL;
-
-    hashtable_delete(cache->hashtable, ghost_to_evict);
+  if (obj_to_evict->LeCaR.evict_expert == 1) {
+    prepend_obj_to_head(&params->ghost_lru_head, &params->ghost_lru_tail,
+                        obj_to_evict);
+    params->lru_g_occupied_byte += obj_to_evict->obj_size + cache->obj_md_size;
+    // evict ghost entries if its full
+    while (params->lru_g_occupied_byte > cache->cache_size / 2) {
+      cache_obj_t *ghost_to_evict = params->ghost_lru_tail;
+      DEBUG_ASSERT(ghost_to_evict != NULL);
+      params->lru_g_occupied_byte -=
+          (ghost_to_evict->obj_size + cache->obj_md_size);
+      params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
+      if (likely(params->ghost_lru_tail != NULL)) {
+        params->ghost_lru_tail->queue.next = NULL;
+      }
+      hashtable_delete(cache->hashtable, ghost_to_evict);
+    }
+  } else if (obj_to_evict->LeCaR.evict_expert == 2) {
+    prepend_obj_to_head(&params->ghost_lfu_head, &params->ghost_lfu_tail,
+                        obj_to_evict);
+    params->lfu_g_occupied_byte += obj_to_evict->obj_size + cache->obj_md_size;
+    // evict ghost entries if its full
+    while (params->lfu_g_occupied_byte > cache->cache_size / 2) {
+      cache_obj_t *ghost_to_evict = params->ghost_lfu_tail;
+      DEBUG_ASSERT(ghost_to_evict != NULL);
+      params->lfu_g_occupied_byte -=
+          (ghost_to_evict->obj_size + cache->obj_md_size);
+      params->ghost_lfu_tail = params->ghost_lfu_tail->queue.prev;
+      if (likely(params->ghost_lfu_tail != NULL)) {
+        params->ghost_lfu_tail->queue.next = NULL;
+      }
+      hashtable_delete(cache->hashtable, ghost_to_evict);
+    }
   }
 }
 #endif
@@ -770,11 +767,11 @@ static void update_weight(cache_t *cache, int64_t t, double *w_update,
 static void verify_ghost_lru_integrity(cache_t *cache, LeCaR_params_t *params) {
   if (params->ghost_lru_head == NULL) {
     assert(params->ghost_lru_tail == NULL);
-    assert(params->ghost_entry_used_size == 0);
+    assert(params->lru_g_occupied_byte == 0);
     return;
   } else {
     assert(params->ghost_lru_tail != NULL);
-    assert(params->ghost_entry_used_size > 0);
+    assert(params->lru_g_occupied_byte > 0);
   }
 
   int64_t ghost_entry_size = 0;
@@ -792,11 +789,11 @@ static void verify_ghost_lru_integrity(cache_t *cache, LeCaR_params_t *params) {
   VVVERBOSE(
       "ghost entry head %p tail %p, "
       "ghost_entry_size from scan = %ld,"
-      "ghost_entry_used_size = %ld\n ",
+      "lru_g_occupied_byte = %ld\n ",
       params->ghost_lru_head, params->ghost_lru_tail, ghost_entry_size,
-      params->ghost_entry_used_size);
+      params->lru_g_occupied_byte);
 
-  assert(ghost_entry_size == params->ghost_entry_used_size);
+  assert(ghost_entry_size == params->lru_g_occupied_byte);
 }
 
 #ifdef __cplusplus

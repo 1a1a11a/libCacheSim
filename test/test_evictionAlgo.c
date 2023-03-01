@@ -286,10 +286,10 @@ static void test_Hyperbolic(gconstpointer user_data) {
 }
 
 static void test_LeCaR(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {93408, 89821, 83482, 80746,
-                              72493, 68529, 65815, 65652};
-  uint64_t miss_byte_true[] = {4217611264, 4063995904, 3771537408, 3601111040,
-                               3099243008, 2897135104, 2723608576, 2721644032};
+  uint64_t miss_cnt_true[] = {93269, 89035, 80244, 80815,
+                              72165, 67720, 65487, 66535};
+  uint64_t miss_byte_true[] = {4214232576, 4018871808, 3595043328, 3604504064,
+                               3075584512, 2886519808, 2748467712, 2755397120};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {

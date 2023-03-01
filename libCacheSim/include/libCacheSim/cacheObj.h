@@ -38,9 +38,9 @@ typedef struct {
   void *lfu_next;
   void *lfu_prev;
   int64_t eviction_vtime:40;
-  int64_t freq:22;
-  int64_t ghost_evicted_by_lru:1;
-  int64_t ghost_evicted_by_lfu:1;
+  int64_t freq:23;
+  int64_t is_ghost:1;
+  int8_t evict_expert; // 1: LRU, 2: LFU
 } __attribute__((packed)) LeCaR_obj_metadata_t;
 
 typedef struct {
