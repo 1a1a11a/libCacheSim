@@ -42,7 +42,7 @@ typedef struct {
 } QDLPv2_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.2,main-cache=Clock-2";
+    "fifo-size-ratio=0.10,main-cache=Clock-2";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -209,28 +209,37 @@ static bool QDLPv2_get(cache_t *cache, const request_t *req) {
                cache->cache_size);
 
   static __thread int64_t last_print_rtime = 0;
-  static __thread int last_change_direction = 0;
-  if (cache->n_req % 1000 == 0) {
-    // if (cache->n_req % 1000 == 0) {
-    // if (req->clock_time - last_print_rtime >= 60) {
-    //   printf("%ld: %d %d %ld %ld\n", cache->n_req, params->fifo_eviction_hit,
-    //          params->main_eviction_hit, params->fifo->cache_size,
-    //          params->main_cache->cache_size);
-    //   last_print_rtime = req->clock_time;
-    // }
+  if (req->clock_time - last_print_rtime >= 600) {
+    printf("%ld %ld: %d %d %ld %ld\n", req->clock_time, cache->n_req,
+    params->fifo_eviction_hit,
+           params->main_eviction_hit, params->fifo->cache_size,
+           params->main_cache->cache_size);
+    last_print_rtime = req->clock_time;
+  }
 
-    if (params->fifo_eviction_hit > params->main_eviction_hit * 1.2) {
-      if (params->main_cache->cache_size > 20) {
-        params->fifo->cache_size += 20;
-        params->main_cache->cache_size -= 20;
+  int step = 20;
+  step = MAX(
+      1, MIN(params->fifo->cache_size, params->main_cache->cache_size) / 1000);
+  bool cond0 = cache->n_req % 10000 == 0;
+  bool cond1 = params->fifo_eviction_hit + params->main_eviction_hit > 100;
+  bool cond2 = params->main_cache_eviction->get_occupied_byte(
+                   params->main_cache_eviction) > 0;
+  if (!cond2) {
+    params->fifo_eviction_hit = 0;
+    params->main_eviction_hit = 0;
+  }
+
+  if (cond0 && cond1 && cond2) {
+    if (params->fifo_eviction_hit > params->main_eviction_hit * 2) {
+      if (params->main_cache->cache_size > step) {
+        params->fifo->cache_size += step;
+        params->main_cache->cache_size -= step;
       }
-      last_change_direction = 1;
-    } else if (params->main_eviction_hit > params->fifo_eviction_hit * 1.2) {
-      if (params->fifo->cache_size > 20) {
-        params->fifo->cache_size -= 20;
-        params->main_cache->cache_size += 20;
+    } else if (params->main_eviction_hit > params->fifo_eviction_hit * 2) {
+      if (params->fifo->cache_size > step) {
+        params->fifo->cache_size -= step;
+        params->main_cache->cache_size += step;
       }
-      last_change_direction = 2;
     }
     params->fifo_eviction_hit = params->fifo_eviction_hit * 0.8;
     params->main_eviction_hit = params->main_eviction_hit * 0.8;
