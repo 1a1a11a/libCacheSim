@@ -107,8 +107,8 @@ typedef struct {
 } QDLP_obj_metadata_t;
 
 typedef struct {
-  int64_t next_access_vtime:40;
-  int64_t freq:24;
+  int64_t next_access_vtime;
+  int32_t freq;
 } __attribute__((packed)) misc_metadata_t;
 
 typedef struct {
