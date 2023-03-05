@@ -22,7 +22,7 @@ typedef struct {
 } LFU_obj_metadata_t;
 
 typedef struct {
-  bool visited;
+  int freq;
 } Clock_obj_metadata_t;
 
 typedef struct {

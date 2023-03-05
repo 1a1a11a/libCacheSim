@@ -232,7 +232,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
     cache_obj->misc.next_access_vtime = req->next_access_vtime;
   }
 
-  cache_obj->misc.freq = 1;
+  cache_obj->misc.freq = 0;
 
   return cache_obj;
 }

@@ -155,8 +155,8 @@ static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
-    if (obj->misc.freq < params->max_freq) {
-      obj->misc.freq += 1;
+    if (obj->clock.freq < params->max_freq) {
+      obj->clock.freq += 1;
     }
 #ifdef USE_BELADY
     obj->next_access_vtime = req->next_access_vtime;
@@ -182,7 +182,7 @@ static cache_obj_t *Clock_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
-  obj->misc.freq = 0;
+  obj->clock.freq = 0;
 #ifdef USE_BELADY
   obj->next_access_vtime = req->next_access_vtime;
 #endif
@@ -208,7 +208,7 @@ static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req) {
 #ifdef USE_BELADY
   while (obj_to_evict->next_access_vtime != INT64_MAX) {
 #else
-  while (obj_to_evict->misc.freq - n_round >= 1) {
+  while (obj_to_evict->clock.freq - n_round >= 1) {
 #endif
     obj_to_evict = obj_to_evict->queue.prev;
     if (obj_to_evict == NULL) {
@@ -233,8 +233,8 @@ static void Clock_evict(cache_t *cache, const request_t *req) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
   cache_obj_t *obj_to_evict = params->q_tail;
-  while (obj_to_evict->misc.freq >= 1) {
-    obj_to_evict->misc.freq -= 1;
+  while (obj_to_evict->clock.freq >= 1) {
+    obj_to_evict->clock.freq -= 1;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
   }

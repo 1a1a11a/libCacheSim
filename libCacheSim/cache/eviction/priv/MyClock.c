@@ -138,7 +138,7 @@ static cache_obj_t *MyClock_find(cache_t *cache, const request_t *req,
                                  const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
   if (cache_obj != NULL && update_cache) {
-    cache_obj->clock.visited = true;
+    cache_obj->clock.freq = 1;
   }
 
   return cache_obj;
@@ -159,7 +159,7 @@ static cache_obj_t *MyClock_insert(cache_t *cache, const request_t *req) {
   MyClock_params_t *params = cache->eviction_params;
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
-  obj->clock.visited = false;
+  obj->clock.freq = 0;
   params->n_written_obj++;
 
   return obj;
@@ -183,14 +183,14 @@ static cache_obj_t *MyClock_to_evict(cache_t *cache, const request_t *req) {
   if (pointer == NULL) pointer = params->q_tail;
 
   /* find the first untouched */
-  while (pointer != NULL && pointer->clock.visited) {
+  while (pointer != NULL && pointer->clock.freq > 0) {
     pointer = pointer->queue.prev;
   }
 
   /* if we have finished one around, start from the tail */
   if (pointer == NULL) {
     pointer = params->q_tail;
-    while (pointer != NULL && pointer->clock.visited) {
+    while (pointer != NULL && pointer->clock.freq > 0) {
       pointer = pointer->queue.prev;
     }
   }
@@ -215,18 +215,18 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
   if (obj == NULL) obj = params->q_tail;
 
   /* find the first untouched */
-  while (obj != NULL && obj->clock.visited) {
+  while (obj != NULL && obj->clock.freq > 0) {
     params->n_scanned_obj++;
-    obj->clock.visited = false;
+    obj->clock.freq -= 1;
     obj = obj->queue.prev;
   }
 
   /* if we have finished one around, start from the tail */
   if (obj == NULL) {
     obj = params->q_tail;
-    while (obj != NULL && obj->clock.visited) {
+    while (obj != NULL && obj->clock.freq > 0) {
       params->n_scanned_obj++;
-      obj->clock.visited = false;
+      obj->clock.freq -= 1;
       obj = obj->queue.prev;
     }
   }
