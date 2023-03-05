@@ -24,3 +24,5 @@ uint64_t str_to_u64(const char *start, size_t len);
 
 /* replace all matching char in a string */
 char *replace_char(char *str, char find, char replace);
+
+const char *mybasename(const char *path);

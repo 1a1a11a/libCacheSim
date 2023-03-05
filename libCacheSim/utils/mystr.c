@@ -56,6 +56,14 @@ char *replace_char(char *str, char find, char replace) {
   return str;
 }
 
+const char *mybasename(char const *path) {
+  char *s = strrchr(path, '/');
+  if (!s)
+    return path;
+  else
+    return s + 1;
+}
+
 #ifdef __cplusplus
 }
 #endif
