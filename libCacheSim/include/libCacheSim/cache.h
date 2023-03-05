@@ -314,7 +314,7 @@ static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj,
                                        const int64_t age) {
 #if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
   if (obj->obj_id % 101 == 0) {
-    printf("ea: %lu %ld\n", obj->obj_id, age);
+    printf("ea_freq: %lu %ld %d\n", obj->obj_id, age, obj->misc.freq);
   }
 #endif
 
