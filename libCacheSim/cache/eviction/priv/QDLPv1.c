@@ -185,6 +185,7 @@ static bool QDLPv1_get(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(params->fifo->get_occupied_byte(params->fifo) +
                    params->main_cache->get_occupied_byte(params->main_cache) <=
                cache->cache_size);
+          
   bool cache_hit = cache_get_base(cache, req);
   return cache_hit;
 }
@@ -223,10 +224,8 @@ static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
 
   /* update cache is true from now */
   params->hit_on_ghost = false;
-  cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
+  cache_obj_t *obj = params->fifo->find(params->fifo, req, true);
   if (obj != NULL) {
-    obj->misc.freq = 1;
-
     return obj;
   }
 
@@ -235,7 +234,7 @@ static cache_obj_t *QDLPv1_find(cache_t *cache, const request_t *req,
     params->hit_on_ghost = true;
   }
 
-  obj = params->main_cache->find(params->main_cache, req, update_cache);
+  obj = params->main_cache->find(params->main_cache, req, true);
 
   return obj;
 }
@@ -268,6 +267,8 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   obj->create_time = CURR_TIME(cache, req);
 #endif
+
+  assert(obj->misc.freq == 0);
 
   return obj;
 }
