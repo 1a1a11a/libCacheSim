@@ -51,8 +51,9 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
     if (req->clock_time - last_report_ts >= REPORT_INTERVAL &&
         req->clock_time != 0) {
       INFO(
-          "%.2lf hour: %lu requests, miss ratio %.4lf, interval miss ratio "
+          "%s %s %.2lf hour: %lu requests, miss ratio %.4lf, interval miss ratio "
           "%.4lf\n",
+          mybasename(reader->trace_path), cache->cache_name,
           (double)req->clock_time / 3600, (unsigned long)req_cnt,
           (double)miss_cnt / req_cnt,
           (double)(miss_cnt - last_miss_cnt) / (req_cnt - last_req_cnt));
