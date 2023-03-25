@@ -28,7 +28,7 @@ admissioner_t *create_adaptsize_admissioner(const char *init_params);
 static inline admissioner_t *create_admissioner(const char *admission_algo,
                                                 const char *admission_params) {
   admissioner_t *admissioner = NULL;
-  if (strcasecmp(admission_algo, "bloomfilter") == 0) {
+  if (strcasecmp(admission_algo, "bloomfilter") == 0 || strcasecmp(admission_algo, "bloom-filter") == 0) {
     admissioner = create_bloomfilter_admissioner(admission_params);
   } else if (strcasecmp(admission_algo, "prob") == 0) {
     admissioner = create_prob_admissioner(admission_params);

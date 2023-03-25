@@ -83,6 +83,9 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
   };
   assert(sizeof(cc_params) == 24);
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
+  if (old_cache->admissioner != NULL) {
+    cache->admissioner = old_cache->admissioner->clone(old_cache->admissioner);
+  }
   cache->future_stack_dist = old_cache->future_stack_dist;
   cache->future_stack_dist_array_size = old_cache->future_stack_dist_array_size;
   return cache;
