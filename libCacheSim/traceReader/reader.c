@@ -499,6 +499,12 @@ int go_back_two_req(reader_t *const reader) {
  * @return 0 on success
  */
 int read_one_req_above(reader_t *const reader, request_t *req) {
+  if (reader->n_req_left > 0) {
+    reader->n_req_left -= 1;
+    req->clock_time = reader->last_req_clock_time;
+    return 0;
+  }
+
   if (go_back_two_req(reader) == 0) {
     return read_one_req(reader, req);
   } else {
@@ -571,33 +577,13 @@ uint64_t get_num_of_req(reader_t *const reader) {
 
   uint64_t n_req = 0;
 
-  if (reader->trace_format == TXT_TRACE_FORMAT) {
-    size_t old_pos = ftell(reader->file);
-    char **buf = (char **)&reader->line_buf;
-    size_t *buf_size = &reader->line_buf_size;
-
-    fseek(reader->file, 0, SEEK_SET);
-    ssize_t read_size = getline(buf, buf_size, reader->file);
-    while (read_size > 0) {
-      if (read_size > 1 || !isspace(reader->line_buf[0])) n_req++;
-
-      read_size = getline(buf, buf_size, reader->file);
-    }
-    /* if the trace is csv with_header, it needs to reduce by 1  */
-    if (reader->trace_type == CSV_TRACE &&
-        ((csv_params_t *)(reader->reader_params))->has_header) {
-      n_req--;
-    }
-
-    fseek(reader->file, old_pos, SEEK_SET);
-  } else if (reader->is_zstd_file) {
-    uint64_t old_offset = reader->mmap_offset;
-    reader->mmap_offset = 0;
+  if (reader->trace_format == TXT_TRACE_FORMAT || reader->is_zstd_file) {
+    reader_t *reader_copy = clone_reader(reader);
+    reader_copy->mmap_offset = 0;
     request_t *req = new_request();
-    while (read_one_req(reader, req) == 0) {
+    while (read_one_req(reader_copy, req) == 0) {
       n_req++;
     }
-    reader->mmap_offset = old_offset;
   } else {
     ERROR("should not reach here\n");
     abort();

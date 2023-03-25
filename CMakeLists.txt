@@ -51,7 +51,7 @@ elseif (${CMAKE_BUILD_TYPE} MATCHES "Debug")
         set(LOG_LEVEL DEBUG)
     endif()
 else()
-    set(LOG_LEVEL DEBUG)
+    set(LOG_LEVEL INFO)
 endif()
 
 
