@@ -18,11 +18,14 @@ extern "C" {
 
 typedef struct {
   void *LRB_cache;
+  char *objective;
   SimpleRequest lrb_req;
 
   pair<uint64_t, uint32_t> to_evict_pair;
   cache_obj_t obj_tmp;
 } LRB_params_t;
+
+static const char *DEFAULT_PARAMS = "objective=object-miss-ratio";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -41,6 +44,8 @@ static void LRB_evict(cache_t *cache, const request_t *req);
 static bool LRB_remove(cache_t *cache, const obj_id_t obj_id);
 static int64_t LRB_get_occupied_byte(const cache_t *cache);
 static int64_t LRB_get_n_obj(const cache_t *cache);
+
+static void LRB_parse_params(cache_t *cache, const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -92,6 +97,12 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
+  if (cache_specific_params != NULL) {
+    LRB_parse_params(cache, cache_specific_params);
+  } else {
+    LRB_parse_params(cache, DEFAULT_PARAMS);
+  }
+
   auto *params = my_malloc(LRB_params_t);
   memset(params, 0, sizeof(LRB_params_t));
   cache->eviction_params = params;
@@ -102,6 +113,17 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
   lrb->setSize(ccache_params.cache_size);
 
   std::map<string, string> params_map;
+
+  params_map["objective"] = params->objective;
+
+  if (strcmp(params->objective, "object-miss-ratio") == 0) {
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "%s", "LRB-OMR");
+  } else if (strcasecmp(params->objective, "byte-miss-ratio") == 0) {
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "%s", "LRB-BMR");
+  } else {
+    ERROR("LRB does not support objective %s\n", params->objective);
+  }
+
   lrb->init_with_params(params_map);
 
   return cache;
@@ -284,6 +306,49 @@ static int64_t LRB_get_occupied_byte(const cache_t *cache) {
   return lrb->_currentSize;
 }
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                  parameter set up functions                   ****
+// ****                                                               ****
+// ***********************************************************************
+static const char *LRB_current_params(cache_t *cache, LRB_params_t *params) {
+  static __thread char params_str[128];
+  int n = snprintf(params_str, 128, "objective=%s", params->objective);
+
+  snprintf(cache->cache_name + n, 128 - n, "\n");
+
+  return params_str;
+}
+
+static void LRB_parse_params(cache_t *cache,
+                             const char *cache_specific_params) {
+  LRB_params_t *params = (LRB_params_t *)cache->eviction_params;
+  char *params_str = strdup(cache_specific_params);
+  char *end;
+
+  while (params_str != NULL && params_str[0] != '\0') {
+    /* different parameters are separated by comma,
+     * key and value are separated by = */
+    char *key = strsep((char **)&params_str, "=");
+    char *value = strsep((char **)&params_str, ",");
+
+    // skip the white space
+    while (params_str != NULL && *params_str == ' ') {
+      params_str++;
+    }
+
+    if (strcasecmp(key, "objective") == 0) {
+      params->objective = strdup(value);
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", LRB_current_params(cache, params));
+      exit(0);
+    } else {
+      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      exit(1);
+    }
+  }
+  free(params_str);
+}
 #ifdef __cplusplus
 }
 #endif

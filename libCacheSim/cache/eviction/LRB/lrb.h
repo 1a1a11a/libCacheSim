@@ -359,9 +359,9 @@ public:
                 }
 //                n_edc_feature = stoull(it.second);
             } else if (it.first == "objective") {
-                if (it.second == "byte_miss_ratio")
+                if (it.second == "byte-miss-ratio")
                     objective = byte_miss_ratio;
-                else if (it.second == "object_miss_ratio")
+                else if (it.second == "object-miss-ratio")
                     objective = object_miss_ratio;
                 else {
                     cerr << "error: unknown objective" << endl;
