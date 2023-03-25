@@ -55,11 +55,12 @@ typedef struct SFIFO_Merge_params {
 // ****                                                               ****
 // ***********************************************************************
 
-static void SFIFO_Merge_parse_params(cache_t *cache, const char *cache_specific_params);
+static void SFIFO_Merge_parse_params(cache_t *cache,
+                                     const char *cache_specific_params);
 static void SFIFO_Merge_free(cache_t *cache);
 static bool SFIFO_Merge_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SFIFO_Merge_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                                     const bool update_cache);
 static cache_obj_t *SFIFO_Merge_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *SFIFO_Merge_to_evict(cache_t *cache, const request_t *req);
 static void SFIFO_Merge_evict(cache_t *cache, const request_t *req);
@@ -123,9 +124,10 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
   assert(params->n_exam_obj > 0 && params->n_evict_obj >= 0);
   assert(params->n_evict_obj <= params->n_exam_obj);
 
-  snprintf(cache->cache_name, 32, "SFIFO_Merge_%s",
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "SFIFO_Merge_%s",
            retain_policy_names[params->retain_policy]);
   params->metric_list = my_malloc_n(struct sort_list_node, params->n_exam_obj);
+
 
   return cache;
 }
@@ -183,12 +185,11 @@ static bool SFIFO_Merge_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *SFIFO_Merge_find(cache_t *cache, const request_t *req,
-                                      const bool update_cache) {
+                                     const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && update_cache) {
-    if (cache_obj->SFIFO_Merge.freq < 4) 
-      cache_obj->SFIFO_Merge.freq++;
+    cache_obj->SFIFO_Merge.freq++;
 
     cache_obj->SFIFO_Merge.last_access_vtime = cache->n_req;
     cache_obj->misc.next_access_vtime = req->next_access_vtime;
@@ -277,8 +278,8 @@ static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
       assert(n_loop++ <= 2);
     }
 
-    // params->metric_list[i].metric = retain_metric(cache, cache_obj);
-    params->metric_list[i].metric = cache_obj->SFIFO_Merge.freq;
+    params->metric_list[i].metric = retain_metric(cache, cache_obj);
+    // params->metric_list[i].metric = cache_obj->SFIFO_Merge.freq;
     params->metric_list[i].cache_obj = cache_obj;
     cache_obj = cache_obj->queue.prev;
   }
@@ -288,16 +289,16 @@ static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
   qsort(params->metric_list, params->n_exam_obj, sizeof(struct sort_list_node),
         cmp_list_node);
 
-  params->n_evict_obj = 0;
-  for (int i = 0; i < params->n_exam_obj; i++) {
-    cache_obj = params->metric_list[i].cache_obj;
-    if (cache_obj->SFIFO_Merge.freq == 0) {
-      params->n_evict_obj += 1;
-    }
-    // cache_obj->SFIFO_Merge.freq = cache_obj->SFIFO_Merge.freq / 2;
-    cache_obj->SFIFO_Merge.freq = cache_obj->SFIFO_Merge.freq - 1;
-    // cache_obj->SFIFO_Merge.freq = 0;
-  }
+  // params->n_evict_obj = 0;
+  // for (int i = 0; i < params->n_exam_obj; i++) {
+  //   cache_obj = params->metric_list[i].cache_obj;
+  //   if (cache_obj->SFIFO_Merge.freq == 0) {
+  //     params->n_evict_obj += 1;
+  //   }
+  //   // cache_obj->SFIFO_Merge.freq = cache_obj->SFIFO_Merge.freq / 2;
+  //   cache_obj->SFIFO_Merge.freq = cache_obj->SFIFO_Merge.freq - 1;
+  //   // cache_obj->SFIFO_Merge.freq = 0;
+  // }
 
   // printf("cache size %ld: evict %d/%d object\n", cache->cache_size,
   // params->n_evict_obj, params->n_exam_obj);
