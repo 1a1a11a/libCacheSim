@@ -77,6 +77,8 @@ reader_t *setup_reader(const char *const trace_path,
   reader->sampler = NULL;
   reader->trace_start_offset = 0;
   reader->read_direction = READ_FORWARD;
+  reader->n_req_left = 0;
+  reader->last_req_clock_time = -1;
 
   if (init_params != NULL) {
     memcpy(&reader->init_params, init_params, sizeof(reader_init_param_t));
@@ -280,93 +282,100 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     return 1;
   }
 
-  size_t offset_before_read = reader->mmap_offset;
+  int status = 0;
+  if (reader->n_req_left > 0) {
+    reader->n_req_left -= 1;
+    req->clock_time = reader->last_req_clock_time;
 
-  int status;
-  reader->n_read_req += 1;
-  req->hv = 0;
-  req->valid = true;
+  } else {
+    size_t offset_before_read = reader->mmap_offset;
 
-  switch (reader->trace_type) {
-    case CSV_TRACE:
-      offset_before_read = ftell(reader->file);
-      status = csv_read_one_req(reader, req);
-      break;
-    case PLAIN_TXT_TRACE:;
-      offset_before_read = ftell(reader->file);
-      status = txt_read_one_req(reader, req);
-      break;
-    case BIN_TRACE:
-      status = binary_read_one_req(reader, req);
-      break;
-    case VSCSI_TRACE:
-      status = vscsi_read_one_req(reader, req);
-      break;
-    case TWR_TRACE:
-      status = twr_read_one_req(reader, req);
-      break;
-    case TWRNS_TRACE:
-      status = twrNS_read_one_req(reader, req);
-      break;
-    case CF1_TRACE:
-      status = cf1_read_one_req(reader, req);
-      break;
-    case AKAMAI_TRACE:
-      status = akamai_read_one_req(reader, req);
-      break;
-    case WIKI16u_TRACE:
-      status = wiki2016u_read_one_req(reader, req);
-      break;
-    case WIKI19u_TRACE:
-      status = wiki2019u_read_one_req(reader, req);
-      break;
-    case WIKI19t_TRACE:
-      status = wiki2019t_read_one_req(reader, req);
-      break;
-    case STANDARD_III_TRACE:
-      status = standardBinIII_read_one_req(reader, req);
-      break;
-    case STANDARD_IQI_TRACE:
-      status = standardBinIQI_read_one_req(reader, req);
-      break;
-    case STANDARD_IQQ_TRACE:
-      status = standardBinIQQ_read_one_req(reader, req);
-      break;
-    case STANDARD_IQIBH_TRACE:
-      status = standardBinIQIBH_read_one_req(reader, req);
-      break;
-    case ORACLE_GENERAL_TRACE:
-      status = oracleGeneralBin_read_one_req(reader, req);
-      break;
-    case ORACLE_GENERALOPNS_TRACE:
-      status = oracleGeneralOpNS_read_one_req(reader, req);
-      break;
-    case ORACLE_SIM_TWR_TRACE:
-      status = oracleSimTwrBin_read_one_req(reader, req);
-      break;
-    case ORACLE_SYS_TWRNS_TRACE:
-      status = oracleSysTwrNSBin_read_one_req(reader, req);
-      break;
-    case ORACLE_SIM_TWRNS_TRACE:
-      status = oracleSimTwrNSBin_read_one_req(reader, req);
-      break;
-    case ORACLE_CF1_TRACE:
-      status = oracleCF1_read_one_req(reader, req);
-      break;
-    case ORACLE_AKAMAI_TRACE:
-      status = oracleAkamai_read_one_req(reader, req);
-      break;
-    case ORACLE_WIKI16u_TRACE:
-      status = oracleWiki2016u_read_one_req(reader, req);
-      break;
-    case ORACLE_WIKI19u_TRACE:
-      status = oracleWiki2019u_read_one_req(reader, req);
-      break;
-    default:
-      ERROR(
-          "cannot recognize reader obj_id_type, given reader obj_id_type: %c\n",
-          reader->trace_type);
-      abort();
+    reader->n_read_req += 1;
+    req->hv = 0;
+    req->valid = true;
+
+    switch (reader->trace_type) {
+      case CSV_TRACE:
+        offset_before_read = ftell(reader->file);
+        status = csv_read_one_req(reader, req);
+        break;
+      case PLAIN_TXT_TRACE:;
+        offset_before_read = ftell(reader->file);
+        status = txt_read_one_req(reader, req);
+        break;
+      case BIN_TRACE:
+        status = binary_read_one_req(reader, req);
+        break;
+      case VSCSI_TRACE:
+        status = vscsi_read_one_req(reader, req);
+        break;
+      case TWR_TRACE:
+        status = twr_read_one_req(reader, req);
+        break;
+      case TWRNS_TRACE:
+        status = twrNS_read_one_req(reader, req);
+        break;
+      case CF1_TRACE:
+        status = cf1_read_one_req(reader, req);
+        break;
+      case AKAMAI_TRACE:
+        status = akamai_read_one_req(reader, req);
+        break;
+      case WIKI16u_TRACE:
+        status = wiki2016u_read_one_req(reader, req);
+        break;
+      case WIKI19u_TRACE:
+        status = wiki2019u_read_one_req(reader, req);
+        break;
+      case WIKI19t_TRACE:
+        status = wiki2019t_read_one_req(reader, req);
+        break;
+      case STANDARD_III_TRACE:
+        status = standardBinIII_read_one_req(reader, req);
+        break;
+      case STANDARD_IQI_TRACE:
+        status = standardBinIQI_read_one_req(reader, req);
+        break;
+      case STANDARD_IQQ_TRACE:
+        status = standardBinIQQ_read_one_req(reader, req);
+        break;
+      case STANDARD_IQIBH_TRACE:
+        status = standardBinIQIBH_read_one_req(reader, req);
+        break;
+      case ORACLE_GENERAL_TRACE:
+        status = oracleGeneralBin_read_one_req(reader, req);
+        break;
+      case ORACLE_GENERALOPNS_TRACE:
+        status = oracleGeneralOpNS_read_one_req(reader, req);
+        break;
+      case ORACLE_SIM_TWR_TRACE:
+        status = oracleSimTwrBin_read_one_req(reader, req);
+        break;
+      case ORACLE_SYS_TWRNS_TRACE:
+        status = oracleSysTwrNSBin_read_one_req(reader, req);
+        break;
+      case ORACLE_SIM_TWRNS_TRACE:
+        status = oracleSimTwrNSBin_read_one_req(reader, req);
+        break;
+      case ORACLE_CF1_TRACE:
+        status = oracleCF1_read_one_req(reader, req);
+        break;
+      case ORACLE_AKAMAI_TRACE:
+        status = oracleAkamai_read_one_req(reader, req);
+        break;
+      case ORACLE_WIKI16u_TRACE:
+        status = oracleWiki2016u_read_one_req(reader, req);
+        break;
+      case ORACLE_WIKI19u_TRACE:
+        status = oracleWiki2019u_read_one_req(reader, req);
+        break;
+      default:
+        ERROR(
+            "cannot recognize reader obj_id_type, given reader obj_id_type: "
+            "%c\n",
+            reader->trace_type);
+        abort();
+    }
   }
 
   if (reader->sampler != NULL) {
@@ -395,7 +404,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
   }
 
   VVERBOSE("read one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
-          req->clock_time, req->obj_id, req->obj_size, offset_before_read);
+           req->clock_time, req->obj_id, req->obj_size, offset_before_read);
 
   return status;
 }

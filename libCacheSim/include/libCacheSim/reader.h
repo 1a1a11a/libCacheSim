@@ -46,6 +46,7 @@ typedef struct {
   int obj_size_field;
   int op_field;
   int ttl_field;
+  int cnt_field;
   int next_access_vtime_field;
 
   // csv reader
@@ -116,10 +117,11 @@ typedef struct reader {
   /* if true, ignore the obj_size in the trace, and use size one */
   bool ignore_obj_size;
 
-  /* this is used when the reader splits a large req into multiple chunked
-   * requests */
-  int n_chunked_req_left;
-  int64_t chunked_req_clock_time;
+  /* this is used when 
+   * a) the reader splits a large req into multiple chunked requests 
+   * b) the trace file uses a count field */
+  int n_req_left;
+  int64_t last_req_clock_time;
 
   /* used for trace sampling */
   sampler_t *sampler;
@@ -268,13 +270,13 @@ static inline void print_reader(reader_t *reader) {
       "%lu, is_zstd_file: %d, item_size: %zu, file: %p, line_buf: "
       "%p, line_buf_size: %zu, csv_delimiter: %c, csv_has_header: %d, "
       "obj_id_is_num: %d, ignore_size_zero_req: %d, ignore_obj_size: %d, "
-      "n_chunked_req_left: %d, chunked_req_clock_time: %ld\n",
+      "n_req_left: %d, last_req_clock_time: %ld\n",
       trace_type_str[reader->trace_type], reader->trace_path,
       reader->trace_start_offset, reader->mmap_offset, reader->is_zstd_file,
       reader->item_size, reader->file, reader->line_buf, reader->line_buf_size,
       reader->csv_delimiter, reader->csv_has_header, reader->obj_id_is_num,
       reader->ignore_size_zero_req, reader->ignore_obj_size,
-      reader->n_chunked_req_left, reader->chunked_req_clock_time);
+      reader->n_req_left, reader->last_req_clock_time);
 }
 
 #ifdef __cplusplus

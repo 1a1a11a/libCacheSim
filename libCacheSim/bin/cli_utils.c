@@ -1,12 +1,13 @@
 
 
 #define _GNU_SOURCE
+#include "cli_utils.h"
+
 #include <assert.h>
 #include <string.h>
 
-#include "../utils/include/mystr.h"
 #include "../include/libCacheSim/reader.h"
-#include "cli_utils.h"
+#include "../utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -116,6 +117,11 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
       params->obj_size_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2)
         ERROR("param parsing error, find string \"%s\" after number\n", end);
+    } else if (strcasecmp(key, "cnt-col") == 0 ||
+               strcasecmp(key, "cnt-field") == 0) {
+      params->cnt_field = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2)
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
     } else if (strcasecmp(key, "next-access-col") == 0 ||
                strcasecmp(key, "next-access-field") == 0) {
       params->next_access_vtime_field = (int)strtol(value, &end, 0);
@@ -212,7 +218,7 @@ bool should_disable_obj_metadata(reader_t *reader) {
   }
   free_request(req);
   reset_reader(reader);
-  
+
   return disable_obj_metadata;
 }
 #undef N_TEST

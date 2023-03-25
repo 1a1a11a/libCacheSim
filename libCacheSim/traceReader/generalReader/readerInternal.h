@@ -25,6 +25,9 @@ typedef struct {
   int time_field_idx;
   int obj_id_field_idx;
   int obj_size_field_idx;
+  int op_field_idx;
+  int cnt_field_idx;
+  int ttl_field_idx;
   bool has_header;
   unsigned char delimiter;
 
