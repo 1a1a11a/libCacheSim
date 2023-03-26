@@ -121,7 +121,7 @@ struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
   obj_id_t obj_id;
-  int32_t obj_size;
+  uint32_t obj_size;
   struct {
     struct cache_obj *prev;
     struct cache_obj *next;

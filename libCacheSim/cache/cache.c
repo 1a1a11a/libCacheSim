@@ -217,7 +217,7 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
-  cache->occupied_byte += cache_obj->obj_size + cache->obj_md_size;
+  cache->occupied_byte += (int64_t) cache_obj->obj_size + (int64_t) cache->obj_md_size;
   cache->n_obj += 1;
 
 #ifdef SUPPORT_TTL

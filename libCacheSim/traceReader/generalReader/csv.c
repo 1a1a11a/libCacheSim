@@ -314,6 +314,11 @@ int csv_read_one_req(reader_t *const reader, request_t *const req) {
 
   csv_fini(csv_params->csv_parser, csv_cb1, csv_cb2, reader);
 
+  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
+      reader->read_direction == READ_FORWARD) {
+    return csv_read_one_req(reader, req);
+  }
+
   if (reader->n_req_left > 0) 
     reader->last_req_clock_time = req->clock_time;
 

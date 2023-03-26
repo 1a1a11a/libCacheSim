@@ -559,7 +559,7 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
       // delete the LRU end of the L2 ghost
       if (params->L2_ghost_size > 0) {
         // it maybe empty if object size is variable
-      _ARC_evict_L2_ghost(cache, req);
+        _ARC_evict_L2_ghost(cache, req);
       }
     }
     return _ARC_replace(cache, req);
@@ -684,7 +684,7 @@ static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
 
 static inline void _ARC_sanity_check_full(cache_t *cache,
                                           const request_t *req) {
-  // if (cache->n_req < 13200000) return;
+  if (cache->n_req < 380000) return;
 
   _ARC_sanity_check(cache, req);
 
@@ -748,9 +748,9 @@ static bool ARC_get_debug(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
   _ARC_sanity_check_full(cache, req);
-  printf("%ld obj_id %ld, p %.2lf\n", cache->n_req, req->obj_id, params->p);
-  print_cache(cache);
-  printf("***************************************\n");
+  // printf("%ld obj_id %ld, p %.2lf\n", cache->n_req, req->obj_id, params->p);
+  // print_cache(cache);
+  // printf("***************************************\n");
 
   cache_obj_t *obj = cache->find(cache, req, true);
   cache->last_request_metadata = obj != NULL ? (void *)"hit" : (void *)"miss";
@@ -764,6 +764,8 @@ static bool ARC_get_debug(cache_t *cache, const request_t *req) {
          cache->cache_size) {
     cache->evict(cache, req);
   }
+
+  _ARC_sanity_check_full(cache, req);
 
   cache->insert(cache, req);
   _ARC_sanity_check_full(cache, req);
