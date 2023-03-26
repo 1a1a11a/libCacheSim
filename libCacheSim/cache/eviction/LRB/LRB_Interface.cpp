@@ -97,15 +97,15 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
+  auto *params = my_malloc(LRB_params_t);
+  memset(params, 0, sizeof(LRB_params_t));
+  cache->eviction_params = params;
+
   if (cache_specific_params != NULL) {
     LRB_parse_params(cache, cache_specific_params);
   } else {
     LRB_parse_params(cache, DEFAULT_PARAMS);
   }
-
-  auto *params = my_malloc(LRB_params_t);
-  memset(params, 0, sizeof(LRB_params_t));
-  cache->eviction_params = params;
 
   auto *lrb = new lrb::LRBCache();
   params->LRB_cache = static_cast<void *>(lrb);
@@ -339,6 +339,9 @@ static void LRB_parse_params(cache_t *cache,
 
     if (strcasecmp(key, "objective") == 0) {
       params->objective = strdup(value);
+      if (params->objective == NULL) {
+        ERROR("out of memory %s\n", strerror(errno));
+      }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", LRB_current_params(cache, params));
       exit(0);
