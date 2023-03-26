@@ -264,7 +264,7 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
       remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
       prepend_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
       params->L1_data_size -= obj->obj_size + cache->obj_md_size;
-      params->L2_data_size += req->obj_size + cache->obj_md_size;
+      params->L2_data_size += obj->obj_size + cache->obj_md_size;
     } else {
       // move to LRU2 head
       move_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
@@ -559,7 +559,7 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
       // delete the LRU end of the L2 ghost
       if (params->L2_ghost_size > 0) {
         // it maybe empty if object size is variable
-        _ARC_evict_L2_ghost(cache, req);
+      _ARC_evict_L2_ghost(cache, req);
       }
     }
     return _ARC_replace(cache, req);
@@ -684,7 +684,7 @@ static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
 
 static inline void _ARC_sanity_check_full(cache_t *cache,
                                           const request_t *req) {
-  if (cache->n_req < 380000) return;
+  // if (cache->n_req < 13200000) return;
 
   _ARC_sanity_check(cache, req);
 
@@ -758,6 +758,10 @@ static bool ARC_get_debug(cache_t *cache, const request_t *req) {
   if (obj != NULL) {
     _ARC_sanity_check_full(cache, req);
     return true;
+  }
+
+  if (!cache->can_insert(cache, req)) {
+    return false;
   }
 
   while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
