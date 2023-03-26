@@ -518,10 +518,8 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
       DEBUG_ASSERT(ghost_to_evict != NULL);
       params->lru_g_occupied_byte -=
           (ghost_to_evict->obj_size + cache->obj_md_size);
-      params->ghost_lru_tail = params->ghost_lru_tail->queue.prev;
-      if (likely(params->ghost_lru_tail != NULL)) {
-        params->ghost_lru_tail->queue.next = NULL;
-      }
+      remove_obj_from_list(&params->ghost_lru_head, &params->ghost_lru_tail,
+                           ghost_to_evict);
       hashtable_delete(cache->hashtable, ghost_to_evict);
     }
   } else if (obj_to_evict->LeCaR.evict_expert == 2) {
@@ -534,10 +532,8 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
       DEBUG_ASSERT(ghost_to_evict != NULL);
       params->lfu_g_occupied_byte -=
           (ghost_to_evict->obj_size + cache->obj_md_size);
-      params->ghost_lfu_tail = params->ghost_lfu_tail->queue.prev;
-      if (likely(params->ghost_lfu_tail != NULL)) {
-        params->ghost_lfu_tail->queue.next = NULL;
-      }
+      remove_obj_from_list(&params->ghost_lfu_head, &params->ghost_lfu_tail,
+                           ghost_to_evict);
       hashtable_delete(cache->hashtable, ghost_to_evict);
     }
   }
