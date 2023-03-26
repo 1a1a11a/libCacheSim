@@ -3,6 +3,7 @@
 #include <glib.h>
 
 #include "../cache.h"
+#include "../evictionAlgo.h"
 #include "inttypes.h"
 
 typedef struct SR_LRU_params {

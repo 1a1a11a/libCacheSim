@@ -25,6 +25,10 @@ static cache_obj_t *SR_LRU_to_evict(cache_t *cache, const request_t *req);
 static void SR_LRU_evict(cache_t *cache, const request_t *req);
 static bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id);
 
+static bool SR_LRU_can_insert(cache_t *cache, const request_t *req);
+static int64_t SR_LRU_get_occupied_byte(const cache_t *cache);
+static int64_t SR_LRU_get_n_obj(const cache_t *cache);
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   end user facing functions                   ****
@@ -50,6 +54,10 @@ cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
   cache->evict = SR_LRU_evict;
   cache->remove = SR_LRU_remove;
   cache->to_evict = SR_LRU_to_evict;
+  cache->can_insert = SR_LRU_can_insert;
+  cache->get_occupied_byte = SR_LRU_get_occupied_byte;
+  cache->get_n_obj = SR_LRU_get_n_obj;
+
   cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
@@ -236,9 +244,8 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
 
   bool ck_hist = params->H_list->find(params->H_list, req, false) != NULL;
-  // it may crash here if the cache size is too small
-  DEBUG_ASSERT(req->obj_size + cache->obj_md_size <
-               params->SR_list->cache_size);
+  cache_obj_t *obj = NULL;
+
   // If history hit
   if (ck_hist) {
     // On a cache miss where x is in H, x is moved to the MRU position of R.
@@ -264,7 +271,7 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
     }
 
     params->R_list->insert(params->R_list, req);
-    cache_obj_t *obj = params->R_list->find(params->R_list, req, false);
+    obj = params->R_list->find(params->R_list, req, false);
 
     // Dynamic size adjustment
     // If an obj is moved from H to R
@@ -289,7 +296,7 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   } else {
     // cache miss, history miss
     params->SR_list->insert(params->SR_list, req);
-    cache_obj_t *obj = params->SR_list->find(params->SR_list, req, false);
+    obj = params->SR_list->find(params->SR_list, req, false);
 
     // label that obj as new obj;
     obj->SR_LRU.new_obj = true;
@@ -328,7 +335,7 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
   cache->occupied_byte =
       params->SR_list->occupied_byte + params->R_list->occupied_byte;
 
-  return NULL;
+  return obj;
 }
 
 /**
@@ -468,6 +475,34 @@ static bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
 
   return true;
 }
+
+static bool SR_LRU_can_insert(cache_t *cache, const request_t *req) {
+  SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
+
+  bool ck_hist = params->H_list->find(params->H_list, req, false) != NULL;
+
+  if (ck_hist) {
+    // it may crash here if the cache size is too small
+    if (req->obj_size + cache->obj_md_size > params->R_list->cache_size) {
+      // If the object is too large to be cached, it is not cached.
+      return FALSE;
+    }
+
+  } else {
+    if (req->obj_size + cache->obj_md_size > params->SR_list->cache_size) {
+      // If the object is too large to be cached, it is not cached.
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+static int64_t SR_LRU_get_occupied_byte(const cache_t *cache) {
+  return cache->occupied_byte;
+}
+
+static int64_t SR_LRU_get_n_obj(const cache_t *cache) { return cache->n_obj; }
 
 #ifdef __cplusplus
 }

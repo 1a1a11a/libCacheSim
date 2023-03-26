@@ -18,10 +18,12 @@ ongoing
 
 
 ### traceConv
-Convert a trace to libCacheSim format so it has a smaller size and runs faster. 
+Convert a trace to libCacheSim format so it has a smaller size, contains next request time (oracle information) and runs faster. 
 ```bash
 ./traceConv ../data/trace.vscsi vscsi ../data/trace.vscsi.bin
 ```
+Note that the conversion supports all trace types including csv trace. Note that if the object id is numeric, add the option -e `obj_id_is_num=1` to the command line, which reduces memory usage.
+
 
 We can also sample a trace to reduce the size of the trace. 
 ```bash
