@@ -19,8 +19,8 @@ typedef struct SR_LRU_params {
 typedef struct CR_LFU_params {
   freq_node_t *freq_one_node;
   GHashTable *freq_map;
-  uint64_t min_freq;
-  uint64_t max_freq;
+  int64_t min_freq;
+  int64_t max_freq;
   cache_t *other_cache;
   request_t *req_local;
 } CR_LFU_params_t;

@@ -292,9 +292,14 @@ static cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req) {
   if (params->max_freq < cache_obj->lfu.freq) {
     params->max_freq = cache_obj->lfu.freq;
   }
-  if (params->min_freq > cache_obj->lfu.freq) {
+  if (params->min_freq > cache_obj->lfu.freq || params->min_freq == -1) {
+    // when considering object size, it is possible that
+    // one object evicts all other objects
+    // and it has a frequency more than 1
+    // because the history is kept in SR-LRU
     params->min_freq = cache_obj->lfu.freq;
   }
+
   freq_node_t *min_freq_node =
       g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));
   DEBUG_ASSERT(min_freq_node != NULL);
@@ -337,7 +342,8 @@ static void CR_LFU_evict(cache_t *cache, const request_t *req) {
     // SR-LRU In case in the future history hit, LFU can load that frequency
     // again.
     SR_LRU_params_t *p = params->other_cache->eviction_params;
-    cache_obj_t *obj_other_cache = p->H_list->find(p->H_list, params->req_local, false);
+    cache_obj_t *obj_other_cache =
+        p->H_list->find(p->H_list, params->req_local, false);
     DEBUG_ASSERT(obj_other_cache != NULL);
     obj_other_cache->CR_LFU.freq = obj_to_evict->lfu.freq;
   }
@@ -360,7 +366,12 @@ static void CR_LFU_evict(cache_t *cache, const request_t *req) {
         break;
       }
     }
-    DEBUG_ASSERT(params->min_freq > old_min_freq);
+    if (params->min_freq == old_min_freq) {
+      params->min_freq = -1;
+      DEBUG_ASSERT(cache->n_obj == 1);
+    } else {
+      DEBUG_ASSERT(params->min_freq > old_min_freq);
+    }
 
   } else {
     min_freq_node->last_obj = obj_to_evict->queue.prev;
@@ -368,11 +379,13 @@ static void CR_LFU_evict(cache_t *cache, const request_t *req) {
   }
   cache_remove_obj_base(cache, obj_to_evict, true);
 
-  min_freq_node =
-      g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(params->min_freq));
-  DEBUG_ASSERT(min_freq_node != NULL);
-  DEBUG_ASSERT(min_freq_node->last_obj != NULL);
-  DEBUG_ASSERT(min_freq_node->n_obj > 0);
+  if (params->min_freq != -1) {
+    min_freq_node = g_hash_table_lookup(params->freq_map,
+                                        GSIZE_TO_POINTER(params->min_freq));
+    DEBUG_ASSERT(min_freq_node != NULL);
+    DEBUG_ASSERT(min_freq_node->last_obj != NULL);
+    DEBUG_ASSERT(min_freq_node->n_obj > 0);
+  }
 }
 
 static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
@@ -390,7 +403,8 @@ static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
     // SR-LRU In case in the future history hit, LFU can load that frequency
     // again.
     SR_LRU_params_t *p = params->other_cache->eviction_params;
-    cache_obj_t *obj_other_cache = p->H_list->find(p->H_list, params->req_local, false);
+    cache_obj_t *obj_other_cache =
+        p->H_list->find(p->H_list, params->req_local, false);
     // Since we call SR_LRU evict before CR_LFU remove, the obj has to be either
     // in H
     DEBUG_ASSERT(obj_other_cache != NULL);
