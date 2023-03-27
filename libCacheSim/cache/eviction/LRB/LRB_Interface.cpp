@@ -25,7 +25,7 @@ typedef struct {
   cache_obj_t obj_tmp;
 } LRB_params_t;
 
-static const char *DEFAULT_PARAMS = "objective=object-miss-ratio";
+static const char *DEFAULT_PARAMS = "objective=byte-miss-ratio";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -85,11 +85,6 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
   cache->init_params = cache_specific_params;
   cache->to_evict_candidate =
       static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 180;

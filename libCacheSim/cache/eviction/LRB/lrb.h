@@ -304,7 +304,7 @@ public:
             {"objective",        "regression"},
             {"num_iterations",   "32"},
             {"num_leaves",       "32"},
-            {"num_threads",      "4"},
+            {"num_threads",      "1"},
             {"feature_fraction", "0.8"},
             {"bagging_freq",     "5"},
             {"bagging_fraction", "0.8"},
