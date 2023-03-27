@@ -274,6 +274,9 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
     obj = params->main_cache->find(params->main_cache, req, false);
   } else {
     /* insert into the fifo */
+    if (req->obj_size >= params->fifo->cache_size) {
+      return NULL;
+    }
     obj = params->fifo->insert(params->fifo, req);
   }
 
