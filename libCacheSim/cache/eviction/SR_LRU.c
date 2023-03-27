@@ -14,8 +14,6 @@ extern "C" {
 // ****                                                               ****
 // ***********************************************************************
 
-static void SR_LRU_parse_params(cache_t *cache,
-                                const char *cache_specific_params);
 static void SR_LRU_free(cache_t *cache);
 static bool SR_LRU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SR_LRU_find(cache_t *cache, const request_t *req,

@@ -4,6 +4,7 @@
 #include <sys/sysinfo.h>
 #endif
 #include <assert.h>
+#include <libgen.h>
 
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/reader.h"
@@ -12,7 +13,7 @@
 #include "../../utils/include/mysys.h"
 #include "internal.h"
 
-int main(int argc, char **argv) {  
+int main(int argc, char **argv) {
   struct arguments args;
   parse_cmd(argc, argv, &args);
   if (args.n_cache_size == 0) {
@@ -22,6 +23,8 @@ int main(int argc, char **argv) {
 
   if (args.n_cache_size == 1) {
     simulate(args.reader, args.cache, args.warmup_sec, args.ofilepath);
+    close_reader(args.reader);
+    args.cache->cache_free(args.cache);
     return 0;
   }
 
@@ -40,7 +43,7 @@ int main(int argc, char **argv) {
   char output_str[1024];
   char output_filename[128];
   create_dir("result/");
-  sprintf(output_filename, "result/%s", rindex(args.trace_path, '/') + 1);
+  sprintf(output_filename, "result/%s", basename(args.trace_path));
   FILE *output_file = fopen(output_filename, "a");
 
   uint64_t size_unit = 1;
