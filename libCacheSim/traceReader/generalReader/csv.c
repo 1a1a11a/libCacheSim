@@ -154,7 +154,7 @@ static bool csv_detect_header(const reader_t *reader) {
 }
 
 /**
- * @brief check whether the trace uses the given delimiter by making sure 
+ * @brief check whether the trace uses the given delimiter by making sure
  *        the delimiter is in each line
  *
  * @param reader
@@ -314,13 +314,15 @@ int csv_read_one_req(reader_t *const reader, request_t *const req) {
 
   csv_fini(csv_params->csv_parser, csv_cb1, csv_cb2, reader);
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD) {
-    return csv_read_one_req(reader, req);
+  if (req->obj_size == 0 && reader->ignore_size_zero_req) {
+    if (reader->read_direction == READ_FORWARD) {
+      return csv_read_one_req(reader, req);
+    } else {
+      return read_one_req_above(reader, req);
+    }
   }
 
-  if (reader->n_req_left > 0) 
-    reader->last_req_clock_time = req->clock_time;
+  if (reader->n_req_left > 0) reader->last_req_clock_time = req->clock_time;
 
   return 0;
 }
