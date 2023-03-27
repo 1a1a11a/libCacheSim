@@ -199,13 +199,17 @@ static void QDLPv2_update_fifo_size(cache_t *cache, const request_t *req) {
 
   if (cond1 && cond2) {
     if (params->fifo_eviction_hit > params->main_eviction_hit * 2) {
-      if (params->main_cache->cache_size > step) {
+      // if (params->main_cache->cache_size > step) {
+      if (params->main_cache->cache_size > cache->cache_size / 100) {
         params->fifo->cache_size += step;
+        params->fifo_ghost->cache_size += step;
         params->main_cache->cache_size -= step;
       }
     } else if (params->main_eviction_hit > params->fifo_eviction_hit * 2) {
-      if (params->fifo->cache_size > step) {
+      // if (params->fifo->cache_size > step) {
+      if (params->fifo->cache_size > cache->cache_size / 100) {
         params->fifo->cache_size -= step;
+        params->fifo_ghost->cache_size -= step;
         params->main_cache->cache_size += step;
       }
     }
@@ -220,25 +224,13 @@ static void QDLPv2_update_fifo_size2(cache_t *cache, const request_t *req) {
   assert(params->fifo_eviction_hit + params->main_eviction_hit <= 1);
   if (params->fifo_eviction_hit == 1 && params->main_cache->cache_size > 1) {
     params->fifo->cache_size += 1;
-    // params->main_cache->cache_size -= 1;
+    params->main_cache->cache_size -= 1;
   } else if (params->main_eviction_hit == 1 && params->fifo->cache_size > 1) {
     params->main_cache->cache_size += 1;
-    // params->fifo->cache_size -= 1;
+    params->fifo->cache_size -= 1;
   }
   params->fifo_eviction_hit = 0;
   params->main_eviction_hit = 0;
-}
-
-static void QDLPv2_update_fifo_size4(cache_t *cache, const request_t *req) {
-  QDLPv2_params_t *params = (QDLPv2_params_t *)cache->eviction_params;
-
-  if (req->clock_time < 86400) {
-    params->fifo->cache_size = cache->cache_size * 0.88;
-    params->main_cache->cache_size = cache->cache_size * 0.12;
-  } else {
-    params->fifo->cache_size = cache->cache_size * 0.01;
-    params->main_cache->cache_size = cache->cache_size * 0.99;
-  }
 }
 
 /**
@@ -266,16 +258,20 @@ static bool QDLPv2_get(cache_t *cache, const request_t *req) {
                    params->main_cache->get_occupied_byte(params->main_cache) <=
                cache->cache_size);
 
-  static __thread int64_t last_print_rtime = 0;
-  if (req->clock_time - last_print_rtime >= 24 * 3600) {
-    printf("%ld %ld: %d %d, %ld/%ld %ld/%ld\n", req->clock_time, cache->n_req,
-           params->fifo_eviction_hit, params->main_eviction_hit,
-           params->fifo->get_occupied_byte(params->fifo),
-           params->fifo->cache_size, 
-           params->main_cache->get_occupied_byte(params->main_cache),
-           params->main_cache->cache_size);
-    last_print_rtime = req->clock_time;
-  }
+  // static __thread int64_t last_print_rtime = 0;
+  // if (req->clock_time - last_print_rtime >= 24 * 3600) {
+  //   printf(
+  //       "%ld %ld day: evictHit %d %d, fifo size %ld/%ld main size %ld/%ld, ghost "
+  //       "size %ld/%ld\n",
+  //       cache->n_req, req->clock_time / 86400, params->fifo_eviction_hit,
+  //       params->main_eviction_hit,
+  //       params->fifo->get_occupied_byte(params->fifo), params->fifo->cache_size,
+  //       params->main_cache->get_occupied_byte(params->main_cache),
+  //       params->main_cache->cache_size,
+  //       params->fifo_ghost->get_occupied_byte(params->fifo_ghost),
+  //       params->fifo_ghost->cache_size);
+  //   last_print_rtime = req->clock_time;
+  // }
 
   QDLPv2_update_fifo_size(cache, req);
 
@@ -367,6 +363,8 @@ static cache_obj_t *QDLPv2_insert(cache_t *cache, const request_t *req) {
     /* insert into the fifo */
     obj = params->fifo->insert(params->fifo, req);
   }
+
+  assert(obj->misc.freq == 0);
 
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   obj->create_time = CURR_TIME(cache, req);
