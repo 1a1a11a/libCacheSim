@@ -13,6 +13,10 @@
 #include "../cli_utils.h"
 #include "internal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 const char *argp_program_version = "cachesim 0.0.1";
 const char *argp_program_bug_address =
     "https://groups.google.com/g/libcachesim";
@@ -344,6 +348,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cache = Clock_init(cc_params, args->eviction_params);
   } else if (strcasecmp(args->eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, args->eviction_params);
+  } else if (strcasecmp(args->eviction_algo, "flashProb") == 0) {
+    cache = flashProb_init(cc_params, args->eviction_params);
 #if defined(ENABLE_GLCACHE)
   } else if (strcasecmp(args->eviction_algo, "GLCache") == 0 ||
              strcasecmp(args->eviction_algo, "gl-cache") == 0) {
@@ -405,3 +411,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   print_parsed_args(args);
 }
+
+#ifdef __cplusplus
+}
+#endif

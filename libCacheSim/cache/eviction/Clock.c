@@ -18,15 +18,7 @@ extern "C" {
 #endif
 
 // #define USE_BELADY
-
-typedef struct {
-  cache_obj_t *q_head;
-  cache_obj_t *q_tail;
-  // clock uses one-bit counter
-  int n_bit_counter;
-  // max_freq = 1 << (n_bit_counter - 1)
-  int max_freq;
-} Clock_params_t;
+#undef USE_BELADY
 
 static const char *DEFAULT_PARAMS = "n-bit-counter=1";
 
@@ -82,6 +74,7 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
 #endif
 
   cache->eviction_params = malloc(sizeof(Clock_params_t));
+  memset(cache->eviction_params, 0, sizeof(Clock_params_t));
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
   params->q_head = NULL;
   params->q_tail = NULL;
@@ -235,6 +228,8 @@ static void Clock_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj_to_evict = params->q_tail;
   while (obj_to_evict->clock.freq >= 1) {
     obj_to_evict->clock.freq -= 1;
+    params->n_obj_rewritten += 1;
+    params->n_byte_rewritten += obj_to_evict->obj_size;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
   }

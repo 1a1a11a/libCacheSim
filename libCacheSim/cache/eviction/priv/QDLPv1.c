@@ -25,6 +25,14 @@ typedef struct {
   cache_t *main_cache;
   bool hit_on_ghost;
 
+  int64_t n_obj_admit_to_fifo;
+  int64_t n_obj_admit_to_main;
+  int64_t n_obj_move_to_main;
+  int64_t n_byte_admit_to_fifo;
+  int64_t n_byte_admit_to_main;
+  int64_t n_byte_move_to_main;
+
+  int move_to_main_threshold;
   double fifo_size_ratio;
   double ghost_size_ratio;
   char main_cache_type[32];
@@ -32,8 +40,9 @@ typedef struct {
   request_t *req_local;
 } QDLPv1_params_t;
 
+
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.1,ghost-size-ratio=0.9,main-cache=ARC";
+    "fifo-size-ratio=0.05,ghost-size-ratio=0.9,main-cache=Clock,move-to-main-threshold=1";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -151,7 +160,8 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
 #endif
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv1-%.4lf-%.4lf-%s",
-           params->fifo_size_ratio, params->ghost_size_ratio, params->main_cache_type);
+           params->fifo_size_ratio, params->ghost_size_ratio,
+           params->main_cache_type);
 
   return cache;
 }
@@ -199,6 +209,7 @@ static bool QDLPv1_get(cache_t *cache, const request_t *req) {
                cache->cache_size);
 
   bool cache_hit = cache_get_base(cache, req);
+
   return cache_hit;
 }
 
@@ -270,6 +281,8 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
   if (params->hit_on_ghost) {
     /* insert into the ARC */
     params->hit_on_ghost = false;
+    params->n_obj_admit_to_main += 1;
+    params->n_byte_admit_to_main += req->obj_size;
     params->main_cache->get(params->main_cache, req);
     obj = params->main_cache->find(params->main_cache, req, false);
   } else {
@@ -277,6 +290,8 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
     if (req->obj_size >= params->fifo->cache_size) {
       return NULL;
     }
+    params->n_obj_admit_to_fifo += 1;
+    params->n_byte_admit_to_fifo += req->obj_size;
     obj = params->fifo->insert(params->fifo, req);
   }
 
@@ -329,8 +344,9 @@ static void QDLPv1_evict(cache_t *cache, const request_t *req) {
     assert(main->get_occupied_byte(main) <= cache->cache_size);
     // evict from main cache
     main->evict(main, req);
+
     return;
-  }
+  } 
 
   // evict from FIFO
   cache_obj_t *obj = fifo->to_evict(fifo, req);
@@ -339,7 +355,7 @@ static void QDLPv1_evict(cache_t *cache, const request_t *req) {
   copy_cache_obj_to_request(params->req_local, obj);
 
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  if (obj->misc.freq > 0) {
+  if (obj->misc.freq >= params->move_to_main_threshold) {
     // get will insert to and evict from main cache
     params->main_cache->get(params->main_cache, params->req_local);
     main->find(main, params->req_local, false)->create_time = obj->create_time;
@@ -359,7 +375,9 @@ static void QDLPv1_evict(cache_t *cache, const request_t *req) {
   fifo->remove(fifo, params->req_local->obj_id);
 
   // freq is updated in cache_find_base
-  if (obj->misc.freq > 0) {
+  if (obj->misc.freq >= params->move_to_main_threshold) {
+    params->n_obj_move_to_main += 1;
+    params->n_byte_move_to_main += obj->obj_size;
     //  get will insert to and evict from main cache
     params->main_cache->get(params->main_cache, params->req_local);
   } else {
@@ -448,6 +466,8 @@ static void QDLPv1_parse_params(cache_t *cache,
       params->fifo_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
       params->ghost_size_ratio = strtod(value, NULL);
+    } else if (strcasecmp(key, "move-to-main-threshold") == 0) {
+      params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "main-cache") == 0) {
       strncpy(params->main_cache_type, value, 30);
     } else if (strcasecmp(key, "print") == 0) {

@@ -25,6 +25,19 @@ typedef struct freq_node {
   uint32_t n_obj;
 } freq_node_t;
 
+
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+  // clock uses one-bit counter
+  int n_bit_counter;
+  // max_freq = 1 << (n_bit_counter - 1)
+  int max_freq;
+
+  int64_t n_obj_rewritten;
+  int64_t n_byte_rewritten;
+} Clock_params_t;
+
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
@@ -105,6 +118,9 @@ cache_t *Size_init(const common_cache_params_t ccache_params,
 
 cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params);
+
+cache_t *flashProb_init(const common_cache_params_t ccache_params,
+                        const char *cache_specific_params);
 
 #ifdef ENABLE_LRB
 cache_t *LRB_init(const common_cache_params_t ccache_params,

@@ -8,6 +8,10 @@
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/admissionAlgo.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define N_ARGS 4
 #define N_MAX_CACHE_SIZE 128
 #define OFILEPATH_LEN 128
@@ -57,3 +61,7 @@ int conv_cache_sizes(char *cache_size_str, struct arguments *args);
 void print_parsed_args(struct arguments *args);
 
 bool is_true(const char *arg); 
+
+#ifdef __cplusplus
+}
+#endif

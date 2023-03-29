@@ -46,6 +46,9 @@ typedef struct SFIFO_Reinsertion_params {
   struct sort_list_node *metric_list;
   // the policy to determine the n_keep_obj objects
   retain_policy_t retain_policy;
+
+  int64_t n_obj_rewritten;
+  int64_t n_byte_rewritten;
 } SFIFO_Reinsertion_params_t;
 
 // ***********************************************************************
@@ -113,8 +116,8 @@ cache_t *SFIFO_Reinsertion_init(const common_cache_params_t ccache_params,
   cache->eviction_params = params;
 
   params->n_exam_obj = 100;
-  params->n_keep_obj = params->n_exam_obj / 2;
-  params->retain_policy = RETAIN_POLICY_FREQUENCY;
+  params->n_keep_obj = params->n_exam_obj / 5;
+  params->retain_policy = RETAIN_POLICY_RECENCY;
   params->next_to_merge = NULL;
   params->q_head = NULL;
   params->q_tail = NULL;
@@ -126,8 +129,9 @@ cache_t *SFIFO_Reinsertion_init(const common_cache_params_t ccache_params,
   assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);
   assert(params->n_keep_obj <= params->n_exam_obj);
 
-  snprintf(cache->cache_name, 32, "SFIFO_Reinsertion_%s",
-           retain_policy_names[params->retain_policy]);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "SFIFO_Reinsertion_%s-%.4lf",
+           retain_policy_names[params->retain_policy],
+           (double)params->n_keep_obj / params->n_exam_obj);
   params->metric_list = my_malloc_n(struct sort_list_node, params->n_exam_obj);
 
   return cache;
@@ -304,6 +308,9 @@ static void SFIFO_Reinsertion_evict(cache_t *cache, const request_t *req) {
     move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
     cache_obj->SFIFO_Reinsertion.freq =
         (cache_obj->SFIFO_Reinsertion.freq + 1) / 2;
+
+    params->n_obj_rewritten += 1;
+    params->n_byte_rewritten += cache_obj->obj_size;
   }
 }
 

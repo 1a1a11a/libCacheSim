@@ -40,8 +40,8 @@ typedef struct SFIFO_Merge_params {
   cache_obj_t *next_to_exam;
   // the number of object to examine at each eviction
   int n_exam_obj;
-  // of the n_exam_obj, we evict n_evict_obj and evict the rest
-  int n_evict_obj;
+  // of the n_exam_obj, we keep n_keep_obj and evict the rest
+  int n_keep_obj;
   // used to sort the n_exam_obj objects
   struct sort_list_node *metric_list;
   // the policy to determine the n_keep_obj objects
@@ -112,7 +112,7 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
 
   /* TODO: can we make this parameter adaptive to trace? */
   params->n_exam_obj = 100;
-  params->n_evict_obj = params->n_exam_obj / 4;
+  params->n_keep_obj = params->n_exam_obj / 2;
   params->retain_policy = RETAIN_POLICY_FREQUENCY;
   params->next_to_exam = NULL;
   params->pos_in_metric_list = INT32_MAX;
@@ -121,8 +121,8 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
     SFIFO_Merge_parse_params(cache, cache_specific_params);
   }
 
-  assert(params->n_exam_obj > 0 && params->n_evict_obj >= 0);
-  assert(params->n_evict_obj <= params->n_exam_obj);
+  assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);
+  assert(params->n_keep_obj <= params->n_exam_obj);
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "SFIFO_Merge_%s",
            retain_policy_names[params->retain_policy]);
@@ -250,7 +250,7 @@ static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = NULL;
   // the logic is that - we search for n_exam objects and identify n_exam -
   // n_keep objects to evict, each time we evict one object
-  if (params->pos_in_metric_list < params->n_evict_obj) {
+  if (params->pos_in_metric_list < params->n_exam_obj - params->n_keep_obj) {
     // there are objects identified to evict
     cache_obj = params->metric_list[params->pos_in_metric_list++].cache_obj;
     remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
@@ -348,8 +348,8 @@ bool SFIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id) {
 // ***********************************************************************
 static const char *SFIFO_Merge_current_params(SFIFO_Merge_params_t *params) {
   static __thread char params_str[128];
-  snprintf(params_str, 128, "n-exam=%d, n-evict=%d, retain-policy=%s",
-           params->n_exam_obj, params->n_evict_obj,
+  snprintf(params_str, 128, "n-exam=%d, n-keep=%d, retain-policy=%s",
+           params->n_exam_obj, params->n_keep_obj,
            retain_policy_names[params->retain_policy]);
   return params_str;
 }
@@ -382,7 +382,7 @@ static void SFIFO_Merge_parse_params(cache_t *cache,
         params->retain_policy = RETAIN_POLICY_BELADY;
       else if (strcasecmp(value, "none") == 0) {
         params->retain_policy = RETAIN_NONE;
-        params->n_evict_obj = params->n_exam_obj;
+        params->n_keep_obj = params->n_exam_obj;
       } else {
         ERROR("unknown retain-policy %s\n", value);
         exit(1);
@@ -392,8 +392,8 @@ static void SFIFO_Merge_parse_params(cache_t *cache,
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
       }
-    } else if (strcasecmp(key, "n-evict") == 0) {
-      params->n_evict_obj = (int)strtol(value, &end, 0);
+    } else if (strcasecmp(key, "n-keep") == 0) {
+      params->n_keep_obj = (int)strtol(value, &end, 0);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
       }
