@@ -51,7 +51,7 @@ static bool GDSF_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *GDSF_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("GDSF", ccache_params);
+  cache_t *cache = cache_struct_init("GDSF", ccache_params, cache_specific_params);
   cache->eviction_params = reinterpret_cast<void *>(new eviction::GDSF);
 
   cache->cache_init = GDSF_init;

@@ -74,7 +74,7 @@ static void QDLPv1_parse_params(cache_t *cache,
 
 cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("QDLPv1", ccache_params);
+  cache_t *cache = cache_struct_init("QDLPv1", ccache_params, cache_specific_params);
   cache->cache_init = QDLPv1_init;
   cache->cache_free = QDLPv1_free;
   cache->get = QDLPv1_get;
@@ -83,7 +83,6 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
   cache->evict = QDLPv1_evict;
   cache->remove = QDLPv1_remove;
   cache->to_evict = QDLPv1_to_evict;
-  cache->init_params = cache_specific_params;
   cache->get_n_obj = QDLPv1_get_n_obj;
   cache->get_occupied_byte = QDLPv1_get_occupied_byte;
   cache->can_insert = QDLPv1_can_insert;

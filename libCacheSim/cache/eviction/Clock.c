@@ -53,7 +53,7 @@ static bool Clock_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *Clock_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Clock", ccache_params);
+  cache_t *cache = cache_struct_init("Clock", ccache_params, cache_specific_params);
   cache->cache_init = Clock_init;
   cache->cache_free = Clock_free;
   cache->get = Clock_get;
@@ -65,8 +65,6 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
   cache->get_n_obj = cache_get_n_obj_default;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->to_evict = Clock_to_evict;
-
-  cache->init_params = cache_specific_params;
   cache->obj_md_size = 0;
 
 #ifdef USE_BELADY

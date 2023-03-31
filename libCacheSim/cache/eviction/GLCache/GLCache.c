@@ -128,7 +128,7 @@ static void GLCache_parse_init_params(const char *cache_specific_params,
  */
 cache_t *GLCache_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("GLCache", ccache_params);
+  cache_t *cache = cache_struct_init("GLCache", ccache_params, cache_specific_params);
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 2 + 1 + 8;  // freq, bool, history
@@ -139,7 +139,6 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   // tells hash table that the cache_obj does not need to be free when removed
   // from the hash table
   cache->hashtable->external_obj = true;
-  cache->init_params = cache_specific_params;
 
   GLCache_params_t *params = my_malloc(GLCache_params_t);
   memset(params, 0, sizeof(GLCache_params_t));

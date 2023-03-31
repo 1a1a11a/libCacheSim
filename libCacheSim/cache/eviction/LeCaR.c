@@ -101,9 +101,9 @@ static void update_weight(cache_t *cache, int64_t t, double *w_update,
 cache_t *LeCaR_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
 #ifdef LECAR_USE_BELADY
-  cache_t *cache = cache_struct_init("LeCaR-Belady", ccache_params);
+  cache_t *cache = cache_struct_init("LeCaR-Belady", ccache_params, cache_specific_params);
 #else
-  cache_t *cache = cache_struct_init("LeCaR", ccache_params);
+  cache_t *cache = cache_struct_init("LeCaR", ccache_params, cache_specific_params);
 #endif
   cache->cache_init = LeCaR_init;
   cache->cache_free = LeCaR_free;
@@ -113,7 +113,6 @@ cache_t *LeCaR_init(const common_cache_params_t ccache_params,
   cache->evict = LeCaR_evict;
   cache->remove = LeCaR_remove;
   cache->to_evict = LeCaR_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history

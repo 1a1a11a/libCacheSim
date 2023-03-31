@@ -43,7 +43,7 @@ typedef struct {
 } QDLPv2_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.10,main-cache=Clock-2,move-to-main-threshold=1";
+    "fifo-size-ratio=0.10,main-cache=Clock2,move-to-main-threshold=1";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -75,7 +75,7 @@ static void QDLPv2_parse_params(cache_t *cache,
 
 cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("QDLPv2", ccache_params);
+  cache_t *cache = cache_struct_init("QDLPv2", ccache_params, cache_specific_params);
   cache->cache_init = QDLPv2_init;
   cache->cache_free = QDLPv2_free;
   cache->get = QDLPv2_get;
@@ -84,7 +84,6 @@ cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
   cache->evict = QDLPv2_evict;
   cache->remove = QDLPv2_remove;
   cache->to_evict = QDLPv2_to_evict;
-  cache->init_params = cache_specific_params;
   cache->get_n_obj = QDLPv2_get_n_obj;
   cache->get_occupied_byte = QDLPv2_get_occupied_byte;
   cache->can_insert = QDLPv2_can_insert;

@@ -67,7 +67,7 @@ static void flashProb_parse_params(cache_t *cache,
 
 cache_t *flashProb_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("flashProb", ccache_params);
+  cache_t *cache = cache_struct_init("flashProb", ccache_params, cache_specific_params);
   cache->cache_init = flashProb_init;
   cache->cache_free = flashProb_free;
   cache->get = flashProb_get;
@@ -76,7 +76,6 @@ cache_t *flashProb_init(const common_cache_params_t ccache_params,
   cache->evict = flashProb_evict;
   cache->remove = flashProb_remove;
   cache->to_evict = flashProb_to_evict;
-  cache->init_params = cache_specific_params;
   cache->get_n_obj = flashProb_get_n_obj;
   cache->get_occupied_byte = flashProb_get_occupied_byte;
 

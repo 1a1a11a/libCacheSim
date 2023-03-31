@@ -89,7 +89,7 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj);
  */
 cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
                           const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SFIFO_Merge", ccache_params);
+  cache_t *cache = cache_struct_init("SFIFO_Merge", ccache_params, cache_specific_params);
   cache->cache_init = SFIFO_Merge_init;
   cache->cache_free = SFIFO_Merge_free;
   cache->get = SFIFO_Merge_get;
@@ -98,7 +98,6 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
   cache->evict = SFIFO_Merge_evict;
   cache->remove = SFIFO_Merge_remove;
   cache->to_evict = SFIFO_Merge_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 4;

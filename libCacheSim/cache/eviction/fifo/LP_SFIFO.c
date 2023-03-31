@@ -62,7 +62,7 @@ static void LP_SFIFO_demote(cache_t *cache, const request_t *req, int seg_id);
  */
 cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LP-SFIFO", ccache_params);
+  cache_t *cache = cache_struct_init("LP-SFIFO", ccache_params, cache_specific_params);
   cache->cache_init = LP_SFIFO_init;
   cache->cache_free = LP_SFIFO_free;
   cache->get = LP_SFIFO_get;
@@ -71,7 +71,6 @@ cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
   cache->evict = LP_SFIFO_evict;
   cache->remove = LP_SFIFO_remove;
   cache->to_evict = LP_SFIFO_to_evict;
-  cache->init_params = cache_specific_params;
   cache->get_occupied_byte = LP_SFIFO_get_occupied_byte;
   cache->get_n_obj = LP_SFIFO_get_n_obj;
   cache->can_insert = LP_SFIFO_can_insert;

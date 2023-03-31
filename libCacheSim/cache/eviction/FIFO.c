@@ -48,7 +48,7 @@ static bool FIFO_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *FIFO_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("FIFO", ccache_params);
+  cache_t *cache = cache_struct_init("FIFO", ccache_params, cache_specific_params);
   cache->cache_init = FIFO_init;
   cache->cache_free = FIFO_free;
   cache->get = FIFO_get;
@@ -60,7 +60,6 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
   cache->can_insert = cache_can_insert_default;
-  cache->init_params = cache_specific_params;
   cache->obj_md_size = 0;
 
   cache->eviction_params = malloc(sizeof(FIFO_params_t));

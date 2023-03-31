@@ -74,7 +74,7 @@ static inline void update_min_freq(LFU_params_t *params);
  */
 cache_t *LFU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LFU", ccache_params);
+  cache_t *cache = cache_struct_init("LFU", ccache_params, cache_specific_params);
   cache->cache_init = LFU_init;
   cache->cache_free = LFU_free;
   cache->get = LFU_get;
@@ -83,7 +83,6 @@ cache_t *LFU_init(const common_cache_params_t ccache_params,
   cache->evict = LFU_evict;
   cache->remove = LFU_remove;
   cache->to_evict = LFU_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2;

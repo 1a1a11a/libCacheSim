@@ -72,7 +72,7 @@ static inline int64_t SFIFOv0_get_n_obj(const cache_t *cache);
  */
 cache_t *SFIFOv0_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SFIFOv0", ccache_params);
+  cache_t *cache = cache_struct_init("SFIFOv0", ccache_params, cache_specific_params);
   cache->cache_init = SFIFOv0_init;
   cache->cache_free = SFIFOv0_free;
   cache->get = SFIFOv0_get;
@@ -81,7 +81,6 @@ cache_t *SFIFOv0_init(const common_cache_params_t ccache_params,
   cache->evict = SFIFOv0_evict;
   cache->remove = SFIFOv0_remove;
   cache->to_evict = SFIFOv0_to_evict;
-  cache->init_params = cache_specific_params;
   cache->can_insert = SFIFOv0_can_insert;
   cache->get_occupied_byte = SFIFOv0_get_occupied_byte;
   cache->get_n_obj = SFIFOv0_get_n_obj;

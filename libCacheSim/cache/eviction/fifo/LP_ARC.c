@@ -82,7 +82,7 @@ static bool LP_ARC_get_debug(cache_t *cache, const request_t *req);
  */
 cache_t *LP_ARC_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LP_ARC", ccache_params);
+  cache_t *cache = cache_struct_init("LP_ARC", ccache_params, cache_specific_params);
   cache->cache_init = LP_ARC_init;
   cache->cache_free = LP_ARC_free;
   cache->get = LP_ARC_get;
@@ -94,7 +94,6 @@ cache_t *LP_ARC_init(const common_cache_params_t ccache_params,
   cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = LP_ARC_get_occupied_byte;
   cache->get_n_obj = LP_ARC_get_n_obj;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     // two pointer + ghost metadata

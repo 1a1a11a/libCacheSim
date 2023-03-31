@@ -94,7 +94,7 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj);
  */
 cache_t *SFIFO_Reinsertion_init(const common_cache_params_t ccache_params,
                                 const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SFIFO_Reinsertion", ccache_params);
+  cache_t *cache = cache_struct_init("SFIFO_Reinsertion", ccache_params, cache_specific_params);
   cache->cache_init = SFIFO_Reinsertion_init;
   cache->cache_free = SFIFO_Reinsertion_free;
   cache->get = SFIFO_Reinsertion_get;
@@ -103,7 +103,6 @@ cache_t *SFIFO_Reinsertion_init(const common_cache_params_t ccache_params,
   cache->evict = SFIFO_Reinsertion_evict;
   cache->remove = SFIFO_Reinsertion_remove;
   cache->to_evict = SFIFO_Reinsertion_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 4;

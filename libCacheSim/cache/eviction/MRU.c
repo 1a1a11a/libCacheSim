@@ -51,7 +51,7 @@ static bool MRU_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *MRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("MRU", ccache_params);
+  cache_t *cache = cache_struct_init("MRU", ccache_params, cache_specific_params);
   cache->cache_init = MRU_init;
   cache->cache_free = MRU_free;
   cache->get = MRU_get;
@@ -60,7 +60,6 @@ cache_t *MRU_init(const common_cache_params_t ccache_params,
   cache->evict = MRU_evict;
   cache->to_evict = MRU_to_evict;
   cache->remove = MRU_remove;
-  cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
     printf("MRU does not support any parameters, but got %s\n",

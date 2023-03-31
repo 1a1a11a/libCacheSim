@@ -48,7 +48,7 @@ cache_t *Random_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_copy = ccache_params;
   ccache_params_copy.hashpower = MAX(12, ccache_params_copy.hashpower - 8);
 
-  cache_t *cache = cache_struct_init("Random", ccache_params);
+  cache_t *cache = cache_struct_init("Random", ccache_params, cache_specific_params);
   cache->cache_init = Random_init;
   cache->cache_free = Random_free;
   cache->get = Random_get;
@@ -57,7 +57,6 @@ cache_t *Random_init(const common_cache_params_t ccache_params,
   cache->to_evict = Random_to_evict;
   cache->evict = Random_evict;
   cache->remove = Random_remove;
-  cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
     ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,

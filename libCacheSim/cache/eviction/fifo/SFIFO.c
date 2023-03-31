@@ -119,7 +119,7 @@ static void SFIFO_free(cache_t *cache) {
  */
 cache_t *SFIFO_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SFIFO", ccache_params);
+  cache_t *cache = cache_struct_init("SFIFO", ccache_params, cache_specific_params);
   cache->cache_init = SFIFO_init;
   cache->cache_free = SFIFO_free;
   cache->get = SFIFO_get;
@@ -128,7 +128,6 @@ cache_t *SFIFO_init(const common_cache_params_t ccache_params,
   cache->evict = SFIFO_evict;
   cache->remove = SFIFO_remove;
   cache->to_evict = SFIFO_to_evict;
-  cache->init_params = cache_specific_params;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
   cache->can_insert = SFIFO_can_insert;

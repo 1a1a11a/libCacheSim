@@ -70,7 +70,7 @@ static int64_t myMQv1_get_n_obj(const cache_t *cache);
  */
 cache_t *myMQv1_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("myMQv1", ccache_params);
+  cache_t *cache = cache_struct_init("myMQv1", ccache_params, cache_specific_params);
   cache->cache_init = myMQv1_init;
   cache->cache_free = myMQv1_free;
   cache->get = myMQv1_get;
@@ -82,8 +82,6 @@ cache_t *myMQv1_init(const common_cache_params_t ccache_params,
   cache->get_occupied_byte = myMQv1_get_occupied_byte;
   cache->get_n_obj = myMQv1_get_n_obj;
   cache->can_insert = cache_can_insert_default;
-
-  cache->init_params = cache_specific_params;
   cache->obj_md_size = 0;
 
   cache->eviction_params = malloc(sizeof(myMQv1_params_t));

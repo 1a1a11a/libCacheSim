@@ -52,8 +52,8 @@ static bool LFUCpp_remove(cache_t *cache, const obj_id_t obj_id);
  * function or use -e "print" with the cachesim binary
  */
 cache_t *LFUCpp_init(const common_cache_params_t ccache_params,
-                     const char *init_params) {
-  cache_t *cache = cache_struct_init("LFUCpp", ccache_params);
+                     const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("LFUCpp", ccache_params, cache_specific_params);
   auto *lfu = new eviction::LFUCpp();
   cache->eviction_params = lfu;
 

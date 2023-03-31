@@ -56,7 +56,7 @@ static void Belady_remove_obj(cache_t *cache, cache_obj_t *obj);
 cache_t *Belady_init(const common_cache_params_t ccache_params,
                      __attribute__((unused))
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Belady", ccache_params);
+  cache_t *cache = cache_struct_init("Belady", ccache_params, cache_specific_params);
   cache->cache_init = Belady_init;
   cache->cache_free = Belady_free;
   cache->get = Belady_get;
@@ -65,7 +65,6 @@ cache_t *Belady_init(const common_cache_params_t ccache_params,
   cache->evict = Belady_evict;
   cache->to_evict = Belady_to_evict;
   cache->remove = Belady_remove;
-  cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
     printf("Belady does not support any parameters, but got %s\n",

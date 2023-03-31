@@ -58,7 +58,7 @@ static void free_list_node(void *list_node);
  */
 cache_t *LFUDA_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LFUDA", ccache_params);
+  cache_t *cache = cache_struct_init("LFUDA", ccache_params, cache_specific_params);
   cache->cache_init = LFUDA_init;
   cache->cache_free = LFUDA_free;
   cache->get = LFUDA_get;
@@ -67,7 +67,6 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
   cache->evict = LFUDA_evict;
   cache->remove = LFUDA_remove;
   cache->to_evict = LFUDA_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2;

@@ -103,7 +103,7 @@ static void QDLP_parse_params(cache_t *cache,
  */
 cache_t *QDLP_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("QDLP", ccache_params);
+  cache_t *cache = cache_struct_init("QDLP", ccache_params, cache_specific_params);
   cache->cache_init = QDLP_init;
   cache->cache_free = QDLP_free;
   cache->get = QDLP_get;
@@ -112,7 +112,6 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   cache->evict = QDLP_evict;
   cache->remove = QDLP_remove;
   cache->to_evict = QDLP_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 1;

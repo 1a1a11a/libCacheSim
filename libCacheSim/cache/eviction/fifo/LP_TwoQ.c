@@ -74,7 +74,7 @@ static void LP_TwoQ_parse_params(cache_t *cache,
  */
 cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LP-TwoQv2", ccache_params);
+  cache_t *cache = cache_struct_init("LP-TwoQv2", ccache_params, cache_specific_params);
   cache->cache_init = LP_TwoQ_init;
   cache->cache_free = LP_TwoQ_free;
   cache->get = LP_TwoQ_get;
@@ -83,7 +83,6 @@ cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
   cache->evict = LP_TwoQ_evict;
   cache->remove = LP_TwoQ_remove;
   cache->to_evict = LP_TwoQ_to_evict;
-  cache->init_params = cache_specific_params;
   cache->get_n_obj = LP_TwoQ_get_n_obj;
   cache->get_occupied_byte = LP_TwoQ_get_occupied_byte;
   cache->can_insert = LP_TwoQ_can_insert;

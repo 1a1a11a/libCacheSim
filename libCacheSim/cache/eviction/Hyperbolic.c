@@ -46,7 +46,7 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.hashpower = MAX(12, ccache_params_local.hashpower - 8);
 
-  cache_t *cache = cache_struct_init("Hyperbolic", ccache_params_local);
+  cache_t *cache = cache_struct_init("Hyperbolic", ccache_params_local, cache_specific_params);
   cache->cache_init = Hyperbolic_init;
   cache->cache_free = Hyperbolic_free;
   cache->get = Hyperbolic_get;
@@ -55,7 +55,6 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
   cache->evict = Hyperbolic_evict;
   cache->remove = Hyperbolic_remove;
   cache->to_evict = Hyperbolic_to_evict;
-  cache->init_params = cache_specific_params;
 
   Hyperbolic_params_t *params = my_malloc(Hyperbolic_params_t);
   params->n_sample = 64;

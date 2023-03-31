@@ -43,7 +43,7 @@ static int64_t SR_LRU_get_n_obj(const cache_t *cache);
  */
 cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SR_LRU", ccache_params);
+  cache_t *cache = cache_struct_init("SR_LRU", ccache_params, cache_specific_params);
   cache->cache_init = SR_LRU_init;
   cache->cache_free = SR_LRU_free;
   cache->get = SR_LRU_get;
@@ -55,8 +55,6 @@ cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
   cache->can_insert = SR_LRU_can_insert;
   cache->get_occupied_byte = SR_LRU_get_occupied_byte;
   cache->get_n_obj = SR_LRU_get_n_obj;
-
-  cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
     printf("SR-LRU does not support any parameters, but got %s\n",

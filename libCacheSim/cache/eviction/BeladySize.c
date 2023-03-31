@@ -55,7 +55,7 @@ static void BeladySize_remove_obj(cache_t *cache, cache_obj_t *obj);
  */
 cache_t *BeladySize_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("BeladySize", ccache_params);
+  cache_t *cache = cache_struct_init("BeladySize", ccache_params, cache_specific_params);
 
   cache->cache_init = BeladySize_init;
   cache->cache_free = BeladySize_free;

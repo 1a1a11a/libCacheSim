@@ -98,7 +98,7 @@ static bool ARC_get_debug(cache_t *cache, const request_t *req);
  */
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("ARC", ccache_params);
+  cache_t *cache = cache_struct_init("ARC", ccache_params, cache_specific_params);
   cache->cache_init = ARC_init;
   cache->cache_free = ARC_free;
   cache->get = ARC_get;
@@ -110,7 +110,6 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     // two pointer + ghost metadata
@@ -559,7 +558,7 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
       // delete the LRU end of the L2 ghost
       if (params->L2_ghost_size > 0) {
         // it maybe empty if object size is variable
-      _ARC_evict_L2_ghost(cache, req);
+        _ARC_evict_L2_ghost(cache, req);
       }
     }
     return _ARC_replace(cache, req);

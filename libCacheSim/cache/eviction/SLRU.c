@@ -102,7 +102,7 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req);
  */
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SLRU", ccache_params);
+  cache_t *cache = cache_struct_init("SLRU", ccache_params, cache_specific_params);
   cache->cache_init = SLRU_init;
   cache->cache_free = SLRU_free;
   cache->get = SLRU_get;
@@ -111,7 +111,6 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   cache->evict = SLRU_evict;
   cache->remove = SLRU_remove;
   cache->to_evict = SLRU_to_evict;
-  cache->init_params = cache_specific_params;
   cache->can_insert = SLRU_can_insert;
 
   if (ccache_params.consider_obj_metadata) {

@@ -74,7 +74,7 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
   /* reduce the hash table size */
   updated_cc_params.hashpower -= 2;
 
-  cache_t *cache = cache_struct_init("Cacheus", updated_cc_params);
+  cache_t *cache = cache_struct_init("Cacheus", updated_cc_params, cache_specific_params);
   cache->cache_init = Cacheus_init;
   cache->cache_free = Cacheus_free;
   cache->get = Cacheus_get;
@@ -86,7 +86,6 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
   cache->can_insert = cache_can_insert_default;
   cache->get_n_obj = Cacheus_get_n_obj;
   cache->get_occupied_byte = Cacheus_get_occupied_byte;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history

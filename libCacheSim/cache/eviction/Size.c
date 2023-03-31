@@ -54,7 +54,7 @@ static void Size_remove_obj(cache_t *cache, cache_obj_t *obj);
 cache_t *Size_init(const common_cache_params_t ccache_params,
                      __attribute__((unused))
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Size", ccache_params);
+  cache_t *cache = cache_struct_init("Size", ccache_params, cache_specific_params);
   cache->cache_init = Size_init;
   cache->cache_free = Size_free;
   cache->get = Size_get;
@@ -63,7 +63,6 @@ cache_t *Size_init(const common_cache_params_t ccache_params,
   cache->evict = Size_evict;
   cache->to_evict = Size_to_evict;
   cache->remove = Size_remove;
-  cache->init_params = cache_specific_params;
 
   if (cache_specific_params != NULL) {
     printf("Size does not support any parameters, but got %s\n",

@@ -60,7 +60,7 @@ static inline int64_t SLRUv0_get_n_obj(const cache_t *cache);
  */
 cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SLRUv0", ccache_params);
+  cache_t *cache = cache_struct_init("SLRUv0", ccache_params, cache_specific_params);
   cache->cache_init = SLRUv0_init;
   cache->cache_free = SLRUv0_free;
   cache->get = SLRUv0_get;
@@ -69,7 +69,6 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
   cache->evict = SLRUv0_evict;
   cache->remove = SLRUv0_remove;
   cache->to_evict = SLRUv0_to_evict;
-  cache->init_params = cache_specific_params;
   cache->can_insert = SLRUv0_can_insert;
   cache->get_occupied_byte = SLRUv0_get_occupied_byte;
   cache->get_n_obj = SLRUv0_get_n_obj;

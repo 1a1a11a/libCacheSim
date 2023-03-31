@@ -46,7 +46,7 @@ static void free_list_node(void *list_node) {
  */
 cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("CR_LFU", ccache_params);
+  cache_t *cache = cache_struct_init("CR_LFU", ccache_params, cache_specific_params);
   cache->cache_init = CR_LFU_init;
   cache->cache_free = CR_LFU_free;
   cache->get = CR_LFU_get;
@@ -55,7 +55,6 @@ cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
   cache->evict = CR_LFU_evict;
   cache->remove = CR_LFU_remove;
   cache->to_evict = CR_LFU_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 16;

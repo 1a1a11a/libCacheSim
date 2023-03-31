@@ -58,7 +58,7 @@ static bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *LRUv0_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LRUv0", ccache_params);
+  cache_t *cache = cache_struct_init("LRUv0", ccache_params, cache_specific_params);
   cache->cache_init = LRUv0_init;
   cache->cache_free = LRUv0_free;
   cache->get = LRUv0_get;
@@ -67,7 +67,6 @@ cache_t *LRUv0_init(const common_cache_params_t ccache_params,
   cache->evict = LRUv0_evict;
   cache->remove = LRUv0_remove;
   cache->to_evict = LRUv0_to_evict;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2;

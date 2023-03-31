@@ -73,7 +73,7 @@ static void LIRS_print_cache_compared_to_cacheus(cache_t *cache);
  */
 cache_t *LIRS_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-    cache_t *cache = cache_struct_init("LIRS", ccache_params);
+    cache_t *cache = cache_struct_init("LIRS", ccache_params, cache_specific_params);
     cache->cache_init = LIRS_init;
     cache->cache_free = LIRS_free;
     cache->get = LIRS_get;
@@ -83,7 +83,6 @@ cache_t *LIRS_init(const common_cache_params_t ccache_params,
     cache->evict = LIRS_evict;
     cache->remove = LIRS_remove;
     cache->to_evict = LIRS_to_evict;
-    cache->init_params = cache_specific_params;
 
     if (ccache_params.consider_obj_metadata) {
       cache->obj_md_size = 8 * 2;

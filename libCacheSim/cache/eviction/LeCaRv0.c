@@ -79,7 +79,7 @@ static inline int64_t LeCaRv0_get_occupied_byte(const cache_t *cache) {
  */
 cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LeCaRv0", ccache_params);
+  cache_t *cache = cache_struct_init("LeCaRv0", ccache_params, cache_specific_params);
   cache->cache_init = LeCaRv0_init;
   cache->cache_free = LeCaRv0_free;
   cache->get = LeCaRv0_get;
@@ -90,7 +90,6 @@ cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
   cache->to_evict = LeCaRv0_to_evict;
   cache->get_n_obj = LeCaRv0_get_n_obj;
   cache->get_occupied_byte = LeCaRv0_get_occupied_byte;
-  cache->init_params = cache_specific_params;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2 + 8 * 2 + 8;  // LRU chain, LFU chain, history

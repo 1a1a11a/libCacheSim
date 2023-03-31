@@ -2,8 +2,9 @@
 // Created by Juncheng Yang on 6/20/20.
 //
 
-#include "../dataStructure/hashtable/hashtable.h"
 #include "../include/libCacheSim/cache.h"
+
+#include "../dataStructure/hashtable/hashtable.h"
 
 /** this file contains both base function, which should be called by all
  *eviction algorithms, and the queue related functions, which should be called
@@ -20,10 +21,15 @@
  * @return cache_t* pointer to the cache
  */
 cache_t *cache_struct_init(const char *const cache_name,
-                           const common_cache_params_t params) {
+                           const common_cache_params_t params,
+                           const void *const init_params) {
   cache_t *cache = my_malloc(cache_t);
   memset(cache, 0, sizeof(cache_t));
-  strncpy(cache->cache_name, cache_name, 31);
+  strncpy(cache->cache_name, cache_name, CACHE_NAME_ARRAY_LEN);
+
+  if (init_params != NULL) {
+    strncpy(cache->init_params, init_params, CACHE_INIT_PARAMS_LEN);
+  }
   cache->cache_size = params.cache_size;
   cache->eviction_params = NULL;
   cache->admissioner = NULL;
@@ -217,7 +223,8 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
-  cache->occupied_byte += (int64_t) cache_obj->obj_size + (int64_t) cache->obj_md_size;
+  cache->occupied_byte +=
+      (int64_t)cache_obj->obj_size + (int64_t)cache->obj_md_size;
   cache->n_obj += 1;
 
 #ifdef SUPPORT_TTL

@@ -62,7 +62,7 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   }
 #endif
 
-  cache_t *cache = cache_struct_init("LHD", ccache_params);
+  cache_t *cache = cache_struct_init("LHD", ccache_params, cache_specific_params);
   cache->cache_init = LHD_init;
   cache->cache_free = LHD_free;
   cache->get = LHD_get;
@@ -74,7 +74,6 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = LHD_get_occupied_byte;
   cache->get_n_obj = LHD_get_n_obj;
-  cache->init_params = cache_specific_params;
   cache->to_evict_candidate =
       static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
   if (cache_specific_params != NULL) {

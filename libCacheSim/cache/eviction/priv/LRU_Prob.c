@@ -57,7 +57,7 @@ static bool LRU_Prob_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LRU_Prob", ccache_params);
+  cache_t *cache = cache_struct_init("LRU_Prob", ccache_params, cache_specific_params);
   cache->cache_init = LRU_Prob_init;
   cache->cache_free = LRU_Prob_free;
   cache->get = LRU_Prob_get;
@@ -66,7 +66,6 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
   cache->evict = LRU_Prob_evict;
   cache->remove = LRU_Prob_remove;
   cache->to_evict = LRU_Prob_to_evict;
-  cache->init_params = cache_specific_params;
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2;
   } else {

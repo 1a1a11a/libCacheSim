@@ -67,6 +67,7 @@ typedef void (*cache_print_cache_func_ptr)(const cache_t *);
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
 #define CACHE_NAME_ARRAY_LEN 64
+#define CACHE_INIT_PARAMS_LEN 256
 typedef struct {
   int64_t n_warmup_req;
   int64_t n_req;
@@ -138,7 +139,7 @@ struct cache {
    * some situations */
   // cache_stat_t stat;
   char cache_name[CACHE_NAME_ARRAY_LEN];
-  const char *init_params;
+  char init_params[CACHE_INIT_PARAMS_LEN];
 
   void *last_request_metadata;
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
@@ -167,8 +168,8 @@ static inline common_cache_params_t default_common_cache_params(void) {
  * @param params
  * @return
  */
-cache_t *cache_struct_init(const char *cache_name,
-                           common_cache_params_t params);
+cache_t *cache_struct_init(const char *cache_name, common_cache_params_t params,
+                           const void *const init_params);
 
 /**
  * free the cache struct, must be called in all cache_free functions
