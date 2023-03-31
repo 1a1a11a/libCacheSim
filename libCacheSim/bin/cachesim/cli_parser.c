@@ -36,10 +36,6 @@ void parse_eviction_algo(struct arguments *args, const char *arg) {
   }
   args->n_eviction_algo = n_algo;
 
-  for (int i = 0; i < n_algo; i++) {
-    printf("%s ", args->eviction_algo[i]);
-  }
-  printf("\n");
 #undef MAX_ALGO_LEN
 }
 
