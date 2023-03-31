@@ -15,6 +15,36 @@ static void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
 static void set_cache_size(struct arguments *args, reader_t *reader);
 
 /**
+ * @brief parse the command line eviction_algo arguments
+ * the given input is a string, e.g., "LRU,LFU"
+ * this function parses the string and stores the parsed eviction algorithms
+ * into the args->eviction_algo array
+ * and the number of eviction algorithms is stored in args->n_eviction_algo
+ */
+void parse_eviction_algo(struct arguments *args, const char *arg) {
+#define MAX_ALGO_LEN 4096
+  char data[MAX_ALGO_LEN];
+  memcpy(data, arg, strlen(arg));
+  char *str = data;
+  char *algo;
+
+  int n_algo = 0;
+  while (str != NULL && str[0] != '\0') {
+    /* different algorithms are separated by comma */
+    algo = strsep(&str, ",");
+    args->eviction_algo[n_algo++] = strdup(algo);
+  }
+  args->n_eviction_algo = n_algo;
+
+  for (int i = 0; i < n_algo; i++) {
+    printf("%s ", args->eviction_algo[i]);
+  }
+  printf("\n");
+#undef MAX_ALGO_LEN
+}
+
+/**
+ *
  * @brief convert cache size string to byte, e.g., 100MB -> 100 * 1024 * 1024
  * the cache size can be an integer or a string with suffix KB/MB/GB
  *
@@ -97,10 +127,16 @@ void print_parsed_args(struct arguments *args) {
   char output_str[OUTPUT_STR_LEN];
   int n = snprintf(
       output_str, OUTPUT_STR_LEN - 1,
-      "trace path: %s, trace_type %s, eviction %s, ofilepath "
-      "%s, %d threads, warmup %d sec",
-      args->trace_path, trace_type_str[args->trace_type],  // cache_size_str,
-      args->eviction_algo, args->ofilepath, args->n_thread, args->warmup_sec);
+      "trace path: %s, trace_type %s, ofilepath "
+      "%s, %d threads, warmup %d sec, total %d algo x %d size = %d caches",
+      args->trace_path, trace_type_str[args->trace_type], args->ofilepath,
+      args->n_thread, args->warmup_sec, args->n_eviction_algo,
+      args->n_cache_size, args->n_eviction_algo * args->n_cache_size);
+
+  for (int i = 0; i < args->n_eviction_algo; i++) {
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", %s",
+                  args->eviction_algo[i]);
+  }
 
   if (args->trace_type_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,

@@ -2,18 +2,19 @@
 
 #include <inttypes.h>
 
+#include "../../include/libCacheSim/admissionAlgo.h"
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
 #include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/admissionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define N_ARGS 4
-#define N_MAX_CACHE_SIZE 128
+#define N_MAX_ALGO 16
+#define N_MAX_CACHE_SIZE 16
 #define OFILEPATH_LEN 128
 
 /* This structure is used to communicate with parse_opt. */
@@ -21,7 +22,8 @@ struct arguments {
   /* argument from the user */
   char *args[N_ARGS];
   char *trace_path;
-  char *eviction_algo;
+  char *eviction_algo[N_MAX_ALGO];
+  int n_eviction_algo;
   char *admission_algo;
   uint64_t cache_sizes[N_MAX_CACHE_SIZE];
   int n_cache_size;
@@ -35,7 +37,7 @@ struct arguments {
   char *admission_params;
   double sample_ratio;
   int n_thread;
-  int64_t n_req;    /* number of requests to process */
+  int64_t n_req; /* number of requests to process */
 
   bool verbose;
   bool ignore_obj_size;
@@ -44,10 +46,14 @@ struct arguments {
 
   /* arguments generated */
   reader_t *reader;
-  cache_t *cache;
+  cache_t *caches[N_MAX_ALGO * N_MAX_CACHE_SIZE];
 };
 
 void parse_cmd(int argc, char *argv[], struct arguments *args);
+
+void free_arg(struct arguments *args);
+
+void parse_eviction_algo(struct arguments *args, const char *arg);
 
 void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
               char *ofilepath);
@@ -60,7 +66,7 @@ int conv_cache_sizes(char *cache_size_str, struct arguments *args);
 
 void print_parsed_args(struct arguments *args);
 
-bool is_true(const char *arg); 
+bool is_true(const char *arg);
 
 #ifdef __cplusplus
 }

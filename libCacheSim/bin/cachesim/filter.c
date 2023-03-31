@@ -62,15 +62,18 @@ void filter(reader_t *reader, cache_t *cache) {
 int main(int argc, char *argv[]) {
   struct arguments args;
   parse_cmd(argc, argv, &args);
-  if (args.n_cache_size == 0) {
-    WARN("no cache size found\n");
+  if (args.n_cache_size != 1) {
+    WARN("only support one cache size\n");
+    exit(0);
+  }
+  if (args.n_eviction_algo != 1) {
+    WARN("only support one eviction algorithm\n");
     exit(0);
   }
 
-  filter(args.reader, args.cache);
+  filter(args.reader, args.caches[0]);
 
-  close_reader(args.reader);
-  args.cache->cache_free(args.cache);
+  free_arg(&args);
 
   return 0;
 }
