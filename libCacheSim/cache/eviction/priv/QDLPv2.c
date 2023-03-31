@@ -29,6 +29,7 @@ typedef struct {
   cache_t *fifo_ghost;
   cache_t *main_cache;
   bool hit_on_ghost;
+  int move_to_main_threshold;
 
   double fifo_size_ratio;
   char main_cache_type[32];
@@ -42,7 +43,7 @@ typedef struct {
 } QDLPv2_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.10,main-cache=Clock-2";
+    "fifo-size-ratio=0.10,main-cache=Clock-2,move-to-main-threshold=1";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -119,9 +120,9 @@ cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
     params->main_cache = FIFO_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "clock") == 0) {
     params->main_cache = Clock_init(ccache_params_local, NULL);
-  } else if (strcasecmp(params->main_cache_type, "clock-2") == 0) {
+  } else if (strcasecmp(params->main_cache_type, "clock2") == 0) {
     params->main_cache = Clock_init(ccache_params_local, "n-bit-counter=2");
-  } else if (strcasecmp(params->main_cache_type, "clock-3") == 0) {
+  } else if (strcasecmp(params->main_cache_type, "clock3") == 0) {
     params->main_cache = Clock_init(ccache_params_local, "n-bit-counter=3");
   } else if (strcasecmp(params->main_cache_type, "myclock") == 0) {
     params->main_cache = MyClock_init(ccache_params_local, NULL);
@@ -162,8 +163,8 @@ cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
   params->main_cache_eviction->track_eviction_age = false;
 #endif
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv2-%s",
-           params->main_cache_type);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLPv2-%s-%d",
+           params->main_cache_type, params->move_to_main_threshold);
 
   return cache;
 }
@@ -425,7 +426,7 @@ static void QDLPv2_evict(cache_t *cache, const request_t *req) {
   copy_cache_obj_to_request(params->req_local, obj);
 
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  if (obj->misc.freq > 0) {
+  if (obj->misc.freq >= params->move_to_main_threshold) {
     // promote to main cache
     cache_obj_t *new_obj = main->insert(main, params->req_local);
     new_obj->create_time = obj->create_time;
@@ -457,7 +458,7 @@ static void QDLPv2_evict(cache_t *cache, const request_t *req) {
   bool removed = fifo->remove(fifo, params->req_local->obj_id);
   assert(removed);
 
-  if (obj->misc.freq > 0) {
+  if (obj->misc.freq >= params->move_to_main_threshold) {
     // promote to main cache
     main->insert(main, params->req_local);
 
@@ -553,6 +554,8 @@ static void QDLPv2_parse_params(cache_t *cache,
       params->fifo_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "main-cache") == 0) {
       strncpy(params->main_cache_type, value, 30);
+    } else if (strcasecmp(key, "move-to-main-threshold") == 0) {
+      params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "print") == 0) {
       printf("parameters: %s\n", QDLPv2_current_params(params));
       exit(0);

@@ -41,11 +41,15 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
     req->clock_time -= start_ts;
   }
 
-  printf("%s %32s n_miss %.2lf Mobj (%.4lf, %.4lf), %.2lf MB (%.4lf, %.4lf)",
-         basename(reader->trace_path), cache->cache_name,
-         n_miss / (double)MILLION, n_miss / (double)n_req,
-         n_miss / (double)n_uniq_obj, n_miss_byte / (double)MB,
-         n_miss_byte / (double)n_byte, n_miss_byte / (double)n_uniq_byte);
+  // printf("%s %32s n_miss %.2lf Mobj (%.4lf, %.4lf), %.2lf MB (%.4lf, %.4lf)",
+  //        basename(reader->trace_path), cache->cache_name,
+  //        n_miss / (double)MILLION, n_miss / (double)n_req,
+  //        n_miss / (double)n_uniq_obj, n_miss_byte / (double)MB,
+  //        n_miss_byte / (double)n_byte, n_miss_byte / (double)n_uniq_byte);
+
+  printf("%s %32s miss ratio %.4lf %.4lf, ", basename(reader->trace_path),
+         cache->cache_name, n_miss / (double)n_req,
+         n_miss_byte / (double)n_byte);
 
   int64_t n_byte_write = n_miss_byte;
   if (strcasecmp("fifo", cache->cache_name) == 0) {
@@ -88,20 +92,19 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
     ;
   }
 
-  printf(", n_write %.2lf MB (%.4lf)\n", n_byte_write / (double)MB,
-         n_byte_write / (double)n_uniq_byte);
+  printf("write_amp %.4lf\n", n_byte_write / (double)n_uniq_byte);
 
-  // if (strcasestr(cache->cache_name, "qdlpv1") != NULL) {
-  //   QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
-  //   Clock_params_t *clock_params =
-  //       (Clock_params_t *)params->main_cache->eviction_params;
+  if (strcasestr(cache->cache_name, "qdlpv1") != NULL) {
+    QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
+    Clock_params_t *clock_params =
+        (Clock_params_t *)params->main_cache->eviction_params;
 
-  //   printf("%ld/%ld/%ld, %.2lf/%.2lf/%.2lf\n", params->n_byte_admit_to_main,
-  //          params->n_byte_move_to_main, clock_params->n_byte_rewritten,
-  //          params->n_byte_admit_to_main / (double)n_uniq_byte,
-  //          params->n_byte_move_to_main / (double)n_uniq_byte,
-  //          clock_params->n_byte_rewritten / (double)n_uniq_byte);
-  // }
+    printf("%.4lf/%.2lf/%.2lf/%.2lf\n",
+           params->n_byte_admit_to_main / (double)params->n_byte_admit_to_fifo,
+           params->n_byte_admit_to_main / (double)n_uniq_byte,
+           params->n_byte_move_to_main / (double)n_uniq_byte,
+           clock_params->n_byte_rewritten / (double)n_uniq_byte);
+  }
 }
 
 int main(int argc, char *argv[]) {
