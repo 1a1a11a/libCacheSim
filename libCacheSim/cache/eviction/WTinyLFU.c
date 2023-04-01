@@ -27,6 +27,7 @@ extern "C" {
 #define DEBUG_MODE_2
 #undef DEBUG_MODE_2
 
+
 typedef struct WTinyLFU_params {
   cache_t *LRU;         // LRU as windowed LRU
   cache_t *main_cache;  // any eviction policy
@@ -291,24 +292,8 @@ cache_obj_t *WTinyLFU_insert(cache_t *cache, const request_t *req) {
         params->LRU->cache_size);
 #endif
 
-    while (params->LRU->occupied_byte + req->obj_size + cache->obj_md_size >
-           params->LRU->cache_size) {
-      WTinyLFU_evict(cache, req);
-#ifdef DEBUG_MODE
-      printf("[after evict LRU] LRU occupied_byte: %zu (capacity: %zu)\n",
-             params->LRU->occupied_byte, params->LRU->cache_size);
-#endif
-    }
-#ifdef DEBUG_MODE
-    printf("\n");
-#endif
     return params->LRU->insert(params->LRU, req);
   } else {
-    while (params->main_cache->get_occupied_byte(params->main_cache) +
-               req->obj_size + params->main_cache->obj_md_size >
-           params->main_cache->cache_size) {
-      params->main_cache->evict(params->main_cache, req);
-    }
     return params->main_cache->insert(params->main_cache, req);
   }
 }
@@ -326,107 +311,103 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
     return;
   }
 
-  if (params->LRU->occupied_byte > 0) {
-    cache_obj_t *window_victim = params->LRU->to_evict(params->LRU, req);
-    DEBUG_ASSERT(window_victim != NULL);
-#ifdef DEBUG_MODE
-    printf(
-        "[to evict LRU] window_victim obj_id: %zu, obj_size: %u, LRU "
-        "occupied_byte: %zu (capacity: %zu)\n",
-        window_victim->obj_id, window_victim->obj_size,
-        params->LRU->occupied_byte, params->LRU->cache_size);
-#endif
+  cache_t *window = params->LRU;
+  cache_t *main = params->main_cache;
 
-    // window victim req is different from req
-    copy_cache_obj_to_request(params->req_local, window_victim);
-
-    /** only when main_cache is full, evict an obj from the main_cache **/
-
-    // if main_cache has enough space, insert the obj into main_cache
-    if (params->main_cache->get_occupied_byte(params->main_cache) +
-            params->req_local->obj_size + cache->obj_md_size <=
-        params->main_cache->cache_size) {
+  bool evicted = false;
+  while (!evicted) {
+    if (window->get_occupied_byte(window) > 0) {
+      cache_obj_t *window_victim = window->to_evict(window, req);
+      DEBUG_ASSERT(window_victim != NULL);
 #ifdef DEBUG_MODE
       printf(
-          "[insert main_cache before] req obj_id: %zu, req obj_size: %zu, "
-          "main_cache occupied_byte: %zu (capacity: %zu)\n",
-          params->req_local->obj_id, params->req_local->obj_size,
-          params->main_cache->get_occupied_byte(params->main_cache),
-          params->main_cache->cache_size);
+          "[to evict LRU] window_victim obj_id: %zu, obj_size: %u, LRU "
+          "occupied_byte: %zu (capacity: %zu)\n",
+          window_victim->obj_id, window_victim->obj_size, window->occupied_byte,
+          window->cache_size);
 #endif
-      cache_obj_t *obj_temp =
-          params->main_cache->insert(params->main_cache, params->req_local);
-      // DEBUG_ASSERT(obj_temp != NULL);
-#ifdef DEBUG_MODE
-      printf(
-          "[insert main_cache after] req obj_id: %zu, req obj_size: %zu, "
-          "main_cache occupied_byte: %zu (capacity: %zu)\n",
-          params->req_local->obj_id, params->req_local->obj_size,
-          params->main_cache->get_occupied_byte(params->main_cache),
-          params->main_cache->cache_size);
-#endif
-      params->LRU->remove(params->LRU, window_victim->obj_id);
-    } else {
-      // compare the frequency of window_victim and main_cache_victim
-      cache_obj_t *main_cache_victim =
-          params->main_cache->to_evict(params->main_cache, req);
-      DEBUG_ASSERT(main_cache_victim != NULL);
-      // if window_victim is more frequent, insert it into main_cache
-#ifdef DEBUG_MODE
-      printf(
-          "[compare] window_victim obj_id %zu -> %d, main_cache_victim obj_id "
-          "%zu -> %d\n",
-          window_victim->obj_id,
-          minimalIncrementCBF_estimate(params->CBF,
-                                       (void *)&window_victim->obj_id,
-                                       sizeof(window_victim->obj_id)),
-          main_cache_victim->obj_id,
-          minimalIncrementCBF_estimate(params->CBF,
-                                       (void *)&main_cache_victim->obj_id,
-                                       sizeof(main_cache_victim->obj_id)));
-#endif
-      if (minimalIncrementCBF_estimate(params->CBF,
-                                       (void *)&window_victim->obj_id,
-                                       sizeof(window_victim->obj_id)) >
-          minimalIncrementCBF_estimate(params->CBF,
-                                       (void *)&main_cache_victim->obj_id,
-                                       sizeof(main_cache_victim->obj_id))) {
-        params->main_cache->evict(params->main_cache, req);
+
+      // window victim req is different from req
+      copy_cache_obj_to_request(params->req_local, window_victim);
+
+      /** only when main_cache is full, evict an obj from the main_cache **/
+
+      // if main_cache has enough space, insert the obj into main_cache
+      if (main->get_occupied_byte(main) + params->req_local->obj_size +
+              cache->obj_md_size <=
+          main->cache_size) {
 #ifdef DEBUG_MODE
         printf(
-            "[evict main_cache victim] obj_id: %zu, obj_size: %u, main_cache "
-            "occupied_byte: %zu (capacity: %zu)\n",
-            main_cache_victim->obj_id, main_cache_victim->obj_size,
-            params->main_cache->get_occupied_byte(params->main_cache),
-            params->main_cache->cache_size);
+            "[insert main_cache before] req obj_id: %zu, req obj_size: %zu, "
+            "main_cache occupied_byte: %zu (capacity: %zu)\n",
+            params->req_local->obj_id, params->req_local->obj_size,
+            main->get_occupied_byte(main), main->cache_size);
 #endif
-        bool ret = params->LRU->remove(params->LRU, window_victim->obj_id);
-        DEBUG_ASSERT(ret);
+        main->insert(main, params->req_local);
 
-        cache_obj_t *cache_obj =
-            params->main_cache->insert(params->main_cache, params->req_local);
+#ifdef DEBUG_MODE
+        printf(
+            "[insert main_cache after] req obj_id: %zu, req obj_size: %zu, "
+            "main_cache occupied_byte: %zu (capacity: %zu)\n",
+            params->req_local->obj_id, params->req_local->obj_size,
+            main->get_occupied_byte(main), main->cache_size);
+#endif
+        window->remove(window, window_victim->obj_id);
       } else {
+        // compare the frequency of window_victim and main_cache_victim
+        cache_obj_t *main_cache_victim = main->to_evict(main, req);
+        DEBUG_ASSERT(main_cache_victim != NULL);
+        // if window_victim is more frequent, insert it into main_cache
 #ifdef DEBUG_MODE
-        printf("[evict LRU victim] obj_id: %zu\n", window_victim->obj_id);
+        printf(
+            "[compare] window_victim obj_id %zu -> %d, main_cache_victim "
+            "obj_id "
+            "%zu -> %d\n",
+            window_victim->obj_id,
+            minimalIncrementCBF_estimate(params->CBF,
+                                         (void *)&window_victim->obj_id,
+                                         sizeof(window_victim->obj_id)),
+            main_cache_victim->obj_id,
+            minimalIncrementCBF_estimate(params->CBF,
+                                         (void *)&main_cache_victim->obj_id,
+                                         sizeof(main_cache_victim->obj_id)));
 #endif
-        params->LRU->evict(params->LRU, req);
+        if (minimalIncrementCBF_estimate(params->CBF,
+                                         (void *)&window_victim->obj_id,
+                                         sizeof(window_victim->obj_id)) >
+            minimalIncrementCBF_estimate(params->CBF,
+                                         (void *)&main_cache_victim->obj_id,
+                                         sizeof(main_cache_victim->obj_id))) {
+          main->evict(main, req);
+#ifdef DEBUG_MODE
+          printf(
+              "[evict main_cache victim] obj_id: %zu, obj_size: %u, main_cache "
+              "occupied_byte: %zu (capacity: %zu)\n",
+              main_cache_victim->obj_id, main_cache_victim->obj_size,
+              main->get_occupied_byte(main), main->cache_size);
+#endif
+          bool ret = window->remove(window, window_victim->obj_id);
+          DEBUG_ASSERT(ret);
+
+          cache_obj_t *cache_obj = main->insert(main, params->req_local);
+        } else {
+          VVERBOSE("[evict LRU victim] obj_id: %zu\n", window_victim->obj_id);
+
+          window->evict(window, req);
+          evicted = true;
+        }
       }
+      // TODO @ Ziyue: add doorkeeper
+      minimalIncrementCBF_add(params->CBF, (void *)(&params->req_local->obj_id),
+                              8);
+      VVERBOSE("minimal Increment CBF add obj id %zu: %d\n\n",
+               window_victim->obj_id,
+               minimalIncrementCBF_estimate(
+                   params->CBF, (void *)(&window_victim->obj_id), 8));
+    } else {
+      DEBUG_ASSERT(window->get_occupied_byte(window) == 0);
+      return main->evict(main, req);
     }
-    // TODO @ Ziyue: add doorkeeper
-    minimalIncrementCBF_add(params->CBF, (void *)(&window_victim->obj_id), 8);
-#ifdef DEBUG_MODE
-    printf("minimal Increment CBF add obj id %zu: %d\n\n",
-           window_victim->obj_id,
-           minimalIncrementCBF_estimate(params->CBF,
-                                        (void *)(&window_victim->obj_id), 8));
-#endif
-  } else if (params->LRU->occupied_byte == 0) {
-    params->main_cache->evict(params->main_cache, req);
-  } else {
-#ifdef DEBUG_MODE
-    printf("error evict: LRU and main_cache are both empty\n");
-#endif
-    exit(1);
   }
 }
 

@@ -206,6 +206,7 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
          cache->cache_size) {
     cache->evict(cache, req);
   }
+
   cache->insert(cache, req);
 
   return false;
