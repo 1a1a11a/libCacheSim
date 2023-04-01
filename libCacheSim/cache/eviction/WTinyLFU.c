@@ -254,11 +254,11 @@ static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
 #endif
   if (cache_hit && update_cache) {
     // frequency update
-    minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id, 8);
+    minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t));
 
 #ifdef DEBUG_MODE
     printf("minimal Increment CBF add obj id %zu: %d\n\n", req->obj_id,
-           minimalIncrementCBF_estimate(params->CBF, (void *)&req->obj_id, 8));
+           minimalIncrementCBF_estimate(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t)));
 #endif
     params->request_counter++;
     if (params->request_counter >= params->max_request_num) {
@@ -399,11 +399,11 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
       }
       // TODO @ Ziyue: add doorkeeper
       minimalIncrementCBF_add(params->CBF, (void *)(&params->req_local->obj_id),
-                              8);
+                              sizeof(obj_id_t));
       VVERBOSE("minimal Increment CBF add obj id %zu: %d\n\n",
                window_victim->obj_id,
                minimalIncrementCBF_estimate(
-                   params->CBF, (void *)(&window_victim->obj_id), 8));
+                   params->CBF, (void *)(&window_victim->obj_id), sizeof(obj_id_t)));
     } else {
       DEBUG_ASSERT(window->get_occupied_byte(window) == 0);
       return main->evict(main, req);
