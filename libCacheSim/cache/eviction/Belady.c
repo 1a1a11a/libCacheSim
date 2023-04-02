@@ -66,12 +66,6 @@ cache_t *Belady_init(const common_cache_params_t ccache_params,
   cache->to_evict = Belady_to_evict;
   cache->remove = Belady_remove;
 
-  if (cache_specific_params != NULL) {
-    printf("Belady does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
-  }
-
   Belady_params_t *params = my_malloc(Belady_params_t);
   cache->eviction_params = params;
 

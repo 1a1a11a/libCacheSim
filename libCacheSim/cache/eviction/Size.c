@@ -64,12 +64,6 @@ cache_t *Size_init(const common_cache_params_t ccache_params,
   cache->to_evict = Size_to_evict;
   cache->remove = Size_remove;
 
-  if (cache_specific_params != NULL) {
-    printf("Size does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
-  }
-
   Size_params_t *params = my_malloc(Size_params_t);
   cache->eviction_params = params;
 

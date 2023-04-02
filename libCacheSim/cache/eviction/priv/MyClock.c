@@ -68,12 +68,6 @@ cache_t *MyClock_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    ERROR("Clock does not support any parameters, but got %s\n",
-          cache_specific_params);
-    abort();
-  }
-
   cache->eviction_params = my_malloc(MyClock_params_t);
   MyClock_params_t *params = (MyClock_params_t *)cache->eviction_params;
   params->pointer = NULL;

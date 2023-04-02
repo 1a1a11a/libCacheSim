@@ -74,12 +74,6 @@ cache_t *LRUv0_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    printf("LRUv0 does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
-  }
-
   cache->eviction_params = g_new0(LRUv0_params_t, 1);
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   LRUv0_params->hashtable =

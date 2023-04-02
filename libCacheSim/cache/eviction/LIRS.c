@@ -90,12 +90,6 @@ cache_t *LIRS_init(const common_cache_params_t ccache_params,
       cache->obj_md_size = 0;
     }
 
-    if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-    }
-    
     cache->eviction_params = (LIRS_params_t *)malloc(sizeof(LIRS_params_t));
     LIRS_params_t * params = (LIRS_params_t *)(cache->eviction_params);
 

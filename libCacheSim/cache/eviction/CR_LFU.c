@@ -62,12 +62,6 @@ cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    printf("CR-LFU does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
-  }
-
   CR_LFU_params_t *params = my_malloc_n(CR_LFU_params_t, 1);
   cache->eviction_params = params;
   params->req_local = new_request();

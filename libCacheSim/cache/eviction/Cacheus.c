@@ -93,12 +93,6 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    printf("%s does not support any parameters, but got %s\n",
-           cache->cache_name, cache_specific_params);
-    abort();
-  }
-
   cache->eviction_params = my_malloc_n(Cacheus_params_t, 1);
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   params->ghost_list_factor = 1;

@@ -90,12 +90,6 @@ cache_t *LFU_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    printf("LFU does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
-  }
-
   LFU_params_t *params = my_malloc_n(LFU_params_t, 1);
   memset(params, 0, sizeof(LFU_params_t));
   cache->eviction_params = params;

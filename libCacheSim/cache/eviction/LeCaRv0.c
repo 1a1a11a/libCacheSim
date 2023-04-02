@@ -97,12 +97,6 @@ cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    printf("LeCaRv0 does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
-  }
-
   cache->eviction_params = my_malloc_n(LeCaRv0_params_t, 1);
   LeCaRv0_params_t *params = (LeCaRv0_params_t *)(cache->eviction_params);
   params->ghost_list_factor = 1;

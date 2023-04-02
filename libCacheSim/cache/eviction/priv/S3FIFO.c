@@ -256,8 +256,7 @@ static cache_obj_t *S3FIFO_insert(cache_t *cache, const request_t *req) {
     params->hit_on_ghost = false;
     params->n_obj_admit_to_main += 1;
     params->n_byte_admit_to_main += req->obj_size;
-    params->main_cache->insert(params->main_cache, req);
-    obj = params->main_cache->find(params->main_cache, req, false);
+    obj = params->main_cache->insert(params->main_cache, req);
   } else {
     /* insert into the fifo */
     if (req->obj_size >= params->fifo->cache_size) {

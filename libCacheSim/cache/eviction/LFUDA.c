@@ -74,12 +74,6 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  if (cache_specific_params != NULL) {
-    ERROR("LFUDA does not support any parameters, but got %s\n",
-          cache_specific_params);
-    abort();
-  }
-
   LFUDA_params_t *params = my_malloc_n(LFUDA_params_t, 1);
   cache->eviction_params = params;
 

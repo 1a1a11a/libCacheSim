@@ -58,12 +58,6 @@ cache_t *Random_init(const common_cache_params_t ccache_params,
   cache->evict = Random_evict;
   cache->remove = Random_remove;
 
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
-
   return cache;
 }
 

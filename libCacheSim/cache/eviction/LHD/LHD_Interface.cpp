@@ -76,11 +76,6 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   cache->get_n_obj = LHD_get_n_obj;
   cache->to_evict_candidate =
       static_cast<cache_obj_t *>(malloc(sizeof(cache_obj_t)));
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 3 + 1;  // two age, one time stamp

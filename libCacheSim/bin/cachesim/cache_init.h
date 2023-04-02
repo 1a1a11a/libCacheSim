@@ -6,6 +6,10 @@
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static inline cache_t *create_cache(const char *trace_path,
                                     const char *eviction_algo,
                                     const uint64_t cache_size,
@@ -44,10 +48,6 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = SLRU_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "slruv0") == 0) {
     cache = SLRUv0_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifo") == 0) {
-    cache = SFIFO_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifov0") == 0) {
-    cache = SFIFOv0_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = Hyperbolic_init(cc_params, eviction_params);
@@ -105,6 +105,10 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = MyClock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "mclock") == 0) {
     cache = MClock_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sfifo") == 0) {
+    cache = SFIFO_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sfifov0") == 0) {
+    cache = SFIFOv0_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lp-sfifo") == 0) {
     cache = LP_SFIFO_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lp-arc") == 0) {
@@ -147,3 +151,7 @@ static inline cache_t *create_cache(const char *trace_path,
 
   return cache;
 }
+
+#ifdef __cplusplus
+}
+#endif

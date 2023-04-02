@@ -56,11 +56,6 @@ cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
   cache->get_occupied_byte = SR_LRU_get_occupied_byte;
   cache->get_n_obj = SR_LRU_get_n_obj;
 
-  if (cache_specific_params != NULL) {
-    printf("SR-LRU does not support any parameters, but got %s\n",
-           cache_specific_params);
-    abort();
-  }
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 2;
   } else {

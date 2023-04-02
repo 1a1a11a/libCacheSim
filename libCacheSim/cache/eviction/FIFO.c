@@ -67,12 +67,6 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
   params->q_head = NULL;
   params->q_tail = NULL;
 
-  if (cache_specific_params != NULL) {
-    ERROR("%s does not support any parameters, but got %s\n", cache->cache_name,
-          cache_specific_params);
-    abort();
-  }
-
   return cache;
 }
 
