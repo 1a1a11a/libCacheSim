@@ -49,6 +49,9 @@ cache_t *cache_struct_init(const char *const cache_name,
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   cache->track_eviction_age = true;
 #endif
+#if defined(TRACK_DEMOTION)
+  cache->track_demotion = true;
+#endif
 
   int hash_power = HASH_POWER_DEFAULT;
   if (params.hashpower > 0 && params.hashpower < 40)
@@ -234,7 +237,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   }
 #endif
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE) || \
+    defined(TRACK_DEMOTION)
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 

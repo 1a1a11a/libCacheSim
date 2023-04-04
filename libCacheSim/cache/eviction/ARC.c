@@ -98,7 +98,8 @@ static bool ARC_get_debug(cache_t *cache, const request_t *req);
  */
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("ARC", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("ARC", ccache_params, cache_specific_params);
   cache->cache_init = ARC_init;
   cache->cache_free = ARC_free;
   cache->get = ARC_get;
@@ -183,6 +184,19 @@ static bool ARC_get(cache_t *cache, const request_t *req) {
 #ifdef DEBUG_MODE
   return ARC_get_debug(cache, req);
 #else
+
+#if defined(TRACK_DEMOTION)
+  if (cache->n_req % 1000000 == 0) {
+    printf(
+        "l1 data size: %lu, %4lf, l1 ghost size: %lu, l2 data size: %lu, l2 "
+        "ghost size: %lu\n",
+        params->L1_data_size,
+        params->L1_data_size /
+            (double)(params->L1_data_size + params->L2_data_size),
+        params->L1_ghost_size, params->L2_data_size, params->L2_ghost_size);
+  }
+#endif
+
   return cache_get_base(cache, req);
 #endif
 }
@@ -262,6 +276,13 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
       obj->ARC.lru_id = 2;
       remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
       prepend_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
+
+#if defined(TRACK_DEMOTION)
+      obj->misc.next_access_vtime = req->next_access_vtime;
+      printf("%ld keep %ld %ld\n", cache->n_req, obj->create_time,
+             obj->misc.next_access_vtime);
+#endif
+
       params->L1_data_size -= obj->obj_size + cache->obj_md_size;
       params->L2_data_size += obj->obj_size + cache->obj_md_size;
     } else {
@@ -428,6 +449,11 @@ static void _ARC_evict_L1_data(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = params->L1_data_tail;
   DEBUG_ASSERT(obj != NULL);
 
+#if defined(TRACK_DEMOTION)
+  printf("%ld demote %ld %ld\n", cache->n_req, obj->create_time,
+         obj->misc.next_access_vtime);
+#endif
+
   cache_evict_base(cache, obj, false);
 
   params->L1_data_size -= obj->obj_size + cache->obj_md_size;
@@ -441,6 +467,11 @@ static void _ARC_evict_L1_data_no_ghost(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   cache_obj_t *obj = params->L1_data_tail;
   DEBUG_ASSERT(obj != NULL);
+
+#if defined(TRACK_DEMOTION)
+  printf("%ld demote %ld %ld\n", cache->n_req, obj->create_time,
+         obj->misc.next_access_vtime);
+#endif
 
   remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
   params->L1_data_size -= obj->obj_size + cache->obj_md_size;

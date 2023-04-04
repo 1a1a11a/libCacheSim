@@ -145,6 +145,9 @@ struct cache {
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
   bool track_eviction_age;
 #endif
+#if defined(TRACK_DEMOTION)
+  bool track_demotion;
+#endif
 
   /* not used by most algorithms */
   int32_t *future_stack_dist;
@@ -314,8 +317,9 @@ static inline void record_log2_eviction_age(cache_t *cache, const int age) {
 static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj,
                                        const int64_t age) {
 #if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_EVICTION_R_AGE)
+  // note that the frequency is not correct for QDLP and Clock
   if (obj->obj_id % 101 == 0) {
-    printf("ea_freq: %lu %ld %d\n", obj->obj_id, age, obj->misc.freq);
+    printf("%ld: %lu %ld %d\n", cache->n_req, obj->obj_id, age, obj->misc.freq);
   }
 #endif
 

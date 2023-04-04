@@ -107,6 +107,10 @@ typedef struct {
 } QDLP_obj_metadata_t;
 
 typedef struct {
+  int64_t freq;
+} S3FIFO_obj_metadata_t;
+
+typedef struct {
   int64_t next_access_vtime;
   int32_t freq;
 } __attribute__((packed)) misc_metadata_t;
@@ -130,7 +134,8 @@ typedef struct cache_obj {
   uint32_t exp_time;
 #endif
 /* age is defined as the time since the object entered the cache */
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE) || \
+    defined(TRACK_DEMOTION)
   int64_t create_time;
 #endif
   // used by belady related algorithsm
@@ -153,6 +158,7 @@ typedef struct cache_obj {
     SLRU_obj_metadata_t SLRU;
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
+    S3FIFO_obj_metadata_t S3FIFO;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;
