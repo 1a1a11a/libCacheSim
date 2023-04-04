@@ -9,7 +9,7 @@
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/admissionAlgo.h"
 
-#define N_ARGS 3
+#define N_ARGS 5
 #define OFILEPATH_LEN 128
 
 /* This structure is used to communicate with parse_opt. */

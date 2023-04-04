@@ -12,6 +12,12 @@
 #include "../cli_utils.h"
 #include "internal.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 const char *argp_program_version = "cachesim 0.0.1";
 const char *argp_program_bug_address =
     "https://groups.google.com/g/libcachesim/";
@@ -132,8 +138,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_path = args->args[0];
   const char* trace_type_str = args->args[1];
   const char* dist_type_str = args->args[2];
-  strncasecmp(args->output_type, args->args[3], 7);
-  strncasecmp(args->ofilepath, args->args[4], OFILEPATH_LEN);
+  strncpy(args->output_type, args->args[3], 7);
+  strncpy(args->ofilepath, args->args[4], OFILEPATH_LEN);
   assert(N_ARGS == 5);
 
   if (args->ofilepath[0] == '\0') {
@@ -175,3 +181,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->reader =
       setup_reader(args->trace_path, args->trace_type, &reader_init_params);
 }
+
+
+#ifdef __cplusplus
+}
+#endif
