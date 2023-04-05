@@ -41,7 +41,7 @@ typedef struct {
 } S3FIFO_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.10,ghost-size-ratio=0.9,move-to-main-threshold=1";
+    "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=1";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -112,6 +112,7 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
   params->fifo = FIFO_init(ccache_params_local, NULL);
+  // params->fifo = LRU_init(ccache_params_local, NULL);
 
   if (fifo_ghost_cache_size > 0) {
     ccache_params_local.cache_size = fifo_ghost_cache_size;
@@ -222,6 +223,7 @@ static cache_obj_t *S3FIFO_find(cache_t *cache, const request_t *req,
   params->hit_on_ghost = false;
   cache_obj_t *obj = params->fifo->find(params->fifo, req, true);
   if (obj != NULL) {
+    obj->S3FIFO.freq += 1;
     return obj;
   }
 
@@ -232,6 +234,9 @@ static cache_obj_t *S3FIFO_find(cache_t *cache, const request_t *req,
   }
 
   obj = params->main_cache->find(params->main_cache, req, true);
+  if (obj != NULL) {
+    obj->S3FIFO.freq += 1;
+  }
 
   return obj;
 }
@@ -271,7 +276,11 @@ static cache_obj_t *S3FIFO_insert(cache_t *cache, const request_t *req) {
   obj->create_time = CURR_TIME(cache, req);
 #endif
 
-  assert(obj->misc.freq == 0);
+#if defined(TRACK_DEMOTION)
+  obj->create_time = cache->n_req;
+#endif
+
+  obj->S3FIFO.freq == 0;
 
   return obj;
 }
@@ -298,27 +307,38 @@ static void S3FIFO_evict_fifo(cache_t *cache, const request_t *req) {
   cache_t *main = params->main_cache;
 
   bool has_evicted = false;
-  while (!has_evicted && fifo->get_occupied_byte(fifo) >= fifo->cache_size) {
+  while (!has_evicted && fifo->get_occupied_byte(fifo) > 0) {
     // evict from FIFO
-    cache_obj_t *obj = fifo->to_evict(fifo, req);
-    DEBUG_ASSERT(obj != NULL);
+    cache_obj_t *obj_to_evict = fifo->to_evict(fifo, req);
+    DEBUG_ASSERT(obj_to_evict != NULL);
     // need to copy the object before it is evicted
-    copy_cache_obj_to_request(params->req_local, obj);
+    copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
-    if (obj->misc.freq >= params->move_to_main_threshold) {
+    if (obj_to_evict->S3FIFO.freq >= params->move_to_main_threshold) {
+#if defined(TRACK_DEMOTION)
+      printf("%ld keep %ld %ld\n", cache->n_req, obj_to_evict->create_time,
+             obj_to_evict->misc.next_access_vtime);
+#endif
       // freq is updated in cache_find_base
       params->n_obj_move_to_main += 1;
-      params->n_byte_move_to_main += obj->obj_size;
+      params->n_byte_move_to_main += obj_to_evict->obj_size;
 
-      params->main_cache->insert(params->main_cache, params->req_local);
+      cache_obj_t *new_obj = main->insert(main, params->req_local);
+      new_obj->misc.freq = obj_to_evict->misc.freq;
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-      main->find(main, params->req_local, false)->create_time =
-          obj->create_time;
+      new_obj->create_time = obj_to_evict->create_time;
     } else {
-      record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+      record_eviction_age(cache, obj_to_evict,
+                          CURR_TIME(cache, req) - obj_to_evict->create_time);
 #else
     } else {
 #endif
+
+#if defined(TRACK_DEMOTION)
+      printf("%ld demote %ld %ld\n", cache->n_req, obj->create_time,
+             obj->misc.next_access_vtime);
+#endif
+
       // insert to ghost
       if (ghost != NULL) {
         ghost->get(ghost, params->req_local);
@@ -338,29 +358,43 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
   cache_t *ghost = params->fifo_ghost;
   cache_t *main = params->main_cache;
 
+  // evict from main cache
+  bool has_evicted = false;
+  while (!has_evicted && main->get_occupied_byte(main) > 0) {
+    cache_obj_t *obj_to_evict = main->to_evict(main, req);
+    DEBUG_ASSERT(obj_to_evict != NULL);
+    int freq = obj_to_evict->S3FIFO.freq;
 #if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
-  cache_obj_t *obj = main->to_evict(main, req);
-  record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
+    int64_t create_time = obj_to_evict->create_time;
+#endif
+    copy_cache_obj_to_request(params->req_local, obj_to_evict);
+    if (freq >= 1) {
+      // we need to evict first because the object to insert has the same obj_id
+      // main->evict(main, req);
+      main->remove(main, obj_to_evict->obj_id);
+      obj_to_evict = NULL;
+
+      cache_obj_t *new_obj = main->insert(main, params->req_local);
+      // clock with 2-bit counter
+      new_obj->S3FIFO.freq = MIN(freq, 3) - 1;
+      new_obj->misc.freq = freq;
+
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+      new_obj->create_time = create_time;
+#endif
+    } else {
+#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+      record_eviction_age(cache, obj_to_evict,
+                          CURR_TIME(cache, req) - obj_to_evict->create_time);
 #endif
 
-  // evict from main cache
-  while (main->get_occupied_byte(main) >= main->cache_size) {
-    cache_obj_t *obj = main->to_evict(main, req);
-    DEBUG_ASSERT(obj != NULL);
-    int freq = obj->misc.freq;
-    if (freq >= 1) {
-      copy_cache_obj_to_request(params->req_local, obj);
-      // add freq to 1
-      // fifo->insert(fifo, params->req_local);
+      // main->evict(main, req);
+      bool removed = main->remove(main, obj_to_evict->obj_id);
+      if (!removed) {
+        ERROR("cannot remove obj %ld\n", obj_to_evict->obj_id);
+      }
 
-      main->evict(main, req);
-      main->insert(main, params->req_local);
-      obj = main->find(main, params->req_local, false);
-      // clock with 2-bit counter 
-      obj->misc.freq = MIN(freq, 3) - 1;
-    } else {
-      main->evict(main, req);
-      return;
+      has_evicted = true;
     }
   }
 }
@@ -380,8 +414,6 @@ static void S3FIFO_evict(cache_t *cache, const request_t *req) {
   cache_t *fifo = params->fifo;
   cache_t *ghost = params->fifo_ghost;
   cache_t *main = params->main_cache;
-  // printf("%ld evict %ld %ld\n", cache->n_req, fifo->get_occupied_byte(fifo),
-  // main->get_occupied_byte(main));
 
   if (main->get_occupied_byte(main) > main->cache_size ||
       fifo->get_occupied_byte(fifo) == 0) {
