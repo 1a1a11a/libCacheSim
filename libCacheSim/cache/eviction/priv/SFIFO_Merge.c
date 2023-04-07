@@ -260,6 +260,7 @@ static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
   if (cache->n_obj <= params->n_exam_obj) {
     // just evict one object - this is fifo
     cache_obj_t *cache_obj = params->q_tail;
+    params->next_to_exam = NULL;
     remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
     cache_evict_base(cache, cache_obj, true);
 
@@ -278,29 +279,15 @@ static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
     }
 
     params->metric_list[i].metric = retain_metric(cache, cache_obj);
-    // params->metric_list[i].metric = cache_obj->SFIFO_Merge.freq;
     params->metric_list[i].cache_obj = cache_obj;
     cache_obj = cache_obj->queue.prev;
   }
   params->next_to_exam = cache_obj;
+  cache_obj = NULL;
 
   // sort metrics
   qsort(params->metric_list, params->n_exam_obj, sizeof(struct sort_list_node),
         cmp_list_node);
-
-  // params->n_evict_obj = 0;
-  // for (int i = 0; i < params->n_exam_obj; i++) {
-  //   cache_obj = params->metric_list[i].cache_obj;
-  //   if (cache_obj->SFIFO_Merge.freq == 0) {
-  //     params->n_evict_obj += 1;
-  //   }
-  //   // cache_obj->SFIFO_Merge.freq = cache_obj->SFIFO_Merge.freq / 2;
-  //   cache_obj->SFIFO_Merge.freq = cache_obj->SFIFO_Merge.freq - 1;
-  //   // cache_obj->SFIFO_Merge.freq = 0;
-  // }
-
-  // printf("cache size %ld: evict %d/%d object\n", cache->cache_size,
-  // params->n_evict_obj, params->n_exam_obj);
 
   // remove objects
   params->pos_in_metric_list = 1;
