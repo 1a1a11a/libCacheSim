@@ -108,6 +108,7 @@ typedef struct {
 
 typedef struct {
   int64_t freq;
+  int64_t insertion_time;   // measured in number of objects inserted
 } S3FIFO_obj_metadata_t;
 
 typedef struct {

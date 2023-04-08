@@ -186,9 +186,9 @@ static bool ARC_get(cache_t *cache, const request_t *req) {
 #else
 
 #if defined(TRACK_DEMOTION)
-  if (cache->n_req % 1000000 == 0) {
+  if (cache->n_req % 100000 == 0) {
     printf(
-        "l1 data size: %lu, %4lf, l1 ghost size: %lu, l2 data size: %lu, l2 "
+        "l1 data size: %lu, %.4lf, l1 ghost size: %lu, l2 data size: %lu, l2 "
         "ghost size: %lu\n",
         params->L1_data_size,
         params->L1_data_size /

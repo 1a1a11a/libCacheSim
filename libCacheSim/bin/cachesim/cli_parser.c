@@ -23,10 +23,10 @@ static void set_cache_size(struct arguments *args, reader_t *reader);
  */
 void parse_eviction_algo(struct arguments *args, const char *arg) {
 #define MAX_ALGO_LEN 4096
-  char data[MAX_ALGO_LEN];
+  char data[MAX_ALGO_LEN] = {0};
   memcpy(data, arg, strlen(arg));
   char *str = data;
-  char *algo;
+  char *algo = NULL;
 
   int n_algo = 0;
   while (str != NULL && str[0] != '\0') {

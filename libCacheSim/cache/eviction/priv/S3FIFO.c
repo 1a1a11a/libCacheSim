@@ -1,14 +1,22 @@
 //
-//  Quick demotion + lazy promoition v1
-//
-//  20% FIFO + ARC
-//  insert to ARC when evicting from FIFO
+//  10% small FIFO + 90% main FIFO (2-bit Clock) + ghost
+//  insert to small FIFO if not in the ghost, else insert to the main FIFO
+//  evict from small FIFO:
+//      if object in the small is accessed,
+//          reinsert to main FIFO,
+//      else
+//          evict and insert to the ghost
+//  evict from main FIFO:
+//      if object in the main is accessed,
+//          reinsert to main FIFO,
+//      else
+//          evict
 //
 //
 //  S3FIFO.c
 //  libCacheSim
 //
-//  Created by Juncheng on 12/4/18.
+//  Created by Juncheng on 12/4/22.
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
