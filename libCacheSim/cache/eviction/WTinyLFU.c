@@ -27,7 +27,6 @@ extern "C" {
 #define DEBUG_MODE_2
 #undef DEBUG_MODE_2
 
-
 typedef struct WTinyLFU_params {
   cache_t *LRU;         // LRU as windowed LRU
   cache_t *main_cache;  // any eviction policy
@@ -36,7 +35,6 @@ typedef struct WTinyLFU_params {
   size_t max_request_num;
   size_t request_counter;
   char main_cache_type[32];
-  bool is_windowed;
 
   request_t *req_local;
 } WTinyLFU_params_t;
@@ -112,14 +110,10 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
 
-  if (params->is_windowed) {
-    ccache_params_local.cache_size *= params->window_size;
-    params->LRU = LRU_init(ccache_params_local, NULL);
-    ccache_params_local.cache_size = ccache_params.cache_size;
-    ccache_params_local.cache_size -= params->LRU->cache_size;
-  } else {
-    params->LRU = NULL;
-  }
+  ccache_params_local.cache_size *= params->window_size;
+  params->LRU = LRU_init(ccache_params_local, NULL);
+  ccache_params_local.cache_size = ccache_params.cache_size;
+  ccache_params_local.cache_size -= params->LRU->cache_size;
 
   if (strcasecmp(params->main_cache_type, "LRU") == 0) {
     params->main_cache = LRU_init(ccache_params_local, NULL);
@@ -143,25 +137,13 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
     ERROR("WTinyLFU does not support %s \n", params->main_cache_type);
   }
 
-  if (params->is_windowed) {
-    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "WTinyLFU-w%.2lf-%s",
-             params->window_size, params->main_cache_type);
-  } else {
-    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "TinyLFU-%s",
-             params->main_cache_type);
-  }
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "WTinyLFU-w%.2lf-%s",
+           params->window_size, params->main_cache_type);
+
   params->req_local = new_request();
 
   params->max_request_num =
       32 * params->main_cache->cache_size;  // sample size is 32
-
-#ifdef DEBUG_MODE
-  printf(
-      "main_cache cache size: %ld, consider_obj_metadata: %d, hashpower: "
-      "%d\n\n",
-      ccache_params_local.cache_size, ccache_params_local.consider_obj_metadata,
-      ccache_params_local.hashpower);
-#endif
 
   params->CBF =
       (struct minimalIncrementCBF *)malloc(sizeof(struct minimalIncrementCBF));
@@ -181,6 +163,11 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
 
   params->request_counter = 0;  // initialize request counter
 
+#if defined(TRACK_DEMOTION)
+  params->LRU->track_demotion = false;
+  params->main_cache->track_demotion = false;
+#endif
+
   return cache;
 }
 
@@ -191,7 +178,7 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
  */
 static void WTinyLFU_free(cache_t *cache) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
-  if (params->is_windowed) params->LRU->cache_free(params->LRU);
+  params->LRU->cache_free(params->LRU);
   params->main_cache->cache_free(params->main_cache);
 
   minimalIncrementCBF_free(params->CBF);
@@ -213,89 +200,46 @@ static bool WTinyLFU_get(cache_t *cache, const request_t *req) {
 static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
                                   const bool update_cache) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
-#ifdef DEBUG_MODE
-  if (params == NULL) printf("cache->eviction_params == NULL\n");
-  DEBUG_ASSERT(params != NULL);
-#endif
 
-  if (params->is_windowed) {
-    cache_obj_t *obj = params->LRU->find(params->LRU, req, update_cache);
-    bool cache_hit = (obj != NULL);
-#ifdef DEBUG_MODE
-    if (obj != NULL)
-      printf(
-          "[find LRU hit] req id: %zu, obj id: %zu, obj size: %u, "
-          "update_cache: %d\n",
-          req->obj_id, obj->obj_id, obj->obj_size, update_cache);
-    else
-      printf("[find LRU miss] req id: %zu ", req->obj_id);
-#endif
-    if (cache_hit) {
-#ifdef DEBUG_MODE
-      printf("\n");
-#endif
-      return obj;
-    }
+  assert(params->is_windowed);
+
+  cache_obj_t *obj_window = NULL;
+  cache_obj_t *obj_main = NULL;
+
+  obj_window = params->LRU->find(params->LRU, req, update_cache);
+  obj_main = params->main_cache->find(params->main_cache, req, update_cache);
+
+  cache_obj_t *obj = obj_window != NULL ? obj_window : obj_main;
+
+  if (!update_cache) {
+    return obj;
   }
 
-  cache_obj_t *obj =
-      params->main_cache->find(params->main_cache, req, update_cache);
-  bool cache_hit = (obj != NULL);
-#ifdef DEBUG_MODE_2
-  if (obj != NULL)
-    printf(
-        "-> [find main_cache hit] obj size: %u, main_cache occupied_byte: %zu, "
-        "update_cache: %d\n",
-        obj->obj_size,
-        params->main_cache->get_occupied_byte(params->main_cache),
-        update_cache);
-  else
-    printf("-> [find main_cache miss]\n");
-#endif
-  if (cache_hit && update_cache) {
+  if (obj_main != NULL) {
     // frequency update
     minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t));
 
-#ifdef DEBUG_MODE
-    printf("minimal Increment CBF add obj id %zu: %d\n\n", req->obj_id,
-           minimalIncrementCBF_estimate(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t)));
-#endif
     params->request_counter++;
     if (params->request_counter >= params->max_request_num) {
       params->request_counter = 0;
       minimalIncrementCBF_decay(params->CBF);
     }
-    return obj;
-  } else if (cache_hit) {
-#ifdef DEBUG_MODE
-    printf("\n");
-#endif
-    return obj;
   }
 
-#ifdef DEBUG_MODE
-  printf("\n");
-#endif
-
-  return NULL;
+  return obj;
 }
 
 cache_obj_t *WTinyLFU_insert(cache_t *cache, const request_t *req) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
 
-  if (params->is_windowed) {
-#ifdef DEBUG_MODE
-    printf(
-        "[insert] req obj_id: %zu, req obj_size: %zu, LRU occupied_byte: %zu "
-        "(capacity: %zu)\n",
-        req->obj_id, req->obj_size, params->LRU->occupied_byte,
-        params->LRU->cache_size);
+  cache_obj_t *obj = NULL;
+  obj = params->LRU->insert(params->LRU, req);
+
+#if defined(TRACK_DEMOTION)
+  obj->create_time = cache->n_req;
 #endif
 
-    return params->LRU->insert(params->LRU, req);
-  } else {
-    return params->main_cache->insert(params->main_cache, req);
-  }
+  return obj;
 }
 
 static cache_obj_t *WTinyLFU_to_evict(cache_t *cache, const request_t *req) {
@@ -306,11 +250,6 @@ static cache_obj_t *WTinyLFU_to_evict(cache_t *cache, const request_t *req) {
 static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
 
-  if (params->is_windowed == false) {
-    params->main_cache->evict(params->main_cache, req);
-    return;
-  }
-
   cache_t *window = params->LRU;
   cache_t *main = params->main_cache;
 
@@ -319,13 +258,6 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
     if (window->get_occupied_byte(window) > 0) {
       cache_obj_t *window_victim = window->to_evict(window, req);
       DEBUG_ASSERT(window_victim != NULL);
-#ifdef DEBUG_MODE
-      printf(
-          "[to evict LRU] window_victim obj_id: %zu, obj_size: %u, LRU "
-          "occupied_byte: %zu (capacity: %zu)\n",
-          window_victim->obj_id, window_victim->obj_size, window->occupied_byte,
-          window->cache_size);
-#endif
 
       // window victim req is different from req
       copy_cache_obj_to_request(params->req_local, window_victim);
@@ -336,62 +268,43 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
       if (main->get_occupied_byte(main) + params->req_local->obj_size +
               cache->obj_md_size <=
           main->cache_size) {
-#ifdef DEBUG_MODE
-        printf(
-            "[insert main_cache before] req obj_id: %zu, req obj_size: %zu, "
-            "main_cache occupied_byte: %zu (capacity: %zu)\n",
-            params->req_local->obj_id, params->req_local->obj_size,
-            main->get_occupied_byte(main), main->cache_size);
-#endif
         main->insert(main, params->req_local);
 
-#ifdef DEBUG_MODE
-        printf(
-            "[insert main_cache after] req obj_id: %zu, req obj_size: %zu, "
-            "main_cache occupied_byte: %zu (capacity: %zu)\n",
-            params->req_local->obj_id, params->req_local->obj_size,
-            main->get_occupied_byte(main), main->cache_size);
+#if defined(TRACK_DEMOTION)
+        printf("%ld keep %ld %ld\n", cache->n_req, window_victim->create_time,
+               window_victim->misc.next_access_vtime);
 #endif
+
         window->remove(window, window_victim->obj_id);
+
       } else {
         // compare the frequency of window_victim and main_cache_victim
         cache_obj_t *main_cache_victim = main->to_evict(main, req);
         DEBUG_ASSERT(main_cache_victim != NULL);
         // if window_victim is more frequent, insert it into main_cache
-#ifdef DEBUG_MODE
-        printf(
-            "[compare] window_victim obj_id %zu -> %d, main_cache_victim "
-            "obj_id "
-            "%zu -> %d\n",
-            window_victim->obj_id,
-            minimalIncrementCBF_estimate(params->CBF,
-                                         (void *)&window_victim->obj_id,
-                                         sizeof(window_victim->obj_id)),
-            main_cache_victim->obj_id,
-            minimalIncrementCBF_estimate(params->CBF,
-                                         (void *)&main_cache_victim->obj_id,
-                                         sizeof(main_cache_victim->obj_id)));
-#endif
         if (minimalIncrementCBF_estimate(params->CBF,
                                          (void *)&window_victim->obj_id,
                                          sizeof(window_victim->obj_id)) >
             minimalIncrementCBF_estimate(params->CBF,
                                          (void *)&main_cache_victim->obj_id,
                                          sizeof(main_cache_victim->obj_id))) {
-          main->evict(main, req);
-#ifdef DEBUG_MODE
-          printf(
-              "[evict main_cache victim] obj_id: %zu, obj_size: %u, main_cache "
-              "occupied_byte: %zu (capacity: %zu)\n",
-              main_cache_victim->obj_id, main_cache_victim->obj_size,
-              main->get_occupied_byte(main), main->cache_size);
+#if defined(TRACK_DEMOTION)
+          printf("%ld keep %ld %ld\n", cache->n_req, window_victim->create_time,
+                 window_victim->misc.next_access_vtime);
 #endif
+
+          main->evict(main, req);
+
           bool ret = window->remove(window, window_victim->obj_id);
           DEBUG_ASSERT(ret);
 
           cache_obj_t *cache_obj = main->insert(main, params->req_local);
         } else {
-          VVERBOSE("[evict LRU victim] obj_id: %zu\n", window_victim->obj_id);
+#if defined(TRACK_DEMOTION)
+          printf("%ld demote %ld %ld\n", cache->n_req,
+                 window_victim->create_time,
+                 window_victim->misc.next_access_vtime);
+#endif
 
           window->evict(window, req);
           evicted = true;
@@ -400,10 +313,6 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
       // TODO @ Ziyue: add doorkeeper
       minimalIncrementCBF_add(params->CBF, (void *)(&params->req_local->obj_id),
                               sizeof(obj_id_t));
-      VVERBOSE("minimal Increment CBF add obj id %zu: %d\n\n",
-               window_victim->obj_id,
-               minimalIncrementCBF_estimate(
-                   params->CBF, (void *)(&window_victim->obj_id), sizeof(obj_id_t)));
     } else {
       DEBUG_ASSERT(window->get_occupied_byte(window) == 0);
       return main->evict(main, req);
@@ -413,7 +322,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
 
 static bool WTinyLFU_remove(cache_t *cache, const obj_id_t obj_id) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
-  if (params->is_windowed && params->LRU->remove(params->LRU, obj_id)) {
+  if (params->LRU->remove(params->LRU, obj_id)) {
     return true;
   }
   if (params->main_cache->remove(params->main_cache, obj_id)) {
@@ -450,7 +359,6 @@ static void WTinyLFU_parse_params(cache_t *cache,
         ERROR("window_size must be in [0, 1)\n");
         exit(1);
       }
-      params->is_windowed = (params->window_size > 0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
       exit(1);
@@ -464,53 +372,17 @@ bool WTinyLFU_can_insert(cache_t *cache, const request_t *req) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
 
-#ifdef DEBUG_MODE
-  if (params->is_windowed == false) {
-    if (params->main_cache->can_insert(params->main_cache, req) == false) {
-      printf(
-          "[can_insert FALSE] req object size: %lu, cache object md size: %u, "
-          "main_cache can insert: %d\n",
-          req->obj_size, cache->obj_md_size,
-          params->main_cache->can_insert(params->main_cache, req));
-      DEBUG_ASSERT(false);
-    }
-  } else if (can_insert &&
-             (req->obj_size + cache->obj_md_size <= params->LRU->cache_size) &&
-             (params->main_cache->can_insert(params->main_cache, req)) ==
-                 false) {
-    printf(
-        "[can_insert FALSE] req object size: %lu, cache object md size: %u, "
-        "cache size: %lu, main_cache can insert: %d\n",
-        req->obj_size, cache->obj_md_size, params->LRU->cache_size,
-        params->main_cache->can_insert(params->main_cache, req));
-    DEBUG_ASSERT(false);
-  }
-#endif
-
-  if (params->is_windowed == false)
-    return can_insert &&
-           params->main_cache->can_insert(params->main_cache, req);
-  else
-    return can_insert &&
-           (req->obj_size + cache->obj_md_size <= params->LRU->cache_size) &&
-           (params->main_cache->can_insert(params->main_cache, req));
+  return can_insert &&
+         (req->obj_size + cache->obj_md_size <= params->LRU->cache_size) &&
+         (params->main_cache->can_insert(params->main_cache, req));
 }
 
 static int64_t WTinyLFU_get_occupied_byte(const cache_t *cache) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
   int64_t occupied_byte = 0;
 
-  if (params->is_windowed == false)
-    return params->main_cache->get_occupied_byte(params->main_cache);
-
   occupied_byte += params->LRU->occupied_byte;
   occupied_byte += params->main_cache->get_occupied_byte(params->main_cache);
-
-#ifdef DEBUG_MODE
-  printf("[get_occupied_byte] LRU: %ld, main_cache: %ld\n\n",
-         params->LRU->occupied_byte,
-         params->main_cache->get_occupied_byte(params->main_cache));
-#endif
 
   return occupied_byte;
 }
@@ -519,15 +391,11 @@ static int64_t WTinyLFU_get_n_obj(const cache_t *cache) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
   int64_t n_obj = 0;
 
-  if (params->is_windowed == false)
-    return params->main_cache->get_n_obj(params->main_cache);
-
   n_obj += params->LRU->n_obj;
   n_obj += params->main_cache->get_n_obj(params->main_cache);
   return n_obj;
 }
 
 #ifdef __cplusplus
-extern "C"
 }
 #endif

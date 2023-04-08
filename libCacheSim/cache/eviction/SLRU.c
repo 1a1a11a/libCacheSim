@@ -37,7 +37,7 @@ typedef struct SLRU_params {
 static void SLRU_free(cache_t *cache);
 static bool SLRU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SLRU_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                              const bool update_cache);
 static cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *SLRU_to_evict(cache_t *cache, const request_t *req);
 static void SLRU_evict(cache_t *cache, const request_t *req);
@@ -102,7 +102,8 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req);
  */
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SLRU", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("SLRU", ccache_params, cache_specific_params);
   cache->cache_init = SLRU_init;
   cache->cache_free = SLRU_free;
   cache->get = SLRU_get;
@@ -152,12 +153,31 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   }
 
   // update slru cache name
-  int n = snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S%dLRU(%d",
-                   params->n_seg,
-                   (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
+  bool same_size = true;
   for (int i = 1; i < params->n_seg; i++) {
-    n += snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ":%d",
-                  (int)(params->lru_max_n_bytes[i] * 100 / cache->cache_size));
+    if (params->lru_max_n_bytes[i] != params->lru_max_n_bytes[i - 1]) {
+      same_size = false;
+      break;
+    }
+  }
+  int n = 0;
+  if (same_size) {
+    n = snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S%dLRU(%d",
+                 params->n_seg, (int)(100 / params->n_seg));
+    for (int i = 1; i < params->n_seg; i++) {
+      n += snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ":%d",
+                    (int)(100 / params->n_seg));
+    }
+  } else {
+    n = snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S%dLRU(%d",
+                 params->n_seg,
+                 (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
+
+    for (int i = 1; i < params->n_seg; i++) {
+      n +=
+          snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ":%d",
+                   (int)(params->lru_max_n_bytes[i] * 100 / cache->cache_size));
+    }
   }
   snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ")");
 
@@ -217,7 +237,7 @@ static bool SLRU_get(cache_t *cache, const request_t *req) {
  * promote to the next segment if update_cache is true
  */
 static cache_obj_t *SLRU_find(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+                              const bool update_cache) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
@@ -318,10 +338,10 @@ static cache_obj_t *SLRU_to_evict(cache_t *cache, const request_t *req) {
       return params->lru_tails[i];
     }
   }
-  // No object to evict
-  #ifdef DEBUG_MODE
-    printf("No object to evict, please check whether this is unexpected\n");
-  #endif
+// No object to evict
+#ifdef DEBUG_MODE
+  printf("No object to evict, please check whether this is unexpected\n");
+#endif
   return NULL;
 }
 
@@ -383,7 +403,7 @@ static bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
 static const char *SLRU_current_params(cache_t *cache, SLRU_params_t *params) {
   static __thread char params_str[128];
   int n = snprintf(params_str, 128, "n-seg=%d,seg-size=%d", params->n_seg,
-      (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
+                   (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
 
   for (int i = 1; i < params->n_seg; i++) {
     n += snprintf(params_str + n, 128 - n, ":%d",
