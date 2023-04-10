@@ -62,10 +62,8 @@ static inline cache_t *create_cache(const char *trace_path,
   } else if (strcasecmp(eviction_algo, "lfucpp") == 0) {
     cache = LFUCpp_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "tinyLFU") == 0) {
-    // if no window specified, we add window-size=0 to the eviction params
     if (eviction_params == NULL) {
-      // eviction_params = strdup("window-size=0");
-      cache = WTinyLFU_init(cc_params, "window-size=0");
+      cache = WTinyLFU_init(cc_params, eviction_params);
     } else {
       const char *window_size = strstr(eviction_params, "window-size=");
       if (window_size == NULL) {
@@ -130,6 +128,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = QDLPv2_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3fifo") == 0) {
     cache = S3FIFO_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "s3fifod") == 0) {
+    cache = S3FIFOd_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "myMQv1") == 0) {
     cache = myMQv1_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lru-belady") == 0) {
