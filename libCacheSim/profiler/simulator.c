@@ -10,12 +10,13 @@
 extern "C" {
 #endif
 
+#include "../include/libCacheSim/simulator.h"
+
 #include <math.h>
 
 #include "../cache/cacheUtils.h"
 #include "../include/libCacheSim/evictionAlgo.h"
 #include "../include/libCacheSim/plugin.h"
-#include "../include/libCacheSim/simulator.h"
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
 
@@ -259,8 +260,12 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
   params->caches = caches;
   params->warmup_reader = warmup_reader;
   params->warmup_sec = warmup_sec;
-  params->n_warmup_req =
-      (uint64_t)((double)get_num_of_req(reader) * warmup_frac);
+  if (warmup_frac > 1e-6) {
+    params->n_warmup_req =
+        (uint64_t)((double)get_num_of_req(reader) * warmup_frac);
+  } else {
+    params->n_warmup_req = 0;
+  }
   params->result = result;
   params->free_cache = false;
   params->progress = &progress;

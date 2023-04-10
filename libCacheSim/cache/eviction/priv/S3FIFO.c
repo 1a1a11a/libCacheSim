@@ -343,8 +343,8 @@ static void S3FIFO_evict_fifo(cache_t *cache, const request_t *req) {
 #endif
 
 #if defined(TRACK_DEMOTION)
-      printf("%ld demote %ld %ld\n", cache->n_req, obj->create_time,
-             obj->misc.next_access_vtime);
+      printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
+             obj_to_evict->misc.next_access_vtime);
 #endif
 
       // insert to ghost
