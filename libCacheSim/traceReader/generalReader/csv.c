@@ -11,6 +11,7 @@
 #include <stdlib.h>
 
 #include "../../../libCacheSim/include/libCacheSim/macro.h"
+#include "../../dataStructure/hash/hash.h"
 #include "libcsv.h"
 #include "readerInternal.h"
 
@@ -202,14 +203,13 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
         WARN("object id is not numeric %s\n", (char *)s);
       }
     } else {
-      req->obj_id = (uint64_t)g_quark_from_string(s);
+      // req->obj_id = (uint64_t)g_quark_from_string(s);
+      req->obj_id = (uint64_t)get_hash_value_str((char *)s, len);
     }
   } else if (csv_params->curr_field_idx == csv_params->time_field_idx) {
     // this does not work, because s is not null terminated
     uint64_t ts = (uint64_t)atof((char *)s);
     // uint64_t ts = (uint64_t)strtod((char *)s, &end);
-    // we only support 32-bit ts
-    assert(ts < UINT32_MAX);
     req->clock_time = ts;
   } else if (csv_params->curr_field_idx == csv_params->obj_size_field_idx) {
     req->obj_size = (uint32_t)strtoul((char *)s, &end, 0);
