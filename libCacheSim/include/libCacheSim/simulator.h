@@ -86,7 +86,8 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
                                          int num_of_caches,
                                          reader_t *warmup_reader,
                                          double warmup_frac, int warmup_sec,
-                                         int num_of_threads);
+                                         int num_of_threads, 
+                                         bool free_cache_when_finish);
 
 #ifdef __cplusplus
 }

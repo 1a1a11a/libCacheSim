@@ -30,23 +30,33 @@ static inline uint64_t next_rand() {
 }
 
 static inline long long next_power_of_2(long long N) {
-    // if N is a power of two simply return it
-    if (!(N & (N - 1)))
-        return N;
-    // else set only the left bit of most significant bit
-    return 0x8000000000000000 >> (__builtin_clzll(N) - 1);
+  // if N is a power of two simply return it
+  if (!(N & (N - 1))) return N;
+  // else set only the left bit of most significant bit
+  return 0x8000000000000000 >> (__builtin_clzll(N) - 1);
 }
 
 static inline uint64_t next_power_of_2_v2(uint64_t n) {
-    n--;
-    n |= n >> 1;
-    n |= n >> 2;
-    n |= n >> 4;
-    n |= n >> 8;
-    n |= n >> 16;
-    n |= n >> 32;
-    n++;
-    return n;
+  n--;
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  n |= n >> 32;
+  n++;
+  return n;
+}
+
+static inline unsigned long long log2_ull(unsigned long long n) {
+  unsigned long long r = 0;
+  while (n >>= 1) r++;
+  return r;
+}
+
+static inline unsigned long long log2_v2(unsigned long long n) {
+  return (unsigned long long)(8 * sizeof(unsigned long long) -
+                              __builtin_clzll((n)));
 }
 
 #ifdef __cplusplus

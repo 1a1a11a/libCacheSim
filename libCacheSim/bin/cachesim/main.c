@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
   cache_stat_t *result = simulate_with_multi_caches(
       args.reader, args.caches, args.n_cache_size * args.n_eviction_algo, NULL,
-      0, args.warmup_sec, args.n_thread);
+      0, args.warmup_sec, args.n_thread, true);
 
   char output_str[1024];
   char output_filename[128];

@@ -62,6 +62,10 @@ extern "C" {
 #define MAX2(a, b) MAX(a, b)
 #define MIN2(a, b) MIN(a, b)
 
+// not exactly LOG2, and the input must be uint64_t
+#define LOG2_ULL(X) \
+  ((unsigned)(8 * sizeof(unsigned long long) - __builtin_clzll((X))))
+
 #define MAX3(a, b, c) \
   ((a) > (b) ? ((a) > (c) ? (a) : (c)) : ((b) > (c) ? (b) : (c)))
 #define MIN3(a, b, c) \

@@ -305,13 +305,9 @@ static inline void print_cache_stat(const cache_t *cache) {
  * @param cache
  * @param age
  */
-static inline void record_log2_eviction_age(cache_t *cache, const int age) {
-#define LOG2(X) \
-  ((unsigned)(8 * sizeof(unsigned long long) - __builtin_clzll((X))))
-
-  int age_log2 = age == 0 ? 0 : LOG2(age);
+static inline void record_log2_eviction_age(cache_t *cache, const unsigned long long age) {
+  int age_log2 = age == 0 ? 0 : LOG2_ULL(age);
   cache->log_eviction_age_cnt[age_log2] += 1;
-#undef LOG2
 }
 
 static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj,

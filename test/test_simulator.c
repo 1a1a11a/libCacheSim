@@ -106,7 +106,7 @@ static void test_simulator(gconstpointer user_data) {
     g_assert_true(caches[i] != NULL);
   }
 
-  res = simulate_with_multi_caches(reader, caches, 4, NULL, 0, 0, _n_cores());
+  res = simulate_with_multi_caches(reader, caches, 4, NULL, 0, 0, _n_cores(), false);
   g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
   g_assert_cmpuint(res[1].n_req_byte, ==, req_byte_true);
   g_assert_cmpuint(res[3].n_req, ==, req_cnt_true);

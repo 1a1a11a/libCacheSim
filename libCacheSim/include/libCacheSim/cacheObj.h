@@ -107,8 +107,9 @@ typedef struct {
 } QDLP_obj_metadata_t;
 
 typedef struct {
-  int64_t freq;
   int64_t insertion_time;   // measured in number of objects inserted
+  int64_t freq;
+  int32_t main_insert_freq;
 } S3FIFO_obj_metadata_t;
 
 typedef struct {

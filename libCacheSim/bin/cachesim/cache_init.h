@@ -42,7 +42,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = GDSF_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lfuda") == 0) {
     cache = LFUDA_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "twoq") == 0) {
+  } else if (strcasecmp(eviction_algo, "twoq") == 0 ||
+             strcasecmp(eviction_algo, "2q") == 0) {
     cache = TwoQ_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, eviction_params);

@@ -31,7 +31,7 @@ typedef struct simulator_multithreading_params {
   GMutex mtx; /* prevent simultaneous write to progress */
   gint *progress;
   gpointer other_data;
-  bool free_cache;
+  bool free_cache_when_finish;
 } sim_mt_params_t;
 
 static void _simulate(gpointer data, gpointer user_data) {
@@ -127,7 +127,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   g_mutex_unlock(&(params->mtx));
 
   // clean up
-  if (params->free_cache) {
+  if (params->free_cache_when_finish) {
     local_cache->cache_free(local_cache);
   }
   free_request(req);
@@ -187,7 +187,7 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
   params->n_warmup_req =
       (uint64_t)((double)get_num_of_req(reader) * warmup_frac);
   params->result = result;
-  params->free_cache = true;
+  params->free_cache_when_finish = true;
   params->progress = &progress;
   g_mutex_init(&(params->mtx));
 
@@ -247,7 +247,8 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
                                          int num_of_caches,
                                          reader_t *warmup_reader,
                                          double warmup_frac, int warmup_sec,
-                                         int num_of_threads) {
+                                         int num_of_threads, 
+                                         bool free_cache_when_finish) {
   assert(num_of_caches > 0);
   int i, progress = 0;
 
@@ -267,7 +268,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
     params->n_warmup_req = 0;
   }
   params->result = result;
-  params->free_cache = false;
+  params->free_cache_when_finish = free_cache_when_finish;
   params->progress = &progress;
   g_mutex_init(&(params->mtx));
 
