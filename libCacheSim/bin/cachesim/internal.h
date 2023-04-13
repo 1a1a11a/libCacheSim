@@ -14,7 +14,7 @@ extern "C" {
 
 #define N_ARGS 4
 #define N_MAX_ALGO 16
-#define N_MAX_CACHE_SIZE 16
+#define N_MAX_CACHE_SIZE 128
 #define OFILEPATH_LEN 128
 
 /* This structure is used to communicate with parse_opt. */
