@@ -43,6 +43,8 @@ static void _simulate(gpointer data, gpointer user_data) {
   reader_t *cloned_reader = clone_reader(params->reader);
   request_t *req = new_request();
   cache_t *local_cache = params->caches[idx];
+  strncpy(result[idx].cache_name, local_cache->cache_name,
+          CACHE_NAME_ARRAY_LEN);
 
   /* warm up using warmup_reader */
   if (params->warmup_reader) {
@@ -247,7 +249,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[],
                                          int num_of_caches,
                                          reader_t *warmup_reader,
                                          double warmup_frac, int warmup_sec,
-                                         int num_of_threads, 
+                                         int num_of_threads,
                                          bool free_cache_when_finish) {
   assert(num_of_caches > 0);
   int i, progress = 0;

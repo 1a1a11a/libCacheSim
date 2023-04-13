@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     snprintf(output_str, 1024,
              "%s %32s cache size %8ld%s, %lld req, miss ratio %.4lf, byte miss "
              "ratio %.4lf\n",
-             output_filename, args.caches[i]->cache_name,
+             output_filename, result[i].cache_name,
              (long)result[i].cache_size / size_unit, size_unit_str,
              (long long)result[i].n_req,
              (double)result[i].n_miss / (double)result[i].n_req,
