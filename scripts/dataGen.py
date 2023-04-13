@@ -43,7 +43,7 @@ if __name__ == "__main__":
                     default=100000000,
                     help="Number of requests")
     ap.add_argument("--alpha", type=float, default=1.0, help="Zipf parameter")
-    ap.add_argument("--output_path",
+    ap.add_argument("--output",
                     type=str,
                     default="",
                     help="Output file (oracleGeneral format)")
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # for i in range(p.n):
     #     print(zg.next())
 
-    output_file = open(p.output_path, "wb") if p.output_path != "" else None
+    output_file = open(p.output, "wb") if p.output != "" else None
     s = struct.Struct("<IQIq")
     
     batch_size = 1000000
