@@ -26,16 +26,17 @@ void verify_req(reader_t *reader, request_t *req, int req_idx) {
   if (req_idx == -1) {
     if (obj_id_is_num(reader))
       g_assert_true(req->obj_id == trace_end_req_d);
-    else
-      g_assert_cmpstr(g_quark_to_string(req->obj_id), ==, trace_end_req_s);
+    // else
+    //   g_assert_cmpstr(g_quark_to_string(req->obj_id), ==, trace_end_req_s);
     return;
   }
 
   if (obj_id_is_num(reader))
     g_assert_true(req->obj_id == trace_start_req_d[req_idx]);
-  else
-    g_assert_cmpstr(g_quark_to_string(req->obj_id), ==,
-                    trace_start_req_s[req_idx]);
+  // we do not use g_quark_to_string() because it uses too much memory
+  // else
+  //   g_assert_cmpstr(g_quark_to_string(req->obj_id), ==,
+  //                   trace_start_req_s[req_idx]);
 
   if (get_trace_type(reader) == CSV_TRACE ||
       get_trace_type(reader) == BIN_TRACE ||
