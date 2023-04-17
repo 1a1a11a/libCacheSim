@@ -89,7 +89,8 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj);
  */
 cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
                           const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SFIFO_Merge", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("SFIFO_Merge", ccache_params, cache_specific_params);
   cache->cache_init = SFIFO_Merge_init;
   cache->cache_free = SFIFO_Merge_free;
   cache->get = SFIFO_Merge_get;
@@ -126,7 +127,6 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "SFIFO_Merge_%s",
            retain_policy_names[params->retain_policy]);
   params->metric_list = my_malloc_n(struct sort_list_node, params->n_exam_obj);
-
 
   return cache;
 }
@@ -249,12 +249,14 @@ static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = NULL;
   // the logic is that - we search for n_exam objects and identify n_exam -
   // n_keep objects to evict, each time we evict one object
-  if (params->pos_in_metric_list < params->n_exam_obj - params->n_keep_obj) {
-    // there are objects identified to evict
+  if (params->pos_in_metric_list < params->n_exam_obj) {
     cache_obj = params->metric_list[params->pos_in_metric_list++].cache_obj;
-    remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
-    cache_evict_base(cache, cache_obj, true);
-    return;
+    if (params->pos_in_metric_list < params->n_exam_obj - params->n_keep_obj) {
+      // there are objects identified to evict
+      remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
+      cache_evict_base(cache, cache_obj, true);
+      return;
+    }
   }
 
   if (cache->n_obj <= params->n_exam_obj) {

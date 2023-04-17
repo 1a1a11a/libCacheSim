@@ -194,7 +194,7 @@ static cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   auto *lhd = static_cast<repl::LHD *>(params->LHD_cache);
   auto id = repl::candidate_t::make(req);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   id.create_time = CURR_TIME(cache, req);
 #endif
 
@@ -267,7 +267,7 @@ static void LHD_evict(cache_t *cache, const request_t *req) {
   cache->occupied_byte -= (victimItr->second + cache->obj_md_size);
   cache->n_obj -= 1;
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   {
     cache_obj_t obj;
     obj.obj_id = victim.id;

@@ -201,8 +201,6 @@ static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
                                   const bool update_cache) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
 
-  assert(params->is_windowed);
-
   cache_obj_t *obj_window = NULL;
   cache_obj_t *obj_main = NULL;
 

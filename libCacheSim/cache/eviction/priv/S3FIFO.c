@@ -134,7 +134,7 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
   ccache_params_local.cache_size = main_cache_size;
   params->main_cache = FIFO_init(ccache_params_local, NULL);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   if (params->fifo_ghost != NULL) {
     params->fifo_ghost->track_eviction_age = false;
   }
@@ -191,6 +191,16 @@ static bool S3FIFO_get(cache_t *cache, const request_t *req) {
                cache->cache_size);
 
   bool cache_hit = cache_get_base(cache, req);
+
+  // if (cache->n_req % 1000000 == 0) {
+  //   double s = params->n_obj_admit_to_fifo + params->n_obj_admit_to_main +
+  //              params->n_obj_move_to_main;
+  //   printf("%ld %ld: %.4lf/%.4lf/%.4lf, %ld %ld\n", cache->n_req,
+  //          cache->cache_size, (double)params->n_obj_admit_to_fifo / s,
+  //          (double)params->n_obj_admit_to_main / s,
+  //          (double)params->n_obj_move_to_main / s, params->fifo->cache_size,
+  //          params->main_cache->cache_size);
+  // }
 
   return cache_hit;
 }
@@ -280,7 +290,7 @@ static cache_obj_t *S3FIFO_insert(cache_t *cache, const request_t *req) {
     obj = params->fifo->insert(params->fifo, req);
   }
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   obj->create_time = CURR_TIME(cache, req);
 #endif
 
@@ -333,7 +343,7 @@ static void S3FIFO_evict_fifo(cache_t *cache, const request_t *req) {
 
       cache_obj_t *new_obj = main->insert(main, params->req_local);
       new_obj->misc.freq = obj_to_evict->misc.freq;
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
       new_obj->create_time = obj_to_evict->create_time;
     } else {
       record_eviction_age(cache, obj_to_evict,
@@ -372,7 +382,7 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
     cache_obj_t *obj_to_evict = main->to_evict(main, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
     int freq = obj_to_evict->S3FIFO.freq;
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
     int64_t create_time = obj_to_evict->create_time;
 #endif
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
@@ -387,11 +397,11 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
       new_obj->S3FIFO.freq = MIN(freq, 3) - 1;
       new_obj->misc.freq = freq;
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
       new_obj->create_time = create_time;
 #endif
     } else {
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
       record_eviction_age(cache, obj_to_evict,
                           CURR_TIME(cache, req) - obj_to_evict->create_time);
 #endif

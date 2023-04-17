@@ -13,7 +13,7 @@ struct candidate_t {
   int appId;
   int64_t id;
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   int64_t create_time;
 #endif
 

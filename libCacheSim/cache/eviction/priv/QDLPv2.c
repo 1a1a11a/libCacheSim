@@ -154,7 +154,7 @@ cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
   snprintf(params->main_cache_eviction->cache_name, CACHE_NAME_ARRAY_LEN, "%s",
            "main-evicted");
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   params->fifo->track_eviction_age = false;
   params->main_cache->track_eviction_age = false;
   params->fifo_ghost->track_eviction_age = false;
@@ -366,7 +366,7 @@ static cache_obj_t *QDLPv2_insert(cache_t *cache, const request_t *req) {
 
   assert(obj->misc.freq == 0);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   obj->create_time = CURR_TIME(cache, req);
 #endif
 
@@ -408,7 +408,7 @@ static void QDLPv2_evict(cache_t *cache, const request_t *req) {
     assert(main->get_occupied_byte(main) <= cache->cache_size);
     // evict from main cache
     cache_obj_t *obj = main->to_evict(main, req);
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
     copy_cache_obj_to_request(params->req_local, obj);
@@ -424,7 +424,7 @@ static void QDLPv2_evict(cache_t *cache, const request_t *req) {
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   if (obj->misc.freq >= params->move_to_main_threshold) {
     // promote to main cache
     cache_obj_t *new_obj = main->insert(main, params->req_local);

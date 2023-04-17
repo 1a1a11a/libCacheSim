@@ -86,7 +86,7 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
   fprintf(output_file, "%s\n", output_str);
   fclose(output_file);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   while (cache->get_occupied_byte(cache) > 0) {
     cache->evict(cache, req);
   }

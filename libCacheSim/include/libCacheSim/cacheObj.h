@@ -136,7 +136,7 @@ typedef struct cache_obj {
   uint32_t exp_time;
 #endif
 /* age is defined as the time since the object entered the cache */
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE) || \
+#if defined(TRACK_EVICTION_V_AGE) || \
     defined(TRACK_DEMOTION)
   int64_t create_time;
 #endif

@@ -164,7 +164,7 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
     return;
   }
 
-  static int max_chain_len = 1;
+  static int max_chain_len = 16;
   int chain_len = 1;
   cache_obj_t *cur_obj = hashtable->ptr_table[hv];
   while (cur_obj != NULL && cur_obj->hash_next != cache_obj) {
@@ -172,9 +172,9 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
     chain_len += 1;
   }
 
-  if (chain_len > 16 && chain_len > max_chain_len) {
+  if (chain_len > max_chain_len) {
     max_chain_len = chain_len;
-    DEBUG(
+    WARN(
         "hashtable remove %lu chain len %d, hashtable load %ld/%ld %lf\n ",
         (unsigned long)cache_obj->obj_id, max_chain_len, (long)hashtable->n_obj,
         (long)hashsize(hashtable->hashpower),

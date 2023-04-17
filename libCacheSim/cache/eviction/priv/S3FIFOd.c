@@ -179,7 +179,7 @@ cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
   ccache_params_local.cache_size = main_cache_size;
   params->main_cache = FIFO_init(ccache_params_local, NULL);
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   if (params->fifo_ghost != NULL) {
     params->fifo_ghost->track_eviction_age = false;
   }
@@ -627,7 +627,7 @@ static cache_obj_t *S3FIFOd_insert(cache_t *cache, const request_t *req) {
 
   obj->S3FIFO.insertion_time = params->n_insertion++;
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   obj->create_time = CURR_TIME(cache, req);
 #endif
 
@@ -687,7 +687,7 @@ static void S3FIFOd_evict_fifo(cache_t *cache, const request_t *req) {
       new_obj->S3FIFO.freq = 0;
       new_obj->S3FIFO.main_insert_freq = obj_to_evict->misc.freq;
       params->main_freq_cnt[0] += 1;
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
       new_obj->create_time = obj_to_evict->create_time;
     } else {
       record_eviction_age(cache, obj_to_evict,
@@ -727,7 +727,7 @@ static void S3FIFOd_evict_main(cache_t *cache, const request_t *req) {
     DEBUG_ASSERT(obj_to_evict != NULL);
     int freq = obj_to_evict->S3FIFO.freq;
     int total_freq = obj_to_evict->misc.freq;
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
     int64_t create_time = obj_to_evict->create_time;
 #endif
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
@@ -743,11 +743,11 @@ static void S3FIFOd_evict_main(cache_t *cache, const request_t *req) {
       new_obj->misc.freq = total_freq;
       params->main_freq_cnt[log2_ull(new_obj->S3FIFO.freq)] += 1;
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
       new_obj->create_time = create_time;
 #endif
     } else {
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
       record_eviction_age(cache, obj_to_evict,
                           CURR_TIME(cache, req) - obj_to_evict->create_time);
 #endif

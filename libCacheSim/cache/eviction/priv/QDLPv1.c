@@ -155,7 +155,7 @@ cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
     ERROR("QDLPv1 does not support %s \n", params->main_cache_type);
   }
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   if (params->fifo_ghost != NULL) {
     params->fifo_ghost->track_eviction_age = false;
   }
@@ -299,7 +299,7 @@ static cache_obj_t *QDLPv1_insert(cache_t *cache, const request_t *req) {
     obj = params->fifo->insert(params->fifo, req);
   }
 
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
   obj->create_time = CURR_TIME(cache, req);
 #endif
 
@@ -340,7 +340,7 @@ static void QDLPv1_evict(cache_t *cache, const request_t *req) {
   cache_t *main = params->main_cache;
 
   if (fifo->get_occupied_byte(fifo) == 0) {
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
     cache_obj_t *obj = main->to_evict(main, req);
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
@@ -364,7 +364,7 @@ static void QDLPv1_evict(cache_t *cache, const request_t *req) {
     params->n_byte_move_to_main += obj->obj_size;
 
     params->main_cache->get(params->main_cache, params->req_local);
-#if defined(TRACK_EVICTION_R_AGE) || defined(TRACK_EVICTION_V_AGE)
+#if defined(TRACK_EVICTION_V_AGE)
     main->find(main, params->req_local, false)->create_time = obj->create_time;
   } else {
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
