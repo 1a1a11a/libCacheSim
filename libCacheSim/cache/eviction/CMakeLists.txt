@@ -34,13 +34,16 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/LRU_Prob.c
 
                 priv/MyClock.c
+                priv/QDLPv0.c
+
                 priv/QDLP.c
 
                 priv/S3LRU.c
                 priv/S3FIFO.c
                 priv/S3FIFOd.c
-                priv/QDLPv1.c
-                priv/QDLPv2.c
+
+                priv/S3FIFOdv2.c
+
 
                 priv/myMQv1.c
 

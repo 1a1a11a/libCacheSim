@@ -123,10 +123,10 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = LRU_Prob_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
     cache = QDLP_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "qdlpv1") == 0) {
-    cache = QDLPv1_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "qdlpv2") == 0) {
-    cache = QDLPv2_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "qdlpv0") == 0) {
+    cache = QDLPv0_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "s3fifodv2") == 0) {
+    cache = S3FIFOdv2_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3lru") == 0) {
     cache = S3LRU_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3fifo") == 0) {

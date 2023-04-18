@@ -134,13 +134,10 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
 cache_t *MyClock_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
-cache_t *QDLP_init(const common_cache_params_t ccache_params,
+cache_t *QDLPv0_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 
-cache_t *QDLPv1_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params);
-
-cache_t *QDLPv2_init(const common_cache_params_t ccache_params,
+cache_t *QDLP_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
 cache_t *S3LRU_init(const common_cache_params_t ccache_params,
@@ -150,6 +147,9 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
 cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
+cache_t *S3FIFOdv2_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
 cache_t *myMQv1_init(const common_cache_params_t ccache_params,
