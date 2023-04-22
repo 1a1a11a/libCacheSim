@@ -24,6 +24,7 @@ set(sourceC
         WTinyLFU.c
         Size.c
         flash/flashProb.c
+        QDLP.c
         )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
@@ -36,7 +37,6 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/MyClock.c
                 priv/QDLPv0.c
 
-                priv/QDLP.c
 
                 priv/S3LRU.c
                 priv/S3FIFO.c
