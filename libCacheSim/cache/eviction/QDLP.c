@@ -378,8 +378,8 @@ static void QDLP_evict(cache_t *cache, const request_t *req) {
   }
 
   // remove from fifo, but do not update stat
-  bool removed = fifo->remove(fifo, params->req_local->obj_id);
-  assert(removed);
+  // bool removed = fifo->remove(fifo, params->req_local->obj_id);
+  fifo->evict(fifo, req);
 }
 
 /**
