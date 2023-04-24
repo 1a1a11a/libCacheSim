@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+#include "chainedHashTableV2.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -34,12 +36,12 @@ extern "C" {
 #include "../../include/libCacheSim/macro.h"
 #include "../../utils/include/mymath.h"
 #include "../hash/hash.h"
-#include "chainedHashTableV2.h"
 
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)
 #define NEXT_OBJ(cur_obj) (((cache_obj_t *)(cur_obj))->hash_next)
 
-void _chained_hashtable_expand_v2(hashtable_t *hashtable);
+static void _chained_hashtable_expand_v2(hashtable_t *hashtable);
+static void print_hashbucket_item_distribution(const hashtable_t *hashtable);
 
 /************************ helper func ************************/
 /**
@@ -67,6 +69,14 @@ static inline void add_to_bucket(hashtable_t *hashtable,
 
   cache_obj->hash_next = head_ptr;
   hashtable->ptr_table[hv] = cache_obj;
+
+#ifdef DEBUG
+  cache_obj_t *curr_obj = cache_obj->hash_next;
+  while (curr_obj) {
+    assert(curr_obj->obj_id != cache_obj->obj_id);
+    curr_obj = curr_obj->hash_next;
+  }
+#endif
 }
 
 /* free object, called by other functions when iterating through the hashtable
@@ -174,11 +184,12 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
 
   if (chain_len > max_chain_len) {
     max_chain_len = chain_len;
-    WARN(
-        "hashtable remove %lu chain len %d, hashtable load %ld/%ld %lf\n ",
-        (unsigned long)cache_obj->obj_id, max_chain_len, (long)hashtable->n_obj,
-        (long)hashsize(hashtable->hashpower),
-        (double)hashtable->n_obj / hashsize(hashtable->hashpower));
+    WARN("hashtable remove %lu chain len %d, hashtable load %ld/%ld %lf\n",
+         (unsigned long)cache_obj->obj_id, max_chain_len,
+         (long)hashtable->n_obj, (long)hashsize(hashtable->hashpower),
+         (double)hashtable->n_obj / hashsize(hashtable->hashpower));
+
+    print_hashbucket_item_distribution(hashtable);
   }
 
   // the object to remove is not in the hash table
@@ -288,7 +299,7 @@ void free_chained_hashtable_v2(hashtable_t *hashtable) {
 }
 
 /* grows the hashtable to the next power of 2. */
-void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
+static void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
   cache_obj_t **old_table = hashtable->ptr_table;
   hashtable->ptr_table =
       my_malloc_n(cache_obj_t *, hashsize(++hashtable->hashpower));
@@ -332,6 +343,43 @@ void check_hashtable_integrity_v2(const hashtable_t *hashtable) {
       cur_obj = next_obj;
     }
   }
+}
+
+static int count_n_obj_in_bucket(cache_obj_t *curr_obj) {
+  obj_id_t obj_id_arr[64];
+  int chain_len = 0;
+  while (curr_obj != NULL) {
+    obj_id_arr[chain_len] = curr_obj->obj_id;
+    for (int i = 0; i < chain_len; i++) {
+      if (obj_id_arr[i] == curr_obj->obj_id) {
+        ERROR("obj_id %lu is duplicated in hashtable\n", curr_obj->obj_id);
+        abort();
+      }
+    }
+
+    curr_obj = curr_obj->hash_next;
+    chain_len += 1;
+  }
+
+  return chain_len;
+}
+
+static void print_hashbucket_item_distribution(const hashtable_t *hashtable) {
+  int n_print = 0;
+  int n_obj = 0;
+  for (int i = 0; i < hashsize(hashtable->hashpower); i++) {
+    int chain_len = count_n_obj_in_bucket(hashtable->ptr_table[i]);
+    n_obj += chain_len;
+    if (chain_len > 1) {
+      printf("%d, ", chain_len);
+      n_print++;
+    }
+    if (n_print == 20) {
+      printf("\n");
+      n_print = 0;
+    }
+  }
+  printf("\n #################### %d \n", n_obj);
 }
 
 #ifdef __cplusplus

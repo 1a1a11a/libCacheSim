@@ -20,6 +20,7 @@ typedef struct SLRUv0_params {
   request_t *req_local;
 } SLRUv0_params_t;
 
+
 static const char *DEFAULT_CACHE_PARAMS = "n-seg=4";
 
 // ***********************************************************************
@@ -60,7 +61,8 @@ static inline int64_t SLRUv0_get_n_obj(const cache_t *cache);
  */
 cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SLRUv0", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("SLRUv0", ccache_params, cache_specific_params);
   cache->cache_init = SLRUv0_init;
   cache->cache_free = SLRUv0_free;
   cache->get = SLRUv0_get;
@@ -91,8 +93,9 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size /= params->n_seg;
-  ccache_params_local.hashpower /= MIN(16, ccache_params_local.hashpower - 4);
-  for (int i = 0; i < params->n_seg; i++) {
+  ccache_params_local.hashpower = MIN(16, ccache_params_local.hashpower - 4);
+  params->LRUs[0] = LRU_init(ccache_params_local, NULL);
+  for (int i = 1; i < params->n_seg; i++) {
     params->LRUs[i] = LRU_init(ccache_params_local, NULL);
   }
   params->req_local = new_request();
@@ -168,7 +171,15 @@ static cache_obj_t *SLRUv0_find(cache_t *cache, const request_t *req,
     obj = params->LRUs[i]->find(params->LRUs[i], req, false);
     bool cache_hit = obj != NULL;
 
-    if (cache_hit) {
+    if (obj == NULL) {
+      continue;
+    }
+
+    if (!update_cache) {
+      return obj;
+    }
+
+    if (cache_hit && i != params->n_seg - 1) {
       // bump object from lower segment to upper segment;
       int src_id = i;
       int dest_id = i + 1;
@@ -177,6 +188,8 @@ static cache_obj_t *SLRUv0_find(cache_t *cache, const request_t *req,
       }
 
       params->LRUs[src_id]->remove(params->LRUs[src_id], req->obj_id);
+      assert(params->LRUs[dest_id]->find(params->LRUs[dest_id], req, false) ==
+             NULL);
 
       // If the upper LRU is full;
       while (params->LRUs[dest_id]->occupied_byte + req->obj_size +
@@ -185,10 +198,11 @@ static cache_obj_t *SLRUv0_find(cache_t *cache, const request_t *req,
         SLRUv0_cool(cache, req, dest_id);
 
       params->LRUs[dest_id]->insert(params->LRUs[dest_id], req);
-
-      return obj;
     }
+
+    return obj;
   }
+
   return NULL;
 }
 
@@ -261,7 +275,8 @@ static void SLRUv0_evict(cache_t *cache, const request_t *req) {
 
   int nth_seg_to_evict = 0;
   for (int i = 0; i < params->n_seg; i++) {
-    if (params->LRUs[i]->occupied_byte > 0) {
+    cache_t *lru = params->LRUs[i];
+    if (lru->get_occupied_byte(lru) > 0) {
       nth_seg_to_evict = i;
       break;
     }
@@ -307,7 +322,7 @@ static inline int64_t SLRUv0_get_occupied_byte(const cache_t *cache) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
   int64_t occupied_byte = 0;
   for (int i = 0; i < params->n_seg; i++) {
-    occupied_byte += params->LRUs[i]->occupied_byte;
+    occupied_byte += params->LRUs[i]->get_occupied_byte(params->LRUs[i]);
   }
   return occupied_byte;
 }
@@ -316,7 +331,7 @@ static inline int64_t SLRUv0_get_n_obj(const cache_t *cache) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)cache->eviction_params;
   int64_t n_obj = 0;
   for (int i = 0; i < params->n_seg; i++) {
-    n_obj += params->LRUs[i]->n_obj;
+    n_obj += params->LRUs[i]->get_n_obj(params->LRUs[i]);
   }
   return n_obj;
 }
