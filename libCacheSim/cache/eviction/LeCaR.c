@@ -101,9 +101,11 @@ static void update_weight(cache_t *cache, int64_t t, double *w_update,
 cache_t *LeCaR_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
 #ifdef LECAR_USE_BELADY
-  cache_t *cache = cache_struct_init("LeCaR-Belady", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LeCaR-Belady", ccache_params, cache_specific_params);
 #else
-  cache_t *cache = cache_struct_init("LeCaR", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LeCaR", ccache_params, cache_specific_params);
 #endif
   cache->cache_init = LeCaR_init;
   cache->cache_free = LeCaR_free;
@@ -257,6 +259,7 @@ static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
       hashtable_delete(cache->hashtable, cache_obj);
     } else {
       assert(cache_obj->LeCaR.evict_expert == -1);
+      hashtable_delete(cache->hashtable, cache_obj);
       // the two experts both pick this object, do nothing
       ;
     }
@@ -535,6 +538,9 @@ void LeCaR_evict(cache_t *cache, const request_t *req) {
                            ghost_to_evict);
       hashtable_delete(cache->hashtable, ghost_to_evict);
     }
+  } else {
+    // evicted by both caches
+    // TODO: this currently does not increase ghost size
   }
 }
 #endif

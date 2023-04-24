@@ -70,7 +70,7 @@ static inline void add_to_bucket(hashtable_t *hashtable,
   cache_obj->hash_next = head_ptr;
   hashtable->ptr_table[hv] = cache_obj;
 
-#ifdef DEBUG
+#ifdef HASHTABLE_DEBUG
   cache_obj_t *curr_obj = cache_obj->hash_next;
   while (curr_obj) {
     assert(curr_obj->obj_id != cache_obj->obj_id);
