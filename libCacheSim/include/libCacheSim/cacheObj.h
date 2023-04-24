@@ -137,7 +137,7 @@ typedef struct cache_obj {
 #endif
 /* age is defined as the time since the object entered the cache */
 #if defined(TRACK_EVICTION_V_AGE) || \
-    defined(TRACK_DEMOTION)
+    defined(TRACK_DEMOTION) || defined(TRACK_CREATE_TIME)
   int64_t create_time;
 #endif
   // used by belady related algorithsm

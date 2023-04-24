@@ -238,7 +238,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 #endif
 
 #if defined(TRACK_EVICTION_V_AGE) || \
-    defined(TRACK_DEMOTION)
+    defined(TRACK_DEMOTION) || defined(TRACK_CREATE_TIME)
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 
