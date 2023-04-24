@@ -29,7 +29,7 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size, string trace_
     n_req += 1;
     hit = cache->get(cache, req);
     if (!hit)
-      miss_ofs << req->real_time << "," << (uint64_t) req->obj_id_ptr << "," << req->obj_size << std::endl;
+      miss_ofs << req->clock_time << "," << (uint64_t) req->obj_id_ptr << "," << req->obj_size << std::endl;
     else
       n_hit += 1;
     read_one_req(reader, req);

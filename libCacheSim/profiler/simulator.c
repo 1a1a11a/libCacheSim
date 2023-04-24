@@ -102,7 +102,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   if (local_cache->hashtable->n_obj != 0) {
     cache_stat_t temp_stat;
     memset(&temp_stat, 0, sizeof(cache_stat_t));
-    temp_stat.curr_rtime = req->real_time;
+    temp_stat.curr_rtime = req->clock_time;
     get_cache_state(local_cache, &temp_stat);
 
     if (local_cache->occupied_size != temp_stat.occupied_size) {

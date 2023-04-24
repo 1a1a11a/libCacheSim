@@ -50,6 +50,16 @@ typedef struct request {
   int16_t n_param;
   int8_t method;
 
+  /* used in trace analysis */
+  int64_t vtime_since_last_access;
+  int64_t rtime_since_last_access;
+  int64_t prev_size;     /* prev size */
+  int32_t create_rtime;
+  bool compulsory_miss;   /* use this field only when it is set */
+  bool overwrite;  // this request overwrites a previous object
+  bool first_seen_in_window; /* the first time see in the time window */
+  /* used in trace analysis */
+
   bool valid; /* indicate whether request is valid request
                * it is invlalid if the trace reaches the end */
 } request_t;
@@ -100,7 +110,7 @@ static inline void free_request(request_t *req) { my_free(request_t, req); }
 static inline void print_request(request_t *req) {
 #ifdef SUPPORT_TTL
   INFO("req real_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
-       (unsigned long)req->real_time, (unsigned long long)req->obj_id,
+       (unsigned long)req->clock_time, (unsigned long long)req->obj_id,
        (long)req->obj_size, (long)req->ttl, req_op_str[req->op], req->valid);
 #else
   printf("req real_time %lu, id %llu, size %ld, op %s, valid %d\n",

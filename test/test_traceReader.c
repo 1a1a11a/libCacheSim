@@ -142,7 +142,7 @@ void test_twr(gconstpointer user_data) {
   for (int i = 0; i < N_TEST_REQ; i++) {
     read_one_req(reader, req);
     //    printf("req %d: real time %lu, obj_id %llu, obj_size %ld, ttl %ld, op
-    //    %d\n", i, (unsigned long) req->real_time,
+    //    %d\n", i, (unsigned long) req->clock_time,
     //           (unsigned long long) req->obj_id, (long) req->obj_size,
     //           (long) req->ttl, req->op);
   }

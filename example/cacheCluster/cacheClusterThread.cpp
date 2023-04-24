@@ -24,10 +24,10 @@ void cacheClusterThread::run() {
   }
   // std::cout << "host " << req->op << std::endl;
 
-  cache_start_time = req->real_time;
-  last_cluster_update = req->real_time;
+  cache_start_time = req->clock_time;
+  last_cluster_update = req->clock_time;
   last_log_otime = 0;
-  last_log_otime = req->real_time;
+  last_log_otime = req->clock_time;
   cluster_hit_t hit_result;
   INFO("cache cluster started, trace start time %ld\n", cache_start_time);
 
@@ -42,19 +42,19 @@ void cacheClusterThread::run() {
 #endif
 
 #ifdef FIND_REP_COEF
-  uint64_t last_find_rep_coef_time = req->real_time;
+  uint64_t last_find_rep_coef_time = req->clock_time;
 #endif
 
   while (req->valid) {
     if (!failure_vector_deque.empty()) {
       // update server availability info
-      if (req->real_time - last_cluster_update >= cluster_update_interval) {
+      if (req->clock_time - last_cluster_update >= cluster_update_interval) {
         for (unsigned long i = 0; i < cache_cluster->get_num_server(); i++)
           cache_cluster->recover_one_server(i);
 
         std::vector<int> failed_servers = failure_vector_deque.front();
 #ifdef DEBUG_UNAVAILABILITY
-        std::cout << req->real_time << "," << vtime << "," << "update failed servers ";
+        std::cout << req->clock_time << "," << vtime << "," << "update failed servers ";
         std::for_each(failed_servers.begin(),
                       failed_servers.end(),
                       [](const int e) { std::cout << e << " "; });
@@ -67,7 +67,7 @@ void cacheClusterThread::run() {
           }
         }
         failure_vector_deque.pop_front();
-        last_cluster_update = req->real_time;
+        last_cluster_update = req->clock_time;
       }
     }
 
@@ -86,8 +86,8 @@ void cacheClusterThread::run() {
 
 #ifdef TRACK_FAILURE_IMPACTED_HIT_START
     if (vtime == TRACK_FAILURE_IMPACTED_HIT_START) {
-      tracking_start_rtime = req->real_time;
-      last_tracking_log_time = req->real_time;
+      tracking_start_rtime = req->clock_time;
+      last_tracking_log_time = req->clock_time;
       this->cache_cluster->get_all_server_stored_obj();
       failure_impacted_hit_ofstream << "# freeze cluster obj cache, total ";
 
@@ -113,9 +113,9 @@ void cacheClusterThread::run() {
         }
       }
 
-      if (req->real_time != last_tracking_log_time && (req->real_time - tracking_start_rtime) % log_interval == 0) {
-        last_tracking_log_time = req->real_time;
-        failure_impacted_hit_ofstream << req->real_time-tracking_start_rtime << "," << vtime << ",";
+      if (req->clock_time != last_tracking_log_time && (req->clock_time - tracking_start_rtime) % log_interval == 0) {
+        last_tracking_log_time = req->clock_time;
+        failure_impacted_hit_ofstream << req->clock_time-tracking_start_rtime << "," << vtime << ",";
         for (size_t i = 0; i < 10; i++) {
           failure_impacted_hit_ofstream << hit_cnt[i] << "/" << req_cnt[i] << "/" << hit_byte[i] << "/" << req_byte[i];
           if (i != 9) failure_impacted_hit_ofstream << ","; else failure_impacted_hit_ofstream << std::endl;
@@ -129,20 +129,20 @@ void cacheClusterThread::run() {
 
 #endif
 
-    if (log_interval != 0 && req->real_time - last_log_otime >= log_interval) {
+    if (log_interval != 0 && req->clock_time - last_log_otime >= log_interval) {
 //    if (log_interval != 0 && vtime - last_log_otime >= log_interval) {
 //      if (vtime % (20 * log_interval) == 0) {
-//      INFO("finish request %ld %ld - %lld - %ld\n", (long) vtime, (long) (req->real_time),
+//      INFO("finish request %ld %ld - %lld - %ld\n", (long) vtime, (long) (req->clock_time),
 //           (long long) (*(guint64 *) (req->label_ptr)), (long) (req->size));
 //      }
 //      last_log_otime = vtime;
 //      log_ofstream << vtime << ", " << cluster_stat->stat_str(false, false);
 
-      last_log_otime = req->real_time;
-      log_ofstream << req->real_time << ", " << cluster_stat->stat_str(false, false);
+      last_log_otime = req->clock_time;
+      log_ofstream << req->clock_time << ", " << cluster_stat->stat_str(false, false);
 
 #ifdef TRACK_BUCKET_STAT
-      log_bucket_ofstream << req->real_time << "," << vtime << ",";
+      log_bucket_ofstream << req->clock_time << "," << vtime << ",";
       for (size_t i=0; i<N_BUCKET-1; i++){
         log_bucket_ofstream << cache_cluster->bucket_stat[i].stat_str() << ",";
         cache_cluster->bucket_stat[i].clear();
@@ -155,8 +155,8 @@ void cacheClusterThread::run() {
     }
 
 #ifdef FIND_REP_COEF
-    if (log_interval != 0 && req->real_time - last_find_rep_coef_time >= log_interval * 20 ) {
-      last_find_rep_coef_time = req->real_time;
+    if (log_interval != 0 && req->clock_time - last_find_rep_coef_time >= log_interval * 20 ) {
+      last_find_rep_coef_time = req->clock_time;
       uint64_t n_server_obj, n_server_byte, n_cluster_obj, n_cluster_byte;
       cache_cluster->find_rep_factor(&cluster_stat->rep_coef_obj, &cluster_stat->rep_coef_byte,
                                      &n_server_obj, &n_server_byte, &n_cluster_obj, &n_cluster_byte);
