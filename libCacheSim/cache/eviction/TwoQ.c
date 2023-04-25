@@ -19,6 +19,8 @@
 extern "C" {
 #endif
 
+// #define USE_MYCLOCK
+
 typedef struct {
   cache_t *Ain;
   cache_t *Aout;
@@ -68,7 +70,8 @@ static void TwoQ_parse_params(cache_t *cache,
 
 cache_t *TwoQ_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("TwoQ", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("TwoQ", ccache_params, cache_specific_params);
   cache->cache_init = TwoQ_init;
   cache->cache_free = TwoQ_free;
   cache->get = TwoQ_get;
@@ -107,8 +110,11 @@ cache_t *TwoQ_init(const common_cache_params_t ccache_params,
 
   ccache_params_local.cache_size = params->Am_cache_size;
   params->Am = LRU_init(ccache_params_local, NULL);
-
-  //   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "TwoQ");
+#ifdef USE_MYCLOCK
+  params->Am->cache_free(params->Am);
+  params->Am = MyClock_init(ccache_params_local, NULL);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "TwoQ-myclock");
+#endif
 
   return cache;
 }

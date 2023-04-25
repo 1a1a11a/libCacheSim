@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+// #define USE_BELADY
+
 typedef struct {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
@@ -15,6 +17,8 @@ typedef struct {
   int64_t n_scanned_obj;
   int64_t n_written_obj;
   double wrap_around_ratio;
+
+  int64_t n_miss;
 } MyClock_params_t;
 
 // ***********************************************************************
@@ -52,7 +56,8 @@ static void MyClock_verify(cache_t *cache);
  */
 cache_t *MyClock_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("MyClock", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("MyClock", ccache_params, cache_specific_params);
   cache->cache_init = MyClock_init;
   cache->cache_free = MyClock_free;
   cache->get = MyClock_get;
@@ -73,6 +78,9 @@ cache_t *MyClock_init(const common_cache_params_t ccache_params,
   params->pointer = NULL;
   params->q_head = NULL;
   params->q_tail = NULL;
+  params->n_scanned_obj = 0;
+  params->n_written_obj = 0;
+  params->n_miss = 0;
 
   return cache;
 }
@@ -108,7 +116,13 @@ static void MyClock_free(cache_t *cache) {
  */
 
 static bool MyClock_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
+  bool ret = cache_get_base(cache, req);
+  if (!ret) {
+    MyClock_params_t *params = (MyClock_params_t *)cache->eviction_params;
+    params->n_miss++;
+  }
+
+  return ret;
 }
 
 // ***********************************************************************
@@ -168,27 +182,47 @@ static cache_obj_t *MyClock_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *MyClock_to_evict(cache_t *cache, const request_t *req) {
+static cache_obj_t *MyClock_to_evict_with_freq(cache_t *cache, const request_t *req, int to_evict_freq) {
   MyClock_params_t *params = cache->eviction_params;
   cache_obj_t *pointer = params->pointer;
+  cache_obj_t *old_pointer = pointer;
 
   /* if we have run one full around or first eviction */
   if (pointer == NULL) pointer = params->q_tail;
 
   /* find the first untouched */
-  while (pointer != NULL && pointer->clock.freq > 0) {
+  while (pointer != NULL && pointer->clock.freq > to_evict_freq) {
     pointer = pointer->queue.prev;
   }
 
   /* if we have finished one around, start from the tail */
   if (pointer == NULL) {
     pointer = params->q_tail;
-    while (pointer != NULL && pointer->clock.freq > 0) {
+    while (pointer != NULL && pointer->clock.freq > to_evict_freq) {
       pointer = pointer->queue.prev;
     }
   }
 
+  if (pointer == NULL) return NULL;
+
   return pointer;
+}
+
+static cache_obj_t *MyClock_to_evict(cache_t *cache, const request_t *req) {
+
+  // because we do not change the frequency of the object, 
+  // if all objects have frequency 1, we may return NULL
+  int to_evict_freq = 0;
+
+  cache_obj_t *obj_to_evict = MyClock_to_evict_with_freq(cache, req, to_evict_freq);
+
+  while (obj_to_evict == NULL) {
+    to_evict_freq += 1;
+
+    obj_to_evict = MyClock_to_evict_with_freq(cache, req, to_evict_freq);
+  }
+
+  return obj_to_evict;
 }
 
 /**
@@ -205,10 +239,19 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = params->pointer;
 
   /* if we have run one full around or first eviction */
-  if (obj == NULL) obj = params->q_tail;
+  if (obj == NULL) {
+    obj = params->q_tail;
+  }
 
   /* find the first untouched */
-  while (obj != NULL && obj->clock.freq > 0) {
+#ifdef USE_BELADY
+  while (obj != NULL && obj->misc.next_access_vtime != INT64_MAX &&
+         (obj->misc.next_access_vtime - cache->n_req) <
+             (double)cache->cache_size /
+                 ((double)params->n_miss / cache->n_req)) {
+#else
+  while ((obj != NULL && obj->clock.freq > 0)) {
+#endif
     params->n_scanned_obj++;
     obj->clock.freq -= 1;
     obj = obj->queue.prev;
@@ -217,7 +260,14 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
   /* if we have finished one around, start from the tail */
   if (obj == NULL) {
     obj = params->q_tail;
+#ifdef USE_BELADY
+    while (obj != NULL && obj->misc.next_access_vtime != INT64_MAX &&
+           (obj->misc.next_access_vtime - cache->n_req) <
+               (double)cache->cache_size /
+                   ((double)params->n_miss / cache->n_req)) {
+#else
     while (obj != NULL && obj->clock.freq > 0) {
+#endif
       params->n_scanned_obj++;
       obj->clock.freq -= 1;
       obj = obj->queue.prev;
@@ -263,7 +313,6 @@ static bool MyClock_remove(cache_t *cache, const obj_id_t obj_id) {
 
   return true;
 }
-
 
 static void MyClock_verify(cache_t *cache) {
   MyClock_params_t *params = cache->eviction_params;
