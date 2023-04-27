@@ -19,6 +19,8 @@ typedef struct {
   double wrap_around_ratio;
 
   int64_t n_miss;
+  int64_t n_new_obj;  // used to track the number of objects since last pointer
+                      // went back to the tail (the oldest)
 } MyClock_params_t;
 
 // ***********************************************************************
@@ -74,6 +76,7 @@ cache_t *MyClock_init(const common_cache_params_t ccache_params,
   }
 
   cache->eviction_params = my_malloc(MyClock_params_t);
+  memset(cache->eviction_params, 0, sizeof(MyClock_params_t));
   MyClock_params_t *params = (MyClock_params_t *)cache->eviction_params;
   params->pointer = NULL;
   params->q_head = NULL;
@@ -116,13 +119,19 @@ static void MyClock_free(cache_t *cache) {
  */
 
 static bool MyClock_get(cache_t *cache, const request_t *req) {
-  bool ret = cache_get_base(cache, req);
-  if (!ret) {
-    MyClock_params_t *params = (MyClock_params_t *)cache->eviction_params;
+  MyClock_params_t *params = (MyClock_params_t *)cache->eviction_params;
+
+  bool ck_hit = cache_get_base(cache, req);
+  if (!ck_hit) {
     params->n_miss++;
   }
 
-  return ret;
+  // if (cache->n_req % 1000 == 0) {
+  //   printf("sieve %ld %ld %lf\n", cache->cache_size, cache->n_req,
+  //          (double)params->n_new_obj / (double)cache->cache_size);
+  // }
+
+  return ck_hit;
 }
 
 // ***********************************************************************
@@ -145,7 +154,7 @@ static cache_obj_t *MyClock_find(cache_t *cache, const request_t *req,
                                  const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
   if (cache_obj != NULL && update_cache) {
-    cache_obj->clock.freq = 1;
+    cache_obj->myclock.freq = 1;
   }
 
   return cache_obj;
@@ -166,8 +175,10 @@ static cache_obj_t *MyClock_insert(cache_t *cache, const request_t *req) {
   MyClock_params_t *params = cache->eviction_params;
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
-  obj->clock.freq = 0;
+  obj->myclock.freq = 0;
+  obj->myclock.new_obj = true;
   params->n_written_obj++;
+  params->n_new_obj++;
 
   return obj;
 }
@@ -182,7 +193,9 @@ static cache_obj_t *MyClock_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *MyClock_to_evict_with_freq(cache_t *cache, const request_t *req, int to_evict_freq) {
+static cache_obj_t *MyClock_to_evict_with_freq(cache_t *cache,
+                                               const request_t *req,
+                                               int to_evict_freq) {
   MyClock_params_t *params = cache->eviction_params;
   cache_obj_t *pointer = params->pointer;
   cache_obj_t *old_pointer = pointer;
@@ -191,14 +204,14 @@ static cache_obj_t *MyClock_to_evict_with_freq(cache_t *cache, const request_t *
   if (pointer == NULL) pointer = params->q_tail;
 
   /* find the first untouched */
-  while (pointer != NULL && pointer->clock.freq > to_evict_freq) {
+  while (pointer != NULL && pointer->myclock.freq > to_evict_freq) {
     pointer = pointer->queue.prev;
   }
 
   /* if we have finished one around, start from the tail */
   if (pointer == NULL) {
     pointer = params->q_tail;
-    while (pointer != NULL && pointer->clock.freq > to_evict_freq) {
+    while (pointer != NULL && pointer->myclock.freq > to_evict_freq) {
       pointer = pointer->queue.prev;
     }
   }
@@ -209,12 +222,12 @@ static cache_obj_t *MyClock_to_evict_with_freq(cache_t *cache, const request_t *
 }
 
 static cache_obj_t *MyClock_to_evict(cache_t *cache, const request_t *req) {
-
-  // because we do not change the frequency of the object, 
+  // because we do not change the frequency of the object,
   // if all objects have frequency 1, we may return NULL
   int to_evict_freq = 0;
 
-  cache_obj_t *obj_to_evict = MyClock_to_evict_with_freq(cache, req, to_evict_freq);
+  cache_obj_t *obj_to_evict =
+      MyClock_to_evict_with_freq(cache, req, to_evict_freq);
 
   while (obj_to_evict == NULL) {
     to_evict_freq += 1;
@@ -250,10 +263,13 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
              (double)cache->cache_size /
                  ((double)params->n_miss / cache->n_req)) {
 #else
-  while ((obj != NULL && obj->clock.freq > 0)) {
+  while ((obj != NULL && obj->myclock.freq > 0)) {
 #endif
     params->n_scanned_obj++;
-    obj->clock.freq -= 1;
+    obj->myclock.freq -= 1;
+    if (obj->myclock.new_obj) params->n_new_obj -= 1;
+
+    obj->myclock.new_obj = false;
     obj = obj->queue.prev;
   }
 
@@ -266,14 +282,16 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
                (double)cache->cache_size /
                    ((double)params->n_miss / cache->n_req)) {
 #else
-    while (obj != NULL && obj->clock.freq > 0) {
+    while (obj != NULL && obj->myclock.freq > 0) {
 #endif
       params->n_scanned_obj++;
-      obj->clock.freq -= 1;
+      obj->myclock.freq -= 1;
+      obj->myclock.new_obj = false;
       obj = obj->queue.prev;
     }
   }
 
+  if (obj->myclock.new_obj) params->n_new_obj -= 1;
   params->n_scanned_obj++;
   params->pointer = obj->queue.prev;
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);

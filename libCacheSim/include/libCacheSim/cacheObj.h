@@ -118,6 +118,13 @@ typedef struct {
 } __attribute__((packed)) misc_metadata_t;
 
 typedef struct {
+  int32_t clock_id;
+  int32_t freq;
+  bool visited;
+  bool new_obj;
+} __attribute__((packed)) myclock_params_t;
+
+typedef struct {
   bool is_LIR;
   bool in_cache;
 } LIRS_obj_metadata_t;
@@ -161,6 +168,7 @@ typedef struct cache_obj {
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
+    myclock_params_t myclock;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;
