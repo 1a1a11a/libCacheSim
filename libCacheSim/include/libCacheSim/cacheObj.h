@@ -68,6 +68,11 @@ typedef struct Belady_obj_metadata {
   int64_t next_access_vtime;
 } Belady_obj_metadata_t;
 
+typedef struct {
+  bool is_LIR;
+  bool in_cache;
+} LIRS_obj_metadata_t;
+
 typedef struct FIFOMerge_obj_metadata {
   int32_t freq;
   int32_t last_access_vtime;
@@ -113,6 +118,10 @@ typedef struct {
 } S3FIFO_obj_metadata_t;
 
 typedef struct {
+  int32_t freq;
+} __attribute__((packed)) Sieve_obj_params_t;
+
+typedef struct {
   int64_t next_access_vtime;
   int32_t freq;
 } __attribute__((packed)) misc_metadata_t;
@@ -120,14 +129,10 @@ typedef struct {
 typedef struct {
   int32_t clock_id;
   int32_t freq;
+  int32_t n_miss;
   bool visited;
   bool new_obj;
-} __attribute__((packed)) myclock_params_t;
-
-typedef struct {
-  bool is_LIR;
-  bool in_cache;
-} LIRS_obj_metadata_t;
+} __attribute__((packed)) myclock_obj_params_t;
 
 // ############################## cache obj ###################################
 struct cache_obj;
@@ -168,7 +173,8 @@ typedef struct cache_obj {
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
-    myclock_params_t myclock;
+    myclock_obj_params_t myclock;
+    Sieve_obj_params_t sieve;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;

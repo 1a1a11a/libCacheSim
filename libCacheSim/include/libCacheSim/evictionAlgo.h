@@ -134,6 +134,10 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
 cache_t *MyClock_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
+cache_t *Sieve_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
+
+cache_t *MyClockv2_init(const common_cache_params_t ccache_params,
 cache_t *QDLPv0_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 

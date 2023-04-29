@@ -35,6 +35,8 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
                 priv/LRU_Prob.c
 
                 priv/MyClock.c
+                priv/Sieve.c
+                priv/MyClockv2.c
                 priv/QDLPv0.c
 
 
@@ -58,6 +60,14 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fifo")
         fifo/LP_ARC.c
         fifo/SFIFO.c
         fifo/SFIFOv0.c
+        )
+endif()
+
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/belady")
+        set(sourceC ${sourceC} 
+        belady/Sieve_Belady.c
+        belady/LRU_Belady.c
+        belady/FIFO_Belady.c
         )
 endif()
 
