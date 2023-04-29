@@ -44,14 +44,12 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
     if (cache->get(cache, req) == false) {
       miss_cnt++;
       miss_byte += req->obj_size;
-      // printf("############### %ld miss - %ld\n", req->obj_id, miss_cnt);
-    } else {
-      // printf("############### %ld hit  - %ld\n", req->obj_id, miss_cnt);
     }
     if (req->clock_time - last_report_ts >= REPORT_INTERVAL &&
         req->clock_time != 0) {
       INFO(
-          "%s %s %.2lf hour: %lu requests, miss ratio %.4lf, interval miss ratio "
+          "%s %s %.2lf hour: %lu requests, miss ratio %.4lf, interval miss "
+          "ratio "
           "%.4lf\n",
           mybasename(reader->trace_path), cache->cache_name,
           (double)req->clock_time / 3600, (unsigned long)req_cnt,

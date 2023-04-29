@@ -1,4 +1,5 @@
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +25,8 @@ static inline cache_t *create_cache(const char *trace_path,
   cache_t *cache;
 
   /* the trace provided is small */
-  if (strcasestr(trace_path, "data/trace.") != NULL) cc_params.hashpower -= 8;
+  if (trace_path != NULL && strstr(trace_path, "data/trace.") != NULL)
+    cc_params.hashpower -= 8;
 
   if (strcasecmp(eviction_algo, "lru") == 0) {
     cache = LRU_init(cc_params, eviction_params);
@@ -88,8 +90,6 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = Clock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "flashProb") == 0) {
-    cache = flashProb_init(cc_params, eviction_params);
 #if defined(ENABLE_GLCACHE)
   } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
              strcasecmp(eviction_algo, "gl-cache") == 0) {
@@ -100,8 +100,14 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = LRB_init(cc_params, eviction_params);
 #endif
 #ifdef INCLUDE_PRIV
+  } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
+    cache = QDLP_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "myclock") == 0) {
     cache = MyClock_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sieve") == 0) {
+    cache = Sieve_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "myclockv2") == 0) {
+    cache = MyClockv2_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "mclock") == 0) {
     cache = MClock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "sfifo") == 0) {
@@ -121,8 +127,6 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = SFIFO_Reinsertion_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
-    cache = QDLP_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "qdlpv0") == 0) {
     cache = QDLPv0_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3fifodv2") == 0) {
@@ -135,17 +139,12 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = S3FIFOd_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "myMQv1") == 0) {
     cache = myMQv1_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "fifo-belady") == 0) {
+    cache = FIFO_Belady_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lru-belady") == 0) {
-    if (strstr(trace_path, ".zst") != NULL) {
-      ERROR("lru-belady only supports uncompressed trace files\n");
-    }
-    ERROR("not implemented\n");
-    // reader_t *reader = clone_reader(args->reader);
-    cache = LRU_init(cc_params, eviction_params);
-    // cache->future_stack_dist = get_stack_dist(
-    //     reader, FUTURE_STACK_DIST, &(cache->future_stack_dist_array_size));
-    // assert(get_num_of_req(reader) == cache->future_stack_dist_array_size);
-    // close_reader(reader);
+    cache = LRU_Belady_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sieve-belady") == 0) {
+    cache = Sieve_Belady_init(cc_params, eviction_params);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", eviction_algo);
