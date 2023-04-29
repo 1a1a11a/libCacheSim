@@ -25,6 +25,7 @@ set(sourceC
         Size.c
         flash/flashProb.c
         QDLP.c
+        nop.c
         )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")

@@ -81,6 +81,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = WTinyLFU_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "belady") == 0) {
     cache = Belady_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "nop") == 0) {
+    cache = nop_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "beladySize") == 0) {
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, eviction_params);
@@ -90,7 +92,7 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = Clock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, eviction_params);
-#if defined(ENABLE_GLCACHE)
+#ifdef ENABLE_GLCACHE
   } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
              strcasecmp(eviction_algo, "gl-cache") == 0) {
     cache = GLCache_init(cc_params, eviction_params);
