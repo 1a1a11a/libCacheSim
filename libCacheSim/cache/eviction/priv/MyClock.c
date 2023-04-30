@@ -7,8 +7,6 @@
 extern "C" {
 #endif
 
-// #define USE_BELADY
-
 typedef struct {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
@@ -26,8 +24,6 @@ typedef struct {
 // ****                                                               ****
 // ***********************************************************************
 
-static void MyClock_parse_params(cache_t *cache,
-                                 const char *cache_specific_params);
 static void MyClock_free(cache_t *cache);
 static bool MyClock_get(cache_t *cache, const request_t *req);
 static cache_obj_t *MyClock_find(cache_t *cache, const request_t *req,
@@ -150,6 +146,7 @@ static cache_obj_t *MyClock_find(cache_t *cache, const request_t *req,
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
   if (cache_obj != NULL && update_cache) {
     cache_obj->myclock.freq = 1;
+    // cache_obj->myclock.freq += 1;
   }
 
   return cache_obj;
@@ -251,14 +248,7 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
   }
 
   /* find the first untouched */
-#ifdef USE_BELADY
-  while (obj != NULL && obj->misc.next_access_vtime != INT64_MAX &&
-         (obj->misc.next_access_vtime - cache->n_req) <
-             (double)cache->cache_size /
-                 ((double)params->n_miss / cache->n_req)) {
-#else
   while ((obj != NULL && obj->myclock.freq > 0)) {
-#endif
     obj->myclock.freq -= 1;
     if (obj->myclock.new_obj) params->n_new_obj -= 1;
 
@@ -269,14 +259,7 @@ static void MyClock_evict(cache_t *cache, const request_t *req) {
   /* if we have finished one around, start from the tail */
   if (obj == NULL) {
     obj = params->q_tail;
-#ifdef USE_BELADY
-    while (obj != NULL && obj->misc.next_access_vtime != INT64_MAX &&
-           (obj->misc.next_access_vtime - cache->n_req) <
-               (double)cache->cache_size /
-                   ((double)params->n_miss / cache->n_req)) {
-#else
     while (obj != NULL && obj->myclock.freq > 0) {
-#endif
       obj->myclock.freq -= 1;
       obj->myclock.new_obj = false;
       obj = obj->queue.prev;

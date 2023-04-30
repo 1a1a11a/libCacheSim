@@ -2,9 +2,8 @@
 CURR_DIR=$(pwd)
 
 setup_ubuntu() {
+	sudo apt update
 	sudo apt install libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
-
-
 }
 
 setup_centos() {
@@ -51,7 +50,7 @@ setup_zstd() {
 }
 
 
-# setup_ubuntu 
+setup_ubuntu
 setup_xgboost
 setup_lightgbm
 setup_zstd
