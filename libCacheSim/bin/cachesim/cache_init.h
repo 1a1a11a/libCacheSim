@@ -108,8 +108,6 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = MyClock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "sieve") == 0) {
     cache = Sieve_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "myclockv2") == 0) {
-    cache = MyClockv2_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "mclock") == 0) {
     cache = MClock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "sfifo") == 0) {
