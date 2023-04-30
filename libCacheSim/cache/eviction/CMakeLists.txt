@@ -37,7 +37,6 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
 
                 priv/MyClock.c
                 priv/Sieve.c
-                priv/MyClockv2.c
                 priv/QDLPv0.c
 
 
