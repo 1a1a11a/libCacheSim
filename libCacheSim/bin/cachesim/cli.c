@@ -36,6 +36,7 @@ enum argp_option_short {
   OPTION_CONSIDER_OBJ_METADATA = 0x105,
   OPTION_NUM_THREAD = 0x106,
   OPTION_SAMPLE_RATIO = 's',
+  OPTION_REPORT_INTERVAL = 0x108,
 };
 
 /*
@@ -66,6 +67,8 @@ static struct argp_option options[] = {
     {0, 0, 0, 0, "Other less used options:"},
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
      "specify to ignore the object size from the trace", 10},
+    {"report-interval", OPTION_REPORT_INTERVAL, "3600", 0,
+     "how often to report stat when running one cache", 10},
     {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
     {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
      11},
@@ -115,6 +118,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case OPTION_USE_TTL:
       arguments->use_ttl = is_true(arg) ? true : false;
+      break;
+    case OPTION_REPORT_INTERVAL:
+      arguments->report_interval = atol(arg);
       break;
     case OPTION_SAMPLE_RATIO:
       arguments->sample_ratio = atof(arg);
@@ -185,6 +191,7 @@ static void init_arg(struct arguments *args) {
   args->use_ttl = false;
   args->ignore_obj_size = false;
   args->consider_obj_metadata = false;
+  args->report_interval = 3600 * 24;
   args->n_thread = n_cores();
   args->warmup_sec = -1;
   memset(args->ofilepath, 0, OFILEPATH_LEN);

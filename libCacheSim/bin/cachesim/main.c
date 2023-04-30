@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
   }
 
   if (args.n_cache_size * args.n_eviction_algo == 1) {
-    simulate(args.reader, args.caches[0], args.warmup_sec, args.ofilepath);
+    simulate(args.reader, args.caches[0], args.report_interval, args.warmup_sec,
+             args.ofilepath);
 
     free_arg(&args);
     return 0;

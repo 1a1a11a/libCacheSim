@@ -10,9 +10,8 @@
 extern "C" {
 #endif
 
-#define REPORT_INTERVAL (24 * 3600)
-void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
-              char *ofilepath) {
+void simulate(reader_t *reader, cache_t *cache, int report_interval,
+              int warmup_sec, char *ofilepath) {
   /* random seed */
   srand(time(NULL));
   set_rand_seed(rand());
@@ -45,7 +44,7 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
       miss_cnt++;
       miss_byte += req->obj_size;
     }
-    if (req->clock_time - last_report_ts >= REPORT_INTERVAL &&
+    if (req->clock_time - last_report_ts >= report_interval &&
         req->clock_time != 0) {
       INFO(
           "%s %s %.2lf hour: %lu requests, miss ratio %.4lf, interval miss "
@@ -81,6 +80,10 @@ void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
   printf("%s", output_str);
 
   FILE *output_file = fopen(ofilepath, "a");
+  if (output_file == NULL) {
+    ERROR("cannot open file %s %s\n", ofilepath, strerror(errno));
+    exit(1);
+  }
   fprintf(output_file, "%s\n", output_str);
   fclose(output_file);
 

@@ -40,6 +40,7 @@ struct arguments {
   int64_t n_req; /* number of requests to process */
 
   bool verbose;
+  int report_interval;
   bool ignore_obj_size;
   bool consider_obj_metadata;
   bool use_ttl;
@@ -55,8 +56,8 @@ void free_arg(struct arguments *args);
 
 void parse_eviction_algo(struct arguments *args, const char *arg);
 
-void simulate(reader_t *reader, cache_t *cache, int warmup_sec,
-              char *ofilepath);
+void simulate(reader_t *reader, cache_t *cache, int report_interval,
+              int warmup_sec, char *ofilepath);
 
 bool set_hard_code_cache_size(struct arguments *args);
 
