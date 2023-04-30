@@ -22,7 +22,7 @@ setup_xgboost() {
 	mkdir build
 	pushd build
 	cmake ..
-	make -j
+	make
 	sudo make install
 }
 
@@ -33,7 +33,7 @@ setup_lightgbm() {
 	mkdir build
 	pushd build
 	cmake ..
-	make -j
+	make
 	sudo make install
 }
 
@@ -45,7 +45,7 @@ setup_zstd() {
     mkdir _build;
     pushd _build/;
     cmake ..
-    make -j
+    make
     sudo make install
 }
 
