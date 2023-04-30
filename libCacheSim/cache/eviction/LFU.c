@@ -48,7 +48,7 @@ typedef struct LFU_params {
 static void LFU_free(cache_t *cache);
 static bool LFU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LFU_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                             const bool update_cache);
 static cache_obj_t *LFU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LFU_to_evict(cache_t *cache, const request_t *req);
 static void LFU_evict(cache_t *cache, const request_t *req);
@@ -74,7 +74,8 @@ static inline void update_min_freq(LFU_params_t *params);
  */
 cache_t *LFU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LFU", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LFU", ccache_params, cache_specific_params);
   cache->cache_init = LFU_init;
   cache->cache_free = LFU_free;
   cache->get = LFU_get;
@@ -162,12 +163,12 @@ static bool LFU_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t* LFU_find(cache_t *cache, const request_t *req,
-                            const bool update_cache) {
+static cache_obj_t *LFU_find(cache_t *cache, const request_t *req,
+                             const bool update_cache) {
+  LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && likely(update_cache)) {
-    LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
     /* freq incr and move to next freq node */
     cache_obj->lfu.freq += 1;
     if (params->max_freq < cache_obj->lfu.freq) {
@@ -201,12 +202,17 @@ static cache_obj_t* LFU_find(cache_t *cache, const request_t *req,
     append_obj_to_tail(&new_node->first_obj, &new_node->last_obj, cache_obj);
     new_node->n_obj += 1;
 
-    // if the old freq_node has one object and is the min_freq_node, after
-    // removing this object, the freq_node will have no object,
-    // then we should update min_freq to the new freq
-    if (params->min_freq == old_node->freq && old_node->n_obj == 0) {
-      /* update min freq */
-      update_min_freq(params);
+    if (old_node->n_obj == 0) {
+      if (params->min_freq == old_node->freq) {
+        // if the old freq_node has one object and is the min_freq_node, after
+        // removing this object, the freq_node will have no object,
+        // then we should update min_freq to the new freq
+        update_min_freq(params);
+      }
+
+      if (old_node->freq != 1) {
+        g_hash_table_remove(params->freq_map, old_key);
+      }
     }
   }
   return cache_obj;
@@ -276,8 +282,10 @@ static void LFU_evict(cache_t *cache, const request_t *req) {
     DEBUG_ASSERT(min_freq_node->first_obj == NULL);
     DEBUG_ASSERT(min_freq_node->last_obj == NULL);
 
-    /* update min freq */
-    update_min_freq(params);
+    // we delay the min_freq update to next eviction
+    params->min_freq = 0;
+    // /* update min freq */
+    // update_min_freq(params);
   }
 
   cache_evict_base(cache, obj_to_evict, true);
@@ -324,7 +332,7 @@ bool LFU_remove(cache_t *cache, obj_id_t obj_id) {
   }
 
   LFU_remove_obj(cache, obj);
-  
+
   return true;
 }
 
@@ -342,6 +350,10 @@ static inline freq_node_t *get_min_freq_node(LFU_params_t *params) {
   if (params->min_freq == 1) {
     min_freq_node = params->freq_one_node;
   } else {
+    if (params->min_freq == 0) {
+      /* update min freq */
+      update_min_freq(params);
+    }
     min_freq_node = g_hash_table_lookup(params->freq_map,
                                         GSIZE_TO_POINTER(params->min_freq));
   }
