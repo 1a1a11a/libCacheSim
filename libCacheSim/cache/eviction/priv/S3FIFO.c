@@ -120,7 +120,6 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
   params->fifo = FIFO_init(ccache_params_local, NULL);
-  // params->fifo = LRU_init(ccache_params_local, NULL);
 
   if (fifo_ghost_cache_size > 0) {
     ccache_params_local.cache_size = fifo_ghost_cache_size;
