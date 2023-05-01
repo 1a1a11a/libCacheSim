@@ -225,25 +225,10 @@ static void Sieve_evict(cache_t *cache, const request_t *req) {
   /* if we have run one full around or first eviction */
   cache_obj_t *obj = params->pointer == NULL ? params->q_tail : params->pointer;
 
-  while (obj->myclock.freq > 0) {
-    obj->myclock.freq -= 1;
+  while (obj->sieve.freq > 0) {
+    obj->sieve.freq -= 1;
     obj = obj->queue.prev == NULL ? params->q_tail : obj->queue.prev;
   }
-
-  /* find the first untouched */
-  // while ((obj != NULL && obj->sieve.freq > 0)) {
-  //   obj->sieve.freq -= 1;
-  //   obj = obj->queue.prev;
-  // }
-
-  // /* if we have finished one around, start from the tail */
-  // if (obj == NULL) {
-  //   obj = params->q_tail;
-  //   while (obj != NULL && obj->sieve.freq > 0) {
-  //     obj->sieve.freq -= 1;
-  //     obj = obj->queue.prev;
-  //   }
-  // }
 
   params->pointer = obj->queue.prev;
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);

@@ -496,10 +496,10 @@ static void test_S3FIFO(gconstpointer user_data) {
 }
 
 static void test_Sieve(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {93403, 89386, 84387, 84025,
-                              72498, 72228, 72182, 72140};
-  uint64_t miss_byte_true[] = {4213112832, 4052646400, 3829170176, 3807412736,
-                               3093146112, 3079525888, 3079210496, 3077547520};
+  uint64_t miss_cnt_true[] = {91699, 86720, 78578, 76707,
+                              69945, 66221, 64445, 64376};
+  uint64_t miss_byte_true[] = {4158632960, 3917211648, 3536227840, 3455379968,
+                               3035580416, 2801699328, 2699456000, 2696345600};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
