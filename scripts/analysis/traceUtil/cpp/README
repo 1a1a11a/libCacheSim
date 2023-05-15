@@ -1,0 +1,3 @@
+
+a simple cpp script to convert traces from text to binary, used internally for alibaba and tencent, check libCacheSim for general-purpose trace converter
+
