@@ -49,7 +49,7 @@ typedef struct {
 } S3FIFO_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=1";
+    "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=2";
 
 // ***********************************************************************
 // ****                                                               ****

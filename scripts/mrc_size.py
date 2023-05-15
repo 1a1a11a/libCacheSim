@@ -75,18 +75,39 @@ def run_cachesim(datapath,
     return mrc_dict
 
 
-def plot_mrc(mrc_dict, name="mrc"):
+def plot_mrc(mrc_dict, ignore_obj_size=1, name="mrc"):
     linestyles = itertools.cycle(["-", "--", "-.", ":"])
+    markers = itertools.cycle([
+        "o", "v", "^", "<", ">", "s", "p", "P", "*", "h", "H", "+", "x", "X",
+        "D", "d", "|", "_"
+    ])
     # colors = itertools.cycle(["r", "g", "b", "c", "m", "y", "k"])
+
+    size_unit, size_unit_str = 1, "B"
+    first_size = int(list(mrc_dict.values())[0][0][0])
+    if first_size > 1024 * 1024 * 1024:
+        size_unit = 1024 * 1024 * 1024
+        size_unit_str = "GiB"
+    elif first_size > 1024 * 1024:
+        size_unit = 1024 * 1024
+        size_unit_str = "MiB"
+    elif first_size > 1024:
+        size_unit = 1024
+        size_unit_str = "KiB"
 
     for algo, mrc in mrc_dict.items():
         print(mrc)
-        plt.plot([x[0] for x in mrc], [x[1] for x in mrc],
+        plt.plot([x[0] / size_unit for x in mrc], [x[1] for x in mrc],
                  linewidth=2,
+                #  marker=next(markers),
+                #  markersize=1,
                  linestyle=next(linestyles),
                  label=algo)
 
-    plt.xlabel("Cache Size")
+    if ignore_obj_size:
+        plt.xlabel("Cache Size")
+    else:
+        plt.xlabel("Cache Size ({})".format(size_unit_str))
     plt.xscale("log")
     plt.ylabel("Miss Ratio")
     plt.legend()
@@ -99,12 +120,11 @@ def plot_mrc(mrc_dict, name="mrc"):
 def run():
     import glob
 
-    algos = "lru,slru,arc,lirs,lhd,tinylfu,qdlpv1"
+    algos = "lru,slru,arc,lirs,lhd,tinylfu,s3fifo"
     algos = "lru,arc,sieve,lrb"
     cache_sizes = ""
-    for i in range(1, 100, 2):
-        cache_sizes += str(i / 100.0) + ","
-    cache_sizes = cache_sizes[:-1]
+    cache_sizes = "0.01,0.02,0.05,0.075,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.7,0.8"
+    cache_sizes = "0.05,0.075,0.1,0.15,0.2,0.25,0.3,0.4,0.5,0.6,0.7,0.8"
     print(cache_sizes)
 
     for tracepath in glob.glob("/disk/data/*.zst"):
@@ -112,7 +132,10 @@ def run():
             ".oracleGeneral", "").replace(".sample10",
                                           "").replace(".bin",
                                                       "").replace(".zst", "")
-        mrc_dict = run_cachesim(tracepath, algos, cache_sizes, ignore_obj_size=0)
+        mrc_dict = run_cachesim(tracepath,
+                                algos,
+                                cache_sizes,
+                                ignore_obj_size=0)
         with open("{}.mrc".format(dataname), "wb") as f:
             pickle.dump(mrc_dict, f)
         plot_mrc(mrc_dict, dataname)
@@ -123,34 +146,30 @@ if __name__ == "__main__":
         # print("Usage: python3 {} <datapath> <algos> <cache_sizes>".format(sys.argv[0]))
         # exit(1)
         # tracepath = "/disk/data/w96.oracleGeneral.bin.zst"
-        tracepath = "/disk/data/wiki_2016u.oracleGeneral.sample10.zst"
-        # tracepath = "/mntData2/oracleReuse/msr/src1_0.IQI.bin.oracleGeneral.zst"
-        # tracepath = "/mntData2/oracleReuse/msr/src1_1.IQI.bin.oracleGeneral.zst"
+        tracepath = "/disk/data/wiki_2019t.oracleGeneral.sample10.zst"
+        tracepath = "/disk/wiki2018.oracleGeneral.sample10"
         algos = "lru,arc,sieve,lrb"
         cache_sizes = "0"
+        cache_sizes = "0.01,0.02,0.05,0.075,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.6,0.8"
+        # cache_sizes = "0.05,0.075,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.6,0.8"
     else:
         tracepath = sys.argv[1]
         algos = sys.argv[2]
         cache_sizes = sys.argv[3]
 
-    if cache_sizes == "0":
-        cache_sizes = ""
-        for i in range(1, 100, 2):
-            cache_sizes += str(i / 100.0) + ","
-        cache_sizes = cache_sizes[:-1]
+    # run()
 
-    run()
-
-    dataname = tracepath.split("/")[-1].split(".")[0]
-    if os.path.exists("{}.mrc".format(dataname)):
-        with open("{}.mrc".format(dataname), "rb") as f:
-            mrc_dict = pickle.load(f)
+    dataname = tracepath.split("/")[-1].split(".")[0] + ".sample10"
+    if os.path.exists("{}.mrc.pickle".format(dataname)):
+        print("Load result from {}".format("{}.mrc.pickle".format(dataname)))
+        with open("{}.mrc.pickle".format(dataname), "rb") as f:
+            mrc_dict = pickle.load(f)        
     else:
         mrc_dict = run_cachesim(tracepath,
                                 algos,
                                 cache_sizes,
                                 ignore_obj_size=0)
-        with open("{}.mrc".format(dataname), "wb") as f:
+        with open("{}.mrc.pickle".format(dataname), "wb") as f:
             pickle.dump(mrc_dict, f)
 
-    plot_mrc(mrc_dict, dataname)
+    plot_mrc(mrc_dict, ignore_obj_size=0, name=dataname)
