@@ -47,7 +47,7 @@ cachesim supports the following algorithms:
 
 ## Build and Install libCacheSim
 ### Install dependency
-libCacheSim uses [camke](https://cmake.org/) build system and has a few dependencies: 
+libCacheSim uses [cmake](https://cmake.org/) build system and has a few dependencies: 
 [glib](https://developer.gnome.org/glib/)
 [tcmalloc](https://github.com/google/tcmalloc), 
 [zstd](https://github.com/facebook/zstd).
