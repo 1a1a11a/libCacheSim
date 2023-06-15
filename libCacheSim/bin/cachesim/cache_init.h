@@ -92,6 +92,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = Clock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
+    cache = QDLP_init(cc_params, eviction_params);
 #ifdef ENABLE_GLCACHE
   } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
              strcasecmp(eviction_algo, "gl-cache") == 0) {
@@ -102,8 +104,6 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = LRB_init(cc_params, eviction_params);
 #endif
 #ifdef INCLUDE_PRIV
-  } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
-    cache = QDLP_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "myclock") == 0) {
     cache = MyClock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "sieve") == 0) {
