@@ -1,5 +1,4 @@
-
-CURR_DIR=$(pwd)
+#!/bin/bash 
 
 setup_ubuntu() {
 	sudo apt update
@@ -50,14 +49,19 @@ setup_zstd() {
 }
 
 
-setup_ubuntu
+CURR_DIR=$(pwd)
+
+if [  -n "$(uname -a | grep Ubuntu)" ]; then
+	setup_ubuntu
+elif [  -n "$(uname -a | grep Darwin)" ]; then
+	setup_macOS
+else
+	setup_centos
+fi  
+
 setup_xgboost
 setup_lightgbm
 setup_zstd
 
-
-
-
-
-
+cd $CURR_DIR
 

@@ -103,6 +103,17 @@ Run the example traces with LRU eviction algorithm and 1GB cache size.
 ./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
 ``` 
 
+#### Plot miss ratio curve
+```bash
+# plot miss ratio over size
+cd scripts;
+python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=," --algos=fifo,lru,lecar,s3fifo --sizes=0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4
+
+# plot miss ratio over time
+python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1, obj-id-col=2, obj-size-col=3, delimiter=,," --algos=fifo,lru,lecar,s3fifo --report-interval=30 --miss-ratio-type="accu"
+```
+
+
 See [quick start cachesim](doc/quickstart_cachesim.md) for more usages. 
 
 
