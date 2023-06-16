@@ -31,8 +31,6 @@ struct arguments {
 
 void parse_cmd(int argc, char *argv[], struct arguments *args);
 
-void parse_reader_params(char *reader_params_str, reader_init_param_t *params);
-
 bool is_true(const char *arg);
 
 void cal_one_hit(reader_t *reader, char *ofilepath);

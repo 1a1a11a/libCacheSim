@@ -61,8 +61,6 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
 
 bool set_hard_code_cache_size(struct arguments *args);
 
-void parse_reader_params(char *reader_params_str, reader_init_param_t *params);
-
 int conv_cache_sizes(char *cache_size_str, struct arguments *args);
 
 void print_parsed_args(struct arguments *args);

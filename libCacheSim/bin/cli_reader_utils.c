@@ -78,7 +78,13 @@ bool is_true(const char *arg) {
   }
 }
 
-void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
+/**
+ * @brief parse the reader parameters, mostly this is used by csv traces
+ * 
+ * @param reader_params_str 
+ * @param params 
+ */
+void parse_reader_params(const char *reader_params_str, reader_init_param_t *params) {
   params->delimiter = '\0';
   params->obj_id_is_num = false;
 
@@ -168,6 +174,12 @@ void parse_reader_params(char *reader_params_str, reader_init_param_t *params) {
   free(old_params_str);
 }
 
+/**
+ * @brief detect the trace type from the trace path
+ * 
+ * @param trace_path 
+ * @return trace_type_e 
+ */
 trace_type_e detect_trace_type(const char *trace_path) {
   trace_type_e trace_type = UNKNOWN_TRACE;
 
@@ -204,6 +216,10 @@ trace_type_e detect_trace_type(const char *trace_path) {
   return trace_type;
 }
 
+/**
+ * @brief detect whether we should disable object metadata
+ * 
+ */
 #define N_TEST 1024
 bool should_disable_obj_metadata(reader_t *reader) {
   bool disable_obj_metadata = true;
@@ -222,6 +238,44 @@ bool should_disable_obj_metadata(reader_t *reader) {
   return disable_obj_metadata;
 }
 #undef N_TEST
+
+
+/**
+ * @brief Create a reader from the parameters
+ * 
+ * @param trace_type_str 
+ * @param trace_path 
+ * @param trace_type_params 
+ * @param n_req 
+ * @param ignore_obj_size 
+ * @param sample_ratio 
+ * @return reader_t* 
+ */
+reader_t *create_reader(const char *trace_type_str, const char *trace_path,
+                        const char *trace_type_params, const int64_t n_req,
+                        const bool ignore_obj_size, const int sample_ratio) {
+  /* convert trace type string to enum */
+  trace_type_e trace_type = trace_type_str_to_enum(trace_type_str, trace_path);
+
+  reader_init_param_t reader_init_params;
+  memset(&reader_init_params, 0, sizeof(reader_init_params));
+  reader_init_params.ignore_obj_size = ignore_obj_size;
+  reader_init_params.ignore_size_zero_req = true;
+  reader_init_params.obj_id_is_num = true;
+  reader_init_params.cap_at_n_req = n_req;
+  reader_init_params.sampler = NULL;
+
+  parse_reader_params(trace_type_params, &reader_init_params);
+
+  if (sample_ratio > 0 && sample_ratio < 1 - 1e-6) {
+    sampler_t *sampler = create_spatial_sampler(sample_ratio);
+    reader_init_params.sampler = sampler;
+  }
+
+  reader_t *reader = setup_reader(trace_path, trace_type, &reader_init_params);
+
+  return reader;
+}
 
 #ifdef __cplusplus
 }

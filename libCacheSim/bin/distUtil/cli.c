@@ -7,16 +7,14 @@
 #include <string.h>
 
 #include "../../include/libCacheSim/const.h"
-#include "../../utils/include/mysys.h"
 #include "../../utils/include/mystr.h"
+#include "../../utils/include/mysys.h"
 #include "../cli_reader_utils.h"
 #include "internal.h"
-
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 const char *argp_program_version = "cachesim 0.0.1";
 const char *argp_program_bug_address =
@@ -91,7 +89,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
    A description of the non-option command-line arguments
      that we accept.
 */
-static char args_doc[] = "trace_path trace_type dist_type output_type output_path";
+static char args_doc[] =
+    "trace_path trace_type dist_type output_type output_path";
 
 /* Program documentation. */
 static char doc[] =
@@ -136,8 +135,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   argp_parse(&argp, argc, argv, 0, 0, args);
 
   args->trace_path = args->args[0];
-  const char* trace_type_str = args->args[1];
-  const char* dist_type_str = args->args[2];
+  const char *trace_type_str = args->args[1];
+  const char *dist_type_str = args->args[2];
   strncpy(args->output_type, args->args[3], 7);
   strncpy(args->ofilepath, args->args[4], OFILEPATH_LEN);
   assert(N_ARGS == 5);
@@ -148,8 +147,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   }
 
   /* convert trace type string to enum */
-  args->trace_type =
-      trace_type_str_to_enum(trace_type_str, args->trace_path);
+  // args->trace_type = trace_type_str_to_enum(trace_type_str,
+  // args->trace_path);
 
   if (strcasecmp(dist_type_str, "stack_dist") == 0) {
     args->dist_type = STACK_DIST;
@@ -163,25 +162,28 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     ERROR("unsupported dist type %s\n", dist_type_str);
   }
 
-  reader_init_param_t reader_init_params;
-  memset(&reader_init_params, 0, sizeof(reader_init_params));
-  reader_init_params.ignore_obj_size = true;
-  reader_init_params.ignore_size_zero_req = true;
-  reader_init_params.obj_id_is_num = true;
-  reader_init_params.cap_at_n_req = args->n_req;
-  reader_init_params.sampler = NULL;
+  // reader_init_param_t reader_init_params;
+  // memset(&reader_init_params, 0, sizeof(reader_init_params));
+  // reader_init_params.ignore_obj_size = true;
+  // reader_init_params.ignore_size_zero_req = true;
+  // reader_init_params.obj_id_is_num = true;
+  // reader_init_params.cap_at_n_req = args->n_req;
+  // reader_init_params.sampler = NULL;
 
-  parse_reader_params(args->trace_type_params, &reader_init_params);
+  // parse_reader_params(args->trace_type_params, &reader_init_params);
 
-  if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
-      reader_init_params.obj_size_field == -1) {
-    reader_init_params.ignore_obj_size = true;
-  }
+  // if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE)
+  // &&
+  //     reader_init_params.obj_size_field == -1) {
+  //   reader_init_params.ignore_obj_size = true;
+  // }
 
-  args->reader =
-      setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+  // args->reader =
+  //     setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+
+  args->reader = create_reader(trace_type_str, args->trace_path,
+                               args->trace_type_params, args->n_req, true, 0);
 }
-
 
 #ifdef __cplusplus
 }

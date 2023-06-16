@@ -16,7 +16,7 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size, string trace_
   uint64_t n_req = 0, n_hit = 0;
   std::ofstream miss_ofs(miss_output_path);
 
-  reader_init_param_t reader_init_params = {.real_time_field=1, .obj_id_field=2, .obj_size_field=3};
+  reader_init_param_t reader_init_params = {.time_field=1, .obj_id_field=2, .obj_size_field=3};
   reader_init_params.binary_fmt_str = "III";
   reader_t *reader = setup_reader(trace_path.c_str(), BIN_TRACE, OBJ_ID_NUM, &reader_init_params);
   common_cache_params_t cc_params = {.cache_size=cache_size, .obj_id_type=reader->base->obj_id_type, .support_ttl=FALSE};
@@ -44,7 +44,7 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size, string trace_
 
 void Simulator::output_mrc(string &algo, vector<uint64_t> cache_sizes, string &trace_path, string &mrc_output_path) {
   char alg[] = "LRU";
-  reader_init_param_t reader_init_params = {.real_time_field=1, .obj_id_field=2, .obj_size_field=3};
+  reader_init_param_t reader_init_params = {.time_field=1, .obj_id_field=2, .obj_size_field=3};
   reader_init_params.binary_fmt_str = "III";
   reader_t *reader = setup_reader(trace_path.c_str(), BIN_TRACE, OBJ_ID_NUM, &reader_init_params);
   cache_t *cache = create_cache(algo.c_str(), 1, reader->base->obj_id_type, nullptr);

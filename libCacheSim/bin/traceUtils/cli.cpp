@@ -208,31 +208,34 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   assert(N_ARGS == 2);
 
   /* convert trace type string to enum */
-  args->trace_type =
-      trace_type_str_to_enum(args->trace_type_str, args->trace_path);
+  // args->trace_type =
+  //     trace_type_str_to_enum(args->trace_type_str, args->trace_path);
 
-  reader_init_param_t reader_init_params;
-  set_default_reader_init_params(&reader_init_params);
-  reader_init_params.ignore_obj_size = args->ignore_obj_size;
-  reader_init_params.ignore_size_zero_req = true;
-  reader_init_params.obj_id_is_num = true;
-  reader_init_params.cap_at_n_req = args->n_req;
-  reader_init_params.sampler = NULL;
+  // reader_init_param_t reader_init_params;
+  // set_default_reader_init_params(&reader_init_params);
+  // reader_init_params.ignore_obj_size = args->ignore_obj_size;
+  // reader_init_params.ignore_size_zero_req = true;
+  // reader_init_params.obj_id_is_num = true;
+  // reader_init_params.cap_at_n_req = args->n_req;
+  // reader_init_params.sampler = NULL;
 
-  if (args->sample_ratio > 0 && args->sample_ratio < 1 - 1e-6) {
-    sampler_t *sampler = create_spatial_sampler(args->sample_ratio);
-    reader_init_params.sampler = sampler;
-  }
+  // if (args->sample_ratio > 0 && args->sample_ratio < 1 - 1e-6) {
+  //   sampler_t *sampler = create_spatial_sampler(args->sample_ratio);
+  //   reader_init_params.sampler = sampler;
+  // }
 
-  parse_reader_params(args->trace_type_params, &reader_init_params);
-  if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
-      reader_init_params.obj_size_field == -1) {
-    args->ignore_obj_size = true;
-    reader_init_params.ignore_obj_size = true;
-  }
+  // parse_reader_params(args->trace_type_params, &reader_init_params);
+  // if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
+  //     reader_init_params.obj_size_field == -1) {
+  //   args->ignore_obj_size = true;
+  //   reader_init_params.ignore_obj_size = true;
+  // }
 
-  args->reader =
-      setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+  // args->reader =
+  //     setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+
+  args->reader = create_reader(args->trace_type_str, args->trace_path,
+                               args->trace_type_params, args->n_req, true, 0);
 
   print_parsed_arg(args);
 }
