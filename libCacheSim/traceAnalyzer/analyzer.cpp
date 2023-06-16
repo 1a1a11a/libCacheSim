@@ -2,7 +2,7 @@
 // Created by Juncheng on 6/5/21.
 //
 
-#include "analysis.h"
+#include "analyzer.h"
 
 #include <algorithm>  // std::make_heap, std::pop_heap, std::push_heap, std::sort_heap
 #include <vector>  // std::vector

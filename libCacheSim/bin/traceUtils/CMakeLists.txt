@@ -1,10 +1,10 @@
 
 
-add_library(cli_utils ../cli_utils.c)
+add_library(cliReaderLib ../cli_reader_utils.c)
 
 
 add_executable(tracePrint tracePrintMain.cpp cli.cpp)
-target_link_libraries(tracePrint cli_utils ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(tracePrint cliReaderLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(tracePrint
         PROPERTIES
         CXX_STANDARD 17
@@ -14,7 +14,7 @@ set_target_properties(tracePrint
 
 
 add_executable(traceConv traceConvMain.cpp traceConv.cpp cli.cpp)
-target_link_libraries(traceConv cli_utils ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(traceConv cliReaderLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(traceConv
         PROPERTIES
         CXX_STANDARD 17

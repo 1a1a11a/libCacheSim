@@ -3,9 +3,10 @@
 
 add_subdirectory(cachesim)
 # add_subdirectory(traceWriter)
-add_subdirectory(traceConv)
 add_subdirectory(distUtil)
-add_subdirectory(traceAnalysis)
+add_subdirectory(traceOneHit)
+add_subdirectory(traceUtils)
+# add_subdirectory(traceAnalyzer)
 
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/priv)

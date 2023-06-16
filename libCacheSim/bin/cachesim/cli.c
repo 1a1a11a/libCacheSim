@@ -10,7 +10,7 @@
 #include "../../include/libCacheSim/dist.h"
 #include "../../utils/include/mystr.h"
 #include "../../utils/include/mysys.h"
-#include "../cli_utils.h"
+#include "../cli_reader_utils.h"
 #include "cache_init.h"
 #include "internal.h"
 

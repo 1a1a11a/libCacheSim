@@ -13,7 +13,7 @@
 #include <thread>
 
 #include "../include/logging.h"
-#include "../traceReader/reader.h"
+#include "../../libCacheSim/include/reader.h"
 
 using namespace std;
 

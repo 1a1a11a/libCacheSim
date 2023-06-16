@@ -1,8 +1,8 @@
 
-set(source analysis.cpp)
-add_library (analysisLib ${source})
+set(source analyzer.cpp)
+add_library (traceAnalyzerLib ${source})
 
-set_target_properties(analysisLib
+set_target_properties(traceAnalyzerLib
         PROPERTIES
         CXX_STANDARD 17
         CXX_STANDARD_REQUIRED YES

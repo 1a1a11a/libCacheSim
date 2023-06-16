@@ -250,7 +250,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/bin)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/traceAnalysis)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/traceAnalyzer)
 
 
 ########################################

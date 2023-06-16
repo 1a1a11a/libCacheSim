@@ -7,8 +7,8 @@
 #include <cstdlib>
 #include <iostream>
 
-#include "../../analysis/analysis.h"
-#include "../utils.h"
+#include "../traceAnalyzer/analyzer.h"
+#include "utils.h"
 #include "params.h"
 
 using namespace std;
