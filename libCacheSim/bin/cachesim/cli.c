@@ -44,36 +44,39 @@ enum argp_option_short {
    Order of fields: {NAME, KEY, ARG, FLAGS, DOC}.
 */
 static struct argp_option options[] = {
+    {NULL, 0, NULL, 0, "trace reader related parameters", 0},
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
      "\"obj-id-col=1;delimiter=,\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\"", 2},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
-     "Num of requests to process, default -1 means all requests in the trace"},
+     "Num of requests to process, default -1 means all requests in the trace", 2},
+    {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
+     "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 2},
 
+    {NULL, 0, NULL, 0, "cache related parameters:", 0},
     {"eviction-params", OPTION_EVICTION_PARAMS, "\"n-seg=\"4", 0,
-     "optional params for each eviction algorithm, e.g., n-seg=4", 3},
+     "optional params for each eviction algorithm, e.g., n-seg=4", 4},
     {"admission", OPTION_ADMISSION_ALGO, "bloom-filter", 0,
      "Admission algorithm: size/bloom-filter/prob", 4},
     {"admission-params", OPTION_ADMISSION_PARAMS, "\"prob=0.8\"", 0,
      "params for admission algorithm", 4},
-    {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
-     "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 5},
 
-    {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
-    {"num-thread", OPTION_NUM_THREAD, "16", 0,
-     "Number of threads if running when using default cache sizes", 5},
-    {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output"},
-
-    {0, 0, 0, 0, "Other less used options:"},
+    {0, 0, 0, 0, "Other options:"},
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
-     "specify to ignore the object size from the trace", 10},
+     "specify to ignore the object size from the trace", 6},
+    {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 6},
+    {"num-thread", OPTION_NUM_THREAD, "16", 0,
+     "Number of threads if running when using default cache sizes", 6},
+
+    {0, 0, 0, 0, "Other less common options:"},
     {"report-interval", OPTION_REPORT_INTERVAL, "3600", 0,
      "how often to report stat when running one cache", 10},
     {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
     {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
-     11},
+     10},
     {"consider-obj-metadata", OPTION_CONSIDER_OBJ_METADATA, "false", 0,
      "Whether consider per object metadata size in the simulated cache", 10},
+    {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output", 10},
 
     {0}};
 
