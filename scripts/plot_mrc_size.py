@@ -228,3 +228,4 @@ if __name__ == "__main__":
     plot_mrc_size(mrc_dict,
                   ignore_obj_size=ap.ignore_obj_size,
                   name=dataname if len(ap.name) == 0 else ap.name)
+

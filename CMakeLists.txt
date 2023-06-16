@@ -98,9 +98,8 @@ else()
     add_compile_definitions(LOGLEVEL=7)
 endif()
 
-# message(STATUS ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
-# message(STATUS ${CMAKE_CXX_FLAGS_RELEASE})
-# message(STATUS ${CMAKE_CXX_FLAGS_DEBUG})
+
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
 # string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
 message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}, ENABLE_LRB ${ENABLE_LRB}, SUPPORT_ZSTD_TRACE ${SUPPORT_ZSTD_TRACE}")
@@ -113,16 +112,15 @@ message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEV
 # flags   #
 ########################################
 set(CFLAGS "$ENV{CFLAGS} "
-        "-std=gnu99 ${CMAKE_ENABLE_C99} "
         "-Wall -Wshadow -Winline "
         "-Wno-unused "
         "-Wstrict-prototypes -Wmissing-prototypes "
         "-Wmissing-declarations "
         "-Wredundant-decls "
         "-Wunused-value -Wunused-variable "
-        # "-Wunused-function "
         "-std=c11 "
         "-fno-strict-aliasing "
+        "-O0 "
         )
 
 
@@ -164,13 +162,17 @@ endif(SUPPORT_ZSTD_TRACE)
 
 # libgoogle-perftools-dev google-perftools
 # tcmalloc causes trouble with valgrind https://github.com/gperftools/gperftools/issues/792
-find_package(Tcmalloc)
-if ("${Tcmalloc_LIBRARY}" STREQUAL "")
-    message(STATUS "!!! cannot find tcmalloc")
-else ()
-    set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
-endif ()
+# when using valgrind, we should not compile with tcmalloc
+# maybe disable tcmalloc under debug model
+if (NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    find_package(Tcmalloc)
+    if ("${Tcmalloc_LIBRARY}" STREQUAL "")
+        message(STATUS "!!! cannot find tcmalloc")
+    else ()
+        set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+    endif ()
+endif()
 
 find_package(Threads)
 
