@@ -6,12 +6,11 @@
 
 #define __STDC_FORMAT_MACROS
 
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
-#include <cinttypes>
-#include <cstdio>
-#include <cstdlib>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -21,35 +20,34 @@
 
 #include "../include/libCacheSim/reader.h"
 #include "accessPattern.h"
-#include "createFutureReuseCCDF.h"
-#include "lifetime.h"
 #include "op.h"
 #include "popularity.h"
 #include "popularityDecay.h"
-#include "probAtAge.h"
 #include "reqRate.h"
 #include "reuse.h"
 #include "size.h"
-#include "sizeChange.h"
 #include "struct.h"
 #include "ttl.h"
 
 /* experimental module */
+#include "experimental/createFutureReuseCCDF.h"
+#include "experimental/lifetime.h"
+#include "experimental/probAtAge.h"
 #include "experimental/scanDetector.h"
+#include "experimental/sizeChange.h"
 
 // /* deprecated module */
 // #include "dep/writeFutureReuse.h"
 // #include "dep/writeReuse.h"
 
-using namespace std;
-
-namespace analysis {
-struct analysis_option {
+namespace traceAnalyzer {
+typedef struct analysis_option {
   bool req_rate;
   bool access_pattern;
   bool size;
   bool reuse;
   bool popularity;
+  bool ttl;
 
   bool popularity_decay;
   bool lifetime;
@@ -58,25 +56,27 @@ struct analysis_option {
   bool prob_at_age;
 
   bool size_change;
-};
+} analysis_option_t;
 
-struct analysis_param {
+typedef struct analysis_param {
   int track_n_popular;
   /* tracking the number of one-hit, ... X-hit wonders */
   int track_n_hit;
   int time_window;
   int warmup_time;
   /* use for accessPattern only */
-  int sample_ratio;
-};
+  double sample_ratio;
+  int sample_ratio_inv;
+} analysis_param_t;
 
-static struct analysis_param default_param() {
-  struct analysis_param param;
-  param.track_n_popular = 20;
-  param.track_n_hit = 20;
+static analysis_param_t default_param() {
+  analysis_param_t param;
+  param.track_n_popular = 8;
+  param.track_n_hit = 8;
   param.time_window = 300;
   param.warmup_time = 86400;
-  param.sample_ratio = 101;
+  param.sample_ratio = 0.01;
+  param.sample_ratio_inv = 101;
 
   return param;
 };
@@ -85,6 +85,7 @@ static struct analysis_option default_option() {
   struct analysis_option option = {0};
   option.req_rate = false;
   option.access_pattern = false;
+  option.ttl = false;
   option.size = false;
   option.reuse = false;
   option.popularity = false;
@@ -99,13 +100,15 @@ static struct analysis_option default_option() {
 
 #define DEFAULT_PREALLOC_N_OBJ 1e8
 
-class Analysis {
+class TraceAnalyzer {
  public:
-  explicit Analysis(reader_t *reader, string output_path,
-                    struct analysis_option option, struct analysis_param params)
+  explicit TraceAnalyzer(reader_t *reader, string output_path,
+                         struct analysis_option option,
+                         struct analysis_param params)
       : reader_(reader),
         output_path_(std::move(output_path)),
         option_(option),
+        sample_ratio_(params.sample_ratio),
         track_n_popular_(params.track_n_popular),
         track_n_hit_(params.track_n_hit),
         time_window_(params.time_window),
@@ -116,76 +119,19 @@ class Analysis {
       ERROR("warmup time needs to be multiple of time_window\n");
       exit(1);
     }
-    obj_map_.reserve(DEFAULT_PREALLOC_N_OBJ);
 
-    op_stat_ = new OpStat();
-    ttl_stat_ = new TtlStat();
-
-    if (option.req_rate) {
-      req_rate_stat_ = new ReqRate(time_window_);
-    }
-    if (option.access_pattern) {
-      access_stat_ = new AccessPattern((int64_t)get_num_of_req(reader_),
-                                       params.sample_ratio);
-    }
-    if (option.size) {
-      size_stat_ = new SizeDistribution(output_path_, time_window_);
-    }
-    if (option.reuse) {
-      reuse_stat_ = new ReuseDistribution(output_path_, time_window_);
-    }
-    if (option.popularity_decay) {
-      popularity_decay_stat_ =
-          new PopularityDecay(output_path_, time_window_, warmup_time_);
-    }
-    if (option.create_future_reuse_ccdf) {
-      create_future_reuse_ = new CreateFutureReuseDistribution(warmup_time_);
-    }
-    if (option.prob_at_age) {
-      prob_at_age_ = new ProbAtAge(time_window_, warmup_time_);
-    }
-    if (option.lifetime) {
-      lifetime_stat_ = new LifetimeDistribution();
-    }
-
-    if (option.size_change) {
-      size_change_distribution_ = new SizeChangeDistribution();
-    }
-
-    // scan_detector_ = new ScanDetector(reader_, output_path, 100);
+    initialize();
   };
 
-  ~Analysis() {
-    delete op_stat_;
-    delete ttl_stat_;
-    delete req_rate_stat_;
-    delete reuse_stat_;
-    delete size_stat_;
-    delete access_stat_;
-    delete popularity_stat_;
-    delete popularity_decay_stat_;
-
-    delete prob_at_age_;
-    delete lifetime_stat_;
-    delete create_future_reuse_;
-    delete size_change_distribution_;
-
-    // delete write_reuse_stat_;
-    // delete write_future_reuse_stat_;
-
-    delete scan_detector_;
-
-    if (n_hit_cnt_ != nullptr) {
-      delete[] n_hit_cnt_;
-    }
-    if (popular_cnt_ != nullptr) {
-      delete[] popular_cnt_;
-    }
-  };
+  ~TraceAnalyzer() { cleanup(); };
 
   void run();
 
-  friend ostream &operator<<(ostream &os, const Analysis &stat) {
+  void initialize();
+
+  void cleanup();
+
+  friend ostream &operator<<(ostream &os, const TraceAnalyzer &stat) {
     if (!stat.has_run_) {
       os << "trace stat has not been computed" << endl;
     } else {
@@ -199,6 +145,7 @@ class Analysis {
   int warmup_time_;
   int track_n_popular_;
   int track_n_hit_;
+  int sample_ratio_;
 
   /* stat */
   int64_t n_req_ = 0;
@@ -250,4 +197,4 @@ class Analysis {
   inline int time_to_window_idx(uint32_t rtime) { return rtime / time_window_; }
 };
 
-};  // namespace analysis
+};  // namespace traceAnalyzer

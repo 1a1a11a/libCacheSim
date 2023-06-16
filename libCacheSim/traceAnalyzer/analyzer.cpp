@@ -9,7 +9,85 @@
 
 #include "utils/include/utils.h"
 
-void analysis::Analysis::run() {
+void traceAnalyzer::TraceAnalyzer::initialize() {
+  obj_map_.reserve(DEFAULT_PREALLOC_N_OBJ);
+
+  op_stat_ = new OpStat();
+
+  if (option_.ttl) {
+    ttl_stat_ = new TtlStat();
+  }
+
+  if (option_.req_rate) {
+    req_rate_stat_ = new ReqRate(time_window_);
+  }
+
+  if (option_.access_pattern) {
+    access_stat_ =
+        new AccessPattern((int64_t)get_num_of_req(reader_), sample_ratio_);
+  }
+
+  if (option_.size) {
+    size_stat_ = new SizeDistribution(output_path_, time_window_);
+  }
+
+  if (option_.reuse) {
+    reuse_stat_ = new ReuseDistribution(output_path_, time_window_);
+  }
+
+  if (option_.popularity_decay) {
+    popularity_decay_stat_ =
+        new PopularityDecay(output_path_, time_window_, warmup_time_);
+  }
+
+  if (option_.create_future_reuse_ccdf) {
+    create_future_reuse_ = new CreateFutureReuseDistribution(warmup_time_);
+  }
+
+  if (option_.prob_at_age) {
+    prob_at_age_ = new ProbAtAge(time_window_, warmup_time_);
+  }
+  
+  if (option_.lifetime) {
+    lifetime_stat_ = new LifetimeDistribution();
+  }
+
+  if (option_.size_change) {
+    size_change_distribution_ = new SizeChangeDistribution();
+  }
+
+  // scan_detector_ = new ScanDetector(reader_, output_path, 100);
+}
+
+void traceAnalyzer::TraceAnalyzer::cleanup() {
+  delete op_stat_;
+  delete ttl_stat_;
+  delete req_rate_stat_;
+  delete reuse_stat_;
+  delete size_stat_;
+  delete access_stat_;
+  delete popularity_stat_;
+  delete popularity_decay_stat_;
+
+  delete prob_at_age_;
+  delete lifetime_stat_;
+  delete create_future_reuse_;
+  delete size_change_distribution_;
+
+  // delete write_reuse_stat_;
+  // delete write_future_reuse_stat_;
+
+  delete scan_detector_;
+
+  if (n_hit_cnt_ != nullptr) {
+    delete[] n_hit_cnt_;
+  }
+  if (popular_cnt_ != nullptr) {
+    delete[] popular_cnt_;
+  }
+}
+
+void traceAnalyzer::TraceAnalyzer::run() {
   if (has_run_) return;
 
   request_t *req = new_request();
@@ -18,9 +96,10 @@ void analysis::Analysis::run() {
   int32_t curr_time_window_idx = 0;
   int next_time_window_ts = time_window_;
 
+  int64_t n = 0;
   /* going through the trace */
   do {
-    utils::my_assert(req->obj_size != 0, "req->obj_size != 0");
+    DEBUG_ASSERT(req->obj_size != 0);
 
     // change real time to relative time
     req->clock_time -= start_ts_;
@@ -30,9 +109,7 @@ void analysis::Analysis::run() {
       next_time_window_ts += time_window_;
     }
 
-    utils::my_assert(
-        curr_time_window_idx == time_to_window_idx(req->clock_time),
-        "curr_time_window_idx == time_to_window_idx(req->clock_time)");
+    DEBUG_ASSERT(curr_time_window_idx == time_to_window_idx(req->clock_time));
 
     n_req_ += 1;
     sum_obj_size_req += req->obj_size;
@@ -77,10 +154,8 @@ void analysis::Analysis::run() {
       req->rtime_since_last_access =
           (int64_t)(req->clock_time) - it->second.last_access_rtime;
 
-      utils::my_assert(req->vtime_since_last_access > 0,
-                       "req->vtime_since_last_access <= 0");
-      utils::my_assert(req->rtime_since_last_access >= 0,
-                       "req->rtime_since_last_access < 0");
+      assert(req->vtime_since_last_access > 0);
+      assert(req->rtime_since_last_access >= 0);
 
       req->prev_size = it->second.obj_size;
       it->second.obj_size = req->obj_size;
@@ -90,7 +165,11 @@ void analysis::Analysis::run() {
     }
 
     op_stat_->add_req(req);
-    ttl_stat_->add_req(req);
+
+    if (ttl_stat_ != nullptr) {
+      ttl_stat_->add_req(req);
+    }
+
     if (req_rate_stat_ != nullptr) {
       req_rate_stat_->add_req(req);
     }
@@ -119,15 +198,10 @@ void analysis::Analysis::run() {
       lifetime_stat_->add_req(req);
     }
 
-    // if (write_reuse_stat_ != nullptr) {
-    //   write_reuse_stat_->add_req(req);
-    // }
     if (create_future_reuse_ != nullptr) {
       create_future_reuse_->add_req(req);
     }
-    // if (write_future_reuse_stat_ != nullptr) {
-    //   write_future_reuse_stat_->add_req(req);
-    // }
+
     if (size_change_distribution_ != nullptr) {
       size_change_distribution_->add_req(req);
     }
@@ -199,7 +273,7 @@ void analysis::Analysis::run() {
   has_run_ = true;
 }
 
-string analysis::Analysis::gen_stat_str() {
+string traceAnalyzer::TraceAnalyzer::gen_stat_str() {
   stat_ss_.clear();
   double cold_miss_ratio = (double)obj_map_.size() / (double)n_req_;
   double byte_cold_miss_ratio =
@@ -251,9 +325,9 @@ string analysis::Analysis::gen_stat_str() {
   return stat_ss_.str();
 }
 
-void analysis::Analysis::post_processing() {
-  utils::my_assert(n_hit_cnt_ == nullptr, "n_hit_cnt_ == nullptr");
-  utils::my_assert(popular_cnt_ == nullptr, "popular_cnt_ == nullptr");
+void traceAnalyzer::TraceAnalyzer::post_processing() {
+  assert(n_hit_cnt_ == nullptr);
+  assert(popular_cnt_ == nullptr);
 
   n_hit_cnt_ = new uint64_t[track_n_hit_];
   popular_cnt_ = new uint64_t[track_n_popular_];

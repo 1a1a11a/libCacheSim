@@ -1,5 +1,6 @@
 
 
+#include <iomanip>
 #include <algorithm>
 #include <fstream>
 #include <functional>
@@ -13,7 +14,7 @@
 
 using namespace std;
 
-namespace analysis {
+namespace traceAnalyzer {
 
 class OpStat {
  public:
@@ -55,4 +56,4 @@ class OpStat {
   uint64_t op_cnt_[OP_INVALID + 1] = {0}; /* the number of requests of an op */
   uint64_t overwrite_cnt_ = 0;
 };
-}  // namespace analysis
+}  // namespace traceAnalyzer

@@ -5,6 +5,7 @@
  *
  */
 
+#include <assert.h>
 #include <algorithm>
 #include <fstream>
 #include <functional>
@@ -14,13 +15,11 @@
 #include <string>
 #include <vector>
 
-#include "../dataStructure/robin_hood.h"
-#include "../include/libCacheSim/request.h"
-#include "utils/include/utils.h"
+#include "../../dataStructure/robin_hood.h"
+#include "../../include/libCacheSim/request.h"
+#include "../utils/include/utils.h"
 
-using namespace std;
-
-namespace analysis {
+namespace traceAnalyzer {
 
 class SizeChangeDistribution {
  public:
@@ -94,68 +93,20 @@ class SizeChangeDistribution {
 
   ~SizeChangeDistribution() = default;
 
-  inline int absolute_change_to_array_pos(int absolute_change) {
-    static int mid_pos = n_bins_absolute / 2;
-    if (absolute_change == 0) return mid_pos;
+  int absolute_change_to_array_pos(int absolute_change);
 
-    int pos = mid_pos;
-    if (absolute_change > 0) {
-      unsigned change = absolute_change;
-      while (change > 0) {
-        change = change >> 1u;
-        pos += 1;
-      }
-    } else {
-      unsigned change = -absolute_change;
-      while (change > 0) {
-        change = change >> 1u;
-        pos -= 1;
-      }
-    }
+  void add_req(request_t *req);
 
-    if (pos >= n_bins_absolute)
-      pos = n_bins_absolute - 1;
-    else if (pos < 0)
-      pos = 0;
-
-    return pos;
-  }
-
-  inline void add_req(request_t *req) {
-    n_req_total_ += 1;
-    if (req->overwrite) {
-      int absolute_size_change = (int)req->obj_size - (int)req->prev_size;
-      double relative_size_change =
-          (double)absolute_size_change / (double)req->prev_size;
-      absolute_size_change_cnt_[absolute_change_to_array_pos(
-          absolute_size_change)]++;
-      relative_size_change_cnt_[relative_change_to_array_pos(
-          relative_size_change)]++;
-
-      //      if (absolute_size_change > 4096) {
-      //        print_request(req);
-      //        printf("%lf\n", relative_size_change);
-      //        printf("%ld %ld %d %ld\n", req->prev_size, req->obj_size,
-      //               relative_change_to_array_pos(relative_size_change),
-      //               relative_size_change_cnt_[relative_change_to_array_pos(relative_size_change)]);
-      //      }
-    }
-    //    if (req->obj_id == 3102)
-    //      print_request(req);
-  }
-
-  friend ostream &operator<<(ostream &os,
-                             const SizeChangeDistribution &size_change) {
-    stringstream stat_ss;
+  friend std::ostream &operator<<(std::ostream &os,
+                                  const SizeChangeDistribution &size_change) {
+    std::stringstream stat_ss;
     uint64_t n_req = accumulate(
         size_change.absolute_size_change_cnt_,
         size_change.absolute_size_change_cnt_ + n_bins_absolute, 0UL);
     uint64_t n_req2 = accumulate(
         size_change.relative_size_change_cnt_,
         size_change.relative_size_change_cnt_ + n_bins_relative, 0UL);
-    utils::my_assert(
-        n_req == n_req2,
-        "absolute size change and relative size change request count diff\n");
+    assert(n_req == n_req2);
 
     if ((double)n_req / (double)size_change.n_req_total_ < 0.001) return os;
 
@@ -190,7 +141,7 @@ class SizeChangeDistribution {
   static const int n_bins_relative = 14 * 2 + 1;
   uint64_t relative_size_change_cnt_[n_bins_relative] = {
       0}; /* the number of requests of an op */
-  string relative_size_change_labels[n_bins_relative] = {
+  std::string relative_size_change_labels[n_bins_relative] = {
       "<-0.1",   "-0.1",    "-0.08",  "-0.05",  "-0.02",   "-0.01",
       "-0.008",  "-0.005",  "-0.002", "-0.001", "-0.0008", "-0.0005",
       "-0.0002", "-0.0001", "0",      "0.0001", "0.0002",  "0.0005",
@@ -201,11 +152,11 @@ class SizeChangeDistribution {
    */
   static const int n_bins_absolute = 16 * 2 + 1;
   uint64_t absolute_size_change_cnt_[n_bins_absolute] = {0};
-  string absolute_size_change_labels[n_bins_absolute] = {
+  std::string absolute_size_change_labels[n_bins_absolute] = {
       "<-16384", "-16384", "-8192", "-4096", "-2048", "-1024", "-512",
       "-256",    "-128",   "-64",   "-32",   "-16",   "-8",    "-4",
       "-2",      "-1",     "0",     "1",     "2",     "4",     "8",
       "16",      "32",     "64",    "128",   "256",   "512",   "1024",
       "2048",    "4096",   "8192",  "16384", ">16384"};
 };
-}  // namespace analysis
+}  // namespace traceAnalyzer

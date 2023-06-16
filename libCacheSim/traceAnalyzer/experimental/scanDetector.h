@@ -20,7 +20,7 @@
 
 using namespace std;
 
-namespace analysis {
+namespace traceAnalyzer {
 class ScanDetector {
   struct ScanStream {
     int64_t stream_start_vtime;

@@ -3,13 +3,13 @@
 #include <unordered_map>
 
 #include "../dataStructure/robin_hood.h"
+#include "../include/config.h"
+
 
 typedef uint32_t obj_size_t;
 // typedef int32_t time_t;
 
-namespace analysis {
-typedef obj_id_t int64_t;
-
+namespace traceAnalyzer {
 struct obj_info {
   int64_t last_access_vtime;
   obj_size_t obj_size;
@@ -21,4 +21,4 @@ struct obj_info {
 using obj_info_map_type =
     robin_hood::unordered_flat_map<obj_id_t, struct obj_info>;
 
-}  // namespace analysis
+}  // namespace traceAnalyzer

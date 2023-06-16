@@ -1,15 +1,10 @@
 #pragma once
 
-#include "../utils.h"
+#include "utils.h"
 
 using namespace std;
 
 namespace analysis {
-
-#define CHECK_PARSER_STATE(end) \
-      if (strlen(end) > 2) { \
-        ERROR("param parsing error, find string \"%s\" after number\n", end); \
-      } 
 
 
 static struct analysis_param parse_param(string param_string) {

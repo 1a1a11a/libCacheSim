@@ -12,8 +12,8 @@
 #include <string>
 #include <thread>
 
-#include "../include/logging.h"
-#include "../../libCacheSim/include/reader.h"
+#include "../../include/libCacheSim/logging.h"
+#include "../../include/libCacheSim/reader.h"
 
 using namespace std;
 
@@ -148,84 +148,84 @@ class Util {
     return arg;
   }
 
-  static reader_t *create_reader(cli_arg_t *arg) {
-    reader_t *reader;
-    reader_init_param_t init_params;
-    init_params.real_time_field = 1;
-    init_params.obj_id_field = 2;
-    init_params.obj_size_field = 3;
+  // static reader_t *create_reader(cli_arg_t *arg) {
+  //   reader_t *reader;
+  //   reader_init_param_t init_params;
+  //   init_params.time_field = 1;
+  //   init_params.obj_id_field = 2;
+  //   init_params.obj_size_field = 3;
 
-    if (arg->trace_type == "twr") {
-      reader = open_trace(arg->ipath.c_str(), TWR_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "twrNS") {
-      reader = open_trace(arg->ipath.c_str(), TWRNS_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "cf1") {
-      reader = open_trace(arg->ipath.c_str(), CF1_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "akamai") {
-      reader =
-          open_trace(arg->ipath.c_str(), AKAMAI_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "wiki16u") {
-      reader =
-          open_trace(arg->ipath.c_str(), WIKI16u_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "wiki19u") {
-      reader =
-          open_trace(arg->ipath.c_str(), WIKI19u_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "wiki19t") {
-      reader =
-          open_trace(arg->ipath.c_str(), WIKI19t_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "vscsi") {
-      reader = open_trace(arg->ipath.c_str(), VSCSI_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "standardBinIII") {
-      reader = open_trace(arg->ipath.c_str(), STANDARD_III_TRACE, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "standardBinIQI") {
-      reader = open_trace(arg->ipath.c_str(), STANDARD_IQI_TRACE, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "standardBinIQQ") {
-      reader = open_trace(arg->ipath.c_str(), STANDARD_IQQ_TRACE, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "standardBinIQIBH") {
-      reader = open_trace(arg->ipath.c_str(), STANDARD_IQIBH_TRACE, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "plainTxt") {
-      reader =
-          open_trace(arg->ipath.c_str(), PLAIN_TXT_TRACE, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "oracleSimTwr") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_SIM_TWR_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleSimTwrNS") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_SIM_TWRNS_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleSysTwrNS") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_SYS_TWRNS_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleCF1") {
-      reader =
-          open_trace(arg->ipath.c_str(), ORACLE_CF1_BIN, OBJ_ID_NUM, nullptr);
-    } else if (arg->trace_type == "oracleAkamai") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_AKAMAI_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleWiki16u") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_WIKI16u_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleWiki19u") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_WIKI19u_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleWiki19t") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_WIKI19t_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleGeneral") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_GENERAL_BIN, OBJ_ID_NUM,
-                          nullptr);
-    } else if (arg->trace_type == "oracleGeneralOpNS") {
-      reader = open_trace(arg->ipath.c_str(), ORACLE_GENERALOPNS_BIN,
-                          OBJ_ID_NUM, nullptr);
-    } else {
-      ERROR("unknown trace type %s\n", arg->trace_type.c_str());
-      abort();
-    }
+  //   if (arg->trace_type == "twr") {
+  //     reader = open_trace(arg->ipath.c_str(), TWR_TRACE, nullptr);
+  //   } else if (arg->trace_type == "twrNS") {
+  //     reader = open_trace(arg->ipath.c_str(), TWRNS_TRACE, nullptr);
+  //   } else if (arg->trace_type == "cf1") {
+  //     reader = open_trace(arg->ipath.c_str(), CF1_TRACE, nullptr);
+  //   } else if (arg->trace_type == "akamai") {
+  //     reader =
+  //         open_trace(arg->ipath.c_str(), AKAMAI_TRACE, nullptr);
+  //   } else if (arg->trace_type == "wiki16u") {
+  //     reader =
+  //         open_trace(arg->ipath.c_str(), WIKI16u_TRACE, nullptr);
+  //   } else if (arg->trace_type == "wiki19u") {
+  //     reader =
+  //         open_trace(arg->ipath.c_str(), WIKI19u_TRACE, nullptr);
+  //   } else if (arg->trace_type == "wiki19t") {
+  //     reader =
+  //         open_trace(arg->ipath.c_str(), WIKI19t_TRACE, nullptr);
+  //   } else if (arg->trace_type == "vscsi") {
+  //     reader = open_trace(arg->ipath.c_str(), VSCSI_TRACE, nullptr);
+  //   } else if (arg->trace_type == "standardBinIII") {
+  //     reader = open_trace(arg->ipath.c_str(), STANDARD_III_TRACE, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "standardBinIQI") {
+  //     reader = open_trace(arg->ipath.c_str(), STANDARD_IQI_TRACE, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "standardBinIQQ") {
+  //     reader = open_trace(arg->ipath.c_str(), STANDARD_IQQ_TRACE, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "standardBinIQIBH") {
+  //     reader = open_trace(arg->ipath.c_str(), STANDARD_IQIBH_TRACE, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "plainTxt") {
+  //     reader =
+  //         open_trace(arg->ipath.c_str(), PLAIN_TXT_TRACE, nullptr);
+  //   } else if (arg->trace_type == "oracleSimTwr") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_SIM_TWR_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleSimTwrNS") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_SIM_TWRNS_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleSysTwrNS") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_SYS_TWRNS_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleCF1") {
+  //     reader =
+  //         open_trace(arg->ipath.c_str(), ORACLE_CF1_BIN, nullptr);
+  //   } else if (arg->trace_type == "oracleAkamai") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_AKAMAI_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleWiki16u") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_WIKI16u_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleWiki19u") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_WIKI19u_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleWiki19t") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_WIKI19t_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleGeneral") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_GENERAL_BIN, OBJ_ID_NUM,
+  //                         nullptr);
+  //   } else if (arg->trace_type == "oracleGeneralOpNS") {
+  //     reader = open_trace(arg->ipath.c_str(), ORACLE_GENERALOPNS_BIN,
+  //                         nullptr);
+  //   } else {
+  //     ERROR("unknown trace type %s\n", arg->trace_type.c_str());
+  //     abort();
+  //   }
 
-    return reader;
-  }
+  //   return reader;
+  // }
 };
 };  // namespace cli

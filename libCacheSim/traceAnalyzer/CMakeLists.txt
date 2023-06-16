@@ -1,6 +1,8 @@
 
-set(source analyzer.cpp)
-add_library (traceAnalyzerLib ${source})
+file(GLOB source *.cpp)
+file(GLOB source2 experimental/*.cpp)
+
+add_library (traceAnalyzerLib ${source} ${source2})
 
 set_target_properties(traceAnalyzerLib
         PROPERTIES

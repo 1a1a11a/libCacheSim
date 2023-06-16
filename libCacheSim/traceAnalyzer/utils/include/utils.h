@@ -34,10 +34,10 @@ void vector_incr(vector<T> &vec, int pos, T v) {
   vec[pos] += v;
 }
 
-static inline void my_assert(bool b, const std::string &msg) {
-  if (!b) {
-    ERROR("%s", msg.c_str());
-    abort();
-  }
-}
+// static inline void my_assert(bool b, const std::string &msg) {
+//   if (!b) {
+//     ERROR("%s", msg.c_str());
+//     abort();
+//   }
+// }
 }  // namespace utils
