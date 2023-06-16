@@ -57,7 +57,7 @@ jobs:
         # - name: Prepare2
         #   run: sudo apt install -yqq libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
       - name: Prepare
-        run: bash scripts/setup.sh
+        run: bash scripts/install_dependency.sh
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Build
