@@ -65,8 +65,6 @@ int conv_cache_sizes(char *cache_size_str, struct arguments *args);
 
 void print_parsed_args(struct arguments *args);
 
-bool is_true(const char *arg);
-
 #ifdef __cplusplus
 }
 #endif

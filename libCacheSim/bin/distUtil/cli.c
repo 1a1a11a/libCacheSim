@@ -182,7 +182,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   //     setup_reader(args->trace_path, args->trace_type, &reader_init_params);
 
   args->reader = create_reader(trace_type_str, args->trace_path,
-                               args->trace_type_params, args->n_req, true, 0);
+                               args->trace_type_params, args->n_req, false, 0);
 }
 
 #ifdef __cplusplus

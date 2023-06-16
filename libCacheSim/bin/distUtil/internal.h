@@ -32,4 +32,6 @@ struct arguments {
 
 void parse_cmd(int argc, char *argv[], struct arguments *args);
 
-bool is_true(const char *arg); 
+
+
+
