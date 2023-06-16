@@ -27,6 +27,9 @@ namespace traceAnalyzer {
 
 void AccessPattern::add_req(const request_t *req) {
   if (n_seen_req_ > 0xfffffff0) {
+    if (n_seen_req_ == 0xfffffff0) {
+      INFO("trace is too long, accessPattern uses up to 0xfffffff0 requests\n");
+    }
     return;
   }
   n_seen_req_ += 1;

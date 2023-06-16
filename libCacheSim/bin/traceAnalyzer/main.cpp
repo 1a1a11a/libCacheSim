@@ -12,10 +12,8 @@ int main(int argc, char *argv[]) {
   struct arguments args;
   parse_cmd(argc, argv, &args);
 
-  TraceAnalyzer *stat = nullptr;
-
-  stat = new TraceAnalyzer(args.reader, args.ofilepath, args.analysis_option,
-                           args.analysis_param);
+  TraceAnalyzer *stat = new TraceAnalyzer(
+      args.reader, args.ofilepath, args.analysis_option, args.analysis_param);
   stat->run();
 
   // } else if (strcasecmp(args.task, "hotOS23") == 0) {

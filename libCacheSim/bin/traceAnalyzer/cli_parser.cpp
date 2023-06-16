@@ -144,9 +144,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->analysis_param.warmup_time = atoi(arg);
       break;
     case OPTION_ACCESS_PATTERN_SAMPLE_RATIO:
-      arguments->analysis_param.sample_ratio = atof(arg);
-      arguments->analysis_param.sample_ratio_inv =
-          (int)(1.0 / arguments->analysis_param.sample_ratio) + 1;
+      arguments->analysis_param.access_pattern_sample_ratio = atof(arg);
+      arguments->analysis_param.access_pattern_sample_ratio_inv =
+          (int)(1.0 / arguments->analysis_param.access_pattern_sample_ratio) + 1;
       break;
     case OPTION_TRACK_N_HIT:
       arguments->analysis_param.track_n_hit = atoi(arg);
@@ -221,7 +221,7 @@ static char args_doc[] = "trace_path trace_type [--task1] [--task2] ...";
 
 /* Program documentation. */
 static char doc[] =
-    "example: ./traceAnalysis /trace/path csv\n\n"
+    "example: ./bin/traceAnalyzer ../data/trace.vscsi vscsi --common\n\n"
     "trace_type: txt/csv/twr/vscsi/oracleGeneralBin and more\n"
     "if using csv trace, considering specifying -t obj-id-is-num=true\n\n"
     "task: "
@@ -264,6 +264,12 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   args->trace_path = args->args[0];
   const char *trace_type_str = args->args[1];
+
+  if (args->ofilepath[0] == '\0') {
+    char *trace_filename = rindex(args->trace_path, '/');
+    snprintf(args->ofilepath, OFILEPATH_LEN, "%s",
+             trace_filename == NULL ? args->trace_path : trace_filename + 1);
+  }
 
   args->reader = create_reader(trace_type_str, args->trace_path,
                                args->trace_type_params, args->n_req, false, 1);

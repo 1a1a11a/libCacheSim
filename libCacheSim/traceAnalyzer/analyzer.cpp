@@ -23,8 +23,7 @@ void traceAnalyzer::TraceAnalyzer::initialize() {
   }
 
   if (option_.access_pattern) {
-    access_stat_ =
-        new AccessPattern((int64_t)get_num_of_req(reader_), sample_ratio_);
+    access_stat_ = new AccessPattern(access_pattern_sample_ratio_inv_);
   }
 
   if (option_.size) {
@@ -47,7 +46,7 @@ void traceAnalyzer::TraceAnalyzer::initialize() {
   if (option_.prob_at_age) {
     prob_at_age_ = new ProbAtAge(time_window_, warmup_time_);
   }
-  
+
   if (option_.lifetime) {
     lifetime_stat_ = new LifetimeDistribution();
   }
@@ -222,6 +221,10 @@ void traceAnalyzer::TraceAnalyzer::run() {
   ofs << gen_stat_str() << endl;
   ofs.close();
 
+  if (ttl_stat_ != nullptr) {
+    ttl_stat_->dump(output_path_);
+  }
+
   if (req_rate_stat_ != nullptr) {
     req_rate_stat_->dump(output_path_);
   }
@@ -254,13 +257,13 @@ void traceAnalyzer::TraceAnalyzer::run() {
     lifetime_stat_->dump(output_path_);
   }
 
-  // if (write_reuse_stat_ != nullptr) {
-  //   write_reuse_stat_->dump(output_path_);
-  // }
-
   if (create_future_reuse_ != nullptr) {
     create_future_reuse_->dump(output_path_);
   }
+
+  // if (write_reuse_stat_ != nullptr) {
+  //   write_reuse_stat_->dump(output_path_);
+  // }
 
   // if (write_future_reuse_stat_ != nullptr) {
   //   write_future_reuse_stat_->dump(output_path_);
@@ -299,7 +302,9 @@ string traceAnalyzer::TraceAnalyzer::gen_stat_str() {
            << (double)(end_ts_ - start_ts_) / 3600 / 24 << " day)\n";
 
   stat_ss_ << *op_stat_;
-  stat_ss_ << *ttl_stat_;
+  if (ttl_stat_ != nullptr) {
+    stat_ss_ << *ttl_stat_;
+  }
   if (req_rate_stat_ != nullptr) stat_ss_ << *req_rate_stat_;
   if (popularity_stat_ != nullptr) stat_ss_ << *popularity_stat_;
 
@@ -310,7 +315,7 @@ string traceAnalyzer::TraceAnalyzer::gen_stat_str() {
   }
   stat_ss_ << "\n";
 
-  stat_ss_ << "freq of the most popular obj: ";
+  stat_ss_ << "freq (fraction) of the most popular obj: ";
   for (int i = 0; i < track_n_popular_; i++) {
     stat_ss_ << popular_cnt_[i] << "("
              << (double)popular_cnt_[i] / (double)n_req_ << "), ";

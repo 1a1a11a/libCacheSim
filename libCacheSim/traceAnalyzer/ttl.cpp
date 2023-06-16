@@ -14,16 +14,18 @@ namespace traceAnalyzer {
 using namespace std;
 
 void TtlStat::add_req(request_t *req) {
+  printf("req->ttl: %d\n", req->ttl);
+  
   if (req->ttl > 0) {
-    auto it2 = ttl_cnt_.find(req->ttl);
-    if (it2 == ttl_cnt_.end()) {
+    auto it = ttl_cnt_.find(req->ttl);
+    if (it == ttl_cnt_.end()) {
       ttl_cnt_[req->ttl] = 1;
       if ((!too_many_ttl_) && ttl_cnt_.size() > 1000000) {
         too_many_ttl_ = true;
         WARN("there are too many TTLs (%zu) in the trace\n", ttl_cnt_.size());
       }
     } else {
-      it2->second += 1;
+      it->second += 1;
     }
   }
 }

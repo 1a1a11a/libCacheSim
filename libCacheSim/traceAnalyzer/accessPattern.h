@@ -27,13 +27,8 @@ class AccessPattern {
    * @param n_req the total number of requests in the trace
    * @param n_obj the number of objects we would like to sample
    */
-  explicit AccessPattern(int64_t n_req, int sample_ratio = 1001)
-      : sample_ratio_(sample_ratio), n_total_req_(n_req) {
-    if (n_total_req_ > 0xfffffff0) {
-      INFO(
-          "trace is too long (more than 0xfffffff0 requests), accessPattern "
-          "will be limited to 0xfffffff0 requests\n");
-    }
+  explicit AccessPattern(int sample_ratio = 1001)
+      : sample_ratio_(sample_ratio) {
 
     if (sample_ratio_ < 1) {
       ERROR(
@@ -56,7 +51,6 @@ class AccessPattern {
 
  private:
   int64_t n_obj_ = 0;
-  int64_t n_total_req_ = 0;
   int64_t n_seen_req_ = 0;
   int sample_ratio_ = 1001;
 

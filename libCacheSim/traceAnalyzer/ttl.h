@@ -22,6 +22,8 @@ class TtlStat {
 
   friend std::ostream& operator<<(std::ostream& os, const TtlStat& ttl) {
     std::stringstream stat_ss;
+
+    std::cout << "TTL: " << ttl.ttl_cnt_.size() << " different TTLs, ";
     uint64_t n_req = std::accumulate(
         std::begin(ttl.ttl_cnt_), std::end(ttl.ttl_cnt_), 0ULL,
         [](uint64_t value,

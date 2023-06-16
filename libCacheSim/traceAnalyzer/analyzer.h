@@ -64,9 +64,8 @@ typedef struct analysis_param {
   int track_n_hit;
   int time_window;
   int warmup_time;
-  /* use for accessPattern only */
-  double sample_ratio;
-  int sample_ratio_inv;
+  double access_pattern_sample_ratio;
+  int access_pattern_sample_ratio_inv;
 } analysis_param_t;
 
 static analysis_param_t default_param() {
@@ -75,8 +74,8 @@ static analysis_param_t default_param() {
   param.track_n_hit = 8;
   param.time_window = 300;
   param.warmup_time = 86400;
-  param.sample_ratio = 0.01;
-  param.sample_ratio_inv = 101;
+  param.access_pattern_sample_ratio = 0.01;
+  param.access_pattern_sample_ratio_inv = 101;
 
   return param;
 };
@@ -108,7 +107,8 @@ class TraceAnalyzer {
       : reader_(reader),
         output_path_(std::move(output_path)),
         option_(option),
-        sample_ratio_(params.sample_ratio),
+        access_pattern_sample_ratio_inv_(
+            params.access_pattern_sample_ratio_inv),
         track_n_popular_(params.track_n_popular),
         track_n_hit_(params.track_n_hit),
         time_window_(params.time_window),
@@ -142,10 +142,14 @@ class TraceAnalyzer {
 
   /* params */
   int time_window_;
+  // warmup time in seconds
   int warmup_time_;
+  // the number of requests to the most popular object, 2nd most popular ...
   int track_n_popular_;
+  // track one-hit wonders, two-hit wonders, etc.
   int track_n_hit_;
-  int sample_ratio_;
+  // the sampling ratio used in access pattern analysis
+  int access_pattern_sample_ratio_inv_;
 
   /* stat */
   int64_t n_req_ = 0;
