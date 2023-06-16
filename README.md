@@ -69,38 +69,38 @@ popd;
 
 ## Usage
 ### cachesim (a high-performance cache simulator)
-After building and installing libCacheSim, `cachesim` should be in the build directory. 
+After building and installing libCacheSim, `cachesim` should be in the `_build/bin/` directory. 
 #### basic usage
 ```
-./cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
+./bin/cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
 ```
 
-use `./cachesim --help` to get more information.
+use `./bin/cachesim --help` to get more information.
 
 #### Run a single cache simulation
 Run the example traces with LRU eviction algorithm and 1GB cache size. 
 
 ```bash
 # Note that no space between the cache size and the unit, unit is not case sensitive
-./cachesim ../data/trace.vscsi vscsi lru 1gb 
+./bin/cachesim ../data/trace.vscsi vscsi lru 1gb 
 ```
 
 #### Run multiple cache simulations with different cache sizes
 ```bash
 # Note that no space between the cache sizes
-./cachesim ../data/trace.vscsi vscsi lru 1mb,16mb,256mb,8gb
+./bin/cachesim ../data/trace.vscsi vscsi lru 1mb,16mb,256mb,8gb
 
 # besides absolute cache size, you can also use fraction of working set size
-./cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
+./bin/cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
 
 # besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
-./cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore obj-size 1
+./bin/cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore obj-size 1
 
 # use a csv trace, note the qutation marks when you have multiple options
-./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
+./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
 
 # use a csv trace with more options
-./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
+./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
 ``` 
 
 #### Plot miss ratio curve

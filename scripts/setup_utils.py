@@ -4,7 +4,7 @@ import subprocess
 
 
 BASEPATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../_build")
-CACHESIM_PATH = os.path.join(BASEPATH, "cachesim")
+CACHESIM_PATH = os.path.join(BASEPATH, "/bin/cachesim")
 
 if not os.path.exists(BASEPATH):
     os.makedirs(BASEPATH)

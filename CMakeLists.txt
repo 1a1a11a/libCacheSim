@@ -209,8 +209,8 @@ endif()
 
 link_libraries("-lpthread -ldl -lm ${LIBS}")
 
-# put binary in current directory
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+# put binary in bin directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")

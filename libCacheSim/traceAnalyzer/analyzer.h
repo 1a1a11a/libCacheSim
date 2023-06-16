@@ -22,19 +22,17 @@
 #include "../include/libCacheSim/reader.h"
 #include "accessPattern.h"
 #include "createFutureReuseCCDF.h"
+#include "lifetime.h"
 #include "op.h"
 #include "popularity.h"
 #include "popularityDecay.h"
+#include "probAtAge.h"
 #include "reqRate.h"
 #include "reuse.h"
 #include "size.h"
 #include "sizeChange.h"
 #include "struct.h"
 #include "ttl.h"
-
-/* hotos 23 */
-#include "lifetime.h"
-#include "probAtAge.h"
 
 /* experimental module */
 #include "experimental/scanDetector.h"
