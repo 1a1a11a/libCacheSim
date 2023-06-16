@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from typing import List, Dict, Tuple, Union, Literal
 import subprocess
+import logging
+
+logger = logging.getLogger("plot_mrc_time")
 
 from plot_utils import *
 from trace_utils import extract_dataname
@@ -27,8 +30,7 @@ def run_cachesim_time(
         byte_miss_ratio: bool = False,  # not used
         trace_format: str = "oracleGeneral",
         trace_format_args: str = "",
-        num_thread: int = -1, 
-        verbose : int = 0) -> Tuple[List[float], List[float]]:
+        num_thread: int = -1) -> Tuple[List[float], List[float]]:
     """ run the cachesim on the given trace to obtain how miss ratio change over time
     Args:
         datapath: the path to the trace
@@ -64,22 +66,20 @@ def run_cachesim_time(
         run_args.append("--trace-type-params")
         run_args.append(trace_format_args)
 
-    p = subprocess.run(run_args,
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE)
+    logger.debug("running \"{}\"".format(" ".join(run_args)))
 
     p = subprocess.run(run_args,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE)
 
-    o = p.stdout.decode("utf-8")
-    if verbose > 0:
-        print(p.stderr.decode("utf-8"))
+    stderr_str = p.stderr.decode("utf-8")
+    if stderr_str != "":
+        logger.warning(stderr_str)
+    
+    stdout_str = p.stdout.decode("utf-8")
+    for line in stdout_str.split("\n"):
+        logger.debug(line)
 
-    for line in o.split("\n"):
-        if verbose > 0:
-            print(line)
-            
         if "[INFO]" in line[:16]:
             m = re.search(REGEX, line)
             if not m:
@@ -93,13 +93,13 @@ def run_cachesim_time(
                 raise Exception(
                     "Unknown miss ratio type {}".format(miss_ratio_type))
 
-        if verbose > 0 and line.startswith("result"):
-            print(line)
+        if line.startswith("result"):
+            logger.debug(line)
 
     return ts_list, mrc_list
 
 
-def plot_mrc_time(mrc_dict, name="mrc", color=None):
+def plot_mrc_time(mrc_dict, name="mrc"):
 
     linestyles = itertools.cycle(["-", "--", "-.", ":"])
     linestyles = itertools.cycle(["--", "-", "--", "-.", ":"])
@@ -112,10 +112,6 @@ def plot_mrc_time(mrc_dict, name="mrc", color=None):
     MARKERS = itertools.cycle(Line2D.markers.keys())
 
     for algo, (ts, mrc) in mrc_dict.items():
-        print(algo)
-        print(ts)
-        print(mrc)
-        print()
         ts = np.array(ts) / ts[-1]
         plt.plot(ts,
                  mrc,
@@ -165,11 +161,12 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(
         description=
         "plot miss ratio over size for different algorithms, example: \n"
-        "python3 {} ".format(sys.argv[0]) + "--tracepath ../data/twitter_cluster52.csv "
-        "--trace_format csv "
-        "--trace_format_params=\"time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,\" "
+        "python3 {} ".format(sys.argv[0]) +
+        "--tracepath ../data/twitter_cluster52.csv "
+        "--trace-format csv "
+        "--trace-format-params=\"time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,,obj-id-is-num=1\" "
         "--algos=fifo,lru,lecar,s3fifo "
-        "--report_interval 120")
+        "--report-interval 120")
     p.add_argument("--tracepath", type=str, required=True)
     p.add_argument("--algos", type=str, default=default_args["algos"])
     p.add_argument("--size", type=str, default=default_args["size"])
@@ -188,9 +185,14 @@ if __name__ == "__main__":
     p.add_argument("--byte-miss-ratio", action="store_true", default=False)
     p.add_argument("--num-thread", type=int, default=-1)
     p.add_argument("--name", type=str, default="")
-    p.add_argument("--verbose", type=int, default=0)
+    p.add_argument("--verbose", action="store_true", default=False)
     p.add_argument("--test", action="store_true", default=False)
     ap = p.parse_args()
+
+    if ap.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
 
     if ap.test:
         run()
@@ -203,6 +205,6 @@ if __name__ == "__main__":
         mrc_dict[algo] = run_cachesim_time(
             ap.tracepath, algo, ap.size, ap.ignore_obj_size,
             ap.miss_ratio_type, ap.report_interval, ap.byte_miss_ratio,
-            ap.trace_format, ap.trace_format_params, ap.num_thread, ap.verbose)
+            ap.trace_format, ap.trace_format_params, ap.num_thread)
 
     plot_mrc_time(mrc_dict, "{}_{}".format(dataname, ap.size))

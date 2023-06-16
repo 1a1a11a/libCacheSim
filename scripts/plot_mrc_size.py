@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import subprocess
 
+import logging
 from typing import List, Dict, Tuple
 
 from plot_utils import *
@@ -14,6 +15,7 @@ from trace_utils import extract_dataname
 from utils import conv_size_str_to_int, find_unit_of_cache_size
 from setup_utils import setup, CACHESIM_PATH
 
+logger = logging.getLogger("plot_mrc_size")
 
 def run_cachesim_size(
     datapath: str,
@@ -24,7 +26,6 @@ def run_cachesim_size(
     trace_format: str = "oracleGeneral",
     trace_format_params: str = "",
     num_thread: int = -1,
-    verbose: int = 0,
 ) -> Dict[str, Tuple[int, float]]:
     """ run the cachesim on the given trace
     Args:
@@ -59,17 +60,19 @@ def run_cachesim_size(
         run_args.append("--trace-type-params")
         run_args.append(trace_format_params)
 
+    logger.debug("running \"{}\"".format(" ".join(run_args)))
+
     p = subprocess.run(run_args,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE)
 
-    o = p.stdout.decode("utf-8")
-    if verbose > 0:
-        print(p.stderr.decode("utf-8"))
-
-    for line in o.split("\n"):
-        if verbose > 0:
-            print(line)
+    stderr_str = p.stderr.decode("utf-8")
+    if stderr_str != "":
+        logger.warning(stderr_str)
+    
+    stdout_str = p.stdout.decode("utf-8")
+    for line in stdout_str.split("\n"):
+        logger.info(line)
 
         if "[INFO]" in line[:16]:
             continue
@@ -88,7 +91,8 @@ def run_cachesim_size(
 
 def plot_mrc_size(mrc_dict: Dict[str, Tuple[int, float]],
                   ignore_obj_size: bool = True,
-                  name: str = "mrc", verbose: int = 0):
+                  name: str = "mrc", 
+                  ) -> None:
     """ plot the miss ratio from the computation 
         X-axis is cache size, different lines are different algos
         
@@ -113,9 +117,8 @@ def plot_mrc_size(mrc_dict: Dict[str, Tuple[int, float]],
     size_unit, size_unit_str = find_unit_of_cache_size(first_size)
 
     for algo, mrc in mrc_dict.items():
-        if verbose > 0:
-            print(mrc)
-            
+        logger.debug(mrc)
+
         plt.plot(
             [x[0] / size_unit for x in mrc],
             [x[1] for x in mrc],
@@ -173,7 +176,7 @@ def run():
 if __name__ == "__main__":
     default_args = {
         "algos": "fifo,lru,arc,lhd,lecar,s3fifo,sieve",
-        "sizes": "0.001,0.002,0.005,0.01,0.02,0.05,0.08,0.10,0.20,0.30,0.40",
+        "sizes": "0.001,0.005,0.01,0.02,0.05,0.10,0.20,0.40",
     }
     import argparse
     p = argparse.ArgumentParser(
@@ -181,7 +184,7 @@ if __name__ == "__main__":
         "example: python3 {} ".format(sys.argv[0]) +
         "--tracepath ../data/twitter_cluster52.csv "
         "--trace-format csv "
-        "--trace-format-params=\"time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,\" "
+        "--trace-format-params=\"time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,,obj-id-is-num=1\" "
         "--algos=fifo,lru,lecar,s3fifo")
     p.add_argument("--tracepath", type=str, required=True)
     p.add_argument("--algos",
@@ -200,7 +203,7 @@ if __name__ == "__main__":
     p.add_argument("--num-thread", type=int, default=-1)
     p.add_argument("--trace-format", type=str, default="oracleGeneral")
     p.add_argument("--name", type=str, default="")
-    p.add_argument("--verbose", type=int, default=0)
+    p.add_argument("--verbose", action="store_true", default=False)
     p.add_argument("--test", action="store_true", default=False)
     ap = p.parse_args()
 
@@ -208,12 +211,16 @@ if __name__ == "__main__":
         run()
         sys.exit(0)
 
+    if ap.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    
     dataname = extract_dataname(ap.tracepath)
     mrc_dict = run_cachesim_size(ap.tracepath, ap.algos.replace(" ", ""),
                                  ap.sizes.replace(" ", ""), ap.ignore_obj_size,
                                  False, ap.trace_format,
-                                 ap.trace_format_params, ap.num_thread,
-                                 ap.verbose)
+                                 ap.trace_format_params, ap.num_thread)
 
     with open("/tmp/{}.mrc.pickle".format(dataname), "wb") as f:
         pickle.dump(mrc_dict, f)

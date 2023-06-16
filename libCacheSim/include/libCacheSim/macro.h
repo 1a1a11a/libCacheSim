@@ -189,6 +189,13 @@ extern "C" {
     (instance).has_##field = 1;      \
   } while (0)
 
+
+#define CHECK_PARSER_STATE(end)                                           \
+  if (strlen(end) > 2) {                                                  \
+    ERROR("param parsing error, find string \"%s\" after number\n", end); \
+  }
+
+
 #ifdef __cplusplus
 }
 #endif

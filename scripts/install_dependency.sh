@@ -2,7 +2,7 @@
 
 setup_ubuntu() {
 	sudo apt update
-	sudo apt install libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
+	sudo apt install -yqq libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
 }
 
 setup_centos() {
@@ -21,7 +21,11 @@ setup_xgboost() {
 	mkdir build
 	pushd build
 	cmake ..
-	make
+	if [[ $GITHUB_ACTIONS == "true" ]]; then
+		make
+	else
+		make -j
+	fi
 	sudo make install
 }
 
@@ -32,7 +36,11 @@ setup_lightgbm() {
 	mkdir build
 	pushd build
 	cmake ..
-	make
+	if [[ $GITHUB_ACTIONS == "true" ]]; then
+		make
+	else
+		make -j
+	fi
 	sudo make install
 }
 
@@ -44,7 +52,7 @@ setup_zstd() {
     mkdir _build;
     pushd _build/;
     cmake ..
-    make
+    make -j
     sudo make install
 }
 

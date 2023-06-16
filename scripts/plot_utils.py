@@ -1,5 +1,9 @@
 
+import logging
 import matplotlib.pyplot as plt
+
+logger_font = logging.getLogger("fontTools")
+logger_font.setLevel(logging.WARN)
 
 
 params = {

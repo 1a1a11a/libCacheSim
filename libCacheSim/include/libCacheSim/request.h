@@ -78,6 +78,7 @@ static inline request_t *new_request() {
   req->clock_time = 0;
   req->hv = 0;
   req->next_access_vtime = -2;
+  req->ttl = 0;
   return req;
 }
 
