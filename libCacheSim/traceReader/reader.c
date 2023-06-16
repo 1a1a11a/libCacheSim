@@ -292,6 +292,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
 
     reader->n_read_req += 1;
     req->hv = 0;
+    req->ttl = -1;
     req->valid = true;
 
     switch (reader->trace_type) {
