@@ -36,16 +36,16 @@ Plot data are generated using `traceAnalyzer` using
 Then we can plot access pattern, request rate, size, reuse, and popularity using the following commands:
 
 ```bash
-python3 analysis/access_pattern.py ${dataname}.access
-python3 analysis/req_rate.py ${dataname}.reqRate_w300
-python3 analysis/size.py ${dataname}.size
-python3 analysis/reuse.py ${dataname}.reuse
-python3 analysis/popularity.py ${dataname}.popularity
+python3 traceAnalysis/access_pattern.py ${dataname}.access
+python3 traceAnalysis/req_rate.py ${dataname}.reqRate_w300
+python3 traceAnalysis/size.py ${dataname}.size
+python3 traceAnalysis/reuse.py ${dataname}.reuse
+python3 traceAnalysis/popularity.py ${dataname}.popularity
 
 # plot more expensive analysis
-python3 analysis/size_heatmap.py ${dataname}.sizeWindow_w300
-python3 analysis/popularity_decay.py ${dataname}.popularityDecay_w300
-python3 analysis/reuse_heatmap.py ${dataname}.reuseWindow_w300
+python3 traceAnalysis/size_heatmap.py ${dataname}.sizeWindow_w300
+python3 traceAnalysis/popularity_decay.py ${dataname}.popularityDecay_w300
+python3 traceAnalysis/reuse_heatmap.py ${dataname}.reuseWindow_w300
 ```
 
 

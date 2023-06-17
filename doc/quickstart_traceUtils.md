@@ -10,13 +10,6 @@ Print requests from a trace.
 ./tracePrint ../data/trace.vscsi vscsi -n 10
 ```
 
-### traceStat
-ongoing
-
-### traceGen
-ongoing
-
-
 ### traceConv
 Convert a trace to libCacheSim format so it has a smaller size, contains next request time (oracle information) and runs faster. 
 ```bash
