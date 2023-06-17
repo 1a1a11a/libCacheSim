@@ -54,14 +54,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args);
 
 void free_arg(struct arguments *args);
 
-void parse_eviction_algo(struct arguments *args, const char *arg);
-
 void simulate(reader_t *reader, cache_t *cache, int report_interval,
               int warmup_sec, char *ofilepath);
 
 bool set_hard_code_cache_size(struct arguments *args);
-
-int conv_cache_sizes(char *cache_size_str, struct arguments *args);
 
 void print_parsed_args(struct arguments *args);
 
