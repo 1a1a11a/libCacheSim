@@ -228,6 +228,11 @@ Such as in the `_build` directory:
 export PKG_CONFIG_PATH=$PWD
 ```
 
+#### Possible problems
+* if you get `error while loading shared libraries`, run `sudo ldconfig`
+
+
+
 ---
 
 

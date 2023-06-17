@@ -15,11 +15,12 @@
 ---
 
 ## libCacheSim features 
-* **high performance** - over 20M requests/sec for a realistic trace replay. 
-* **high memory efficiency** - predictable and small memory footprint. 
-* **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation. 
-* **Simple API** - easy to build cache clusters, multi-layer caching, etc.
-* **extensible** - easy to support new trace types or eviction algorithms.
+* **High performance** - over 20M requests/sec for a realistic trace replay. 
+* **High memory efficiency** - predictable and small memory footprint. 
+* **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation, see [here](/doc/quickstart_cachesim.md). 
+* **The ONLY feature-rich trace analyzer** - all types of trace analysis you need, see [here](/doc/quickstart_traceAnalyzer.md).
+* **Simple API** - easy to build cache clusters, multi-layer caching, etc, see [here](/doc/API.md).
+* **Extensible** - easy to support new trace types or eviction algorithms, see [here](/doc/advanced_lib_extend.md).
 ---
 
 ## Supported algorithms
@@ -46,13 +47,18 @@ cachesim supports the following algorithms:
 
 
 ## Build and Install libCacheSim
-### Install dependency
-libCacheSim uses [cmake](https://cmake.org/) build system and has a few dependencies: 
-[glib](https://developer.gnome.org/glib/)
-[tcmalloc](https://github.com/google/tcmalloc), 
-[zstd](https://github.com/facebook/zstd).
+### One-line install
+We provide some scripts for quick installation of libCacheSim. 
+```bash
+cd scripts && bash install_dependency.sh && bash install_libcachesim.sh;
+```
+If this does not work, please 
+1. let us know what system you are using and what error you get
+2. read the following sections for self-installation.
 
-Please see [install.md](doc/install.md) for how to install the dependencies. 
+### Install dependency
+libCacheSim uses [cmake](https://cmake.org/) build system and has a few dependencies: [glib](https://developer.gnome.org/glib/), [tcmalloc](https://github.com/google/tcmalloc), [zstd](https://github.com/facebook/zstd).
+Please see [install.md](/doc/install.md) for how to install the dependencies. 
 
 
 ### Build libCacheSim
@@ -133,7 +139,7 @@ See [trace analysis](/doc/quickstart_traceAnalyzer.md) for more details.
 
 ### Using libCacheSim as a library 
 libCacheSim can be used as a library for building cache simulators. 
-For example, you can build a cache cluster with consistent hashing, or a multi-layer caching simulator.
+For example, you can build a cache cluster with consistent hashing, or a multi-layer cache simulator.
 
 Here is a simplified example showing the basic APIs. 
 ```c 
@@ -150,63 +156,40 @@ common_cache_params_t cc_params = {.cache_size=1024*1024U};
 cache_t *cache = LRU_init(cc_params, NULL); 
 
 /* counters */
-uint64_t req_byte = 0, miss_byte = 0;
 uint64_t n_req = 0, n_miss = 0;
 
 /* loop through the trace */
 while (read_one_req(reader, req) == 0) {
-    if (cache->get(cache, req) == cache_ck_miss) {
-        miss_byte += req->obj_size;
+    if (!cache->get(cache, req)) {
         n_miss++;
     }
-    req_byte += req->obj_size; 
     n_req++;
 }
 
-printf("miss ratio: %.4lf, byte miss ratio %.4lf\n", 
-        (double)n_miss / n_req, (double)miss_byte / req_byte);
+printf("miss ratio: %.4lf\n", (double)n_miss / n_req);
 
 /* cleaning */
 close_trace(reader);
 free_request(req);
 cache->cache_free(cache);
 ```
+
 save this to `test.c` and compile with 
-```
+``` bash
 gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out
 ```
 
-if you get `error while loading shared libraries`, run `sudo ldconfig`
-
-See [quickstart](doc/quickstart_lib.md) for more details. 
-And see [example folder](example) for examples on how to use libCacheSim, such as cache cluster with consistent hashing, multi-layer caching simulators. 
+See [here](/doc/advanced_lib.md) for more details, and see [example folder](/example) for examples on how to use libCacheSim, such as building a cache cluster with consistent hashing, multi-layer cache simulators. 
 
 ---
 
 
-### Extending libCacheSim 
-#### Adding new trace types
-libCacheSim supports txt, csv, and binary traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
+### Extending libCacheSim (new algorithms and trace types)
+libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
 
-We also support zstd compressed traces with decompression first, this allows you to store the traces with less space.
+We also support zstd compressed binary traces without decompression. This allows you to store the traces with less space.
 
-You should not need to add support to use a new trace if you follow the (cachesim quick start tutorial)[doc/quickstart_cachesim.md] and (libCacheSim quick start tutorial)[doc/quickstart_libcachesim].
-
-But if you ever need to add a new trace type, please see [`libCacheSim/traceReader/customizedReader/akamaiBin.h`](libCacheSim/traceReader/customizedReader/akamaiBin.h) for an example reader.
-
-#### Adding new eviction algorithms
-Adding eviction algorithm is easy, you can see [`libCacheSim/cache/eviction/LRU.c`](/libCacheSim/cache/eviction/LRU.c) for an example.
-Besides implementing the a new eviction algorithm in `libCacheSim/cache/eviction/myCache.c`, you also need to perform the following tasks.
-1. Add the `myCache_init()` function to [`libCacheSim/include/libCacheSim/evictionAlgo.h`](/libCacheSim/include/libCacheSim/evictionAlgo.h).
-2. Add the mycache.c to [`libCacheSim/cache/eviction/CMakeLists.txt`](/libCacheSim/cache/eviction/CMakeLists.txt) so that it can be compiled.
-3. Add the option to use mycache in `cachesim` in [`libCacheSim/bin/cachesim/cli.c`](/libCacheSim/bin/cachesim/cli.c).
-4. If you are creating a pull request, you would also need to add a test in [`test/test_evictionAlgo.c`](/test/test_evictionAlgo.c) and add the algorithm to this README. 
-
-#### Adding new eviction algorithms in C++
-You can also write your eviction algorithm in C++ and use it in libCacheSim.
-You can see [`libCacheSim/cache/eviction/cpp/LFU.cpp`](/libCacheSim/cache/eviction/cpp/LFU.cpp) for an example.
-
-For further reading on how to use libCacheSim, please see the [quick start libCacheSim](/doc/quickstart_libcachesim.md).
+If you need to add a new trace type, please see [here](/doc/advanced_lib_extend.md) for details.
 
 
 ---

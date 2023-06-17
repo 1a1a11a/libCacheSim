@@ -2,7 +2,7 @@
 ## Trace analysis tool
 libCacheSim provides a set of tools to help you analyze traces. After building the project, you can find a binary called `traceAnalyzer`.
 This doc shows how to use the tool.
-If you are interested, the source code is located in the [libCacheSim/bin/traceAnalyzer/](/libCacheSim/bin/traceAnalyzer) and [libCacheSim/traceAnalyzer](/libCacheSim/traceAnalyzer) directory.
+If you are interested, the source code is located in the [bin/traceAnalyzer/](/libCacheSim/bin/traceAnalyzer) and [traceAnalyzer](/libCacheSim/traceAnalyzer) directory.
 
 ### Obtain trace statistics
 #### Usage: 

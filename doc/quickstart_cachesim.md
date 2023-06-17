@@ -11,7 +11,7 @@ Meanwhile, cachesim has high-performance with low resource usages.
 ---
 
 ## Installation
-First, [build libCacheSim](../README.md). After building libCacheSim, `cachesim` should be in the build directory. 
+First, [build libCacheSim](/doc/install.md). After building libCacheSim, `cachesim` should be in the build directory. 
 
 ---
 
@@ -58,21 +58,21 @@ You can enable this feature by setting cache size to 0 or auto.
 
 ### Use different eviction algorithms
 cachesim supports the following algorithms:
-[FIFO](../libCacheSim/libCacheSim/cache/eviction/FIFO.c), 
-[LRU](../libCacheSim/libCacheSim/cache/eviction/LRU.c), 
-[Clock](../libCacheSim/libCacheSim/cache/eviction/Clock.c),
-[LFU](../libCacheSim/libCacheSim/cache/eviction/LFU.c), 
-[ARC](../libCacheSim/libCacheSim/cache/eviction/ARC.c), 
-[SLRU](../libCacheSim/libCacheSim/cache/eviction/SLRU.c), 
-[GDSF](../libCacheSim/libCacheSim/cache/eviction/GDSF.c), 
-[TinyLFU](../libCacheSim/libCacheSim/cache/eviction/TinyLFU.c), 
-[LeCaR](../libCacheSim/libCacheSim/cache/eviction/LeCaR.c), 
-[Cacheus](../libCacheSim/libCacheSim/cache/eviction/Cacheus.c), 
-[Hyperbolic](../libCacheSim/libCacheSim/cache/eviction/Hyperbolic.c), 
-[LHD](../libCacheSim/libCacheSim/cache/eviction/LHD/LHDInterface.cpp), 
-[GLCache](../libCacheSim/libCacheSim/cache/eviction/GLCache/GLCache.c),
-[Belady](../libCacheSim/libCacheSim/cache/eviction/Belady.c), 
-[BeladySize](../libCacheSim/libCacheSim/cache/eviction/BeladySize.c), 
+* [FIFO](/libCacheSim/cache/eviction/FIFO.c)
+* [LRU](/libCacheSim/cache/eviction/LRU.c)
+* [Clock](/libCacheSim/cache/eviction/Clock.c)
+* [LFU](/libCacheSim/cache/eviction/LFU.c)
+* [ARC](/libCacheSim/cache/eviction/ARC.c)
+* [SLRU](/libCacheSim/cache/eviction/SLRU.c)
+* [GDSF](/libCacheSim/cache/eviction/GDSF.c)
+* [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
+* [LeCaR](/libCacheSim/cache/eviction/LeCaR.c)
+* [Cacheus](/libCacheSim/cache/eviction/Cacheus.c)
+* [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
+* [LHD](/libCacheSim/cache/eviction/LHD/LHDInterface.cpp)
+* [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
+* [Belady](/libCacheSim/cache/eviction/Belady.c)
+* [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 
 You can just use the algorithm name as the eviction algorithm parameter, for example  
 
