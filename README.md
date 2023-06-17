@@ -5,7 +5,6 @@
 
 
 [![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
-![visitors](https://visitor-badge.glitch.me/badge?page_id=1a1a11a.libCacheSim)
 
 
 ## What is libCacheSim
@@ -119,6 +118,7 @@ python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-forma
 python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1, obj-id-col=2, obj-size-col=3, delimiter=,," --algos=fifo,lru,lecar,s3fifo --report-interval=30 --miss-ratio-type="accu"
 ```
 
+---
 
 ### Trace analysis
 libCacheSim also has a trace analyzer that provides a lot of useful information about the trace. 
