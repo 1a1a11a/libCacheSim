@@ -14,7 +14,7 @@ def extract_dataname(datapath: str) -> str:
     """
 
     dataname = datapath.split("/")[-1]
-    l1 = [".sample10", ".sample100", ".oracleGeneral", ".bin", ".zst"]
+    l1 = [".sample10", ".sample100", ".oracleGeneral", ".bin", ".zst", ".csv", ".txt", ".gz"]
     l2 = ["_w300", "_w60", "_obj", "_req"]
     l3 = [
         ".reuseWindow",
@@ -26,6 +26,8 @@ def extract_dataname(datapath: str) -> str:
         ".size",
         ".ttl",
         ".accessPattern",
+        ".accessRtime",
+        ".accessVtime",
         "_reuse", 
     ]
     

@@ -14,9 +14,8 @@ each records the clock/logical time of sampled objects
 
 import os, sys
 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "../"))
 from utils.common import *
+from trace_utils import extract_dataname
 
 logger = logging.getLogger("access_pattern")
 
@@ -92,7 +91,7 @@ def plot_access_pattern(datapath: str,
     """
 
     if len(figname_prefix) == 0:
-        figname_prefix = datapath.split("/")[-1]
+        figname_prefix = extract_dataname(datapath)
 
     access_time_list = _load_access_pattern_data(datapath, n_obj_to_plot)
 
@@ -117,7 +116,7 @@ def plot_access_pattern(datapath: str,
                         s=8)
 
     plt.xlabel(xlabel)
-    plt.ylabel("Sampled object (sorted by first access time)")
+    plt.ylabel("Sampled object") # (sorted by first access time)
     plt.savefig(figname, bbox_inches="tight")
     plt.clf()
     logger.info("save fig to {}".format(figname))

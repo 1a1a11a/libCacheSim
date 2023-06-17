@@ -1,0 +1,9 @@
+
+1. add support for set-associative cache
+2. add support for space management 
+3. mac compatibility 
+4. add support for cache clusters
+5. add support for cache hierarchy
+6. fix oracle trace gen
+7. update the analysis scripts
+

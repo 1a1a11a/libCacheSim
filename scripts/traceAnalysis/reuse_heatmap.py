@@ -123,11 +123,11 @@ def plot_reuse_heatmap(datapath: str, figname_prefix: str = "") -> None:
             lambda x, pos: "{:.0f}".format(x * time_granularity / 3600)))
     plt.xlabel("Time (hour)")
     plt.ylabel("Reuse time (hour)")
-    plt.savefig("{}/{}_reuse_rt_heatmap.{}".format(FIG_DIR, figname_prefix,
+    plt.savefig("{}/{}_reuse_heatmap_rt.{}".format(FIG_DIR, figname_prefix,
                                                    FIG_TYPE),
                 bbox_inches="tight")
     plt.clf()
-    logger.info("plot saved to {}/{}_reuse_rt_heatmap.{}".format(
+    logger.info("plot saved to {}/{}_reuse_heatmap_rt.{}".format(
         FIG_DIR, figname_prefix, FIG_TYPE))
 
     plot_data_vt, time_granularity, time_window, log_base = _load_reuse_heatmap_data(
@@ -147,11 +147,11 @@ def plot_reuse_heatmap(datapath: str, figname_prefix: str = "") -> None:
         FuncFormatter(lambda x, pos: "{:.0f}".format(log_base**x)))
     plt.xlabel("Time (hour)")
     plt.ylabel("Reuse time (# request)")
-    plt.savefig("{}/{}_reuse_vt_heatmap.{}".format(FIG_DIR, figname_prefix,
+    plt.savefig("{}/{}_reuse_heatmap_vt.{}".format(FIG_DIR, figname_prefix,
                                                    FIG_TYPE),
                 bbox_inches="tight")
     plt.clf()
-    logger.info("plot saved to {}/{}_reuse_vt_heatmap.{}".format(
+    logger.info("plot saved to {}/{}_reuse_heatmap_vt.{}".format(
         FIG_DIR, figname_prefix, FIG_TYPE))
 
 

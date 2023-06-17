@@ -47,7 +47,7 @@ def plot_popularity_Zipf(datapath, figname_prefix=""):
     from scipy.optimize import curve_fit
 
     if len(figname_prefix) == 0:
-        figname_prefix = datapath.split("/")[-1]
+        figname_prefix = extract_dataname(datapath)
 
     sorted_freq, _ = load_popularity_data(datapath)
 
@@ -57,11 +57,11 @@ def plot_popularity_Zipf(datapath, figname_prefix=""):
     plt.grid(linestyle="--")
     plt.xscale("log")
     plt.yscale("log")
-    plt.savefig("{}/{}_popularity_rank.{}".format(FIG_DIR, figname_prefix,
+    plt.savefig("{}/{}_pop_rank.{}".format(FIG_DIR, figname_prefix,
                                                   FIG_TYPE),
                 bbox_inches="tight")
     plt.clf()
-    logger.info("save fig to {}/{}_popularity_rank.{}".format(
+    logger.info("save fig to {}/{}_pop_rank.{}".format(
         FIG_DIR, figname_prefix, FIG_TYPE))
 
     x = np.log(np.arange(1, 1 + len(sorted_freq)))
