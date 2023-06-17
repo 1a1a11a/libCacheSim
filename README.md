@@ -10,6 +10,7 @@
 
 ## What is libCacheSim
 * a high-performance **cache simulator** binary for running cache simulations. 
+* a high-performance and versatile trace analyzer for **analyzing cache traces**.
 * a high-performance **library** for building cache simulators. 
 
 ---
@@ -103,7 +104,12 @@ Run the example traces with LRU eviction algorithm and 1GB cache size.
 ./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
 ``` 
 
+See [quick start cachesim](doc/quickstart_cachesim.md) for more usages. 
+
+
 #### Plot miss ratio curve
+You can plot miss ratios of different algorithms and sizes, and plot the miss ratios over time.
+
 ```bash
 # plot miss ratio over size
 cd scripts;
@@ -114,7 +120,12 @@ python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-forma
 ```
 
 
-See [quick start cachesim](doc/quickstart_cachesim.md) for more usages. 
+### Trace analysis
+libCacheSim also has a trace analyzer that provides a lot of useful information about the trace. 
+And it is very fast, designed to work with billions of requests. 
+It also coms with a set of scripts to help you analyze the trace. 
+See [trace analysis](/doc/quickstart_traceAnalyzer.md) for more details.
+
 
 
 
