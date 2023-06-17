@@ -14,17 +14,26 @@
 #include "internal.hpp"
 
 namespace cli {
-const char *argp_program_version = "traceConv 0.0.1";
-const char *argp_program_bug_address = "google group";
+const char *argp_program_version = "traceUtil 0.0.1";
+const char *argp_program_bug_address =
+    "https://groups.google.com/g/libcachesim";
 
 enum argp_option_short {
   OPTION_TRACE_TYPE_PARAMS = 't',
   OPTION_OUTPUT_PATH = 'o',
-  OPTION_NUM_REQ = 'n',
   OPTION_SAMPLE_RATIO = 's',
   OPTION_IGNORE_OBJ_SIZE = 0x101,
+
+  // trace conv
   OPTION_OUTPUT_TXT = 0x102,
-  OPTION_REMOVE_SIZE_CHANGE = 0x103
+  OPTION_REMOVE_SIZE_CHANGE = 0x103,
+
+  // trace print
+  OPTION_NUM_REQ = 'n',
+
+  // trace filter
+  OPTION_FILTER_TYPE = 0x301,
+  OPTION_FILTER_SIZE = 0x302
 };
 
 /*
@@ -36,30 +45,31 @@ static struct argp_option options[] = {
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
      "\"obj-id-col=1,header=true\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1,header=true\"", 2},
-    {"num-req", OPTION_NUM_REQ, "-1", 0,
-     "Number of requests to process, -1 means all requests in the trace", 2},
+    {"output", OPTION_OUTPUT_PATH, "/path/output", 0, "Path to write output",
+     2},
+    {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
+     "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 2},
+    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
+     "specify to ignore the object size from the trace", 2},
 
     {0, 0, 0, 0, "traceConv options:"},
-    {"output", OPTION_OUTPUT_PATH, "/path/output", 0, "Path to write output",
-     5},
-    {"sample-ratio", OPTION_SAMPLE_RATIO, "1", 0,
-     "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 5},
-    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
-     "specify to ignore the object size from the trace", 10},
     {"output-txt", OPTION_OUTPUT_TXT, "false", 0,
-     "output trace in txt format in addition to binary format", 10},
+     "output trace in txt format in addition to binary format", 4},
     {"remove-size-change", OPTION_REMOVE_SIZE_CHANGE, "false", 0,
      "whether remove object size change, if true, objects with changed size "
      "are updated to the old size",
-     10},
+     4},
 
-    // {0, 0, 0, 0, "Other less used options:"},
-    // {"warmup_sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
-    // {"use_ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the
-    // trace",
-    //  11},
-    // {"consider_obj_metadata", OPTION_CONSIDER_OBJ_METADATA, "true", 0,
-    //  "Whether consider per object metadata size in the simulated cache", 10},
+    {0, 0, 0, 0, "tracePrint options:"},
+    {"num-req", OPTION_NUM_REQ, "-1", 0,
+     "Number of requests to process, -1 means all requests in the trace", 6},
+
+    {0, 0, 0, 0, "traceFilter options:"},
+    {"filter-type", OPTION_FILTER_TYPE, "FIFO", 0,
+     "The filter type, e.g., FIFO and LRU", 8},
+    {"filter-size", OPTION_FILTER_SIZE, "0.1", 0,
+     "The size of the filter, can be absolute size or relative to working set",
+     8},
 
     {0}};
 
@@ -78,14 +88,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_IGNORE_OBJ_SIZE:
       arguments->ignore_obj_size = is_true(arg) ? true : false;
       break;
-    case OPTION_REMOVE_SIZE_CHANGE:
-      arguments->remove_size_change = is_true(arg) ? true : false;
-      break;
     case OPTION_OUTPUT_PATH:
-      arguments->ofilepath = arg;
-      break;
-    case OPTION_OUTPUT_TXT:
-      arguments->output_txt = is_true(arg) ? true : false;
+      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
       break;
     case OPTION_SAMPLE_RATIO:
       arguments->sample_ratio = atof(arg);
@@ -93,8 +97,20 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         ERROR("sample ratio should be in (0, 1]\n");
       }
       break;
+    case OPTION_REMOVE_SIZE_CHANGE:
+      arguments->remove_size_change = is_true(arg) ? true : false;
+      break;
+    case OPTION_OUTPUT_TXT:
+      arguments->output_txt = is_true(arg) ? true : false;
+      break;
     case OPTION_NUM_REQ:
       arguments->n_req = atoll(arg);
+      break;
+    case OPTION_FILTER_TYPE:
+      arguments->cache_name = arg;
+      break;
+    case OPTION_FILTER_SIZE:
+      arguments->cache_size = atof(arg);
       break;
     case ARGP_KEY_ARG:
       if (state->arg_num >= N_ARGS) {
@@ -129,9 +145,12 @@ static char doc[] =
     "\n"
     "tracePrint: utility to print binary trace in human-readable format\n"
     "traceConv: utility to convert a trace to oracleGeneral format\n\n"
+    "traceFilter: utility to filter a trace\n\n"
     "example usage: ./traceConv /trace/path csv -o "
-    "/path/new_trace.oracleGeneral -t \"obj-id-col=5, time-col=2, "
-    "obj-size-col=4\"\n\n";
+    "/path/new_trace.oracleGeneral -t "
+    "\"obj-id-col=5,time-col=2,obj-size-col=4\"\n\n"
+    "example usage: ./traceFilter /trace/path lcs -o /path/new_trace.lcs "
+    "--filter fifo --filter-size 0.1\n\n";
 
 /**
  * @brief initialize the arguments
@@ -147,9 +166,11 @@ static void init_arg(struct arguments *args) {
   args->trace_type_params = NULL;
   args->ignore_obj_size = false;
   args->sample_ratio = 1.0;
-  args->ofilepath = NULL;
+  memset(args->ofilepath, 0, OFILEPATH_LEN);
   args->output_txt = false;
   args->remove_size_change = false;
+  args->cache_name = NULL;
+  args->cache_size = 0;
 }
 
 static void print_parsed_arg(struct arguments *args) {
@@ -207,36 +228,11 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_type_str = args->args[1];
   assert(N_ARGS == 2);
 
-  /* convert trace type string to enum */
-  // args->trace_type =
-  //     trace_type_str_to_enum(args->trace_type_str, args->trace_path);
-
-  // reader_init_param_t reader_init_params;
-  // set_default_reader_init_params(&reader_init_params);
-  // reader_init_params.ignore_obj_size = args->ignore_obj_size;
-  // reader_init_params.ignore_size_zero_req = true;
-  // reader_init_params.obj_id_is_num = true;
-  // reader_init_params.cap_at_n_req = args->n_req;
-  // reader_init_params.sampler = NULL;
-
-  // if (args->sample_ratio > 0 && args->sample_ratio < 1 - 1e-6) {
-  //   sampler_t *sampler = create_spatial_sampler(args->sample_ratio);
-  //   reader_init_params.sampler = sampler;
-  // }
-
-  // parse_reader_params(args->trace_type_params, &reader_init_params);
-  // if ((args->trace_type == CSV_TRACE || args->trace_type == PLAIN_TXT_TRACE) &&
-  //     reader_init_params.obj_size_field == -1) {
-  //   args->ignore_obj_size = true;
-  //   reader_init_params.ignore_obj_size = true;
-  // }
-
-  // args->reader =
-  //     setup_reader(args->trace_path, args->trace_type, &reader_init_params);
-
   args->reader = create_reader(args->trace_type_str, args->trace_path,
-                               args->trace_type_params, args->n_req, true, 0);
+                               args->trace_type_params, args->n_req, args->ignore_obj_size, 0);
 
   print_parsed_arg(args);
 }
+
+void free_arg(struct arguments *args) { close_reader(args->reader); }
 }  // namespace cli

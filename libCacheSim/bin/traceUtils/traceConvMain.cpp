@@ -31,8 +31,7 @@ int main(int argc, char *argv[]) {
 
   cli::parse_cmd(argc, argv, &args);
   if (args.ofilepath == NULL) {
-    args.ofilepath = (char *)malloc(strlen(args.trace_path) + 10);
-    sprintf(args.ofilepath, "%s.lcs", args.trace_path);
+    snprintf(args.ofilepath, OFILEPATH_LEN, "%s.oracleGeneral", args.trace_path);
   }
 
   traceConv::convert_to_oracleGeneral(args.reader, args.ofilepath,

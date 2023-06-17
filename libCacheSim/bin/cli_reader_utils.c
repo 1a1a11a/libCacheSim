@@ -80,11 +80,12 @@ bool is_true(const char *arg) {
 
 /**
  * @brief parse the reader parameters, mostly this is used by csv traces
- * 
- * @param reader_params_str 
- * @param params 
+ *
+ * @param reader_params_str
+ * @param params
  */
-void parse_reader_params(const char *reader_params_str, reader_init_param_t *params) {
+void parse_reader_params(const char *reader_params_str,
+                         reader_init_param_t *params) {
   params->delimiter = '\0';
   params->obj_id_is_num = false;
 
@@ -176,9 +177,9 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
 
 /**
  * @brief detect the trace type from the trace path
- * 
- * @param trace_path 
- * @return trace_type_e 
+ *
+ * @param trace_path
+ * @return trace_type_e
  */
 trace_type_e detect_trace_type(const char *trace_path) {
   trace_type_e trace_type = UNKNOWN_TRACE;
@@ -218,7 +219,7 @@ trace_type_e detect_trace_type(const char *trace_path) {
 
 /**
  * @brief detect whether we should disable object metadata
- * 
+ *
  */
 #define N_TEST 1024
 bool should_disable_obj_metadata(reader_t *reader) {
@@ -239,17 +240,56 @@ bool should_disable_obj_metadata(reader_t *reader) {
 }
 #undef N_TEST
 
+void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
+                          int64_t *wss_byte) {
+  reset_reader(reader);
+  request_t *req = new_request();
+  GHashTable *obj_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+  *wss_obj = 0;
+  *wss_byte = 0;
+
+  // sample the object space in case there are too many objects
+  // which can cause a crash
+  int scaling_factor = 1;
+  if (reader->file_size > 5 * GiB) {
+    scaling_factor = 101;
+  } else if (reader->file_size > 1 * GiB) {
+    scaling_factor = 11;
+  }
+
+  INFO("calculating working set size...\n");
+  while (read_one_req(reader, req) == 0) {
+    if (scaling_factor > 1 && req->obj_id % scaling_factor != 0) {
+      continue;
+    }
+
+    if (g_hash_table_contains(obj_table, (gconstpointer)req->obj_id)) {
+      continue;
+    }
+
+    g_hash_table_add(obj_table, (gpointer)req->obj_id);
+
+    *wss_obj += 1;
+    *wss_byte += req->obj_size;
+  }
+  *wss_obj *= scaling_factor;
+  *wss_byte *= scaling_factor;
+  INFO("working set size: %ld object %ld byte\n", *wss_obj, *wss_byte);
+
+  free_request(req);
+  reset_reader(reader);
+}
 
 /**
  * @brief Create a reader from the parameters
- * 
- * @param trace_type_str 
- * @param trace_path 
- * @param trace_type_params 
- * @param n_req 
- * @param ignore_obj_size 
- * @param sample_ratio 
- * @return reader_t* 
+ *
+ * @param trace_type_str
+ * @param trace_path
+ * @param trace_type_params
+ * @param n_req
+ * @param ignore_obj_size
+ * @param sample_ratio
+ * @return reader_t*
  */
 reader_t *create_reader(const char *trace_type_str, const char *trace_path,
                         const char *trace_type_params, const int64_t n_req,

@@ -26,7 +26,12 @@ We can also sample a trace to reduce the size of the trace.
 
 
 ### traceFilter
+traceFilter simulates a multi-layer cache hierarchy. It filters the trace based on the cache hit/miss information and generates a trace for the second layer. 
+The generated trace is in oracleGeneral format. 
 
-
+```bash 
+# filter trace using a cache with a size 0.01 of the working set size and the FIFO eviction policy
+./bin/traceFilter ../data/trace.vscsi vscsi --filter-type fifo --filter-size 0.01 --ignore-obj-size 1
+```
 
 

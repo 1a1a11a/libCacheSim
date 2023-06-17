@@ -18,8 +18,8 @@ static inline cache_t *create_cache(const char *trace_path,
                                     const bool consider_obj_metadata) {
   common_cache_params_t cc_params = {
       .cache_size = cache_size,
-      .hashpower = 24,
       .default_ttl = 86400 * 300,
+      .hashpower = 24,
       .consider_obj_metadata = consider_obj_metadata,
   };
   cache_t *cache;
