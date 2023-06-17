@@ -2,7 +2,7 @@
 ## Trace analysis tool
 libCacheSim provides a set of tools to help you analyze traces. After building the project, you can find a binary called `traceAnalyzer`.
 This doc shows how to use the tool.
-If you are interested, the source code is located in the [libCacheSim/bin/traceAnalyzer/](libCacheSim/bin/traceAnalyzer) and [libCacheSim/traceAnalyzer](libCacheSim/traceAnalyzer) directory.
+If you are interested, the source code is located in the [libCacheSim/bin/traceAnalyzer/](/libCacheSim/bin/traceAnalyzer) and [libCacheSim/traceAnalyzer](/libCacheSim/traceAnalyzer) directory.
 
 ### Obtain trace statistics
 #### Usage: 
@@ -14,12 +14,12 @@ If you are interested, the source code is located in the [libCacheSim/bin/traceA
 #### A list of tasks:
 * `--common`: run all common tasks, including `--stat`, `--traceStat`, `--reqRate`, `--size`, `--reuse`, `--popularity`
 * `--all`: run all tasks
-* `--accessPattern`: generate access pattern data for plotting using [scripts/traceAnalysis/access_pattern.py](scripts/traceAnalysis/access_pattern.py)
-* `--reqRate`: generate request rate data for plotting using [scripts/traceAnalysis/req_rate.py](scripts/traceAnalysis/req_rate.py)
-* `--size`: generate size distribution data for plotting using [scripts/traceAnalysis/size.py](scripts/traceAnalysis/size.py) and [scripts/traceAnalysis/size_heatmap.py](scripts/traceAnalysis/size_heatmap.py)
-* `--reuse`: generate reuse distribution data for plotting using [scripts/traceAnalysis/reuse.py](scripts/traceAnalysis/reuse.py) and [scripts/traceAnalysis/reuse_heatmap.py](scripts/traceAnalysis/reuse_heatmap.py)
-* `--popularity`: generate popularity data for plotting using [scripts/traceAnalysis/popularity.py](scripts/traceAnalysis/popularity.py)
-* `--popularityDecay`: generate popularity data for plotting using [scripts/traceAnalysis/popularity_decay.py](scripts/traceAnalysis/popularity_decay.py)
+* `--accessPattern`: generate access pattern data for plotting using [scripts/traceAnalysis/access_pattern.py](/scripts/traceAnalysis/access_pattern.py)
+* `--reqRate`: generate request rate data for plotting using [scripts/traceAnalysis/req_rate.py](/scripts/traceAnalysis/req_rate.py)
+* `--size`: generate size distribution data for plotting using [scripts/traceAnalysis/size.py](/scripts/traceAnalysis/size.py) and [scripts/traceAnalysis/size_heatmap.py](/scripts/traceAnalysis/size_heatmap.py)
+* `--reuse`: generate reuse distribution data for plotting using [scripts/traceAnalysis/reuse.py](/scripts/traceAnalysis/reuse.py) and [scripts/traceAnalysis/reuse_heatmap.py](/scripts/traceAnalysis/reuse_heatmap.py)
+* `--popularity`: generate popularity data for plotting using [scripts/traceAnalysis/popularity.py](/scripts/traceAnalysis/popularity.py)
+* `--popularityDecay`: generate popularity data for plotting using [scripts/traceAnalysis/popularity_decay.py](/scripts/traceAnalysis/popularity_decay.py)
 
 #### Example: 
 ```bash
@@ -70,7 +70,7 @@ The trace analyzer will generate statistics of the trace and save them to `stat`
 ----
 
 ### Plot trace statistics and visualize the trace
-We provide plot scripts in [scripts/traceAnalysis/](scripts/traceAnalysis/) to help you plot the trace statistics.
+We provide plot scripts in [scripts/traceAnalysis/](/scripts/traceAnalysis/) to help you plot the trace statistics.
 After generating plot data, we can plot access pattern, request rate, size, reuse, and popularity using the following commands:
 
 #### Access pattern
