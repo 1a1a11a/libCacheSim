@@ -60,11 +60,10 @@ enum argp_option_short {
 */
 static struct argp_option options[] = {
     {NULL, 0, NULL, 0, "trace reader related parameters:", 0},
-    {"trace-type-params", OPTION_TRACE_TYPE_PARAMS, NULL, OPTION_ARG_OPTIONAL,
-     "Parameters used for csv trace, e.g., "
-     "\"time-col=1,obj-id-col=2;delimiter=,\"",
-     1},
-    {"num-req", OPTION_NUM_REQ, 0, OPTION_ARG_OPTIONAL,
+    {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
+     "time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,", NULL,
+     "Parameters used for csv trace", 1},
+    {"num-req", OPTION_NUM_REQ, 0, NULL,
      "Num of requests to process, default -1 means all requests in the trace",
      1},
 
@@ -113,7 +112,7 @@ static struct argp_option options[] = {
 
     {NULL, 0, NULL, 0, "common parameters:", 0},
 
-    {"output", OPTION_OUTPUT_PATH, NULL, OPTION_ARG_OPTIONAL, "Output path", 8},
+    {"output", OPTION_OUTPUT_PATH, "", NULL, "Output path", 8},
     {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
      "Produce verbose output", 8},
 
@@ -146,7 +145,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_ACCESS_PATTERN_SAMPLE_RATIO:
       arguments->analysis_param.access_pattern_sample_ratio = atof(arg);
       arguments->analysis_param.access_pattern_sample_ratio_inv =
-          (int)(1.0 / arguments->analysis_param.access_pattern_sample_ratio) + 1;
+          (int)(1.0 / arguments->analysis_param.access_pattern_sample_ratio) +
+          1;
       break;
     case OPTION_TRACK_N_HIT:
       arguments->analysis_param.track_n_hit = atoi(arg);
