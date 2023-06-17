@@ -24,23 +24,23 @@
 
 ## Supported algorithms
 cachesim supports the following algorithms:
-* [FIFO](libCacheSim/cache/eviction/FIFO.c)
-* [LRU](libCacheSim/cache/eviction/LRU.c)
-* [Clock](libCacheSim/cache/eviction/Clock.c)
-* [LFU](libCacheSim/cache/eviction/LFU.c)
-* [LFU with dynamic aging](libCacheSim/cache/eviction/LFUDA.c)
-* [ARC](libCacheSim/cache/eviction/ARC.c)
-* [SLRU](libCacheSim/cache/eviction/SLRU.c)
-* [GDSF](libCacheSim/cache/eviction/cpp/GDSF.cpp)
-* [TinyLFU](libCacheSim/cache/eviction/TinyLFU.c)
-* [LeCaR](libCacheSim/cache/eviction/LeCaR.c)
-* [Cacheus](libCacheSim/cache/eviction/Cacheus.c)
-* [Hyperbolic](libCacheSim/cache/eviction/Hyperbolic.c)
-* [LHD](libCacheSim/cache/eviction/LHD/LHD_Interface.cpp)
-* [LRB](libCacheSim/cache/eviction/LRB/LRB_Interface.cpp)
-* [GLCache](libCacheSim/cache/eviction/GLCache/GLCache.c)
-* [Belady](libCacheSim/cache/eviction/Belady.c)
-* [BeladySize](libCacheSim/cache/eviction/BeladySize.c)
+* [FIFO](/libCacheSim/cache/eviction/FIFO.c)
+* [LRU](/libCacheSim/cache/eviction/LRU.c)
+* [Clock](/libCacheSim/cache/eviction/Clock.c)
+* [LFU](/libCacheSim/cache/eviction/LFU.c)
+* [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c)
+* [ARC](/libCacheSim/cache/eviction/ARC.c)
+* [SLRU](/libCacheSim/cache/eviction/SLRU.c)
+* [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp)
+* [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
+* [LeCaR](/libCacheSim/cache/eviction/LeCaR.c)
+* [Cacheus](/libCacheSim/cache/eviction/Cacheus.c)
+* [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
+* [LHD](/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp)
+* [LRB](/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp)
+* [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
+* [Belady](/libCacheSim/cache/eviction/Belady.c)
+* [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 
 ---
 
@@ -192,15 +192,15 @@ We also support zstd compressed traces with decompression first, this allows you
 
 You should not need to add support to use a new trace if you follow the (cachesim quick start tutorial)[doc/quickstart_cachesim.md] and (libCacheSim quick start tutorial)[doc/quickstart_libcachesim].
 
-But if you ever need to add a new trace type, please see `libCacheSim/traceReader/customizedReader/akamaiBin.h` for an example reader.
+But if you ever need to add a new trace type, please see [`libCacheSim/traceReader/customizedReader/akamaiBin.h`](libCacheSim/traceReader/customizedReader/akamaiBin.h) for an example reader.
 
 #### Adding new eviction algorithms
-Adding eviction algorithm is easy, you can see (`libCacheSim/cache/eviction/LRU.c`)[libCacheSim/cache/eviction/LRU.c] for an example.
+Adding eviction algorithm is easy, you can see [`libCacheSim/cache/eviction/LRU.c`](/libCacheSim/cache/eviction/LRU.c) for an example.
 Besides implementing the a new eviction algorithm in `libCacheSim/cache/eviction/myCache.c`, you also need to perform the following tasks.
-1. Add the `myCache_init()` function to (`libCacheSim/include/libCacheSim/evictionAlgo.h`)[libCacheSim/include/libCacheSim/evictionAlgo.h].
-2. Add the mycache.c to (`libCacheSim/cache/eviction/CMakeLists.txt`)[libCacheSim/cache/eviction/CMakeLists.txt] so that it can be compiled.
-3. Add the option to use mycache in `cachesim` in (`libCacheSim/bin/cachesim/cli.c`)[libCacheSim/bin/cachesim/cli.c].
-4. If you are creating a pull request, you would also need to add a test in (`test/test_evictionAlgo.c`)[test/test_evictionAlgo.c] and add the algorithm to this README. 
+1. Add the `myCache_init()` function to [`libCacheSim/include/libCacheSim/evictionAlgo.h`](/libCacheSim/include/libCacheSim/evictionAlgo.h).
+2. Add the mycache.c to [`libCacheSim/cache/eviction/CMakeLists.txt`](/libCacheSim/cache/eviction/CMakeLists.txt) so that it can be compiled.
+3. Add the option to use mycache in `cachesim` in [`libCacheSim/bin/cachesim/cli.c`](/libCacheSim/bin/cachesim/cli.c).
+4. If you are creating a pull request, you would also need to add a test in [`test/test_evictionAlgo.c`](/test/test_evictionAlgo.c) and add the algorithm to this README. 
 
 #### Adding new eviction algorithms in C++
 You can also write your eviction algorithm in C++ and use it in libCacheSim.
