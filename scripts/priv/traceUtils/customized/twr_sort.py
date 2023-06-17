@@ -74,7 +74,7 @@ def sort_trace(datapath, odatapath, buffer_time=300):
 if __name__ == "__main__":
     import argparse 
     parser = argparse.ArgumentParser(description="sort the open source twr trace") 
-    parser.add_argument("--datapath", type=str)
+    parser.add_argument("datapath", type=str)
     parser.add_argument("--odatapath", type=str, help="output path")
     p = parser.parse_args() 
 

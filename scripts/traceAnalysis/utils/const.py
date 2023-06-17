@@ -1,9 +1,6 @@
 
 
-import os
-import sys
-import socket
-
+# Constants
 
 KiB = 1024
 MiB = 1024*1024

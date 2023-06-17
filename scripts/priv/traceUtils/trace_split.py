@@ -10,7 +10,7 @@ import os, sys
 import struct
 
 
-def split_cf_trace(ifile_path, ofile_path, split_by):
+def split_cf_trace(ifile_path:str, ofile_path:str, split_by:str):
     ifile = open(ifile_path, "rb")
     ofile_dict = {}
 
@@ -47,7 +47,7 @@ def split_cf_trace(ifile_path, ofile_path, split_by):
         ofile_idx = "_".join([str(t[i]) for i in split_by_idx_list])
         ofile = ofile_dict.get(ofile_idx, None)
         if ofile is None:
-            ofile_dict[ofile_idx] = open(ofilepath + "." + ofile_idx, "wb")
+            ofile_dict[ofile_idx] = open(ofile_path + "." + ofile_idx, "wb")
 
         ofile.write(b)
         b = ifile.read(s.size)
@@ -61,9 +61,9 @@ def split_cf_trace(ifile_path, ofile_path, split_by):
 if __name__ == "__main__":
     import argparse 
     parser = argparse.ArgumentParser(description="split CF1 trace by some fields")
-    parser.add_argument("--trace_path", type=str, help="input path")
-    parser.add_argument("--output_path", type=str, help="output path")
-    parser.add_argument("--split_by", type="+", help="field to split trace")
+    parser.add_argument("--trace-path", type=str, help="input path")
+    parser.add_argument("--output-path", type=str, help="output path")
+    parser.add_argument("--split-by", type="+", help="field to split trace")
 
     p = parser.parse_args()
     split_cf_trace(p.trace_path, p.output_path, p.split_by)

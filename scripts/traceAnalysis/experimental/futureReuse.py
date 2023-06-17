@@ -3,13 +3,23 @@
 """
 plot future_reuse time distribution 
 
+
+TO update
 """
 
 
-import os, sys 
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../"))
-from utils.common import *
+import os, sys
 import re
+import logging
+import numpy as np
+import matplotlib.pyplot as plt
+
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "../"))
+from utils.common import *
+
+logger = logging.getLogger("future_reuse")
+
 
 def _load_future_reuse_data(datapath):
     """ load future_reuse distribution plot data from C++ computation """ 
@@ -84,9 +94,9 @@ def plot_future_reuse(datapath_list, figname_prefix=""):
 if __name__ == "__main__": 
     import argparse 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--datapath", type=str, default="", help="data path")
-    ap.add_argument("--datapath_prefix", type=str, default="", help="data path")
-    ap.add_argument("--figname_prefix", type=str, default="", help="the prefix of figname")
+    ap.add_argument("datapath", type=str, default="", help="data path")
+    ap.add_argument("datapath-prefix", type=str, default="", help="data path")
+    ap.add_argument("--figname-prefix", type=str, default="", help="the prefix of figname")
     p = ap.parse_args()
 
     # try:

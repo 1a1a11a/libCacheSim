@@ -61,7 +61,7 @@ def convert_trace(datapath, odatapath):
 if __name__ == "__main__":
     import argparse 
     parser = argparse.ArgumentParser(description="sort the open source twr trace") 
-    parser.add_argument("--datapath", type=str)
+    parser.add_argument("datapath", type=str)
     parser.add_argument("--odatapath", type=str, default="", help="output path")
     p = parser.parse_args() 
 

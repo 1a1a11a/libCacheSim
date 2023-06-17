@@ -2,20 +2,6 @@ import os
 import glob
 import struct
 import heapq
-import logging
-
-FORMAT = "[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-LOG_NAME = "rpcRunner"
-LOG_FMT = '%(asctime)s: %(levelname)s [%(filename)s:%(lineno)s]: \t%(message)s'
-LOG_DATEFMT = '%H:%M:%S'
-
-# logging.basicConfig(filename=LOG_NAME, format='%(asctime)s: %(levelname)s [%(filename)s:%(lineno)s]: \t%(message)s',
-#                     level=logging.DEBUG, datefmt='%H:%M:%S')
-logging.basicConfig(
-    format=
-    '%(asctime)s: %(levelname)s [%(filename)s:%(lineno)s]: \t%(message)s',
-    level=logging.INFO,
-    datefmt='%H:%M:%S')
 
 import pyzstd
 from pyzstd import ZstdFile, CParameter, DParameter, Strategy
@@ -80,7 +66,7 @@ def merge_twrNS_traces(datapath_list, odatapath):
         ofile.write(s.pack(ts, obj_id, kv_size, op_ttl, new_ns))
         n += 1
         if n % 10000000 == 0:
-            logging.info(str(n // 1000000) + "M requests")
+            print(str(n // 1000000) + "M requests")
 
         data = ifiles[datapath_idx].read(s.size)
         if data:
@@ -137,7 +123,7 @@ def merge_oracleGeneral_traces(datapath_list, odatapath):
         ofile.write(s_out.pack(ts, obj_id, sz))
         n += 1
         if n % 10000000 == 0:
-            logging.info(str(n // 1000000) + "M requests " + "time " + str(ts))
+            print(str(n // 1000000) + "M requests " + "time " + str(ts))
 
         data = ifiles[datapath_idx].read(s_in.size)
         if data:

@@ -76,9 +76,9 @@ def plot_scan_size(datapath, figname_prefix=""):
 if __name__ == "__main__":
     import argparse
     # ap = argparse.ArgumentParser()
-    # ap.add_argument("--datapath", type=str, help="data path")
+    # ap.add_argument("datapath", type=str, help="data path")
     # ap.add_argument("--n_obj", type=int, default=400, help="the number of objects to plot")
-    # ap.add_argument("--figname_prefix", type=str, default="", help="the prefix of figname")
+    # ap.add_argument("--figname-prefix", type=str, default="", help="the prefix of figname")
     # p = ap.parse_args()
 
     BASEPATH = os.path.dirname(os.path.abspath(__file__))

@@ -2,19 +2,39 @@
 plot how popularity decay over time 
 this can be used to visualize how objects get accessed over time
 
+usage: 
+1. run traceAnalyzer: `./traceAnalyzer /path/trace trace_format --all`, 
+this will generate some output, including popularityDecay result, trace.popularityDecay_w300_obj
+2. plot popularity decay using this script: 
+`python3 popularity_decay.py trace.popularityDecay_w300_obj`
+
+Note that the small data provided in the repo cannot be used to plot this, please use large data
+
+@jason: need to clean up
+
 """
 
 import os, sys
-import scipy
-
-# sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-#                              "../"))
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+import logging
+import numpy as np
+import matplotlib.pyplot as plt
 from utils.common import *
+from trace_utils import extract_dataname
+
+logger = logging.getLogger("popularity_decay")
 
 
-def load_popularity_decay_data(datapath):
-    """ load popularity decay plot data from C++ computation """
+def load_popularity_decay_data(datapath: str) -> Tuple[np.ndarray, int]:
+    """ load popularity decay plot data from C++ computation 
+        
+    Args:
+        datapath: the path to the popularityDecay data file
+    
+    Returns:
+        data: the popularityDecay data matrix
+        time_window: the time window used to compute the popularityDecay data
+    """
+
     import numpy.ma as ma
 
     ifile = open(datapath)
@@ -240,10 +260,10 @@ def find_stable_probability2(mean_req_prob, time_window, figname_prefix):
     return time_reach_stability
 
 
-def plot_popularity_decay_line(plot_data_list,
-                               time_window,
-                               figname_prefix,
-                               label_list=()):
+def plot_popularity_decay_line(plot_data_list: List[np.ndarray],
+                               time_window: int,
+                               figname_prefix: str,
+                               label_list: List[str] = ()):
     """
     plot how the popularty (frequency) of new objects decay over time using line plot
     the line is the average of all time windows
@@ -353,6 +373,8 @@ def plot_popularity_decay_line(plot_data_list,
     # plt.savefig(f"{FIG_DIR}/{figname_prefix}_popularityDecayLineLog.pdf",
     #             bbox_inches="tight")
     plt.clf()
+    logger.info("plot saved at {}".format(
+        f"{FIG_DIR}/{figname_prefix}_popularityDecayLineLog.pdf"))
 
 
 def plot_popularity_decay_heatmap(plot_data, time_window, figname_prefix):
@@ -405,7 +427,7 @@ if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("datapath_list", type=str, nargs="+", help="data path")
-    ap.add_argument("--figname_prefix",
+    ap.add_argument("--figname-prefix",
                     type=str,
                     default="",
                     help="the prefix of figname")
@@ -424,10 +446,7 @@ if __name__ == "__main__":
                                time_window,
                                figname_prefix,
                                label_list=[
-                                   os.path.basename(datapath).replace(
-                                       ".oracleGeneral",
-                                       "").replace(".bin", "").replace(
-                                           "_w300", "").replace("w_60", "").replace(".popularityDecay", "").replace("_obj", "")
+                                   extract_dataname(datapath)
                                    for datapath in p.datapath_list
                                ])
     # plot_popularity_decay_heatmap(plot_data, time_window, figname_prefix)
