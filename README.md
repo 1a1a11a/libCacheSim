@@ -204,9 +204,9 @@ Besides implementing the a new eviction algorithm in `libCacheSim/cache/eviction
 
 #### Adding new eviction algorithms in C++
 You can also write your eviction algorithm in C++ and use it in libCacheSim.
-You can see `libCacheSim/cache/eviction/cpp/LFU.cpp` for an example.
+You can see [`libCacheSim/cache/eviction/cpp/LFU.cpp`](/libCacheSim/cache/eviction/cpp/LFU.cpp) for an example.
 
-For further reading on how to use libCacheSim, please see the [quick start libCacheSim](doc/quickstart_libcachesim.md).
+For further reading on how to use libCacheSim, please see the [quick start libCacheSim](/doc/quickstart_libcachesim.md).
 
 
 ---
