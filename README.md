@@ -1,9 +1,5 @@
 # libCacheSim - building and running cache simulations
 
-<!-- [![Documentation Status](https://readthedocs.org/projects/libCacheSim/badge/?version=master)](http://libCacheSim.readthedocs.io/en/develop/?badge=master)
-[![GitHub version](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim.svg)](https://badge.fury.io/gh/1a1a11a%2FlibCasheSim) -->
-
-
 [![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
 
 
@@ -42,6 +38,7 @@ cachesim supports the following algorithms:
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
 * [Belady](/libCacheSim/cache/eviction/Belady.c)
 * [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
+* [QD-LP](/libCacheSim/cache/eviction/qdlp.c)
 
 ---
 
@@ -100,7 +97,7 @@ Run the example traces with LRU eviction algorithm and 1GB cache size.
 ./bin/cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
 
 # besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
-./bin/cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore obj-size 1
+./bin/cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
 
 # use a csv trace, note the qutation marks when you have multiple options
 ./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
@@ -109,7 +106,7 @@ Run the example traces with LRU eviction algorithm and 1GB cache size.
 ./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
 ``` 
 
-See [quick start cachesim](doc/quickstart_cachesim.md) for more usages. 
+See [quick start cachesim](/doc/quickstart_cachesim.md) for more usages. 
 
 
 #### Plot miss ratio curve
@@ -189,7 +186,7 @@ libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces 
 
 We also support zstd compressed binary traces without decompression. This allows you to store the traces with less space.
 
-If you need to add a new trace type, please see [here](/doc/advanced_lib_extend.md) for details.
+If you need to add a new trace type or a new algorithm, please see [here](/doc/advanced_lib_extend.md) for details. 
 
 
 ---

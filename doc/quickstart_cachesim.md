@@ -44,8 +44,14 @@ Note that vscsi is a trace format, we also support csv traces.
 ./cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
 
 # besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
-./cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore obj-size 1
-``` 
+./cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
+
+# new feature: you can run a few algorithms in parallel by concatenating the algorithms
+./cachesim ../data/trace.vscsi vscsi fifo,lru,arc,qdlp 0.01 --ignore-obj-size 1
+
+# run 4*4 simulations in parallel (no more than n_thread at the same time)
+./cachesim ../data/trace.vscsi vscsi fifo,lru,arc,qdlp 0.01,0.05,0.1,0.2 --ignore-obj-size 1
+```
 
 
 ### Auto detect cache sizes
@@ -73,6 +79,7 @@ cachesim supports the following algorithms:
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
 * [Belady](/libCacheSim/cache/eviction/Belady.c)
 * [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
+* [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
 
 You can just use the algorithm name as the eviction algorithm parameter, for example  
 
