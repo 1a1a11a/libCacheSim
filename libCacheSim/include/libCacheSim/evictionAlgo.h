@@ -121,78 +121,11 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
 cache_t *nop_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
-cache_t *QDLP_init(const common_cache_params_t ccache_params,
-                   const char *cache_specific_params);
-
-cache_t *flashProb_init(const common_cache_params_t ccache_params,
-                        const char *cache_specific_params);
-
 #ifdef ENABLE_LRB
 cache_t *LRB_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 #endif
-
-#ifdef INCLUDE_PRIV
-cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
-                       const char *cache_specific_params);
-
-cache_t *MyClock_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
-
-cache_t *Sieve_init(const common_cache_params_t ccache_params,
-                    const char *cache_specific_params);
-
-cache_t *QDLPv0_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params);
-
-cache_t *S3LRU_init(const common_cache_params_t ccache_params,
-                    const char *cache_specific_params);
-
-cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params);
-
-cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
-
-cache_t *S3FIFOdv2_init(const common_cache_params_t ccache_params,
-                        const char *cache_specific_params);
-
-cache_t *myMQv1_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params);
-
-cache_t *MClock_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params);
-
-cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
-                          const char *cache_specific_params);
-
-cache_t *SFIFO_Reinsertion_init(const common_cache_params_t ccache_params,
-                                const char *cache_specific_params);
-
-cache_t *SFIFOv0_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
-
-cache_t *SFIFO_init(const common_cache_params_t ccache_params,
-                    const char *cache_specific_params);
-
-cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
-                       const char *cache_specific_params);
-
-cache_t *LP_ARC_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params);
-
-cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
-
-cache_t *Sieve_Belady_init(const common_cache_params_t ccache_params,
-                           const char *cache_specific_params);
-
-cache_t *LRU_Belady_init(const common_cache_params_t ccache_params,
-                         const char *cache_specific_params);
-
-cache_t *FIFO_Belady_init(const common_cache_params_t ccache_params,
-                          const char *cache_specific_params);
-#endif
+  
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
 

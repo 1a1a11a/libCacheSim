@@ -23,28 +23,9 @@ set(sourceC
         LIRS.c
         WTinyLFU.c
         Size.c
-        flash/flashProb.c
         QDLP.c
         nop.c
         )
-
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fifo")
-        set(sourceC ${sourceC} 
-        fifo/LP_SFIFO.c
-        fifo/LP_TwoQ.c
-        fifo/LP_ARC.c
-        fifo/SFIFO.c
-        fifo/SFIFOv0.c
-        )
-endif()
-
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/belady")
-        set(sourceC ${sourceC} 
-        belady/Sieve_Belady.c
-        belady/LRU_Belady.c
-        belady/FIFO_Belady.c
-        )
-endif()
 
 set(sourceCPP
         cpp/LFU.cpp

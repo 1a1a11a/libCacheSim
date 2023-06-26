@@ -226,7 +226,7 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = SLRU_init(cc_params, "n-seg=5");
   } else if (strcasecmp(alg_name, "LIRS") == 0) {
     cache = LIRS_init(cc_params, NULL);
-  } else {
+ } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);
   }
