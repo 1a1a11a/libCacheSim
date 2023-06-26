@@ -557,10 +557,10 @@ int main(int argc, char *argv[]) {
 
   reader = setup_oracleGeneralBin_reader();
   // reader = setup_vscsi_reader_with_ignored_obj_size();
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,
-                       test_QDLP_FIFO);
+  // g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
+  // g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
+  // g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,
+  //                      test_QDLP_FIFO);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);

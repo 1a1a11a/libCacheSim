@@ -28,31 +28,6 @@ set(sourceC
         nop.c
         )
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
-    set(sourceC ${sourceC} 
-                priv/SFIFO_Merge.c
-                priv/SFIFO_Reinsertion.c
-
-                priv/LRU_Prob.c
-
-                priv/MyClock.c
-                priv/Sieve.c
-                priv/QDLPv0.c
-
-
-                priv/S3LRU.c
-                priv/S3FIFO.c
-                priv/S3FIFOd.c
-
-                priv/S3FIFOdv2.c
-
-
-                priv/myMQv1.c
-
-                priv/MClock.c
-                )
-endif()
-
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fifo")
         set(sourceC ${sourceC} 
         fifo/LP_SFIFO.c
