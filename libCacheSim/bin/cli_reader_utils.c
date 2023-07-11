@@ -60,6 +60,8 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return ORACLE_CF1_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleSysTwrNS") == 0) {
     return ORACLE_SYS_TWRNS_TRACE;
+  } else if (strcasecmp(trace_type_str, "valpinTrace") == 0){
+    return VALPIN_TRACE;
   } else {
     ERROR("unsupported trace type: %s\n", trace_type_str);
   }
