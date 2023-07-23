@@ -396,7 +396,7 @@ static void SLRUv0_parse_params(cache_t *cache,
  */
 static void SLRUv0_cool(cache_t *cache, const request_t *req, int i) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
-
+  request_t *saved_req = new_request();
   cache_t *lru = params->LRUs[i];
   // the last LRU is evict-only, do not move to a lower lru
   if (i == 0) {
@@ -406,18 +406,19 @@ static void SLRUv0_cool(cache_t *cache, const request_t *req, int i) {
 
   // the evicted object move to lower lru
   cache_obj_t *obj_evicted = lru->to_evict(lru, req);
-  copy_cache_obj_to_request(params->req_local, obj_evicted);
+  copy_cache_obj_to_request(saved_req, obj_evicted);
   lru->evict(lru, NULL);
 
   // If lower LRUs are full
   cache_t *next_lru = params->LRUs[i - 1];
   int64_t required_size =
-      next_lru->cache_size - params->req_local->obj_size - cache->obj_md_size;
+      next_lru->cache_size - saved_req->obj_size - cache->obj_md_size;
   while (next_lru->get_occupied_byte(next_lru) > required_size) {
     SLRUv0_cool(cache, req, i - 1);
   }
 
-  next_lru->insert(next_lru, params->req_local);
+  next_lru->insert(next_lru, saved_req);
+  free_request(saved_req);
 }
 
 // ***********************************************************************
