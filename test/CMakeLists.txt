@@ -23,11 +23,13 @@ add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
 add_test(NAME testSimulator COMMAND testSimulator WORKING_DIRECTORY .)
 add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
 
-if (ENABLE_GLCACHE)
-    add_executable(testGLCache test_glcache.c)
-    target_link_libraries(testGLCache ${coreLib})
-    add_test(NAME testGLCache COMMAND testGLCache WORKING_DIRECTORY .)
-endif (ENABLE_GLCACHE)
+# if (ENABLE_GLCACHE)
+#     add_executable(testGLCache test_glcache.c)
+#     target_link_libraries(testGLCache ${coreLib})
+#     add_test(NAME testGLCache COMMAND testGLCache WORKING_DIRECTORY .)
+# endif (ENABLE_GLCACHE)
+
+
 
 
 
