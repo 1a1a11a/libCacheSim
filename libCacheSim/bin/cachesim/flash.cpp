@@ -69,9 +69,9 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
     Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
     n_byte_write = n_miss_byte + params->n_byte_rewritten;
-  } else if (strcasestr(cache->cache_name, "sfifo_reinsertion") != NULL) {
-    SFIFO_Reinsertion_params_t *params =
-        (SFIFO_Reinsertion_params_t *)cache->eviction_params;
+  } else if (strcasestr(cache->cache_name, "FIFO_Reinsertion") != NULL) {
+    FIFO_Reinsertion_params_t *params =
+        (FIFO_Reinsertion_params_t *)cache->eviction_params;
 
     n_byte_write = n_miss_byte + params->n_byte_rewritten;
   } else if (strcasestr(cache->cache_name, "qdlpv1") != NULL) {

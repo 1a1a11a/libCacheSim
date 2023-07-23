@@ -23,29 +23,30 @@ set(sourceC
         LIRS.c
         WTinyLFU.c
         Size.c
-        flash/flashProb.c
+        LRUProb.c
         QDLP.c
         nop.c
-        )
+
+        FIFO_Merge.c
+        FIFO_Reinsertion.c
+
+        S3FIFO.c
+        S3FIFOd.c
+
+        other/flashProb.c
+        other/S3LRU.c
+
+        Sieve.c
+)
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
     set(sourceC ${sourceC} 
-                priv/SFIFO_Merge.c
-                priv/SFIFO_Reinsertion.c
-
-                priv/LRU_Prob.c
 
                 priv/MyClock.c
-                priv/Sieve.c
                 priv/QDLPv0.c
 
 
-                priv/S3LRU.c
-                priv/S3FIFO.c
-                priv/S3FIFOd.c
-
                 priv/S3FIFOdv2.c
-
 
                 priv/myMQv1.c
 

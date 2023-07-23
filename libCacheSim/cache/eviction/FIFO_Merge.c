@@ -1,8 +1,8 @@
 //
-//  SFIFO_Merge scans N objects and retains M objects, evict the rest
+//  FIFO_Merge scans N objects and retains M objects, evict the rest
 //
 //
-//  SFIFO_Merge.c
+//  FIFO_Merge.c
 //  libCacheSim
 //
 //  Created by Juncheng on 12/20/21.
@@ -11,8 +11,8 @@
 
 #include <assert.h>
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +32,7 @@ typedef enum {
 
 static char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY", "None"};
 
-typedef struct SFIFO_Merge_params {
+typedef struct FIFO_Merge_params {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
 
@@ -47,7 +47,7 @@ typedef struct SFIFO_Merge_params {
   // the policy to determine the n_keep_obj objects
   retain_policy_t retain_policy;
   int pos_in_metric_list;
-} SFIFO_Merge_params_t;
+} FIFO_Merge_params_t;
 
 // ***********************************************************************
 // ****                                                               ****
@@ -55,16 +55,16 @@ typedef struct SFIFO_Merge_params {
 // ****                                                               ****
 // ***********************************************************************
 
-static void SFIFO_Merge_parse_params(cache_t *cache,
+static void FIFO_Merge_parse_params(cache_t *cache,
                                      const char *cache_specific_params);
-static void SFIFO_Merge_free(cache_t *cache);
-static bool SFIFO_Merge_get(cache_t *cache, const request_t *req);
-static cache_obj_t *SFIFO_Merge_find(cache_t *cache, const request_t *req,
+static void FIFO_Merge_free(cache_t *cache);
+static bool FIFO_Merge_get(cache_t *cache, const request_t *req);
+static cache_obj_t *FIFO_Merge_find(cache_t *cache, const request_t *req,
                                      const bool update_cache);
-static cache_obj_t *SFIFO_Merge_insert(cache_t *cache, const request_t *req);
-static cache_obj_t *SFIFO_Merge_to_evict(cache_t *cache, const request_t *req);
-static void SFIFO_Merge_evict(cache_t *cache, const request_t *req);
-static bool SFIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id);
+static cache_obj_t *FIFO_Merge_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *FIFO_Merge_to_evict(cache_t *cache, const request_t *req);
+static void FIFO_Merge_evict(cache_t *cache, const request_t *req);
+static bool FIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id);
 
 /* internal functions */
 static inline int cmp_list_node(const void *a0, const void *b0);
@@ -87,18 +87,18 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj);
  * @param cache_specific_params cache specific parameters, see parse_params
  * function or use -e "print" with the cachesim binary
  */
-cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
+cache_t *FIFO_Merge_init(const common_cache_params_t ccache_params,
                           const char *cache_specific_params) {
   cache_t *cache =
-      cache_struct_init("SFIFO_Merge", ccache_params, cache_specific_params);
-  cache->cache_init = SFIFO_Merge_init;
-  cache->cache_free = SFIFO_Merge_free;
-  cache->get = SFIFO_Merge_get;
-  cache->find = SFIFO_Merge_find;
-  cache->insert = SFIFO_Merge_insert;
-  cache->evict = SFIFO_Merge_evict;
-  cache->remove = SFIFO_Merge_remove;
-  cache->to_evict = SFIFO_Merge_to_evict;
+      cache_struct_init("FIFO_Merge", ccache_params, cache_specific_params);
+  cache->cache_init = FIFO_Merge_init;
+  cache->cache_free = FIFO_Merge_free;
+  cache->get = FIFO_Merge_get;
+  cache->find = FIFO_Merge_find;
+  cache->insert = FIFO_Merge_insert;
+  cache->evict = FIFO_Merge_evict;
+  cache->remove = FIFO_Merge_remove;
+  cache->to_evict = FIFO_Merge_to_evict;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 4;
@@ -106,8 +106,8 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  SFIFO_Merge_params_t *params = my_malloc(SFIFO_Merge_params_t);
-  memset(params, 0, sizeof(SFIFO_Merge_params_t));
+  FIFO_Merge_params_t *params = my_malloc(FIFO_Merge_params_t);
+  memset(params, 0, sizeof(FIFO_Merge_params_t));
   cache->eviction_params = params;
 
   /* TODO: can we make this parameter adaptive to trace? */
@@ -118,13 +118,13 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
   params->pos_in_metric_list = INT32_MAX;
 
   if (cache_specific_params != NULL) {
-    SFIFO_Merge_parse_params(cache, cache_specific_params);
+    FIFO_Merge_parse_params(cache, cache_specific_params);
   }
 
   assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);
   assert(params->n_keep_obj <= params->n_exam_obj);
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "SFIFO_Merge_%s",
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO_Merge_%s",
            retain_policy_names[params->retain_policy]);
   params->metric_list = my_malloc_n(struct sort_list_node, params->n_exam_obj);
 
@@ -136,11 +136,11 @@ cache_t *SFIFO_Merge_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-static void SFIFO_Merge_free(cache_t *cache) {
-  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+static void FIFO_Merge_free(cache_t *cache) {
+  FIFO_Merge_params_t *params = (FIFO_Merge_params_t *)cache->eviction_params;
   my_free(sizeof(struct sort_list_node) * params->n_exam_obj,
           params->metric_list);
-  my_free(sizeof(SFIFO_Merge_params_t), params);
+  my_free(sizeof(FIFO_Merge_params_t), params);
   cache_struct_free(cache);
 }
 
@@ -163,7 +163,7 @@ static void SFIFO_Merge_free(cache_t *cache) {
  * @param req
  * @return true if cache hit, false if cache miss
  */
-static bool SFIFO_Merge_get(cache_t *cache, const request_t *req) {
+static bool FIFO_Merge_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -183,14 +183,14 @@ static bool SFIFO_Merge_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t *SFIFO_Merge_find(cache_t *cache, const request_t *req,
+static cache_obj_t *FIFO_Merge_find(cache_t *cache, const request_t *req,
                                      const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && update_cache) {
-    cache_obj->SFIFO_Merge.freq++;
+    cache_obj->FIFO_Merge.freq++;
 
-    cache_obj->SFIFO_Merge.last_access_vtime = cache->n_req;
+    cache_obj->FIFO_Merge.last_access_vtime = cache->n_req;
     cache_obj->misc.next_access_vtime = req->next_access_vtime;
   }
 
@@ -208,13 +208,13 @@ static cache_obj_t *SFIFO_Merge_find(cache_t *cache, const request_t *req,
  * @param req
  * @return the inserted object
  */
-static cache_obj_t *SFIFO_Merge_insert(cache_t *cache, const request_t *req) {
-  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+static cache_obj_t *FIFO_Merge_insert(cache_t *cache, const request_t *req) {
+  FIFO_Merge_params_t *params = (FIFO_Merge_params_t *)cache->eviction_params;
 
   cache_obj_t *cache_obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
-  cache_obj->SFIFO_Merge.freq = 0;
-  cache_obj->SFIFO_Merge.last_access_vtime = cache->n_req;
+  cache_obj->FIFO_Merge.freq = 0;
+  cache_obj->FIFO_Merge.last_access_vtime = cache->n_req;
   cache_obj->misc.next_access_vtime = req->next_access_vtime;
 
   return cache_obj;
@@ -230,7 +230,7 @@ static cache_obj_t *SFIFO_Merge_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *SFIFO_Merge_to_evict(cache_t *cache, const request_t *req) {
+static cache_obj_t *FIFO_Merge_to_evict(cache_t *cache, const request_t *req) {
   ERROR("Undefined! Multiple objs will be evicted\n");
   return NULL;
 }
@@ -244,8 +244,8 @@ static cache_obj_t *SFIFO_Merge_to_evict(cache_t *cache, const request_t *req) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
-  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+static void FIFO_Merge_evict(cache_t *cache, const request_t *req) {
+  FIFO_Merge_params_t *params = (FIFO_Merge_params_t *)cache->eviction_params;
   cache_obj_t *cache_obj = NULL;
   // the logic is that - we search for n_exam objects and identify n_exam -
   // n_keep objects to evict, each time we evict one object
@@ -298,9 +298,9 @@ static void SFIFO_Merge_evict(cache_t *cache, const request_t *req) {
   cache_evict_base(cache, cache_obj, true);
 }
 
-static void SFIFO_Merge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
+static void FIFO_Merge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   assert(obj_to_remove != NULL);
-  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+  FIFO_Merge_params_t *params = (FIFO_Merge_params_t *)cache->eviction_params;
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_remove);
   cache_remove_obj_base(cache, obj_to_remove, true);
 }
@@ -318,13 +318,13 @@ static void SFIFO_Merge_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-bool SFIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id) {
+bool FIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;
   }
 
-  SFIFO_Merge_remove_obj(cache, obj);
+  FIFO_Merge_remove_obj(cache, obj);
 
   return true;
 }
@@ -334,7 +334,7 @@ bool SFIFO_Merge_remove(cache_t *cache, const obj_id_t obj_id) {
 // ****                parameter set up functions                     ****
 // ****                                                               ****
 // ***********************************************************************
-static const char *SFIFO_Merge_current_params(SFIFO_Merge_params_t *params) {
+static const char *FIFO_Merge_current_params(FIFO_Merge_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-exam=%d, n-keep=%d, retain-policy=%s",
            params->n_exam_obj, params->n_keep_obj,
@@ -342,9 +342,9 @@ static const char *SFIFO_Merge_current_params(SFIFO_Merge_params_t *params) {
   return params_str;
 }
 
-static void SFIFO_Merge_parse_params(cache_t *cache,
+static void FIFO_Merge_parse_params(cache_t *cache,
                                      const char *cache_specific_params) {
-  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+  FIFO_Merge_params_t *params = (FIFO_Merge_params_t *)cache->eviction_params;
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
@@ -387,7 +387,7 @@ static void SFIFO_Merge_parse_params(cache_t *cache,
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("%s parameters: %s\n", cache->cache_name,
-             SFIFO_Merge_current_params(params));
+             FIFO_Merge_current_params(params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
@@ -428,18 +428,18 @@ static inline double freq_metric(cache_t *cache, cache_obj_t *cache_obj) {
   /* we add a small rand number to distinguish objects with frequency 0 or same
    * frequency */
   double r = (double)(next_rand() % 1000) / 10000.0;
-  return 1.0e6 * ((double)cache_obj->SFIFO_Merge.freq + r) /
+  return 1.0e6 * ((double)cache_obj->FIFO_Merge.freq + r) /
          (double)cache_obj->obj_size;
 }
 
 static inline double recency_metric(cache_t *cache, cache_obj_t *cache_obj) {
   return 1.0e12 /
-         (double)(cache->n_req - cache_obj->SFIFO_Merge.last_access_vtime) /
+         (double)(cache->n_req - cache_obj->FIFO_Merge.last_access_vtime) /
          (double)cache_obj->obj_size;
 }
 
 static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
-  SFIFO_Merge_params_t *params = (SFIFO_Merge_params_t *)cache->eviction_params;
+  FIFO_Merge_params_t *params = (FIFO_Merge_params_t *)cache->eviction_params;
 
   switch (params->retain_policy) {
     case RETAIN_POLICY_FREQUENCY:

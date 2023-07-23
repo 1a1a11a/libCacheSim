@@ -33,11 +33,6 @@ static inline int valpin_read_one_req(reader_t *reader, request_t *req)
 
 
 
-
-
-
-
-
 #ifdef __cplusplus
 }
 #endif

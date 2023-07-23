@@ -9,9 +9,9 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/cache.h"
-#include "../../../utils/include/mymath.h"
+#include "../../dataStructure/hashtable/hashtable.h"
+#include "../../include/libCacheSim/cache.h"
+#include "../../utils/include/mymath.h"
 
 #ifdef __cplusplus
 extern "C" {

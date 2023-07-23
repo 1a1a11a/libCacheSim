@@ -92,6 +92,25 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = Clock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "fifomerge") == 0 ||
+             strcasecmp(eviction_algo, "fifo-merge") == 0) {
+    cache = FIFO_Merge_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0) {
+    cache = FIFO_Reinsertion_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "lru-prob") == 0) {
+    cache = LRU_Prob_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "fifo-belady") == 0) {
+    cache = FIFO_Belady_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "lru-belady") == 0) {
+    cache = LRU_Belady_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sieve-belady") == 0) {
+    cache = Sieve_Belady_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "s3lru") == 0) {
+    cache = S3LRU_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "s3fifo") == 0) {
+    cache = S3FIFO_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "s3fifod") == 0) {
+    cache = S3FIFOd_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
     cache = QDLP_init(cc_params, eviction_params);
 #ifdef ENABLE_GLCACHE
@@ -120,31 +139,12 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = LP_ARC_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lp-twoq") == 0) {
     cache = LP_TwoQ_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifomerge") == 0 ||
-             strcasecmp(eviction_algo, "sfifo-merge") == 0) {
-    cache = SFIFO_Merge_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifo-reinsertion") == 0) {
-    cache = SFIFO_Reinsertion_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lru-prob") == 0) {
-    cache = LRU_Prob_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "qdlpv0") == 0) {
     cache = QDLPv0_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3fifodv2") == 0) {
     cache = S3FIFOdv2_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3lru") == 0) {
-    cache = S3LRU_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifo") == 0) {
-    cache = S3FIFO_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifod") == 0) {
-    cache = S3FIFOd_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "myMQv1") == 0) {
     cache = myMQv1_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "fifo-belady") == 0) {
-    cache = FIFO_Belady_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lru-belady") == 0) {
-    cache = LRU_Belady_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sieve-belady") == 0) {
-    cache = Sieve_Belady_init(cc_params, eviction_params);
 #endif
   } else {
     ERROR("do not support algorithm %s\n", eviction_algo);

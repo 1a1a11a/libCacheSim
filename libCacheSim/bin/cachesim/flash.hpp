@@ -30,7 +30,7 @@ typedef enum {
   RETAIN_POLICY_BELADY,
   RETAIN_NONE
 } retain_policy_t;
-typedef struct SFIFO_Reinsertion_params {
+typedef struct FIFO_Reinsertion_params {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
 
@@ -47,7 +47,7 @@ typedef struct SFIFO_Reinsertion_params {
 
   int64_t n_obj_rewritten;
   int64_t n_byte_rewritten;
-} SFIFO_Reinsertion_params_t;
+} FIFO_Reinsertion_params_t;
 
 typedef struct {
   cache_t *fifo;
