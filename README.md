@@ -206,7 +206,7 @@ This project adheres to Google's coding style. By participating, you are expecte
 ---
 ### Reference
 ```
-@inproceedings {libCacheSim,
+@inproceedings{libCacheSim,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
     title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
     booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
@@ -217,8 +217,18 @@ This project adheres to Google's coding style. By participating, you are expecte
     publisher = {USENIX Association},
     month = nov,
 }
+
+@inproceedings{yang2023-s3fifo,
+  title={FIFO queues are all you need for cache eviction},
+  author={Yang, Juncheng and Zhang, Yazhuo and Qiu, Ziyue and Yue, Yao and Rashmi, K.V.},
+  booktitle={Symposium on Operating Systems Principles (SOSP'23)},
+  year={2023}
+}
 ```
+If you used libCacheSim in your research, please cite the above papers. And we welcome you to send us a link to your paper and add reference to (references.md)[references.md].
+
 ---
+
 
 ### License
 See [LICENSE](LICENSE) for details.

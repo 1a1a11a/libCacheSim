@@ -11,7 +11,6 @@ setup_centos() {
 
 setup_macOS() {
 	brew install glib google-perftools
-
 }
 
 setup_xgboost() {
@@ -67,9 +66,10 @@ else
 	setup_centos
 fi  
 
-setup_xgboost
-setup_lightgbm
+if [[ ! $GITHUB_ACTIONS == "true" ]]; then
+	setup_xgboost
+	setup_lightgbm
+fi
 setup_zstd
 
 cd $CURR_DIR
-
