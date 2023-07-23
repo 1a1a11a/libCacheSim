@@ -3,9 +3,14 @@
 [![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
 
 
+## News
+* **2023 June**: QD-LP is available now, see [paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
+* **2023 Oct**: S3-FIFO and Sieve are generally available! These are simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
+---
+
 ## What is libCacheSim
-* a high-performance **cache simulator** binary for running cache simulations. 
-* a high-performance and versatile trace analyzer for **analyzing cache traces**.
+* a high-performance **cache simulator** for running cache simulations. 
+* a high-performance and versatile trace analyzer for **analyzing different cache traces**.
 * a high-performance **library** for building cache simulators. 
 
 ---
@@ -14,6 +19,7 @@
 * **High performance** - over 20M requests/sec for a realistic trace replay. 
 * **High memory efficiency** - predictable and small memory footprint. 
 * **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation, see [here](/doc/quickstart_cachesim.md). 
+* Parallelism out-of-the-box - uses the many CPU cores to speed up trace analysis and cache simulations. 
 * **The ONLY feature-rich trace analyzer** - all types of trace analysis you need, see [here](/doc/quickstart_traceAnalyzer.md).
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc, see [here](/doc/API.md).
 * **Extensible** - easy to support new trace types or eviction algorithms, see [here](/doc/advanced_lib_extend.md).
@@ -21,25 +27,21 @@
 
 ## Supported algorithms
 cachesim supports the following algorithms:
-* [FIFO](/libCacheSim/cache/eviction/FIFO.c)
-* [LRU](/libCacheSim/cache/eviction/LRU.c)
-* [Clock](/libCacheSim/cache/eviction/Clock.c)
-* [LFU](/libCacheSim/cache/eviction/LFU.c)
-* [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c)
-* [ARC](/libCacheSim/cache/eviction/ARC.c)
-* [SLRU](/libCacheSim/cache/eviction/SLRU.c)
+* [FIFO](/libCacheSim/cache/eviction/FIFO.c), [LRU](/libCacheSim/cache/eviction/LRU.c), [Clock](/libCacheSim/cache/eviction/Clock.c), [SLRU](/libCacheSim/cache/eviction/SLRU.c)
+* [LFU](/libCacheSim/cache/eviction/LFU.c), [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c)
+* [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c)
+* [Belady](/libCacheSim/cache/eviction/Belady.c), [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 * [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp)
-* [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
+* [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
 * [LeCaR](/libCacheSim/cache/eviction/LeCaR.c)
 * [Cacheus](/libCacheSim/cache/eviction/Cacheus.c)
-* [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
 * [LHD](/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp)
 * [LRB](/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp)
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
-* [Belady](/libCacheSim/cache/eviction/Belady.c)
-* [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
-* [QD-LP](/libCacheSim/cache/eviction/qdlp.c)
-
+* [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
+* [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
+* [S3-FIFO](/libcacheSim/cache/eviction/S3FIFO.c)
+* [Sieve](/libCacheSim/cache/eviction/Sieve.c)
 ---
 
 
