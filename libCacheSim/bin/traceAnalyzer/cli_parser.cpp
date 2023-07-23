@@ -115,7 +115,6 @@ static struct argp_option options[] = {
     {"output", OPTION_OUTPUT_PATH, "", NULL, "Output path", 8},
     {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
      "Produce verbose output", 8},
-
     {0}};
 
 /*

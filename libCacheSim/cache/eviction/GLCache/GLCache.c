@@ -188,7 +188,6 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
   cache->to_evict = NULL;
   cache->evict = GLCache_evict;
   cache->remove = GLCache_remove;
-  cache->init_params = cache_specific_params;
 
   INFO(
       "%s, %.0lfMB, segment_size %d, training_interval %d, source %d, "
