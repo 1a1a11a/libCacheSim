@@ -206,7 +206,7 @@ This project adheres to Google's coding style. By participating, you are expecte
 ---
 ### Reference
 ```
-@inproceedings{libCacheSim,
+@inproceedings{osdi20-workload,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
     title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
     booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
