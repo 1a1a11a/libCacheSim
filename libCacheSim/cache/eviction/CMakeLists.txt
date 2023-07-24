@@ -39,31 +39,6 @@ set(sourceC
         Sieve.c
 )
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
-    set(sourceC ${sourceC} 
-
-                priv/MyClock.c
-                priv/QDLPv0.c
-
-
-                priv/S3FIFOdv2.c
-
-                priv/myMQv1.c
-
-                priv/MClock.c
-                )
-endif()
-
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fifo")
-        set(sourceC ${sourceC} 
-        fifo/LP_SFIFO.c
-        fifo/LP_TwoQ.c
-        fifo/LP_ARC.c
-        fifo/SFIFO.c
-        fifo/SFIFOv0.c
-        )
-endif()
-
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/belady")
         set(sourceC ${sourceC} 
         belady/Sieve_Belady.c
