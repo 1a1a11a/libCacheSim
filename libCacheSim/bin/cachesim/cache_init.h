@@ -122,30 +122,6 @@ static inline cache_t *create_cache(const char *trace_path,
   } else if (strcasecmp(eviction_algo, "lrb") == 0) {
     cache = LRB_init(cc_params, eviction_params);
 #endif
-#ifdef INCLUDE_PRIV
-  } else if (strcasecmp(eviction_algo, "myclock") == 0) {
-    cache = MyClock_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sieve") == 0) {
-    cache = Sieve_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "mclock") == 0) {
-    cache = MClock_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifo") == 0) {
-    cache = SFIFO_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifov0") == 0) {
-    cache = SFIFOv0_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lp-sfifo") == 0) {
-    cache = LP_SFIFO_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lp-arc") == 0) {
-    cache = LP_ARC_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lp-twoq") == 0) {
-    cache = LP_TwoQ_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "qdlpv0") == 0) {
-    cache = QDLPv0_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifodv2") == 0) {
-    cache = S3FIFOdv2_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "myMQv1") == 0) {
-    cache = myMQv1_init(cc_params, eviction_params);
-#endif
   } else {
     ERROR("do not support algorithm %s\n", eviction_algo);
     abort();

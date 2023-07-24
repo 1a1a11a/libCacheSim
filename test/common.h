@@ -228,10 +228,6 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = LIRS_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "QDLP-FIFO") == 0) {
     cache = QDLP_init(cc_params, "fifo-size-ratio=0.10,main-cache=Clock2");
-  } else if (strcasecmp(alg_name, "S3-FIFO") == 0) {
-    cache = S3FIFO_init(cc_params, "move-to-main-threshold=2");
-  } else if (strcasecmp(alg_name, "Sieve") == 0) {
-    cache = Sieve_init(cc_params, NULL);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

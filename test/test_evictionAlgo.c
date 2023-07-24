@@ -474,47 +474,6 @@ static void test_QDLP_FIFO(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
-static void test_S3FIFO(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {89307, 82387, 77041, 76791,
-                              71300, 70343, 70455, 70355};
-  uint64_t miss_byte_true[] = {4040718336, 3703628800, 3353047552, 3282235904,
-                               3038256128, 2980646912, 2984458752, 2979649536};
-
-  reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {
-      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("S3-FIFO", cc_params, reader, NULL);
-  g_assert_true(cache != NULL);
-  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
-
-  print_results(cache, res);
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->cache_free(cache);
-  my_free(sizeof(cache_stat_t), res);
-}
-
-static void test_Sieve(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {91699, 86720, 78578, 76707,
-                              69945, 66221, 64445, 64376};
-  uint64_t miss_byte_true[] = {4158632960, 3917211648, 3536227840, 3455379968,
-                               3035580416, 2801699328, 2699456000, 2696345600};
-
-  reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {
-      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("Sieve", cc_params, reader, NULL);
-  g_assert_true(cache != NULL);
-  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
-
-  print_results(cache, res);
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->cache_free(cache);
-  my_free(sizeof(cache_stat_t), res);
-}
 
 static void test_WTinyLFU(gconstpointer user_data) {
   // TODO: to be implemented
@@ -557,8 +516,6 @@ int main(int argc, char *argv[]) {
 
   reader = setup_oracleGeneralBin_reader();
   // reader = setup_vscsi_reader_with_ignored_obj_size();
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,
                        test_QDLP_FIFO);
 
