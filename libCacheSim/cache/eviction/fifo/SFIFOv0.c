@@ -17,8 +17,8 @@
 //
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
