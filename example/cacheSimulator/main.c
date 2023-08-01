@@ -5,7 +5,7 @@
 #include "libCacheSim.h"
 
 int main(int argc, char **argv) {
-  /* setup reader */
+  /* setup a csv reader */
   reader_init_param_t init_params = default_reader_init_params();
   init_params.obj_id_field = 5;
   init_params.obj_size_field = 4;
@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
   /* we can also use open_trace with the same parameters */
   reader_t *reader =
-      setup_reader("../../../data/trace.csv", CSV_TRACE, &init_params);
+      open_trace("../../../data/trace.csv", CSV_TRACE, &init_params);
 
   /* set up a request */
   request_t *req = new_request();
@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
   int64_t n_hit = 0, n_req = 0;
   while (read_one_req(reader, req) == 0) {
-    if (lru->get(lru, req) == cache_ck_hit) {
+    if (lru->get(lru, req)) {
       n_hit++;
     }
     n_req++;
