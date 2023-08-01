@@ -1,0 +1,23 @@
+L1:
+  size: 8GB
+  path:
+    - /home/to/l1/trace
+    - /home/to/l1/trace2
+    - /home/to/l1/trace3
+    - /home/to/l1/trace4
+    - /home/to/l1/trace5
+
+L2:
+  size:
+    - 2GB
+    - 4GB
+    - 8GB
+    - 16GB
+    - 32GB
+    - 64GB
+    - 128GB
+    - 256GB
+    - 512GB
+    - 1024GB
+
+output: result
