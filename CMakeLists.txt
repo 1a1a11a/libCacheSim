@@ -21,7 +21,7 @@ option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
-set(LOG_LEVEL NONE CACHE STRING "Enable SOMETHING support") 
+set(LOG_LEVEL NONE CACHE STRING "change the logging level") 
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
 
 
@@ -271,6 +271,30 @@ file(GLOB cache_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/*
     )
 
+if (EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/fifo)
+    file(GLOB fifo_source
+            ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/fifo/*.c)
+    set (cache_source
+            ${cache_source} ${fifo_source}
+    )
+endif()
+
+if (EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/belady)
+    file(GLOB belady_source
+            ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/belady/*.c)
+    set (cache_source
+            ${cache_source} ${belady_source}
+    )
+endif()
+
+if (EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv)
+    file(GLOB priv_source
+            ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv/*.c)
+    set (cache_source
+            ${cache_source} ${priv_source}
+    )
+endif()
+
 if (ENABLE_GLCACHE)
     file(GLOB GLCache_source
             ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/GLCache/*.c)
@@ -309,7 +333,7 @@ set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${reader_source} ${dataStructure_so
 
 ###################
 # # https://stackoverflow.com/questions/32469953/why-is-cmake-designed-so-that-it-removes-runtime-path-when-installing
-# SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
