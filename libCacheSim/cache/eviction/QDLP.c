@@ -147,8 +147,6 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
     params->main_cache = FIFO_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "SLRU") == 0) {
     params->main_cache = SLRU_init(ccache_params_local, NULL);
-  } else if (strcasecmp(params->main_cache_type, "SFIFO") == 0) {
-    params->main_cache = SFIFO_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "LIRS") == 0) {
     params->main_cache = LIRS_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "Hyperbolic") == 0) {
