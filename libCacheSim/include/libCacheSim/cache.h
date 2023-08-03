@@ -181,6 +181,14 @@ cache_t *cache_struct_init(const char *cache_name, common_cache_params_t params,
 void cache_struct_free(cache_t *cache);
 
 /**
+ * @brief create a new cache with the same size and parameters
+ *
+ * @param old_cache
+ * @return cache_t*
+ */
+cache_t *clone_cache(const cache_t *old_cache);
+
+/**
  * create a cache with new size
  * @param old_cache
  * @param new_size
@@ -305,7 +313,8 @@ static inline void print_cache_stat(const cache_t *cache) {
  * @param cache
  * @param age
  */
-static inline void record_log2_eviction_age(cache_t *cache, const unsigned long long age) {
+static inline void record_log2_eviction_age(cache_t *cache,
+                                            const unsigned long long age) {
   int age_log2 = age == 0 ? 0 : LOG2_ULL(age);
   cache->log_eviction_age_cnt[age_log2] += 1;
 }
