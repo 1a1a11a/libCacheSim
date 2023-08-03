@@ -4,8 +4,8 @@
 
 
 ## News
-* **2023 June**: QD-LP is available now, see [paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
-* **2023 Oct**: S3-FIFO and Sieve are generally available! These are simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
+* **2023 June**: **QD-LP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
+* **2023 Oct**: **S3-FIFO** and **Sieve** are generally available! These are simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
 ---
 
 ## What is libCacheSim
