@@ -109,8 +109,6 @@ cache_t *flashProb_init(const common_cache_params_t ccache_params,
     params->ram = Clock_init(ccache_params_local, "n-bit-counter=2");
   } else if (strcasecmp(params->ram_cache_type, "clock-3") == 0) {
     params->ram = Clock_init(ccache_params_local, "n-bit-counter=3");
-  } else if (strcasecmp(params->ram_cache_type, "myclock") == 0) {
-    params->ram = MyClock_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->ram_cache_type, "LRU") == 0) {
     params->ram = LRU_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->ram_cache_type, "LeCaR") == 0) {

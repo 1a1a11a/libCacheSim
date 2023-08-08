@@ -133,8 +133,6 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
     params->main_cache = Clock_init(ccache_params_local, "n-bit-counter=2");
   } else if (strcasecmp(params->main_cache_type, "clock3") == 0) {
     params->main_cache = Clock_init(ccache_params_local, "n-bit-counter=3");
-  } else if (strcasecmp(params->main_cache_type, "myclock") == 0) {
-    params->main_cache = MyClock_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "LRU") == 0) {
     params->main_cache = LRU_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "LeCaR") == 0) {

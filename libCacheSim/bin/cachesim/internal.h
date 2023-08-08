@@ -57,8 +57,6 @@ void free_arg(struct arguments *args);
 void simulate(reader_t *reader, cache_t *cache, int report_interval,
               int warmup_sec, char *ofilepath);
 
-bool set_hard_code_cache_size(struct arguments *args);
-
 void print_parsed_args(struct arguments *args);
 
 #ifdef __cplusplus
