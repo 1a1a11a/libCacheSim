@@ -209,7 +209,7 @@ else()
 endif()
 
 
-link_libraries("-lpthread -ldl -lm ${LIBS}")
+# link_libraries("-ldl -lm ${LIBS}")
 
 # put binary in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

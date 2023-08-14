@@ -38,7 +38,7 @@ message(STATUS ${YAML_CPP_INCLUDE_DIR} ";" ${YAML_CPP_LIBRARIES})
 file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
 message(STATUS "all sources " ${ALL_SRC})
 add_executable(layeredCache ${ALL_SRC})
-target_link_libraries(layeredCache yaml-cpp libCacheSim m ${GLib_LIBRARY} pthread dl)
+target_link_libraries(layeredCache yaml-cpp libCacheSim m ${GLib_LIBRARY})
 
 
 

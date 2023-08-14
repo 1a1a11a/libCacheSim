@@ -1,5 +1,5 @@
 
-set(coreLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} -ldl)
+set(coreLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(testReader test_traceReader.c)
 target_link_libraries(testReader ${coreLib})

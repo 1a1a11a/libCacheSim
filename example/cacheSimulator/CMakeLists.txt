@@ -27,4 +27,4 @@ message(STATUS "glib found? ${GLib_FOUND}, lib = ${GLib_LIBRARY}, header = ${GLi
 
 
 add_executable(cacheSimulator main.c)
-target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY} -lpthread -ldl)
+target_link_libraries(cacheSimulator libCacheSim m ${GLib_LIBRARY})
