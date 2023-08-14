@@ -100,7 +100,7 @@ To use a csv trace, we need to provide the column of *time*, *obj-id*, and *obj-
 Both time and size are optional, but many algorithms rely on time and size to work properly.
 The column starts from 1, the first column is 1, the second is 2, etc.
 Besides the column information, a csv reader also requires the delimiter and whether the csv file has a header. 
-cachesim builds in a simple delimiter and header detector, if the detected result is not correct, you can provide the correct information using `dlimiter=,`, `has-header=true`.
+cachesim builds in a simple delimiter and header detector, if the detected result is not correct, you can provide the correct information using `delimiter=,`, `has-header=true`.
 
 
 ```bash
