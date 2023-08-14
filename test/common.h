@@ -8,6 +8,7 @@
 #include <glib.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <unistd.h>
 
 #include "../libCacheSim/include/libCacheSim.h"
@@ -232,6 +233,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = S3FIFO_init(cc_params, "move-to-main-threshold=2");
   } else if (strcasecmp(alg_name, "Sieve") == 0) {
     cache = Sieve_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "Mithril") == 0) {
+    cache = Mithril_init(cc_params, NULL);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

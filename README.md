@@ -42,6 +42,7 @@ cachesim supports the following algorithms:
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
 * [S3-FIFO](/libcacheSim/cache/eviction/S3FIFO.c)
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c)
+* [Mithril](/libCacheSim/cache/eviction/Mithril.c)
 ---
 
 

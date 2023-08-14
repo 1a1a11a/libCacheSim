@@ -305,7 +305,8 @@ static inline void print_cache_stat(const cache_t *cache) {
  * @param cache
  * @param age
  */
-static inline void record_log2_eviction_age(cache_t *cache, const unsigned long long age) {
+static inline void record_log2_eviction_age(cache_t *cache,
+                                            const unsigned long long age) {
   int age_log2 = age == 0 ? 0 : LOG2_ULL(age);
   cache->log_eviction_age_cnt[age_log2] += 1;
 }

@@ -61,7 +61,7 @@ static struct argp_option options[] = {
      "Sample ratio, 1 means no sampling, 0.01 means sample 1% of objects", 2},
 
     {NULL, 0, NULL, 0, "cache related parameters:", 0},
-    {"eviction-params", OPTION_EVICTION_PARAMS, "\"n-seg=\"4", 0,
+    {"eviction-params", OPTION_EVICTION_PARAMS, "\"n-seg=4\"", 0,
      "optional params for each eviction algorithm, e.g., n-seg=4", 4},
     {"admission", OPTION_ADMISSION_ALGO, "bloom-filter", 0,
      "Admission algorithm: size/bloom-filter/prob", 4},
@@ -85,8 +85,7 @@ static struct argp_option options[] = {
      "Whether consider per object metadata size in the simulated cache", 10},
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output", 10},
 
-    {0}
-    };
+    {0}};
 
 /*
    PARSER. Field 2 in ARGP.

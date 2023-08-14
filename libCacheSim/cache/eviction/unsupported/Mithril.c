@@ -8,14 +8,16 @@
 
 #include "Mithril.h"
 
-//#define TRACK_BLOCK 192618l
+#include <glib.h>
+
+// #define TRACK_BLOCK 192618l
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 static inline void _Mithril_rec_min_support_one(cache_t *Mithril,
-                                                 request_t *cp);
+                                                request_t *cp);
 
 /***************** verify function, not part of Mithril *******************/
 
@@ -23,7 +25,6 @@ static inline void _Mithril_rec_min_support_one(cache_t *Mithril,
  verify the integrity of recording and mining hashtable
  */
 void verify_rm_hashtable(gpointer key, gpointer value, gpointer user_data) {
-
   cache_t *Mithril = (cache_t *)user_data;
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(Mithril->cache_params);
@@ -69,7 +70,6 @@ void verify_rm_hashtable(gpointer key, gpointer value, gpointer user_data) {
 
 void verify_prefetched_hashtable(gpointer key, gpointer value,
                                  gpointer user_data) {
-
   Mithril_params_t *Mithril_params = (Mithril_params_t *)user_data;
   GHashTable *h =
       ((struct LRU_params *)(Mithril_params->cache->cache_params))->hashtable;
@@ -115,17 +115,15 @@ static inline gint _Mithril_get_total_num_of_ts(gint64 *row, gint row_length) {
   int count = 0;
   for (i = 1; i < row_length; i++) {
     t = NUM_OF_TS(row[i]);
-    if (t == 0)
-      return count;
+    if (t == 0) return count;
     count += t;
   }
   return count;
 }
 
 static inline gboolean _Mithril_remove_from_rmtable(obj_id_t obj_id_type,
-                                                     rec_mining_t *rmtable,
-                                                     gint64 *row) {
-
+                                                    rec_mining_t *rmtable,
+                                                    gint64 *row) {
   if (obj_id_type == OBJ_ID_NUM) {
     return g_hash_table_remove(rmtable->hashtable, row);
   } else if (obj_id_type == OBJ_ID_STR) {
@@ -140,12 +138,11 @@ static inline gboolean _Mithril_remove_from_rmtable(obj_id_t obj_id_type,
  check whether last request is part of a sequential access
  */
 static inline gboolean _Mithril_check_sequential(cache_t *Mithril,
-                                                  request_t *cp) {
+                                                 request_t *cp) {
   int i;
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(Mithril->cache_params);
-  if (Mithril_params->sequential_K == 0)
-    return FALSE;
+  if (Mithril_params->sequential_K == 0) return FALSE;
 
   if (Mithril->obj_id_type != OBJ_ID_NUM)
     ERROR("sequential prefetching only support data obj_id_type l\n");
@@ -155,13 +152,11 @@ static inline gboolean _Mithril_check_sequential(cache_t *Mithril,
   gpointer old_item_p = cp->obj_id_ptr;
   cp->obj_id_ptr = &last;
   gint sequential_K = Mithril_params->sequential_K;
-  if (sequential_K == -1)
-    /* when use AMP, this is -1 */
+  if (sequential_K == -1) /* when use AMP, this is -1 */
     sequential_K = 1;
   for (i = 0; i < sequential_K; i++) {
     last--;
-    if (!Mithril_params->cache->check(Mithril_params->cache,
-                                            cp)) {
+    if (!Mithril_params->cache->check(Mithril_params->cache, cp)) {
       is_sequential = FALSE;
       break;
     }
@@ -185,12 +180,10 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
 
   if (Mithril_params->rec_trigger != each_req)
     /* if it does not record at each request, check whether it is hit or miss */
-    if (Mithril_params->cache->check(Mithril_params->cache, cp))
-      return;
+    if (Mithril_params->cache->check(Mithril_params->cache, cp)) return;
 
   /* check it is sequtial or not */
-  if (Mithril_params->sequential_type &&
-      _Mithril_check_sequential(Mithril, cp))
+  if (Mithril_params->sequential_type && _Mithril_check_sequential(Mithril, cp))
     return;
 
   if (Mithril_params->min_support == 1) {
@@ -200,8 +193,8 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
   else {
     gint64 *row_in_rtable;
     // check the obj_id in hashtable for training
-    gint index =
-        GPOINTER_TO_INT(g_hash_table_lookup(rmtable->hashtable, cp->obj_id_ptr));
+    gint index = GPOINTER_TO_INT(
+        g_hash_table_lookup(rmtable->hashtable, cp->obj_id_ptr));
 
     if (index == 0) {
       // the node is not in the recording/mining data, should be added
@@ -249,20 +242,22 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
         if (cp->obj_id_type == OBJ_ID_STR) {
           if (!g_hash_table_contains(rmtable->hashtable,
                                      (char *)(row_in_rtable[0])))
-            ERROR("remove old entry from recording table, "
-                  "but it is not in recording hashtable "
-                  "%s, pointer %ld, current ts %ld\n",
-                  (char *)(row_in_rtable[0]), (long)rmtable->rtable_cur_row,
-                  (long)Mithril_params->ts);
+            ERROR(
+                "remove old entry from recording table, "
+                "but it is not in recording hashtable "
+                "%s, pointer %ld, current ts %ld\n",
+                (char *)(row_in_rtable[0]), (long)rmtable->rtable_cur_row,
+                (long)Mithril_params->ts);
 
           g_hash_table_remove(rmtable->hashtable, (char *)(row_in_rtable[0]));
         } else if (cp->obj_id_type == OBJ_ID_NUM) {
           if (!g_hash_table_contains(rmtable->hashtable, row_in_rtable)) {
-            ERROR("remove old entry from recording table, "
-                  "but it is not in recording hashtable, "
-                  "block %ld, recording table pos %ld, ts %ld ",
-                  *(long *)row_in_rtable, (long)rmtable->rtable_cur_row,
-                  (long)Mithril_params->ts);
+            ERROR(
+                "remove old entry from recording table, "
+                "but it is not in recording hashtable, "
+                "block %ld, recording table pos %ld, ts %ld ",
+                *(long *)row_in_rtable, (long)rmtable->rtable_cur_row,
+                (long)Mithril_params->ts);
 
             long temp = rmtable->rtable_cur_row - 1;
             fprintf(stderr, "previous line block %ld\n",
@@ -298,18 +293,20 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
 #ifdef SANITY_CHECK
         if (cp->obj_id_type == OBJ_ID_NUM) {
           if (*(gint64 *)(cp->obj_id_ptr) != row_in_mtable[0]) {
-            ERROR("inconsistent entry in mtable "
-                  "and mining hashtable current request %ld, "
-                  "mining table %ld\n",
-                  *(gint64 *)(cp->obj_id_ptr), row_in_mtable[0]);
+            ERROR(
+                "inconsistent entry in mtable "
+                "and mining hashtable current request %ld, "
+                "mining table %ld\n",
+                *(gint64 *)(cp->obj_id_ptr), row_in_mtable[0]);
             abort();
           }
         } else {
           if (strcmp(cp->obj_id_ptr, (char *)(row_in_mtable[0])) != 0) {
-            ERROR("inconsistent entry in mtable "
-                  "and mining hashtable current request %ld, "
-                  "mining table %s %s\n",
-                  (char *)(cp->obj_id_ptr), (char *)(row_in_mtable[0]));
+            ERROR(
+                "inconsistent entry in mtable "
+                "and mining hashtable current request %ld, "
+                "mining table %s %s\n",
+                (char *)(cp->obj_id_ptr), (char *)(row_in_mtable[0]));
             abort();
           }
         }
@@ -327,7 +324,7 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
         if (timestamps_length == Mithril_params->max_support) {
           /* no timestamp added, drop this request, it is too frequent */
           if (!_Mithril_remove_from_rmtable(cp->obj_id_type, rmtable,
-                                             row_in_mtable))
+                                            row_in_mtable))
             ERROR("removing from rmtable failed for mining table entry\n");
 
           /** for dataType c, now the pointer to string has been freed,
@@ -401,10 +398,11 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
           if ((long)rmtable->mining_table->len >= Mithril_params->mtable_size) {
             /* if this happens, array will re-malloc, which will make
              * the hashtable key not reliable when obj_id_type is l */
-            ERROR("mining table length reaches limit, but no mining, "
-                  "entry %d, size %u, threshold %d\n",
-                  rmtable->n_avail_mining, rmtable->mining_table->len,
-                  Mithril_params->mtable_size);
+            ERROR(
+                "mining table length reaches limit, but no mining, "
+                "entry %d, size %u, threshold %d\n",
+                rmtable->n_avail_mining, rmtable->mining_table->len,
+                Mithril_params->mtable_size);
             abort();
           }
 #endif
@@ -434,8 +432,7 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
             /** if current pointer points to 1,
              *  then don't move it, clear the row (that moves to mining table)
              **/
-            for (i = 0; i < rmtable->rtable_row_len; i++)
-              row_in_rtable[i] = 0;
+            for (i = 0; i < rmtable->rtable_row_len; i++) row_in_rtable[i] = 0;
           }
 
           gint64 *inserted_row_in_mtable =
@@ -482,8 +479,7 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
 
           // one entry has been moved to mining table, shrinking recording table
           // size by 1
-          if (rmtable->rtable_cur_row >= 2)
-            rmtable->rtable_cur_row--;
+          if (rmtable->rtable_cur_row >= 2) rmtable->rtable_cur_row--;
         }
       }
     }
@@ -497,16 +493,15 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
 }
 
 static inline void _Mithril_rec_min_support_one(cache_t *Mithril,
-                                                 request_t *cp) {
-
+                                                const request_t *cp) {
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(Mithril->cache_params);
   rec_mining_t *rmtable = Mithril_params->rmtable;
 
 #ifdef TRACK_BLOCK
   if (*(gint64 *)(cp->obj_id_ptr) == TRACK_BLOCK) {
-    int old_pos =
-        GPOINTER_TO_INT(g_hash_table_lookup(rmtable->hashtable, cp->obj_id_ptr));
+    int old_pos = GPOINTER_TO_INT(
+        g_hash_table_lookup(rmtable->hashtable, cp->obj_id_ptr));
     printf("insert %ld, old pos %d", TRACK_BLOCK, old_pos);
     if (old_pos == 0)
       printf("\n");
@@ -541,8 +536,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *Mithril,
       array_ele[0] = *(gint64 *)(cp->obj_id_ptr);
       hash_key = GET_ROW_IN_MTABLE(Mithril_params, rmtable->mining_table->len);
     }
-    for (i = 1; i < rmtable->mtable_row_len; i++)
-      array_ele[i] = 0;
+    for (i = 1; i < rmtable->mtable_row_len; i++) array_ele[i] = 0;
     array_ele[1] = ADD_TS(array_ele[1], Mithril_params->ts);
 
     g_array_append_val(rmtable->mining_table, array_ele);
@@ -603,7 +597,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *Mithril,
     if (timestamps_length == Mithril_params->max_support) {
       /* no timestamp added, drop this request, it is too frequent */
       if (!_Mithril_remove_from_rmtable(cp->obj_id_type, rmtable,
-                                         row_in_mtable))
+                                        row_in_mtable))
         ERROR("removing from rmtable failed for mining table entry\n");
 
       g_array_remove_index_fast(rmtable->mining_table, index - 1);
@@ -624,7 +618,6 @@ static inline void _Mithril_rec_min_support_one(cache_t *Mithril,
 }
 
 static inline void _Mithril_prefetch(cache_t *Mithril, request_t *cp) {
-
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(Mithril->cache_params);
   gint prefetch_table_index = GPOINTER_TO_INT(
@@ -640,15 +633,13 @@ static inline void _Mithril_prefetch(cache_t *Mithril, request_t *cp) {
     int i;
     for (i = 1; i < Mithril_params->pf_list_size + 1; i++) {
       // begin from 1 because index 0 is the obj_id of originated request
-      if (Mithril_params->ptable_array[dim1][dim2 + i] == 0)
-        break;
+      if (Mithril_params->ptable_array[dim1][dim2 + i] == 0) break;
       if (cp->obj_id_type == OBJ_ID_NUM)
         cp->obj_id_ptr = &(Mithril_params->ptable_array[dim1][dim2 + i]);
       else
         cp->obj_id_ptr = (char *)(Mithril_params->ptable_array[dim1][dim2 + i]);
 
-      if (Mithril_params->output_statistics)
-        Mithril_params->num_of_check += 1;
+      if (Mithril_params->output_statistics) Mithril_params->num_of_check += 1;
 
       // can't use Mithril_check here
       if (Mithril_params->cache->check(Mithril_params->cache, cp)) {
@@ -689,20 +680,20 @@ static inline void _Mithril_prefetch(cache_t *Mithril, request_t *cp) {
 
     // use this, not add because we need to record stat when evicting
     Mithril_params->cache->_insert(Mithril_params->cache, cp);
-    while ((long)Mithril_params->cache->get_used_size(
-               Mithril_params->cache) > Mithril_params->cache->size)
+    while ((long)Mithril_params->cache->get_used_size(Mithril_params->cache) >
+           Mithril_params->cache->size)
       _Mithril_evict(Mithril, cp);
 
     if (Mithril_params->output_statistics) {
       Mithril_params->num_of_prefetch_sequential += 1;
-      g_hash_table_add(Mithril_params->prefetched_hashtable_sequential, GSIZE_TO_POINTER(next));
+      g_hash_table_add(Mithril_params->prefetched_hashtable_sequential,
+                       GSIZE_TO_POINTER(next));
     }
     cp->obj_id_ptr = old_obj_id;
   }
 }
 
 gboolean Mithril_check(cache_t *Mithril, request_t *cp) {
-
   // check element, record entry and prefetch element
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(Mithril->cache_params);
@@ -721,31 +712,29 @@ gboolean Mithril_check(cache_t *Mithril, request_t *cp) {
     }
   }
 
-  gboolean result =
-      Mithril_params->cache->check(Mithril_params->cache, cp);
+  gboolean result = Mithril_params->cache->check(Mithril_params->cache, cp);
 
-  if (Mithril_params->rec_trigger != evict)
-    _Mithril_record_entry(Mithril, cp);
+  if (Mithril_params->rec_trigger != evict) _Mithril_record_entry(Mithril, cp);
 
   return result;
 }
 
 void _Mithril_update(cache_t *Mithril, request_t *cp) {
-
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(Mithril->cache_params);
   Mithril_params->cache->_update(Mithril_params->cache, cp);
 }
 
 void _Mithril_evict(cache_t *Mithril, request_t *cp) {
-
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(Mithril->cache_params);
 
   if (Mithril_params->output_statistics) {
-    gpointer gp = Mithril_params->cache->evict_with_return(Mithril_params->cache, cp);
+    gpointer gp =
+        Mithril_params->cache->evict_with_return(Mithril_params->cache, cp);
 
-    gint type = GPOINTER_TO_INT(g_hash_table_lookup(Mithril_params->prefetched_hashtable_Mithril, gp));
+    gint type = GPOINTER_TO_INT(
+        g_hash_table_lookup(Mithril_params->prefetched_hashtable_Mithril, gp));
     if (type != 0 && type < Mithril_params->cycle_time) {
       // give one more chance
       gpointer new_key = gp;
@@ -787,8 +776,8 @@ gboolean Mithril_add(cache_t *Mithril, request_t *cp) {
     retval = Mithril_check(Mithril, cp);
     AMP_add_no_eviction(Mithril_params->cache, cp);
     _Mithril_prefetch(Mithril, cp);
-    while ((long)Mithril_params->cache->get_used_size(
-               Mithril_params->cache) > Mithril->size)
+    while ((long)Mithril_params->cache->get_used_size(Mithril_params->cache) >
+           Mithril->size)
       _Mithril_evict(Mithril, cp);
 
   } else {
@@ -799,8 +788,8 @@ gboolean Mithril_add(cache_t *Mithril, request_t *cp) {
     } else {
       _Mithril_insert(Mithril, cp);
       _Mithril_prefetch(Mithril, cp);
-      while ((long)Mithril_params->cache->get_used_size(
-                 Mithril_params->cache) > Mithril->size)
+      while ((long)Mithril_params->cache->get_used_size(Mithril_params->cache) >
+             Mithril->size)
         _Mithril_evict(Mithril, cp);
       retval = FALSE;
     }
@@ -822,8 +811,7 @@ void _Mithril_evict_only(cache_t *Mithril, request_t *cp) {
       (Mithril_params_t *)(Mithril->cache_params);
 
   gpointer gp;
-  gp = Mithril_params->cache->evict_with_return(Mithril_params->cache,
-                                                      cp);
+  gp = Mithril_params->cache->evict_with_return(Mithril_params->cache, cp);
 
   gint type = GPOINTER_TO_INT(
       g_hash_table_lookup(Mithril_params->prefetched_hashtable_Mithril, gp));
@@ -838,7 +826,7 @@ void _Mithril_evict_only(cache_t *Mithril, request_t *cp) {
                           GINT_TO_POINTER(type + 1));
     gpointer old_cp = cp->obj_id_ptr;
     cp->obj_id_ptr = gp;
-    _Mithril_insert(Mithril, cp); // insert is same
+    _Mithril_insert(Mithril, cp);  // insert is same
     cp->obj_id_ptr = old_cp;
     _Mithril_evict_only(Mithril, cp);
   } else {
@@ -861,18 +849,18 @@ gboolean Mithril_add_only(cache_t *Mithril, request_t *cp) {
   if (strcmp(Mithril_params->cache->cache_name, "AMP")) {
     retval = Mithril_check_only(Mithril, cp);
     AMP_add_only_no_eviction(Mithril_params->cache, cp);
-    while ((long)Mithril_params->cache->get_used_size(
-               Mithril_params->cache) > Mithril->size)
+    while ((long)Mithril_params->cache->get_used_size(Mithril_params->cache) >
+           Mithril->size)
       _Mithril_evict_only(Mithril, cp);
   } else {
     if (Mithril_check_only(Mithril, cp)) {
       // new
-      _Mithril_update(Mithril, cp); // update is same
+      _Mithril_update(Mithril, cp);  // update is same
       retval = TRUE;
     } else {
-      _Mithril_insert(Mithril, cp); // insert is same
-      while ((long)Mithril_params->cache->get_used_size(
-                 Mithril_params->cache) > Mithril->size)
+      _Mithril_insert(Mithril, cp);  // insert is same
+      while ((long)Mithril_params->cache->get_used_size(Mithril_params->cache) >
+             Mithril->size)
         _Mithril_evict_only(Mithril, cp);
       retval = FALSE;
     }
@@ -881,73 +869,77 @@ gboolean Mithril_add_only(cache_t *Mithril, request_t *cp) {
   return retval;
 }
 
-//gboolean Mithril_add_withsize(cache_t *Mithril, request_t *cp) {
-//  int i;
+// gboolean Mithril_add_withsize(cache_t *Mithril, request_t *cp) {
+//   int i;
 //
-//  gboolean ret_val;
-//  if (Mithril->block_size != 0 && cp->disk_sector_size != 0) {
+//   gboolean ret_val;
+//   if (Mithril->block_size != 0 && cp->disk_sector_size != 0) {
 //
-//    *(gint64 *)(cp->obj_id_ptr) =
-//        (gint64)(*(gint64 *)(cp->obj_id_ptr) * cp->disk_sector_size /
-//                 Mithril->block_size);
-//  }
+//     *(gint64 *)(cp->obj_id_ptr) =
+//         (gint64)(*(gint64 *)(cp->obj_id_ptr) * cp->disk_sector_size /
+//                  Mithril->block_size);
+//   }
 //
-//#ifdef TRACK_BLOCK
-//  Mithril_params_t *Mithril_params =
-//      (Mithril_params_t *)(Mithril->cache_params);
-//  rec_mining_t *rmtable = Mithril_params->rmtable;
-//  static int last_found_pos = 0;
-//  gint64 b = TRACK_BLOCK;
-//  if (*(gint64 *)(cp->obj_id_ptr) == TRACK_BLOCK) {
-//    printf("ts %lu, track block add\n", cp->ts);
-//  }
-//  int old_pos = GPOINTER_TO_INT(g_hash_table_lookup(rmtable->hashtable, &b));
-//  if (old_pos != 0) {
-//    if (old_pos > 0) {
-//      gint64 *row = GET_ROW_IN_RTABLE(Mithril_params, old_pos);
-//      if (*row != TRACK_BLOCK) {
-//        ERROR("the row (%d) from recording table does not match track block, "
-//              "it is %ld\n",
-//              old_pos, *row);
-//        abort();
-//      }
-//    } else if (old_pos < 0) {
-//      gint64 *row = GET_ROW_IN_MTABLE(Mithril_params, -old_pos - 1);
-//      if (*row != TRACK_BLOCK) {
-//        ERROR("the row (%d) from recording table does not match track block, "
-//              "it is %ld\n",
-//              old_pos, *row);
-//        abort();
-//      }
-//    }
-//    if (last_found_pos != old_pos) {
-//      ERROR("ts %lu, found track block change in hashtable, pos %d\n", cp->ts,
-//            old_pos);
-//      last_found_pos = old_pos;
-//    }
-//  } else {
-//    if (last_found_pos != 0) {
-//      printf("ts %lu, track block %ld disappeared, might because of mining\n",
-//             cp->ts, TRACK_BLOCK);
-//    }
-//  }
-//#endif
+// #ifdef TRACK_BLOCK
+//   Mithril_params_t *Mithril_params =
+//       (Mithril_params_t *)(Mithril->cache_params);
+//   rec_mining_t *rmtable = Mithril_params->rmtable;
+//   static int last_found_pos = 0;
+//   gint64 b = TRACK_BLOCK;
+//   if (*(gint64 *)(cp->obj_id_ptr) == TRACK_BLOCK) {
+//     printf("ts %lu, track block add\n", cp->ts);
+//   }
+//   int old_pos = GPOINTER_TO_INT(g_hash_table_lookup(rmtable->hashtable, &b));
+//   if (old_pos != 0) {
+//     if (old_pos > 0) {
+//       gint64 *row = GET_ROW_IN_RTABLE(Mithril_params, old_pos);
+//       if (*row != TRACK_BLOCK) {
+//         ERROR("the row (%d) from recording table does not match track block,
+//         "
+//               "it is %ld\n",
+//               old_pos, *row);
+//         abort();
+//       }
+//     } else if (old_pos < 0) {
+//       gint64 *row = GET_ROW_IN_MTABLE(Mithril_params, -old_pos - 1);
+//       if (*row != TRACK_BLOCK) {
+//         ERROR("the row (%d) from recording table does not match track block,
+//         "
+//               "it is %ld\n",
+//               old_pos, *row);
+//         abort();
+//       }
+//     }
+//     if (last_found_pos != old_pos) {
+//       ERROR("ts %lu, found track block change in hashtable, pos %d\n",
+//       cp->ts,
+//             old_pos);
+//       last_found_pos = old_pos;
+//     }
+//   } else {
+//     if (last_found_pos != 0) {
+//       printf("ts %lu, track block %ld disappeared, might because of
+//       mining\n",
+//              cp->ts, TRACK_BLOCK);
+//     }
+//   }
+// #endif
 //
-//  ret_val = Mithril_add(Mithril, cp);
+//   ret_val = Mithril_add(Mithril, cp);
 //
-//  if (Mithril->block_size != 0 && cp->disk_sector_size != 0) {
-//    int n = (int)ceil((double)cp->size / Mithril->block_size);
+//   if (Mithril->block_size != 0 && cp->disk_sector_size != 0) {
+//     int n = (int)ceil((double)cp->size / Mithril->block_size);
 //
-//    for (i = 0; i < n - 1; i++) {
-//      (*(guint64 *)(cp->obj_id_ptr))++;
-//      Mithril_add_only(Mithril, cp);
-//    }
-//    *(gint64 *)(cp->obj_id_ptr) -= (n - 1);
-//  }
+//     for (i = 0; i < n - 1; i++) {
+//       (*(guint64 *)(cp->obj_id_ptr))++;
+//       Mithril_add_only(Mithril, cp);
+//     }
+//     *(gint64 *)(cp->obj_id_ptr) -= (n - 1);
+//   }
 //
-//  Mithril->ts += 1;
-//  return ret_val;
-//}
+//   Mithril->ts += 1;
+//   return ret_val;
+// }
 
 void Mithril_destroy(cache_t *cache) {
   Mithril_params_t *Mithril_params = (Mithril_params_t *)(cache->cache_params);
@@ -984,7 +976,7 @@ void Mithril_destroy(cache_t *cache) {
     g_hash_table_destroy(Mithril_params->prefetched_hashtable_Mithril);
     g_hash_table_destroy(Mithril_params->prefetched_hashtable_sequential);
   }
-  Mithril_params->cache->destroy(Mithril_params->cache); // 0921
+  Mithril_params->cache->destroy(Mithril_params->cache);  // 0921
   cache_destroy(cache);
 }
 
@@ -1029,7 +1021,7 @@ void Mithril_destroy_unique(cache_t *cache) {
     g_hash_table_destroy(Mithril_params->prefetched_hashtable_Mithril);
     g_hash_table_destroy(Mithril_params->prefetched_hashtable_sequential);
   }
-  Mithril_params->cache->destroy_unique(Mithril_params->cache); // 0921
+  Mithril_params->cache->destroy_unique(Mithril_params->cache);  // 0921
   cache_destroy_unique(cache);
 }
 
@@ -1050,8 +1042,8 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
   cache->_evict = _Mithril_evict;
   cache->get_used_size = Mithril_get_size;
   cache->cache_init_params = params;
-//  cache->add_only = Mithril_add_only;
-//  cache->add_withsize = Mithril_add_withsize;
+  //  cache->add_only = Mithril_add_only;
+  //  cache->add_withsize = Mithril_add_withsize;
 
   Mithril_init_params_t *init_params = (Mithril_init_params_t *)params;
 
@@ -1103,13 +1095,14 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
       PREFETCH_TABLE_SHARD_SIZE * (Mithril_params->pf_list_size * 8 + 8 + 4);
 
   if (Mithril_params->max_support != 1) {
-    rmtable->n_rows_in_rtable = (gint)(
-        size * Mithril_params->block_size * RECORDING_TABLE_MAXIMAL /
-        ((gint)ceil((double)Mithril_params->min_support / (double)2) * 2 + 8 +
-         4));
+    rmtable->n_rows_in_rtable =
+        (gint)(size * Mithril_params->block_size * RECORDING_TABLE_MAXIMAL /
+               ((gint)ceil((double)Mithril_params->min_support / (double)2) *
+                    2 +
+                8 + 4));
     rmtable->recording_table = g_new0(
         gint64, rmtable->n_rows_in_rtable *
-                    rmtable->rtable_row_len); // this should begins with 1
+                    rmtable->rtable_row_len);  // this should begins with 1
     Mithril_params->cur_metadata_size +=
         (((gint)ceil((double)init_params->min_support / (double)4 + 1) * 8 +
           4) *
@@ -1134,7 +1127,7 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
     Mithril_params->cache = LRU_init(size, obj_id_type, NULL);
   else if (strcmp(init_params->cache_type, "FIFO") == 0)
     Mithril_params->cache = FIFO_init(size, obj_id_type, NULL);
-  else if (strcmp(init_params->cache_type, "LFU") == 0) // use LFU_fast
+  else if (strcmp(init_params->cache_type, "LFU") == 0)  // use LFU_fast
     Mithril_params->cache = LFUFast_init(size, obj_id_type, NULL);
   else if (strcmp(init_params->cache_type, "AMP") == 0) {
     struct AMP_init_params *AMP_init_params = g_new0(struct AMP_init_params, 1);
@@ -1142,8 +1135,7 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
     AMP_init_params->p_threshold = init_params->AMP_pthreshold;
     AMP_init_params->read_size = 1;
     AMP_init_params->K = init_params->sequential_K;
-    Mithril_params->cache =
-        AMP_init(size, obj_id_type, AMP_init_params);
+    Mithril_params->cache = AMP_init(size, obj_id_type, AMP_init_params);
   } else if (strcmp(init_params->cache_type, "Belady") == 0) {
     struct Belady_init_params *Belady_init_params =
         g_new(struct Belady_init_params, 1);
@@ -1163,22 +1155,22 @@ cache_t *Mithril_init(guint64 size, obj_id_t obj_id_type, void *params) {
         g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
 
     if (Mithril_params->output_statistics) {
-      Mithril_params->prefetched_hashtable_Mithril = g_hash_table_new_full(
-          g_direct_hash, g_direct_equal, NULL, NULL);
-      Mithril_params->prefetched_hashtable_sequential = g_hash_table_new_full(
-          g_direct_hash, g_direct_equal, NULL, NULL);
+      Mithril_params->prefetched_hashtable_Mithril =
+          g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+      Mithril_params->prefetched_hashtable_sequential =
+          g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
     }
   } else if (obj_id_type == OBJ_ID_STR) {
-    rmtable->hashtable = g_hash_table_new_full(
-        g_str_hash, g_str_equal, g_free, NULL);
+    rmtable->hashtable =
+        g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     Mithril_params->prefetch_hashtable =
         g_hash_table_new_full(g_str_hash, g_str_equal, NULL, NULL);
 
     if (Mithril_params->output_statistics) {
-      Mithril_params->prefetched_hashtable_Mithril = g_hash_table_new_full(
-          g_str_hash, g_str_equal, g_free, NULL);
-      Mithril_params->prefetched_hashtable_sequential = g_hash_table_new_full(
-          g_str_hash, g_str_equal, g_free, NULL);
+      Mithril_params->prefetched_hashtable_Mithril =
+          g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+      Mithril_params->prefetched_hashtable_sequential =
+          g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
     }
   } else {
     ERROR("does not support given obj_id type: %c\n", obj_id_type);
@@ -1239,8 +1231,7 @@ void _Mithril_mining(cache_t *Mithril) {
       if (GET_NTH_TS(item2, 1) - GET_NTH_TS(item1, 1) >
           Mithril_params->lookahead_range)
         break;
-      num_of_ts2 =
-          _Mithril_get_total_num_of_ts(item2, rmtable->mtable_row_len);
+      num_of_ts2 = _Mithril_get_total_num_of_ts(item2, rmtable->mtable_row_len);
 
       if (ABS(num_of_ts1 - num_of_ts2) > Mithril_params->confidence) {
         continue;
@@ -1342,8 +1333,7 @@ void Mithril_add_to_prefetch_table(cache_t *Mithril, gpointer gp1,
           exit(1);
         }
 #endif
-        if ((Mithril_params->ptable_array[dim1][dim2 + i]) == 0)
-          break;
+        if ((Mithril_params->ptable_array[dim1][dim2 + i]) == 0) break;
         if ((Mithril_params->ptable_array[dim1][dim2 + i]) == *(gint64 *)(gp2))
           /* update score here, not implemented yet */
           insert = FALSE;
@@ -1357,8 +1347,7 @@ void Mithril_add_to_prefetch_table(cache_t *Mithril, gpointer gp1,
           fprintf(stderr, "ERROR prefetch table pos wrong\n");
           exit(1);
         }
-        if ((Mithril_params->ptable_array[dim1][dim2 + i]) == 0)
-          break;
+        if ((Mithril_params->ptable_array[dim1][dim2 + i]) == 0) break;
         if (strcmp((gchar *)(Mithril_params->ptable_array[dim1][dim2 + i]),
                    (gchar *)gp2) == 0)
           /* update score here, not implemented yet */
@@ -1464,7 +1453,7 @@ void Mithril_add_to_prefetch_table(cache_t *Mithril, gpointer gp1,
         Mithril_params->cur_metadata_size += required_meta_data_size;
         Mithril_params->cache->size =
             Mithril->size - (gint)((Mithril_params->cur_metadata_size) /
-                                         Mithril_params->block_size);
+                                   Mithril_params->block_size);
       } else {
         Mithril_params->ptable_is_full = TRUE;
         Mithril_params->ptable_cur_row = 1;
@@ -1477,8 +1466,7 @@ void _Mithril_aging(cache_t *Mithril) { ; }
 
 guint64 Mithril_get_size(cache_t *cache) {
   Mithril_params_t *Mithril_params = (Mithril_params_t *)(cache->cache_params);
-  return (guint64)Mithril_params->cache->get_used_size(
-      Mithril_params->cache);
+  return (guint64)Mithril_params->cache->get_used_size(Mithril_params->cache);
 }
 
 void prefetch_node_destroyer(gpointer data) {
