@@ -1,5 +1,6 @@
 //
 //  FIFO_Reinsertion scans N objects and retains M objects, evict the rest
+//  Note that this is the same as CLOCK, please use CLOCK, this is a used to compare with FIFO Merge and is deprecated
 //
 //
 //  FIFO_Reinsertion.c
