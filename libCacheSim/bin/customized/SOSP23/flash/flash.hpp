@@ -11,9 +11,9 @@ typedef struct {
   cache_t *disk;
 
   int64_t n_obj_admit_to_ram;
-  int64_t n_obj_move_to_disk;
+  int64_t n_obj_admit_to_disk;
   int64_t n_byte_admit_to_ram;
-  int64_t n_byte_move_to_disk;
+  int64_t n_byte_admit_to_disk;
 
   double ram_size_ratio;
   double disk_admit_prob;
@@ -71,3 +71,15 @@ typedef struct {
   request_t *req_local;
 } QDLPv1_params_t;
 
+typedef struct WTinyLFU_params {
+  cache_t *LRU;         // LRU as windowed LRU
+  cache_t *main_cache;  // any eviction policy
+  double window_size;
+  int64_t n_admit_bytes;
+  struct minimalIncrementCBF *CBF;
+  size_t max_request_num;
+  size_t request_counter;
+  char main_cache_type[32];
+
+  request_t *req_local;
+} WTinyLFU_params_t;

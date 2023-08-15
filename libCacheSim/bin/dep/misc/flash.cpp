@@ -57,7 +57,7 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
   } else if (strcasestr(cache->cache_name, "flashProb") != NULL) {
     flashProb_params_t *params = (flashProb_params_t *)cache->eviction_params;
 
-    n_byte_write = params->n_byte_move_to_disk;
+    n_byte_write = params->n_byte_admit_to_disk;
 
     if (strcasestr(params->disk->cache_name, "Clock") != NULL) {
       Clock_params_t *clock_params =

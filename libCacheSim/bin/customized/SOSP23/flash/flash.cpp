@@ -1,12 +1,11 @@
 
 
-#include "flash.hpp"
-
 #include <libgen.h>
 
 #include <unordered_set>
 
 #include "../../../../include/libCacheSim/evictionAlgo.h"
+#include "flash.hpp"
 
 #define REPORT_INTERVAL (4 * 3600)
 #define MILLION 1000000ul
@@ -53,7 +52,7 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
   } else if (strcasestr(cache->cache_name, "flashProb") != NULL) {
     flashProb_params_t *params = (flashProb_params_t *)cache->eviction_params;
 
-    n_byte_write = params->n_byte_move_to_disk;
+    n_byte_write = params->n_byte_admit_to_disk;
 
     if (strcasestr(params->disk->cache_name, "Clock") != NULL) {
       Clock_params_t *clock_params =
@@ -65,6 +64,20 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
         (FIFO_Reinsertion_params_t *)cache->eviction_params;
 
     n_byte_write = n_miss_byte + params->n_byte_rewritten;
+  } else if (strcasestr(cache->cache_name, "TinyLFU") != NULL) {
+    WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
+    n_byte_write = params->n_admit_bytes;
+
+    if (strcasestr(params->main_cache->cache_name, "Clock") != NULL) {
+      Clock_params_t *clock_params =
+          (Clock_params_t *)params->main_cache->eviction_params;
+      n_byte_write += clock_params->n_byte_rewritten;
+    } else if (strcasestr(params->main_cache->cache_name, "fifo") != NULL) {
+      ;
+    } else {
+      printf("\n");
+      ERROR("Main cache type only support FIFO and FIFO-Reinsertion (CLOCK)\n");
+    }
   } else if (strcasestr(cache->cache_name, "qdlp") != NULL) {
     QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
     if (strcasestr(params->main_cache->cache_name, "Clock") != NULL) {
@@ -77,7 +90,7 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
       n_byte_write = params->n_byte_admit_to_main + params->n_byte_move_to_main;
     } else {
       printf("\n");
-      ERROR("Unknown main cache type %s\n", params->main_cache->cache_name);
+      ERROR("Main cache type only support FIFO and FIFO-Reinsertion (CLOCK)\n");
     }
   } else {
     printf("\n");

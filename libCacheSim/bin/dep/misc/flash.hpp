@@ -12,9 +12,9 @@ typedef struct {
   cache_t *disk;
 
   int64_t n_obj_admit_to_ram;
-  int64_t n_obj_move_to_disk;
+  int64_t n_obj_admit_to_disk;
   int64_t n_byte_admit_to_ram;
-  int64_t n_byte_move_to_disk;
+  int64_t n_byte_admit_to_disk;
 
   double ram_size_ratio;
   double disk_admit_prob;
