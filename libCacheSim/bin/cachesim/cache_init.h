@@ -103,6 +103,9 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = FIFO_Merge_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0) {
     cache = FIFO_Reinsertion_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "flashProb") == 0) {
+    // used to measure application level write amp
+    cache = flashProb_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "fifo-belady") == 0) {
