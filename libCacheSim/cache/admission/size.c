@@ -64,6 +64,9 @@ void free_size_admissioner(admissioner_t *admissioner) {
   size_admission_params_t *pa = admissioner->params;
 
   free(pa);
+  if (admissioner->init_params) {
+    free(admissioner->init_params);
+  }
   free(admissioner);
 }
 

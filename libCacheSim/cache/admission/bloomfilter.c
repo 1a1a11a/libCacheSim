@@ -37,6 +37,9 @@ void free_bloomfilter_admissioner(admissioner_t *admissioner) {
   struct bloomfilter_admission *bf = admissioner->params;
   g_hash_table_destroy(bf->seen_times);
   free(bf);
+    if(admissioner->init_params){
+    free(admissioner->init_params);
+  }
   free(admissioner);
 }
 

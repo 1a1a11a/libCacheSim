@@ -62,6 +62,9 @@ void free_adaptsize_admissioner(admissioner_t *admissioner) {
       static_cast<adaptsize_admission_params_t *>(admissioner->params);
 
   free(pa);
+  if(admissioner->init_params){
+    free(admissioner->init_params);
+  }
   free(admissioner);
 }
 

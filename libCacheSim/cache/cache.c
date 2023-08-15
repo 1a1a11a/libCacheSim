@@ -73,6 +73,7 @@ cache_t *cache_struct_init(const char *const cache_name,
 void cache_struct_free(cache_t *cache) {
   free_hashtable(cache->hashtable);
   if (cache->admissioner != NULL) cache->admissioner->free(cache->admissioner);
+  if (cache->prefetcher != NULL) cache->prefetcher->free(cache->prefetcher);
   my_free(sizeof(cache_t), cache);
 }
 
