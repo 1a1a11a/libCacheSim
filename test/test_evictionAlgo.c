@@ -541,27 +541,6 @@ static void test_LIRS(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
-static void test_Mithril(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {79797, 78480, 76127, 75256,
-                              72336, 72062, 71936, 71667};
-  uint64_t miss_byte_true[] = {3471427072, 3399668736, 3285212672, 3245231616,
-                               3092759040, 3077801472, 3075234816, 3061489664};
-
-  reader_t *reader = (reader_t *)user_data;
-  common_cache_params_t cc_params = {
-      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
-  cache_t *cache = create_test_cache("Mithril", cc_params, reader, NULL);
-  g_assert_true(cache != NULL);
-  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(
-      reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
-
-  print_results(cache, res);
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
-  cache->cache_free(cache);
-  my_free(sizeof(cache_stat_t), res);
-}
-
 static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
@@ -610,7 +589,6 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
                        test_BeladySize);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_Mithril", reader, test_Mithril);
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);

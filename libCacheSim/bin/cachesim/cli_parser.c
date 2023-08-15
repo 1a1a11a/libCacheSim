@@ -8,6 +8,7 @@
 
 #include "../../include/libCacheSim/const.h"
 #include "../../include/libCacheSim/dist.h"
+#include "../../include/libCacheSim/prefetchAlgo.h"
 #include "../../utils/include/mystr.h"
 #include "../../utils/include/mysys.h"
 #include "../cli_reader_utils.h"
@@ -43,6 +44,9 @@ enum argp_option_short {
   OPTION_NUM_THREAD = 0x106,
   OPTION_SAMPLE_RATIO = 's',
   OPTION_REPORT_INTERVAL = 0x108,
+
+  OPTION_PREFETCH_ALGO = 'p',
+  OPTION_PREFETCH_PARAMS = 0x109,
 };
 
 /*
@@ -67,6 +71,11 @@ static struct argp_option options[] = {
      "Admission algorithm: size/bloom-filter/prob", 4},
     {"admission-params", OPTION_ADMISSION_PARAMS, "\"prob=0.8\"", 0,
      "params for admission algorithm", 4},
+    {"prefetch", OPTION_PREFETCH_ALGO, "Mithril", 0,
+     "Prefetching algorithm: Mithril", 4},
+    {"prefetch-params", OPTION_PREFETCH_PARAMS, "\"block-size=65536\"", 0,
+     "optional params for each prefetching algorithm, e.g., block-size=65536",
+     4},
 
     {0, 0, 0, 0, "Other options:"},
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
@@ -112,10 +121,18 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_ADMISSION_ALGO:
       arguments->admission_algo = arg;
       break;
+    case OPTION_PREFETCH_ALGO:
+      arguments->prefetch_algo = arg;
+      break;
     case OPTION_ADMISSION_PARAMS:
       arguments->admission_params = strdup(arg);
       replace_char(arguments->admission_params, ';', ',');
       replace_char(arguments->admission_params, '_', '-');
+      break;
+    case OPTION_PREFETCH_PARAMS:
+      arguments->prefetch_params = strdup(arg);
+      replace_char(arguments->prefetch_params, ';', ',');
+      replace_char(arguments->prefetch_params, '_', '-');
       break;
     case OPTION_OUTPUT_PATH:
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
@@ -194,7 +211,9 @@ static void init_arg(struct arguments *args) {
   args->trace_path = NULL;
   args->eviction_params = NULL;
   args->admission_algo = NULL;
+  args->prefetch_algo = NULL;
   args->admission_params = NULL;
+  args->prefetch_params = NULL;
   args->trace_type_str = NULL;
   args->trace_type_params = NULL;
   args->verbose = true;
@@ -320,6 +339,11 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
       if (args->admission_algo != NULL) {
         args->caches[idx]->admissioner =
             create_admissioner(args->admission_algo, args->admission_params);
+      }
+
+      if (args->prefetch_algo != NULL) {
+        args->caches[idx]->prefetcher = create_prefetcher(
+            args->prefetch_algo, args->prefetch_params, args->cache_sizes[j]);
       }
     }
   }

@@ -26,6 +26,9 @@ extern "C" {
 struct cache;
 typedef struct cache cache_t;
 
+struct prefetcher;
+typedef struct prefetcher prefetcher_t;
+
 typedef struct {
   uint64_t cache_size;
   uint64_t default_ttl;
@@ -106,6 +109,8 @@ struct cache {
   cache_print_cache_func_ptr print_cache;
 
   admissioner_t *admissioner;
+
+  prefetcher_t *prefetcher;
 
   void *eviction_params;
 

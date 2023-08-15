@@ -38,7 +38,6 @@ set(sourceC
 
         Sieve.c
 
-        Mithril.c
 )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")

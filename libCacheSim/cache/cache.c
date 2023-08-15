@@ -5,6 +5,7 @@
 #include "../include/libCacheSim/cache.h"
 
 #include "../dataStructure/hashtable/hashtable.h"
+#include "../include/libCacheSim/prefetchAlgo.h"
 
 /** this file contains both base function, which should be called by all
  *eviction algorithms, and the queue related functions, which should be called
@@ -33,6 +34,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->cache_size = params.cache_size;
   cache->eviction_params = NULL;
   cache->admissioner = NULL;
+  cache->prefetcher = NULL;
   cache->future_stack_dist = NULL;
   cache->future_stack_dist_array_size = 0;
   cache->default_ttl = params.default_ttl;
@@ -193,10 +195,10 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
           cache->get_occupied_byte(cache), cache->cache_size);
 
   cache_obj_t *obj = cache->find(cache, req, true);
+  bool hit = (obj != NULL);
 
-  if (obj != NULL) {
+  if (hit) {
     VVERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
-    return true;
   }
 
   if (cache->can_insert(cache, req) == false) {
@@ -205,14 +207,25 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
     return false;
   }
 
-  while (cache->get_occupied_byte(cache) + req->obj_size + cache->obj_md_size >
-         cache->cache_size) {
-    cache->evict(cache, req);
+  if (cache->prefetcher) {
+    // this interface should do the following
+
+    // if !hit:
+    //     evict until have enough space to insert the requested obj
+    //     insert the requested obj
+    // prefetch
+    // evict until cache is not full
+    cache->prefetcher->insert_prefetch(cache, req, !hit);
+  } else if (!hit) {
+    while (cache->get_occupied_byte(cache) + req->obj_size +
+               cache->obj_md_size >
+           cache->cache_size) {
+      cache->evict(cache, req);
+    }
+    cache->insert(cache, req);
   }
 
-  cache->insert(cache, req);
-
-  return false;
+  return hit;
 }
 
 /**
@@ -237,8 +250,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   }
 #endif
 
-#if defined(TRACK_EVICTION_V_AGE) || \
-    defined(TRACK_DEMOTION) || defined(TRACK_CREATE_TIME)
+#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_DEMOTION) || \
+    defined(TRACK_CREATE_TIME)
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 

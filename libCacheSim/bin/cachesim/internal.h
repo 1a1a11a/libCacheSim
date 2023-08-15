@@ -25,6 +25,7 @@ struct arguments {
   char *eviction_algo[N_MAX_ALGO];
   int n_eviction_algo;
   char *admission_algo;
+  char *prefetch_algo;
   uint64_t cache_sizes[N_MAX_CACHE_SIZE];
   int n_cache_size;
   int warmup_sec;
@@ -35,6 +36,7 @@ struct arguments {
   char *trace_type_params;
   char *eviction_params;
   char *admission_params;
+  char *prefetch_params;
   double sample_ratio;
   int n_thread;
   int64_t n_req; /* number of requests to process */
@@ -64,4 +66,3 @@ void print_parsed_args(struct arguments *args);
 #ifdef __cplusplus
 }
 #endif
-

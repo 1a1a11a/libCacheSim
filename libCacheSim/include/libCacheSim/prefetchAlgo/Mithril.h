@@ -9,7 +9,7 @@
 /* 201912 due to the remove of sector_size and block_size, AMP, Mithril does not
  * work out-of-box now, new changes are needed to make them correct */
 
-//  Modified by Zhelong
+//  Modified by Zhelong on 2023/8/15
 
 #ifndef Mithril_h
 #define Mithril_h
@@ -160,9 +160,6 @@ typedef enum _recording_loc {
 
 /* the data for Mithril initialization */
 typedef struct {
-  /* obj_id_type of cache, LRU, FIFO, Optimal, AMP */
-  char cache_type[CACHE_NAME_ARRAY_LEN];
-
   /** when we say two obj/blocks are associated,
    *  how far away they can be separated away,
    *  the more parallelism, the larger this value should be
@@ -285,9 +282,6 @@ typedef struct {
 } rec_mining_t;
 
 typedef struct {
-  /* the underlying cache, like LRU, LFU, AMP */
-  cache_t *cache;
-
   /* see Mithril_init_params_t */
   gint lookahead_range;
   gint max_support;
