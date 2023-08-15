@@ -71,7 +71,7 @@ static inline cache_t *create_cache(const char *trace_path,
       const char *window_size = strstr(eviction_params, "window-size=");
       if (window_size == NULL) {
         char *new_params = malloc(strlen(eviction_params) + 20);
-        sprintf(new_params, "%s,window-size=0", eviction_params);
+        sprintf(new_params, "%s,window-size=0.01", eviction_params);
         cache = WTinyLFU_init(cc_params, new_params);
       } else {
         cache = WTinyLFU_init(cc_params, eviction_params);
