@@ -233,6 +233,8 @@ cache_obj_t *WTinyLFU_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = NULL;
   obj = params->LRU->insert(params->LRU, req);
 
+  minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t));
+
 #if defined(TRACK_DEMOTION)
   obj->create_time = cache->n_req;
 #endif
