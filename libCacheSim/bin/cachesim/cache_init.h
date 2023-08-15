@@ -80,10 +80,16 @@ static inline cache_t *create_cache(const char *trace_path,
   } else if (strcasecmp(eviction_algo, "wtinyLFU") == 0) {
     cache = WTinyLFU_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "belady") == 0) {
+    if (strcasestr(trace_path, "oracleGeneral") == NULL) {
+      WARN("belady is only supported for oracleGeneral trace\n");
+    }
     cache = Belady_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "nop") == 0) {
     cache = nop_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "beladySize") == 0) {
+    if (strcasestr(trace_path, "oracleGeneral") == NULL) {
+      WARN("belady is only supported for oracleGeneral trace\n");
+    }
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0 ||
