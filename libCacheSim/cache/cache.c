@@ -98,6 +98,10 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
   if (old_cache->admissioner != NULL) {
     cache->admissioner = old_cache->admissioner->clone(old_cache->admissioner);
   }
+  if (old_cache->prefetcher != NULL) {
+    cache->prefetcher =
+        old_cache->prefetcher->clone(old_cache->prefetcher, new_size);
+  }
   cache->future_stack_dist = old_cache->future_stack_dist;
   cache->future_stack_dist_array_size = old_cache->future_stack_dist_array_size;
   return cache;

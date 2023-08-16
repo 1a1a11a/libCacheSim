@@ -1,5 +1,6 @@
 #ifndef PREFETCHINGALGO_H
 #define PREFETCHINGALGO_H
+
 #include "cache.h"
 #include "request.h"
 
@@ -13,13 +14,17 @@ typedef void (*prefetcher_prefetch_func_ptr)(cache_t *, const request_t *);
 typedef void (*prefetcher_handle_find_func_ptr)(cache_t *, const request_t *);
 typedef void (*prefetcher_handle_evict_func_ptr)(cache_t *, const request_t *);
 typedef void (*prefetcher_free_func_ptr)(struct prefetcher *);
+typedef struct prefetcher *(*prefetcher_clone_func_ptr)(struct prefetcher *,
+                                                        uint64_t);
 
 typedef struct prefetcher {
   void *params;
+  void *init_params;
   prefetcher_prefetch_func_ptr prefetch;
   prefetcher_handle_find_func_ptr handle_find;
   prefetcher_handle_evict_func_ptr handle_evict;
   prefetcher_free_func_ptr free;
+  prefetcher_clone_func_ptr clone;
 } prefetcher_t;
 
 prefetcher_t *create_Mithril_prefetcher(const char *init_paramsm,

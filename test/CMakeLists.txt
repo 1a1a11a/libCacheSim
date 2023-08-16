@@ -16,12 +16,16 @@ target_link_libraries(testSimulator ${coreLib})
 add_executable(testEvictionAlgo test_evictionAlgo.c)
 target_link_libraries(testEvictionAlgo ${coreLib})
 
+add_executable(testPrefetchAlgo test_prefetchAlgo.c)
+target_link_libraries(testPrefetchAlgo ${coreLib})
+
 
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
 add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
 add_test(NAME testSimulator COMMAND testSimulator WORKING_DIRECTORY .)
 add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
+add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 
 # if (ENABLE_GLCACHE)
 #     add_executable(testGLCache test_glcache.c)

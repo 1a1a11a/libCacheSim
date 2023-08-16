@@ -232,7 +232,7 @@ static void set_Mithril_params(Mithril_params_t *Mithril_params,
 // ****                                                               ****
 // ****                     prefetcher interfaces                     ****
 // ****                                                               ****
-// ****      create, free, handle_find, prefetch, handle_evict        ****
+// ****   create, free, clone, handle_find, handle_evict, prefetch    ****
 // ***********************************************************************
 /**
  1. record the request in cache_size_map for being aware of prefetching object's
@@ -435,7 +435,15 @@ void free_Mithril_prefetcher(prefetcher_t *prefetcher) {
     g_hash_table_destroy(Mithril_params->prefetched_hashtable_sequential);
   }
   my_free(sizeof(Mithril_params_t), Mithril_params);
+  if (prefetcher->init_params) {
+    free(prefetcher->init_params);
+  }
   my_free(sizeof(prefetcher_t), prefetcher);
+}
+
+prefetcher_t *clone_Mithril_prefetcher(prefetcher_t *prefetcher,
+                                       uint64_t cache_size) {
+  return create_Mithril_prefetcher(prefetcher->init_params, cache_size);
 }
 
 prefetcher_t *create_Mithril_prefetcher(const char *init_params,
@@ -463,6 +471,10 @@ prefetcher_t *create_Mithril_prefetcher(const char *init_params,
   prefetcher->handle_find = Mithril_handle_find;
   prefetcher->handle_evict = Mithril_handle_evict;
   prefetcher->free = free_Mithril_prefetcher;
+  prefetcher->clone = clone_Mithril_prefetcher;
+  if (init_params) {
+    prefetcher->init_params = strdup(init_params);
+  }
 
   my_free(sizeof(Mithril_init_params_t), Mithril_init_params);
   return prefetcher;
