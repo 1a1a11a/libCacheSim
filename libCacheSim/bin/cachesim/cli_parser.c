@@ -515,6 +515,16 @@ void print_parsed_args(struct arguments *args) {
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
                   ", admission-params: %s", args->admission_params);
 
+  if (args->prefetch_algo != NULL) {
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", prefetch: %s",
+                  args->prefetch_algo);
+  }
+
+  if (args->prefetch_params != NULL) {
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", prefetch-params: %s", args->prefetch_params);
+  }
+
   if (args->eviction_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
                   ", eviction-params: %s", args->eviction_params);

@@ -195,35 +195,29 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
           cache->cache_name, cache->n_req, req->obj_id, req->obj_size,
           cache->get_occupied_byte(cache), cache->cache_size);
 
+  if (cache->prefetcher && cache->prefetcher->handle_find) {
+    cache->prefetcher->handle_find(cache, req);
+  }
+
   cache_obj_t *obj = cache->find(cache, req, true);
   bool hit = (obj != NULL);
 
   if (hit) {
     VVERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
-  }
-
-  if (cache->can_insert(cache, req) == false) {
+  } else if (!cache->can_insert(cache, req)) {
     VVERBOSE("req %ld, obj %ld --- cache miss cannot insert\n", cache->n_req,
              req->obj_id);
-    return false;
-  }
-
-  if (cache->prefetcher) {
-    // this interface should do the following
-
-    // if !hit:
-    //     evict until have enough space to insert the requested obj
-    //     insert the requested obj
-    // prefetch
-    // evict until cache is not full
-    cache->prefetcher->insert_prefetch(cache, req, !hit);
-  } else if (!hit) {
+  } else {
     while (cache->get_occupied_byte(cache) + req->obj_size +
                cache->obj_md_size >
            cache->cache_size) {
       cache->evict(cache, req);
     }
     cache->insert(cache, req);
+  }
+
+  if (cache->prefetcher && cache->prefetcher->prefetch) {
+    cache->prefetcher->prefetch(cache, req);
   }
 
   return hit;
@@ -277,6 +271,17 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj,
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
   }
 #endif
+  if (cache->prefetcher && cache->prefetcher->handle_evict) {
+    request_t *check_req = new_request();
+    check_req->obj_id = obj->obj_id;
+    check_req->obj_size = obj->obj_size;
+    // check_req->ttl = 0; // re-add objects should be?
+    cache_remove_obj_base(cache, obj, remove_from_hashtable);
+    cache->prefetcher->handle_evict(cache, check_req);
+    my_free(sizeof(request_t), check_req);
+    return;
+  }
+
   cache_remove_obj_base(cache, obj, remove_from_hashtable);
 }
 

@@ -9,15 +9,16 @@ extern "C" {
 
 struct prefetcher;
 typedef struct prefetcher *(*prefetcher_create_func_ptr)(const char *);
-typedef void (*cache_insert_prefetch_func_ptr)(cache_t *, const request_t *,
-                                               bool);
+typedef void (*prefetcher_prefetch_func_ptr)(cache_t *, const request_t *);
+typedef void (*prefetcher_handle_find_func_ptr)(cache_t *, const request_t *);
+typedef void (*prefetcher_handle_evict_func_ptr)(cache_t *, const request_t *);
 typedef void (*prefetcher_free_func_ptr)(struct prefetcher *);
 
 typedef struct prefetcher {
   void *params;
-  // for general purpose,
-  // not only prefetch, but also insert req and evict when space is full
-  cache_insert_prefetch_func_ptr insert_prefetch;
+  prefetcher_prefetch_func_ptr prefetch;
+  prefetcher_handle_find_func_ptr handle_find;
+  prefetcher_handle_evict_func_ptr handle_evict;
   prefetcher_free_func_ptr free;
 } prefetcher_t;
 
