@@ -232,9 +232,17 @@ static void set_Mithril_params(Mithril_params_t *Mithril_params,
 // ****                                                               ****
 // ****                     prefetcher interfaces                     ****
 // ****                                                               ****
-// ****          create, free, clone, prefetch, handle_evict          ****
+// ****      create, free, handle_find, prefetch, handle_evict        ****
 // ***********************************************************************
+/**
+ 1. record the request in cache_size_map for being aware of prefetching object's
+ size in the future.
+ 2. record entry if rec_trigger is not evict.
 
+ @param cache the cache struct
+ @param req the request containing the request
+ @return
+*/
 static void Mithril_handle_find(cache_t *cache, const request_t *req) {
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(cache->prefetcher->params);
@@ -266,9 +274,9 @@ static void Mithril_handle_find(cache_t *cache, const request_t *req) {
  evict_req->obj_id has been evict by cache_remove_base.
  Now, prefetcher checks whether it can be added to cache (second chance).
 
-@param cache the cache struct
-@param req the request containing the request
-@return
+ @param cache the cache struct
+ @param req the request containing the request
+ @return
 */
 void Mithril_handle_evict(cache_t *cache, const request_t *check_req) {
   Mithril_params_t *Mithril_params =
