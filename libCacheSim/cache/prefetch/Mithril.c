@@ -243,7 +243,8 @@ static void set_Mithril_params(Mithril_params_t *Mithril_params,
  @param req the request containing the request
  @return
 */
-static void Mithril_handle_find(cache_t *cache, const request_t *req) {
+static void Mithril_handle_find(cache_t *cache, const request_t *req,
+                                bool hit) {
   Mithril_params_t *Mithril_params =
       (Mithril_params_t *)(cache->prefetcher->params);
 
@@ -267,7 +268,13 @@ static void Mithril_handle_find(cache_t *cache, const request_t *req) {
     }
   }
 
-  if (Mithril_params->rec_trigger != evict) _Mithril_record_entry(cache, req);
+  // 1. record entry when rec_trigger is each_req.
+  // 2. record entry when (rec_trigger is miss or miss_evict (in other words,
+  // !evict)) && !hit
+  if ((Mithril_params->rec_trigger == each_req) ||
+      (Mithril_params->rec_trigger != evict && !hit)) {
+    _Mithril_record_entry(cache, req);
+  }
 }
 
 /**
@@ -623,13 +630,6 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
   rec_mining_t *rmtable = Mithril_params->rmtable;
 
   int i;
-
-  if (Mithril_params->rec_trigger != each_req &&
-      cache->find(cache, req, false)) {
-    /* if it does not record at each request, check whether it is hit or miss
-     */
-    return;
-  }
 
   /* check it is sequtial or not */
   if (Mithril_params->sequential_type && _Mithril_check_sequential(cache, req))

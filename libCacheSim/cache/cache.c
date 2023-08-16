@@ -153,6 +153,11 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
                              const bool update_cache) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
+  if (cache->prefetcher && cache->prefetcher->handle_find) {
+    bool hit = (cache_obj != NULL);
+    cache->prefetcher->handle_find(cache, req, hit);
+  }
+
   if (cache_obj != NULL) {
 #ifdef SUPPORT_TTL
     if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->clock_time) {
@@ -198,10 +203,6 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
   VERBOSE("******* %s req %ld, obj %ld, obj_size %ld, cache size %ld/%ld\n",
           cache->cache_name, cache->n_req, req->obj_id, req->obj_size,
           cache->get_occupied_byte(cache), cache->cache_size);
-
-  if (cache->prefetcher && cache->prefetcher->handle_find) {
-    cache->prefetcher->handle_find(cache, req);
-  }
 
   cache_obj_t *obj = cache->find(cache, req, true);
   bool hit = (obj != NULL);

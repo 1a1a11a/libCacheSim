@@ -45,9 +45,9 @@ static void print_results(const cache_t *cache, const cache_stat_t *res) {
 }
 
 static void test_Mithril(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {79796, 78480, 76126, 75256,
+  uint64_t miss_cnt_true[] = {79999, 78490, 76128, 75257,
                               72336, 72062, 71936, 71667};
-  uint64_t miss_byte_true[] = {3471357440, 3399726080, 3285093888, 3245231616,
+  uint64_t miss_byte_true[] = {3483394560, 3398693888, 3285270016, 3245235712,
                                3092759040, 3077801472, 3075234816, 3061489664};
 
   reader_t *reader = (reader_t *)user_data;
