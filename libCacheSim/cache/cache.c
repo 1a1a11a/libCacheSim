@@ -153,7 +153,9 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
                              const bool update_cache) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
-  if (cache->prefetcher && cache->prefetcher->handle_find) {
+  // "update_cache = true" means that it is a real user request, use handle_find
+  // to update prefetcher's state
+  if (cache->prefetcher && cache->prefetcher->handle_find && update_cache) {
     bool hit = (cache_obj != NULL);
     cache->prefetcher->handle_find(cache, req, hit);
   }

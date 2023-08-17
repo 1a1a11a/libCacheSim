@@ -358,7 +358,6 @@ void Mithril_prefetch(cache_t *cache, const request_t *req) {
         Mithril_params->num_of_check += 1;
       }
 
-      // can't use Mithril_find here
       if (cache->find(cache, new_req, false)) {
         continue;
       }
@@ -387,7 +386,7 @@ void Mithril_prefetch(cache_t *cache, const request_t *req) {
     new_req->obj_id = req->obj_id + 1;
     new_req->obj_size = req->obj_size;  // same size
 
-    if (cache->find(cache, new_req, true)) {
+    if (cache->find(cache, new_req, false)) {
       my_free(sizeof(request_t), new_req);
       return;
     }
