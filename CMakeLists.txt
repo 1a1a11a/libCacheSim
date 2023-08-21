@@ -244,7 +244,7 @@ message(STATUS "========================================================")
 # library compilation  #
 ########################################
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-set(ALL_MODULES cachelib admission evictionC evictionCPP traceReader profiler dataStructure ds_hash utils)
+set(ALL_MODULES cachelib admission prefetch evictionC evictionCPP traceReader profiler dataStructure ds_hash utils)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/dataStructure)

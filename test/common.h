@@ -8,9 +8,11 @@
 #include <glib.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <strings.h>
 #include <unistd.h>
 
 #include "../libCacheSim/include/libCacheSim.h"
+#include "../libCacheSim/include/libCacheSim/prefetchAlgo.h"
 
 #define BLOCK_UNIT_SIZE 0   // 16 * 1024
 #define DISK_SECTOR_SIZE 0  // 512
@@ -232,6 +234,10 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = S3FIFO_init(cc_params, "move-to-main-threshold=2");
   } else if (strcasecmp(alg_name, "Sieve") == 0) {
     cache = Sieve_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "Mithril") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->prefetcher =
+        create_prefetcher("Mithril", NULL, cc_params.cache_size);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

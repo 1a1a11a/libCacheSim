@@ -18,7 +18,8 @@ typedef struct bloomfilter_admission {
 bool bloomfilter_admit(admissioner_t *admissioner, const request_t *req) {
   bf_admission_params_t *bf = admissioner->params;
   gpointer key = GINT_TO_POINTER(req->obj_id);
-  gpointer n_times = g_hash_table_lookup(bf->seen_times, GSIZE_TO_POINTER(req->obj_id));
+  gpointer n_times =
+      g_hash_table_lookup(bf->seen_times, GSIZE_TO_POINTER(req->obj_id));
   if (n_times == NULL) {
     g_hash_table_insert(bf->seen_times, key, GINT_TO_POINTER(1));
     return false;
@@ -37,6 +38,9 @@ void free_bloomfilter_admissioner(admissioner_t *admissioner) {
   struct bloomfilter_admission *bf = admissioner->params;
   g_hash_table_destroy(bf->seen_times);
   free(bf);
+  if (admissioner->init_params) {
+    free(admissioner->init_params);
+  }
   free(admissioner);
 }
 

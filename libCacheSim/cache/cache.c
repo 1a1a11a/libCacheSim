@@ -5,6 +5,7 @@
 #include "../include/libCacheSim/cache.h"
 
 #include "../dataStructure/hashtable/hashtable.h"
+#include "../include/libCacheSim/prefetchAlgo.h"
 
 /** this file contains both base function, which should be called by all
  *eviction algorithms, and the queue related functions, which should be called
@@ -33,6 +34,7 @@ cache_t *cache_struct_init(const char *const cache_name,
   cache->cache_size = params.cache_size;
   cache->eviction_params = NULL;
   cache->admissioner = NULL;
+  cache->prefetcher = NULL;
   cache->future_stack_dist = NULL;
   cache->future_stack_dist_array_size = 0;
   cache->default_ttl = params.default_ttl;
@@ -71,6 +73,7 @@ cache_t *cache_struct_init(const char *const cache_name,
 void cache_struct_free(cache_t *cache) {
   free_hashtable(cache->hashtable);
   if (cache->admissioner != NULL) cache->admissioner->free(cache->admissioner);
+  if (cache->prefetcher != NULL) cache->prefetcher->free(cache->prefetcher);
   my_free(sizeof(cache_t), cache);
 }
 
@@ -94,6 +97,10 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   if (old_cache->admissioner != NULL) {
     cache->admissioner = old_cache->admissioner->clone(old_cache->admissioner);
+  }
+  if (old_cache->prefetcher != NULL) {
+    cache->prefetcher =
+        old_cache->prefetcher->clone(old_cache->prefetcher, new_size);
   }
   cache->future_stack_dist = old_cache->future_stack_dist;
   cache->future_stack_dist_array_size = old_cache->future_stack_dist_array_size;
@@ -146,6 +153,13 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
                              const bool update_cache) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
+  // "update_cache = true" means that it is a real user request, use handle_find
+  // to update prefetcher's state
+  if (cache->prefetcher && cache->prefetcher->handle_find && update_cache) {
+    bool hit = (cache_obj != NULL);
+    cache->prefetcher->handle_find(cache, req, hit);
+  }
+
   if (cache_obj != NULL) {
 #ifdef SUPPORT_TTL
     if (cache_obj->exp_time != 0 && cache_obj->exp_time < req->clock_time) {
@@ -193,26 +207,27 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
           cache->get_occupied_byte(cache), cache->cache_size);
 
   cache_obj_t *obj = cache->find(cache, req, true);
+  bool hit = (obj != NULL);
 
-  if (obj != NULL) {
+  if (hit) {
     VVERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
-    return true;
-  }
-
-  if (cache->can_insert(cache, req) == false) {
+  } else if (!cache->can_insert(cache, req)) {
     VVERBOSE("req %ld, obj %ld --- cache miss cannot insert\n", cache->n_req,
              req->obj_id);
-    return false;
+  } else {
+    while (cache->get_occupied_byte(cache) + req->obj_size +
+               cache->obj_md_size >
+           cache->cache_size) {
+      cache->evict(cache, req);
+    }
+    cache->insert(cache, req);
   }
 
-  while (cache->get_occupied_byte(cache) + req->obj_size + cache->obj_md_size >
-         cache->cache_size) {
-    cache->evict(cache, req);
+  if (cache->prefetcher && cache->prefetcher->prefetch) {
+    cache->prefetcher->prefetch(cache, req);
   }
 
-  cache->insert(cache, req);
-
-  return false;
+  return hit;
 }
 
 /**
@@ -237,8 +252,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   }
 #endif
 
-#if defined(TRACK_EVICTION_V_AGE) || \
-    defined(TRACK_DEMOTION) || defined(TRACK_CREATE_TIME)
+#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_DEMOTION) || \
+    defined(TRACK_CREATE_TIME)
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 
@@ -263,6 +278,17 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj,
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
   }
 #endif
+  if (cache->prefetcher && cache->prefetcher->handle_evict) {
+    request_t *check_req = new_request();
+    check_req->obj_id = obj->obj_id;
+    check_req->obj_size = obj->obj_size;
+    // check_req->ttl = 0; // re-add objects should be?
+    cache_remove_obj_base(cache, obj, remove_from_hashtable);
+    cache->prefetcher->handle_evict(cache, check_req);
+    my_free(sizeof(request_t), check_req);
+    return;
+  }
+
   cache_remove_obj_base(cache, obj, remove_from_hashtable);
 }
 

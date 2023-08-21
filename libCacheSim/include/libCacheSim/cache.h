@@ -26,6 +26,9 @@ extern "C" {
 struct cache;
 typedef struct cache cache_t;
 
+struct prefetcher;
+typedef struct prefetcher prefetcher_t;
+
 typedef struct {
   uint64_t cache_size;
   uint64_t default_ttl;
@@ -106,6 +109,8 @@ struct cache {
   cache_print_cache_func_ptr print_cache;
 
   admissioner_t *admissioner;
+
+  prefetcher_t *prefetcher;
 
   void *eviction_params;
 
@@ -305,7 +310,8 @@ static inline void print_cache_stat(const cache_t *cache) {
  * @param cache
  * @param age
  */
-static inline void record_log2_eviction_age(cache_t *cache, const unsigned long long age) {
+static inline void record_log2_eviction_age(cache_t *cache,
+                                            const unsigned long long age) {
   int age_log2 = age == 0 ? 0 : LOG2_ULL(age);
   cache->log_eviction_age_cnt[age_log2] += 1;
 }
