@@ -40,7 +40,7 @@ cachesim supports the following algorithms:
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
 * [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
-* [S3-FIFO](/libcacheSim/cache/eviction/S3FIFO.c)
+* [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c)
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c)
 ---
 
