@@ -7,14 +7,13 @@
 
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <queue>
-
+#include <vector>
 
 #define KB 1024
-#define MB 1024*1024
-#define GB 1024*1024*1024
-#define TB 1024*1024*1024*1024
+#define MB 1024 * 1024
+#define GB 1024 * 1024 * 1024
+#define TB 1024 * 1024 * 1024 * 1024
 
 using namespace std;
 
@@ -25,24 +24,19 @@ typedef struct {
   uint32_t trace_id;
 } req_t;
 
-typedef struct comReq{
-  bool operator()(req_t const& r1, req_t const& r2) {
-    return r1.ts < r2.ts;
-  }
-}cmpReq_t;
+typedef struct comReq {
+  bool operator()(req_t const& r1, req_t const& r2) { return r1.ts < r2.ts; }
+} cmpReq_t;
 
-
-class TraceUtils{
-public:
-  static uint64_t merge_l1_trace(std::vector<std::string>& l1_trace_path, std::string& l2_output_trace_path);
-
+class TraceUtils {
+ public:
+  static uint64_t merge_l1_trace(std::vector<std::string>& l1_trace_path,
+                                 std::string& l2_output_trace_path);
 };
 
-class Utils{
-
-public:
+class Utils {
+ public:
   static uint64_t convert_size_str(std::string sz_str);
 };
 
-
-#endif //CACHESIMULATORCPP_UTILS_H
+#endif  // CACHESIMULATORCPP_UTILS_H

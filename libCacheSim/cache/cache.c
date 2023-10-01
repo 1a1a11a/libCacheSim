@@ -78,6 +78,30 @@ void cache_struct_free(cache_t *cache) {
 }
 
 /**
+ * @brief create a new cache with the same size as the old cache
+ *
+ * @param old_cache
+ * @param new_size
+ * @return cache_t*
+ */
+cache_t *clone_cache(const cache_t *old_cache) {
+  common_cache_params_t cc_params = {
+      .cache_size = old_cache->cache_size,
+      .hashpower = old_cache->hashtable->hashpower,
+      .default_ttl = old_cache->default_ttl,
+      .consider_obj_metadata = old_cache->obj_md_size == 0 ? false : true,
+  };
+  assert(sizeof(cc_params) == 24);
+  cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
+  if (old_cache->admissioner != NULL) {
+    cache->admissioner = old_cache->admissioner->clone(old_cache->admissioner);
+  }
+  cache->future_stack_dist = old_cache->future_stack_dist;
+  cache->future_stack_dist_array_size = old_cache->future_stack_dist_array_size;
+
+  return cache;
+}
+/**
  * @brief this function is called by all eviction algorithms to clone old cache
  * with new size
  *

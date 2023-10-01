@@ -186,6 +186,14 @@ cache_t *cache_struct_init(const char *cache_name, common_cache_params_t params,
 void cache_struct_free(cache_t *cache);
 
 /**
+ * @brief create a new cache with the same size and parameters
+ *
+ * @param old_cache
+ * @return cache_t*
+ */
+cache_t *clone_cache(const cache_t *old_cache);
+
+/**
  * create a cache with new size
  * @param old_cache
  * @param new_size
