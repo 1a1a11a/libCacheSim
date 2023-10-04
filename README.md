@@ -1,6 +1,6 @@
 # libCacheSim - building and running cache simulations
 
-[![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
+[![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
 
 
 ## News
@@ -63,8 +63,8 @@ Please see [install.md](/doc/install.md) for how to install the dependencies.
 ### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```
-git clone https://github.com/1a1a11a/libCacheSimPrv
-pushd libCachesimPrv;
+git clone https://github.com/1a1a11a/libCacheSim;
+pushd libCachesim;
 mkdir _build && cd _build;
 cmake .. && make -j;
 [sudo] make install;
@@ -195,6 +195,11 @@ If you need to add a new trace type or a new algorithm, please see [here](/doc/a
 ### Questions? 
 Please join the Google group https://groups.google.com/g/libcachesim and ask questions.
 
+---
+### FAQ
+**1. Belady has a higher miss ratio than LRU, why?**
+Belady and BeladySize (object size aware Belady) are offline optimal eviction algorithms, however, it is only supported using oracleGeneral trace type, which contains the future reques information. 
+If you use csv traces, you can convert the traces to oracleGeneral traces using `./bin/traceConv /path/trace csv -t "params" -o trace.oracleGeneral.bin`.
 
 ---  
 ### Contributions 

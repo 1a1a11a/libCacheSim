@@ -48,7 +48,7 @@ popd;
 ### Install dependency on Mac
 using [homebrew](https://brew.sh/) as an example
 ```
-brew install cmake glib google-perftools
+brew install cmake glib google-perftools libomp zstd
 ```
 And you need to install the rest of the dependencies manually.
 
