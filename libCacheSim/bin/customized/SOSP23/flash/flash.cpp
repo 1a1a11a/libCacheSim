@@ -1,10 +1,11 @@
 
 
-#include "flash.hpp"
-
 #include <libgen.h>
 
 #include <unordered_set>
+
+#include "../../../../include/libCacheSim/evictionAlgo.h"
+#include "flash.hpp"
 
 #define REPORT_INTERVAL (4 * 3600)
 #define MILLION 1000000ul
@@ -41,15 +42,9 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
     req->clock_time -= start_ts;
   }
 
-  // printf("%s %32s n_miss %.2lf Mobj (%.4lf, %.4lf), %.2lf MB (%.4lf, %.4lf)",
-  //        basename(reader->trace_path), cache->cache_name,
-  //        n_miss / (double)MILLION, n_miss / (double)n_req,
-  //        n_miss / (double)n_uniq_obj, n_miss_byte / (double)MB,
-  //        n_miss_byte / (double)n_byte, n_miss_byte / (double)n_uniq_byte);
-
-  printf("%s %32s miss ratio %.4lf %.4lf, ", basename(reader->trace_path),
-         cache->cache_name, n_miss / (double)n_req,
-         n_miss_byte / (double)n_byte);
+  printf("%s %32s miss ratio %.4lf byte miss ratio %.4lf, ",
+         basename(reader->trace_path), cache->cache_name,
+         n_miss / (double)n_req, n_miss_byte / (double)n_byte);
 
   int64_t n_byte_write = n_miss_byte;
   if (strcasecmp("fifo", cache->cache_name) == 0) {
@@ -57,24 +52,33 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
   } else if (strcasestr(cache->cache_name, "flashProb") != NULL) {
     flashProb_params_t *params = (flashProb_params_t *)cache->eviction_params;
 
-    n_byte_write = params->n_byte_move_to_disk;
+    n_byte_write = params->n_byte_admit_to_disk;
 
     if (strcasestr(params->disk->cache_name, "Clock") != NULL) {
       Clock_params_t *clock_params =
           (Clock_params_t *)params->disk->eviction_params;
       n_byte_write += clock_params->n_byte_rewritten;
     }
-  } else if (strcasestr(cache->cache_name, "clock") != NULL &&
-             strcasestr(cache->cache_name, "qdlp") == NULL) {
-    Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
-
-    n_byte_write = n_miss_byte + params->n_byte_rewritten;
-  } else if (strcasestr(cache->cache_name, "FIFO_Reinsertion") != NULL) {
+  } else if (strcasecmp(cache->cache_name, "FIFO_Reinsertion") == 0) {
     FIFO_Reinsertion_params_t *params =
         (FIFO_Reinsertion_params_t *)cache->eviction_params;
 
     n_byte_write = n_miss_byte + params->n_byte_rewritten;
-  } else if (strcasestr(cache->cache_name, "qdlpv1") != NULL) {
+  } else if (strcasestr(cache->cache_name, "TinyLFU") != NULL) {
+    WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
+    n_byte_write = params->n_admit_bytes;
+
+    if (strcasestr(params->main_cache->cache_name, "Clock") != NULL) {
+      Clock_params_t *clock_params =
+          (Clock_params_t *)params->main_cache->eviction_params;
+      n_byte_write += clock_params->n_byte_rewritten;
+    } else if (strcasestr(params->main_cache->cache_name, "fifo") != NULL) {
+      ;
+    } else {
+      printf("\n");
+      ERROR("Main cache type only support FIFO and FIFO-Reinsertion (CLOCK)\n");
+    }
+  } else if (strcasestr(cache->cache_name, "qdlp") != NULL) {
     QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
     if (strcasestr(params->main_cache->cache_name, "Clock") != NULL) {
       Clock_params_t *clock_params =
@@ -83,18 +87,19 @@ void calWriteAmp(reader_t *reader, cache_t *cache) {
           (params->n_byte_admit_to_main + params->n_byte_move_to_main +
            clock_params->n_byte_rewritten);
     } else if (strcasestr(params->main_cache->cache_name, "fifo") != NULL) {
-      // n_obj_write = params->n_obj_admit_to_main + params->n_obj_move_to_main;
       n_byte_write = params->n_byte_admit_to_main + params->n_byte_move_to_main;
     } else {
-      ERROR("Unknown main cache type %s\n", params->main_cache->cache_name);
+      printf("\n");
+      ERROR("Main cache type only support FIFO and FIFO-Reinsertion (CLOCK)\n");
     }
   } else {
-    ;
+    printf("\n");
+    ERROR("Do not support write amp for %s cache\n", cache->cache_name);
   }
 
   printf("write_amp %.4lf\n", n_byte_write / (double)n_uniq_byte);
 
-  if (strcasestr(cache->cache_name, "qdlpv1") != NULL) {
+  if (strcasestr(cache->cache_name, "qdlp") != NULL) {
     QDLPv1_params_t *params = (QDLPv1_params_t *)cache->eviction_params;
     Clock_params_t *clock_params =
         (Clock_params_t *)params->main_cache->eviction_params;

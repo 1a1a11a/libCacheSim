@@ -72,7 +72,7 @@ static inline cache_t *create_cache(const char *trace_path,
       const char *window_size = strstr(eviction_params, "window-size=");
       if (window_size == NULL) {
         char *new_params = malloc(strlen(eviction_params) + 20);
-        sprintf(new_params, "%s,window-size=0", eviction_params);
+        sprintf(new_params, "%s,window-size=0.01", eviction_params);
         cache = WTinyLFU_init(cc_params, new_params);
       } else {
         cache = WTinyLFU_init(cc_params, eviction_params);
@@ -81,10 +81,16 @@ static inline cache_t *create_cache(const char *trace_path,
   } else if (strcasecmp(eviction_algo, "wtinyLFU") == 0) {
     cache = WTinyLFU_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "belady") == 0) {
+    if (strcasestr(trace_path, "oracleGeneral") == NULL) {
+      WARN("belady is only supported for oracleGeneral trace\n");
+    }
     cache = Belady_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "nop") == 0) {
     cache = nop_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "beladySize") == 0) {
+    if (strcasestr(trace_path, "oracleGeneral") == NULL) {
+      WARN("belady is only supported for oracleGeneral trace\n");
+    }
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0 ||
@@ -96,8 +102,15 @@ static inline cache_t *create_cache(const char *trace_path,
   } else if (strcasecmp(eviction_algo, "fifomerge") == 0 ||
              strcasecmp(eviction_algo, "fifo-merge") == 0) {
     cache = FIFO_Merge_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0) {
-    cache = FIFO_Reinsertion_init(cc_params, eviction_params);
+  // } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0) {
+  //   cache = FIFO_Reinsertion_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "flashProb") == 0) {
+    // used to measure application level write amp
+    cache = flashProb_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sfifo") == 0) {
+    cache = SFIFO_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sfifov0") == 0) {
+    cache = SFIFOv0_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lru-prob") == 0) {
     cache = LRU_Prob_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "fifo-belady") == 0) {
@@ -114,6 +127,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = S3FIFOd_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
     cache = QDLP_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "sieve") == 0) {
+    cache = Sieve_init(cc_params, eviction_params);
 #ifdef ENABLE_GLCACHE
   } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
              strcasecmp(eviction_algo, "gl-cache") == 0) {
@@ -126,14 +141,8 @@ static inline cache_t *create_cache(const char *trace_path,
 #ifdef INCLUDE_PRIV
   } else if (strcasecmp(eviction_algo, "myclock") == 0) {
     cache = MyClock_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sieve") == 0) {
-    cache = Sieve_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "mclock") == 0) {
     cache = MClock_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifo") == 0) {
-    cache = SFIFO_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sfifov0") == 0) {
-    cache = SFIFOv0_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lp-sfifo") == 0) {
     cache = LP_SFIFO_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lp-arc") == 0) {

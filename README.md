@@ -2,10 +2,12 @@
 
 [![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
 
+**The stable development of libCacheSim has moved to [https://github.com/cacheMon/libCacheSim](https://github.com/cacheMon/libCacheSim)**. 
+
 
 ## News
-* **2023 June**: QD-LP is available now, see [paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
-* **2023 Oct**: S3-FIFO and Sieve are generally available! These are simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
+* **2023 June**: **QD-LP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
+* **2023 Oct**: **S3-FIFO** and **Sieve** are generally available! These are simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
 ---
 
 ## What is libCacheSim
@@ -40,7 +42,7 @@ cachesim supports the following algorithms:
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
 * [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
-* [S3-FIFO](/libcacheSim/cache/eviction/S3FIFO.c)
+* [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c)
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c)
 ---
 
@@ -206,7 +208,7 @@ This project adheres to Google's coding style. By participating, you are expecte
 ---
 ### Reference
 ```
-@inproceedings{osdi20-workload,
+@inproceedings{yang20-workload,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
     title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
     booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},

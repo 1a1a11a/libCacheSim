@@ -31,6 +31,7 @@ typedef struct WTinyLFU_params {
   cache_t *LRU;         // LRU as windowed LRU
   cache_t *main_cache;  // any eviction policy
   double window_size;
+  int64_t n_admit_bytes;
   struct minimalIncrementCBF *CBF;
   size_t max_request_num;
   size_t request_counter;
@@ -121,6 +122,10 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
     params->main_cache = SLRU_init(ccache_params_local, "seg-size=1:4");
   } else if (strcasecmp(params->main_cache_type, "LFU") == 0) {
     params->main_cache = LFU_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "FIFO") == 0) {
+    params->main_cache = FIFO_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "FIFO-Reinsertion") == 0) {
+    params->main_cache = FIFO_Reinsertion_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "ARC") == 0) {
     params->main_cache = ARC_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "clock") == 0) {
@@ -141,6 +146,7 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
            params->window_size, params->main_cache_type);
 
   params->req_local = new_request();
+  params->n_admit_bytes = 0;
 
   params->max_request_num =
       32 * params->main_cache->cache_size;  // sample size is 32
@@ -233,6 +239,8 @@ cache_obj_t *WTinyLFU_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = NULL;
   obj = params->LRU->insert(params->LRU, req);
 
+  minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t));
+
 #if defined(TRACK_DEMOTION)
   obj->create_time = cache->n_req;
 #endif
@@ -272,6 +280,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
         printf("%ld keep %ld %ld\n", cache->n_req, window_victim->create_time,
                window_victim->misc.next_access_vtime);
 #endif
+        params->n_admit_bytes += params->req_local->obj_size;
 
         window->remove(window, window_victim->obj_id);
 
@@ -297,6 +306,8 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
           DEBUG_ASSERT(ret);
 
           cache_obj_t *cache_obj = main->insert(main, params->req_local);
+          params->n_admit_bytes += params->req_local->obj_size;
+
         } else {
 #if defined(TRACK_DEMOTION)
           printf("%ld demote %ld %ld\n", cache->n_req,
