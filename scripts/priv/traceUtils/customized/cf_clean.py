@@ -254,11 +254,11 @@ def processing(datafile, sample_ratio=1):
 
         # colo28
         # ts                    obj                sz     content tier      ttl             age         cstatus  method
-        # 1628639938      14769378147408796115    8688    jpeg    0       2666327358      39582683        miss    GET     s3.amazonaws.com        /media.pinterest.com/150x150/3a/36/13/3a3613c5086a070f43afce13bf856b79.jpg
+        # 1628639938      14769378147408796115    8688    jpeg    0       2666327358      39582683        miss    GET     s3.amazonaws.com        /a.pinterest.com/b/c/d/e/f.jpg
 
         # all colo
         # ts             client         colo        obj                    sz    tier    cStatus
-        # 626591102      1433663661      87      10824946938601195600    2944141 0       hit     static-v6.starmakerstudios.com  /production/uploading/recordings/10977524122478104/master.mp4
+        # 626591102      1433663661      87      10824946938601195600    2944141 0       hit     a.b.com  /production/uploading/c/d/master.mp4
 
         n += 1
         try:

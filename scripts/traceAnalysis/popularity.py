@@ -9,24 +9,29 @@ this will generate some output, including popularity result, trace.popularity
 """
 
 import os, sys
-import logging
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import Counter
+from typing import List, Dict, Tuple
+import logging
 
-from utils.common import *
-from trace_utils import extract_dataname
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils.trace_utils import extract_dataname
+from utils.plot_utils import FIG_DIR, FIG_TYPE
+
 
 logger = logging.getLogger("popularity")
 
 
 def load_popularity_data(datapath):
-    """ load popularity plot data from C++ computation """
+    """load popularity plot data from C++ computation"""
 
     ifile = open(datapath)
     data_line = ifile.readline()
     desc_line = ifile.readline()
-    assert "# freq (sorted):cnt" in desc_line, \
+    assert "# freq (sorted):cnt" in desc_line, (
         "the input file might not be popularity freq data file " + "data " + datapath
+    )
 
     sorted_freq = []
     freq_cnt = Counter()
@@ -51,18 +56,22 @@ def plot_popularity_Zipf(datapath, figname_prefix=""):
 
     sorted_freq, _ = load_popularity_data(datapath)
 
-    plt.plot(sorted_freq, )
+    plt.plot(
+        sorted_freq,
+    )
     plt.xlabel("Object rank")
     plt.ylabel("Frequency")
     plt.grid(linestyle="--")
     plt.xscale("log")
     plt.yscale("log")
-    plt.savefig("{}/{}_pop_rank.{}".format(FIG_DIR, figname_prefix,
-                                                  FIG_TYPE),
-                bbox_inches="tight")
+    plt.savefig(
+        "{}/{}_pop_rank.{}".format(FIG_DIR, figname_prefix, FIG_TYPE),
+        bbox_inches="tight",
+    )
     plt.clf()
-    logger.info("save fig to {}/{}_pop_rank.{}".format(
-        FIG_DIR, figname_prefix, FIG_TYPE))
+    logger.info(
+        "save fig to {}/{}_pop_rank.{}".format(FIG_DIR, figname_prefix, FIG_TYPE)
+    )
 
     x = np.log(np.arange(1, 1 + len(sorted_freq)))
     y = np.log(np.array(sorted_freq))
@@ -75,7 +84,8 @@ def plot_popularity_Zipf(datapath, figname_prefix=""):
         )
     else:
         s = "{:48} {:12} obj alpha {:.4f}, r^2 {:.4f}".format(
-            figname_prefix, len(sorted_freq), -slope, r_value * r_value)
+            figname_prefix, len(sorted_freq), -slope, r_value * r_value
+        )
 
     logger.info(s)
 
@@ -84,15 +94,16 @@ def plot_popularity_Zipf(datapath, figname_prefix=""):
 
 if __name__ == "__main__":
     import argparse
+
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "datapath",
         type=str,
-        help="data path, should have the format of dataname.popularity")
-    ap.add_argument("--figname-prefix",
-                    type=str,
-                    default="",
-                    help="the prefix of figname")
+        help="data path, should have the format of dataname.popularity",
+    )
+    ap.add_argument(
+        "--figname-prefix", type=str, default="", help="the prefix of figname"
+    )
     p = ap.parse_args()
 
     plot_popularity_Zipf(p.datapath, p.figname_prefix)

@@ -10,12 +10,14 @@ import subprocess
 import logging
 from typing import List, Dict, Tuple
 
-from plot_utils import *
-from trace_utils import extract_dataname
-from utils import conv_size_str_to_int, find_unit_of_cache_size
-from setup_utils import setup, CACHESIM_PATH
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils.plot_utils import *
+from utils.trace_utils import extract_dataname
+from utils.str_utils import conv_size_str_to_int, find_unit_of_cache_size
+from utils.setup_utils import setup, CACHESIM_PATH
 
 logger = logging.getLogger("plot_mrc_size")
+
 
 def run_cachesim_size(
     datapath: str,
@@ -27,7 +29,7 @@ def run_cachesim_size(
     trace_format_params: str = "",
     num_thread: int = -1,
 ) -> Dict[str, Tuple[int, float]]:
-    """ run the cachesim on the given trace
+    """run the cachesim on the given trace
     Args:
         datapath: the path to the trace
         algos: the algos to run, separated by comma
@@ -60,16 +62,14 @@ def run_cachesim_size(
         run_args.append("--trace-type-params")
         run_args.append(trace_format_params)
 
-    logger.debug("running \"{}\"".format(" ".join(run_args)))
+    logger.debug('running "{}"'.format(" ".join(run_args)))
 
-    p = subprocess.run(run_args,
-                       stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE)
+    p = subprocess.run(run_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     stderr_str = p.stderr.decode("utf-8")
     if stderr_str != "":
         logger.warning(stderr_str)
-    
+
     stdout_str = p.stdout.decode("utf-8")
     for line in stdout_str.split("\n"):
         logger.info(line)
@@ -89,27 +89,46 @@ def run_cachesim_size(
     return mrc_dict
 
 
-def plot_mrc_size(mrc_dict: Dict[str, Tuple[int, float]],
-                  ignore_obj_size: bool = True,
-                  name: str = "mrc", 
-                  ) -> None:
-    """ plot the miss ratio from the computation 
+def plot_mrc_size(
+    mrc_dict: Dict[str, Tuple[int, float]],
+    ignore_obj_size: bool = True,
+    name: str = "mrc",
+) -> None:
+    """plot the miss ratio from the computation
         X-axis is cache size, different lines are different algos
-        
+
     Args:
         mrc_dict: a dict of mrc, key is the algo name, value is a list of (cache_size, miss_ratio)
         ignore_obj_size: whether to ignore the object size, default: True
         name: the name of the plot, default: mrc
     Returns:
         None
-    
+
     """
 
     linestyles = itertools.cycle(["-", "--", "-.", ":"])
-    markers = itertools.cycle([
-        "o", "v", "^", "<", ">", "s", "p", "P", "*", "h", "H", "+", "x", "X",
-        "D", "d", "|", "_"
-    ])
+    markers = itertools.cycle(
+        [
+            "o",
+            "v",
+            "^",
+            "<",
+            ">",
+            "s",
+            "p",
+            "P",
+            "*",
+            "h",
+            "H",
+            "+",
+            "x",
+            "X",
+            "D",
+            "d",
+            "|",
+            "_",
+        ]
+    )
     # MARKERS = itertools.cycle(Line2D.markers.keys())
     # colors = itertools.cycle(["r", "g", "b", "c", "m", "y", "k"])
 
@@ -126,7 +145,8 @@ def plot_mrc_size(mrc_dict: Dict[str, Tuple[int, float]],
             #  marker=next(markers),
             #  markersize=1,
             linestyle=next(linestyles),
-            label=algo)
+            label=algo,
+        )
 
     if ignore_obj_size:
         plt.xlabel("Cache Size")
@@ -136,9 +156,9 @@ def plot_mrc_size(mrc_dict: Dict[str, Tuple[int, float]],
     plt.ylabel("Miss Ratio")
     legend = plt.legend()
     frame = legend.get_frame()
-    frame.set_facecolor('0.9')
-    frame.set_edgecolor('0.9')
-    plt.grid(linestyle='--')
+    frame.set_facecolor("0.9")
+    frame.set_edgecolor("0.9")
+    plt.grid(linestyle="--")
     plt.savefig("{}.pdf".format(name), bbox_inches="tight")
     plt.show()
     plt.clf()
@@ -148,7 +168,7 @@ def plot_mrc_size(mrc_dict: Dict[str, Tuple[int, float]],
 def run():
     """
     a function that runs the cachesim on all the traces in /disk/data
-    
+
     """
 
     import glob
@@ -160,11 +180,9 @@ def run():
     for tracepath in glob.glob("/disk/data/*.zst"):
         dataname = extract_dataname(tracepath)
 
-        mrc_dict = run_cachesim_size(cachesim_path,
-                                     tracepath,
-                                     algos,
-                                     cache_sizes,
-                                     ignore_obj_size=True)
+        mrc_dict = run_cachesim_size(
+            cachesim_path, tracepath, algos, cache_sizes, ignore_obj_size=True
+        )
 
         # save the results in pickle
         with open("{}.mrc".format(dataname), "wb") as f:
@@ -179,26 +197,31 @@ if __name__ == "__main__":
         "sizes": "0.001,0.005,0.01,0.02,0.05,0.10,0.20,0.40",
     }
     import argparse
+
     p = argparse.ArgumentParser(
         description="plot miss ratio over size for different algorithms, "
-        "example: python3 {} ".format(sys.argv[0]) +
-        "--tracepath ../data/twitter_cluster52.csv "
+        "example: python3 {} ".format(sys.argv[0])
+        + "--tracepath ../data/twitter_cluster52.csv "
         "--trace-format csv "
-        "--trace-format-params=\"time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,,obj-id-is-num=1\" "
-        "--algos=fifo,lru,lecar,s3fifo")
+        '--trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,,obj-id-is-num=1" '
+        "--algos=fifo,lru,lecar,s3fifo"
+    )
     p.add_argument("--tracepath", type=str, required=True)
-    p.add_argument("--algos",
-                   type=str,
-                   default=default_args["algos"],
-                   help="the algorithms to run, separated by comma")
-    p.add_argument("--sizes",
-                   type=str,
-                   default=default_args["sizes"],
-                   help="the cache sizes to run, separated by comma")
-    p.add_argument("--trace-format-params",
-                   type=str,
-                   default="",
-                   help="used by csv trace")
+    p.add_argument(
+        "--algos",
+        type=str,
+        default=default_args["algos"],
+        help="the algorithms to run, separated by comma",
+    )
+    p.add_argument(
+        "--sizes",
+        type=str,
+        default=default_args["sizes"],
+        help="the cache sizes to run, separated by comma",
+    )
+    p.add_argument(
+        "--trace-format-params", type=str, default="", help="used by csv trace"
+    )
     p.add_argument("--ignore-obj-size", action="store_true", default=True)
     p.add_argument("--num-thread", type=int, default=-1)
     p.add_argument("--trace-format", type=str, default="oracleGeneral")
@@ -215,17 +238,24 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
-    
+
     dataname = extract_dataname(ap.tracepath)
-    mrc_dict = run_cachesim_size(ap.tracepath, ap.algos.replace(" ", ""),
-                                 ap.sizes.replace(" ", ""), ap.ignore_obj_size,
-                                 False, ap.trace_format,
-                                 ap.trace_format_params, ap.num_thread)
+    mrc_dict = run_cachesim_size(
+        ap.tracepath,
+        ap.algos.replace(" ", ""),
+        ap.sizes.replace(" ", ""),
+        ap.ignore_obj_size,
+        False,
+        ap.trace_format,
+        ap.trace_format_params,
+        ap.num_thread,
+    )
 
     with open("/tmp/{}.mrc.pickle".format(dataname), "wb") as f:
         pickle.dump(mrc_dict, f)
 
-    plot_mrc_size(mrc_dict,
-                  ignore_obj_size=ap.ignore_obj_size,
-                  name=dataname if len(ap.name) == 0 else ap.name)
-
+    plot_mrc_size(
+        mrc_dict,
+        ignore_obj_size=ap.ignore_obj_size,
+        name=dataname if len(ap.name) == 0 else ap.name,
+    )

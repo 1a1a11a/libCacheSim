@@ -15,21 +15,25 @@ Note that the small data provided in the repo cannot be used to plot this, pleas
 """
 
 import os, sys
-import logging
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.common import *
-from trace_utils import extract_dataname
+from typing import List, Dict, Tuple
+import logging
+import matplotlib.colors as colors
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from utils.trace_utils import extract_dataname
+from utils.plot_utils import FIG_DIR, FIG_TYPE
 
 logger = logging.getLogger("popularity_decay")
 
 
 def load_popularity_decay_data(datapath: str) -> Tuple[np.ndarray, int]:
-    """ load popularity decay plot data from C++ computation 
-        
+    """load popularity decay plot data from C++ computation
+
     Args:
         datapath: the path to the popularityDecay data file
-    
+
     Returns:
         data: the popularityDecay data matrix
         time_window: the time window used to compute the popularityDecay data
@@ -40,7 +44,9 @@ def load_popularity_decay_data(datapath: str) -> Tuple[np.ndarray, int]:
     ifile = open(datapath)
     _data_line = ifile.readline()
     desc_line = ifile.readline()
-    assert "cnt for new" in desc_line, "the input file might not be popularityDecay data file: " + datapath
+    assert "cnt for new" in desc_line, (
+        "the input file might not be popularityDecay data file: " + datapath
+    )
     time_window = int(desc_line.split()[11].strip("()"))
     window_cnt_list_list = []
 
@@ -49,13 +55,19 @@ def load_popularity_decay_data(datapath: str) -> Tuple[np.ndarray, int]:
     for line in ifile:
         l = [int(i) for i in line.strip("\n,").split(",")]
         assert l[-1] == 0, "the last element should be 0, " + datapath
-        assert len(l) - 2 == len(window_cnt_list_list), \
-                datapath + " data len is inconsistent {} != {}".format(len(l) - 2, len(window_cnt_list_list))
+        assert len(l) - 2 == len(
+            window_cnt_list_list
+        ), datapath + " data len is inconsistent {} != {}".format(
+            len(l) - 2, len(window_cnt_list_list)
+        )
         window_cnt_list_list.append(l[:-1])
 
     trace_length_rtime = len(window_cnt_list_list) * time_window
-    print("{} trace length {:.2f} days".format(os.path.basename(datapath),
-                                               trace_length_rtime / 86400))
+    print(
+        "{} trace length {:.2f} days".format(
+            os.path.basename(datapath), trace_length_rtime / 86400
+        )
+    )
 
     ifile.close()
 
@@ -64,7 +76,7 @@ def load_popularity_decay_data(datapath: str) -> Tuple[np.ndarray, int]:
     # data = np.zeros((dim, dim), dtype=np.double)
     # list l is the number of requests/objects for objects in the previous windows
     for idx, l in enumerate(window_cnt_list_list):
-        data[idx][:len(l)] = l
+        data[idx][: len(l)] = l
 
     # shape below, each point (i, j) is the num of obj/req created in window j requested in window i
     # each col j shows the obj/req created at (j, j) get requested in the following time windows
@@ -200,40 +212,46 @@ def find_stable_probability(mean_req_prob, time_window, figname_prefix):
 
     slope = -1
     if time_reach_stability > 0:
-        slope = (1 -
-                 mean_req_prob[time_reach_stability]) / time_reach_stability
+        slope = (1 - mean_req_prob[time_reach_stability]) / time_reach_stability
     print(figname_prefix, time_reach_stability, slope)
     with open("popularityDecayStability", "a") as ofile:
-        ofile.write("{}: {}, {}\n".format(figname_prefix, time_reach_stability,
-                                          slope))
+        ofile.write("{}: {}, {}\n".format(figname_prefix, time_reach_stability, slope))
 
     return time_reach_stability, slope
 
 
 def find_stable_probability2(mean_req_prob, time_window, figname_prefix):
-    """ find the time point when popularity reach stability using moving average
-        this does not work well enough because a periodic spike will 
-        cause the popularity to be unstable and we will find 
-        a time point that's too early
+    """find the time point when popularity reach stability using moving average
+    this does not work well enough because a periodic spike will
+    cause the popularity to be unstable and we will find
+    a time point that's too early
     """
     MIN_TIME = 5 * 24  # hours
     time_reach_stability = -1
     if len(mean_req_prob) * time_window >= MIN_TIME * 3600:
         n_window_pts_hour = 3600 // time_window
-        n_pts_hour = MIN_TIME * 3600 // time_window // n_window_pts_hour * n_window_pts_hour
+        n_pts_hour = (
+            MIN_TIME * 3600 // time_window // n_window_pts_hour * n_window_pts_hour
+        )
         mov_avg_prob_hour = np.cumsum(mean_req_prob[:n_pts_hour])
-        mov_avg_prob_hour[n_window_pts_hour:] = mov_avg_prob_hour[
-            n_window_pts_hour:] - mov_avg_prob_hour[:-n_window_pts_hour]
-        mov_avg_prob_hour = mov_avg_prob_hour[n_window_pts_hour -
-                                              1:] / n_window_pts_hour
+        mov_avg_prob_hour[n_window_pts_hour:] = (
+            mov_avg_prob_hour[n_window_pts_hour:]
+            - mov_avg_prob_hour[:-n_window_pts_hour]
+        )
+        mov_avg_prob_hour = (
+            mov_avg_prob_hour[n_window_pts_hour - 1 :] / n_window_pts_hour
+        )
 
         n_window_pts_5min = 300 // time_window
         n_pts_5min = n_pts_hour * 12
         mov_avg_prob_5min = np.cumsum(mean_req_prob[:n_pts_5min])
-        mov_avg_prob_5min[n_window_pts_5min:] = mov_avg_prob_5min[
-            n_window_pts_5min:] - mov_avg_prob_5min[:-n_window_pts_5min]
-        mov_avg_prob_5min = mov_avg_prob_5min[n_window_pts_5min -
-                                              1:] / n_window_pts_5min
+        mov_avg_prob_5min[n_window_pts_5min:] = (
+            mov_avg_prob_5min[n_window_pts_5min:]
+            - mov_avg_prob_5min[:-n_window_pts_5min]
+        )
+        mov_avg_prob_5min = (
+            mov_avg_prob_5min[n_window_pts_5min - 1 :] / n_window_pts_5min
+        )
 
         # plt.plot(np.arange(0, len(mov_avg_prob_hour)),
         #            mov_avg_prob_hour, label="hour")
@@ -260,10 +278,12 @@ def find_stable_probability2(mean_req_prob, time_window, figname_prefix):
     return time_reach_stability
 
 
-def plot_popularity_decay_line(plot_data_list: List[np.ndarray],
-                               time_window: int,
-                               figname_prefix: str,
-                               label_list: List[str] = ()):
+def plot_popularity_decay_line(
+    plot_data_list: List[np.ndarray],
+    time_window: int,
+    figname_prefix: str,
+    label_list: List[str] = (),
+):
     """
     plot how the popularty (frequency) of new objects decay over time using line plot
     the line is the average of all time windows
@@ -285,7 +305,7 @@ def plot_popularity_decay_line(plot_data_list: List[np.ndarray],
 
         ######## drop the first and last 1/8 of trace
         n_skip = plot_data_matrix.shape[0] // 8
-        plot_data_matrix = plot_data_matrix[n_skip:-n_skip, 1:-n_skip - 1]
+        plot_data_matrix = plot_data_matrix[n_skip:-n_skip, 1 : -n_skip - 1]
 
         ######## calculate the col mean
         mean_req_prob = np.nanmean(plot_data_matrix, axis=0)
@@ -311,9 +331,9 @@ def plot_popularity_decay_line(plot_data_list: List[np.ndarray],
 
         ######## keep the len at 5 or 21 days
         if "io_traces" in figname_prefix or "alibaba" in figname_prefix:
-            mean_req_prob = mean_req_prob[:3600 * 24 * 21 // time_window]
+            mean_req_prob = mean_req_prob[: 3600 * 24 * 21 // time_window]
         else:
-            mean_req_prob = mean_req_prob[:3600 * 24 * 5 // time_window]
+            mean_req_prob = mean_req_prob[: 3600 * 24 * 5 // time_window]
 
         ######## fit the curve up to one day
         # r = scipy.stats.linregress(np.log(np.arange(3600 * 24 * 1 // time_window) + 1),
@@ -329,13 +349,16 @@ def plot_popularity_decay_line(plot_data_list: List[np.ndarray],
         # find_stable_probability2(mean_req_prob, time_window, figname_prefix)
 
         if label_list:
-            plt.plot([(i + 1) * time_window
-                      for i in range(mean_req_prob.shape[0])],
-                     mean_req_prob,
-                     label=label_list[data_idx])
+            plt.plot(
+                [(i + 1) * time_window for i in range(mean_req_prob.shape[0])],
+                mean_req_prob,
+                label=label_list[data_idx],
+            )
         else:
-            plt.plot([(i + 1) * time_window
-                      for i in range(mean_req_prob.shape[0])], mean_req_prob)
+            plt.plot(
+                [(i + 1) * time_window for i in range(mean_req_prob.shape[0])],
+                mean_req_prob,
+            )
 
     plt.grid(linestyle="--")
 
@@ -354,11 +377,14 @@ def plot_popularity_decay_line(plot_data_list: List[np.ndarray],
         plt.xticks(
             [300, 3600, 86400, 86400 * 2, 86400 * 4, 86400 * 8, 86400 * 16],
             ["5 min", "1 hour", "1 day", "", "4 day", "", "16 day"],
-            rotation=28)
+            rotation=28,
+        )
     else:
-        plt.xticks([300, 3600, 86400, 86400 * 2, 86400 * 4],
-                   ["5 min", "1 hour", "1 day", "", "4 day"],
-                   rotation=28)
+        plt.xticks(
+            [300, 3600, 86400, 86400 * 2, 86400 * 4],
+            ["5 min", "1 hour", "1 day", "", "4 day"],
+            rotation=28,
+        )
         # plt.xticks([300, 3600, 7200, 10800, 21600, 43200, 86400, 86400 * 2, 86400 * 4],
         #            ["5 min", "1 hour", "", "", "", "", "1 day", "", "4 day", ],
         #            rotation=28)
@@ -368,13 +394,17 @@ def plot_popularity_decay_line(plot_data_list: List[np.ndarray],
     if label_list:
         plt.legend()
 
-    plt.savefig(f"{FIG_DIR}/{figname_prefix}_popularityDecayLineLog.pdf",
-                bbox_inches="tight")
+    plt.savefig(
+        f"{FIG_DIR}/{figname_prefix}_popularityDecayLineLog.pdf", bbox_inches="tight"
+    )
     # plt.savefig(f"{FIG_DIR}/{figname_prefix}_popularityDecayLineLog.pdf",
     #             bbox_inches="tight")
     plt.clf()
-    logger.info("plot saved at {}".format(
-        f"{FIG_DIR}/{figname_prefix}_popularityDecayLineLog.pdf"))
+    logger.info(
+        "plot saved at {}".format(
+            f"{FIG_DIR}/{figname_prefix}_popularityDecayLineLog.pdf"
+        )
+    )
 
 
 def plot_popularity_decay_heatmap(plot_data, time_window, figname_prefix):
@@ -397,12 +427,13 @@ def plot_popularity_decay_heatmap(plot_data, time_window, figname_prefix):
 
     # cmap = copy.copy(plt.cm.get_cmap("jet"))
     cmap = copy.copy(plt.cm.get_cmap("PuBu"))
-    cmap.set_bad(color='white', alpha=1.)
+    cmap.set_bad(color="white", alpha=1.0)
     img = plt.imshow(
         plot_data_matrix,
         cmap=cmap,  # aspect='auto',
-        norm=colors.LogNorm(vmin=np.nanmin(plot_data_matrix),
-                            vmax=np.nanmax(plot_data_matrix)),
+        norm=colors.LogNorm(
+            vmin=np.nanmin(plot_data_matrix), vmax=np.nanmax(plot_data_matrix)
+        ),
     )
     cb = plt.colorbar(img)
 
@@ -411,26 +442,27 @@ def plot_popularity_decay_heatmap(plot_data, time_window, figname_prefix):
         "{:.0f}".format(i * time_window / 3600)
         for i in range(plot_data_matrix.shape[0])
     ]
-    tick1, tick2 = tick1[::len(tick1) // 4], tick2[::len(tick2) // 4]
+    tick1, tick2 = tick1[:: len(tick1) // 4], tick2[:: len(tick2) // 4]
     plt.xticks(tick1, tick2)
     plt.yticks(tick1, tick2)
 
     plt.xlabel("Time (Hour)")
     plt.ylabel("Creation time (Hour)")
-    plt.savefig("{}/{}_popularityDecay_heatmap.{}".format(
-        FIG_DIR, figname_prefix, FIG_TYPE),
-                bbox_inches="tight")
+    plt.savefig(
+        "{}/{}_popularityDecay_heatmap.{}".format(FIG_DIR, figname_prefix, FIG_TYPE),
+        bbox_inches="tight",
+    )
     plt.clf()
 
 
 if __name__ == "__main__":
-    import argparse
+    import time, argparse
+
     ap = argparse.ArgumentParser()
     ap.add_argument("datapath_list", type=str, nargs="+", help="data path")
-    ap.add_argument("--figname-prefix",
-                    type=str,
-                    default="",
-                    help="the prefix of figname")
+    ap.add_argument(
+        "--figname-prefix", type=str, default="", help="the prefix of figname"
+    )
     p = ap.parse_args()
 
     figname_prefix = p.figname_prefix
@@ -442,11 +474,10 @@ if __name__ == "__main__":
         plot_data, time_window = load_popularity_decay_data(datapath)
         plot_data_list.append(plot_data)
 
-    plot_popularity_decay_line(plot_data_list,
-                               time_window,
-                               figname_prefix,
-                               label_list=[
-                                   extract_dataname(datapath)
-                                   for datapath in p.datapath_list
-                               ])
+    plot_popularity_decay_line(
+        plot_data_list,
+        time_window,
+        figname_prefix,
+        label_list=[extract_dataname(datapath) for datapath in p.datapath_list],
+    )
     # plot_popularity_decay_heatmap(plot_data, time_window, figname_prefix)

@@ -12,7 +12,7 @@ import pickle
 import logging
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from utils import conv_size_str_to_int
+from scripts.str_utils import conv_size_str_to_int
 import re
 import glob
 from collections import defaultdict
