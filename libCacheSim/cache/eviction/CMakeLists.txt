@@ -37,7 +37,7 @@ set(sourceC
         other/S3LRU.c
 
         Sieve.c
-
+        S3FIFO_delay.c
 )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")

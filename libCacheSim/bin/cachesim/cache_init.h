@@ -129,6 +129,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = QDLP_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "sieve") == 0) {
     cache = Sieve_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "S3FIFO-delay") == 0) {
+    cache = S3FIFO_delay_init(cc_params, eviction_params);
 #ifdef ENABLE_GLCACHE
   } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
              strcasecmp(eviction_algo, "gl-cache") == 0) {
