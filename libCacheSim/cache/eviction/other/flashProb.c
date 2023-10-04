@@ -22,9 +22,9 @@ typedef struct {
   cache_t *disk;
 
   int64_t n_obj_admit_to_ram;
-  int64_t n_obj_move_to_disk;
+  int64_t n_obj_admit_to_disk;
   int64_t n_byte_admit_to_ram;
-  int64_t n_byte_move_to_disk;
+  int64_t n_byte_admit_to_disk;
 
   double ram_size_ratio;
   double disk_admit_prob;
@@ -109,8 +109,6 @@ cache_t *flashProb_init(const common_cache_params_t ccache_params,
     params->ram = Clock_init(ccache_params_local, "n-bit-counter=2");
   } else if (strcasecmp(params->ram_cache_type, "clock-3") == 0) {
     params->ram = Clock_init(ccache_params_local, "n-bit-counter=3");
-  } else if (strcasecmp(params->ram_cache_type, "myclock") == 0) {
-    params->ram = MyClock_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->ram_cache_type, "LRU") == 0) {
     params->ram = LRU_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->ram_cache_type, "LeCaR") == 0) {
@@ -305,8 +303,8 @@ static void flashProb_evict(cache_t *cache, const request_t *req) {
 
   // freq is updated in cache_find_base
   if (next_rand() % params->inv_prob == 0) {
-    params->n_obj_move_to_disk += 1;
-    params->n_byte_move_to_disk += obj->obj_size;
+    params->n_obj_admit_to_disk += 1;
+    params->n_byte_admit_to_disk += obj->obj_size;
     // get will insert to and evict from disk cache
     params->disk->get(params->disk, params->req_local);
   }

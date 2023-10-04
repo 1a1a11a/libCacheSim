@@ -8,7 +8,6 @@ Description: A high performance library for building cache simulators
 Version: @libCacheSim_VERSION@
 Requires:
 Libs: -L${libdir} -llibCacheSim
-Libs.private: -pthread
 Cflags: -I${includedir}
 
 
