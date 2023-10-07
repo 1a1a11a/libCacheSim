@@ -199,7 +199,7 @@ if __name__ == "__main__":
                    type=str,
                    default="",
                    help="used by csv trace")
-    p.add_argument("--ignore-obj-size", action="store_true", default=True)
+    p.add_argument("--ignore-obj-size", action="store_true", default=False)
     p.add_argument("--num-thread", type=int, default=-1)
     p.add_argument("--trace-format", type=str, default="oracleGeneral")
     p.add_argument("--name", type=str, default="")
