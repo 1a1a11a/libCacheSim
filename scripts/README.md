@@ -48,6 +48,6 @@ python3 traceAnalysis/popularity_decay.py ${dataname}.popularityDecay_w300
 python3 traceAnalysis/reuse_heatmap.py ${dataname}.reuseWindow_w300
 ```
 
-
-
-
+## Note
+- The support for the Belady and BeladySize algorithms is limited to oracleGeneral traces because these traces contain future request information that Belady and BeladySize rely on.
+- When the object size is considered (i.e., `--ignore-obj-size 1` is **not** provided as a command-line argument), BeladySize should be used instead of Belady.
