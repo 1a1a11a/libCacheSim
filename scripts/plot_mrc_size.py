@@ -65,6 +65,8 @@ def run_cachesim_size(
     logger.debug('running "{}"'.format(" ".join(run_args)))
 
     p = subprocess.run(run_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if p.returncode != 0:
+        logger.warning("cachesim may have crashed with segfault")
 
     stderr_str = p.stderr.decode("utf-8")
     if stderr_str != "":
@@ -72,7 +74,7 @@ def run_cachesim_size(
 
     stdout_str = p.stdout.decode("utf-8")
     for line in stdout_str.split("\n"):
-        logger.info(line)
+        logger.info("cachesim log: " + line)
 
         if "[INFO]" in line[:16]:
             continue
@@ -250,6 +252,10 @@ if __name__ == "__main__":
         ap.trace_format_params,
         ap.num_thread,
     )
+
+    if len(mrc_dict) == 0:
+        logger.error("fail to compute mrc")
+        sys.exit(1)
 
     with open("/tmp/{}.mrc.pickle".format(dataname), "wb") as f:
         pickle.dump(mrc_dict, f)

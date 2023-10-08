@@ -72,6 +72,8 @@ def run_cachesim_time(
     logger.debug('running "{}"'.format(" ".join(run_args)))
 
     p = subprocess.run(run_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if p.returncode != 0:
+        logger.warning("cachesim may have crashed with segfault")
 
     stderr_str = p.stderr.decode("utf-8")
     if stderr_str != "":
@@ -79,7 +81,7 @@ def run_cachesim_time(
 
     stdout_str = p.stdout.decode("utf-8")
     for line in stdout_str.split("\n"):
-        logger.debug(line)
+        logger.debug("cachesim log: " + line)
 
         if "[INFO]" in line[:16]:
             m = re.search(REGEX, line)
@@ -216,5 +218,9 @@ if __name__ == "__main__":
             ap.trace_format_params,
             ap.num_thread,
         )
+
+    if len(mrc_dict) == 0:
+        logger.error("fail to compute mrc")
+        sys.exit(1)
 
     plot_mrc_time(mrc_dict, "{}_{}".format(dataname, ap.size))

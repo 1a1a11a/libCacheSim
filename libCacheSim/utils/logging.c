@@ -34,8 +34,8 @@ void print_progress(double perc) {
     sleep(2);
     return;
   }
-  if (last_perc != 0) fprintf(stderr, "\033[A\033[2K\r");
-  fprintf(stderr, "%.2f%%...\n", perc);
+  if (last_perc != 0) fprintf(stdout, "\033[A\033[2K\r");
+  fprintf(stdout, "%.2f%%...\n", perc);
   last_perc = perc;
   last_print_time = cur_time;
 }
