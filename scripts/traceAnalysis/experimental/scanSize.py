@@ -6,20 +6,25 @@ this can be used to visualize how objects get accessed
 
 
 import os, sys
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../"))
-from utils.common import *
 from collections import defaultdict
 import numpy as np
 import matplotlib.pyplot as plt
 
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../"))
+from utils.trace_utils import extract_dataname
+from utils.plot_utils import FIG_DIR, FIG_TYPE
+from utils.data_utils import conv_to_cdf
+
 
 def _load_scan_size_data(datapath):
-    """ load scan size plot data from C++ computation """
+    """load scan size plot data from C++ computation"""
 
     ifile = open(datapath)
     data_line = ifile.readline()
     desc_line = ifile.readline()
-    assert "# scan_size" in desc_line, "the input file might not be scanSize data file" + "data " + datapath
+    assert "# scan_size" in desc_line, (
+        "the input file might not be scanSize data file" + "data " + datapath
+    )
 
     scan_size_list = []
     for line in ifile:
@@ -37,7 +42,7 @@ def _load_scan_size_data(datapath):
 
 def plot_scan_size(datapath, figname_prefix=""):
     """
-    plot scan size distribution 
+    plot scan size distribution
 
     """
 
@@ -75,6 +80,7 @@ def plot_scan_size(datapath, figname_prefix=""):
 
 if __name__ == "__main__":
     import argparse
+
     # ap = argparse.ArgumentParser()
     # ap.add_argument("datapath", type=str, help="data path")
     # ap.add_argument("--n_obj", type=int, default=400, help="the number of objects to plot")
@@ -83,10 +89,11 @@ if __name__ == "__main__":
 
     BASEPATH = os.path.dirname(os.path.abspath(__file__))
     plot_scan_size(f"{BASEPATH}/../../_build/lax.scanSize", "lax")
-    plot_scan_size(f"{BASEPATH}/../../_build/colo28_sample100.scanSize", "colo28_sample100")
+    plot_scan_size(
+        f"{BASEPATH}/../../_build/colo28_sample100.scanSize", "colo28_sample100"
+    )
 
     # for i in range(10, 107):
     #     plot_scan_size(f"/disk/scanSize/w{i}.scanSize", f"fig/w{i}")
-
 
     # plot_scan_size(p.datapath, p.n_obj, p.figname_prefix)

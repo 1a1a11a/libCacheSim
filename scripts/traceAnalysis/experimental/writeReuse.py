@@ -14,22 +14,31 @@ import re
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import List, Dict, Tuple
 
-from utils.common import *
-from trace_utils import extract_dataname
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../"))
+from utils.trace_utils import extract_dataname
+from utils.plot_utils import FIG_DIR, FIG_TYPE
+from utils.data_utils import conv_to_cdf
 
 logger = logging.getLogger("write_reuse")
 
 
 def _load_write_reuse_data(
-    datapath: str
-) -> Tuple[Dict[int, int], Dict[int, int], Dict[int, int], Dict[int, float],
-           Dict[int, int], Dict[int, int]]:
-    """ load write_reuse distribution plot data from C++ computation 
-    
+    datapath: str,
+) -> Tuple[
+    Dict[int, int],
+    Dict[int, int],
+    Dict[int, int],
+    Dict[int, float],
+    Dict[int, int],
+    Dict[int, int],
+]:
+    """load write_reuse distribution plot data from C++ computation
+
     Args:
         datapath: path to the write_reuse data file
-    
+
     Return:
         read_reuse_req_cnt: number of read reuse requests at each reuse time
         write_reuse_req_cnt: number of write reuse requests at each reuse time
@@ -44,10 +53,22 @@ def _load_write_reuse_data(
     data_line = ifile.readline()
     desc_line = ifile.readline()
     m = re.match(r"# read reuse real time: req_cnt", desc_line)
-    assert m is not None, "the input file might not be write_reuse data file, desc line " + desc_line + " data " + datapath
+    assert m is not None, (
+        "the input file might not be write_reuse data file, desc line "
+        + desc_line
+        + " data "
+        + datapath
+    )
 
     # rtime_granularity = int(m.group("tg"))
-    read_reuse_req_cnt, write_reuse_req_cnt, remove_reuse_req_cnt, read_reuse_freq, first_read_reuse_req_cnt, no_reuse_req_cnt = {}, {}, {}, {}, {}, {}
+    (
+        read_reuse_req_cnt,
+        write_reuse_req_cnt,
+        remove_reuse_req_cnt,
+        read_reuse_freq,
+        first_read_reuse_req_cnt,
+        no_reuse_req_cnt,
+    ) = ({}, {}, {}, {}, {}, {})
 
     for line in ifile:
         if line[0] == "#" and "no reuse" in line:
@@ -79,21 +100,33 @@ def _load_write_reuse_data(
 
     ifile.close()
 
-    return read_reuse_req_cnt, write_reuse_req_cnt, remove_reuse_req_cnt, read_reuse_freq, \
-                    first_read_reuse_req_cnt, no_reuse_req_cnt
+    return (
+        read_reuse_req_cnt,
+        write_reuse_req_cnt,
+        remove_reuse_req_cnt,
+        read_reuse_freq,
+        first_read_reuse_req_cnt,
+        no_reuse_req_cnt,
+    )
 
 
 def plot_write_reuse(datapath, figname_prefix=""):
     """
-    plot write_reuse time distribution 
+    plot write_reuse time distribution
 
     """
 
     if len(figname_prefix) == 0:
         figname_prefix = datapath.split("/")[-1]
 
-    read_reuse_req_cnt, write_reuse_req_cnt, remove_reuse_req_cnt, read_reuse_freq, \
-            first_read_reuse_req_cnt, no_reuse_req_cnt = _load_write_reuse_data(datapath)
+    (
+        read_reuse_req_cnt,
+        write_reuse_req_cnt,
+        remove_reuse_req_cnt,
+        read_reuse_freq,
+        first_read_reuse_req_cnt,
+        no_reuse_req_cnt,
+    ) = _load_write_reuse_data(datapath)
 
     # plot the nubmer of read/write/remove in fraction of total read/write/remove after write
     req_cnts = [
@@ -104,15 +137,20 @@ def plot_write_reuse(datapath, figname_prefix=""):
     n_req = sum((sum(i.values()) for i in req_cnts))
     reuse_time_list = sorted(list(read_reuse_req_cnt.keys()))
 
-    y_read, y_write, y_remove = [read_reuse_req_cnt[t] for t in reuse_time_list],   \
-                                [write_reuse_req_cnt[t] for t in reuse_time_list],  \
-                                [remove_reuse_req_cnt[t] for t in reuse_time_list]
+    y_read, y_write, y_remove = (
+        [read_reuse_req_cnt[t] for t in reuse_time_list],
+        [write_reuse_req_cnt[t] for t in reuse_time_list],
+        [remove_reuse_req_cnt[t] for t in reuse_time_list],
+    )
 
-    y_read, y_write, y_remove = np.cumsum(y_read), np.cumsum(
-        y_write), np.cumsum(y_remove)
-    assert y_read[-1] + y_write[-1] + y_remove[
-        -1] == n_req, "{}+{}+{} != {}".format(y_read[-1], y_write[-1],
-                                              y_remove[-1], n_req)
+    y_read, y_write, y_remove = (
+        np.cumsum(y_read),
+        np.cumsum(y_write),
+        np.cumsum(y_remove),
+    )
+    assert y_read[-1] + y_write[-1] + y_remove[-1] == n_req, "{}+{}+{} != {}".format(
+        y_read[-1], y_write[-1], y_remove[-1], n_req
+    )
     y_read, y_write, y_remove = y_read / n_req, y_write / n_req, y_remove / n_req
 
     if y_read[-1] > 1e-6:
@@ -129,13 +167,15 @@ def plot_write_reuse(datapath, figname_prefix=""):
     # plt.savefig("{}/{}_writeReuse_rt.{}".format(FIG_DIR, figname_prefix, FIG_TYPE), bbox_inches="tight")
 
     plt.xscale("log")
-    plt.xticks(np.array([5, 60, 300, 3600, 86400, 86400 * 2, 86400 * 4]) /
-               3600,
-               ["5 sec", "1 min", "5 min", "1 hour", "1 day", "", "4 day"],
-               rotation=28)
-    plt.savefig("{}/{}_writeReuse_rt_log.{}".format(FIG_DIR, figname_prefix,
-                                                    FIG_TYPE),
-                bbox_inches="tight")
+    plt.xticks(
+        np.array([5, 60, 300, 3600, 86400, 86400 * 2, 86400 * 4]) / 3600,
+        ["5 sec", "1 min", "5 min", "1 hour", "1 day", "", "4 day"],
+        rotation=28,
+    )
+    plt.savefig(
+        "{}/{}_writeReuse_rt_log.{}".format(FIG_DIR, figname_prefix, FIG_TYPE),
+        bbox_inches="tight",
+    )
     plt.clf()
 
     # x_reuse_time = sorted(list(read_reuse_req_cnt.keys()))
@@ -215,12 +255,12 @@ def plot_write_reuse(datapath, figname_prefix=""):
 
 if __name__ == "__main__":
     import argparse
+
     ap = argparse.ArgumentParser()
     ap.add_argument("datapath", type=str, help="data path")
-    ap.add_argument("--figname-prefix",
-                    type=str,
-                    default="",
-                    help="the prefix of figname")
+    ap.add_argument(
+        "--figname-prefix", type=str, default="", help="the prefix of figname"
+    )
     p = ap.parse_args()
 
     try:
