@@ -12,7 +12,7 @@ logging.basicConfig(
 logger = logging.getLogger("setup_utils")
 
 BASEPATH = os.path.normpath(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../_build")
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../_build")
 )
 CACHESIM_PATH = os.path.join(BASEPATH, "bin/cachesim")
 
