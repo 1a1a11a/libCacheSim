@@ -2,11 +2,10 @@
 // Created by Juncheng on 6/5/21.
 //
 
-#include "analyzer.h"
-
 #include <algorithm>  // std::make_heap, std::pop_heap, std::push_heap, std::sort_heap
 #include <vector>  // std::vector
 
+#include "analyzer.h"
 #include "utils/include/utils.h"
 
 void traceAnalyzer::TraceAnalyzer::initialize() {
@@ -106,6 +105,13 @@ void traceAnalyzer::TraceAnalyzer::run() {
     while (req->clock_time >= next_time_window_ts) {
       curr_time_window_idx += 1;
       next_time_window_ts += time_window_;
+    }
+
+    if (curr_time_window_idx != time_to_window_idx(req->clock_time)) {
+      ERROR(
+          "The data is not ordered by time, please sort the trace first!"
+          "Current time %ld requested object %lu\n",
+          req->clock_time + start_ts_, req->obj_id);
     }
 
     DEBUG_ASSERT(curr_time_window_idx == time_to_window_idx(req->clock_time));
