@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <unistd.h>
+#include <sys/sysinfo.h>
 
 #include "../libCacheSim/include/libCacheSim.h"
 #include "../libCacheSim/include/libCacheSim/prefetchAlgo.h"
@@ -26,7 +27,7 @@
 
 #define DEFAULT_TTL (300 * 86400)
 
-static inline unsigned int _n_cores() {
+static inline unsigned int _n_cores0() {
   unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
 
   asm volatile("cpuid"
@@ -35,6 +36,10 @@ static inline unsigned int _n_cores() {
                :);
   //  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
   return ebx;
+}
+
+static inline unsigned int _n_cores() {
+  return get_nprocs();
 }
 
 static void _detect_data_path(char *data_path, char *data_name) {
