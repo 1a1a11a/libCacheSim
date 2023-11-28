@@ -248,26 +248,51 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
   return false;
 }
 
-void chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
+/**
+ *  This function is used to delete an object from the hash table by object id.
+ *  - if the object is in the hash table
+ *      remove it
+ *      return true.
+ *  - if the object is not in the hash table
+ *      return false.
+ *  
+ *  @method chained_hashtable_delete_obj_id_v2
+ *  @date   2023-11-28
+ *  @param  hashtable                          [Handle to the hashtable]
+ *  @param  obj_id                             [The object id to remove]
+ *  @return                                    [true or false]
+ */
+bool chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
                                         const obj_id_t obj_id) {
-  hashtable->n_obj -= 1;
-  uint64_t hv = get_hash_value_int_64(obj_id) & hashmask(hashtable->hashpower);
-  cache_obj_t *cache_obj = hashtable->ptr_table[hv];
-  if (cache_obj != NULL && cache_obj->obj_id == obj_id) {
-    hashtable->ptr_table[hv] = cache_obj->hash_next;
-    if (!hashtable->external_obj) free_cache_obj(cache_obj);
-    return;
+  uint64_t hv = get_hash_value_int_64(&obj_id) & hashmask(hashtable->hashpower);
+  cache_obj_t *cur_obj = hashtable->ptr_table[hv];
+  // the hash bucket is empty
+  if(cur_obj == NULL) return false;
+
+  // the object to remove is the first object in the hash bucket
+  if (cur_obj->obj_id == obj_id) {
+    hashtable->ptr_table[hv] = cur_obj->hash_next;
+    if (!hashtable->external_obj) free_cache_obj(cur_obj);
+    hashtable->n_obj -= 1;
+    return true;
   }
 
-  cache_obj = cache_obj->hash_next;
-  while (cache_obj != NULL && cache_obj->obj_id != obj_id) {
-    cache_obj = cache_obj->hash_next;
-  }
+  cache_obj_t *prev_obj;
 
-  if (cache_obj != NULL) {
-    cache_obj->hash_next = cache_obj->hash_next;
-    if (!hashtable->external_obj) free_cache_obj(cache_obj);
+  do {
+    prev_obj = cur_obj;
+    cur_obj = cur_obj->hash_next;
+  } while(cur_obj != NULL && cur_obj->obj_id != obj_id);
+
+  // the object to remove is in the hash bucket
+  if (cur_obj != NULL) {
+    prev_obj->hash_next = cur_obj->hash_next;
+    if (!hashtable->external_obj) free_cache_obj(cur_obj);
+    hashtable->n_obj -= 1;
+    return true;
   }
+  // the object to remove is not in the hash table
+  return false;
 }
 
 cache_obj_t *chained_hashtable_rand_obj_v2(const hashtable_t *hashtable) {
