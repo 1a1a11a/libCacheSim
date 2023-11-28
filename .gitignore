@@ -12,3 +12,5 @@ example/cacheSimulatorC/cmake-build-debug
 .vscode/*
 *.log
 fig/
+# Chaos
+sftp-config.json
