@@ -1,6 +1,6 @@
 # libCacheSim - building and running cache simulations
 
-[![build](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSimPrv/actions/workflows/build.yml)
+[![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
 
 **The stable development of libCacheSim has moved to [https://github.com/cacheMon/libCacheSim](https://github.com/cacheMon/libCacheSim)**. 
 
@@ -65,8 +65,8 @@ Please see [install.md](/doc/install.md) for how to install the dependencies.
 ### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```
-git clone https://github.com/1a1a11a/libCacheSimPrv
-pushd libCachesimPrv;
+git clone https://github.com/1a1a11a/libCacheSim
+pushd libCachesim;
 mkdir _build && cd _build;
 cmake .. && make -j;
 [sudo] make install;
