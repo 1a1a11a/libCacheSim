@@ -2,12 +2,10 @@
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
 
-**The stable development of libCacheSim has moved to [https://github.com/cacheMon/libCacheSim](https://github.com/cacheMon/libCacheSim)**. 
-
 
 ## News
-* **2023 June**: **QD-LP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
-* **2023 Oct**: **S3-FIFO** and **Sieve** are generally available! These are simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
+* **2023 June**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
+* **2023 Oct**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **SIEVE** are available! These are very simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
 ---
 
 ## What is libCacheSim
@@ -23,8 +21,8 @@
 * **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation, see [here](/doc/quickstart_cachesim.md). 
 * Parallelism out-of-the-box - uses the many CPU cores to speed up trace analysis and cache simulations. 
 * **The ONLY feature-rich trace analyzer** - all types of trace analysis you need, see [here](/doc/quickstart_traceAnalyzer.md).
-* **Simple API** - easy to build cache clusters, multi-layer caching, etc, see [here](/doc/API.md).
-* **Extensible** - easy to support new trace types or eviction algorithms, see [here](/doc/advanced_lib_extend.md).
+* **Simple API** - easy to build cache clusters, multi-layer caching, etc.; see [here](/doc/API.md).
+* **Extensible** - easy to support new trace types or eviction algorithms; see [here](/doc/advanced_lib_extend.md).
 ---
 
 ## Supported algorithms
@@ -59,7 +57,7 @@ If this does not work, please
 
 ### Install dependency
 libCacheSim uses [cmake](https://cmake.org/) build system and has a few dependencies: [glib](https://developer.gnome.org/glib/), [tcmalloc](https://github.com/google/tcmalloc), [zstd](https://github.com/facebook/zstd).
-Please see [install.md](/doc/install.md) for how to install the dependencies. 
+Please see [install.md](/doc/install.md) for instructions on how to install the dependencies. 
 
 
 ### Build libCacheSim
@@ -88,16 +86,16 @@ use `./bin/cachesim --help` to get more information.
 Run the example traces with LRU eviction algorithm and 1GB cache size. 
 
 ```bash
-# Note that no space between the cache size and the unit, unit is not case sensitive
+# Note that no space between the cache size and the unit, and the unit is not case-sensitive
 ./bin/cachesim ../data/trace.vscsi vscsi lru 1gb 
 ```
 
 #### Run multiple cache simulations with different cache sizes
 ```bash
-# Note that no space between the cache sizes
+# Note that there is no space between the cache sizes
 ./bin/cachesim ../data/trace.vscsi vscsi lru 1mb,16mb,256mb,8gb
 
-# besides absolute cache size, you can also use fraction of working set size
+# Besides absolute cache size, you can also use a fraction of the working set size
 ./bin/cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
 
 # besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
@@ -140,7 +138,7 @@ See [trace analysis](/doc/quickstart_traceAnalyzer.md) for more details.
 
 ### Using libCacheSim as a library 
 libCacheSim can be used as a library for building cache simulators. 
-For example, you can build a cache cluster with consistent hashing, or a multi-layer cache simulator.
+For example, you can build a cache cluster with consistent hashing or a multi-layer cache simulator.
 
 Here is a simplified example showing the basic APIs. 
 ```c 
@@ -149,7 +147,7 @@ Here is a simplified example showing the basic APIs.
 /* open trace, see quickstart_lib.md for opening csv and binary trace */
 reader_t *reader = open_trace("../data/trace.vscsi", VSCSI_TRACE, NULL);
 
-/* craete a container for reading from trace */
+/* create a container for reading from trace */
 request_t *req = new_request();
 
 /* create a LRU cache */
@@ -175,7 +173,7 @@ free_request(req);
 cache->cache_free(cache);
 ```
 
-save this to `test.c` and compile with 
+save this to `test.c` and compile it with 
 ``` bash
 gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out
 ```
@@ -201,14 +199,14 @@ Please join the Google group https://groups.google.com/g/libcachesim and ask que
 ---  
 ### Contributions 
 We gladly welcome pull requests.
-Before making any changes, we recommend opening an issue and discussing your proposed changes.  
-This will let us give you advice on the proposed changes. If the changes are minor, then feel free to make them without discussion. 
+Before making any large changes, we recommend opening an issue and discussing your proposed changes.  
+If the changes are minor, then feel free to make them without discussion. 
 This project adheres to Google's coding style. By participating, you are expected to uphold this code. 
 
 ---
 ### Reference
 ```
-@inproceedings{yang20-workload,
+@inproceedings{yang2020-workload,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
     title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
     booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
@@ -217,17 +215,32 @@ This project adheres to Google's coding style. By participating, you are expecte
     pages = {191--208},
     url = {https://www.usenix.org/conference/osdi20/presentation/yang},
     publisher = {USENIX Association},
-    month = nov,
 }
 
 @inproceedings{yang2023-s3fifo,
-  title={FIFO queues are all you need for cache eviction},
-  author={Yang, Juncheng and Zhang, Yazhuo and Qiu, Ziyue and Yue, Yao and Rashmi, K.V.},
-  booktitle={Symposium on Operating Systems Principles (SOSP'23)},
+  title = {FIFO Queues Are All You Need for Cache Eviction},
+  author = {Juncheng Yang and Yazhuo Zhang and Ziyue Qiu and Yao Yue and K.V. Rashmi},
+  isbn = {9798400702297},
+  publisher = {Association for Computing Machinery},
+  booktitle = {Symposium on Operating Systems Principles (SOSP'23)},
+  pages = {130–149},
+  numpages = {20},
   year={2023}
 }
+
+@inproceedings{yang2023-qdlp,
+  author = {Juncheng Yang and Ziyue Qiu and Yazhuo Zhang and Yao Yue and K.V. Rashmi},
+  title = {FIFO Can Be Better than LRU: The Power of Lazy Promotion and Quick Demotion},
+  year = {2023},
+  isbn = {9798400701955},
+  publisher = {Association for Computing Machinery},
+  doi = {10.1145/3593856.3595887},
+  booktitle = {Proceedings of the 19th Workshop on Hot Topics in Operating Systems (HotOS23)},
+  pages = {70–79},
+  numpages = {10},
+}
 ```
-If you used libCacheSim in your research, please cite the above papers. And we welcome you to send us a link to your paper and add reference to (references.md)[references.md].
+If you used libCacheSim in your research, please cite the above papers. And we welcome you to send us a link to your paper and add a reference to [references.md](references.md).
 
 ---
 
@@ -238,5 +251,3 @@ See [LICENSE](LICENSE) for details.
 ### Related
 * [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated
 ---
-
-
