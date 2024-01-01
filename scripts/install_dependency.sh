@@ -55,7 +55,6 @@ setup_zstd() {
     sudo make install
 }
 
-
 CURR_DIR=$(pwd)
 
 if [  -n "$(uname -a | grep Ubuntu)" ]; then
@@ -66,10 +65,11 @@ else
 	setup_centos
 fi  
 
+setup_zstd
+
 if [[ ! $GITHUB_ACTIONS == "true" ]]; then
 	setup_xgboost
 	setup_lightgbm
 fi
-setup_zstd
 
 cd $CURR_DIR
