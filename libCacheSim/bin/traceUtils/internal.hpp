@@ -31,6 +31,9 @@ struct arguments {
 
   /* trace print */
   int64_t num_req; /* number of requests to print */
+  char delimiter;
+  bool print_obj_id_only;
+  bool print_obj_id_32bit;
 
   /* trace filter */
   char *cache_name;

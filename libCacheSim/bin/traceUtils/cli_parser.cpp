@@ -30,6 +30,9 @@ enum argp_option_short {
 
   // trace print
   OPTION_NUM_REQ = 'n',
+  OPTION_FIELD_DELIMITER = 0x201,
+  OPTION_OBJ_ID_ONLY = 0x202,
+  OPTION_OBJ_ID_32bit = 0x204,
 
   // trace filter
   OPTION_FILTER_TYPE = 0x301,
@@ -63,6 +66,11 @@ static struct argp_option options[] = {
     {0, 0, 0, 0, "tracePrint options:"},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Number of requests to process, -1 means all requests in the trace", 6},
+    {"field-delimiter", OPTION_FIELD_DELIMITER, ",", 0,
+     "The delimiter formatting the trace", 6},
+    {"obj-id-only", OPTION_OBJ_ID_ONLY, "0", 0, "Only to print object id", 6},
+    {"obj-id-32bit", OPTION_OBJ_ID_32bit, "0", 0,
+     "Print object id as 32-bit int", 6},
 
     {0, 0, 0, 0, "traceFilter options:"},
     {"filter-type", OPTION_FILTER_TYPE, "FIFO", 0,
@@ -106,6 +114,15 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_NUM_REQ:
       arguments->n_req = atoll(arg);
       break;
+    case OPTION_FIELD_DELIMITER:
+      arguments->delimiter = arg[0];
+      break;
+    case OPTION_OBJ_ID_ONLY:
+      arguments->print_obj_id_only = atol(arg);
+      break;
+    case OPTION_OBJ_ID_32bit:
+      arguments->print_obj_id_32bit = atol(arg);
+      break;
     case OPTION_FILTER_TYPE:
       arguments->cache_name = arg;
       break;
@@ -146,6 +163,8 @@ static char doc[] =
     "tracePrint: utility to print binary trace in human-readable format\n"
     "traceConv: utility to convert a trace to oracleGeneral format\n\n"
     "traceFilter: utility to filter a trace\n\n"
+    "example usage: ./tracePrint /trace/path oracleGeneral -n 20 "
+    "--obj-id-only=1\n\n"
     "example usage: ./traceConv /trace/path csv -o "
     "/path/new_trace.oracleGeneral -t "
     "\"obj-id-col=5,time-col=2,obj-size-col=4\"\n\n"
@@ -171,6 +190,9 @@ static void init_arg(struct arguments *args) {
   args->remove_size_change = false;
   args->cache_name = NULL;
   args->cache_size = 0;
+  args->delimiter = ',';
+  args->print_obj_id_only = false;
+  args->print_obj_id_32bit = false;
 }
 
 static void print_parsed_arg(struct arguments *args) {
@@ -229,7 +251,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   assert(N_ARGS == 2);
 
   args->reader = create_reader(args->trace_type_str, args->trace_path,
-                               args->trace_type_params, args->n_req, args->ignore_obj_size, 0);
+                               args->trace_type_params, args->n_req,
+                               args->ignore_obj_size, 0);
 
   print_parsed_arg(args);
 }
