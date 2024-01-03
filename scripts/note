@@ -1,0 +1,9 @@
+## How to run Caffeine simulator
+```
+git clone https://github.com/ben-manes/caffeine.git
+./gradlew build
+export GRADLE_OPTS="-Xmx204800m"
+# modify simulator/src/main/resources/reference.conf, the lirs format is txt with only the object id
+./gradlew run simulator:run
+
+```
