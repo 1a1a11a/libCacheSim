@@ -69,6 +69,7 @@ int minimalIncrementCBF_init(struct minimalIncrementCBF * CBF, int entries, doub
 int minimalIncrementCBF_init_size(struct minimalIncrementCBF * CBF, int entries, double error,
                     unsigned int cache_size) {
   minimalIncrementCBF_init(CBF, entries, error);
+  return 0;
 }
 
 static int minimalIncrementCBF_check_add(struct minimalIncrementCBF * CBF,
@@ -167,6 +168,6 @@ int minimalIncrementCBF_decay(struct minimalIncrementCBF * CBF) {
   return 0;
 }
 
-const char * minimalIncrementCBF_version() {
+const char * minimalIncrementCBF_version(void) {
   return MAKESTRING(VERSION);
 }

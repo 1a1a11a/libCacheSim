@@ -18,7 +18,10 @@ struct candidate_t {
 #endif
 
   static candidate_t make(const request_t* req) {
-    return candidate_t{DEFAULT_APP_ID, static_cast<int64_t>(req->obj_id)};
+    candidate_t c;
+    c.appId = DEFAULT_APP_ID;
+    c.id = static_cast<int64_t>(req->obj_id);
+    return c;
   }
 
   inline bool operator==(const candidate_t& that) const {

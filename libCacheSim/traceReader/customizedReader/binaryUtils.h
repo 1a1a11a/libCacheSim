@@ -4,6 +4,12 @@
 #include "../generalReader/zstdReader.h"
 #endif
 
+#include "../../include/libCacheSim/reader.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* read decompressed data file */
 static inline char *_read_bytes(reader_t *reader) {
   if (reader->mmap_offset >= reader->file_size) {
@@ -45,3 +51,7 @@ static inline char *read_bytes(reader_t *reader) {
   }
   return start;
 }
+
+#ifdef __cplusplus
+}
+#endif

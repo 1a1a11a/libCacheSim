@@ -52,8 +52,8 @@ reader_t *setup_reader(const char *const trace_path,
    * currently zstd reader only supports a few binary trace */
   reader->is_zstd_file = false;
   reader->zstd_reader_p = NULL;
-  size_t slen = strlen(trace_path);
 #ifdef SUPPORT_ZSTD_TRACE
+  size_t slen = strlen(trace_path);
   if (strncmp(trace_path + (slen - 4), ".zst", 4) == 0 ||
       strncmp(trace_path + (slen - 7), ".zst.22", 7) == 0) {
     reader->is_zstd_file = true;
@@ -281,7 +281,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
 
   if (reader->cap_at_n_req > 1 && reader->n_read_req >= reader->cap_at_n_req) {
     DEBUG("read_one_req: processed %ld requests capped by the user\n",
-          reader->n_read_req);
+          (long) reader->n_read_req);
     req->valid = false;
     return 1;
   }

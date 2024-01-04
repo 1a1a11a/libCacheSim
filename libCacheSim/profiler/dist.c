@@ -134,7 +134,7 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
     stack_dist = get_stack_dist_add_req(req, &splay_tree, hash_table, curr_ts,
                                         &last_access_ts);
     if (stack_dist > (int64_t)UINT32_MAX) {
-      ERROR("stack distance %ld is larger than UINT32_MAX\n", stack_dist);
+      ERROR("stack distance %ld is larger than UINT32_MAX\n", (long)stack_dist);
       abort();
     }
     if (dist_type == STACK_DIST) {
@@ -159,7 +159,8 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
   return stack_dist_array;
 }
 
-int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type, int64_t *array_size) {
+int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type,
+                         int64_t *array_size) {
   int64_t curr_ts = 0;
   int64_t dist = 0;
   request_t *req = new_request();
@@ -174,7 +175,7 @@ int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type, int64_t 
   while (req->valid) {
     dist = get_access_dist_add_req(req, hash_table, curr_ts, dist_type);
     if (dist > (int64_t)UINT32_MAX) {
-      ERROR("access distance %ld is larger than UINT32_MAX\n", dist);
+      ERROR("access distance %ld is larger than UINT32_MAX\n", (long)dist);
       abort();
     }
 
@@ -203,8 +204,8 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
 }
 
 void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
-               int64_t array_size, const char *const ofilepath,
-               const dist_type_e dist_type) {
+                   int64_t array_size, const char *const ofilepath,
+                   const dist_type_e dist_type) {
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
   sprintf(file_path, "%s.%s.txt", ofilepath, dist_type_str[dist_type]);
   FILE *file = fopen(file_path, "w");
@@ -254,12 +255,12 @@ void _write_dist_cnt(gpointer key, gpointer value, gpointer user_data) {
   int64_t dist = (int64_t)GPOINTER_TO_SIZE(key);
   int64_t cnt = (int64_t)GPOINTER_TO_SIZE(value);
   FILE *file = (FILE *)user_data;
-  fprintf(file, "%ld:%ld, ", dist, cnt);
+  fprintf(file, "%ld:%ld, ", (long)dist, (long)cnt);
 }
 
 void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
-                      const int64_t array_size, const char *const ofilepath,
-                      const dist_type_e dist_type) {
+                          const int64_t array_size, const char *const ofilepath,
+                          const dist_type_e dist_type) {
   assert(get_num_of_req(reader) == array_size);
 
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);

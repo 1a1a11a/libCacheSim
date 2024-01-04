@@ -28,7 +28,7 @@ sampler_t *clone_spatial_sampler(const sampler_t *sampler) {
   return cloned_sampler;
 }
 
-sampler_t *free_spatial_sampler(sampler_t *sampler) { free(sampler); }
+void free_spatial_sampler(sampler_t *sampler) { free(sampler); }
 
 sampler_t *create_spatial_sampler(double sampling_ratio) {
   if (sampling_ratio > 1 || sampling_ratio <= 0) {

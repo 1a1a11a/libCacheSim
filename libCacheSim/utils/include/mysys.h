@@ -18,7 +18,7 @@ int get_n_cores(void);
 
 int n_cores(void);
 
-double gettime();
+double gettime(void);
 
 void print_cwd(void);
 

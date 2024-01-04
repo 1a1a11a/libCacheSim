@@ -159,7 +159,7 @@ static bool should_insert(cache_t *cache, int64_t next_access_vtime) {
  */
 static cache_obj_t *FIFO_Belady_find(cache_t *cache, const request_t *req,
                                     const bool update_cache) {
-  FIFO_Belady_params_t *params = (FIFO_Belady_params_t *)cache->eviction_params;
+
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   return cache_obj;
@@ -280,7 +280,7 @@ static void FIFO_Belady_print_cache(const cache_t *cache) {
     return;
   }
   while (cur != NULL) {
-    printf("%lu->", cur->obj_id);
+    printf("%ld->", (long)cur->obj_id);
     cur = cur->queue.next;
   }
   printf("END\n");

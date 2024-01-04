@@ -2,9 +2,8 @@
 // Created by Juncheng Yang on 6/20/20.
 //
 
-#include "../include/libCacheSim/cache.h"
-
 #include "../dataStructure/hashtable/hashtable.h"
+#include "../include/libCacheSim/cache.h"
 #include "../include/libCacheSim/prefetchAlgo.h"
 
 /** this file contains both base function, which should be called by all
@@ -145,7 +144,7 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
     if (admissioner->admit(admissioner, req) == false) {
       DEBUG_ONCE(
           "admission algorithm does not admit: req %ld, obj %lu, size %lu\n",
-          cache->n_req, (unsigned long)req->obj_id,
+          (long)cache->n_req, (unsigned long)req->obj_id,
           (unsigned long)req->obj_size);
       return false;
     }
@@ -153,7 +152,7 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
 
   if (req->obj_size + cache->obj_md_size > cache->cache_size) {
     WARN_ONCE("%ld req, obj %lu, size %lu larger than cache size %lu\n",
-              cache->n_req, (unsigned long)req->obj_id,
+              (long)cache->n_req, (unsigned long)req->obj_id,
               (unsigned long)req->obj_size, (unsigned long)cache->cache_size);
     return false;
   }

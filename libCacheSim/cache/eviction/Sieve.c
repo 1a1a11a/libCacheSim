@@ -102,10 +102,7 @@ static void Sieve_free(cache_t *cache) {
  */
 
 static bool Sieve_get(cache_t *cache, const request_t *req) {
-  Sieve_params_t *params = (Sieve_params_t *)cache->eviction_params;
-
   bool ck_hit = cache_get_base(cache, req);
-
   return ck_hit;
 }
 
@@ -170,7 +167,6 @@ static cache_obj_t *Sieve_to_evict_with_freq(cache_t *cache,
                                              int to_evict_freq) {
   Sieve_params_t *params = cache->eviction_params;
   cache_obj_t *pointer = params->pointer;
-  cache_obj_t *old_pointer = pointer;
 
   /* if we have run one full around or first eviction */
   if (pointer == NULL) pointer = params->q_tail;

@@ -56,8 +56,8 @@ int binaryReader_setup(reader_t *const reader) {
   params->fmt_str = strdup(init_params->binary_fmt_str + 1);
   const char *fmt_str = params->fmt_str;
 
-  uint32_t field_size = 0;
-  uint32_t curr_offset = 0;
+  // uint32_t field_size = 0;
+  // uint32_t curr_offset = 0;
 
   params->n_fields = strlen(fmt_str);
 

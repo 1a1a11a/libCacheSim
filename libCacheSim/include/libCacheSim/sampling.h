@@ -13,7 +13,7 @@ typedef bool (*trace_sampling_func)(struct sampler *sampler, request_t *req);
 
 typedef struct sampler *(*clone_sampler_func)(const struct sampler *sampler);
 
-typedef struct sampler *(*free_sampler_func)(struct sampler *sampler);
+typedef void (*free_sampler_func)(struct sampler *sampler);
 
 enum sampler_type {
   SPATIAL_SAMPLER,

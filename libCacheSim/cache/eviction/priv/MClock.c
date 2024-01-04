@@ -224,7 +224,7 @@ static void print_curr_hand_pos(cache_t *cache) {
   int64_t obj_idx = 0;
   while (obj != NULL) {
     if (obj == params->hands[hand_idx]) {
-      printf("hand %d: %ld %p %p %p\n", hand_idx, obj_idx, obj, obj->queue.prev,
+      printf("hand %d: %ld %p %p %p\n", hand_idx, (long) obj_idx, obj, obj->queue.prev,
              obj->queue.next);
       hand_idx++;
     }
@@ -392,13 +392,13 @@ static bool MClock_remove(cache_t *cache, const obj_id_t obj_id) {
 }
 
 static int64_t MClock_get_occupied_byte(const cache_t *cache) {
-  MClock_params_t *params = (MClock_params_t *)cache->eviction_params;
+  // MClock_params_t *params = (MClock_params_t *)cache->eviction_params;
   int64_t occupied_byte = cache->occupied_byte;
   return occupied_byte;
 }
 
 static int64_t MClock_get_n_obj(const cache_t *cache) {
-  MClock_params_t *params = (MClock_params_t *)cache->eviction_params;
+  // MClock_params_t *params = (MClock_params_t *)cache->eviction_params;
   int64_t n_obj = cache->n_obj;
   return n_obj;
 }

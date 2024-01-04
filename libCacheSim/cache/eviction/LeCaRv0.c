@@ -247,6 +247,7 @@ static cache_obj_t *LeCaRv0_to_evict(cache_t *cache, const request_t *req) {
   } else {
     params->LFU->to_evict(params->LFU, req);
   }
+  return NULL;
 }
 
 /**

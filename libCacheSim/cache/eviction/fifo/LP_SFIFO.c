@@ -137,7 +137,7 @@ static void LP_SFIFO_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool LP_SFIFO_get(cache_t *cache, const request_t *req) {
-  LP_SFIFO_params_t *params = (LP_SFIFO_params_t *)(cache->eviction_params);
+  // LP_SFIFO_params_t *params = (LP_SFIFO_params_t *)(cache->eviction_params);
   // printf("%ld %ld %ld %ld %ld\n", cache->n_req,
   //        params->fifos[0]->get_n_obj(params->fifos[0]),
   //        params->fifos[1]->get_n_obj(params->fifos[1]),
@@ -243,6 +243,7 @@ static cache_obj_t *LP_SFIFO_to_evict(cache_t *cache, const request_t *req) {
       return params->fifos[i]->to_evict(params->fifos[i], req);
     }
   }
+  return NULL;
 }
 
 /**

@@ -114,7 +114,7 @@ static void SR_LRU_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool SR_LRU_get(cache_t *cache, const request_t *req) {
-  SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
+  // SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
   bool cache_hit = SR_LRU_find(cache, req, true) != NULL;
 
   if (!cache_hit) {

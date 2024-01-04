@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.12)
 project(libCacheSim)
 set(DESCRIPTION "a high performance cache simulation library")
 set(PROJECT_WEB "http://cachesim.com")
@@ -9,6 +9,9 @@ set(${PROJECT_NAME}_VERSION_PATCH 0)
 set(${PROJECT_NAME}_RELEASE_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR})
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}_VERSION_PATCH})
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+set(CMAKE_CXX_EXTENSIONS Off)
 
 ########################################
 # define options #
@@ -19,7 +22,7 @@ option(USE_HUGEPAGE "use transparent hugepage" ON)
 option(ENABLE_TESTS "whether enable test" ON)
 option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
-option(SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
+option(OPT_SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
 set(LOG_LEVEL NONE CACHE STRING "change the logging level") 
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
@@ -102,7 +105,7 @@ endif()
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
 # string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}, ENABLE_LRB ${ENABLE_LRB}, SUPPORT_ZSTD_TRACE ${SUPPORT_ZSTD_TRACE}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}, ENABLE_LRB ${ENABLE_LRB}, OPT_SUPPORT_ZSTD_TRACE ${OPT_SUPPORT_ZSTD_TRACE}")
 
 # add_compile_options(-fsanitize=address)
 # add_link_options(-fsanitize=address)
@@ -114,13 +117,12 @@ message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEV
 set(CFLAGS "$ENV{CFLAGS} "
         "-Wall -Wshadow -Winline "
         "-Wno-unused "
-        "-Wstrict-prototypes -Wmissing-prototypes "
+        "-Wstrict-prototypes "
+        # "-Wmissing-prototypes "
         "-Wmissing-declarations "
         "-Wredundant-decls "
         "-Wunused-value -Wunused-variable "
-        "-std=c11 "
         "-fno-strict-aliasing "
-        "-O0 "
         )
 
 
@@ -147,7 +149,7 @@ set(LIBS ${LIBS} ${GLib_LIBRARY})
 #    link_libraries(${GLib2_LDFLAGS})
 #endif()
 
-if (SUPPORT_ZSTD_TRACE)
+if (OPT_SUPPORT_ZSTD_TRACE)
     add_compile_definitions(SUPPORT_ZSTD_TRACE=1)
     find_package(ZSTD)
     if ("${ZSTD_LIBRARIES}" STREQUAL "") 
@@ -157,7 +159,7 @@ if (SUPPORT_ZSTD_TRACE)
     message(STATUS "ZSTD_INCLUDE_DIRS ${ZSTD_INCLUDE_DIRS}, ZSTD_LIBRARIES ${ZSTD_LIBRARIES}")
 else()
     remove_definitions(SUPPORT_ZSTD_TRACE)
-endif(SUPPORT_ZSTD_TRACE)
+endif(OPT_SUPPORT_ZSTD_TRACE)
 
 
 # libgoogle-perftools-dev google-perftools
@@ -311,10 +313,20 @@ if (ENABLE_LRB)
     )
 endif(ENABLE_LRB)
 
-file(GLOB reader_source 
-        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/*.c 
-        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/*.c 
+set(reader_source 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/reader.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/binary.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/csv.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/lcs.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/libcsv.c 
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/txt.c 
     )
+if (OPT_SUPPORT_ZSTD_TRACE)
+    set (reader_source
+            ${reader_source} ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/zstdReader.c
+    )
+endif(OPT_SUPPORT_ZSTD_TRACE)
+
 file(GLOB dataStructure_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/*.c
         ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hashtable/*.c

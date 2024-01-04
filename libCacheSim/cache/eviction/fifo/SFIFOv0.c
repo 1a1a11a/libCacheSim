@@ -11,7 +11,7 @@
 //
 //
 //  we notice that adding belady is not helpful
-//  
+//
 //
 //  libCacheSim
 //
@@ -72,7 +72,8 @@ static inline int64_t SFIFOv0_get_n_obj(const cache_t *cache);
  */
 cache_t *SFIFOv0_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SFIFOv0", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("SFIFOv0", ccache_params, cache_specific_params);
   cache->cache_init = SFIFOv0_init;
   cache->cache_free = SFIFOv0_free;
   cache->get = SFIFOv0_get;
@@ -272,6 +273,7 @@ static cache_obj_t *SFIFOv0_to_evict(cache_t *cache, const request_t *req) {
     }
   }
 #endif
+  return NULL;
 }
 
 /**
@@ -303,7 +305,6 @@ static void SFIFOv0_evict(cache_t *cache, const request_t *req) {
   fifo->evict(fifo, req);
 #else
 
-  int nth_seg_to_evict = 0;
   for (int i = 0; i < params->n_queues; i++) {
     cache_t *fifo = params->FIFOs[i];
     if (fifo->get_occupied_byte(fifo) > 0) {
@@ -459,7 +460,7 @@ static void SFIFOv0_print_cache(cache_t *cache) {
     cache_obj_t *obj =
         ((FIFO_params_t *)params->FIFOs[i]->eviction_params)->q_head;
     while (obj) {
-      printf("%ld(%u)->", obj->obj_id, obj->obj_size);
+      printf("%ld(%u)->", (long)obj->obj_id, (unsigned int)obj->obj_size);
       obj = obj->queue.next;
     }
     printf(" | ");

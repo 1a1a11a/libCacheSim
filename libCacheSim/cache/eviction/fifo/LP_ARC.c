@@ -159,7 +159,7 @@ static void LP_ARC_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool LP_ARC_get(cache_t *cache, const request_t *req) {
-  LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
+  // LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
   return LP_ARC_get_debug(cache, req);
   // return cache_get_base(cache, req);
@@ -485,13 +485,13 @@ static void LP_ARC_parse_params(cache_t *cache,
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
-  char *end;
+  // char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
      * key and value are separated by = */
     char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ",");
+    // char *value = strsep((char **)&params_str, ",");
 
     // skip the white space
     while (params_str != NULL && *params_str == ' ') {
@@ -528,7 +528,7 @@ static void print_cache(cache_t *cache) {
 }
 
 static bool LP_ARC_get_debug(cache_t *cache, const request_t *req) {
-  LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
+  // LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
   cache->n_req += 1;
 

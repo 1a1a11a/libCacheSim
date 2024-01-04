@@ -12,9 +12,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "../../../dataStructure/hashtable/hashtable.h"
 #include "../../../include/libCacheSim/cache.h"
 #include "../../../include/libCacheSim/cacheObj.h"
-#include "../../../dataStructure/hashtable/hashtable.h"
 
 using namespace std;
 
@@ -34,8 +34,8 @@ struct pq_node_type {
       : obj(obj), priority(priority), last_request_vtime(last_request_vtime){};
 
   void print() const {
-    printf("obj %lu, priority %f, last_request_vtime %ld\n", obj->obj_id,
-           priority, last_request_vtime);
+    printf("obj %lu, priority %f, last_request_vtime %ld\n",
+           (unsigned long)obj->obj_id, priority, (long)last_request_vtime);
   }
 
   bool operator<(const pq_node_type &rhs) const {

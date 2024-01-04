@@ -26,7 +26,7 @@ static void size_admissioner_parse_params(const char *init_params,
                                           size_admission_params_t *pa) {
   if (init_params == NULL) {
     pa->size_threshold = INT64_MAX;
-    INFO("use default size admission: %ld", pa->size_threshold);
+    INFO("use default size admission: %ld", (long)pa->size_threshold);
   } else {
     char *params_str = strdup(init_params);
     char *old_params_str = params_str;

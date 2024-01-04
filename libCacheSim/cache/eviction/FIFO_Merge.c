@@ -261,7 +261,7 @@ static void FIFO_Merge_evict(cache_t *cache, const request_t *req) {
 
   if (cache->n_obj <= params->n_exam_obj) {
     // just evict one object - this is fifo
-    cache_obj_t *cache_obj = params->q_tail;
+    cache_obj = params->q_tail;
     params->next_to_exam = NULL;
     remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
     cache_evict_base(cache, cache_obj, true);
@@ -451,6 +451,8 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
     default:
       break;
   }
+  abort();
+  return -1;
 }
 
 #ifdef __cplusplus

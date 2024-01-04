@@ -179,7 +179,6 @@ static void flashProb_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool flashProb_get(cache_t *cache, const request_t *req) {
-  flashProb_params_t *params = (flashProb_params_t *)cache->eviction_params;
 
   bool cache_hit = cache_get_base(cache, req);
 
@@ -368,7 +367,6 @@ static void flashProb_parse_params(cache_t *cache,
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
-  char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,

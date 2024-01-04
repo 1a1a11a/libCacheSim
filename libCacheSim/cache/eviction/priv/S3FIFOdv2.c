@@ -81,18 +81,18 @@ static const char *DEFAULT_CACHE_PARAMS =
 // ****                                                               ****
 // ***********************************************************************
 cache_t *S3FIFOdv2_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
+                        const char *cache_specific_params);
 static void S3FIFOdv2_free(cache_t *cache);
 static bool S3FIFOdv2_get(cache_t *cache, const request_t *req);
 
-static bool S3FIFOdv2_rebalance(cache_t *cache);
+static void S3FIFOdv2_rebalance(cache_t *cache);
 static void S3FIFOdv2_choose_threshold(cache_t *cache);
 static void S3FIFOdv2_update_main_reinsert_threshold(cache_t *cache);
 static void S3FIFOdv2_update_main_reinsert_threshold_incorrect(cache_t *cache);
 static void S3FIFOdv2_update_small_reinsert_threshold(cache_t *cache);
 
 static cache_obj_t *S3FIFOdv2_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache);
+                                   const bool update_cache);
 static cache_obj_t *S3FIFOdv2_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *S3FIFOdv2_to_evict(cache_t *cache, const request_t *req);
 static void S3FIFOdv2_evict(cache_t *cache, const request_t *req);
@@ -101,7 +101,7 @@ static inline int64_t S3FIFOdv2_get_occupied_byte(const cache_t *cache);
 static inline int64_t S3FIFOdv2_get_n_obj(const cache_t *cache);
 static inline bool S3FIFOdv2_can_insert(cache_t *cache, const request_t *req);
 static void S3FIFOdv2_parse_params(cache_t *cache,
-                                 const char *cache_specific_params);
+                                   const char *cache_specific_params);
 
 static void S3FIFOdv2_evict_fifo(cache_t *cache, const request_t *req);
 static void S3FIFOdv2_evict_main(cache_t *cache, const request_t *req);
@@ -113,7 +113,7 @@ static void S3FIFOdv2_evict_main(cache_t *cache, const request_t *req);
 // ***********************************************************************
 
 cache_t *S3FIFOdv2_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params) {
+                        const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("S3FIFOdv2", ccache_params, cache_specific_params);
   cache->cache_init = S3FIFOdv2_init;
@@ -294,7 +294,7 @@ static void S3FIFOdv2_update_main_reinsert_threshold_incorrect(cache_t *cache) {
     n_obj += params->main_freq_cnt[i];
   }
   if (n_obj != n_main_obj)
-    ERROR("n_obj %ld != n_main_obj %d\n", n_obj, n_main_obj);
+    ERROR("n_obj %ld != n_main_obj %d\n", (long)n_obj, n_main_obj);
 
   // if (params->move_to_main_threshold > 1) {
   //   printf("set threshold to %d, ", params->move_to_main_threshold);
@@ -335,7 +335,7 @@ static void S3FIFOdv2_update_main_reinsert_threshold(cache_t *cache) {
     n_obj += params->main_freq_cnt[i];
   }
   if (n_obj != n_main_obj)
-    ERROR("n_obj %ld != n_main_obj %d\n", n_obj, n_main_obj);
+    ERROR("n_obj %ld != n_main_obj %d\n", (long)n_obj, n_main_obj);
 
   // if (params->main_reinsert_threshold > 1) {
   //   printf("set threshold to %d, ", params->main_reinsert_threshold);
@@ -376,7 +376,7 @@ static void S3FIFOdv2_update_small_reinsert_threshold(cache_t *cache) {
     n_obj += params->small_freq_cnt[i];
   }
   if (n_obj != n_small_obj)
-    ERROR("n_obj %ld != n_small_obj %d\n", n_obj, n_small_obj);
+    ERROR("n_obj %ld != n_small_obj %d\n", (long)n_obj, n_small_obj);
 
   // if (params->move_to_main_threshold > 1) {
   //   printf("set threshold to %d, ", params->move_to_main_threshold);
@@ -414,8 +414,8 @@ static void S3FIFOdv2_choose_threshold(cache_t *cache) {
 
   if (params->move_to_main_threshold != 1) {
     for (int i = 0; i < MAX_FREQ_THRESHOLD; i++) {
-      printf("%8ld/%-4d ", params->eviction_freq_cnt[i],
-             params->threshold_cnt[i]);
+      printf("%8ld/%-4d ", (long)params->eviction_freq_cnt[i],
+             (int)params->threshold_cnt[i]);
     }
 
     printf("move_to_main_threshold: %d\n", params->move_to_main_threshold);
@@ -470,18 +470,18 @@ static bool S3FIFOdv2_rebalance0(cache_t *cache) {
   }
 
   memset(params->first_access_cnt_over_age_fifo, 0,
-         sizeof(params->first_access_cnt_over_age_fifo));
+         sizeof(*params->first_access_cnt_over_age_fifo));
   memset(params->first_access_cnt_over_age_main, 0,
-         sizeof(params->first_access_cnt_over_age_main));
+         sizeof(*params->first_access_cnt_over_age_main));
 
   return true;
 }
 
-static bool S3FIFOdv2_rebalance(cache_t *cache) {
+static void S3FIFOdv2_rebalance(cache_t *cache) {
   S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)cache->eviction_params;
 
-  double s = params->n_obj_admit_to_fifo + params->n_obj_admit_to_main +
-             params->n_obj_move_to_main;
+  // double s = params->n_obj_admit_to_fifo + params->n_obj_admit_to_main +
+  //            params->n_obj_move_to_main;
 
   size_t n_slots =
       MIN(params->fifo->cache_size, params->main_cache->cache_size) / 100 + 1;
@@ -526,7 +526,7 @@ static bool S3FIFOdv2_rebalance(cache_t *cache) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *S3FIFOdv2_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache) {
+                                   const bool update_cache) {
   S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the fifo and main caches
@@ -635,7 +635,7 @@ static cache_obj_t *S3FIFOdv2_insert(cache_t *cache, const request_t *req) {
   obj->create_time = cache->n_req;
 #endif
 
-  obj->S3FIFO.freq == 0;
+  obj->S3FIFO.freq = 0;
 
   return obj;
 }
@@ -716,8 +716,8 @@ static void S3FIFOdv2_evict_fifo(cache_t *cache, const request_t *req) {
 
 static void S3FIFOdv2_evict_main(cache_t *cache, const request_t *req) {
   S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)cache->eviction_params;
-  cache_t *fifo = params->fifo;
-  cache_t *ghost = params->fifo_ghost;
+  // cache_t *fifo = params->fifo;
+  // cache_t *ghost = params->fifo_ghost;
   cache_t *main = params->main_cache;
 
   // evict from main cache
@@ -755,7 +755,7 @@ static void S3FIFOdv2_evict_main(cache_t *cache, const request_t *req) {
       // main->evict(main, req);
       bool removed = main->remove(main, obj_to_evict->obj_id);
       if (!removed) {
-        ERROR("cannot remove obj %ld\n", obj_to_evict->obj_id);
+        ERROR("cannot remove obj %ld\n", (long)obj_to_evict->obj_id);
       }
 
       has_evicted = true;
@@ -776,7 +776,7 @@ static void S3FIFOdv2_evict(cache_t *cache, const request_t *req) {
   S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)cache->eviction_params;
 
   cache_t *fifo = params->fifo;
-  cache_t *ghost = params->fifo_ghost;
+  // cache_t *ghost = params->fifo_ghost;
   cache_t *main = params->main_cache;
 
   if (main->get_occupied_byte(main) > main->cache_size ||
@@ -841,12 +841,12 @@ static const char *S3FIFOdv2_current_params(S3FIFOdv2_params_t *params) {
 }
 
 static void S3FIFOdv2_parse_params(cache_t *cache,
-                                 const char *cache_specific_params) {
+                                   const char *cache_specific_params) {
   S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)(cache->eviction_params);
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
-  char *end;
+  // char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
