@@ -4,22 +4,30 @@
 
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
-* [What is libCacheSim](#what-is-libcachesim)
-* [libCacheSim features ](#libcachesim-features)
-* [Supported algorithms](#supported-algorithms)
-* [Build and Install libCacheSim](#build-and-install-libcachesim)
-  + [One-line install](#one-line-install)
-  + [Install dependency](#install-dependency)
-  + [Build libCacheSim](#build-libcachesim)
-* [Usage](#usage)
-  + [cachesim (a high-performance cache simulator)](#cachesim-a-high-performance-cache-simulator)
-  + [Trace analysis](#trace-analysis)
-  + [Using libCacheSim as a library ](#using-libcachesim-as-a-library)
-  + [Extending libCacheSim (new algorithms and trace types)](#extending-libcachesim-new-algorithms-and-trace-types)
-* [Open source cache traces](#open-source-cache-traces)
-* [Questions? ](#questions)
-* [Reference](#reference)
-* [License](#license)
+- [libCacheSim - building and running cache simulations](#libcachesim---building-and-running-cache-simulations)
+  - [News](#news)
+  - [What is libCacheSim](#what-is-libcachesim)
+  - [libCacheSim features](#libcachesim-features)
+  - [Supported algorithms](#supported-algorithms)
+  - [Build and Install libCacheSim](#build-and-install-libcachesim)
+    - [One-line install](#one-line-install)
+    - [Install dependency](#install-dependency)
+    - [Build libCacheSim](#build-libcachesim)
+  - [Usage](#usage)
+    - [cachesim (a high-performance cache simulator)](#cachesim-a-high-performance-cache-simulator)
+      - [basic usage](#basic-usage)
+      - [Run a single cache simulation](#run-a-single-cache-simulation)
+      - [Run multiple cache simulations with different cache sizes](#run-multiple-cache-simulations-with-different-cache-sizes)
+      - [Plot miss ratio curve](#plot-miss-ratio-curve)
+    - [Trace analysis](#trace-analysis)
+    - [Using libCacheSim as a library](#using-libcachesim-as-a-library)
+    - [Extending libCacheSim (new algorithms and trace types)](#extending-libcachesim-new-algorithms-and-trace-types)
+  - [Open source cache traces](#open-source-cache-traces)
+  - [Questions?](#questions)
+  - [Contributions](#contributions)
+  - [Reference](#reference)
+  - [License](#license)
+  - [Related](#related)
 <!-- TOC end -->
 
 
@@ -251,7 +259,7 @@ The compressed traces can be used with libCacheSim without decompression. And li
 | Tencent Photo | 2018 |   object  |                      [link](http://iotta.snia.org/traces/parallel?only=27476)                     | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/tencentPhoto/) |
 | WikiCDN       | 2019 |   object  |          [link](https://wikitech.wikimedia.org/wiki/Analytics/Data_Lake/Traffic/Caching)          |     [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/wiki/)     |
 | Tencent CBS   | 2020 |   block   |                      [link](http://iotta.snia.org/traces/parallel?only=27917)                     | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/tencentBlock/) |
-| Alibaba CBS   | 2020 |   block   |                          [link](https://github.com/alibaba/block-traces)                          | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/alibabaBlock/) |
+| Alibaba Block | 2020 |   block   |                          [link](https://github.com/alibaba/block-traces)                          | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/alibabaBlock/) |
 | Twitter       | 2020 | key-value |                          [link](https://github.com/twitter/cache-traces)                          | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/twitter/)      |
 | MetaKV        | 2022 | key-value | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaKV/)       |
 | MetaCDN       | 2023 | object    | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaCDN/)      |
