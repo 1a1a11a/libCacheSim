@@ -98,7 +98,7 @@ typedef struct reader {
   /************* used by binary trace *************/
   /* mmap the file, this should not change during runtime */
   char *mapped_file;
-  uint64_t mmap_offset;
+  size_t mmap_offset;
   struct zstd_reader *zstd_reader_p;
   bool is_zstd_file;
   /* the size of one request in binary trace */
@@ -117,8 +117,8 @@ typedef struct reader {
   /* if true, ignore the obj_size in the trace, and use size one */
   bool ignore_obj_size;
 
-  /* this is used when 
-   * a) the reader splits a large req into multiple chunked requests 
+  /* this is used when
+   * a) the reader splits a large req into multiple chunked requests
    * b) the trace file uses a count field */
   int n_req_left;
   int64_t last_req_clock_time;
@@ -180,8 +180,9 @@ reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
                        const reader_init_param_t *reader_init_param);
 
 /* this is the same function as setup_reader */
-static inline reader_t *open_trace(const char *path, const trace_type_e type,
-                                   const reader_init_param_t *reader_init_param) {
+static inline reader_t *open_trace(
+    const char *path, const trace_type_e type,
+    const reader_init_param_t *reader_init_param) {
   return setup_reader(path, type, reader_init_param);
 }
 
@@ -272,11 +273,12 @@ static inline void print_reader(reader_t *reader) {
       "obj_id_is_num: %d, ignore_size_zero_req: %d, ignore_obj_size: %d, "
       "n_req_left: %d, last_req_clock_time: %ld\n",
       trace_type_str[reader->trace_type], reader->trace_path,
-      reader->trace_start_offset, reader->mmap_offset, reader->is_zstd_file,
-      reader->item_size, reader->file, reader->line_buf, reader->line_buf_size,
-      reader->csv_delimiter, reader->csv_has_header, reader->obj_id_is_num,
-      reader->ignore_size_zero_req, reader->ignore_obj_size,
-      reader->n_req_left, reader->last_req_clock_time);
+      reader->trace_start_offset, (long)reader->mmap_offset,
+      reader->is_zstd_file, reader->item_size, reader->file, reader->line_buf,
+      reader->line_buf_size, reader->csv_delimiter, reader->csv_has_header,
+      reader->obj_id_is_num, reader->ignore_size_zero_req,
+      reader->ignore_obj_size, reader->n_req_left,
+      (long)reader->last_req_clock_time);
 }
 
 #ifdef __cplusplus

@@ -53,7 +53,8 @@ static bool Clock_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *Clock_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Clock", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("Clock", ccache_params, cache_specific_params);
   cache->cache_init = Clock_init;
   cache->cache_free = Clock_free;
   cache->get = Clock_get;
@@ -231,7 +232,7 @@ static void Clock_evict(cache_t *cache, const request_t *req) {
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
   }
-  
+
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
   cache_evict_base(cache, obj_to_evict, true);
 }
@@ -291,8 +292,7 @@ static bool Clock_remove(cache_t *cache, const obj_id_t obj_id) {
 static const char *Clock_current_params(cache_t *cache,
                                         Clock_params_t *params) {
   static __thread char params_str[128];
-  int n =
-      snprintf(params_str, 128, "n-bit-counter=%d\n", params->n_bit_counter);
+  snprintf(params_str, 128, "n-bit-counter=%d\n", params->n_bit_counter);
 
   return params_str;
 }

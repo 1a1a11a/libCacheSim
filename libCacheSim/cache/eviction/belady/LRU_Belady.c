@@ -295,7 +295,7 @@ static void LRU_Belady_print_cache(const cache_t *cache) {
     return;
   }
   while (cur != NULL) {
-    printf("%lu->", cur->obj_id);
+    printf("%ld->", (long)cur->obj_id);
     cur = cur->queue.next;
   }
   printf("END\n");

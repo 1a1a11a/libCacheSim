@@ -51,7 +51,7 @@ static void _simulate(gpointer data, gpointer user_data) {
     reader_t *warmup_cloned_reader = clone_reader(params->warmup_reader);
     read_one_req(warmup_cloned_reader, req);
     while (req->valid) {
-      bool ck = local_cache->get(local_cache, req);
+      local_cache->get(local_cache, req);
       result[idx].n_warmup_req += 1;
       read_one_req(warmup_cloned_reader, req);
     }
@@ -72,7 +72,7 @@ static void _simulate(gpointer data, gpointer user_data) {
     while (req->valid && (n_warmup < params->n_warmup_req ||
                           req->clock_time - start_ts < params->warmup_sec)) {
       req->clock_time -= start_ts;
-      bool ck = local_cache->get(local_cache, req);
+      local_cache->get(local_cache, req);
       n_warmup += 1;
       read_one_req(cloned_reader, req);
     }

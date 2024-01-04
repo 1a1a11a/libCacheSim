@@ -2,8 +2,8 @@
 //  multi queue
 //  each queue has a specified size and a specified ghost size
 //  promotion upon hit
-//  
-//  in progress, this is not finished 
+//
+//  in progress, this is not finished
 //
 //
 //  myMQv1.c
@@ -60,7 +60,6 @@ static int64_t myMQv1_get_n_obj(const cache_t *cache);
 // ****                                                               ****
 // ***********************************************************************
 
-
 /**
  * @brief initialize the cache
  *
@@ -70,7 +69,8 @@ static int64_t myMQv1_get_n_obj(const cache_t *cache);
  */
 cache_t *myMQv1_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("myMQv1", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("myMQv1", ccache_params, cache_specific_params);
   cache->cache_init = myMQv1_init;
   cache->cache_free = myMQv1_free;
   cache->get = myMQv1_get;
@@ -169,7 +169,6 @@ static cache_obj_t *myMQv1_find(cache_t *cache, const request_t *req,
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
   ERROR("todo");
 
-
   return cache_obj;
 }
 
@@ -185,11 +184,10 @@ static cache_obj_t *myMQv1_find(cache_t *cache, const request_t *req,
  * @return the inserted object
  */
 static cache_obj_t *myMQv1_insert(cache_t *cache, const request_t *req) {
-  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
+  // myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   ERROR("todo");
-
 
   return obj;
 }
@@ -219,11 +217,9 @@ static cache_obj_t *myMQv1_to_evict(cache_t *cache, const request_t *req) {
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
 static void myMQv1_evict(cache_t *cache, const request_t *req) {
-  myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
+  // myMQv1_params_t *params = (myMQv1_params_t *)cache->eviction_params;
 
   ERROR("todo");
-
-
 }
 
 /**
@@ -278,7 +274,7 @@ static const char *myMQv1_current_params(cache_t *cache,
                                          myMQv1_params_t *params) {
   static __thread char params_str[128];
   int n = snprintf(params_str, 128, "n-caches=%ld;cache-size-ratio=%d",
-                   params->n_caches,
+                   (long)params->n_caches,
                    (int)(params->cache_sizes[0] * 100 / cache->cache_size));
 
   for (int i = 1; i < params->n_caches; i++) {
@@ -342,7 +338,6 @@ static void myMQv1_parse_params(cache_t *cache,
       }
     } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
       int n_ghost_caches = 0;
-      int64_t cache_size_sum = 0;
       int64_t ghost_size_array[myMQv1_MAX_N_cache];
       char *v = strsep((char **)&value, ":");
       while (v != NULL) {

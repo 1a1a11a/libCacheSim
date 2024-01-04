@@ -23,8 +23,6 @@
 extern "C" {
 #endif
 
-#include "chainedHashTableV2.h"
-
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -36,6 +34,7 @@ extern "C" {
 #include "../../include/libCacheSim/macro.h"
 #include "../../utils/include/mymath.h"
 #include "../hash/hash.h"
+#include "chainedHashTableV2.h"
 
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)
 #define NEXT_OBJ(cur_obj) (((cache_obj_t *)(cur_obj))->hash_next)
@@ -255,7 +254,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
  *      return true.
  *  - if the object is not in the hash table
  *      return false.
- *  
+ *
  *  @method chained_hashtable_delete_obj_id_v2
  *  @date   2023-11-28
  *  @param  hashtable                          [Handle to the hashtable]
@@ -267,7 +266,7 @@ bool chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
   uint64_t hv = get_hash_value_int_64(&obj_id) & hashmask(hashtable->hashpower);
   cache_obj_t *cur_obj = hashtable->ptr_table[hv];
   // the hash bucket is empty
-  if(cur_obj == NULL) return false;
+  if (cur_obj == NULL) return false;
 
   // the object to remove is the first object in the hash bucket
   if (cur_obj->obj_id == obj_id) {
@@ -282,7 +281,7 @@ bool chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
   do {
     prev_obj = cur_obj;
     cur_obj = cur_obj->hash_next;
-  } while(cur_obj != NULL && cur_obj->obj_id != obj_id);
+  } while (cur_obj != NULL && cur_obj->obj_id != obj_id);
 
   // the object to remove is in the hash bucket
   if (cur_obj != NULL) {
@@ -377,7 +376,8 @@ static int count_n_obj_in_bucket(cache_obj_t *curr_obj) {
     obj_id_arr[chain_len] = curr_obj->obj_id;
     for (int i = 0; i < chain_len; i++) {
       if (obj_id_arr[i] == curr_obj->obj_id) {
-        ERROR("obj_id %lu is duplicated in hashtable\n", curr_obj->obj_id);
+        ERROR("obj_id %lu is duplicated in hashtable\n",
+              (unsigned long)curr_obj->obj_id);
         abort();
       }
     }

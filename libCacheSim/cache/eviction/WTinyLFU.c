@@ -347,8 +347,6 @@ static void WTinyLFU_parse_params(cache_t *cache,
   // params->max_request_num = 32 * cache->cache_size; // 32 * cache_size
 
   char *params_str = strdup(cache_specific_params);
-  char *old_params_str = params_str;
-  char *end;
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
      * key and value are separated by = */

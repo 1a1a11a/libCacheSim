@@ -10,9 +10,9 @@ set(source
     sampling/temporal.c
     )
 
-if (SUPPORT_ZSTD_TRACE)
+if (OPT_SUPPORT_ZSTD_TRACE)
     set(source ${source} generalReader/zstdReader.c)
-endif (SUPPORT_ZSTD_TRACE)
+endif (OPT_SUPPORT_ZSTD_TRACE)
 
 add_library(traceReader ${source})
 

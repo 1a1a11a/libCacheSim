@@ -259,6 +259,7 @@ static cache_obj_t *SLRUv0_to_evict(cache_t *cache, const request_t *req) {
       return lru->to_evict(lru, req);
     }
   }
+  return NULL;
 }
 
 /**
@@ -432,7 +433,7 @@ static void SLRUv0_print_cache(cache_t *cache) {
     cache_obj_t *obj =
         ((LRU_params_t *)params->LRUs[i]->eviction_params)->q_head;
     while (obj) {
-      printf("%ld(%u)->", obj->obj_id, obj->obj_size);
+      printf("%ld(%u)->", (long) obj->obj_id, obj->obj_size);
       obj = obj->queue.next;
     }
     printf(" | ");

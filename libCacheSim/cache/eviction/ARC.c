@@ -180,7 +180,6 @@ static void ARC_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool ARC_get(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 #ifdef DEBUG_MODE
   return ARC_get_debug(cache, req);
 #else
@@ -520,7 +519,6 @@ static void _ARC_evict_L2_ghost(cache_t *cache, const request_t *req) {
 static void _ARC_replace(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-  cache_obj_t *obj = NULL;
 
   bool cond1 = params->L1_data_size > 0;
   bool cond2 = params->L1_data_size > params->p;
@@ -613,13 +611,12 @@ static void ARC_parse_params(cache_t *cache,
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
-  char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
      * key and value are separated by = */
     char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ",");
+    // char *value = strsep((char **)&params_str, ",");
 
     // skip the white space
     while (params_str != NULL && *params_str == ' ') {
@@ -649,7 +646,7 @@ static void print_cache(cache_t *cache) {
   cache_obj_t *obj = params->L1_data_head;
   printf("T1: ");
   while (obj != NULL) {
-    printf("%ld ", obj->obj_id);
+    printf("%ld ", (long)obj->obj_id);
     obj = obj->queue.next;
   }
   printf("\n");
@@ -657,7 +654,7 @@ static void print_cache(cache_t *cache) {
   obj = params->L1_ghost_head;
   printf("B1: ");
   while (obj != NULL) {
-    printf("%ld ", obj->obj_id);
+    printf("%ld ", (long)obj->obj_id);
     obj = obj->queue.next;
   }
   printf("\n");
@@ -665,7 +662,7 @@ static void print_cache(cache_t *cache) {
   obj = params->L2_data_head;
   printf("T2: ");
   while (obj != NULL) {
-    printf("%ld ", obj->obj_id);
+    printf("%ld ", (long)obj->obj_id);
     obj = obj->queue.next;
   }
   printf("\n");
@@ -673,7 +670,7 @@ static void print_cache(cache_t *cache) {
   obj = params->L2_ghost_head;
   printf("B2: ");
   while (obj != NULL) {
-    printf("%ld ", obj->obj_id);
+    printf("%ld ", (long)obj->obj_id);
     obj = obj->queue.next;
   }
   printf("\n");
@@ -773,7 +770,6 @@ static inline void _ARC_sanity_check_full(cache_t *cache,
 }
 
 static bool ARC_get_debug(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   cache->n_req += 1;
 

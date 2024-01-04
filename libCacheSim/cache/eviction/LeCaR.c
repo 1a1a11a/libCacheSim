@@ -585,8 +585,8 @@ bool LeCaR_remove(cache_t *cache, obj_id_t obj_id) {
 static const char *LeCaR_current_params(cache_t *cache,
                                         LeCaR_params_t *params) {
   static __thread char params_str[128];
-  int n = snprintf(params_str, 128, "update-weight=%d,lru-weight=%.lf",
-                   params->update_weight, params->w_lru);
+  snprintf(params_str, 128, "update-weight=%d,lru-weight=%.lf",
+           params->update_weight, params->w_lru);
 
   return params_str;
 }

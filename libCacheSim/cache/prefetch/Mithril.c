@@ -8,8 +8,6 @@
 //  Created by Zhelong on 23/8/15.
 //  Copyright © 2023 Zhelong. All rights reserved.
 //
-#include "../../include/libCacheSim/prefetchAlgo/Mithril.h"
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -19,6 +17,7 @@
 #include <sys/types.h>
 
 #include "../../include/libCacheSim/prefetchAlgo.h"
+#include "../../include/libCacheSim/prefetchAlgo/Mithril.h"
 #include "glibconfig.h"
 
 #define TRACK_BLOCK 192618l
@@ -529,7 +528,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
       printf("\n");
     else
       printf(", block at old_pos %ld\n",
-             *(gint64 *)GET_ROW_IN_MTABLE(Mithril_params, old_pos - 1));
+             (long)*(gint64 *)GET_ROW_IN_MTABLE(Mithril_params, old_pos - 1));
 
   } else {
     gint64 b = TRACK_BLOCK;
@@ -537,8 +536,9 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
         g_hash_table_lookup(rmtable->hashtable, GINT_TO_POINTER(b)));
     if (old_pos != 0) {
       ERROR("ts %lu, checking %ld, %ld is found at pos %d\n",
-            Mithril_params->ts, TRACK_BLOCK,
-            *(gint64 *)GET_ROW_IN_MTABLE(Mithril_params, old_pos - 1), old_pos);
+            (unsigned long)Mithril_params->ts, (long)TRACK_BLOCK,
+            (long)*(gint64 *)GET_ROW_IN_MTABLE(Mithril_params, old_pos - 1),
+            old_pos);
       abort();
     }
   }
@@ -571,7 +571,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
         GET_ROW_IN_MTABLE(Mithril_params, rmtable->mining_table->len - 1);
     if (req->obj_id != row_in_mtable[0]) {
       ERROR("after inserting, hashtable mining not consistent %ld %ld\n",
-            req->obj_id, row_in_mtable[0]);
+            (long)req->obj_id, (long)row_in_mtable[0]);
       abort();
     }
 #endif
@@ -582,7 +582,8 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
 #ifdef SANITY_CHECK
     if (req->obj_id != row_in_mtable[0]) {
       ERROR("ts %lu, hashtable mining found position not correct %ld %ld\n",
-            Mithril_params->ts, req->obj_id, row_in_mtable[0]);
+            (unsigned long)Mithril_params->ts, (long)req->obj_id,
+            (long)row_in_mtable[0]);
       abort();
     }
 #endif
@@ -683,7 +684,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
               "remove old entry from recording table, "
               "but it is not in recording hashtable, "
               "block %ld, recording table pos %ld, ts %ld ",
-              row_in_rtable[0], (long)rmtable->rtable_cur_row,
+              (long)row_in_rtable[0], (long)rmtable->rtable_cur_row,
               (long)Mithril_params->ts);
 
           long temp = rmtable->rtable_cur_row - 1;
@@ -719,7 +720,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
               "inconsistent entry in mtable "
               "and mining hashtable current request %ld, "
               "mining table %ld\n",
-              req->obj_id, row_in_mtable[0]);
+              (long)req->obj_id, (long)row_in_mtable[0]);
           abort();
         }
 #endif
@@ -767,7 +768,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
 #ifdef SANITY_CHECK
         if (req->obj_id != row_in_rtable[0]) {
           ERROR("Hashtable recording found position not correct %ld %ld\n",
-                req->obj_id, row_in_rtable[0]);
+                (long)req->obj_id, (long) row_in_rtable[0]);
           abort();
         }
 #endif
@@ -819,9 +820,9 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
 #ifdef SANITY_CHECK
             if (row_in_rtable == cur_row_in_rtable)
               ERROR("FOUND SRC DEST same, ts %ld %p %p %ld %ld %d %ld\n",
-                    Mithril_params->ts, row_in_rtable, cur_row_in_rtable,
-                    *row_in_rtable, *cur_row_in_rtable, index,
-                    rmtable->rtable_cur_row - 1);
+                    (long)Mithril_params->ts, row_in_rtable, cur_row_in_rtable,
+                    (long)*row_in_rtable, (long)*cur_row_in_rtable, index,
+                    (long)rmtable->rtable_cur_row - 1);
 #endif
             memcpy(row_in_rtable, cur_row_in_rtable,
                    sizeof(TS_REPRESENTATION) * rmtable->rtable_row_len);
@@ -843,7 +844,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
 #ifdef SANITY_CHECK
           if (inserted_row_in_mtable[0] != (gint64)req->obj_id) {
             ERROR("current block %ld, moving mining row block %ld\n",
-                  (gint64)req->obj_id, inserted_row_in_mtable[0]);
+                  (long)req->obj_id, (long)inserted_row_in_mtable[0]);
             abort();
           }
 #endif
@@ -906,7 +907,7 @@ void print_one_line(gpointer key, gpointer value, gpointer user_data) {
               (Mithril_params->pf_list_size + 1);
   printf("src %d, prefetch ", src_key);
   for (int i = 1; i < Mithril_params->pf_list_size + 1; i++) {
-    printf("%ld ", Mithril_params->ptable_array[dim1][dim2 + i]);
+    printf("%ld ", (long)Mithril_params->ptable_array[dim1][dim2 + i]);
   }
   printf("\n");
 }
@@ -1011,7 +1012,8 @@ static void _Mithril_mining(cache_t *cache) {
 
 #ifdef PROFILING
   printf("ts: %lu, clearing training data takes %lf seconds\n",
-         Mithril_params->ts, g_timer_elapsed(timer, &microsecond));
+         (unsigned long)Mithril_params->ts,
+         g_timer_elapsed(timer, &microsecond));
   g_timer_stop(timer);
   g_timer_destroy(timer);
 #endif
@@ -1056,8 +1058,8 @@ static void _Mithril_add_to_prefetch_table(cache_t *cache, gpointer gp1,
 #ifdef SANITY_CHECK
       if (Mithril_params->ptable_array[dim1][dim2] != GPOINTER_TO_INT(gp1)) {
         fprintf(stderr, "ERROR prefetch table pos wrong %d %ld, dim %d %d\n",
-                GPOINTER_TO_INT(gp1), Mithril_params->ptable_array[dim1][dim2],
-                dim1, dim2);
+                GPOINTER_TO_INT(gp1),
+                (long)Mithril_params->ptable_array[dim1][dim2], dim1, dim2);
         exit(1);
       }
 #endif

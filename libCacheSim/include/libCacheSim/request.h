@@ -20,7 +20,7 @@ extern "C" {
 /* need to optimize this for CPU cacheline */
 typedef struct request {
   int64_t clock_time; /* use uint64_t because vscsi uses microsec timestamp */
-  uint64_t hv;       /* hash value, used when offloading hash to reader */
+  uint64_t hv;        /* hash value, used when offloading hash to reader */
   obj_id_t obj_id;
   int64_t obj_size;
   int32_t ttl;
@@ -53,10 +53,10 @@ typedef struct request {
   /* used in trace analysis */
   int64_t vtime_since_last_access;
   int64_t rtime_since_last_access;
-  int64_t prev_size;     /* prev size */
+  int64_t prev_size; /* prev size */
   int32_t create_rtime;
-  bool compulsory_miss;   /* use this field only when it is set */
-  bool overwrite;  // this request overwrites a previous object
+  bool compulsory_miss;      /* use this field only when it is set */
+  bool overwrite;            // this request overwrites a previous object
   bool first_seen_in_window; /* the first time see in the time window */
   /* used in trace analysis */
 
@@ -68,7 +68,7 @@ typedef struct request {
  * allocate a new request_t struct and fill in necessary field
  * @return
  */
-static inline request_t *new_request() {
+static inline request_t *new_request(void) {
   request_t *req = my_malloc(request_t);
   memset(req, 0, sizeof(request_t));
   req->obj_size = 1;

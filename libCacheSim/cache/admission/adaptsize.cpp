@@ -23,7 +23,7 @@ static void adaptsize_admissioner_parse_params(
     const char *init_params, adaptsize_admission_params_t *pa) {
   if (init_params == NULL) {
     pa->adaptsize_threshold = INT64_MAX;
-    INFO("use default adaptsize admission: %ld", pa->adaptsize_threshold);
+    INFO("use default adaptsize admission: %ld", (long) pa->adaptsize_threshold);
   } else {
     char *params_str = strdup(init_params);
     char *old_params_str = params_str;

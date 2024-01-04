@@ -2,7 +2,7 @@
 
 setup_ubuntu() {
 	sudo apt update
-	sudo apt install -yqq libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools
+	sudo apt install -yqq libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools xxhash
 }
 
 setup_centos() {
@@ -10,7 +10,7 @@ setup_centos() {
 }
 
 setup_macOS() {
-	brew install glib google-perftools
+	brew install glib google-perftools argp-standalone
 }
 
 setup_xgboost() {

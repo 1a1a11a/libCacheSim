@@ -79,7 +79,7 @@ static int read_first_line(const reader_t *reader, char *in_buf,
  */
 static char csv_detect_delimiter(const reader_t *reader) {
   char first_line[1024] = {0};
-  int _buf_size = read_first_line(reader, first_line, 1024);
+  read_first_line(reader, first_line, 1024);
 
   char possible_delims[4] = {'\t', ',', '|', ':'};
   int possible_delim_counts[4] = {0, 0, 0, 0};
@@ -168,7 +168,7 @@ bool check_delimiter(const reader_t *reader, char delimiter) {
   bool is_delimiter_correct = true;
   size_t n = 0;
 
-  ssize_t read_size = getline(&buf, &n, ifile);
+  getline(&buf, &n, ifile);
 #define N_TEST 1024
   for (int i = 0; i < N_TEST; i++) {
     if (strchr(buf, delimiter) == NULL) {
@@ -338,8 +338,7 @@ void csv_reset_reader(reader_t *reader) {
     csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
   if (csv_params->has_header) {
-    ssize_t _read_size =
-        getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
 

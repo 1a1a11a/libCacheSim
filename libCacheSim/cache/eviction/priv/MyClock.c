@@ -189,7 +189,7 @@ static cache_obj_t *MyClock_to_evict_with_freq(cache_t *cache,
                                                int to_evict_freq) {
   MyClock_params_t *params = cache->eviction_params;
   cache_obj_t *pointer = params->pointer;
-  cache_obj_t *old_pointer = pointer;
+  // cache_obj_t *old_pointer = pointer;
 
   /* if we have run one full around or first eviction */
   if (pointer == NULL) pointer = params->q_tail;

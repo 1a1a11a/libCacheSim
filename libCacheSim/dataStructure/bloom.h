@@ -164,7 +164,7 @@ int bloom_reset(struct bloom * bloom);
  * Return: version string
  *
  */
-const char * bloom_version();
+const char * bloom_version(void);
 
 #ifdef __cplusplus
 }

@@ -358,7 +358,7 @@ static cache_obj_t *S3FIFOd_insert(cache_t *cache, const request_t *req) {
     /* insert into the ARC */
     params->hit_on_ghost = false;
     params->main_cache->get(params->main_cache, req);
-    obj = obj = params->main_cache->find(params->main_cache, req, false);
+    obj = params->main_cache->find(params->main_cache, req, false);
   } else {
     /* insert into the fifo */
     obj = params->fifo->insert(params->fifo, req);
@@ -435,7 +435,7 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
 
     while (main->get_occupied_byte(main) > main->cache_size) {
       // evict from main cache
-      cache_obj_t *obj = main->to_evict(main, req);
+      obj = main->to_evict(main, req);
       copy_cache_obj_to_request(params->req_local, obj);
       params->main_cache_eviction->get(params->main_cache_eviction,
                                        params->req_local);
@@ -463,7 +463,7 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
 
     while (main->get_occupied_byte(main) > main->cache_size) {
       // evict from main cache
-      cache_obj_t *obj = main->to_evict(main, req);
+      obj = main->to_evict(main, req);
       copy_cache_obj_to_request(params->req_local, obj);
       params->main_cache_eviction->get(params->main_cache_eviction,
                                        params->req_local);
@@ -536,7 +536,7 @@ static void S3FIFOd_parse_params(cache_t *cache,
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
-  char *end;
+  // char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,

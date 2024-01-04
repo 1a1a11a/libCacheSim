@@ -270,7 +270,7 @@ static void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req) {
 
   if (cache->n_obj <= params->n_exam_obj) {
     // just evict one object
-    cache_obj_t *cache_obj = params->next_to_merge->queue.prev;
+    cache_obj = params->next_to_merge->queue.prev;
     FIFO_Reinsertion_remove_obj(cache, params->next_to_merge);
     params->next_to_merge = cache_obj;
 
@@ -473,6 +473,7 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj) {
     default:
       break;
   }
+  abort();
 }
 
 #ifdef __cplusplus

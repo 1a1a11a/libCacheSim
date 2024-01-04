@@ -1,9 +1,8 @@
 
-#include "lcs.h"
-
 #include <assert.h>
 
 #include "../customizedReader/binaryUtils.h"
+#include "lcs.h"
 #include "readerInternal.h"
 
 #ifdef __cplusplus
@@ -24,12 +23,13 @@ const char *print_lcs_trace_format(lcs_trace_header_t *header) {
 bool verify_LCS_trace_header(lcs_trace_header_t *header) {
   if (header->start_magic != LCS_TRACE_START_MAGIC) {
     ERROR("invalid trace file, start magic is wrong 0x%lx\n",
-          header->start_magic);
+          (unsigned long)header->start_magic);
     return false;
   }
 
   if (header->end_magic != LCS_TRACE_END_MAGIC) {
-    ERROR("invalid trace file, end magic is wrong 0x%lx\n", header->end_magic);
+    ERROR("invalid trace file, end magic is wrong 0x%lx\n",
+          (unsigned long)header->end_magic);
     return false;
   }
 

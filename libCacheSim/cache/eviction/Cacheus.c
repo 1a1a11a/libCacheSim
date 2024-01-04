@@ -273,7 +273,6 @@ static void Cacheus_evict(cache_t *cache, const request_t *req) {
   cache_t *lfu = params->LFU;
   cache_t *lru_g = params->LRU_g;
   cache_t *lfu_g = params->LFU_g;
-  SR_LRU_params_t *params_LRU = (SR_LRU_params_t *)(lru->eviction_params);
 
   // If two voters decide the same:
   cache_obj_t *lru_to_evict = lru->to_evict(lru, req);
@@ -390,8 +389,8 @@ static void update_lr(cache_t *cache, const request_t *req) {
     // self.learning_rate = 0.9
     // elif self.learning_rate <= 0.001:
     // self.learning_rate = 0.005
-    if (params->lr + sign * abs(params->lr * delta_lr) > 0.001)
-      params->lr = params->lr + sign * abs(params->lr * delta_lr);
+    if (params->lr + sign * fabs(params->lr * delta_lr) > 0.001)
+      params->lr = params->lr + sign * fabs(params->lr * delta_lr);
     else
       params->lr = 0.0001;
     params->unlearn_count = 0;

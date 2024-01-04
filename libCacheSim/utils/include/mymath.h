@@ -24,7 +24,7 @@ void set_rand_seed(uint64_t seed);
  * random number generator from Knuth MMIX
  * @return
  */
-static inline uint64_t next_rand() {
+static inline uint64_t next_rand(void) {
   rand_seed = 6364136223846793005 * rand_seed + 1442695040888963407;
   return rand_seed;
 }

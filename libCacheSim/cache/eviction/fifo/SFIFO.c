@@ -291,6 +291,7 @@ static cache_obj_t *SFIFO_to_evict(cache_t *cache, const request_t *req) {
       return params->fifo_tails[i];
     }
   }
+  return NULL;
 }
 
 /**
@@ -512,7 +513,7 @@ static void _SFIFO_verify_fifo_size(cache_t *cache) {
 bool SFIFO_get_debug(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
-  SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
+  // SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   cache->last_request_metadata = "none";
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 

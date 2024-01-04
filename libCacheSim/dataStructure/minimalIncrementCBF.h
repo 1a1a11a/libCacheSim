@@ -142,7 +142,7 @@ int minimalIncrementCBF_decay(struct minimalIncrementCBF * bloom);
  * Return: version string
  *
  */
-const char * minimalIncrementCBF_version();
+const char * minimalIncrementCBF_version(void);
 
 #ifdef __cplusplus
 }

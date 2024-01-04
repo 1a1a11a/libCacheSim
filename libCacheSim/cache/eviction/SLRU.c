@@ -230,6 +230,7 @@ static bool SLRU_get(cache_t *cache, const request_t *req) {
 #else
   bool ck = cache_get_base(cache, req);
 #endif
+  return ck;
 }
 
 /**
@@ -546,9 +547,9 @@ static void _SLRU_verify_lru_size(cache_t *cache) {
 }
 
 bool SLRU_get_debug(cache_t *cache, const request_t *req) {
+  // SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   cache->n_req += 1;
 
-  SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
   bool cache_hit = cache->find(cache, req, true) != NULL;

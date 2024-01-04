@@ -48,7 +48,8 @@ static void LRU_print_cache(const cache_t *cache);
  */
 cache_t *LRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LRU", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LRU", ccache_params, cache_specific_params);
   cache->cache_init = LRU_init;
   cache->cache_free = LRU_free;
   cache->get = LRU_get;
@@ -207,8 +208,8 @@ static void LRU_evict(cache_t *cache, const request_t *req) {
 
 #if defined(TRACK_DEMOTION)
   if (cache->track_demotion)
-  printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
-         obj_to_evict->misc.next_access_vtime);
+    printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
+           obj_to_evict->misc.next_access_vtime);
 #endif
 
   cache_evict_base(cache, obj_to_evict, true);
@@ -273,7 +274,7 @@ static void LRU_print_cache(const cache_t *cache) {
     return;
   }
   while (cur != NULL) {
-    printf("%lu->", cur->obj_id);
+    printf("%lu->", (unsigned long)cur->obj_id);
     cur = cur->queue.next;
   }
   printf("END\n");

@@ -33,7 +33,7 @@ sampler_t *clone_temporal_sampler(const sampler_t *sampler) {
   return cloned_sampler;
 }
 
-sampler_t *free_temporal_sampler(sampler_t *sampler) {
+void free_temporal_sampler(sampler_t *sampler) {
   free(sampler->other_params);
   free(sampler);
 }

@@ -58,7 +58,7 @@ int get_n_cores(void) {
 
   return get_nprocs();
 #else
-  return sysconf(_SC_NPROCESSORS_ONLN)
+  return sysconf(_SC_NPROCESSORS_ONLN);
 #endif
   WARN("Unknown system, use 4 threads as default\n");
   return 4;
@@ -88,9 +88,9 @@ void print_glib_ver(void) {
 //   return ebx;
 // }
 
-int n_cores() { return get_n_cores(); }
+int n_cores(void) { return get_n_cores(); }
 
-double gettime() {
+double gettime(void) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
 
