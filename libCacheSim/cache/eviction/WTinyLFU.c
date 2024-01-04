@@ -138,6 +138,8 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
     params->main_cache = Hyperbolic_init(ccache_params_local, NULL);
   } else if (strcasecmp(params->main_cache_type, "LHD") == 0) {
     params->main_cache = LHD_init(ccache_params_local, NULL);
+  } else if (strcasecmp(params->main_cache_type, "SIEVE") == 0) {
+    params->main_cache = Sieve_init(ccache_params_local, NULL);
   } else {
     ERROR("WTinyLFU does not support %s \n", params->main_cache_type);
   }

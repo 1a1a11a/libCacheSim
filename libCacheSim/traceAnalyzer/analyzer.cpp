@@ -110,8 +110,9 @@ void traceAnalyzer::TraceAnalyzer::run() {
     if (curr_time_window_idx != time_to_window_idx(req->clock_time)) {
       ERROR(
           "The data is not ordered by time, please sort the trace first!"
-          "Current time %ld requested object %lu\n",
-          (long) req->clock_time + start_ts_, (unsigned long) req->obj_id);
+          "Current time %ld requested object %lu, obj size %lu\n",
+          (long)req->clock_time + start_ts_, (unsigned long)req->obj_id,
+          req->obj_size);
     }
 
     DEBUG_ASSERT(curr_time_window_idx == time_to_window_idx(req->clock_time));
