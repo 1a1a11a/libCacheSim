@@ -253,6 +253,7 @@ cache_obj_t *WTinyLFU_insert(cache_t *cache, const request_t *req) {
 static cache_obj_t *WTinyLFU_to_evict(cache_t *cache, const request_t *req) {
   // Warning: don't use this function
   DEBUG_ASSERT(false);
+  return NULL;
 }
 
 static void WTinyLFU_evict(cache_t *cache, const request_t *req) {

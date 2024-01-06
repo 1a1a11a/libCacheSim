@@ -46,7 +46,8 @@ static void free_list_node(void *list_node) {
  */
 cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("CR_LFU", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("CR_LFU", ccache_params, cache_specific_params);
   cache->cache_init = CR_LFU_init;
   cache->cache_free = CR_LFU_free;
   cache->get = CR_LFU_get;

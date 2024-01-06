@@ -113,9 +113,9 @@ static bool nop_get(cache_t *cache, const request_t *req) {
  */
 static cache_obj_t *nop_find(cache_t *cache, const request_t *req,
                              const bool update_cache) {
-//   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
+  //   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
-//   return cache_obj;
+  //   return cache_obj;
   return NULL;
 }
 
@@ -130,9 +130,9 @@ static cache_obj_t *nop_find(cache_t *cache, const request_t *req,
  * @return the inserted object
  */
 static cache_obj_t *nop_insert(cache_t *cache, const request_t *req) {
-//   cache_obj_t *obj = cache_insert_base(cache, req);
+  //   cache_obj_t *obj = cache_insert_base(cache, req);
 
-//   return obj;
+  //   return obj;
   return NULL;
 }
 
@@ -147,7 +147,8 @@ static cache_obj_t *nop_insert(cache_t *cache, const request_t *req) {
  * @return the object to be evicted
  */
 static cache_obj_t *nop_to_evict(cache_t *cache, const request_t *req) {
-    assert(false);
+  assert(false);
+  return NULL;
 }
 
 /**
@@ -159,7 +160,7 @@ static cache_obj_t *nop_to_evict(cache_t *cache, const request_t *req) {
  * @param req not used
  */
 static void nop_evict(cache_t *cache, const request_t *req) {
-//   cache_evict_base(cache, obj_to_evict, true);
+  // cache_evict_base(cache, obj_to_evict, true);
 }
 
 /**

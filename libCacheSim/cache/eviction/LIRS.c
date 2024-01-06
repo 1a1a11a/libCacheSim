@@ -502,7 +502,7 @@ bool LIRS_can_insert(cache_t *cache, const request_t *req) {
 
   INFO("LIRS_can_insert: should not reach here. n_req = %ld\n",
        (long)cache->n_req);
-  assert(false);
+  abort();
 }
 
 static void LIRS_prune(cache_t *cache) {

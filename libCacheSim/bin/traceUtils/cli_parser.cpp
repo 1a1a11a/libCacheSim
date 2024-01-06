@@ -200,7 +200,7 @@ static void print_parsed_arg(struct arguments *args) {
   int n = 0;
   char output_str[OUTPUT_STR_LEN];
   n = snprintf(output_str, OUTPUT_STR_LEN - 1, "trace path: %s, trace_type %s",
-               args->trace_path, trace_type_str[args->trace_type]);
+               args->trace_path, g_trace_type_name[args->trace_type]);
 
   if (args->trace_type_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,

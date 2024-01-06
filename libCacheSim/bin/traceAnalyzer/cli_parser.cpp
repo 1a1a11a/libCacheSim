@@ -61,9 +61,9 @@ enum argp_option_short {
 static struct argp_option options[] = {
     {NULL, 0, NULL, 0, "trace reader related parameters:", 0},
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
-     "time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,", NULL,
+     "time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,", 0,
      "Parameters used for csv trace", 1},
-    {"num-req", OPTION_NUM_REQ, 0, NULL,
+    {"num-req", OPTION_NUM_REQ, 0, 0,
      "Num of requests to process, default -1 means all requests in the trace",
      1},
 
@@ -112,7 +112,7 @@ static struct argp_option options[] = {
 
     {NULL, 0, NULL, 0, "common parameters:", 0},
 
-    {"output", OPTION_OUTPUT_PATH, "", NULL, "Output path", 8},
+    {"output", OPTION_OUTPUT_PATH, "", OPTION_ARG_OPTIONAL, "Output path", 8},
     {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
      "Produce verbose output", 8},
     {0}};
