@@ -320,6 +320,7 @@ static cache_obj_t *QDLPv0_to_evict(cache_t *cache, const request_t *req) {
     // not implemented, we need to evict from the clock cache
     assert(0);
   }
+  return NULL;
 }
 
 /**

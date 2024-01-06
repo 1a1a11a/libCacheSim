@@ -10,7 +10,7 @@ setup_centos() {
 }
 
 setup_macOS() {
-	brew install glib google-perftools argp-standalone
+	brew install glib google-perftools argp-standalone xxhash
 }
 
 setup_xgboost() {

@@ -4,8 +4,8 @@
 #include "../libCacheSim/utils/include/mymath.h"
 #include "common.h"
 
-// static const uint64_t req_cnt_true = 113872, req_byte_true = 4205978112;
-static const uint64_t req_cnt_true = 113872, req_byte_true = 4368040448;
+
+static const uint64_t g_req_cnt_true = 113872, g_req_byte_true = 4368040448;
 
 static void _verify_profiler_results(const cache_stat_t *res,
                                      uint64_t num_of_sizes,
@@ -23,23 +23,23 @@ static void _verify_profiler_results(const cache_stat_t *res,
 
 static void print_results(const cache_t *cache, const cache_stat_t *res) {
   printf("%s uint64_t cache_size[] = {", cache->cache_name);
-  printf("%ld", res[0].cache_size);
+  printf("%ld", (long)res[0].cache_size);
   for (uint64_t i = 1; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf(", %ld", res[i].cache_size);
+    printf(", %ld", (long)res[i].cache_size);
   }
   printf("};\n");
 
   printf("uint64_t miss_cnt_true[] = {");
-  printf("%ld", res[0].n_miss);
+  printf("%ld", (long)res[0].n_miss);
   for (uint64_t i = 1; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf(", %ld", res[i].n_miss);
+    printf(", %ld", (long)res[i].n_miss);
   }
   printf("};\n");
 
   printf("uint64_t miss_byte_true[] = {");
-  printf("%ld", res[0].n_miss_byte);
+  printf("%ld", (long)res[0].n_miss_byte);
   for (uint64_t i = 1; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf(", %ld", res[i].n_miss_byte);
+    printf(", %ld", (long)res[i].n_miss_byte);
   }
   printf("};\n");
 }
@@ -59,8 +59,8 @@ static void test_Mithril(gconstpointer user_data) {
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   print_results(cache, res);
-  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, req_cnt_true,
-                           miss_cnt_true, req_byte_true, miss_byte_true);
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, g_req_cnt_true,
+                           miss_cnt_true, g_req_byte_true, miss_byte_true);
   cache->cache_free(cache);
   my_free(sizeof(cache_stat_t), res);
 }

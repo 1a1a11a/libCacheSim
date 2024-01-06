@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
   struct arguments args;
 
   cli::parse_cmd(argc, argv, &args);
-  if (args.ofilepath == NULL) {
+  if (strlen(args.ofilepath) == 0) {
     snprintf(args.ofilepath, OFILEPATH_LEN, "%s.oracleGeneral", args.trace_path);
   }
 

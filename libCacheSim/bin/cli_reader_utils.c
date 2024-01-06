@@ -1,13 +1,12 @@
 
 
 #define _GNU_SOURCE
-#include "cli_reader_utils.h"
-
 #include <assert.h>
 #include <string.h>
 
 #include "../include/libCacheSim/reader.h"
 #include "../utils/include/mystr.h"
+#include "cli_reader_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,11 +59,12 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return ORACLE_CF1_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleSysTwrNS") == 0) {
     return ORACLE_SYS_TWRNS_TRACE;
-  } else if (strcasecmp(trace_type_str, "valpinTrace") == 0){
+  } else if (strcasecmp(trace_type_str, "valpinTrace") == 0) {
     return VALPIN_TRACE;
   } else {
     ERROR("unsupported trace type: %s\n", trace_type_str);
   }
+  return UNKNOWN_TRACE;
 }
 
 bool is_true(const char *arg) {
@@ -215,7 +215,7 @@ trace_type_e detect_trace_type(const char *trace_path) {
     trace_type = UNKNOWN_TRACE;
   }
 
-  INFO("detecting trace type: %s\n", trace_type_str[trace_type]);
+  INFO("detecting trace type: %s\n", g_trace_type_name[trace_type]);
   return trace_type;
 }
 
@@ -276,7 +276,8 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
   }
   *wss_obj *= scaling_factor;
   *wss_byte *= scaling_factor;
-  INFO("working set size: %ld object %ld byte\n", *wss_obj, *wss_byte);
+  INFO("working set size: %ld object %ld byte\n", (long)*wss_obj,
+       (long)*wss_byte);
 
   free_request(req);
   reset_reader(reader);

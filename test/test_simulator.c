@@ -106,7 +106,8 @@ static void test_simulator(gconstpointer user_data) {
     g_assert_true(caches[i] != NULL);
   }
 
-  res = simulate_with_multi_caches(reader, caches, 4, NULL, 0, 0, _n_cores(), false);
+  res = simulate_with_multi_caches(reader, caches, 4, NULL, 0, 0, _n_cores(),
+                                   false);
   g_assert_cmpuint(res[0].cache_size, ==, STEP_SIZE);
   g_assert_cmpuint(res[1].n_req_byte, ==, req_byte_true);
   g_assert_cmpuint(res[3].n_req, ==, req_cnt_true);
@@ -205,9 +206,10 @@ static void test_simulator_with_ttl(gconstpointer user_data) {
       reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
 
   for (uint64_t i = 0; i < CACHE_SIZE / STEP_SIZE; i++) {
-    printf("cache size: %lu, n_req: %lu, n_req_byte: %lu, n_miss: %8lu %16lu\n",
-           res[i].cache_size, res[i].n_req, res[i].n_req_byte, res[i].n_miss,
-           res[i].n_miss_byte);
+    printf("cache size: %lu, n_req: %ld, n_req_byte: %ld, n_miss: %8ld %16ld\n",
+           (unsigned long)res[i].cache_size, (long)res[i].n_req,
+           (long)res[i].n_req_byte, (long)res[i].n_miss,
+           (long)res[i].n_miss_byte);
     g_assert_cmpuint(res[i].cache_size, ==, STEP_SIZE * (i + 1));
     g_assert_cmpuint(res[i].n_req, ==, req_cnt_true);
     g_assert_cmpuint(res[i].n_req_byte, ==, req_byte_true);
@@ -224,13 +226,11 @@ int main(int argc, char *argv[]) {
   reader_t *reader;
 
   reader = setup_plaintxt_reader_num();
-  g_test_add_data_func_full("/libCacheSim/simulator_no_size_plain_num",
-  reader,
+  g_test_add_data_func_full("/libCacheSim/simulator_no_size_plain_num", reader,
                             test_simulator_no_size, test_teardown);
 
   reader = setup_plaintxt_reader_str();
-  g_test_add_data_func_full("/libCacheSim/simulator_no_size_plain_str",
-  reader,
+  g_test_add_data_func_full("/libCacheSim/simulator_no_size_plain_str", reader,
                             test_simulator_no_size, test_teardown);
 
   reader = setup_csv_reader_obj_num();

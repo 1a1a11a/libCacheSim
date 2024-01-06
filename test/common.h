@@ -10,7 +10,12 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <unistd.h>
+#ifdef __linux__
 #include <sys/sysinfo.h>
+#elif __APPLE__
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#endif
 
 #include "../libCacheSim/include/libCacheSim.h"
 #include "../libCacheSim/include/libCacheSim/prefetchAlgo.h"
@@ -27,20 +32,30 @@
 
 #define DEFAULT_TTL (300 * 86400)
 
-static inline unsigned int _n_cores0() {
-  unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
+// static inline unsigned int _n_cores0() {
+//   unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
 
-  asm volatile("cpuid"
-               : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
-               : "0"(eax), "2"(ecx)
-               :);
-  //  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
-  return ebx;
-}
+//   asm volatile("cpuid"
+//                : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+//                : "0"(eax), "2"(ecx)
+//                :);
+//   //  printf("Cores: %d\nThreads: %d\nActual thread: %d\n", eax, ebx, edx);
+//   return ebx;
+// }
 
-static inline unsigned int _n_cores() {
-  return get_nprocs();
+#ifdef __linux__
+static inline unsigned int _n_cores(void) { return get_nprocs(); }
+#elif __APPLE__
+static inline unsigned int _n_cores(void) {
+  int count;
+  size_t count_len = sizeof(count);
+  sysctlbyname("hw.physicalcpu", &count, &count_len, NULL, 0);
+  // fprintf(stderr, "you have %i cpu cores", count);
+  return count;
 }
+#else
+#error "what platform is this"
+#endif
 
 static void _detect_data_path(char *data_path, char *data_name) {
   sprintf(data_path, "data/%s", data_name);

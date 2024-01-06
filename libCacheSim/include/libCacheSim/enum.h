@@ -65,7 +65,7 @@ typedef enum {
   UNKNOWN_TRACE,
 } __attribute__((__packed__)) trace_type_e;
 
-static char *trace_type_str[UNKNOWN_TRACE + 2] = {
+static char *g_trace_type_name[UNKNOWN_TRACE + 2] = {
     "CSV_TRACE",
     "BIN_TRACE",
     "PLAIN_TXT_TRACE",

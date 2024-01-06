@@ -196,7 +196,7 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
                int64_t array_size, const char *const ofilepath,
                const dist_type_e dist_type) {
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
-  sprintf(file_path, "%s.%s", ofilepath, dist_type_str[dist_type]);
+  sprintf(file_path, "%s.%s", ofilepath, g_dist_type_name[dist_type]);
   FILE *file = fopen(file_path, "wb");
   fwrite(dist_array, sizeof(int32_t), get_num_of_req(reader), file);
   fclose(file);
@@ -207,7 +207,7 @@ void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
                    int64_t array_size, const char *const ofilepath,
                    const dist_type_e dist_type) {
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
-  sprintf(file_path, "%s.%s.txt", ofilepath, dist_type_str[dist_type]);
+  sprintf(file_path, "%s.%s.txt", ofilepath, g_dist_type_name[dist_type]);
   FILE *file = fopen(file_path, "w");
   for (int i = 0; i < array_size; i++) {
     fprintf(file, "%d\n", dist_array[i]);
@@ -264,7 +264,7 @@ void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
   assert(get_num_of_req(reader) == array_size);
 
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
-  sprintf(file_path, "%s.%s.cnt", ofilepath, dist_type_str[dist_type]);
+  sprintf(file_path, "%s.%s.cnt", ofilepath, g_dist_type_name[dist_type]);
   FILE *file = fopen(file_path, "w");
 
   GHashTable *hash_table =

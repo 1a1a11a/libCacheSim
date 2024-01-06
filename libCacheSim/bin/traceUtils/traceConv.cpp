@@ -96,7 +96,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
           "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
           "object, %lld B (%.2lf GB)\n",
           reader->trace_path, (long)(n_req_curr / 1e6),
-          (double)total_bytes / GiB, start_ts - req->clock_time,
+          (double)total_bytes / GiB, (long)(start_ts - req->clock_time),
           (long long)n_obj, (long long)unique_bytes,
           (double)unique_bytes / GiB);
     }
@@ -118,8 +118,8 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
       "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
       "object, %lld B (%.2lf GB), reversing output...\n",
       reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB,
-      start_ts - req->clock_time, (long long)n_obj, (long long)unique_bytes,
-      (double)unique_bytes / GiB);
+      (long)(start_ts - req->clock_time), (long long)n_obj,
+      (long long)unique_bytes, (double)unique_bytes / GiB);
 
   struct trace_stat stat;
   stat.n_req = n_req_curr;
@@ -251,6 +251,6 @@ static void _reverse_file(std::string ofilepath, struct trace_stat stat,
   remove((ofilepath + ".reverse").c_str());
 
   INFO("trace conversion finished, %ld requests %ld objects, output %s\n",
-       n_req, stat.n_obj, ofilepath.c_str());
+       (long) n_req, (long) stat.n_obj, ofilepath.c_str());
 }
 }  // namespace traceConv

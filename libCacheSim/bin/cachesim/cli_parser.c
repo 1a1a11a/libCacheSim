@@ -477,7 +477,7 @@ static void set_cache_size(struct arguments *args, reader_t *reader) {
   args->n_cache_size = n_cache_sizes;
 
   if (args->n_cache_size == 0) {
-    printf("working set %ld too small\n", wss);
+    printf("working set %ld too small\n", (long) wss);
     exit(0);
   }
 }
@@ -494,7 +494,7 @@ void print_parsed_args(struct arguments *args) {
       output_str, OUTPUT_STR_LEN - 1,
       "trace path: %s, trace_type %s, ofilepath "
       "%s, %d threads, warmup %d sec, total %d algo x %d size = %d caches",
-      args->trace_path, trace_type_str[args->trace_type], args->ofilepath,
+      args->trace_path, g_trace_type_name[args->trace_type], args->ofilepath,
       args->n_thread, args->warmup_sec, args->n_eviction_algo,
       args->n_cache_size, args->n_eviction_algo * args->n_cache_size);
 
