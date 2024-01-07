@@ -1,33 +1,27 @@
 
 FROM ubuntu:22.04 as base
 MAINTAINER Juncheng
-LABEL version="0.0.1"
+LABEL version="0.0.2"
 
 
 WORKDIR /
 
 # install dependency
-RUN apt update && apt-get install -yqq libglib2.0-dev libgoogle-perftools-dev cmake git sudo wget gcc g++
-
-# install dependency zstd
-RUN wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz > /dev/null 2>&1 && \
-tar xvf zstd-1.5.0.tar.gz >/dev/null && \
-cd zstd-1.5.0/build/cmake/ && mkdir _build && cd _build/ && \
-cmake .. && make -j && make install && \
-cd .. 
+# RUN apt update && apt-get install -yqq libglib2.0-dev libgoogle-perftools-dev cmake git sudo wget gcc g++ xxhash
+RUN apt update && apt-get install -yqq cmake git sudo wget
 
 # clone repo
 RUN git clone https://github.com/1a1a11a/libCacheSim -b develop
 
 # build libCacheSim
 WORKDIR /libCacheSim/
-RUN mkdir _build;
-# RUN bash ./scripts/install_dependency.sh
-# RUN bash ./scripts/install_libcachesim.sh
+# RUN mkdir _build;
+RUN bash ./scripts/install_dependency.sh
+RUN bash ./scripts/install_libcachesim.sh
 
 
 WORKDIR /libCacheSim/_build/
-RUN cmake -DSUPPORT_ZSTD_TRACE=on .. && make -j && sudo make install
+# RUN cmake -DSUPPORT_ZSTD_TRACE=on .. && make -j && sudo make install
 
 
 WORKDIR /libCacheSim/_build/bin/
@@ -38,8 +32,9 @@ WORKDIR /libCacheSim/_build/bin/
 # sudo docker build -t 1a1a11a/libcachesim -f dockerfile .
 
 # push to docker hub
-# sudo docker tag 1a1a11a/libcachesim:latest 1a1a11a/libcachesim:0.0.1
+# sudo docker tag 1a1a11a/libcachesim:latest 1a1a11a/libcachesim:0.0.2
 # sudo docker push 1a1a11a/libcachesim:latest
+# sudo docker push 1a1a11a/libcachesim:0.0.2
 
 # use the container
 # sudo docker run -v /local/data/path:/data -it 1a1a11a/libcachesim:latest bash
@@ -56,7 +51,5 @@ WORKDIR /libCacheSim/_build/bin/
 #   "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
 #   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 # sudo apt update && sudo apt-get install -yqq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-
 
 
