@@ -19,8 +19,6 @@
 extern "C" {
 #endif
 
-// #define USE_MYCLOCK
-
 typedef struct {
   cache_t *Ain;
   cache_t *Aout;
@@ -110,11 +108,6 @@ cache_t *TwoQ_init(const common_cache_params_t ccache_params,
 
   ccache_params_local.cache_size = params->Am_cache_size;
   params->Am = LRU_init(ccache_params_local, NULL);
-#ifdef USE_MYCLOCK
-  params->Am->cache_free(params->Am);
-  params->Am = MyClock_init(ccache_params_local, NULL);
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "TwoQ-myclock");
-#endif
 
   return cache;
 }

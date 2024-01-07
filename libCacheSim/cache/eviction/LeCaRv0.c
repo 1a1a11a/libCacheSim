@@ -18,8 +18,6 @@
 extern "C" {
 #endif
 
-// #define USE_MYCLOCK
-
 typedef struct LeCaRv0_params {
   cache_t *LRU;    // LRU
   cache_t *LRU_g;  // eviction history of LRU
@@ -117,12 +115,6 @@ cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
 
   params->LRU_g = LRU_init(ccache_params_g, NULL);
   params->LFU_g = LRU_init(ccache_params_g, NULL);
-
-#ifdef USE_MYCLOCK
-  params->LRU->cache_free(params->LRU);
-  params->LRU = MyClock_init(ccache_params, NULL);
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LeCaRv0-myclock");
-#endif
 
   return cache;
 }

@@ -97,6 +97,9 @@ cache_t *MRU_init(const common_cache_params_t ccache_params,
 cache_t *Random_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
+cache_t *RandomTwo_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 
@@ -175,9 +178,6 @@ cache_t *LP_ARC_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
 cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
-
-cache_t *MyClock_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
 cache_t *QDLPv0_init(const common_cache_params_t ccache_params,

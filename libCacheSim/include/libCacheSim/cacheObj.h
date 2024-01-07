@@ -100,6 +100,10 @@ typedef struct {
 
 typedef struct {
   int64_t last_access_vtime;
+} RandomTwo_obj_metadata_t;
+
+typedef struct {
+  int64_t last_access_vtime;
   int32_t freq;
   int8_t fifo_id;
 } SFIFO_obj_metadata_t;
@@ -125,14 +129,6 @@ typedef struct {
   int64_t next_access_vtime;
   int32_t freq;
 } __attribute__((packed)) misc_metadata_t;
-
-typedef struct {
-  int32_t clock_id;
-  int32_t freq;
-  int32_t n_miss;
-  bool visited;
-  bool new_obj;
-} __attribute__((packed)) myclock_obj_params_t;
 
 // ############################## cache obj ###################################
 struct cache_obj;
@@ -165,6 +161,7 @@ typedef struct cache_obj {
     SR_LRU_obj_metadata_t SR_LRU;
     CR_LFU_obj_metadata_t CR_LFU;
     Hyperbolic_obj_metadata_t hyperbolic;
+    RandomTwo_obj_metadata_t RandomTwo;
     Belady_obj_metadata_t Belady;
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
@@ -173,7 +170,6 @@ typedef struct cache_obj {
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
-    myclock_obj_params_t myclock;
     Sieve_obj_params_t sieve;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1

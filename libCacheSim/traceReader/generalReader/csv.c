@@ -168,7 +168,7 @@ bool check_delimiter(const reader_t *reader, char delimiter) {
   bool is_delimiter_correct = true;
   size_t n = 0;
 
-  getline(&buf, &n, ifile);
+  size_t _n = getline(&buf, &n, ifile);
 #define N_TEST 1024
   for (int i = 0; i < N_TEST; i++) {
     if (strchr(buf, delimiter) == NULL) {
@@ -338,7 +338,8 @@ void csv_reset_reader(reader_t *reader) {
     csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
   if (csv_params->has_header) {
-    getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    size_t _n =
+        getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
 

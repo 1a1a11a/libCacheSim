@@ -1,6 +1,7 @@
 set(sourceC
         MRU.c
         Random.c
+        RandomTwo.c
         LFU.c
         LFUDA.c
         ARC.c
@@ -43,7 +44,6 @@ set(sourceC
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
     set(sourceC ${sourceC} 
 
-                priv/MyClock.c
                 priv/QDLPv0.c
 
 
