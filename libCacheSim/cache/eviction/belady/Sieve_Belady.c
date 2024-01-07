@@ -173,7 +173,7 @@ static cache_obj_t *Sieve_Belady_find(cache_t *cache, const request_t *req,
                                       const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
   if (cache_obj != NULL && update_cache) {
-    cache_obj->myclock.freq = 1;
+    cache_obj->sieve.freq = 1;
   }
 
   return cache_obj;
@@ -199,14 +199,14 @@ static cache_obj_t *Sieve_Belady_insert(cache_t *cache, const request_t *req) {
   if (should_insert(cache, req->next_access_vtime)) {
     obj = cache_insert_base(cache, req);
     prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
-    obj->myclock.freq = 0;
-    obj->myclock.new_obj = true;
+    obj->sieve.freq = 0;
+    // obj->sieve.new_obj = true;
   }
 #else
   obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
-  obj->myclock.freq = 0;
-  obj->myclock.new_obj = true;
+  obj->sieve.freq = 0;
+  // obj->sieve.new_obj = true;
 #endif
 
   return obj;
@@ -232,8 +232,8 @@ static void Sieve_Belady_evict(cache_t *cache, const request_t *req) {
 
   /* find the first untouched */
   while (obj != NULL && should_insert(cache, obj->misc.next_access_vtime)) {
-    // while (obj != NULL && obj->myclock.freq > 0) {
-    obj->myclock.freq -= 1;
+    // while (obj != NULL && obj->sieve.freq > 0) {
+    obj->sieve.freq -= 1;
     obj = obj->queue.prev;
   }
 
@@ -241,8 +241,8 @@ static void Sieve_Belady_evict(cache_t *cache, const request_t *req) {
   if (obj == NULL) {
     obj = params->q_tail;
     while (obj != NULL && should_insert(cache, obj->misc.next_access_vtime)) {
-      // while (obj != NULL && obj->myclock.freq > 0) {
-      obj->myclock.freq -= 1;
+      // while (obj != NULL && obj->sieve.freq > 0) {
+      obj->sieve.freq -= 1;
       obj = obj->queue.prev;
     }
   }

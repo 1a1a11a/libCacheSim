@@ -66,7 +66,6 @@ static void test_LRU(gconstpointer user_data) {
 }
 
 static void test_Clock(gconstpointer user_data) {
-  /* myclock */
   uint64_t miss_cnt_true[] = {93313, 89775, 83411, 81328,
                               74815, 72283, 71927, 64456};
   uint64_t miss_byte_true[] = {4213887488, 4064512000, 3762650624, 3644467200,

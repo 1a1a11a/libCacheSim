@@ -2,7 +2,7 @@
  * @file QDLP.c
  * @brief Implementation of QDLPv0 eviction algorithm
  * QDLPv0: lazy promotion and quick demotion
- * it uses a probationary FIFO queue with a myclock cache
+ * it uses a probationary FIFO queue with a sieve cache
  * objects are first inserted into the FIFO queue, and moved to the clock cache
  * when evicting from the FIFO queue if it has been accessed
  * if the cache is full, evict from the FIFO cache

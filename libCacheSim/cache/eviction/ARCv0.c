@@ -30,8 +30,6 @@ extern "C" {
 // #define LAZY_PROMOTION
 // #define QUICK_DEMOTION
 
-// #define USE_MYCLOCK
-
 typedef struct ARCv0_params {
   // L1_data is T1 in the paper, L1_ghost is B1 in the paper
   cache_t *T1;
@@ -139,12 +137,6 @@ cache_t *ARCv0_init(const common_cache_params_t ccache_params,
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "ARCv0-LP");
 #elif defined(QUICK_DEMOTION)
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "ARCv0-QD");
-#endif
-
-#ifdef USE_MYCLOCK
-  params->T2->cache_free(params->T2);
-  params->T2 = MyClock_init(ccache_params_local, NULL);
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "ARCv0-myclock");
 #endif
 
   return cache;
