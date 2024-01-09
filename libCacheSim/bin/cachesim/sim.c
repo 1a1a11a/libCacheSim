@@ -41,9 +41,11 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
     req_cnt++;
     req_byte += req->obj_size;
     if (cache->get(cache, req) == false) {
+      printf("%lu miss\n", (unsigned long)req->obj_id);
       miss_cnt++;
       miss_byte += req->obj_size;
     }
+    printf("%lu hit\n", (unsigned long)req->obj_id);
     if (req->clock_time - last_report_ts >= report_interval &&
         req->clock_time != 0) {
       INFO(
