@@ -50,7 +50,7 @@ cache_t *RandomTwo_init(const common_cache_params_t ccache_params,
   ccache_params_copy.hashpower = MAX(12, ccache_params_copy.hashpower - 8);
 
   cache_t *cache =
-      cache_struct_init("RandomTwo", ccache_params, cache_specific_params);
+      cache_struct_init("RandomTwo", ccache_params_copy, cache_specific_params);
   cache->cache_init = RandomTwo_init;
   cache->cache_free = RandomTwo_free;
   cache->get = RandomTwo_get;
