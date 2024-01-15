@@ -3,7 +3,7 @@
 #include <thread>
 
 #define NUM_SIZES 8
-const char *TRACE_PATH = "../../../data/trace.csv";
+const char *TRACE_PATH = "../../../data/cloudPhysicsIO.csv";
 
 void run_one_cache_multiple_sizes(cache_t *cache, reader_t *reader) {
   uint64_t cache_sizes[NUM_SIZES] = {100,  200,  400,  800,
@@ -44,7 +44,7 @@ void run_multiple_caches(reader_t *reader) {
 
   cache_t *caches[8] = {
       LRU_init(cc_params, nullptr),  LFU_init(cc_params, nullptr),
-      FIFO_init(cc_params, nullptr), SLRU_init(cc_params, nullptr),
+      FIFO_init(cc_params, nullptr), Sieve_init(cc_params, nullptr),
       LHD_init(cc_params, nullptr),  LeCaR_init(cc_params, nullptr),
       ARC_init(cc_params, nullptr),  NULL};
 
@@ -55,7 +55,7 @@ void run_multiple_caches(reader_t *reader) {
 
   cache_stat_t *result = simulate_with_multi_caches(
       reader, caches, 8, nullptr, 0.0, 0,
-      static_cast<int>(std::thread::hardware_concurrency()));
+      static_cast<int>(std::thread::hardware_concurrency()), 0);
 
   printf(
       "      cache name        cache size           num_miss        num_req"

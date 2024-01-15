@@ -1,7 +1,5 @@
 
 ## Building a concurrent cache simulator 
-> WARN
-> this has not been updated
 
 
 This tutorial shows how to build a concurrent cache simulator using libCacheSim. 
