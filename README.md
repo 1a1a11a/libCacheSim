@@ -34,7 +34,8 @@
 <!-- TOC --><a name="news"></a>
 ## News
 * **2023 June**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
-* **2023 Oct**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **SIEVE** are available! These are very simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
+* **2023 Oct**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **SIEVE(https://sievecache.com)** are available! These are very simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
+* **2024 Jan**: We compiled a list of open-source cache datasets at the bottom of this page 
 ---
 
 <!-- TOC --><a name="what-is-libcachesim"></a>
