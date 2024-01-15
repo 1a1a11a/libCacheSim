@@ -1,18 +1,27 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.2)
 project (cacheSimulatorMultiSize)
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_library(libCacheSim libCacheSim)
 find_path(libCacheSimInclude libCacheSim)
 include_directories(${libCacheSimInclude})
 message(STATUS "libCacheSim found? ${libCacheSim}, ${libCacheSimInclude}")
 
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../../cmake/Modules/")
 find_package(GLib "2.40" REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
 message(STATUS "glib found? ${GLib_FOUND}, lib = ${GLib_LIBRARY}, header = ${GLib_INCLUDE_DIRS}")
 
+find_package(ZSTD)
+# https://stackoverflow.com/questions/61377055/cannot-find-gflags-gflags-h-while-building-library-osx/61379123#61379123
+include_directories(${ZSTD_INCLUDE_DIR})
+if ("${ZSTD_LIBRARIES}" STREQUAL "") 
+    message(FATAL_ERROR "zstd not found")
+endif()
 
 add_executable(cacheSimulatorMultiSize main.cpp)
-target_link_libraries(cacheSimulatorMultiSize libCacheSim)
+target_link_libraries(cacheSimulatorMultiSize libCacheSim m ${GLib_LIBRARY} ${ZSTD_LIBRARIES})
+
