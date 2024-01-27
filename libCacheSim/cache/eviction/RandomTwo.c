@@ -149,7 +149,6 @@ static cache_obj_t *RandomTwo_insert(cache_t *cache, const request_t *req) {
 static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj_to_evict1 = hashtable_rand_obj(cache->hashtable);
   cache_obj_t *obj_to_evict2 = hashtable_rand_obj(cache->hashtable);
-  DEBUG_ASSERT(obj_to_evict->obj_size != 0);
   if (obj_to_evict1->RandomTwo.last_access_vtime <
       obj_to_evict2->RandomTwo.last_access_vtime)
     return obj_to_evict1;
@@ -168,7 +167,6 @@ static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req) {
 static void RandomTwo_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj_to_evict1 = hashtable_rand_obj(cache->hashtable);
   cache_obj_t *obj_to_evict2 = hashtable_rand_obj(cache->hashtable);
-  DEBUG_ASSERT(obj_to_evict->obj_size != 0);
   if (obj_to_evict1->RandomTwo.last_access_vtime <
       obj_to_evict2->RandomTwo.last_access_vtime)
     cache_evict_base(cache, obj_to_evict1, true);
