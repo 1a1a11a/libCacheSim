@@ -258,6 +258,9 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = LRU_init(cc_params, NULL);
     cache->prefetcher =
         create_prefetcher("Mithril", NULL, cc_params.cache_size);
+  } else if (strcasecmp(alg_name, "OBL") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->prefetcher = create_prefetcher("OBL", NULL, cc_params.cache_size);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

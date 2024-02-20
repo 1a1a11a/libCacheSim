@@ -65,6 +65,23 @@ static void test_Mithril(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_OBL(gconstpointer user_data) {
+  uint64_t miss_cnt_true[] = {92139, 88548, 82337, 80487, 71259, 70869, 70737, 70469};
+  uint64_t miss_byte_true[] = {4213140480, 4060079616, 3776877568, 3659406848,
+                               3099764736, 3076965888, 3074241024, 3060499968};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("OBL", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
+
+  print_results(cache, res);
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, g_req_cnt_true, miss_cnt_true, g_req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
   srand(0);  // for reproducibility
@@ -80,6 +97,7 @@ int main(int argc, char *argv[]) {
   reader = setup_oracleGeneralBin_reader();
   // reader = setup_vscsi_reader_with_ignored_obj_size();
   g_test_add_data_func("/libCacheSim/cacheAlgo_Mithril", reader, test_Mithril);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_OBL", reader, test_OBL);
 
   return g_test_run();
 }
