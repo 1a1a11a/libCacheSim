@@ -72,7 +72,7 @@ static struct argp_option options[] = {
     {"admission-params", OPTION_ADMISSION_PARAMS, "\"prob=0.8\"", 0,
      "params for admission algorithm", 4},
     {"prefetch", OPTION_PREFETCH_ALGO, "Mithril", 0,
-     "Prefetching algorithm: Mithril", 4},
+     "Prefetching algorithm: Mithril/OBL/PG/AMP", 4},
     {"prefetch-params", OPTION_PREFETCH_PARAMS, "\"block-size=65536\"", 0,
      "optional params for each prefetching algorithm, e.g., block-size=65536",
      4},
