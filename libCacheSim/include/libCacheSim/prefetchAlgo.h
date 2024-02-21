@@ -35,6 +35,7 @@ typedef struct prefetcher {
 prefetcher_t *create_Mithril_prefetcher(const char *init_paramsm,
                                         uint64_t cache_size);
 prefetcher_t *create_OBL_prefetcher(const char *init_paramsm, uint64_t cache_size);
+prefetcher_t *create_PG_prefetcher(const char *init_paramsm, uint64_t cache_size);
 
 static inline prefetcher_t *create_prefetcher(const char *prefetching_algo,
                                               const char *prefetching_params,
@@ -44,6 +45,8 @@ static inline prefetcher_t *create_prefetcher(const char *prefetching_algo,
     prefetcher = create_Mithril_prefetcher(prefetching_params, cache_size);
   } else if (strcasecmp(prefetching_algo, "OBL") == 0) {
     prefetcher = create_OBL_prefetcher(prefetching_params, cache_size);
+  } else if (strcasecmp(prefetching_algo, "PG") == 0) {
+    prefetcher = create_PG_prefetcher(prefetching_params, cache_size);
   } else {
     ERROR("prefetching algo %s not supported\n", prefetching_algo);
   }

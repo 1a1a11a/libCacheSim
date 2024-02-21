@@ -82,6 +82,23 @@ static void test_OBL(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_PG(gconstpointer user_data) {
+  uint64_t miss_cnt_true[] = {92786, 89494, 83403, 81564, 72360, 71973, 71842, 71574};
+  uint64_t miss_byte_true[] = {4195964416, 4054977024, 3776220672, 3659069952,
+                               3100251136, 3077595648, 3074874880, 3061133824};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("PG", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores());
+
+  print_results(cache, res);
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, g_req_cnt_true, miss_cnt_true, g_req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
   srand(0);  // for reproducibility
@@ -98,6 +115,7 @@ int main(int argc, char *argv[]) {
   // reader = setup_vscsi_reader_with_ignored_obj_size();
   g_test_add_data_func("/libCacheSim/cacheAlgo_Mithril", reader, test_Mithril);
   g_test_add_data_func("/libCacheSim/cacheAlgo_OBL", reader, test_OBL);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_PG", reader, test_PG);
 
   return g_test_run();
 }
