@@ -71,7 +71,7 @@ cachesim supports the following algorithms:
 * [ARC](/libCacheSim/cache/eviction/ARC.c)
 * [SLRU](/libCacheSim/cache/eviction/SLRU.c)
 * [GDSF](/libCacheSim/cache/eviction/GDSF.c)
-* [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
+* [WTinyLFU](/libCacheSim/cache/eviction/WTinyLFU.c)
 * [LeCaR](/libCacheSim/cache/eviction/LeCaR.c)
 * [Cacheus](/libCacheSim/cache/eviction/Cacheus.c)
 * [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
@@ -148,12 +148,19 @@ Some eviction algorithms have parameters, you can set the parameters by using `-
 
 ### Admission algorithm
 cachesim supports the following admission algorithms: size, probabilistic, bloomFilter, adaptSize.
-You can use `-a` or `--admission-algo` to set the admission algorithm. 
+You can use `-a` or `--admission` to set the admission algorithm. 
 ```bash
 # add a bloom filter to filter out objects on first access
 ./cachesim ../data/trace.vscsi vscsi lru 1gb -a bloomFilter
 ```
 
+### Prefetching algorithm
+cachesim supports the following prefetching algorithms: OBL, Mithril, PG (and AMP is on the way).
+You can use `-p` or `--prefetch` to set the prefetching algorithm. 
+```bash
+# add a mithril to record object association information and fetch objests that are likely to be accessed in the future
+./cachesim ../data/trace.vscsi vscsi lru 1gb -p Mithril
+```
 
 ### Advanced features 
 ```bash

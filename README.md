@@ -45,7 +45,7 @@
 ## libCacheSim features 
 * **High performance** - over 20M requests/sec for a realistic trace replay. 
 * **High memory efficiency** - predictable and small memory footprint. 
-* **State-of-the-art algorithms** - eviction algorithms, admission algorithms, sampling techniques, approximate miss ratio computation, see [here](/doc/quickstart_cachesim.md). 
+* **State-of-the-art algorithms** - eviction algorithms, admission algorithms, prefetching algorithms, sampling techniques, approximate miss ratio computation, see [here](/doc/quickstart_cachesim.md). 
 * Parallelism out-of-the-box - uses the many CPU cores to speed up trace analysis and cache simulations. 
 * **The ONLY feature-rich trace analyzer** - all types of trace analysis you need, see [here](/doc/quickstart_traceAnalyzer.md).
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc.; see [here](/doc/API.md).
@@ -55,6 +55,7 @@
 <!-- TOC --><a name="supported-algorithms"></a>
 ## Supported algorithms
 cachesim supports the following algorithms:
+### Eviction algorithms
 * [FIFO](/libCacheSim/cache/eviction/FIFO.c), [LRU](/libCacheSim/cache/eviction/LRU.c), [Clock](/libCacheSim/cache/eviction/Clock.c), [SLRU](/libCacheSim/cache/eviction/SLRU.c)
 * [LFU](/libCacheSim/cache/eviction/LFU.c), [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c)
 * [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c)
@@ -66,10 +67,19 @@ cachesim supports the following algorithms:
 * [LHD](/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp)
 * [LRB](/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp)
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
-* [TinyLFU](/libCacheSim/cache/eviction/TinyLFU.c)
+* [WTinyLFU](/libCacheSim/cache/eviction/WTinyLFU.c)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
 * [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c)
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c)
+### Admission algorithms
+* [Adaptsize](/libCacheSim/cache/admission/adaptsize.c)
+* [Bloomfilter](/libCacheSim/cache/admission/bloomfilter.c)
+* [Prob](/libCacheSim/cache/admission/prob.c)
+* [Size](/libCacheSim/cache/admission/size.c)
+### Prefetching algorithms
+* [OBL](/libCacheSim/cache/prefetch/OBL.c)
+* [Mithril](/libCacheSim/cache/prefetch/Mithril.c)
+* [PG](/libCacheSim/cache/prefetch/PG.c)
 ---
 
 
