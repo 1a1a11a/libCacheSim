@@ -162,7 +162,7 @@ void PG_prefetch(cache_t *cache, const request_t *req) {
   if (prefetch_list) {
     GList *node = prefetch_list;
     request_t *new_req = my_malloc(request_t);
-    memcpy(new_req, req, sizeof(request_t));
+    copy_request(new_req, req);
     while (node) {
       new_req->obj_id = GPOINTER_TO_INT(node->data);
       new_req->obj_size =

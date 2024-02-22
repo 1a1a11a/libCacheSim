@@ -340,7 +340,7 @@ void Mithril_prefetch(cache_t *cache, const request_t *req) {
               (Mithril_params->pf_list_size + 1);
 
   request_t *new_req = my_malloc(request_t);
-  memcpy(new_req, req, sizeof(request_t));
+  copy_request(new_req, req);
 
   if (prefetch_table_index) {
     int i;
@@ -497,7 +497,7 @@ static inline bool _Mithril_check_sequential(cache_t *cache,
   if (Mithril_params->sequential_K == 0) return FALSE;
 
   request_t *new_req = my_malloc(request_t);
-  memcpy(new_req, req, sizeof(request_t));
+  copy_request(new_req, req);
   bool is_sequential = TRUE;
   gint sequential_K = Mithril_params->sequential_K;
   if (sequential_K == -1) { /* when use AMP, this is -1 */
