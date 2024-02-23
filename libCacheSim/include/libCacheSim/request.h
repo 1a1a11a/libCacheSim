@@ -87,7 +87,7 @@ static inline request_t *new_request(void) {
  * @param req_dest
  * @param req_src
  */
-static inline void copy_request(request_t *req_dest, request_t *req_src) {
+static inline void copy_request(request_t *req_dest, const request_t *req_src) {
   memcpy(req_dest, req_src, sizeof(request_t));
 }
 
@@ -96,7 +96,7 @@ static inline void copy_request(request_t *req_dest, request_t *req_src) {
  * @param req
  * @return
  */
-static inline request_t *clone_request(request_t *req) {
+static inline request_t *clone_request(const request_t *req) {
   request_t *req_new = my_malloc(request_t);
   copy_request(req_new, req);
   return req_new;
