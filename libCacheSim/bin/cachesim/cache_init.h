@@ -87,6 +87,10 @@ static inline cache_t *create_cache(const char *trace_path,
   } else if (strcasecmp(eviction_algo, "belady") == 0) {
     if (strcasestr(trace_path, "oracleGeneral") == NULL) {
       WARN("belady is only supported for oracleGeneral trace\n");
+      WARN("to convert a trace to oracleGeneral format\n");
+      WARN("./bin/traceConv input_trace trace_format output_trace\n");
+      WARN("./bin/traceConv ../data/cloudPhysicsIO.txt txt cloudPhysicsIO.oracleGeneral.bin\n");
+      exit(1);
     }
     cache = Belady_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "nop") == 0) {
