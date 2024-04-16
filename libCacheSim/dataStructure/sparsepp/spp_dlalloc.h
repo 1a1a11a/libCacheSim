@@ -569,7 +569,7 @@ static char *cmfail = (char*)mfail;
         return (ptr != 0) ? ptr : mfail;
     }
     
-    /* This function supports releasing coalesed segments */
+    /* This function supports releasing coalesced segments */
     static SPP_FORCEINLINE int win32munmap(void* ptr, size_t size)
     {
         MEMORY_BASIC_INFORMATION minfo;
@@ -649,7 +649,7 @@ static char *cmfail = (char*)mfail;
     #define SPP_CALL_MREMAP(addr, osz, nsz, mv)     mfail
 #endif
 
-/* mstate bit set if continguous morecore disabled or failed */
+/* mstate bit set if contiguous morecore disabled or failed */
 static const unsigned USE_NONCONTIGUOUS_BIT = 4U;
 
 /* segment bit set in create_mspace_with_base */
@@ -867,12 +867,12 @@ nextchunk-> +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
   of the same size are arranged in a circularly-linked list, with only
   the oldest chunk (the next to be used, in our FIFO ordering)
   actually in the tree.  (Tree members are distinguished by a non-null
-  parent pointer.)  If a chunk with the same size an an existing node
+  parent pointer.)  If a chunk with the same size as an existing node
   is inserted, it is linked off the existing node using pointers that
   work in the same way as fd/bk pointers of small chunks.
 
   Each tree contains a power of 2 sized range of chunk sizes (the
-  smallest is 0x100 <= x < 0x180), which is is divided in half at each
+  smallest is 0x100 <= x < 0x180), which is divided in half at each
   tree level, with the chunks in the smaller half of the range (0x100
   <= x < 0x140 for the top nose) in the left subtree and the larger
   half (0x140 <= x < 0x180) in the right subtree.  This is, of course,
@@ -1196,7 +1196,7 @@ public:
       http://www.usenix.org/events/lisa03/tech/robertson.html The footer
       of an inuse chunk holds the xor of its mstate and a random seed,
       that is checked upon calls to free() and realloc().  This is
-      (probabalistically) unguessable from outside the program, but can be
+      (probabilistically) unguessable from outside the program, but can be
       computed by any code successfully malloc'ing any chunk, so does not
       itself provide protection against code that has already broken
       security through some other means.  Unlike Robertson et al, we
@@ -1463,7 +1463,7 @@ private:
         mark_inuse_foot(p, s);
     }
 
-    /* ------------------------ Addressing by index. See  about smallbin repositioning --- */
+    /* ------------------------ Addressing by index. See about smallbin repositioning --- */
     sbinptr  smallbin_at(bindex_t i) const { return (sbinptr)((char*)&_smallbins[i << 1]); }
     tbinptr* treebin_at(bindex_t i)  { return &_treebins[i]; }
 
@@ -2181,8 +2181,8 @@ void malloc_state::insert_large_chunk(tchunkptr X, size_t s)
      and choose its bk node as its replacement.
   2. If x was the last node of its size, but not a leaf node, it must
      be replaced with a leaf node (not merely one with an open left or
-     right), to make sure that lefts and rights of descendents
-     correspond properly to bit masks.  We use the rightmost descendent
+     right), to make sure that lefts and rights of descendants
+     correspond properly to bit masks.  We use the rightmost descendant
      of x.  We could use any other leaf, but this is easy to locate and
      tends to counteract removal of leftmosts elsewhere, and so keeps
      paths shorter than minimally guaranteed.  This doesn't loop much

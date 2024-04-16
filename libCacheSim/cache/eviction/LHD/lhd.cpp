@@ -24,7 +24,7 @@ LHD::LHD(int _associativity, int _admissions, cache_t* _cache)
   }
 
   // Initialize policy to ~GDSF by default.
-  // jason: why is this GDSF? and why the index of class is used in densit
+  // jason: why is this GDSF? and why the index of class is used in density
   for (uint32_t c = 0; c < NUM_CLASSES; c++) {
     for (age_t a = 0; a < MAX_AGE; a++) {
       classes[c].hitDensities[a] = 1. * (c + 1) / (a + 1);

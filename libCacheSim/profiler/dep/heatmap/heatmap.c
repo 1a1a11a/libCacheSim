@@ -39,7 +39,7 @@ draw_dict *hm_hr_st_et(reader_t *reader,
  *      reader:                 the reader for data
  *      cache:                  cache which heatmap is based on
  *      time_mode:              real time (r) or virtual time (v)
- *      time_interval:          real time interval or vritual time interval
+ *      time_interval:          real time interval or virtual time interval
  *      num_of_pixels:          the number of pixels in x/y dimension,
  *                                  this is optional, if time_interval is specified,
  *                                  then this one is not needed
@@ -94,7 +94,7 @@ draw_dict *heatmap(reader_t *reader,
  *      cache:          cache which heatmap is based on, contains information
  *                      including cache_size, etc.
  *      time_mode:           real time (r) or virtual time (v)
- *      time_interval:  real time interval or vritual time interval
+ *      time_interval:  real time interval or virtual time interval
  *      num_of_pixels:  the number of pixels in x/y dimension,
  *                      this is optional, if time_interval is specified,
  *                      then this one is not needed
@@ -147,7 +147,7 @@ draw_dict *heatmap_computation(reader_t *reader,
     dist = get_last_access_dist(reader);
     draw_dict *dd = heatmap_dist_distribution(reader, dist, num_of_threads, 0);
     return dd;
-  } else if (plot_type == rt_distribution) {        // real time distribution, time msut be integer
+  } else if (plot_type == rt_distribution) {        // real time distribution, time must be integer
     dist = get_reuse_time(reader);
     draw_dict *dd = heatmap_dist_distribution(reader, dist, num_of_threads, 0);
     return dd;

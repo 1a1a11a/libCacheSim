@@ -6,7 +6,7 @@
 //  cross checked with https://github.com/trauzti/cache/blob/master/ARCv0.py
 //  one thing not clear in the paper is whether delta and p is int or float,
 //  we used int as first,
-//  but the implemnetation above used float, so we have changed to use float
+//  but the implementation above used float, so we have changed to use float
 //
 //
 //  libCacheSim

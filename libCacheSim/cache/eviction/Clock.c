@@ -325,7 +325,7 @@ static void Clock_parse_params(cache_t *cache,
       printf("current parameters: %s\n", Clock_current_params(cache, params));
       exit(0);
     } else {
-      ERROR("%s does not have parameter %s, example paramters %s\n",
+      ERROR("%s does not have parameter %s, example parameters %s\n",
             cache->cache_name, key, Clock_current_params(cache, params));
       exit(1);
     }

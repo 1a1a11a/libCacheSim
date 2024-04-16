@@ -2,7 +2,7 @@
 // Copyright (c) 2016, Steven Gregory Popovitch - greg7mdp@gmail.com
 // All rights reserved.
 //
-// Code derived derived from Boost libraries.
+// Code derived from Boost libraries.
 // Boost software licence reproduced below.
 //
 // Redistribution and use in source and binary forms, with or without

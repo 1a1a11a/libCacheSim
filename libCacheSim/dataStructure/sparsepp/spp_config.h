@@ -3,7 +3,7 @@
 
 // --------------------------------------------------
 // Sparsepp config macros
-// some can be overriden on the command line
+// some can be overridden on the command line
 // --------------------------------------------------
 #ifndef SPP_NAMESPACE
      #define SPP_NAMESPACE spp
@@ -35,7 +35,7 @@
 #endif
 
 #ifndef SPP_ALLOC_SZ
-    // must be power of 2 (0 = agressive alloc, 1 = smallest memory usage, 2 = good compromise)
+    // must be power of 2 (0 = aggressive alloc, 1 = smallest memory usage, 2 = good compromise)
     #define SPP_ALLOC_SZ 0
 #endif
 
@@ -46,7 +46,7 @@
 
 
 // ---------------------------------------------------------------------------
-// Compiler detection code (SPP_ proprocessor macros) derived from Boost
+// Compiler detection code (SPP_ preprocessor macros) derived from Boost
 // libraries. Therefore Boost software licence reproduced below.
 // ---------------------------------------------------------------------------
 // Boost Software License - Version 1.0 - August 17th, 2003
@@ -277,7 +277,7 @@
     // __POPCNT__ defined when the compiled with popcount support
     // (-mpopcnt compiler option is given for example)
     #ifdef __POPCNT__
-        // slower unless compiled iwith -mpopcnt
+        // slower unless compiled with -mpopcnt
         #define SPP_POPCNT   __builtin_popcount
         #define SPP_POPCNT64 __builtin_popcountll
     #endif

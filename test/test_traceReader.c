@@ -61,7 +61,7 @@ void test_reader_basic(gconstpointer user_data) {
   }
   reset_reader(reader);
 
-  // check reseting and reading
+  // check resetting and reading
   for (i = 0; i < N_TEST_REQ; i++) {
     read_one_req(reader, req);
     verify_req(reader, req, i);

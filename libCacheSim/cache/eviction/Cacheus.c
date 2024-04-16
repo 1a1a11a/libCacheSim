@@ -374,7 +374,7 @@ static void update_lr(cache_t *cache, const request_t *req) {
 
   if (delta_lr != 0) {
     int sign;
-    // Intuition: If hit rate is decreasing (deltla hit rate < 0)
+    // Intuition: If hit rate is decreasing (delta hit rate < 0)
     // Learning rate is positive (delta_lr > 0)
     // sign = -1 => decrease learning rate;
     if (delta_hit_rate / delta_lr > 0)

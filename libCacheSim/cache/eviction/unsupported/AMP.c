@@ -236,7 +236,7 @@ void _AMP_evict(cache_t *AMP, request_t *cp) {
 void *_AMP_evict_with_return(cache_t *AMP, request_t *cp) {
   /** return a pointer points to the data that being evicted,
    *  it can be a pointer pointing to gint64 or a pointer pointing to char*
-   *  it is the user's responsbility to g_free the pointer
+   *  it is the user's responsibility to g_free the pointer
    **/
 
   struct AMP_params *AMP_params = (struct AMP_params *)(AMP->cache_params);

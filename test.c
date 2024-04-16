@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
   /* open trace, see quickstart.md for opening csv and binary trace */
   reader_t *reader = open_trace("../data/trace.vscsi", VSCSI_TRACE, NULL);
 
-  /* craete a container for reading from trace */
+  /* create a container for reading from trace */
   request_t *req = new_request();
 
   /* create a LRU cache */

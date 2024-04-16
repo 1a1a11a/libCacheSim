@@ -479,14 +479,14 @@ ketama_create_continuum( key_t key, char* filename )
     memcpy( data + 1, &modtime, sizeof( time_t ) );
     memcpy( data + 1 + sizeof( void* ), &continuum, sizeof( mcs ) * nump );
 
-    /* We detatch here because we will re-attach in read-only
+    /* We detach here because we will re-attach in read-only
      * mode to actually use it. */
 #ifdef SOLARIS
     if ( shmdt( (char *) data ) == -1 )
 #else
     if ( shmdt( data ) == -1 )
 #endif
-        strcpy( k_error, "Error detatching from shared memory!" );
+        strcpy( k_error, "Error detaching from shared memory!" );
 
     return 1;
 }

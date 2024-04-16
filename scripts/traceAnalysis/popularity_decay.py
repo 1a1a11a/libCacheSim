@@ -195,8 +195,8 @@ def find_stable_probability(mean_req_prob, time_window, figname_prefix):
         n_pts = MIN_TIME * 3600 // time_window // n_window_pts * n_window_pts
         data_matrix = np.array(mean_req_prob[:n_pts]).reshape(-1, n_window_pts)
         mean_prob_hour = np.nanmean(data_matrix, axis=1)
-        # we define the pupularity reach stability when the
-        # request proabability of last three hours is
+        # we define the popularity reach stability when the
+        # request probability of last three hours is
         # the same as the request probability of the last day
         stable_prob = np.nanmean(mean_prob_hour[-24:])
 
@@ -285,7 +285,7 @@ def plot_popularity_decay_line(
     label_list: List[str] = (),
 ):
     """
-    plot how the popularty (frequency) of new objects decay over time using line plot
+    plot how the popularity (frequency) of new objects decay over time using line plot
     the line is the average of all time windows
 
     """
@@ -409,7 +409,7 @@ def plot_popularity_decay_line(
 
 def plot_popularity_decay_heatmap(plot_data, time_window, figname_prefix):
     """
-    plot how the popularty (frequency) of new objects decay over time using heatmap
+    plot how the popularity (frequency) of new objects decay over time using heatmap
     this is not very useful because the scale is linear
 
     """

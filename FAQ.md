@@ -1,5 +1,5 @@
 ## FAQ
-1. **how to read OracleGeneral trace，how to transfrom from csv to it? **
+1. **how to read OracleGeneral trace，how to transform from csv to it? **
 The [oracleGeneral](/libCacheSim/traceReader/customizedReader/oracle/oracleGeneralBin.h) trace is a binary trace, so you cannot direct read as txt file. Each request uses the following data struct 
 ```c
 struct {

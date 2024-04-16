@@ -10,7 +10,7 @@ typedef float pred_t;
 typedef float train_y_t;
 
 typedef enum {
-  LOGCACHE_TWO_ORACLE = 1,   // oralce to select group and object
+  LOGCACHE_TWO_ORACLE = 1,   // oracle to select group and object
   LOGCACHE_LOG_ORACLE = 2,   // oracle to select group, obj_score to select obj
   LOGCACHE_ITEM_ORACLE = 3,  // FIFO for seg selection, oracle for obj selection
   LOGCACHE_LEARNED = 4,
@@ -174,7 +174,7 @@ typedef struct seg_sel {
 /* parameters and state related to cache */
 typedef struct {
   /* user parameters */
-  int segment_size; /* in temrs of number of objects */
+  int segment_size; /* in terms of number of objects */
   int n_merge;
   // whether we merge consecutive segments (with the first segment has the
   // lowest utility) or we merge non-consecutive segments based on ranking

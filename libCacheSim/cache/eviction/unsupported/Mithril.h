@@ -371,7 +371,7 @@ typedef struct {
 
  @param Mithril the cache struct
  @param req the request
- @return TRUE/FASLE
+ @return TRUE/FALSE
  */
 extern gboolean Mithril_check(cache_t *Mithril,
                                       request_t *req);
@@ -446,14 +446,14 @@ extern void Mithril_destroy_unique(cache_t *Mithril);
 
 
 /**
- the mining funciton, it is called when mining table is ready
+ the mining function, it is called when mining table is ready
 
  @param Mithril the cache struct
  */
 extern void _Mithril_mining(cache_t *Mithril);
 
 /**
- the aging function, to avoid some blocks stay too lonng,
+ the aging function, to avoid some blocks stay too long,
  not used in this version.
 
  @param Mithril the cache struct

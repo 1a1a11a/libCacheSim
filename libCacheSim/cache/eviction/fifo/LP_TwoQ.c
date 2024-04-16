@@ -1,5 +1,5 @@
 //
-//  Quick demotion + lazy promoition v1
+//  Quick demotion + lazy promotion v1
 //
 //  20% Ain + ARC
 //  insert to ARC when evicting from Ain

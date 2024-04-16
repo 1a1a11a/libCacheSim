@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-/* check params vaild */
+/* check params valid */
 #define check_params(params)                                                                                   \
   (assert(params->lookahead_range > 0 && params->lookahead_range <= 100 && params->max_metadata_size > 0 &&    \
           params->max_metadata_size < 1 && params->prefetch_threshold > 0 && params->prefetch_threshold < 1 && \

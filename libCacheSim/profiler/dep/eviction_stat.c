@@ -119,7 +119,7 @@ gint64 *get_eviction_freq(reader_t *reader, cache_t *optimal, gboolean accumulat
   gint64 *freq_array = g_new0(gint64, reader->base->total_num);
 
 
-  // create request struct and initializa
+  // create request struct and initialize
   request_t *req = new_req_struct(reader->base->label_type);
 
   // create hashtable
@@ -210,7 +210,7 @@ static gint64 *get_eviction_stack_dist(reader_t *reader, cache_t *optimal) {
   gint64 *stack_dist_array = g_new0(gint64, reader->base->total_num);
 
 
-  // create request struct and initializa
+  // create request struct and initialize
   request_t *req = new_req_struct(reader->base->label_type);
 
   // create hashtable

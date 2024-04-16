@@ -57,7 +57,7 @@ draw_dict* hm_opt_effective_size(reader_t* reader,
  *      reader:                 the reader for data
  *      cache:                  cache which heatmap is based on
  *      time_mode:              real time (r) or virtual time (v)
- *      time_interval:          real time interval or vritual time interval
+ *      time_interval:          real time interval or virtual time interval
  *      num_of_pixels:          the number of pixels in x/y dimension,
  *                                  this is optional, if time_interval is specified,
  *                                  then this one is not needed
@@ -125,7 +125,7 @@ draw_dict* heatmap(reader_t* reader,
  *      cache:          cache which heatmap is based on, contains information
  *                      including cache_size, etc.
  *      time_mode:           real time (r) or virtual time (v)
- *      time_interval:  real time interval or vritual time interval
+ *      time_interval:  real time interval or virtual time interval
  *      num_of_pixels:  the number of pixels in x/y dimension,
  *                      this is optional, if time_interval is specified,
  *                      then this one is not needed
@@ -256,7 +256,7 @@ draw_dict* heatmap_computation(reader_t* reader,
 
         return dd;
     }
-    else if (plot_type == rt_distribution) {        // real time distribution, time msut be integer
+    else if (plot_type == rt_distribution) {        // real time distribution, time must be integer
         if (reader->sdata->stack_dist_type != REUSE_TIME) {
             g_free(reader->sdata->stack_dist);
             reader->sdata->stack_dist = NULL;

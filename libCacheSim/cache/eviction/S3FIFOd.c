@@ -1,5 +1,5 @@
 //
-//  Quick demotion + lazy promoition v2
+//  Quick demotion + lazy promotion v2
 //
 //  FIFO + Clock
 //  the ratio of FIFO is decided dynamically

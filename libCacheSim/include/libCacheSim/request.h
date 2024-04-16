@@ -61,7 +61,7 @@ typedef struct request {
   /* used in trace analysis */
 
   bool valid; /* indicate whether request is valid request
-               * it is invlalid if the trace reaches the end */
+               * it is invalid if the trace reaches the end */
 } request_t;
 
 /**

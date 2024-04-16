@@ -182,7 +182,7 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
     /* if it does not record at each request, check whether it is hit or miss */
     if (Mithril_params->cache->check(Mithril_params->cache, cp)) return;
 
-  /* check it is sequtial or not */
+  /* check it is sequential or not */
   if (Mithril_params->sequential_type && _Mithril_check_sequential(Mithril, cp))
     return;
 
@@ -217,7 +217,7 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
         g_hash_table_insert(rmtable->hashtable, str,
                             GINT_TO_POINTER(rmtable->rtable_cur_row));
       } else {
-        ERROR("unsupport data obj_id_type in _Mithril_record_entry\n");
+        ERROR("unsupported data obj_id_type in _Mithril_record_entry\n");
       }
 
       row_in_rtable[1] = ADD_TS(row_in_rtable[1], Mithril_params->ts);
@@ -328,7 +328,7 @@ static inline void _Mithril_record_entry(cache_t *Mithril, request_t *cp) {
             ERROR("removing from rmtable failed for mining table entry\n");
 
           /** for dataType c, now the pointer to string has been freed,
-           *  so mining table entry is incorrent,
+           *  so mining table entry is incorrect,
            *  but mining table entry will be deleted, so it is OK
            */
 

@@ -1,5 +1,5 @@
 """ 
-this script takes the raw dataset, clean it up, fill in TTL, and geenrate a cleaned dataset
+this script takes the raw dataset, clean it up, fill in TTL, and generate a cleaned dataset
 
 """
 

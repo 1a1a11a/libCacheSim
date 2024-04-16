@@ -34,7 +34,7 @@ static inline void obj_hit_update(GLCache_params_t *params, cache_obj_t *obj,
   bucket_t *bkt = &params->buckets[seg->bucket_id];
 }
 
-/* some internal state update bwhen an object is evicted */
+/* some internal state update when an object is evicted */
 static inline void obj_evict_update(cache_t *cache, cache_obj_t *obj) {
   GLCache_params_t *params = cache->eviction_params;
   segment_t *seg = obj->GLCache.segment;

@@ -3,7 +3,7 @@
 //  there are m hands, each points to i/m position of the clock
 //  there is no action on hit,
 //  on miss, one of the hands is selected to evict based on next access distance
-//  (Belady) then the hands are reset to correponding positions
+//  (Belady) then the hands are reset to corresponding positions
 //
 //
 //  mClock.c

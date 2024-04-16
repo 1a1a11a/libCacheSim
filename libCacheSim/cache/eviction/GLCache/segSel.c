@@ -24,7 +24,7 @@ static inline int cmp_seg(const void *p1, const void *p2) {
 
 // check whether there are min_evictable segments to evict
 // consecutive indicates the merge eviction uses consecutive segments in the
-// chain if not, it usees segments in ranked order and may not be consecutive
+// chain if not, it uses segments in ranked order and may not be consecutive
 static bool is_seg_evictable(segment_t *seg, int min_evictable,
                              bool consecutive) {
   if (seg == NULL) return false;
@@ -184,7 +184,7 @@ void rank_segs(cache_t *cache) {
 
 /* when cache size is small and space is fragmented between buckets,
  * it is possible that there is no bucket with n_merge + 1 segments,
- * in which case, we randonly pick one and uses eviction w/o merge */
+ * in which case, we randomly pick one and uses eviction w/o merge */
 static bucket_t *select_one_seg_to_evict(cache_t *cache, segment_t **segs) {
   GLCache_params_t *params = cache->eviction_params;
   bucket_t *bucket = NULL;
