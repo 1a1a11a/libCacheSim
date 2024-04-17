@@ -96,7 +96,7 @@ def _load_write_reuse_data(
             time_no_reuse, count = [int(i) for i in line.split(":")]
             no_reuse_req_cnt[time_no_reuse] = count
         except Exception as e:
-            print("error pasing no reuse " + line)
+            print("error parsing no reuse " + line)
 
     ifile.close()
 
@@ -128,7 +128,7 @@ def plot_write_reuse(datapath, figname_prefix=""):
         no_reuse_req_cnt,
     ) = _load_write_reuse_data(datapath)
 
-    # plot the nubmer of read/write/remove in fraction of total read/write/remove after write
+    # plot the number of read/write/remove in fraction of total read/write/remove after write
     req_cnts = [
         read_reuse_req_cnt,
         write_reuse_req_cnt,

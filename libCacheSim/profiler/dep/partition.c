@@ -271,7 +271,7 @@ static void profiler_partition_thread(gpointer data, gpointer user_data) {
 return_res_t **profiler_partition(reader_t *reader_in, cache_t *cache_in, int num_of_threads_in, int bin_size_in) {
   /**
    if profiling from the very beginning, then set begin_pos=0,
-   if porfiling till the end of trace, then set end_pos=-1 or the length of trace+1;
+   if profiling till the end of trace, then set end_pos=-1 or the length of trace+1;
    return results do not include size 0
    **/
 

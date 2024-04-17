@@ -38,7 +38,7 @@ static void dump_training_data(cache_t *cache) {
 
 /* currently we snapshot segments after each training, then we collect segment
  * utility for the snapshotted segments over time, when it is time to retrain,
- * we used the snapshotted segment featuers and calculated utility to train a
+ * we used the snapshotted segment features and calculated utility to train a
  * model, Because the snapshotted segments may be evicted over time, we move
  * evicted segments to training buckets and keep ghost entries of evicted
  * objects so that we can more accurately calculate utility. Because we keep

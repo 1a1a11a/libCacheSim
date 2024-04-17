@@ -72,7 +72,7 @@ size_t _read_from_file(zstd_reader *reader) {
 }
 
 rstatus _decompress_from_buff(zstd_reader *reader) {
-  /* move the unread decompresed data to the head of buff_out */
+  /* move the unread decompressed data to the head of buff_out */
   void *buff_start = reader->buff_out + reader->buff_out_read_pos;
   size_t buff_left_sz = reader->output.pos - reader->buff_out_read_pos;
   memmove(reader->buff_out, buff_start, buff_left_sz);

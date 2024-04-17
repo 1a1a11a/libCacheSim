@@ -1,5 +1,5 @@
 //
-//  Quick demotion + lazy promoition v1
+//  Quick demotion + lazy promotion v1
 //
 //  20% FIFO + ARC
 //  insert to ARC when evicting from FIFO

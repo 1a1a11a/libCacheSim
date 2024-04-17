@@ -35,7 +35,7 @@ heatmap_plot_matrix_t *get_last_access_dist_heatmap_matrix(reader_t *reader,
                                                            double log_base);
 
 /**
- * get heatmap plot data for reues time distribution in each time window
+ * get heatmap plot data for reuse time distribution in each time window
  * @param reader
  * @param window
  * @param log_base

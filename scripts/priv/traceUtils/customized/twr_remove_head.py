@@ -1,5 +1,5 @@
 """
-the following open source traces have issuse, the beginning of the traces have a very long idle perid which is not right, 
+the following open source traces have issues, the beginning of the traces have a very long idle period which is not right, 
 we remove this idle period from the open_source_sort traces 
 
 traces: 10 26 45 50 

@@ -1093,7 +1093,7 @@ XXH3_accumulate_512_avx2( void* XXH_RESTRICT acc,
     XXH_ASSERT((((size_t)acc) & 31) == 0);
     {   XXH_ALIGN(32) __m256i* const xacc    =       (__m256i *) acc;
         /* Unaligned. This is mainly for pointer arithmetic, and because
-         * _mm256_loadu_si256 requires  a const __m256i * pointer for some reason. */
+         * _mm256_loadu_si256 requires a const __m256i * pointer for some reason. */
         const         __m256i* const xinput  = (const __m256i *) input;
         /* Unaligned. This is mainly for pointer arithmetic, and because
          * _mm256_loadu_si256 requires a const __m256i * pointer for some reason. */
@@ -2574,7 +2574,7 @@ XXH128(const void* input, size_t len, XXH64_hash_t seed)
 
 /*
  * All the functions are actually the same as for 64-bit streaming variant.
- * The only difference is the finalizatiom routine.
+ * The only difference is the finalization routine.
  */
 
 static void

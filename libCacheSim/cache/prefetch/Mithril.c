@@ -631,7 +631,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
 
   int i;
 
-  /* check it is sequtial or not */
+  /* check it is sequential or not */
   if (Mithril_params->sequential_type && _Mithril_check_sequential(cache, req))
     return;
 
@@ -741,7 +741,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
           }
 
           /** for dataType c, now the pointer to string has been freed,
-           *  so mining table entry is incorrent,
+           *  so mining table entry is incorrect,
            *  but mining table entry will be deleted, so it is OK
            */
 
@@ -919,7 +919,7 @@ void print_prefetch_table(Mithril_params_t *Mithril_params) {
 }
 
 /**
- the mining funciton, it is called when mining table is ready
+ the mining function, it is called when mining table is ready
 
  @param Mithril the cache struct
  */

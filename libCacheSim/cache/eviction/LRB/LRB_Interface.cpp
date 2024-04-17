@@ -220,7 +220,7 @@ static cache_obj_t *LRB_insert(cache_t *cache, const request_t *req) {
 /**
  * @brief find an eviction candidate, but do not evict from the cache,
  * and do not update the cache metadata
- * note that eviction must evicts this object, so if we implment this function
+ * note that eviction must evicts this object, so if we implement this function
  * and it uses random number, we must make sure that the same object is evicted
  * when we call evict
  *

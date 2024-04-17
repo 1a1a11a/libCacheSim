@@ -146,7 +146,7 @@ struct cvt<const std::pair<const K, V> >
 namespace sparsehash_internal
 {
 
-// Adaptor methods for reading/writing data from an INPUT or OUPTUT
+// Adaptor methods for reading/writing data from an INPUT or OUTPUT
 // variable passed to serialize() or unserialize().  For now we
 // have implemented INPUT/OUTPUT for FILE*, istream*/ostream* (note
 // they are pointers, unlike typical use), or else a pointer to
@@ -424,7 +424,7 @@ namespace sparsehash_internal
             set_consider_shrink(false);
         }
 
-        // Caller is resposible for calling reset_threshold right after
+        // Caller is responsible for calling reset_threshold right after
         // set_resizing_parameters.
         // ------------------------------------------------------------
         void set_resizing_parameters(float shrink, float grow)
@@ -2737,7 +2737,7 @@ private:
                 static_cast<size_type>(settings.shrink_size((size_type)(resize_to*2)));
             if (table.num_nonempty() + delta >= target)
             {
-                // Good, we won't be below the shrink threshhold even if we double.
+                // Good, we won't be below the shrink threshold even if we double.
                 resize_to *= 2;
             }
         }

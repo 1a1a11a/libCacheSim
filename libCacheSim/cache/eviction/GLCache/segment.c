@@ -120,7 +120,7 @@ segment_t *allocate_new_seg(cache_t *cache, int bucket_id) {
   return new_seg;
 }
 
-/* link a segment before antoher segment, this is used to place the merged
+/* link a segment before another segment, this is used to place the merged
  * segment in the same position as old segments */
 void link_new_seg_before_seg(GLCache_params_t *params, bucket_t *bucket,
                              segment_t *old_seg, segment_t *new_seg) {

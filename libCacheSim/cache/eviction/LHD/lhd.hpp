@@ -115,7 +115,7 @@ class LHD {
   rank_t ewmaNumObjectsMass = 0.;
 
   // how many objects had age > max age (this should almost never
-  // happen -- if you observe non-neglible overflows, something has
+  // happen -- if you observe non-negligible overflows, something has
   // gone wrong with the age coarsening!!!)
   uint64_t overflows = 0;
 

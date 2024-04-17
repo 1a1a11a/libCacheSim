@@ -70,7 +70,7 @@ typedef struct pqueue_t {
   pqueue_set_pri_f setpri; /**< callback to set priority of a node */
   pqueue_get_pos_f getpos; /**< callback to get position of a node */
   pqueue_set_pos_f setpos; /**< callback to set position of a node */
-  void **d;                /**< The actualy queue in binary heap form */
+  void **d;                /**< The actual queue in binary heap form */
 } pqueue_t;
 
 typedef struct node_t {
@@ -96,7 +96,7 @@ pqueue_init(size_t n);
  * @param getpos the callback function to get the current element's position
  * @param setpos the callback function to set the current element's position
  *
- * @return the handle or NULL for insufficent memory
+ * @return the handle or NULL for insufficient memory
  */
 pqueue_t *
 pqueue_init_full(size_t n,

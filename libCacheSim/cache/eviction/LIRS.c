@@ -306,7 +306,7 @@ static cache_obj_t *LIRS_insert(cache_t *cache, const request_t *req) {
       params->hirs_count += inserted_obj_s->obj_size;
       cache->occupied_byte += inserted_obj_s->obj_size + cache->obj_md_size;
     } else {
-      // the curcumstance is same as accessing an HIR non-resident not in S
+      // the circumstance is same as accessing an HIR non-resident not in S
       // insert the req into S and place it on the top of S
       cache_obj_t *inserted_obj_s = params->LRU_s->insert(params->LRU_s, req);
       inserted_obj_s->LIRS.is_LIR = false;
@@ -378,7 +378,7 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
     if (params->lirs_count + req->obj_size > params->lirs_limit &&
         params->hirs_count + req->obj_size > params->hirs_limit) {
       // when both LIR and HIR block sets are full,
-      // the curcumstance is same as accessing an HIR non-resident not in S
+      // the circumstance is same as accessing an HIR non-resident not in S
       // remove the HIR resident at the front of Q
       evictHIR(cache);
     }
@@ -491,7 +491,7 @@ bool LIRS_can_insert(cache_t *cache, const request_t *req) {
     if (params->lirs_count + req->obj_size > params->lirs_limit &&
         params->hirs_count + req->obj_size > params->hirs_limit) {
       // when both LIR and HIR block sets are full,
-      // the curcumstance is same as accessing an HIR non-resident not in S
+      // the circumstance is same as accessing an HIR non-resident not in S
       while (params->hirs_count + req->obj_size > params->hirs_limit) {
         evictHIR(cache);
       }

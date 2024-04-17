@@ -158,7 +158,7 @@ You can use `-a` or `--admission` to set the admission algorithm.
 cachesim supports the following prefetching algorithms: OBL, Mithril, PG (and AMP is on the way).
 You can use `-p` or `--prefetch` to set the prefetching algorithm. 
 ```bash
-# add a mithril to record object association information and fetch objests that are likely to be accessed in the future
+# add a mithril to record object association information and fetch objects that are likely to be accessed in the future
 ./cachesim ../data/trace.vscsi vscsi lru 1gb -p Mithril
 ```
 
@@ -167,7 +167,7 @@ You can use `-p` or `--prefetch` to set the prefetching algorithm.
 # change number of threads 
 ./cachesim ../data/trace.vscsi vscsi lru 1gb --num-thread=4
 
-# cap the number of requests raed from the trace
+# cap the number of requests read from the trace
 ./cachesim ../data/trace.vscsi vscsi lru 1gb --num-req=1000000
 
 # change output 

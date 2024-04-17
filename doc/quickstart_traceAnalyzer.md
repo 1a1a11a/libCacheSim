@@ -178,7 +178,7 @@ The first 10m requests of the Twitter cluster52 trace. The left column shows wal
 # the popularity skewness ($\alpha$) is in the output of traceAnalyzer
 # this plots the request count/freq over object rank
 # note that measuring popularity plot does not make sense for very small traces and some block workloads  
-# and note that popularity is highly affected by the the layer of the cache hierarchy
+# and note that popularity is highly affected by the layer of the cache hierarchy
 python3 scripts/traceAnalysis/popularity.py ${dataname}.popularity
 ```
 

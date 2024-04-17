@@ -89,7 +89,7 @@ typedef struct {
   int32_t last_access_rtime;
   int32_t last_access_vtime;
   int16_t idx_in_segment;
-  int16_t active : 2;  // whether this object has been acccessed
+  int16_t active : 2;  // whether this object has been accessed
   int16_t in_cache : 2;
   int16_t seen_after_snapshot : 2;
 } GLCache_obj_metadata_t;
@@ -148,7 +148,7 @@ typedef struct cache_obj {
     defined(TRACK_DEMOTION) || defined(TRACK_CREATE_TIME)
   int64_t create_time;
 #endif
-  // used by belady related algorithsm
+  // used by belady related algorithms
   misc_metadata_t misc;
 
   union {

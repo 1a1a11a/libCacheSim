@@ -127,13 +127,13 @@ int ketama_compare(mcs *a, mcs *b);
   * \return The resulting hash. */
 unsigned int ketama_hashi(const char *const inString);
 
-/** \brief Hashinf function to 16 bytes char array using MD5.
+/** \brief Hashing function to 16 bytes char array using MD5.
  * \param inString The string that you want to hash.
  * \param md5pword The resulting hash. */
 void ketama_md5_digest(const char *const inString, unsigned char md5pword[16]);
 
 /** \brief Error method for error checking.
-  * \return The latest error that occured. */
+  * \return The latest error that occurred. */
 char *ketama_error();
 
 #ifdef __cplusplus /* If this is a C++ compiler, end C linkage */

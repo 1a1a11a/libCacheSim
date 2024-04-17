@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   reader_t *reader = cli::Util::create_reader(&cli_arg);
 
   if (oarg.oracle_type == "freq") {
-    /* this is nolonger used */
+    /* this is no longer used */
     std::vector<uint64_t> time_window{TIME_WINDOW};
     OracleFreqTraceGen trace_gen(reader, cli_arg.opath, time_window, 300);
     trace_gen.run();

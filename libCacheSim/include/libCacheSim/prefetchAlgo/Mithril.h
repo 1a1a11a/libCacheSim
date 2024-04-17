@@ -34,7 +34,7 @@
 /* recording table size, unit: percentage of cache size */
 #define RECORDING_TABLE_MAXIMAL 0.02
 
-/* check params vaild */
+/* check params valid */
 #define check_params(params)                                                \
   (assert(params->lookahead_range > 0 && params->lookahead_range <= 100 &&  \
           params->max_support > 0 && params->min_support > 0 &&             \
@@ -185,7 +185,7 @@ typedef struct {
   rec_trigger_e rec_trigger;
 
   /** size of block
-   *  when all object's size is 1, shoule be set in eviction_params.
+   *  when all object's size is 1, should be set in eviction_params.
    *  Otherwise, should be 1 (default).
    **/
   guint64 block_size;

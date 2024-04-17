@@ -148,7 +148,7 @@ Run the example traces with LRU eviction algorithm and 1GB cache size.
 # besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
 ./bin/cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
 
-# use a csv trace, note the qutation marks when you have multiple options
+# use a csv trace, note the quotation marks when you have multiple options
 ./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
 
 # use a csv trace with more options
@@ -177,7 +177,7 @@ python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-forma
 ### Trace analysis
 libCacheSim also has a trace analyzer that provides a lot of useful information about the trace. 
 And it is very fast, designed to work with billions of requests. 
-It also coms with a set of scripts to help you analyze the trace. 
+It also comes with a set of scripts to help you analyze the trace. 
 See [trace analysis](/doc/quickstart_traceAnalyzer.md) for more details.
 
 
