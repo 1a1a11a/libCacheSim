@@ -169,7 +169,7 @@ cache_t *Sieve_init(const common_cache_params_t ccache_params,
 cache_t *RandomLRU_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
-cache_t *S3FIFO_delay_init(const common_cache_params_t ccache_params,
+cache_t *Cloud2QPlus_init(const common_cache_params_t ccache_params,
                            const char *cache_specific_params);
 
 #ifdef ENABLE_LRB
