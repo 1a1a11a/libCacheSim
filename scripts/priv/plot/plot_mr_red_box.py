@@ -21,7 +21,7 @@ def update_algo_name(algo_name):
     name_dict = {
         "WTinyLFU-w0.01-SLRU": "TinyLFU",
         "S3FIFO-0.1000-2": "S3FIFO",
-        "Cloud2QPlus-0.1000-2-0.50": "Cloud2QPlus",
+        "Cloud2QPlus-0.1000-2-0.50": "Cloud2Q+",
     }
 
     return name_dict.get(algo_name, algo_name)
@@ -74,7 +74,6 @@ def plot_box_algo(datapath, size_idx=0, metric="miss_ratio"):
     algo_list = [
         "S3FIFO-0.1000-2",
         "Cloud2QPlus-0.1000-2-0.50",
-        # "Cloud2QPlus-0.1000-2-1.00",
         "LIRS",
         "TwoQ",
         "ARC",
@@ -108,7 +107,7 @@ def plot_box_algo(datapath, size_idx=0, metric="miss_ratio"):
     plt.clf()
 
 
-def plot_box_ignore_frac(datapath, size_idx=0, metric="miss_ratio"):
+def plot_box_corr(datapath, size_idx=0, metric="miss_ratio"):
     """
     plot the miss ratio reduction box
 
@@ -151,12 +150,13 @@ def plot_box_ignore_frac(datapath, size_idx=0, metric="miss_ratio"):
         medianprops=dict(color="black", linewidth=1.6),
     )
 
+    plt.xticks(range(1, len(algo_list) + 1), name_list, rotation=0)
     plt.xlabel("Correlation window size (fraction of small FIFO size)")
     plt.ylabel("Miss ratio reduction from FIFO")
-    plt.xticks(range(1, len(algo_list) + 1), name_list, rotation=0)
     plt.grid(linestyle="--")
-    plt.savefig("{}_corr_box_{}.png".format(metric, size_idx))
-    plt.savefig("{}_corr_box_{}.pdf".format(metric, size_idx))
+    plt.subplots_adjust(bottom=-0.2)
+    plt.savefig("{}_corr_box_{}.png".format(metric, size_idx), bbox_inches="tight")
+    plt.savefig("{}_corr_box_{}.pdf".format(metric, size_idx), bbox_inches="tight")
     plt.clf()
 
 
@@ -167,17 +167,16 @@ if __name__ == "__main__":
     parser.add_argument("--datapath", type=str, help="path to the cachesim result")
     ap = parser.parse_args()
 
-    # plot_percentiles("{}/all".format(ap.datapath), size_idx=0, metric="miss_ratio")
-    # plot_percentiles("{}/all".format(ap.datapath), size_idx=2, metric="miss_ratio")
-
-    plot_box_algo("/disk/libCacheSim/_build/result2/", size_idx=0, metric="miss_ratio")
-    # plot_box_algo("/disk/libCacheSim/_build/result2/", size_idx=2, metric="miss_ratio")
-    plot_box_algo("/disk/libCacheSim/_build/result2/", size_idx=4, metric="miss_ratio")
-
-    plot_box_ignore_frac(
-        "/disk/libCacheSim/_build/result2/", size_idx=0, metric="miss_ratio"
+    plot_box_algo(
+        "/disk/libCacheSim/_build/result_data/", size_idx=0, metric="miss_ratio"
     )
-    # plot_box_ignore_frac("/disk/libCacheSim/_build/result2/", size_idx=2, metric="miss_ratio")
-    plot_box_ignore_frac(
-        "/disk/libCacheSim/_build/result2/", size_idx=4, metric="miss_ratio"
+    plot_box_algo(
+        "/disk/libCacheSim/_build/result_data/", size_idx=4, metric="miss_ratio"
+    )
+
+    plot_box_corr(
+        "/disk/libCacheSim/_build/result_data/", size_idx=0, metric="miss_ratio"
+    )
+    plot_box_corr(
+        "/disk/libCacheSim/_build/result_data/", size_idx=4, metric="miss_ratio"
     )

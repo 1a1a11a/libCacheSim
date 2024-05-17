@@ -68,7 +68,7 @@ def _find_cache_size(datapath, metric):
         )
 
     if len(cache_sizes) < N_CACHE_SIZE:
-        # the working sets of some traces are not large enough, when running with some cache sizes, 
+        # the working sets of some traces are not large enough, when running with some cache sizes,
         # e.g., 0.0001, there are too few objects to run, so we will have fewer cache sizes
         return []
 
@@ -113,7 +113,9 @@ def load_miss_ratio_reduction_from_dir(data_dir_path, algos, metric="miss_ratio"
     for f in sorted(glob.glob(data_dir_path + "/*")):
         # a list of miss ratio dict (algo -> miss ratio) at different cache sizes
         miss_ratio_dict_list = load_data(f, metric)
-        assert len(miss_ratio_dict_list) == N_CACHE_SIZE, f"{f} {len(miss_ratio_dict_list)}"
+        assert (
+            len(miss_ratio_dict_list) == N_CACHE_SIZE
+        ), f"{f} {len(miss_ratio_dict_list)}"
         # print(f, sorted(miss_ratio_dict_list[0].keys()))
 
         if len(mr_reduction_dict_list) == 0:
@@ -153,6 +155,61 @@ def load_miss_ratio_reduction_from_dir(data_dir_path, algos, metric="miss_ratio"
 
             for algo, mr_reduction in mr_reduction_dict.items():
                 mr_reduction_dict_list[size_idx][algo].append(mr_reduction)
+
+    return mr_reduction_dict_list
+
+
+def load_miss_ratio_and_miss_ratio_reduction_from_dir(
+    data_dir_path, algos, metric="miss_ratio"
+):
+    data_dirname = os.path.basename(data_dir_path)
+
+    mr_reduction_dict_list = []
+    for f in sorted(glob.glob(data_dir_path + "/*")):
+        # a list of miss ratio dict (algo -> miss ratio) at different cache sizes
+        miss_ratio_dict_list = load_data(f, metric)
+        assert (
+            len(miss_ratio_dict_list) == N_CACHE_SIZE
+        ), f"{f} {len(miss_ratio_dict_list)}"
+        # print(f, sorted(miss_ratio_dict_list[0].keys()))
+
+        if len(mr_reduction_dict_list) == 0:
+            mr_reduction_dict_list = [
+                defaultdict(list) for _ in range(len(miss_ratio_dict_list))
+            ]
+        for size_idx, miss_ratio_dict in enumerate(miss_ratio_dict_list):
+            if len(miss_ratio_dict) == 0:
+                continue
+
+            mr_fifo = miss_ratio_dict["FIFO"]
+            if mr_fifo == 0 or 1 - mr_fifo == 0:
+                continue
+
+            miss_ratio_dict = {k.lower(): v for k, v in miss_ratio_dict.items()}
+
+            mr_reduction_dict = {}
+            for algo in algos:
+                if algo.lower() not in miss_ratio_dict:
+                    logger.warning("no data for {} in {}".format(algo.lower(), f))
+                    break
+                miss_ratio = miss_ratio_dict[algo.lower()]
+                mr_reduction = (mr_fifo - miss_ratio) / mr_fifo
+                if mr_reduction < 0:
+                    mr_reduction = -(miss_ratio - mr_fifo) / miss_ratio
+
+                mr_reduction_dict[algo] = mr_reduction
+
+            if len(mr_reduction_dict) < len(algos):
+                # some algorithm does not have data
+                logger.info(
+                    "skip {} because of missing algorithm result {}".format(
+                        f, set(algos) - set(miss_ratio_dict.keys())
+                    )
+                )
+                continue
+
+            for algo, mr_reduction in mr_reduction_dict.items():
+                mr_reduction_dict_list[size_idx][algo].append((mr_fifo, mr_reduction))
 
     return mr_reduction_dict_list
 
