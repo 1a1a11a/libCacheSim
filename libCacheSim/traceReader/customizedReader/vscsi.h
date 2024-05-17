@@ -132,6 +132,12 @@ static inline int vscsi_read_ver1(reader_t *reader, request_t *req) {
   /* need to parse op */
 
   req->obj_id = record->lbn;
+
+// #define METADATA_TRACE
+#ifdef METADATA_TRACE
+  req->obj_id /= 200;
+#endif
+
   (reader->mmap_offset) += reader->item_size;
   return 0;
 }
@@ -142,6 +148,11 @@ static inline int vscsi_read_ver2(reader_t *reader, request_t *req) {
   req->clock_time = record->ts / 1000000;
   req->obj_size = record->len;
   req->obj_id = record->lbn;
+
+#ifdef METADATA_TRACE
+  req->obj_id /= 200;
+#endif
+
   (reader->mmap_offset) += reader->item_size;
   return 0;
 }

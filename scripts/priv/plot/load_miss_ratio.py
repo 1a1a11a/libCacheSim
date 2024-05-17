@@ -28,7 +28,7 @@ regex = re.compile(
     r"(?P<data>.*?) (?P<algo>.*?) cache size \s*(?P<cache_size>\d+[KMGTiB]*)?, (?P<n_req>\d+) req, miss ratio (?P<miss_ratio>\d\.\d+), byte miss ratio (?P<byte_miss_ratio>\d\.\d+)"
 )
 
-N_CACHE_SIZE = 2
+N_CACHE_SIZE = 8
 
 
 def _find_cache_size(datapath, metric):

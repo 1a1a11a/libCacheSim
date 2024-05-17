@@ -43,14 +43,15 @@ typedef struct {
   int move_to_main_threshold;
   double fifo_size_ratio;
   double ghost_size_ratio;
-  double delay_perc;
+  double corr_window_ratio;
   char main_cache_type[32];
 
   request_t *req_local;
 } Cloud2QPlus_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=2,delay-perc=0.2";
+    "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=2,"
+    "corr-window-ratio=0.2";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -58,22 +59,21 @@ static const char *DEFAULT_CACHE_PARAMS =
 // ****                                                               ****
 // ***********************************************************************
 cache_t *Cloud2QPlus_init(const common_cache_params_t ccache_params,
-                           const char *cache_specific_params);
+                          const char *cache_specific_params);
 static void Cloud2QPlus_free(cache_t *cache);
 static bool Cloud2QPlus_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *Cloud2QPlus_find(cache_t *cache, const request_t *req,
-                                      const bool update_cache);
+                                     const bool update_cache);
 static cache_obj_t *Cloud2QPlus_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *Cloud2QPlus_to_evict(cache_t *cache, const request_t *req);
 static void Cloud2QPlus_evict(cache_t *cache, const request_t *req);
 static bool Cloud2QPlus_remove(cache_t *cache, const obj_id_t obj_id);
 static inline int64_t Cloud2QPlus_get_occupied_byte(const cache_t *cache);
 static inline int64_t Cloud2QPlus_get_n_obj(const cache_t *cache);
-static inline bool Cloud2QPlus_can_insert(cache_t *cache,
-                                           const request_t *req);
+static inline bool Cloud2QPlus_can_insert(cache_t *cache, const request_t *req);
 static void Cloud2QPlus_parse_params(cache_t *cache,
-                                      const char *cache_specific_params);
+                                     const char *cache_specific_params);
 
 static void Cloud2QPlus_evict_fifo(cache_t *cache, const request_t *req);
 static void Cloud2QPlus_evict_main(cache_t *cache, const request_t *req);
@@ -85,7 +85,7 @@ static void Cloud2QPlus_evict_main(cache_t *cache, const request_t *req);
 // ***********************************************************************
 
 cache_t *Cloud2QPlus_init(const common_cache_params_t ccache_params,
-                           const char *cache_specific_params) {
+                          const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("Cloud2QPlus", ccache_params, cache_specific_params);
   cache->cache_init = Cloud2QPlus_init;
@@ -104,11 +104,10 @@ cache_t *Cloud2QPlus_init(const common_cache_params_t ccache_params,
 
   cache->eviction_params = malloc(sizeof(Cloud2QPlus_params_t));
   memset(cache->eviction_params, 0, sizeof(Cloud2QPlus_params_t));
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   params->req_local = new_request();
   params->hit_on_ghost = false;
-  params->delay_perc = 0.2;
+  params->corr_window_ratio = 0.2;
 
   Cloud2QPlus_parse_params(cache, DEFAULT_CACHE_PARAMS);
   if (cache_specific_params != NULL) {
@@ -145,8 +144,9 @@ cache_t *Cloud2QPlus_init(const common_cache_params_t ccache_params,
   params->main_cache->track_eviction_age = false;
 #endif
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Cloud2QPlus-%.4lf-%d-%.2lf",
-           params->fifo_size_ratio, params->move_to_main_threshold, params->delay_perc);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN,
+           "Cloud2QPlus-%.4lf-%d-%.2lf", params->fifo_size_ratio,
+           params->move_to_main_threshold, params->corr_window_ratio);
 
   return cache;
 }
@@ -157,8 +157,7 @@ cache_t *Cloud2QPlus_init(const common_cache_params_t ccache_params,
  * @param cache
  */
 static void Cloud2QPlus_free(cache_t *cache) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   free_request(params->req_local);
   params->fifo->cache_free(params->fifo);
   if (params->fifo_ghost != NULL) {
@@ -189,8 +188,7 @@ static void Cloud2QPlus_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool Cloud2QPlus_get(cache_t *cache, const request_t *req) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   DEBUG_ASSERT(params->fifo->get_occupied_byte(params->fifo) +
                    params->main_cache->get_occupied_byte(params->main_cache) <=
                cache->cache_size);
@@ -216,9 +214,8 @@ static bool Cloud2QPlus_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *Cloud2QPlus_find(cache_t *cache, const request_t *req,
-                                      const bool update_cache) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+                                     const bool update_cache) {
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the fifo and main caches
   if (!update_cache) {
@@ -237,9 +234,12 @@ static cache_obj_t *Cloud2QPlus_find(cache_t *cache, const request_t *req,
   params->hit_on_ghost = false;
   cache_obj_t *obj = params->fifo->find(params->fifo, req, true);
   if (obj != NULL) {
-    if (params->n_obj_admit_to_fifo - obj->Cloud2QPlus.insertion_time >
-        params->fifo->cache_size * params->delay_perc) {
-      obj->Cloud2QPlus.freq += 1;
+    int time_since_insertion =
+        params->n_obj_admit_to_fifo - obj->Cloud2QPlus.insertion_time;
+    if (time_since_insertion >
+        params->fifo->cache_size * params->corr_window_ratio) {
+      // if (time_since_insertion <= params->fifo->cache_size)
+        obj->Cloud2QPlus.freq += 1;
     }
     return obj;
   }
@@ -270,8 +270,7 @@ static cache_obj_t *Cloud2QPlus_find(cache_t *cache, const request_t *req,
  * @return the inserted object
  */
 static cache_obj_t *Cloud2QPlus_insert(cache_t *cache, const request_t *req) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   cache_obj_t *obj = NULL;
 
   if (params->hit_on_ghost) {
@@ -314,15 +313,13 @@ static cache_obj_t *Cloud2QPlus_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *Cloud2QPlus_to_evict(cache_t *cache,
-                                          const request_t *req) {
+static cache_obj_t *Cloud2QPlus_to_evict(cache_t *cache, const request_t *req) {
   assert(false);
   return NULL;
 }
 
 static void Cloud2QPlus_evict_fifo(cache_t *cache, const request_t *req) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   cache_t *fifo = params->fifo;
   cache_t *ghost = params->fifo_ghost;
   cache_t *main = params->main_cache;
@@ -336,30 +333,13 @@ static void Cloud2QPlus_evict_fifo(cache_t *cache, const request_t *req) {
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
     if (obj_to_evict->Cloud2QPlus.freq >= params->move_to_main_threshold) {
-#if defined(TRACK_DEMOTION)
-      printf("%ld keep %ld %ld\n", cache->n_req, obj_to_evict->create_time,
-             obj_to_evict->misc.next_access_vtime);
-#endif
       // freq is updated in cache_find_base
       params->n_obj_move_to_main += 1;
       params->n_byte_move_to_main += obj_to_evict->obj_size;
 
       cache_obj_t *new_obj = main->insert(main, params->req_local);
       new_obj->misc.freq = obj_to_evict->misc.freq;
-#if defined(TRACK_EVICTION_V_AGE)
-      new_obj->create_time = obj_to_evict->create_time;
     } else {
-      record_eviction_age(cache, obj_to_evict,
-                          CURR_TIME(cache, req) - obj_to_evict->create_time);
-#else
-    } else {
-#endif
-
-#if defined(TRACK_DEMOTION)
-      printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
-             obj_to_evict->misc.next_access_vtime);
-#endif
-
       // insert to ghost
       if (ghost != NULL) {
         ghost->get(ghost, params->req_local);
@@ -374,8 +354,7 @@ static void Cloud2QPlus_evict_fifo(cache_t *cache, const request_t *req) {
 }
 
 static void Cloud2QPlus_evict_main(cache_t *cache, const request_t *req) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   cache_t *fifo = params->fifo;
   cache_t *ghost = params->fifo_ghost;
   cache_t *main = params->main_cache;
@@ -386,9 +365,6 @@ static void Cloud2QPlus_evict_main(cache_t *cache, const request_t *req) {
     cache_obj_t *obj_to_evict = main->to_evict(main, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
     int freq = obj_to_evict->Cloud2QPlus.freq;
-#if defined(TRACK_EVICTION_V_AGE)
-    int64_t create_time = obj_to_evict->create_time;
-#endif
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
     if (freq >= 1) {
       // we need to evict first because the object to insert has the same obj_id
@@ -400,16 +376,7 @@ static void Cloud2QPlus_evict_main(cache_t *cache, const request_t *req) {
       // clock with 2-bit counter
       new_obj->Cloud2QPlus.freq = MIN(freq, 3) - 1;
       new_obj->misc.freq = freq;
-
-#if defined(TRACK_EVICTION_V_AGE)
-      new_obj->create_time = create_time;
-#endif
     } else {
-#if defined(TRACK_EVICTION_V_AGE)
-      record_eviction_age(cache, obj_to_evict,
-                          CURR_TIME(cache, req) - obj_to_evict->create_time);
-#endif
-
       // main->evict(main, req);
       bool removed = main->remove(main, obj_to_evict->obj_id);
       if (!removed) {
@@ -431,8 +398,7 @@ static void Cloud2QPlus_evict_main(cache_t *cache, const request_t *req) {
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
 static void Cloud2QPlus_evict(cache_t *cache, const request_t *req) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
 
   cache_t *fifo = params->fifo;
   cache_t *ghost = params->fifo_ghost;
@@ -459,8 +425,7 @@ static void Cloud2QPlus_evict(cache_t *cache, const request_t *req) {
  * cache
  */
 static bool Cloud2QPlus_remove(cache_t *cache, const obj_id_t obj_id) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->fifo->remove(params->fifo, obj_id);
   removed = removed || (params->fifo_ghost &&
@@ -471,23 +436,20 @@ static bool Cloud2QPlus_remove(cache_t *cache, const obj_id_t obj_id) {
 }
 
 static inline int64_t Cloud2QPlus_get_occupied_byte(const cache_t *cache) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   return params->fifo->get_occupied_byte(params->fifo) +
          params->main_cache->get_occupied_byte(params->main_cache);
 }
 
 static inline int64_t Cloud2QPlus_get_n_obj(const cache_t *cache) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
   return params->fifo->get_n_obj(params->fifo) +
          params->main_cache->get_n_obj(params->main_cache);
 }
 
 static inline bool Cloud2QPlus_can_insert(cache_t *cache,
-                                           const request_t *req) {
-  Cloud2QPlus_params_t *params =
-      (Cloud2QPlus_params_t *)cache->eviction_params;
+                                          const request_t *req) {
+  Cloud2QPlus_params_t *params = (Cloud2QPlus_params_t *)cache->eviction_params;
 
   return req->obj_size <= params->fifo->cache_size;
 }
@@ -499,13 +461,16 @@ static inline bool Cloud2QPlus_can_insert(cache_t *cache,
 // ***********************************************************************
 static const char *Cloud2QPlus_current_params(Cloud2QPlus_params_t *params) {
   static __thread char params_str[128];
-  snprintf(params_str, 128, "fifo-size-ratio=%.4lf,main-cache=%s\n",
-           params->fifo_size_ratio, params->main_cache->cache_name);
+  snprintf(params_str, 128,
+           "fifo-size-ratio=%.4lf,ghost-size-ratio=%.4lf,move-to-main-"
+           "threshold=%d,corr-window-ratio=%.4lf\n",
+           params->fifo_size_ratio, params->ghost_size_ratio,
+           params->move_to_main_threshold, params->corr_window_ratio);
   return params_str;
 }
 
 static void Cloud2QPlus_parse_params(cache_t *cache,
-                                      const char *cache_specific_params) {
+                                     const char *cache_specific_params) {
   Cloud2QPlus_params_t *params =
       (Cloud2QPlus_params_t *)(cache->eviction_params);
 
@@ -528,8 +493,8 @@ static void Cloud2QPlus_parse_params(cache_t *cache,
       params->fifo_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
       params->ghost_size_ratio = strtod(value, NULL);
-    } else if (strcasecmp(key, "delay-perc") == 0) {
-      params->delay_perc = strtod(value, NULL);
+    } else if (strcasecmp(key, "corr-window-ratio") == 0) {
+      params->corr_window_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "move-to-main-threshold") == 0) {
       params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "print") == 0) {
