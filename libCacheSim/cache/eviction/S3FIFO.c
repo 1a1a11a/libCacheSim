@@ -191,15 +191,7 @@ static bool S3FIFO_get(cache_t *cache, const request_t *req) {
 
   bool cache_hit = cache_get_base(cache, req);
 
-  // if (cache->n_req % 1000000 == 0) {
-  //   double s = params->n_obj_admit_to_fifo + params->n_obj_admit_to_main +
-  //              params->n_obj_move_to_main;
-  //   printf("%ld %ld: %.4lf/%.4lf/%.4lf, %ld %ld\n", cache->n_req,
-  //          cache->cache_size, (double)params->n_obj_admit_to_fifo / s,
-  //          (double)params->n_obj_admit_to_main / s,
-  //          (double)params->n_obj_move_to_main / s, params->fifo->cache_size,
-  //          params->main_cache->cache_size);
-  // }
+  // printf("---------- get %ld %d\n", req->obj_id, cache_hit);
 
   return cache_hit;
 }
@@ -274,12 +266,14 @@ static cache_obj_t *S3FIFO_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = NULL;
 
   if (params->hit_on_ghost) {
+    // printf("---- insert main %ld\n", req->obj_id);
     /* insert into the ARC */
     params->hit_on_ghost = false;
     params->n_obj_admit_to_main += 1;
     params->n_byte_admit_to_main += req->obj_size;
     obj = params->main_cache->insert(params->main_cache, req);
   } else {
+    // printf("---- insert fifo %ld\n", req->obj_id);
     /* insert into the fifo */
     if (req->obj_size >= params->fifo->cache_size) {
       return NULL;
@@ -341,6 +335,7 @@ static void S3FIFO_evict_fifo(cache_t *cache, const request_t *req) {
       params->n_byte_move_to_main += obj_to_evict->obj_size;
 
       cache_obj_t *new_obj = main->insert(main, params->req_local);
+      // printf("---- reinsert fifo %ld\n", new_obj->obj_id);
       new_obj->misc.freq = obj_to_evict->misc.freq;
 #if defined(TRACK_EVICTION_V_AGE)
       new_obj->create_time = obj_to_evict->create_time;
@@ -358,6 +353,7 @@ static void S3FIFO_evict_fifo(cache_t *cache, const request_t *req) {
 
       // insert to ghost
       if (ghost != NULL) {
+        // printf("---- evict fifo %ld\n", params->req_local->obj_id);
         ghost->get(ghost, params->req_local);
       }
       has_evicted = true;
@@ -391,6 +387,7 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
       main->remove(main, obj_to_evict->obj_id);
       obj_to_evict = NULL;
 
+      // printf("---- reinsert main %ld\n", params->req_local->obj_id);
       cache_obj_t *new_obj = main->insert(main, params->req_local);
       // clock with 2-bit counter
       new_obj->S3FIFO.freq = MIN(freq, 3) - 1;
@@ -405,6 +402,7 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
                           CURR_TIME(cache, req) - obj_to_evict->create_time);
 #endif
 
+      // printf("---- evict main %ld\n", obj_to_evict->obj_id);
       // main->evict(main, req);
       bool removed = main->remove(main, obj_to_evict->obj_id);
       if (!removed) {

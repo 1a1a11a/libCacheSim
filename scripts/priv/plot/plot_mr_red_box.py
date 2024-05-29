@@ -21,7 +21,12 @@ def update_algo_name(algo_name):
     name_dict = {
         "WTinyLFU-w0.01-SLRU": "TinyLFU",
         "S3FIFO-0.1000-2": "S3FIFO",
-        "Cloud2QPlus-0.1000-2-0.50": "Cloud2Q+",
+        "Cloud2QPlus-0.1000-2-0.50": "Cloud2Q+0.5",
+        "Cloud2QPlus-0.1000-2-0.00": "Cloud2Q+",
+        "Cloud2QPlus2-0.1000-2-0.00": "Cloud2Q+2",
+        "Cloud2QPlus2-0.1000-2-0.50": "Cloud2Q+2-0.5",
+        "Cloud2QPlus4-0.1000-2-0.00": "Cloud2Q+4",
+        "Cloud2QPlus4-0.1000-2-0.50": "Cloud2Q+4-0.5",
     }
 
     return name_dict.get(algo_name, algo_name)
@@ -74,12 +79,18 @@ def plot_box_algo(datapath, size_idx=0, metric="miss_ratio"):
     algo_list = [
         "S3FIFO-0.1000-2",
         "Cloud2QPlus-0.1000-2-0.50",
+        "Cloud2QPlus-0.1000-2-0.00",
+        "Cloud2QPlus2-0.1000-2-0.00",
+        "Cloud2QPlus2-0.1000-2-0.50",
+        "Cloud2QPlus4-0.1000-2-0.00",
+        "Cloud2QPlus4-0.1000-2-0.50",
         "LIRS",
         "TwoQ",
         "ARC",
     ]
 
     name_list = [update_algo_name(algo) for algo in algo_list]
+
 
     mr_reduction_dict_list = load_miss_ratio_reduction_from_dir(
         datapath, algo_list, metric
@@ -90,6 +101,7 @@ def plot_box_algo(datapath, size_idx=0, metric="miss_ratio"):
 
     print([len(mr_reduction_dict_list[size_idx][algo]) for algo in algo_list])
 
+    # plt.tight_layout()
     plt.boxplot(
         [mr_reduction_dict_list[size_idx][algo] for algo in algo_list],
         whis=(10, 90),
@@ -99,11 +111,11 @@ def plot_box_algo(datapath, size_idx=0, metric="miss_ratio"):
         medianprops=dict(color="black", linewidth=1.6),
     )
 
-    plt.ylabel("Miss ratio reduction from FIFO")
-    plt.xticks(range(1, len(algo_list) + 1), name_list, rotation=0)
+    plt.ylabel("Miss ratio reduction\n from FIFO")
+    plt.xticks(range(1, len(algo_list) + 1), name_list, rotation=90)
     plt.grid(linestyle="--")
-    plt.savefig("{}_algo_box_{}.png".format(metric, size_idx))
-    plt.savefig("{}_algo_box_{}.pdf".format(metric, size_idx))
+    plt.savefig("{}_algo_box_{}.png".format(metric, size_idx), bbox_inches="tight")
+    plt.savefig("{}_algo_box_{}.pdf".format(metric, size_idx), bbox_inches="tight")
     plt.clf()
 
 
@@ -116,20 +128,23 @@ def plot_box_corr(datapath, size_idx=0, metric="miss_ratio"):
     """
 
     algo_list = [
-        "Cloud2QPlus-0.1000-2-0.00",
-        "Cloud2QPlus-0.1000-2-0.01",
-        "Cloud2QPlus-0.1000-2-0.05",
-        "Cloud2QPlus-0.1000-2-0.10",
-        "Cloud2QPlus-0.1000-2-0.20",
-        # "Cloud2QPlus-0.1000-2-0.30",
-        "Cloud2QPlus-0.1000-2-0.40",
-        # "Cloud2QPlus-0.1000-2-0.50",
-        # "Cloud2QPlus-0.1000-2-0.60",
-        # "Cloud2QPlus-0.1000-2-0.70",
-        # "Cloud2QPlus-0.1000-2-0.80",
-        # "Cloud2QPlus-0.1000-2-0.90",
-        # "Cloud2QPlus-0.1000-2-1.00",
+        "S3FIFO-0.1000-2",
+        "Cloud2QPlus2-0.1000-2-0.00",
+        "Cloud2QPlus2-0.1000-2-0.01",
+        "Cloud2QPlus2-0.1000-2-0.05",
+        "Cloud2QPlus2-0.1000-2-0.10",
+        "Cloud2QPlus2-0.1000-2-0.20",
+        "Cloud2QPlus2-0.1000-2-0.30",
+        "Cloud2QPlus2-0.1000-2-0.40",
+        "Cloud2QPlus2-0.1000-2-0.50",
+        "Cloud2QPlus2-0.1000-2-0.60",
+        "Cloud2QPlus2-0.1000-2-0.70",
+        "Cloud2QPlus2-0.1000-2-0.80",
+        "Cloud2QPlus2-0.1000-2-0.90",
+        # "Cloud2QPlus2-0.1000-2-0.99",
+        "Cloud2QPlus2-0.1000-2-1.00",
     ]
+
     name_list = [algo.split("-")[-1] for algo in algo_list]
 
     mr_reduction_dict_list = load_miss_ratio_reduction_from_dir(
@@ -138,6 +153,7 @@ def plot_box_corr(datapath, size_idx=0, metric="miss_ratio"):
     print(name_list)
 
     plt.figure(figsize=(28, 8))
+
 
     print([len(mr_reduction_dict_list[size_idx][algo]) for algo in algo_list])
 
@@ -168,15 +184,15 @@ if __name__ == "__main__":
     ap = parser.parse_args()
 
     plot_box_algo(
-        "/disk/libCacheSim/_build/result_data/", size_idx=0, metric="miss_ratio"
+        "/disk/result/", size_idx=0, metric="miss_ratio"
     )
     plot_box_algo(
-        "/disk/libCacheSim/_build/result_data/", size_idx=4, metric="miss_ratio"
+        "/disk/result/", size_idx=4, metric="miss_ratio"
     )
 
     plot_box_corr(
-        "/disk/libCacheSim/_build/result_data/", size_idx=0, metric="miss_ratio"
+        "/disk/result/", size_idx=0, metric="miss_ratio"
     )
     plot_box_corr(
-        "/disk/libCacheSim/_build/result_data/", size_idx=4, metric="miss_ratio"
+        "/disk/result/", size_idx=4, metric="miss_ratio"
     )
