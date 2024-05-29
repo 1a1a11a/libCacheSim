@@ -53,7 +53,7 @@ typedef struct {
 
 static const char *DEFAULT_CACHE_PARAMS =
     "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=2,"
-    "corr-window-ratio=0.0";
+    "corr-window-ratio=0.5";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -241,9 +241,8 @@ static cache_obj_t *Cloud2QPlus_find(cache_t *cache, const request_t *req,
   if (obj != NULL) {
     int time_since_insertion =
         params->n_obj_admit_to_fifo - obj->Cloud2QPlus.insertion_time;
-    if (time_since_insertion >
+    if (time_since_insertion >=
         params->fifo->cache_size * params->corr_window_ratio) {
-      // if (time_since_insertion <= params->fifo->cache_size)
       obj->Cloud2QPlus.freq += 1;
     }
     return obj;
