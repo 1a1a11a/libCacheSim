@@ -158,13 +158,13 @@ def plot_mrc_size(
     plt.ylabel("Miss Ratio")
     legend = plt.legend()
     frame = legend.get_frame()
-    frame.set_facecolor("0.9")
-    frame.set_edgecolor("0.9")
-    plt.grid(linestyle="--")
-    plt.savefig("{}.pdf".format(name), bbox_inches="tight")
+    frame.set_facecolor('0.9')
+    frame.set_edgecolor('0.9')
+    plt.grid(linestyle='--')
+    plt.savefig("{}.png".format(name), bbox_inches="tight")
     plt.show()
     plt.clf()
-    print("plot is saved to {}.pdf".format(name))
+    print("plot is saved to {}.png".format(name))
 
 
 def run():
