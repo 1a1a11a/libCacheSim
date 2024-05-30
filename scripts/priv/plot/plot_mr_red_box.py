@@ -22,12 +22,12 @@ def update_algo_name(algo_name):
         "WTinyLFU-w0.01-SLRU": "TinyLFU",
         "S3FIFO-0.1000-2": "S3FIFO",
         "S3FIFOv2-0.1000-2": "S3FIFO",
-        "Cloud2QPlus-0.1000-2-0.50": "Cloud2Q+0.5",
-        "Cloud2QPlus-0.1000-2-0.00": "Cloud2Q+",
-        "Cloud2QPlus2-0.1000-2-0.00": "Cloud2Q+2",
-        "Cloud2QPlus2-0.1000-2-0.50": "Cloud2Q+2",
-        "Cloud2QPlus4-0.1000-2-0.00": "Cloud2Q+",
-        "Cloud2QPlus4-0.1000-2-0.50": "Cloud2Q+",
+        "Cloud2QPlus-0.1000-2-0.50": "Clock2Q+0.5",
+        "Cloud2QPlus-0.1000-2-0.00": "Clock2Q+",
+        "Cloud2QPlus2-0.1000-2-0.00": "Clock2Q+2",
+        "Cloud2QPlus2-0.1000-2-0.50": "Clock2Q+2",
+        "Cloud2QPlus4-0.1000-2-0.00": "Clock2Q+",
+        "Cloud2QPlus4-0.1000-2-0.50": "Clock2Q+",
     }
 
     return name_dict.get(algo_name, algo_name)
@@ -79,13 +79,14 @@ def plot_box_algo(datapath, size_idx=0, metric="miss_ratio"):
 
     algo_list = [
         # "S3FIFO-0.1000-2",
+        "Cloud2QPlus4-0.1000-2-0.50",
         "S3FIFOv2-0.1000-2",
         # "Cloud2QPlus-0.1000-2-0.50",
         # "Cloud2QPlus-0.1000-2-0.00",
         # "Cloud2QPlus2-0.1000-2-0.00",
         # "Cloud2QPlus2-0.1000-2-0.50",
         # "Cloud2QPlus4-0.1000-2-0.00",
-        "Cloud2QPlus4-0.1000-2-0.50",
+        # "Cloud2QPlus4-0.1000-2-0.50",
         "LIRS",
         "TwoQ",
         "ARC",

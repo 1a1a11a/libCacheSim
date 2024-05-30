@@ -127,7 +127,7 @@ typedef struct {
   int64_t insertion_time;   // measured in number of objects inserted
   int64_t freq;
   int32_t main_insert_freq;
-} Cloud2QPlus_obj_metadata_t;
+} Clock2QPlus_obj_metadata_t;
 
 typedef struct {
   int32_t freq;
@@ -179,7 +179,7 @@ typedef struct cache_obj {
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
     S3FIFO_obj_metadata_t S3FIFOv2;
-    Cloud2QPlus_obj_metadata_t Cloud2QPlus;
+    Clock2QPlus_obj_metadata_t Clock2QPlus;
     myclock_obj_params_t myclock;
     Sieve_obj_params_t sieve;
 

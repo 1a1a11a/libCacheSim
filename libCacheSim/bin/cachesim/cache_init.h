@@ -134,8 +134,8 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
     cache = QDLP_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "sieve") == 0) {
     cache = Sieve_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "Cloud2QPlus") == 0) {
-    cache = Cloud2QPlus_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "Clock2QPlus") == 0) {
+    cache = Clock2QPlus_init(cc_params, eviction_params);
 #ifdef ENABLE_GLCACHE
   } else if (strcasecmp(eviction_algo, "GLCache") == 0 || strcasecmp(eviction_algo, "gl-cache") == 0) {
     cache = GLCache_init(cc_params, eviction_params);
