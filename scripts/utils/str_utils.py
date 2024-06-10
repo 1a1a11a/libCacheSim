@@ -26,7 +26,7 @@ def conv_size_str_to_int(size_str: str) -> int:
     return cache_size
 
 
-def find_unit_of_cache_size(cache_size: int) -> tuple[int, str]:
+def find_unit_of_cache_size(cache_size: int) -> Tuple[int, str]:
     """convert a cache size in int (byte) to a size with unit"""
 
     size_unit, size_unit_str = 1, "B"
