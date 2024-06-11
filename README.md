@@ -89,7 +89,7 @@ cachesim supports the following algorithms:
 ### One-line install
 We provide some scripts for quick installation of libCacheSim. 
 ```bash
-cd scripts && bash install_dependency.sh && bash install_libcachesim.sh;
+cd scripts && bash install_dependency.sh && bash install_libcachesim.sh
 ```
 If this does not work, please 
 1. let us know what system you are using and what error you get
@@ -104,13 +104,13 @@ Please see [install.md](/doc/install.md) for instructions on how to install the 
 <!-- TOC --><a name="build-libcachesim"></a>
 ### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
-```
+```bash
 git clone https://github.com/1a1a11a/libCacheSim
-pushd libCachesim;
-mkdir _build && cd _build;
-cmake .. && make -j;
-[sudo] make install;
-popd;
+pushd libCacheSim
+mkdir _build && cd _build
+cmake .. && make -j
+[sudo] make install
+popd
 ```
 ---
 
@@ -164,7 +164,7 @@ You can plot miss ratios of different algorithms and sizes, and plot the miss ra
 
 ```bash
 # plot miss ratio over size
-cd scripts;
+cd scripts
 python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=," --algos=fifo,lru,lecar,s3fifo --sizes=0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4
 
 # plot miss ratio over time
