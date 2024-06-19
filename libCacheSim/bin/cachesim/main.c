@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 
   if (args.n_cache_size * args.n_eviction_algo == 1) {
     simulate(args.reader, args.caches[0], args.report_interval, args.warmup_sec,
-             args.ofilepath);
+             args.ofilepath, args.ignore_obj_size);
 
     free_arg(&args);
     return 0;
@@ -54,6 +54,8 @@ int main(int argc, char **argv) {
     } else if (args.cache_sizes[0] > KiB) {
       size_unit = KiB;
       size_unit_str = "KiB";
+    } else {
+      size_unit_str = "B";
     }
   }
 
