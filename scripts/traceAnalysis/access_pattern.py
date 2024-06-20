@@ -105,7 +105,7 @@ def plot_access_pattern(
     is_real_time = "Rtime" in datapath
     if is_real_time:
         xlabel = "Time (hour)"
-        figname = "fig/{}_access_rt.{}".format(figname_prefix, FIG_TYPE)
+        figname = "{}/{}_access_rt.{}".format(FIG_DIR, figname_prefix, FIG_TYPE)
         for idx, ts_list in enumerate(access_time_list):
             # access_rtime_list stores N objects, each object has one access pattern list
             plt.scatter(
@@ -117,7 +117,7 @@ def plot_access_pattern(
             "Vtime" in datapath
         ), "the input file might not be accessPattern data file"
         xlabel = "Time (# million requests)"
-        figname = "fig/{}_access_vt.{}".format(figname_prefix, FIG_TYPE)
+        figname = "{}/{}_access_vt.{}".format(FIG_DIR, figname_prefix, FIG_TYPE)
         for idx, ts_list in enumerate(access_time_list):
             # access_rtime_list stores N objects, each object has one access pattern list
             plt.scatter(

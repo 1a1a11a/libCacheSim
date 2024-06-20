@@ -57,7 +57,7 @@ def plot_scan_size(datapath, figname_prefix=""):
 
     plt.xlabel("Scan size")
     plt.ylabel("Count")
-    plt.savefig("{}_scan_size.png".format(figname_prefix), bbox_inches="tight")
+    plt.savefig("{}/{}_scan_size.{}".format(FIG_DIR, figname_prefix, FIG_TYPE), bbox_inches="tight")
     plt.clf()
 
     x, y = conv_to_cdf(scan_size_cnt)
@@ -74,7 +74,7 @@ def plot_scan_size(datapath, figname_prefix=""):
     plt.grid(linestyle="--")
     plt.xlabel("Scan size")
     plt.ylabel("CDF")
-    plt.savefig("{}_scan_size_cdf.png".format(figname_prefix), bbox_inches="tight")
+    plt.savefig("{}/{}_scan_size_cdf.{}".format(FIG_DIR, figname_prefix, FIG_TYPE), bbox_inches="tight")
     plt.clf()
 
 
