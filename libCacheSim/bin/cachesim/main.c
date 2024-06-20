@@ -72,6 +72,9 @@ int main(int argc, char **argv) {
   }
   fclose(output_file);
 
+  if (args.n_cache_size * args.n_eviction_algo > 0)
+    my_free(sizeof(cache_stat_t) * args.n_cache_size * args.n_eviction_algo, result);
+
   free_arg(&args);
 
   return 0;
