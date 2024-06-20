@@ -79,7 +79,7 @@ After generating plot data, we can plot access pattern, request rate, size, reus
 python3 scripts/traceAnalysis/access_pattern.py ${dataname}.accessRtime
 
 # plot the access pattern using logical/virtual (request count) time 
-python3 scripts/traceAnalysis/access_pattern.py ${dataname}.accessRtime
+python3 scripts/traceAnalysis/access_pattern.py ${dataname}.accessVtime
 ```
 
 Some example plots are shown below:
@@ -243,7 +243,7 @@ There are two versions of the plots, one is line plot, and the other is a heatma
 ```bash
 # this requires a long trace (e.g., 7 day) to generate a meaningful plot
 # and most block workloads do not have enough requests to plot meaningful popularity decay
-python3 scripts/traceAnalysis/popularity_decay.py ${dataname}.popularityDecay_w300
+python3 scripts/traceAnalysis/popularity_decay.py ${dataname}.popularityDecay_w300_obj
 ```
 
 <!-- Some example plots are shown below:
