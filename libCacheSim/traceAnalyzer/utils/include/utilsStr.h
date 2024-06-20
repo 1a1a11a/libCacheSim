@@ -29,7 +29,7 @@ static inline void convert_size_to_str(long long size, char *str) {
     } else if (size >= KiB) {
         sprintf(str, "%.0lf KiB", (double) size / KiB);
     } else {
-        sprintf(str, "%lld", size);
+        sprintf(str, "%lld B", size);
     }
 }
 
