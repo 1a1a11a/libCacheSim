@@ -63,7 +63,7 @@ static struct argp_option options[] = {
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
      "time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,", 0,
      "Parameters used for csv trace", 1},
-    {"num-req", OPTION_NUM_REQ, 0, 0,
+    {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Num of requests to process, default -1 means all requests in the trace",
      1},
 
@@ -133,7 +133,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
       break;
     case OPTION_NUM_REQ:
-      arguments->n_req = atoi(arg);
+      arguments->n_req = atoll(arg);
       break;
     case OPTION_TIME_WINDOW:
       arguments->analysis_param.time_window = atoi(arg);

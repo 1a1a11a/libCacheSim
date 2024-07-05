@@ -256,3 +256,15 @@ The block workload has most objects being 4 KiB and 64 KiB, while the Twitter wo
 The Request curve is weighted by request count, and the Object curve is weighted by object count. 
 </div>
 <br> -->
+
+### Advanced features 
+```bash
+# cap the number of requests read from the trace
+./traceAnalyzer --num-req=1000000 ../data/trace.vscsi vscsi
+
+# change output 
+./traceAnalyzer -o my-output ../data/trace.vscsi vscsi
+
+# use part of the trace to warm up the cache
+./traceAnalyzer --warmup-sec=86400 ../data/trace.vscsi vscsi
+```
