@@ -1,5 +1,7 @@
 #!/bin/bash 
 
+set -eu # Enable error checking and command tracing
+
 setup_ubuntu() {
 	sudo apt update
 	sudo apt install -yqq libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools xxhash
@@ -23,7 +25,7 @@ setup_xgboost() {
 	if [[ $GITHUB_ACTIONS == "true" ]]; then
 		make
 	else
-		make -j
+		make -j $(nproc)
 	fi
 	sudo make install
 }
@@ -38,7 +40,7 @@ setup_lightgbm() {
 	if [[ $GITHUB_ACTIONS == "true" ]]; then
 		make
 	else
-		make -j
+		make -j $(nproc)
 	fi
 	sudo make install
 }
@@ -51,19 +53,19 @@ setup_zstd() {
     mkdir _build;
     pushd _build/;
     cmake ..
-    make -j
+    make -j $(nproc)
     sudo make install
 }
 
 CURR_DIR=$(pwd)
 
-if [  -n "$(uname -a | grep Ubuntu)" ]; then
-	setup_ubuntu
-elif [  -n "$(uname -a | grep Darwin)" ]; then
-	setup_macOS
+if [ -n "$(uname -a | grep Ubuntu)" ] || [ -n "$(uname -a | grep WSL)" ]; then
+    setup_ubuntu
+elif [ -n "$(uname -a | grep Darwin)" ]; then
+    setup_macOS
 else
-	setup_centos
-fi  
+    setup_centos
+fi 
 
 setup_zstd
 
