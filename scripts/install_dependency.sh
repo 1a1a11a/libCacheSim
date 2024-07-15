@@ -4,7 +4,10 @@ set -eu # Enable error checking and command tracing
 
 setup_ubuntu() {
 	sudo apt update
-	sudo apt install -yqq libglib2.0-dev libgoogle-perftools-dev build-essential cmake google-perftools xxhash
+	sudo apt install -yqq build-essential cmake google-perftools xxhash
+	
+	sudo apt install -yqq libglib2.0-dev libunwind-dev
+	sudo apt install -yqq libgoogle-perftools-dev
 }
 
 setup_centos() {
