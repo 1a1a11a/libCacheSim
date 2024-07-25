@@ -2,11 +2,11 @@
 """
 example usage
 for i in 0.2 0.4 0.6 0.8 1 1.2 1.4 1.6; do 
-    python3 dataGen.py -m 1000000 -n 100000000 --alpha $i > /disk/data/zipf_${i}_1_100 & 
+    python3 data_gen.py -m 1000000 -n 100000000 --alpha $i > /disk/data/zipf_${i}_1_100.txt & 
 done
 
 for i in 0.2 0.4 0.6 0.8 1 1.2 1.4 1.6; do 
-    python3 dataGen.py -m 10000000 -n 100000000 --alpha $i > /disk/data/zipf_${i}_10_100 & 
+    python3 data_gen.py -m 10000000 -n 100000000 --alpha $i --bin-output /disk/data/zipf_${i}_10_100.oracleGeneral & 
 done
 
 
