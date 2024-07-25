@@ -51,3 +51,13 @@ python3 traceAnalysis/reuse_heatmap.py ${dataname}.reuseWindow_w300
 ## Note
 - The support for the Belady and BeladySize algorithms is limited to oracleGeneral traces because these traces contain future request information that Belady and BeladySize rely on.
 - When the object size is considered (i.e., `--ignore-obj-size 1` is **not** provided as a command-line argument), BeladySize should be used instead of Belady.
+
+## Generate Synthetic Workload
+
+We can generate a Zipf-distributed workload in either txt or oracleGeneral format using [data_gen.py](./data_gen.py). The skewness of the distribution can be controlled with the `--alpha` parameter (greater than or equal to 0). A smaller value of `--alpha` results in less skewness. When `--alpha` is set to 0, the distribution reduces to a uniform distribution.
+
+```bash
+python3 data_gen.py -m 1000000 -n 100000000 --alpha 1 > /disk/data/zipf_1_1_100.txt
+
+python3 data_gen.py -m 10000000 -n 100000000 --alpha 1 --bin-output zipf_1_10_100.oracleGeneral
+```
