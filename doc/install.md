@@ -63,15 +63,11 @@ brew install pkg-config
 ```
 
 #### Install zstd
-
-zstd must be installed from source
-
+Use the below command to install
 ```bash
-wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz
-tar xvf zstd-1.5.0.tar.gz
-pushd zstd-1.5.0/build/cmake/
-mkdir _build && cd _build/
-cmake .. && make -j
-sudo make install
-popd
+brew install zstd
+```
+If still shows zstd not found after compilation, try
+```bash
+brew link zstd
 ```
