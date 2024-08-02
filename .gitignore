@@ -6,6 +6,7 @@ __pycache__
 *.clean
 *.nogit*
 *_build*
+*.out
 build
 .idea
 example/cacheSimulatorC/cmake-build-debug

@@ -223,9 +223,13 @@ free_request(req);
 cache->cache_free(cache);
 ```
 
-save this to `test.c` and compile it with 
-``` bash
-gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out
+save this to `test.c` and compile it with below command. For `libCacheSim.h` to work correctly we need the following libs to be installed first: [glib](https://developer.gnome.org/glib/) and [zstd](https://github.com/facebook/zstd). Please check the previous section [installation](#install-dependency).
+```bash
+gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out -lm -lzstd
+```
+To run the executable,
+```bash
+./test.out
 ```
 
 See [here](/doc/advanced_lib.md) for more details, and see [example folder](/example) for examples on how to use libCacheSim, such as building a cache cluster with consistent hashing, multi-layer cache simulators. 
