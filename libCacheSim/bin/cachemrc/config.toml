@@ -1,0 +1,10 @@
+trace = "../../../data/twitter_cluster52.csv"
+output = "./mrc_twitter.png"
+policies = ["LRU", "FIFO"]
+cache_size = "10mb"
+sample_rate = 0.01
+timestamp = 0
+key = 1
+command = -1
+size = 2
+ttl = -1
