@@ -41,9 +41,11 @@ static inline int oracleAkamai_read_one_req(reader_t *reader, request_t *req) {
   req->bucket_id = *(int16_t *)(record + 18) - 1;
   req->content_type = *(int16_t *)(record + 20) - 1;
   req->next_access_vtime = *(int64_t *)(record + 22);
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
+  }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD)
+  if (req->obj_size == 0 && reader->ignore_size_zero_req && reader->read_direction == READ_FORWARD)
     return oracleAkamai_read_one_req(reader, req);
   return 0;
 }

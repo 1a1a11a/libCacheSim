@@ -51,14 +51,17 @@ static int oracleCF1_read_one_req(reader_t *reader, request_t *req) {
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint64_t *)(record + 12);
   if (req->obj_size > UINT32_MAX) {
-    if (req->obj_size > 0xFFFFFFFF00000000)
-      req->obj_size -= 0xFFFFFFFF00000000;
+    if (req->obj_size > 0xFFFFFFFF00000000) req->obj_size -= 0xFFFFFFFF00000000;
   }
 
   req->ttl = *(int32_t *)(record + 20);
   req->age = *(uint32_t *)(record + 24);
   req->hostname = *(uint32_t *)(record + 28);
   req->next_access_vtime = *(int64_t *)(record + 32);
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
+  }
+
   req->content_type = *(uint16_t *)(record + 40);
   req->extension = *(uint16_t *)(record + 42);
   req->n_level = *(uint16_t *)(record + 44);
@@ -66,8 +69,7 @@ static int oracleCF1_read_one_req(reader_t *reader, request_t *req) {
   req->method = *(uint8_t *)(record + 47);
   req->colo = *(uint8_t *)(record + 48);
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD)
+  if (req->obj_size == 0 && reader->ignore_size_zero_req && reader->read_direction == READ_FORWARD)
     return oracleCF1_read_one_req(reader, req);
   return 0;
 }

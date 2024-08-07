@@ -45,8 +45,7 @@ static inline int oracleWiki2016uReader_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleWiki2016u_read_one_req(reader_t *reader,
-                                               request_t *req) {
+static inline int oracleWiki2016u_read_one_req(reader_t *reader, request_t *req) {
   char *record = read_bytes(reader);
 
   if (record == NULL) {
@@ -58,10 +57,12 @@ static inline int oracleWiki2016u_read_one_req(reader_t *reader,
   req->obj_id = *(uint64_t *)(record);
   req->obj_size = *(uint32_t *)(record + 8);
   req->content_type = *(uint16_t *)(record + 12);
-  req->next_access_vtime = *(uint64_t *)(record + 14);
+  req->next_access_vtime = *(int64_t *)(record + 14);
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
+  }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD)
+  if (req->obj_size == 0 && reader->ignore_size_zero_req && reader->read_direction == READ_FORWARD)
     return oracleWiki2016u_read_one_req(reader, req);
 
   return 0;
@@ -76,8 +77,7 @@ static inline int oracleWiki2019uReader_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleWiki2019u_read_one_req(reader_t *reader,
-                                               request_t *req) {
+static inline int oracleWiki2019u_read_one_req(reader_t *reader, request_t *req) {
   char *record = read_bytes(reader);
 
   if (record == NULL) {
@@ -89,15 +89,16 @@ static inline int oracleWiki2019u_read_one_req(reader_t *reader,
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 12);
   req->content_type = *(uint16_t *)(record + 16);
-  req->next_access_vtime = *(uint64_t *)(record + 18);
+  req->next_access_vtime = *(int64_t *)(record + 18);
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
+  }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD)
+  if (req->obj_size == 0 && reader->ignore_size_zero_req && reader->read_direction == READ_FORWARD)
     return oracleWiki2019u_read_one_req(reader, req);
 
   return 0;
 }
-
 
 #ifdef __cplusplus
 }

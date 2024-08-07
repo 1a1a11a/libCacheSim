@@ -44,8 +44,7 @@ static inline int oracleSimTwrBin_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleSimTwrBin_read_one_req(reader_t *reader,
-                                               request_t *req) {
+static inline int oracleSimTwrBin_read_one_req(reader_t *reader, request_t *req) {
   char *record = read_bytes(reader);
 
   if (record == NULL) {
@@ -58,12 +57,11 @@ static inline int oracleSimTwrBin_read_one_req(reader_t *reader,
   req->obj_size = *(uint16_t *)(record + 12);
   req->ttl = *(uint16_t *)(record + 16);
   req->next_access_vtime = *(int64_t *)(record + 20);
-  if (req->next_access_vtime == -1) {
-    req->next_access_vtime = INT64_MAX;
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req &&
-      (req->op == OP_GET || req->op == OP_GETS) &&
+  if (req->val_size == 0 && reader->ignore_size_zero_req && (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD)
     return oracleSimTwrBin_read_one_req(reader, req);
 
@@ -82,8 +80,7 @@ static inline int oracleSysTwrBin_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleSysTwrBin_read_one_req(reader_t *reader,
-                                               request_t *req) {
+static inline int oracleSysTwrBin_read_one_req(reader_t *reader, request_t *req) {
   char *record = read_bytes(reader);
 
   if (record == NULL) {
@@ -100,12 +97,11 @@ static inline int oracleSysTwrBin_read_one_req(reader_t *reader,
   req->ns = *(uint16_t *)(record + 20);
   req->ttl = *(int32_t *)(record + 22);
   req->next_access_vtime = *(int64_t *)(record + 26);
-  if (req->next_access_vtime == -1) {
-    req->next_access_vtime = INT64_MAX;
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req &&
-      (req->op == OP_GET || req->op == OP_GETS) &&
+  if (req->val_size == 0 && reader->ignore_size_zero_req && (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD)
     return oracleSimTwrBin_read_one_req(reader, req);
 

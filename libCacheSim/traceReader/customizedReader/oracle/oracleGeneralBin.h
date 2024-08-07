@@ -27,8 +27,7 @@ static inline int oracleGeneralBin_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleGeneralBin_read_one_req(reader_t *reader,
-                                                request_t *req) {
+static inline int oracleGeneralBin_read_one_req(reader_t *reader, request_t *req) {
   char *record = read_bytes(reader);
 
   if (record == NULL) {
@@ -40,12 +39,11 @@ static inline int oracleGeneralBin_read_one_req(reader_t *reader,
   req->obj_id = *(uint64_t *)(record + 4);
   req->obj_size = *(uint32_t *)(record + 12);
   req->next_access_vtime = *(int64_t *)(record + 16);
-  if (req->next_access_vtime == -1) {
-    req->next_access_vtime = INT64_MAX;
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD) {
+  if (req->obj_size == 0 && reader->ignore_size_zero_req && reader->read_direction == READ_FORWARD) {
     return oracleGeneralBin_read_one_req(reader, req);
   }
   return 0;
@@ -60,8 +58,7 @@ static inline int oracleGeneralOpNS_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleGeneralOpNS_read_one_req(reader_t *reader,
-                                                 request_t *req) {
+static inline int oracleGeneralOpNS_read_one_req(reader_t *reader, request_t *req) {
   char *record = read_bytes(reader);
 
   if (record == NULL) {
@@ -79,8 +76,7 @@ static inline int oracleGeneralOpNS_read_one_req(reader_t *reader,
     req->next_access_vtime = INT64_MAX;
   }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD) {
+  if (req->obj_size == 0 && reader->ignore_size_zero_req && reader->read_direction == READ_FORWARD) {
     return oracleGeneralOpNS_read_one_req(reader, req);
   }
   return 0;

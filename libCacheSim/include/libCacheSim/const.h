@@ -58,6 +58,8 @@ extern "C" {
 #define GB 1000000000L
 #define TB 1000000000000L
 
+#define MAX_REUSE_DISTANCE INT64_MAX
+
 #ifdef __cplusplus
 }
 #endif
