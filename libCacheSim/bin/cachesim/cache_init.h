@@ -12,11 +12,8 @@
 extern "C" {
 #endif
 
-static inline cache_t *create_cache(const char *trace_path,
-                                    const char *eviction_algo,
-                                    const uint64_t cache_size,
-                                    const char *eviction_params,
-                                    const bool consider_obj_metadata) {
+static inline cache_t *create_cache(const char *trace_path, const char *eviction_algo, const uint64_t cache_size,
+                                    const char *eviction_params, const bool consider_obj_metadata) {
   common_cache_params_t cc_params = {
       .cache_size = cache_size,
       .default_ttl = 86400 * 300,
@@ -26,8 +23,7 @@ static inline cache_t *create_cache(const char *trace_path,
   cache_t *cache;
 
   /* the trace provided is small */
-  if (trace_path != NULL && strstr(trace_path, "data/trace.") != NULL)
-    cc_params.hashpower -= 8;
+  if (trace_path != NULL && strstr(trace_path, "data/trace.") != NULL) cc_params.hashpower -= 8;
 
   if (strcasecmp(eviction_algo, "lru") == 0) {
     cache = LRU_init(cc_params, eviction_params);
@@ -49,8 +45,7 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = GDSF_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lfuda") == 0) {
     cache = LFUDA_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "twoq") == 0 ||
-             strcasecmp(eviction_algo, "2q") == 0) {
+  } else if (strcasecmp(eviction_algo, "twoq") == 0 || strcasecmp(eviction_algo, "2q") == 0) {
     cache = TwoQ_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "slru") == 0) {
     cache = SLRU_init(cc_params, eviction_params);
@@ -63,6 +58,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = LeCaR_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lecarv0") == 0) {
     cache = LeCaRv0_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "RandomLRU") == 0) {
+    cache = RandomLRU_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "cacheus") == 0) {
     cache = Cacheus_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "size") == 0) {
@@ -101,14 +98,12 @@ static inline cache_t *create_cache(const char *trace_path,
     }
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0 ||
-             strcasecmp(eviction_algo, "clock") == 0 ||
+  } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0 || strcasecmp(eviction_algo, "clock") == 0 ||
              strcasecmp(eviction_algo, "second-chance") == 0) {
     cache = Clock_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "fifomerge") == 0 ||
-             strcasecmp(eviction_algo, "fifo-merge") == 0) {
+  } else if (strcasecmp(eviction_algo, "fifomerge") == 0 || strcasecmp(eviction_algo, "fifo-merge") == 0) {
     cache = FIFO_Merge_init(cc_params, eviction_params);
     // } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0) {
     //   cache = FIFO_Reinsertion_init(cc_params, eviction_params);
@@ -129,8 +124,7 @@ static inline cache_t *create_cache(const char *trace_path,
     cache = Sieve_Belady_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3lru") == 0) {
     cache = S3LRU_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifo") == 0 ||
-             strcasecmp(eviction_algo, "s3-fifo") == 0) {
+  } else if (strcasecmp(eviction_algo, "s3fifo") == 0 || strcasecmp(eviction_algo, "s3-fifo") == 0) {
     cache = S3FIFO_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3fifod") == 0) {
     cache = S3FIFOd_init(cc_params, eviction_params);
@@ -139,8 +133,7 @@ static inline cache_t *create_cache(const char *trace_path,
   } else if (strcasecmp(eviction_algo, "sieve") == 0) {
     cache = Sieve_init(cc_params, eviction_params);
 #ifdef ENABLE_GLCACHE
-  } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
-             strcasecmp(eviction_algo, "gl-cache") == 0) {
+  } else if (strcasecmp(eviction_algo, "GLCache") == 0 || strcasecmp(eviction_algo, "gl-cache") == 0) {
     cache = GLCache_init(cc_params, eviction_params);
 #endif
 #ifdef ENABLE_LRB

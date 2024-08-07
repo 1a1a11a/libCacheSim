@@ -113,7 +113,7 @@ static cache_obj_t *RandomTwo_find(cache_t *cache, const request_t *req,
                                    const bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
-    obj->RandomTwo.last_access_vtime = cache->n_req;
+    obj->Random.last_access_vtime = cache->n_req;
   }
 
   return obj;
@@ -131,7 +131,7 @@ static cache_obj_t *RandomTwo_find(cache_t *cache, const request_t *req,
  */
 static cache_obj_t *RandomTwo_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
-  obj->RandomTwo.last_access_vtime = cache->n_req;
+  obj->Random.last_access_vtime = cache->n_req;
 
   return obj;
 }
@@ -149,8 +149,8 @@ static cache_obj_t *RandomTwo_insert(cache_t *cache, const request_t *req) {
 static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj_to_evict1 = hashtable_rand_obj(cache->hashtable);
   cache_obj_t *obj_to_evict2 = hashtable_rand_obj(cache->hashtable);
-  if (obj_to_evict1->RandomTwo.last_access_vtime <
-      obj_to_evict2->RandomTwo.last_access_vtime)
+  if (obj_to_evict1->Random.last_access_vtime <
+      obj_to_evict2->Random.last_access_vtime)
     return obj_to_evict1;
   else
     return obj_to_evict2;
@@ -167,8 +167,8 @@ static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req) {
 static void RandomTwo_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj_to_evict1 = hashtable_rand_obj(cache->hashtable);
   cache_obj_t *obj_to_evict2 = hashtable_rand_obj(cache->hashtable);
-  if (obj_to_evict1->RandomTwo.last_access_vtime <
-      obj_to_evict2->RandomTwo.last_access_vtime)
+  if (obj_to_evict1->Random.last_access_vtime <
+      obj_to_evict2->Random.last_access_vtime)
     cache_evict_base(cache, obj_to_evict1, true);
   else
     cache_evict_base(cache, obj_to_evict2, true);

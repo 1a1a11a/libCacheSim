@@ -100,7 +100,9 @@ typedef struct {
 
 typedef struct {
   int64_t last_access_vtime;
-} RandomTwo_obj_metadata_t;
+  int64_t insertion_time;
+  int32_t oracle_idx;
+} Random_obj_metadata_t;
 
 typedef struct {
   int64_t last_access_vtime;
@@ -161,7 +163,7 @@ typedef struct cache_obj {
     SR_LRU_obj_metadata_t SR_LRU;
     CR_LFU_obj_metadata_t CR_LFU;
     Hyperbolic_obj_metadata_t hyperbolic;
-    RandomTwo_obj_metadata_t RandomTwo;
+    Random_obj_metadata_t Random;
     Belady_obj_metadata_t Belady;
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
