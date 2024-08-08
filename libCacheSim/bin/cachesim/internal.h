@@ -46,6 +46,7 @@ struct arguments {
   bool ignore_obj_size;
   bool consider_obj_metadata;
   bool use_ttl;
+  bool print_head_req;
 
   /* arguments generated */
   reader_t *reader;
@@ -57,7 +58,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args);
 void free_arg(struct arguments *args);
 
 void simulate(reader_t *reader, cache_t *cache, int report_interval,
-              int warmup_sec, char *ofilepath, bool ignore_obj_size);
+              int warmup_sec, char *ofilepath, bool ignore_obj_size,
+              bool print_head_req);
 
 void print_parsed_args(struct arguments *args);
 

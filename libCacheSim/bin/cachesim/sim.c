@@ -1,5 +1,3 @@
-
-
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/reader.h"
 #include "../../utils/include/mymath.h"
@@ -10,8 +8,16 @@
 extern "C" {
 #endif
 
-void simulate(reader_t *reader, cache_t *cache, int report_interval,
-              int warmup_sec, char *ofilepath, bool ignore_obj_size) {
+void print_head_requests(request_t *req, uint64_t req_cnt) {
+  if (req_cnt < 2) {
+    print_request(req, INFO_LEVEL);
+  } else if (req_cnt < 10) {
+    print_request(req, DEBUG_LEVEL);
+  }
+}
+
+void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_sec, char *ofilepath,
+              bool ignore_obj_size, bool print_head_req) {
   /* random seed */
   srand(time(NULL));
   set_rand_seed(rand());
@@ -27,6 +33,10 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
 
   double start_time = -1;
   while (req->valid) {
+    if (print_head_req) {
+      print_head_requests(req, req_cnt);
+    }
+
     req->clock_time -= start_ts;
     if (req->clock_time <= warmup_sec) {
       cache->get(cache, req);
@@ -72,15 +82,15 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
 #pragma GCC diagnostic ignored "-Wformat-truncation"
   if (!ignore_obj_size) {
     snprintf(output_str, 1024,
-            "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
-            "%.2lf MQPS\n",
+             "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
+             "%.2lf MQPS\n",
             reader->trace_path, cache->cache_name, size_str,
             (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
             (double)req_cnt / 1000000.0 / runtime);
   } else {
     snprintf(output_str, 1024,
-            "%s %s cache size %8ld, %16lu req, miss ratio %.4lf, throughput "
-            "%.2lf MQPS\n",
+             "%s %s cache size %8ld, %16lu req, miss ratio %.4lf, throughput "
+             "%.2lf MQPS\n",
             reader->trace_path, cache->cache_name, cache->cache_size,
             (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
             (double)req_cnt / 1000000.0 / runtime);

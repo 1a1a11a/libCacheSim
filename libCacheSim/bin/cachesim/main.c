@@ -19,10 +19,9 @@ int main(int argc, char **argv) {
   if (args.n_cache_size == 0) {
     ERROR("no cache size found\n");
   }
-
   if (args.n_cache_size * args.n_eviction_algo == 1) {
-    simulate(args.reader, args.caches[0], args.report_interval, args.warmup_sec,
-             args.ofilepath, args.ignore_obj_size);
+    simulate(args.reader, args.caches[0], args.report_interval, args.warmup_sec, args.ofilepath, args.ignore_obj_size,
+             args.print_head_req);
 
     free_arg(&args);
     return 0;

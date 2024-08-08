@@ -47,6 +47,7 @@ enum argp_option_short {
 
   OPTION_PREFETCH_ALGO = 'p',
   OPTION_PREFETCH_PARAMS = 0x109,
+  OPTION_PRINT_HEAD_REQ = 0x10a,
 };
 
 /*
@@ -93,6 +94,8 @@ static struct argp_option options[] = {
     {"consider-obj-metadata", OPTION_CONSIDER_OBJ_METADATA, "false", 0,
      "Whether consider per object metadata size in the simulated cache", 10},
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output", 10},
+    {"print-head-req", OPTION_PRINT_HEAD_REQ, "false", 0,
+     "Print the first few requests", 10},
 
     {0}};
 
@@ -164,6 +167,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_WARMUP_SEC:
       arguments->warmup_sec = atoi(arg);
       break;
+    case OPTION_PRINT_HEAD_REQ:
+      arguments->print_head_req = is_true(arg) ? true : false;
+      break;
     case ARGP_KEY_ARG:
       if (state->arg_num >= N_ARGS) {
         printf("found too many arguments, current %s\n", arg);
@@ -198,7 +204,8 @@ static char doc[] =
     "trace can be zstd compressed\n"
     "cache_size is in byte, but also support KB/MB/GB\n"
     "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin\n"
-    "supported eviction_algo: LRU/LFU/FIFO/ARC/LeCaR/Cacheus\n";
+    "supported eviction_algo: LRU/LFU/FIFO/ARC/LeCaR/Cacheus\n"
+    "print-head-req: Print the first few requests when simulating start\n";
 
 /**
  * @brief initialize the arguments
@@ -226,6 +233,7 @@ static void init_arg(struct arguments *args) {
   memset(args->ofilepath, 0, OFILEPATH_LEN);
   args->n_req = -1;
   args->sample_ratio = 1.0;
+  args->print_head_req = true;
 
   for (int i = 0; i < N_MAX_ALGO; i++) {
     args->eviction_algo[i] = NULL;
