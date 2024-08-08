@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 
   /* read one request and print */
   read_one_req(reader, req);
-  print_request(req);
+  print_request(req, INFO_LEVEL);
 
   /* setup a cache */
   common_cache_params_t cc_params = {

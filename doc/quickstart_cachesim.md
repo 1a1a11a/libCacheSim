@@ -185,6 +185,8 @@ You can use `-p` or `--prefetch` to set the prefetching algorithm.
 # Use TTL
 ./cachesim ../data/trace.vscsi vscsi lru 1gb --use-ttl=true
 
+# Disable the print of the first few requests
+./cachesim ../data/trace.vscsi vscsi lru 1gb --print-head-req=false
 ```
 
 
