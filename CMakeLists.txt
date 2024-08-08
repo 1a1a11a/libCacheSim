@@ -13,6 +13,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_EXTENSIONS Off)
 
+# export compile commands, useful for IDEs
+set(EXPORT_COMPILE_COMMANDS ON)
 ########################################
 # define options #
 # options are cached variables https://stackoverflow.com/questions/35744647/disabling-cmake-option-has-no-effect
