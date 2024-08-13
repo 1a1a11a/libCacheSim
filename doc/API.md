@@ -1,4 +1,5 @@
 traceReader:
+```C
 typedef struct {
   int time_field;
   int obj_id_field;
@@ -122,18 +123,20 @@ int close_reader(reader_t *const reader);
  */
 reader_t *clone_reader(const reader_t *const reader);
 
-
+```
 
 cache and cacheAlgo:
 
+```C
 static inline request_t *new_request();
 static inline void copy_request(request_t *req_dest, request_t *req_src);
 static inline request_t *clone_request(request_t *req);
 static inline void free_request(request_t *req);
 static inline void print_request(request_t *req);
-
+```
 
 simulator:
+```C
 sim_res_t *
 simulate_at_multi_sizes(reader_t *const reader,
                      const cache_t *const cache,
@@ -151,7 +154,7 @@ simulate_at_multi_sizes_with_step_size(reader_t *const reader_in,
                                     reader_t *const warmup_reader,
                                     const double warmup_perc,
                                     const gint num_of_threads);
-
+```
 
 
 
