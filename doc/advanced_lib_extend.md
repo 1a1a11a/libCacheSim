@@ -39,6 +39,14 @@ Specifically, you can following the steps:
 5. Add command line option in [bin/cachesim/cache_init.h](/libCacheSim/bin/cachesim/cache_init.h) so that you can use `cachesim` binary. You may also want to take a look at [bin/cachesim/cli_parser.c](/libCacheSim/bin/cachesim/cli_parser.c). 
 6. Remember to add a test in [test/test_evictionAlgo.c](/test/test_evictionAlgo.c) and add the algorithm to this [README](README.md). 
 
+> [!TIP]
+> Many eviction algorithms use a doubly linked list to maintain state, libCacheSim provides several functions in [cacheObj.h](/libCacheSim/include/libCacheSim/cacheObj.h) to manipulate list. 
+
+
+> [!TIP]
+> Many eviction algorithms are composable, e.g., LeCaR uses one LRU and one LFU, it is easy to support these algorithms in libCacheSim, please take a look at [LeCaR](/libCacheSim/cache/eviction/LeCaRv0.c). 
+
+
 ---
 
 ## Add new eviction algorithms in C++
