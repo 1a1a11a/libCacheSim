@@ -27,6 +27,8 @@ struct arguments {
   char *admission_algo;
   char *prefetch_algo;
   uint64_t cache_sizes[N_MAX_CACHE_SIZE];
+  // Sample will scale the cache size, keep the original size for output
+  uint64_t origin_cache_sizes[N_MAX_CACHE_SIZE];
   int n_cache_size;
   int warmup_sec;
 
@@ -57,9 +59,8 @@ void parse_cmd(int argc, char *argv[], struct arguments *args);
 
 void free_arg(struct arguments *args);
 
-void simulate(reader_t *reader, cache_t *cache, int report_interval,
-              int warmup_sec, char *ofilepath, bool ignore_obj_size,
-              bool print_head_req);
+void simulate(reader_t *reader, uint64_t origin_cache_size,cache_t *cache, int report_interval, int warmup_sec, char *ofilepath,
+              bool ignore_obj_size, bool print_head_req, sampler_t *sampler);
 
 void print_parsed_args(struct arguments *args);
 

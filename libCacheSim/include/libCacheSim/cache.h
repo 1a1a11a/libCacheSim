@@ -86,6 +86,9 @@ typedef struct {
   int64_t curr_rtime;
   int64_t expired_obj_cnt;
   int64_t expired_bytes;
+
+  // for sampling
+  double_t result_scale_ratio;
   char cache_name[CACHE_NAME_ARRAY_LEN];
 } cache_stat_t;
 

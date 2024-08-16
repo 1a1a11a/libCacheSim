@@ -32,16 +32,19 @@ typedef struct sampler {
   clone_sampler_func clone;
   free_sampler_func free;
   enum sampler_type type;
+  ssize_t total_count;
+  ssize_t access_count;
 } sampler_t;
 
 sampler_t *create_spatial_sampler(double sampling_ratio);
 
 sampler_t *create_temporal_sampler(double sampling_ratio);
 
+double scale_miss_ratio(sampler_t *sample, double miss_ratio);
+
 static inline void print_sampler(sampler_t *sampler) {
-  printf("%s sampler: sample ratio %lf, sample func %p, clone func %p\n",
-         sampling_type_str[sampler->type], sampler->sampling_ratio,
-         sampler->sample, sampler->clone);
+  printf("%s sampler: sample ratio %lf, sample func %p, clone func %p\n", sampling_type_str[sampler->type],
+         sampler->sampling_ratio, sampler->sample, sampler->clone);
 }
 
 #ifdef __cplusplus

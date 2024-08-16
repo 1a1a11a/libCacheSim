@@ -336,13 +336,21 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
    * if the user specifies float number, we use the number as the fraction of
    * the working set size **/
   conv_cache_sizes(args->args[3], args);
+  
+  // If a sample ratio is specified and is within the valid range (0, 1), scale the cache sizes
+  if (args->sample_ratio > 0 && args->sample_ratio < 1 - 1e-6) {
+    for (int i = 0; i < args->n_cache_size; i++) {
+      // Scale each cache size by the sample ratio to adjust for sampling
+      args->cache_sizes[i] = args->cache_sizes[i] * args->sample_ratio;
+    }
+  }
 
   for (int i = 0; i < args->n_eviction_algo; i++) {
     for (int j = 0; j < args->n_cache_size; j++) {
       int idx = i * args->n_cache_size + j;
       args->caches[idx] = create_cache(
           args->trace_path, args->eviction_algo[i], args->cache_sizes[j],
-          args->eviction_params, args->consider_obj_metadata);
+                                       args->eviction_params, args->consider_obj_metadata);
 
       if (args->admission_algo != NULL) {
         args->caches[idx]->admissioner =
@@ -455,6 +463,10 @@ static int conv_cache_sizes(char *cache_size_str, struct arguments *args) {
     set_cache_size(args, args->reader);
   }
 
+  for(int i = 0;i<args->n_cache_size;i++){
+    args->origin_cache_sizes[i] = args->cache_sizes[i];
+  }
+
   return args->n_cache_size;
 }
 
@@ -500,8 +512,8 @@ void print_parsed_args(struct arguments *args) {
   char output_str[OUTPUT_STR_LEN];
   int n = snprintf(
       output_str, OUTPUT_STR_LEN - 1,
-      "trace path: %s, trace_type %s, ofilepath "
-      "%s, %d threads, warmup %d sec, total %d algo x %d size = %d caches",
+               "trace path: %s, trace_type %s, ofilepath "
+               "%s, %d threads, warmup %d sec, total %d algo x %d size = %d caches",
       args->trace_path, g_trace_type_name[args->trace_type], args->ofilepath,
       args->n_thread, args->warmup_sec, args->n_eviction_algo,
       args->n_cache_size, args->n_eviction_algo * args->n_cache_size);

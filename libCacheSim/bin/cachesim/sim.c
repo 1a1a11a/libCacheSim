@@ -16,8 +16,8 @@ void print_head_requests(request_t *req, uint64_t req_cnt) {
   }
 }
 
-void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_sec, char *ofilepath,
-              bool ignore_obj_size, bool print_head_req) {
+void simulate(reader_t *reader, uint64_t origin_cache_size, cache_t *cache, int report_interval, int warmup_sec, char *ofilepath,
+              bool ignore_obj_size, bool print_head_req, sampler_t *sampler) {
   /* random seed */
   srand(time(NULL));
   set_rand_seed(rand());
@@ -54,16 +54,13 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
       miss_cnt++;
       miss_byte += req->obj_size;
     }
-    if (req->clock_time - last_report_ts >= report_interval &&
-        req->clock_time != 0) {
+    if (req->clock_time - last_report_ts >= report_interval && req->clock_time != 0) {
       INFO(
           "%s %s %.2lf hour: %lu requests, miss ratio %.4lf, interval miss "
           "ratio "
           "%.4lf\n",
-          mybasename(reader->trace_path), cache->cache_name,
-          (double)req->clock_time / 3600, (unsigned long)req_cnt,
-          (double)miss_cnt / req_cnt,
-          (double)(miss_cnt - last_miss_cnt) / (req_cnt - last_req_cnt));
+          mybasename(reader->trace_path), cache->cache_name, (double)req->clock_time / 3600, (unsigned long)req_cnt,
+          (double)miss_cnt / req_cnt, (double)(miss_cnt - last_miss_cnt) / (req_cnt - last_req_cnt));
       last_miss_cnt = miss_cnt;
       last_req_cnt = req_cnt;
       last_report_ts = (int64_t)req->clock_time;
@@ -76,24 +73,29 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
 
   char output_str[1024];
   char size_str[8];
-  if (!ignore_obj_size)
-    convert_size_to_str(cache->cache_size, size_str);
+  if (!ignore_obj_size) convert_size_to_str(origin_cache_size, size_str);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
   if (!ignore_obj_size) {
+    double miss_ratio = (double)miss_cnt / (double)req_cnt;
+    if (sampler) {
+      miss_ratio = scale_miss_ratio(sampler, miss_ratio);
+    }
     snprintf(output_str, 1024,
              "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
              "%.2lf MQPS\n",
-            reader->trace_path, cache->cache_name, size_str,
-            (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
-            (double)req_cnt / 1000000.0 / runtime);
+             reader->trace_path, cache->cache_name, size_str, (unsigned long)req_cnt, miss_ratio,
+             (double)req_cnt / 1000000.0 / runtime);
   } else {
+    double miss_ratio = (double)miss_cnt / (double)req_cnt;
+    if (sampler) {
+      miss_ratio = scale_miss_ratio(sampler, miss_ratio);
+    }
     snprintf(output_str, 1024,
              "%s %s cache size %8ld, %16lu req, miss ratio %.4lf, throughput "
              "%.2lf MQPS\n",
-            reader->trace_path, cache->cache_name, cache->cache_size,
-            (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
-            (double)req_cnt / 1000000.0 / runtime);
+             reader->trace_path, cache->cache_name, cache->cache_size, (unsigned long)req_cnt, miss_ratio,
+             (double)req_cnt / 1000000.0 / runtime);
   }
 
 #pragma GCC diagnostic pop

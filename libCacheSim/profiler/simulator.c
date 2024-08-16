@@ -123,6 +123,15 @@ static void _simulate(gpointer data, gpointer user_data) {
   strncpy(result[idx].cache_name, local_cache->cache_name,
           CACHE_NAME_ARRAY_LEN);
 
+if (cloned_reader->sampler) {
+    sampler_t *sampler = cloned_reader->sampler;
+    double_t result_scale_ratio = (double_t)sampler->access_count / ((double_t)sampler->total_count * sampler->sampling_ratio);
+
+    double_t scaled_n_miss = (double_t)result[idx].n_miss * result_scale_ratio;
+    double_t scaled_n_miss_byte = (double_t)result[idx].n_miss_byte * result_scale_ratio;
+    result[idx].n_miss = scaled_n_miss;
+    result[idx].n_miss_byte = scaled_n_miss_byte;
+}
   // report progress
   g_mutex_lock(&(params->mtx));
   (*(params->progress))++;
