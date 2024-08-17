@@ -180,7 +180,6 @@ typedef struct cache_obj {
     S3FIFO_obj_metadata_t S3FIFO;
     S3FIFO_obj_metadata_t S3FIFOv2;
     Clock2QPlus_obj_metadata_t Clock2QPlus;
-    myclock_obj_params_t myclock;
     Sieve_obj_params_t sieve;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1

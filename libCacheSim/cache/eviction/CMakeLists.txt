@@ -40,8 +40,7 @@ set(sourceC
 
         Sieve.c
         RandomLRU.c
-        S3FIFO_delay.c
-        Cloud2QPlus.c
+        Clock2QPlus.c
 )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
