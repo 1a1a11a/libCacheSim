@@ -27,20 +27,23 @@ set(sourceC
         LRUProb.c
         QDLP.c
         nop.c
+        S3FIFO.c
+        Sieve.c
 
         FIFO_Merge.c
         FIFO_Reinsertion.c
 
-        S3FIFO.c
         S3FIFOv2.c
         S3FIFOd.c
 
         other/flashProb.c
         other/S3LRU.c
 
-        Sieve.c
         RandomLRU.c
         Clock2QPlus.c
+
+        S3FIFOv3.c
+        Clock2QPlusv2.c
 )
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")

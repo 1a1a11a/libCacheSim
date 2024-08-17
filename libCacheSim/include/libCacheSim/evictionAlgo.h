@@ -154,6 +154,9 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
 cache_t *S3FIFOv2_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
+cache_t *S3FIFOv3_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params);
+
 cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
@@ -173,6 +176,9 @@ cache_t *RandomLRU_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
 cache_t *Clock2QPlus_init(const common_cache_params_t ccache_params,
+                           const char *cache_specific_params);
+
+cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params,
                            const char *cache_specific_params);
 
 #ifdef ENABLE_LRB

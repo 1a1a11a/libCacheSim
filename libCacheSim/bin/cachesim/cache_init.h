@@ -128,14 +128,18 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
     cache = S3FIFO_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3fifov2") == 0) {
     cache = S3FIFOv2_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "s3fifov3") == 0) {
+    cache = S3FIFOv3_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "s3fifod") == 0) {
     cache = S3FIFOd_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
     cache = QDLP_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "sieve") == 0) {
     cache = Sieve_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "Clock2QPlus") == 0) {
+  } else if (strcasecmp(eviction_algo, "Clock2QPlus") == 0 || strcasecmp(eviction_algo, "Clock2Q+") == 0) {
     cache = Clock2QPlus_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "Clock2QPlusv2") == 0 || strcasecmp(eviction_algo, "Clock2Q+v2") == 0) {
+    cache = Clock2QPlusv2_init(cc_params, eviction_params);
 #ifdef ENABLE_GLCACHE
   } else if (strcasecmp(eviction_algo, "GLCache") == 0 || strcasecmp(eviction_algo, "gl-cache") == 0) {
     cache = GLCache_init(cc_params, eviction_params);
