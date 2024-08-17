@@ -1,4 +1,10 @@
 //
+//  S3FIFOv2 different from S3-FIFO in that when the small queue is full, but the cache is not full, 
+//  S3-FIFO will insert into the small queue, but S3FIFOv2 will insert into the main queue. 
+//  S3-FIFOv2 is in general better than S3-FIFO because 
+//    1. the objects inserted after the cache is full are evicted more quickly
+//    2. the objects inserted between the small queue is full and the cache is full are kept slightly longer
+// 
 //  10% small FIFO + 90% main FIFO (2-bit Clock) + ghost
 //  insert to small FIFO if not in the ghost, else insert to the main FIFO
 //  evict from small FIFO:
@@ -234,7 +240,7 @@ static cache_obj_t *S3FIFOv2_find(cache_t *cache, const request_t *req,
   params->hit_on_ghost = false;
   cache_obj_t *obj = params->fifo->find(params->fifo, req, true);
   if (obj != NULL) {
-    obj->S3FIFOv2.freq += 1;
+    obj->S3FIFO.freq += 1;
     return obj;
   }
 
@@ -246,7 +252,7 @@ static cache_obj_t *S3FIFOv2_find(cache_t *cache, const request_t *req,
 
   obj = params->main_cache->find(params->main_cache, req, true);
   if (obj != NULL) {
-    obj->S3FIFOv2.freq += 1;
+    obj->S3FIFO.freq += 1;
   }
 
   return obj;
@@ -301,7 +307,7 @@ static cache_obj_t *S3FIFOv2_insert(cache_t *cache, const request_t *req) {
   obj->create_time = cache->n_req;
 #endif
 
-  obj->S3FIFOv2.freq == 0;
+  obj->S3FIFO.freq == 0;
 
   return obj;
 }
@@ -335,7 +341,7 @@ static void S3FIFOv2_evict_fifo(cache_t *cache, const request_t *req) {
     // need to copy the object before it is evicted
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
-    if (obj_to_evict->S3FIFOv2.freq >= params->move_to_main_threshold) {
+    if (obj_to_evict->S3FIFO.freq >= params->move_to_main_threshold) {
 #if defined(TRACK_DEMOTION)
       printf("%ld keep %ld %ld\n", cache->n_req, obj_to_evict->create_time,
              obj_to_evict->misc.next_access_vtime);
@@ -386,7 +392,7 @@ static void S3FIFOv2_evict_main(cache_t *cache, const request_t *req) {
   while (!has_evicted && main->get_occupied_byte(main) > 0) {
     cache_obj_t *obj_to_evict = main->to_evict(main, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
-    int freq = obj_to_evict->S3FIFOv2.freq;
+    int freq = obj_to_evict->S3FIFO.freq;
 #if defined(TRACK_EVICTION_V_AGE)
     int64_t create_time = obj_to_evict->create_time;
 #endif
@@ -400,7 +406,7 @@ static void S3FIFOv2_evict_main(cache_t *cache, const request_t *req) {
       // printf("---- reinsert main %ld\n", params->req_local->obj_id);
       cache_obj_t *new_obj = main->insert(main, params->req_local);
       // clock with 2-bit counter
-      new_obj->S3FIFOv2.freq = MIN(freq, 3) - 1;
+      new_obj->S3FIFO.freq = MIN(freq, 3) - 1;
       new_obj->misc.freq = freq;
 
 #if defined(TRACK_EVICTION_V_AGE)

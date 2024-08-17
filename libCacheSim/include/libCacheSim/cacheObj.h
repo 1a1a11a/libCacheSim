@@ -178,7 +178,6 @@ typedef struct cache_obj {
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
-    S3FIFO_obj_metadata_t S3FIFOv2;
     Clock2QPlus_obj_metadata_t Clock2QPlus;
     Sieve_obj_params_t sieve;
 

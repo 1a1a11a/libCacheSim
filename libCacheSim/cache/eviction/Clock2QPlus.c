@@ -1,16 +1,6 @@
 //
-//  10% small FIFO + 90% main FIFO (2-bit Clock) + ghost
-//  insert to small FIFO if not in the ghost, else insert to the main FIFO
-//  evict from small FIFO:
-//      if object in the small is accessed,
-//          reinsert to main FIFO,
-//      else
-//          evict and insert to the ghost
-//  evict from main FIFO:
-//      if object in the main is accessed,
-//          reinsert to main FIFO,
-//      else
-//          evict
+//  add a correlation window to filter out correlated requests
+//  objects inserted in the small queue do not set bit during correlation window
 //
 //
 //  Clock2QPlus.c
