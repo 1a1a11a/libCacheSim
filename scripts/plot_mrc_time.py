@@ -45,6 +45,9 @@ def run_cachesim_time(
         byte_miss_ratio: whether to report the miss ratio in byte, default: False
         trace_format: the trace format, default: oracleGeneral
         num_thread: the number of threads to run, default: -1 (use all the cores)
+    Returns:
+        (ts_list, mrc_list): A tuple containing two lists of floats. 
+        The first list contains time, and the second list contains miss ratio.
     """
 
     ts_list, mrc_list = [], []
@@ -101,7 +104,19 @@ def run_cachesim_time(
     return ts_list, mrc_list
 
 
-def plot_mrc_time(mrc_dict, name="mrc"):
+def plot_mrc_time(
+    mrc_dict: Dict[str, Tuple[List[float], List[float]]], 
+    name: str = "mrc"
+) -> None:
+    """plot the miss ratio from the computation
+        X-axis is time, different lines are different algos
+    Args:
+        mrc_dict: a dict of mrc, key is the algo name, value is (time_list, miss_ratio_list)
+        name: the name of the plot, default: mrc
+    Returns:
+        None
+    """
+    
     linestyles = itertools.cycle(["-", "--", "-.", ":"])
     linestyles = itertools.cycle(["--", "-", "--", "-.", ":"])
     colors = itertools.cycle(

@@ -28,7 +28,7 @@ def run_cachesim_size(
     trace_format: str = "oracleGeneral",
     trace_format_params: str = "",
     num_thread: int = -1,
-) -> Dict[str, Tuple[int, float]]:
+) -> Dict[str, List[Tuple[int, float]]]:
     """run the cachesim on the given trace
     Args:
         datapath: the path to the trace
@@ -92,7 +92,7 @@ def run_cachesim_size(
 
 
 def plot_mrc_size(
-    mrc_dict: Dict[str, Tuple[int, float]],
+    mrc_dict: Dict[str, List[Tuple[int, float]]],
     ignore_obj_size: bool = True,
     name: str = "mrc",
 ) -> None:
