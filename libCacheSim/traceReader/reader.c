@@ -560,6 +560,7 @@ int skip_n_req(reader_t *reader, const int N) {
 void reset_reader(reader_t *const reader) {
   /* rewind the reader back to beginning */
   long curr_offset = 0;
+  reader->n_read_req = 0;
   if (reader->trace_type == PLAIN_TXT_TRACE) {
     fseek(reader->file, 0, SEEK_SET);
     curr_offset = ftell(reader->file);
