@@ -11,7 +11,7 @@ setup_ubuntu() {
 }
 
 setup_centos() {
-	sudo yum install glib2-devel google-perftools-devel
+	sudo yum install -y glib2-devel google-perftools-devel
 }
 
 setup_macOS() {
@@ -25,7 +25,7 @@ setup_xgboost() {
 	mkdir build
 	pushd build
 	cmake ..
-	if [[ $GITHUB_ACTIONS == "true" ]]; then
+	if [[ ${GITHUB_ACTIONS:-} == "true" ]]; then
 		make
 	else
 		make -j $(nproc)
@@ -40,7 +40,7 @@ setup_lightgbm() {
 	mkdir build || true
 	pushd build
 	cmake ..
-	if [[ $GITHUB_ACTIONS == "true" ]]; then
+	if [[ ${GITHUB_ACTIONS:-} == "true" ]]; then
 		make
 	else
 		make -j $(nproc)
