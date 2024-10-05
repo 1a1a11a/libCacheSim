@@ -37,7 +37,7 @@ setup_lightgbm() {
     pushd /tmp/
 	git clone --recursive https://github.com/microsoft/LightGBM
 	pushd LightGBM
-	mkdir build
+	mkdir build || true
 	pushd build
 	cmake ..
 	if [[ $GITHUB_ACTIONS == "true" ]]; then
@@ -53,7 +53,7 @@ setup_zstd() {
     wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz
     tar xvf zstd-1.5.0.tar.gz;
     pushd zstd-1.5.0/build/cmake/
-    mkdir _build;
+    mkdir _build || true
     pushd _build/;
     cmake ..
     make -j $(nproc)
