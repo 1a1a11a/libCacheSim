@@ -22,9 +22,9 @@ extern pthread_mutex_t log_mtx;
   do {                                     \
     pthread_mutex_lock(&log_mtx);          \
     log_header(level, __FILE__, __LINE__); \
-    printf(FMT, ##__VA_ARGS__);            \
-    printf("%s", NORMAL);                  \
-    fflush(stdout);                        \
+    fprintf(stderr, FMT, ##__VA_ARGS__);            \
+    fprintf(stderr, "%s", NORMAL);                  \
+    fflush(stderr);                        \
     pthread_mutex_unlock(&log_mtx);        \
   } while (0)
 
@@ -111,28 +111,28 @@ static inline void log_header(int level, const char *file, int line) {
 
   switch (level) {
     case VVVERBOSE_LEVEL:
-      printf("%s[VVV]   ", CYAN);
+      fprintf(stderr, "%s[VVV]   ", CYAN);
       break;
     case VVERBOSE_LEVEL:
-      printf("%s[VV]    ", CYAN);
+      fprintf(stderr, "%s[VV]    ", CYAN);
       break;
     case VERBOSE_LEVEL:
-      printf("%s[VERB]  ", MAGENTA);
+      fprintf(stderr, "%s[VERB]  ", MAGENTA);
       break;
     case DEBUG_LEVEL:
-      printf("%s[DEBUG] ", CYAN);
+      fprintf(stderr, "%s[DEBUG] ", CYAN);
       break;
     case INFO_LEVEL:
-      printf("%s[INFO]  ", GREEN);
+      fprintf(stderr, "%s[INFO]  ", GREEN);
       break;
     case WARN_LEVEL:
-      printf("%s[WARN]  ", YELLOW);
+      fprintf(stderr, "%s[WARN]  ", YELLOW);
       break;
     case SEVERE_LEVEL:
-      printf("%s[ERROR] ", RED);
+      fprintf(stderr, "%s[ERROR] ", RED);
       break;
     default:
-      printf("in logging should not be here\n");
+      fprintf(stderr, "in logging should not be here\n");
       break;
   }
 
@@ -144,8 +144,8 @@ static inline void log_header(int level, const char *file, int line) {
   curtime = tv.tv_sec;
   strftime(buffer, 30, "%m-%d-%Y %T", localtime(&curtime));
 
-  printf("%s %8s:%-4d ", buffer, strrchr(file, '/') + 1, line);
-  printf("(tid=%zu): ", (unsigned long)pthread_self());
+  fprintf(stderr, "%s %8s:%-4d ", buffer, strrchr(file, '/') + 1, line);
+  fprintf(stderr, "(tid=%zu): ", (unsigned long)pthread_self());
 }
 
 #ifdef __cplusplus
