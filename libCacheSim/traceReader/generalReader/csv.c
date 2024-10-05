@@ -200,21 +200,19 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     if (reader->obj_id_is_num) {
       req->obj_id = strtoull((char *)s, &end, 0);
       if (req->obj_id == 0 && s == end) {
-        WARN("object id is not numeric %s\n", (char *)s);
+        WARN("object id is not numeric: \"%s\"\n", (char *)s);
       }
     } else {
       // req->obj_id = (uint64_t)g_quark_from_string(s);
       req->obj_id = (uint64_t)get_hash_value_str((char *)s, len);
     }
   } else if (csv_params->curr_field_idx == csv_params->time_field_idx) {
-    // this does not work, because s is not null terminated
     uint64_t ts = (uint64_t)atof((char *)s);
-    // uint64_t ts = (uint64_t)strtod((char *)s, &end);
     req->clock_time = ts;
   } else if (csv_params->curr_field_idx == csv_params->obj_size_field_idx) {
     req->obj_size = (uint32_t)strtoul((char *)s, &end, 0);
     if (req->obj_size == 0 && end == s) {
-      ERROR("csvReader obj_size is not a number: \"%s\"\n", (char *)s);
+      WARN("csvReader obj_size is not a number: \"%s\"\n", (char *)s);
     }
   } else if (csv_params->curr_field_idx == csv_params->cnt_field_idx) {
     reader->n_req_left = (uint64_t)strtoull((char *)s, &end, 0) - 1;
