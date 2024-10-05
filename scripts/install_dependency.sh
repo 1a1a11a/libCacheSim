@@ -72,7 +72,7 @@ fi
 
 setup_zstd
 
-if [[ ! $GITHUB_ACTIONS == "true" ]]; then
+if [[ ! ${GITHUB_ACTIONS:-} == "true" ]]; then
 	setup_xgboost
 	setup_lightgbm
 fi
