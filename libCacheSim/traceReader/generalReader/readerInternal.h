@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#define MAX_LINE_LEN (1024 * 1)
+#define PER_SEEK_SIZE 1024
 #define MAX_OBJ_ID_LEN 256
 
 /**************** common ****************/
