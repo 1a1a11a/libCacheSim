@@ -1,3 +1,4 @@
+import os
 import logging
 import matplotlib.pyplot as plt
 
@@ -20,7 +21,8 @@ plt.rcParams.update(params)
 
 FIG_DIR = "figure/"
 FIG_TYPE = "png"
-
+if not os.path.exists(FIG_DIR):
+    os.makedirs(FIG_DIR)
 
 def get_colors(n):
     COLOR_FIVE = [

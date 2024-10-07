@@ -9,14 +9,12 @@ this will generate some output, including request rate result, trace.reqRate
 """
 
 import os, sys
-import re
-import numpy as np
 import matplotlib.pyplot as plt
 
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 import logging
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../")
 from utils.trace_utils import extract_dataname
 from utils.plot_utils import FIG_DIR, FIG_TYPE, get_colors, get_linestyles
 
@@ -63,7 +61,7 @@ def _load_req_rate_data(
 def plot_req_rate(datapath: str, figname_prefix: str = ""):
     COLOR = get_colors(2)
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
     (
@@ -103,7 +101,7 @@ def plot_req_rate(datapath: str, figname_prefix: str = ""):
         linewidth=1,
     )
     plt.xlabel("Time (Hour)")
-    plt.ylabel("Request rate (Mbps)")
+    plt.ylabel("Request rate (MB/s)")
     plt.grid(linestyle="--")
     plt.savefig(
         "{}/{}_byteRate.{}".format(FIG_DIR, figname_prefix, FIG_TYPE),
