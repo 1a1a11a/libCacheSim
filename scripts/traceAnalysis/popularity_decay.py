@@ -21,7 +21,7 @@ from typing import List, Dict, Tuple
 import logging
 import matplotlib.colors as colors
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.abspath(__file__))+ "/../")
 from utils.trace_utils import extract_dataname
 from utils.plot_utils import FIG_DIR, FIG_TYPE
 

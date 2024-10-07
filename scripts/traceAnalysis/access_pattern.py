@@ -72,7 +72,7 @@ def _load_access_pattern_data(datapath: str, n_obj_to_plot: int) -> List[List[fl
     n_line = 0
     for line in ifile:
         n_line += 1
-        if len(line.strip()) == 0:
+        if not line.strip():
             continue
         elif n_line % sample_ratio == 0:
             access_time_list.append([float(i) for i in line.split(",")[:-1]])
@@ -97,19 +97,24 @@ def plot_access_pattern(
         None
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
     access_time_list = _load_access_pattern_data(datapath, n_obj_to_plot)
 
     is_real_time = "Rtime" in datapath
     if is_real_time:
-        xlabel = "Time (hour)"
+        if access_time_list[0][-1] < 30 * 24 * 3600:
+            xlabel = "Time (hour)"
+            time_unit = 3600
+        else:
+            xlabel = "Time (day)"
+            time_unit = 3600 * 24
         figname = "{}/{}_access_rt.{}".format(FIG_DIR, figname_prefix, FIG_TYPE)
         for idx, ts_list in enumerate(access_time_list):
             # access_rtime_list stores N objects, each object has one access pattern list
             plt.scatter(
-                [ts / 3600 for ts in ts_list], [idx for _ in range(len(ts_list))], s=8
+                [ts / time_unit for ts in ts_list], [idx for _ in range(len(ts_list))], s=8
             )
 
     else:
