@@ -46,7 +46,7 @@ def plot_scan_size(datapath, figname_prefix=""):
 
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = datapath.split("/")[-1]
 
     scan_size_list, scan_size_cnt = _load_scan_size_data(datapath)

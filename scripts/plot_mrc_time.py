@@ -234,7 +234,7 @@ if __name__ == "__main__":
             ap.num_thread,
         )
 
-    if len(mrc_dict) == 0:
+    if not mrc_dict:
         logger.error("fail to compute mrc")
         sys.exit(1)
 

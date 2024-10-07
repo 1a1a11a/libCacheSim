@@ -54,7 +54,7 @@ def _find_cache_size(datapath, metric):
         if m.group("algo").strip() == "FIFO":
             fifo_miss_ratios.append(float(m.group("miss_ratio")))
 
-    if len(fifo_miss_ratios) == 0:
+    if not fifo_miss_ratios:
         raise RuntimeError("the result has no FIFO data: {}".format(datapath))
 
     cache_sizes = sorted(list(set(cache_sizes)))
@@ -116,12 +116,12 @@ def load_miss_ratio_reduction_from_dir(data_dir_path, algos, metric="miss_ratio"
         assert len(miss_ratio_dict_list) == N_CACHE_SIZE, f"{f} {len(miss_ratio_dict_list)}"
         # print(f, sorted(miss_ratio_dict_list[0].keys()))
 
-        if len(mr_reduction_dict_list) == 0:
+        if not mr_reduction_dict_list:
             mr_reduction_dict_list = [
                 defaultdict(list) for _ in range(len(miss_ratio_dict_list))
             ]
         for size_idx, miss_ratio_dict in enumerate(miss_ratio_dict_list):
-            if len(miss_ratio_dict) == 0:
+            if not miss_ratio_dict:
                 continue
 
             mr_fifo = miss_ratio_dict["FIFO"]

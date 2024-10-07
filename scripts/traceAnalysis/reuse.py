@@ -65,7 +65,7 @@ def _load_reuse_data(datapath: str) -> Tuple[dict, dict]:
             )
             log_base = float(m.group("lb"))
             break
-        elif len(line.strip()) == 0:
+        elif not line.strip():
             continue
         else:
             reuse_time, count = [int(i) for i in line.split(":")]
@@ -74,7 +74,7 @@ def _load_reuse_data(datapath: str) -> Tuple[dict, dict]:
             reuse_rtime_count[reuse_time * rtime_granularity] = count
 
     for line in ifile:
-        if len(line.strip()) == 0:
+        if not line.strip():
             continue
         else:
             reuse_time, count = [int(i) for i in line.split(":")]
@@ -100,7 +100,7 @@ def plot_reuse(datapath: str, figname_prefix: str = "") -> None:
 
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
     reuse_rtime_count, reuse_vtime_count = _load_reuse_data(datapath)

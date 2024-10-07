@@ -84,7 +84,7 @@ def plot_future_reuse(datapath_list, figname_prefix=""):
 
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = datapath_list[0].split("/")[-1]
 
     for datapath in datapath_list:
