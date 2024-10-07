@@ -101,6 +101,11 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
           (double)unique_bytes / GiB);
     }
 
+    if (n_req_curr > n_req_total * 2) {
+      ERROR("n_req_curr (%ld) > n_req_total (%ld)\n", n_req_curr,
+            n_req_total);
+    }
+
     if (read_one_req_above(reader, req) != 0) {
       break;
     }
