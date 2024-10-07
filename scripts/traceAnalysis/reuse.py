@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from typing import List, Dict, Tuple
 import logging
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__))+ "/../")
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../")
 from utils.trace_utils import extract_dataname
 from utils.plot_utils import FIG_DIR, FIG_TYPE
 from utils.data_utils import conv_to_cdf
@@ -25,7 +25,9 @@ from utils.data_utils import conv_to_cdf
 logger = logging.getLogger("reuse")
 
 
-def _load_reuse_data(datapath: str) -> Tuple[dict, dict]:
+def _load_reuse_data(
+    datapath: str, ignore_compulsory_miss: bool = True
+) -> Tuple[dict, dict]:
     """load reuse distribution plot data from C++ computation
 
     Args:
@@ -57,12 +59,8 @@ def _load_reuse_data(datapath: str) -> Tuple[dict, dict]:
             m = re.match(
                 r"# reuse virtual time: freq \(log base (?P<lb>\d+\.?\d*)\)", line
             )
-            assert m is not None, (
-                "the input file might not be reuse data file, desc line "
-                + line
-                + " data "
-                + datapath
-            )
+            assert m is not None, "the input file might not be "\
+                f"reuse data file, desc line {line} data {datapath}"
             log_base = float(m.group("lb"))
             break
         elif not line.strip():
@@ -70,7 +68,10 @@ def _load_reuse_data(datapath: str) -> Tuple[dict, dict]:
         else:
             reuse_time, count = [int(i) for i in line.split(":")]
             if reuse_time < -1:
+                # it can be -1, which indicates compulsory misses
                 print("find negative reuse time " + line)
+            if reuse_time == -1 and not ignore_compulsory_miss:
+                continue
             reuse_rtime_count[reuse_time * rtime_granularity] = count
 
     for line in ifile:
@@ -79,7 +80,10 @@ def _load_reuse_data(datapath: str) -> Tuple[dict, dict]:
         else:
             reuse_time, count = [int(i) for i in line.split(":")]
             if reuse_time < -1:
+                # it can be -1, which indicates compulsory misses
                 print("find negative reuse time " + line)
+            if reuse_time == -1 and not ignore_compulsory_miss:
+                continue
             reuse_vtime_count[log_base**reuse_time] = count
 
     ifile.close()
@@ -103,15 +107,16 @@ def plot_reuse(datapath: str, figname_prefix: str = "") -> None:
     if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
-    reuse_rtime_count, reuse_vtime_count = _load_reuse_data(datapath)
+    reuse_rtime_count, reuse_vtime_count = _load_reuse_data(datapath, False)
 
     x, y = conv_to_cdf(None, data_dict=reuse_rtime_count)
     if x[0] < 0:
+        # this is compulsory miss
         x = x[1:]
         y = [y[i] - y[0] for i in range(1, len(y))]
     plt.plot([i / 3600 for i in x], y)
     plt.grid(linestyle="--")
-    plt.ylim(0, 1)
+    # plt.ylim(0, 1)
     plt.xlabel("Time (Hour)")
     plt.ylabel("Fraction of requests (CDF)")
     plt.savefig(
