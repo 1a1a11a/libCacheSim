@@ -23,7 +23,7 @@ def plot_compare_grouping(datafile_regex, ofile_path):
     seq_data_dict, rnd_data_dict = {}, {}
     for t, data_dict in [("seq", seq_data_dict), ("rnd", rnd_data_dict)]:
         datapath_list = glob.glob(datafile_regex + t)
-        if len(datapath_list) == 0:
+        if not datapath_list:
             print(f"cannot find data {datafile_regex}")
             sys.exit(1)
         for ifilepath in datapath_list:
@@ -176,7 +176,7 @@ def plot_compare_grouping_utility(ifile_prefix, ofilepath, ):
     seq_data_dict, rnd_data_dict = {}, {}
     for t, data_dict in [("seq", seq_data_dict), ("rnd", rnd_data_dict)]:
         datapath_list = glob.glob(ifile_prefix + t)
-        if len(datapath_list) == 0:
+        if not datapath_list:
             print(f"cannot find data {ifile_prefix}")
             sys.exit(1)
         for ifilepath in datapath_list:

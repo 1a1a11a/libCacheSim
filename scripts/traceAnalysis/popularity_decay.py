@@ -466,7 +466,7 @@ if __name__ == "__main__":
     p = ap.parse_args()
 
     figname_prefix = p.figname_prefix
-    if len(p.figname_prefix) == 0:
+    if not p.figname_prefix:
         figname_prefix = time.strftime("%Y%m%d_%H%M%S", time.localtime())
 
     plot_data_list = []

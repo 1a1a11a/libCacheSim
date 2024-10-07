@@ -60,7 +60,7 @@ def _load_size_heatmap_data(datapath) -> Tuple[np.ndarray, int, float, int]:
     for line in ifile:
         # if "obj_cnt" in line:
         #     curr_data = size_distribution_by_obj_over_time
-        # elif len(line.strip()) == 0:
+        # elif not line.strip():
         #     continue
         # else:
         count_list = line.strip("\n,").split(",")
@@ -89,7 +89,7 @@ def plot_size_heatmap(datapath: str, figname_prefix: str = ""):
 
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
     plot_data, time_window, log_base, size_base = _load_size_heatmap_data(
