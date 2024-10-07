@@ -51,7 +51,7 @@ def plot_popularity_Zipf(datapath, figname_prefix=""):
     from scipy.optimize import minimize
     from scipy.optimize import curve_fit
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
     sorted_freq, _ = load_popularity_data(datapath)

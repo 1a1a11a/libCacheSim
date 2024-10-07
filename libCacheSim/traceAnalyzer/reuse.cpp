@@ -20,6 +20,7 @@ void ReuseDistribution::add_req(request_t *req) {
   }
 
   if (req->rtime_since_last_access < 0) {
+    // compulsory miss
     reuse_rtime_req_cnt_[-1] += 1;
     reuse_vtime_req_cnt_[-1] += 1;
 

@@ -142,7 +142,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("datapath", type=str, help="data path")
     ap.add_argument(
-        "--n-obj-to-plot", type=int, default=400, help="the number of objects to plot"
+        "--n-obj-to-plot", type=int, default=2000, help="the number of objects to plot"
     )
     ap.add_argument(
         "--figname-prefix", type=str, default="", help="the prefix of figname"

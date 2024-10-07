@@ -81,7 +81,7 @@ def _load_reuse_heatmap_data(datapath: str) -> Tuple[np.ndarray, int, int, float
     reuse_time_distribution_list = []
 
     for line in ifile:
-        if len(line.strip()) == 0:
+        if not line.strip():
             continue
         else:
             reuse_time_distribution_list.append(
@@ -118,7 +118,7 @@ def plot_reuse_heatmap(datapath: str, figname_prefix: str = "") -> None:
 
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
     plot_data_rt, time_granularity, time_window, log_base = _load_reuse_heatmap_data(

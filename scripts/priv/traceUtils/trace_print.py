@@ -11,7 +11,7 @@ def print_trace(idatapath: str, format: str, n: int = 20):
 
     for _ in range(n):
         d = ifile.read(s.size)
-        if len(d) == 0:
+        if not d:
             break
         print(s.unpack(d))
 

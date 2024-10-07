@@ -77,7 +77,7 @@ def plot_size_distribution(datapath: str, figname_prefix: str = ""):
 
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = extract_dataname(datapath)
 
     obj_size_req_cnt, obj_size_obj_cnt = _load_size_data(datapath)

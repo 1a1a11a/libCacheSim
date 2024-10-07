@@ -116,7 +116,7 @@ def plot_write_reuse(datapath, figname_prefix=""):
 
     """
 
-    if len(figname_prefix) == 0:
+    if not figname_prefix:
         figname_prefix = datapath.split("/")[-1]
 
     (

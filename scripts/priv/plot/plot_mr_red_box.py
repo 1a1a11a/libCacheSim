@@ -149,7 +149,7 @@ def compare_two_algo_miss_ratio(datapath, algo1, algo2, size_idx_list=(0, 1, 2, 
         miss_ratio_dict_list = load_data(f)
         for size_idx in size_idx_list:
             mr_dict = miss_ratio_dict_list[size_idx]
-            if len(mr_dict) == 0:
+            if not mr_dict:
                 continue
             mr1 = mr_dict.get(algo1, 2)
             mr2 = mr_dict.get(algo2, 2)
