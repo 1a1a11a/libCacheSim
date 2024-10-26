@@ -33,6 +33,7 @@ typedef struct {
   double fifo_size_ratio;
   double ghost_size_ratio;
   double corr_window_ratio;
+  uint64_t corr_window_size;
   // used to indicate whether the cache is full
   bool has_evicted;
   char main_cache_type[32];
@@ -41,21 +42,19 @@ typedef struct {
 } Clock2QPlusv2_params_t;
 
 static const char *DEFAULT_CACHE_PARAMS =
-    "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=1,"
-    "corr-window-ratio=0.5";
+    "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=2,"
+    "corr-window-ratio=0.20";
 
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params,
-                          const char *cache_specific_params);
+cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params, const char *cache_specific_params);
 static void Clock2QPlusv2_free(cache_t *cache);
 static bool Clock2QPlusv2_get(cache_t *cache, const request_t *req);
 
-static cache_obj_t *Clock2QPlusv2_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache);
+static cache_obj_t *Clock2QPlusv2_find(cache_t *cache, const request_t *req, const bool update_cache);
 static cache_obj_t *Clock2QPlusv2_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *Clock2QPlusv2_to_evict(cache_t *cache, const request_t *req);
 static void Clock2QPlusv2_evict(cache_t *cache, const request_t *req);
@@ -63,8 +62,7 @@ static bool Clock2QPlusv2_remove(cache_t *cache, const obj_id_t obj_id);
 static inline int64_t Clock2QPlusv2_get_occupied_byte(const cache_t *cache);
 static inline int64_t Clock2QPlusv2_get_n_obj(const cache_t *cache);
 static inline bool Clock2QPlusv2_can_insert(cache_t *cache, const request_t *req);
-static void Clock2QPlusv2_parse_params(cache_t *cache,
-                                     const char *cache_specific_params);
+static void Clock2QPlusv2_parse_params(cache_t *cache, const char *cache_specific_params);
 
 static void Clock2QPlusv2_evict_fifo(cache_t *cache, const request_t *req);
 static void Clock2QPlusv2_evict_main(cache_t *cache, const request_t *req);
@@ -75,10 +73,8 @@ static void Clock2QPlusv2_evict_main(cache_t *cache, const request_t *req);
 // ****                                                               ****
 // ***********************************************************************
 
-cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params,
-                          const char *cache_specific_params) {
-  cache_t *cache =
-      cache_struct_init("Clock2QPlusv2", ccache_params, cache_specific_params);
+cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params, const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("Clock2QPlusv2", ccache_params, cache_specific_params);
   cache->cache_init = Clock2QPlusv2_init;
   cache->cache_free = Clock2QPlusv2_free;
   cache->get = Clock2QPlusv2_get;
@@ -98,7 +94,6 @@ cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params,
   Clock2QPlusv2_params_t *params = (Clock2QPlusv2_params_t *)cache->eviction_params;
   params->req_local = new_request();
   params->hit_on_ghost = false;
-  params->corr_window_ratio = 0.2;
   params->has_evicted = false;
 
   Clock2QPlusv2_parse_params(cache, DEFAULT_CACHE_PARAMS);
@@ -106,12 +101,14 @@ cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params,
     Clock2QPlusv2_parse_params(cache, cache_specific_params);
   }
 
-  int64_t fifo_cache_size =
-      (int64_t)ccache_params.cache_size * params->fifo_size_ratio;
+  int64_t fifo_cache_size = (int64_t)ccache_params.cache_size * params->fifo_size_ratio;
   int64_t main_cache_size = ccache_params.cache_size - fifo_cache_size;
-  int64_t fifo_ghost_cache_size =
-      (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
+  int64_t fifo_ghost_cache_size = (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
 
+  params->corr_window_size = params->corr_window_ratio * fifo_cache_size;
+  if (params->corr_window_size >= fifo_cache_size) {
+    ERROR("corr_window_size %lu should be smaller than fifo size %lu\n", params->corr_window_size, fifo_cache_size);
+  }
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
   params->fifo = FIFO_init(ccache_params_local, NULL);
@@ -119,8 +116,7 @@ cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params,
   if (fifo_ghost_cache_size > 0) {
     ccache_params_local.cache_size = fifo_ghost_cache_size;
     params->fifo_ghost = FIFO_init(ccache_params_local, NULL);
-    snprintf(params->fifo_ghost->cache_name, CACHE_NAME_ARRAY_LEN,
-             "FIFO-ghost");
+    snprintf(params->fifo_ghost->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO-ghost");
   } else {
     params->fifo_ghost = NULL;
   }
@@ -136,8 +132,7 @@ cache_t *Clock2QPlusv2_init(const common_cache_params_t ccache_params,
   params->main_cache->track_eviction_age = false;
 #endif
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN,
-           "Clock2QPlusv2-%.4lf-%d-%.2lf", params->fifo_size_ratio,
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Clock2QPlusv2-%.4lf-%d-%.2lf", params->fifo_size_ratio,
            params->move_to_main_threshold, params->corr_window_ratio);
 
   return cache;
@@ -206,8 +201,7 @@ static bool Clock2QPlusv2_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t *Clock2QPlusv2_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache) {
+static cache_obj_t *Clock2QPlusv2_find(cache_t *cache, const request_t *req, const bool update_cache) {
   Clock2QPlusv2_params_t *params = (Clock2QPlusv2_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the fifo and main caches
@@ -228,17 +222,14 @@ static cache_obj_t *Clock2QPlusv2_find(cache_t *cache, const request_t *req,
   cache_obj_t *obj = params->fifo->find(params->fifo, req, true);
 
   if (obj != NULL) {
-    int time_since_insertion =
-        params->n_obj_admit_to_fifo - obj->Clock2QPlus.insertion_time;
-    if (time_since_insertion >=
-        params->fifo->cache_size * params->corr_window_ratio) {
+    int time_since_insertion = params->n_obj_admit_to_fifo - obj->Clock2QPlus.insertion_time;
+    if (time_since_insertion >= params->corr_window_size) {
       obj->Clock2QPlus.freq += 1;
     }
     return obj;
   }
 
-  if (params->fifo_ghost != NULL &&
-      params->fifo_ghost->remove(params->fifo_ghost, req->obj_id)) {
+  if (params->fifo_ghost != NULL && params->fifo_ghost->remove(params->fifo_ghost, req->obj_id)) {
     // if object in fifo_ghost, remove will return true
     params->hit_on_ghost = true;
   }
@@ -281,8 +272,7 @@ static cache_obj_t *Clock2QPlusv2_insert(cache_t *cache, const request_t *req) {
     }
     /* if the cache is not full, but small fifo is full
      * insert to the main fifo, this happens during warmup */
-    if (!params->has_evicted && params->fifo->get_occupied_byte(params->fifo) >=
-                                    params->fifo->cache_size) {
+    if (!params->has_evicted && params->fifo->get_occupied_byte(params->fifo) >= params->fifo->cache_size) {
       params->n_obj_admit_to_main += 1;
       params->n_byte_admit_to_main += req->obj_size;
       obj = params->main_cache->insert(params->main_cache, req);
@@ -414,8 +404,7 @@ static void Clock2QPlusv2_evict(cache_t *cache, const request_t *req) {
   cache_t *main = params->main_cache;
 
   params->has_evicted = true;
-  if (main->get_occupied_byte(main) > main->cache_size ||
-      fifo->get_occupied_byte(fifo) == 0) {
+  if (main->get_occupied_byte(main) > main->cache_size || fifo->get_occupied_byte(fifo) == 0) {
     return Clock2QPlusv2_evict_main(cache, req);
   }
   return Clock2QPlusv2_evict_fifo(cache, req);
@@ -438,8 +427,7 @@ static bool Clock2QPlusv2_remove(cache_t *cache, const obj_id_t obj_id) {
   Clock2QPlusv2_params_t *params = (Clock2QPlusv2_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->fifo->remove(params->fifo, obj_id);
-  removed = removed || (params->fifo_ghost &&
-                        params->fifo_ghost->remove(params->fifo_ghost, obj_id));
+  removed = removed || (params->fifo_ghost && params->fifo_ghost->remove(params->fifo_ghost, obj_id));
   removed = removed || params->main_cache->remove(params->main_cache, obj_id);
 
   return removed;
@@ -447,18 +435,15 @@ static bool Clock2QPlusv2_remove(cache_t *cache, const obj_id_t obj_id) {
 
 static inline int64_t Clock2QPlusv2_get_occupied_byte(const cache_t *cache) {
   Clock2QPlusv2_params_t *params = (Clock2QPlusv2_params_t *)cache->eviction_params;
-  return params->fifo->get_occupied_byte(params->fifo) +
-         params->main_cache->get_occupied_byte(params->main_cache);
+  return params->fifo->get_occupied_byte(params->fifo) + params->main_cache->get_occupied_byte(params->main_cache);
 }
 
 static inline int64_t Clock2QPlusv2_get_n_obj(const cache_t *cache) {
   Clock2QPlusv2_params_t *params = (Clock2QPlusv2_params_t *)cache->eviction_params;
-  return params->fifo->get_n_obj(params->fifo) +
-         params->main_cache->get_n_obj(params->main_cache);
+  return params->fifo->get_n_obj(params->fifo) + params->main_cache->get_n_obj(params->main_cache);
 }
 
-static inline bool Clock2QPlusv2_can_insert(cache_t *cache,
-                                          const request_t *req) {
+static inline bool Clock2QPlusv2_can_insert(cache_t *cache, const request_t *req) {
   Clock2QPlusv2_params_t *params = (Clock2QPlusv2_params_t *)cache->eviction_params;
 
   return req->obj_size <= params->fifo->cache_size;
@@ -474,15 +459,13 @@ static const char *Clock2QPlusv2_current_params(Clock2QPlusv2_params_t *params) 
   snprintf(params_str, 128,
            "fifo-size-ratio=%.4lf,ghost-size-ratio=%.4lf,move-to-main-"
            "threshold=%d,corr-window-ratio=%.4lf\n",
-           params->fifo_size_ratio, params->ghost_size_ratio,
-           params->move_to_main_threshold, params->corr_window_ratio);
+           params->fifo_size_ratio, params->ghost_size_ratio, params->move_to_main_threshold,
+           params->corr_window_ratio);
   return params_str;
 }
 
-static void Clock2QPlusv2_parse_params(cache_t *cache,
-                                     const char *cache_specific_params) {
-  Clock2QPlusv2_params_t *params =
-      (Clock2QPlusv2_params_t *)(cache->eviction_params);
+static void Clock2QPlusv2_parse_params(cache_t *cache, const char *cache_specific_params) {
+  Clock2QPlusv2_params_t *params = (Clock2QPlusv2_params_t *)(cache->eviction_params);
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
