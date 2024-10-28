@@ -1,7 +1,7 @@
 //
-//  this version differs from the origianl S3-FIFO in that when the small queue is full, but the cache is not full,
-//  S3-FIFO will insert into the small queue, but S3FIFO will insert into the main queue.
-//  S3-FIFOv2 is in general better than S3-FIFO because
+//  This version (S3FIFO.c) differs from the original S3-FIFO (S3FIFOv0.c) in that when the small queue is full, but the cache is not full,
+//  the original S3-FIFO will insert into the small queue, but this version will insert into the main queue.
+//  This version is in general better than the original S3-FIFO because
 //    1. the objects inserted after the cache is full are evicted more quickly
 //    2. the objects inserted between the small queue is full and the cache is full are kept slightly longer
 //
