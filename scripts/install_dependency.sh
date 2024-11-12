@@ -18,7 +18,16 @@ setup_macOS() {
 	brew install glib google-perftools argp-standalone xxhash
 }
 
-setup_xgboost() {
+install_cmake() {
+	pushd /tmp/;
+	wget https://github.com/Kitware/CMake/releases/download/v3.31.0/cmake-3.31.0-linux-x86_64.sh;
+	mkdir -p $HOME/software/cmake 2>/dev/null || true;
+	bash cmake-3.31.0-linux-x86_64.sh --skip-license --prefix=$HOME/software/cmake;
+	echo 'export PATH=$HOME/software/cmake/bin:$PATH' >> $HOME/.$(echo $0 | tr -d -)rc;
+	popd;
+}
+
+install_xgboost() {
     pushd /tmp/
 	if [ ! -d "xgboost" ]; then
 		git clone --recursive https://github.com/dmlc/xgboost
@@ -35,7 +44,7 @@ setup_xgboost() {
 	sudo make install
 }
 
-setup_lightgbm() {
+install_lightgbm() {
     pushd /tmp/
 	if [ ! -d "LightGBM" ]; then
 		git clone --recursive https://github.com/microsoft/LightGBM
@@ -52,7 +61,7 @@ setup_lightgbm() {
 	sudo make install
 }
 
-setup_zstd() {
+install_zstd() {
     pushd /tmp/;
 	if [ ! -f "zstd-1.5.0.tar.gz" ]; then 
 	    wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz
@@ -76,11 +85,12 @@ else
     setup_centos
 fi 
 
-setup_zstd
+install_cmake
+install_zstd
 
 if [[ ! ${GITHUB_ACTIONS:-} == "true" ]]; then
-	setup_xgboost
-	setup_lightgbm
+	install_xgboost
+	install_lightgbm
 fi
 
 cd $CURR_DIR
