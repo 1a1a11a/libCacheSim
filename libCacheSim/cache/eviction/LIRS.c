@@ -210,6 +210,24 @@ static cache_obj_t *LIRS_find(cache_t *cache, const request_t *req,
   obj_s = params->LRU_s->find(params->LRU_s, req, update_cache);
   obj_q = params->LRU_q->find(params->LRU_q, req, update_cache);
 
+  if (update_cache == false) {
+    if (obj_s != NULL) {
+      if (obj_s->LIRS.is_LIR || obj_s->LIRS.in_cache) {
+        return obj_s;
+      } else {
+        return NULL;
+      }
+    } else if (obj_q != NULL) {
+      if (obj_q->LIRS.in_cache) {
+        return obj_q;
+      } else {
+        return NULL;
+      }
+    } else {
+      return NULL;
+    }
+  }
+
   // cache_obj_t *res = NULL;
   if (obj_s != NULL) {
     if (obj_s->LIRS.is_LIR) {
