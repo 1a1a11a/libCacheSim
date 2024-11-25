@@ -253,6 +253,10 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->reader = create_reader(args->trace_type_str, args->trace_path,
                                args->trace_type_params, args->n_req,
                                args->ignore_obj_size, 0);
+  if (args->sample_ratio < 1.0) {
+    INFO("create a spatial sampler with sample ratio %.4flf\n", args->sample_ratio);
+    args->reader->sampler = create_spatial_sampler(args->sample_ratio);
+  }
 
   print_parsed_arg(args);
 }

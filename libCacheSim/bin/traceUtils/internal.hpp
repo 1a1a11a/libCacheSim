@@ -4,8 +4,8 @@
 
 #include <string>
 
-#include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/cache.h"
+#include "../../include/libCacheSim/reader.h"
 
 #define N_ARGS 2
 #define OFILEPATH_LEN 128
@@ -50,7 +50,6 @@ void parse_cmd(int argc, char *argv[], struct arguments *args);
 void free_arg(struct arguments *args);
 }  // namespace cli
 
-
 namespace traceConv {
 
 /**
@@ -64,8 +63,7 @@ namespace traceConv {
  * @param remove_size_change whether remove object size change during traceConv
  * @param use_lcs_format whether use lcs format
  */
-void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
-                              int sample_ratio, bool output_txt,
-                              bool remove_size_change, bool use_lcs_format);
+void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath, bool output_txt, bool remove_size_change,
+                              bool use_lcs_format);
 
 }  // namespace traceConv

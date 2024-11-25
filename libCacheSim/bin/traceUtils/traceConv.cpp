@@ -32,8 +32,7 @@ struct trace_stat {
   int64_t n_obj_byte;
 };
 
-static void _reverse_file(std::string ofilepath, struct trace_stat stat,
-                          bool output_txt, bool remove_size_change,
+static void _reverse_file(std::string ofilepath, struct trace_stat stat, bool output_txt, bool remove_size_change,
                           bool use_lcs_format);
 
 /**
@@ -48,20 +47,17 @@ static void _reverse_file(std::string ofilepath, struct trace_stat stat,
  * @param output_txt
  * @param remove_size_change
  */
-void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
-                              int sample_ratio, bool output_txt,
-                              bool remove_size_change, bool use_lcs_format) {
+void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath, bool output_txt, bool remove_size_change,
+                              bool use_lcs_format) {
   request_t *req = new_request();
-  std::ofstream ofile_temp(ofilepath + ".reverse",
-                           std::ios::out | std::ios::binary | std::ios::trunc);
+  std::ofstream ofile_temp(ofilepath + ".reverse", std::ios::out | std::ios::binary | std::ios::trunc);
   std::unordered_map<uint64_t, int64_t> last_access_map;
 
   int64_t n_req_curr = 0, n_req_total = get_num_of_req(reader);
   last_access_map.reserve(n_req_total / 100 + 1e4);
 
   int64_t unique_bytes = 0, total_bytes = 0, n_obj = 0;
-  INFO("%s: %.2f M requests in total\n", reader->trace_path,
-       (double)n_req_total / 1.0e6);
+  INFO("%s: %.2f M requests in total\n", reader->trace_path, (double)n_req_total / 1.0e6);
 
   reader->read_direction = READ_BACKWARD;
   reader_set_read_pos(reader, 1.0);
@@ -87,23 +83,19 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
     total_bytes += req->obj_size;
     last_access_map[req->obj_id] = n_req_curr;
 
-    ofile_temp.write(reinterpret_cast<char *>(&og_req),
-                     sizeof(oracleGeneral_req_t));
+    ofile_temp.write(reinterpret_cast<char *>(&og_req), sizeof(oracleGeneral_req_t));
     n_req_curr += 1;
 
     if (n_req_curr % 100000000 == 0) {
       INFO(
           "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
           "object, %lld B (%.2lf GB)\n",
-          reader->trace_path, (long)(n_req_curr / 1e6),
-          (double)total_bytes / GiB, (long)(start_ts - req->clock_time),
-          (long long)n_obj, (long long)unique_bytes,
-          (double)unique_bytes / GiB);
+          reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB, (long)(start_ts - req->clock_time),
+          (long long)n_obj, (long long)unique_bytes, (double)unique_bytes / GiB);
     }
 
     if (n_req_curr > n_req_total * 2) {
-      ERROR("n_req_curr (%ld) > n_req_total (%ld)\n", n_req_curr,
-            n_req_total);
+      ERROR("n_req_curr (%ld) > n_req_total (%ld)\n", n_req_curr, n_req_total);
     }
 
     if (read_one_req_above(reader, req) != 0) {
@@ -122,9 +114,8 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   INFO(
       "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
       "object, %lld B (%.2lf GB), reversing output...\n",
-      reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB,
-      (long)(start_ts - req->clock_time), (long long)n_obj,
-      (long long)unique_bytes, (double)unique_bytes / GiB);
+      reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB, (long)(start_ts - req->clock_time),
+      (long long)n_obj, (long long)unique_bytes, (double)unique_bytes / GiB);
 
   struct trace_stat stat;
   stat.n_req = n_req_curr;
@@ -132,8 +123,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   stat.n_req_byte = total_bytes;
   stat.n_obj_byte = unique_bytes;
 
-  _reverse_file(ofilepath, stat, output_txt, remove_size_change,
-                use_lcs_format);
+  _reverse_file(ofilepath, stat, output_txt, remove_size_change, use_lcs_format);
 }
 
 static void *_setup_mmap(const std::string &file_path, size_t *size) {
@@ -158,14 +148,12 @@ static void *_setup_mmap(const std::string &file_path, size_t *size) {
   if ((mapped_file) == MAP_FAILED) {
     close(fd);
     mapped_file = nullptr;
-    ERROR("Unable to allocate %llu bytes of memory, %s\n",
-          (unsigned long long)st.st_size, strerror(errno));
+    ERROR("Unable to allocate %llu bytes of memory, %s\n", (unsigned long long)st.st_size, strerror(errno));
     abort();
   }
 
 #ifdef MADV_HUGEPAGE
-  int mstatus =
-      madvise(mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
+  int mstatus = madvise(mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
   if (mstatus != 0) {
     WARN("cannot turn on hugepage %s\n", strerror(errno));
   }
@@ -175,17 +163,14 @@ static void *_setup_mmap(const std::string &file_path, size_t *size) {
   return mapped_file;
 }
 
-static void _reverse_file(std::string ofilepath, struct trace_stat stat,
-                          bool output_txt, bool remove_size_change,
+static void _reverse_file(std::string ofilepath, struct trace_stat stat, bool output_txt, bool remove_size_change,
                           bool use_lcs_format) {
   int64_t n_req = 0;
   size_t file_size;
-  char *mapped_file =
-      reinterpret_cast<char *>(_setup_mmap(ofilepath + ".reverse", &file_size));
+  char *mapped_file = reinterpret_cast<char *>(_setup_mmap(ofilepath + ".reverse", &file_size));
   size_t pos = file_size;
 
-  std::ofstream ofile(ofilepath,
-                      std::ios::out | std::ios::binary | std::ios::trunc);
+  std::ofstream ofile(ofilepath, std::ios::out | std::ios::binary | std::ios::trunc);
   if (use_lcs_format) {
     lcs_trace_header_t lcs_header;
     lcs_header.start_magic = LCS_TRACE_START_MAGIC;
@@ -203,13 +188,11 @@ static void _reverse_file(std::string ofilepath, struct trace_stat stat,
     memcpy(lcs_header.format, "<IQIQ", 5);
 
     verify_LCS_trace_header(&lcs_header);
-    ofile.write(reinterpret_cast<char *>(&lcs_header),
-                sizeof(lcs_trace_header_t));
+    ofile.write(reinterpret_cast<char *>(&lcs_header), sizeof(lcs_trace_header_t));
   }
 
   std::ofstream ofile_txt;
-  if (output_txt)
-    ofile_txt.open(ofilepath + ".txt", std::ios::out | std::ios::trunc);
+  if (output_txt) ofile_txt.open(ofilepath + ".txt", std::ios::out | std::ios::trunc);
 
   /* we remove object size change because some of the systems do not allow
    * object size change */
@@ -238,8 +221,8 @@ static void _reverse_file(std::string ofilepath, struct trace_stat stat,
 
     ofile.write(reinterpret_cast<char *>(&og_req), req_entry_size);
     if (output_txt) {
-      ofile_txt << og_req.clock_time << "," << og_req.obj_id << ","
-                << og_req.obj_size << "," << og_req.next_access_vtime << "\n";
+      ofile_txt << og_req.clock_time << "," << og_req.obj_id << "," << og_req.obj_size << ","
+                << og_req.next_access_vtime << "\n";
     }
 
     if ((++n_req) % 100000000 == 0) {
@@ -255,7 +238,7 @@ static void _reverse_file(std::string ofilepath, struct trace_stat stat,
 
   remove((ofilepath + ".reverse").c_str());
 
-  INFO("trace conversion finished, %ld requests %ld objects, output %s\n",
-       (long) n_req, (long) stat.n_obj, ofilepath.c_str());
+  INFO("trace conversion finished, %ld requests %ld objects, output %s\n", (long)n_req, (long)stat.n_obj,
+       ofilepath.c_str());
 }
 }  // namespace traceConv
