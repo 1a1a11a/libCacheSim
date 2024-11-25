@@ -40,7 +40,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
 void chained_hashtable_delete_v2(hashtable_t *hashtable,
                                  cache_obj_t *cache_obj);
 
-cache_obj_t *chained_hashtable_rand_obj_v2(const hashtable_t *hashtable);
+cache_obj_t *chained_hashtable_rand_obj_v2(hashtable_t *hashtable);
 
 void chained_hashtable_foreach_v2(hashtable_t *hashtable,
                                   hashtable_iter iter_func, void *user_data);

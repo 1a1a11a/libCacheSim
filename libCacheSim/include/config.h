@@ -40,7 +40,7 @@ extern "C" {
 #endif
 
 #ifndef CHAINED_HASHTABLE_EXPAND_THRESHOLD
-#define CHAINED_HASHTABLE_EXPAND_THRESHOLD 1
+#define CHAINED_HASHTABLE_EXPAND_THRESHOLD 2
 #endif
 
 #include <sys/mman.h>

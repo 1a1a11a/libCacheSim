@@ -57,6 +57,7 @@ extern "C" {
 #define hashtable_rand_obj(hashtable) chained_hashtable_rand_obj_v2(hashtable)
 #define hashtable_foreach(hashtable, iter_func, user_data) \
   chained_hashtable_foreach_v2(hashtable, iter_func, user_data)
+
 #define free_hashtable(hashtable) free_chained_hashtable_v2(hashtable)
 #define hashtable_add_ptr_to_monitoring(hashtable, ptr)
 #define HASHTABLE_VER 2
