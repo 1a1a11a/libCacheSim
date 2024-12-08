@@ -50,7 +50,8 @@ typedef struct {
   int32_t cnt_field;
   int32_t next_access_vtime_field;
 
-  // block cache
+  // block cache, 0 and -1 means ignore this field, 1 is also invalid
+  // block_size breaks a large request for multiple blocks into multiple requests
   int32_t block_size;
 
   // csv reader
@@ -164,6 +165,7 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->has_header_set = false;
   params->delimiter = ',';
 
+  params->block_size = -1;
   params->binary_fmt_str = NULL;
 
   params->sampler = NULL;

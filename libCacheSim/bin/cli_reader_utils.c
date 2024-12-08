@@ -42,20 +42,8 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str, const char *trac
     return TWRNS_TRACE;
   } else if (strcasecmp(trace_type_str, "vscsi") == 0) {
     return VSCSI_TRACE;
-  } else if (strcasecmp(trace_type_str, "CF1") == 0) {
-    return CF1_TRACE;
-  } else if (strcasecmp(trace_type_str, "oracleWiki16u") == 0) {
-    return ORACLE_WIKI16u_TRACE;
-  } else if (strcasecmp(trace_type_str, "oracleWiki19u") == 0) {
-    return ORACLE_WIKI19u_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleGeneralBin") == 0 || strcasecmp(trace_type_str, "oracleGeneral") == 0) {
     return ORACLE_GENERAL_TRACE;
-  } else if (strcasecmp(trace_type_str, "oracleGeneralOpNS") == 0) {
-    return ORACLE_GENERALOPNS_TRACE;
-  } else if (strcasecmp(trace_type_str, "oracleAkamai") == 0) {
-    return ORACLE_AKAMAI_TRACE;
-  } else if (strcasecmp(trace_type_str, "oracleCF1") == 0) {
-    return ORACLE_CF1_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleSysTwrNS") == 0) {
     return ORACLE_SYS_TWRNS_TRACE;
   } else if (strcasecmp(trace_type_str, "valpinTrace") == 0) {
@@ -80,7 +68,7 @@ bool is_true(const char *arg) {
 }
 
 /**
- * @brief parse the reader parameters, mostly this is used by csv traces
+ * @brief parse the reader parameters
  *
  * @param reader_params_str
  * @param params
@@ -108,7 +96,15 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
 
     key = replace_char(key, '_', '-');
 
-    if (strcasecmp(key, "time-col") == 0 || strcasecmp(key, "time-field") == 0) {
+    if (strcasecmp(key, "block-size") == 0) {
+      params->block_size = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+      if (params->time_field < 1) {
+        ERROR("field/col index should start from 1\n");
+      }
+    } else if (strcasecmp(key, "time-col") == 0 || strcasecmp(key, "time-field") == 0) {
       params->time_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
@@ -201,23 +197,12 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
 trace_type_e detect_trace_type(const char *trace_path) {
   trace_type_e trace_type = UNKNOWN_TRACE;
 
-  if (strcasestr(trace_path, "oracleGeneralBin") != NULL || strcasestr(trace_path, "oracleGeneral.bin") != NULL ||
-      strcasestr(trace_path, "bin.oracleGeneral") != NULL || strcasestr(trace_path, "oracleGeneral.zst") != NULL ||
-      strcasestr(trace_path, "oracleGeneral.") != NULL ||
-      strcasecmp(trace_path + strlen(trace_path) - 13, "oracleGeneral") == 0) {
+  if (strcasestr(trace_path, ".oracleGeneral") != NULL) {
     trace_type = ORACLE_GENERAL_TRACE;
+  } else if (strcasestr(trace_path, ".lcs") != NULL) {
+    trace_type = LCS_TRACE;
   } else if (strcasestr(trace_path, ".vscsi") != NULL) {
     trace_type = VSCSI_TRACE;
-  } else if (strcasestr(trace_path, "oracleGeneralOpNS") != NULL) {
-    trace_type = ORACLE_GENERALOPNS_TRACE;
-  } else if (strcasestr(trace_path, "oracleCF1") != NULL) {
-    trace_type = ORACLE_CF1_TRACE;
-  } else if (strcasestr(trace_path, "oracleAkamai") != NULL) {
-    trace_type = ORACLE_AKAMAI_TRACE;
-  } else if (strcasestr(trace_path, "oracleWiki16u") != NULL) {
-    trace_type = ORACLE_WIKI16u_TRACE;
-  } else if (strcasestr(trace_path, "oracleWiki19u") != NULL) {
-    trace_type = ORACLE_WIKI19u_TRACE;
   } else if (strcasestr(trace_path, ".twr.") != NULL) {
     trace_type = TWR_TRACE;
   } else if (strcasestr(trace_path, ".twrNS.") != NULL) {
@@ -311,7 +296,8 @@ reader_t *create_reader(const char *trace_type_str, const char *trace_path, cons
   trace_type_e trace_type = trace_type_str_to_enum(trace_type_str, trace_path);
 
   reader_init_param_t reader_init_params;
-  memset(&reader_init_params, 0, sizeof(reader_init_params));
+  // memset(&reader_init_params, 0, sizeof(reader_init_params));
+  set_default_reader_init_params(&reader_init_params);
   reader_init_params.ignore_obj_size = ignore_obj_size;
   reader_init_params.ignore_size_zero_req = true;
   reader_init_params.obj_id_is_num = true;

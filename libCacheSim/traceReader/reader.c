@@ -9,20 +9,14 @@
 #include <ctype.h>
 
 #include "../include/libCacheSim/macro.h"
-#include "customizedReader/akamaiBin.h"
-#include "customizedReader/cf1Bin.h"
-#include "customizedReader/oracle/oracleAkamaiBin.h"
-#include "customizedReader/oracle/oracleCF1Bin.h"
 #include "customizedReader/oracle/oracleGeneralBin.h"
 #include "customizedReader/oracle/oracleTwrBin.h"
 #include "customizedReader/oracle/oracleTwrNSBin.h"
-#include "customizedReader/oracle/oracleWikiBin.h"
 #include "customizedReader/standardBin.h"
 #include "customizedReader/twrBin.h"
 #include "customizedReader/twrNSBin.h"
 #include "customizedReader/valpinBin.h"
 #include "customizedReader/vscsi.h"
-#include "customizedReader/wikiBin.h"
 #include "generalReader/lcs.h"
 #include "generalReader/libcsv.h"
 #include "generalReader/readerInternal.h"
@@ -95,6 +89,7 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
     reader->trace_start_offset = init_params->trace_start_offset;
     reader->mmap_offset = init_params->trace_start_offset;
     reader->cap_at_n_req = init_params->cap_at_n_req;
+    reader->block_size = init_params->block_size;
     if (init_params->sampler != NULL) reader->sampler = init_params->sampler->clone(init_params->sampler);
   } else {
     memset(&reader->init_params, 0, sizeof(reader_init_param_t));
@@ -166,21 +161,6 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
     case TWRNS_TRACE:
       twrNSReader_setup(reader);
       break;
-    case CF1_TRACE:
-      cf1Reader_setup(reader);
-      break;
-    case AKAMAI_TRACE:
-      akamaiReader_setup(reader);
-      break;
-    case WIKI16u_TRACE:
-      wiki2016uReader_setup(reader);
-      break;
-    case WIKI19u_TRACE:
-      wiki2019uReader_setup(reader);
-      break;
-    case WIKI19t_TRACE:
-      wiki2019tReader_setup(reader);
-      break;
     case STANDARD_III_TRACE:
       standardBinIII_setup(reader);
       break;
@@ -196,9 +176,6 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
     case ORACLE_GENERAL_TRACE:
       oracleGeneralBin_setup(reader);
       break;
-    case ORACLE_GENERALOPNS_TRACE:
-      oracleGeneralOpNS_setup(reader);
-      break;
     case ORACLE_SIM_TWR_TRACE:
       oracleSimTwrBin_setup(reader);
       break;
@@ -207,18 +184,6 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
       break;
     case ORACLE_SIM_TWRNS_TRACE:
       oracleSimTwrNSBin_setup(reader);
-      break;
-    case ORACLE_CF1_TRACE:
-      oracleCF1_setup(reader);
-      break;
-    case ORACLE_AKAMAI_TRACE:
-      oracleAkamai_setup(reader);
-      break;
-    case ORACLE_WIKI16u_TRACE:
-      oracleWiki2016uReader_setup(reader);
-      break;
-    case ORACLE_WIKI19u_TRACE:
-      oracleWiki2019uReader_setup(reader);
       break;
     case LCS_TRACE:
       lcsReader_setup(reader);
@@ -315,21 +280,6 @@ int read_one_req(reader_t *const reader, request_t *const req) {
       case TWRNS_TRACE:
         status = twrNS_read_one_req(reader, req);
         break;
-      case CF1_TRACE:
-        status = cf1_read_one_req(reader, req);
-        break;
-      case AKAMAI_TRACE:
-        status = akamai_read_one_req(reader, req);
-        break;
-      case WIKI16u_TRACE:
-        status = wiki2016u_read_one_req(reader, req);
-        break;
-      case WIKI19u_TRACE:
-        status = wiki2019u_read_one_req(reader, req);
-        break;
-      case WIKI19t_TRACE:
-        status = wiki2019t_read_one_req(reader, req);
-        break;
       case STANDARD_III_TRACE:
         status = standardBinIII_read_one_req(reader, req);
         break;
@@ -345,9 +295,6 @@ int read_one_req(reader_t *const reader, request_t *const req) {
       case ORACLE_GENERAL_TRACE:
         status = oracleGeneralBin_read_one_req(reader, req);
         break;
-      case ORACLE_GENERALOPNS_TRACE:
-        status = oracleGeneralOpNS_read_one_req(reader, req);
-        break;
       case ORACLE_SIM_TWR_TRACE:
         status = oracleSimTwrBin_read_one_req(reader, req);
         break;
@@ -356,18 +303,6 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         break;
       case ORACLE_SIM_TWRNS_TRACE:
         status = oracleSimTwrNSBin_read_one_req(reader, req);
-        break;
-      case ORACLE_CF1_TRACE:
-        status = oracleCF1_read_one_req(reader, req);
-        break;
-      case ORACLE_AKAMAI_TRACE:
-        status = oracleAkamai_read_one_req(reader, req);
-        break;
-      case ORACLE_WIKI16u_TRACE:
-        status = oracleWiki2016u_read_one_req(reader, req);
-        break;
-      case ORACLE_WIKI19u_TRACE:
-        status = oracleWiki2019u_read_one_req(reader, req);
         break;
       case LCS_TRACE:
         status = lcs_read_one_req(reader, req);
