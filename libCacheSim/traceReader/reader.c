@@ -215,7 +215,7 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
       oracleWiki2019uReader_setup(reader);
       break;
     case LCS_TRACE:
-      LCSReader_setup(reader);
+      lcsReader_setup(reader);
       break;
     case VALPIN_TRACE:
       valpinReader_setup(reader);
@@ -363,6 +363,9 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         break;
       case ORACLE_WIKI19u_TRACE:
         status = oracleWiki2019u_read_one_req(reader, req);
+        break;
+      case LCS_TRACE:
+        status = lcs_read_one_req(reader, req);
         break;
       case VALPIN_TRACE:
         status = valpin_read_one_req(reader, req);

@@ -171,25 +171,25 @@ static void _reverse_file(std::string ofilepath, struct trace_stat stat, bool ou
   size_t pos = file_size;
 
   std::ofstream ofile(ofilepath, std::ios::out | std::ios::binary | std::ios::trunc);
-  if (use_lcs_format) {
-    lcs_trace_header_t lcs_header;
-    lcs_header.start_magic = LCS_TRACE_START_MAGIC;
-    lcs_header.end_magic = LCS_TRACE_END_MAGIC;
-    lcs_header.n_req = stat.n_req;
-    lcs_header.n_obj = stat.n_obj;
-    lcs_header.n_req_byte = stat.n_req_byte;
-    lcs_header.n_obj_byte = stat.n_obj_byte;
-    lcs_header.time_field = 1;
-    lcs_header.obj_id_field = 2;
-    lcs_header.obj_size_field = 3;
-    lcs_header.next_access_vtime_field = 4;
-    lcs_header.item_size = sizeof(oracleGeneral_req_t);
-    lcs_header.n_fields = 4;
-    memcpy(lcs_header.format, "<IQIQ", 5);
+  // if (use_lcs_format) {
+  //   lcs_trace_header_t lcs_header;
+  //   lcs_header.start_magic = LCS_TRACE_START_MAGIC;
+  //   lcs_header.end_magic = LCS_TRACE_END_MAGIC;
+  //   lcs_header.n_req = stat.n_req;
+  //   lcs_header.n_obj = stat.n_obj;
+  //   lcs_header.n_req_byte = stat.n_req_byte;
+  //   lcs_header.n_obj_byte = stat.n_obj_byte;
+  //   lcs_header.time_field = 1;
+  //   lcs_header.obj_id_field = 2;
+  //   lcs_header.obj_size_field = 3;
+  //   lcs_header.next_access_vtime_field = 4;
+  //   lcs_header.item_size = sizeof(oracleGeneral_req_t);
+  //   lcs_header.n_fields = 4;
+  //   memcpy(lcs_header.format, "<IQIQ", 5);
 
-    verify_LCS_trace_header(&lcs_header);
-    ofile.write(reinterpret_cast<char *>(&lcs_header), sizeof(lcs_trace_header_t));
-  }
+  //   verify_LCS_trace_header(&lcs_header);
+  //   ofile.write(reinterpret_cast<char *>(&lcs_header), sizeof(lcs_trace_header_t));
+  // }
 
   std::ofstream ofile_txt;
   if (output_txt) ofile_txt.open(ofilepath + ".txt", std::ios::out | std::ios::trunc);

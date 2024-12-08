@@ -123,6 +123,9 @@ typedef struct reader {
   int n_req_left;
   int64_t last_req_clock_time;
 
+  // lcs trace version, used only lcs reader
+  int64_t lcs_ver;
+
   /* used for trace sampling */
   sampler_t *sampler;
   enum read_direction read_direction;

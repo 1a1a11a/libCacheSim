@@ -1,96 +1,126 @@
 
+#include "lcs.h"
+
 #include <assert.h>
 
 #include "../customizedReader/binaryUtils.h"
-#include "lcs.h"
 #include "readerInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-const char *print_lcs_trace_format(lcs_trace_header_t *header) {
-  static __thread char buf[512];
-  snprintf(buf, 512,
-           "lcs trace format: %s, obj_id_field %d, time_field %d, "
-           "obj_size_field %d, next_access_vtime_field %d\n",
-           header->format, header->obj_id_field, header->time_field,
-           header->obj_size_field, header->next_access_vtime_field);
-
-  return buf;
-}
-
-bool verify_LCS_trace_header(lcs_trace_header_t *header) {
+static bool verify(lcs_trace_header_t *header) {
+  /* check whether the trace is valid */
   if (header->start_magic != LCS_TRACE_START_MAGIC) {
-    ERROR("invalid trace file, start magic is wrong 0x%lx\n",
-          (unsigned long)header->start_magic);
+    ERROR("invalid trace file, start magic is wrong 0x%lx\n", (unsigned long)header->start_magic);
     return false;
   }
 
   if (header->end_magic != LCS_TRACE_END_MAGIC) {
-    ERROR("invalid trace file, end magic is wrong 0x%lx\n",
-          (unsigned long)header->end_magic);
+    ERROR("invalid trace file, end magic is wrong 0x%lx\n", (unsigned long)header->end_magic);
     return false;
   }
 
-  if (header->n_fields != strlen(header->format) - 1) {
-    ERROR("invalid trace file, n_fields %d != format length %ld (format %s)\n",
-          header->n_fields, strlen(header->format) - 1, header->format);
+  if (header->version > MAX_LCS_VERSION) {
+    ERROR("invalid trace file, lcs version %ld is not supported\n", (unsigned long)header->version);
     return false;
   }
 
-  if (header->obj_id_field > header->n_fields) {
-    ERROR("invalid trace file, obj_id_field %d > n_fields %d\n",
-          header->obj_id_field, header->n_fields);
-    return false;
-  }
-
-  int item_size = 0;
-  /* the first is little-endian */
-  for (int i = 1; i < header->n_fields + 1; i++) {
-    item_size += format_to_size(header->format[i]);
-  }
-  if (item_size != header->item_size) {
-    ERROR(
-        "invalid trace file, item_size %d != calculated item_size %d, format "
-        "string %s\n",
-        header->item_size, item_size, header->format);
+  lcs_trace_stat_t *stat = &(header->stat);
+  if (stat->n_req < 0 || stat->n_obj < 0) {
+    ERROR("invalid trace file, n_req %ld, n_obj %ld\n", (unsigned long)stat->n_req, (unsigned long)stat->n_obj);
     return false;
   }
 
   return true;
 }
 
-int LCSReader_setup(reader_t *reader) {
+int lcsReader_setup(reader_t *reader) {
   // read the header
   assert(sizeof(lcs_trace_header_t) == 1024);
+  assert(sizeof(lcs_trace_stat_t) == 512);
+  assert(sizeof(lcs_req_v1_t) == 24);
+  assert(sizeof(lcs_req_v2_t) == 28);
+
   char *data = read_bytes(reader, reader->item_size);
   lcs_trace_header_t *header = (lcs_trace_header_t *)data;
 
-  if (!verify_LCS_trace_header(header)) {
-    ERROR("invalid LCS trace\n");
+  if (!verify(header)) {
+    exit(1);
   }
 
-  reader->init_params.time_field = header->time_field;
-  reader->init_params.obj_id_field = header->obj_id_field;
-  reader->init_params.obj_size_field = header->obj_size_field;
-  reader->init_params.next_access_vtime_field = header->next_access_vtime_field;
-  reader->init_params.op_field = header->op_field;
-  reader->init_params.ttl_field = header->ttl_field;
-  reader->init_params.binary_fmt_str = strdup(header->format);
-  reader->init_params.trace_start_offset = sizeof(lcs_trace_header_t);
+  reader->lcs_ver = header->version;
+  reader->trace_type = LCS_TRACE;
+  reader->trace_format = BINARY_TRACE_FORMAT;
   reader->trace_start_offset = sizeof(lcs_trace_header_t);
+  reader->obj_id_is_num = true;
 
-  binaryReader_setup(reader);
-
-  if (reader->item_size != (size_t)header->item_size) {
-    ERROR(
-        "LCS trace corruption, item size in header %d is different from "
-        "calculated using format string %d\n",
-        header->item_size, (int)reader->item_size);
+  if (reader->lcs_ver == 1) {
+    reader->item_size = sizeof(lcs_req_v1_t);
+  } else if (reader->lcs_ver == 2) {
+    reader->item_size = sizeof(lcs_req_v2_t);
+  } else {
+    ERROR("invalid lcs version %ld\n", (unsigned long)reader->lcs_ver);
+    exit(1);
   }
+
+  lcs_print_trace_stat(reader);
 
   return 0;
+}
+
+// read one request from trace file
+// return 0 if success, 1 if error
+int lcs_read_one_req(reader_t *reader, request_t *req) {
+  char *record = read_bytes(reader, reader->item_size);
+
+  if (record == NULL) {
+    req->valid = FALSE;
+    return 1;
+  }
+
+  if (reader->lcs_ver == 1) {
+    lcs_req_v1_t *req_v1 = (lcs_req_v1_t *)record;
+    req->clock_time = req_v1->clock_time;
+    req->obj_id = req_v1->obj_id;
+    req->obj_size = req_v1->obj_size;
+    req->next_access_vtime = req_v1->next_access_vtime;
+  } else if (reader->lcs_ver == 2) {
+    lcs_req_v2_t *req_v2 = (lcs_req_v2_t *)record;
+    req->clock_time = req_v2->clock_time;
+    req->obj_id = req_v2->obj_id;
+    req->obj_size = req_v2->obj_size;
+    req->next_access_vtime = req_v2->next_access_vtime;
+    req->tenant_id = req_v2->tenant;
+    req->op = req_v2->op;
+  } else {
+    ERROR("invalid lcs version %ld\n", (unsigned long)reader->lcs_ver);
+    return 1;
+  }
+
+  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+    req->next_access_vtime = MAX_REUSE_DISTANCE;
+  }
+
+  if (req->obj_size == 0 && reader->ignore_size_zero_req && reader->read_direction == READ_FORWARD) {
+    return lcs_read_one_req(reader, req);
+  }
+  return 0;
+}
+
+void lcs_print_trace_stat(reader_t *reader) {
+  // we need to reset the reader so clone a new one
+  reader_t *cloned_reader = clone_reader(reader);
+  reset_reader(cloned_reader);
+  char *data = read_bytes(cloned_reader, sizeof(lcs_trace_header_t));
+  lcs_trace_header_t *header = (lcs_trace_header_t *)data;
+  lcs_trace_stat_t *stat = &(header->stat);
+
+  printf("trace stat: n_ttl %d, smallest_ttl %d, largest_ttl %d, time_unit %d, trace_type %d\n", stat->n_ttl,
+         stat->smallest_ttl, stat->largest_ttl, stat->time_unit, stat->trace_type);
+
+  close_reader(cloned_reader);
 }
 
 #ifdef __cplusplus
