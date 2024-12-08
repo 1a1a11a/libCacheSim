@@ -38,6 +38,10 @@ extern "C" {
 #define FILE_COMMA 0x2c
 #define FILE_QUOTE 0x22
 
+// to suppress the warnings
+char *strdup(const char *s);
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+
 reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_type,
                        const reader_init_param_t *const init_params) {
   static bool _info_printed = false;
@@ -279,13 +283,12 @@ int read_one_req(reader_t *const reader, request_t *const req) {
   }
 
   int status = 0;
+  size_t offset_before_read = reader->mmap_offset;
   if (reader->n_req_left > 0) {
     reader->n_req_left -= 1;
     req->clock_time = reader->last_req_clock_time;
 
   } else {
-    size_t offset_before_read = reader->mmap_offset;
-
     reader->n_read_req += 1;
     req->hv = 0;
     req->ttl = -1;

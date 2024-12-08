@@ -92,8 +92,7 @@ static reader_t *setup_GLCacheTestData_reader(void) {
     ERROR("downloading data failed\n");
   }
 
-  reader_t *reader_oracle =
-      setup_reader(".w68.oracleGeneral.bin.zst", ORACLE_GENERAL_TRACE, NULL);
+  reader_t *reader_oracle = setup_reader(".w68.oracleGeneral.bin.zst", ORACLE_GENERAL_TRACE, NULL);
   return reader_oracle;
 }
 
@@ -178,9 +177,8 @@ static void test_teardown(gpointer data) {
   close_reader(reader);
 }
 
-static cache_t *create_test_cache(const char *alg_name,
-                                  common_cache_params_t cc_params,
-                                  reader_t *reader, const char *params) {
+static cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc_params, reader_t *reader,
+                                  const char *params) {
   cache_t *cache;
   if (strcasecmp(alg_name, "LRU") == 0) {
     cache = LRU_init(cc_params, NULL);
@@ -188,8 +186,7 @@ static cache_t *create_test_cache(const char *alg_name,
     //   cache = Clock_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO") == 0) {
     cache = FIFO_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "FIFO-Reinsertion") == 0 ||
-             strcasecmp(alg_name, "Clock") == 0) {
+  } else if (strcasecmp(alg_name, "FIFO-Reinsertion") == 0 || strcasecmp(alg_name, "Clock") == 0) {
     cache = Clock_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Belady") == 0) {
     cache = Belady_init(cc_params, NULL);
@@ -259,8 +256,7 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = Sieve_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Mithril") == 0) {
     cache = LRU_init(cc_params, NULL);
-    cache->prefetcher =
-        create_prefetcher("Mithril", NULL, cc_params.cache_size);
+    cache->prefetcher = create_prefetcher("Mithril", NULL, cc_params.cache_size);
   } else if (strcasecmp(alg_name, "OBL") == 0) {
     cache = LRU_init(cc_params, NULL);
     cache->prefetcher = create_prefetcher("OBL", NULL, cc_params.cache_size);

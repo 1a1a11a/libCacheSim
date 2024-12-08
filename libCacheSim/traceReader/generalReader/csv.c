@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "../../../libCacheSim/include/libCacheSim/macro.h"
@@ -18,6 +19,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// to suppress the warning of getline
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 /**
  * @brief count the number of times char c appears in string str

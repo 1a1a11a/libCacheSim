@@ -92,6 +92,10 @@ typedef char static_assert_lcs_trace_header_size[(sizeof(struct lcs_trace_header
 /******************************************************************************/
 /**       v1 is the simplest trace format (same as oracleGeneral)            **/
 /** it only contains the clock time, obj_id, obj_size, and next_access_vtime **/
+/**                                                                          **/
+/** the next_access_vtime is the logical timestamp of next request           **/
+/** in other words, is is the next_access_vtime th request in the trace      **/
+/** if this is the last request in the trace, then it is -1                  **/
 /******************************************************************************/
 typedef struct __attribute__((packed)) lcs_req_v1 {
   uint32_t clock_time;

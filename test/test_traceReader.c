@@ -15,31 +15,25 @@ size_t trace_start_req_d[N_TEST_REQ] = {
 char *trace_start_req_s[N_TEST_REQ] = {
     "42932745", "42932746", "42932747", "40409911", "31954535", "6238199",
 };
-size_t trace_start_req_time[N_TEST_REQ] = {5633898368802, 5633898611441,
-                                           5633898745540, 5633898967708,
-                                           5633899967748, 5633899967980};
+size_t trace_start_req_time[N_TEST_REQ] = {5633898368802, 5633898611441, 5633898745540,
+                                           5633898967708, 5633899967748, 5633899967980};
 size_t trace_start_req_size[N_TEST_REQ] = {512, 512, 512, 6656, 6144, 57344};
 size_t trace_end_req_d = 42936150;
 char *trace_end_req_s = "42936150";
 
 void verify_req(reader_t *reader, request_t *req, int req_idx) {
   if (req_idx == -1) {
-    if (obj_id_is_num(reader))
-      g_assert_true(req->obj_id == trace_end_req_d);
-    // else
-    //   g_assert_cmpstr(g_quark_to_string(req->obj_id), ==, trace_end_req_s);
+    if (obj_id_is_num(reader)) g_assert_true(req->obj_id == trace_end_req_d);
     return;
   }
 
-  if (obj_id_is_num(reader))
-    g_assert_true(req->obj_id == trace_start_req_d[req_idx]);
+  if (obj_id_is_num(reader)) g_assert_true(req->obj_id == trace_start_req_d[req_idx]);
   // we do not use g_quark_to_string() because it uses too much memory
   // else
   //   g_assert_cmpstr(g_quark_to_string(req->obj_id), ==,
   //                   trace_start_req_s[req_idx]);
 
-  if (get_trace_type(reader) == CSV_TRACE ||
-      get_trace_type(reader) == BIN_TRACE ||
+  if (get_trace_type(reader) == CSV_TRACE || get_trace_type(reader) == BIN_TRACE ||
       get_trace_type(reader) == VSCSI_TRACE) {
     g_assert_true(req->clock_time == trace_start_req_time[req_idx] ||
                   req->clock_time == trace_start_req_time[req_idx] / 1000000);
@@ -146,8 +140,7 @@ void test_twr(gconstpointer user_data) {
     //           (unsigned long long) req->obj_id, (long) req->obj_size,
     //           (long) req->ttl, req->op);
   }
-  printf("%llu req %llu obj\n", (unsigned long long)n_req,
-         (unsigned long long)n_obj);
+  printf("%llu req %llu obj\n", (unsigned long long)n_req, (unsigned long long)n_obj);
 }
 
 int main(int argc, char *argv[]) {
@@ -155,60 +148,39 @@ int main(int argc, char *argv[]) {
   reader_t *reader;
 
   reader = setup_plaintxt_reader_num();
-  g_test_add_data_func("/libCacheSim/reader_basic_plain_num", reader,
-                       test_reader_basic);
-  g_test_add_data_func("/libCacheSim/reader_more1_plain_num", reader,
-                       test_reader_more1);
-  g_test_add_data_func_full("/libCacheSim/reader_more2_plain_num", reader,
-                            test_reader_more2, test_teardown);
+  g_test_add_data_func("/libCacheSim/reader_basic_plain_num", reader, test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_plain_num", reader, test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_plain_num", reader, test_reader_more2, test_teardown);
 
   reader = setup_plaintxt_reader_str();
-  g_test_add_data_func("/libCacheSim/reader_basic_plain_str", reader,
-                       test_reader_basic);
-  g_test_add_data_func("/libCacheSim/reader_more1_plain_str", reader,
-                       test_reader_more1);
-  g_test_add_data_func_full("/libCacheSim/reader_more2_plain_str", reader,
-                            test_reader_more2, test_teardown);
+  g_test_add_data_func("/libCacheSim/reader_basic_plain_str", reader, test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_plain_str", reader, test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_plain_str", reader, test_reader_more2, test_teardown);
 
   reader = setup_csv_reader_obj_num();
-  g_test_add_data_func("/libCacheSim/reader_basic_csv_num", reader,
-                       test_reader_basic);
-  g_test_add_data_func("/libCacheSim/reader_more1_csv_num", reader,
-                       test_reader_more1);
-  g_test_add_data_func_full("/libCacheSim/reader_more2_csv_num", reader,
-                            test_reader_more2, test_teardown);
+  g_test_add_data_func("/libCacheSim/reader_basic_csv_num", reader, test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_csv_num", reader, test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_csv_num", reader, test_reader_more2, test_teardown);
 
   reader = setup_csv_reader_obj_str();
-  g_test_add_data_func("/libCacheSim/reader_basic_csv_str", reader,
-                       test_reader_basic);
-  g_test_add_data_func("/libCacheSim/reader_more1_csv_str", reader,
-                       test_reader_more1);
-  g_test_add_data_func_full("/libCacheSim/reader_more2_csv_str", reader,
-                            test_reader_more2, test_teardown);
+  g_test_add_data_func("/libCacheSim/reader_basic_csv_str", reader, test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_csv_str", reader, test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_csv_str", reader, test_reader_more2, test_teardown);
 
   reader = setup_binary_reader();
-  g_test_add_data_func("/libCacheSim/reader_basic_binary", reader,
-                       test_reader_basic);
-  g_test_add_data_func("/libCacheSim/reader_more1_binary", reader,
-                       test_reader_more1);
-  g_test_add_data_func_full("/libCacheSim/reader_more2_binary", reader,
-                            test_reader_more2, test_teardown);
+  g_test_add_data_func("/libCacheSim/reader_basic_binary", reader, test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_binary", reader, test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_binary", reader, test_reader_more2, test_teardown);
 
   reader = setup_vscsi_reader();
-  g_test_add_data_func("/libCacheSim/reader_basic_vscsi", reader,
-                       test_reader_basic);
-  g_test_add_data_func("/libCacheSim/reader_more1_vscsi", reader,
-                       test_reader_more1);
-  g_test_add_data_func_full("/libCacheSim/reader_more2_vscsi", reader,
-                            test_reader_more2, test_teardown);
+  g_test_add_data_func("/libCacheSim/reader_basic_vscsi", reader, test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_vscsi", reader, test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_vscsi", reader, test_reader_more2, test_teardown);
 
   reader = setup_oracleGeneralBin_reader();
-  g_test_add_data_func("/libCacheSim/reader_basic_oracleGeneral", reader,
-                       test_reader_basic);
-  g_test_add_data_func("/libCacheSim/reader_more1_oracleGeneral", reader,
-                       test_reader_more1);
-  g_test_add_data_func_full("/libCacheSim/reader_more2_oracleGeneral", reader,
-                            test_reader_more2, test_teardown);
+  g_test_add_data_func("/libCacheSim/reader_basic_oracleGeneral", reader, test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_oracleGeneral", reader, test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_oracleGeneral", reader, test_reader_more2, test_teardown);
 
   // g_test_add_data_func("/libCacheSim/test_twr", NULL, test_twr);
   return g_test_run();

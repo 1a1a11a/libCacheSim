@@ -1,12 +1,13 @@
 
 
 #define _GNU_SOURCE
+#include "cli_reader_utils.h"
+
 #include <assert.h>
 #include <string.h>
 
 #include "../include/libCacheSim/reader.h"
 #include "../utils/include/mystr.h"
-#include "cli_reader_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,8 +18,7 @@ extern "C" {
  *
  * @param args
  */
-trace_type_e trace_type_str_to_enum(const char *trace_type_str,
-                                    const char *trace_path) {
+trace_type_e trace_type_str_to_enum(const char *trace_type_str, const char *trace_path) {
   if (strcasecmp(trace_type_str, "auto") == 0) {
     trace_type_e trace_type = detect_trace_type(trace_path);
     if (trace_type == UNKNOWN_TRACE) {
@@ -48,8 +48,7 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return ORACLE_WIKI16u_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleWiki19u") == 0) {
     return ORACLE_WIKI19u_TRACE;
-  } else if (strcasecmp(trace_type_str, "oracleGeneralBin") == 0 ||
-             strcasecmp(trace_type_str, "oracleGeneral") == 0) {
+  } else if (strcasecmp(trace_type_str, "oracleGeneralBin") == 0 || strcasecmp(trace_type_str, "oracleGeneral") == 0) {
     return ORACLE_GENERAL_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleGeneralOpNS") == 0) {
     return ORACLE_GENERALOPNS_TRACE;
@@ -68,11 +67,11 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
 }
 
 bool is_true(const char *arg) {
-  if (strcasecmp(arg, "true") == 0 || strcasecmp(arg, "1") == 0 ||
-      strcasecmp(arg, "yes") == 0 || strcasecmp(arg, "y") == 0) {
+  if (strcasecmp(arg, "true") == 0 || strcasecmp(arg, "1") == 0 || strcasecmp(arg, "yes") == 0 ||
+      strcasecmp(arg, "y") == 0) {
     return true;
-  } else if (strcasecmp(arg, "false") == 0 || strcasecmp(arg, "0") == 0 ||
-             strcasecmp(arg, "no") == 0 || strcasecmp(arg, "n") == 0) {
+  } else if (strcasecmp(arg, "false") == 0 || strcasecmp(arg, "0") == 0 || strcasecmp(arg, "no") == 0 ||
+             strcasecmp(arg, "n") == 0) {
     return false;
   } else {
     ERROR("Invalid value: %s, expect true/false", arg);
@@ -86,8 +85,7 @@ bool is_true(const char *arg) {
  * @param reader_params_str
  * @param params
  */
-void parse_reader_params(const char *reader_params_str,
-                         reader_init_param_t *params) {
+void parse_reader_params(const char *reader_params_str, reader_init_param_t *params) {
   params->delimiter = '\0';
   params->obj_id_is_num = false;
   params->obj_id_is_num_set = false;
@@ -110,8 +108,7 @@ void parse_reader_params(const char *reader_params_str,
 
     key = replace_char(key, '_', '-');
 
-    if (strcasecmp(key, "time-col") == 0 ||
-        strcasecmp(key, "time-field") == 0) {
+    if (strcasecmp(key, "time-col") == 0 || strcasecmp(key, "time-field") == 0) {
       params->time_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
@@ -119,8 +116,7 @@ void parse_reader_params(const char *reader_params_str,
       if (params->time_field < 1) {
         ERROR("field/col index should start from 1\n");
       }
-    } else if (strcasecmp(key, "obj-id-col") == 0 ||
-               strcasecmp(key, "obj-id-field") == 0) {
+    } else if (strcasecmp(key, "obj-id-col") == 0 || strcasecmp(key, "obj-id-field") == 0) {
       params->obj_id_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
@@ -128,10 +124,8 @@ void parse_reader_params(const char *reader_params_str,
       if (params->obj_id_field < 1) {
         ERROR("field/col index should start from 1\n");
       }
-    } else if (strcasecmp(key, "obj-size-col") == 0 ||
-               strcasecmp(key, "obj-size-field") == 0 ||
-               strcasecmp(key, "size-col") == 0 ||
-               strcasecmp(key, "size-field") == 0) {
+    } else if (strcasecmp(key, "obj-size-col") == 0 || strcasecmp(key, "obj-size-field") == 0 ||
+               strcasecmp(key, "size-col") == 0 || strcasecmp(key, "size-field") == 0) {
       params->obj_size_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
@@ -139,8 +133,7 @@ void parse_reader_params(const char *reader_params_str,
       if (params->obj_size_field < 1) {
         ERROR("field/col index should start from 1\n");
       }
-    } else if (strcasecmp(key, "cnt-col") == 0 ||
-               strcasecmp(key, "cnt-field") == 0) {
+    } else if (strcasecmp(key, "cnt-col") == 0 || strcasecmp(key, "cnt-field") == 0) {
       params->cnt_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
@@ -148,8 +141,7 @@ void parse_reader_params(const char *reader_params_str,
       if (params->cnt_field < 1) {
         ERROR("field/col index should start from 1\n");
       }
-    } else if (strcasecmp(key, "next-access-col") == 0 ||
-               strcasecmp(key, "next-access-field") == 0) {
+    } else if (strcasecmp(key, "next-access-col") == 0 || strcasecmp(key, "next-access-field") == 0) {
       params->next_access_vtime_field = (int)strtol(value, &end, 0);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
@@ -162,8 +154,7 @@ void parse_reader_params(const char *reader_params_str,
       params->obj_id_is_num = is_true(value);
     } else if (strcasecmp(key, "block-size") == 0) {
       params->block_size = (int)(strtol(value, &end, 0));
-    } else if (strcasecmp(key, "header") == 0 ||
-               strcasecmp(key, "has-header") == 0) {
+    } else if (strcasecmp(key, "header") == 0 || strcasecmp(key, "has-header") == 0) {
       params->has_header = is_true(value);
       params->has_header_set = true;
     } else if (strcasecmp(key, "format") == 0) {
@@ -210,10 +201,8 @@ void parse_reader_params(const char *reader_params_str,
 trace_type_e detect_trace_type(const char *trace_path) {
   trace_type_e trace_type = UNKNOWN_TRACE;
 
-  if (strcasestr(trace_path, "oracleGeneralBin") != NULL ||
-      strcasestr(trace_path, "oracleGeneral.bin") != NULL ||
-      strcasestr(trace_path, "bin.oracleGeneral") != NULL ||
-      strcasestr(trace_path, "oracleGeneral.zst") != NULL ||
+  if (strcasestr(trace_path, "oracleGeneralBin") != NULL || strcasestr(trace_path, "oracleGeneral.bin") != NULL ||
+      strcasestr(trace_path, "bin.oracleGeneral") != NULL || strcasestr(trace_path, "oracleGeneral.zst") != NULL ||
       strcasestr(trace_path, "oracleGeneral.") != NULL ||
       strcasecmp(trace_path + strlen(trace_path) - 13, "oracleGeneral") == 0) {
     trace_type = ORACLE_GENERAL_TRACE;
@@ -266,8 +255,7 @@ bool should_disable_obj_metadata(reader_t *reader) {
 }
 #undef N_TEST
 
-void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
-                          int64_t *wss_byte) {
+void cal_working_set_size(reader_t *reader, int64_t *wss_obj, int64_t *wss_byte) {
   reset_reader(reader);
   request_t *req = new_request();
   GHashTable *obj_table = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -300,8 +288,7 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
   }
   *wss_obj *= scaling_factor;
   *wss_byte *= scaling_factor;
-  INFO("working set size: %ld object %ld byte\n", (long)*wss_obj,
-       (long)*wss_byte);
+  INFO("working set size: %ld object %ld byte\n", (long)*wss_obj, (long)*wss_byte);
 
   free_request(req);
   reset_reader(reader);
@@ -318,9 +305,8 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
  * @param sample_ratio
  * @return reader_t*
  */
-reader_t *create_reader(const char *trace_type_str, const char *trace_path,
-                        const char *trace_type_params, const int64_t n_req,
-                        const bool ignore_obj_size, const int sample_ratio) {
+reader_t *create_reader(const char *trace_type_str, const char *trace_path, const char *trace_type_params,
+                        const int64_t n_req, const bool ignore_obj_size, const int sample_ratio) {
   /* convert trace type string to enum */
   trace_type_e trace_type = trace_type_str_to_enum(trace_type_str, trace_path);
 
