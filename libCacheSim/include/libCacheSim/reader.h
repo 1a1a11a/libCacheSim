@@ -39,21 +39,26 @@ typedef struct {
   bool ignore_obj_size;
   bool ignore_size_zero_req;
   bool obj_id_is_num;
+  bool obj_id_is_num_set; // whether the user has passed this parameter
   int64_t cap_at_n_req;  // only process at most n_req requests
 
-  int time_field;
-  int obj_id_field;
-  int obj_size_field;
-  int op_field;
-  int ttl_field;
-  int cnt_field;
-  int next_access_vtime_field;
+  int32_t time_field;
+  int32_t obj_id_field;
+  int32_t obj_size_field;
+  int32_t op_field;
+  int32_t ttl_field;
+  int32_t cnt_field;
+  int32_t next_access_vtime_field;
+
+  // block cache
+  int32_t block_size;
 
   // csv reader
   bool has_header;
   // whether the has_header is set, because false could indicate
   // it is not set or it does not has a header
   bool has_header_set;
+
   char delimiter;
   // read the trace from the offset, this is used by some binary trace
   // which stores metadata at the start of the trace
@@ -110,12 +115,18 @@ typedef struct reader {
   size_t line_buf_size;
   char csv_delimiter;
   bool csv_has_header;
-  /* whether the object id is hashed */
+
+  /* whether the object id is numeric value */
   bool obj_id_is_num;
+  /* whether obj_id_is_num is set by user */
+  bool obj_id_is_num_set; 
 
   bool ignore_size_zero_req;
   /* if true, ignore the obj_size in the trace, and use size one */
   bool ignore_obj_size;
+
+  // used by block cache trace to split a large request into multiple requests to multiple blocks
+  int32_t block_size;
 
   /* this is used when
    * a) the reader splits a large req into multiple chunked requests
@@ -137,6 +148,7 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->ignore_obj_size = false;
   params->ignore_size_zero_req = true;
   params->obj_id_is_num = true;
+  params->obj_id_is_num_set = false;
   params->cap_at_n_req = -1;
   params->trace_start_offset = 0;
 

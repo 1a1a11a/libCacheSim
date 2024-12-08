@@ -13,7 +13,7 @@ extern "C" {
 #define MAX_OBJ_ID_LEN 256
 
 /**************** common ****************/
-bool is_str_num(const char *str);
+bool is_str_num(const char *str, size_t len);
 
 /**************** csv ****************/
 typedef struct {
@@ -31,10 +31,11 @@ typedef struct {
   bool has_header;
   unsigned char delimiter;
 
+  int n_obj_id_is_num;
+  int n_obj_id_is_not_num;
+
   void *request;
 } csv_params_t;
-
-bool csv_detect_obj_id_is_num(reader_t *const reader);
 
 void csv_setup_reader(reader_t *const reader);
 

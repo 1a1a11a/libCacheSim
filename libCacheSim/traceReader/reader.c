@@ -71,6 +71,7 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
   reader->cloned = false;
   reader->item_size = 0;
   reader->obj_id_is_num = false;
+  reader->obj_id_is_num_set = false;
   reader->mapped_file = NULL;
   reader->mmap_offset = 0;
   reader->sampler = NULL;
@@ -86,6 +87,7 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
     reader->ignore_obj_size = init_params->ignore_obj_size;
     reader->ignore_size_zero_req = init_params->ignore_size_zero_req;
     reader->obj_id_is_num = init_params->obj_id_is_num;
+    reader->obj_id_is_num_set = init_params->obj_id_is_num_set;
     reader->trace_start_offset = init_params->trace_start_offset;
     reader->mmap_offset = init_params->trace_start_offset;
     reader->cap_at_n_req = init_params->cap_at_n_req;
@@ -710,8 +712,8 @@ void read_last_req(reader_t *reader, request_t *req) {
   reader->mmap_offset = offset;
 }
 
-bool is_str_num(const char *str) {
-  for (int i = 0; i < strlen(str); i++) {
+bool is_str_num(const char *str, size_t len) {
+  for (int i = 0; i < len; i++) {
     if (!(isdigit(str[i]) || (str[i] >= 'a' && str[i] <= 'f') || (str[i] >= 'A' && str[i] <= 'F'))) return false;
   }
   return true;

@@ -138,6 +138,7 @@ static reader_t *setup_csv_reader_obj_str(void) {
   init_params_csv->obj_size_field = 4;
   init_params_csv->has_header = true;
   init_params_csv->obj_id_is_num = false;
+  init_params_csv->obj_id_is_num_set = true;
   reader_t *reader_csv_c = setup_reader(data_path, CSV_TRACE, init_params_csv);
   g_free(init_params_csv);
   return reader_csv_c;
