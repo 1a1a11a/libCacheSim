@@ -30,14 +30,13 @@ static inline int standardBinIQQ_setup(reader_t *reader) {
   reader->trace_type = STANDARD_IQI_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 20;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
   reader->obj_id_is_num = true;
   return 0;
 }
 
 static inline int standardBinIQQ_read_one_req(reader_t *reader,
                                               request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;
@@ -55,14 +54,13 @@ static inline int standardBinIQI_setup(reader_t *reader) {
   reader->trace_type = STANDARD_IQI_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 16;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
   reader->obj_id_is_num = true;
   return 0;
 }
 
 static inline int standardBinIQI_read_one_req(reader_t *reader,
                                               request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;
@@ -80,14 +78,13 @@ static inline int standardBinIII_setup(reader_t *reader) {
   reader->trace_type = STANDARD_III_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 12;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
   reader->obj_id_is_num = true;
   return 0;
 }
 
 static inline int standardBinIII_read_one_req(reader_t *reader,
                                               request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;
@@ -105,14 +102,13 @@ static inline int standardBinIQIBH_setup(reader_t *reader) {
   reader->trace_type = STANDARD_IQIBH_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 19;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
   reader->obj_id_is_num = true;
   return 0;
 }
 
 static inline int standardBinIQIBH_read_one_req(reader_t *reader,
                                                 request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;

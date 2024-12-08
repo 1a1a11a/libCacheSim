@@ -112,7 +112,6 @@ static inline int vscsiReader_setup(reader_t *const reader) {
     case VSCSI2:
       reader->item_size = record_size(ver);
       params->vscsi_ver = ver;
-      reader->n_total_req = reader->file_size / (reader->item_size);
       break;
 
     case UNKNOWN:

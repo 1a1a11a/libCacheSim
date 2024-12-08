@@ -35,7 +35,6 @@ static inline int oracleSimTwrBin_setup(reader_t *reader) {
   reader->trace_type = ORACLE_SIM_TWR_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 28;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
   reader->obj_id_is_num = true;
 
   /* all oracle twr traces are oracle twrNS traces */
@@ -45,7 +44,7 @@ static inline int oracleSimTwrBin_setup(reader_t *reader) {
 }
 
 static inline int oracleSimTwrBin_read_one_req(reader_t *reader, request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;
@@ -72,7 +71,6 @@ static inline int oracleSysTwrBin_setup(reader_t *reader) {
   reader->trace_type = ORACLE_SYS_TWR_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 34;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
 
   /* all oracle twr traces are oracle twrNS traces */
   ERROR("this struct is not correct, need update\n");
@@ -81,7 +79,7 @@ static inline int oracleSysTwrBin_setup(reader_t *reader) {
 }
 
 static inline int oracleSysTwrBin_read_one_req(reader_t *reader, request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;

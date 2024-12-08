@@ -20,22 +20,32 @@ extern "C" {
 /* need to optimize this for CPU cacheline */
 typedef struct request {
   int64_t clock_time; /* use uint64_t because vscsi uses microsec timestamp */
+
   uint64_t hv;        /* hash value, used when offloading hash to reader */
+
+  /* this represents the hash of the object id in key-value cache
+   * or the logical block address in block cache, note that LBA % block_size == 0 */
   obj_id_t obj_id;
+
   int64_t obj_size;
+
   int32_t ttl;
+
   req_op_e op;
 
   uint64_t n_req;
+
   int64_t next_access_vtime;
   /* carry necessary data between the multiple functions of serving one request
    */
   void *eviction_algo_data;
 
+  // this is used by key-value cache traces
   struct {
     uint64_t key_size : 16;
     uint64_t val_size : 48;
   };
+
 
   int32_t ns;  // namespace
   int32_t content_type;

@@ -64,8 +64,7 @@ bool verify_LCS_trace_header(lcs_trace_header_t *header) {
 int LCSReader_setup(reader_t *reader) {
   // read the header
   assert(sizeof(lcs_trace_header_t) == 1024);
-  reader->item_size = sizeof(lcs_trace_header_t);
-  char *data = read_bytes(reader);
+  char *data = read_bytes(reader, reader->item_size);
   lcs_trace_header_t *header = (lcs_trace_header_t *)data;
 
   if (!verify_LCS_trace_header(header)) {

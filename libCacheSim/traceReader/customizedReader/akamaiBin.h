@@ -37,9 +37,6 @@ static inline int akamaiReader_setup(reader_t *reader) {
   /* the size of one request in the trace, this is sizeof(struct req) */
   reader->item_size = 22; /* IqIhhh */
 
-  /* calculate the number of requests in the trace */
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
-
   /* the object id is numerical so do not convert it again, this is useful for
    * TXT_TRACE_FORMAT */
   reader->obj_id_is_num = true;
@@ -56,7 +53,7 @@ static inline int akamaiReader_setup(reader_t *reader) {
  */
 static inline int akamai_read_one_req(reader_t *reader, request_t *req) {
   /* read reader->item_size bytes from the trace */
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     /* end of the trace or error */

@@ -4,15 +4,25 @@ extern "C" {
 #endif
 
 /*
- * oracle binary trace format
+ * oracleGeneral binary trace format
  *
  *  struct {
- *    uint32_t real_time;
+ *    uint32_t clock_time;
  *    uint64_t obj_id;
  *    uint32_t obj_size;
  *    int64_t next_access_vtime;
  *  };
  *
+ * oracleGeneralOpNS binary trace format
+ *
+ * struct {
+ *  uint32_t clock_time;
+ *  uint64_t obj_id;
+ *  uint64_t obj_size:40;
+ *  uint64_t op:4;
+ *  uint64_t ns:20;
+ *  int64_t next_access_vtime;
+ * };
  *
  */
 
@@ -22,13 +32,13 @@ static inline int oracleGeneralBin_setup(reader_t *reader) {
   reader->trace_type = ORACLE_GENERAL_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 24;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
+
   reader->obj_id_is_num = true;
   return 0;
 }
 
 static inline int oracleGeneralBin_read_one_req(reader_t *reader, request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;
@@ -53,13 +63,12 @@ static inline int oracleGeneralOpNS_setup(reader_t *reader) {
   reader->trace_type = ORACLE_GENERALOPNS_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 27;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
   reader->obj_id_is_num = true;
   return 0;
 }
 
 static inline int oracleGeneralOpNS_read_one_req(reader_t *reader, request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;

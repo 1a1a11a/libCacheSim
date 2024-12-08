@@ -26,13 +26,12 @@ static inline int twrNSReader_setup(reader_t *reader) {
   reader->trace_type = TWRNS_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
   reader->item_size = 22;
-  reader->n_total_req = (uint64_t)reader->file_size / (reader->item_size);
   reader->obj_id_is_num = true;
   return 0;
 }
 
 static inline int twrNS_read_one_req(reader_t *reader, request_t *req) {
-  char *record = read_bytes(reader);
+  char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
     req->valid = FALSE;
