@@ -16,28 +16,24 @@
 #include <utility>
 #include <vector>
 
-#include "../include/libCacheSim/reader.h"
+#include "../../include/libCacheSim/reader.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 using namespace std;
 
-void load_popularity_data(string input_path, vector<uint32_t>& sorted_freq) {
-  ifstream ifs(input_path);
-  string line;
-  getline(ifs, line);
-  getline(ifs, line);
-
-  while (!ifs.eof()) {
-    ifs >> line;
-    sorted_freq.push_back(stoi(line));
-  }
-
-  ifs.close();
-
-  return;
-}
-
 int main(int argc, char* argv[]) {
 
+  if (argc < 2) {
+    printf("Usage: %s <trace_file>\n", argv[0]);
+    return 1;
+  }
 
   return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
