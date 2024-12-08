@@ -12,7 +12,6 @@
 #include "customizedReader/oracle/oracleGeneralBin.h"
 #include "customizedReader/oracle/oracleTwrBin.h"
 #include "customizedReader/oracle/oracleTwrNSBin.h"
-#include "customizedReader/standardBin.h"
 #include "customizedReader/twrBin.h"
 #include "customizedReader/twrNSBin.h"
 #include "customizedReader/valpinBin.h"
@@ -161,18 +160,6 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
     case TWRNS_TRACE:
       twrNSReader_setup(reader);
       break;
-    case STANDARD_III_TRACE:
-      standardBinIII_setup(reader);
-      break;
-    case STANDARD_IQI_TRACE:
-      standardBinIQI_setup(reader);
-      break;
-    case STANDARD_IQQ_TRACE:
-      standardBinIQQ_setup(reader);
-      break;
-    case STANDARD_IQIBH_TRACE:
-      standardBinIQIBH_setup(reader);
-      break;
     case ORACLE_GENERAL_TRACE:
       oracleGeneralBin_setup(reader);
       break;
@@ -279,18 +266,6 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         break;
       case TWRNS_TRACE:
         status = twrNS_read_one_req(reader, req);
-        break;
-      case STANDARD_III_TRACE:
-        status = standardBinIII_read_one_req(reader, req);
-        break;
-      case STANDARD_IQI_TRACE:
-        status = standardBinIQI_read_one_req(reader, req);
-        break;
-      case STANDARD_IQQ_TRACE:
-        status = standardBinIQQ_read_one_req(reader, req);
-        break;
-      case STANDARD_IQIBH_TRACE:
-        status = standardBinIQIBH_read_one_req(reader, req);
         break;
       case ORACLE_GENERAL_TRACE:
         status = oracleGeneralBin_read_one_req(reader, req);
