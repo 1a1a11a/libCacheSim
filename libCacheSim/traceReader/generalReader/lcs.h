@@ -53,8 +53,7 @@ typedef struct lcs_trace_stat {
   int32_t n_tenant;
 
   // block cache specific
-  int32_t block_size;    // used in block trace, block size in bytes
-  int64_t n_uniq_block;  // number of unique blocks
+  int32_t block_size;  // used in block trace, block size in bytes
 
   // key-value cache and object cache specific
   int32_t n_ttl;
@@ -111,8 +110,6 @@ typedef char static_assert_lcs_v1_size[(sizeof(struct lcs_req_v1) == 24) ? 1 : -
 /******************************************************************************/
 /**              v2 has more fields, operation and tenant                    **/
 /******************************************************************************/
-//
-// specifically we add operation and ns
 typedef struct __attribute__((packed)) lcs_req_v2 {
   uint32_t clock_time;
   // this is the hash of key in key-value cache
@@ -125,9 +122,6 @@ typedef struct __attribute__((packed)) lcs_req_v2 {
 } lcs_req_v2_t;
 // assert the struct size at compile time
 typedef char static_assert_lcs_v2_size[(sizeof(struct lcs_req_v2) == 28) ? 1 : -1];
-
-
-
 
 int lcsReader_setup(reader_t *reader);
 

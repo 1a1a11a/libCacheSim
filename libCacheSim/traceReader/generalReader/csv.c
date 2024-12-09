@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <strings.h>
 
 #include "../../../libCacheSim/include/libCacheSim/macro.h"
 #include "../../dataStructure/hash/hash.h"
@@ -228,6 +229,22 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     if (req->obj_size == 0 && end == s) {
       WARN("csvReader obj_size is not a number: \"%s\"\n", (char *)s);
     }
+  } else if (csv_params->curr_field_idx == csv_params->op_field_idx) {
+    if (strncasecmp((char *)s, "read", len) == 0) {
+      req->op = OP_READ;
+    } else if (strncasecmp((char *)s, "write", len) == 0) {
+      req->op = OP_WRITE;
+    } else if (strncasecmp((char *)s, "get", len) == 0) {
+      req->op = OP_GET;
+    } else if (strncasecmp((char *)s, "set", len) == 0) {
+      req->op = OP_SET;
+    } else if (strncasecmp((char *)s, "delete", len) == 0) {
+      req->op = OP_DELETE;
+    } else {
+      WARN("unknown operation: \"%s\"\n", (char *)s);
+    }
+  } else if (csv_params->curr_field_idx == csv_params->ttl_field_idx) {
+    req->ttl = (uint32_t)strtoul((char *)s, &end, 0);
   } else if (csv_params->curr_field_idx == csv_params->cnt_field_idx) {
     reader->n_req_left = (uint64_t)strtoull((char *)s, &end, 0) - 1;
   }
@@ -245,8 +262,6 @@ static inline void csv_cb2(int c, void *data) {
   reader_t *reader = (reader_t *)data;
   csv_params_t *csv_params = reader->reader_params;
   csv_params->curr_field_idx = 1;
-
-  // printf("cb2 %d '%c'\n", csv_params->curr_field_idx, c);
 }
 
 /**
