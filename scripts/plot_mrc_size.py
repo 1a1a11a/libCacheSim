@@ -205,17 +205,13 @@ def run():
 
     import glob
 
-    cachesim_path = "/proj/redundancy-PG0/jason/libCacheSim/_build/cachesim"
     algos = "lru,slru,arc,lirs,lhd,tinylfu,s3fifo,sieve"
     cache_sizes = "0.01,0.02,0.05,0.075,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.7,0.8"
 
     for tracepath in glob.glob("/disk/data/*.zst"):
         dataname = extract_dataname(tracepath)
-
-        mrc_dict = run_cachesim_size(
-            cachesim_path, tracepath, algos, cache_sizes, ignore_obj_size=True
-        )
-
+        mrc_dict = run_cachesim_size(tracepath, algos, cache_sizes,
+                                     ignore_obj_size=True)
         # save the results in pickle
         with open("{}.mrc".format(dataname), "wb") as f:
             pickle.dump(mrc_dict, f)
