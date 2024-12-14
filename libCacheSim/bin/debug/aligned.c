@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "../../include/libCacheSim/reader.h"
-#include "../../traceReader/generalReader/lcs.h"
+#include "../../traceReader/customizedReader/lcs.h"
 
 #define N_OP 200000000llu
 
