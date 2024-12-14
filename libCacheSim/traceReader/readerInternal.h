@@ -3,13 +3,13 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "../../include/libCacheSim/reader.h"
+#include "../include/libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define PER_SEEK_SIZE 1024
+#define PER_SEEK_SIZE 256
 #define MAX_OBJ_ID_LEN 256
 
 /**************** common ****************/

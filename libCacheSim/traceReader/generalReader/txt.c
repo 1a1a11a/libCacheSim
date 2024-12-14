@@ -4,7 +4,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include "readerInternal.h"
+#include "../readerInternal.h"
 
 int txt_read_one_req(reader_t *const reader, request_t *const req) {
   char **buf_ptr = (char **)&reader->line_buf;

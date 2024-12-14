@@ -317,7 +317,7 @@ set(reader_source
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/reader.c
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/binary.c
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/csv.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/lcs.c
+    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/customizedReader/lcs.c
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/libcsv.c
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/txt.c
 )

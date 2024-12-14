@@ -48,6 +48,7 @@ typedef struct {
   int32_t op_field;
   int32_t ttl_field;
   int32_t cnt_field;
+  int32_t tenant_field;
   int32_t next_access_vtime_field;
 
   // block cache, 0 and -1 means ignore this field, 1 is also invalid
@@ -158,6 +159,7 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->obj_size_field = 0;
   params->op_field = 0;
   params->ttl_field = 0;
+  params->tenant_field = 0;
   params->next_access_vtime_field = 0;
 
   params->has_header = false;

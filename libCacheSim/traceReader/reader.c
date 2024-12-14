@@ -9,6 +9,7 @@
 #include <ctype.h>
 
 #include "../include/libCacheSim/macro.h"
+#include "customizedReader/lcs.h"
 #include "customizedReader/oracle/oracleGeneralBin.h"
 #include "customizedReader/oracle/oracleTwrBin.h"
 #include "customizedReader/oracle/oracleTwrNSBin.h"
@@ -16,9 +17,8 @@
 #include "customizedReader/twrNSBin.h"
 #include "customizedReader/valpinBin.h"
 #include "customizedReader/vscsi.h"
-#include "generalReader/lcs.h"
 #include "generalReader/libcsv.h"
-#include "generalReader/readerInternal.h"
+#include "readerInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,6 +42,7 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
   int fd;
   struct stat st;
   reader_t *const reader = (reader_t *)malloc(sizeof(reader_t));
+  memset(reader, 0, sizeof(reader_t));
   reader->reader_params = NULL;
 
   /* check whether the trace is a zstd trace file,
@@ -469,6 +470,13 @@ void reset_reader(reader_t *const reader) {
   /* rewind the reader back to beginning */
   long curr_offset = 0;
   reader->n_read_req = 0;
+
+#ifdef SUPPORT_ZSTD_TRACE
+  if (reader->is_zstd_file) {
+    fseek(reader->zstd_reader_p->ifile, 0, SEEK_SET);
+  }
+#endif
+
   if (reader->trace_type == PLAIN_TXT_TRACE) {
     fseek(reader->file, 0, SEEK_SET);
     curr_offset = ftell(reader->file);
@@ -478,13 +486,10 @@ void reset_reader(reader_t *const reader) {
   } else {
     reader->mmap_offset = reader->trace_start_offset;
     curr_offset = reader->mmap_offset;
+    if (reader->trace_start_offset != 0) {
+      _read_bytes(reader, reader->trace_start_offset);
+    }
   }
-
-#ifdef SUPPORT_ZSTD_TRACE
-  if (reader->is_zstd_file) {
-    fseek(reader->zstd_reader_p->ifile, 0, SEEK_SET);
-  }
-#endif
 
   DEBUG("reset reader current offset %ld\n", curr_offset);
 }

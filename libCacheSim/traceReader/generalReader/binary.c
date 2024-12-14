@@ -17,7 +17,7 @@
 
 #include <string.h>
 
-#include "readerInternal.h"
+#include "../readerInternal.h"
 
 #ifdef __cplusplus
 extern "C" {

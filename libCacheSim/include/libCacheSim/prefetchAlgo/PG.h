@@ -16,7 +16,7 @@
 #include <glib.h>
 
 #include "../../../dataStructure/pqueue.h"
-#include "../../../traceReader/generalReader/readerInternal.h"
+#include "../../../traceReader/readerInternal.h"
 #include "../cache.h"
 
 #ifdef __cplusplus

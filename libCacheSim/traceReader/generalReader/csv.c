@@ -14,8 +14,8 @@
 
 #include "../../../libCacheSim/include/libCacheSim/macro.h"
 #include "../../dataStructure/hash/hash.h"
+#include "../readerInternal.h"
 #include "libcsv.h"
-#include "readerInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -222,10 +222,11 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
       req->obj_id = (uint64_t)get_hash_value_str((char *)s, len);
     }
   } else if (csv_params->curr_field_idx == csv_params->time_field_idx) {
-    uint64_t ts = (uint64_t)atof((char *)s);
+    // int64_t ts = (int64_t)atof((char *)s);
+    int64_t ts = (int64_t)strtod((char *)s, NULL);
     req->clock_time = ts;
   } else if (csv_params->curr_field_idx == csv_params->obj_size_field_idx) {
-    req->obj_size = (uint32_t)strtoul((char *)s, &end, 0);
+    req->obj_size = (int64_t)strtoul((char *)s, &end, 0);
     if (req->obj_size == 0 && end == s) {
       WARN("csvReader obj_size is not a number: \"%s\"\n", (char *)s);
     }
@@ -274,13 +275,16 @@ void csv_setup_reader(reader_t *const reader) {
   reader->trace_format = TXT_TRACE_FORMAT;
   reader_init_param_t *init_params = &reader->init_params;
 
-  reader->reader_params = (csv_params_t *)malloc(sizeof(csv_params_t));
-  csv_params_t *csv_params = reader->reader_params;
+  csv_params_t *csv_params = (csv_params_t *)malloc(sizeof(csv_params_t));
+  memset(csv_params, 0, sizeof(csv_params_t));
+  reader->reader_params = csv_params;
   csv_params->curr_field_idx = 1;
 
   csv_params->time_field_idx = init_params->time_field;
   csv_params->obj_id_field_idx = init_params->obj_id_field;
   csv_params->obj_size_field_idx = init_params->obj_size_field;
+  csv_params->op_field_idx = init_params->op_field;
+  csv_params->ttl_field_idx = init_params->ttl_field;
   csv_params->cnt_field_idx = init_params->cnt_field;
   csv_params->csv_parser = (struct csv_parser *)malloc(sizeof(struct csv_parser));
   csv_params->n_obj_id_is_num = 0;
