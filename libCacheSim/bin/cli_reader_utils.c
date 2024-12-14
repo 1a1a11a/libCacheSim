@@ -67,6 +67,15 @@ bool is_true(const char *arg) {
   }
 }
 
+static void _check_parsed_result(char *end, int col_idx) {
+  if (strlen(end) > 2) {
+    ERROR("param parsing error, find string \"%s\" after number\n", end);
+  }
+  if (col_idx < 1) {
+    ERROR("field/col index should start from 1\n");
+  }
+}
+
 /**
  * @brief parse the reader parameters
  *
@@ -96,55 +105,26 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
 
     key = replace_char(key, '_', '-');
 
-    if (strcasecmp(key, "block-size") == 0) {
-      params->block_size = (int)strtol(value, &end, 0);
-      if (strlen(end) > 2) {
-        ERROR("param parsing error, find string \"%s\" after number\n", end);
-      }
-      if (params->time_field < 1) {
-        ERROR("field/col index should start from 1\n");
-      }
-    } else if (strcasecmp(key, "time-col") == 0 || strcasecmp(key, "time-field") == 0) {
+    if (strcasecmp(key, "time-col") == 0) {
       params->time_field = (int)strtol(value, &end, 0);
-      if (strlen(end) > 2) {
-        ERROR("param parsing error, find string \"%s\" after number\n", end);
-      }
-      if (params->time_field < 1) {
-        ERROR("field/col index should start from 1\n");
-      }
-    } else if (strcasecmp(key, "obj-id-col") == 0 || strcasecmp(key, "obj-id-field") == 0) {
+      _check_parsed_result(end, params->time_field);
+    } else if (strcasecmp(key, "obj-id-col") == 0) {
       params->obj_id_field = (int)strtol(value, &end, 0);
-      if (strlen(end) > 2) {
-        ERROR("param parsing error, find string \"%s\" after number\n", end);
-      }
-      if (params->obj_id_field < 1) {
-        ERROR("field/col index should start from 1\n");
-      }
-    } else if (strcasecmp(key, "obj-size-col") == 0 || strcasecmp(key, "obj-size-field") == 0 ||
-               strcasecmp(key, "size-col") == 0 || strcasecmp(key, "size-field") == 0) {
+      _check_parsed_result(end, params->obj_id_field);
+    } else if (strcasecmp(key, "obj-size-col") == 0 || strcasecmp(key, "size-col") == 0) {
       params->obj_size_field = (int)strtol(value, &end, 0);
-      if (strlen(end) > 2) {
-        ERROR("param parsing error, find string \"%s\" after number\n", end);
-      }
-      if (params->obj_size_field < 1) {
-        ERROR("field/col index should start from 1\n");
-      }
-    } else if (strcasecmp(key, "cnt-col") == 0 || strcasecmp(key, "cnt-field") == 0) {
+      _check_parsed_result(end, params->obj_size_field);
+    } else if (strcasecmp(key, "cnt-col") == 0) {
       params->cnt_field = (int)strtol(value, &end, 0);
-      if (strlen(end) > 2) {
-        ERROR("param parsing error, find string \"%s\" after number\n", end);
-      }
-      if (params->cnt_field < 1) {
-        ERROR("field/col index should start from 1\n");
-      }
-    } else if (strcasecmp(key, "next-access-col") == 0 || strcasecmp(key, "next-access-field") == 0) {
+    } else if (strcasecmp(key, "op-col") == 0) {
+      params->op_field = (int)strtol(value, &end, 0);
+      _check_parsed_result(end, params->op_field);
+    } else if (strcasecmp(key, "tenant-col") == 0) {
+      params->tenant_field = (int)(strtol(value, &end, 0));
+      _check_parsed_result(end, params->tenant_field);
+    } else if (strcasecmp(key, "next-access-col") == 0) {
       params->next_access_vtime_field = (int)strtol(value, &end, 0);
-      if (strlen(end) > 2) {
-        ERROR("param parsing error, find string \"%s\" after number\n", end);
-      }
-      if (params->next_access_vtime_field < 1) {
-        ERROR("field/col index should start from 1\n");
-      }
+      _check_parsed_result(end, params->next_access_vtime_field);
     } else if (strcasecmp(key, "obj-id-is-num") == 0) {
       params->obj_id_is_num_set = true;
       params->obj_id_is_num = is_true(value);

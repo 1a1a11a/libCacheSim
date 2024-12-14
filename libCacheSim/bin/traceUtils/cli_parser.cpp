@@ -21,6 +21,7 @@ const char *argp_program_bug_address =
 enum argp_option_short {
   OPTION_TRACE_TYPE_PARAMS = 't',
   OPTION_OUTPUT_PATH = 'o',
+  OPTION_OUTPUT_FORMAT = 'f',
   OPTION_SAMPLE_RATIO = 's',
   OPTION_IGNORE_OBJ_SIZE = 0x101,
 
@@ -33,6 +34,7 @@ enum argp_option_short {
   OPTION_FIELD_DELIMITER = 0x201,
   OPTION_OBJ_ID_ONLY = 0x202,
   OPTION_OBJ_ID_32bit = 0x204,
+  OPTION_PRINT_STAT = 0x208,
 
   // trace filter
   OPTION_FILTER_TYPE = 0x301,
@@ -56,6 +58,8 @@ static struct argp_option options[] = {
      "specify to ignore the object size from the trace", 2},
 
     {0, 0, 0, 0, "traceConv options:"},
+    {"output-format", OPTION_OUTPUT_FORMAT, "lcs", 0,
+     "currently support lcs/lcs_v1/lcs_v2/lcs_v3/oracleGeneral", 4},
     {"output-txt", OPTION_OUTPUT_TXT, "false", 0,
      "output trace in txt format in addition to binary format", 4},
     {"remove-size-change", OPTION_REMOVE_SIZE_CHANGE, "false", 0,
@@ -64,6 +68,8 @@ static struct argp_option options[] = {
      4},
 
     {0, 0, 0, 0, "tracePrint options:"},
+    {"print-stat", OPTION_PRINT_STAT, "false", 0,
+     "Print trace statistics only available for lcs traces", 6},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
      "Number of requests to process, -1 means all requests in the trace", 6},
     {"field-delimiter", OPTION_FIELD_DELIMITER, ",", 0,
@@ -111,8 +117,14 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_OUTPUT_TXT:
       arguments->output_txt = is_true(arg) ? true : false;
       break;
+    case OPTION_OUTPUT_FORMAT:
+      arguments->output_format = arg;
+      break;
     case OPTION_NUM_REQ:
       arguments->n_req = atoll(arg);
+      break;
+    case OPTION_PRINT_STAT:
+      arguments->print_stat = is_true(arg) ? true : false;
       break;
     case OPTION_FIELD_DELIMITER:
       arguments->delimiter = arg[0];
@@ -161,39 +173,15 @@ static char args_doc[] = "trace_path trace_type";
 static char doc[] =
     "\n"
     "tracePrint: utility to print binary trace in human-readable format\n"
-    "traceConv: utility to convert a trace to oracleGeneral format\n\n"
+    "traceConv: utility to convert a trace to lcs format\n\n"
     "traceFilter: utility to filter a trace\n\n"
     "example usage: ./tracePrint /trace/path oracleGeneral -n 20 "
     "--obj-id-only=1\n\n"
     "example usage: ./traceConv /trace/path csv -o "
-    "/path/new_trace.oracleGeneral -t "
+    "/path/new_trace.lcs -t "
     "\"obj-id-col=5,time-col=2,obj-size-col=4\"\n\n"
     "example usage: ./traceFilter /trace/path lcs -o /path/new_trace.lcs "
     "--filter fifo --filter-size 0.1\n\n";
-
-/**
- * @brief initialize the arguments
- *
- * @param args
- */
-static void init_arg(struct arguments *args) {
-  memset(args, 0, sizeof(struct arguments));
-
-  args->n_req = -1;
-  args->trace_path = NULL;
-  args->trace_type_str = NULL;
-  args->trace_type_params = NULL;
-  args->ignore_obj_size = false;
-  args->sample_ratio = 1.0;
-  memset(args->ofilepath, 0, OFILEPATH_LEN);
-  args->output_txt = false;
-  args->remove_size_change = false;
-  args->cache_name = NULL;
-  args->cache_size = 0;
-  args->delimiter = ',';
-  args->print_obj_id_only = false;
-  args->print_obj_id_32bit = false;
-}
 
 static void print_parsed_arg(struct arguments *args) {
 #define OUTPUT_STR_LEN 1024
@@ -261,6 +249,4 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   print_parsed_arg(args);
 }
-
-void free_arg(struct arguments *args) { close_reader(args->reader); }
 }  // namespace cli

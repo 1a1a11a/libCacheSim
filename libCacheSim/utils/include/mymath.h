@@ -18,7 +18,6 @@ extern "C" {
 extern __thread uint64_t rand_seed;
 extern __thread __uint128_t g_lehmer64_state;
 
-
 void set_rand_seed(uint64_t seed);
 
 /**
@@ -60,9 +59,10 @@ static inline unsigned long long log2_ull(unsigned long long n) {
 }
 
 static inline unsigned long long log2_v2(unsigned long long n) {
-  return (unsigned long long)(8 * sizeof(unsigned long long) -
-                              __builtin_clzll((n)));
+  return (unsigned long long)(8 * sizeof(unsigned long long) - __builtin_clzll((n)));
 }
+
+void linear_regression(double* x, double* y, int n, double* slope, double* intercept);
 
 #ifdef __cplusplus
 }

@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "../../include/libCacheSim/reader.h"
+#include "../../traceReader/customizedReader/lcs.h"
 #include "internal.hpp"
 
 int main(int argc, char *argv[]) {
@@ -17,6 +18,11 @@ int main(int argc, char *argv[]) {
   read_one_req(args.reader, req);
 
   bool trace_has_next_access_vtime = req->next_access_vtime != -2;
+
+  if (args.print_stat) {
+    lcs_print_trace_stat(args.reader);
+    return 0;
+  }
 
   if (!args.print_obj_id_only) {
     if (trace_has_next_access_vtime) {

@@ -13,7 +13,7 @@ set_target_properties(tracePrint
         )
 
 
-add_executable(traceConv traceConvMain.cpp traceConv.cpp cli_parser.cpp)
+add_executable(traceConv traceConvMain.cpp traceConvOracleGeneral.cpp traceConvLCS.cpp cli_parser.cpp utils.cpp)
 target_link_libraries(traceConv cliReaderLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 set_target_properties(traceConv
         PROPERTIES

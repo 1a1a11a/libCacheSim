@@ -28,10 +28,12 @@ struct arguments {
   /* some objects may change size during the trace, this keeps the size as the
    * last size in the trace */
   bool remove_size_change;
+  char *output_format;
 
   /* trace print */
   int64_t num_req; /* number of requests to print */
   char delimiter;
+  bool print_stat;
   bool print_obj_id_only;
   bool print_obj_id_32bit;
 
@@ -47,7 +49,33 @@ struct arguments {
 namespace cli {
 void parse_cmd(int argc, char *argv[], struct arguments *args);
 
-void free_arg(struct arguments *args);
+/**
+ * @brief initialize the arguments
+ *
+ * @param args
+ */
+static void init_arg(struct arguments *args) {
+  memset(args, 0, sizeof(struct arguments));
+
+  args->n_req = -1;
+  args->trace_path = NULL;
+  args->trace_type_str = NULL;
+  args->trace_type_params = NULL;
+  args->ignore_obj_size = false;
+  args->sample_ratio = 1.0;
+  memset(args->ofilepath, 0, OFILEPATH_LEN);
+  args->output_txt = false;
+  args->remove_size_change = false;
+  args->cache_name = NULL;
+  args->output_format = "lcs";
+  args->cache_size = 0;
+  args->delimiter = ',';
+  args->print_stat = false;
+  args->print_obj_id_only = false;
+  args->print_obj_id_32bit = false;
+}
+
+static void free_arg(struct arguments *args) { close_reader(args->reader); }
 }  // namespace cli
 
 namespace traceConv {
@@ -63,7 +91,13 @@ namespace traceConv {
  * @param remove_size_change whether remove object size change during traceConv
  * @param use_lcs_format whether use lcs format
  */
-void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath, bool output_txt, bool remove_size_change,
-                              bool use_lcs_format);
+void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath, bool output_txt, bool remove_size_change);
+
+/** convert to lcs format */
+void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bool remove_size_change, int lcs_ver);
 
 }  // namespace traceConv
+
+namespace utils {
+void *setup_mmap(const std::string &file_path, size_t *size);
+}  // namespace utils

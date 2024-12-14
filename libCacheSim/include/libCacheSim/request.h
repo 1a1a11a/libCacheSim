@@ -51,14 +51,14 @@ typedef struct request {
   int32_t content_type;
   int32_t tenant_id;
 
-  int32_t bucket_id;
-  int32_t age;
-  int32_t hostname;
-  int16_t extension;
-  int16_t colo;
-  int16_t n_level;
-  int16_t n_param;
-  int8_t method;
+  // int32_t bucket_id;
+  // int32_t age;
+  // int32_t hostname;
+  // int16_t extension;
+  // int16_t colo;
+  // int16_t n_level;
+  // int16_t n_param;
+  // int8_t method;
 
   /* used in trace analysis */
   int64_t vtime_since_last_access;
