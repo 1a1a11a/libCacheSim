@@ -164,7 +164,7 @@ def run():
     print(cache_sizes)
 
     for tracepath in glob.glob("/disk/data/*.zst"):
-        dataname = tracepath.split("/")[-1].split(".")[0]
+        dataname = extract_dataname(tracepath)
         mrc_dict = run_cachesim_time(tracepath, algos, cache_sizes)
         plot_mrc_time(mrc_dict, dataname)
 
