@@ -4,7 +4,7 @@ set -eu # Enable error checking and command tracing
 
 setup_ubuntu() {
 	sudo apt update
-	sudo apt install -yqq build-essential cmake google-perftools xxhash
+	sudo apt install -yqq build-essential google-perftools xxhash
 	
 	sudo apt install -yqq libglib2.0-dev libunwind-dev
 	sudo apt install -yqq libgoogle-perftools-dev
@@ -25,6 +25,8 @@ install_cmake() {
 	bash cmake-3.31.0-linux-x86_64.sh --skip-license --prefix=$HOME/software/cmake;
 	echo 'export PATH=$HOME/software/cmake/bin:$PATH' >> $HOME/.bashrc;
 	echo 'export PATH=$HOME/software/cmake/bin:$PATH' >> $HOME/.zshrc;
+	source $HOME/.bashrc;
+	source $HOME/.zshrc;
 	popd;
 }
 
