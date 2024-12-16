@@ -1,6 +1,5 @@
 import os
 import sys
-from const import *
 from collections import defaultdict
 import subprocess
 from math import ceil
@@ -25,20 +24,19 @@ sys.path.append(BASEPATH)
 BLOCK_SIZE = 4096
 
 # because each volume may access the same LBA, we add MAX_VOL_SIZE to lba to make it unique
-MAX_VOL_SIZE = 100 * 1024 * 1024 * 1024 * 1024  # 100TiB
+MAX_VOL_SIZE = 100 * 1024 * 1024 * 1024 * 1024 // BLOCK_SIZE  # 100TiB
 
-def preprocess(ifilepath, ofilepath=None):
+
+def preprocess(ifilepath, ofilepath, stat_path):
     """
     preprocess the trace into a csv format with only necessary information
     this step aims to normalize the trace format before converting it to lcs format
 
     """
 
-    if os.path.exists(ifilepath + ".stat"):
+    if os.path.exists(stat_path):
         return
 
-    if not ofilepath:
-        ofilepath = ifilepath + ".pre_lcs"
     ifile = open(ifilepath, "r")
     ofile = open(ofilepath, "w")
     n_req, n_original_req, n_byte = 0, 0, 0
@@ -56,9 +54,11 @@ def preprocess(ifilepath, ofilepath=None):
 
         ts = int(ts) // 1_000_000
         lba = int(offset)
+        # calculate logical block number
+        lbn = lba // BLOCK_SIZE
         # because different volumes may access the same LBA
         # we add volume id to lba to make it unique
-        lba += int(vol_id) * MAX_VOL_SIZE
+        lbn += int(vol_id) * MAX_VOL_SIZE
 
         req_size = int(req_size)
         if op == "R":
@@ -70,9 +70,6 @@ def preprocess(ifilepath, ofilepath=None):
         else:
             raise RuntimeError(f"Unknown operation: {op} {req_size} {lba} {ts}")
 
-        # align lba to block size to BLOCK_SIZE
-        lba = lba - (lba % BLOCK_SIZE)
-
         if not start_ts:
             start_ts = ts
         end_ts = ts
@@ -80,17 +77,15 @@ def preprocess(ifilepath, ofilepath=None):
 
         # write to file
         for i in range(int(ceil(req_size / BLOCK_SIZE))):
-            ofile.write(
-                "{},{},{},{}\n".format(ts, lba + i * BLOCK_SIZE, BLOCK_SIZE, op)
-            )
-            block_cnt[lba + i * BLOCK_SIZE] += 1
+            ofile.write(f"{ts},{lbn + i},{BLOCK_SIZE},{op},{vol_id}\n")
+            block_cnt[lbn + i] += 1
             n_req += 1
             n_byte += BLOCK_SIZE
 
     ifile.close()
     ofile.close()
 
-    with open(ofilepath.replace(".pre_lcs", ".stat"), "w") as f:
+    with open(stat_path, "w") as f:
         f.write(ifilepath + "\n")
         f.write("n_original_req: {}\n".format(n_original_req))
         f.write("n_req:          {}\n".format(n_req))
@@ -104,15 +99,15 @@ def preprocess(ifilepath, ofilepath=None):
         f.write("end_ts:         {}\n".format(end_ts))
         f.write("duration:       {}\n".format(end_ts - start_ts))
 
-    print(open(ofilepath.replace(".pre_lcs", ".stat"), "r").read().strip("\n"))
+    print(open(stat_path, "r").read().strip("\n"))
     print(f"Preprocessed trace is saved to {ofilepath}")
 
 
-def convert(traceConv_path, ifilepath, ofilepath=None):
-    if not ofilepath:
-        ofilepath = ifilepath.replace(".pre_lcs", ".lcs")
+def convert(traceconv_path, ifilepath, ofilepath):
+    csv_params = '"time-col=1,obj-id-col=2,obj-size-col=3,op-col=4,tenant-col=5,obj-id-is-num=1"'
+    
     p = subprocess.run(
-        f'{traceConv_path} {ifilepath} csv -t "time-col=1,obj-id-col=2,obj-size-col=3,op-col=4,obj-id-is-num=1" -o {ofilepath} --output-format lcs_v2',
+        f'{traceconv_path} {ifilepath} csv -t {csv_params} -o {ofilepath} --output-format lcs_v2',
         shell=True,
     )
     if p.returncode == 0:
@@ -120,21 +115,36 @@ def convert(traceConv_path, ifilepath, ofilepath=None):
 
 
 if __name__ == "__main__":
+    from argparse import ArgumentParser
     from utils import post_process
+
     DEFAULT_TRACECONV_PATH = BASEPATH + "/_build/bin/traceConv"
 
-    if len(sys.argv) < 2:
-        print("Usage: {} <trace file>".format(sys.argv[0]))
-        sys.exit(1)
+    p = ArgumentParser()
+    p.add_argument("ifilepath", help="trace file")
+    p.add_argument(
+        "--traceconv-path", help="path to traceConv", default=DEFAULT_TRACECONV_PATH
+    )
+    p.add_argument("--ofilepath", help="output file path", default=None)
+    args = p.parse_args()
 
-    ifilepath = sys.argv[1]
-    traceConv_path = os.environ.get("TRACECONV_PATH", DEFAULT_TRACECONV_PATH)
+    if not os.path.exists(args.traceconv_path):
+        raise RuntimeError(f"traceConv not found at {args.traceconv_path}")
+
+    if args.ofilepath:
+        lcs_path = args.ofilepath
+        prelcs_path = args.ofilepath + ".pre_lcs"
+        stat_path = args.ofilepath + ".stat"
+    else:
+        prelcs_path = args.ifilepath + ".pre_lcs"
+        lcs_path = args.ifilepath + ".lcs"
+        stat_path = args.ifilepath + ".stat"
 
     try:
-        preprocess(ifilepath, ifilepath + ".pre_lcs")
-        convert(traceConv_path, ifilepath + ".pre_lcs", ofilepath=ifilepath + ".lcs")
-        post_process(ifilepath)
+        preprocess(args.ifilepath, prelcs_path, stat_path)
+        convert(args.traceconv_path, prelcs_path, ofilepath=lcs_path)
+        post_process(args.ifilepath, prelcs_path, stat_path, lcs_path)
     except Exception as e:
         print(e)
-        with open(ifilepath + ".fail", "w") as f:
+        with open(lcs_path.replace(".lcs", ".fail"), "w") as f:
             f.write(str(e))

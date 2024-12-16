@@ -74,27 +74,64 @@
 
 
 # typedef struct __attribute__((packed)) lcs_req_v3 {
-#   int64_t clock_time;
+#   uint32_t clock_time;
 #   uint64_t obj_id;
 #   int64_t obj_size;
 #   uint32_t op : 8;
 #   uint32_t tenant : 24;
+#   int32_t ttl;
 #   int64_t next_access_vtime;
 # } lcs_req_v3_t;
 
 
 import struct
+from utils.const import OP_NAMES
 
+LCS_FORMAT_NAME = [None] + [f"lcs_v{i}" for i in range(1, 9)]
+
+LCS_FORMAT_STR = [
+    None,
+    "<IQIq",
+    "<IQIIq",
+    "<IQqIIq",
+    "<IQqIIqI",
+    "<IQqIIqII",
+    "<IQqIIqIIII",
+    "<IQqIIqIIIIIIII",
+    "<IQqIIq" + "I" * 16,
+]
+
+BASIC_INFO = [
+    "clock_time",
+    "obj_id",
+    "obj_size",
+    "ttl",
+    "op",
+    "tenant",
+    "next_access_vtime",
+]
+
+
+LCS_REQUEST_HEADER = [
+    None,
+    ["clock_time", "obj_id", "obj_size", "next_access_vtime"],
+    ["clock_time", "obj_id", "obj_size", "op", "tenant", "next_access_vtime"],
+    BASIC_INFO,
+    BASIC_INFO[:-1] + [f"feature_{i}" for i in range(1)] + BASIC_INFO[-1:],
+    BASIC_INFO[:-1] + [f"feature_{i}" for i in range(2)] + BASIC_INFO[-1:],
+    BASIC_INFO[:-1] + [f"feature_{i}" for i in range(4)] + BASIC_INFO[-1:],
+    BASIC_INFO[:-1] + [f"feature_{i}" for i in range(8)] + BASIC_INFO[-1:],
+    BASIC_INFO[:-1] + [f"feature_{i}" for i in range(16)] + BASIC_INFO[-1:],
+]
 
 LCS_HEADER_SIZE = 1024 * 8
 LCS_TRACE_STAT_SIZE = 1000 * 8
 LCS_STRAT_MAGIC = 0x123456789ABCDEF0
 LCS_END_MAGIC = 0x123456789ABCDEF0
 N_MOST_COMMON = 16
-
+N_MOST_COMMON_PRINT = 4
 
 def parse_stat(b, print_stat=True):
-
     # basic info
     (
         ver,
@@ -130,9 +167,34 @@ def parse_stat(b, print_stat=True):
     )
     skewness = struct.unpack("<d", b[544 : 544 + 8])[0]
 
+    # tenant 
+    n_tenant = struct.unpack(
+        "<I", b[544 + 8 : 544 + 8 + 4]
+    )[0]
+    most_common_tenant = struct.unpack(
+        "<" + "I" * N_MOST_COMMON, b[556 : 556 + N_MOST_COMMON * 4]
+    )
+    most_common_tenant_ratio = struct.unpack(
+        "<" + "f" * N_MOST_COMMON, b[620 : 620 + N_MOST_COMMON * 4]
+    )
+    
+    # ttl
+    n_ttl, smallest_ttl, largest_ttl = struct.unpack(
+        "<III", b[684: 684 + 12]
+    )
+    most_common_ttl = struct.unpack(
+        "<" + "I" * N_MOST_COMMON, b[696 : 696 + N_MOST_COMMON * 4]
+    )
+    most_common_ttl_ratio = struct.unpack(
+        "<" + "f" * N_MOST_COMMON, b[760 : 760 + N_MOST_COMMON * 4]
+    )
+    
+    
+
     if print_stat:
+        print("####################### trace stat ########################")
         print(
-            f"version: {ver}, n_req: {n_req}, n_obj: {n_obj}, n_req_byte: {n_req_byte}, n_obj_byte: {n_obj_byte}"
+            f"stat version: {ver}, n_req: {n_req}, n_obj: {n_obj}, n_req_byte: {n_req_byte}, n_obj_byte: {n_obj_byte}"
         )
         print(
             f"start_ts: {start_ts}, end_ts: {end_ts}, duration: {(end_ts-start_ts)/86400:.2f} days, n_read: {n_read}, n_write: {n_write}, n_delete: {n_delete}"
@@ -141,22 +203,40 @@ def parse_stat(b, print_stat=True):
             f"smallest_obj_size: {smallest_obj_size}, largest_obj_size: {largest_obj_size}"
         )
         print(f"most_common_obj_sizes: ", end="")
-        for i in range(N_MOST_COMMON):
+        for i in range(N_MOST_COMMON_PRINT):
             if most_common_obj_size_ratio[i] == 0:
                 break
             print(
                 f"{most_common_obj_sizes[i]}({most_common_obj_size_ratio[i]:.4f}), ",
                 end="",
             )
-        print()
+        print("....")
 
         print(f"highest_freq: {highest_freq}, skewness: {skewness:.4f}")
         print(f"most_common_freq: ", end="")
-        for i in range(N_MOST_COMMON):
+        for i in range(N_MOST_COMMON_PRINT):
             if most_common_freq_ratio[i] == 0:
                 break
             print(f"{most_common_freq[i]}({most_common_freq_ratio[i]:.4f}), ", end="")
-        print()
+        print("....")
+        
+        if n_tenant > 0:
+            print(f"n_tenant: {n_tenant}, most_common_tenant: ", end="")
+            for i in range(N_MOST_COMMON_PRINT):
+                if most_common_tenant_ratio[i] == 0:
+                    break
+                print(f"{most_common_tenant[i]}({most_common_tenant_ratio[i]:.4f}), ", end="")
+            print("....")
+            
+        if n_ttl > 1:
+            print(f"n_ttl: {n_ttl}, smallest_ttl: {smallest_ttl}, largest_ttl: {largest_ttl}")
+            print(f"most_common_ttl: ", end="")
+            for i in range(N_MOST_COMMON_PRINT):
+                if most_common_ttl_ratio[i] == 0:
+                    break
+                print(f"{most_common_ttl[i]}({most_common_ttl_ratio[i]:.4f}), ", end="")
+            print("....")
+        print("###########################################################")
 
 
 def read_header(ifile, print_stat=True):
@@ -168,12 +248,13 @@ def read_header(ifile, print_stat=True):
     if end_magic != LCS_END_MAGIC:
         raise RuntimeError(f"Invalid trace file end magic {end_magic:016x}")
 
+    print("lcs format version:", version)
     parse_stat(header[16:-176], print_stat=print_stat)
 
     return version
 
 
-def read_trace(ifilepath, n_max_req=-1):
+def print_trace(ifilepath, n_max_req=-1, print_stat=True, print_header=True):
     if ifilepath.endswith(".zst"):
         import zstandard as zstd
 
@@ -183,21 +264,37 @@ def read_trace(ifilepath, n_max_req=-1):
         ifile = open(ifilepath, "rb")
         reader = ifile
 
-    version = read_header(reader)
-    s = [
-        struct.Struct("<IQIq"),
-        struct.Struct("<IQIIq"),
-        struct.Struct("<qQqIq"),
-    ][version - 1]
+    version = read_header(reader, print_stat)
+    s = struct.Struct(LCS_FORMAT_STR[version])
+
+    if print_header:
+        print(",".join(LCS_REQUEST_HEADER[version]))
 
     n_req = 0
-
     while True:
         b = reader.read(s.size)
         if not b:
             break
         req = s.unpack(b)
-        print(req)
+        ts, obj, size = req[:3]
+        print(f"{ts},{obj},{size}", end="")
+        if version == 2:
+            op = OP_NAMES[req[3] & 0xFF]
+            tenant = (req[3]>>8) & 0xFFFFFF
+            next_access_vtime = req[4]
+            print(f",{op},{tenant}", end="")
+        elif version >= 3:
+            op = OP_NAMES[req[3] & 0xFF]
+            tenant = (req[3]>>8) & 0xFFFFFF
+            ttl = req[4]
+            next_access_vtime = req[5]
+            features = req[6:]
+            print(f",{ttl},{op},{tenant}", end="")
+            for f in features:
+                print(f",{f}", end="")
+
+        print(f",{next_access_vtime}")
+
         n_req += 1
         if n_max_req > 0 and n_req >= n_max_req:
             break
@@ -205,43 +302,23 @@ def read_trace(ifilepath, n_max_req=-1):
     reader.close()
 
 
-def test_block_trace(ifilepath):
-    if ifilepath.endswith(".zst"):
-        import zstandard as zstd
-
-        decompressor = zstd.ZstdDecompressor()
-        reader = decompressor.stream_reader(open(ifilepath, "rb"))
-    else:
-        ifile = open(ifilepath, "rb")
-        reader = ifile
-
-    version = read_header(reader, print_stat=False)
-    s = [
-        struct.Struct("<IQIq"),
-        struct.Struct("<IQIIq"),
-        struct.Struct("<qQqIq"),
-    ][version - 1]
-
-    while True:
-        b = reader.read(s.size)
-        if not b:
-            break
-        req = s.unpack(b)
-        if req[1] % 4096 != 0:
-            raise RuntimeError(
-                f"lba is not multiple of block size {req[1]} % 4096 = {req[1] % 4096} {ifilepath}"
-            )
-
-    reader.close()
-    print(f"LBA test passed {ifilepath}")
-
-
 if __name__ == "__main__":
-    import sys
+    from argparse import ArgumentParser
 
-    if len(sys.argv) < 2:
-        print(f"Usage: {sys.argv[0]} /path/trace [n_req]")
-        sys.exit(1)
+    p = ArgumentParser()
+    p.add_argument("trace", help="trace file path")
+    p.add_argument(
+        "-n",
+        type=int,
+        help="number of requests to read",
+        required=False,
+        default=-1,
+    )
+    p.add_argument("--print-stat", action="store_true", help="print stat", default=True)
+    p.add_argument(
+        "--print-header", action="store_true", help="print header", default=True
+    )
+    args = p.parse_args()
 
-    test_block_trace(sys.argv[1])
-    # read_trace(sys.argv[1], int(sys.argv[2]) if len(sys.argv) > 2 else -1)
+    # test_block_trace(sys.argv[1])
+    print_trace(args.trace, args.n, args.print_stat, args.print_header)

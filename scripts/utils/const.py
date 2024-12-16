@@ -1,4 +1,3 @@
-
 KiB = 1024
 MiB = 1024 * KiB
 GiB = 1024 * MiB
@@ -15,3 +14,21 @@ TB = 1000 * GB
 PB = 1000 * TB
 EB = 1000 * PB
 
+
+OP_NAMES = [
+    "NOP",
+    "GET",
+    "GETS",
+    "SET",
+    "ADD",
+    "CAS",
+    "REPLACE",
+    "APPEND",
+    "PREPEND",
+    "DELETE",
+    "INCR",
+    "DECR",
+    "READ",
+    "WRITE",
+    "UPDATE",
+]
