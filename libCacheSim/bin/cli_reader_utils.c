@@ -122,9 +122,21 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
     } else if (strcasecmp(key, "tenant-col") == 0) {
       params->tenant_field = (int)(strtol(value, &end, 0));
       _check_parsed_result(end, params->tenant_field);
-    } else if (strcasecmp(key, "next-access-col") == 0) {
-      params->next_access_vtime_field = (int)strtol(value, &end, 0);
-      _check_parsed_result(end, params->next_access_vtime_field);
+    } else if (strcasecmp(key, "feature-cols") == 0) {
+      // feature-cols=1|2|3
+      char *feature_str = strdup(value);
+      char *feature = strsep(&feature_str, "|");
+      int i = 0;
+      while (feature != NULL) {
+        params->feature_fields[i] = (int)strtol(feature, &end, 0);
+        _check_parsed_result(end, params->feature_fields[i]);
+        i++;
+        feature = strsep(&feature_str, ",");
+      }
+      params->n_feature_fields = i;
+    } else if (strcasecmp(key, "ttl-col") == 0) {
+      params->ttl_field = (int)strtol(value, &end, 0);
+      _check_parsed_result(end, params->ttl_field);
     } else if (strcasecmp(key, "obj-id-is-num") == 0) {
       params->obj_id_is_num_set = true;
       params->obj_id_is_num = is_true(value);
@@ -150,7 +162,7 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
             /* user input: k1=v1, delimiter=\t, k2=v2*/
             params->delimiter = '\t';
           } else if (value[1] == ',') {
-            ERROR("can I reach here?\n");
+            WARN("delimiter may be incorrect\n");
             params->delimiter = ',';
           } else {
             ERROR("unsupported delimiter: '%s'\n", value);

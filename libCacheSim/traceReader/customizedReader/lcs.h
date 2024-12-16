@@ -138,18 +138,72 @@ typedef struct __attribute__((packed)) lcs_req_v2 {
 typedef char static_assert_lcs_v2_size[(sizeof(struct lcs_req_v2) == 28) ? 1 : -1];
 
 /******************************************************************************/
-/**              v3 uses int64_t for object size and clock time              **/
+/**              v3 uses int64_t for object size and adds ttl                **/
 /******************************************************************************/
 typedef struct __attribute__((packed)) lcs_req_v3 {
-  int64_t clock_time;
+  uint32_t clock_time;
   uint64_t obj_id;
   int64_t obj_size;
   uint32_t op : 8;
   uint32_t tenant : 24;
+  uint32_t ttl;
   int64_t next_access_vtime;
 } lcs_req_v3_t;
 // assert the struct size at compile time
 typedef char static_assert_lcs_v3_size[(sizeof(struct lcs_req_v3) == 36) ? 1 : -1];
+
+
+/******************************************************************************/
+/**              v4 has one feature field                                    **/
+/******************************************************************************/
+typedef struct __attribute__((packed)) lcs_req_v4 {
+  lcs_req_v3_t base;
+  uint32_t feature;
+} lcs_req_v4_t;
+// assert the struct size at compile time
+typedef char static_assert_lcs_v4_size[(sizeof(struct lcs_req_v4) == 40) ? 1 : -1];
+
+/******************************************************************************/
+/**              v5 has two feature fields                                   **/
+/******************************************************************************/
+typedef struct __attribute__((packed)) lcs_req_v5 {
+  lcs_req_v3_t base;
+  uint32_t features[2];
+} lcs_req_v5_t;
+// assert the struct size at compile time
+typedef char static_assert_lcs_v5_size[(sizeof(struct lcs_req_v5) == 44) ? 1 : -1];
+
+/******************************************************************************/
+/**              v6 has four feature fields                                  **/
+/******************************************************************************/
+typedef struct __attribute__((packed)) lcs_req_v6 {
+  lcs_req_v3_t base;
+  uint32_t features[4];
+} lcs_req_v6_t;
+// assert the struct size at compile time
+typedef char static_assert_lcs_v6_size[(sizeof(struct lcs_req_v6) == 52) ? 1 : -1];
+
+/******************************************************************************/
+/**              v7 has eight feature fields                                 **/
+/******************************************************************************/
+typedef struct __attribute__((packed)) lcs_req_v7 {
+  lcs_req_v3_t base;
+  uint32_t features[8];
+} lcs_req_v7_t;
+// assert the struct size at compile time
+typedef char static_assert_lcs_v7_size[(sizeof(struct lcs_req_v7) == 68) ? 1 : -1];
+
+/******************************************************************************/
+/**              v8 has sixteen feature fields                               **/
+/******************************************************************************/
+typedef struct __attribute__((packed)) lcs_req_v8 {
+  lcs_req_v3_t base;
+  uint32_t features[16];
+} lcs_req_v8_t;
+// assert the struct size at compile time
+typedef char static_assert_lcs_v8_size[(sizeof(struct lcs_req_v8) == 100) ? 1 : -1];
+
+static int LCS_VER_TO_N_FEATURES[10] = {0, 0, 0, 0, 1, 2, 4, 8, 16, 0};
 
 int lcsReader_setup(reader_t *reader);
 

@@ -51,6 +51,9 @@ typedef struct {
   int32_t tenant_field;
   int32_t next_access_vtime_field;
 
+  int32_t n_feature_fields;
+  int32_t feature_fields[N_MAX_FEATURES];
+
   // block cache, 0 and -1 means ignore this field, 1 is also invalid
   // block_size breaks a large request for multiple blocks into multiple requests
   int32_t block_size;
@@ -153,14 +156,6 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->obj_id_is_num_set = false;
   params->cap_at_n_req = -1;
   params->trace_start_offset = 0;
-
-  params->time_field = 0;
-  params->obj_id_field = 0;
-  params->obj_size_field = 0;
-  params->op_field = 0;
-  params->ttl_field = 0;
-  params->tenant_field = 0;
-  params->next_access_vtime_field = 0;
 
   params->has_header = false;
   /* whether the user has specified the has_header params */

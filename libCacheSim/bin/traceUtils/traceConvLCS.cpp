@@ -104,6 +104,7 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
     lcs_req.obj_size = req->obj_size;
     lcs_req.op = req->op;
     lcs_req.tenant = req->tenant_id;
+    lcs_req.ttl = req->ttl;
     lcs_req.next_access_vtime = req->next_access_vtime;
 
     if (lcs_req.op == OP_GET || lcs_req.op == OP_GETS || lcs_req.op == OP_READ) {
@@ -130,6 +131,9 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
     }
 
     ofile_temp.write(reinterpret_cast<char *>(&lcs_req), sizeof(lcs_req_full_t));
+    for (int i = 0; i < req->n_features; i++) {
+      ofile_temp.write(reinterpret_cast<char *>(&req->features[i]), sizeof(int32_t));
+    }
 
     stat.n_req_byte += req->obj_size;
     stat.n_req += 1;
@@ -312,6 +316,14 @@ static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint
   }
 }
 
+/**
+ * @brief read the reverse trace and write to the output file
+ *
+ * @param ofilepath
+ * @param stat
+ * @param output_txt
+ * @param lcs_ver
+ */
 static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat, bool output_txt, int64_t lcs_ver) {
   size_t file_size;
   char *mapped_file = reinterpret_cast<char *>(utils::setup_mmap(ofilepath + ".reverse", &file_size));
@@ -327,8 +339,16 @@ static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat, bool out
   lcs_req_full_t lcs_req_full;
   size_t lcs_full_req_entry_size = sizeof(lcs_req_full_t);
 
-  while (pos >= lcs_full_req_entry_size) {
-    pos -= lcs_full_req_entry_size;
+  // for lcs version 4-8, we need to read the features
+  size_t n_features = 0;
+  if (lcs_ver >= 4 && lcs_ver <= 8) {
+    n_features = LCS_VER_TO_N_FEATURES[lcs_ver];
+  }
+
+  size_t entry_size = lcs_full_req_entry_size + n_features * sizeof(int32_t);
+
+  while (pos >= entry_size) {
+    pos -= entry_size;
     memcpy(&lcs_req_full, mapped_file + pos, lcs_full_req_entry_size);
     if (lcs_req_full.next_access_vtime != INT64_MAX) {
       /* req.next_access_vtime is the vtime start from the end */
@@ -363,6 +383,17 @@ static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat, bool out
       lcs_req_v3.next_access_vtime = lcs_req_full.next_access_vtime;
 
       ofile.write(reinterpret_cast<char *>(&lcs_req_v3), sizeof(lcs_req_v3));
+    } else if (lcs_ver >= 4 && lcs_ver <= 8) {
+      lcs_req_v3_t base;
+      base.clock_time = lcs_req_full.clock_time;
+      base.obj_id = lcs_req_full.obj_id;
+      base.obj_size = lcs_req_full.obj_size;
+      base.op = lcs_req_full.op;
+      base.tenant = lcs_req_full.tenant;
+      base.next_access_vtime = lcs_req_full.next_access_vtime;
+
+      ofile.write(reinterpret_cast<char *>(&base), sizeof(lcs_req_v3));
+      ofile.write(mapped_file + pos + lcs_full_req_entry_size, n_features * sizeof(int32_t));
     } else {
       ERROR("invalid lcs version %ld\n", lcs_ver);
     }

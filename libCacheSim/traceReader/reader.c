@@ -51,7 +51,7 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
   reader->zstd_reader_p = NULL;
 #ifdef SUPPORT_ZSTD_TRACE
   size_t slen = strlen(trace_path);
-  if (strncmp(trace_path + (slen - 4), ".zst", 4) == 0 || strncmp(trace_path + (slen - 7), ".zst.22", 7) == 0) {
+  if (strncmp(trace_path + (slen - 4), ".zst", 4) == 0) {
     reader->is_zstd_file = true;
     reader->zstd_reader_p = create_zstd_reader(trace_path);
     if (!_info_printed) {

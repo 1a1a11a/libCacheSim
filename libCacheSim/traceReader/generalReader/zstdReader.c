@@ -15,8 +15,8 @@
 
 #define LINE_DELIM '\n'
 
-zstd_reader *create_zstd_reader(const char *trace_path) {
-  zstd_reader *reader = malloc(sizeof(zstd_reader));
+zstd_reader_t *create_zstd_reader(const char *trace_path) {
+  zstd_reader_t *reader = malloc(sizeof(zstd_reader_t));
 
   reader->ifile = fopen(trace_path, "rb");
   if (reader->ifile == NULL) {
@@ -41,17 +41,32 @@ zstd_reader *create_zstd_reader(const char *trace_path) {
 
   reader->zds = ZSTD_createDStream();
 
+  DEBUG("create zstd reader %s\n", trace_path);
   return reader;
 }
 
-void free_zstd_reader(zstd_reader *reader) {
+void free_zstd_reader(zstd_reader_t *reader) {
   ZSTD_freeDStream(reader->zds);
   free(reader->buff_in);
   free(reader->buff_out);
   free(reader);
+  DEBUG("free zstd reader\n");
 }
 
-size_t _read_from_file(zstd_reader *reader) {
+void reset_zstd_reader(zstd_reader_t *reader) {
+  ZSTD_freeDStream(reader->zds);
+  reader->zds = ZSTD_createDStream();
+  fseek(reader->ifile, 0, SEEK_SET);
+  reader->input.size = 0;
+  reader->input.pos = 0;
+  memset(reader->buff_in, 0, reader->buff_in_sz);
+  reader->output.pos = 0;
+  reader->buff_out_read_pos = 0;
+  memset(reader->buff_out, 0, reader->buff_out_sz);
+  reader->status = 0;
+}
+
+size_t _read_from_file(zstd_reader_t *reader) {
   size_t read_sz;
   read_sz = fread(reader->buff_in, 1, reader->buff_in_sz, reader->ifile);
   if (read_sz < reader->buff_in_sz) {
@@ -71,7 +86,7 @@ size_t _read_from_file(zstd_reader *reader) {
   return read_sz;
 }
 
-rstatus _decompress_from_buff(zstd_reader *reader) {
+rstatus _decompress_from_buff(zstd_reader_t *reader) {
   /* move the unread decompressed data to the head of buff_out */
   void *buff_start = reader->buff_out + reader->buff_out_read_pos;
   size_t buff_left_sz = reader->output.pos - reader->buff_out_read_pos;
@@ -92,8 +107,7 @@ rstatus _decompress_from_buff(zstd_reader *reader) {
     }
   }
 
-  size_t const ret =
-      ZSTD_decompressStream(reader->zds, &(reader->output), &(reader->input));
+  size_t const ret = ZSTD_decompressStream(reader->zds, &(reader->output), &(reader->input));
   if (ret != 0) {
     if (ZSTD_isError(ret)) {
       printf("%zu\n", ret);
@@ -111,8 +125,7 @@ rstatus _decompress_from_buff(zstd_reader *reader) {
 
     @return the number of bytes read (include line ending byte)
 **/
-size_t zstd_reader_read_line(zstd_reader *reader, char **line_start,
-                             char **line_end) {
+size_t zstd_reader_read_line(zstd_reader_t *reader, char **line_start, char **line_end) {
   bool has_data_in_line_buff = false;
 
   if (reader->buff_out_read_pos < reader->output.pos) {
@@ -170,8 +183,7 @@ size_t zstd_reader_read_line(zstd_reader *reader, char **line_start,
  * @param data_start
  * @return
  */
-size_t zstd_reader_read_bytes(zstd_reader *reader, size_t n_byte,
-                              char **data_start) {
+size_t zstd_reader_read_bytes(zstd_reader_t *reader, size_t n_byte, char **data_start) {
   size_t sz = 0;
   while (reader->buff_out_read_pos + n_byte > reader->output.pos) {
     rstatus status = _decompress_from_buff(reader);
@@ -194,8 +206,7 @@ size_t zstd_reader_read_bytes(zstd_reader *reader, size_t n_byte,
 
     return sz;
   } else {
-    ERROR("do not have enough bytes %zu < %zu\n",
-          reader->output.pos - reader->buff_out_read_pos, n_byte);
+    ERROR("do not have enough bytes %zu < %zu\n", reader->output.pos - reader->buff_out_read_pos, n_byte);
 
     return sz;
   }

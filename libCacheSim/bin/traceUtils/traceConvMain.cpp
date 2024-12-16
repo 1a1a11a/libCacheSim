@@ -15,26 +15,6 @@
  * each version has a different request struct format, however, all lcs traces have
  * the same header format which stores the version and trace statistics
  *
- * lcs_v1 is the simplest format with only clock_time, obj_id, obj_size, and next_access_vtime
- *
- * typedef struct __attribute__((packed)) lcs_req_v1 {
- *   uint32_t clock_time;
- *   uint64_t obj_id;
- *   uint32_t obj_size;
- *   int64_t next_access_vtime;
- * } lcs_req_v1_t;
- *
- *
- * lcs_v2 has more fields, operation and tenant
- *
- * typedef struct __attribute__((packed)) lcs_req_v2 {
- *   uint32_t clock_time;
- *   uint64_t obj_id;
- *   uint32_t obj_size;
- *   uint32_t op : 8;
- *   uint32_t tenant : 24;
- *   int64_t next_access_vtime;
- * } lcs_req_v2_t;
  *
  * see traceReader/generalReader/lcs.h for more details
  *
@@ -57,6 +37,16 @@ int main(int argc, char *argv[]) {
     traceConv::convert_to_lcs(args.reader, args.ofilepath, args.output_txt, args.remove_size_change, 2);
   } else if (strcasecmp(args.output_format, "lcs_v3") == 0) {
     traceConv::convert_to_lcs(args.reader, args.ofilepath, args.output_txt, args.remove_size_change, 3);
+  } else if (strcasecmp(args.output_format, "lcs_v4") == 0) {
+    traceConv::convert_to_lcs(args.reader, args.ofilepath, args.output_txt, args.remove_size_change, 4);
+  } else if (strcasecmp(args.output_format, "lcs_v5") == 0) {
+    traceConv::convert_to_lcs(args.reader, args.ofilepath, args.output_txt, args.remove_size_change, 5);
+  } else if (strcasecmp(args.output_format, "lcs_v6") == 0) {
+    traceConv::convert_to_lcs(args.reader, args.ofilepath, args.output_txt, args.remove_size_change, 6);
+  } else if (strcasecmp(args.output_format, "lcs_v7") == 0) {
+    traceConv::convert_to_lcs(args.reader, args.ofilepath, args.output_txt, args.remove_size_change, 7);
+  } else if (strcasecmp(args.output_format, "lcs_v8") == 0) {
+    traceConv::convert_to_lcs(args.reader, args.ofilepath, args.output_txt, args.remove_size_change, 8);
   } else if (strcasecmp(args.output_format, "oracleGeneral") == 0) {
     traceConv::convert_to_oracleGeneral(args.reader, args.ofilepath, args.output_txt, args.remove_size_change);
   } else {

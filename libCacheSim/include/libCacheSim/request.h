@@ -17,11 +17,13 @@
 extern "C" {
 #endif
 
+#define N_MAX_FEATURES 16
+
 /* need to optimize this for CPU cacheline */
 typedef struct request {
   int64_t clock_time; /* use uint64_t because vscsi uses microsec timestamp */
 
-  uint64_t hv;        /* hash value, used when offloading hash to reader */
+  uint64_t hv; /* hash value, used when offloading hash to reader */
 
   /* this represents the hash of the object id in key-value cache
    * or the logical block address in block cache, note that LBA % block_size == 0 */
@@ -33,12 +35,11 @@ typedef struct request {
 
   req_op_e op;
 
+  int32_t tenant_id;
+
   uint64_t n_req;
 
   int64_t next_access_vtime;
-  /* carry necessary data between the multiple functions of serving one request
-   */
-  void *eviction_algo_data;
 
   // this is used by key-value cache traces
   struct {
@@ -46,19 +47,10 @@ typedef struct request {
     uint64_t val_size : 48;
   };
 
-
   int32_t ns;  // namespace
-  int32_t content_type;
-  int32_t tenant_id;
 
-  // int32_t bucket_id;
-  // int32_t age;
-  // int32_t hostname;
-  // int16_t extension;
-  // int16_t colo;
-  // int16_t n_level;
-  // int16_t n_param;
-  // int8_t method;
+  // carry necessary data between the multiple functions of serving one request
+  void *eviction_algo_data;
 
   /* used in trace analysis */
   int64_t vtime_since_last_access;
@@ -72,6 +64,10 @@ typedef struct request {
 
   bool valid; /* indicate whether request is valid request
                * it is invalid if the trace reaches the end */
+
+  int32_t n_features;
+  int32_t features[N_MAX_FEATURES];
+
 } request_t;
 
 /**

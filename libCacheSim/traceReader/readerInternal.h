@@ -28,6 +28,11 @@ typedef struct {
   int op_field_idx;
   int cnt_field_idx;
   int ttl_field_idx;
+  int tenant_field_idx;
+
+  int n_feature_fields;
+  int feature_fields[N_MAX_FEATURES];
+
   bool has_header;
   unsigned char delimiter;
 
