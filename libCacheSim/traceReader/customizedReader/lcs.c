@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-static bool verify(lcs_trace_header_t *header) {
+static bool _verify_lcs_header(lcs_trace_header_t *header) {
   /* check whether the trace is valid */
   if (header->start_magic != LCS_TRACE_START_MAGIC) {
     ERROR("invalid trace file, start magic is wrong 0x%lx\n", (unsigned long)header->start_magic);
@@ -81,7 +81,7 @@ int lcsReader_setup(reader_t *reader) {
   char *data = read_bytes(reader, sizeof(lcs_trace_header_t));
   lcs_trace_header_t *header = (lcs_trace_header_t *)data;
 
-  if (!verify(header)) {
+  if (!_verify_lcs_header(header)) {
     exit(1);
   }
 
@@ -190,6 +190,7 @@ int lcs_read_one_req(reader_t *reader, request_t *req) {
 void lcs_print_trace_stat(reader_t *reader) {
   reader_t *cloned_reader = clone_reader(reader);
 
+  cloned_reader->mmap_offset = 0;
 #ifdef SUPPORT_ZSTD_TRACE
   if (cloned_reader->is_zstd_file) {
     reset_zstd_reader(cloned_reader->zstd_reader_p);
@@ -198,6 +199,9 @@ void lcs_print_trace_stat(reader_t *reader) {
 
   char *data = read_bytes(cloned_reader, sizeof(lcs_trace_header_t));
   lcs_trace_header_t *header = (lcs_trace_header_t *)data;
+
+  _verify_lcs_header(header);
+
   lcs_trace_stat_t *stat = &(header->stat);
 
   _lcs_print_trace_stat(stat);
