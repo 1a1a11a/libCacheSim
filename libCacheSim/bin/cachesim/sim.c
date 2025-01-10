@@ -102,7 +102,7 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
     ERROR("cannot open file %s %s\n", ofilepath, strerror(errno));
     exit(1);
   }
-  fprintf(output_file, "%s\n", output_str);
+  fprintf(output_file, "%s", output_str);
   fclose(output_file);
 
 #if defined(TRACK_EVICTION_V_AGE)

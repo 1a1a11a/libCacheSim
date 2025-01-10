@@ -31,11 +31,13 @@ int main(int argc, char **argv) {
       args.reader, args.caches, args.n_cache_size * args.n_eviction_algo, NULL,
       0, args.warmup_sec, args.n_thread, true, true);
 
+  // output to file
   char output_str[1024];
-  char output_filename[128];
-  create_dir("result/");
-  sprintf(output_filename, "result/%s", basename(args.trace_path));
-  FILE *output_file = fopen(output_filename, "a");
+  FILE *output_file = fopen(args.ofilepath, "a");
+  if (output_file == NULL) {
+    ERROR("cannot open file %s %s\n", args.ofilepath, strerror(errno));
+    exit(1);
+  }
 
   uint64_t size_unit = 1;
   char *size_unit_str = "";
@@ -57,9 +59,9 @@ int main(int argc, char **argv) {
   printf("\n");
   for (int i = 0; i < args.n_cache_size * args.n_eviction_algo; i++) {
     snprintf(output_str, 1024,
-             "%s %32s cache size %8ld%s, %lld req, miss ratio %.4lf, byte miss "
+             "%s %s cache size %8ld%s, %lld req, miss ratio %.4lf, byte miss "
              "ratio %.4lf\n",
-             output_filename, result[i].cache_name,
+             args.reader->trace_path, result[i].cache_name,
              (long)(result[i].cache_size / size_unit), size_unit_str,
              (long long)result[i].n_req,
              (double)result[i].n_miss / (double)result[i].n_req,
