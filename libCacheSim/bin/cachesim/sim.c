@@ -96,7 +96,13 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
 
 #pragma GCC diagnostic pop
   printf("%s", output_str);
-
+  char *output_dir = rindex(ofilepath, '/');
+  if (output_dir != NULL) {
+    size_t dir_length = output_dir - ofilepath;
+    char dir_path[1024];
+    snprintf(dir_path, dir_length + 1, "%s", ofilepath);
+    create_dir(dir_path);
+  }
   FILE *output_file = fopen(ofilepath, "a");
   if (output_file == NULL) {
     ERROR("cannot open file %s %s\n", ofilepath, strerror(errno));

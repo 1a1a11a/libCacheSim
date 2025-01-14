@@ -291,7 +291,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   if (args->ofilepath[0] == '\0') {
     char *trace_filename = rindex(args->trace_path, '/');
-    snprintf(args->ofilepath, OFILEPATH_LEN, "%s.cachesim",
+    snprintf(args->ofilepath, OFILEPATH_LEN, "result/%s.cachesim",
              trace_filename == NULL ? args->trace_path : trace_filename + 1);
   }
 

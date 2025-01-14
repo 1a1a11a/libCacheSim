@@ -33,6 +33,14 @@ int main(int argc, char **argv) {
 
   // output to file
   char output_str[1024];
+  // ensure file path exists
+  char *output_dir = rindex(args.ofilepath, '/');
+  if (output_dir != NULL) {
+    size_t dir_length = output_dir - args.ofilepath;
+    char dir_path[1024];
+    snprintf(dir_path, dir_length + 1, "%s", args.ofilepath);
+    create_dir(dir_path);
+  }
   FILE *output_file = fopen(args.ofilepath, "a");
   if (output_file == NULL) {
     ERROR("cannot open file %s %s\n", args.ofilepath, strerror(errno));

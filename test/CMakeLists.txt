@@ -22,6 +22,8 @@ target_link_libraries(testPrefetchAlgo ${coreLib})
 add_executable(testDataStructure test_dataStructure.c)
 target_link_libraries(testDataStructure ${coreLib})
 
+add_executable(testUtils test_utils.c)
+target_link_libraries(testUtils ${coreLib})
 
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
 add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
@@ -30,6 +32,7 @@ add_test(NAME testSimulator COMMAND testSimulator WORKING_DIRECTORY .)
 add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
+add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
 
 # if (ENABLE_GLCACHE)
 #     add_executable(testGLCache test_glcache.c)
