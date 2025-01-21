@@ -104,17 +104,17 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params, const char *cach
     S3FIFO_parse_params(cache, cache_specific_params);
   }
 
-  int64_t fifo_cache_size = (int64_t)ccache_params.cache_size * params->small_size_ratio;
-  int64_t main_fifo_size = ccache_params.cache_size - fifo_cache_size;
-  int64_t _size_fifo_ghost_cach = (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
+  int64_t small_fifo_size = (int64_t)ccache_params.cache_size * params->small_size_ratio;
+  int64_t main_fifo_size = ccache_params.cache_size - small_fifo_size;
+  int64_t ghost_fifo_size = (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
 
   common_cache_params_t ccache_params_local = ccache_params;
-  ccache_params_local.cache_size = fifo_cache_size;
+  ccache_params_local.cache_size = small_fifo_size;
   params->small_fifo = FIFO_init(ccache_params_local, NULL);
   params->has_evicted = false;
 
-  if (_size_fifo_ghost_cach > 0) {
-    ccache_params_local.cache_size = _size_fifo_ghost_cach;
+  if (ghost_fifo_size > 0) {
+    ccache_params_local.cache_size = ghost_fifo_size;
     params->ghost_fifo = FIFO_init(ccache_params_local, NULL);
     snprintf(params->ghost_fifo->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO-ghost");
   } else {
