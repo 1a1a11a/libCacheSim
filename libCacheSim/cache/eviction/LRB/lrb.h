@@ -81,7 +81,7 @@ class Meta {
 public:
     //25 byte
     uint64_t _key;
-    uint32_t _size;
+    uint64_t _size;
     uint32_t _past_timestamp;
     uint16_t _extra_features[max_n_extra_feature];
     MetaExtra *_extra = nullptr;

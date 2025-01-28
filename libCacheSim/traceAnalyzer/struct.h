@@ -6,7 +6,7 @@
 #include "../include/config.h"
 
 
-typedef uint32_t obj_size_t;
+typedef uint64_t obj_size_t;
 // typedef int32_t time_t;
 
 namespace traceAnalyzer {

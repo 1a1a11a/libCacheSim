@@ -286,7 +286,7 @@ pair<uint64_t, uint32_t> LRBCache::rank() {
     int32_t indices[sample_rate * n_feature];
     double data[sample_rate * n_feature];
     int32_t past_timestamps[sample_rate];
-    uint32_t sizes[sample_rate];
+    uint64_t sizes[sample_rate];
 
     unordered_set<uint64_t> key_set;
     uint64_t keys[sample_rate];
