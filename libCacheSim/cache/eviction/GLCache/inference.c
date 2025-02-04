@@ -41,7 +41,7 @@ static int prepare_inference_data(cache_t *cache) {
 
   feature_t *x = learner->inference_x;
 
-  int n_segs = 0;
+  unsigned int n_segs = 0;
   int inv_sample_ratio = MAX(params->n_in_use_segs / N_INFERENCE_DATA, 1);
   int credit = inv_sample_ratio;
   // printf("%d %d\n", params->n_in_use_segs, inv_sample_ratio);
@@ -66,8 +66,13 @@ static int prepare_inference_data(cache_t *cache) {
   }
   safe_call(XGDMatrixCreateFromMat(learner->inference_x, n_segs,
                                    learner->n_feature, -2, &learner->inf_dm));
-
-  safe_call(XGDMatrixSetUIntInfo(learner->inf_dm, "group", &n_segs, 1));
+  
+  // convert to array interface format
+  char str_n_segs[128];
+  snprintf(str_n_segs, sizeof(str_n_segs),
+           "{\"data\": [%llu],\"shape\": [1],\"typestr\": \"<u4\",\"version\": 3}",
+           (unsigned long long)(uintptr_t)&n_segs);
+  safe_call(XGDMatrixSetInfoFromInterface(learner->inf_dm, "group", str_n_segs));
 
   return n_segs;
 }

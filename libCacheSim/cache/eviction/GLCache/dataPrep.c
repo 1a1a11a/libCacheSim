@@ -293,10 +293,13 @@ static void prepare_training_data_per_package(cache_t *cache) {
   // safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", group,
   // n_group));
 
-  safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group",
-                                 &learner->n_train_samples, 1));
-  safe_call(XGDMatrixSetUIntInfo(learner->valid_dm, "group",
-                                 &learner->n_valid_samples, 1));
+  // convert to array interface format
+  char str_n_valid_sample[128];
+  snprintf(str_n_valid_sample, sizeof(str_n_valid_sample),
+           "{\"data\": [%llu],\"shape\": [1],\"typestr\": \"<u4\",\"version\": 3}",
+           (unsigned long long)(uintptr_t)&learner->n_valid_samples);
+  safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", str_n_valid_sample));
+  safe_call(XGDMatrixSetUIntInfo(learner->valid_dm, "group", str_n_valid_sample));
 #endif
 }
 
