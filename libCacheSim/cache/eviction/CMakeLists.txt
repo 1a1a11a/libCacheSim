@@ -80,6 +80,8 @@ set(sourceCPP
         cpp/GDSF.cpp
         LHD/lhd.cpp
         LHD/LHD_Interface.cpp
+        3LCache/ThreeLCache_Interface.cpp
+        3LCache/ThreeLCache.cpp
         )
 
 if (ENABLE_LRB)

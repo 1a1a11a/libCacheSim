@@ -27,6 +27,7 @@ option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(OPT_SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
+option(ENABLE_3L_CACHE "enable 3LCache" ON)
 set(LOG_LEVEL NONE CACHE STRING "change the logging level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
 
@@ -215,6 +216,22 @@ else()
     remove_definitions(ENABLE_LRB)
 endif()
 
+if(ENABLE_3L_CACHE)
+    find_path(LIGHTGBM_PATH LightGBM)
+    if (NOT LIGHTGBM_PATH)
+        message(FATAL_ERROR "LIGHTGBM_PATH not found")
+    endif ()
+    include_directories(${LIGHTGBM_PATH})
+
+    find_library(LIGHTGBM_LIB _lightgbm)
+    if (NOT LIGHTGBM_LIB)
+        message(FATAL_ERROR "LIGHTGBM_LIB not found")
+    endif ()
+    link_libraries(${LIGHTGBM_LIB})
+    add_compile_definitions(ENABLE_3L_CACHE=1)
+else()
+    remove_definitions(ENABLE_3L_CACHE)
+endif()
 # link_libraries("-ldl -lm ${LIBS}")
 
 # put binary in bin directory
@@ -271,6 +288,7 @@ file(GLOB cache_source
 
     ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LHD/*
     ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/*
+    ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/3LCache/*
 )
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/fifo)
@@ -312,6 +330,14 @@ if(ENABLE_LRB)
         ${cache_source} ${LRB_source}
     )
 endif(ENABLE_LRB)
+
+if(ENABLE_3L_CACHE)
+    file(GLOB ThreeLCache_source
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/3LCache/*.cpp)
+    set(cache_source
+        ${cache_source} ${ThreeLCache_source}
+    )
+endif(ENABLE_3L_CACHE)
 
 set(reader_source
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/reader.c
