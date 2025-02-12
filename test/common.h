@@ -96,6 +96,22 @@ static reader_t *setup_GLCacheTestData_reader(void) {
   return reader_oracle;
 }
 
+static reader_t *setup_3LCacheTestData_reader(void) {
+  char *url =
+      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/tencentBlock/"
+      "tencentBlock.ns3964.oracleGeneral.zst";
+  int ret = system(
+      "if [ ! -f tencentBlock.ns3964.oracleGeneral.zst ]; then wget "
+      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/tencentBlock/"
+      "tencentBlock.ns3964.oracleGeneral.zst; fi");
+  if (ret != 0) {
+    ERROR("downloading data failed\n");
+  }
+
+  reader_t *reader_oracle = setup_reader("tencentBlock.ns3964.oracleGeneral.zst", ORACLE_GENERAL_TRACE, NULL);
+  return reader_oracle;
+}
+
 static reader_t *setup_vscsi_reader_with_ignored_obj_size(void) {
   char data_path[1024];
   reader_init_param_t *init_params = g_new0(reader_init_param_t, 1);
@@ -229,6 +245,16 @@ static cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc
           "train-source-y=online, rank-intvl=0.05, retrain-intvl=172800";
     }
     cache = GLCache_init(cc_params, init_params);
+#endif
+#if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
+  } else if (strncasecmp(alg_name, "3LCache", 7) == 0) {
+    const char *init_params;
+    if (strcasecmp(alg_name, "3LCache-object-miss-ratio") == 0) {
+      init_params = "objective=object-miss-ratio";
+    } else if (strcasecmp(alg_name, "3LCache-byte-miss-ratio") == 0) {
+      init_params = "objective=byte-miss-ratio";
+    }
+    cache = ThreeLCache_init(cc_params, init_params);
 #endif
   } else if (strcasecmp(alg_name, "LHD") == 0) {
     cache = LHD_init(cc_params, NULL);
