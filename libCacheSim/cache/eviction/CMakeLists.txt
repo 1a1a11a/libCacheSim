@@ -80,14 +80,19 @@ set(sourceCPP
         cpp/GDSF.cpp
         LHD/lhd.cpp
         LHD/LHD_Interface.cpp
-        3LCache/ThreeLCache_Interface.cpp
-        3LCache/ThreeLCache.cpp
         )
 
 if (ENABLE_LRB)
     set (sourceCPP ${sourceCPP} 
         LRB/lrb.cpp
         LRB/LRB_Interface.cpp
+        )
+endif()
+
+if (ENABLE_3L_CACHE)
+    set (sourceCPP ${sourceCPP} 
+        3LCache/ThreeLCache_Interface.cpp
+        3LCache/ThreeLCache.cpp
         )
 endif()
 
