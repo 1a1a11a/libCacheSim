@@ -18,4 +18,3 @@ result/
 sftp-config.json
 # Clangd cache
 *.cache/
-data/tencentBlock_ns3964.csv
