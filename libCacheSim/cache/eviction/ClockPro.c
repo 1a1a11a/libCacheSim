@@ -457,7 +457,7 @@ static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
 // ***********************************************************************
 static const char *ClockPro_current_params(cache_t *cache, ClockPro_params_t *params) {
   static __thread char params_str[128];
-  snprintf(params_str, 128, "\n");
+  snprintf(params_str, 128, "init-ref=%d\n", params->init_ref);
   return params_str;
 }
 
@@ -480,6 +480,9 @@ static void ClockPro_parse_params(cache_t *cache, const char *cache_specific_par
     } else if (strcasecmp(key, "init-ratio-cold") == 0) {
       const double ratio = strtod(value, &end);
       params->mem_cold_max = (int64_t)((double)cache->cache_size * ratio);
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", ClockPro_current_params(cache, params));
+      exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
     }
