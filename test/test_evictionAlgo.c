@@ -495,32 +495,32 @@ int main(int argc, char *argv[]) {
 
   reader = setup_oracleGeneralBin_reader();
 
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFOv0", reader, test_S3FIFOv0);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader, test_QDLP_FIFO);
-  //
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_CR_LFU", reader, test_CR_LFU);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader, test_Hyperbolic);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFOv0", reader, test_S3FIFOv0);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader, test_QDLP_FIFO);
 
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_ARC", reader, test_ARC);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LeCaR", reader, test_LeCaR);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_CR_LFU", reader, test_CR_LFU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Cacheus", reader, test_Cacheus);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Hyperbolic", reader, test_Hyperbolic);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
+
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
   g_test_add_data_func("/libCacheSim/cacheAlgo_ClockPro", reader, test_ClockPro);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
-  //
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_LFUCpp", reader, test_LFUCpp);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFU", reader, test_LFU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUDA", reader, test_LFUDA);
+
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LFUCpp", reader, test_LFUCpp);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
 
   // /* Belady requires reader that has next access information and can only use
   //  * oracleGeneral trace */
