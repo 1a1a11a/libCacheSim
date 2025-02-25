@@ -10,7 +10,6 @@
 #include <stdio.h>
 
 #include "../config.h"
-#include "enum.h"
 #include "mem.h"
 
 #ifdef __cplusplus
@@ -25,6 +24,12 @@ typedef struct {
 typedef struct {
   int freq;
 } Clock_obj_metadata_t;
+
+typedef enum {
+  CLOCKPRO_TEST,
+  CLOCKPRO_COLD,
+  CLOCKPRO_HOT
+} clockpro_status_e;
 
 typedef struct {
   clockpro_status_e status;

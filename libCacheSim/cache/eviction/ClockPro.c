@@ -189,7 +189,7 @@ static cache_obj_t *ClockPro_insert(cache_t *cache, const request_t *req) {
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->clockpro.referenced = params->init_ref;
-  obj->clockpro.status = COLD;
+  obj->clockpro.status = CLOCKPRO_COLD;
 
   if (params->hand_hot == NULL) { // Initial insertion
     prepend_obj_to_head(&params->hand_hot, &params->hand_hot, obj);
@@ -243,11 +243,11 @@ static void ClockPro_remove_obj(cache_t *cache, cache_obj_t *obj) {
   DEBUG_ASSERT(obj != NULL);
   cache_obj_t *hand_hot_prev = params->hand_hot->queue.prev;
 
-  if (obj->clockpro.status == TEST) {
+  if (obj->clockpro.status == CLOCKPRO_TEST) {
     params->mem_test -= obj->obj_size;
-  } else if (obj->clockpro.status == COLD) {
+  } else if (obj->clockpro.status == CLOCKPRO_COLD) {
     params->mem_cold -= obj->obj_size;
-  } else if (obj->clockpro.status == HOT) {
+  } else if (obj->clockpro.status == CLOCKPRO_HOT) {
     params->mem_hot -= obj->obj_size;
   }
 
@@ -298,7 +298,7 @@ static void ClockPro_run_test(cache_t *cache) {
   ClockPro_params_t *params = (ClockPro_params_t *)cache->eviction_params;
   cache_obj_t *obj = params->hand_test;
 
-  if (obj->clockpro.status != TEST) {
+  if (obj->clockpro.status != CLOCKPRO_TEST) {
     params->hand_test = obj->queue.next;
     return;
   }
@@ -331,7 +331,7 @@ static void ClockPro_run_cold(cache_t *cache) {
   ClockPro_params_t *params = (ClockPro_params_t *)cache->eviction_params;
   cache_obj_t *obj = params->hand_cold;
 
-  if (obj->clockpro.status != COLD) {
+  if (obj->clockpro.status != CLOCKPRO_COLD) {
     params->hand_cold = obj->queue.next;
     return;
   }
@@ -351,7 +351,7 @@ static void ClockPro_run_cold(cache_t *cache) {
   copy_cache_obj_to_request(&req, obj);
   cache_obj_t *demoted_obj = hashtable_insert(params->ht_test, &req);
   demoted_obj->clockpro.referenced = params->init_ref;
-  demoted_obj->clockpro.status = TEST;
+  demoted_obj->clockpro.status = CLOCKPRO_TEST;
 
   params->mem_test += obj->obj_size;
 
@@ -376,7 +376,7 @@ static void ClockPro_run_hot(cache_t *cache) {
   ClockPro_params_t *params = (ClockPro_params_t *)cache->eviction_params;
   cache_obj_t *obj = params->hand_hot;
 
-  if (obj->clockpro.status != HOT) {
+  if (obj->clockpro.status != CLOCKPRO_HOT) {
     params->hand_hot = obj->queue.next;
     return;
   }
@@ -391,7 +391,7 @@ static void ClockPro_run_hot(cache_t *cache) {
     ClockPro_run_cold(cache);
   }
 
-  obj->clockpro.status = COLD;
+  obj->clockpro.status = CLOCKPRO_COLD;
   obj->clockpro.referenced = params->init_ref;
 
   if (params->hand_cold == obj) {
@@ -412,7 +412,7 @@ static void ClockPro_run_hot(cache_t *cache) {
 static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
   ClockPro_params_t *params = (ClockPro_params_t *)cache->eviction_params;
 
-  if (obj->clockpro.status == TEST) {
+  if (obj->clockpro.status == CLOCKPRO_TEST) {
     if (params->mem_cold_max + (int64_t)obj->obj_size > cache->cache_size) {
       params->mem_cold_max = cache->cache_size;
     } else {
@@ -432,7 +432,7 @@ static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
   }
 
   clockpro_status_e old_status = obj->clockpro.status;
-  obj->clockpro.status = HOT;
+  obj->clockpro.status = CLOCKPRO_HOT;
   obj->clockpro.referenced = params->init_ref;
   cache_obj_t *hand_hot_next = params->hand_hot->queue.next;
   move_obj_to_tail(&hand_hot_next, &params->hand_hot, obj);
@@ -441,9 +441,9 @@ static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
 
   params->hand_hot = obj->queue.next;
 
-  if (old_status == COLD) {
+  if (old_status == CLOCKPRO_COLD) {
     params->mem_cold -= obj->obj_size;
-  } else if (old_status == TEST) {
+  } else if (old_status == CLOCKPRO_TEST) {
     params->mem_test -= obj->obj_size;
   }
 

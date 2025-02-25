@@ -86,12 +86,6 @@ typedef enum {
   OP_INVALID = 255
 } req_op_e;
 
-typedef enum {
-  TEST,
-  COLD,
-  HOT
-} clockpro_status_e;
-
 static char *req_op_str[OP_INVALID + 2] = {"nop",     "get",    "gets", "set",  "add",  "cas",   "replace", "append",
                                            "prepend", "delete", "incr", "decr", "read", "write", "update",  "invalid"};
 
