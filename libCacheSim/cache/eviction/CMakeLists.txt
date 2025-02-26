@@ -40,6 +40,8 @@ set(sourceC
 
         Sieve.c
 
+        CAR.c
+
         RandomLRU.c
 )
 
