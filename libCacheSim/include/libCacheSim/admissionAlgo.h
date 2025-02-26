@@ -9,6 +9,7 @@ extern "C" {
 struct admissioner;
 typedef struct admissioner *(*admissioner_create_func_ptr)(const char *);
 typedef struct admissioner *(*admissioner_clone_func_ptr)(struct admissioner *);
+typedef void (*admissioner_update_func_ptr)(struct admissioner *, const request_t *);
 typedef bool (*cache_admit_func_ptr)(struct admissioner *, const request_t *);
 typedef void (*admissioner_free_func_ptr)(struct admissioner *);
 
@@ -17,6 +18,7 @@ typedef struct admissioner {
   void *params;
   admissioner_clone_func_ptr clone;
   admissioner_free_func_ptr free;
+  admissioner_update_func_ptr update;
   void *init_params;
 } admissioner_t;
 
