@@ -1,20 +1,15 @@
-// #include "cacheObj.h"
-// #include "cache.h"
-// #include "evictionAlgo.h"
+//
+//  CAR, the same as FIFO-Reinsertion or second chance, is a fusion 
+//  of CLOCK with Adapative Replacement Cache
+//
+
+
 #include "../../dataStructure/hashtable/hashtable.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
 
 // #define DEBUG_MODE
 
 typedef struct {
-    // clock uses one-bit counter
-    // int32_t n_bit_counter;
-    // max_freq = 1 << (n_bit_counter - 1)
-    // int32_t max_freq;
-    // int32_t init_freq;
-  
-    // int64_t n_obj_rewritten;
-    // int64_t n_byte_rewritten;
     int64_t L1_data_size;
     int64_t L2_data_size;
     int64_t L1_ghost_size;
@@ -35,7 +30,6 @@ typedef struct {
     bool curr_obj_in_L1_ghost;
     bool curr_obj_in_L2_ghost;
     int64_t last_req_in_ghost;
-    // request_t *req_local;
 } CAR_params_t;
 
 
@@ -92,9 +86,6 @@ cache_t *CAR_init(
     memset(cache->eviction_params, 0, sizeof(CAR_params_t));
     CAR_params_t *params = (CAR_params_t *)cache->eviction_params;
 
-    // params->n_bit_counter = 1;
-    // params->max_freq = 1;
-
     params->L1_data_size = 0;
     params->L2_data_size = 0;
     params->L1_ghost_size = 0;
@@ -110,8 +101,6 @@ cache_t *CAR_init(
     params->curr_obj_in_L1_ghost = false;
     params->curr_obj_in_L2_ghost = false;
     params->last_req_in_ghost = -1;
-    // params->vtime_last_req_in_ghost = -1;
-    // params->req_local = new_request();
     params->p = 0;
   
     CAR_parse_params(cache, DEFAULT_PARAMS);
@@ -119,17 +108,15 @@ cache_t *CAR_init(
       CAR_parse_params(cache, cache_specific_params);
     }
   
-#ifdef DEBUG_MODE
-    printf("From debug");
-#endif
-
-    // if (params->n_bit_counter != 1) {
-    //   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Clock-%d-%d", params->n_bit_counter, params->init_freq);
-    // }
-  
     return cache;
 }
 
+/**
+ * @brief initialize a CAR cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params Clock specific parameters as a string
+ */
 static cache_obj_t *CAR_find(cache_t *cache, const request_t *req, const bool update_cache){
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
     cache_obj_t *obj = cache_find_base(cache, req, update_cache);
@@ -186,11 +173,35 @@ static cache_obj_t *CAR_find(cache_t *cache, const request_t *req, const bool up
     return result;
 }
 
+/**
+ * free resources used by this cache
+ *
+ * @param cache
+ */
 static void CAR_free(cache_t *cache){
     free(cache->eviction_params);
     cache_struct_free(cache);
 }
 
+/**
+ * @brief this function is the user facing API
+ * it performs the following logic
+ *
+ * ```
+ * if obj in cache:
+ *    update_metadata
+ *    return true
+ * else:
+ *    if cache does not have enough space:
+ *        evict until it has space to insert
+ *    insert the object
+ *    return false
+ * ```
+ *
+ * @param cache
+ * @param req
+ * @return true if cache hit, false if cache miss
+ */
 static bool CAR_get(cache_t *cache, const request_t *req){
     #ifdef DEBUG_MODE
         return _CAR_get_debug(cache,req);
@@ -199,6 +210,22 @@ static bool CAR_get(cache_t *cache, const request_t *req){
     #endif
 }
 
+// ***********************************************************************
+// ****                                                               ****
+// ****       developer facing APIs (used by cache developer)         ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief insert an object into the cache,
+ * update the hash table and cache metadata
+ * this function assumes the cache has enough space
+ * and eviction is not part of this function
+ *
+ * @param cache
+ * @param req
+ * @return the inserted object
+ */
 static cache_obj_t *CAR_insert(cache_t *cache, const request_t *req){
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
     cache_obj_t *obj = cache_insert_base(cache, req);
@@ -225,6 +252,16 @@ static cache_obj_t *CAR_insert(cache_t *cache, const request_t *req){
     }
 }
 
+/**
+ * @brief find the object to be evicted
+ * this function does not actually evict the object or update metadata
+ * not all eviction algorithms support this function
+ * because the eviction logic cannot be decoupled from finding eviction
+ * candidate, so use assert(false) if you cannot support this function
+ *
+ * @param cache the cache
+ * @return the object to be evicted
+ */
 static cache_obj_t *CAR_to_evict(cache_t *cache, const request_t *req){
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
     if (params->L1_data_size + params->L2_data_size >= cache->cache_size) {
@@ -234,6 +271,15 @@ static cache_obj_t *CAR_to_evict(cache_t *cache, const request_t *req){
     return cache->to_evict_candidate;
 }
 
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param req not used
+ * @param evicted_obj if not NULL, return the evicted object to caller
+ */
 static void CAR_evict(cache_t *cache, const request_t *req){
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
     int64_t incoming_size = req->obj_size + cache->obj_md_size;
@@ -241,7 +287,6 @@ static void CAR_evict(cache_t *cache, const request_t *req){
         (params->L1_data_size + params->L2_data_size + incoming_size >= cache->cache_size)
     ) {
         _CAR_replace(cache,req);
-        // _CAR_sanity_check_full(cache, req);
         if (
             (params->last_req_in_ghost == cache->n_req) &&
             (!params->curr_obj_in_L1_ghost || !params->curr_obj_in_L2_ghost)
@@ -257,10 +302,22 @@ static void CAR_evict(cache_t *cache, const request_t *req){
                 _CAR_discard_LRU_L2_ghost(cache,req);
             }
         }
-        // _CAR_sanity_check_full(cache, req);
     }
 }
 
+/**
+ * @brief remove an object from the cache
+ * this is different from cache_evict because it is used to for user trigger
+ * remove, and eviction is used by the cache to make space for new objects
+ *
+ * it needs to call cache_remove_obj_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * @param cache
+ * @param obj_id
+ * @return true if the object is removed, false if the object is not in the
+ * cache
+ */
 static bool CAR_remove(cache_t *cache, const obj_id_t obj_id){
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
     cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
@@ -291,6 +348,12 @@ static bool CAR_remove(cache_t *cache, const obj_id_t obj_id){
     return true;
 }
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                  cache internal functions                     ****
+// ****                                                               ****
+// ***********************************************************************
+
 static void _CAR_replace(cache_t *cache, const request_t *req){
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
     _CAR_sanity_check(cache, req);
@@ -300,23 +363,18 @@ static void _CAR_replace(cache_t *cache, const request_t *req){
             if (!params->L1_data_head->CAR.reference) {
                 found = true;
                 _CAR_L1_demote_to_MRU_data(cache,req);
-                // _CAR_sanity_check_full(cache, req);
             } else {
                 params->L1_data_head->CAR.reference = false;
                 _CAR_L1_move_to_tail_L2_data(cache,req);
-                // _CAR_sanity_check_full(cache, req);
             }
         } else {
             if (!params->L2_data_head->CAR.reference) {
                 found = true;
                 _CAR_L2_demote_to_MRU_data(cache,req);
-                // _CAR_sanity_check_full(cache, req);
 
             } else {
                 params->L2_data_head->CAR.reference = 0;
                 _CAR_move_to_tail_L2_data(cache,req);
-                // _CAR_sanity_check_full(cache, req);
-
             }
         }
     }
@@ -379,9 +437,6 @@ static void _CAR_L1_move_to_tail_L2_data(cache_t *cache, const request_t *req) {
     append_obj_to_tail(&params->L2_data_head,&params->L2_data_tail,obj);
     obj->CAR.ghost = false;
     obj->CAR.lru_id = 2;
-    _CAR_sanity_check(cache, req);
-    
-    _CAR_sanity_check(cache, req);
 }
 
 static void _CAR_move_to_tail_L2_data(cache_t *cache, const request_t *req) {
@@ -458,7 +513,11 @@ static void CAR_parse_params(cache_t *cache, const char *cache_specific_params) 
     free(old_params_str);
 }
 
-// DEBUG:
+// ***********************************************************************
+// ****                                                               ****
+// ****                       debug functions                         ****
+// ****                                                               ****
+// ***********************************************************************
 
 static void print_cache(cache_t *cache) {
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
