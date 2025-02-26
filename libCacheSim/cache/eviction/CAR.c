@@ -1,7 +1,10 @@
 //
 //  CAR, the same as FIFO-Reinsertion or second chance, is a fusion 
 //  of CLOCK with Adapative Replacement Cache
-//
+// 
+//  Created by Rafly Hanggaraksa
+// 
+// 
 
 
 #include "../../dataStructure/hashtable/hashtable.h"
