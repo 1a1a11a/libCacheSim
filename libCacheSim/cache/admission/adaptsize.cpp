@@ -30,20 +30,33 @@ typedef struct adaptsize_admissioner {
   std::vector<double> aligned_admission_probs;
 } adaptsize_admission_params_t;
 
+static const char* DEFAULT_PARAMS="max-iteration=15,reconf-interval=30000";
+
+// ***********************************************************************
+// ****                                                               ****
+// ****                   function declarations                       ****
+// ****                                                               ****
+// ***********************************************************************
+void free_adaptsize_admissioner(admissioner_t *admissioner);
+admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner);
+admissioner_t *create_adaptsize_admissioner(const char *init_params);
+
 void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req, const uint64_t cache_size);
 void adaptsize_reconfiguration(adaptsize_admission_params_t *pa);
 double adaptsize_model_hit_rate(adaptsize_admission_params_t *pa,double c);
-
 bool adaptsize_admit(admissioner_t *admissioner, const request_t *req);
-void free_adaptsize_admissioner(admissioner_t *admissioner);
-admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner);
+// ***********************************************************************
+// ****                                                               ****
+// ****                   end user facing functions                   ****
+// ****                                                               ****
+// ***********************************************************************
 
-// Constants from the original implementation
+// Constants used on original implementation
 const double EWMA_DECAY = 0.3;
 const double gss_r = 0.61803399;
 const double tol = 3.0e-8;
 
-//Math Formulas from the original implementation
+//Math formulas from the original implementation
 static inline double adaptsize_oP1(double T, double l, double p) {
     return (l * p * T * (840.0 + 60.0 * l * T + 20.0 * l*l * T*T + l*l*l * T*T*T));
 }
@@ -51,6 +64,12 @@ static inline double adaptsize_oP2(double T, double l, double p) {
     return (840.0 + 120.0 * l * (-3.0 + 7.0 * p) * T + 60.0 * l*l * (1.0 + p) * T*T + 4.0 * l*l*l * (-1.0 + 5.0 * p) * T*T*T + l*l*l*l * p * T*T*T*T);
 }
 
+/** 
+ * @brief This function get called for every lookup to update adaptsize stats
+ * @param admissioner  
+ * @param req 
+ * @param cache_size current cache size
+ */
 void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req, const uint64_t cache_size) {
   adaptsize_admission_params_t *pa = (adaptsize_admission_params_t *)admissioner->params;
   pa->cache_size = cache_size;
@@ -75,6 +94,10 @@ void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req, co
   obj_info.obj_size = req->obj_size;
 }
 
+/** 
+ * @brief This function get called for every *reconf_interval* request, to find current best *c_param* 
+ * @param pa Adaptsize current data  
+ */
 void adaptsize_reconfiguration(adaptsize_admission_params_t *pa) {
   // Check if its time to reconfigure
   --pa->next_reconf;
@@ -125,7 +148,7 @@ void adaptsize_reconfiguration(adaptsize_admission_params_t *pa) {
     log2(total_obj_size), 
     log2(pa->stat_size));
   // END Reconfiguration Initialization
-  // MATH
+  // Finding best hit rate
   double x0 = 0;
   double x1 = log2(pa->cache_size);
   double x2 = x1;
@@ -159,7 +182,7 @@ void adaptsize_reconfiguration(adaptsize_admission_params_t *pa) {
     && fabs(x3 - x0) > tol * (fabs(x1) + fabs(x2))) {
       if (h1 != h1 || h2 != h2) {
         //Error NaN
-        WARN("BUG: 1 NaN h1:%f h2:%f\n", h1, h2);
+        WARN("BUG: NaN h1:%f h2:%f\n", h1, h2);
         break;
       }
       if (h2 > h1) {
@@ -176,11 +199,11 @@ void adaptsize_reconfiguration(adaptsize_admission_params_t *pa) {
         h1 = adaptsize_model_hit_rate(pa, x1);
       }
     }
-    // END MATH
+    // END Finding best hit rate
     // Check for result
     if (h1 != h1 || h2 != h2) {
       //Error NaN
-      WARN("BUG: 2 NaN h1:%f h2:%f\n", h1, h2);
+      WARN("BUG: NaN h1:%f h2:%f\n", h1, h2);
     } else if (h1 > h2) {
       pa->c_param = pow(2, x1);
       VVERBOSE("C = %f (log2: %f )\n", pa->c_param, x1);
@@ -191,6 +214,11 @@ void adaptsize_reconfiguration(adaptsize_admission_params_t *pa) {
     // END Check for result
 }
 
+/** 
+ * @brief This functioon used by adaptsize_reconfiguration to predict hit rate of c 
+ * @param pa Adaptsize current data
+ * @param log2c variable to predict its hit rate  
+ */
 double adaptsize_model_hit_rate(adaptsize_admission_params_t* pa,double log2c){
   double old_T, the_T, the_C;
   double sum_val = 0.;
@@ -203,12 +231,10 @@ double adaptsize_model_hit_rate(adaptsize_admission_params_t* pa,double log2c){
     return(0);
   }
   the_T = pa->cache_size / sum_val;
-  // prepare admission probabilities
   pa->aligned_admission_probs.clear();
   for(size_t i = 0; i < pa->aligned_obj_seen_times.size(); i++) {
     pa->aligned_admission_probs.push_back(exp(-pa->aligned_obj_size[i] / pow(2.0, thparam)));
   }
-  // 20 iterations to calculate TTL
   for(int j = 0; j < 20; j++) {
     the_C = 0;
     if(the_T > 1e70) {
@@ -217,7 +243,6 @@ double adaptsize_model_hit_rate(adaptsize_admission_params_t* pa,double log2c){
     for(size_t i = 0; i < pa->aligned_obj_seen_times.size(); i++) {
       const double reqTProd = pa->aligned_obj_seen_times[i] * the_T;
       if(reqTProd > 150) {
-        // cache hit probability = 1, but numerically inaccurate to calculate
         the_C += pa->aligned_obj_size[i];
       } else {
         const double expTerm = exp(reqTProd) - 1;
@@ -231,7 +256,6 @@ double adaptsize_model_hit_rate(adaptsize_admission_params_t* pa,double log2c){
   }
   assert(the_C > 0);
 
-  // calculate object hit ratio
   double weighted_hitratio_sum = 0;
   for(size_t i = 0; i < pa->aligned_obj_seen_times.size(); i++) {
     const double tmp01= adaptsize_oP1(the_T,pa->aligned_obj_seen_times[i],pa->aligned_admission_probs[i]);
@@ -250,16 +274,28 @@ double adaptsize_model_hit_rate(adaptsize_admission_params_t* pa,double log2c){
   return weighted_hitratio_sum;
 }
 
+/** 
+ * @brief This function used by cache can_admit(), get called everytime an object is to be admitted. 
+ * @param pa Adaptsize current data  
+ * @param log2c variable to predict its hit rate  
+ * @return true cache would be admitted 
+ */
 bool adaptsize_admit(admissioner_t *admissioner, const request_t *req) {
   adaptsize_admission_params_t *pa =
       (adaptsize_admission_params_t *)admissioner->params;
   double prob = exp(-(double)req->obj_size/pa->c_param);
-  if ((double)(next_rand() % MAX_MODULE) / (double)MAX_MODULE < prob) {
+  double roll = (double)(next_rand() % MAX_MODULE) / (double)MAX_MODULE;
+  if (roll < prob) {
     return true;
   }
   return false;
 }
 
+/**
+ * @brief Parsing params for adaptsize. 
+ * @param init_params Adaptsize spesific parameter
+ * @param pa Adaptsize current data  
+ */
 static void adaptsize_admissioner_parse_params(
     const char *init_params, adaptsize_admission_params_t *pa) {
   if (init_params != NULL) {
@@ -280,12 +316,10 @@ static void adaptsize_admissioner_parse_params(
 
       if (strcasecmp(key, "max-iteration") == 0) {
         pa->max_iteration = strtoll(value, &end, 10);
-      } else if (strcasecmp(key, "c-param-shift") == 0) {
-        pa->c_param = 1 << atoi(value);
       } else if (strcasecmp(key, "reconf-interval") == 0) {
         pa->reconf_interval = strtoull(value, &end, 10);
       } else if (strcasecmp(key, "print") == 0){
-        printf("max-iteration=%lu,c-param-shift=%f,reconf-interval=%lu", pa->max_iteration, pa->c_param, pa->reconf_interval);
+        printf("max-iteration=%lu,reconf-interval=%lu", pa->max_iteration, pa->reconf_interval);
         exit(0);
       } else {
         ERROR("adaptsize admission does not have parameter %s\n", key);
@@ -296,10 +330,19 @@ static void adaptsize_admissioner_parse_params(
   }
 }
 
+/**
+ * @brief clone adaptsize params with its parameter 
+ * @param admissioner
+ * @return admissioner with the same parameter  
+ */
 admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner) {
   return create_adaptsize_admissioner((const char *)admissioner->init_params);
 }
 
+/**
+ * @brief free adaptsize admissioner 
+ * @param admissioner 
+ */
 void free_adaptsize_admissioner(admissioner_t *admissioner) {
   adaptsize_admission_params_t *pa = 
     (adaptsize_admission_params_t*)(admissioner->params);
@@ -312,6 +355,11 @@ void free_adaptsize_admissioner(admissioner_t *admissioner) {
   free(admissioner);
 }
 
+/**
+ * @brief Init adaptsize admissioner 
+ * @param init_params Adaptsize spesific parameter
+ * @return 
+ */
 admissioner_t *create_adaptsize_admissioner(const char *init_params) {
   adaptsize_admission_params_t *pa = (adaptsize_admission_params_t *)malloc(
       sizeof(adaptsize_admission_params_t));
@@ -319,9 +367,11 @@ admissioner_t *create_adaptsize_admissioner(const char *init_params) {
 
   pa->reconf_interval = 15000;
   pa->max_iteration = 15;
-  pa->c_param = 1 << 15;
 
-  adaptsize_admissioner_parse_params(init_params, pa);
+  adaptsize_admissioner_parse_params(DEFAULT_PARAMS,  pa);
+  if (init_params != NULL) {
+    adaptsize_admissioner_parse_params(init_params, pa);
+  }
 
   admissioner_t *admissioner = (admissioner_t *)malloc(sizeof(admissioner_t));
   memset(admissioner, 0, sizeof(admissioner_t));
