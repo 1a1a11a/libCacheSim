@@ -27,6 +27,7 @@ option(ENABLE_GLCACHE "enable group-learned cache" OFF)
 option(SUPPORT_TTL "whether support TTL" OFF)
 option(OPT_SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
+option(ENABLE_3L_CACHE "enable 3LCache" OFF)
 set(LOG_LEVEL NONE CACHE STRING "change the logging level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
 
@@ -108,7 +109,7 @@ endif()
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
 
 # string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}, ENABLE_LRB ${ENABLE_LRB}, OPT_SUPPORT_ZSTD_TRACE ${OPT_SUPPORT_ZSTD_TRACE}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}, ENABLE_LRB ${ENABLE_LRB}, ENABLE_3L_CACHE ${ENABLE_3L_CACHE}, OPT_SUPPORT_ZSTD_TRACE ${OPT_SUPPORT_ZSTD_TRACE}")
 
 # add_compile_options(-fsanitize=address)
 # add_link_options(-fsanitize=address)
@@ -194,27 +195,24 @@ else()
     remove_definitions(ENABLE_GLCACHE)
 endif()
 
-if(ENABLE_LRB)
-    find_path(LIGHTGBM_PATH LightGBM)
+foreach (FEATURE ENABLE_LRB ENABLE_3L_CACHE)
+    if (${FEATURE})
+        find_path(LIGHTGBM_PATH LightGBM)
+        if (NOT LIGHTGBM_PATH)
+            message(FATAL_ERROR "LIGHTGBM_PATH not found")
+        endif ()
+        include_directories(${LIGHTGBM_PATH})
 
-    if(NOT LIGHTGBM_PATH)
-        message(FATAL_ERROR "LIGHTGBM_PATH not found")
+        find_library(LIGHTGBM_LIB _lightgbm)
+        if (NOT LIGHTGBM_LIB)
+            message(FATAL_ERROR "LIGHTGBM_LIB not found")
+        endif ()
+        link_libraries(${LIGHTGBM_LIB})
+        add_compile_definitions(${FEATURE}=1)
+    else()
+        remove_definitions(${FEATURE})
     endif()
-
-    include_directories(${LIGHTGBM_PATH})
-
-    find_library(LIGHTGBM_LIB _lightgbm)
-
-    if(NOT LIGHTGBM_LIB)
-        message(FATAL_ERROR "LIGHTGBM_LIB not found")
-    endif()
-
-    link_libraries(${LIGHTGBM_LIB})
-    add_compile_definitions(ENABLE_LRB=1)
-else()
-    remove_definitions(ENABLE_LRB)
-endif()
-
+endforeach()
 # link_libraries("-ldl -lm ${LIBS}")
 
 # put binary in bin directory
@@ -312,6 +310,14 @@ if(ENABLE_LRB)
         ${cache_source} ${LRB_source}
     )
 endif(ENABLE_LRB)
+
+if(ENABLE_3L_CACHE)
+    file(GLOB ThreeLCache_source
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/3LCache/*.cpp)
+    set(cache_source
+        ${cache_source} ${ThreeLCache_source}
+    )
+endif(ENABLE_3L_CACHE)
 
 set(reader_source
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/reader.c

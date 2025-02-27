@@ -40,9 +40,8 @@ add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
 #     add_test(NAME testGLCache COMMAND testGLCache WORKING_DIRECTORY .)
 # endif (ENABLE_GLCACHE)
 
-
-
-
-
-
-
+if (ENABLE_3L_CACHE)
+    add_executable(test3LCache test_3lcache.c)
+    target_link_libraries(test3LCache ${coreLib})
+    add_test(NAME test3LCache COMMAND test3LCache WORKING_DIRECTORY .)
+endif (ENABLE_3L_CACHE)

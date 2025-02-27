@@ -91,6 +91,13 @@ if (ENABLE_LRB)
         )
 endif()
 
+if (ENABLE_3L_CACHE)
+    set (sourceCPP ${sourceCPP} 
+        3LCache/ThreeLCache_Interface.cpp
+        3LCache/ThreeLCache.cpp
+        )
+endif()
+
 if (ENABLE_GLCACHE)
     set(sourceC 
         ${sourceC} 
