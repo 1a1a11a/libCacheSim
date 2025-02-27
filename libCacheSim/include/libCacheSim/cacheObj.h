@@ -125,8 +125,8 @@ typedef struct {
 
 typedef struct {
   // int32_t freq;
-  bool reference;
   int lru_id;
+  bool reference;
   bool ghost;
 } CAR_obj_metadata_t;
 
