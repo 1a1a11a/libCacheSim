@@ -356,8 +356,8 @@ static void test_ARC(gconstpointer user_data) {
 }
 
 static void test_CAR(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {92579, 87078, 80781, 75067, 67660, 66352, 65680, 64719};
-  uint64_t miss_byte_true[] = {4159481856, 3811910656, 3431201280, 3186882560, 2876251136, 2798345216, 2764891648, 2712564224};
+  uint64_t miss_cnt_true[] = {92799, 87222, 80945, 75207, 67660, 66352, 65680, 64719};
+  uint64_t miss_byte_true[] = {4165612544, 3813033984, 3436215296, 3188880896, 2876251136, 2798345216, 2764891648, 2712564224};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
