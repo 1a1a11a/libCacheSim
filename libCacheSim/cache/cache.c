@@ -233,7 +233,7 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
   bool hit = (obj != NULL);
 
   if (cache->admissioner && cache->admissioner->update) {
-    cache->admissioner->update(cache->admissioner, req);
+    cache->admissioner->update(cache->admissioner, req, cache->cache_size);
   }
 
   if (hit) {
