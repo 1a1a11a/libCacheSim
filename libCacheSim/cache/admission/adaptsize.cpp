@@ -283,7 +283,7 @@ double adaptsize_model_hit_rate(adaptsize_admission_params_t* pa,double log2c){
 bool adaptsize_admit(admissioner_t *admissioner, const request_t *req) {
   adaptsize_admission_params_t *pa =
       (adaptsize_admission_params_t *)admissioner->params;
-  double prob = exp(-(double)req->obj_size/pa->c_param);
+  double prob = exp(-1.0 * ((double)req->obj_size) / pa->c_param);
   double roll = (double)(next_rand() % MAX_MODULE) / (double)MAX_MODULE;
   if (roll < prob) {
     return true;
