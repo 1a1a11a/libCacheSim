@@ -1,6 +1,6 @@
 
 
-
+add_subdirectory(MRC)
 add_subdirectory(cachesim)
 # add_subdirectory(traceWriter)
 add_subdirectory(distUtil)
