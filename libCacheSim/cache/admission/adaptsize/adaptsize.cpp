@@ -76,7 +76,6 @@ void Adaptsize::reconfigure(){
 
     for (auto it = longterm_metadata.begin();
         it != longterm_metadata.end();
-        it++
     ) {
         if (it->second.obj_seen_times < 0.1) {
             stat_size -= it->second.obj_size;
@@ -87,6 +86,7 @@ void Adaptsize::reconfigure(){
         total_seen_times += it->second.obj_seen_times;
         aligned_obj_size.push_back(it->second.obj_size);
         total_obj_size += it->second.obj_size;
+        ++it;
     }
     VVERBOSE("Reconfiguring over %zu objects - log2 total size %f log2 statsize %f\n", 
         longterm_metadata.size(), 
