@@ -83,6 +83,7 @@ admissioner_t *create_size_admissioner(const char *init_params) {
   admissioner->clone = clone_size_admissioner;
   if (init_params != NULL) admissioner->init_params = strdup(init_params);
 
+  strncpy(admissioner->admissioner_name, "Size", CACHE_NAME_LEN);
   return admissioner;
 }
 

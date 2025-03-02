@@ -102,6 +102,7 @@ admissioner_t *create_size_probabilistic_admissioner(const char *init_params) {
   admissioner->clone = clone_size_probabilistic_admissioner;
   if (init_params != NULL) admissioner->init_params = strdup(init_params);
 
+  strncpy(admissioner->admissioner_name, "SizeProbabilistic", CACHE_NAME_LEN);
   return admissioner;
 }
 
