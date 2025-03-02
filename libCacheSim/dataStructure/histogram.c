@@ -8,17 +8,17 @@
 
 ReuseHistogram* init_histogram() {
   ReuseHistogram* hist = (ReuseHistogram*)malloc(sizeof(ReuseHistogram));
-  hist->bins = g_hash_table_new(g_int64_hash, g_int64_equal);  // ✅ Dynamic binning
+  hist->bins = g_hash_table_new(g_int64_hash, g_int64_equal);
   hist->cold_miss_bin = 0;
-  hist->cold_miss_threshold = 0.0;  // ✅ Keeps existing logic
-  hist->f = fopen("/users/Claire/libCacheSim/histogram.log", "w");
+  hist->cold_miss_threshold = 0.0;
+  // hist->f = fopen("/users/Claire/libCacheSim/histogram.log", "w");
   return hist;
 }
 
 void update_histogram(ReuseHistogram* hist, uint64_t distance, float new_thres) {
-  if (distance == (uint64_t)-1) {  // ✅ Cold Miss Handling (Unchanged)
+  if (distance == (uint64_t)-1) {
     if (hist->cold_miss_threshold > new_thres) {
-      hist->cold_miss_bin = (uint64_t)(hist->cold_miss_bin * new_thres / hist->cold_miss_threshold);
+      hist->cold_miss_bin = (uint64_t)(hist->cold_miss_bin * new_thres / hist->cold_miss_threshold + 0.5);
       hist->cold_miss_threshold = new_thres;
     }
     if (hist->cold_miss_threshold == 0) {
@@ -28,20 +28,15 @@ void update_histogram(ReuseHistogram* hist, uint64_t distance, float new_thres) 
     return;
   }
 
-  // ✅ Check if the distance exists in the hash table
   BinEntry* bin = (BinEntry*)g_hash_table_lookup(hist->bins, &distance);
 
   if (bin) {
-    // ✅ Distance already exists, update frequency and threshold
-
     if (bin->threshold > new_thres) {
-      bin->frequency *= new_thres / bin->threshold;
-      bin->threshold = new_thres;  // ✅ Maintain the lowest threshold
+      bin->frequency = (bin->frequency * new_thres / bin->threshold + 0.5);
+      bin->threshold = new_thres;
     }
     bin->frequency++;
   } else {
-    // fprintf(hist->f,"New Distance: %lu, Final Number:%lu\n", distance,    (uint64_t)((double)(distance) /(double)
-    // new_thres)); ✅ Distance does not exist, create a new bin
     BinEntry* new_bin = (BinEntry*)malloc(sizeof(BinEntry));
     new_bin->frequency = 1;
     new_bin->threshold = new_thres;
@@ -50,7 +45,6 @@ void update_histogram(ReuseHistogram* hist, uint64_t distance, float new_thres) 
 }
 
 void wrap_up_histogram(ReuseHistogram* hist, float rate) {
-  // ✅ Iterate over hash table bins
   GHashTableIter iter;
   gpointer key, value;
   g_hash_table_iter_init(&iter, hist->bins);
@@ -59,7 +53,7 @@ void wrap_up_histogram(ReuseHistogram* hist, float rate) {
     BinEntry* bin = (BinEntry*)value;
     bin->frequency = (uint64_t)(bin->frequency * rate / bin->threshold);
   }
-  hist->cold_miss_bin = (uint64_t)(hist->cold_miss_bin * rate / hist->cold_miss_threshold);
+  hist->cold_miss_bin = (uint64_t)(hist->cold_miss_bin * rate / hist->cold_miss_threshold + 0.5);
 }
 
 void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
@@ -70,12 +64,10 @@ void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
 
   fprintf(file, "Distance,Frequency\n");
 
-  // ✅ Export cold misses first
   if (hist->cold_miss_bin > 0) {
     fprintf(file, "ColdMiss,%lu\n", hist->cold_miss_bin);
   }
 
-  // ✅ Iterate over hash table bins
   GHashTableIter iter;
   gpointer key, value;
   g_hash_table_iter_init(&iter, hist->bins);
@@ -84,7 +76,6 @@ void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
     BinEntry* bin = (BinEntry*)value;
     double scaled_distance = (double)(distance) / (double)rate;
 
-    // ✅ Ensure result is within uint64_t bounds before conversion
     if (scaled_distance > (double)UINT64_MAX) {
       fprintf(file, "Overflow,%lu\n", bin->frequency);
     } else {
@@ -120,11 +111,35 @@ void free_histogram(ReuseHistogram* hist) {
   gpointer key, value;
   g_hash_table_iter_init(&iter, hist->bins);
 
-  // ✅ Free all BinEntry structures
   while (g_hash_table_iter_next(&iter, &key, &value)) {
     free(value);
   }
 
-  g_hash_table_destroy(hist->bins);  // ✅ Free hash table memory
+  g_hash_table_destroy(hist->bins);
   free(hist);
+}
+
+void adjust_histogram(ReuseHistogram* hist, uint64_t total_requests, float rate) {
+  uint64_t total = hist->cold_miss_bin;
+  GHashTableIter iter;
+  gpointer key, value;
+  g_hash_table_iter_init(&iter, hist->bins);
+  while (g_hash_table_iter_next(&iter, &key, &value)) {
+    BinEntry* bin = (BinEntry*)value;
+    total += bin->frequency;
+  }
+
+  uint64_t expected = (uint64_t)(total_requests * rate);
+
+  if (expected > total) {
+    uint64_t diff = expected - total;
+    // Use get_min_distance to find the smallest distance bucket.
+    uint64_t min_distance = get_min_distance(hist);
+    if (min_distance != UINT64_MAX) {
+      BinEntry* bin = (BinEntry*)g_hash_table_lookup(hist->bins, &min_distance);
+      if (bin) {
+        bin->frequency += diff;
+      }
+    }
+  }
 }

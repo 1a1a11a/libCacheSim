@@ -9,14 +9,20 @@
 #include "mrc_internal.h"
 
 int main(int argc, char **argv) {
-  if (argc < 3) {
-    fprintf(stderr, "Usage: %s trace_file\n", argv[0]);
+  if (argc < 5) {
+    fprintf(stderr, "Usage:\n"
+            "  For SHARDS:\n"
+            "    %s SHARDS <output_file> <trace_file> <trace_type> <rate> [--size SIZE] [other options]\n\n"
+            "  For MINI:\n"
+            "    %s MINI <trace_file> <trace_type> <eviction_algo> <cache_sizes> <rate> <output_file> [other options]\n",
+            argv[0], argv[0]);
     return 1;
-  }
-  printf("Received Arguments:\n");
-  for (int i = 0; i < argc; i++) {
-    printf("argv[%d]: %s\n", i, argv[i]);
-  }
+}
+
+  // printf("Received Arguments:\n");
+  // for (int i = 0; i < argc; i++) {
+  //   printf("argv[%d]: %s\n", i, argv[i]);
+  // }
 
   char *algorithm_type = argv[1];
   printf("Algorithm type: %s\n", algorithm_type);

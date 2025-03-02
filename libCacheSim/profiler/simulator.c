@@ -48,7 +48,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   cache_stat_t *result = params->result;
   /* If an array of readers is provided, use the one corresponding to this cache; otherwise, use the single reader */
   reader_t *source_reader = params->readers ? params->readers[idx] : params->reader;
-  reader_t *cloned_reader = clone_reader(params->reader);
+  reader_t *cloned_reader = clone_reader(source_reader);
   request_t *req = new_request();
   cache_t *local_cache = params->caches[idx];
   strncpy(result[idx].cache_name, local_cache->cache_name, CACHE_NAME_ARRAY_LEN);
@@ -354,7 +354,9 @@ cache_stat_t *simulate_with_multi_caches_scaling(reader_t **readers, cache_t *ca
   g_thread_pool_free(gthread_pool, FALSE, TRUE);
   g_mutex_clear(&(params->mtx));
   my_free(sizeof(sim_mt_params_t), params);
-
+  for (int i=0; i<num_of_caches; i++) {
+    result[i].sampler_ratio = readers[i]->sampler->sampling_ratio;
+  }
   return result;
 }
 

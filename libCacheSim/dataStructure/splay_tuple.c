@@ -195,6 +195,7 @@ sTree_tuple *splay_delete_t(key_type_t i, sTree_tuple *t) {
   sTree_tuple *current = t;
   sTree_tuple *parent = NULL;
 
+  // Iterate until find the node to delete
   while (current != NULL) {
     if (key_cmp_t(i, current->key) == 0 && i->L == current->key->L) {
       sTree_tuple *replacement;
@@ -230,11 +231,10 @@ sTree_tuple *splay_delete_t(key_type_t i, sTree_tuple *t) {
     }
 
     parent = current;
-    if (i->L < current->key->L) {
+    if (key_cmp_t(i, current->key) < 0 || (key_cmp_t(i, current->key) == 0 && i->L < current->key->L))
       current = current->left;
-    } else {
+    else
       current = current->right;
-    }
   }
 
   return t;

@@ -4,9 +4,9 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "DataStructure/histogram.h"
-#include "DataStructure/splay.h"
-#include "DataStructure/splay_tuple.h"
+#include "../../dataStructure/histogram.h"
+#include "../../dataStructure/splay.h"
+#include "../../dataStructure/splay_tuple.h"
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/cache.h"
@@ -43,7 +43,7 @@ struct SHARD_arguments {
 struct PARAM {
   float rate;
   bool ver;  // 0 means fixed rate, 1 means fixed size
-  void (*mrc_algo)(struct PARAM*, char* path);
+  
   uint64_t threshold;
   //GHashTable* prio_hash;
   sTree_tuple* prio_tree;  // root of the splay tree
@@ -51,6 +51,8 @@ struct PARAM {
   ReuseHistogram* data;
   GHashTable* lookup_hash;
   reader_t *reader;
+  int64_t (*compute_distance)(struct PARAM *, request_t *, uint64_t);
+  void (*mrc_algo)(struct PARAM*, char* path);
 };
 
 struct MINI_arguments {
@@ -89,13 +91,17 @@ struct MINI_arguments {
 
 };
 
+int64_t compute_distance_fixed_rate(struct PARAM *params, request_t *req, uint64_t timestamp);
+
+int64_t compute_distance_fixed_size(struct PARAM *params, request_t *req, uint64_t timestamp);
+
 void generate_shards_mrc(struct PARAM* params, char* path);
 
 cache_stat_t * generate_mini_mrc(struct MINI_arguments* args);
 
 void parse_mrc_cmd(int argc, char **argv, struct PARAM *args);
 
-void parse_mini_cmd(int argc, char** argv, struct MINI_arguments* args);
+void parse_mini_cmd(int argc, char* argv[], struct MINI_arguments* args);
 
 #ifdef __cplusplus
 }

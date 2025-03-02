@@ -24,5 +24,6 @@ void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path);
 void free_histogram(ReuseHistogram* hist);
 void wrap_up_histogram(ReuseHistogram* hist, float rate);
 uint64_t get_min_distance(ReuseHistogram* hist);
+void adjust_histogram(ReuseHistogram* hist, uint64_t total_requests, float rate);
 
 #endif

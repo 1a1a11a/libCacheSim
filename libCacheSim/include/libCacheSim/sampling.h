@@ -22,7 +22,7 @@ enum sampler_type {
   INVALID_SAMPLER
 };
 
-static const char *sampling_type_str[] = {"spatial", "temporal", "invalid"};
+static const char *sampling_type_str[] = {"spatial", "temporal", "shards","invalid"};
 
 typedef struct sampler {
   trace_sampling_func sample;
