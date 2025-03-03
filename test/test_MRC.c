@@ -60,12 +60,6 @@
 #define DISTANCE_TOLERANCE 3
 #define FLOAT_TOLERANCE 0.00001
 
-/* Structure to hold expected row data for the SHARDS CSV test.
- * line_index: index in the CSV file (0-based; header is index 0)
- * If expected_distance_str is non-NULL, token[0] is compared as a string.
- * Otherwise, token[0] is parsed as an integer and compared to expected_distance_num
- * within a tolerance.
- */
 typedef struct {
     int line_index;
     const char* expected_distance_str; // if not NULL, compare string exactly
