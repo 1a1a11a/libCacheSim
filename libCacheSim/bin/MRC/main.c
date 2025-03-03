@@ -3,7 +3,7 @@
 #endif
 #include <assert.h>
 #include <libgen.h>
-
+#include <unistd.h>
 #include "../../include/libCacheSim/sampling.h"
 #include "../cachesim/internal.h"
 #include "mrc_internal.h"
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
     struct MINI_arguments arguments;
     parse_mini_cmd(argc, argv, &arguments);
     cache_stat_t *return_value = generate_mini_mrc(&arguments);
-    
+
     FILE *output_file = fopen(path, "w");
     if (output_file == NULL) {
       perror("Error opening file");

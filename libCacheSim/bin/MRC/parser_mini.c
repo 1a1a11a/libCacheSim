@@ -415,10 +415,10 @@ static int conv_cache_sizes(char *cache_size_str, char *rate_size_str, struct MI
         wss = args->ignore_obj_size ? wss_obj : wss_byte;
       }
       if (n_rate == 1) {
-        args->cache_sizes[args->n_cache_size++] = MAX(57344,(uint64_t)(wss * atof(token) * args->cache_size_ratio[0]));
+        args->cache_sizes[args->n_cache_size++] =(wss * atof(token) * args->cache_size_ratio[0]);
       } else if (n_rate > args->n_cache_size) {
         args->cache_sizes[args->n_cache_size++] =
-            MAX(57344,(uint64_t)(wss * atof(token) * args->cache_size_ratio[args->n_cache_size]));
+            (uint64_t)(wss * atof(token) * args->cache_size_ratio[args->n_cache_size]);
       } else {
         ERROR("Number of cache size ratios should be equal to the number of cache sizes\n");
         exit(1);
