@@ -62,7 +62,6 @@ admissioner_t *create_bloomfilter_admissioner(const char *init_params) {
   admissioner->free = free_bloomfilter_admissioner;
   admissioner->admit = bloomfilter_admit;
 
-  strncpy(admissioner->admissioner_name, "BloomFilter", CACHE_NAME_LEN);
   return admissioner;
 }
 
