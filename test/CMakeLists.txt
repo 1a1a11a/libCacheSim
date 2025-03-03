@@ -16,6 +16,9 @@ target_link_libraries(testSimulator ${coreLib})
 add_executable(testEvictionAlgo test_evictionAlgo.c)
 target_link_libraries(testEvictionAlgo ${coreLib})
 
+add_executable(testAdmissionAlgo test_admissionAlgo.c)
+target_link_libraries(testAdmissionAlgo ${coreLib})
+
 add_executable(testPrefetchAlgo test_prefetchAlgo.c)
 target_link_libraries(testPrefetchAlgo ${coreLib})
 
@@ -30,6 +33,7 @@ add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
 add_test(NAME testSimulator COMMAND testSimulator WORKING_DIRECTORY .)
 add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
+add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
