@@ -181,6 +181,7 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache, in
   // build parameters and send to thread pool
   sim_mt_params_t *params = my_malloc(sim_mt_params_t);
   params->reader = reader;
+  params->readers = NULL;
   params->warmup_reader = warmup_reader;
   params->warmup_sec = warmup_sec;
   params->n_caches = num_of_sizes;
