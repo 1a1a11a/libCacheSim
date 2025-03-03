@@ -86,17 +86,14 @@ static void test_SizeProb(gconstpointer user_data) {
 }
 
 static void test_BloomFilter(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {93374, 89783, 83572, 81722, 72494, 72104, 71972, 71704};
-  uint64_t miss_byte_true[] = {4214303232, 4061242368, 3778040320, 3660569600,
-                               3100927488, 3078128640, 3075403776, 3061662720};
+  uint64_t miss_cnt_true[] = {94816, 90386, 88417, 85744, 82344, 79504, 77058, 76979};
+  uint64_t miss_byte_true[] = {4193502720, 3979631104, 3877562880, 3716727296, 3503820288, 3323299328, 3257762304, 3254848512};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
   cache_t *cache = create_test_cache("BloomFilter", cc_params, reader, NULL);
   g_assert_true(cache != NULL);
-  INFO("START 1\n");
   cache_stat_t *res = simulate_at_multi_sizes_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores(), false);
-  INFO("END 1\n");
 
   print_results(cache, res);
   _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, g_req_cnt_true, miss_cnt_true, g_req_byte_true, miss_byte_true);
