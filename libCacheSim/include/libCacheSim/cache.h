@@ -71,7 +71,7 @@ typedef void (*cache_print_cache_func_ptr)(const cache_t *);
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
 #define CACHE_NAME_ARRAY_LEN 64
-#define CACHE_STAT_NAME_ARRAY_LEN 1024
+#define CACHE_STAT_NAME_ARRAY_LEN 640
 #define CACHE_INIT_PARAMS_LEN 256
 typedef struct {
   int64_t n_warmup_req;
