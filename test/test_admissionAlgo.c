@@ -120,9 +120,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/admissionAlgo_AdaptSize", reader, test_AdaptSize);
   g_test_add_data_func("/libCacheSim/admissionAlgo_Size", reader, test_Size);
   g_test_add_data_func("/libCacheSim/admissionAlgo_SizeProb", reader, test_SizeProb);
-
-  // Segfault
-  // g_test_add_data_func("/libCacheSim/admissionAlgo_BloomFilter", reader, test_BloomFilter); 
+  g_test_add_data_func("/libCacheSim/admissionAlgo_BloomFilter", reader, test_BloomFilter);
 
   return g_test_run();
 }
