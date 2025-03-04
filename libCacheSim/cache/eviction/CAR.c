@@ -234,7 +234,7 @@ static cache_obj_t *CAR_insert(cache_t *cache, const request_t *req){
     cache_obj_t *obj = cache_insert_base(cache, req);
 
     if(
-        (params->last_req_in_ghost == cache->n_req) &&
+        // (params->last_req_in_ghost == cache->n_req) &&
         (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)
     ) {
         // Insert at the tail of T2
@@ -291,7 +291,6 @@ static void CAR_evict(cache_t *cache, const request_t *req){
     ) {
         _CAR_replace(cache,req);
         if (
-            (params->last_req_in_ghost == cache->n_req) &&
             (!params->curr_obj_in_L1_ghost || !params->curr_obj_in_L2_ghost)
         ) {
             if (
