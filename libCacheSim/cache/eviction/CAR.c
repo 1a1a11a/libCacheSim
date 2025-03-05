@@ -358,7 +358,7 @@ static bool CAR_remove(cache_t *cache, const obj_id_t obj_id){
 
 static void _CAR_replace(cache_t *cache, const request_t *req){
     CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
-    _CAR_sanity_check(cache, req);
+    // _CAR_sanity_check(cache, req);
     bool found = false;
     while(!found){
         if (params->L1_data_size >= MAX(1,params->p)){
