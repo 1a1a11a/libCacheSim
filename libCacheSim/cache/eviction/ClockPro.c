@@ -3,8 +3,12 @@
 // https://www.usenix.org/legacy/event/usenix05/tech/general/full_papers/jiang/jiang.pdf
 //
 // Inspirations are taken from
-// https://bitbucket.org/SamiLehtinen/pyclockpro/src/master/
 // https://blog.yufeng.info/wp-content/uploads/2010/08/8-Clock-Pro.pdf
+//
+// cross checked with https://bitbucket.org/SamiLehtinen/pyclockpro/src/master/ with --ignore-obj-size
+// one thing to note is the difference in the clock hand movement
+// this implementation checks the object pointed by the hand first before moving the hand (as per the material in blog.yufeng.info)
+// PyClockPro implementation moves the hand first before checking the object pointed by the hand
 //
 // libCacheSim
 //
