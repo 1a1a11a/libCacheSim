@@ -84,6 +84,7 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
   fprintf(csv_file, "%s,%s,%ld,%" PRIu64 ",%" PRIu64 ",%lf,%lf,%lf,%hhd\n", reader->trace_path, cache->cache_name, cache->cache_size,
         req_cnt, miss_cnt, (double)miss_cnt / (double)req_cnt, (double)miss_byte / (double)req_byte,
         (double)req_cnt / runtime, ignore_obj_size);
+  fclose(csv_file);
   // if (!ignore_obj_size) {
   //   snprintf(output_str, 1024,
   //            "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
