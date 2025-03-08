@@ -78,21 +78,27 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
     convert_size_to_str(cache->cache_size, size_str);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
-  if (!ignore_obj_size) {
-    snprintf(output_str, 1024,
-             "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
-             "%.2lf MQPS\n",
-            reader->trace_path, cache->cache_name, size_str,
-            (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
-            (double)req_cnt / 1000000.0 / runtime);
-  } else {
-    snprintf(output_str, 1024,
-             "%s %s cache size %8ld, %16lu req, miss ratio %.4lf, throughput "
-             "%.2lf MQPS\n",
-            reader->trace_path, cache->cache_name, cache->cache_size,
-            (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
-            (double)req_cnt / 1000000.0 / runtime);
-  }
+  char *csv_path = "/mnt/mfs/data.csv";
+  FILE *csv_file = fopen(csv_path, "a");
+  // trace,algo,size,req,miss_cnt,miss_ratio,byte_miss_ratio,throughput,ignore_obj_size
+  fprintf(csv_file, "%s,%s,%ld,%" PRIu64 ",%" PRIu64 ",%lf,%lf,%lf,%hhd\n", reader->trace_path, cache->cache_name, cache->cache_size,
+        req_cnt, miss_cnt, (double)miss_cnt / (double)req_cnt, (double)miss_byte / (double)req_byte,
+        (double)req_cnt / runtime, ignore_obj_size);
+  // if (!ignore_obj_size) {
+  //   snprintf(output_str, 1024,
+  //            "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
+  //            "%.2lf MQPS\n",
+  //           reader->trace_path, cache->cache_name, size_str,
+  //           (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
+  //           (double)req_cnt / 1000000.0 / runtime);
+  // } else {
+  //   snprintf(output_str, 1024,
+  //            "%s %s cache size %8ld, %16lu req, miss ratio %.4lf, throughput "
+  //            "%.2lf MQPS\n",
+  //           reader->trace_path, cache->cache_name, cache->cache_size,
+  //           (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
+  //           (double)req_cnt / 1000000.0 / runtime);
+  // }
 
 #pragma GCC diagnostic pop
   printf("%s", output_str);

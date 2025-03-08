@@ -14,8 +14,8 @@
 #include "internal.h"
 
 int main(int argc, char **argv) {
-  // trace,algo,size,miss_ratio,byte_miss_ratio,ignore_obj_size
-  const char *output_csv = "test.csv";
+  // trace,algo,size,miss_ratio,byte_miss_ratio,throughput,ignore_obj_size
+  const char *output_csv = "/mnt/mfs/data.csv";
   struct arguments args;
   parse_cmd(argc, argv, &args);
   if (args.n_cache_size == 0) {
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     // printf("%s", output_str);
     // fprintf(output_file, "%s", output_str);
     FILE *file = fopen(output_csv, "a");
-    // trace,algo,size,miss_ratio,byte_miss_ratio,ignore_obj_size
+    // trace,algo,size,miss_ratio,byte_miss_ratio,throughput,ignore_obj_size
     fprintf(file, "%s,%s,%ld,%lf,%lf,%d\n", args.reader->trace_path, result[i].cache_name,
             result[i].cache_size,
             (double)result[i].n_miss / (double)result[i].n_req,
