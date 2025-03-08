@@ -128,8 +128,15 @@ static inline int vscsi_read_ver1(reader_t *reader, request_t *req) {
   // trace uses microsec change to sec
   req->clock_time = record->ts / 1000000;
   req->obj_size = record->len;
-  /* need to parse op */
-
+  uint16_t cmd = record->cmd;
+  if (cmd == 40 || cmd == 8 || cmd == 136 || cmd == 45 || cmd == 168) {
+      req->op = OP_READ;
+  } else if (cmd == 42 || cmd == 63 || cmd == 138 || cmd == 142 ||
+             cmd == 154 || cmd == 156 || cmd == 170 || cmd == 174) {
+      req->op = OP_WRITE;
+  } else {
+      req->op = OP_INVALID;
+  }
   req->obj_id = record->lbn;
   (reader->mmap_offset) += reader->item_size;
   return 0;
@@ -140,6 +147,15 @@ static inline int vscsi_read_ver2(reader_t *reader, request_t *req) {
       (trace_v2_record_t *)(reader->mapped_file + reader->mmap_offset);
   req->clock_time = record->ts / 1000000;
   req->obj_size = record->len;
+  uint16_t cmd = record->cmd;
+  if (cmd == 40 || cmd == 8 || cmd == 136 || cmd == 45 || cmd == 168) {
+      req->op = OP_READ;
+  } else if (cmd == 42 || cmd == 63 || cmd == 138 || cmd == 142 ||
+             cmd == 154 || cmd == 156 || cmd == 170 || cmd == 174) {
+      req->op = OP_WRITE;
+  } else {
+      req->op = OP_INVALID;
+  }
   req->obj_id = record->lbn;
   (reader->mmap_offset) += reader->item_size;
   return 0;
