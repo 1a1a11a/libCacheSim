@@ -8,6 +8,7 @@
 #include <glib.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #ifdef __linux__
@@ -295,6 +296,19 @@ static cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc
     cache = CAR_init(cc_params, NULL);
   } 
   else {
+  } else if (strcasecmp(alg_name, "AdaptSize") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_adaptsize_admissioner(NULL);
+  } else if (strcasecmp(alg_name, "Size") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_size_admissioner(NULL);
+  } else if (strcasecmp(alg_name, "SizeProb") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_size_probabilistic_admissioner(NULL);
+  } else if (strcasecmp(alg_name, "BloomFilter") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_bloomfilter_admissioner(NULL);
+  } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);
   }

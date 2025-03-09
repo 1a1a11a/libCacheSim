@@ -232,6 +232,10 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache->find(cache, req, true);
   bool hit = (obj != NULL);
 
+  if (cache->admissioner && cache->admissioner->update) {
+    cache->admissioner->update(cache->admissioner, req, cache->cache_size);
+  }
+
   if (hit) {
     VVERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
   } else if (!cache->can_insert(cache, req)) {
