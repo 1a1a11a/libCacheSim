@@ -18,11 +18,11 @@ typedef void (*free_sampler_func)(struct sampler *sampler);
 enum sampler_type {
   SPATIAL_SAMPLER,
   TEMPORAL_SAMPLER,
-
+  SHARDS_SAMPLER,
   INVALID_SAMPLER
 };
 
-static const char *sampling_type_str[] = {"spatial", "temporal", "invalid"};
+static const char *sampling_type_str[] = {"spatial", "temporal", "shards","invalid"};
 
 typedef struct sampler {
   trace_sampling_func sample;
@@ -43,6 +43,8 @@ static inline void print_sampler(sampler_t *sampler) {
          sampling_type_str[sampler->type], sampler->sampling_ratio,
          sampler->sample, sampler->clone);
 }
+
+sampler_t *create_SHARDS_sampler(double sampling_ratio);
 
 #ifdef __cplusplus
 }
