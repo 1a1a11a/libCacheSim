@@ -10,6 +10,7 @@
 #define CACHE_H
 
 #include <math.h>
+#include <string.h>
 
 #include "../config.h"
 #include "admissionAlgo.h"
@@ -70,6 +71,7 @@ typedef void (*cache_print_cache_func_ptr)(const cache_t *);
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
 #define CACHE_NAME_ARRAY_LEN 64
+#define CACHE_STAT_NAME_ARRAY_LEN 640
 #define CACHE_INIT_PARAMS_LEN 256
 typedef struct {
   int64_t n_warmup_req;
@@ -86,7 +88,8 @@ typedef struct {
   int64_t curr_rtime;
   int64_t expired_obj_cnt;
   int64_t expired_bytes;
-  char cache_name[CACHE_NAME_ARRAY_LEN];
+
+  char cache_name[CACHE_STAT_NAME_ARRAY_LEN];
 } cache_stat_t;
 
 struct hashtable;
@@ -366,6 +369,25 @@ bool dump_eviction_age(const cache_t *cache, const char *ofilepath);
 bool dump_cached_obj_age(cache_t *cache, const request_t *req,
                          const char *ofilepath);
 
+static inline void generate_cache_name(cache_t *cache ,char *str_dest) {
+  char admis_name[CACHE_NAME_ARRAY_LEN] = "";
+  char admis_param[CACHE_INIT_PARAMS_LEN] = "";
+  if (cache->admissioner) {
+    strncpy(admis_name, cache->admissioner->admissioner_name, CACHE_NAME_ARRAY_LEN);
+    if (cache->admissioner->init_params) {
+      strncpy(admis_param, (const char *)cache->admissioner->init_params, CACHE_INIT_PARAMS_LEN);
+    }
+  } 
+
+  snprintf(str_dest, CACHE_STAT_NAME_ARRAY_LEN, 
+    "evict:%s[%s] admit:%s[%s]",
+    cache->cache_name, 
+    cache->init_params, 
+    admis_name, 
+    admis_param
+  );
+}
+                        
 #ifdef __cplusplus
 }
 #endif

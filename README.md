@@ -5,8 +5,6 @@
 #### The main development of libCacheSim is at [https://github.com/1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim), the [cachemon](https://github.com/cachemon/libCacheSim) repo is a mirror of the stable branch. Please fork and submit PR to this repo. 
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
-- [libCacheSim - building and running cache simulations](#libcachesim---building-and-running-cache-simulations)
-      - [The main development of libCacheSim is at https://github.com/1a1a11a/libCacheSim, the cachemon repo is a mirror of the stable branch. Please fork and submit PR to this repo.](#the-main-development-of-libcachesim-is-at-httpsgithubcom1a1a11alibcachesim-the-cachemon-repo-is-a-mirror-of-the-stable-branch-please-fork-and-submit-pr-to-this-repo)
   - [News](#news)
   - [What is libCacheSim](#what-is-libcachesim)
   - [libCacheSim features](#libcachesim-features)
