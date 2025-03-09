@@ -294,45 +294,46 @@ string traceAnalyzer::TraceAnalyzer::gen_stat_str() {
   double freq_mean = (double)n_req_ / (double)obj_map_.size();
   int64_t time_span = end_ts_ - start_ts_;
 
-  stat_ss_ << setprecision(4) << fixed << "dat: " << reader_->trace_path << "\n"
-           << "number of requests: " << n_req_
-           << ", number of objects: " << obj_map_.size() << "\n"
-           << "number of req GiB: " << (double)sum_obj_size_req / (double)GiB
-           << ", number of obj GiB: " << (double)sum_obj_size_obj / (double)GiB
-           << "\n"
-           << "compulsory miss ratio (req/byte): " << cold_miss_ratio << "/"
-           << byte_cold_miss_ratio << "\n"
-           << "object size weighted by req/obj: " << mean_obj_size_req << "/"
-           << mean_obj_size_obj << "\n"
-           << "frequency mean: " << freq_mean << "\n";
-  stat_ss_ << "time span: " << time_span << "("
-           << (double)(end_ts_ - start_ts_) / 3600 / 24 << " day)\n";
+  stat_ss_ << std::fixed << reader_->trace_path << ","
+           << n_req_ << ","
+           << obj_map_.size() << ","
+           << (double)sum_obj_size_req / (double)GiB << ","
+           << (double)sum_obj_size_obj / (double)GiB << ","
+           << cold_miss_ratio << "," << byte_cold_miss_ratio << ","
+           << mean_obj_size_req << "/" << mean_obj_size_obj << ","
+           << freq_mean << ",";
+  stat_ss_ << time_span << ",";
 
   stat_ss_ << *op_stat_;
-  if (ttl_stat_ != nullptr) {
-    stat_ss_ << *ttl_stat_;
-  }
+  // if (ttl_stat_ != nullptr) {
+  //   stat_ss_ << *ttl_stat_;
+  // }
   if (req_rate_stat_ != nullptr) stat_ss_ << *req_rate_stat_;
   if (popularity_stat_ != nullptr) stat_ss_ << *popularity_stat_;
 
-  stat_ss_ << "X-hit (number of obj accessed X times): ";
+  // stat_ss_ << "X-hit (number of obj accessed X times): ";
   for (int i = 0; i < track_n_hit_; i++) {
     stat_ss_ << n_hit_cnt_[i] << "("
-             << (double)n_hit_cnt_[i] / (double)obj_map_.size() << "), ";
+             << (double)n_hit_cnt_[i] / (double)obj_map_.size() << ")";
+    if (i != track_n_hit_ - 1) {
+      stat_ss_ << ";";
+    }
   }
-  stat_ss_ << "\n";
+  stat_ss_ << ",";
 
-  stat_ss_ << "freq (fraction) of the most popular obj: ";
+  // stat_ss_ << "freq (fraction) of the most popular obj: ";
   for (int i = 0; i < track_n_popular_; i++) {
     stat_ss_ << popular_cnt_[i] << "("
-             << (double)popular_cnt_[i] / (double)n_req_ << "), ";
+             << (double)popular_cnt_[i] / (double)n_req_ << ")";
+    if (i != track_n_popular_ - 1) {
+      stat_ss_ << ";";
+    }
   }
-  stat_ss_ << "\n";
 
-  if (size_change_distribution_ != nullptr)
-    stat_ss_ << *size_change_distribution_;
-
-  if (scan_detector_ != nullptr) stat_ss_ << *scan_detector_;
+  // if (size_change_distribution_ != nullptr)
+  //   stat_ss_ << *size_change_distribution_;
+  //
+  // if (scan_detector_ != nullptr) stat_ss_ << *scan_detector_;
 
   return stat_ss_.str();
 }

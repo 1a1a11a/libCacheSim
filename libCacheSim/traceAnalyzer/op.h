@@ -35,18 +35,22 @@ class OpStat {
     uint64_t n_overwrite = op.overwrite_cnt_;
 
     if (op.op_cnt_[OP_INVALID] < n_req / 2) {
-      stat_ss << fixed << setprecision(4) << "op: ";
-      for (int i = 0; i < OP_INVALID + 1; i++) {
-        stat_ss << req_op_str[i] << ":" << op.op_cnt_[i] << "("
-                << (double)op.op_cnt_[i] / (double)n_req << "), ";
+      stat_ss << std::fixed;
+      for (int i = 0; i < OP_UPDATE + 1; i++) {
+        // stat_ss << i << ":" << op.op_cnt_[i] << "\n";
+        stat_ss << op.op_cnt_[i] << ",";
+        // stat_ss << req_op_str[i] << ":" << op.op_cnt_[i] << "("
+        // << (double)op.op_cnt_[i] / (double)n_req << "), \n";
       }
-      stat_ss << "\n";
+      stat_ss << op.op_cnt_[OP_INVALID] << ",";
+      // stat_ss << "\n";
     }
-    stat_ss << "write: " << n_write << "(" << (double)n_write / (double)n_req
-            << "), "
-            << "overwrite: " << n_overwrite << "("
-            << (double)n_overwrite / (double)n_req << "), "
-            << "del:" << n_del << "(" << (double)n_del / (double)n_req << ")\n";
+    stat_ss << n_write << "," << n_overwrite << "," << n_del << ",";
+    // stat_ss << "write: " << n_write << "(" << (double)n_write / (double)n_req
+    //         << "), "
+    //         << "overwrite: " << n_overwrite << "("
+    //         << (double)n_overwrite / (double)n_req << "), "
+    //         << "del:" << n_del << "(" << (double)n_del / (double)n_req << ")\n";
     os << stat_ss.str();
 
     return os;

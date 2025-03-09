@@ -33,8 +33,9 @@ class ReqRate {
     double min =
         (double)*std::min_element(rr.req_rate_.cbegin(), rr.req_rate_.cend()) /
         rr.time_window_;
-    os << std::fixed << "request rate min " << min << " req/s, max " << max
-       << " req/s, window " << rr.time_window_ << "s\n";
+    // os << std::fixed << "request rate min " << min << " req/s, max " << max
+    //    << " req/s, window " << rr.time_window_ << "s\n";
+      os << std::fixed << min << "," << max << "," << rr.time_window_ << ",";
 
     max =
         (double)*std::max_element(rr.obj_rate_.cbegin(), rr.obj_rate_.cend()) /
@@ -42,8 +43,9 @@ class ReqRate {
     min =
         (double)*std::min_element(rr.obj_rate_.cbegin(), rr.obj_rate_.cend()) /
         rr.time_window_;
-    os << std::fixed << "object rate min " << min << " obj/s, max " << max
-       << " obj/s, window " << rr.time_window_ << "s\n";
+    os << std::fixed << min << "," << max << "," << rr.time_window_ << ",";
+    // os << std::fixed << "object rate min " << min << " obj/s, max " << max
+    //    << " obj/s, window " << rr.time_window_ << "s\n";
 
     return os;
   }

@@ -44,12 +44,14 @@ class Popularity {
     }
 
     if (popularity.fit_fail_reason_.size() > 0)
-      os << popularity.fit_fail_reason_ << "\n";
+      os << popularity.fit_fail_reason_ << ",";
     else
-      os << std::setprecision(4)
-         << "popularity: Zipf linear fitting slope=" << popularity.slope_
-         << ", intercept=" << popularity.intercept_ << ", R2=" << popularity.r2_
-         << "\n";
+      os << std::fixed << popularity.slope_ << "," << popularity.intercept_ << ","
+         << popularity.r2_ << ",";
+      // os << std::setprecision(4)
+      //    << "popularity: Zipf linear fitting slope=" << popularity.slope_
+      //    << ", intercept=" << popularity.intercept_ << ", R2=" << popularity.r2_
+      //    << "\n";
 
     return os;
   }
