@@ -16,8 +16,12 @@ target_link_libraries(testSimulator ${coreLib})
 add_executable(testEvictionAlgo test_evictionAlgo.c)
 target_link_libraries(testEvictionAlgo ${coreLib})
 
+add_executable(testMRC test_MRC.c)
+target_link_libraries(testMRC ${coreLib})
+
 add_executable(testAdmissionAlgo test_admissionAlgo.c)
 target_link_libraries(testAdmissionAlgo ${coreLib})
+
 
 add_executable(testPrefetchAlgo test_prefetchAlgo.c)
 target_link_libraries(testPrefetchAlgo ${coreLib})
