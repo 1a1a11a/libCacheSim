@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
 
   /* we can also use open_trace with the same parameters */
   reader_t *reader =
-      open_trace("../../../data/trace.csv", CSV_TRACE, &init_params);
+      open_trace("../../../data/cloudPhysicsIO.csv", CSV_TRACE, &init_params);
 
   /* set up a request */
   request_t *req = new_request();
