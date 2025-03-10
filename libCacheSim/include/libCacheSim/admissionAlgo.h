@@ -9,15 +9,19 @@ extern "C" {
 struct admissioner;
 typedef struct admissioner *(*admissioner_create_func_ptr)(const char *);
 typedef struct admissioner *(*admissioner_clone_func_ptr)(struct admissioner *);
+typedef void (*admissioner_update_func_ptr)(struct admissioner *, const request_t *, const uint64_t cache_size);
 typedef bool (*cache_admit_func_ptr)(struct admissioner *, const request_t *);
 typedef void (*admissioner_free_func_ptr)(struct admissioner *);
 
+#define CACHE_NAME_LEN 64
 typedef struct admissioner {
   cache_admit_func_ptr admit;
   void *params;
   admissioner_clone_func_ptr clone;
   admissioner_free_func_ptr free;
+  admissioner_update_func_ptr update;
   void *init_params;
+  char admissioner_name[CACHE_NAME_LEN];
 } admissioner_t;
 
 admissioner_t *create_bloomfilter_admissioner(const char *init_params);
