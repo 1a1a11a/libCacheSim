@@ -19,7 +19,7 @@ First, [build libCacheSim](/doc/install.md). After building libCacheSim, `mrcPro
 
 ```
 ./mrcProfiler trace_path trace_type --algo=[LRU] --profiler=[SHARDS|MINISIM]
-            --profiler-params=[FIX_RATE,0.01,random_seed|FIX_SIZE,8192,random_seed|FIX_RATE,0.01,thread_num(for MINISIM)]
+            --profiler-params=[FIX_RATE,0.01,hash_salt|FIX_SIZE,8192,hash_salt|FIX_RATE,0.01,thread_num(for MINISIM)]
             --size=[0.01,1,100|1MiB,100MiB,100|0.001,0.002,0.004,0.008,0.016|1MiB,10MiB,10MiB,1GiB]
 ```
 

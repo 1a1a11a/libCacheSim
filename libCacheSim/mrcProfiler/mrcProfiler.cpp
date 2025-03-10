@@ -112,7 +112,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
     n_req_ += 1;
     sum_obj_size_req += req->obj_size;
 
-    uint64_t hash_value = get_hash_value_int_64_with_seed(req->obj_id, params_.shards_params.seed);
+    uint64_t hash_value = get_hash_value_int_64_with_salt(req->obj_id, params_.shards_params.salt);
     current_time += 1;
     if (hash_value <= sample_max) {
       sampled_cnt += 1.0 / sample_rate;
@@ -186,7 +186,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
     n_req_ += 1;
     sum_obj_size_req += req->obj_size;
 
-    uint64_t hash_value = get_hash_value_int_64_with_seed(req->obj_id, params_.shards_params.seed);
+    uint64_t hash_value = get_hash_value_int_64_with_salt(req->obj_id, params_.shards_params.salt);
     
     current_time += 1;
     if (!min_value_map.full() || hash_value < min_value_map.get_max_value() || last_access_time_map.count(req->obj_id)) {
@@ -268,7 +268,7 @@ void mrcProfiler::MRCProfilerMINISIM::run(){
     printf("sample_rate is too large, do not sample\n");
   } else {
     sampler = create_spatial_sampler(sample_rate);
-    set_spatial_sampler_seed(sampler, 10000019); // TODO: seed can be changed by params
+    set_spatial_sampler_salt(sampler, 10000019); // TODO: salt can be changed by params
   }
 
   // 1. obtain the n_req_, sum_obj_size_req, sampled_cnt and sampled_size

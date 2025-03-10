@@ -12,7 +12,7 @@ extern "C" {
 
 bool spatial_sample(sampler_t *sampler, request_t *req) {
   uint64_t hash_value = req->hv;
-  if(sampler->sampling_seed == 0){
+  if(sampler->sampling_salt == 0){
     if (hash_value == 0) {
       hash_value = get_hash_value_int_64(&(req->obj_id));
       req->hv = hash_value;
@@ -20,7 +20,7 @@ bool spatial_sample(sampler_t *sampler, request_t *req) {
   }
   else{
     // hacked: for some sampeld trace, the hash value mod 10 is always 0.
-    int64_t key = req->obj_id ^ sampler->sampling_seed;
+    int64_t key = req->obj_id ^ sampler->sampling_salt;
     hash_value = get_hash_value_int_64(&(key));
   }
 
@@ -53,7 +53,7 @@ sampler_t *create_spatial_sampler(double sampling_ratio) {
   memset(s, 0, sizeof(sampler_t));
   s->sampling_ratio = sampling_ratio;
   s->sampling_ratio_inv = (int)(1.0 / sampling_ratio);
-  s->sampling_seed = 0;
+  s->sampling_salt = 0;
   s->sample = spatial_sample;
   s->clone = clone_spatial_sampler;
   s->free = free_spatial_sampler;
@@ -67,12 +67,12 @@ sampler_t *create_spatial_sampler(double sampling_ratio) {
 }
 
 
-void set_spatial_sampler_seed(sampler_t *sampler, uint64_t seed) {
+void set_spatial_sampler_salt(sampler_t *sampler, uint64_t salt) {
   if (sampler->type != SPATIAL_SAMPLER) {
-    ERROR("set spatial sampler seed error, sampler type %d\n", sampler->type);
+    ERROR("set spatial sampler salt error, sampler type %d\n", sampler->type);
   }
-  sampler->sampling_seed = seed;
-  VVERBOSE("set spatial sampler seed to %lu\n", seed);
+  sampler->sampling_salt = salt;
+  VVERBOSE("set spatial sampler salt to %lu\n", salt);
 }
 
 #ifdef __cplusplus

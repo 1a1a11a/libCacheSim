@@ -23,8 +23,11 @@ typedef enum {
   INVALID_PROFILER
 } mrc_profiler_e;
 
-static uint64_t get_hash_value_int_64_with_seed(uint64_t obj_id, uint64_t seed) {
-  int64_t key = obj_id ^ seed;
+/**
+ * @brief get hash value for a 64-bit integer. 
+ */
+static uint64_t get_hash_value_int_64_with_salt(uint64_t obj_id, uint64_t salt) {
+  int64_t key = obj_id ^ salt;
   return get_hash_value_int_64(&key);
 }
 
@@ -33,18 +36,18 @@ typedef struct profiler_params {
     bool enable_fix_size;
     int64_t sample_size;
     double sample_rate;
-    int64_t seed;
+    int64_t salt;
 
     void print() {
       printf("shards params:\n");
       printf("  enable_fix_size: %d\n", enable_fix_size);
       printf("  sample_size: %ld\n", sample_size);
       printf("  sample_rate: %f\n", sample_rate);
-      printf("  seed: %ld\n", seed);
+      printf("  salt: %ld\n", salt);
     }
 
     void parse_params(const char *str) {
-      // format: FIX_RATE,0.01,random_seed|FIX_SIZE,8192,random_seed
+      // format: FIX_RATE,0.01,hash_salt|FIX_SIZE,8192,hash_salt
       if (strlen(str) == 0) {
         printf("invalid params for shards\n");
         exit(1);
@@ -92,8 +95,8 @@ typedef struct profiler_params {
               }
             }
           } else if (current_param_idx == 2) {
-            // check the seed
-            seed = atoi(buffer);
+            // check the salt
+            salt = atoi(buffer);
           } else {
             printf("too many params for shards: %s\n", str);
             exit(1);

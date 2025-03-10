@@ -53,7 +53,7 @@ static struct argp_option options[] = {
     {"algo", OPTION_CACHE_ALGORITHM, "LRU", OPTION_ARG_OPTIONAL,
      "Which algorithm to profile. Only Support LRU for SHARDS.", 2},
     {"size", OPTION_MRC_SIZE, "0.01,1,100", OPTION_ARG_OPTIONAL,
-     "MRC profile size. Support 4 format [0.01,1,100|1MiB,100MiB,100|0.001,0.002,0.004,0.008,0.016|1MiB,10MiB,10MiB,1GiB]", 2},
+     "MRC profile size. Support two formats [start_size,end_size,#test_points|size1,size2,size3,...,size_n]. For size settings, both explicit sizes (e.g., 1GiB) and WSS-based sizes (a floating-point number between 0 and 1) are supported.", 2},
     {"profiler", OPTION_PROFILER, "SHARDS", OPTION_ARG_OPTIONAL,
      "Which profiler to use. Support SHARDS|MINISIM", 
      2},
@@ -133,7 +133,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
    A description of the non-option command-line arguments
      that we accept.
 */
-static char args_doc[] = "trace_path trace_type --algo=[LRU] --profiler=[SHARDS] --profiler-params=[FIX_RATE,0.01,random_seed|FIX_SIZE,8192,random_seed|FIX_RATE,0.01,thread_num(for MINISIM)] --size=[0.01,1,100|1MiB,100MiB,100|0.001,0.002,0.004,0.008,0.016|1MiB,10MiB,10MiB,1GiB]";
+static char args_doc[] = "trace_path trace_type --algo=[LRU] --profiler=[SHARDS] --profiler-params=[FIX_RATE,0.01,hash_salt|FIX_SIZE,8192,hash_salt|FIX_RATE,0.01,thread_num(for MINISIM)] --size=[0.01,1,100|1MiB,100MiB,100|0.001,0.002,0.004,0.008,0.016|1MiB,10MiB,10MiB,1GiB]";
 
 /* Program documentation. */
 static char doc[] =
@@ -215,10 +215,27 @@ static unsigned long conv_size_str_to_byte_ul(char *cache_size_str) {
 
 
 /**
- * @brief parse the mrc size string
+ * @brief Parse the MRC size string.
  * 
- * @param mrc_size_str
- * @param params
+ * In MRC profiling, it is necessary to support setting the cache size and the number of test points.
+ * For setting the cache size, I referenced the implementation in cachesim, which allows specifying 
+ * a fixed cache size (e.g., 1GiB) or a Working Set Size (WSS)-based cache size (a float between 0 and 1).
+ * 
+ * For setting the number of test points, the implementation supports Explicit test points and Interval-Based 
+ * points. For example, "1MiB,10MiB,10MiB,1GiB" means that the cache size is 1MiB, 10MiB, 10MiB, and 1GiB,
+ * and the number of test points is 4. The interval-based points are specified by a starting size,
+ * an ending size, and a number of test points. For example, "1MiB,4MiB,4" means that the cache size is 
+ * 1MiB, 2MiB, 3MiB, and 4MiB, and the number of test points is 4.
+ * 
+ * Thus, the current implementation supports the following four input formats:
+ * 
+ * |                        | Fixed cache size                | WSS based cache size            |
+ * |------------------------|---------------------------------|---------------------------------|
+ * | Explicit test points   | "1MiB,10MiB,10MiB,1GiB"         | "0.001,0.002,0.004,0.008,0.016" |
+ * | Interval-Based points  | "1MiB,100MiB,100"               | "0.01,1,100"                    |
+ * 
+ * @param mrc_size_str The MRC size string to parse.
+ * @param params The structure to store the parsed MRC profiler parameters.
  */
 static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_profiler_params_t &params){
     std::vector<std::string> mrc_size_vec = split_by_char(mrc_size_str, ',');
@@ -236,7 +253,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
         wss_based_mrc = true;
     }
 
-    // 2. check whether the last size is an integer
+    // 2. check whether the number of split strings is 3 and the last part is an integer
     if(mrc_size_vec.size() == 3 && mrc_size_vec[mrc_size_vec.size() - 1].find_first_not_of("0123456789") == std::string::npos){
         // if the last size is an integer and greater than 1, then it is interval based mrc
         int64_t mrc_points = atoi(mrc_size_vec[mrc_size_vec.size() - 1].c_str());
@@ -325,7 +342,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
 
 
 /**
- * @brief initialize the arguments
+ * @brief initialize the arguments. 
  * 
  * @param cache_algorithm_str
  * @param profiler_str
@@ -335,6 +352,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
  * @param params
  */
 void mrc_profiler_params_parse(const char * cache_algorithm_str, const char * profiler_str, const char * params_str, const char * mrc_size_str, mrcProfiler::mrc_profiler_e &profiler_type, mrcProfiler::mrc_profiler_params_t &params){
+    // initial the params of mrc profiler
     if(strcmp(profiler_str, "SHARDS") == 0 || strcmp(profiler_str, "shards") == 0){
         profiler_type = mrcProfiler::SHARDS_PROFILER;
         if(strcmp(cache_algorithm_str, "LRU")){
@@ -359,6 +377,7 @@ void mrc_profiler_params_parse(const char * cache_algorithm_str, const char * pr
         exit(1);
     }
 
+    // parse mrc size
     parse_mrc_size_params(mrc_size_str, params);
 }
 
@@ -404,9 +423,11 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_path = args->args[0];
   const char *trace_type_str = args->args[1];
 
+  // initialize the trace reader
   args->reader = create_reader(trace_type_str, args->trace_path,
                                args->trace_type_params, args->n_req, args->ignore_obj_size, 1);
 
+  // initialize the mrc profiler params
   mrc_profiler_params_parse(args->cache_algorithm_str, args->mrc_profiler_str, args->mrc_profiler_params_str, args->mrc_size_str, args->mrc_profiler_type, args->mrc_profiler_params);
 
   if(args->mrc_profiler_params.profile_wss_ratio.size() != 0){
