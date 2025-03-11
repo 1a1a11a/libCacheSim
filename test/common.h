@@ -8,6 +8,7 @@
 #include <glib.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #ifdef __linux__
@@ -204,6 +205,8 @@ static cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc
     cache = FIFO_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO-Reinsertion") == 0 || strcasecmp(alg_name, "Clock") == 0) {
     cache = Clock_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "ClockPro") == 0) {
+    cache = ClockPro_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Belady") == 0) {
     cache = Belady_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "BeladySize") == 0) {
@@ -289,6 +292,18 @@ static cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc
   } else if (strcasecmp(alg_name, "PG") == 0) {
     cache = LRU_init(cc_params, NULL);
     cache->prefetcher = create_prefetcher("PG", NULL, cc_params.cache_size);
+  } else if (strcasecmp(alg_name, "AdaptSize") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_adaptsize_admissioner(NULL);
+  } else if (strcasecmp(alg_name, "Size") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_size_admissioner(NULL);
+  } else if (strcasecmp(alg_name, "SizeProb") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_size_probabilistic_admissioner(NULL);
+  } else if (strcasecmp(alg_name, "BloomFilter") == 0) {
+    cache = LRU_init(cc_params, NULL);
+    cache->admissioner = create_bloomfilter_admissioner(NULL);
   } else {
     printf("cannot recognize algorithm %s\n", alg_name);
     exit(1);

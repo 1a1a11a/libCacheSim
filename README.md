@@ -5,8 +5,6 @@
 #### The main development of libCacheSim is at [https://github.com/1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim), the [cachemon](https://github.com/cachemon/libCacheSim) repo is a mirror of the stable branch. Please fork and submit PR to this repo. 
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
-- [libCacheSim - building and running cache simulations](#libcachesim---building-and-running-cache-simulations)
-      - [The main development of libCacheSim is at https://github.com/1a1a11a/libCacheSim, the cachemon repo is a mirror of the stable branch. Please fork and submit PR to this repo.](#the-main-development-of-libcachesim-is-at-httpsgithubcom1a1a11alibcachesim-the-cachemon-repo-is-a-mirror-of-the-stable-branch-please-fork-and-submit-pr-to-this-repo)
   - [News](#news)
   - [What is libCacheSim](#what-is-libcachesim)
   - [libCacheSim features](#libcachesim-features)
@@ -180,6 +178,12 @@ python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-forma
 
 # plot miss ratio over time
 python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1, obj-id-col=2, obj-size-col=3, delimiter=,," --algos=fifo,lru,lecar,s3fifo --report-interval=30 --miss-ratio-type="accu"
+
+# plot miss ratio over size using SHARDS
+python3 plot_appr_mrc.py SHARDS ../data/twitter_cluster52.vscsi vscsi 0.01
+
+# plot miss ratio over size using Miniature Simulations
+python3 plot_appr_mrc.py MINI ../data/twitter_cluster52.vscsi vscsi s3fifo "0.0001,0.0002,0.0004,0.0008,0.001,0.002,0.004,0.008,0.01,0.02,0.04,0.08,0.1,0.2,0.4,0.8" 0.001,0.01,0.1,1 --extra_args "--ignore-obj-size 1" 
 ```
 
 ---
