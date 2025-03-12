@@ -49,7 +49,7 @@ typedef struct profiler_params {
     void parse_params(const char *str) {
       // format: FIX_RATE,0.01,hash_salt|FIX_SIZE,8192,hash_salt
       if (strlen(str) == 0) {
-        printf("invalid params for shards\n");
+        ERROR("invalid params for shards\n");
         exit(1);
       }
 
@@ -63,7 +63,7 @@ typedef struct profiler_params {
           // copy from start to end to buffer
           int need_size = end - start;
           if (need_size > 1024) {
-            printf("params too long for shards: %s\n", str);
+            ERROR("params too long for shards: %s\n", str);
             exit(1);
           }
           memcpy(buffer, start, end - start);
@@ -76,7 +76,7 @@ typedef struct profiler_params {
             } else if (strcmp(buffer, "FIX_RATE") == 0) {
               enable_fix_size = false;
             } else {
-              printf("invalid sample type for shards: %s\n", str);
+              ERROR("invalid sample type for shards: %s\n", str);
               exit(1);
             }
           } else if (current_param_idx == 1) {
@@ -84,13 +84,13 @@ typedef struct profiler_params {
             if (enable_fix_size) {
               sample_size = atoi(buffer);
               if (sample_size <= 0) {
-                printf("invalid sample size for shards: %s\n", str);
+                ERROR("invalid sample size for shards: %s\n", str);
                 exit(1);
               }
             } else {
               sample_rate = atof(buffer);
               if (sample_rate <= 0 || sample_rate > 1) {
-                printf("invalid sample rate for shards: %s\n", str);
+                ERROR("invalid sample rate for shards: %s\n", str);
                 exit(1);
               }
             }
@@ -98,7 +98,7 @@ typedef struct profiler_params {
             // check the salt
             salt = atoi(buffer);
           } else {
-            printf("too many params for shards: %s\n", str);
+            ERROR("too many params for shards: %s\n", str);
             exit(1);
           }
 
@@ -123,7 +123,7 @@ typedef struct profiler_params {
     void parse_params(const char *str) {
       // format: FIX_RATE,0.01,thread_num
       if (strlen(str) == 0) {
-        printf("invalid params for shards\n");
+        ERROR("invalid params for shards\n");
         exit(1);
       }
 
@@ -137,7 +137,7 @@ typedef struct profiler_params {
           // copy from start to end to buffer
           int need_size = end - start;
           if (need_size > 1024) {
-            printf("params too long for shards: %s\n", str);
+            ERROR("params too long for shards: %s\n", str);
             exit(1);
           }
           memcpy(buffer, start, end - start);
@@ -148,25 +148,25 @@ typedef struct profiler_params {
             if (strcmp(buffer, "FIX_RATE") == 0) {
               ;
             } else {
-              printf("invalid sample type for minisim: %s\n", str);
+              ERROR("invalid sample type for minisim: %s\n", str);
               exit(1);
             }
           } else if (current_param_idx == 1) {
             // check the sample rate or sample size
             sample_rate = atof(buffer);
             if (sample_rate <= 0 || sample_rate > 1) {
-              printf("invalid sample rate for shards: %s\n", str);
+              ERROR("invalid sample rate for minisim: %s\n", str);
               exit(1);
             }
           } else if (current_param_idx == 2) {
             // check the thread_num
             thread_num = atoi(buffer);
             if (thread_num <= 0) {
-              printf("invalid thread_num for minisim: %s\n", str);
+              ERROR("invalid thread_num for minisim: %s\n", str);
               exit(1);
             }
           } else {
-            printf("too many params for shards: %s\n", str);
+            ERROR("too many params for minisim: %s\n", str);
             exit(1);
           }
 

@@ -15,6 +15,7 @@ BASEPATH = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "../../_build")
 )
 CACHESIM_PATH = os.path.join(BASEPATH, "bin/cachesim")
+MRCPROFILER_PATH = os.path.join(BASEPATH, "bin/mrcProfiler")
 
 
 def install_dependency():

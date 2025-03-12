@@ -109,7 +109,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case ARGP_KEY_ARG:
       if (state->arg_num >= N_ARGS) {
-        printf("found too many arguments, current %s\n", arg);
+        ERROR("found too many arguments, current %s\n", arg);
         argp_usage(state);
         exit(1);
       }
@@ -117,7 +117,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case ARGP_KEY_END:
       if (state->arg_num < N_ARGS) {
-        printf("not enough arguments found\n");
+        ERROR("not enough arguments found\n");
         argp_usage(state);
         exit(1);
       }
@@ -266,14 +266,14 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
         int64_t mrc_points = atoi(mrc_size_vec[mrc_size_vec.size() - 1].c_str());
         mrc_size_vec.erase(mrc_size_vec.end() - 1);
         if(mrc_size_vec.size() != 2){
-            printf("mrc size setting wrong, current %s\n", mrc_size_str);
+            ERROR("mrc size setting wrong, current %s\n", mrc_size_str);
             exit(1);
         }
         if(wss_based_mrc){
             double start_ratio = atof(mrc_size_vec[0].c_str());
             double end_ratio = atof(mrc_size_vec[1].c_str());
             if(start_ratio < 0 || end_ratio > 1 || start_ratio >= end_ratio){
-                printf("mrc start size or end size wrong, current %s\n", mrc_size_str);
+                ERROR("mrc start size or end size wrong, current %s\n", mrc_size_str);
                 exit(1);
             }
             double interval = (end_ratio - start_ratio) / (mrc_points - 1);
@@ -287,7 +287,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
             uint64_t start_size = conv_size_str_to_byte_ul((char *)mrc_size_vec[0].c_str());
             uint64_t end_size = conv_size_str_to_byte_ul((char *)mrc_size_vec[1].c_str());
             if(start_size < 0 || start_size >= end_size){
-                printf("mrc start size or end size wrong, current %s\n", mrc_size_str);
+                ERROR("mrc start size or end size wrong, current %s\n", mrc_size_str);
                 exit(1);
             }
             uint64_t interval = (end_size - start_size) / (mrc_points - 1);
@@ -305,7 +305,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
                 // must be double
                 double ratio = atof(mrc_size_vec[i].c_str());
                 if(ratio < 0 || ratio > 1){
-                    printf("mrc wss ratio must be in [0, 1], current %s\n", mrc_size_str);
+                    ERROR("mrc wss ratio must be in [0, 1], current %s\n", mrc_size_str);
                     exit(1);
                 }
                 params.profile_wss_ratio.push_back(ratio);
@@ -314,7 +314,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
             // cache size must be increasing
             for(int i = 0; i < params.profile_wss_ratio.size() - 1; i++){
                 if(params.profile_wss_ratio[i] >= params.profile_wss_ratio[i + 1]){
-                    printf("mrc wss ratio must be increasing, current %s\n", mrc_size_str);
+                    ERROR("mrc wss ratio must be increasing, current %s\n", mrc_size_str);
                     exit(1);
                 }
             }
@@ -327,7 +327,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
             // cache size must be increasing
             for(int i = 0; i < params.profile_size.size() - 1; i++){
                 if(params.profile_size[i] >= params.profile_size[i + 1]){
-                    printf("mrc size must be increasing, current %s\n", mrc_size_str);
+                    ERROR("mrc size must be increasing, current %s\n", mrc_size_str);
                     exit(1);
                 }
             }
@@ -335,7 +335,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
     }
 
     if(params.profile_size.size() > MAX_MRC_PROFILE_POINTS || params.profile_wss_ratio.size() > MAX_MRC_PROFILE_POINTS){
-        printf("mrc size must be less than MAX_MRC_PROFILE_POINTS\n");
+        ERROR("mrc size must be less than MAX_MRC_PROFILE_POINTS\n");
         exit(1);
     }
 }
@@ -356,7 +356,7 @@ void mrc_profiler_params_parse(const char * cache_algorithm_str, const char * pr
     if(strcmp(profiler_str, "SHARDS") == 0 || strcmp(profiler_str, "shards") == 0){
         profiler_type = mrcProfiler::SHARDS_PROFILER;
         if(strcmp(cache_algorithm_str, "LRU")){
-            printf("cache algorithm must be LRU for SHARDS\n");
+            ERROR("cache algorithm must be LRU for SHARDS\n")
             exit(1);
         }
 
@@ -373,7 +373,7 @@ void mrc_profiler_params_parse(const char * cache_algorithm_str, const char * pr
         params.minisim_params.parse_params(params_str);
     }
     else{
-        printf("profiler type %s not supported\n", profiler_str);
+        ERROR("profiler type %s not supported\n", profiler_str);
         exit(1);
     }
 

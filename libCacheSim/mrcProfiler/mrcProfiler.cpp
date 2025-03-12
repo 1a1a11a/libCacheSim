@@ -22,7 +22,7 @@ mrcProfiler::MRCProfilerBase * mrcProfiler::create_mrc_profiler(mrc_profiler_e t
     case mrc_profiler_e::MINISIM_PROFILER:
       return new MRCProfilerMINISIM(reader, output_path, params);
     default:
-      printf("unknown profiler type %d\n", type);
+      ERROR("unknown profiler type %d\n", type);
       exit(1);
     }
 }
@@ -31,7 +31,7 @@ mrcProfiler::MRCProfilerBase * mrcProfiler::create_mrc_profiler(mrc_profiler_e t
 
 void mrcProfiler::MRCProfilerBase::print(const char * output_path) {
   if (!has_run_) {
-    printf("MRCProfiler has not been run\n");
+    ERROR("MRCProfiler has not been run\n");
     return;
   }
 
@@ -41,18 +41,18 @@ void mrcProfiler::MRCProfilerBase::print(const char * output_path) {
     outfp = fopen(output_path, "w");
     open_output_file = true;
     if (outfp == nullptr) {
-      printf("failed to open file %s, print to stdout\n", output_path);
+      WARN("failed to open file %s\n", output_path);
       fclose(outfp);
       outfp = stdout;
       open_output_file = false;
     }
   }
 
-  fprintf(outfp, "%s profiler:\n", profiler_name_);
-  fprintf(outfp, "  trace: %s\n", reader_->trace_path);
-  fprintf(outfp, "  cache_algorithm: %s\n", params_.cache_algorithm_str);
-  fprintf(outfp, "  n_req: %ld\n", n_req_);
-  fprintf(outfp, "  sum_obj_size_req: %ld\n", sum_obj_size_req);
+  fprintf(outfp, "profiler: %s\n", profiler_name_);
+  fprintf(outfp, "trace: %s\n", reader_->trace_path);
+  fprintf(outfp, "cache_algorithm: %s\n", params_.cache_algorithm_str);
+  fprintf(outfp, "n_req: %ld\n", n_req_);
+  fprintf(outfp, "sum_obj_size_req: %ld\n", sum_obj_size_req);
 
   if (params_.profile_wss_ratio.size() != 0) {
     fprintf(outfp, "wss_ratio\t");
@@ -96,7 +96,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
   std::vector<double> local_hit_size_vec(mrc_size_vec.size(), 0);
   uint64_t sample_max = UINT64_MAX * sample_rate;
   if (sample_rate == 1) {
-    printf("sample_rate is 1, no need to sample\n");
+    INFO("sample_rate is 1, no need to sample\n");
     sample_max = UINT64_MAX;
   }
   double sampled_cnt = 0, sampled_size = 0;
@@ -265,7 +265,7 @@ void mrcProfiler::MRCProfilerMINISIM::run(){
   double sampled_cnt = 0, sampled_size = 0;
   sampler_t *sampler = nullptr;
   if (sample_rate > 0.5) {
-    printf("sample_rate is too large, do not sample\n");
+    INFO("sample_rate is too large, do not sample\n");
   } else {
     sampler = create_spatial_sampler(sample_rate);
     set_spatial_sampler_salt(sampler, 10000019); // TODO: salt can be changed by params
@@ -302,7 +302,13 @@ void mrcProfiler::MRCProfilerMINISIM::run(){
 
   // 4. adjust hit cnt and hit size
   for (int i = 0; i < mrc_size_vec.size(); i++) {
-    hit_cnt_vec[i] = n_req_ - result[i].n_miss * reader_->sampler->sampling_ratio_inv;
-    hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte * reader_->sampler->sampling_ratio_inv;
+    if(sampler){
+      hit_cnt_vec[i] = n_req_ - result[i].n_miss * reader_->sampler->sampling_ratio_inv;
+      hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte * reader_->sampler->sampling_ratio_inv;
+    }
+    else{
+      hit_cnt_vec[i] = n_req_ - result[i].n_miss;
+      hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte;
+    }
   }
 }

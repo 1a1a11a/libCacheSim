@@ -25,6 +25,8 @@ First, [build libCacheSim](/doc/install.md). After building libCacheSim, `mrcPro
 
 Use ./mrcProfiler --help for more details.
 
+Plot scripts are provided in `scripts/profile_mrc.py`. See [here](/scripts/README.md) for more details.
+
 ### Profiling LRU with SHARDS
 
 Run the example `vscsi` trace with SHARDS profiler. 
@@ -164,6 +166,6 @@ resluts:
 
 - [x] Conduct performance and accuracy tests.
 
-- [ ] Integrate plotting scripts.
+- [x] Integrate plotting scripts.
 
 - [ ] Implement additional profilers (e.g., FLOWS, TTLs Matter, Kosmo, AET).
