@@ -83,7 +83,7 @@ typedef struct {
   int64_t n_obj;
   int64_t occupied_byte;
   int64_t cache_size;
-
+  float sampler_ratio;
   /* current trace time, used to determine obj expiration */
   int64_t curr_rtime;
   int64_t expired_obj_cnt;
