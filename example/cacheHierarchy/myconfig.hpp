@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "utils.hpp"
-#include "yaml-cpp/yaml.h"
+#include "fkYAML/node.hpp"
 
 using namespace std;
 
