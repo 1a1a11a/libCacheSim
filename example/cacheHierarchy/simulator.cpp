@@ -17,9 +17,9 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size,
   std::ofstream miss_ofs(miss_output_path);
 
   reader_init_param_t reader_init_params = {
-      .time_field = 1, .obj_id_field = 2, .obj_size_field = 3};
+      .time_field = 1, .obj_id_field = 2, .obj_size_field = 3, .next_access_vtime_field = 4};
   // see the cacheSimulator example for using csv trace
-  reader_init_params.binary_fmt_str = "III";
+  reader_init_params.binary_fmt_str = "<IQIQ";
   reader_t *reader =
       open_trace(trace_path.c_str(), BIN_TRACE, &reader_init_params);
   common_cache_params_t cc_params = {.cache_size = cache_size};
@@ -52,7 +52,7 @@ void Simulator::output_mrc(string &algo, vector<uint64_t> cache_sizes,
   char alg[] = "LRU";
   reader_init_param_t reader_init_params = {
       .time_field = 1, .obj_id_field = 2, .obj_size_field = 3};
-  reader_init_params.binary_fmt_str = "III";
+  reader_init_params.binary_fmt_str = "<III";
   reader_t *reader =
       open_trace(trace_path.c_str(), BIN_TRACE, &reader_init_params);
 
@@ -64,7 +64,7 @@ void Simulator::output_mrc(string &algo, vector<uint64_t> cache_sizes,
 
   auto mrc = simulate_at_multi_sizes(reader, cache, cache_sizes.size(),
                                      cache_size_array, nullptr, 0, 0,
-                                     std::thread::hardware_concurrency());
+                                     std::thread::hardware_concurrency(), false);
 
   std::ofstream mrc_ofs(mrc_output_path);
   mrc_ofs << "# L2, " << mrc[0].n_req << " req, " << mrc[0].n_req_byte
