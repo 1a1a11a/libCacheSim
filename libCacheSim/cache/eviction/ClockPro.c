@@ -3,8 +3,27 @@
 // https://www.usenix.org/legacy/event/usenix05/tech/general/full_papers/jiang/jiang.pdf
 //
 // Inspirations are taken from
-// https://bitbucket.org/SamiLehtinen/pyclockpro/src/master/
 // https://blog.yufeng.info/wp-content/uploads/2010/08/8-Clock-Pro.pdf
+//
+// compared with https://bitbucket.org/SamiLehtinen/pyclockpro/src/master/ using --ignore-obj-size
+// using cloudPhysicsIO as traces
+//
+//    Size	      This Implementation	PyClockPro
+//   ======	    =======================	==========
+//    4897	            0.8363	          0.7420
+//    9794	            0.7662	          0.7076
+//    14692	            0.6435	          0.6214
+//    19589	            0.5670	          0.5848
+//    24487	            0.5092	          0.5654
+//    29384	            0.4955	          0.5653
+//    34281	            0.4726	          0.5646
+//    39179	            0.4574	          0.5049
+//    44076	            0.4384	          0.4302
+//    48974	            0.4301	          0.4301
+//
+// one thing to note is the difference in the clock hand movement (this implementation vs PyClockPro)
+// this implementation checks the object pointed by the hand first before moving the hand (as per the material in blog.yufeng.info)
+// PyClockPro implementation moves the hand first before checking the object pointed by the hand
 //
 // libCacheSim
 //

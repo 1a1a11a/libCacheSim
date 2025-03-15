@@ -18,20 +18,13 @@ if ("${ZSTD_LIBRARIES}" STREQUAL "")
 endif()
 
 
-# https://github.com/jbeder/yaml-cpp
-# wget https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz
-# tar -xzf 0.8.0.tar.gz; mkdir yaml-cpp-0.8.0/_build; cd yaml-cpp-0.8.0/_build; 
-# cmake -DBUILD_SHARED_LIBS=ON ..; 
-# make -j; sudo make install
-find_package(YAML-CPP REQUIRED)
-# set(YAML_CPP_INCLUDE_DIR /usr/local/include/)
-# set(YAML_CPP_LIBRARIES /usr/local/lib/)
-include_directories(${YAML_CPP_INCLUDE_DIR})
-message(STATUS ${YAML_CPP_INCLUDE_DIR} ";" ${YAML_CPP_LIBRARIES})
-
 
 file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
 message(STATUS "all sources " ${ALL_SRC})
 add_executable(layeredCache ${ALL_SRC})
-target_link_libraries(layeredCache yaml-cpp libCacheSim dl m ${GLib_LIBRARY} ${ZSTD_LIBRARIES} pthread)
+target_link_libraries(layeredCache 
+                    -Wl,--whole-archive 
+                    libCacheSim 
+                    -Wl,--no-whole-archive
+                    dl m ${GLib_LIBRARY} ${ZSTD_LIBRARIES} pthread)
 
