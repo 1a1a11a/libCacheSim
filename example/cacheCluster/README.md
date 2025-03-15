@@ -14,3 +14,6 @@ make -j;
 
 ## Run
 You can run the example trace
+```bash
+./cacheCluster
+```

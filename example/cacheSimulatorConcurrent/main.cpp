@@ -19,7 +19,7 @@ void run_one_cache_multiple_sizes(cache_t *cache, reader_t *reader) {
    */
   cache_stat_t *result = simulate_at_multi_sizes(
       reader, cache, NUM_SIZES, cache_sizes, nullptr, 0.0, 0,
-      static_cast<int>(std::thread::hardware_concurrency()));
+      static_cast<int>(std::thread::hardware_concurrency()), false);
 
   printf(
       "      cache name        cache size           num_miss        num_req"
@@ -55,7 +55,7 @@ void run_multiple_caches(reader_t *reader) {
 
   cache_stat_t *result = simulate_with_multi_caches(
       reader, caches, 8, nullptr, 0.0, 0,
-      static_cast<int>(std::thread::hardware_concurrency()), 0);
+      static_cast<int>(std::thread::hardware_concurrency()), 0, false);
 
   printf(
       "      cache name        cache size           num_miss        num_req"

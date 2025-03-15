@@ -1,4 +1,5 @@
 #ifndef LIBCACHESIM_ADMISSION_ADAPTSIZE_H
+#define LIBCACHESIM_ADMISSION_ADAPTSIZE_H
 
 #include "../../include/libCacheSim/request.h"
 #include <unordered_map>

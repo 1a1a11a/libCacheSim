@@ -5,7 +5,6 @@ It outputs the L2 miss ratio curve.
 
 ## Dependency
 * libCacheSim: you must install libCacheSim first
-* libyaml: `sudo apt install -yq libyaml-dev libyaml-cpp-dev`
 
 
 ## Build
@@ -19,5 +18,5 @@ make -j;
 
 
 ## Run 
-./layeredCache config.yaml
+./layeredCache ../config.yaml
 

@@ -13,29 +13,30 @@
 using namespace std;
 
 void Myconfig::load_config() {
-  YAML::Node yamlconfig = YAML::LoadFile(config_path);
-  assert(yamlconfig["L1"]["path"].IsSequence());
-  assert(yamlconfig["L2"]["size"].IsSequence());
+  FILE *fp = fopen(config_path.c_str(), "r");
+  auto yamlconfig = fkyaml::node::deserialize(fp);
+  assert(yamlconfig["L1"]["path"].is_sequence());
+  assert(yamlconfig["L2"]["size"].is_sequence());
 
   n_l1 = yamlconfig["L1"]["path"].size();
   uint64_t l1_size =
-      Utils::convert_size_str(yamlconfig["L1"]["size"].as<string>());
+      Utils::convert_size_str(yamlconfig["L1"]["size"].as_str());
   for (int i = 0; i < n_l1; i++) {
     l1_sizes.push_back(l1_size);
-    l1_sizes_str.push_back(yamlconfig["L1"]["size"].as<string>());
+    l1_sizes_str.push_back(yamlconfig["L1"]["size"].as_str());
   }
 
   for (std::size_t i = 0; i < n_l1; i++) {
-    l1_trace_path.push_back(yamlconfig["L1"]["path"][i].as<string>());
+    l1_trace_path.push_back(yamlconfig["L1"]["path"][i].as_str());
   }
 
   for (std::size_t i = 0; i < yamlconfig["L2"]["size"].size(); i++) {
-    string sz = yamlconfig["L2"]["size"][i].as<string>();
+    string sz = yamlconfig["L2"]["size"][i].as_str();
     l2_sizes.push_back(Utils::convert_size_str(sz));
     l2_sizes_str.push_back(sz);
   }
 
-  output_path = yamlconfig["output"].as<string>();
+  output_path = yamlconfig["output"].as_str();
 }
 
 void Myconfig::_prepare() {
