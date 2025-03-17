@@ -1,7 +1,7 @@
 // created by Xiaojun Guo, 02/28/25
 
 #include <stdint.h>
-#include "../../dataStructure/segment_tree.hpp"
+#include "../../../dataStructure/segment_tree.hpp"
 
 class BeladyOnline {
     int64_t cache_size_;

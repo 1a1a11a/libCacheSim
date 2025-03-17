@@ -8,8 +8,8 @@
 // Created by Xiaojun Guo on 3/27/25.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "../../../dataStructure/hashtable/hashtable.h"
+#include "../../../include/libCacheSim/evictionAlgo.h"
 #include "./BeladyOnline_wrapper.h"
 
 #ifdef __cplusplus
