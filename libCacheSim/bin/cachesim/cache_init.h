@@ -15,11 +15,11 @@ extern "C" {
 static inline cache_t *create_cache(const char *trace_path, const char *eviction_algo, const uint64_t cache_size,
                                     const char *eviction_params, const bool consider_obj_metadata) {
   common_cache_params_t cc_params = {
-      .cache_size = cache_size,
-      .default_ttl = 86400 * 300,
-      .hashpower = 24,
-      .consider_obj_metadata = consider_obj_metadata,
-  };
+    .cache_size = cache_size,
+    .default_ttl = 86400 * 300,
+    .hashpower = 24,
+    .consider_obj_metadata = consider_obj_metadata,
+};
   cache_t *cache;
 
   /* the trace provided is small */
@@ -107,6 +107,8 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
   } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0 || strcasecmp(eviction_algo, "clock") == 0 ||
              strcasecmp(eviction_algo, "second-chance") == 0) {
     cache = Clock_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "clockpro") == 0) {
+    cache = ClockPro_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "lirs") == 0) {
     cache = LIRS_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "fifomerge") == 0 || strcasecmp(eviction_algo, "fifo-merge") == 0) {

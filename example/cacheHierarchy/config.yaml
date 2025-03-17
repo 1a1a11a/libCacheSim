@@ -1,23 +1,15 @@
 L1:
-  size: 8GB
+  size: 1MB
   path:
-    - /home/to/l1/trace
-    - /home/to/l1/trace2
-    - /home/to/l1/trace3
-    - /home/to/l1/trace4
-    - /home/to/l1/trace5
+    - ../../../data/cloudPhysicsIO.oracleGeneral.bin
 
 L2:
   size:
-    - 2GB
-    - 4GB
-    - 8GB
-    - 16GB
-    - 32GB
-    - 64GB
-    - 128GB
-    - 256GB
-    - 512GB
-    - 1024GB
+    - 1MB
+    - 3MB
+    - 7MB
+    - 15MB
+    - 31MB
+    - 63MB
 
 output: result

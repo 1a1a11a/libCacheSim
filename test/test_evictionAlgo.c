@@ -75,6 +75,24 @@ static void test_Clock(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_ClockPro(gconstpointer user_data) {
+  uint64_t miss_cnt_true[] = {96390, 92614, 88911, 85894, 82276, 73203, 63728, 57544};
+  uint64_t miss_byte_true[] = {4163599360, 3922361856, 3700721152, 3491452416,
+                              3245322240, 2653708288, 2413087744, 2293678592};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("ClockPro", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  // cache_stat_t *res = simulate_at_multi_sizes_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores(), false);
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores(), false);
+
+  print_results(cache, res);
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, g_req_cnt_true, miss_cnt_true, g_req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
 static void test_FIFO(gconstpointer user_data) {
   uint64_t miss_cnt_true[] = {93403, 89386, 84387, 84025, 72498, 72228, 72182, 72140};
   uint64_t miss_byte_true[] = {4213112832, 4052646400, 3829170176, 3807412736,
@@ -515,6 +533,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_Clock", reader, test_Clock);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_ClockPro", reader, test_ClockPro);
   g_test_add_data_func("/libCacheSim/cacheAlgo_FIFO", reader, test_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);

@@ -52,6 +52,8 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params, const char *cac
 
 cache_t *Clock_init(const common_cache_params_t ccache_params, const char *cache_specific_params);
 
+cache_t *ClockPro_init(const common_cache_params_t ccache_params, const char *cache_specific_params);
+
 cache_t *CR_LFU_init(const common_cache_params_t ccache_params, const char *cache_specific_params);
 
 cache_t *FIFO_init(const common_cache_params_t ccache_params, const char *cache_specific_params);

@@ -8,6 +8,7 @@ set(sourceC
         FIFO.c
         LRU.c
         Clock.c
+        ClockPro.c
         SLRU.c
         SLRUv0.c
         CR_LFU.c

@@ -25,6 +25,17 @@ typedef struct {
   int freq;
 } Clock_obj_metadata_t;
 
+typedef enum {
+  CLOCKPRO_TEST,
+  CLOCKPRO_COLD,
+  CLOCKPRO_HOT
+} clockpro_status_e;
+
+typedef struct {
+  clockpro_status_e status;
+  bool referenced;
+} ClockPro_obj_metadata_t;
+
 typedef struct {
   void *pq_node;
 } Size_obj_metadata_t;
@@ -156,6 +167,7 @@ typedef struct cache_obj {
   union {
     LFU_obj_metadata_t lfu;          // for LFU
     Clock_obj_metadata_t clock;      // for Clock
+    ClockPro_obj_metadata_t clockpro;// for ClockPro
     Size_obj_metadata_t Size;        // for Size
     ARC_obj_metadata_t ARC;          // for ARC
     LeCaR_obj_metadata_t LeCaR;      // for LeCaR
