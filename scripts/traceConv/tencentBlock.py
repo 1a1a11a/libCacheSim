@@ -20,7 +20,42 @@ sys.path.append(BASEPATH)
 SECTOR_SIZE = 512
 
 
-def preprocess(ifilepath, ofilepath, block_size, stat_path, split_tenant=False):
+def split_trace(ifilepath, ofile_dir):
+    """
+    split the trace into multiple files, one file per tenant
+
+    """
+
+    if not os.path.exists(ofile_dir):
+        os.makedirs(ofile_dir)
+
+    ifile = open(ifilepath, "r")
+    req_dict = defaultdict(list)
+
+    ofile_dict = defaultdict(lambda: open(
+        os.path.join(ofile_dir, f"{vol_id}"), "w"))
+
+    for line in ifile:
+        parts = line.strip().split(",")
+        if len(parts) != 5:
+            raise RuntimeError("unknown line {}".format(line))
+
+        ts, offset, req_size, op, vol_id = parts
+        req_dict[vol_id].append(line)
+        if len(req_dict[vol_id]) > 20000:
+            for req in req_dict[vol_id]:
+                ofile_dict[vol_id].write(req)
+            req_dict[vol_id] = []
+
+    for vol_id, req_list in req_dict.items():
+        for req in req_list:
+            ofile_dict[vol_id].write(req)
+        ofile_dict[vol_id].close()
+
+    ifile.close()
+
+
+def preprocess(ifilepath, ofilepath, block_size, stat_path):
     """
     preprocess the trace into a csv format with only necessary information
     this step normalizes the trace format before converting it to lcs format
@@ -41,14 +76,6 @@ def preprocess(ifilepath, ofilepath, block_size, stat_path, split_tenant=False):
     start_ts, end_ts = None, None
     n_read, n_write = 0, 0
     block_cnt = defaultdict(int)
-
-    # per tenant
-    ofile_dict = defaultdict(lambda: open(ofilepath + f".{vol_id}", "w"))
-    n_req_dict, n_byte_dict = defaultdict(int), defaultdict(int)
-    n_original_req_dict = defaultdict(int)
-    n_read_dict, n_write_dict = defaultdict(int), defaultdict(int)
-    start_ts_dict, end_ts_dict = defaultdict(int), defaultdict(int)
-    block_cnt_dict = defaultdict(int)
 
     for line in ifile:
         parts = line.strip().split(",")
@@ -75,7 +102,8 @@ def preprocess(ifilepath, ofilepath, block_size, stat_path, split_tenant=False):
             op = "write"
             n_write += 1
         else:
-            raise RuntimeError(f"Unknown operation: {op} {req_size} {lba} {ts}")
+            raise RuntimeError(
+                f"Unknown operation: {op} {req_size} {lba} {ts}")
 
         if not start_ts:
             start_ts = ts
@@ -83,39 +111,17 @@ def preprocess(ifilepath, ofilepath, block_size, stat_path, split_tenant=False):
         n_original_req += 1
 
         # write to file
-        if split_tenant:
-            ofile = ofile_dict[vol_id]
-            n_block = 0
-            if block_size == 1:
-                ofile.write(f"{ts},{lbn},{req_size},{op},{vol_id}\n")
-                block_cnt[lbn] += 1
-                n_block = 1
-            else:
-                for i in range(int(ceil(req_size / block_size))):
-                    ofile.write(f"{ts},{lbn + i},{block_size},{op},{vol_id}\n")
-                    block_cnt[lbn + i] += 1
-                    n_block += 1
-
-            n_req_dict[vol_id] += n_block
-            n_byte_dict[vol_id] += req_size
-            n_original_req_dict[vol_id] += 1
-            n_read_dict[vol_id] += n_block if op == "read" else 0
-            n_write_dict[vol_id] += n_block if op == "write" else 0
-
-            start_ts_dict[vol_id] = min(start_ts_dict.get(vol_id, ts), ts)
-            end_ts_dict[vol_id] = max(end_ts_dict.get(vol_id, ts), ts)
+        if block_size == 1:
+            ofile.write(f"{ts},{lbn},{req_size},{op},{vol_id}\n")
+            block_cnt[lbn] += 1
+            n_req += 1
+            n_byte += req_size
         else:
-            if block_size == 1:
-                ofile.write(f"{ts},{lbn},{req_size},{op},{vol_id}\n")
-                block_cnt[lbn] += 1
+            for i in range(int(ceil(req_size / block_size))):
+                ofile.write(f"{ts},{lbn + i},{block_size},{op},{vol_id}\n")
+                block_cnt[lbn + i] += 1
                 n_req += 1
-                n_byte += req_size
-            else:
-                for i in range(int(ceil(req_size / block_size))):
-                    ofile.write(f"{ts},{lbn + i},{block_size},{op},{vol_id}\n")
-                    block_cnt[lbn + i] += 1
-                    n_req += 1
-                    n_byte += block_size
+                n_byte += block_size
 
     ifile.close()
     ofile.close()
@@ -135,7 +141,6 @@ def preprocess(ifilepath, ofilepath, block_size, stat_path, split_tenant=False):
 
     print(open(stat_path, "r").read().strip("\n"))
     print(f"Preprocessed trace is saved to {ofilepath}")
-    return ofile_dict
 
 
 def convert(traceconv_path, ifilepath, ofilepath, output_format="lcs_v2"):
@@ -166,7 +171,8 @@ if __name__ == "__main__":
         "--traceconv-path", help="path to traceConv", default=DEFAULT_TRACECONV_PATH
     )
     p.add_argument("--ofilepath", help="output file path", default=None)
-    p.add_argument("--output-format", help="output format", default="lcs_v2", type=str)
+    p.add_argument("--output-format", help="output format",
+                   default="lcs_v2", type=str)
     p.add_argument("--block-size", help="block size", default=1, type=int)
     p.add_argument(
         "--split-tenant", help="split into per tenant files", action="store_true"
@@ -176,6 +182,10 @@ if __name__ == "__main__":
     if not os.path.exists(args.traceconv_path):
         raise RuntimeError(f"traceConv not found at {args.traceconv_path}")
 
+    if args.split_tenant:
+        split_trace(args.ifilepath, args.ofilepath)
+        sys.exit(0)
+        
     if args.ofilepath:
         lcs_path = args.ofilepath
         prelcs_path = args.ofilepath + f".pre_{args.output_format}"
@@ -186,28 +196,16 @@ if __name__ == "__main__":
         stat_path = args.ifilepath + ".stat"
 
     try:
-        ofile_dict = preprocess(
-            args.ifilepath, prelcs_path, args.block_size, stat_path, args.split_tenant
+        preprocess(
+            args.ifilepath, prelcs_path, args.block_size, stat_path
         )
-        if args.split_tenant:
-            for vol_id, ofile in ofile_dict.items():
-                convert(
-                    args.traceconv_path,
-                    ofile.name,
-                    ofilepath=lcs_path + f".{vol_id}",
-                    output_format=args.output_format,
-                )
-                post_process(
-                    args.ifilepath, prelcs_path, stat_path, lcs_path + f".{vol_id}"
-                )
-        else:
-            convert(
-                args.traceconv_path,
-                prelcs_path,
-                ofilepath=lcs_path,
-                output_format=args.output_format,
-            )
-            post_process(args.ifilepath, prelcs_path, stat_path, lcs_path)
+        convert(
+            args.traceconv_path,
+            prelcs_path,
+            ofilepath=lcs_path,
+            output_format=args.output_format,
+        )
+        post_process(args.ifilepath, prelcs_path, stat_path, lcs_path)
     except Exception as e:
         print(e)
         with open(lcs_path.replace(f".{args.output_format}", ".fail"), "w") as f:
