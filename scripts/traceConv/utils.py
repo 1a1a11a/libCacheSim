@@ -18,62 +18,94 @@ def post_process(ifilepath, prelcs_path, stat_path, lcs_path):
     subprocess.run("zstd -16 --long -T16 " + lcs_path, shell=True)
     shutil.move(f"{lcs_path}.zst", f"{dir_path}lcs/")
 
-    subprocess.run("zstd -8 -T4 " + ifilepath, shell=True)
     os.remove(ifilepath)
     os.remove(prelcs_path)
     os.remove(lcs_path)
 
-    shutil.move(ifilepath + ".zst", f"{dir_path}finished/")
+    # shutil.move(ifilepath + ".zst", f"{dir_path}finished/")
 
 
-def categorize_trace(trace_dir, stat_dir):
-    """
-    Categorize trace files based on the number of objects in the trace
+def read_stat(stat_path):
+    stat_dict = {}
+    with open(stat_path, "r") as f:
+        trace_name = f.readline().strip()
+        stat_dict["trace_name"] = trace_name
+        for line in f:
+            if ":" in line:
+                key, value = line.split(":")
+                stat_dict[key.strip()] = int(value.strip())
+    return stat_dict
 
-    """
 
-    trace_files = [f for f in os.listdir(trace_dir) if f.endswith(".zst")]
-    stat_files = os.listdir(stat_dir)
-    assert len(trace_files) == len(stat_files)
+def move_trace_by_nobj(trace_dir):
+    n_1k, n_10k, n_100k, n_1M = 0, 0, 0, 0
+    n_trace = len(glob(trace_dir + "/stat/*.stat"))
+    for stat_path in glob(trace_dir + "/stat/*.stat"):
+        stat_dict = read_stat(stat_path)
+        nobj = stat_dict["n_obj"]
 
-    if not os.path.exists(trace_dir + "1k"):
-        os.mkdir(trace_dir + "1k")
-    if not os.path.exists(trace_dir + "10k"):
-        os.mkdir(trace_dir + "10k")
-    if not os.path.exists(trace_dir + "100k"):
-        os.mkdir(trace_dir + "100k")
-    if not os.path.exists(trace_dir + "1m"):
-        os.mkdir(trace_dir + "1m")
+        if not os.path.exists(f"{trace_dir}/lcs/{stat_dict['trace_name']}.oracleGeneral.zst"):
+            print(f"{trace_dir}/lcs/{stat_dict['trace_name']}.oracleGeneral.zst not found")
+            continue
 
-    for trace_file in trace_files:
-        stat_ifile = open(os.path.join(
-            stat_dir, trace_file.replace(".zst", ".stat")), "r")
-        for line in stat_ifile:
-            if line.startswith("n_obj"):
-                n_obj = int(line.split(":")[1].strip())
-                break
-        stat_ifile.close()
+        if nobj < 1000:
+            shutil.move(
+                f"{trace_dir}/lcs/{stat_dict['trace_name']}.oracleGeneral.zst",
+                trace_dir + "/lcs/1K/",
+            )
+            n_1k += 1
+        elif nobj < 10000:
+            shutil.move(
+                f"{trace_dir}/lcs/{stat_dict['trace_name']}.oracleGeneral.zst",
+                trace_dir + "/lcs/10K/",
+            )
+            n_10k += 1
+        elif nobj < 100000:
+            shutil.move(
+                f"{trace_dir}/lcs/{stat_dict['trace_name']}.oracleGeneral.zst",
+                trace_dir + "/lcs/100K/",
+            )
+            n_100k += 1
+        elif nobj < 1000000:
+            shutil.move(
+                f"{trace_dir}/lcs/{stat_dict['trace_name']}.oracleGeneral.zst",
+                trace_dir + "/lcs/1M/",
+            )
+            n_1M += 1
+    with open(trace_dir + "/README", "w") as f:
+        f.write(f"Total number of traces: {n_trace}\n")
+        f.write("the 1K, 10K, 100K, 1M folders store traces with no more than 1K, 10K, 100K, 1M objects, respectively\n")
+        f.write(f"{n_1k}, {n_10k}, {n_100k}, {n_1M} traces with no more than 1K, 10K, 100K, 1M objects\n")
+        f.write(f"{n_trace - n_1k - n_10k - n_100k - n_1M} traces with more than 1M objects\n")
 
-        if n_obj < 1000:
-            print(f"move {trace_file} to {trace_dir + '/1k'}")
-            shutil.move(os.path.join(trace_dir, trace_file),
-                        os.path.join(trace_dir + "/1k", trace_file))
-        elif n_obj < 10000:
-            print(f"move {trace_file} to {trace_dir + '/10k'}")
-            shutil.move(os.path.join(trace_dir, trace_file),
-                        os.path.join(trace_dir + "/10k", trace_file))
-        elif n_obj < 100000:
-            print(f"move {trace_file} to {trace_dir + '/100k'}")
-            shutil.move(os.path.join(trace_dir, trace_file),
-                        os.path.join(trace_dir + "/100k", trace_file))
-        elif n_obj < 1000000:
-            print(f"move {trace_file} to {trace_dir + '/1m'}")
-            shutil.move(os.path.join(trace_dir, trace_file),
-                        os.path.join(trace_dir + "/1m", trace_file))
-        else:
-            print(f"keep {trace_file} in {trace_dir}")
+def plot_nobj(stat_dir):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import os
+    import sys
+    from glob import glob
+
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from utils.data_utils import conv_to_cdf
+
+    stat_paths = glob(stat_dir + "/*.stat")
+    stat_dicts = [read_stat(stat_path) for stat_path in stat_paths]
+    n_objs = [stat_dict["n_obj"] for stat_dict in stat_dicts]
+    x, y = conv_to_cdf(n_objs)
+    plt.plot(x, y)
+    plt.xscale("log")
+    plt.xlabel("Number of Objects")
+    plt.ylabel("CDF")
+    plt.grid(linestyle="--", alpha=0.8)
+    plt.savefig(stat_dir + "/nobj.png", bbox_inches="tight")
+    plt.savefig("nobj.png", bbox_inches="tight")
+    plt.close()
+
 
 if __name__ == "__main__":
-    trace_dir = "/disk/tmp/lcs/"
-    stat_dir = "/disk/tmp/stat/"
-    categorize_trace(trace_dir, stat_dir)
+    import os, sys
+    from glob import glob
+
+    # plot_nobj("/mnt/cfs/original/alibabaBlock/stat/")
+
+    move_trace_by_nobj("/mnt/cfs/original/alibabaBlock/")
