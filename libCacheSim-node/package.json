@@ -1,0 +1,17 @@
+{
+  "name": "libcachesim-node",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "install": "node-gyp configure build",
+    "build": "node-gyp rebuild",
+    "clean": "node-gyp clean",
+  },
+  "keywords": [],
+  "author": "Murphy Tian",
+  "license": "MIT",
+  "description": "Node.js bindings for libCacheSim",
+  "dependencies": {
+    "node-addon-api": "^8.3.1"
+  }
+}
