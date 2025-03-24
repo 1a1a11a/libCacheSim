@@ -59,6 +59,7 @@
 * **The ONLY feature-rich trace analyzer** - all types of trace analysis you need, see [here](/doc/quickstart_traceAnalyzer.md).
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc.; see [here](/doc/API.md).
 * **Extensible** - easy to support new trace types or eviction algorithms; see [here](/doc/advanced_lib_extend.md).
+* **Efficient Miss Ratio Curve profiler** - quickly build highly accurate miss ratio curves on large-scale workloads; see [here](/doc/quickstart_mrcProfiler.md).
 ---
 
 <!-- TOC --><a name="supported-algorithms"></a>
@@ -195,6 +196,12 @@ And it is very fast, designed to work with billions of requests.
 It also comes with a set of scripts to help you analyze the trace. 
 See [trace analysis](/doc/quickstart_traceAnalyzer.md) for more details.
 
+---
+
+<!-- TOC --><a name="miss-ratio-curves-profiling"></a>
+### Miss ratio curves profiling
+
+Constructing fine-grained miss ratio curves for large-scale workloads is very demanding on CPU and memory resources. libCacheSim provides advanced miss ratio curves profiling tools to help you quickly build miss ratio curves for large-scale workloads. See [mrcProfiler](/doc/quickstart_mrcProfiler.md) for more details.
 
 
 

@@ -25,6 +25,19 @@ python3 plot_mrc_time.py \
 --report-interval 120
 ```
 
+## Profile miss ratio curves
+
+`mrcProfiler` enables fast profiling of miss ratio curves. With a proper parameter setting (such as `sampling_rate`, see [here](../doc/quickstart_mrcProfiler.md) for details) `mrcProfiler` can profile miss ratio curves in a fast way with acceptable accuracy.
+
+```bash
+# plot profiled miss ratio over sizes
+python3 profile_mrc.py \
+--tracepath ../data/twitter_cluster52.csv --trace-format csv \
+--trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,,obj-id-is-num=1" \
+--profiler=MINISIM --algos=LRU,FIFO,ARC,S3FIFO --profiler-params=FIX_RATE,0.1,10 \
+--sizes=0.01,0.02,0.05,0.10,0.20,0.40
+```
+
 ## Trace analysis
 ### Generate the plot data
 Plot data are generated using `traceAnalyzer` using 

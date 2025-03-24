@@ -1,6 +1,8 @@
 
 set(coreLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
+message(STATUS  "coreLib: ${coreLib}")
+
 add_executable(testReader test_traceReader.c)
 target_link_libraries(testReader ${coreLib})
 
@@ -32,6 +34,12 @@ target_link_libraries(testDataStructure ${coreLib})
 add_executable(testUtils test_utils.c)
 target_link_libraries(testUtils ${coreLib})
 
+add_executable(testMrcProfiler test_mrcProfiler.cpp)
+target_link_libraries(testMrcProfiler mrcProfilerLib m zstd dl pthread -Wl,--whole-archive  libCacheSim -Wl,--no-whole-archive ${coreLib})
+target_link_options(testMrcProfiler PRIVATE "-Wl,--export-dynamic")
+
+
+
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
 add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
@@ -41,6 +49,7 @@ add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
+add_test(NAME testMrcProfiler COMMAND testMrcProfiler WORKING_DIRECTORY .)
 
 # if (ENABLE_GLCACHE)
 #     add_executable(testGLCache test_glcache.c)

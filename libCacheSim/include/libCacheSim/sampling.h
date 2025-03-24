@@ -28,6 +28,7 @@ typedef struct sampler {
   trace_sampling_func sample;
   int sampling_ratio_inv;
   double sampling_ratio;
+  int sampling_salt;
   void *other_params;
   clone_sampler_func clone;
   free_sampler_func free;
@@ -35,6 +36,8 @@ typedef struct sampler {
 } sampler_t;
 
 sampler_t *create_spatial_sampler(double sampling_ratio);
+
+void set_spatial_sampler_salt(sampler_t *sampler, uint64_t salt);
 
 sampler_t *create_temporal_sampler(double sampling_ratio);
 
