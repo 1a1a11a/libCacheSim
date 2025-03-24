@@ -1,0 +1,27 @@
+
+[package]
+name = "libcachesim-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+libc = "0.2" # For C types
+bindgen = { version = "0.71.1", features = ["experimental"] }
+
+[lib]
+name = "libcachesim_rs"
+path = "src/lib.rs"
+
+[build]
+rustflags = []
+
+[build-dependencies]
+cc = "1.0" # For compiling the C library
+bindgen = { version = "0.71.1", features = ["experimental"] }
+pkg-config = "0.3"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"

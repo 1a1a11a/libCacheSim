@@ -18,3 +18,6 @@ result/
 sftp-config.json
 # Clangd cache
 *.cache/
+libcachesim-rs/target/
+zstd-1.5.0/
+zstd-1.5.0.tar.gz

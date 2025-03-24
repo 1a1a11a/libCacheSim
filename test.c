@@ -6,7 +6,9 @@
 
 int main(int argc, char *argv[]) {
   /* open trace, see quickstart.md for opening csv and binary trace */
-  reader_t *reader = open_trace("../data/trace.vscsi", VSCSI_TRACE, NULL);
+  reader_init_param_t init_params_csv = 
+    {.delimiter=',', .time_field=2, .obj_id_field=6, .obj_size_field=4, .has_header=FALSE}; 
+  reader_t *reader = open_trace("../data/trace.csv", CSV_TRACE, &init_params_csv);
 
   /* create a container for reading from trace */
   request_t *req = new_request();
