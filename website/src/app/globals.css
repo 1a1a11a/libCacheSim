@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+}
+
+.prose pre {
+  background-color: #1a1a1a;
+  color: #ffffff;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.prose code {
+  background-color: #f3f4f6;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+} 

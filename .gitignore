@@ -18,3 +18,8 @@ result/
 sftp-config.json
 # Clangd cache
 *.cache/
+
+website/.next/*
+website/node_modules/
+
+
