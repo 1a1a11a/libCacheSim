@@ -80,7 +80,7 @@ install_zstd() {
 
 CURR_DIR=$(pwd)
 
-if [ -n "$(uname -a | grep Ubuntu)" ] || [ -n "$(uname -a | grep Debian)" ] || [ -n "$(uname -a | grep WSL)" ]; then
+if [ -n "$(uname -a | grep Ubuntu)" ] || [ -n "$(uname -a | grep Debian)" ] || [ -n "$(uname -a | grep WSL)" ] || [ -n "$(uname -a | grep Linux)" ]; then
     setup_ubuntu
 elif [ -n "$(uname -a | grep Darwin)" ]; then
     setup_macOS
