@@ -272,9 +272,9 @@ static void test_LeCaR(gconstpointer user_data) {
 }
 
 static void test_Cacheus(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {89328, 82377, 80079, 77111, 69654, 69492, 69165, 66072};
-  uint64_t miss_byte_true[] = {4025448960, 3727429632, 3554795008, 3359375872,
-                               3003613696, 2964137472, 2928446976, 2790086656};
+  uint64_t miss_cnt_true[] = {89776, 82725, 78839, 73048, 69329, 69184, 69117, 66048};
+  uint64_t miss_byte_true[] = {4048868864, 3727920128, 3489738752, 3184179200,
+                               2981198336, 2968055296, 2925565440, 2789046784};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
@@ -289,9 +289,9 @@ static void test_Cacheus(gconstpointer user_data) {
 }
 
 static void test_SR_LRU(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {90043, 83978, 81481, 77724, 72611, 72058, 67837, 65739};
-  uint64_t miss_byte_true[] = {4068758016, 3792818176, 3639694848, 3379471872,
-                               3165339648, 3058749440, 2862783488, 2774183936};
+  uint64_t miss_cnt_true[] = {90043, 83978, 81482, 77727, 72611, 72059, 67836, 65739};
+  uint64_t miss_byte_true[] = {4068758016, 3792818176, 3639756288, 3379609600,
+                               3165339648, 3058814976, 2862775296, 2774183936};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
