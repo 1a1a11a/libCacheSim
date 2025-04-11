@@ -238,6 +238,9 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
 
   // If history hit
   if (ck_hist) {
+    // Used to carry-over the new_obj flag
+    bool was_new = H->find(H, req, false)->SR_LRU.new_obj;
+
     // On a cache miss where x is in H, x is moved to the MRU position of R.
     H->remove(H, req->obj_id);
 
@@ -261,6 +264,7 @@ static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req) {
 
     R->insert(R, req);
     obj = R->find(R, req, false);
+    obj->SR_LRU.new_obj = was_new;
 
     // Dynamic size adjustment
     // If an obj is moved from H to R
