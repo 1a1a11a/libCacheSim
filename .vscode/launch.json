@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug libCacheSim",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/_build_dbg/bin/cachesim",
+            "args": ["data/cloudPhysicsIO.vscsi", "vscsi", "lru", "100m,1gb"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build-debug"
+        }
+    ]
+}
+

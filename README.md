@@ -2,9 +2,8 @@
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
 
-#### The main development of libCacheSim is at [https://github.com/1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim), the [cachemon](https://github.com/cachemon/libCacheSim) repo is a mirror of the stable branch. Please fork and submit PR to this repo. 
-
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+- [libCacheSim - building and running cache simulations](#libcachesim---building-and-running-cache-simulations)
   - [News](#news)
   - [What is libCacheSim](#what-is-libcachesim)
   - [libCacheSim features](#libcachesim-features)
@@ -21,8 +20,10 @@
       - [basic usage](#basic-usage)
       - [Run a single cache simulation](#run-a-single-cache-simulation)
       - [Run multiple cache simulations with different cache sizes](#run-multiple-cache-simulations-with-different-cache-sizes)
+      - [Debug cachesim](#debug-cachesim)
       - [Plot miss ratio curve](#plot-miss-ratio-curve)
     - [Trace analysis](#trace-analysis)
+    - [Miss ratio curves profiling](#miss-ratio-curves-profiling)
     - [Using libCacheSim as a library](#using-libcachesim-as-a-library)
     - [Extending libCacheSim (new algorithms and trace types)](#extending-libcachesim-new-algorithms-and-trace-types)
   - [Open source cache traces](#open-source-cache-traces)
@@ -68,7 +69,7 @@ cachesim supports the following algorithms:
 ### Eviction algorithms
 * [FIFO](/libCacheSim/cache/eviction/FIFO.c), [LRU](/libCacheSim/cache/eviction/LRU.c), [Clock](/libCacheSim/cache/eviction/Clock.c), [SLRU](/libCacheSim/cache/eviction/SLRU.c)
 * [LFU](/libCacheSim/cache/eviction/LFU.c), [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c)
-* [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c)
+* [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c), [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c)
 * [Belady](/libCacheSim/cache/eviction/Belady.c), [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 * [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp)
 * [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
@@ -78,6 +79,7 @@ cachesim supports the following algorithms:
 * [LRB](/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp)
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
 * [WTinyLFU](/libCacheSim/cache/eviction/WTinyLFU.c)
+* [3LCache](/libCacheSim/cache/eviction/3LCache/)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
 * [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c)
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c)
@@ -122,6 +124,7 @@ cmake .. && make -j
 [sudo] make install
 popd
 ```
+
 ---
 
 <!-- TOC --><a name="usage"></a>
@@ -167,6 +170,17 @@ Run the example traces using the LRU eviction algorithm and a 1 GB cache size.
 
 See [quick start cachesim](/doc/quickstart_cachesim.md) for more usages. 
 
+<!-- TOC --><a name="debug-cachesim"></a>
+#### Debug cachesim
+We provide a debug script to help you debug cachesim with GDB. For detailed usage instructions, see [debug guide](/doc/usage.md).
+
+```bash
+# Basic usage
+./scripts/debug.sh
+
+# Debug with program arguments
+./scripts/debug.sh -- data/cloudPhysicsIO.vscsi vscsi lru,s3fifo 100mb,1gb
+```
 
 <!-- TOC --><a name="plot-miss-ratio-curve"></a>
 #### Plot miss ratio curve
