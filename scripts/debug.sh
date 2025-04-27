@@ -1,4 +1,5 @@
 #!/bin/bash 
+set -euo pipefail
 
 SOURCE=$(readlink -f ${BASH_SOURCE[0]})
 SCRIPT_DIR=$(dirname ${SOURCE})
@@ -28,6 +29,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -c|--clean)
             CLEAN=1
+            shift
+            ;;
+        -d|--default)
+            PROGRAM_ARGS=("data/cloudPhysicsIO.vscsi" "vscsi" "lru,s3fifo" "100m,1gb")
             shift
             ;;
         --)

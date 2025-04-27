@@ -29,8 +29,8 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
   uint64_t start_ts = (uint64_t)req->clock_time;
   uint64_t last_report_ts = warmup_sec;
 
-  char cache_stat_name[CACHE_STAT_NAME_ARRAY_LEN];
-  generate_cache_name(cache, cache_stat_name);
+  char detailed_cache_name[256];
+  generate_cache_name(cache, detailed_cache_name, 256);
 
   double start_time = -1;
   while (req->valid) {
@@ -61,7 +61,7 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
           "%s %s %.2lf hour: %lu requests, miss ratio %.4lf, interval miss "
           "ratio "
           "%.4lf\n",
-          mybasename(reader->trace_path), cache_stat_name,
+          mybasename(reader->trace_path), detailed_cache_name,
           (double)req->clock_time / 3600, (unsigned long)req_cnt,
           (double)miss_cnt / req_cnt,
           (double)(miss_cnt - last_miss_cnt) / (req_cnt - last_req_cnt));
@@ -88,14 +88,14 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
     snprintf(output_str, 1024,
              "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
              "%.2lf MQPS\n",
-            reader->trace_path, cache_stat_name, size_str,
+            reader->trace_path, detailed_cache_name, size_str,
             (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
             (double)req_cnt / 1000000.0 / runtime);
   } else {
     snprintf(output_str, 1024,
              "%s %s cache size %8ld, %16lu req, miss ratio %.4lf, throughput "
              "%.2lf MQPS\n",
-            reader->trace_path, cache_stat_name, cache->cache_size,
+            reader->trace_path, detailed_cache_name, cache->cache_size,
             (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
             (double)req_cnt / 1000000.0 / runtime);
   }

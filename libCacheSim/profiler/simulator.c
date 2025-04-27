@@ -124,7 +124,6 @@ static void _simulate(gpointer data, gpointer user_data) {
   result[idx].curr_rtime = req->clock_time;
   result[idx].n_obj = local_cache->n_obj;
   result[idx].occupied_byte = local_cache->occupied_byte;
-  generate_cache_name(local_cache, result[idx].cache_name);
 
   // report progress
   g_mutex_lock(&(params->mtx));
