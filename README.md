@@ -36,7 +36,7 @@
 
 <!-- TOC --><a name="news"></a>
 ## News
-* **2024 Oct**: **S3-FIFO** gets an upgrade! Please try out the new version (the old is now called S3-FIFOv0).
+* **2024 Oct**: **S3-FIFO** gets an upgrade! Please try out the new version (the old is now renamed to S3-FIFOv0).
 * **2023 June**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
 * **2023 Oct**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **SIEVE(https://sievecache.com)** are available! These are very simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
 * **2024 Jan**: We compiled a list of open-source cache datasets at the bottom of this page 
@@ -139,7 +139,7 @@ use `./bin/cachesim --help` to get more information.
 
 <!-- TOC --><a name="run-a-single-cache-simulation"></a>
 #### Run a single cache simulation
-Run the example traces with LRU eviction algorithm and 1GB cache size. 
+Run the example traces using the LRU eviction algorithm and a 1 GB cache size. 
 
 ```bash
 # Note that no space between the cache size and the unit, and the unit is not case-sensitive
@@ -245,7 +245,7 @@ free_request(req);
 cache->cache_free(cache);
 ```
 
-save this to `test.c` and compile it with below command. For `libCacheSim.h` to work correctly we need the following libs to be installed first: [glib](https://developer.gnome.org/glib/) and [zstd](https://github.com/facebook/zstd). Please check the previous section [installation](#install-dependency).
+Save this to `test.c` and compile it with the below command. For `libCacheSim.h` to work correctly, we need the following libs to be installed first: [glib](https://developer.gnome.org/glib/) and [zstd](https://github.com/facebook/zstd). Please refer to the previous section, [Installation](#install-dependency).
 ```bash
 gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out -lm -lzstd
 ```
@@ -261,17 +261,19 @@ See [here](/doc/advanced_lib.md) for more details, and see [example folder](/exa
 
 <!-- TOC --><a name="extending-libcachesim-new-algorithms-and-trace-types"></a>
 ### Extending libCacheSim (new algorithms and trace types)
-libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
+libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces because they allow libCacheSim to run faster, and the traces are more compact. 
 
 We also support zstd compressed binary traces without decompression. This allows you to store the traces with less space.
 
 If you need to add a new trace type or a new algorithm, please see [here](/doc/advanced_lib_extend.md) for details. 
 
+We encourage the users to check [deepWiki](https://deepwiki.com/1a1a11a/libCacheSim) for a more detailed documentation. 
+
 
 ---
 <!-- TOC --><a name="open-source-cache-traces"></a>
 ## Open source cache traces
-In the [repo](/data/), there are sample (one from cloudphysics and one from twitter) traces in different formats (csv, txt, vscsi, and oracleGeneral). Note that the provided traces are **very small** samples and __should not be used for evaluating different algorithms' miss ratios__. The full traces can be found either with the original release or the processed oracleGeneral format. 
+In the [repo](/data/), there are sample traces in different formats (`csv`, `txt`, `vscsi`, and `oracleGeneral`). Note that the sampled traces are **very small** and __should not be used for evaluating different algorithms' miss ratios__. The full traces can be found either with the original release or the processed `oracleGeneral` format. 
 
 Note that the oracleGeneral traces are compressed with [zstd](https://github.com/facebook/zstd) and have the following format:
 
@@ -283,7 +285,7 @@ struct {
     int64_t next_access_vtime;  // -1 if no next access
 }
 ```
-The compressed traces can be used with libCacheSim without decompression. And libCacheSim provides a `tracePrint` tool to print the trace in human-readable format. 
+The compressed traces can be used with libCacheSim without decompression. And libCacheSim provides a `tracePrint` tool to print the trace in a human-readable format. 
 
 
 | Dataset       | Year |    Type   |                                      Original release                                     |                                OracleGeneral format                                |
@@ -296,13 +298,13 @@ The compressed traces can be used with libCacheSim without decompression. And li
 | MetaKV        | 2022 | key-value | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaKV/)       |
 | MetaCDN       | 2023 | object    | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaCDN/)      |
 
-Among the large number of traces, I recommend using the newer traces from Twitter (cluster52), Wiki, and Meta. 
+Among the large number of traces, I recommend using the newer ones from Twitter (cluster52), Wiki, and Meta. 
 
 
 ---
 <!-- TOC --><a name="questions"></a>
 ## Questions? 
-Please join the Google group https://groups.google.com/g/libcachesim and ask questions.
+Please join the [Google group](https://groups.google.com/g/libcachesim) and feel free to ask questions.
 
 
 ---  
@@ -319,7 +321,7 @@ This project adheres to Google's coding style. By participating, you are expecte
 ```
 @inproceedings{yang2020-workload,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
-    title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
+    title = {A large-scale analysis of hundreds of in-memory cache clusters at Twitter},
     booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
     year = {2020},
     isbn = {978-1-939133-19-9},
