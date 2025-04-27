@@ -345,8 +345,8 @@ static freq_node_t *get_min_freq_node(LFUDA_params_t *params) {
 }
 
 static void update_min_freq(LFUDA_params_t *params) {
-  uint64_t old_min_freq = params->min_freq;
-  for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+  int64_t old_min_freq = params->min_freq;
+  for (int64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
     freq_node_t *node =
         g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
     if (node != NULL && node->n_obj > 0) {
@@ -367,11 +367,11 @@ static int _verify(cache_t *cache) {
   LFUDA_params_t *LFUDA_params = (LFUDA_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj, *prev_obj;
   /* update min freq */
-  for (uint64_t freq = 1; freq <= LFUDA_params->max_freq; freq++) {
+  for (int64_t freq = 1; freq <= LFUDA_params->max_freq; freq++) {
     freq_node_t *freq_node =
         g_hash_table_lookup(LFUDA_params->freq_map, GSIZE_TO_POINTER(freq));
     if (freq_node != NULL) {
-      uint32_t n_obj = 0;
+      int32_t n_obj = 0;
       cache_obj = freq_node->first_obj;
       prev_obj = NULL;
       while (cache_obj != NULL) {
@@ -385,6 +385,10 @@ static int _verify(cache_t *cache) {
     }
   }
   return 0;
+}
+
+static inline void free_freq_node(void *list_node) {
+  my_free(sizeof(freq_node_t), list_node);
 }
 
 #ifdef __cplusplus

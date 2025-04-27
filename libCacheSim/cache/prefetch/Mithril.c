@@ -569,7 +569,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
 #ifdef SANITY_CHECK
     gint64 *row_in_mtable =
         GET_ROW_IN_MTABLE(Mithril_params, rmtable->mining_table->len - 1);
-    if (req->obj_id != row_in_mtable[0]) {
+    if (req->obj_id != (obj_id_t) row_in_mtable[0]) {
       ERROR("after inserting, hashtable mining not consistent %ld %ld\n",
             (long)req->obj_id, (long)row_in_mtable[0]);
       abort();
@@ -580,7 +580,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
     gint64 *row_in_mtable = GET_ROW_IN_MTABLE(Mithril_params, index - 1);
 
 #ifdef SANITY_CHECK
-    if (req->obj_id != row_in_mtable[0]) {
+    if (req->obj_id != (obj_id_t) row_in_mtable[0]) {
       ERROR("ts %lu, hashtable mining found position not correct %ld %ld\n",
             (unsigned long)Mithril_params->ts, (long)req->obj_id,
             (long)row_in_mtable[0]);
@@ -715,7 +715,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
         gint64 *row_in_mtable = GET_ROW_IN_MTABLE(Mithril_params, -index - 1);
 
 #ifdef SANITY_CHECK
-        if (req->obj_id != row_in_mtable[0]) {
+        if (req->obj_id != (obj_id_t) row_in_mtable[0]) {
           ERROR(
               "inconsistent entry in mtable "
               "and mining hashtable current request %ld, "
@@ -766,7 +766,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
         int timestamps_length = 0;
 
 #ifdef SANITY_CHECK
-        if (req->obj_id != row_in_rtable[0]) {
+        if (req->obj_id != (obj_id_t) row_in_rtable[0]) {
           ERROR("Hashtable recording found position not correct %ld %ld\n",
                 (long)req->obj_id, (long) row_in_rtable[0]);
           abort();
@@ -819,10 +819,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
 
 #ifdef SANITY_CHECK
             if (row_in_rtable == cur_row_in_rtable)
-              ERROR("FOUND SRC DEST same, ts %ld %p %p %ld %ld %d %ld\n",
-                    (long)Mithril_params->ts, row_in_rtable, cur_row_in_rtable,
-                    (long)*row_in_rtable, (long)*cur_row_in_rtable, index,
-                    (long)rmtable->rtable_cur_row - 1);
+              ERROR("FOUND SRC DEST same\n");
 #endif
             memcpy(row_in_rtable, cur_row_in_rtable,
                    sizeof(TS_REPRESENTATION) * rmtable->rtable_row_len);

@@ -51,8 +51,6 @@ static const char *DEFAULT_CACHE_PARAMS =
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *S3LRU_init(const common_cache_params_t ccache_params,
-                    const char *cache_specific_params);
 static void S3LRU_free(cache_t *cache);
 static bool S3LRU_get(cache_t *cache, const request_t *req);
 
@@ -393,15 +391,14 @@ static void S3LRU_evict(cache_t *cache, const request_t *req) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
 
   cache_t *LRU = params->LRU;
-  // cache_t *ghost = params->LRU_ghost;
   cache_t *main = params->main_cache;
 
   if (main->get_occupied_byte(main) > main->cache_size ||
       LRU->get_occupied_byte(LRU) == 0) {
-    // return S3LRU_evict_main(cache, req);
-    return main->evict(main, req);
+    main->evict(main, req);
+    return;
   } else {
-    return S3LRU_evict_LRU(cache, req);
+    S3LRU_evict_LRU(cache, req);
   }
 }
 

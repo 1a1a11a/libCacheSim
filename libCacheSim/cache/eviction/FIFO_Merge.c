@@ -30,7 +30,7 @@ typedef enum {
   RETAIN_NONE
 } retain_policy_t;
 
-static char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY", "None"};
+static const char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY", "None"};
 
 typedef struct FIFO_Merge_params {
   cache_obj_t *q_head;

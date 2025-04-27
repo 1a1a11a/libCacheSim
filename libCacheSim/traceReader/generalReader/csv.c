@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 // to suppress the warning of getline
-ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+// ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 /**
  * @brief count the number of times char c appears in string str
@@ -33,7 +33,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream);
  */
 static int count_occurrence(const char *str, const char c) {
   int count = 0;
-  for (int i = 0; i < strlen(str); i++) {
+  for (int i = 0; i < (int)strlen(str); i++) {
     if (str[i] == c) count++;
   }
   return count;
@@ -52,7 +52,7 @@ static int read_first_line(const reader_t *reader, char *in_buf, const size_t in
   FILE *ifile = fopen(reader->trace_path, "r");
   char *buf = NULL;
   size_t n = 0;
-  ssize_t read_size = getline(&buf, &n, ifile);
+  size_t read_size = getline(&buf, &n, ifile);
 
   if (in_buf_size < read_size) {
     WARN(
@@ -169,8 +169,9 @@ bool check_delimiter(const reader_t *reader, char delimiter) {
   char *buf = NULL;
   bool is_delimiter_correct = true;
   size_t n = 0;
+  ssize_t n_read = getline(&buf, &n, ifile);
+  DEBUG_ASSERT(n_read != -1);
 
-  size_t _n = getline(&buf, &n, ifile);
 #define N_TEST 1024
   for (int i = 0; i < N_TEST; i++) {
     if (strchr(buf, delimiter) == NULL) {
@@ -351,7 +352,7 @@ int csv_read_one_req(reader_t *const reader, request_t *const req) {
     return 1;
   }
 
-  if ((size_t)csv_parse(csv_parser, *line_buf_ptr, read_size, csv_cb1, csv_cb2, reader) != read_size) {
+  if ((ssize_t)csv_parse(csv_parser, *line_buf_ptr, read_size, csv_cb1, csv_cb2, reader) != read_size) {
     WARN("parsing csv file error: %s\n", csv_strerror(csv_error(csv_params->csv_parser)));
   }
 
@@ -382,7 +383,7 @@ void csv_reset_reader(reader_t *reader) {
   if (csv_params->delimiter) csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
   if (csv_params->has_header) {
-    size_t _n = getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    getline(&reader->line_buf, &reader->line_buf_size, reader->file);
   }
 }
 

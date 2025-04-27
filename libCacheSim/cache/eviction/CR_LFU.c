@@ -1,4 +1,3 @@
-
 #include <glib.h>
 #include <math.h>
 
@@ -192,8 +191,8 @@ static cache_obj_t *CR_LFU_find(cache_t *cache, const request_t *req,
     // min_freq
     if (params->min_freq == old_node->freq && old_node->n_obj == 0) {
       /* update min freq */
-      uint64_t old_min_freq = params->min_freq;
-      for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq;
+      int64_t old_min_freq = params->min_freq;
+      for (int64_t freq = params->min_freq + 1; freq <= params->max_freq;
            freq++) {
         freq_node_t *node =
             g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
@@ -350,8 +349,8 @@ static void CR_LFU_evict(cache_t *cache, const request_t *req) {
     min_freq_node->last_obj = NULL;
 
     /* update min freq */
-    uint64_t old_min_freq = params->min_freq;
-    for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq;
+    int64_t old_min_freq = params->min_freq;
+    for (int64_t freq = params->min_freq + 1; freq <= params->max_freq;
          freq++) {
       freq_node_t *node =
           g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
@@ -424,8 +423,8 @@ static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
     min_freq_node->last_obj = NULL;
 
     /* update min freq */
-    uint64_t old_min_freq = params->min_freq;
-    for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq;
+    int64_t old_min_freq = params->min_freq;
+    for (int64_t freq = params->min_freq + 1; freq <= params->max_freq;
          freq++) {
       freq_node_t *node =
           g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
@@ -446,6 +445,13 @@ static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
   return true;
 }
 
+static void CR_LFU_parse_params(cache_t *cache,
+                                const char *cache_specific_params) {
+  if (cache_specific_params != NULL) {
+    ERROR("CR_LFU does not support cache specific parameters\n");
+    exit(1);
+  }
+}
 // ***********************************************************************
 // ****                                                               ****
 // ****                         debug functions                       ****
@@ -456,11 +462,11 @@ static int _verify(cache_t *cache) {
       (CR_LFU_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj, *prev_obj;
   /* update min freq */
-  for (uint64_t freq = 1; freq <= CR_LFUDA_params->max_freq; freq++) {
+  for (int64_t freq = 1; freq <= CR_LFUDA_params->max_freq; freq++) {
     freq_node_t *freq_node =
         g_hash_table_lookup(CR_LFUDA_params->freq_map, GSIZE_TO_POINTER(freq));
     if (freq_node != NULL) {
-      uint32_t n_obj = 0;
+      int32_t n_obj = 0;
       cache_obj = freq_node->first_obj;
       prev_obj = NULL;
       while (cache_obj != NULL) {

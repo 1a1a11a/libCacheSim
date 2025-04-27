@@ -474,9 +474,6 @@ bool dump_cached_obj_age(cache_t *cache, const request_t *req, const char *ofile
 }
 
 void generate_cache_name(cache_t *cache, char *str_dest, int str_dest_len) {
-  char admis_name[CACHE_NAME_ARRAY_LEN] = "";
-  char admis_param[CACHE_INIT_PARAMS_LEN] = "";
-
   int len = snprintf(str_dest, str_dest_len, "%s", cache->cache_name);
   assert(len < str_dest_len);
 

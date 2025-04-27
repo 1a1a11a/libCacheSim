@@ -572,11 +572,13 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
       // we do not use params->L1_data_size < cache->cache_size
       // because it does not work for variable size objects
       _ARC_evict_L1_ghost(cache, req);
-      return _ARC_replace(cache, req);
+      _ARC_replace(cache, req);
+      return;
     } else {
       // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
       // data
-      return _ARC_evict_L1_data_no_ghost(cache, req);
+      _ARC_evict_L1_data_no_ghost(cache, req);
+      return;
     }
   } else {
     DEBUG_ASSERT(params->L1_data_size + params->L1_ghost_size <
@@ -590,7 +592,8 @@ static void _ARC_evict_miss_on_all_queues(cache_t *cache,
         _ARC_evict_L2_ghost(cache, req);
       }
     }
-    return _ARC_replace(cache, req);
+    _ARC_replace(cache, req);
+    return;
   }
 }
 
@@ -774,12 +777,9 @@ static bool ARC_get_debug(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
   _ARC_sanity_check_full(cache, req);
-  // printf("%ld obj_id %ld, p %.2lf\n", cache->n_req, req->obj_id, params->p);
-  // print_cache(cache);
-  // printf("***************************************\n");
 
   cache_obj_t *obj = cache->find(cache, req, true);
-  cache->last_request_metadata = obj != NULL ? (void *)"hit" : (void *)"miss";
+  cache->last_request_metadata = obj != NULL ? "hit" : "miss";
 
   if (obj != NULL) {
     _ARC_sanity_check_full(cache, req);

@@ -29,8 +29,8 @@ typedef struct LeCaR_params {
   // used for LFU
   freq_node_t *freq_one_node;
   GHashTable *freq_map;
-  uint64_t min_freq;
-  uint64_t max_freq;
+  int64_t min_freq;
+  int64_t max_freq;
 
   // eviction history
   cache_obj_t *ghost_lru_head;
@@ -643,8 +643,8 @@ static void LeCaR_parse_params(cache_t *cache,
  * min_freq is empty
  */
 static inline void update_LFU_min_freq(LeCaR_params_t *params) {
-  unsigned old_min_freq = params->min_freq;
-  for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+  int64_t old_min_freq = params->min_freq;
+  for (int64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
     freq_node_t *node =
         g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
     if (node != NULL && node->n_obj > 0) {
@@ -652,8 +652,8 @@ static inline void update_LFU_min_freq(LeCaR_params_t *params) {
       break;
     }
   }
-  VVERBOSE("update LFU min freq from %u to %u\n", (unsigned)old_min_freq,
-           (unsigned)params->min_freq);
+  VVERBOSE("update LFU min freq from %ld to %ld\n", old_min_freq,
+           params->min_freq);
   // if the object is the only object in the cache, we may have min_freq == 1
   DEBUG_ASSERT(params->min_freq > old_min_freq ||
                params->q_head == params->q_tail);
@@ -711,7 +711,7 @@ static inline void remove_obj_from_freq_node(LeCaR_params_t *params,
   cache_obj->LeCaR.lfu_prev = NULL;
   cache_obj->LeCaR.lfu_next = NULL;
 
-  if (freq_node->freq == params->min_freq && freq_node->n_obj == 0) {
+  if (freq_node->freq == (int64_t)params->min_freq && freq_node->n_obj == 0) {
     update_LFU_min_freq(params);
   }
 }

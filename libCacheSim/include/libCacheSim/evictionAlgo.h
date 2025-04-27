@@ -22,7 +22,7 @@ typedef struct freq_node {
   int64_t freq;
   cache_obj_t *first_obj;
   cache_obj_t *last_obj;
-  uint32_t n_obj;
+  int32_t n_obj;
 } freq_node_t;
 
 typedef struct {

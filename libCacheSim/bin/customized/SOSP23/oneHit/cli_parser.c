@@ -1,5 +1,3 @@
-
-
 #define _GNU_SOURCE
 #include <argp.h>
 #include <stdbool.h>
@@ -35,10 +33,10 @@ static struct argp_option options[] = {
      "\"obj-id-col=1;delimiter=,\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\"", 2},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
-     "Num of requests to process, default -1 means all requests in the trace"},
+     "Num of requests to process, default -1 means all requests in the trace", 2},
 
-    {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 5},
-    {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output"},
+    {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 2},
+    {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output", 2},
 
     {0}};
 
@@ -121,7 +119,15 @@ static void init_arg(struct arguments *args) {
 void parse_cmd(int argc, char *argv[], struct arguments *args) {
   init_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {
+      .options = options,
+      .parser = parse_opt,
+      .args_doc = args_doc,
+      .doc = doc,
+      .children = NULL,
+      .help_filter = NULL,
+      .argp_domain = NULL
+  };
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 

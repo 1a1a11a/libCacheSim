@@ -8,20 +8,20 @@
 int go_back_two_req(reader_t *const reader);
 
 // TRUE DATA
-size_t trace_length = 113872;
-size_t trace_start_req_d[N_TEST_REQ] = {
+static const size_t trace_length = 113872;
+static const size_t trace_start_req_d[N_TEST_REQ] = {
     42932745, 42932746, 42932747, 40409911, 31954535, 6238199,
 };
-char *trace_start_req_s[N_TEST_REQ] = {
+static const char *trace_start_req_s[N_TEST_REQ] = {
     "42932745", "42932746", "42932747", "40409911", "31954535", "6238199",
 };
-size_t trace_start_req_time[N_TEST_REQ] = {5633898368802, 5633898611441, 5633898745540,
+static const int64_t trace_start_req_time[N_TEST_REQ] = {5633898368802, 5633898611441, 5633898745540,
                                            5633898967708, 5633899967748, 5633899967980};
-size_t trace_start_req_size[N_TEST_REQ] = {512, 512, 512, 6656, 6144, 57344};
-size_t trace_end_req_d = 42936150;
-char *trace_end_req_s = "42936150";
+static const size_t trace_start_req_size[N_TEST_REQ] = {512, 512, 512, 6656, 6144, 57344};
+static const size_t trace_end_req_d = 42936150;
+static const char *trace_end_req_s = "42936150";
 
-void verify_req(reader_t *reader, request_t *req, int req_idx) {
+static void verify_req(reader_t *reader, request_t *req, int req_idx) {
   if (req_idx == -1) {
     if (obj_id_is_num(reader)) g_assert_true(req->obj_id == trace_end_req_d);
     return;
@@ -37,7 +37,7 @@ void verify_req(reader_t *reader, request_t *req, int req_idx) {
       get_trace_type(reader) == VSCSI_TRACE) {
     g_assert_true(req->clock_time == trace_start_req_time[req_idx] ||
                   req->clock_time == trace_start_req_time[req_idx] / 1000000);
-    g_assert_true(req->obj_size == trace_start_req_size[req_idx]);
+    g_assert_cmpint(req->obj_size, ==, trace_start_req_size[req_idx]);
   }
 }
 
@@ -46,7 +46,7 @@ void test_reader_basic(gconstpointer user_data) {
   int i;
   request_t *req = new_request();
 
-  g_assert_true(get_num_of_req(reader) == trace_length);
+  g_assert_cmpint(get_num_of_req(reader), ==, trace_length);
 
   // check reading
   for (i = 0; i < N_TEST_REQ; i++) {
@@ -67,17 +67,17 @@ void test_reader_basic(gconstpointer user_data) {
   verify_req(reader, req, -1);
   reset_reader(reader);
 
-  g_assert_true(get_num_of_req(reader) == trace_length);
+  g_assert_cmpint(get_num_of_req(reader), ==, trace_length);
   free_request(req);
 }
 
 void test_reader_more1(gconstpointer user_data) {
   reader_t *reader = (reader_t *)user_data;
-  int i;
+  size_t i;
   request_t *req = new_request();
 
   // check skip_n_req
-  g_assert_true(skip_n_req(reader, 4) == 4);
+  g_assert_cmpint(skip_n_req(reader, 4), ==, 4);
   for (i = 4; i < N_TEST_REQ; i++) {
     read_one_req(reader, req);
     verify_req(reader, req, i);
@@ -85,7 +85,7 @@ void test_reader_more1(gconstpointer user_data) {
   reset_reader(reader);
 
   // check reader rewind
-  g_assert_true(skip_n_req(reader, 4) == 4);
+  g_assert_cmpint(skip_n_req(reader, 4), ==, 4);
 
   go_back_one_req(reader);
   read_one_req(reader, req);
@@ -98,7 +98,7 @@ void test_reader_more1(gconstpointer user_data) {
   read_one_req_above(reader, req);
   verify_req(reader, req, 1);
 
-  g_assert_true(get_num_of_req(reader) == trace_length);
+  g_assert_cmpint(get_num_of_req(reader), ==, trace_length);
 
   reader_set_read_pos(reader, 1.0);
   for (i = 0; i < trace_length; i++) {

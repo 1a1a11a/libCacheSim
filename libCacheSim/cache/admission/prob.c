@@ -18,7 +18,7 @@ typedef struct prob_admissioner {
 
 bool prob_admit(admissioner_t *admissioner, const request_t *req) {
   prob_admission_params_t *pa = (prob_admission_params_t *)admissioner->params;
-  if (next_rand() % MAX_MODULE < pa->admission_probability_int) {
+  if ((int)(next_rand() % MAX_MODULE) < pa->admission_probability_int) {
     return true;
   }
 

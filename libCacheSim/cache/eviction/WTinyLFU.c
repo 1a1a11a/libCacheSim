@@ -327,7 +327,8 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
                               sizeof(obj_id_t));
     } else {
       DEBUG_ASSERT(window->get_occupied_byte(window) == 0);
-      return main->evict(main, req);
+      main->evict(main, req);
+      return;
     }
   }
 }

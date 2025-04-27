@@ -1,5 +1,3 @@
-
-
 #define _GNU_SOURCE
 #include <argp.h>
 #include <glib.h>
@@ -68,12 +66,12 @@ static struct argp_option options[] = {
     {"prefetch-params", OPTION_PREFETCH_PARAMS, "\"block-size=65536\"", 0,
      "optional params for each prefetching algorithm, e.g., block-size=65536", 4},
 
-    {0, 0, 0, 0, "Other options:"},
+    {0, 0, 0, 0, "Other options:", 6},
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0, "specify to ignore the object size from the trace", 6},
     {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 6},
     {"num-thread", OPTION_NUM_THREAD, "16", 0, "Number of threads if running when using default cache sizes", 6},
 
-    {0, 0, 0, 0, "Other less common options:"},
+    {0, 0, 0, 0, "Other less common options:", 10},
     {"report-interval", OPTION_REPORT_INTERVAL, "3600", 0, "how often to report stat when running one cache", 10},
     {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
     {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace", 10},
@@ -82,7 +80,8 @@ static struct argp_option options[] = {
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output", 10},
     {"print-head-req", OPTION_PRINT_HEAD_REQ, "false", 0, "Print the first few requests", 10},
 
-    {0}};
+    {0, 0, 0, 0, 0, 0}
+};
 
 /*
    PARSER. Field 2 in ARGP.
@@ -258,7 +257,15 @@ void free_arg(struct MINI_arguments *args) {
 void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
   init_mini_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {
+      .options = options,
+      .parser = parse_opt,
+      .args_doc = args_doc,
+      .doc = doc,
+      .children = NULL,
+      .help_filter = NULL,
+      .argp_domain = NULL
+  };
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 
@@ -399,10 +406,11 @@ static int conv_cache_sizes(char *cache_size_str, char *rate_size_str, struct MI
   char *saveptr1, *saveptr2;
   char *rate_token = strtok_r(rate_size_str, "," ,&saveptr1);
   long wss = 0;
-  args->n_cache_size = 0;
+  int n_cache_size = 0;
   int n_rate = 0;
   while (rate_token != NULL) {
-    args->cache_size_ratio[n_rate++] = atof(rate_token);
+    args->cache_size_ratio[n_rate] = atof(rate_token);
+    n_rate++;
     rate_token = strtok_r(NULL, ",",&saveptr1);
   }
   char *token = strtok_r(cache_size_str, ",",&saveptr2);
@@ -415,19 +423,22 @@ static int conv_cache_sizes(char *cache_size_str, char *rate_size_str, struct MI
         wss = args->ignore_obj_size ? wss_obj : wss_byte;
       }
       if (n_rate == 1) {
-        args->cache_sizes[args->n_cache_size++] =(wss * atof(token) * args->cache_size_ratio[0]);
-      } else if (n_rate > args->n_cache_size) {
-        args->cache_sizes[args->n_cache_size++] =
-            (uint64_t)(wss * atof(token) * args->cache_size_ratio[args->n_cache_size]);
+        args->cache_sizes[n_cache_size] = (wss * atof(token) * args->cache_size_ratio[0]);
+        n_cache_size++;
+      } else if (n_rate > n_cache_size) {
+        args->cache_sizes[n_cache_size] = (uint64_t)(wss * atof(token) * args->cache_size_ratio[n_cache_size]);
+        n_cache_size++;
       } else {
         ERROR("Number of cache size ratios should be equal to the number of cache sizes\n");
         exit(1);
       }
     } else {
       if (n_rate==1) {
-        args->cache_sizes[args->n_cache_size++] = conv_size_str_to_byte_ul(token) * args->cache_size_ratio[0];
-      } else if (n_rate > args->n_cache_size) {
-        args->cache_sizes[args->n_cache_size++] = conv_size_str_to_byte_ul(token) * args->cache_size_ratio[args->n_cache_size];
+        args->cache_sizes[n_cache_size] = conv_size_str_to_byte_ul(token) * args->cache_size_ratio[0];
+        n_cache_size++;
+      } else if (n_rate > n_cache_size) {
+        args->cache_sizes[n_cache_size] = conv_size_str_to_byte_ul(token) * args->cache_size_ratio[n_cache_size];
+        n_cache_size++;
       } else {
         ERROR("Number of cache size ratios should be equal to the number of cache sizes\n");
         exit(1);
@@ -437,9 +448,7 @@ static int conv_cache_sizes(char *cache_size_str, char *rate_size_str, struct MI
     token = strtok_r(NULL, ",",&saveptr2);
   }
 
-  // if (args->n_cache_size == 1 && args->cache_sizes[0] == 0) {
-  //   set_cache_size(args, args->reader);
-  // }
+  args->n_cache_size = (int) n_cache_size;
 
   return args->n_cache_size;
 }

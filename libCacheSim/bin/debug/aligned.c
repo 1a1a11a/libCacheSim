@@ -28,7 +28,7 @@ void test_unaligned_read_mmap(char* filepath) {
     exit(1);
   }
 
-  if (st.st_size < N_OP * 8) {
+  if ((int64_t) st.st_size < (int64_t) N_OP * 8) {
     fprintf(stderr, "file size is too small, require %llu bytes\n", N_OP * 8);
     exit(1);
   }
@@ -218,7 +218,7 @@ void test_unaligned_read_mmap_struct(char* filepath) {
     exit(1);
   }
 
-  if (st.st_size < N_OP * sizeof(struct aligned_struct)) {
+  if ((uint64_t) st.st_size < (uint64_t) (N_OP * sizeof(struct aligned_struct))) {
     fprintf(stderr, "file size is too small\n");
     exit(1);
   }

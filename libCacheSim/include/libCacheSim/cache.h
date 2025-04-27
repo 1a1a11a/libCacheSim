@@ -144,7 +144,7 @@ struct cache {
   char cache_name[CACHE_NAME_ARRAY_LEN];
   char init_params[CACHE_INIT_PARAMS_LEN];
 
-  void *last_request_metadata;
+  const char *last_request_metadata;
 #if defined(TRACK_EVICTION_V_AGE)
   bool track_eviction_age;
 #endif

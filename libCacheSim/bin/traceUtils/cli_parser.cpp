@@ -1,4 +1,3 @@
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -230,7 +229,15 @@ static void print_parsed_arg(struct arguments *args) {
 void parse_cmd(int argc, char *argv[], struct arguments *args) {
   init_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {
+      .options = options,
+      .parser = parse_opt,
+      .args_doc = args_doc,
+      .doc = doc,
+      .children = NULL,
+      .help_filter = NULL,
+      .argp_domain = NULL
+  };
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 

@@ -61,10 +61,9 @@ cd _build_dbg
 
 # Configure and build with warning flags
 echo "Configuring and building project with strict warnings..."
-cmake -DCMAKE_BUILD_TYPE=Debug .. 
-    #   -DCMAKE_C_FLAGS="-Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wunused-variable -Wunused-parameter -Wshadow -Wwrite-strings -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs" \
-    #   -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror -Wpedantic -Wformat=2 -Wformat-security -Wunused-variable -Wunused-parameter -Wshadow -Wwrite-strings -Wredundant-decls -Wmissing-include-dirs" \
-    #   ..
+cmake -DCMAKE_BUILD_TYPE=Debug \
+      -DCMAKE_C_FLAGS="-Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs" \
+      ..
 
 make -j
 

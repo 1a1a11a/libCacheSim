@@ -50,8 +50,6 @@ static const char *DEFAULT_CACHE_PARAMS =
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params);
 static void S3FIFOd_free(cache_t *cache);
 static bool S3FIFOd_get(cache_t *cache, const request_t *req);
 

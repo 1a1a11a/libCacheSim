@@ -50,6 +50,7 @@ admissioner_t *create_bloomfilter_admissioner(const char *init_params) {
   }
 
   admissioner_t *admissioner = (admissioner_t *)malloc(sizeof(admissioner_t));
+  memset(admissioner, 0, sizeof(admissioner_t));
   admissioner->init_params = NULL;
 
   bf_admission_params_t *bf_params =

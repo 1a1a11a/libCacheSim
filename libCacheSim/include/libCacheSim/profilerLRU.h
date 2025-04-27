@@ -33,7 +33,7 @@ double *get_lru_obj_miss_ratio_curve(reader_t *reader, gint64 size);
 // double *get_lru_byte_miss_ratio(reader_t* reader, gint64 size);
 
 /* internal use, can be used externally, but not recommended */
-guint64 *_get_lru_miss_cnt(reader_t *reader, gint64 size);
+int64_t *_get_lru_miss_cnt(reader_t *reader, int64_t size);
 
 #ifdef __cplusplus
 }

@@ -33,8 +33,6 @@ static const char *DEFAULT_PARAMS = "n-seg=4,seg-size=1:1:1:1";
 // ***********************************************************************
 static void LP_SFIFO_parse_params(cache_t *cache,
                                  const char *cache_specific_params);
-static void LP_SFIFO_parse_params(cache_t *cache,
-                                 const char *cache_specific_params);
 static void LP_SFIFO_free(cache_t *cache);
 static bool LP_SFIFO_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_SFIFO_find(cache_t *cache, const request_t *req,
@@ -309,7 +307,8 @@ static void LP_SFIFO_demote(cache_t *cache, const request_t *req, int seg_id) {
   }
   if (next_fifo->get_occupied_byte(next_fifo) >
       params->per_seg_max_size[seg_id - 1]) {
-    return LP_SFIFO_demote(cache, req, seg_id - 1);
+    LP_SFIFO_demote(cache, req, seg_id - 1);
+    return;
   }
 }
 

@@ -62,7 +62,7 @@ static int bloom_check_add(struct bloom *bloom, const void *buffer, int len,
   register unsigned int a = XXH64(buffer, len, HASH_SEED0);
   register unsigned int b = XXH64(buffer, len, HASH_SEED1);
   register unsigned int x;
-  register unsigned int i;
+  register int i;
 
   for (i = 0; i < bloom->hashes; i++) {
     x = (a + i * b) % bloom->bits;

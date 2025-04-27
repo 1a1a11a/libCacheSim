@@ -49,8 +49,8 @@ typedef struct {
   void *lfu_next;
   void *lfu_prev;
   int64_t eviction_vtime:40;
-  int64_t freq:23;
-  int64_t is_ghost:1;
+  int64_t freq:24;
+  bool is_ghost;
   int8_t evict_expert; // 1: LRU, 2: LFU
 } __attribute__((packed)) LeCaR_obj_metadata_t;
 
@@ -155,7 +155,7 @@ struct cache_obj;
 typedef struct cache_obj {
   struct cache_obj *hash_next;
   obj_id_t obj_id;
-  uint64_t obj_size;
+  int64_t obj_size;
   struct {
     struct cache_obj *prev;
     struct cache_obj *next;

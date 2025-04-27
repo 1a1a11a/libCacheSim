@@ -42,9 +42,8 @@ void set_spatial_sampler_salt(sampler_t *sampler, uint64_t salt);
 sampler_t *create_temporal_sampler(double sampling_ratio);
 
 static inline void print_sampler(sampler_t *sampler) {
-  printf("%s sampler: sample ratio %lf, sample func %p, clone func %p\n",
-         sampling_type_str[sampler->type], sampler->sampling_ratio,
-         sampler->sample, sampler->clone);
+  printf("%s sampler: sample ratio %lf\n",
+         sampling_type_str[sampler->type], sampler->sampling_ratio);
 }
 
 sampler_t *create_SHARDS_sampler(double sampling_ratio);

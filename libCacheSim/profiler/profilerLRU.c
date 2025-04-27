@@ -17,30 +17,30 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
                                GHashTable *hash_table, const int64_t curr_ts,
                                int64_t *last_access_ts);
 
-guint64 *_get_lru_hit_cnt(reader_t *reader, gint64 size);
+int64_t *_get_lru_hit_cnt(reader_t *reader, int64_t size);
 
-double *get_lru_obj_miss_ratio_curve(reader_t *reader, gint64 size) {
+double *get_lru_obj_miss_ratio_curve(reader_t *reader, int64_t size) {
   return get_lru_obj_miss_ratio(reader, size);
 }
 
-double *get_lru_obj_miss_ratio(reader_t *reader, gint64 size) {
+double *get_lru_obj_miss_ratio(reader_t *reader, int64_t size) {
   double n_req = (double)get_num_of_req(reader);
   double *miss_ratio_array = g_new(double, size + 1);
 
-  guint64 *miss_count_array = _get_lru_miss_cnt(reader, size);
+  int64_t *miss_count_array = _get_lru_miss_cnt(reader, size);
   assert(miss_count_array[0] == get_num_of_req(reader));
 
-  for (gint64 i = 0; i < size + 1; i++) {
+  for (int64_t i = 0; i < size + 1; i++) {
     miss_ratio_array[i] = miss_count_array[i] / n_req;
   }
   g_free(miss_count_array);
   return miss_ratio_array;
 }
 
-guint64 *_get_lru_miss_cnt(reader_t *reader, gint64 size) {
-  guint64 n_req = get_num_of_req(reader);
-  guint64 *miss_cnt = _get_lru_hit_cnt(reader, size);
-  for (gint64 i = 0; i < size + 1; i++) {
+int64_t *_get_lru_miss_cnt(reader_t *reader, int64_t size) {
+  int64_t n_req = get_num_of_req(reader);
+  int64_t *miss_cnt = _get_lru_hit_cnt(reader, size);
+  for (int64_t i = 0; i < size + 1; i++) {
     miss_cnt[i] = n_req - miss_cnt[i];
   }
   return miss_cnt;
@@ -54,10 +54,10 @@ guint64 *_get_lru_miss_cnt(reader_t *reader, gint64 size) {
  * @param size: the max cache size, if -1, then it uses the maximum size
  */
 
-guint64 *_get_lru_hit_cnt(reader_t *reader, gint64 size) {
-  guint64 ts = 0;
-  gint64 stack_dist;
-  guint64 *hit_count_array = g_new0(guint64, size + 1);
+int64_t *_get_lru_hit_cnt(reader_t *reader, int64_t size) {
+  int64_t ts = 0;
+  int64_t stack_dist;
+  int64_t *hit_count_array = g_new0(int64_t, size + 1);
   request_t *req = new_request();
 
   // create hash table and splay tree
@@ -83,7 +83,7 @@ guint64 *_get_lru_hit_cnt(reader_t *reader, gint64 size) {
 
   // change to accumulative, so that hit_count_array[x] is the hit count for
   // size x
-  for (gint64 i = 1; i < size + 1; i++) {
+  for (int64_t i = 1; i < size + 1; i++) {
     hit_count_array[i] = hit_count_array[i] + hit_count_array[i - 1];
   }
 

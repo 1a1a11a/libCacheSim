@@ -58,7 +58,7 @@ static inline unsigned int _n_cores(void) {
 #error "what platform is this"
 #endif
 
-static void _detect_data_path(char *data_path, char *data_name) {
+static void _detect_data_path(char *data_path, const char *data_name) {
   sprintf(data_path, "data/%s", data_name);
   if (access(data_path, F_OK) != -1) return;
 
@@ -82,7 +82,7 @@ static reader_t *setup_oracleGeneralBin_reader(void) {
 }
 
 static reader_t *setup_GLCacheTestData_reader(void) {
-  char *url =
+  const char *url =
       "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/"
       ".w68.oracleGeneral.bin.zst";
   int ret = system(
@@ -98,7 +98,7 @@ static reader_t *setup_GLCacheTestData_reader(void) {
 }
 
 static reader_t *setup_3LCacheTestData_reader(void) {
-  char *url =
+  const char *url =
       "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/tencentBlock/"
       "tencentBlock.ns3964.oracleGeneral.zst";
   int ret = system(
@@ -134,7 +134,7 @@ static reader_t *setup_binary_reader(void) {
   char data_path[1024];
   _detect_data_path(data_path, "cloudPhysicsIO.vscsi");
   reader_init_param_t *init_params_bin = g_new0(reader_init_param_t, 1);
-  init_params_bin->binary_fmt_str = "<IIIHHQQ";
+  init_params_bin->binary_fmt_str = (char *)"<IIIHHQQ";
   init_params_bin->obj_size_field = 2;
   init_params_bin->obj_id_field = 6;
   init_params_bin->time_field = 7;

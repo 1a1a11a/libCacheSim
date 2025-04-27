@@ -414,7 +414,7 @@ static int count_n_obj_in_bucket(cache_obj_t *curr_obj) {
 static void print_hashbucket_item_distribution(const hashtable_t *hashtable) {
   int n_print = 0;
   int n_obj = 0;
-  for (int i = 0; i < hashsize(hashtable->hashpower); i++) {
+  for (uint64_t i = 0; i < hashsize(hashtable->hashpower); i++) {
     int chain_len = count_n_obj_in_bucket(hashtable->ptr_table[i]);
     n_obj += chain_len;
     if (chain_len > 1) {
@@ -430,12 +430,12 @@ static void print_hashbucket_item_distribution(const hashtable_t *hashtable) {
 }
 
 void print_chained_hashtable_v2(const hashtable_t *hashtable) {
-  for (int i = 0; i < hashsize(hashtable->hashpower); i++) {
+  for (uint64_t i = 0; i < hashsize(hashtable->hashpower); i++) {
     cache_obj_t *cur_obj = hashtable->ptr_table[i];
     if (cur_obj == NULL) {
       continue;
     }
-    printf("hash bucket %d: ", i);
+    printf("hash bucket %lu: ", (unsigned long) i);
     while (cur_obj != NULL) {
       printf("%lu, ", (unsigned long)cur_obj->obj_id);
       cur_obj = cur_obj->hash_next;

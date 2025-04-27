@@ -35,8 +35,8 @@ extern "C" {
 typedef struct LFU_params {
   freq_node_t *freq_one_node;
   GHashTable *freq_map;
-  uint64_t min_freq;
-  uint64_t max_freq;
+  int64_t min_freq;
+  int64_t max_freq;
 } LFU_params_t;
 
 // ***********************************************************************
@@ -171,7 +171,7 @@ static cache_obj_t *LFU_find(cache_t *cache, const request_t *req,
   if (cache_obj && likely(update_cache)) {
     /* freq incr and move to next freq node */
     cache_obj->lfu.freq += 1;
-    if (params->max_freq < cache_obj->lfu.freq) {
+    if ((int64_t)params->max_freq < cache_obj->lfu.freq) {
       params->max_freq = cache_obj->lfu.freq;
     }
 
@@ -203,7 +203,7 @@ static cache_obj_t *LFU_find(cache_t *cache, const request_t *req,
     new_node->n_obj += 1;
 
     if (old_node->n_obj == 0) {
-      if (params->min_freq == old_node->freq) {
+      if ((int64_t)params->min_freq == old_node->freq) {
         // if the old freq_node has one object and is the min_freq_node, after
         // removing this object, the freq_node will have no object,
         // then we should update min_freq to the new freq
@@ -305,7 +305,7 @@ void LFU_remove_obj(cache_t *cache, cache_obj_t *obj) {
 
   cache_remove_obj_base(cache, obj, true);
 
-  if (freq_node->freq == params->min_freq && freq_node->n_obj == 0) {
+  if ((int64_t)freq_node->freq == params->min_freq && freq_node->n_obj == 0) {
     /* update min freq */
     update_min_freq(params);
   }
@@ -365,8 +365,8 @@ static inline freq_node_t *get_min_freq_node(LFU_params_t *params) {
 }
 
 static inline void update_min_freq(LFU_params_t *params) {
-  uint64_t old_min_freq = params->min_freq;
-  for (uint64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
+  int64_t old_min_freq = params->min_freq;
+  for (int64_t freq = params->min_freq + 1; freq <= params->max_freq; freq++) {
     freq_node_t *node =
         g_hash_table_lookup(params->freq_map, GSIZE_TO_POINTER(freq));
     if (node != NULL && node->n_obj > 0) {

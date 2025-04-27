@@ -87,8 +87,6 @@ static bool QDLPv0_remove(cache_t *cache, const obj_id_t obj_id);
 static void QDLPv0_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove);
 
 static void QDLPv0_clock_evict(cache_t *cache, const request_t *req);
-static void QDLPv0_parse_params(cache_t *cache,
-                              const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****

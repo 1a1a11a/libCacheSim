@@ -32,9 +32,9 @@ typedef struct prefetcher {
   char prefetcher_name[64];
 } prefetcher_t;
 
-prefetcher_t *create_Mithril_prefetcher(const char *init_paramsm, uint64_t cache_size);
-prefetcher_t *create_OBL_prefetcher(const char *init_paramsm, uint64_t cache_size);
-prefetcher_t *create_PG_prefetcher(const char *init_paramsm, uint64_t cache_size);
+prefetcher_t *create_Mithril_prefetcher(const char *init_params, uint64_t cache_size);
+prefetcher_t *create_OBL_prefetcher(const char *init_params, uint64_t cache_size);
+prefetcher_t *create_PG_prefetcher(const char *init_params, uint64_t cache_size);
 
 static inline prefetcher_t *create_prefetcher(const char *prefetching_algo, const char *prefetching_params,
                                               uint64_t cache_size) {

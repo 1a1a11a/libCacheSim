@@ -215,7 +215,7 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache, in
       num_of_threads);
 
   // wait for all simulations to finish
-  while (progress < (uint64_t)num_of_sizes - 1) {
+  while (progress < num_of_sizes - 1) {
     print_progress((double)progress / (double)(num_of_sizes - 1) * 100);
   }
 
@@ -291,7 +291,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[], in
       caches[num_of_caches - 1]->cache_name, end_cache_size, num_of_caches, num_of_threads);
 
   // wait for all simulations to finish
-  while (progress < (uint64_t)num_of_caches - 1) {
+  while (progress < num_of_caches - 1) {
     print_progress((double)progress / (double)(num_of_caches - 1) * 100);
   }
 
@@ -347,7 +347,7 @@ cache_stat_t *simulate_with_multi_caches_scaling(reader_t **readers, cache_t *ca
       "%s, %d caches, %d threads, please wait\n",
       (long long)params->n_warmup_req, start_cache_size, end_cache_size, num_of_caches, num_of_threads);
 
-  while (progress < (uint64_t)num_of_caches - 1) {
+  while (progress < num_of_caches - 1) {
     print_progress((double)progress / (double)(num_of_caches - 1) * 100);
   }
 

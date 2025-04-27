@@ -488,7 +488,10 @@ static void SLRU_cool(cache_t *cache, const request_t *req, const int id) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  if (id == 0) return SLRU_evict(cache, req);
+  if (id == 0) {
+    SLRU_evict(cache, req);
+    return;
+  }
 
   cache_obj_t *obj = params->lru_tails[id];
   DEBUG_ASSERT(obj != NULL);

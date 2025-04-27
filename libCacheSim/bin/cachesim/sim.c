@@ -55,7 +55,7 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
       miss_cnt++;
       miss_byte += req->obj_size;
     }
-    if (req->clock_time - last_report_ts >= report_interval &&
+    if (req->clock_time - last_report_ts >= (uint64_t) report_interval &&
         req->clock_time != 0) {
       INFO(
           "%s %s %.2lf hour: %lu requests, miss ratio %.4lf, interval miss "
