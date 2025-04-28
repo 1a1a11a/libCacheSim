@@ -96,7 +96,8 @@ admissioner_t *create_prob_admissioner(const char *init_params) {
   admissioner->clone = clone_prob_admissioner;
   if (init_params != NULL) admissioner->init_params = strdup(init_params);
 
-  strncpy(admissioner->admissioner_name, "Probabilistic", CACHE_NAME_LEN);
+  strncpy(admissioner->admissioner_name, "Probabilistic", CACHE_NAME_LEN - 1);
+  admissioner->admissioner_name[CACHE_NAME_LEN - 1] = '\0';
   return admissioner;
 }
 

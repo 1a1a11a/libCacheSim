@@ -22,8 +22,10 @@ typedef struct size_probabilistic_admissioner {
   double exponent;
 } size_probabilistic_admission_params_t;
 
-bool size_probabilistic_admit(admissioner_t *admissioner, const request_t *req) {
-  size_probabilistic_admission_params_t *pa = (size_probabilistic_admission_params_t *)admissioner->params;
+bool size_probabilistic_admit(admissioner_t *admissioner,
+                              const request_t *req) {
+  size_probabilistic_admission_params_t *pa =
+      (size_probabilistic_admission_params_t *)admissioner->params;
   double prob = exp(-pa->exponent * (double)req->obj_size);
   if ((double)(next_rand() % MAX_MODULE) / (double)MAX_MODULE < prob) {
     return true;
@@ -32,8 +34,8 @@ bool size_probabilistic_admit(admissioner_t *admissioner, const request_t *req) 
   return false;
 }
 
-static void size_probabilistic_admissioner_parse_params(const char *init_params,
-                                                        size_probabilistic_admission_params_t *pa) {
+static void size_probabilistic_admissioner_parse_params(
+    const char *init_params, size_probabilistic_admission_params_t *pa) {
   if (init_params == NULL) {
     pa->exponent = 1e-6;
     INFO("use default admission exponent: %f\n", pa->exponent);
@@ -68,13 +70,15 @@ static void size_probabilistic_admissioner_parse_params(const char *init_params,
 
   if (pa->exponent > 1 || pa->exponent <= 0) {
     ERROR(
-        "size-probabilistic admissioner calculates probability e^(-exponent * obj_size) to admit object, a common "
+        "size-probabilistic admissioner calculates probability e^(-exponent * "
+        "obj_size) to admit object, a common "
         "exponent should be 0-1, e.g., 1e-6, but input %lf\n",
         pa->exponent);
   }
 }
 
-admissioner_t *clone_size_probabilistic_admissioner(admissioner_t *admissioner) {
+admissioner_t *clone_size_probabilistic_admissioner(
+    admissioner_t *admissioner) {
   return create_size_probabilistic_admissioner(admissioner->init_params);
 }
 
@@ -90,7 +94,8 @@ void free_size_probabilistic_admissioner(admissioner_t *admissioner) {
 
 admissioner_t *create_size_probabilistic_admissioner(const char *init_params) {
   size_probabilistic_admission_params_t *pa =
-      (size_probabilistic_admission_params_t *)malloc(sizeof(size_probabilistic_admission_params_t));
+      (size_probabilistic_admission_params_t *)malloc(
+          sizeof(size_probabilistic_admission_params_t));
   memset(pa, 0, sizeof(size_probabilistic_admission_params_t));
   size_probabilistic_admissioner_parse_params(init_params, pa);
 
@@ -102,7 +107,9 @@ admissioner_t *create_size_probabilistic_admissioner(const char *init_params) {
   admissioner->clone = clone_size_probabilistic_admissioner;
   if (init_params != NULL) admissioner->init_params = strdup(init_params);
 
-  strncpy(admissioner->admissioner_name, "SizeProbabilistic", CACHE_NAME_LEN);
+  strncpy(admissioner->admissioner_name, "SizeProbabilistic",
+          CACHE_NAME_LEN - 1);
+  admissioner->admissioner_name[CACHE_NAME_LEN - 1] = '\0';
   return admissioner;
 }
 

@@ -1,7 +1,8 @@
 #include <fcntl.h>
 #include <math.h>
-#include <sys/types.h>
 #include <stdint.h>
+#include <sys/types.h>
+
 #include "../../include/libCacheSim/admissionAlgo.h"
 #include "adaptsize/adaptsize.h"
 
@@ -9,14 +10,13 @@
 extern "C" {
 #endif
 
-
 typedef struct adaptsize_admissioner {
   uint64_t max_iteration;
   uint64_t reconf_interval;
   Adaptsize adaptsize;
 } adaptsize_admission_params_t;
 
-static const char* DEFAULT_PARAMS="max-iteration=15,reconf-interval=30000";
+static const char *DEFAULT_PARAMS = "max-iteration=15,reconf-interval=30000";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -26,7 +26,8 @@ static const char* DEFAULT_PARAMS="max-iteration=15,reconf-interval=30000";
 void free_adaptsize_admissioner(admissioner_t *admissioner);
 admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner);
 admissioner_t *create_adaptsize_admissioner(const char *init_params);
-void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req, const uint64_t cache_size);
+void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req,
+                            const uint64_t cache_size);
 bool adaptsize_admit(admissioner_t *admissioner, const request_t *req);
 // ***********************************************************************
 // ****                                                               ****
@@ -34,21 +35,24 @@ bool adaptsize_admit(admissioner_t *admissioner, const request_t *req);
 // ****                                                               ****
 // ***********************************************************************
 
-/** 
+/**
  * @brief This function get called for every lookup to update adaptsize stats
- * @param admissioner  
- * @param req 
+ * @param admissioner
+ * @param req
  * @param cache_size current cache size
  */
-void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req, const uint64_t cache_size) {
-  adaptsize_admission_params_t *pa = (adaptsize_admission_params_t *)admissioner->params;
+void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req,
+                            const uint64_t cache_size) {
+  adaptsize_admission_params_t *pa =
+      (adaptsize_admission_params_t *)admissioner->params;
   pa->adaptsize.updateStats(req, cache_size);
 }
 
-/** 
- * @brief This function used by cache can_admit(), get called everytime an object is to be admitted. 
- * @param pa Adaptsize current data  
- * @return true cache would be admitted 
+/**
+ * @brief This function used by cache can_admit(), get called everytime an
+ * object is to be admitted.
+ * @param pa Adaptsize current data
+ * @return true cache would be admitted
  */
 bool adaptsize_admit(admissioner_t *admissioner, const request_t *req) {
   adaptsize_admission_params_t *pa =
@@ -57,9 +61,9 @@ bool adaptsize_admit(admissioner_t *admissioner, const request_t *req) {
 }
 
 /**
- * @brief Parsing params for adaptsize. 
+ * @brief Parsing params for adaptsize.
  * @param init_params Adaptsize spesific parameter
- * @param pa Adaptsize current data  
+ * @param pa Adaptsize current data
  */
 static void adaptsize_admissioner_parse_params(
     const char *init_params, adaptsize_admission_params_t *pa) {
@@ -83,8 +87,9 @@ static void adaptsize_admissioner_parse_params(
         pa->max_iteration = strtoll(value, &end, 10);
       } else if (strcasecmp(key, "reconf-interval") == 0) {
         pa->reconf_interval = strtoull(value, &end, 10);
-      } else if (strcasecmp(key, "print") == 0){
-        printf("max-iteration=%lu,reconf-interval=%lu", pa->max_iteration, pa->reconf_interval);
+      } else if (strcasecmp(key, "print") == 0) {
+        printf("max-iteration=%lu,reconf-interval=%lu", pa->max_iteration,
+               pa->reconf_interval);
         exit(0);
       } else {
         ERROR("adaptsize admission does not have parameter %s\n", key);
@@ -96,22 +101,22 @@ static void adaptsize_admissioner_parse_params(
 }
 
 /**
- * @brief clone adaptsize params with its parameter 
+ * @brief clone adaptsize params with its parameter
  * @param admissioner
- * @return admissioner with the same parameter  
+ * @return admissioner with the same parameter
  */
 admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner) {
   return create_adaptsize_admissioner((const char *)admissioner->init_params);
 }
 
 /**
- * @brief free adaptsize admissioner 
- * @param admissioner 
+ * @brief free adaptsize admissioner
+ * @param admissioner
  */
 void free_adaptsize_admissioner(admissioner_t *admissioner) {
-  adaptsize_admission_params_t *pa = 
-    (adaptsize_admission_params_t*)(admissioner->params);
-  
+  adaptsize_admission_params_t *pa =
+      (adaptsize_admission_params_t *)(admissioner->params);
+
   free(pa);
 
   if (admissioner->init_params) {
@@ -121,18 +126,19 @@ void free_adaptsize_admissioner(admissioner_t *admissioner) {
 }
 
 /**
- * @brief Init adaptsize admissioner 
+ * @brief Init adaptsize admissioner
  * @param init_params Adaptsize spesific parameter
- * @return 
+ * @return
  */
 admissioner_t *create_adaptsize_admissioner(const char *init_params) {
   adaptsize_admission_params_t *pa = (adaptsize_admission_params_t *)malloc(
       sizeof(adaptsize_admission_params_t));
   pa->max_iteration = 0;
   pa->reconf_interval = 0;
-  // Don't initialize the Adaptsize object here, it will be properly initialized later
+  // Don't initialize the Adaptsize object here, it will be properly initialized
+  // later
 
-  adaptsize_admissioner_parse_params(DEFAULT_PARAMS,  pa);
+  adaptsize_admissioner_parse_params(DEFAULT_PARAMS, pa);
   if (init_params != NULL) {
     adaptsize_admissioner_parse_params(init_params, pa);
   }
@@ -149,7 +155,8 @@ admissioner_t *create_adaptsize_admissioner(const char *init_params) {
   admissioner->update = adaptsize_update_stats;
   if (init_params != NULL) admissioner->init_params = strdup(init_params);
 
-  strncpy(admissioner->admissioner_name, "AdaptSize", CACHE_NAME_LEN);
+  strncpy(admissioner->admissioner_name, "AdaptSize", CACHE_NAME_LEN - 1);
+  admissioner->admissioner_name[CACHE_NAME_LEN - 1] = '\0';
   return admissioner;
 }
 

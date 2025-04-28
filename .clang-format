@@ -1,7 +1,7 @@
 ---
 Language:        Cpp
 BasedOnStyle:  Google
-ColumnLimit: 120
+ColumnLimit: 80
 AccessModifierOffset: -1
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: false

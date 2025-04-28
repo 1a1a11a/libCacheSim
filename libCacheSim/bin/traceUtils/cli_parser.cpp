@@ -84,9 +84,8 @@ static struct argp_option options[] = {
      "The size of the filter, can be absolute size or relative to working set",
      8},
 
-    {NULL, 0, NULL, 0, NULL, 0}, 
-  };
-
+    {NULL, 0, NULL, 0, NULL, 0},
+};
 
 /*
    PARSER. Field 2 in ARGP.
@@ -105,6 +104,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case OPTION_OUTPUT_PATH:
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
+      arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
     case OPTION_SAMPLE_RATIO:
       arguments->sample_ratio = atof(arg);
@@ -231,15 +231,13 @@ static void print_parsed_arg(struct arguments *args) {
 void parse_cmd(int argc, char *argv[], struct arguments *args) {
   init_arg(args);
 
-  static struct argp argp = {
-      .options = options,
-      .parser = parse_opt,
-      .args_doc = args_doc,
-      .doc = doc,
-      .children = NULL,
-      .help_filter = NULL,
-      .argp_domain = NULL
-  };
+  static struct argp argp = {.options = options,
+                             .parser = parse_opt,
+                             .args_doc = args_doc,
+                             .doc = doc,
+                             .children = NULL,
+                             .help_filter = NULL,
+                             .argp_domain = NULL};
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 
@@ -247,12 +245,14 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_type_str = args->args[1];
   assert(N_ARGS == 2);
 
-  args->trace_type = trace_type_str_to_enum(args->trace_type_str, args->trace_path);
+  args->trace_type =
+      trace_type_str_to_enum(args->trace_type_str, args->trace_path);
   args->reader = create_reader(args->trace_type_str, args->trace_path,
                                args->trace_type_params, args->n_req,
                                args->ignore_obj_size, 0);
   if (args->sample_ratio < 1.0) {
-    INFO("create a spatial sampler with sample ratio %.4flf\n", args->sample_ratio);
+    INFO("create a spatial sampler with sample ratio %.4flf\n",
+         args->sample_ratio);
     args->reader->sampler = create_spatial_sampler(args->sample_ratio);
   }
 

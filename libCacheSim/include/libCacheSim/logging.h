@@ -18,12 +18,12 @@ static inline void log_header(int level, const char *file, int line);
 void print_stack_trace(void);
 extern pthread_mutex_t log_mtx;
 
-#define LOGGING(level, ...)           \
+#define LOGGING(level, ...)                \
   do {                                     \
     pthread_mutex_lock(&log_mtx);          \
     log_header(level, __FILE__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__);            \
-    fprintf(stderr, "%s", NORMAL);                  \
+    fprintf(stderr, __VA_ARGS__);          \
+    fprintf(stderr, "%s", NORMAL);         \
     fflush(stderr);                        \
     pthread_mutex_unlock(&log_mtx);        \
   } while (0)
@@ -31,74 +31,86 @@ extern pthread_mutex_t log_mtx;
 #if LOGLEVEL <= VVVERBOSE_LEVEL
 #define VVVERBOSE(...) LOGGING(VVVERBOSE_LEVEL, __VA_ARGS__)
 #else
-#define VVVERBOSE(...) do {} while(0)
+#define VVVERBOSE(...) \
+  do {                 \
+  } while (0)
 #endif
 
 #if LOGLEVEL <= VVERBOSE_LEVEL
 #define VVERBOSE(...) LOGGING(VVERBOSE_LEVEL, __VA_ARGS__)
 #else
-#define VVERBOSE(...) do {} while(0)
+#define VVERBOSE(...) \
+  do {                \
+  } while (0)
 #endif
 
 #if LOGLEVEL <= VERBOSE_LEVEL
 #define VERBOSE(...) LOGGING(VERBOSE_LEVEL, __VA_ARGS__)
 #else
-#define VERBOSE(...) do {} while(0)
+#define VERBOSE(...) \
+  do {               \
+  } while (0)
 #endif
 
 #if LOGLEVEL <= DEBUG_LEVEL
 #define DEBUG(...) LOGGING(DEBUG_LEVEL, __VA_ARGS__)
 #else
-#define DEBUG(...) do {} while(0)
+#define DEBUG(...) \
+  do {             \
+  } while (0)
 #endif
 
 #if LOGLEVEL <= INFO_LEVEL
 #define INFO(...) LOGGING(INFO_LEVEL, __VA_ARGS__)
 #else
-#define INFO(...) do {} while(0)
+#define INFO(...) \
+  do {            \
+  } while (0)
 #endif
 
 #if LOGLEVEL <= WARN_LEVEL
 #define WARN(...) LOGGING(WARN_LEVEL, __VA_ARGS__)
 #else
-#define WARN(...) do {} while(0)
+#define WARN(...) \
+  do {            \
+  } while (0)
 #endif
 
 #if LOGLEVEL <= SEVERE_LEVEL
-#define ERROR(...)                        \
-  {                                            \
+#define ERROR(...)                      \
+  {                                     \
     LOGGING(SEVERE_LEVEL, __VA_ARGS__); \
-    abort();                                   \
+    abort();                            \
   }
 #else
 #define ERROR(...)
 #endif
 
-#define WARN_ONCE(...)      \
+#define WARN_ONCE(...)           \
   do {                           \
     static bool printed = false; \
     if (!printed) {              \
-      WARN(__VA_ARGS__);  \
+      WARN(__VA_ARGS__);         \
       printed = true;            \
       fflush(stdout);            \
     }                            \
   } while (0)
 
-#define DEBUG_ONCE(...)     \
+#define DEBUG_ONCE(...)          \
   do {                           \
     static bool printed = false; \
     if (!printed) {              \
-      DEBUG(__VA_ARGS__);  \
+      DEBUG(__VA_ARGS__);        \
       printed = true;            \
       fflush(stdout);            \
     }                            \
   } while (0)
 
-#define INFO_ONCE(...)      \
+#define INFO_ONCE(...)           \
   do {                           \
     static bool printed = false; \
     if (!printed) {              \
-      WARN(__VA_ARGS__);  \
+      WARN(__VA_ARGS__);         \
       printed = true;            \
       fflush(stdout);            \
     }                            \
@@ -134,7 +146,7 @@ static inline void log_header(int level, const char *file, int line) {
 
   char buffer[30];
   struct timeval tv;
-  time_t curtime;
+  time_t curtime = time(NULL);
 
   gettimeofday(&tv, NULL);
   curtime = tv.tv_sec;

@@ -110,12 +110,18 @@ setup_ubuntu() {
     sudo apt update
     sudo apt install -yqq build-essential google-perftools xxhash
     sudo apt install -yqq libglib2.0-dev libunwind-dev
-    sudo apt install -yqq libgoogle-perftools-dev
+    sudo apt install -yqq libgoogle-perftools-dev clang-tidy
 }
 
 setup_centos() {
     log_info "Setting up CentOS dependencies..."
+    sudo yum install centos-release-scl
     sudo yum install -y glib2-devel google-perftools-devel
+    # For the older llvm-toolset-7 (Clang 5.0.1)
+    sudo yum install llvm-toolset-7-clang-tools-extra
+    # Or for llvm-toolset-10 (Clang 10)
+    # sudo yum install llvm-toolset-10.0-clang-tools-extra
+    sudo scl enable llvm-toolset-10 bash
 }
 
 setup_macOS() {
@@ -124,7 +130,7 @@ setup_macOS() {
         log_error "Homebrew is not installed. Please install Homebrew first."
         exit 1
     fi
-    brew install glib google-perftools argp-standalone xxhash
+    brew install glib google-perftools argp-standalone xxhash clang-tidy
 }
 
 # Install CMake

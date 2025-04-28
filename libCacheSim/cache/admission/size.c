@@ -22,7 +22,8 @@ bool size_admit(admissioner_t *admissioner, const request_t *req) {
   return false;
 }
 
-static void size_admissioner_parse_params(const char *init_params, size_admission_params_t *pa) {
+static void size_admissioner_parse_params(const char *init_params,
+                                          size_admission_params_t *pa) {
   if (init_params == NULL) {
     pa->size_threshold = INT64_MAX;
     INFO("use default size admission: %ld\n", (long)pa->size_threshold);
@@ -71,7 +72,8 @@ void free_size_admissioner(admissioner_t *admissioner) {
 }
 
 admissioner_t *create_size_admissioner(const char *init_params) {
-  size_admission_params_t *pa = (size_admission_params_t *)malloc(sizeof(size_admission_params_t));
+  size_admission_params_t *pa =
+      (size_admission_params_t *)malloc(sizeof(size_admission_params_t));
   memset(pa, 0, sizeof(size_admission_params_t));
   size_admissioner_parse_params(init_params, pa);
 
@@ -83,7 +85,8 @@ admissioner_t *create_size_admissioner(const char *init_params) {
   admissioner->clone = clone_size_admissioner;
   if (init_params != NULL) admissioner->init_params = strdup(init_params);
 
-  strncpy(admissioner->admissioner_name, "Size", CACHE_NAME_LEN);
+  strncpy(admissioner->admissioner_name, "Size", CACHE_NAME_LEN - 1);
+  admissioner->admissioner_name[CACHE_NAME_LEN - 1] = '\0';
   return admissioner;
 }
 

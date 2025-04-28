@@ -441,7 +441,8 @@ static inline int64_t S3LRU_get_n_obj(const cache_t *cache) {
 static inline bool S3LRU_can_insert(cache_t *cache, const request_t *req) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
 
-  return req->obj_size <= params->LRU->cache_size && cache_can_insert_default(cache, req);
+  return req->obj_size <= params->LRU->cache_size &&
+         cache_can_insert_default(cache, req);
 }
 
 // ***********************************************************************
@@ -481,7 +482,8 @@ static void S3LRU_parse_params(cache_t *cache,
       params->ghost_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "main-cache-type") == 0 ||
                strcasecmp(key, "main-cache") == 0) {
-      strncpy(params->main_cache_type, value, 32);
+      strncpy(params->main_cache_type, value, 31);
+      params->main_cache_type[31] = '\0';
     } else if (strcasecmp(key, "move-to-main-threshold") == 0) {
       params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "promote-on-hit") == 0) {
