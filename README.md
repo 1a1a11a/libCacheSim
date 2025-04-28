@@ -15,6 +15,8 @@
     - [One-line install](#one-line-install)
     - [Install dependency](#install-dependency)
     - [Build libCacheSim](#build-libcachesim)
+    - [Developer Setup](#developer-setup)
+      - [Pre-commit Hooks](#pre-commit-hooks)
   - [Usage](#usage)
     - [cachesim (a high-performance cache simulator)](#cachesim-a-high-performance-cache-simulator)
       - [basic usage](#basic-usage)
@@ -124,6 +126,25 @@ cmake .. && make -j
 [sudo] make install
 popd
 ```
+
+<!-- TOC --><a name="developer-setup"></a>
+### Developer Setup
+For developers, we provide tools to ensure code quality and consistent formatting:
+
+#### Pre-commit Hooks
+We provide a git pre-commit hook that runs linting checks before each commit, helping catch issues early:
+
+```bash
+# Install the pre-commit hook
+bash scripts/setup-hooks.sh
+```
+
+The pre-commit hook:
+- Checks formatting with clang-format (if available)
+- Runs clang-tidy static analysis in parallel
+- Compiles modified files with strict compiler warnings enabled
+- Prevents committing code with formatting, static analysis, or compiler issues
+- Logs are preserved for debugging in `.lint-logs/` directory
 
 ---
 

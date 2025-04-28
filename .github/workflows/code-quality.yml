@@ -1,0 +1,106 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for proper git diff
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format clang-tidy cmake g++ make
+          bash scripts/install_dependency.sh
+
+      - name: Get changed C/C++ files
+        id: changed-files
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            **/*.c
+            **/*.h
+            **/*.cpp
+            **/*.cc
+            **/*.hpp
+
+      - name: Create log directory
+        run: mkdir -p logs
+
+      - name: Clang-format check
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Running clang-format checks..."
+          FORMAT_ERRORS=0
+          
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Checking formatting for $file"
+            if ! clang-format --dry-run --Werror "$file" >> logs/format.log 2>&1; then
+              echo "::error file=$file::Formatting issues in $file"
+              FORMAT_ERRORS=$((FORMAT_ERRORS + 1))
+            fi
+          done
+          
+          if [ $FORMAT_ERRORS -gt 0 ]; then
+            echo "Found formatting issues in $FORMAT_ERRORS files."
+            echo "You can fix these issues with: clang-format -i <file>"
+            cat logs/format.log
+            exit 1
+          else
+            echo "Formatting check passed."
+          fi
+
+      - name: Configure CMake
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_FLAGS="-Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs" \
+            -DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Clang-tidy check
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Running clang-tidy checks..."
+          FILES_WITH_ISSUES=0
+          
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "Checking $file with clang-tidy"
+            LOG_FILE="logs/tidy_$(basename "$file").log"
+            
+            # Run clang-tidy with selected checks (same as pre-commit hook)
+            if ! clang-tidy -p=build \
+              -checks='-*,bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,performance-*,portability-*,readability-*,-readability-magic-numbers,-readability-braces-around-statements,-cppcoreguidelines-avoid-magic-numbers,-readability-identifier-length,-clang-diagnostic-unused-command-line-argument' \
+              "$file" > "$LOG_FILE" 2>&1; then
+              echo "::error file=$file::clang-tidy found issues in $file"
+              cat "$LOG_FILE"
+              FILES_WITH_ISSUES=$((FILES_WITH_ISSUES + 1))
+            fi
+          done
+          
+          if [ $FILES_WITH_ISSUES -gt 0 ]; then
+            echo "clang-tidy found issues in $FILES_WITH_ISSUES files."
+            exit 1
+          else
+            echo "clang-tidy check passed successfully."
+          fi
+
+      - name: Compilation check
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Checking for compilation warnings..."
+          if cmake --build build -j$(nproc) > logs/compile.log 2>&1; then
+            echo "Compilation successful!"
+          else
+            echo "Compilation failed. Please fix the warnings."
+            cat logs/compile.log
+            exit 1
+          fi 
