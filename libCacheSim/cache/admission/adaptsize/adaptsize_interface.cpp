@@ -106,6 +106,8 @@ static void adaptsize_admissioner_parse_params(
  * @return admissioner with the same parameter
  */
 admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner) {
+  // This is handled correctly by create_adaptsize_admissioner which already
+  // uses the parameters from the original object to create a new one
   return create_adaptsize_admissioner((const char *)admissioner->init_params);
 }
 
@@ -116,6 +118,9 @@ admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner) {
 void free_adaptsize_admissioner(admissioner_t *admissioner) {
   adaptsize_admission_params_t *pa =
       (adaptsize_admission_params_t *)(admissioner->params);
+
+  // Explicitly call the destructor for the Adaptsize object
+  pa->adaptsize.~Adaptsize();
 
   free(pa);
 
@@ -146,7 +151,8 @@ admissioner_t *create_adaptsize_admissioner(const char *init_params) {
   admissioner_t *admissioner = (admissioner_t *)malloc(sizeof(admissioner_t));
   memset(admissioner, 0, sizeof(admissioner_t));
 
-  pa->adaptsize = Adaptsize(pa->max_iteration, pa->reconf_interval);
+  // Use placement new to construct the object in-place
+  new (&pa->adaptsize) Adaptsize(pa->max_iteration, pa->reconf_interval);
 
   admissioner->params = pa;
   admissioner->admit = adaptsize_admit;

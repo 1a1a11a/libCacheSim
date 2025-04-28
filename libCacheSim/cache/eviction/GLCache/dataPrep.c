@@ -295,11 +295,14 @@ static void prepare_training_data_per_package(cache_t *cache) {
 
   // convert to array interface format
   char str_n_valid_sample[128];
-  snprintf(str_n_valid_sample, sizeof(str_n_valid_sample),
-           "{\"data\": [%llu],\"shape\": [1],\"typestr\": \"<u4\",\"version\": 3}",
-           (unsigned long long)(uintptr_t)&learner->n_valid_samples);
-  safe_call(XGDMatrixSetUIntInfo(learner->train_dm, "group", str_n_valid_sample));
-  safe_call(XGDMatrixSetUIntInfo(learner->valid_dm, "group", str_n_valid_sample));
+  snprintf(
+      str_n_valid_sample, sizeof(str_n_valid_sample),
+      "{\"data\": [%llu],\"shape\": [1],\"typestr\": \"<u4\",\"version\": 3}",
+      (unsigned long long)(uintptr_t)&learner->n_valid_samples);
+  safe_call(
+      XGDMatrixSetUIntInfo(learner->train_dm, "group", str_n_valid_sample));
+  safe_call(
+      XGDMatrixSetUIntInfo(learner->valid_dm, "group", str_n_valid_sample));
 #endif
 }
 
@@ -363,12 +366,12 @@ void prepare_training_data(cache_t *cache) {
 #ifdef NORMALIZE_Y
   float max_y = learner->train_y[0];
   float min_y = learner->train_y[0];
-  for (int y = 1; y < learner->n_train_samples; y++) {
-    if (learner->train_y[y] > max_y) {
-      max_y = learner->train_y[y];
+  for (int j = 1; j < learner->n_train_samples; j++) {
+    if (learner->train_y[j] > max_y) {
+      max_y = learner->train_y[j];
     }
-    if (learner->train_y[y] < min_y) {
-      min_y = learner->train_y[y];
+    if (learner->train_y[j] < min_y) {
+      min_y = learner->train_y[j];
     }
   }
 #endif

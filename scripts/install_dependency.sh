@@ -173,7 +173,7 @@ install_xgboost() {
     if [[ ${GITHUB_ACTIONS:-} == "true" ]]; then
         make
     else
-        make -j "$(nproc)"
+        make -j
     fi
     sudo make install
     popd > /dev/null
@@ -195,7 +195,7 @@ install_lightgbm() {
     if [[ ${GITHUB_ACTIONS:-} == "true" ]]; then
         make
     else
-        make -j "$(nproc)"
+        make -j
     fi
     sudo make install
     popd > /dev/null
@@ -216,7 +216,7 @@ install_zstd() {
     mkdir -p _build
     pushd _build > /dev/null
     cmake ..
-    make -j "$(nproc)"
+    make -j
     sudo make install
     popd > /dev/null
     popd > /dev/null

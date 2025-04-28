@@ -4,10 +4,9 @@
 #include <string>
 
 #include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
 #include "../../../include/libCacheSim/cache.h"
+#include "../../../include/libCacheSim/evictionAlgo.h"
 #include "ThreeLCache.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +17,7 @@ typedef struct {
   char *objective;
   SimpleRequest ThreeLCache_req;
 
-  pair<uint64_t, uint32_t> to_evict_pair;
+  pair<uint64_t, int32_t> to_evict_pair;
   cache_obj_t obj_tmp;
 } ThreeLCache_params_t;
 
@@ -34,7 +33,7 @@ static void ThreeLCache_free(cache_t *cache);
 static bool ThreeLCache_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *ThreeLCache_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                                     const bool update_cache);
 static cache_obj_t *ThreeLCache_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *ThreeLCache_to_evict(cache_t *cache, const request_t *req);
 static void ThreeLCache_evict(cache_t *cache, const request_t *req);
@@ -42,7 +41,8 @@ static bool ThreeLCache_remove(cache_t *cache, const obj_id_t obj_id);
 static int64_t ThreeLCache_get_occupied_byte(const cache_t *cache);
 static int64_t ThreeLCache_get_n_obj(const cache_t *cache);
 
-static void ThreeLCache_parse_params(cache_t *cache, const char *cache_specific_params);
+static void ThreeLCache_parse_params(cache_t *cache,
+                                     const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -59,7 +59,7 @@ static void ThreeLCache_parse_params(cache_t *cache, const char *cache_specific_
  * function or use -e "print" with the cachesim binary
  */
 cache_t *ThreeLCache_init(const common_cache_params_t ccache_params,
-                  const char *cache_specific_params) {
+                          const char *cache_specific_params) {
 #ifdef SUPPORT_TTL
   if (ccache_params.default_ttl < 30 * 86400) {
     ERROR("ThreeLCache does not support expiration\n");
@@ -67,7 +67,8 @@ cache_t *ThreeLCache_init(const common_cache_params_t ccache_params,
   }
 #endif
 
-  cache_t *cache = cache_struct_init("ThreeLCache", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("ThreeLCache", ccache_params, cache_specific_params);
   cache->cache_init = ThreeLCache_init;
   cache->cache_free = ThreeLCache_free;
   cache->get = ThreeLCache_get;
@@ -88,8 +89,7 @@ cache_t *ThreeLCache_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  auto *params = my_malloc(ThreeLCache_params_t);
-  memset(params, 0, sizeof(ThreeLCache_params_t));
+  ThreeLCache_params_t *params = my_malloc(ThreeLCache_params_t);
   cache->eviction_params = params;
 
   if (cache_specific_params != NULL) {
@@ -127,7 +127,8 @@ cache_t *ThreeLCache_init(const common_cache_params_t ccache_params,
  */
 static void ThreeLCache_free(cache_t *cache) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
   delete ThreeLCache;
   free(cache->to_evict_candidate);
   my_free(sizeof(ThreeLCache_params_t), params);
@@ -174,16 +175,18 @@ static bool ThreeLCache_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *ThreeLCache_find(cache_t *cache, const request_t *req,
-                             const bool update_cache) {
+                                     const bool update_cache) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
 
   if (!update_cache) {
     bool is_hit = ThreeLCache->exist(static_cast<int64_t>(req->obj_id));
     return is_hit ? reinterpret_cast<cache_obj_t *>(0x1) : NULL;
   }
 
-  params->ThreeLCache_req.reinit(cache->n_req, req->obj_id, req->obj_size, nullptr);
+  params->ThreeLCache_req.reinit(cache->n_req, req->obj_id, req->obj_size,
+                                 nullptr);
   bool is_hit = ThreeLCache->lookup(params->ThreeLCache_req);
 
   if (is_hit) {
@@ -206,8 +209,10 @@ static cache_obj_t *ThreeLCache_find(cache_t *cache, const request_t *req,
  */
 static cache_obj_t *ThreeLCache_insert(cache_t *cache, const request_t *req) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
-  params->ThreeLCache_req.reinit(cache->n_req, req->obj_id, req->obj_size, nullptr);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  params->ThreeLCache_req.reinit(cache->n_req, req->obj_id, req->obj_size,
+                                 nullptr);
 
   ThreeLCache->admit(params->ThreeLCache_req);
 
@@ -227,7 +232,8 @@ static cache_obj_t *ThreeLCache_insert(cache_t *cache, const request_t *req) {
  */
 static cache_obj_t *ThreeLCache_to_evict(cache_t *cache, const request_t *req) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
   // ThreeLCache rank变成了evict_preobj
   params->to_evict_pair = ThreeLCache->evict_predobj();
   auto &meta = ThreeLCache->in_cache.metas[params->to_evict_pair.second];
@@ -252,7 +258,8 @@ static cache_obj_t *ThreeLCache_to_evict(cache_t *cache, const request_t *req) {
  */
 static void ThreeLCache_evict(cache_t *cache, const request_t *req) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
 
   if (cache->to_evict_candidate_gen_vtime == cache->n_req) {
     ThreeLCache->evict_with_candidate(params->to_evict_pair);
@@ -277,7 +284,8 @@ static void ThreeLCache_evict(cache_t *cache, const request_t *req) {
  */
 static bool ThreeLCache_remove(cache_t *cache, const obj_id_t obj_id) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
 
   ERROR("do not support remove");
   return true;
@@ -285,14 +293,16 @@ static bool ThreeLCache_remove(cache_t *cache, const obj_id_t obj_id) {
 
 static int64_t ThreeLCache_get_n_obj(const cache_t *cache) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
 
   return ThreeLCache->in_cache.metas.size();
 }
 
 static int64_t ThreeLCache_get_occupied_byte(const cache_t *cache) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
-  auto *ThreeLCache = static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
+  auto *ThreeLCache =
+      static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
 
   return ThreeLCache->_currentSize;
 }
@@ -302,7 +312,8 @@ static int64_t ThreeLCache_get_occupied_byte(const cache_t *cache) {
 // ****                  parameter set up functions                   ****
 // ****                                                               ****
 // ***********************************************************************
-static const char *ThreeLCache_current_params(cache_t *cache, ThreeLCache_params_t *params) {
+static const char *ThreeLCache_current_params(cache_t *cache,
+                                              ThreeLCache_params_t *params) {
   static __thread char params_str[128];
   int n = snprintf(params_str, 128, "objective=%s", params->objective);
 
@@ -312,7 +323,7 @@ static const char *ThreeLCache_current_params(cache_t *cache, ThreeLCache_params
 }
 
 static void ThreeLCache_parse_params(cache_t *cache,
-                             const char *cache_specific_params) {
+                                     const char *cache_specific_params) {
   ThreeLCache_params_t *params = (ThreeLCache_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *end;
@@ -334,7 +345,8 @@ static void ThreeLCache_parse_params(cache_t *cache,
         ERROR("out of memory %s\n", strerror(errno));
       }
     } else if (strcasecmp(key, "print") == 0) {
-      printf("current parameters: %s\n", ThreeLCache_current_params(cache, params));
+      printf("current parameters: %s\n",
+             ThreeLCache_current_params(cache, params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
