@@ -67,7 +67,8 @@ static struct argp_option options[] = {
     {"output", OPTION_OUTPUT_PATH, "", OPTION_ARG_OPTIONAL, "Output path", 3},
     {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
      "Produce verbose output", 3},
-    {0}};
+    {NULL, 0, NULL, 0, NULL, 0}};
+
 
 /*
    PARSER. Field 2 in ARGP.
@@ -284,7 +285,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
         else{
             uint64_t start_size = conv_size_str_to_byte_ul((char *)mrc_size_vec[0].c_str());
             uint64_t end_size = conv_size_str_to_byte_ul((char *)mrc_size_vec[1].c_str());
-            if(start_size < 0 || start_size >= end_size){
+            if (start_size >= end_size){
                 ERROR("mrc start size or end size wrong, current %s\n", mrc_size_str);
                 exit(1);
             }
@@ -299,7 +300,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
     else{
         // not interval based mrc
         if(wss_based_mrc){
-            for(int i = 0; i < mrc_size_vec.size(); i++){
+            for(size_t i = 0; i < mrc_size_vec.size(); i++){
                 // must be double
                 double ratio = atof(mrc_size_vec[i].c_str());
                 if(ratio < 0 || ratio > 1){
@@ -310,7 +311,7 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
             }
 
             // cache size must be increasing
-            for(int i = 0; i < params.profile_wss_ratio.size() - 1; i++){
+            for(size_t i = 0; i < params.profile_wss_ratio.size() - 1; i++){
                 if(params.profile_wss_ratio[i] >= params.profile_wss_ratio[i + 1]){
                     ERROR("mrc wss ratio must be increasing, current %s\n", mrc_size_str);
                     exit(1);
@@ -318,12 +319,12 @@ static void parse_mrc_size_params(const char * mrc_size_str, mrcProfiler::mrc_pr
             }
         }
         else{
-            for(int i = 0; i < mrc_size_vec.size(); i++){
+            for(size_t i = 0; i < mrc_size_vec.size(); i++){
                 uint64_t size = conv_size_str_to_byte_ul((char *)mrc_size_vec[i].c_str());
                 params.profile_size.push_back(size);
             }
             // cache size must be increasing
-            for(int i = 0; i < params.profile_size.size() - 1; i++){
+            for(size_t i = 0; i < params.profile_size.size() - 1; i++){
                 if(params.profile_size[i] >= params.profile_size[i + 1]){
                     ERROR("mrc size must be increasing, current %s\n", mrc_size_str);
                     exit(1);
@@ -386,11 +387,9 @@ void mrc_profiler_params_parse(const char * cache_algorithm_str, const char * pr
  * @param args
  */
 static void init_arg(struct arguments *args) {
-  memset(args, 0, sizeof(struct arguments));
-
+  // Initialize all fields directly instead of using memset
   args->trace_path = NULL;
   args->trace_type_params = NULL;
-  args->verbose = true;
   memset(args->ofilepath, 0, OFILEPATH_LEN);
   args->n_req = -1;
   args->verbose = false;
@@ -443,7 +442,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
     cal_working_set_size(args->reader, &wss_obj, &wss_byte);
     wss = wss_byte;
 
-    for(int i = 0; i < args->mrc_profiler_params.profile_wss_ratio.size(); i++){
+    for(size_t i = 0; i < args->mrc_profiler_params.profile_wss_ratio.size(); i++){
       args->mrc_profiler_params.profile_size.push_back(wss * args->mrc_profiler_params.profile_wss_ratio[i]);
     }
   }

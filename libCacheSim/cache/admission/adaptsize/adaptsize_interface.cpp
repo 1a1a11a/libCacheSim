@@ -1,9 +1,14 @@
 #include <fcntl.h>
 #include <math.h>
 #include <sys/types.h>
-#include <cstdint>
+#include <stdint.h>
 #include "../../include/libCacheSim/admissionAlgo.h"
 #include "adaptsize/adaptsize.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef struct adaptsize_admissioner {
   uint64_t max_iteration;
@@ -123,7 +128,9 @@ void free_adaptsize_admissioner(admissioner_t *admissioner) {
 admissioner_t *create_adaptsize_admissioner(const char *init_params) {
   adaptsize_admission_params_t *pa = (adaptsize_admission_params_t *)malloc(
       sizeof(adaptsize_admission_params_t));
-  memset(pa, 0, sizeof(adaptsize_admission_params_t));
+  pa->max_iteration = 0;
+  pa->reconf_interval = 0;
+  // Don't initialize the Adaptsize object here, it will be properly initialized later
 
   adaptsize_admissioner_parse_params(DEFAULT_PARAMS,  pa);
   if (init_params != NULL) {
@@ -145,3 +152,7 @@ admissioner_t *create_adaptsize_admissioner(const char *init_params) {
   strncpy(admissioner->admissioner_name, "AdaptSize", CACHE_NAME_LEN);
   return admissioner;
 }
+
+#ifdef __cplusplus
+}
+#endif

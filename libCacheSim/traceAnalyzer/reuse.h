@@ -15,12 +15,12 @@
 namespace traceAnalyzer {
 class ReuseDistribution {
  public:
-  explicit ReuseDistribution(std::string output_path, int time_window = 300,
-                             int rtime_granularity = 5,
-                             int vtime_granularity = 1000)
-      : time_window_(time_window),
-        rtime_granularity_(rtime_granularity),
-        vtime_granularity_(vtime_granularity) {
+  explicit ReuseDistribution(std::string output_path, int time_window_param = 300,
+                             int rtime_granularity_param = 5,
+                             int vtime_granularity_param = 1000)
+      : time_window_(time_window_param),
+        rtime_granularity_(rtime_granularity_param),
+        vtime_granularity_(vtime_granularity_param) {
     turn_on_stream_dump(output_path);
   };
 
@@ -45,9 +45,9 @@ class ReuseDistribution {
   /* used to plot reuse distribution heatmap */
   const double log_base_ = 1.5;
   const double log_log_base_ = log(log_base_);
+  const int time_window_;
   const int rtime_granularity_;
   const int vtime_granularity_;
-  const int time_window_;
   int64_t next_window_ts_ = -1;
 
   std::vector<uint32_t> window_reuse_rtime_req_cnt_;

@@ -24,7 +24,7 @@ void vector_insert(vector<T> &vec, int pos, T v) {
 }
 
 template <typename T>
-void vector_incr(vector<T> &vec, int pos, T v) {
+void vector_incr(vector<T> &vec, size_t pos, T v) {
   if (pos >= vec.size()) {
     /* resize the vector so that we can increase,
      * pos + 8 is to reduce the number of resize op */

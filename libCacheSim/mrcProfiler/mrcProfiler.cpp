@@ -58,7 +58,7 @@ void mrcProfiler::MRCProfilerBase::print(const char * output_path) {
     fprintf(outfp, "wss_ratio\t");
   }
   fprintf(outfp, "cache_size\tmiss_rate\tbyte_miss_rate\n");
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     if (params_.profile_wss_ratio.size() != 0) {
       fprintf(outfp, "%lf\t", params_.profile_wss_ratio[i]);
     }
@@ -156,7 +156,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
 
   // 4. calculate the mrc
   int64_t accu_hit_cnt = 0, accu_hit_size = 0;
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     accu_hit_cnt += local_hit_cnt_vec[i];
     accu_hit_size += local_hit_size_vec[i];
     hit_cnt_vec[i] = accu_hit_cnt;
@@ -248,7 +248,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
 
   // 4. calculate the mrc
   int64_t accu_hit_cnt = 0, accu_hit_size = 0;
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     accu_hit_cnt += local_hit_cnt_vec[i];
     accu_hit_size += local_hit_size_vec[i];
     hit_cnt_vec[i] = accu_hit_cnt;
@@ -291,17 +291,16 @@ void mrcProfiler::MRCProfilerMINISIM::run(){
 
   // 3. run the simulate_with_multi_caches
   cache_t *caches[MAX_MRC_PROFILE_POINTS];
-  for (int i = 0; i < params_.profile_size.size(); i++) {
+  for (size_t i = 0; i < params_.profile_size.size(); i++) {
     size_t _cache_size = mrc_size_vec[i] * sample_rate;
-    // size_t _cache_size = mrc_size_vec[i];
-    common_cache_params_t cc_params = {.cache_size = _cache_size};
+    common_cache_params_t cc_params = {.cache_size = _cache_size, .default_ttl = 0, .hashpower = 20, .consider_obj_metadata = false};
     caches[i] = create_cache(params_.cache_algorithm_str, cc_params, nullptr);
   }
   result = simulate_with_multi_caches(reader_, caches, mrc_size_vec.size(), NULL, 0, 0,
                                       params_.minisim_params.thread_num, true, true);
 
   // 4. adjust hit cnt and hit size
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     if(sampler){
       hit_cnt_vec[i] = n_req_ - result[i].n_miss * reader_->sampler->sampling_ratio_inv;
       hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte * reader_->sampler->sampling_ratio_inv;

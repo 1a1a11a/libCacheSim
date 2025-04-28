@@ -45,7 +45,7 @@ enum argp_option_short {
    Order of fields: {NAME, KEY, ARG, FLAGS, DOC}.
 */
 static struct argp_option options[] = {
-    {0, 0, 0, 0, "Options used by all the utilities:"},
+    {0, 0, 0, 0, "Options used by all the utilities:", 0},
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
      "\"obj-id-col=1,header=true\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1,header=true\"", 2},
@@ -56,7 +56,7 @@ static struct argp_option options[] = {
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
      "specify to ignore the object size from the trace", 2},
 
-    {0, 0, 0, 0, "traceConv options:"},
+    {0, 0, 0, 0, "traceConv options:", 0},
     {"output-format", OPTION_OUTPUT_FORMAT, "lcs", 0,
      "currently support lcs/lcs_v1/lcs_v2/lcs_v3/oracleGeneral", 4},
     {"output-txt", OPTION_OUTPUT_TXT, "false", 0,
@@ -66,7 +66,7 @@ static struct argp_option options[] = {
      "are updated to the old size",
      4},
 
-    {0, 0, 0, 0, "tracePrint options:"},
+    {0, 0, 0, 0, "tracePrint options:", 0},
     {"print-stat", OPTION_PRINT_STAT, "false", 0,
      "Print trace statistics only available for lcs traces", 6},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
@@ -77,14 +77,16 @@ static struct argp_option options[] = {
     {"obj-id-32bit", OPTION_OBJ_ID_32bit, "0", 0,
      "Print object id as 32-bit int", 6},
 
-    {0, 0, 0, 0, "traceFilter options:"},
+    {0, 0, 0, 0, "traceFilter options:", 0},
     {"filter-type", OPTION_FILTER_TYPE, "FIFO", 0,
      "The filter type, e.g., FIFO and LRU", 8},
     {"filter-size", OPTION_FILTER_SIZE, "0.1", 0,
      "The size of the filter, can be absolute size or relative to working set",
      8},
 
-    {0}};
+    {NULL, 0, NULL, 0, NULL, 0}, 
+  };
+
 
 /*
    PARSER. Field 2 in ARGP.

@@ -347,7 +347,7 @@ void traceAnalyzer::TraceAnalyzer::post_processing() {
   memset(popular_cnt_, 0, sizeof(uint64_t) * track_n_popular_);
 
   for (auto it : obj_map_) {
-    if (it.second.freq <= track_n_hit_) {
+    if ((int) it.second.freq <= track_n_hit_) {
       n_hit_cnt_[it.second.freq - 1] += 1;
     }
   }

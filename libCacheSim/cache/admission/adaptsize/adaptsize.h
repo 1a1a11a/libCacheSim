@@ -26,7 +26,7 @@ class Adaptsize {
 
 		struct obj_info{
 			double obj_seen_times;
-			uint64_t obj_size;
+			int64_t obj_size;
 		};
 
 		std::unordered_map<obj_id_t, obj_info> interval_metadata;

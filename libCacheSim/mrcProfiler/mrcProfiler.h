@@ -194,6 +194,8 @@ class MRCProfilerBase {
         hit_cnt_vec(params.profile_size.size(), 0),
         hit_size_vec(params.profile_size.size(), 0) {}
   
+  virtual ~MRCProfilerBase() = default;
+  
   /**
    * run the profiler, and store the result to hit_cnt_vec and hit_size_vec
    */

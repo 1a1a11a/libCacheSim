@@ -26,11 +26,11 @@ void print_args(struct arguments *args) {
   printf("profiler_str: %s\n", args->mrc_profiler_str);
   printf("mrc_profiler_params_str: %s\n", args->mrc_profiler_params_str);
 
-  for(int i = 0; i < args->mrc_profiler_params.profile_size.size(); i++){
+  for(size_t i = 0; i < args->mrc_profiler_params.profile_size.size(); i++){
     printf("profile_size: %ld\n", args->mrc_profiler_params.profile_size[i]);
   }
   printf("====\n");
-  for(int i = 0; i < args->mrc_profiler_params.profile_wss_ratio.size(); i++){
+  for(size_t i = 0; i < args->mrc_profiler_params.profile_wss_ratio.size(); i++){
     printf("profile_wss_ratio: %f\n", args->mrc_profiler_params.profile_wss_ratio[i]);
   }
 

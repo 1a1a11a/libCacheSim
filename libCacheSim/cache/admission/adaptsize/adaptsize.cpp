@@ -13,17 +13,17 @@ const double tol = 3.0e-8;
 
 /**
  * @brief Initialzie Adaptstat
- * @param max_iteration
- * @param reconf_interval
+ * @param max_iteration_param
+ * @param reconf_interval_param
  */
-Adaptsize::Adaptsize(const uint64_t max_iteration, const uint64_t reconf_interval)
-  : max_iteration(max_iteration),
-  reconf_interval(reconf_interval),
-  gss_v(1 - gss_r),
-  c_param(1 << 15),
-  stat_size(0),
-  next_reconf(reconf_interval),
-  cache_size(0)
+Adaptsize::Adaptsize(const uint64_t max_iteration_param, const uint64_t reconf_interval_param)
+  : cache_size(0),
+    max_iteration(max_iteration_param),
+    reconf_interval(reconf_interval_param),
+    next_reconf(reconf_interval_param),
+    stat_size(0),
+    c_param(1 << 15),
+    gss_v(1 - gss_r)
 {
 }
 
@@ -32,8 +32,8 @@ Adaptsize::Adaptsize(const uint64_t max_iteration, const uint64_t reconf_interva
  * @param req
  * @param cache_size current cache size
  */
-void Adaptsize::updateStats(const request_t *req, const uint64_t cache_size) {
-  this->cache_size = cache_size;
+void Adaptsize::updateStats(const request_t *req, const uint64_t cache_size_param) {
+  this->cache_size = cache_size_param;
   reconfigure();
   if (interval_metadata.count(req->obj_id) == 0
     && longterm_metadata.count(req->obj_id) == 0) {
@@ -50,9 +50,9 @@ void Adaptsize::updateStats(const request_t *req, const uint64_t cache_size) {
       stat_size += req->obj_size;
     }
   }
-  auto& obj_info = interval_metadata[req->obj_id];
-  obj_info.obj_seen_times += 1.0;
-  obj_info.obj_size = req->obj_size;
+  auto& oinfo = interval_metadata[req->obj_id];
+  oinfo.obj_seen_times += 1.0;
+  oinfo.obj_size = req->obj_size;
 }
 
 /**

@@ -117,6 +117,7 @@ static reader_t *setup_vscsi_reader_with_ignored_obj_size(void) {
   char data_path[1024];
   reader_init_param_t *init_params = g_new0(reader_init_param_t, 1);
   init_params->ignore_obj_size = true;
+  init_params->sampler = NULL;
   _detect_data_path(data_path, "cloudPhysicsIO.vscsi");
   reader_t *reader_vscsi = setup_reader(data_path, VSCSI_TRACE, init_params);
   g_free(init_params);
@@ -178,14 +179,18 @@ static reader_t *setup_csv_reader_obj_num(void) {
 static reader_t *setup_plaintxt_reader_num(void) {
   char data_path[1024];
   _detect_data_path(data_path, "cloudPhysicsIO.txt");
-  reader_init_param_t init_params = {.obj_id_is_num = true};
+  reader_init_param_t init_params;
+  set_default_reader_init_params(&init_params);
+  init_params.obj_id_is_num = true;
   return setup_reader(data_path, PLAIN_TXT_TRACE, &init_params);
 }
 
 static reader_t *setup_plaintxt_reader_str(void) {
   char data_path[1024];
   _detect_data_path(data_path, "cloudPhysicsIO.txt");
-  reader_init_param_t init_params = {.obj_id_is_num = false};
+  reader_init_param_t init_params;
+  set_default_reader_init_params(&init_params);
+  init_params.obj_id_is_num = false;
   return setup_reader(data_path, PLAIN_TXT_TRACE, &init_params);
 }
 
@@ -199,8 +204,8 @@ static cache_t *create_test_cache(const char *alg_name, common_cache_params_t cc
   cache_t *cache;
   if (strcasecmp(alg_name, "LRU") == 0) {
     cache = LRU_init(cc_params, NULL);
-    // } else if (strcasecmp(alg_name, "Clock") == 0) {
-    //   cache = Clock_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "Clock") == 0) {
+    cache = Clock_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO") == 0) {
     cache = FIFO_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "FIFO-Reinsertion") == 0 || strcasecmp(alg_name, "Clock") == 0) {

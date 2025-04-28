@@ -51,7 +51,7 @@ class LHD {
   // called to find a victim upon a cache miss
   candidate_t rank(const request_t *req);
 
-  void dumpStats(LHDCache::Cache *cache) {}
+  void dumpStats(LHDCache::Cache *cache_params) {}
 
   std::unordered_map<candidate_t, uint32_t> sizeMap;
   // object metadata; indices maps object id -> metadata
