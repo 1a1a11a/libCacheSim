@@ -25,7 +25,8 @@ static const char *DEFAULT_PARAMS = "max-iteration=15,reconf-interval=30000";
 // ***********************************************************************
 void free_adaptsize_admissioner(admissioner_t *admissioner);
 admissioner_t *clone_adaptsize_admissioner(admissioner_t *admissioner);
-// admissioner_t *create_adaptsize_admissioner(const char *init_params); // declared in admissionAlgo.h
+// declared in admissionAlgo.h
+// admissioner_t *create_adaptsize_admissioner(const char *init_params);
 void adaptsize_update_stats(admissioner_t *admissioner, const request_t *req,
                             const uint64_t cache_size);
 bool adaptsize_admit(admissioner_t *admissioner, const request_t *req);
