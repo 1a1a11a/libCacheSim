@@ -279,6 +279,7 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj, int64_t *wss_byte)
     INFO("working set size: %lld object %lld byte\n", (long long)*wss_obj, (long long)*wss_byte);
   }
 
+  g_hash_table_destroy(obj_table);
   free_request(req);
   reset_reader(reader);
 }
