@@ -29,7 +29,6 @@
     - [Using libCacheSim as a library](#using-libcachesim-as-a-library)
     - [Extending libCacheSim (new algorithms and trace types)](#extending-libcachesim-new-algorithms-and-trace-types)
   - [Open source cache traces](#open-source-cache-traces)
-  - [Questions?](#questions)
   - [Contributions](#contributions)
   - [Reference](#reference)
   - [License](#license)
@@ -337,12 +336,6 @@ Among the large number of traces, I recommend using the newer ones from Twitter 
 
 
 ---
-<!-- TOC --><a name="questions"></a>
-## Questions? 
-Please join the [Google group](https://groups.google.com/g/libcachesim) and feel free to ask questions.
-
-
----  
 <!-- TOC --><a name="contributions"></a>
 ## Contributions 
 We gladly welcome pull requests.
