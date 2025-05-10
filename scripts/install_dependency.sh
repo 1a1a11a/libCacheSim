@@ -130,7 +130,7 @@ setup_macOS() {
         log_error "Homebrew is not installed. Please install Homebrew first."
         exit 1
     fi
-    brew install glib google-perftools argp-standalone xxhash llvm wget
+    brew install glib google-perftools argp-standalone xxhash llvm wget cmake zstd xgboost lightgbm
 }
 
 # Install CMake
@@ -234,24 +234,27 @@ main() {
         setup_centos
     fi
 
-    # Install requested components
-    if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_CMAKE" = true ]; then
-        install_cmake
-    fi
-
-    if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_ZSTD" = true ]; then
-        install_zstd
-    fi
-
-    if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_XGBOOST" = true ]; then
-        if [[ ! ${GITHUB_ACTIONS:-} == "true" ]]; then
-            install_xgboost
+    # Install requested components only on non macOS computers
+    # Libraries already installed on macOS using brew in setup_macOS
+    if [[ -z "$(uname -a | grep Darwin)" ]]; then
+        if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_CMAKE" = true ]; then
+            install_cmake
         fi
-    fi
 
-    if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_LIGHTGBM" = true ]; then
-        if [[ ! ${GITHUB_ACTIONS:-} == "true" ]]; then
-            install_lightgbm
+        if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_ZSTD" = true ]; then
+            install_zstd
+        fi
+
+        if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_XGBOOST" = true ]; then
+            if [[ ! ${GITHUB_ACTIONS:-} == "true" ]]; then
+                install_xgboost
+            fi
+        fi
+
+        if [ "$INSTALL_ALL" = true ] || [ "$INSTALL_LIGHTGBM" = true ]; then
+            if [[ ! ${GITHUB_ACTIONS:-} == "true" ]]; then
+                install_lightgbm
+            fi
         fi
     fi
 
