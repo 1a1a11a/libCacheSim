@@ -130,7 +130,7 @@ setup_macOS() {
         log_error "Homebrew is not installed. Please install Homebrew first."
         exit 1
     fi
-    brew install glib google-perftools argp-standalone xxhash clang-tidy
+    brew install glib google-perftools argp-standalone xxhash llvm
 }
 
 # Install CMake
