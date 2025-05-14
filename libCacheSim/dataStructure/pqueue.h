@@ -41,6 +41,9 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+#include <stdio.h>
+
 #include "../include/config.h"
 
 /** priority data type */
