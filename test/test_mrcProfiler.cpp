@@ -2,28 +2,29 @@
 // Created by Xiaojun Guo on 02/28/25.
 //
 
-#include "common.h"
 #include "../libCacheSim/mrcProfiler/mrcProfiler.h"
+#include "common.h"
 
 /**
  * this one for testing with the SHARDS profiler with fiexd sample rate
  * @param user_data
  */
-static void test_shards_profiler_with_fixed_sample_rate(gconstpointer user_data) {
-  reader_t * reader = setup_vscsi_reader();
+static void test_shards_profiler_with_fixed_sample_rate(
+    gconstpointer user_data) {
+  reader_t *reader = setup_vscsi_reader();
   mrcProfiler::mrc_profiler_params_t params;
   mrcProfiler::mrc_profiler_e mrc_profiler_type = mrcProfiler::SHARDS_PROFILER;
 
-  
   params.cache_algorithm_str = "LRU";
   params.shards_params.parse_params("FIX_RATE,0.01,10");
   uint64_t step_size = 202976972;
   int test_steps = 10;
-  for(int i = 0; i < test_steps; i++){
+  for (int i = 0; i < test_steps; i++) {
     params.profile_size.push_back(step_size * (i + 1));
   }
 
-  mrcProfiler::MRCProfilerBase * profiler = create_mrc_profiler(mrc_profiler_type, reader, "", params);
+  mrcProfiler::MRCProfilerBase *profiler =
+      create_mrc_profiler(mrc_profiler_type, reader, "", params);
   g_assert_true(profiler != NULL);
   profiler->run();
 
@@ -37,9 +38,7 @@ static void test_shards_profiler_with_fixed_sample_rate(gconstpointer user_data)
   g_assert_cmpuint(hit_cnt_vec.size(), ==, test_steps);
   g_assert_cmpuint(hit_size_vec.size(), ==, test_steps);
 
-  
-
-  for(int i = 0; i < test_steps; i++){
+  for (int i = 0; i < test_steps; i++) {
     g_assert_cmpuint(mrc_size_vec[i], ==, step_size * (i + 1));
   }
 
@@ -65,7 +64,6 @@ static void test_shards_profiler_with_fixed_sample_rate(gconstpointer user_data)
   g_assert_cmpuint(hit_size_vec[8], ==, 2151475712);
   g_assert_cmpuint(hit_size_vec[9], ==, 2151475712);
 
-
   delete profiler;
 
   close_reader(reader);
@@ -75,21 +73,22 @@ static void test_shards_profiler_with_fixed_sample_rate(gconstpointer user_data)
  * this one for testing with the SHARDS profiler with fiexd sample size
  * @param user_data
  */
-static void test_shards_profiler_with_fixed_sample_size(gconstpointer user_data) {
-  reader_t * reader = setup_vscsi_reader();
+static void test_shards_profiler_with_fixed_sample_size(
+    gconstpointer user_data) {
+  reader_t *reader = setup_vscsi_reader();
   mrcProfiler::mrc_profiler_params_t params;
   mrcProfiler::mrc_profiler_e mrc_profiler_type = mrcProfiler::SHARDS_PROFILER;
 
-  
   params.cache_algorithm_str = "LRU";
   params.shards_params.parse_params("FIX_SIZE,8192,10");
   uint64_t step_size = 202976972;
   int test_steps = 10;
-  for(int i = 0; i < test_steps; i++){
+  for (int i = 0; i < test_steps; i++) {
     params.profile_size.push_back(step_size * (i + 1));
   }
 
-  mrcProfiler::MRCProfilerBase * profiler = create_mrc_profiler(mrc_profiler_type, reader, "", params);
+  mrcProfiler::MRCProfilerBase *profiler =
+      create_mrc_profiler(mrc_profiler_type, reader, "", params);
   g_assert_true(profiler != NULL);
   profiler->run();
 
@@ -103,9 +102,7 @@ static void test_shards_profiler_with_fixed_sample_size(gconstpointer user_data)
   g_assert_cmpuint(hit_cnt_vec.size(), ==, test_steps);
   g_assert_cmpuint(hit_size_vec.size(), ==, test_steps);
 
-  
-
-  for(int i = 0; i < test_steps; i++){
+  for (int i = 0; i < test_steps; i++) {
     g_assert_cmpuint(mrc_size_vec[i], ==, step_size * (i + 1));
   }
 
@@ -131,7 +128,6 @@ static void test_shards_profiler_with_fixed_sample_size(gconstpointer user_data)
   g_assert_cmpuint(hit_size_vec[8], ==, 2178659536);
   g_assert_cmpuint(hit_size_vec[9], ==, 2178825309);
 
-
   delete profiler;
 
   close_reader(reader);
@@ -141,22 +137,22 @@ static void test_shards_profiler_with_fixed_sample_size(gconstpointer user_data)
  * this one for testing with the minisim profiler with fiexd sample rate
  * @param user_data
  */
-static void test_minisim_profiler_with_fixed_sample_rate(gconstpointer user_data) {
-  reader_t * reader = setup_vscsi_reader();
+static void test_minisim_profiler_with_fixed_sample_rate(
+    gconstpointer user_data) {
+  reader_t *reader = setup_vscsi_reader();
   mrcProfiler::mrc_profiler_params_t params;
   mrcProfiler::mrc_profiler_e mrc_profiler_type = mrcProfiler::MINISIM_PROFILER;
 
-  
   params.cache_algorithm_str = "FIFO";
   params.minisim_params.parse_params("FIX_RATE,0.01,1");
   uint64_t step_size = 202976972;
   int test_steps = 10;
-  for(int i = 0; i < test_steps; i++){
+  for (int i = 0; i < test_steps; i++) {
     params.profile_size.push_back(step_size * (i + 1));
   }
 
-
-  mrcProfiler::MRCProfilerBase * profiler = create_mrc_profiler(mrc_profiler_type, reader, "", params);
+  mrcProfiler::MRCProfilerBase *profiler =
+      create_mrc_profiler(mrc_profiler_type, reader, "", params);
   g_assert_true(profiler != NULL);
   profiler->run();
 
@@ -170,9 +166,7 @@ static void test_minisim_profiler_with_fixed_sample_rate(gconstpointer user_data
   g_assert_cmpuint(hit_cnt_vec.size(), ==, test_steps);
   g_assert_cmpuint(hit_size_vec.size(), ==, test_steps);
 
-  
-
-  for(int i = 0; i < test_steps; i++){
+  for (int i = 0; i < test_steps; i++) {
     g_assert_cmpuint(mrc_size_vec[i], ==, step_size * (i + 1));
   }
 
@@ -198,23 +192,26 @@ static void test_minisim_profiler_with_fixed_sample_rate(gconstpointer user_data
   g_assert_cmpuint(hit_size_vec[8], ==, 2044774912);
   g_assert_cmpuint(hit_size_vec[9], ==, 2046822912);
 
-
   delete profiler;
 
   close_reader(reader);
 }
 
-
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
   g_test_set_nonfatal_assertions();
 
-  g_test_add_data_func("/libCacheSim/test_shards_profiler_with_fixed_sample_rate", NULL, test_shards_profiler_with_fixed_sample_rate);
+  g_test_add_data_func(
+      "/libCacheSim/test_shards_profiler_with_fixed_sample_rate", NULL,
+      test_shards_profiler_with_fixed_sample_rate);
 
-  g_test_add_data_func("/libCacheSim/test_shards_profiler_with_fixed_sample_size", NULL, test_shards_profiler_with_fixed_sample_size);
+  g_test_add_data_func(
+      "/libCacheSim/test_shards_profiler_with_fixed_sample_size", NULL,
+      test_shards_profiler_with_fixed_sample_size);
 
-  g_test_add_data_func("/libCacheSim/test_minisim_profiler_with_fixed_sample_rate", NULL, test_minisim_profiler_with_fixed_sample_rate);
-
+  g_test_add_data_func(
+      "/libCacheSim/test_minisim_profiler_with_fixed_sample_rate", NULL,
+      test_minisim_profiler_with_fixed_sample_rate);
 
   return g_test_run();
 }

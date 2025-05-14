@@ -34,7 +34,8 @@ int main(int argc, char *argv[]) {
   reader_t *reader;
 
   reader = setup_plaintxt_reader_num();
-  g_test_add_data_func("/libCacheSim/test_chained_hashtable_v2", NULL, test_chained_hashtable_v2);
+  g_test_add_data_func("/libCacheSim/test_chained_hashtable_v2", NULL,
+                       test_chained_hashtable_v2);
 
   return g_test_run();
 }

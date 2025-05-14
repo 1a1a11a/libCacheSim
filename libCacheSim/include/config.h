@@ -9,8 +9,8 @@
 extern "C" {
 #endif
 
-//#pragma GCC optimize("Ofast")
-//#pragma GCC target("avx,avx2,fma")
+// #pragma GCC optimize("Ofast")
+// #pragma GCC target("avx,avx2,fma")
 
 #include "libCacheSim/const.h"  // needed for hash type
 
@@ -23,9 +23,9 @@ extern "C" {
 #endif
 
 #ifndef HASH_TYPE
-//#define HASH_TYPE IDENTITY
-//#define HASH_TYPE MURMUR3
-//#define HASH_TYPE WYHASH
+// #define HASH_TYPE IDENTITY
+// #define HASH_TYPE MURMUR3
+// #define HASH_TYPE WYHASH
 #define HASH_TYPE XXHASH3
 #else
 #error "HASH_TYPE is defined"
@@ -58,7 +58,6 @@ extern "C" {
 #elif defined(TRACK_EVICTION_R_AGE)
 #define CURR_TIME(cache, req) (req->clock_time)
 #endif
-
 
 #include <stdint.h>
 typedef uint64_t obj_id_t;

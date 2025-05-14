@@ -13,5 +13,4 @@ int get_n_cores();
 int get_n_available_cores();
 void print_cwd();
 
-
-}// namespace utilsSys
+}  // namespace utilsSys

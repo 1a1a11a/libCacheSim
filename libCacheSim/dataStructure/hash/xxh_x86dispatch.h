@@ -35,53 +35,63 @@
 #ifndef XXH_X86DISPATCH_H_13563687684
 #define XXH_X86DISPATCH_H_13563687684
 
-#if defined (__cplusplus)
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
+#include "xxhash.h" /* XXH64_hash_t, XXH3_state_t */
 
-#include "xxhash.h"  /* XXH64_hash_t, XXH3_state_t */
+XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_dispatch(const void* input, size_t len);
+XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSeed_dispatch(const void* input,
+                                                          size_t len,
+                                                          XXH64_hash_t seed);
+XXH_PUBLIC_API XXH64_hash_t XXH3_64bits_withSecret_dispatch(const void* input,
+                                                            size_t len,
+                                                            const void* secret,
+                                                            size_t secretLen);
+XXH_PUBLIC_API XXH_errorcode XXH3_64bits_update_dispatch(XXH3_state_t* state,
+                                                         const void* input,
+                                                         size_t len);
 
-XXH_PUBLIC_API XXH64_hash_t  XXH3_64bits_dispatch(const void* input, size_t len);
-XXH_PUBLIC_API XXH64_hash_t  XXH3_64bits_withSeed_dispatch(const void* input, size_t len, XXH64_hash_t seed);
-XXH_PUBLIC_API XXH64_hash_t  XXH3_64bits_withSecret_dispatch(const void* input, size_t len, const void* secret, size_t secretLen);
-XXH_PUBLIC_API XXH_errorcode XXH3_64bits_update_dispatch(XXH3_state_t* state, const void* input, size_t len);
-
-XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_dispatch(const void* input, size_t len);
-XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_withSeed_dispatch(const void* input, size_t len, XXH64_hash_t seed);
-XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_withSecret_dispatch(const void* input, size_t len, const void* secret, size_t secretLen);
-XXH_PUBLIC_API XXH_errorcode XXH3_128bits_update_dispatch(XXH3_state_t* state, const void* input, size_t len);
-
+XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_dispatch(const void* input,
+                                                   size_t len);
+XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_withSeed_dispatch(const void* input,
+                                                            size_t len,
+                                                            XXH64_hash_t seed);
+XXH_PUBLIC_API XXH128_hash_t XXH3_128bits_withSecret_dispatch(
+    const void* input, size_t len, const void* secret, size_t secretLen);
+XXH_PUBLIC_API XXH_errorcode XXH3_128bits_update_dispatch(XXH3_state_t* state,
+                                                          const void* input,
+                                                          size_t len);
 
 /* automatic replacement of XXH3 functions.
  * can be disabled by setting XXH_DISPATCH_DISABLE_REPLACE */
 #ifndef XXH_DISPATCH_DISABLE_REPLACE
 
-# undef  XXH3_64bits
-# define XXH3_64bits XXH3_64bits_dispatch
-# undef  XXH3_64bits_withSeed
-# define XXH3_64bits_withSeed XXH3_64bits_withSeed_dispatch
-# undef  XXH3_64bits_withSecret
-# define XXH3_64bits_withSecret XXH3_64bits_withSecret_dispatch
-# undef  XXH3_64bits_update
-# define XXH3_64bits_update XXH3_64bits_update_dispatch
+#undef XXH3_64bits
+#define XXH3_64bits XXH3_64bits_dispatch
+#undef XXH3_64bits_withSeed
+#define XXH3_64bits_withSeed XXH3_64bits_withSeed_dispatch
+#undef XXH3_64bits_withSecret
+#define XXH3_64bits_withSecret XXH3_64bits_withSecret_dispatch
+#undef XXH3_64bits_update
+#define XXH3_64bits_update XXH3_64bits_update_dispatch
 
-# undef  XXH128
-# define XXH128 XXH3_128bits_withSeed_dispatch
-# define XXH3_128bits XXH3_128bits_dispatch
-# undef  XXH3_128bits
-# define XXH3_128bits XXH3_128bits_dispatch
-# undef  XXH3_128bits_withSeed
-# define XXH3_128bits_withSeed XXH3_128bits_withSeed_dispatch
-# undef  XXH3_128bits_withSecret
-# define XXH3_128bits_withSecret XXH3_128bits_withSecret_dispatch
-# undef  XXH3_128bits_update
-# define XXH3_128bits_update XXH3_128bits_update_dispatch
+#undef XXH128
+#define XXH128 XXH3_128bits_withSeed_dispatch
+#define XXH3_128bits XXH3_128bits_dispatch
+#undef XXH3_128bits
+#define XXH3_128bits XXH3_128bits_dispatch
+#undef XXH3_128bits_withSeed
+#define XXH3_128bits_withSeed XXH3_128bits_withSeed_dispatch
+#undef XXH3_128bits_withSecret
+#define XXH3_128bits_withSecret XXH3_128bits_withSecret_dispatch
+#undef XXH3_128bits_update
+#define XXH3_128bits_update XXH3_128bits_update_dispatch
 
 #endif /* XXH_DISPATCH_DISABLE_REPLACE */
 
-
-#if defined (__cplusplus)
+#if defined(__cplusplus)
 }
 #endif
 

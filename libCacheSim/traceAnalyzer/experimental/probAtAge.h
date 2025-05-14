@@ -16,7 +16,7 @@ using namespace std;
 class ProbAtAge {
  public:
   explicit ProbAtAge(int time_window = 300, int warmup_rtime = 86400)
-      : time_window_(time_window), warmup_rtime_(warmup_rtime){};
+      : time_window_(time_window), warmup_rtime_(warmup_rtime) {};
 
   ~ProbAtAge() = default;
 

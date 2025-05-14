@@ -5,7 +5,6 @@
 #include "../dataStructure/robin_hood.h"
 #include "../include/config.h"
 
-
 typedef uint64_t obj_size_t;
 // typedef int32_t time_t;
 

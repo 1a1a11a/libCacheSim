@@ -71,10 +71,10 @@ extern "C" {
 
 #define SUBMIT_CHAR(p, c) ((p)->entry_buf[entry_pos++] = (c))
 
-static const char *csv_errors[] = {"success",
-                             "error parsing data while strict checking enabled",
-                             "memory exhausted while increasing buffer size",
-                             "data size too large", "invalid status code"};
+static const char *csv_errors[] = {
+    "success", "error parsing data while strict checking enabled",
+    "memory exhausted while increasing buffer size", "data size too large",
+    "invalid status code"};
 
 int csv_error(struct csv_parser *p) {
   /* Return the current status of the parser */

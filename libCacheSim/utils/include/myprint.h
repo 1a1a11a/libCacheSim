@@ -9,13 +9,12 @@ extern "C" {
 #endif
 
 /**
- * @brief a wrapper for printing progress, it will skip printing if 
+ * @brief a wrapper for printing progress, it will skip printing if
  * print too fast or the progress is not changed
- * 
- * @param perc 
+ *
+ * @param perc
  */
-void print_progress(double perc); 
-
+void print_progress(double perc);
 
 #ifdef __cplusplus
 }

@@ -81,19 +81,17 @@ static analysis_param_t default_param() {
 };
 
 static struct analysis_option default_option() {
-  struct analysis_option option = {
-    .req_rate = false,
-    .access_pattern = false,
-    .size = false,
-    .reuse = false,
-    .popularity = false,
-    .ttl = false,
-    .popularity_decay = false,
-    .lifetime = false,
-    .create_future_reuse_ccdf = false,
-    .prob_at_age = false,
-    .size_change = false
-  };
+  struct analysis_option option = {.req_rate = false,
+                                   .access_pattern = false,
+                                   .size = false,
+                                   .reuse = false,
+                                   .popularity = false,
+                                   .ttl = false,
+                                   .popularity_decay = false,
+                                   .lifetime = false,
+                                   .create_future_reuse_ccdf = false,
+                                   .prob_at_age = false,
+                                   .size_change = false};
 
   return option;
 };

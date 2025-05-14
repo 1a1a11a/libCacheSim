@@ -22,8 +22,7 @@ int main(int argc, char *argv[]) {
 }
 
 void fix_msr_oracleGeneral_trace(char *trace_path) {
-  reader_t *reader =
-      setup_reader(trace_path, ORACLE_GENERAL_TRACE, NULL);
+  reader_t *reader = setup_reader(trace_path, ORACLE_GENERAL_TRACE, NULL);
   request_t *req = new_request();
 
   char ofilepath[256];
@@ -51,8 +50,7 @@ void fix_msr_oracleGeneral_trace(char *trace_path) {
 }
 
 void fix_msr_oracleGeneralOpNS_trace(char *trace_path) {
-  reader_t *reader =
-      setup_reader(trace_path, ORACLE_GENERALOPNS_TRACE, NULL);
+  reader_t *reader = setup_reader(trace_path, ORACLE_GENERALOPNS_TRACE, NULL);
   request_t *req = new_request();
 
   char ofilepath[256];
@@ -91,8 +89,7 @@ void fix_msr_oracleGeneralOpNS_trace(char *trace_path) {
 }
 
 void convert_wiki16_trace(char *trace_path) {
-  reader_t *reader =
-      setup_reader(trace_path, ORACLE_WIKI16u_TRACE, NULL);
+  reader_t *reader = setup_reader(trace_path, ORACLE_WIKI16u_TRACE, NULL);
   request_t *req = new_request();
   uint64_t n = 0;
   uint64_t n_total_req = get_num_of_req(reader);

@@ -618,7 +618,8 @@ static void evictLIR(cache_t *cache) {
   cache->n_obj -= 1;
 
   if ((uint64_t)req_local->obj_size <= params->hirs_limit) {
-    while ((uint64_t)params->hirs_count + req_local->obj_size > params->hirs_limit) {
+    while ((uint64_t)params->hirs_count + req_local->obj_size >
+           params->hirs_limit) {
       evictHIR(cache);
     }
     params->LRU_q->insert(params->LRU_q, req_local);

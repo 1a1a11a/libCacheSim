@@ -24,7 +24,6 @@ namespace CDNSimulator {
 
 class CacheCluster {
  private:
-
   // the consistent hash ring
   ring_t *_ring = nullptr;
 

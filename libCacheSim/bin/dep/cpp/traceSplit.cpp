@@ -105,7 +105,8 @@ int read_oracleAkamai_trace(ifstream &ifs, struct trace_req *req) {
 int main(int argc, char *argv[]) {
   cout << "split the trace by tenants, output is standardBinIQI" << endl;
   if (argc < 2) {
-    cout << "Usage: " << argv[0] << " trace_file trace_type (oracleCF1/oracleAkamai) ofilepath" << endl;
+    cout << "Usage: " << argv[0]
+         << " trace_file trace_type (oracleCF1/oracleAkamai) ofilepath" << endl;
     return 0;
   }
 

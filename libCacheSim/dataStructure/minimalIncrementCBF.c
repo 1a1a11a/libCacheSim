@@ -2,6 +2,8 @@
  * Refer to minimalIncrementCBF.h for documentation on the public interfaces.
  */
 
+#include "minimalIncrementCBF.h"
+
 #include <assert.h>
 #include <fcntl.h>
 #include <math.h>
@@ -13,12 +15,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "minimalIncrementCBF.h"
 #include "hash/hash.h"
 #define XXH_INLINE_ALL
-#include "hash/xxhash.h"
 #include "hash/xxh3.h"
-
+#include "hash/xxhash.h"
 
 #define MAKESTRING(n) STRING(n)
 #define STRING(n) #n
@@ -26,7 +26,8 @@
 #define DEBUG_CBF
 #undef DEBUG_CBF
 
-int minimalIncrementCBF_init(struct minimalIncrementCBF * CBF, int entries, double error){
+int minimalIncrementCBF_init(struct minimalIncrementCBF *CBF, int entries,
+                             double error) {
   if (CBF->ready == 1) {
     printf("CBF at %p already initialized!\n", (void *)CBF);
     return -1;
@@ -36,51 +37,55 @@ int minimalIncrementCBF_init(struct minimalIncrementCBF * CBF, int entries, doub
   CBF->error = error;
 
   double num = log(error);
-  double denom = 0.480453013918201; // ln(2)^2
+  double denom = 0.480453013918201;  // ln(2)^2
   CBF->bpe = -num / denom;
 
-  CBF->hashes = (int)ceil(0.693147180559945 * CBF->bpe); // ln(2)
+  CBF->hashes = (int)ceil(0.693147180559945 * CBF->bpe);  // ln(2)
 
   CBF->counter_num = (int)fmin(ceil(CBF->bpe * entries), INT_MAX);
   // if (CBF->counter_num < 1) {
-  //   printf("CBF at %p has too few counters %d!\n", (void *)CBF, CBF->counter_num);
-  //   return -1;
+  //   printf("CBF at %p has too few counters %d!\n", (void *)CBF,
+  //   CBF->counter_num); return -1;
   // }
   if (CBF->counter_num < CBF->hashes) {
     printf("CBF at %p has too few counters %d! make it into 2 * %d\n",
-      (void *)CBF, CBF->counter_num, CBF->hashes * 2);
+           (void *)CBF, CBF->counter_num, CBF->hashes * 2);
     CBF->counter_num = CBF->hashes * 2;
   }
 
   CBF->bf = (unsigned int *)calloc(sizeof(unsigned int), CBF->counter_num);
   // TODO: check whether unsigned int is enough for the size of each counter
 
-  if(CBF->bf == NULL) {
-// #ifdef DEBUG_CBF
-    printf("CBF at %p failed to allocate memory (aimed to allocate %d counters!)\n", (void *)CBF, CBF->counter_num);
-    printf("Note it is possible that the counter size should be divided by average object size.\n");
-// #endif
+  if (CBF->bf == NULL) {
+    // #ifdef DEBUG_CBF
+    printf(
+        "CBF at %p failed to allocate memory (aimed to allocate %d "
+        "counters!)\n",
+        (void *)CBF, CBF->counter_num);
+    printf(
+        "Note it is possible that the counter size should be divided by "
+        "average object size.\n");
+    // #endif
     exit(1);
   }
   CBF->ready = 1;
   return 0;
 }
 
-int minimalIncrementCBF_init_size(struct minimalIncrementCBF * CBF, int entries, double error,
-                    unsigned int cache_size) {
+int minimalIncrementCBF_init_size(struct minimalIncrementCBF *CBF, int entries,
+                                  double error, unsigned int cache_size) {
   minimalIncrementCBF_init(CBF, entries, error);
   return 0;
 }
 
-static int minimalIncrementCBF_check_add(struct minimalIncrementCBF * CBF,
-                            const void * buffer, int len, int add)
-{
+static int minimalIncrementCBF_check_add(struct minimalIncrementCBF *CBF,
+                                         const void *buffer, int len, int add) {
   if (CBF->ready == 0) {
     printf("CBF at %p not initialized!\n", (void *)CBF);
     return -1;
   }
 
-  if(add != 0 && add != 1) {
+  if (add != 0 && add != 1) {
     printf("add should be 0 or 1!\n");
     return -1;
   }
@@ -91,21 +96,22 @@ static int minimalIncrementCBF_check_add(struct minimalIncrementCBF * CBF,
   register unsigned int x;
   register int i;
 
-  //register unsigned int counter_num = CBF->counter_num;
+  // register unsigned int counter_num = CBF->counter_num;
   register unsigned int min_count = UINT_MAX;
-  
+
   assert(CBF->counter_num != 0);
   for (i = 0; i < CBF->hashes; i++) {
     x = (a + i * b) % CBF->counter_num;
     if (CBF->bf[x] < min_count) {
 #ifdef DEBUG_CBF
-      printf("[CBF search] x = %u, bf[x] = %u < min_count = %u\n", x, CBF->bf[x], min_count);
+      printf("[CBF search] x = %u, bf[x] = %u < min_count = %u\n", x,
+             CBF->bf[x], min_count);
 #endif
       min_count = CBF->bf[x];
-    }
-    else {
+    } else {
 #ifdef DEBUG_CBF
-      printf("[CBF search] x = %u, bf[x] = %u >= min_count = %u\n", x, CBF->bf[x], min_count);
+      printf("[CBF search] x = %u, bf[x] = %u >= min_count = %u\n", x,
+             CBF->bf[x], min_count);
 #endif
     }
   }
@@ -113,12 +119,13 @@ static int minimalIncrementCBF_check_add(struct minimalIncrementCBF * CBF,
   if (add == 1 && min_count < UINT_MAX) {
     for (i = 0; i < CBF->hashes; i++) {
       x = (a + i * b) % CBF->counter_num;
-      if(CBF->bf[x] == min_count) {
+      if (CBF->bf[x] == min_count) {
 #ifdef DEBUG_CBF
-        printf("[CBF add before] x = %u, bf[x] = %u, min_count = %u\n", x, CBF->bf[x], min_count);
+        printf("[CBF add before] x = %u, bf[x] = %u, min_count = %u\n", x,
+               CBF->bf[x], min_count);
 #endif
       }
-        CBF->bf[x]++;
+      CBF->bf[x]++;
     }
     min_count++;
   }
@@ -126,15 +133,17 @@ static int minimalIncrementCBF_check_add(struct minimalIncrementCBF * CBF,
   return min_count;
 }
 
-int minimalIncrementCBF_estimate(struct minimalIncrementCBF * CBF, const void * buffer, int len) {
+int minimalIncrementCBF_estimate(struct minimalIncrementCBF *CBF,
+                                 const void *buffer, int len) {
   return minimalIncrementCBF_check_add(CBF, buffer, len, 0);
 }
 
-int minimalIncrementCBF_add(struct minimalIncrementCBF * CBF, const void * buffer, int len) {
+int minimalIncrementCBF_add(struct minimalIncrementCBF *CBF, const void *buffer,
+                            int len) {
   return minimalIncrementCBF_check_add(CBF, buffer, len, 1);
 }
 
-void minimalIncrementCBF_print(struct minimalIncrementCBF * CBF) {
+void minimalIncrementCBF_print(struct minimalIncrementCBF *CBF) {
   printf("Minimal Increment CBF:\n");
   printf("  entries: %d\n", CBF->entries);
   printf("  error: %f\n", CBF->error);
@@ -143,14 +152,14 @@ void minimalIncrementCBF_print(struct minimalIncrementCBF * CBF) {
   printf("  hash functions = %d\n", CBF->hashes);
 }
 
-void minimalIncrementCBF_free(struct minimalIncrementCBF * CBF) {
+void minimalIncrementCBF_free(struct minimalIncrementCBF *CBF) {
   if (CBF->ready) {
     free(CBF->bf);
   }
   CBF->ready = 0;
 }
 
-int minimalIncrementCBF_decay(struct minimalIncrementCBF * CBF) {
+int minimalIncrementCBF_decay(struct minimalIncrementCBF *CBF) {
 #ifdef DEBUG_CBF
   printf("call decay\n");
 #endif
@@ -168,6 +177,4 @@ int minimalIncrementCBF_decay(struct minimalIncrementCBF * CBF) {
   return 0;
 }
 
-const char * minimalIncrementCBF_version(void) {
-  return MAKESTRING(VERSION);
-}
+const char *minimalIncrementCBF_version(void) { return MAKESTRING(VERSION); }

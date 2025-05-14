@@ -53,8 +53,8 @@ void filter(reader_t *reader, cache_t *cache, std::string ofilepath) {
     read_one_req(reader, req);
   }
 
-  INFO("write %ld/%ld %.4lf requests to file %s\n", (long) n_written_req, (long) n_req,
-       (double)n_written_req / n_req, ofilepath.c_str());
+  INFO("write %ld/%ld %.4lf requests to file %s\n", (long)n_written_req,
+       (long)n_req, (double)n_written_req / n_req, ofilepath.c_str());
   free_request(req);
   output_file.close();
 }

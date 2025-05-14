@@ -82,7 +82,8 @@ static bool LP_ARC_get_debug(cache_t *cache, const request_t *req);
  */
 cache_t *LP_ARC_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LP_ARC", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LP_ARC", ccache_params, cache_specific_params);
   cache->cache_init = LP_ARC_init;
   cache->cache_free = LP_ARC_free;
   cache->get = LP_ARC_get;

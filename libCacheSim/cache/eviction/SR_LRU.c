@@ -43,7 +43,8 @@ static int64_t SR_LRU_get_n_obj(const cache_t *cache);
  */
 cache_t *SR_LRU_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SR_LRU", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("SR_LRU", ccache_params, cache_specific_params);
   cache->cache_init = SR_LRU_init;
   cache->cache_free = SR_LRU_free;
   cache->get = SR_LRU_get;

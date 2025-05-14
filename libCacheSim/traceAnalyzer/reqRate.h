@@ -14,7 +14,7 @@ namespace traceAnalyzer {
 class ReqRate {
  public:
   ReqRate() = default;
-  explicit ReqRate(int time_window) : time_window_(time_window){};
+  explicit ReqRate(int time_window) : time_window_(time_window) {};
   ~ReqRate() = default;
 
   void add_req(request_t *req);

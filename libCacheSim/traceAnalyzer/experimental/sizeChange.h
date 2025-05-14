@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+
 #include <algorithm>
 #include <fstream>
 #include <functional>

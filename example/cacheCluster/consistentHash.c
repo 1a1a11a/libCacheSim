@@ -136,10 +136,9 @@ int ch_ring_get_server(const char *const key, const ring_t *const ring) {
   return (ring->vnodes + ch_ring_get_vnode_idx(key, ring))->server_id;
 }
 
-int ch_ring_get_server_from_uint64(uint64_t obj_id,
-                                     const ring_t *const ring) {
-  char key[8]; 
-  memcpy(key, (char *) &obj_id, 8);
+int ch_ring_get_server_from_uint64(uint64_t obj_id, const ring_t *const ring) {
+  char key[8];
+  memcpy(key, (char *)&obj_id, 8);
   key[7] = 0;
   return (ring->vnodes + ch_ring_get_vnode_idx(key, ring))->server_id;
 }

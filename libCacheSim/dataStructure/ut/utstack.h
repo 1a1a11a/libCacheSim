@@ -58,31 +58,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define STACK_EMPTY(head) (!(head))
 
-#define STACK_PUSH(head,add)                                         \
-    STACK_PUSH2(head,add,next)
+#define STACK_PUSH(head, add) STACK_PUSH2(head, add, next)
 
-#define STACK_PUSH2(head,add,next)                                   \
-do {                                                                 \
-  (add)->next = (head);                                              \
-  (head) = (add);                                                    \
-} while (0)
+#define STACK_PUSH2(head, add, next) \
+  do {                               \
+    (add)->next = (head);            \
+    (head) = (add);                  \
+  } while (0)
 
-#define STACK_POP(head,result)                                       \
-    STACK_POP2(head,result,next)
+#define STACK_POP(head, result) STACK_POP2(head, result, next)
 
-#define STACK_POP2(head,result,next)                                 \
-do {                                                                 \
-  (result) = (head);                                                 \
-  (head) = (head)->next;                                             \
-} while (0)
+#define STACK_POP2(head, result, next) \
+  do {                                 \
+    (result) = (head);                 \
+    (head) = (head)->next;             \
+  } while (0)
 
-#define STACK_COUNT(head,el,counter)                                 \
-    STACK_COUNT2(head,el,counter,next)                               \
+#define STACK_COUNT(head, el, counter) STACK_COUNT2(head, el, counter, next)
 
-#define STACK_COUNT2(head,el,counter,next)                           \
-do {                                                                 \
-  (counter) = 0;                                                     \
-  for ((el) = (head); el; (el) = (el)->next) { ++(counter); }        \
-} while (0)
+#define STACK_COUNT2(head, el, counter, next)    \
+  do {                                           \
+    (counter) = 0;                               \
+    for ((el) = (head); el; (el) = (el)->next) { \
+      ++(counter);                               \
+    }                                            \
+  } while (0)
 
 #endif /* UTSTACK_H */
