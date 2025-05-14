@@ -21,17 +21,6 @@ jobs:
           sudo apt-get install -y clang-format clang-tidy cmake g++ make
           bash scripts/install_dependency.sh
 
-      - name: Get changed C/C++ files
-        id: changed-files
-        uses: tj-actions/changed-files@v46.0.5
-        with:
-          files: |
-            **/*.c
-            **/*.h
-            **/*.cpp
-            **/*.cc
-            **/*.hpp
-
       - name: Create log directory
         run: mkdir -p logs
 
@@ -41,7 +30,7 @@ jobs:
           echo "Running clang-format checks..."
           FORMAT_ERRORS=0
           
-          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          for file in $(find . -iname '*.h' -or -iname '*.c' -or -iname '*.cpp' -or -iname '*.hpp' -or -iname '*.cc'); do
             echo "Checking formatting for $file"
             if ! clang-format --dry-run --Werror "$file" >> logs/format.log 2>&1; then
               echo "::error file=$file::Formatting issues in $file"
@@ -72,7 +61,7 @@ jobs:
           echo "Running clang-tidy checks..."
           FILES_WITH_ISSUES=0
           
-          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          for file in $(find . -iname '*.h' -or -iname '*.c' -or -iname '*.cpp' -or -iname '*.hpp' -or -iname '*.cc'); do
             echo "Checking $file with clang-tidy"
             LOG_FILE="logs/tidy_$(basename "$file").log"
             
