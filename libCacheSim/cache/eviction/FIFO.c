@@ -48,7 +48,8 @@ static bool FIFO_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *FIFO_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("FIFO", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("FIFO", ccache_params, cache_specific_params);
   cache->cache_init = FIFO_init;
   cache->cache_free = FIFO_free;
   cache->get = FIFO_get;
@@ -120,7 +121,7 @@ static bool FIFO_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *FIFO_find(cache_t *cache, const request_t *req,
-                               const bool update_cache) {
+                              const bool update_cache) {
   return cache_find_base(cache, req, update_cache);
 }
 

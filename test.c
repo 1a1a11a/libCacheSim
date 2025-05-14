@@ -1,8 +1,6 @@
+#include <libCacheSim.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <libCacheSim.h>
-
 
 int main(int argc, char *argv[]) {
   /* open trace, see quickstart.md for opening csv and binary trace */

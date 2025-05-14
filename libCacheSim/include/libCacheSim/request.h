@@ -26,7 +26,8 @@ typedef struct request {
   uint64_t hv; /* hash value, used when offloading hash to reader */
 
   /* this represents the hash of the object id in key-value cache
-   * or the logical block address in block cache, note that LBA % block_size == 0 */
+   * or the logical block address in block cache, note that LBA % block_size ==
+   * 0 */
   obj_id_t obj_id;
 
   int64_t obj_size;
@@ -116,12 +117,15 @@ static inline void free_request(request_t *req) { my_free(request_t, req); }
 
 static inline void print_request(const request_t *req) {
 #ifdef SUPPORT_TTL
-  LOGGING(DEBUG_LEVEL, "req clock_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
-          (unsigned long)req->clock_time, (unsigned long long)req->obj_id, (long)req->obj_size, (long)req->ttl,
-          req_op_str[req->op], req->valid);
+  LOGGING(DEBUG_LEVEL,
+          "req clock_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
+          (unsigned long)req->clock_time, (unsigned long long)req->obj_id,
+          (long)req->obj_size, (long)req->ttl, req_op_str[req->op], req->valid);
 #else
-  LOGGING(DEBUG_LEVEL, "req clock_time %lu, id %llu, size %ld, op %s, valid %d\n", (unsigned long)req->clock_time,
-          (unsigned long long)req->obj_id, (long)req->obj_size, req_op_str[req->op], req->valid);
+  LOGGING(DEBUG_LEVEL,
+          "req clock_time %lu, id %llu, size %ld, op %s, valid %d\n",
+          (unsigned long)req->clock_time, (unsigned long long)req->obj_id,
+          (long)req->obj_size, req_op_str[req->op], req->valid);
 #endif
 }
 

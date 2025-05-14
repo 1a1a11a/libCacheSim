@@ -26,7 +26,8 @@ typedef struct __attribute__((packed)) req2 {
 typedef req2_t req_t;
 
 void write_req(const char *file_path, req_t *req) {
-  std::ofstream file(file_path, std::ios::out | std::ios::binary | std::ios::trunc);
+  std::ofstream file(file_path,
+                     std::ios::out | std::ios::binary | std::ios::trunc);
   file.write(reinterpret_cast<char *>(req), sizeof(req_t));
 }
 

@@ -19,8 +19,7 @@ void Myconfig::load_config() {
   assert(yamlconfig["L2"]["size"].is_sequence());
 
   n_l1 = yamlconfig["L1"]["path"].size();
-  uint64_t l1_size =
-      Utils::convert_size_str(yamlconfig["L1"]["size"].as_str());
+  uint64_t l1_size = Utils::convert_size_str(yamlconfig["L1"]["size"].as_str());
   for (int i = 0; i < n_l1; i++) {
     l1_sizes.push_back(l1_size);
     l1_sizes_str.push_back(yamlconfig["L1"]["size"].as_str());

@@ -20,8 +20,9 @@ extern "C" {
  * @param log_base
  * @return
  */
-heatmap_plot_matrix_t *
-get_stack_dist_heatmap_matrix(reader_t *reader, gint32 window, double log_base);
+heatmap_plot_matrix_t *get_stack_dist_heatmap_matrix(reader_t *reader,
+                                                     gint32 window,
+                                                     double log_base);
 
 /**
  * calculate the heatmap plot data of distance from last access distribution
@@ -41,11 +42,12 @@ heatmap_plot_matrix_t *get_last_access_dist_heatmap_matrix(reader_t *reader,
  * @param log_base
  * @return
  */
-heatmap_plot_matrix_t *
-get_reuse_time_heatmap_matrix(reader_t *reader, gint32 window, double log_base);
+heatmap_plot_matrix_t *get_reuse_time_heatmap_matrix(reader_t *reader,
+                                                     gint32 window,
+                                                     double log_base);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // libCacheSim_DISTHEATMAP_H
+#endif  // libCacheSim_DISTHEATMAP_H

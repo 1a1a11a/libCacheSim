@@ -104,28 +104,28 @@ double gettime(void) {
 // }
 
 void create_dir(char *dir_path) {
-    char temp[1024];
-    snprintf(temp, sizeof(temp), "%s", dir_path);
-    size_t len = strlen(temp);
-    if (temp[len - 1] == '/') {
-        temp[len - 1] = '\0';
-    }
-    for (char *p = temp + 1; *p; p++) {
-        if (*p == '/') {
-            *p = '\0';
-            if (access(temp, F_OK) == -1) {
-                if (mkdir(temp, 0777) == -1) {
-                    perror("mkdir error");
-                }
-            }
-            *p = '/';
-        }
-    }
-    if (access(temp, F_OK) == -1) {
+  char temp[1024];
+  snprintf(temp, sizeof(temp), "%s", dir_path);
+  size_t len = strlen(temp);
+  if (temp[len - 1] == '/') {
+    temp[len - 1] = '\0';
+  }
+  for (char *p = temp + 1; *p; p++) {
+    if (*p == '/') {
+      *p = '\0';
+      if (access(temp, F_OK) == -1) {
         if (mkdir(temp, 0777) == -1) {
-            perror("mkdir error");
+          perror("mkdir error");
         }
+      }
+      *p = '/';
     }
+  }
+  if (access(temp, F_OK) == -1) {
+    if (mkdir(temp, 0777) == -1) {
+      perror("mkdir error");
+    }
+  }
 }
 
 void get_resouce_usage(struct rusage *r_usage) {

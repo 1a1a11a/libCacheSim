@@ -55,6 +55,6 @@ inline int get_n_fields(const std::string& filename) {
     ++object_metric;                                        \
   }
 
-//#define LOG_SAMPLE_RATE 0.01
+// #define LOG_SAMPLE_RATE 0.01
 
 #endif  // WEBCACHESIM_UTILS_H

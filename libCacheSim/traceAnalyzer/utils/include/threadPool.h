@@ -1,23 +1,21 @@
 #pragma once
 
-#include <thread>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <functional>
 #include <iostream>
 #include <mutex>
-#include <vector>
-#include <condition_variable>
 #include <queue>
-#include <functional>
-#include <chrono>
-#include <atomic>
+#include <thread>
+#include <vector>
 
-//#include "utilsSys.h"
-
+// #include "utilsSys.h"
 
 namespace utilsSys {
 
 class ThreadPool {
  public:
-
   explicit ThreadPool(int n_thread = -1);
   ~ThreadPool() { shutdown(); }
 
@@ -36,6 +34,5 @@ class ThreadPool {
   std::atomic<int> n_running_jobs = 0;
 
   void wait_job();
-
 };
-}
+}  // namespace utilsSys

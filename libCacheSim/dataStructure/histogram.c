@@ -14,10 +14,13 @@ ReuseHistogram* init_histogram(void) {
   return hist;
 }
 
-void update_histogram(ReuseHistogram* hist, uint64_t distance, float new_thres) {
+void update_histogram(ReuseHistogram* hist, uint64_t distance,
+                      float new_thres) {
   if (distance == (uint64_t)-1) {
     if (hist->cold_miss_threshold > new_thres) {
-      hist->cold_miss_bin = (uint64_t)(hist->cold_miss_bin * new_thres / hist->cold_miss_threshold + 0.5);
+      hist->cold_miss_bin = (uint64_t)(hist->cold_miss_bin * new_thres /
+                                           hist->cold_miss_threshold +
+                                       0.5);
       hist->cold_miss_threshold = new_thres;
     }
     if (hist->cold_miss_threshold == 0) {
@@ -39,7 +42,8 @@ void update_histogram(ReuseHistogram* hist, uint64_t distance, float new_thres) 
     BinEntry* new_bin = (BinEntry*)malloc(sizeof(BinEntry));
     new_bin->frequency = 1;
     new_bin->threshold = new_thres;
-    g_hash_table_insert(hist->bins, g_memdup2(&distance, sizeof(uint64_t)), new_bin);
+    g_hash_table_insert(hist->bins, g_memdup2(&distance, sizeof(uint64_t)),
+                        new_bin);
   }
 }
 
@@ -51,7 +55,8 @@ void wrap_up_histogram(ReuseHistogram* hist, float rate) {
     BinEntry* bin = (BinEntry*)value;
     bin->frequency = (uint64_t)(bin->frequency * rate / bin->threshold);
   }
-  hist->cold_miss_bin = (uint64_t)(hist->cold_miss_bin * rate / hist->cold_miss_threshold + 0.5);
+  hist->cold_miss_bin =
+      (uint64_t)(hist->cold_miss_bin * rate / hist->cold_miss_threshold + 0.5);
 }
 
 void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
@@ -117,7 +122,8 @@ void free_histogram(ReuseHistogram* hist) {
   free(hist);
 }
 
-void adjust_histogram(ReuseHistogram* hist, uint64_t total_requests, float rate) {
+void adjust_histogram(ReuseHistogram* hist, uint64_t total_requests,
+                      float rate) {
   uint64_t total = hist->cold_miss_bin;
   GHashTableIter iter;
   gpointer key, value;

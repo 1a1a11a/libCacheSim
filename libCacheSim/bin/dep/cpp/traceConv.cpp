@@ -3,6 +3,8 @@
  *
  */
 
+#include "traceConv.h"
+
 #include <algorithm>
 #include <cassert>
 #include <chrono>
@@ -16,7 +18,6 @@
 
 #include "alibaba.h"
 #include "tencent.h"
-#include "traceConv.h"
 
 using namespace std;
 

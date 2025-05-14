@@ -1,12 +1,9 @@
-#pragma once 
+#pragma once
 
+#include <math.h> /* math functions */
 #include <stdlib.h>
-#include <math.h>                           /* math functions */
 
-
-inline static double sqr(double x) {
-  return x*x;
-}
+inline static double sqr(double x) { return x * x; }
 
 /**
  *
@@ -19,18 +16,19 @@ inline static double sqr(double x) {
  * @return
  */
 template <typename t>
-static inline int linreg(int n, const t x[], const t y[], double* m, double* b, double* r){
-  double   sumx = 0.0;                      /* sum of x     */
-  double   sumx2 = 0.0;                     /* sum of x**2  */
-  double   sumxy = 0.0;                     /* sum of x * y */
-  double   sumy = 0.0;                      /* sum of y     */
-  double   sumy2 = 0.0;                     /* sum of y**2  */
+static inline int linreg(int n, const t x[], const t y[], double* m, double* b,
+                         double* r) {
+  double sumx = 0.0;  /* sum of x     */
+  double sumx2 = 0.0; /* sum of x**2  */
+  double sumxy = 0.0; /* sum of x * y */
+  double sumy = 0.0;  /* sum of y     */
+  double sumy2 = 0.0; /* sum of y**2  */
 
-  for (int i=0;i<n;i++){
-    sumx  += x[i];
+  for (int i = 0; i < n; i++) {
+    sumx += x[i];
     sumx2 += sqr(x[i]);
     sumxy += x[i] * y[i];
-    sumy  += y[i];
+    sumy += y[i];
     sumy2 += sqr(y[i]);
   }
 
@@ -43,14 +41,12 @@ static inline int linreg(int n, const t x[], const t y[], double* m, double* b, 
     return 1;
   }
 
-  *m = (n * sumxy  -  sumx * sumy) / denom;
-  *b = (sumy * sumx2  -  sumx * sumxy) / denom;
-  if (r!=NULL) {
-    *r = (sumxy - sumx * sumy / n) /    /* compute correlation coeff */
-        sqrt((sumx2 - sqr(sumx)/n) *
-            (sumy2 - sqr(sumy)/n));
+  *m = (n * sumxy - sumx * sumy) / denom;
+  *b = (sumy * sumx2 - sumx * sumxy) / denom;
+  if (r != NULL) {
+    *r = (sumxy - sumx * sumy / n) / /* compute correlation coeff */
+         sqrt((sumx2 - sqr(sumx) / n) * (sumy2 - sqr(sumy) / n));
   }
 
   return 0;
 }
-

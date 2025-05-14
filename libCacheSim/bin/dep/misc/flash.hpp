@@ -6,7 +6,6 @@
 #include "../../utils/include/mysys.h"
 #include "internal.h"
 
-
 typedef struct {
   cache_t *ram;
   cache_t *disk;

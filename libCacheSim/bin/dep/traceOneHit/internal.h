@@ -21,7 +21,7 @@ struct arguments {
   char ofilepath[OFILEPATH_LEN];
   trace_type_e trace_type;
   char *trace_type_params;
-    char task[TASK_STR_LEN];
+  char task[TASK_STR_LEN];
   int64_t n_req; /* number of requests to process */
   bool verbose;
 
@@ -32,7 +32,6 @@ struct arguments {
 void parse_cmd(int argc, char *argv[], struct arguments *args);
 
 void cal_one_hit(reader_t *reader, char *ofilepath);
-
 
 #ifdef __cplusplus
 }

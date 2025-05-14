@@ -33,7 +33,7 @@ extern "C" {
 
 #define BIT(x) (1 << (x))
 #define GETNAME(var) #var
-#define OFFSETOF(type, element) ((size_t) & (((type *)0)->element))
+#define OFFSETOF(type, element) ((size_t)&(((type *)0)->element))
 #define OFFSETOF2(t, d) __builtin_offsetof(t, d)
 
 #define PASTE(a, b) a##b
@@ -106,7 +106,7 @@ extern "C" {
 #define DEBUG_ASSERT(x)
 #endif
 
-//#pragma message "current LOGLEVEL: " XSTR(LOGLEVEL)
+// #pragma message "current LOGLEVEL: " XSTR(LOGLEVEL)
 
 #if LOGLEVEL > DEBUG_LEVEL
 #define THIS_IS_DEBUG_FUNC return
@@ -189,12 +189,10 @@ extern "C" {
     (instance).has_##field = 1;      \
   } while (0)
 
-
 #define CHECK_PARSER_STATE(end)                                           \
   if (strlen(end) > 2) {                                                  \
     ERROR("param parsing error, find string \"%s\" after number\n", end); \
   }
-
 
 #ifdef __cplusplus
 }

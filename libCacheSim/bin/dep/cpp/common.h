@@ -4,7 +4,6 @@
 
 #include <cstring>
 
-
 struct trace_req {
   uint32_t ts;
   uint64_t obj_id;
@@ -12,7 +11,6 @@ struct trace_req {
   uint8_t op;
   uint32_t ns;  // namespace
 } __attribute__((packed));
-
 
 // enum op {
 //     OP_INVALID = 0,

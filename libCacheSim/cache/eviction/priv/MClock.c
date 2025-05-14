@@ -73,7 +73,8 @@ static int64_t MClock_get_n_obj(const cache_t *cache);
  */
 cache_t *MClock_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("MClock", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("MClock", ccache_params, cache_specific_params);
   cache->cache_init = MClock_init;
   cache->cache_free = MClock_free;
   cache->get = MClock_get;
@@ -334,7 +335,6 @@ static void MClock_evict(cache_t *cache, const request_t *req) {
       best_score = score;
     }
   }
-
 
   // static __thread int *n_choice_per_hand;
   // static __thread int n_evictions = 0;

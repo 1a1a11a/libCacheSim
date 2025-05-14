@@ -13,19 +13,21 @@ extern "C" {
 
 /* Error Codes */
 #define CSV_SUCCESS 0
-#define CSV_EPARSE 1   /* Parse error in strict mode */
-#define CSV_ENOMEM 2   /* Out of memory while increasing buffer size */
-#define CSV_ETOOBIG 3  /* Buffer larger than SIZE_MAX needed */
-#define CSV_EINVALID 4 /* Invalid code,should never be received from \
-                          csv_error*/
+#define CSV_EPARSE 1  /* Parse error in strict mode */
+#define CSV_ENOMEM 2  /* Out of memory while increasing buffer size */
+#define CSV_ETOOBIG 3 /* Buffer larger than SIZE_MAX needed */
+#define CSV_EINVALID                              \
+  4 /* Invalid code,should never be received from \
+       csv_error*/
 
 /* parser options */
-#define CSV_STRICT 1    /* enable strict mode */
-#define CSV_REPALL_NL 2 /* report all unquoted carriage returns and linefeeds \
-                         */
+#define CSV_STRICT 1 /* enable strict mode */
+#define CSV_REPALL_NL                                     \
+  2 /* report all unquoted carriage returns and linefeeds \
+     */
 #define CSV_STRICT_FINI                                                   \
   4                       /* causes csv_fini to return CSV_EPARSE if last \
-                             field is quoted and doesn't contain ending  \
+                             field is quoted and doesn't contain ending   \
                              quote */
 #define CSV_APPEND_NULL 8 /* Ensure that all fields are null-terminated */
 #define CSV_EMPTY_IS_NULL                      \

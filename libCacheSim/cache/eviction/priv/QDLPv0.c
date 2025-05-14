@@ -73,11 +73,11 @@ typedef struct {
 // ***********************************************************************
 
 static void QDLPv0_parse_params(cache_t *cache,
-                              const char *cache_specific_params);
+                                const char *cache_specific_params);
 static void QDLPv0_free(cache_t *cache);
 static bool QDLPv0_get(cache_t *cache, const request_t *req);
 static cache_obj_t *QDLPv0_find(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+                                const bool update_cache);
 static cache_obj_t *QDLPv0_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *QDLPv0_to_evict(cache_t *cache, const request_t *req);
 static void QDLPv0_evict(cache_t *cache, const request_t *req);
@@ -100,8 +100,9 @@ static void QDLPv0_clock_evict(cache_t *cache, const request_t *req);
  * @param cache_specific_params QDLPv0 specific parameters, should be NULL
  */
 cache_t *QDLPv0_init(const common_cache_params_t ccache_params,
-                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("QDLPv0", ccache_params, cache_specific_params);
+                     const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("QDLPv0", ccache_params, cache_specific_params);
   cache->cache_init = QDLPv0_init;
   cache->cache_free = QDLPv0_free;
   cache->get = QDLPv0_get;
@@ -212,7 +213,7 @@ static bool QDLPv0_get(cache_t *cache, const request_t *req) {
  * @return true on hit, false on miss
  */
 static cache_obj_t *QDLPv0_find(cache_t *cache, const request_t *req,
-                              const bool update_cache) {
+                                const bool update_cache) {
   QDLPv0_params_t *params = cache->eviction_params;
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
   cache_obj_t *ret = cache_obj;
@@ -473,7 +474,7 @@ static const char *QDLPv0_current_params(QDLPv0_params_t *params) {
 }
 
 static void QDLPv0_parse_params(cache_t *cache,
-                              const char *cache_specific_params) {
+                                const char *cache_specific_params) {
   QDLPv0_params_t *params = (QDLPv0_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;

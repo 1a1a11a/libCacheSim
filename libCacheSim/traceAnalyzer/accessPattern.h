@@ -12,7 +12,6 @@
  *
  */
 
-
 #include "../include/libCacheSim/logging.h"
 #include "../include/libCacheSim/request.h"
 #include "struct.h"
@@ -29,7 +28,6 @@ class AccessPattern {
    */
   explicit AccessPattern(int sample_ratio = 1001)
       : sample_ratio_(sample_ratio) {
-
     if (sample_ratio_ < 1) {
       ERROR(
           "sample_ratio samples 1/sample_ratio objects, and should be at least "
