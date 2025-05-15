@@ -8,6 +8,7 @@
 #include "../../dataStructure/splay.h"
 #include "../../dataStructure/splay_tuple.h"
 #include "../../include/libCacheSim/reader.h"
+#include "../../include/libCacheSim/hashmap.h"
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
@@ -49,7 +50,11 @@ struct PARAM {
   sTree_tuple* prio_tree;  // root of the splay tree
   sTree* distance_tree;
   ReuseHistogram* data;
+  // <<<<<<<
   GHashTable* lookup_hash;
+  // =======
+  hashmap_t* new_lookup_hash;
+  // >>>>>>>>
   reader_t *reader;
   int64_t (*compute_distance)(struct PARAM *, request_t *, uint64_t);
   void (*mrc_algo)(struct PARAM*, char* path);
