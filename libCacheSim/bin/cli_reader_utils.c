@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "../include/libCacheSim/hashmap.h"
 #include "../include/libCacheSim/reader.h"
 #include "../utils/include/mystr.h"
 
@@ -238,11 +239,30 @@ bool should_disable_obj_metadata(reader_t *reader) {
 }
 #undef N_TEST
 
+// copied from gLib 2.84.0 glib/ghash.c:2647
+// glib uses pointers everywhere, we do not
+static hashmap_uint32_t obj_id_hasher(const hashmap_uint32_t seed,
+                                      const void *const s,
+                                      const hashmap_uint32_t len) {
+  return (hashmap_uint32_t)(((obj_id_t)s >> 32) ^ ((obj_id_t)s & 0xffffffffU));
+}
+
+// also, do direct comparisions instead of mangling with pointers
+static int obj_id_comparer(const void *const a, const hashmap_uint32_t a_len,
+                           const void *const b, const hashmap_uint32_t b_len) {
+  return (const obj_id_t)a == (const obj_id_t)b;
+}
+
 void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
                           int64_t *wss_byte) {
   reset_reader(reader);
   request_t *req = new_request();
-  GHashTable *obj_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+  hashmap_create_options_t obj_table_create_options = {
+      .initial_capacity = 16,
+      .comparer = obj_id_comparer,
+      .hasher = obj_id_hasher};
+  struct hashmap_s new_obj_table;
+  hashmap_create_ex(obj_table_create_options, &new_obj_table);
   *wss_obj = 0;
   *wss_byte = 0;
 
@@ -267,11 +287,12 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
       continue;
     }
 
-    if (g_hash_table_contains(obj_table, (gconstpointer)req->obj_id)) {
+    if (hashmap_get(&new_obj_table, (const void *)(req->obj_id),
+                    sizeof(obj_id_t)) != NULL) {
       continue;
     }
 
-    g_hash_table_add(obj_table, (gpointer)req->obj_id);
+    hashmap_put(&new_obj_table, (void *)(req->obj_id), sizeof(obj_id_t), req);
 
     *wss_obj += 1;
     *wss_byte += req->obj_size;
@@ -289,7 +310,7 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
          (long long)*wss_byte);
   }
 
-  g_hash_table_destroy(obj_table);
+  hashmap_destroy(&new_obj_table);
   free_request(req);
   reset_reader(reader);
 }

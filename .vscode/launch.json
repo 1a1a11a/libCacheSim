@@ -5,8 +5,15 @@
             "name": "Debug libCacheSim",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/_build_dbg/bin/cachesim",
-            "args": ["data/cloudPhysicsIO.vscsi", "vscsi", "lru", "100m,1gb"],
+            "program": "${workspaceFolder}/build/bin/cachesim",
+            "args": [
+                "${workspaceFolder}/data/cloudPhysicsIO.vscsi",
+                "vscsi",
+                "fifo,lru,arc,qdlp",
+                "0.01,0.05,0.1,0.2",
+                "--ignore-obj-size",
+                "1"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
@@ -18,9 +25,7 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
-            ],
-            "preLaunchTask": "build-debug"
+            ]
         }
     ]
 }
-
