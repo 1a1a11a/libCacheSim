@@ -55,8 +55,8 @@ int64_t compute_distance_fixed_size(struct PARAM *params, request_t *req, uint64
       last_max = max->Tmax;
       // Remove the key from prio_tree and update lookup and distance_tree.
       params->prio_tree = splay_delete_t(max, params->prio_tree);
-      void *hash_value_inner = hashmap_get(params->new_lookup_hash, (const void *)id, sizeof(obj_id_t));
-      hashmap_remove(params->new_lookup_hash, (const void *)id, sizeof(obj_id_t));
+      void *hash_value_inner = hashmap_get(params->lookup_hash, (const void *)id, sizeof(obj_id_t));
+      hashmap_remove(params->lookup_hash, (const void *)id, sizeof(obj_id_t));
 
       params->distance_tree = splay_delete((long long)hash_value_inner, params->distance_tree);
       if (params->prio_tree)
@@ -126,8 +126,8 @@ void generate_shards_mrc(struct PARAM *params, char *path) {
       .initial_capacity = 16,
       .comparer = obj_id_comparer,
       .hasher = obj_id_hasher};
-  params->new_lookup_hash = malloc(sizeof(hashmap_t));
-  hashmap_create_ex(lookup_hash_create_options, params->new_lookup_hash);
+  params->lookup_hash = malloc(sizeof(hashmap_t));
+  hashmap_create_ex(lookup_hash_create_options, params->lookup_hash);
 
   // Start the simulation.
   uint64_t read_req=simulate_shards_mrc(params);
@@ -141,8 +141,8 @@ void generate_shards_mrc(struct PARAM *params, char *path) {
   adjust_histogram(params->data, n_req, params->rate);
   
   export_histogram_to_csv(params->data, params->rate, path);
-  hashmap_destroy(params->new_lookup_hash);
-  free(params->new_lookup_hash);
+  hashmap_destroy(params->lookup_hash);
+  free(params->lookup_hash);
   free_sTree_t(params->prio_tree);
   free_sTree(params->distance_tree);
   close_reader(params->reader);
