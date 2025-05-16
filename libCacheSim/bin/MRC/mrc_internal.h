@@ -9,6 +9,7 @@
 #include "../../dataStructure/splay_tuple.h"
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/hashmap.h"
+#include "../../include/libCacheSim/hashmap_defs.in"
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/cache.h"
 #include "../../include/libCacheSim/evictionAlgo.h"

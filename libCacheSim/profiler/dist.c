@@ -12,6 +12,8 @@ extern "C" {
 #include <sys/stat.h>
 
 #include "../dataStructure/splay.h"
+#include "../include/libCacheSim/hashmap.h"
+#include "../include/libCacheSim/hashmap_defs.in"
 #include "../include/libCacheSim/dist.h"
 #include "../include/libCacheSim/macro.h"
 
@@ -30,10 +32,11 @@ extern "C" {
  * @param dist_type     DIST_SINCE_LAST_ACCESS or DIST_SINCE_FIRST_ACCESS
  * @return              distance to last access
  */
-int64_t get_access_dist_add_req(const request_t *req, GHashTable *hash_table,
+int64_t get_access_dist_add_req(const request_t *req, hashmap_t *hash_table,
                                 const int64_t curr_ts,
                                 const dist_type_e dist_type) {
-  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
+  void *gp =
+    hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
   int64_t ret = -1;
   if (gp == NULL) {
     // it has not been requested before
@@ -46,8 +49,8 @@ int64_t get_access_dist_add_req(const request_t *req, GHashTable *hash_table,
 
   if (dist_type == DIST_SINCE_LAST_ACCESS) {
     /* update last access time */
-    g_hash_table_insert(hash_table, GSIZE_TO_POINTER(req->obj_id),
-                        GSIZE_TO_POINTER((gsize)curr_ts));
+    hashmap_put(hash_table, (const void *)(req->obj_id),
+                sizeof(obj_id_t), (void *)curr_ts);
   } else if (dist_type == DIST_SINCE_FIRST_ACCESS) {
     /* do nothing */
   } else {
@@ -70,9 +73,10 @@ int64_t get_access_dist_add_req(const request_t *req, GHashTable *hash_table,
  * @return                  stack distance
  */
 int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
-                               GHashTable *hash_table, const int64_t curr_ts,
+                               hashmap_t *hash_table, const int64_t curr_ts,
                                int64_t *last_access_ts) {
-  gpointer gp = g_hash_table_lookup(hash_table, GSIZE_TO_POINTER(req->obj_id));
+  void *gp =
+    hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
 
   int64_t ret = -1;
   sTree *newtree;
@@ -85,7 +89,7 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
     newtree = insert(curr_ts, *splay_tree);
   } else {
     // not first time access
-    int64_t old_ts = (int64_t)GPOINTER_TO_SIZE(gp);
+    int64_t old_ts = (int64_t)gp;
     if (last_access_ts != NULL) {
       *last_access_ts = old_ts;
     }
@@ -95,8 +99,8 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
     newtree = insert(curr_ts, newtree);
   }
 
-  g_hash_table_insert(hash_table, GSIZE_TO_POINTER(req->obj_id),
-                      (gpointer)GSIZE_TO_POINTER((gsize)curr_ts));
+  hashmap_put(hash_table, (const void *)(req->obj_id),
+              sizeof(obj_id_t), (void *)curr_ts);
 
   *splay_tree = newtree;
 
@@ -123,8 +127,13 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
     }
   }
 
-  GHashTable *hash_table =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  hashmap_t *hash_table = malloc(sizeof(hashmap_t));
+  hashmap_create_options_t options = {
+    .initial_capacity = 16,
+    .comparer = obj_id_comparer,
+    .hasher = obj_id_hasher
+  };
+  hashmap_create_ex(options, hash_table);
 
   // create splay tree
   sTree *splay_tree = NULL;
@@ -153,7 +162,8 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
 
   // clean up
   free_request(req);
-  g_hash_table_destroy(hash_table);
+  hashmap_destroy(hash_table);
+  free(hash_table);
   free_sTree(splay_tree);
   reset_reader(reader);
   return stack_dist_array;
@@ -167,8 +177,13 @@ int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type,
   *array_size = get_num_of_req(reader);
   int32_t *dist_array = malloc(sizeof(int32_t) * get_num_of_req(reader));
 
-  GHashTable *hash_table =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  hashmap_t *hash_table = malloc(sizeof(hashmap_t));
+  hashmap_create_options_t options = {
+    .initial_capacity = 16,
+    .comparer = obj_id_comparer,
+    .hasher = obj_id_hasher
+  };
+  hashmap_create_ex(options, hash_table);
 
   read_one_req(reader, req);
 
@@ -186,7 +201,8 @@ int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type,
 
   // clean up
   free_request(req);
-  g_hash_table_destroy(hash_table);
+  hashmap_destroy(hash_table);
+  free(hash_table);
   reset_reader(reader);
 
   return dist_array;
@@ -243,20 +259,31 @@ int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
 }
 
 void cnt_dist(const int32_t *dist_array, const int64_t array_size,
-              GHashTable *hash_table) {
+              hashmap_t *hash_table) {
   for (int64_t i = 0; i < array_size; i++) {
     int64_t dist = dist_array[i] == -1 ? INT64_MAX : dist_array[i];
-    gpointer gp_dist = GSIZE_TO_POINTER((gsize)dist);
-    int64_t old_cnt = (int64_t)g_hash_table_lookup(hash_table, gp_dist);
-    g_hash_table_replace(hash_table, gp_dist, GSIZE_TO_POINTER(old_cnt + 1));
+    int64_t old_cnt = (int64_t)hashmap_get(hash_table, (const void *)dist, sizeof(int64_t));
+    hashmap_put(hash_table, (const void *)dist, sizeof(int64_t),
+                (void *)(old_cnt + 1));
   }
 }
 
-void _write_dist_cnt(gpointer k, gpointer v, gpointer user_data) {
-  int64_t dist = (int64_t)GPOINTER_TO_SIZE(k);
-  int64_t cnt = (int64_t)GPOINTER_TO_SIZE(v);
+
+/**
+ * void _write_dist_cnt(gpointer k, gpointer v, gpointer user_data) {
+ * int64_t dist = (int64_t)GPOINTER_TO_SIZE(k);
+ * int64_t cnt = (int64_t)GPOINTER_TO_SIZE(v);
+ * FILE *file = (FILE *)user_data;
+ * fprintf(file, "%ld:%ld, ", (long)dist, (long)cnt);
+ * }
+ **/
+
+static int _write_dist_cnt(void *const user_data, struct hashmap_element_s *const e) {
   FILE *file = (FILE *)user_data;
-  fprintf(file, "%ld:%ld, ", (long)dist, (long)cnt);
+  int64_t dist = (long)(e->key);
+  int64_t cnt = (long)(e->data);
+  fprintf(file, "%ld:%ld, ", dist, cnt);
+  return 1;
 }
 
 void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
@@ -268,14 +295,20 @@ void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
   sprintf(file_path, "%s.%s.cnt", ofilepath, g_dist_type_name[dist_type]);
   FILE *file = fopen(file_path, "w");
 
-  GHashTable *hash_table =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  hashmap_t *hash_table = malloc(sizeof(hashmap_t));
+  hashmap_create_options_t options = {
+    .initial_capacity = 16,
+    .comparer = obj_id_comparer,
+    .hasher = obj_id_hasher
+  };
+  hashmap_create_ex(options, hash_table);
 
   cnt_dist(dist_array, get_num_of_req(reader), hash_table);
 
-  g_hash_table_foreach(hash_table, (GHFunc)_write_dist_cnt, file);
+  hashmap_iterate_pairs(hash_table, _write_dist_cnt, file);
 
-  g_hash_table_destroy(hash_table);
+  hashmap_destroy(hash_table);
+  free(hash_table);
 
   fclose(file);
   free(file_path);

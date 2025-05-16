@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "../include/libCacheSim/hashmap.h"
+#include "../include/libCacheSim/hashmap_defs.in"
 #include "../include/libCacheSim/reader.h"
 #include "../utils/include/mystr.h"
 
@@ -239,19 +240,6 @@ bool should_disable_obj_metadata(reader_t *reader) {
 }
 #undef N_TEST
 
-// copied from gLib 2.84.0 glib/ghash.c:2647
-// glib uses pointers everywhere, we do not
-static hashmap_uint32_t obj_id_hasher(const hashmap_uint32_t seed,
-                                      const void *const s,
-                                      const hashmap_uint32_t len) {
-  return (hashmap_uint32_t)(((obj_id_t)s >> 32) ^ ((obj_id_t)s & 0xffffffffU));
-}
-
-// also, do direct comparisions instead of mangling with pointers
-static int obj_id_comparer(const void *const a, const hashmap_uint32_t a_len,
-                           const void *const b, const hashmap_uint32_t b_len) {
-  return (const obj_id_t)a == (const obj_id_t)b;
-}
 
 void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
                           int64_t *wss_byte) {

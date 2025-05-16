@@ -92,19 +92,6 @@ uint64_t simulate_shards_mrc(struct PARAM *params) {
   return n_req;
 }
 
-// copied from gLib 2.84.0 glib/ghash.c:2647
-// glib uses pointers everywhere, we do not
-static hashmap_uint32_t obj_id_hasher(const hashmap_uint32_t seed,
-                                      const void *const s,
-                                      const hashmap_uint32_t len) {
-  return (hashmap_uint32_t)(((obj_id_t)s >> 32) ^ ((obj_id_t)s & 0xffffffffU));
-}
-
-// also, do direct comparisions instead of mangling with pointers
-static int obj_id_comparer(const void *const a, const hashmap_uint32_t a_len,
-                           const void *const b, const hashmap_uint32_t b_len) {
-  return (const obj_id_t)a == (const obj_id_t)b;
-}
 
 void generate_shards_mrc(struct PARAM *params, char *path) {
   srand(time(NULL));

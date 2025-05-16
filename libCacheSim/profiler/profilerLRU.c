@@ -7,6 +7,8 @@
 //
 
 #include "../dataStructure/splay.h"
+#include "../include/libCacheSim/hashmap.h"
+#include "../include/libCacheSim/hashmap_defs.in"
 #include "../include/libCacheSim/profilerLRU.h"
 
 #ifdef __cplusplus
@@ -14,7 +16,7 @@ extern "C" {
 #endif
 
 int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
-                               GHashTable *hash_table, const int64_t curr_ts,
+                               hashmap_t *hash_table, const int64_t curr_ts,
                                int64_t *last_access_ts);
 
 int64_t *_get_lru_hit_cnt(reader_t *reader, int64_t size);
@@ -61,8 +63,13 @@ int64_t *_get_lru_hit_cnt(reader_t *reader, int64_t size) {
   request_t *req = new_request();
 
   // create hash table and splay tree
-  GHashTable *hash_table =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+  hashmap_t *hash_table = malloc(sizeof(hashmap_t));
+  hashmap_create_options_t options = {
+    .initial_capacity = 16,
+    .comparer = obj_id_comparer,
+    .hasher = obj_id_hasher
+  };
+  hashmap_create_ex(options, hash_table);
   sTree *splay_tree = NULL;
 
   read_one_req(reader, req);
@@ -89,7 +96,8 @@ int64_t *_get_lru_hit_cnt(reader_t *reader, int64_t size) {
 
   // clean up
   free_request(req);
-  g_hash_table_destroy(hash_table);
+  hashmap_destroy(hash_table);
+  free(hash_table);
   free_sTree(splay_tree);
   reset_reader(reader);
   return hit_count_array;
