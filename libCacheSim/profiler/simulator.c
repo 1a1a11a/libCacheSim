@@ -17,6 +17,7 @@ extern "C" {
 #include "../cache/cacheUtils.h"
 #include "../include/libCacheSim/evictionAlgo.h"
 #include "../include/libCacheSim/plugin.h"
+#include "../include/libCacheSim/threadpool.h"
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
 
@@ -29,14 +30,14 @@ typedef struct simulator_multithreading_params {
   reader_t *warmup_reader;
   int warmup_sec; /* num of seconds of requests used for warming up cache */
   cache_stat_t *result;
-  GMutex mtx; /* prevent simultaneous write to progress */
-  gint *progress;
-  gpointer other_data;
+  pthread_mutex_t mtx; /* prevent simultaneous write to progress */
+  int *progress;
+  void *other_data;
   bool free_cache_when_finish;
   bool use_random_seed;
 } sim_mt_params_t;
 
-static void _simulate(gpointer data, gpointer user_data) {
+static void _simulate(void *data, void *user_data) {
   sim_mt_params_t *params = (sim_mt_params_t *)user_data;
   int idx = GPOINTER_TO_UINT(data) - 1;
   if (params->use_random_seed) {
@@ -126,9 +127,9 @@ static void _simulate(gpointer data, gpointer user_data) {
   result[idx].occupied_byte = local_cache->occupied_byte;
 
   // report progress
-  g_mutex_lock(&(params->mtx));
+  pthread_mutex_lock(&(params->mtx));
   (*(params->progress))++;
-  g_mutex_unlock(&(params->mtx));
+  pthread_mutex_unlock(&(params->mtx));
 
   // clean up
   if (params->free_cache_when_finish) {
@@ -189,9 +190,10 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache, in
   params->free_cache_when_finish = true;
   params->progress = &progress;
   params->use_random_seed = use_random_seed;
-  g_mutex_init(&(params->mtx));
+  pthread_mutex_init(&(params->mtx), NULL);
 
   // build the thread pool
+
   GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
   ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
 
@@ -221,7 +223,7 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache, in
 
   // clean up
   g_thread_pool_free(gthread_pool, FALSE, TRUE);
-  g_mutex_clear(&(params->mtx));
+  pthread_mutex_destroy(&(params->mtx));
   my_free(sizeof(cache_t *) * num_of_sizes, params->caches);
   my_free(sizeof(sim_mt_params_t), params);
 
@@ -266,7 +268,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[], in
   params->result = result;
   params->free_cache_when_finish = free_cache_when_finish;
   params->progress = &progress;
-  g_mutex_init(&(params->mtx));
+  pthread_mutex_init(&(params->mtx), NULL);
 
   // build the thread pool
   GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
@@ -297,7 +299,7 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[], in
 
   // clean up
   g_thread_pool_free(gthread_pool, FALSE, TRUE);
-  g_mutex_clear(&(params->mtx));
+  pthread_mutex_destroy(&(params->mtx));
   my_free(sizeof(sim_mt_params_t), params);
 
   // user is responsible for free-ing the result
@@ -327,7 +329,7 @@ cache_stat_t *simulate_with_multi_caches_scaling(reader_t **readers, cache_t *ca
   params->result = result;
   params->free_cache_when_finish = free_cache_when_finish;
   params->progress = &progress;
-  g_mutex_init(&(params->mtx));
+  pthread_mutex_init(&(params->mtx), NULL);
 
   GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
   ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
@@ -352,7 +354,7 @@ cache_stat_t *simulate_with_multi_caches_scaling(reader_t **readers, cache_t *ca
   }
 
   g_thread_pool_free(gthread_pool, FALSE, TRUE);
-  g_mutex_clear(&(params->mtx));
+  pthread_mutex_destroy(&(params->mtx));
   my_free(sizeof(sim_mt_params_t), params);
   for (int i=0; i<num_of_caches; i++) {
     result[i].sampler_ratio = readers[i]->sampler->sampling_ratio;
