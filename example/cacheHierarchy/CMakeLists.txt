@@ -28,3 +28,15 @@ target_link_libraries(layeredCache
                     -Wl,--no-whole-archive
                     dl m ${GLib_LIBRARY} ${ZSTD_LIBRARIES} pthread)
 
+# Skip unsupported linker options for macOS (whole-archive, no-whole-archive)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_libraries(layeredCache 
+                        -Wl,--whole-archive 
+                        libCacheSim 
+                        -Wl,--no-whole-archive
+                        dl m ${GLib_LIBRARY} ${ZSTD_LIBRARIES} pthread)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_link_libraries(layeredCache 
+                        libCacheSim 
+                        dl m ${GLib_LIBRARY} ${ZSTD_LIBRARIES} pthread)
+endif()

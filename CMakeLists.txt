@@ -349,7 +349,11 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(${PROJECT_NAME} ${LIB_SOURCE})
 # target_compile_options(${PROJECT_NAME} PRIVATE -fPIC)
-target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic)
+
+# Skip unsupported linker option for macOS (export-dynamic)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic)
+endif()
 
 
 # add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE})

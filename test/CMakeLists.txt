@@ -35,10 +35,14 @@ add_executable(testUtils test_utils.c)
 target_link_libraries(testUtils ${coreLib})
 
 add_executable(testMrcProfiler test_mrcProfiler.cpp)
+
+# Skip unsupported linker options for macOS (export-dynamic, whole-archive, no-whole-archive)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 target_link_libraries(testMrcProfiler mrcProfilerLib m zstd dl pthread -Wl,--whole-archive libCacheSim -Wl,--no-whole-archive ${coreLib})
 target_link_options(testMrcProfiler PRIVATE "-Wl,--export-dynamic")
-
-
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    target_link_libraries(testMrcProfiler mrcProfilerLib m zstd dl pthread ${coreLib})
+endif()
 
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
 add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
