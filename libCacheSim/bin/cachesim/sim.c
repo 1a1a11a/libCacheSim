@@ -80,8 +80,12 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
   char size_str[8];
 
   if (!ignore_obj_size) convert_size_to_str(cache->cache_size, size_str);
+
+#if !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif // !defined(__clang__)
+
   if (!ignore_obj_size) {
     snprintf(output_str, 1024,
              "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
@@ -98,7 +102,10 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
              (double)req_cnt / 1000000.0 / runtime);
   }
 
+#if !defined(__clang__)
 #pragma GCC diagnostic pop
+#endif // !defined(__clang__)
+
   printf("%s", output_str);
   char *output_dir = rindex(ofilepath, '/');
   if (output_dir != NULL) {
