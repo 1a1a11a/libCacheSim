@@ -7,14 +7,15 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-static threadpool_job_t *threadpool_job_create(func_t func, void *arg) {
+static threadpool_job_t *threadpool_job_create(func_t func, void *arg1, void *arg2) {
   threadpool_job_t *job;
 
   if (func == NULL) return NULL;
 
   job = malloc(sizeof(*job));
   job->func = func;
-  job->arg = arg;
+  job->arg1 = arg1;
+  job->arg2 = arg2;
   job->next = NULL;
   return job;
 }
@@ -59,7 +60,7 @@ static void *threadpool_worker(void *arg) {
     pthread_mutex_unlock(&(tm->job_mutex));
 
     if (job != NULL) {
-      job->func(job->arg);
+      job->func(job->arg1, job->arg2);
       threadpool_job_destroy(job);
     }
 
@@ -108,6 +109,7 @@ bool threadpool_create(threadpool_t *tm, size_t num) {
   return true;
 }
 
+// do not call free on tm after calling this function
 void threadpool_destroy(threadpool_t *tm) {
   threadpool_job_t *job;
   threadpool_job_t *job2;
@@ -135,12 +137,14 @@ void threadpool_destroy(threadpool_t *tm) {
   free(tm);
 }
 
-bool threadpool_push(threadpool_t *tm, func_t func, void *arg) {
+// similar to GThreadPool, we make there 2 arguments
+// but we have them pushed to pool together
+bool threadpool_push(threadpool_t *tm, func_t func, void *arg1, void *arg2) {
   threadpool_job_t *job;
 
   if (tm == NULL) return false;
 
-  job = threadpool_job_create(func, arg);
+  job = threadpool_job_create(func, arg1, arg2);
   if (job == NULL) return false;
 
   pthread_mutex_lock(&(tm->job_mutex));

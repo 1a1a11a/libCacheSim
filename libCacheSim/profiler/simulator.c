@@ -37,9 +37,10 @@ typedef struct simulator_multithreading_params {
   bool use_random_seed;
 } sim_mt_params_t;
 
-static void _simulate(void *data, void *user_data) {
+static void _simulate(void *user_data, void *data) {
   sim_mt_params_t *params = (sim_mt_params_t *)user_data;
-  int idx = GPOINTER_TO_UINT(data) - 1;
+  // int idx = GPOINTER_TO_UINT(data) - 1;
+  int idx = ((unsigned int) (unsigned long) (data)) - 1;
   if (params->use_random_seed) {
     set_rand_seed(rand());
   } else {
@@ -194,15 +195,21 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache, in
 
   // build the thread pool
 
-  GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
-  ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
+  // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
+  // ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
+  threadpool_t *thread_pool = (threadpool_t *)malloc(sizeof(threadpool_t));
+  ASSERT_NOT_NULL(thread_pool, "cannot create thread pool in simulator\n");
+  ASSERT_TRUE(threadpool_create(thread_pool, num_of_threads),
+              "cannot create thread pool in simulator\n");
 
   // start computation
   params->caches = my_malloc_n(cache_t *, num_of_sizes);
   for (int i = 1; i < num_of_sizes + 1; i++) {
     params->caches[i - 1] = create_cache_with_new_size(cache, cache_sizes[i - 1]);
     result[i - 1].cache_size = cache_sizes[i - 1];
-    ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
+    // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
+    //          "cannot push data into thread_pool in get_miss_ratio\n");
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, (void *)i),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -222,10 +229,11 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache, in
   }
 
   // clean up
-  g_thread_pool_free(gthread_pool, FALSE, TRUE);
-  pthread_mutex_destroy(&(params->mtx));
+  // g_thread_pool_free(gthread_pool, FALSE, TRUE);
+  threadpool_destroy(thread_pool);
   my_free(sizeof(cache_t *) * num_of_sizes, params->caches);
   my_free(sizeof(sim_mt_params_t), params);
+  pthread_mutex_destroy(&(params->mtx));
 
   // user is responsible for free-ing the result
   return result;
@@ -271,14 +279,19 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[], in
   pthread_mutex_init(&(params->mtx), NULL);
 
   // build the thread pool
-  GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
-  ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
+  // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
+  // ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
+  threadpool_t *thread_pool = (threadpool_t *)malloc(sizeof(threadpool_t));
+  ASSERT_NOT_NULL(thread_pool, "cannot create thread pool in simulator\n");
+  ASSERT_TRUE(threadpool_create(thread_pool, num_of_threads),
+              "cannot create thread pool in simulator\n");
 
   // start computation
   for (i = 1; i < num_of_caches + 1; i++) {
     result[i - 1].cache_size = caches[i - 1]->cache_size;
-
-    ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
+    // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
+    //          "cannot push data into thread_pool in get_miss_ratio\n");
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, (void *)i),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -298,9 +311,10 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader, cache_t *caches[], in
   }
 
   // clean up
-  g_thread_pool_free(gthread_pool, FALSE, TRUE);
-  pthread_mutex_destroy(&(params->mtx));
+  // g_thread_pool_free(gthread_pool, FALSE, TRUE);
+  threadpool_destroy(thread_pool);
   my_free(sizeof(sim_mt_params_t), params);
+  pthread_mutex_destroy(&(params->mtx));
 
   // user is responsible for free-ing the result
   return result;
@@ -331,12 +345,19 @@ cache_stat_t *simulate_with_multi_caches_scaling(reader_t **readers, cache_t *ca
   params->progress = &progress;
   pthread_mutex_init(&(params->mtx), NULL);
 
-  GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
-  ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
+  // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate, (gpointer)params, num_of_threads, TRUE, NULL);
+  // ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
+  threadpool_t *thread_pool = (threadpool_t *)malloc(sizeof(threadpool_t));
+  ASSERT_NOT_NULL(thread_pool, "cannot create thread pool in simulator\n");
+  ASSERT_TRUE(threadpool_create(thread_pool, num_of_threads),
+              "cannot create thread pool in simulator\n");
 
+  
   for (int i = 1; i < num_of_caches + 1; i++) {
     result[i - 1].cache_size = caches[i - 1]->cache_size;
-    ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
+    // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
+    //          "cannot push data into thread_pool in get_miss_ratio\n");
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, (void *)i),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -353,9 +374,10 @@ cache_stat_t *simulate_with_multi_caches_scaling(reader_t **readers, cache_t *ca
     print_progress((double)progress / (double)(num_of_caches - 1) * 100);
   }
 
-  g_thread_pool_free(gthread_pool, FALSE, TRUE);
-  pthread_mutex_destroy(&(params->mtx));
+  // g_thread_pool_free(gthread_pool, FALSE, TRUE);
+  threadpool_destroy(thread_pool);
   my_free(sizeof(sim_mt_params_t), params);
+  pthread_mutex_destroy(&(params->mtx));
   for (int i=0; i<num_of_caches; i++) {
     result[i].sampler_ratio = readers[i]->sampler->sampling_ratio;
   }

@@ -9,14 +9,16 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef void (*func_t)(void *arg);
+typedef void (*func_t)(void *arg1, void *arg2);
 
-// linked list of waiting threads
 struct threadpool_job {
   func_t func;
-  void *arg;
+  void *arg1;
+  void *arg2;
   struct threadpool_job *next;
 };
+// linked list of waiting threads
+// similar to GThreadPool we make there 2 arguments
 typedef struct threadpool_job threadpool_job_t;
 
 struct threadpool {
@@ -34,7 +36,7 @@ typedef struct threadpool threadpool_t;
 bool threadpool_create(threadpool_t *tm, size_t num);
 void threadpool_destroy(threadpool_t *tm);
 
-bool threadpool_push(threadpool_t *tm, func_t func, void *arg);
+bool threadpool_push(threadpool_t *tm, func_t func, void *arg, void *arg2);
 void threadpool_wait(threadpool_t *tm);
 
 #endif
