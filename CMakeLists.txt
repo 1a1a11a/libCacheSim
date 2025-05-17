@@ -3,6 +3,8 @@ project(libCacheSim)
 set(DESCRIPTION "a high performance cache simulation library")
 set(PROJECT_WEB "http://cachesim.com")
 
+find_package(PkgConfig REQUIRED)
+
 set(${PROJECT_NAME}_VERSION_MAJOR 0)
 set(${PROJECT_NAME}_VERSION_MINOR 1)
 set(${PROJECT_NAME}_VERSION_PATCH 0)
@@ -39,7 +41,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     add_definitions(-DOS_DARWIN)
     set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "/opt/homebrew/include/")
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/opt/homebrew/")
-
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     add_definitions(-DOS_LINUX)
 else()
@@ -142,7 +143,7 @@ set(LIBS ${LIBS} ${ARGP_LIBRARY})
 
 if(OPT_SUPPORT_ZSTD_TRACE)
     add_compile_definitions(SUPPORT_ZSTD_TRACE=1)
-    find_package(ZSTD)
+    pkg_check_modules(ZSTD REQUIRED libzstd)
 
     # https://stackoverflow.com/questions/61377055/cannot-find-gflags-gflags-h-while-building-library-osx/61379123#61379123
     include_directories(${ZSTD_INCLUDE_DIR})
@@ -151,6 +152,7 @@ if(OPT_SUPPORT_ZSTD_TRACE)
         message(FATAL_ERROR "zstd not found")
     endif()
 
+    link_directories(${ZSTD_LIBRARY_DIRS})
     link_libraries(${ZSTD_LIBRARIES})
     message(STATUS "ZSTD_INCLUDE_DIR ${ZSTD_INCLUDE_DIR}, ZSTD_LIBRARIES ${ZSTD_LIBRARIES}")
 else()
