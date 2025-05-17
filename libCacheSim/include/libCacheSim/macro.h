@@ -82,20 +82,20 @@ extern "C" {
   do {                                       \
     if ((a)op(b)) {                          \
       printf("%s: %d ", __FILE__, __LINE__); \
-      printf(FMT, ##__VA_ARGS__);            \
+      printf(FMT __VA_OPT__(,) __VA_ARGS__);            \
       fflush(stdout);                        \
       abort();                               \
     }                                        \
   } while (0)
 
 #define ASSERT_NOT_NULL(x, FMT, ...) \
-  CHECK_CONDITION(x, ==, NULL, FMT, ##__VA_ARGS__)
-
+  CHECK_CONDITION(x, ==, NULL, FMT __VA_OPT__(,) __VA_ARGS__)
 #define ASSERT_EQUAL(a, b, FMT, ...) \
-  CHECK_CONDITION(a, !=, b, FMT, ##__VA_ARGS__)
+  CHECK_CONDITION(a, !=, b, FMT __VA_OPT__(,) __VA_ARGS__)
 #define ASSERT_TRUE(x, FMT, ...) \
-  CHECK_CONDITION(x, !=, true, FMT, ##__VA_ARGS__)
-#define ASSERT_ZERO(x, FMT, ...) CHECK_CONDITION(a, !=, 0, FMT, ##__VA_ARGS__)
+  CHECK_CONDITION(x, !=, true, FMT __VA_OPT__(,) __VA_ARGS__)
+#define ASSERT_ZERO(x, FMT, ...) \
+  CHECK_CONDITION(a, !=, 0, FMT, __VA_OPT__(,) __VA_ARGS__)
 
 #if LOGLEVEL < INFO_LEVEL
 #define DEBUG_ASSERT(x) \

@@ -22,7 +22,7 @@ extern pthread_mutex_t log_mtx;
   do {                                     \
     pthread_mutex_lock(&log_mtx);          \
     log_header(level, __FILE__, __LINE__); \
-    fprintf(stderr, __VA_ARGS__);          \
+    fprintf(stderr __VA_OPT__(,) __VA_ARGS__);          \
     fprintf(stderr, "%s", NORMAL);         \
     fflush(stderr);                        \
     pthread_mutex_unlock(&log_mtx);        \
