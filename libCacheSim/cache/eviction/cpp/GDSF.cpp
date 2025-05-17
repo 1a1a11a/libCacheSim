@@ -23,11 +23,13 @@ extern "C" {
 // ****                                                               ****
 // ***********************************************************************
 
-cache_t *GDSF_init(const common_cache_params_t ccache_params, const char *cache_specific_params);
+cache_t *GDSF_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params);
 static void GDSF_free(cache_t *cache);
 static bool GDSF_get(cache_t *cache, const request_t *req);
 
-static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req, const bool update_cache);
+static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req,
+                              const bool update_cache);
 static cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *GDSF_to_evict(cache_t *cache, const request_t *req);
 static void GDSF_evict(cache_t *cache, const request_t *req);
@@ -48,8 +50,10 @@ static bool GDSF_remove(cache_t *cache, const obj_id_t obj_id);
  * @param cache_specific_params cache specific parameters, see parse_params
  * function or use -e "print" with the cachesim binary
  */
-cache_t *GDSF_init(const common_cache_params_t ccache_params, const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("GDSF", ccache_params, cache_specific_params);
+cache_t *GDSF_init(const common_cache_params_t ccache_params,
+                   const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("GDSF", ccache_params, cache_specific_params);
   cache->eviction_params = reinterpret_cast<void *>(new eviction::GDSF);
 
   cache->cache_init = GDSF_init;
@@ -112,8 +116,8 @@ static bool GDSF_get(cache_t *cache, const request_t *req) {
     }
   }
 
-  DEBUG_ASSERT((int64_t) gdsf->pq.size() == cache->n_obj);
-  DEBUG_ASSERT((int64_t) gdsf->pq_map.size() == cache->n_obj);
+  DEBUG_ASSERT((int64_t)gdsf->pq.size() == cache->n_obj);
+  DEBUG_ASSERT((int64_t)gdsf->pq_map.size() == cache->n_obj);
 
   return hit;
 }
@@ -134,7 +138,8 @@ static bool GDSF_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req,
+                              const bool update_cache) {
   cache->n_req += 1;
 
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
@@ -147,7 +152,8 @@ static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req, const bool u
     auto node = gdsf->pq_map[obj];
     gdsf->pq.erase(node);
 
-    double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * 1.0e6 / obj->obj_size;
+    double pri =
+        gdsf->pri_last_evict + (double)(obj->misc.freq) * 1.0e6 / obj->obj_size;
     eviction::pq_node_type new_node = {obj, pri, cache->n_req};
     gdsf->pq.insert(new_node);
     gdsf->pq_map[obj] = new_node;
@@ -166,7 +172,8 @@ static bool GDSF_can_insert(cache_t *cache, const request_t *req) {
     return false;
   }
 
-  int64_t to_evict_size = req->obj_size - (cache->cache_size - cache->get_occupied_byte(cache));
+  int64_t to_evict_size =
+      req->obj_size - (cache->cache_size - cache->get_occupied_byte(cache));
   double pri = gdsf->pri_last_evict + 1.0e6 / req->obj_size;
   bool can_insert = true;
   auto iter = gdsf->pq.begin();
@@ -194,7 +201,8 @@ static bool GDSF_can_insert(cache_t *cache, const request_t *req) {
 
   if ((n_insert + n_cannot_insert) % 100000 == 0) {
     if ((double)n_cannot_insert / (n_insert + n_cannot_insert) > 0.01)
-      DEBUG("size %ld n_insert %ld, n_cannot_insert %ld, ratio %.2f\n", cache->cache_size, n_insert, n_cannot_insert,
+      DEBUG("size %" PRId64 " n_insert %" PRId64 ", n_cannot_insert %" PRId64 ", ratio %.2f\n",
+            cache->cache_size, n_insert, n_cannot_insert,
             (double)n_cannot_insert / (n_insert + n_cannot_insert));
   }
 
@@ -215,11 +223,12 @@ static bool GDSF_can_insert(cache_t *cache, const request_t *req) {
 static cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
 
-  // this does not affect insertion for most workloads unless object size is too large
-  // however, when it have effect, it often increases miss ratio because a list of small objects (with relatively large
-  // priority) will stop the insertion of a large object, however, the newly requested large object is likely to be more
-  // useful than the small objects
-  // if (!GDSF_can_insert(cache, req)) return nullptr;
+  // this does not affect insertion for most workloads unless object size is too
+  // large however, when it have effect, it often increases miss ratio because a
+  // list of small objects (with relatively large priority) will stop the
+  // insertion of a large object, however, the newly requested large object is
+  // likely to be more useful than the small objects if (!GDSF_can_insert(cache,
+  // req)) return nullptr;
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   DEBUG_ASSERT(obj != nullptr);

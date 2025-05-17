@@ -20,7 +20,6 @@ typedef struct SLRUv0_params {
   request_t *req_local;
 } SLRUv0_params_t;
 
-
 static const char *DEFAULT_CACHE_PARAMS = "n-seg=4";
 
 // ***********************************************************************
@@ -433,7 +432,7 @@ static void SLRUv0_print_cache(cache_t *cache) {
     cache_obj_t *obj =
         ((LRU_params_t *)params->LRUs[i]->eviction_params)->q_head;
     while (obj) {
-      printf("%ld(%lu)->", (long) obj->obj_id, obj->obj_size);
+      printf("%ld(%" PRId64 ")->", (long)obj->obj_id, obj->obj_size);
       obj = obj->queue.next;
     }
     printf(" | ");

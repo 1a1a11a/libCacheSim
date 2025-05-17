@@ -19,7 +19,7 @@ void print_args(struct arguments *args) {
   printf("trace_type: %d\n", args->trace_type);
   printf("trace_type_params: %s\n", args->trace_type_params);
   printf("ofilepath: %s\n", args->ofilepath);
-  printf("n_req: %ld\n", args->n_req);
+  printf("n_req: %" PRId64 "\n", args->n_req);
   printf("verbose: %d\n", args->verbose);
   printf("cache_algorithm_str: %s\n", args->cache_algorithm_str);
   printf("mrc_size_str: %s\n", args->mrc_size_str);

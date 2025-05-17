@@ -51,6 +51,7 @@ extern "C" {
 #endif
 
 #include "splay_tuple.h"
+#include <inttypes.h>
 
 // static sTree_tuple * sedgewickized_splay (int i, sTree_tuple * t);
 
@@ -274,7 +275,7 @@ void print_sTree_t(sTree_tuple *t, int d) {
   if (t == NULL) return;
   print_sTree_t(t->right, d + 1);
   for (i = 0; i < d; i++) printf("  ");
-  printf("%lu(%ld)\n", t->key->Tmax, t->value);
+  printf("%" PRIu64 "(%" PRId64 ")\n", t->key->Tmax, t->value);
   print_sTree_t(t->left, d + 1);
 }
 

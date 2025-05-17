@@ -142,7 +142,7 @@ void test_unaligned_read_mmap(char* filepath) {
   printf("uint16_t unaligned read time: %.4f sec\n", time_read_uint16_unaligned);
   printf("uint8_t    aligned read time: %.4f sec\n", time_read_uint8_aligned);
   printf("uint8_t  unaligned read time: %.4f sec\n", time_read_uint8_unaligned);
-  printf("s: %ld\n", s);
+  printf("s: %" PRId64 "\n", s);
 
   close(fd);
 }
@@ -264,7 +264,7 @@ void test_unaligned_read_mmap_struct(char* filepath) {
   printf("struct   aligned read time: %.4f sec\n", time_read_struct_aligned);
   printf("struct unaligned read time: %.4f sec\n", time_read_struct_unaligned);
 
-  printf("s: %ld\n", s);
+  printf("s: %" PRId64 "\n", s);
   close(fd);
 }
 
@@ -314,7 +314,7 @@ void test_unaligned_read_struct(char* filepath) {
   printf("struct   aligned read time: %.4f sec\n", time_read_struct_aligned);
   printf("struct unaligned read time: %.4f sec\n", time_read_struct_unaligned);
 
-  printf("s: %ld\n", s);
+  printf("s: %" PRId64 "\n", s);
 }
 
 int main(int argc, char* argv[]) {

@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <inttypes.h>
 
 #include "../../include/libCacheSim/admissionAlgo.h"
 #include "adaptsize/adaptsize.h"
@@ -89,7 +90,7 @@ static void adaptsize_admissioner_parse_params(
       } else if (strcasecmp(key, "reconf-interval") == 0) {
         pa->reconf_interval = strtoull(value, &end, 10);
       } else if (strcasecmp(key, "print") == 0) {
-        printf("max-iteration=%lu,reconf-interval=%lu", pa->max_iteration,
+        printf("max-iteration=%" PRIu64 ",reconf-interval=%" PRIu64 "", pa->max_iteration,
                pa->reconf_interval);
         exit(0);
       } else {
