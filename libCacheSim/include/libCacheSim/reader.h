@@ -291,7 +291,7 @@ static inline void print_reader(reader_t *reader) {
       g_trace_type_name[reader->trace_type], reader->trace_path,
       reader->trace_start_offset, (long)reader->mmap_offset,
       reader->is_zstd_file, reader->item_size, (void *)reader->file,
-      reader->line_buf, reader->line_buf_size, reader->csv_delimiter,
+      (void*) reader->line_buf, reader->line_buf_size, reader->csv_delimiter,
       reader->csv_has_header, reader->obj_id_is_num,
       reader->ignore_size_zero_req, reader->ignore_obj_size, reader->n_req_left,
       (long)reader->last_req_clock_time);

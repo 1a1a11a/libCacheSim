@@ -383,7 +383,7 @@ static void _chained_hashtable_shrink_v2(hashtable_t *hashtable) {
                   hashsizeULL(hashtable->hashpower));
 
   DEBUG(
-      "shrink hash table size from %llu to %llu, new hashtable load %lu/%lu\n",
+      "shrink hash table size from %llu to %llu, new hashtable load %llu/%llu\n",
       hashsizeULL((uint16_t)(hashtable->hashpower + 1)),
       hashsizeULL(hashtable->hashpower), hashtable->n_obj,
       hashsize(hashtable->hashpower));
@@ -410,7 +410,7 @@ static void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
 
   DEBUG(
       "expand hashtable from %llu to %llu entries, new hashtable load "
-      "%lu/%lu\n",
+      "%llu/%llu\n",
       hashsizeULL((uint16_t)(hashtable->hashpower - 1)),
       hashsizeULL(hashtable->hashpower), hashtable->n_obj,
       hashsize(hashtable->hashpower));

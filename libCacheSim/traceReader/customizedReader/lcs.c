@@ -37,33 +37,33 @@ static bool _verify_lcs_header(lcs_trace_header_t *header) {
 
 static void _lcs_print_trace_stat(lcs_trace_stat_t *stat) {
   printf(
-      "trace stat: n_req %lld, n_obj %lld, n_byte %lld (%.2lf GiB), "
-      "n_uniq_byte %lld (%.2lf GiB)\n",
-      (long long)stat->n_req, (long long)stat->n_obj,
-      (long long)stat->n_req_byte, (double)stat->n_req_byte / GiB,
-      (long long)stat->n_obj_byte, (double)stat->n_obj_byte / GiB);
+      "trace stat: n_req %" PRId64 ", n_obj %" PRId64 ", n_byte %" PRId64 " (%.2lf GiB), "
+      "n_uniq_byte %" PRId64 " (%.2lf GiB)\n",
+      stat->n_req, stat->n_obj,
+      stat->n_req_byte, (double)stat->n_req_byte / GiB,
+      stat->n_obj_byte, (double)stat->n_obj_byte / GiB);
 
   if (stat->n_read > 0) {
-    printf("n_read %lld, n_write %lld, n_delete %lld\n",
-           (long long)stat->n_read, (long long)stat->n_write,
-           (long long)stat->n_delete);
+    printf("n_read %" PRId64 ", n_write %" PRId64 ", n_delete %" PRId64 "\n",
+           stat->n_read, stat->n_write,
+           stat->n_delete);
   }
-  printf("start time %lld, end time %lld, duration %lld seconds %.2lf days\n",
-         (long long)stat->start_timestamp, (long long)stat->end_timestamp,
-         (long long)(stat->end_timestamp - stat->start_timestamp),
+  printf("start time %" PRId64 ", end time %" PRId64 ", duration %" PRId64 " seconds %.2lf days\n",
+         stat->start_timestamp, stat->end_timestamp,
+         (stat->end_timestamp - stat->start_timestamp),
          (double)(stat->end_timestamp - stat->start_timestamp) / (24 * 3600.0));
 
-  printf("object size: smallest %lld, largest %lld\n",
-         (long long)stat->smallest_obj_size, (long long)stat->largest_obj_size);
+  printf("object size: smallest %" PRId64 ", largest %" PRId64 "\n",
+         stat->smallest_obj_size, stat->largest_obj_size);
   printf(
-      "most common object sizes (req fraction): %ld(%.4lf) %ld(%.4lf) "
-      "%ld(%.4lf) %ld(%.4lf)...\n",
+      "most common object sizes (req fraction): %" PRId64 "(%.4lf) %" PRId64 "(%.4lf) "
+      "%" PRId64 "(%.4lf) %" PRId64 "(%.4lf)...\n",
       stat->most_common_obj_sizes[0], stat->most_common_obj_size_ratio[0],
       stat->most_common_obj_sizes[1], stat->most_common_obj_size_ratio[1],
       stat->most_common_obj_sizes[2], stat->most_common_obj_size_ratio[2],
       stat->most_common_obj_sizes[3], stat->most_common_obj_size_ratio[3]);
 
-  printf("highest freq: %ld %ld %ld %ld skewness %.4lf\n",
+  printf("highest freq: %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " skewness %.4lf\n",
          stat->highest_freq[0], stat->highest_freq[1], stat->highest_freq[2],
          stat->highest_freq[3], stat->skewness);
   printf(

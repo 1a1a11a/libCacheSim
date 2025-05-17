@@ -79,13 +79,13 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
     if (lcs_ver == 1 || lcs_ver == 2) {
       if (req->clock_time > UINT32_MAX) {
         WARN(
-            "clock_time %ld > UINT32_MAX, may cause overflow consider using "
+            "clock_time %" PRId64 " > UINT32_MAX, may cause overflow consider using "
             "lcs_ver 3\n",
             req->clock_time);
       }
       if (req->obj_size > UINT32_MAX) {
         WARN(
-            "obj_size %ld > UINT32_MAX, may cause overflow consider using "
+            "obj_size %" PRId64 " > UINT32_MAX, may cause overflow consider using "
             "lcs_ver 3\n",
             req->obj_size);
       }
@@ -106,7 +106,7 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
       if (info_it->second.size != req->obj_size) {
         if (!remove_size_change) {
           WARN(
-              "find object size change, prev %ld new %ld, please enable "
+              "find object size change, prev %" PRId64 " new %" PRId64 ", please enable "
               "remove_size_change\n",
               info_it->second.size, req->obj_size);
         } else {
@@ -161,16 +161,16 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
 
     if (stat.n_req % 100000000 == 0) {
       INFO(
-          "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
-          "object, %lld B (%.2lf GB)\n",
-          reader->trace_path, (long)(stat.n_req / 1e6),
+          "%s: %f M requests (%.2lf GB), trace time %ld, working set %" PRId64 " "
+          "object, %" PRId64 " B (%.2lf GB)\n",
+          reader->trace_path, stat.n_req / 1e6,
           (double)stat.n_req_byte / GiB,
-          (long)(stat.end_timestamp - req->clock_time), (long long)stat.n_obj,
-          (long long)stat.n_obj_byte, (double)stat.n_obj_byte / GiB);
+          (long)(stat.end_timestamp - req->clock_time), stat.n_obj,
+          stat.n_obj_byte, (double)stat.n_obj_byte / GiB);
     }
 
     if (stat.n_req > n_req_total * 2) {
-      ERROR("n_req_curr (%ld) > n_req_total (%ld)\n", stat.n_req, n_req_total);
+      ERROR("n_req_curr (%" PRId64 ") > n_req_total (%" PRId64 ")\n", stat.n_req, n_req_total);
     }
 
     if (read_one_req_above(reader, req) != 0) {
@@ -257,8 +257,8 @@ static void _analyze_trace(
   INFO("object size: smallest %lld, largest %lld\n",
        (long long)stat.smallest_obj_size, (long long)stat.largest_obj_size);
   INFO(
-      "most common object sizes (req fraction): %ld(%.4lf) %ld(%.4lf) "
-      "%ld(%.4lf) %ld(%.4lf)...\n",
+      "most common object sizes (req fraction): %" PRId64 "(%.4lf) %" PRId64 "(%.4lf) "
+      "%" PRId64 "(%.4lf) %" PRId64 "(%.4lf)...\n",
       stat.most_common_obj_sizes[0], stat.most_common_obj_size_ratio[0],
       stat.most_common_obj_sizes[1], stat.most_common_obj_size_ratio[1],
       stat.most_common_obj_sizes[2], stat.most_common_obj_size_ratio[2],
@@ -311,7 +311,7 @@ static void _analyze_trace(
     stat.most_common_freq_ratio[i] = (float)freq_cnt_vec[i].second / stat.n_obj;
   }
 
-  INFO("highest freq: %ld %ld %ld %ld skewness %.4lf\n", stat.highest_freq[0],
+  INFO("highest freq: %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " skewness %.4lf\n", stat.highest_freq[0],
        stat.highest_freq[1], stat.highest_freq[2], stat.highest_freq[3],
        stat.skewness);
   INFO(
@@ -468,7 +468,7 @@ static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat,
       ofile.write(mapped_file + pos + lcs_full_req_entry_size,
                   n_features * sizeof(int32_t));
     } else {
-      ERROR("invalid lcs version %ld\n", lcs_ver);
+      ERROR("invalid lcs version %" PRId64 "\n", lcs_ver);
     }
 
     if (output_txt) {

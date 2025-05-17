@@ -235,8 +235,8 @@ static cache_obj_t *BeladySize_to_evict(cache_t *cache, const request_t *req) {
     WARN(
         "BeladySize_to_evict: obj_to_evict is NULL, "
         "maybe cache size is too small or hash power too large, "
-        "current hash table size %lu, n_obj %lu, cache size %lu, request size "
-        "%lu, and %d samples "
+        "current hash table size %" PRIu64 ", n_obj %" PRIu64 ", cache size %" PRIu64 ", request size "
+        "%" PRIu64 ", and %d samples "
         "obj_to_evict_score %.4lf sampled_obj_score %.4lf\n",
         hashsize(cache->hashtable->hashpower), cache->hashtable->n_obj,
         cache->cache_size, req->obj_size, params->n_sample, obj_to_evict_score,

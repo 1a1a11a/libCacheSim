@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
           (double)return_value[i].n_miss / (double)return_value[i].n_req;
       double miss_ratio_byte = (double)return_value[i].n_miss_byte /
                                (double)return_value[i].n_req_byte;
-      fprintf(output_file, "%ld,%f, %f\n", cache_size, miss_ratio,
+      fprintf(output_file, "%" PRId64 ",%f, %f\n", cache_size, miss_ratio,
               miss_ratio_byte);
     }
 
