@@ -33,6 +33,8 @@
 
 #define DEFAULT_TTL (300 * 86400)
 
+#define DATA_PATH_LEN 1024
+
 // static inline unsigned int _n_cores0() {
 //   unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
 
@@ -59,23 +61,23 @@ static inline unsigned int _n_cores(void) {
 #endif
 
 static void _detect_data_path(char *data_path, const char *data_name) {
-  sprintf(data_path, "data/%s", data_name);
+  snprintf(data_path, DATA_PATH_LEN, "data/%s", data_name);
   if (access(data_path, F_OK) != -1) return;
 
-  sprintf(data_path, "../data/%s", data_name);
+  snprintf(data_path, DATA_PATH_LEN, "../data/%s", data_name);
   if (access(data_path, F_OK) != -1) return;
 
-  sprintf(data_path, "../../data/%s", data_name);
+  snprintf(data_path, DATA_PATH_LEN, "../../data/%s", data_name);
   if (access(data_path, F_OK) != -1) return;
 
-  sprintf(data_path, "../../../data/%s", data_name);
+  snprintf(data_path, DATA_PATH_LEN, "../../../data/%s", data_name);
   if (access(data_path, F_OK) != -1) return;
 
   ERROR("cannot find data %s\n", data_name);
 }
 
 static reader_t *setup_oracleGeneralBin_reader(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   _detect_data_path(data_path, "cloudPhysicsIO.oracleGeneral.bin");
   reader_t *reader_oracle = setup_reader(data_path, ORACLE_GENERAL_TRACE, NULL);
   return reader_oracle;
@@ -118,7 +120,7 @@ static reader_t *setup_3LCacheTestData_reader(void) {
 }
 
 static reader_t *setup_vscsi_reader_with_ignored_obj_size(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   reader_init_param_t *init_params = g_new0(reader_init_param_t, 1);
   init_params->ignore_obj_size = true;
   init_params->sampler = NULL;
@@ -129,14 +131,14 @@ static reader_t *setup_vscsi_reader_with_ignored_obj_size(void) {
 }
 
 static reader_t *setup_vscsi_reader(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   _detect_data_path(data_path, "cloudPhysicsIO.vscsi");
   reader_t *reader_vscsi = setup_reader(data_path, VSCSI_TRACE, NULL);
   return reader_vscsi;
 }
 
 static reader_t *setup_binary_reader(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   _detect_data_path(data_path, "cloudPhysicsIO.vscsi");
   reader_init_param_t *init_params_bin = g_new0(reader_init_param_t, 1);
   init_params_bin->binary_fmt_str = (char *)"<IIIHHQQ";
@@ -150,7 +152,7 @@ static reader_t *setup_binary_reader(void) {
 }
 
 static reader_t *setup_csv_reader_obj_str(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   _detect_data_path(data_path, "cloudPhysicsIO.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
   init_params_csv->delimiter = ',';
@@ -166,7 +168,7 @@ static reader_t *setup_csv_reader_obj_str(void) {
 }
 
 static reader_t *setup_csv_reader_obj_num(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   _detect_data_path(data_path, "cloudPhysicsIO.csv");
   reader_init_param_t *init_params_csv = g_new0(reader_init_param_t, 1);
   init_params_csv->delimiter = ',';
@@ -181,7 +183,7 @@ static reader_t *setup_csv_reader_obj_num(void) {
 }
 
 static reader_t *setup_plaintxt_reader_num(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   _detect_data_path(data_path, "cloudPhysicsIO.txt");
   reader_init_param_t init_params;
   set_default_reader_init_params(&init_params);
@@ -190,7 +192,7 @@ static reader_t *setup_plaintxt_reader_num(void) {
 }
 
 static reader_t *setup_plaintxt_reader_str(void) {
-  char data_path[1024];
+  char data_path[DATA_PATH_LEN] = "";
   _detect_data_path(data_path, "cloudPhysicsIO.txt");
   reader_init_param_t init_params;
   set_default_reader_init_params(&init_params);
