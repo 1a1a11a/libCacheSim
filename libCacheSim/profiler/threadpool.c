@@ -7,7 +7,8 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-static threadpool_job_t *threadpool_job_create(func_t func, void *arg1, void *arg2) {
+static threadpool_job_t *threadpool_job_create(func_t func, void *arg1,
+                                               void *arg2) {
   threadpool_job_t *job;
 
   if (func == NULL) return NULL;

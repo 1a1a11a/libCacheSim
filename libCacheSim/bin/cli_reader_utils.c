@@ -240,7 +240,6 @@ bool should_disable_obj_metadata(reader_t *reader) {
 }
 #undef N_TEST
 
-
 void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
                           int64_t *wss_byte) {
   reset_reader(reader);

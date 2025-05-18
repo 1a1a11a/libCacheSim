@@ -6,6 +6,8 @@
 extern "C" {
 #endif
 
+#include "../include/libCacheSim/dist.h"
+
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -14,7 +16,6 @@ extern "C" {
 #include "../dataStructure/splay.h"
 #include "../include/libCacheSim/hashmap.h"
 #include "../include/libCacheSim/hashmap_defs.in"
-#include "../include/libCacheSim/dist.h"
 #include "../include/libCacheSim/macro.h"
 
 /***********************************************************
@@ -36,7 +37,7 @@ int64_t get_access_dist_add_req(const request_t *req, hashmap_t *hash_table,
                                 const int64_t curr_ts,
                                 const dist_type_e dist_type) {
   void *gp =
-    hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
+      hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
   int64_t ret = -1;
   if (gp == NULL) {
     // it has not been requested before
@@ -49,8 +50,8 @@ int64_t get_access_dist_add_req(const request_t *req, hashmap_t *hash_table,
 
   if (dist_type == DIST_SINCE_LAST_ACCESS) {
     /* update last access time */
-    hashmap_put(hash_table, (const void *)(req->obj_id),
-                sizeof(obj_id_t), (void *)curr_ts);
+    hashmap_put(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t),
+                (void *)curr_ts);
   } else if (dist_type == DIST_SINCE_FIRST_ACCESS) {
     /* do nothing */
   } else {
@@ -76,7 +77,7 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
                                hashmap_t *hash_table, const int64_t curr_ts,
                                int64_t *last_access_ts) {
   void *gp =
-    hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
+      hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
 
   int64_t ret = -1;
   sTree *newtree;
@@ -99,8 +100,8 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
     newtree = insert(curr_ts, newtree);
   }
 
-  hashmap_put(hash_table, (const void *)(req->obj_id),
-              sizeof(obj_id_t), (void *)curr_ts);
+  hashmap_put(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t),
+              (void *)curr_ts);
 
   *splay_tree = newtree;
 
@@ -128,11 +129,9 @@ int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
   }
 
   hashmap_t *hash_table = malloc(sizeof(hashmap_t));
-  hashmap_create_options_t options = {
-    .initial_capacity = 16,
-    .comparer = obj_id_comparer,
-    .hasher = obj_id_hasher
-  };
+  hashmap_create_options_t options = {.initial_capacity = 16,
+                                      .comparer = obj_id_comparer,
+                                      .hasher = obj_id_hasher};
   hashmap_create_ex(options, hash_table);
 
   // create splay tree
@@ -178,11 +177,9 @@ int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type,
   int32_t *dist_array = malloc(sizeof(int32_t) * get_num_of_req(reader));
 
   hashmap_t *hash_table = malloc(sizeof(hashmap_t));
-  hashmap_create_options_t options = {
-    .initial_capacity = 16,
-    .comparer = obj_id_comparer,
-    .hasher = obj_id_hasher
-  };
+  hashmap_create_options_t options = {.initial_capacity = 16,
+                                      .comparer = obj_id_comparer,
+                                      .hasher = obj_id_hasher};
   hashmap_create_ex(options, hash_table);
 
   read_one_req(reader, req);
@@ -219,8 +216,7 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
   free(file_path);
 }
 
-void save_dist_txt(reader_t *const reader , 
-                  const int32_t *dist_array,
+void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
                    int64_t array_size, const char *const ofilepath,
                    const dist_type_e dist_type) {
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
@@ -262,12 +258,12 @@ void cnt_dist(const int32_t *dist_array, const int64_t array_size,
               hashmap_t *hash_table) {
   for (int64_t i = 0; i < array_size; i++) {
     int64_t dist = dist_array[i] == -1 ? INT64_MAX : dist_array[i];
-    int64_t old_cnt = (int64_t)hashmap_get(hash_table, (const void *)dist, sizeof(int64_t));
+    int64_t old_cnt =
+        (int64_t)hashmap_get(hash_table, (const void *)dist, sizeof(int64_t));
     hashmap_put(hash_table, (const void *)dist, sizeof(int64_t),
                 (void *)(old_cnt + 1));
   }
 }
-
 
 /**
  * void _write_dist_cnt(gpointer k, gpointer v, gpointer user_data) {
@@ -278,7 +274,8 @@ void cnt_dist(const int32_t *dist_array, const int64_t array_size,
  * }
  **/
 
-static int _write_dist_cnt(void *const user_data, struct hashmap_element_s *const e) {
+static int _write_dist_cnt(void *const user_data,
+                           struct hashmap_element_s *const e) {
   FILE *file = (FILE *)user_data;
   int64_t dist = (long)(e->key);
   int64_t cnt = (long)(e->data);
@@ -289,18 +286,16 @@ static int _write_dist_cnt(void *const user_data, struct hashmap_element_s *cons
 void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
                           const int64_t array_size, const char *const ofilepath,
                           const dist_type_e dist_type) {
-  assert((int64_t) get_num_of_req(reader) == array_size);
+  assert((int64_t)get_num_of_req(reader) == array_size);
 
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
   sprintf(file_path, "%s.%s.cnt", ofilepath, g_dist_type_name[dist_type]);
   FILE *file = fopen(file_path, "w");
 
   hashmap_t *hash_table = malloc(sizeof(hashmap_t));
-  hashmap_create_options_t options = {
-    .initial_capacity = 16,
-    .comparer = obj_id_comparer,
-    .hasher = obj_id_hasher
-  };
+  hashmap_create_options_t options = {.initial_capacity = 16,
+                                      .comparer = obj_id_comparer,
+                                      .hasher = obj_id_hasher};
   hashmap_create_ex(options, hash_table);
 
   cnt_dist(dist_array, get_num_of_req(reader), hash_table);

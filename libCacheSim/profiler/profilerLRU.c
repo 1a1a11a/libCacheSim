@@ -6,10 +6,11 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
+#include "../include/libCacheSim/profilerLRU.h"
+
 #include "../dataStructure/splay.h"
 #include "../include/libCacheSim/hashmap.h"
 #include "../include/libCacheSim/hashmap_defs.in"
-#include "../include/libCacheSim/profilerLRU.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,11 +65,9 @@ int64_t *_get_lru_hit_cnt(reader_t *reader, int64_t size) {
 
   // create hash table and splay tree
   hashmap_t *hash_table = malloc(sizeof(hashmap_t));
-  hashmap_create_options_t options = {
-    .initial_capacity = 16,
-    .comparer = obj_id_comparer,
-    .hasher = obj_id_hasher
-  };
+  hashmap_create_options_t options = {.initial_capacity = 16,
+                                      .comparer = obj_id_comparer,
+                                      .hasher = obj_id_hasher};
   hashmap_create_ex(options, hash_table);
   sTree *splay_tree = NULL;
 
