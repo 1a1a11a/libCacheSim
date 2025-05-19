@@ -85,6 +85,7 @@ bool threadpool_create(threadpool_t *tm, size_t num) {
   if (num == 0) num = 2;
 
   tm->thread_cnt = num;
+  tm->stop = false;
 
   pthread_mutex_init(&(tm->job_mutex), NULL);
   pthread_cond_init(&(tm->job_cond), NULL);

@@ -31,6 +31,7 @@ typedef struct simulator_multithreading_params {
   int warmup_sec; /* num of seconds of requests used for warming up cache */
   cache_stat_t *result;
   pthread_mutex_t mtx; /* prevent simultaneous write to progress */
+  pthread_cond_t cond;
   int *progress;
   void *other_data;
   bool free_cache_when_finish;
@@ -136,6 +137,8 @@ static void _simulate(void *user_data, void *data) {
   // report progress
   pthread_mutex_lock(&(params->mtx));
   (*(params->progress))++;
+  if (*(params->progress) >= params->n_caches - 1)
+    pthread_cond_broadcast(&(params->cond));
   pthread_mutex_unlock(&(params->mtx));
 
   // clean up
@@ -202,6 +205,7 @@ cache_stat_t *simulate_at_multi_sizes(
   params->progress = &progress;
   params->use_random_seed = use_random_seed;
   pthread_mutex_init(&(params->mtx), NULL);
+  pthread_cond_init(&(params->cond), NULL);
 
   // build the thread pool
 
@@ -221,7 +225,8 @@ cache_stat_t *simulate_at_multi_sizes(
     result[i - 1].cache_size = cache_sizes[i - 1];
     // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
     //          "cannot push data into thread_pool in get_miss_ratio\n");
-    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, (void *)i),
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
+                                (void *)((unsigned long)i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -236,16 +241,20 @@ cache_stat_t *simulate_at_multi_sizes(
       start_cache_size, end_cache_size, num_of_sizes, num_of_threads);
 
   // wait for all simulations to finish
+  pthread_mutex_lock(&(params->mtx));
   while (progress < num_of_sizes - 1) {
-    print_progress((double)progress / (double)(num_of_sizes - 1) * 100);
+    // print_progress((double)progress / (double)(num_of_sizes - 1) * 100);
+    pthread_cond_wait(&(params->cond), &(params->mtx));
   }
+  pthread_mutex_unlock(&(params->mtx));
 
   // clean up
   // g_thread_pool_free(gthread_pool, FALSE, TRUE);
   threadpool_destroy(thread_pool);
+  pthread_mutex_destroy(&(params->mtx));
+  pthread_cond_destroy(&(params->cond));
   my_free(sizeof(cache_t *) * num_of_sizes, params->caches);
   my_free(sizeof(sim_mt_params_t), params);
-  pthread_mutex_destroy(&(params->mtx));
 
   // user is responsible for free-ing the result
   return result;
@@ -291,6 +300,7 @@ cache_stat_t *simulate_with_multi_caches(
   params->free_cache_when_finish = free_cache_when_finish;
   params->progress = &progress;
   pthread_mutex_init(&(params->mtx), NULL);
+  pthread_cond_init(&(params->cond), NULL);
 
   // build the thread pool
   // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate,
@@ -306,7 +316,8 @@ cache_stat_t *simulate_with_multi_caches(
     result[i - 1].cache_size = caches[i - 1]->cache_size;
     // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
     //          "cannot push data into thread_pool in get_miss_ratio\n");
-    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, (void *)i),
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
+                                (void *)((unsigned long)i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -322,15 +333,19 @@ cache_stat_t *simulate_with_multi_caches(
       num_of_caches, num_of_threads);
 
   // wait for all simulations to finish
+  pthread_mutex_lock(&(params->mtx));
   while (progress < num_of_caches - 1) {
-    print_progress((double)progress / (double)(num_of_caches - 1) * 100);
+    // print_progress((double)progress / (double)(num_of_caches - 1) * 100);
+    pthread_cond_wait(&(params->cond), &(params->mtx));
   }
+  pthread_mutex_unlock(&(params->mtx));
 
   // clean up
   // g_thread_pool_free(gthread_pool, FALSE, TRUE);
   threadpool_destroy(thread_pool);
-  my_free(sizeof(sim_mt_params_t), params);
   pthread_mutex_destroy(&(params->mtx));
+  pthread_cond_destroy(&(params->cond));
+  my_free(sizeof(sim_mt_params_t), params);
 
   // user is responsible for free-ing the result
   return result;
@@ -362,6 +377,7 @@ cache_stat_t *simulate_with_multi_caches_scaling(
   params->free_cache_when_finish = free_cache_when_finish;
   params->progress = &progress;
   pthread_mutex_init(&(params->mtx), NULL);
+  pthread_cond_init(&(params->cond), NULL);
 
   // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate,
   // (gpointer)params, num_of_threads, TRUE, NULL);
@@ -375,7 +391,8 @@ cache_stat_t *simulate_with_multi_caches_scaling(
     result[i - 1].cache_size = caches[i - 1]->cache_size;
     // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
     //          "cannot push data into thread_pool in get_miss_ratio\n");
-    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, (void *)i),
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
+                                (void *)((unsigned long)i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -390,14 +407,18 @@ cache_stat_t *simulate_with_multi_caches_scaling(
       (long long)params->n_warmup_req, start_cache_size, end_cache_size,
       num_of_caches, num_of_threads);
 
+  pthread_mutex_lock(&(params->mtx));
   while (progress < num_of_caches - 1) {
-    print_progress((double)progress / (double)(num_of_caches - 1) * 100);
+    // print_progress((double)progress / (double)(num_of_caches - 1) * 100);
+    pthread_cond_wait(&(params->cond), &(params->mtx));
   }
+  pthread_mutex_unlock(&(params->mtx));
 
   // g_thread_pool_free(gthread_pool, FALSE, TRUE);
   threadpool_destroy(thread_pool);
-  my_free(sizeof(sim_mt_params_t), params);
   pthread_mutex_destroy(&(params->mtx));
+  pthread_cond_destroy(&(params->cond));
+  my_free(sizeof(sim_mt_params_t), params);
   for (int i = 0; i < num_of_caches; i++) {
     result[i].sampler_ratio = readers[i]->sampler->sampling_ratio;
   }

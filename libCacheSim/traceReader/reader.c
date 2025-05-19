@@ -41,7 +41,7 @@ extern "C" {
 
 reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_type,
                        const reader_init_param_t *const init_params) {
-  static bool _info_printed = false;
+  static volatile bool _info_printed = false;
 
   int fd;
   struct stat st;
