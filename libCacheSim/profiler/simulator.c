@@ -242,7 +242,7 @@ cache_stat_t *simulate_at_multi_sizes(
 
   // wait for all simulations to finish
   pthread_mutex_lock(&(params->mtx));
-  while (progress < num_of_sizes - 1) {
+  while (progress < num_of_sizes) {
     // print_progress((double)progress / (double)(num_of_sizes - 1) * 100);
     pthread_cond_wait(&(params->cond), &(params->mtx));
   }
@@ -334,7 +334,7 @@ cache_stat_t *simulate_with_multi_caches(
 
   // wait for all simulations to finish
   pthread_mutex_lock(&(params->mtx));
-  while (progress < num_of_caches - 1) {
+  while (progress < num_of_caches) {
     // print_progress((double)progress / (double)(num_of_caches - 1) * 100);
     pthread_cond_wait(&(params->cond), &(params->mtx));
   }
@@ -408,7 +408,7 @@ cache_stat_t *simulate_with_multi_caches_scaling(
       num_of_caches, num_of_threads);
 
   pthread_mutex_lock(&(params->mtx));
-  while (progress < num_of_caches - 1) {
+  while (progress < num_of_caches) {
     // print_progress((double)progress / (double)(num_of_caches - 1) * 100);
     pthread_cond_wait(&(params->cond), &(params->mtx));
   }
