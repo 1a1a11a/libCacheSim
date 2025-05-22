@@ -287,6 +287,7 @@ cache_stat_t *simulate_with_multi_caches(
   params->reader = reader;
   params->readers = NULL;
   params->caches = caches;
+  params->n_caches = num_of_caches;
   params->warmup_reader = warmup_reader;
   params->warmup_sec = warmup_sec;
   params->use_random_seed = use_random_seed;
@@ -364,6 +365,7 @@ cache_stat_t *simulate_with_multi_caches_scaling(
   params->readers = readers;  // use multi-readers for scaling
   params->reader = NULL;      // not used in scaling mode
   params->caches = caches;
+  params->n_caches = num_of_caches;
   params->warmup_reader = warmup_reader;
   params->warmup_sec = warmup_sec;
   params->use_random_seed = false;  // or set as desired
