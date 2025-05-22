@@ -111,7 +111,6 @@ bool threadpool_create(threadpool_t *tm, size_t num) {
   return true;
 }
 
-// do not call free on tm after calling this function
 void threadpool_destroy(threadpool_t *tm) {
   threadpool_job_t *job;
   threadpool_job_t *job2;
@@ -139,8 +138,6 @@ void threadpool_destroy(threadpool_t *tm) {
   free(tm);
 }
 
-// similar to GThreadPool, we make there 2 arguments
-// but we have them pushed to pool together
 bool threadpool_push(threadpool_t *tm, func_t func, void *arg1, void *arg2) {
   threadpool_job_t *job;
 

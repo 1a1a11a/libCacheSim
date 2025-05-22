@@ -161,8 +161,9 @@ extern "C" {
 
 /// @brief Create a hashmap.
 /// @param initial_capacity The initial capacity of the hashmap.
-/// @param out_hashmap The storage for the created hashmap.
+/// @param out_hashmap The storage for the created hashmap. Can be on stack.
 /// @return On success 0 is returned.
+/// @note The `out_hashmap` doens't need to be on heap.
 HASHMAP_WEAK int hashmap_create(const hashmap_uint32_t initial_capacity,
                                 struct hashmap_s *const out_hashmap);
 
@@ -171,14 +172,17 @@ HASHMAP_WEAK int hashmap_create(const hashmap_uint32_t initial_capacity,
 /// @param out_hashmap The storage for the created hashmap.
 /// @return On success 0 is returned.
 ///
-/// The options members work as follows:
-/// - initial_capacity The initial capacity of the hashmap.
-/// - hasher Which hashing function to use with the hashmap (by default the
-//    crc32 with Robert Jenkins' mix is used).
+/// The `options`' members work as follows:
+/// `initial_capacity`: The initial capacity of the hashmap.
+/// `hasher`: Which hashing function to use with the hashmap (by default the
+///   crc32 with Robert Jenkins' mix is used).
+/// `comparer`: Which comparison function to use with the hashmap (by default
+///   `memcmp` is used).
 HASHMAP_WEAK int hashmap_create_ex(struct hashmap_create_options_s options,
                                    struct hashmap_s *const out_hashmap);
 
-/// @brief Put an element into the hashmap.
+/// @brief Put an element into the hashmap. If the key already exists, its value
+/// is updated.
 /// @param hashmap The hashmap to insert into.
 /// @param key The string key to use.
 /// @param len The length of the string key.
@@ -258,6 +262,8 @@ hashmap_capacity(const struct hashmap_s *const hashmap);
 
 /// @brief Destroy the hashmap.
 /// @param hashmap The hashmap to destroy.
+/// @note If the `hashmap` is created on heap, it's NOT automatically freed.
+/// Care need to be taken to not leak memory.
 HASHMAP_WEAK void hashmap_destroy(struct hashmap_s *const hashmap);
 
 static hashmap_uint32_t hashmap_crc32_hasher(const hashmap_uint32_t seed,
