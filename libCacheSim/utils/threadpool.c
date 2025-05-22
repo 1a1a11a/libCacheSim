@@ -2,7 +2,7 @@
 // Originally Copyright (c) 2019 John Schember
 // License: MIT License
 
-#include "../include/libCacheSim/threadpool.h"
+#include "include/threadpool.h"
 
 #include <pthread.h>
 #include <stdlib.h>

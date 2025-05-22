@@ -17,7 +17,7 @@ extern "C" {
 #include "../cache/cacheUtils.h"
 #include "../include/libCacheSim/evictionAlgo.h"
 #include "../include/libCacheSim/plugin.h"
-#include "../include/libCacheSim/threadpool.h"
+#include "../utils/include/threadpool.h"
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
 

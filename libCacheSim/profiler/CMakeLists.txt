@@ -1,6 +1,6 @@
 aux_source_directory(. DIR_LIB_SRCS)
 add_library (profiler ${DIR_LIB_SRCS})
-target_link_libraries(profiler traceReader)
+target_link_libraries(profiler traceReader utils)
 
 #file(GLOB src *.c)
 #add_library (profiler ${src})
