@@ -205,7 +205,7 @@ static serverinfo read_server_line(char *line) {
   server.memory = 0;
 
   char *tok = strtok(line, delimiter);
-  if ((strlen(tok) - 1) < 23) {
+  if (tok && (strlen(tok) - 1) < 23) {
     char *mem = 0;
     char *endptr = 0;
 
@@ -262,7 +262,7 @@ static serverinfo *read_server_definitions(char *filename, unsigned int *count,
 
     lineno++;
 
-    if (strlen(sline) < 2 || sline[0] == '#') continue;
+    if (!sline || strlen(sline) < 2 || sline[0] == '#') continue;
 
     serverinfo server = read_server_line(sline);
     if (server.memory > 0 && strlen(server.addr)) {
