@@ -53,8 +53,7 @@ static void _simulate(gpointer data, gpointer user_data) {
   reader_t *cloned_reader = clone_reader(source_reader);
   request_t *req = new_request();
   cache_t *local_cache = params->caches[idx];
-  strncpy(result[idx].cache_name, local_cache->cache_name,
-          CACHE_NAME_ARRAY_LEN);
+  snprintf(result[idx].cache_name, CACHE_NAME_ARRAY_LEN, "%s", local_cache->cache_name);
 
   /* warm up using warmup_reader */
   if (params->warmup_reader) {
