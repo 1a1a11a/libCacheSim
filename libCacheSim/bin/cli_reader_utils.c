@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "../include/libCacheSim/hashmap.h"
-#include "../include/libCacheSim/hashmap_defs.in"
+#include "../include/libCacheSim/hashmap_defs.h"
 #include "../include/libCacheSim/reader.h"
 #include "../utils/include/mystr.h"
 

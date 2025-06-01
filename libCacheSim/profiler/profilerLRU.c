@@ -10,7 +10,7 @@
 
 #include "../dataStructure/splay.h"
 #include "../include/libCacheSim/hashmap.h"
-#include "../include/libCacheSim/hashmap_defs.in"
+#include "../include/libCacheSim/hashmap_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

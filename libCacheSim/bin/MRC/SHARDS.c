@@ -62,6 +62,7 @@ int64_t compute_distance_fixed_size(struct PARAM *params, request_t *req,
       last_max = max->Tmax;
       // Remove the key from prio_tree and update lookup and distance_tree.
       params->prio_tree = splay_delete_t(max, params->prio_tree);
+      // FIXME: wrap const void * with macro (were GPOINTER)
       void *hash_value_inner =
           hashmap_get(params->lookup_hash, (const void *)id, sizeof(obj_id_t));
       hashmap_remove(params->lookup_hash, (const void *)id, sizeof(obj_id_t));

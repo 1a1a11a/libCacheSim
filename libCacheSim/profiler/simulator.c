@@ -40,7 +40,7 @@ typedef struct simulator_multithreading_params {
 
 static void _simulate(void *user_data, void *data) {
   sim_mt_params_t *params = (sim_mt_params_t *)user_data;
-  // int idx = GPOINTER_TO_UINT(data) - 1;
+  // FIXME: wrap this with a macro
   int idx = ((unsigned int)(unsigned long)(data)) - 1;
   if (params->use_random_seed) {
     set_rand_seed(rand());
@@ -209,9 +209,6 @@ cache_stat_t *simulate_at_multi_sizes(
 
   // build the thread pool
 
-  // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate,
-  // (gpointer)params, num_of_threads, TRUE, NULL);
-  // ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
   threadpool_t *thread_pool = (threadpool_t *)malloc(sizeof(threadpool_t));
   ASSERT_NOT_NULL(thread_pool, "cannot create thread pool in simulator\n");
   ASSERT_TRUE(threadpool_create(thread_pool, num_of_threads),
@@ -223,8 +220,8 @@ cache_stat_t *simulate_at_multi_sizes(
     params->caches[i - 1] =
         create_cache_with_new_size(cache, cache_sizes[i - 1]);
     result[i - 1].cache_size = cache_sizes[i - 1];
-    // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
-    //          "cannot push data into thread_pool in get_miss_ratio\n");
+    // FIXME: wrap this with a pointer
+    // ASSERT_TRUE(g_thread_pool_push(..., GSIZE_TO_POINTER(i), ...));
     ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
                                 (void *)((unsigned long)i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
@@ -243,13 +240,11 @@ cache_stat_t *simulate_at_multi_sizes(
   // wait for all simulations to finish
   pthread_mutex_lock(&(params->mtx));
   while (progress < num_of_sizes) {
-    // print_progress((double)progress / (double)(num_of_sizes - 1) * 100);
     pthread_cond_wait(&(params->cond), &(params->mtx));
   }
   pthread_mutex_unlock(&(params->mtx));
 
   // clean up
-  // g_thread_pool_free(gthread_pool, FALSE, TRUE);
   threadpool_destroy(thread_pool);
   pthread_mutex_destroy(&(params->mtx));
   pthread_cond_destroy(&(params->cond));
@@ -304,9 +299,6 @@ cache_stat_t *simulate_with_multi_caches(
   pthread_cond_init(&(params->cond), NULL);
 
   // build the thread pool
-  // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate,
-  // (gpointer)params, num_of_threads, TRUE, NULL);
-  // ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
   threadpool_t *thread_pool = (threadpool_t *)malloc(sizeof(threadpool_t));
   ASSERT_NOT_NULL(thread_pool, "cannot create thread pool in simulator\n");
   ASSERT_TRUE(threadpool_create(thread_pool, num_of_threads),
@@ -315,8 +307,6 @@ cache_stat_t *simulate_with_multi_caches(
   // start computation
   for (i = 1; i < num_of_caches + 1; i++) {
     result[i - 1].cache_size = caches[i - 1]->cache_size;
-    // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
-    //          "cannot push data into thread_pool in get_miss_ratio\n");
     ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
                                 (void *)((unsigned long)i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
@@ -336,13 +326,11 @@ cache_stat_t *simulate_with_multi_caches(
   // wait for all simulations to finish
   pthread_mutex_lock(&(params->mtx));
   while (progress < num_of_caches) {
-    // print_progress((double)progress / (double)(num_of_caches - 1) * 100);
     pthread_cond_wait(&(params->cond), &(params->mtx));
   }
   pthread_mutex_unlock(&(params->mtx));
 
   // clean up
-  // g_thread_pool_free(gthread_pool, FALSE, TRUE);
   threadpool_destroy(thread_pool);
   pthread_mutex_destroy(&(params->mtx));
   pthread_cond_destroy(&(params->cond));
@@ -381,9 +369,6 @@ cache_stat_t *simulate_with_multi_caches_scaling(
   pthread_mutex_init(&(params->mtx), NULL);
   pthread_cond_init(&(params->cond), NULL);
 
-  // GThreadPool *gthread_pool = g_thread_pool_new((GFunc)_simulate,
-  // (gpointer)params, num_of_threads, TRUE, NULL);
-  // ASSERT_NOT_NULL(gthread_pool, "cannot create thread pool in simulator\n");
   threadpool_t *thread_pool = (threadpool_t *)malloc(sizeof(threadpool_t));
   ASSERT_NOT_NULL(thread_pool, "cannot create thread pool in simulator\n");
   ASSERT_TRUE(threadpool_create(thread_pool, num_of_threads),
@@ -391,8 +376,6 @@ cache_stat_t *simulate_with_multi_caches_scaling(
 
   for (int i = 1; i < num_of_caches + 1; i++) {
     result[i - 1].cache_size = caches[i - 1]->cache_size;
-    // ASSERT_TRUE(g_thread_pool_push(gthread_pool, GSIZE_TO_POINTER(i), NULL),
-    //          "cannot push data into thread_pool in get_miss_ratio\n");
     ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
                                 (void *)((unsigned long)i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
@@ -411,12 +394,10 @@ cache_stat_t *simulate_with_multi_caches_scaling(
 
   pthread_mutex_lock(&(params->mtx));
   while (progress < num_of_caches) {
-    // print_progress((double)progress / (double)(num_of_caches - 1) * 100);
     pthread_cond_wait(&(params->cond), &(params->mtx));
   }
   pthread_mutex_unlock(&(params->mtx));
 
-  // g_thread_pool_free(gthread_pool, FALSE, TRUE);
   threadpool_destroy(thread_pool);
   pthread_mutex_destroy(&(params->mtx));
   pthread_cond_destroy(&(params->cond));

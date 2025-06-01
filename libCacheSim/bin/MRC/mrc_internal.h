@@ -13,7 +13,7 @@
 #include "../../include/libCacheSim/enum.h"
 #include "../../include/libCacheSim/evictionAlgo.h"
 #include "../../include/libCacheSim/hashmap.h"
-#include "../../include/libCacheSim/hashmap_defs.in"
+#include "../../include/libCacheSim/hashmap_defs.h"
 #include "../../include/libCacheSim/reader.h"
 
 #define N_ARGS 4

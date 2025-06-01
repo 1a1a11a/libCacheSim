@@ -15,7 +15,7 @@ extern "C" {
 
 #include "../dataStructure/splay.h"
 #include "../include/libCacheSim/hashmap.h"
-#include "../include/libCacheSim/hashmap_defs.in"
+#include "../include/libCacheSim/hashmap_defs.h"
 #include "../include/libCacheSim/macro.h"
 
 /***********************************************************
@@ -36,6 +36,7 @@ extern "C" {
 int64_t get_access_dist_add_req(const request_t *req, hashmap_t *hash_table,
                                 const int64_t curr_ts,
                                 const dist_type_e dist_type) {
+  // FIXME: wrap const void * here and all below with macro (were GPOINTER)
   void *gp =
       hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
   int64_t ret = -1;
@@ -44,6 +45,7 @@ int64_t get_access_dist_add_req(const request_t *req, hashmap_t *hash_table,
     ret = -1;
   } else {
     // it has been requested before
+    // FIXME: replace GPOINTER_TO_SIZE here and below with a macro
     int64_t old_ts = (int64_t)GPOINTER_TO_SIZE(gp);
     ret = curr_ts - old_ts;
   }

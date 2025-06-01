@@ -8,7 +8,7 @@ In May 2025 we began to remove GLib dependencies from this project. Thus, we nee
 - Use: Generic (non-cache related)
 - Path: *include/libCacheSim/hashmap.h*
 
-This is a generic hash table imported from [sheredom/hashmap.h](https://github.com/sheredom/hashmap.h). It is used everywhere except with cache objects, where there exists an optimised hashtable implementation.
+This is a generic hash table imported from [sheredom/hashmap.h](https://github.com/sheredom/hashmap.h). It is used everywhere except with cache objects, where there exists an optimized hashtable implementation.
 
 #### Structs
 
