@@ -48,19 +48,21 @@ bool threadpool_create(threadpool_t *tm, size_t num);
  */
 void threadpool_destroy(threadpool_t *tm);
 
-
 /**
- * @brief Push a job to the thread pool. There is no limit on the number of waiting jobs.
+ * @brief Push a job to the thread pool. There is no limit on the number of
+ * waiting jobs.
  * @param tm Pointer to the thread pool structure
  * @param func Function to be executed in thread pool
  * @param arg1 First argument to `func`
  * @param arg2 Second argument to `func`
- * @note `func` MUST take 2 pointer arguments only. Prepare arguments in a struct if needed.
+ * @note `func` MUST take 2 pointer arguments only. Prepare arguments in a
+ * struct if needed.
  */
 bool threadpool_push(threadpool_t *tm, func_t func, void *arg, void *arg2);
 
 /**
- * @brief Wait for all jobs to finish. Usually there is no need to manually call this function.
+ * @brief Wait for all jobs to finish. Usually there is no need to manually call
+ * this function.
  * @param tm Pointer to the thread pool structure
  */
 void threadpool_wait(threadpool_t *tm);

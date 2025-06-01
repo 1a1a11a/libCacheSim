@@ -17,9 +17,9 @@ extern "C" {
 #include "../cache/cacheUtils.h"
 #include "../include/libCacheSim/evictionAlgo.h"
 #include "../include/libCacheSim/plugin.h"
-#include "../utils/include/threadpool.h"
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
+#include "../utils/include/threadpool.h"
 
 typedef struct simulator_multithreading_params {
   reader_t *reader;
