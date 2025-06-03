@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "../include/conversion.h"
 #include "../include/libCacheSim/hashmap.h"
 #include "../include/libCacheSim/hashmap_defs.h"
 #include "../include/libCacheSim/reader.h"
@@ -274,7 +275,7 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
       continue;
     }
 
-    if (hashmap_get(&new_obj_table, (const void *)(req->obj_id),
+    if (hashmap_get(&new_obj_table, int_to_cptr(req->obj_id),
                     sizeof(obj_id_t)) != NULL) {
       continue;
     }
