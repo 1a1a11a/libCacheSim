@@ -5,6 +5,7 @@
 #include "../../dataStructure/histogram.h"
 #include "../../dataStructure/splay.h"
 #include "../../dataStructure/splay_tuple.h"  ///users/Claire/libCacheSim/libCacheSim/profiler/dist.c
+#include "../../include/conversion.h"
 #include "../../include/libCacheSim/reader.h"
 #include "../../include/libCacheSim/sampling.h"
 #include "../../profiler/dist.c"  // for get_stack_dist_add_req, etc.
@@ -62,10 +63,9 @@ int64_t compute_distance_fixed_size(struct PARAM *params, request_t *req,
       last_max = max->Tmax;
       // Remove the key from prio_tree and update lookup and distance_tree.
       params->prio_tree = splay_delete_t(max, params->prio_tree);
-      // FIXME: wrap const void * with macro (were GPOINTER)
       void *hash_value_inner =
-          hashmap_get(params->lookup_hash, (const void *)id, sizeof(obj_id_t));
-      hashmap_remove(params->lookup_hash, (const void *)id, sizeof(obj_id_t));
+          hashmap_get(params->lookup_hash, int_to_cptr(id), sizeof(obj_id_t));
+      hashmap_remove(params->lookup_hash, int_to_cptr(id), sizeof(obj_id_t));
 
       params->distance_tree =
           splay_delete((long long)hash_value_inner, params->distance_tree);

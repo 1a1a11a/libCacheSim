@@ -15,6 +15,7 @@ extern "C" {
 #include <math.h>
 
 #include "../cache/cacheUtils.h"
+#include "../include/conversion.h"
 #include "../include/libCacheSim/evictionAlgo.h"
 #include "../include/libCacheSim/plugin.h"
 #include "../utils/include/myprint.h"
@@ -40,8 +41,7 @@ typedef struct simulator_multithreading_params {
 
 static void _simulate(void *user_data, void *data) {
   sim_mt_params_t *params = (sim_mt_params_t *)user_data;
-  // FIXME: wrap this with a macro
-  int idx = ((unsigned int)(unsigned long)(data)) - 1;
+  int idx = ptr_to_int(data) - 1;
   if (params->use_random_seed) {
     set_rand_seed(rand());
   } else {
@@ -220,10 +220,7 @@ cache_stat_t *simulate_at_multi_sizes(
     params->caches[i - 1] =
         create_cache_with_new_size(cache, cache_sizes[i - 1]);
     result[i - 1].cache_size = cache_sizes[i - 1];
-    // FIXME: wrap this with a pointer
-    // ASSERT_TRUE(g_thread_pool_push(..., GSIZE_TO_POINTER(i), ...));
-    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
-                                (void *)((unsigned long)i)),
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, int_to_ptr(i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -307,8 +304,7 @@ cache_stat_t *simulate_with_multi_caches(
   // start computation
   for (i = 1; i < num_of_caches + 1; i++) {
     result[i - 1].cache_size = caches[i - 1]->cache_size;
-    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
-                                (void *)((unsigned long)i)),
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, int_to_ptr(i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 
@@ -376,8 +372,7 @@ cache_stat_t *simulate_with_multi_caches_scaling(
 
   for (int i = 1; i < num_of_caches + 1; i++) {
     result[i - 1].cache_size = caches[i - 1]->cache_size;
-    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params,
-                                (void *)((unsigned long)i)),
+    ASSERT_TRUE(threadpool_push(thread_pool, _simulate, params, int_to_ptr(i)),
                 "cannot push data into thread_pool in get_miss_ratio\n");
   }
 

@@ -14,6 +14,7 @@ extern "C" {
 #include <sys/stat.h>
 
 #include "../dataStructure/splay.h"
+#include "../include/conversion.h"
 #include "../include/libCacheSim/hashmap.h"
 #include "../include/libCacheSim/hashmap_defs.h"
 #include "../include/libCacheSim/macro.h"
@@ -36,24 +37,22 @@ extern "C" {
 int64_t get_access_dist_add_req(const request_t *req, hashmap_t *hash_table,
                                 const int64_t curr_ts,
                                 const dist_type_e dist_type) {
-  // FIXME: wrap const void * here and all below with macro (were GPOINTER)
   void *gp =
-      hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
+      hashmap_get(hash_table, int_to_cptr(req->obj_id), sizeof(obj_id_t));
   int64_t ret = -1;
   if (gp == NULL) {
     // it has not been requested before
     ret = -1;
   } else {
     // it has been requested before
-    // FIXME: replace GPOINTER_TO_SIZE here and below with a macro
-    int64_t old_ts = (int64_t)GPOINTER_TO_SIZE(gp);
+    int64_t old_ts = ptr_to_long(gp);
     ret = curr_ts - old_ts;
   }
 
   if (dist_type == DIST_SINCE_LAST_ACCESS) {
     /* update last access time */
-    hashmap_put(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t),
-                (void *)curr_ts);
+    hashmap_put(hash_table, int_to_cptr(req->obj_id), sizeof(obj_id_t),
+                int_to_ptr(curr_ts));
   } else if (dist_type == DIST_SINCE_FIRST_ACCESS) {
     /* do nothing */
   } else {
@@ -79,7 +78,7 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
                                hashmap_t *hash_table, const int64_t curr_ts,
                                int64_t *last_access_ts) {
   void *gp =
-      hashmap_get(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t));
+      hashmap_get(hash_table, int_to_cptr(req->obj_id), sizeof(obj_id_t));
 
   int64_t ret = -1;
   sTree *newtree;
@@ -102,8 +101,8 @@ int64_t get_stack_dist_add_req(const request_t *req, sTree **splay_tree,
     newtree = insert(curr_ts, newtree);
   }
 
-  hashmap_put(hash_table, (const void *)(req->obj_id), sizeof(obj_id_t),
-              (void *)curr_ts);
+  hashmap_put(hash_table, int_to_cptr(req->obj_id), sizeof(obj_id_t),
+              int_to_ptr(curr_ts));
 
   *splay_tree = newtree;
 
@@ -261,21 +260,15 @@ void cnt_dist(const int32_t *dist_array, const int64_t array_size,
   for (int64_t i = 0; i < array_size; i++) {
     int64_t dist = dist_array[i] == -1 ? INT64_MAX : dist_array[i];
     int64_t old_cnt =
-        (int64_t)hashmap_get(hash_table, (const void *)dist, sizeof(int64_t));
-    hashmap_put(hash_table, (const void *)dist, sizeof(int64_t),
-                (void *)(old_cnt + 1));
+        (int64_t)hashmap_get(hash_table, int_to_cptr(dist), sizeof(int64_t));
+    hashmap_put(hash_table, int_to_cptr(dist), sizeof(int64_t),
+                int_to_ptr(old_cnt + 1));
   }
 }
 
 /**
- * void _write_dist_cnt(gpointer k, gpointer v, gpointer user_data) {
- * int64_t dist = (int64_t)GPOINTER_TO_SIZE(k);
- * int64_t cnt = (int64_t)GPOINTER_TO_SIZE(v);
- * FILE *file = (FILE *)user_data;
- * fprintf(file, "%ld:%ld, ", (long)dist, (long)cnt);
- * }
+ * helper function for save_dist_as_cnt_txt
  **/
-
 static int _write_dist_cnt(void *const user_data,
                            struct hashmap_element_s *const e) {
   FILE *file = (FILE *)user_data;
