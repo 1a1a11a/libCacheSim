@@ -175,6 +175,7 @@ static cache_obj_t *RandomLRU_to_evict(cache_t *cache, const request_t *req) {
   // else
   //   return obj_to_evict2;
   assert(false);
+  return NULL;
 }
 
 static int compare_access_time(const void *p1, const void *p2) {

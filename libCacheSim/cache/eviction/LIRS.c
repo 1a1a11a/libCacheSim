@@ -500,14 +500,14 @@ bool LIRS_can_insert(cache_t *cache, const request_t *req) {
 
   // accessing blocks neither in S nor Q
   if (obj_s == NULL && obj_q == NULL) {
-    if (req->obj_size > params->lirs_limit ||
-        req->obj_size > params->hirs_limit) {
+    if ((uint64_t)req->obj_size > params->lirs_limit ||
+        (uint64_t)req->obj_size > params->hirs_limit) {
       WARN_ONCE("object size too large\n");
       // printf("request num: %ld\n", cache->n_req);
       return false;
     }
-    if (params->lirs_count + req->obj_size > params->lirs_limit &&
-        params->hirs_count + req->obj_size > params->hirs_limit) {
+    if ((uint64_t)params->lirs_count + req->obj_size > params->lirs_limit &&
+        (uint64_t)params->hirs_count + req->obj_size > params->hirs_limit) {
       // when both LIR and HIR block sets are full,
       // the circumstance is same as accessing an HIR non-resident not in S
       while (params->hirs_count + req->obj_size > params->hirs_limit) {
@@ -617,8 +617,8 @@ static void evictLIR(cache_t *cache) {
   cache->occupied_byte -= (req_local->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 
-  if (req_local->obj_size <= params->hirs_limit) {
-    while (params->hirs_count + req_local->obj_size > params->hirs_limit) {
+  if ((uint64_t)req_local->obj_size <= params->hirs_limit) {
+    while ((uint64_t)params->hirs_count + req_local->obj_size > params->hirs_limit) {
       evictHIR(cache);
     }
     params->LRU_q->insert(params->LRU_q, req_local);

@@ -19,7 +19,7 @@ typedef enum {
   FUTURE_STACK_DIST,
 } dist_type_e;
 
-static char *g_dist_type_name[] = {
+static const char *g_dist_type_name[] = {
     "DIST_SINCE_LAST_ACCESS",
     "DIST_SINCE_FIRST_ACCESS",
     "STACK_DIST",

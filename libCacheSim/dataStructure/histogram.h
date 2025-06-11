@@ -18,7 +18,7 @@ typedef struct ReuseHistogram {
     FILE* f;
 } ReuseHistogram;
 
-ReuseHistogram* init_histogram();
+ReuseHistogram* init_histogram(void);
 void update_histogram(ReuseHistogram* hist, uint64_t distance, float new_thres);
 void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path);
 void free_histogram(ReuseHistogram* hist);

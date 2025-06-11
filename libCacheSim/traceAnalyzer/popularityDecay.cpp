@@ -61,7 +61,7 @@ void PopularityDecay::add_req(const request_t *req) {
     next_window_ts_ += time_window_;
   }
 
-  assert(create_time_window_idx - idx_shift < n_req_per_window.size());
+  assert(create_time_window_idx - idx_shift < (int) n_req_per_window.size());
 
   n_req_per_window.at(create_time_window_idx - idx_shift) += 1;
   if (req->first_seen_in_window) {

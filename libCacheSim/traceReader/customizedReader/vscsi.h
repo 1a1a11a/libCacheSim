@@ -66,7 +66,7 @@ static inline vscsi_version_e to_vscsi_version(uint16_t ver) {
 }
 
 static inline vscsi_version_e test_vscsi_version(void *trace) {
-  vscsi_version_e test_buf[MAX_TEST] = {};
+  vscsi_version_e test_buf[MAX_TEST] = {0};
 
   int i;
   for (i = 0; i < MAX_TEST; i++) {

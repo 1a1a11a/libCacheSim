@@ -28,6 +28,7 @@ bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs) {
   }
 
   assert(0);  // should not reach here
+  return NULL;
 }
 
 void transform_seg_to_training(cache_t *cache, bucket_t *bucket,

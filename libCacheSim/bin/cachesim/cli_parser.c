@@ -1,5 +1,3 @@
-
-
 #define _GNU_SOURCE
 #include <argp.h>
 #include <glib.h>
@@ -78,14 +76,14 @@ static struct argp_option options[] = {
      "optional params for each prefetching algorithm, e.g., block-size=65536",
      4},
 
-    {0, 0, 0, 0, "Other options:"},
+    {0, 0, 0, 0, "Other options:", 6},
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
      "specify to ignore the object size from the trace", 6},
     {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 6},
     {"num-thread", OPTION_NUM_THREAD, "16", 0,
      "Number of threads if running when using default cache sizes", 6},
 
-    {0, 0, 0, 0, "Other less common options:"},
+    {0, 0, 0, 0, "Other less common options:", 10},
     {"report-interval", OPTION_REPORT_INTERVAL, "3600", 0,
      "how often to report stat when running one cache", 10},
     {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
@@ -97,7 +95,7 @@ static struct argp_option options[] = {
     {"print-head-req", OPTION_PRINT_HEAD_REQ, "false", 0,
      "Print the first few requests", 10},
 
-    {0}};
+    {0, 0, 0, 0, 0, 0}};
 
 /*
    PARSER. Field 2 in ARGP.
@@ -138,7 +136,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       replace_char(arguments->prefetch_params, '_', '-');
       break;
     case OPTION_OUTPUT_PATH:
-      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
+      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
+      arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
     case OPTION_NUM_REQ:
       arguments->n_req = atoi(arg);
@@ -275,7 +274,13 @@ void free_arg(struct arguments *args) {
 void parse_cmd(int argc, char *argv[], struct arguments *args) {
   init_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {.options = options,
+                             .parser = parse_opt,
+                             .args_doc = args_doc,
+                             .doc = doc,
+                             .children = NULL,
+                             .help_filter = NULL,
+                             .argp_domain = NULL};
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 
@@ -485,7 +490,7 @@ static void set_cache_size(struct arguments *args, reader_t *reader) {
   args->n_cache_size = n_cache_sizes;
 
   if (args->n_cache_size == 0) {
-    printf("working set %ld too small\n", (long) wss);
+    printf("working set %ld too small\n", (long)wss);
     exit(0);
   }
 }

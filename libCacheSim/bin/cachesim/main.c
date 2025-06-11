@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
   }
 
   uint64_t size_unit = 1;
-  char *size_unit_str = "";
+  const char *size_unit_str = "";
   if (!args.ignore_obj_size) {
     if (args.cache_sizes[0] > GiB) {
       size_unit = GiB;

@@ -35,7 +35,7 @@ add_executable(testUtils test_utils.c)
 target_link_libraries(testUtils ${coreLib})
 
 add_executable(testMrcProfiler test_mrcProfiler.cpp)
-target_link_libraries(testMrcProfiler mrcProfilerLib m zstd dl pthread -Wl,--whole-archive  libCacheSim -Wl,--no-whole-archive ${coreLib})
+target_link_libraries(testMrcProfiler mrcProfilerLib m zstd dl pthread -Wl,--whole-archive libCacheSim -Wl,--no-whole-archive ${coreLib})
 target_link_options(testMrcProfiler PRIVATE "-Wl,--export-dynamic")
 
 

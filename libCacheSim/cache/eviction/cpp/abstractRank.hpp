@@ -33,8 +33,8 @@ struct pq_node_type {
     last_request_vtime = -1;
   };
 
-  pq_node_type(cache_obj_t *obj, double priority, int64_t last_request_vtime)
-      : obj(obj), priority(priority), last_request_vtime(last_request_vtime) {};
+  pq_node_type(cache_obj_t *obj_param, double priority_param, int64_t last_request_vtime_param)
+      : obj(obj_param), priority(priority_param), last_request_vtime(last_request_vtime_param) {};
 
   void print() const {
     printf("obj %lu, priority %f, last_request_vtime %ld\n", (unsigned long)obj->obj_id, priority,
@@ -62,7 +62,7 @@ class abstractRank {
     auto p = pq.begin();
     pq_node_type p_copy(*p);
 
-    return std::move(p_copy);
+    return p_copy;
   }
 
   inline pq_node_type pop_lowest_score() {
@@ -71,7 +71,7 @@ class abstractRank {
     pq_map.erase(p->obj);
     pq.erase(p);
 
-    return std::move(p_copy);
+    return p_copy;
   }
 
   inline void remove_obj(cache_t *cache, cache_obj_t *obj) {

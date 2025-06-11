@@ -208,7 +208,7 @@ static cache_obj_t *BeladySize_to_evict(cache_t *cache, const request_t *req) {
 static cache_obj_t *BeladySize_to_evict(cache_t *cache, const request_t *req) {
   BeladySize_params_t *params = (BeladySize_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = NULL, *sampled_obj;
-  double obj_to_evict_score = -1, sampled_obj_score;
+  double obj_to_evict_score = -1, sampled_obj_score = -1;
   for (int i = 0; i < params->n_sample; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
     sampled_obj_score =

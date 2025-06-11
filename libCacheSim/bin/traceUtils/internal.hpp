@@ -28,7 +28,7 @@ struct arguments {
   /* some objects may change size during the trace, this keeps the size as the
    * last size in the trace */
   bool remove_size_change;
-  char *output_format;
+  const char *output_format;
 
   /* trace print */
   int64_t num_req; /* number of requests to print */

@@ -80,11 +80,15 @@ static const char *DEFAULT_CACHE_PARAMS =
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *S3FIFOdv2_init(const common_cache_params_t ccache_params,
-                        const char *cache_specific_params);
 static void S3FIFOdv2_free(cache_t *cache);
 static bool S3FIFOdv2_get(cache_t *cache, const request_t *req);
 
+static bool S3FIFOdv2_remove(cache_t *cache, const obj_id_t obj_id);
+static inline int64_t S3FIFOdv2_get_occupied_byte(const cache_t *cache);
+static inline int64_t S3FIFOdv2_get_n_obj(const cache_t *cache);
+static inline bool S3FIFOdv2_can_insert(cache_t *cache, const request_t *req);
+static void S3FIFOdv2_evict_fifo(cache_t *cache, const request_t *req);
+static void S3FIFOdv2_evict_main(cache_t *cache, const request_t *req);
 static void S3FIFOdv2_rebalance(cache_t *cache);
 static void S3FIFOdv2_choose_threshold(cache_t *cache);
 static void S3FIFOdv2_update_main_reinsert_threshold(cache_t *cache);
@@ -96,15 +100,8 @@ static cache_obj_t *S3FIFOdv2_find(cache_t *cache, const request_t *req,
 static cache_obj_t *S3FIFOdv2_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *S3FIFOdv2_to_evict(cache_t *cache, const request_t *req);
 static void S3FIFOdv2_evict(cache_t *cache, const request_t *req);
-static bool S3FIFOdv2_remove(cache_t *cache, const obj_id_t obj_id);
-static inline int64_t S3FIFOdv2_get_occupied_byte(const cache_t *cache);
-static inline int64_t S3FIFOdv2_get_n_obj(const cache_t *cache);
-static inline bool S3FIFOdv2_can_insert(cache_t *cache, const request_t *req);
 static void S3FIFOdv2_parse_params(cache_t *cache,
                                    const char *cache_specific_params);
-
-static void S3FIFOdv2_evict_fifo(cache_t *cache, const request_t *req);
-static void S3FIFOdv2_evict_main(cache_t *cache, const request_t *req);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -422,61 +419,6 @@ static void S3FIFOdv2_choose_threshold(cache_t *cache) {
   }
 }
 
-static bool S3FIFOdv2_rebalance0(cache_t *cache) {
-  S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)cache->eviction_params;
-
-  int64_t sum_fifo = 0;
-  int64_t sum_main = 0;
-  for (int i = 0; i < PROB_ARRAY_SIZE; i++) {
-    sum_fifo += params->first_access_cnt_over_age_fifo[i];
-    sum_main += params->first_access_cnt_over_age_main[i];
-  }
-
-  int64_t sum_one_perc_fifo = 0, sum_one_perc_main = 0;
-  size_t pos_fifo = params->fifo->cache_size / params->age_granularity;
-  size_t pos_main = params->main_cache->cache_size / params->age_granularity;
-  size_t n_slots =
-      MIN(params->fifo->cache_size, params->main_cache->cache_size) / 20 + 1;
-  for (size_t i = 0; i < n_slots; i++) {
-    sum_one_perc_fifo += params->first_access_cnt_over_age_fifo[pos_fifo - i];
-    sum_one_perc_main += params->first_access_cnt_over_age_main[pos_main - i];
-  }
-
-  if (sum_one_perc_fifo + sum_one_perc_main < 100) {
-    return false;
-  }
-
-  // for (int i = 0; i < 10; i++) {
-  //   printf("%4d ", params->first_access_cnt_over_age_fifo[i]);
-  // }
-  // printf("%ld - %ld\n", sum_fifo, sum_one_perc_fifo);
-
-  // for (int i = 0; i < 10; i++) {
-  //   printf("%4d ", params->first_access_cnt_over_age_main[i]);
-  // }
-  // printf("%ld - %ld\n", sum_main, sum_one_perc_main);
-
-  n_slots = n_slots / 5;
-  if (sum_one_perc_fifo > sum_one_perc_main * 2) {
-    params->fifo->cache_size += n_slots;
-    params->main_cache->cache_size -= n_slots;
-    params->fifo_ghost->cache_size -= n_slots;
-    // printf("move to fifo %ld\n", n_slots);
-  } else if (sum_one_perc_main > sum_one_perc_fifo * 2) {
-    params->fifo->cache_size -= n_slots;
-    params->main_cache->cache_size += n_slots;
-    params->fifo_ghost->cache_size += n_slots;
-    // printf("move to main %ld\n", n_slots);
-  }
-
-  memset(params->first_access_cnt_over_age_fifo, 0,
-         sizeof(*params->first_access_cnt_over_age_fifo));
-  memset(params->first_access_cnt_over_age_main, 0,
-         sizeof(*params->first_access_cnt_over_age_main));
-
-  return true;
-}
-
 static void S3FIFOdv2_rebalance(cache_t *cache) {
   S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)cache->eviction_params;
 
@@ -781,9 +723,10 @@ static void S3FIFOdv2_evict(cache_t *cache, const request_t *req) {
 
   if (main->get_occupied_byte(main) > main->cache_size ||
       fifo->get_occupied_byte(fifo) == 0) {
-    return S3FIFOdv2_evict_main(cache, req);
+    S3FIFOdv2_evict_main(cache, req);
+  } else {
+    S3FIFOdv2_evict_fifo(cache, req);
   }
-  return S3FIFOdv2_evict_fifo(cache, req);
 }
 
 /**
@@ -875,6 +818,61 @@ static void S3FIFOdv2_parse_params(cache_t *cache,
   }
 
   free(old_params_str);
+}
+
+static bool S3FIFOdv2_rebalance0(cache_t *cache) {
+  S3FIFOdv2_params_t *params = (S3FIFOdv2_params_t *)cache->eviction_params;
+
+  int64_t sum_fifo = 0;
+  int64_t sum_main = 0;
+  for (size_t i = 0; i < PROB_ARRAY_SIZE; i++) {
+    sum_fifo += params->first_access_cnt_over_age_fifo[i];
+    sum_main += params->first_access_cnt_over_age_main[i];
+  }
+
+  int64_t sum_one_perc_fifo = 0, sum_one_perc_main = 0;
+  size_t pos_fifo = params->fifo->cache_size / params->age_granularity;
+  size_t pos_main = params->main_cache->cache_size / params->age_granularity;
+  size_t n_slots =
+      MIN(params->fifo->cache_size, params->main_cache->cache_size) / 20 + 1;
+  for (size_t i = 0; i < n_slots; i++) {
+    sum_one_perc_fifo += params->first_access_cnt_over_age_fifo[pos_fifo - i];
+    sum_one_perc_main += params->first_access_cnt_over_age_main[pos_main - i];
+  }
+
+  if (sum_one_perc_fifo + sum_one_perc_main < 100) {
+    return false;
+  }
+
+  // for (int i = 0; i < 10; i++) {
+  //   printf("%4d ", params->first_access_cnt_over_age_fifo[i]);
+  // }
+  // printf("%ld - %ld\n", sum_fifo, sum_one_perc_fifo);
+
+  // for (int i = 0; i < 10; i++) {
+  //   printf("%4d ", params->first_access_cnt_over_age_main[i]);
+  // }
+  // printf("%ld - %ld\n", sum_main, sum_one_perc_main);
+
+  n_slots = n_slots / 5;
+  if (sum_one_perc_fifo > sum_one_perc_main * 2) {
+    params->fifo->cache_size += n_slots;
+    params->main_cache->cache_size -= n_slots;
+    params->fifo_ghost->cache_size -= n_slots;
+    // printf("move to fifo %ld\n", n_slots);
+  } else if (sum_one_perc_main > sum_one_perc_fifo * 2) {
+    params->fifo->cache_size -= n_slots;
+    params->main_cache->cache_size += n_slots;
+    params->fifo_ghost->cache_size += n_slots;
+    // printf("move to main %ld\n", n_slots);
+  }
+
+  memset(params->first_access_cnt_over_age_fifo, 0,
+         sizeof(*params->first_access_cnt_over_age_fifo));
+  memset(params->first_access_cnt_over_age_main, 0,
+         sizeof(*params->first_access_cnt_over_age_main));
+
+  return true;
 }
 
 #ifdef __cplusplus

@@ -50,6 +50,7 @@ admissioner_t *create_bloomfilter_admissioner(const char *init_params) {
   }
 
   admissioner_t *admissioner = (admissioner_t *)malloc(sizeof(admissioner_t));
+  memset(admissioner, 0, sizeof(admissioner_t));
   admissioner->init_params = NULL;
 
   bf_admission_params_t *bf_params =
@@ -62,7 +63,8 @@ admissioner_t *create_bloomfilter_admissioner(const char *init_params) {
   admissioner->free = free_bloomfilter_admissioner;
   admissioner->admit = bloomfilter_admit;
 
-  strncpy(admissioner->admissioner_name, "BloomFilter", CACHE_NAME_LEN);
+  strncpy(admissioner->admissioner_name, "BloomFilter", CACHE_NAME_LEN - 1);
+  admissioner->admissioner_name[CACHE_NAME_LEN - 1] = '\0';
   return admissioner;
 }
 

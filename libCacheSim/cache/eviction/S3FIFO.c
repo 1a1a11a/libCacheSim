@@ -54,7 +54,6 @@ static const char *DEFAULT_CACHE_PARAMS = "small-size-ratio=0.10,ghost-size-rati
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *S3FIFO_init(const common_cache_params_t ccache_params, const char *cache_specific_params);
 static void S3FIFO_free(cache_t *cache);
 static bool S3FIFO_get(cache_t *cache, const request_t *req);
 
@@ -298,7 +297,7 @@ static void S3FIFO_evict_small(cache_t *cache, const request_t *req) {
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
     if (obj_to_evict->S3FIFO.freq >= params->move_to_main_threshold) {
-      cache_obj_t *new_obj = main->insert(main, params->req_local);
+      main->insert(main, params->req_local);
     } else {
       // insert to ghost
       if (ghost != NULL) {
@@ -358,9 +357,10 @@ static void S3FIFO_evict(cache_t *cache, const request_t *req) {
   cache_t *main = params->main_fifo;
 
   if (main->get_occupied_byte(main) > main->cache_size || small->get_occupied_byte(small) == 0) {
-    return S3FIFO_evict_main(cache, req);
+    S3FIFO_evict_main(cache, req);
+  } else {
+    S3FIFO_evict_small(cache, req);
   }
-  return S3FIFO_evict_small(cache, req);
 }
 
 /**
@@ -420,7 +420,6 @@ static void S3FIFO_parse_params(cache_t *cache, const char *cache_specific_param
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
-  char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,

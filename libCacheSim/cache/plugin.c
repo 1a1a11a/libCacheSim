@@ -33,7 +33,14 @@ cache_t *create_cache_external(const char *const cache_alg_name,
   }
   dlerror(); /* Clear any existing error */
 
-  *(void **)(&cache_init) = dlsym(handle, cache_init_func_name);
+  // ISO C compliant way to convert void* to function pointer
+  union {
+    void *obj_ptr;
+    cache_t *(*func_ptr)(common_cache_params_t, void *);
+  } dlsym_ptr;
+
+  dlsym_ptr.obj_ptr = dlsym(handle, cache_init_func_name);
+  cache_init = dlsym_ptr.func_ptr;
 
   if ((error = dlerror()) != NULL) {
     fprintf(stderr, "%s\n", error);
@@ -61,13 +68,21 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
    * everything is OK */
 
   sprintf(cache_init_func_name, "%s_init", cache_alg_name);
-  //  *(void **) (&cache_init) = dlsym(handle, cache_init_func_name);
-  cache_init = dlsym(handle, cache_init_func_name);
+
+  // ISO C compliant way to convert void* to function pointer
+  union {
+    void *obj_ptr;
+    cache_t *(*func_ptr)(common_cache_params_t, void *);
+  } dlsym_ptr;
+
+  dlsym_ptr.obj_ptr = dlsym(handle, cache_init_func_name);
+  cache_init = dlsym_ptr.func_ptr;
+
   err = dlerror();
 
   if (cache_init == NULL) {
     WARN("cannot load internal cache %s: error %s\n", cache_alg_name, err);
-    return NULL;
+    abort();
   }
 
   VERBOSE("internal cache %s loaded\n", cache_alg_name);

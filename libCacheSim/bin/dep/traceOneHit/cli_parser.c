@@ -1,5 +1,3 @@
-
-
 #define _GNU_SOURCE
 #include <argp.h>
 #include <stdbool.h>
@@ -54,7 +52,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->trace_type_params = arg;
       break;
     case OPTION_OUTPUT_PATH:
-      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
+      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
+      arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
     case OPTION_NUM_REQ:
       arguments->n_req = atoi(arg);
@@ -121,14 +120,21 @@ static void init_arg(struct arguments *args) {
 void parse_cmd(int argc, char *argv[], struct arguments *args) {
   init_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {.options = options,
+                             .parser = parse_opt,
+                             .args_doc = args_doc,
+                             .doc = doc,
+                             .children = NULL,
+                             .help_filter = NULL,
+                             .argp_domain = NULL};
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 
   args->trace_path = args->args[0];
   const char *trace_type_str = args->args[1];
   const char *task = args->args[2];
-  strncpy(args->task, task, TASK_STR_LEN);
+  strncpy(args->task, task, TASK_STR_LEN - 1);
+  args->task[TASK_STR_LEN - 1] = '\0';
 
   /* convert trace type string to enum */
   args->trace_type = trace_type_str_to_enum(trace_type_str, args->trace_path);
@@ -151,11 +157,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
       setup_reader(args->trace_path, args->trace_type, &reader_init_params);
 }
 
-
-void free_arg(struct arguments *args) {
-  close_reader(args->reader);
-}
-
+void free_arg(struct arguments *args) { close_reader(args->reader); }
 
 #ifdef __cplusplus
 }

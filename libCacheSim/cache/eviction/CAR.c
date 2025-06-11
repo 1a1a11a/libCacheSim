@@ -234,7 +234,6 @@ static cache_obj_t *CAR_insert(cache_t *cache, const request_t *req){
     cache_obj_t *obj = cache_insert_base(cache, req);
 
     if(
-        // (params->last_req_in_ghost == cache->n_req) &&
         (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)
     ) {
         // Insert at the tail of T2
@@ -253,6 +252,8 @@ static cache_obj_t *CAR_insert(cache_t *cache, const request_t *req){
         params->L1_data_size += req->obj_size + cache->obj_md_size;
 
     }
+
+    return obj;
 }
 
 /**
@@ -654,11 +655,7 @@ static bool _CAR_get_debug(cache_t *cache, const request_t *req) {
     cache->n_req += 1;
     
     cache_obj_t *obj = cache->find(cache, req, true);
-    // printf("********\n");
-    bool hit = (obj != NULL);
-    // printf("%s\n", hit? "hit" : "miss");
 
-    cache->last_request_metadata = hit? "hit" : "miss";
     _CAR_sanity_check_full(cache, req);
 
     if (obj != NULL) {
@@ -671,13 +668,11 @@ static bool _CAR_get_debug(cache_t *cache, const request_t *req) {
     
       while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
              cache->cache_size) {
-        // printf("Evicting\n");
         cache->evict(cache, req);
       }
     
       _CAR_sanity_check_full(cache, req);
     
-    //   printf("Inserting\n");
       cache->insert(cache, req);
       _CAR_sanity_check_full(cache, req);
     

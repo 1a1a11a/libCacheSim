@@ -32,8 +32,12 @@ extern "C" {
 #define FILE_QUOTE 0x22
 
 // to suppress the warnings
-char *strdup(const char *s);
-ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+// #ifndef strdup
+// char *strdup(const char *s);
+// #endif
+// #ifndef getline
+// ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+// #endif
 
 reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_type,
                        const reader_init_param_t *const init_params) {
@@ -379,7 +383,7 @@ int go_back_one_req(reader_t *const reader) {
           return 0;
         }
       }
-
+      break;
     case BINARY_TRACE_FORMAT:
       if (reader->mmap_offset >= reader->trace_start_offset + reader->item_size) {
         reader->mmap_offset -= (reader->item_size);
@@ -387,10 +391,12 @@ int go_back_one_req(reader_t *const reader) {
       } else {
         return 1;
       }
+      break;
     default:
       ERROR("cannot recognize reader trace format: %d\n", reader->trace_format);
       exit(1);
   }
+  return 1;
 }
 
 int go_back_two_req(reader_t *const reader) {
@@ -494,10 +500,10 @@ void reset_reader(reader_t *const reader) {
   DEBUG("reset reader current offset %ld\n", curr_offset);
 }
 
-uint64_t get_num_of_req(reader_t *const reader) {
+int64_t get_num_of_req(reader_t *const reader) {
   if (reader->n_total_req > 0) return reader->n_total_req;
 
-  uint64_t n_req = 0;
+  int64_t n_req = 0;
 
   if (reader->trace_format == TXT_TRACE_FORMAT || reader->is_zstd_file) {
     reader_t *reader_copy = clone_reader(reader);
@@ -563,9 +569,6 @@ int close_reader(reader_t *const reader) {
     if (reader->mapped_file != NULL) {
       munmap(reader->mapped_file, reader->file_size);
     }
-    if (reader->init_params.sampler != NULL) {
-      reader->init_params.sampler->free(reader->init_params.sampler);
-    }
   }
 
   if (reader->reader_params != NULL) {
@@ -605,6 +608,7 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
       while (isspace(c)) {
         fseek(reader->file, -2, SEEK_CUR);
         _v = fread(&c, 1, 1, reader->file);
+        DEBUG_ASSERT(_v == 1);
       }
     }
   } else {
@@ -631,7 +635,7 @@ void read_last_req(reader_t *reader, request_t *req) {
 }
 
 bool is_str_num(const char *str, size_t len) {
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     if (!(isdigit(str[i]) || (str[i] >= 'a' && str[i] <= 'f') || (str[i] >= 'A' && str[i] <= 'F'))) return false;
   }
   return true;

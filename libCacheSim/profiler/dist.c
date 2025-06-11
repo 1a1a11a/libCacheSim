@@ -203,7 +203,8 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
   free(file_path);
 }
 
-void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
+void save_dist_txt(reader_t *const reader , 
+                  const int32_t *dist_array,
                    int64_t array_size, const char *const ofilepath,
                    const dist_type_e dist_type) {
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
@@ -229,10 +230,10 @@ int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
   int fd = fileno(file);
   struct stat buf;
   fstat(fd, &buf);
-  assert(buf.st_size == sizeof(int32_t) * get_num_of_req(reader));
+  assert((size_t)buf.st_size == sizeof(int32_t) * get_num_of_req(reader));
 
   int32_t *dist_array = malloc(sizeof(int32_t) * get_num_of_req(reader));
-  size_t n_read =
+  int64_t n_read =
       fread(dist_array, sizeof(int32_t), get_num_of_req(reader), file);
   assert(n_read == get_num_of_req(reader));
 
@@ -243,7 +244,7 @@ int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
 
 void cnt_dist(const int32_t *dist_array, const int64_t array_size,
               GHashTable *hash_table) {
-  for (uint64_t i = 0; i < array_size; i++) {
+  for (int64_t i = 0; i < array_size; i++) {
     int64_t dist = dist_array[i] == -1 ? INT64_MAX : dist_array[i];
     gpointer gp_dist = GSIZE_TO_POINTER((gsize)dist);
     int64_t old_cnt = (int64_t)g_hash_table_lookup(hash_table, gp_dist);
@@ -251,9 +252,9 @@ void cnt_dist(const int32_t *dist_array, const int64_t array_size,
   }
 }
 
-void _write_dist_cnt(gpointer key, gpointer value, gpointer user_data) {
-  int64_t dist = (int64_t)GPOINTER_TO_SIZE(key);
-  int64_t cnt = (int64_t)GPOINTER_TO_SIZE(value);
+void _write_dist_cnt(gpointer k, gpointer v, gpointer user_data) {
+  int64_t dist = (int64_t)GPOINTER_TO_SIZE(k);
+  int64_t cnt = (int64_t)GPOINTER_TO_SIZE(v);
   FILE *file = (FILE *)user_data;
   fprintf(file, "%ld:%ld, ", (long)dist, (long)cnt);
 }
@@ -261,7 +262,7 @@ void _write_dist_cnt(gpointer key, gpointer value, gpointer user_data) {
 void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
                           const int64_t array_size, const char *const ofilepath,
                           const dist_type_e dist_type) {
-  assert(get_num_of_req(reader) == array_size);
+  assert((int64_t) get_num_of_req(reader) == array_size);
 
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
   sprintf(file_path, "%s.%s.cnt", ofilepath, g_dist_type_name[dist_type]);

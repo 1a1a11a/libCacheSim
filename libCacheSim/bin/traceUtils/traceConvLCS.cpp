@@ -249,7 +249,7 @@ static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint
   double *log_freq = new double[stat.n_obj];
   double *log_rank = new double[stat.n_obj];
   int64_t n = 0;
-  for (int i = 0; i < freq_cnt_vec.size(); i++) {
+  for (size_t i = 0; i < freq_cnt_vec.size(); i++) {
     for (int j = 0; j < freq_cnt_vec[i].second; j++) {
       log_freq[n] = log(static_cast<double>(freq_cnt_vec[i].first));
       log_rank[n] = log(static_cast<double>(n + 1));

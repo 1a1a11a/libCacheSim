@@ -71,7 +71,7 @@ extern "C" {
 
 #define SUBMIT_CHAR(p, c) ((p)->entry_buf[entry_pos++] = (c))
 
-static char *csv_errors[] = {"success",
+static const char *csv_errors[] = {"success",
                              "error parsing data while strict checking enabled",
                              "memory exhausted while increasing buffer size",
                              "data size too large", "invalid status code"};
@@ -81,7 +81,7 @@ int csv_error(struct csv_parser *p) {
   return p->status;
 }
 
-char *csv_strerror(int status) {
+const char *csv_strerror(int status) {
   /* Return a textual description of status */
   if (status >= CSV_EINVALID || status < 0)
     return csv_errors[CSV_EINVALID];
@@ -145,7 +145,7 @@ int csv_fini(struct csv_parser *p, void (*cb1)(void *, size_t, void *),
   /* Finalize parsing.  Needed, for example, when file does not end in a newline
    */
   int quoted = p->quoted;
-  __attribute__((unused)) int pstate = p->pstate;
+  int pstate = p->pstate;
   size_t spaces = p->spaces;
   size_t entry_pos = p->entry_pos;
 

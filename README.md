@@ -2,9 +2,8 @@
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
 
-#### The main development of libCacheSim is at [https://github.com/1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim), the [cachemon](https://github.com/cachemon/libCacheSim) repo is a mirror of the stable branch. Please fork and submit PR to this repo. 
-
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+- [libCacheSim - building and running cache simulations](#libcachesim---building-and-running-cache-simulations)
   - [News](#news)
   - [What is libCacheSim](#what-is-libcachesim)
   - [libCacheSim features](#libcachesim-features)
@@ -16,17 +15,20 @@
     - [One-line install](#one-line-install)
     - [Install dependency](#install-dependency)
     - [Build libCacheSim](#build-libcachesim)
+    - [Developer Setup](#developer-setup)
+      - [Pre-commit Hooks](#pre-commit-hooks)
   - [Usage](#usage)
     - [cachesim (a high-performance cache simulator)](#cachesim-a-high-performance-cache-simulator)
       - [basic usage](#basic-usage)
       - [Run a single cache simulation](#run-a-single-cache-simulation)
       - [Run multiple cache simulations with different cache sizes](#run-multiple-cache-simulations-with-different-cache-sizes)
+      - [Debug cachesim](#debug-cachesim)
       - [Plot miss ratio curve](#plot-miss-ratio-curve)
     - [Trace analysis](#trace-analysis)
+    - [Miss ratio curves profiling](#miss-ratio-curves-profiling)
     - [Using libCacheSim as a library](#using-libcachesim-as-a-library)
     - [Extending libCacheSim (new algorithms and trace types)](#extending-libcachesim-new-algorithms-and-trace-types)
   - [Open source cache traces](#open-source-cache-traces)
-  - [Questions?](#questions)
   - [Contributions](#contributions)
   - [Reference](#reference)
   - [License](#license)
@@ -36,7 +38,7 @@
 
 <!-- TOC --><a name="news"></a>
 ## News
-* **2024 Oct**: **S3-FIFO** gets an upgrade! Please try out the new version (the old is now called S3-FIFOv0).
+* **2024 Oct**: **S3-FIFO** gets an upgrade! Please try out the new version (the old is now renamed to S3-FIFOv0).
 * **2023 June**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
 * **2023 Oct**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **SIEVE(https://sievecache.com)** are available! These are very simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
 * **2024 Jan**: We compiled a list of open-source cache datasets at the bottom of this page 
@@ -68,7 +70,7 @@ cachesim supports the following algorithms:
 ### Eviction algorithms
 * [FIFO](/libCacheSim/cache/eviction/FIFO.c), [LRU](/libCacheSim/cache/eviction/LRU.c), [Clock](/libCacheSim/cache/eviction/Clock.c), [SLRU](/libCacheSim/cache/eviction/SLRU.c)
 * [LFU](/libCacheSim/cache/eviction/LFU.c), [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c)
-* [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c)
+* [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c), [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c)
 * [Belady](/libCacheSim/cache/eviction/Belady.c), [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 * [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp)
 * [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
@@ -78,6 +80,7 @@ cachesim supports the following algorithms:
 * [LRB](/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp)
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
 * [WTinyLFU](/libCacheSim/cache/eviction/WTinyLFU.c)
+* [3LCache](/libCacheSim/cache/eviction/3LCache/)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
 * [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c)
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c)
@@ -122,6 +125,26 @@ cmake .. && make -j
 [sudo] make install
 popd
 ```
+
+<!-- TOC --><a name="developer-setup"></a>
+### Developer Setup
+For developers, we provide tools to ensure code quality and consistent formatting:
+
+#### Pre-commit Hooks
+We provide a git pre-commit hook that runs linting checks before each commit, helping catch issues early:
+
+```bash
+# Install the pre-commit hook
+bash scripts/setup-hooks.sh
+```
+
+The pre-commit hook:
+- Checks formatting with clang-format (if available)
+- Runs clang-tidy static analysis in parallel
+- Compiles modified files with strict compiler warnings enabled
+- Prevents committing code with formatting, static analysis, or compiler issues
+- Logs are preserved for debugging in `.lint-logs/` directory
+
 ---
 
 <!-- TOC --><a name="usage"></a>
@@ -139,7 +162,7 @@ use `./bin/cachesim --help` to get more information.
 
 <!-- TOC --><a name="run-a-single-cache-simulation"></a>
 #### Run a single cache simulation
-Run the example traces with LRU eviction algorithm and 1GB cache size. 
+Run the example traces using the LRU eviction algorithm and a 1 GB cache size. 
 
 ```bash
 # Note that no space between the cache size and the unit, and the unit is not case-sensitive
@@ -167,6 +190,17 @@ Run the example traces with LRU eviction algorithm and 1GB cache size.
 
 See [quick start cachesim](/doc/quickstart_cachesim.md) for more usages. 
 
+<!-- TOC --><a name="debug-cachesim"></a>
+#### Debug cachesim
+We provide a debug script to help you debug cachesim with GDB. For detailed usage instructions, see [debug guide](/doc/usage.md).
+
+```bash
+# Basic usage
+./scripts/debug.sh
+
+# Debug with program arguments
+./scripts/debug.sh -- data/cloudPhysicsIO.vscsi vscsi lru,s3fifo 100mb,1gb
+```
 
 <!-- TOC --><a name="plot-miss-ratio-curve"></a>
 #### Plot miss ratio curve
@@ -245,7 +279,7 @@ free_request(req);
 cache->cache_free(cache);
 ```
 
-save this to `test.c` and compile it with below command. For `libCacheSim.h` to work correctly we need the following libs to be installed first: [glib](https://developer.gnome.org/glib/) and [zstd](https://github.com/facebook/zstd). Please check the previous section [installation](#install-dependency).
+Save this to `test.c` and compile it with the below command. For `libCacheSim.h` to work correctly, we need the following libs to be installed first: [glib](https://developer.gnome.org/glib/) and [zstd](https://github.com/facebook/zstd). Please refer to the previous section, [Installation](#install-dependency).
 ```bash
 gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out -lm -lzstd
 ```
@@ -261,17 +295,19 @@ See [here](/doc/advanced_lib.md) for more details, and see [example folder](/exa
 
 <!-- TOC --><a name="extending-libcachesim-new-algorithms-and-trace-types"></a>
 ### Extending libCacheSim (new algorithms and trace types)
-libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
+libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces because they allow libCacheSim to run faster, and the traces are more compact. 
 
 We also support zstd compressed binary traces without decompression. This allows you to store the traces with less space.
 
 If you need to add a new trace type or a new algorithm, please see [here](/doc/advanced_lib_extend.md) for details. 
 
+We encourage the users to check [deepWiki](https://deepwiki.com/1a1a11a/libCacheSim) for a more detailed documentation. 
+
 
 ---
 <!-- TOC --><a name="open-source-cache-traces"></a>
 ## Open source cache traces
-In the [repo](/data/), there are sample (one from cloudphysics and one from twitter) traces in different formats (csv, txt, vscsi, and oracleGeneral). Note that the provided traces are **very small** samples and __should not be used for evaluating different algorithms' miss ratios__. The full traces can be found either with the original release or the processed oracleGeneral format. 
+In the [repo](/data/), there are sample traces in different formats (`csv`, `txt`, `vscsi`, and `oracleGeneral`). Note that the sampled traces are **very small** and __should not be used for evaluating different algorithms' miss ratios__. The full traces can be found either with the original release or the processed `oracleGeneral` format. 
 
 Note that the oracleGeneral traces are compressed with [zstd](https://github.com/facebook/zstd) and have the following format:
 
@@ -283,7 +319,7 @@ struct {
     int64_t next_access_vtime;  // -1 if no next access
 }
 ```
-The compressed traces can be used with libCacheSim without decompression. And libCacheSim provides a `tracePrint` tool to print the trace in human-readable format. 
+The compressed traces can be used with libCacheSim without decompression. And libCacheSim provides a `tracePrint` tool to print the trace in a human-readable format. 
 
 
 | Dataset       | Year |    Type   |                                      Original release                                     |                                OracleGeneral format                                |
@@ -296,16 +332,10 @@ The compressed traces can be used with libCacheSim without decompression. And li
 | MetaKV        | 2022 | key-value | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaKV/)       |
 | MetaCDN       | 2023 | object    | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaCDN/)      |
 
-Among the large number of traces, I recommend using the newer traces from Twitter (cluster52), Wiki, and Meta. 
+Among the large number of traces, I recommend using the newer ones from Twitter (cluster52), Wiki, and Meta. 
 
 
 ---
-<!-- TOC --><a name="questions"></a>
-## Questions? 
-Please join the Google group https://groups.google.com/g/libcachesim and ask questions.
-
-
----  
 <!-- TOC --><a name="contributions"></a>
 ## Contributions 
 We gladly welcome pull requests.
@@ -319,7 +349,7 @@ This project adheres to Google's coding style. By participating, you are expecte
 ```
 @inproceedings{yang2020-workload,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
-    title = {A large scale analysis of hundreds of in-memory cache clusters at Twitter},
+    title = {A large-scale analysis of hundreds of in-memory cache clusters at Twitter},
     booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
     year = {2020},
     isbn = {978-1-939133-19-9},

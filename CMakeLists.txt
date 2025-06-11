@@ -41,7 +41,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/opt/homebrew/")
 
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    # set(CFLAGS "$ENV{CFLAGS} " "-Wl,--export-dynamic ")
     add_definitions(-DOS_LINUX)
 else()
     message(FATAL_ERROR "unsupported operating system ${CMAKE_SYSTEM_NAME}")
@@ -115,25 +114,18 @@ message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEV
 # add_link_options(-fsanitize=address)
 
 # #######################################
-# flags   #
+# compiler flags #
 # #######################################
-set(CFLAGS "$ENV{CFLAGS} "
-    "-Wall -Wshadow -Winline "
-    "-Wno-unused "
-    "-Wstrict-prototypes "
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs")
 
-    # "-Wmissing-prototypes "
-    "-Wmissing-declarations "
-    "-Wredundant-decls "
-    "-fno-strict-aliasing "
-)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs")
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set(CFLAGS "$ENV{CFLAGS} " "-Wl,--export-dynamic ")
-endif()
+# if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+#     set(CFLAGS "$ENV{CFLAGS} " "-Wl,--export-dynamic ")
+# endif()
 
-string(REPLACE "" "" LOCAL_CFLAGS ${CFLAGS})
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS} ${LOCAL_CFLAGS}")
+# string(REPLACE "" "" LOCAL_CFLAGS ${CFLAGS})
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS} ${LOCAL_CFLAGS}")
 
 # #######################################
 # find dependency #
@@ -244,7 +236,7 @@ message(STATUS "========================================================")
 # #######################################
 # library compilation  #
 # #######################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include)
 set(ALL_MODULES cachelib admission prefetch evictionC evictionCPP traceReader profiler dataStructure ds_hash utils)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache)
@@ -356,6 +348,9 @@ set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${reader_source} ${dataStructure_so
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(${PROJECT_NAME} ${LIB_SOURCE})
+# target_compile_options(${PROJECT_NAME} PRIVATE -fPIC)
+target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic)
+
 
 # add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})

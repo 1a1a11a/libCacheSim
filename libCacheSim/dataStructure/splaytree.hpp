@@ -9,7 +9,7 @@ class SplayTree
     struct node
     {
         node() : parent(nullptr) {}
-        node(K key, V val) : first(key), second(val), sum(val), size(1), parent(nullptr) {}
+        node(K key, V val) : parent(nullptr), first(key), second(val), sum(val), size(1) {}
         std::unique_ptr<node> left, right;
         node *parent;
         K first;
@@ -119,7 +119,7 @@ public:
     };
 
 public:
-    SplayTree() : node_count_{0}, sum(0) {}
+    SplayTree() : sum(0), node_count_{0} {}
     ~SplayTree() {}
     void insert(const K &key, const V &val);
     iterator find(const K &key) { return find_(key) ? iterator(find_(key)) : end(); }

@@ -16,12 +16,12 @@ enum argp_option_short {
 };
 
 static struct argp_option options[] = {
-    {"size", OPTION_SIZE, "SIZE", 0, "Size for fixed-size mode (implies fixed-size mode)"},
+    {"size", OPTION_SIZE, "SIZE", 0, "Size for fixed-size mode (implies fixed-size mode)", 0},
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS, "\"obj-id-col=1;delimiter=,\"", 0,
-     "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\""},
-    {"num-req", OPTION_NUM_REQ, "REQ", 0, "Num of requests to process; default -1 means all requests"},
-    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0, "specify to ignore the object size from the trace"},
-    {0}
+     "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\"", 0},
+    {"num-req", OPTION_NUM_REQ, "REQ", 0, "Num of requests to process; default -1 means all requests", 0},
+    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0, "specify to ignore the object size from the trace", 0},
+    {0, 0, 0, 0, 0, 0}
 };
 
 
@@ -69,7 +69,15 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
   return 0;
 }
 
-static struct argp argp = { options, parse_opt, args_doc, doc };
+static struct argp argp = { 
+    .options = options, 
+    .parser = parse_opt, 
+    .args_doc = args_doc, 
+    .doc = doc, 
+    .children = NULL, 
+    .help_filter = NULL,
+    .argp_domain = NULL 
+};
 
 void parse_mrc_cmd(int argc, char **argv, struct PARAM *args) {
   struct SHARD_arguments arguments;

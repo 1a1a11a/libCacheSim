@@ -84,8 +84,8 @@ enum read_direction {
 struct zstd_reader;
 typedef struct reader {
   /************* common fields *************/
-  uint64_t n_read_req;
-  uint64_t n_total_req; /* number of requests in the trace */
+  int64_t n_read_req;
+  int64_t n_total_req; /* number of requests in the trace */
   char *trace_path;
   size_t file_size;
   reader_init_param_t init_params;
@@ -203,7 +203,7 @@ static inline reader_t *open_trace(const char *path, const trace_type_e type,
  * @param reader
  * @return
  */
-uint64_t get_num_of_req(reader_t *reader);
+int64_t get_num_of_req(reader_t *reader);
 
 /**
  * get the trace type
@@ -277,7 +277,7 @@ static inline void print_reader(reader_t *reader) {
       "obj_id_is_num: %d, ignore_size_zero_req: %d, ignore_obj_size: %d, "
       "n_req_left: %d, last_req_clock_time: %ld\n",
       g_trace_type_name[reader->trace_type], reader->trace_path, reader->trace_start_offset, (long)reader->mmap_offset,
-      reader->is_zstd_file, reader->item_size, reader->file, reader->line_buf, reader->line_buf_size,
+      reader->is_zstd_file, reader->item_size, (void *)reader->file, reader->line_buf, reader->line_buf_size,
       reader->csv_delimiter, reader->csv_has_header, reader->obj_id_is_num, reader->ignore_size_zero_req,
       reader->ignore_obj_size, reader->n_req_left, (long)reader->last_req_clock_time);
 }

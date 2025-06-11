@@ -18,3 +18,4 @@ result/
 sftp-config.json
 # Clangd cache
 *.cache/
+.lint-logs/

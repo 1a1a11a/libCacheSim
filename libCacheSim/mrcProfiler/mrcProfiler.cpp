@@ -1,22 +1,24 @@
+#include "./mrcProfiler.h"
+
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <vector>
-#include <string>
+#include <string.h>
+
 #include <memory>
 #include <ostream>
-#include <vector>
 #include <set>
+#include <string>
 #include <unordered_map>
-#include "./mrcProfiler.h"
-#include "../dataStructure/splaytree.hpp"
+#include <vector>
+
 #include "../dataStructure/minvaluemap.hpp"
+#include "../dataStructure/splaytree.hpp"
 #include "../include/libCacheSim/const.h"
 
-
-
-mrcProfiler::MRCProfilerBase * mrcProfiler::create_mrc_profiler(mrc_profiler_e type, reader_t *reader, std::string output_path, const mrc_profiler_params_t & params) {
-    switch (type) {
+mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
+    mrc_profiler_e type, reader_t *reader, std::string output_path,
+    const mrc_profiler_params_t &params) {
+  switch (type) {
     case mrc_profiler_e::SHARDS_PROFILER:
       return new MRCProfilerSHARDS(reader, output_path, params);
     case mrc_profiler_e::MINISIM_PROFILER:
@@ -24,12 +26,10 @@ mrcProfiler::MRCProfilerBase * mrcProfiler::create_mrc_profiler(mrc_profiler_e t
     default:
       ERROR("unknown profiler type %d\n", type);
       exit(1);
-    }
+  }
 }
 
-
-
-void mrcProfiler::MRCProfilerBase::print(const char * output_path) {
+void mrcProfiler::MRCProfilerBase::print(const char *output_path) {
   if (!has_run_) {
     ERROR("MRCProfiler has not been run\n");
     return;
@@ -37,12 +37,11 @@ void mrcProfiler::MRCProfilerBase::print(const char * output_path) {
 
   FILE *outfp = stdout;
   bool open_output_file = false;
-  if(output_path != nullptr && strlen(output_path) != 0){
+  if (output_path != nullptr && strlen(output_path) != 0) {
     outfp = fopen(output_path, "w");
     open_output_file = true;
     if (outfp == nullptr) {
       WARN("failed to open file %s\n", output_path);
-      fclose(outfp);
       outfp = stdout;
       open_output_file = false;
     }
@@ -58,7 +57,7 @@ void mrcProfiler::MRCProfilerBase::print(const char * output_path) {
     fprintf(outfp, "wss_ratio\t");
   }
   fprintf(outfp, "cache_size\tmiss_rate\tbyte_miss_rate\n");
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     if (params_.profile_wss_ratio.size() != 0) {
       fprintf(outfp, "%lf\t", params_.profile_wss_ratio[i]);
     }
@@ -67,8 +66,10 @@ void mrcProfiler::MRCProfilerBase::print(const char * output_path) {
 
     // clip to [0, 1]
     miss_rate = miss_rate > 1 ? 1 : (miss_rate < 0 ? 0 : miss_rate);
-    byte_miss_rate = byte_miss_rate > 1 ? 1 : (byte_miss_rate < 0 ? 0 : byte_miss_rate);
-    fprintf(outfp, "%ldB\t%lf\t%lf\n", mrc_size_vec[i], miss_rate, byte_miss_rate);
+    byte_miss_rate =
+        byte_miss_rate > 1 ? 1 : (byte_miss_rate < 0 ? 0 : byte_miss_rate);
+    fprintf(outfp, "%ldB\t%lf\t%lf\n", mrc_size_vec[i], miss_rate,
+            byte_miss_rate);
   }
 
   if (open_output_file) {
@@ -112,7 +113,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
     n_req_ += 1;
     sum_obj_size_req += req->obj_size;
 
-    uint64_t hash_value = get_hash_value_int_64_with_salt(req->obj_id, params_.shards_params.salt);
+    uint64_t hash_value = get_hash_value_int_64_with_salt(
+        req->obj_id, params_.shards_params.salt);
     current_time += 1;
     if (hash_value <= sample_max) {
       sampled_cnt += 1.0 / sample_rate;
@@ -120,7 +122,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
 
       if (last_access_time_map.count(req->obj_id)) {
         int64_t last_access_time = last_access_time_map[req->obj_id];
-        size_t stack_distance = rd_tree.getDistance(last_access_time) / sample_rate;
+        size_t stack_distance =
+            rd_tree.getDistance(last_access_time) / sample_rate;
 
         last_access_time_map[req->obj_id] = current_time;
 
@@ -129,7 +132,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
         rd_tree.insert(current_time, req->obj_size);
 
         // find bucket to increase hit cnt and hit size
-        auto it = std::lower_bound(mrc_size_vec.begin(), mrc_size_vec.end(), stack_distance);
+        auto it = std::lower_bound(mrc_size_vec.begin(), mrc_size_vec.end(),
+                                   stack_distance);
 
         if (it != mrc_size_vec.end()) {
           // update hit cnt and hit size
@@ -156,7 +160,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
 
   // 4. calculate the mrc
   int64_t accu_hit_cnt = 0, accu_hit_size = 0;
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     accu_hit_cnt += local_hit_cnt_vec[i];
     accu_hit_size += local_hit_size_vec[i];
     hit_cnt_vec[i] = accu_hit_cnt;
@@ -186,13 +190,15 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
     n_req_ += 1;
     sum_obj_size_req += req->obj_size;
 
-    uint64_t hash_value = get_hash_value_int_64_with_salt(req->obj_id, params_.shards_params.salt);
-    
+    uint64_t hash_value = get_hash_value_int_64_with_salt(
+        req->obj_id, params_.shards_params.salt);
+
     current_time += 1;
-    if (!min_value_map.full() || hash_value < min_value_map.get_max_value() || last_access_time_map.count(req->obj_id)) {
+    if (!min_value_map.full() || hash_value < min_value_map.get_max_value() ||
+        last_access_time_map.count(req->obj_id)) {
       // this is a sampled req
 
-      if(!last_access_time_map.count(req->obj_id)){
+      if (!last_access_time_map.count(req->obj_id)) {
         bool poped = false;
         int64_t poped_id = min_value_map.insert(req->obj_id, hash_value, poped);
         if (poped) {
@@ -206,7 +212,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
       if (!min_value_map.full()) {
         sample_rate = 1.0;  // still 100% sample rate
       } else {
-        sample_rate = min_value_map.get_max_value() * 1.0 / UINT64_MAX;  // adjust the sample rate
+        sample_rate = min_value_map.get_max_value() * 1.0 /
+                      UINT64_MAX;  // adjust the sample rate
       }
 
       sampled_cnt += 1.0 / sample_rate;
@@ -214,7 +221,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
 
       if (last_access_time_map.count(req->obj_id)) {
         int64_t last_acc_time = last_access_time_map[req->obj_id];
-        int64_t stack_distance = rd_tree.getDistance(last_acc_time) * 1.0 / sample_rate;
+        int64_t stack_distance =
+            rd_tree.getDistance(last_acc_time) * 1.0 / sample_rate;
 
         last_access_time_map[req->obj_id] = current_time;
 
@@ -222,7 +230,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
         rd_tree.insert(current_time, req->obj_size);
 
         // find bucket to increase hit cnt and hit size
-        auto it = std::lower_bound(mrc_size_vec.begin(), mrc_size_vec.end(), stack_distance);
+        auto it = std::lower_bound(mrc_size_vec.begin(), mrc_size_vec.end(),
+                                   stack_distance);
 
         if (it != mrc_size_vec.end()) {
           // update hit cnt and hit size
@@ -243,12 +252,11 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
   local_hit_cnt_vec[0] += n_req_ - sampled_cnt;
   local_hit_size_vec[0] += sum_obj_size_req - sampled_size;
 
-
   free_request(req);
 
   // 4. calculate the mrc
   int64_t accu_hit_cnt = 0, accu_hit_size = 0;
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     accu_hit_cnt += local_hit_cnt_vec[i];
     accu_hit_size += local_hit_size_vec[i];
     hit_cnt_vec[i] = accu_hit_cnt;
@@ -256,8 +264,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
   }
 }
 
-
-void mrcProfiler::MRCProfilerMINISIM::run(){
+void mrcProfiler::MRCProfilerMINISIM::run() {
   has_run_ = true;
 
   request_t *req = new_request();
@@ -268,7 +275,8 @@ void mrcProfiler::MRCProfilerMINISIM::run(){
     INFO("sample_rate is too large, do not sample\n");
   } else {
     sampler = create_spatial_sampler(sample_rate);
-    set_spatial_sampler_salt(sampler, 10000019); // TODO: salt can be changed by params
+    set_spatial_sampler_salt(sampler,
+                             10000019);  // TODO: salt can be changed by params
   }
 
   // 1. obtain the n_req_, sum_obj_size_req, sampled_cnt and sampled_size
@@ -277,7 +285,7 @@ void mrcProfiler::MRCProfilerMINISIM::run(){
     DEBUG_ASSERT(req->obj_size != 0);
     n_req_ += 1;
     sum_obj_size_req += req->obj_size;
-    if(sampler == nullptr || sampler->sample(sampler, req)){
+    if (sampler == nullptr || sampler->sample(sampler, req)) {
       sampled_cnt += 1;
       sampled_size += req->obj_size;
     }
@@ -291,22 +299,27 @@ void mrcProfiler::MRCProfilerMINISIM::run(){
 
   // 3. run the simulate_with_multi_caches
   cache_t *caches[MAX_MRC_PROFILE_POINTS];
-  for (int i = 0; i < params_.profile_size.size(); i++) {
+  for (size_t i = 0; i < params_.profile_size.size(); i++) {
     size_t _cache_size = mrc_size_vec[i] * sample_rate;
-    // size_t _cache_size = mrc_size_vec[i];
-    common_cache_params_t cc_params = {.cache_size = _cache_size};
+    common_cache_params_t cc_params = {.cache_size = _cache_size,
+                                       .default_ttl = 0,
+                                       .hashpower = 20,
+                                       .consider_obj_metadata = false};
     caches[i] = create_cache(params_.cache_algorithm_str, cc_params, nullptr);
   }
-  result = simulate_with_multi_caches(reader_, caches, mrc_size_vec.size(), NULL, 0, 0,
-                                      params_.minisim_params.thread_num, true, true);
+  result = simulate_with_multi_caches(
+      reader_, caches, mrc_size_vec.size(), NULL, 0, 0,
+      params_.minisim_params.thread_num, true, true);
 
   // 4. adjust hit cnt and hit size
-  for (int i = 0; i < mrc_size_vec.size(); i++) {
-    if(sampler){
-      hit_cnt_vec[i] = n_req_ - result[i].n_miss * reader_->sampler->sampling_ratio_inv;
-      hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte * reader_->sampler->sampling_ratio_inv;
-    }
-    else{
+  for (size_t i = 0; i < mrc_size_vec.size(); i++) {
+    if (sampler) {
+      hit_cnt_vec[i] =
+          n_req_ - result[i].n_miss * reader_->sampler->sampling_ratio_inv;
+      hit_size_vec[i] =
+          sum_obj_size_req -
+          result[i].n_miss_byte * reader_->sampler->sampling_ratio_inv;
+    } else {
       hit_cnt_vec[i] = n_req_ - result[i].n_miss;
       hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte;
     }

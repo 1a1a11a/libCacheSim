@@ -1,5 +1,3 @@
-
-
 #include <argp.h>
 #include <stdbool.h>
 #include <string.h>
@@ -115,7 +113,7 @@ static struct argp_option options[] = {
     {"output", OPTION_OUTPUT_PATH, "", OPTION_ARG_OPTIONAL, "Output path", 8},
     {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
      "Produce verbose output", 8},
-    {0}};
+    {NULL, 0, NULL, 0, NULL, 0}};
 
 /*
    PARSER. Field 2 in ARGP.
@@ -130,7 +128,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->trace_type_params = arg;
       break;
     case OPTION_OUTPUT_PATH:
-      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
+      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
+      arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
     case OPTION_NUM_REQ:
       arguments->n_req = atoll(arg);
@@ -257,7 +256,13 @@ static void init_arg(struct arguments *args) {
 void parse_cmd(int argc, char *argv[], struct arguments *args) {
   init_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {.options = options,
+                             .parser = parse_opt,
+                             .args_doc = args_doc,
+                             .doc = doc,
+                             .children = NULL,
+                             .help_filter = NULL,
+                             .argp_domain = NULL};
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 

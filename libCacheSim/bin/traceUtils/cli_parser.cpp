@@ -1,4 +1,3 @@
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -46,7 +45,7 @@ enum argp_option_short {
    Order of fields: {NAME, KEY, ARG, FLAGS, DOC}.
 */
 static struct argp_option options[] = {
-    {0, 0, 0, 0, "Options used by all the utilities:"},
+    {0, 0, 0, 0, "Options used by all the utilities:", 0},
     {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
      "\"obj-id-col=1,header=true\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1,header=true\"", 2},
@@ -57,7 +56,7 @@ static struct argp_option options[] = {
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
      "specify to ignore the object size from the trace", 2},
 
-    {0, 0, 0, 0, "traceConv options:"},
+    {0, 0, 0, 0, "traceConv options:", 0},
     {"output-format", OPTION_OUTPUT_FORMAT, "lcs", 0,
      "currently support lcs/lcs_v1/lcs_v2/lcs_v3/oracleGeneral", 4},
     {"output-txt", OPTION_OUTPUT_TXT, "false", 0,
@@ -67,7 +66,7 @@ static struct argp_option options[] = {
      "are updated to the old size",
      4},
 
-    {0, 0, 0, 0, "tracePrint options:"},
+    {0, 0, 0, 0, "tracePrint options:", 0},
     {"print-stat", OPTION_PRINT_STAT, "false", 0,
      "Print trace statistics only available for lcs traces", 6},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
@@ -78,14 +77,15 @@ static struct argp_option options[] = {
     {"obj-id-32bit", OPTION_OBJ_ID_32bit, "0", 0,
      "Print object id as 32-bit int", 6},
 
-    {0, 0, 0, 0, "traceFilter options:"},
+    {0, 0, 0, 0, "traceFilter options:", 0},
     {"filter-type", OPTION_FILTER_TYPE, "FIFO", 0,
      "The filter type, e.g., FIFO and LRU", 8},
     {"filter-size", OPTION_FILTER_SIZE, "0.1", 0,
      "The size of the filter, can be absolute size or relative to working set",
      8},
 
-    {0}};
+    {NULL, 0, NULL, 0, NULL, 0},
+};
 
 /*
    PARSER. Field 2 in ARGP.
@@ -104,6 +104,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case OPTION_OUTPUT_PATH:
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
+      arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
     case OPTION_SAMPLE_RATIO:
       arguments->sample_ratio = atof(arg);
@@ -230,7 +231,13 @@ static void print_parsed_arg(struct arguments *args) {
 void parse_cmd(int argc, char *argv[], struct arguments *args) {
   init_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {.options = options,
+                             .parser = parse_opt,
+                             .args_doc = args_doc,
+                             .doc = doc,
+                             .children = NULL,
+                             .help_filter = NULL,
+                             .argp_domain = NULL};
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 
@@ -238,12 +245,14 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
   args->trace_type_str = args->args[1];
   assert(N_ARGS == 2);
 
-  args->trace_type = trace_type_str_to_enum(args->trace_type_str, args->trace_path);
+  args->trace_type =
+      trace_type_str_to_enum(args->trace_type_str, args->trace_path);
   args->reader = create_reader(args->trace_type_str, args->trace_path,
                                args->trace_type_params, args->n_req,
                                args->ignore_obj_size, 0);
   if (args->sample_ratio < 1.0) {
-    INFO("create a spatial sampler with sample ratio %.4flf\n", args->sample_ratio);
+    INFO("create a spatial sampler with sample ratio %.4flf\n",
+         args->sample_ratio);
     args->reader->sampler = create_spatial_sampler(args->sample_ratio);
   }
 

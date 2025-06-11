@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 #define MAX_N_BUCKET 1
 #define N_TRAIN_ITER 20
 #define N_MAX_VALIDATION 1000
@@ -50,9 +52,9 @@ extern FILE *ofile_cmp_y;  // keep this even if COMPARE_TRAINING_Y is off
 // used to detect overflow
 #define MAGIC 1234567890
 
-static char *GLCache_type_names[] = {"SEGCACHE", "GLCache_TWO_ORACLE",
-                                     "GLCache_LOG_ORACLE",
-                                     "GLCache_ITEM_ORACLE", "GLCache_LEARNED"};
+static const char *const GLCache_type_names[] = {
+    "SEGCACHE", "GLCache_TWO_ORACLE", "GLCache_LOG_ORACLE",
+    "GLCache_ITEM_ORACLE", "GLCache_LEARNED"};
 
-static char *obj_score_type_names[] = {
+static const char *const obj_score_type_names[] = {
     "FREQ", "FREQ_BYTE", "FREQ_AGE", "FREQ_AGE_BYTE", "HIT_DENSITY", "ORACLE"};

@@ -156,7 +156,7 @@ static cache_obj_t *LFUCpp_insert(cache_t *cache, const request_t *req) {
   eviction::pq_node_type new_node = {obj, 1.0, cache->n_req};
   lfu->pq.insert(new_node);
   lfu->pq_map[obj] = new_node;
-  DEBUG_ASSERT(lfu->pq_map.size() == cache->n_obj);
+  DEBUG_ASSERT((int64_t) lfu->pq_map.size() == cache->n_obj);
 
   return obj;
 }

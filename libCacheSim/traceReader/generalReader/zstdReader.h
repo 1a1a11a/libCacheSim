@@ -14,9 +14,9 @@ typedef struct zstd_reader {
   ZSTD_DStream *zds;
 
   size_t buff_in_sz;
-  void *buff_in;
+  char *buff_in;
   size_t buff_out_sz;
-  void *buff_out;
+  char *buff_out;
 
   size_t buff_out_read_pos;
 

@@ -18,7 +18,7 @@ typedef struct prob_admissioner {
 
 bool prob_admit(admissioner_t *admissioner, const request_t *req) {
   prob_admission_params_t *pa = (prob_admission_params_t *)admissioner->params;
-  if (next_rand() % MAX_MODULE < pa->admission_probability_int) {
+  if ((int)(next_rand() % MAX_MODULE) < pa->admission_probability_int) {
     return true;
   }
 
@@ -96,7 +96,8 @@ admissioner_t *create_prob_admissioner(const char *init_params) {
   admissioner->clone = clone_prob_admissioner;
   if (init_params != NULL) admissioner->init_params = strdup(init_params);
 
-  strncpy(admissioner->admissioner_name, "Probabilistic", CACHE_NAME_LEN);
+  strncpy(admissioner->admissioner_name, "Probabilistic", CACHE_NAME_LEN - 1);
+  admissioner->admissioner_name[CACHE_NAME_LEN - 1] = '\0';
   return admissioner;
 }
 

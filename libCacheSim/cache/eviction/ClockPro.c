@@ -121,7 +121,7 @@ cache_t *ClockPro_init(const common_cache_params_t ccache_params, const char *ca
   }
 
   return cache;
-};
+}
 
 /**
  * free resources used by this cache

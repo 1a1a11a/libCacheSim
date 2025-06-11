@@ -54,7 +54,7 @@ extern "C" {
 
 // static sTree_tuple * sedgewickized_splay (int i, sTree_tuple * t);
 
-sTree_tuple *splay_t(key_type_t i, sTree_tuple *t) {
+sTree_tuple *splay_t(splay_key_type_t i, sTree_tuple *t) {
   /* Simple top down splay, not requiring i to be in the sTree t.  */
   /* What it does is described above.                             */
   sTree_tuple N, *l, *r, *y;
@@ -151,7 +151,7 @@ sTree_tuple *splay_t(key_type_t i, sTree_tuple *t) {
 //     return t;
 // }
 
-sTree_tuple *insert_t(key_type_t i, sTree_tuple *t) {
+sTree_tuple *insert_t(splay_key_type_t i, sTree_tuple *t) {
   /* Insert i into the sTree t, unless it's already there.    */
   /* Return a pointer to the resulting sTree.                 */
   sTree_tuple *new;
@@ -187,7 +187,7 @@ sTree_tuple *insert_t(key_type_t i, sTree_tuple *t) {
   return new;
 }
 
-sTree_tuple *splay_delete_t(key_type_t i, sTree_tuple *t) {
+sTree_tuple *splay_delete_t(splay_key_type_t i, sTree_tuple *t) {
   if (t == NULL) return NULL;
 
   t = splay_t(i, t);

@@ -34,9 +34,9 @@ typedef enum training_source {
 typedef struct {
   /* rolling stat on hits,
    * number of hits in the N_FEATURE_TIME_WINDOW min, 10min, hour */
-  int32_t n_hit_per_min[N_FEATURE_TIME_WINDOW];
-  int32_t n_hit_per_ten_min[N_FEATURE_TIME_WINDOW];
-  int32_t n_hit_per_hour[N_FEATURE_TIME_WINDOW];
+  int32_t n_hit_per_min[N_FEATURE_TIME_WINDOW + 1];
+  int32_t n_hit_per_ten_min[N_FEATURE_TIME_WINDOW + 1];
+  int32_t n_hit_per_hour[N_FEATURE_TIME_WINDOW + 1];
 
   /* used to calculate when the next window starts */
   int64_t last_min_window_ts;
@@ -66,8 +66,8 @@ typedef struct learner {
   pred_t *pred;
 
   int n_feature;
-  unsigned int n_train_samples;
-  unsigned int n_valid_samples;
+  int n_train_samples;
+  int n_valid_samples;
   int n_trees;
   int32_t train_matrix_n_row; /* the size of matrix */
   int32_t valid_matrix_n_row;
@@ -220,8 +220,8 @@ typedef struct {
 } GLCache_params_t;
 
 /********************** init ********************/
-void init_global_params();
-void deinit_global_params();
+void init_global_params(void);
+void deinit_global_params(void);
 void check_params(GLCache_params_t *init_params);
 void init_seg_sel(cache_t *cache);
 void init_obj_sel(cache_t *cache);
@@ -261,8 +261,6 @@ bucket_t *select_segs_weighted_fifo(cache_t *cache, segment_t **segs);
 bucket_t *select_segs_rand(cache_t *cache, segment_t **segs);
 
 bucket_t *select_segs_learned(cache_t *cache, segment_t **segs);
-
-bucket_t *select_segs_to_evict(cache_t *cache, segment_t **segs);
 
 void rank_segs(cache_t *cache);
 

@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 // to suppress the warning of getline
-ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+// ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
 /**
  * @brief count the number of times char c appears in string str
@@ -33,7 +33,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream);
  */
 static int count_occurrence(const char *str, const char c) {
   int count = 0;
-  for (int i = 0; i < strlen(str); i++) {
+  for (int i = 0; i < (int)strlen(str); i++) {
     if (str[i] == c) count++;
   }
   return count;
@@ -48,11 +48,12 @@ static int count_occurrence(const char *str, const char c) {
  * @param in_buf_size
  * @return int
  */
-static int read_first_line(const reader_t *reader, char *in_buf, const size_t in_buf_size) {
+static int read_first_line(const reader_t *reader, char *in_buf,
+                           const size_t in_buf_size) {
   FILE *ifile = fopen(reader->trace_path, "r");
   char *buf = NULL;
   size_t n = 0;
-  ssize_t read_size = getline(&buf, &n, ifile);
+  size_t read_size = getline(&buf, &n, ifile);
 
   if (in_buf_size < read_size) {
     WARN(
@@ -92,7 +93,8 @@ static char csv_detect_delimiter(const reader_t *reader) {
 
   for (int i = 0; i < 4; i++) {
     // (5-i) account for the commonality of the delimiters
-    possible_delim_counts[i] = count_occurrence(first_line, possible_delims[i]) * (4 - i);
+    possible_delim_counts[i] =
+        count_occurrence(first_line, possible_delims[i]) * (4 - i);
     if (possible_delim_counts[i] > max_count) {
       max_count = possible_delim_counts[i];
       delimiter = possible_delims[i];
@@ -132,7 +134,8 @@ static bool csv_detect_header(const reader_t *reader) {
       n_digit += 1;
     } else if (isalpha(first_line[i])) {
       n_letter += 1;
-      if ((first_line[i] <= 'f' && first_line[i] >= 'a') || (first_line[i] <= 'F' && first_line[i] >= 'A')) {
+      if ((first_line[i] <= 'f' && first_line[i] >= 'a') ||
+          (first_line[i] <= 'F' && first_line[i] >= 'A')) {
         /* a-f can be hex number */
         n_af += 1;
       }
@@ -169,8 +172,9 @@ bool check_delimiter(const reader_t *reader, char delimiter) {
   char *buf = NULL;
   bool is_delimiter_correct = true;
   size_t n = 0;
+  ssize_t n_read = getline(&buf, &n, ifile);
+  DEBUG_ASSERT(n_read != -1);
 
-  size_t _n = getline(&buf, &n, ifile);
 #define N_TEST 1024
   for (int i = 0; i < N_TEST; i++) {
     if (strchr(buf, delimiter) == NULL) {
@@ -211,10 +215,13 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
         } else {
           csv_params->n_obj_id_is_not_num++;
         }
-        int n_req = csv_params->n_obj_id_is_num + csv_params->n_obj_id_is_not_num;
+        int n_req =
+            csv_params->n_obj_id_is_num + csv_params->n_obj_id_is_not_num;
         if (n_req > 20000) {
           if (csv_params->n_obj_id_is_num > (double)n_req * 0.99) {
-            ERROR("detect obj_id is numeric, please specify -t 'obj-id-is-num=1'\n");
+            ERROR(
+                "detect obj_id is numeric, please specify -t "
+                "'obj-id-is-num=1'\n");
           }
         }
       }
@@ -300,7 +307,8 @@ void csv_setup_reader(reader_t *const reader) {
     csv_params->feature_fields[i] = init_params->feature_fields[i];
   }
 
-  csv_params->csv_parser = (struct csv_parser *)malloc(sizeof(struct csv_parser));
+  csv_params->csv_parser =
+      (struct csv_parser *)malloc(sizeof(struct csv_parser));
   csv_params->n_obj_id_is_num = 0;
   csv_params->n_obj_id_is_not_num = 0;
 
@@ -324,7 +332,8 @@ void csv_setup_reader(reader_t *const reader) {
     csv_params->has_header = init_params->has_header;
   }
   if (csv_params->has_header) {
-    ssize_t read_size = getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    ssize_t read_size =
+        getline(&reader->line_buf, &reader->line_buf_size, reader->file);
     reader->trace_start_offset = read_size;
   }
 }
@@ -351,8 +360,10 @@ int csv_read_one_req(reader_t *const reader, request_t *const req) {
     return 1;
   }
 
-  if ((size_t)csv_parse(csv_parser, *line_buf_ptr, read_size, csv_cb1, csv_cb2, reader) != read_size) {
-    WARN("parsing csv file error: %s\n", csv_strerror(csv_error(csv_params->csv_parser)));
+  if ((ssize_t)csv_parse(csv_parser, *line_buf_ptr, read_size, csv_cb1, csv_cb2,
+                         reader) != read_size) {
+    WARN("parsing csv file error: %s\n",
+         csv_strerror(csv_error(csv_params->csv_parser)));
   }
 
   csv_fini(csv_params->csv_parser, csv_cb1, csv_cb2, reader);
@@ -379,10 +390,13 @@ void csv_reset_reader(reader_t *reader) {
   csv_init(csv_params->csv_parser, CSV_APPEND_NULL);
   csv_params->n_obj_id_is_num = 0;
   csv_params->n_obj_id_is_not_num = 0;
-  if (csv_params->delimiter) csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
+  if (csv_params->delimiter)
+    csv_set_delim(csv_params->csv_parser, csv_params->delimiter);
 
   if (csv_params->has_header) {
-    size_t _n = getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    int read_size =
+        getline(&reader->line_buf, &reader->line_buf_size, reader->file);
+    reader->trace_start_offset = read_size;
   }
 }
 
