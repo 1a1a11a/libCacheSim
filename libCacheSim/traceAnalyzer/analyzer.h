@@ -81,18 +81,19 @@ static analysis_param_t default_param() {
 };
 
 static struct analysis_option default_option() {
-  struct analysis_option option = {0};
-  option.req_rate = false;
-  option.access_pattern = false;
-  option.ttl = false;
-  option.size = false;
-  option.reuse = false;
-  option.popularity = false;
-  option.popularity_decay = false;
-  option.create_future_reuse_ccdf = false;
-  option.prob_at_age = false;
-  option.size_change = false;
-  option.lifetime = false;
+  struct analysis_option option = {
+    .req_rate = false,
+    .access_pattern = false,
+    .size = false,
+    .reuse = false,
+    .popularity = false,
+    .ttl = false,
+    .popularity_decay = false,
+    .lifetime = false,
+    .create_future_reuse_ccdf = false,
+    .prob_at_age = false,
+    .size_change = false
+  };
 
   return option;
 };
@@ -104,15 +105,16 @@ class TraceAnalyzer {
   explicit TraceAnalyzer(reader_t *reader, string output_path,
                          struct analysis_option option,
                          struct analysis_param params)
-      : reader_(reader),
-        output_path_(std::move(output_path)),
-        option_(option),
-        access_pattern_sample_ratio_inv_(
+      : access_pattern_sample_ratio_inv_(
             params.access_pattern_sample_ratio_inv),
         track_n_popular_(params.track_n_popular),
         track_n_hit_(params.track_n_hit),
         time_window_(params.time_window),
-        warmup_time_(params.warmup_time) {
+        warmup_time_(params.warmup_time),
+        n_req_(0),
+        reader_(reader),
+        option_(option),
+        output_path_(std::move(output_path)) {
     if (warmup_time_ % time_window_ != 0) {
       /* the popularityDecay computation needs warmup time to be multiple of
        * time_window */
@@ -141,15 +143,15 @@ class TraceAnalyzer {
   }
 
   /* params */
-  int time_window_;
-  // warmup time in seconds
-  int warmup_time_;
+  // the sampling ratio used in access pattern analysis
+  int access_pattern_sample_ratio_inv_;
   // the number of requests to the most popular object, 2nd most popular ...
   int track_n_popular_;
   // track one-hit wonders, two-hit wonders, etc.
   int track_n_hit_;
-  // the sampling ratio used in access pattern analysis
-  int access_pattern_sample_ratio_inv_;
+  int time_window_;
+  // warmup time in seconds
+  int warmup_time_;
 
   /* stat */
   int64_t n_req_ = 0;

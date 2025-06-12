@@ -224,8 +224,6 @@ static void print_curr_hand_pos(cache_t *cache) {
   int64_t obj_idx = 0;
   while (obj != NULL) {
     if (obj == params->hands[hand_idx]) {
-      printf("hand %d: %ld %p %p %p\n", hand_idx, (long) obj_idx, obj, obj->queue.prev,
-             obj->queue.next);
       hand_idx++;
     }
     obj = obj->queue.next;

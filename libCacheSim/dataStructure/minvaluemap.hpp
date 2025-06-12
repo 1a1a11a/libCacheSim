@@ -10,7 +10,7 @@ template <typename K, typename V>
 class MinValueMap
 {
 public:
-    MinValueMap(size_t n) : n(n) {}
+    MinValueMap(size_t n_param) : n(n_param) {}
 
     bool find(const K &key){
         return map.count(key);

@@ -26,7 +26,7 @@ extern "C" {
   do {                                                                \
     if (cache->n_req > 0) {                                          \
       printf("%ld %ld %s: %s: ", cache->n_req, req->obj_id, __func__, \
-             (char *)cache->last_request_metadata);                   \
+             cache->last_request_metadata);                   \
       for (int i = 0; i < params->n_seg; i++) {                       \
         printf("%ld/%ld/%p/%p, ", params->fifo_n_objs[i],             \
                params->fifo_n_bytes[i], params->fifo_heads[i],        \
@@ -70,7 +70,6 @@ typedef struct SFIFO_params {
 // ***********************************************************************
 static void SFIFO_parse_params(cache_t *cache,
                                const char *cache_specific_params);
-static void SFIFO_parse_params(cache_t *cache, const char *cache_specific_params);
 static void SFIFO_free(cache_t *cache);
 static bool SFIFO_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SFIFO_find(cache_t *cache, const request_t *req,
@@ -426,7 +425,10 @@ static void SFIFO_cool(cache_t *cache, const request_t *req, const int id) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
-  if (id == 0) return SFIFO_evict(cache, req);
+  if (id == 0) {
+    SFIFO_evict(cache, req);
+    return;
+  }
 
   cache_obj_t *obj = params->fifo_tails[id];
   DEBUG_ASSERT(obj != NULL && obj->SFIFO.fifo_id == id);

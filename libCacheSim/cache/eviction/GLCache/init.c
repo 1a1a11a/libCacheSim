@@ -2,7 +2,7 @@
 #include "GLCacheInternal.h"
 #include "const.h"
 
-void init_global_params() {
+void init_global_params(void) {
 #ifdef COMPARE_TRAINING_Y
   ofile_cmp_y = fopen("compare_y.txt", "w");
   fprintf(ofile_cmp_y,
@@ -11,7 +11,7 @@ void init_global_params() {
 #endif
 }
 
-void deinit_global_params() {
+void deinit_global_params(void) {
   if (ofile_cmp_y != NULL) {
     fclose(ofile_cmp_y);
   }

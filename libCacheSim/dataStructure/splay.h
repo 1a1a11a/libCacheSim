@@ -33,10 +33,10 @@ typedef struct sTree{
 }sTree;
 
 
-void static inline free_node(sTree* t){
+static inline void free_node(sTree* t){
     free(t);
 }
-void static inline assign_key(sTree* t, key_type k){
+static inline void assign_key(sTree* t, key_type k){
     t->key=k;
 }
 

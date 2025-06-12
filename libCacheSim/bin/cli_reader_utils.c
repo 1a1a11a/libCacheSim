@@ -18,7 +18,8 @@ extern "C" {
  *
  * @param args
  */
-trace_type_e trace_type_str_to_enum(const char *trace_type_str, const char *trace_path) {
+trace_type_e trace_type_str_to_enum(const char *trace_type_str,
+                                    const char *trace_path) {
   if (strcasecmp(trace_type_str, "auto") == 0) {
     trace_type_e trace_type = detect_trace_type(trace_path);
     if (trace_type == UNKNOWN_TRACE) {
@@ -43,7 +44,8 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str, const char *trac
     return TWRNS_TRACE;
   } else if (strcasecmp(trace_type_str, "vscsi") == 0) {
     return VSCSI_TRACE;
-  } else if (strcasecmp(trace_type_str, "oracleGeneralBin") == 0 || strcasecmp(trace_type_str, "oracleGeneral") == 0) {
+  } else if (strcasecmp(trace_type_str, "oracleGeneralBin") == 0 ||
+             strcasecmp(trace_type_str, "oracleGeneral") == 0) {
     return ORACLE_GENERAL_TRACE;
   } else if (strcasecmp(trace_type_str, "oracleSysTwrNS") == 0) {
     return ORACLE_SYS_TWRNS_TRACE;
@@ -56,11 +58,11 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str, const char *trac
 }
 
 bool is_true(const char *arg) {
-  if (strcasecmp(arg, "true") == 0 || strcasecmp(arg, "1") == 0 || strcasecmp(arg, "yes") == 0 ||
-      strcasecmp(arg, "y") == 0) {
+  if (strcasecmp(arg, "true") == 0 || strcasecmp(arg, "1") == 0 ||
+      strcasecmp(arg, "yes") == 0 || strcasecmp(arg, "y") == 0) {
     return true;
-  } else if (strcasecmp(arg, "false") == 0 || strcasecmp(arg, "0") == 0 || strcasecmp(arg, "no") == 0 ||
-             strcasecmp(arg, "n") == 0) {
+  } else if (strcasecmp(arg, "false") == 0 || strcasecmp(arg, "0") == 0 ||
+             strcasecmp(arg, "no") == 0 || strcasecmp(arg, "n") == 0) {
     return false;
   } else {
     ERROR("Invalid value: %s, expect true/false", arg);
@@ -83,7 +85,8 @@ static void _check_parsed_result(char *end, int col_idx) {
  * @param reader_params_str
  * @param params
  */
-void parse_reader_params(const char *reader_params_str, reader_init_param_t *params) {
+void parse_reader_params(const char *reader_params_str,
+                         reader_init_param_t *params) {
   params->delimiter = '\0';
   params->obj_id_is_num = false;
   params->obj_id_is_num_set = false;
@@ -112,7 +115,8 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
     } else if (strcasecmp(key, "obj-id-col") == 0) {
       params->obj_id_field = (int)strtol(value, &end, 0);
       _check_parsed_result(end, params->obj_id_field);
-    } else if (strcasecmp(key, "obj-size-col") == 0 || strcasecmp(key, "size-col") == 0) {
+    } else if (strcasecmp(key, "obj-size-col") == 0 ||
+               strcasecmp(key, "size-col") == 0) {
       params->obj_size_field = (int)strtol(value, &end, 0);
       _check_parsed_result(end, params->obj_size_field);
     } else if (strcasecmp(key, "cnt-col") == 0) {
@@ -143,7 +147,8 @@ void parse_reader_params(const char *reader_params_str, reader_init_param_t *par
       params->obj_id_is_num = is_true(value);
     } else if (strcasecmp(key, "block-size") == 0) {
       params->block_size = (int)(strtol(value, &end, 0));
-    } else if (strcasecmp(key, "header") == 0 || strcasecmp(key, "has-header") == 0) {
+    } else if (strcasecmp(key, "header") == 0 ||
+               strcasecmp(key, "has-header") == 0) {
       params->has_header = is_true(value);
       params->has_header_set = true;
     } else if (strcasecmp(key, "format") == 0) {
@@ -233,7 +238,8 @@ bool should_disable_obj_metadata(reader_t *reader) {
 }
 #undef N_TEST
 
-void cal_working_set_size(reader_t *reader, int64_t *wss_obj, int64_t *wss_byte) {
+void cal_working_set_size(reader_t *reader, int64_t *wss_obj,
+                          int64_t *wss_byte) {
   reset_reader(reader);
   request_t *req = new_request();
   GHashTable *obj_table = g_hash_table_new(g_direct_hash, g_direct_equal);
@@ -254,7 +260,8 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj, int64_t *wss_byte)
   while (read_one_req(reader, req) == 0) {
     n_req += 1;
     if (n_req % 2000000 == 0) {
-      DEBUG("processed %ld requests, %lld objects, %lld bytes\n", (long)n_req, (long long)*wss_obj, (long long)*wss_byte);
+      DEBUG("processed %ld requests, %lld objects, %lld bytes\n", (long)n_req,
+            (long long)*wss_obj, (long long)*wss_byte);
     }
     if (scaling_factor > 1 && req->obj_id % scaling_factor != 0) {
       continue;
@@ -273,12 +280,16 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj, int64_t *wss_byte)
   *wss_byte *= scaling_factor;
 
   if (scaling_factor > 1) {
-    INFO("estimated working set size (%.2f sample ratio): %lld object %lld byte\n", 1.0 / scaling_factor, (long long)*wss_obj,
-         (long long)*wss_byte);
+    INFO(
+        "estimated working set size (%.2f sample ratio): %lld object %lld "
+        "byte\n",
+        1.0 / scaling_factor, (long long)*wss_obj, (long long)*wss_byte);
   } else {
-    INFO("working set size: %lld object %lld byte\n", (long long)*wss_obj, (long long)*wss_byte);
+    INFO("working set size: %lld object %lld byte\n", (long long)*wss_obj,
+         (long long)*wss_byte);
   }
 
+  g_hash_table_destroy(obj_table);
   free_request(req);
   reset_reader(reader);
 }
@@ -294,8 +305,9 @@ void cal_working_set_size(reader_t *reader, int64_t *wss_obj, int64_t *wss_byte)
  * @param sample_ratio
  * @return reader_t*
  */
-reader_t *create_reader(const char *trace_type_str, const char *trace_path, const char *trace_type_params,
-                        const int64_t n_req, const bool ignore_obj_size, const int sample_ratio) {
+reader_t *create_reader(const char *trace_type_str, const char *trace_path,
+                        const char *trace_type_params, const int64_t n_req,
+                        const bool ignore_obj_size, const int sample_ratio) {
   /* convert trace type string to enum */
   trace_type_e trace_type = trace_type_str_to_enum(trace_type_str, trace_path);
 

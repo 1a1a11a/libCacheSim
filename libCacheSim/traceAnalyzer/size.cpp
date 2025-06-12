@@ -28,7 +28,7 @@ void SizeDistribution::add_req(request_t *req) {
   // MAX(log_{LOG_BASE}{(req->obj_size / SIZE_BASE)} , 0);
   //      int pos = MAX((int) (log((double) req->obj_size / SIZE_BASE) /
   //      log(LOG_BASE)), 0);
-  int pos = (int)MAX(log((double)req->obj_size) / log_log_base, 0);
+  size_t pos = (size_t)MAX(log((double)req->obj_size) / log_log_base, 0);
   if (pos >= window_obj_size_req_cnt_.size()) {
     window_obj_size_req_cnt_.resize(pos + 8, 0);
     window_obj_size_obj_cnt_.resize(pos + 8, 0);

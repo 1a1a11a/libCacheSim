@@ -70,7 +70,8 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
   }
 #endif
 
-  cache_t *cache = cache_struct_init("LRB", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LRB", ccache_params, cache_specific_params);
   cache->cache_init = LRB_init;
   cache->cache_free = LRB_free;
   cache->get = LRB_get;
@@ -91,8 +92,7 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
     cache->obj_md_size = 0;
   }
 
-  auto *params = my_malloc(LRB_params_t);
-  memset(params, 0, sizeof(LRB_params_t));
+  LRB_params_t *params = my_malloc(LRB_params_t);
   cache->eviction_params = params;
 
   if (cache_specific_params != NULL) {

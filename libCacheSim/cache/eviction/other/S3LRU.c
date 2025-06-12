@@ -51,8 +51,6 @@ static const char *DEFAULT_CACHE_PARAMS =
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *S3LRU_init(const common_cache_params_t ccache_params,
-                    const char *cache_specific_params);
 static void S3LRU_free(cache_t *cache);
 static bool S3LRU_get(cache_t *cache, const request_t *req);
 
@@ -393,15 +391,14 @@ static void S3LRU_evict(cache_t *cache, const request_t *req) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
 
   cache_t *LRU = params->LRU;
-  // cache_t *ghost = params->LRU_ghost;
   cache_t *main = params->main_cache;
 
   if (main->get_occupied_byte(main) > main->cache_size ||
       LRU->get_occupied_byte(LRU) == 0) {
-    // return S3LRU_evict_main(cache, req);
-    return main->evict(main, req);
+    main->evict(main, req);
+    return;
   } else {
-    return S3LRU_evict_LRU(cache, req);
+    S3LRU_evict_LRU(cache, req);
   }
 }
 
@@ -444,7 +441,8 @@ static inline int64_t S3LRU_get_n_obj(const cache_t *cache) {
 static inline bool S3LRU_can_insert(cache_t *cache, const request_t *req) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
 
-  return req->obj_size <= params->LRU->cache_size && cache_can_insert_default(cache, req);
+  return req->obj_size <= params->LRU->cache_size &&
+         cache_can_insert_default(cache, req);
 }
 
 // ***********************************************************************
@@ -484,7 +482,8 @@ static void S3LRU_parse_params(cache_t *cache,
       params->ghost_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "main-cache-type") == 0 ||
                strcasecmp(key, "main-cache") == 0) {
-      strncpy(params->main_cache_type, value, 32);
+      strncpy(params->main_cache_type, value, 31);
+      params->main_cache_type[31] = '\0';
     } else if (strcasecmp(key, "move-to-main-threshold") == 0) {
       params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "promote-on-hit") == 0) {

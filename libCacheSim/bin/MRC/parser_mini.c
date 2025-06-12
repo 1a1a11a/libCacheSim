@@ -1,5 +1,3 @@
-
-
 #define _GNU_SOURCE
 #include <argp.h>
 #include <glib.h>
@@ -11,8 +9,8 @@
 #include "../../include/libCacheSim/prefetchAlgo.h"
 #include "../../utils/include/mystr.h"
 #include "../../utils/include/mysys.h"
-#include "../cli_reader_utils.h"
 #include "../cachesim/cache_init.h"
+#include "../cli_reader_utils.h"
 #include "mrc_internal.h"
 
 #ifdef __cplusplus
@@ -21,12 +19,14 @@ extern "C" {
 
 static void set_cache_size(struct MINI_arguments *args, reader_t *reader);
 
-static int conv_cache_sizes(char *cache_size_str, char* rate_size_str,struct MINI_arguments *args);
+static int conv_cache_sizes(char *cache_size_str, char *rate_size_str,
+                            struct MINI_arguments *args);
 
 static void parse_eviction_algo(struct MINI_arguments *args, const char *arg);
 
 const char *argp_program_version = "cachesim 0.0.1";
-const char *argp_program_bug_address = "https://groups.google.com/g/libcachesim";
+const char *argp_program_bug_address =
+    "https://groups.google.com/g/libcachesim";
 
 enum argp_option_short {
   OPTION_TRACE_TYPE_PARAMS = 't',
@@ -54,35 +54,46 @@ enum argp_option_short {
 */
 static struct argp_option options[] = {
     {NULL, 0, NULL, 0, "trace reader related parameters", 0},
-    {"trace-type-params", OPTION_TRACE_TYPE_PARAMS, "\"obj-id-col=1;delimiter=,\"", 0,
+    {"trace-type-params", OPTION_TRACE_TYPE_PARAMS,
+     "\"obj-id-col=1;delimiter=,\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\"", 2},
-    {"num-req", OPTION_NUM_REQ, "-1", 0, "Num of requests to process, default -1 means all requests in the trace", 2},
-
+    {"num-req", OPTION_NUM_REQ, "-1", 0,
+     "Num of requests to process, default -1 means all requests in the trace",
+     2},
 
     {NULL, 0, NULL, 0, "cache related parameters:", 0},
     {"eviction-params", OPTION_EVICTION_PARAMS, "\"n-seg=4\"", 0,
      "optional params for each eviction algorithm, e.g., n-seg=4", 4},
-    {"admission", OPTION_ADMISSION_ALGO, "bloom-filter", 0, "Admission algorithm: size/bloom-filter/prob", 4},
-    {"admission-params", OPTION_ADMISSION_PARAMS, "\"prob=0.8\"", 0, "params for admission algorithm", 4},
-    {"prefetch", OPTION_PREFETCH_ALGO, "Mithril", 0, "Prefetching algorithm: Mithril/OBL/PG/AMP", 4},
+    {"admission", OPTION_ADMISSION_ALGO, "bloom-filter", 0,
+     "Admission algorithm: size/bloom-filter/prob", 4},
+    {"admission-params", OPTION_ADMISSION_PARAMS, "\"prob=0.8\"", 0,
+     "params for admission algorithm", 4},
+    {"prefetch", OPTION_PREFETCH_ALGO, "Mithril", 0,
+     "Prefetching algorithm: Mithril/OBL/PG/AMP", 4},
     {"prefetch-params", OPTION_PREFETCH_PARAMS, "\"block-size=65536\"", 0,
-     "optional params for each prefetching algorithm, e.g., block-size=65536", 4},
+     "optional params for each prefetching algorithm, e.g., block-size=65536",
+     4},
 
-    {0, 0, 0, 0, "Other options:"},
-    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0, "specify to ignore the object size from the trace", 6},
+    {0, 0, 0, 0, "Other options:", 6},
+    {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, "false", 0,
+     "specify to ignore the object size from the trace", 6},
     {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 6},
-    {"num-thread", OPTION_NUM_THREAD, "16", 0, "Number of threads if running when using default cache sizes", 6},
+    {"num-thread", OPTION_NUM_THREAD, "16", 0,
+     "Number of threads if running when using default cache sizes", 6},
 
-    {0, 0, 0, 0, "Other less common options:"},
-    {"report-interval", OPTION_REPORT_INTERVAL, "3600", 0, "how often to report stat when running one cache", 10},
+    {0, 0, 0, 0, "Other less common options:", 10},
+    {"report-interval", OPTION_REPORT_INTERVAL, "3600", 0,
+     "how often to report stat when running one cache", 10},
     {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
-    {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace", 10},
+    {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
+     10},
     {"consider-obj-metadata", OPTION_CONSIDER_OBJ_METADATA, "false", 0,
      "Whether consider per object metadata size in the simulated cache", 10},
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output", 10},
-    {"print-head-req", OPTION_PRINT_HEAD_REQ, "false", 0, "Print the first few requests", 10},
+    {"print-head-req", OPTION_PRINT_HEAD_REQ, "false", 0,
+     "Print the first few requests", 10},
 
-    {0}};
+    {0, 0, 0, 0, 0, 0}};
 
 /*
    PARSER. Field 2 in ARGP.
@@ -123,7 +134,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       replace_char(arguments->prefetch_params, '_', '-');
       break;
     case OPTION_OUTPUT_PATH:
-      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN);
+      strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
+      arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
     case OPTION_NUM_REQ:
       arguments->n_req = atoi(arg);
@@ -155,8 +167,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         argp_usage(state);
         exit(1);
       }
-      if ((state->arg_num>0) &&(state->arg_num<6)) {
-      arguments->args[state->arg_num] = arg;}
+      if ((state->arg_num > 0) && (state->arg_num < 6)) {
+        arguments->args[state->arg_num] = arg;
+      }
       break;
     case ARGP_KEY_END:
       if (state->arg_num < 7) {
@@ -176,7 +189,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
    A description of the non-option command-line arguments
      that we accept.
 */
-static char args_doc[] = "MINI trace_path trace_type eviction_algo cache_size sample_rate";
+static char args_doc[] =
+    "MINI trace_path trace_type eviction_algo cache_size sample_rate";
 
 /* Program documentation. */
 static char doc[] =
@@ -258,14 +272,19 @@ void free_arg(struct MINI_arguments *args) {
 void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
   init_mini_arg(args);
 
-  static struct argp argp = {options, parse_opt, args_doc, doc};
+  static struct argp argp = {.options = options,
+                             .parser = parse_opt,
+                             .args_doc = args_doc,
+                             .doc = doc,
+                             .children = NULL,
+                             .help_filter = NULL,
+                             .argp_domain = NULL};
 
   argp_parse(&argp, argc, argv, 0, 0, args);
 
   args->trace_path = args->args[1];
   args->trace_type_str = args->args[2];
   parse_eviction_algo(args, args->args[3]);
-
 
   if (args->ofilepath[0] == '\0') {
     char *trace_filename = rindex(args->trace_path, '/');
@@ -274,7 +293,8 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
   }
 
   /* convert trace type string to enum */
-  args->trace_type = trace_type_str_to_enum(args->trace_type_str, args->trace_path);
+  args->trace_type =
+      trace_type_str_to_enum(args->trace_type_str, args->trace_path);
 
   reader_init_param_t reader_init_params;
   memset(&reader_init_params, 0, sizeof(reader_init_params));
@@ -293,9 +313,11 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
     reader_init_params.ignore_obj_size = true;
   }
 
-  args->reader = setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+  args->reader =
+      setup_reader(args->trace_path, args->trace_type, &reader_init_params);
 
-  if (args->consider_obj_metadata && should_disable_obj_metadata(args->reader)) {
+  if (args->consider_obj_metadata &&
+      should_disable_obj_metadata(args->reader)) {
     INFO("disable object metadata\n");
     args->consider_obj_metadata = false;
   }
@@ -310,20 +332,21 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
   for (int i = 0; i < args->n_eviction_algo; i++) {
     for (int j = 0; j < args->n_cache_size; j++) {
       int idx = i * args->n_cache_size + j;
-      args->caches[idx] = create_cache(args->trace_path, args->eviction_algo[i], args->cache_sizes[j],
-                                       args->eviction_params, args->consider_obj_metadata);
+      args->caches[idx] = create_cache(
+          args->trace_path, args->eviction_algo[i], args->cache_sizes[j],
+          args->eviction_params, args->consider_obj_metadata);
 
       if (args->admission_algo != NULL) {
-        args->caches[idx]->admissioner = create_admissioner(args->admission_algo, args->admission_params);
+        args->caches[idx]->admissioner =
+            create_admissioner(args->admission_algo, args->admission_params);
       }
 
       if (args->prefetch_algo != NULL) {
-        args->caches[idx]->prefetcher =
-            create_prefetcher(args->prefetch_algo, args->prefetch_params, args->cache_sizes[j]);
+        args->caches[idx]->prefetcher = create_prefetcher(
+            args->prefetch_algo, args->prefetch_params, args->cache_sizes[j]);
       }
     }
   }
-
 }
 
 /**
@@ -364,16 +387,20 @@ static unsigned long conv_size_str_to_byte_ul(char *cache_size_str) {
     return 0;
   }
 
-  if (strcasestr(cache_size_str, "kb") != NULL || cache_size_str[strlen(cache_size_str) - 1] == 'k' ||
+  if (strcasestr(cache_size_str, "kb") != NULL ||
+      cache_size_str[strlen(cache_size_str) - 1] == 'k' ||
       cache_size_str[strlen(cache_size_str) - 1] == 'K') {
     return strtoul(cache_size_str, NULL, 10) * KiB;
-  } else if (strcasestr(cache_size_str, "mb") != NULL || cache_size_str[strlen(cache_size_str) - 1] == 'm' ||
+  } else if (strcasestr(cache_size_str, "mb") != NULL ||
+             cache_size_str[strlen(cache_size_str) - 1] == 'm' ||
              cache_size_str[strlen(cache_size_str) - 1] == 'M') {
     return strtoul(cache_size_str, NULL, 10) * MiB;
-  } else if (strcasestr(cache_size_str, "gb") != NULL || cache_size_str[strlen(cache_size_str) - 1] == 'g' ||
+  } else if (strcasestr(cache_size_str, "gb") != NULL ||
+             cache_size_str[strlen(cache_size_str) - 1] == 'g' ||
              cache_size_str[strlen(cache_size_str) - 1] == 'G') {
     return strtoul(cache_size_str, NULL, 10) * GiB;
-  } else if (strcasestr(cache_size_str, "tb") != NULL || cache_size_str[strlen(cache_size_str) - 1] == 't' ||
+  } else if (strcasestr(cache_size_str, "tb") != NULL ||
+             cache_size_str[strlen(cache_size_str) - 1] == 't' ||
              cache_size_str[strlen(cache_size_str) - 1] == 'T') {
     return strtoul(cache_size_str, NULL, 10) * TiB;
   }
@@ -394,18 +421,19 @@ static unsigned long conv_size_str_to_byte_ul(char *cache_size_str) {
  * @param args
  * @return int
  */
-static int conv_cache_sizes(char *cache_size_str, char *rate_size_str, struct MINI_arguments *args) {
-  
+static int conv_cache_sizes(char *cache_size_str, char *rate_size_str,
+                            struct MINI_arguments *args) {
   char *saveptr1, *saveptr2;
-  char *rate_token = strtok_r(rate_size_str, "," ,&saveptr1);
+  char *rate_token = strtok_r(rate_size_str, ",", &saveptr1);
   long wss = 0;
-  args->n_cache_size = 0;
+  int n_cache_size = 0;
   int n_rate = 0;
   while (rate_token != NULL) {
-    args->cache_size_ratio[n_rate++] = atof(rate_token);
-    rate_token = strtok_r(NULL, ",",&saveptr1);
+    args->cache_size_ratio[n_rate] = atof(rate_token);
+    n_rate++;
+    rate_token = strtok_r(NULL, ",", &saveptr1);
   }
-  char *token = strtok_r(cache_size_str, ",",&saveptr2);
+  char *token = strtok_r(cache_size_str, ",", &saveptr2);
   while (token != NULL) {
     if (strchr(token, '.') != NULL) {
       // input is a float
@@ -415,36 +443,44 @@ static int conv_cache_sizes(char *cache_size_str, char *rate_size_str, struct MI
         wss = args->ignore_obj_size ? wss_obj : wss_byte;
       }
       if (n_rate == 1) {
-        args->cache_sizes[args->n_cache_size++] =(wss * atof(token) * args->cache_size_ratio[0]);
-      } else if (n_rate > args->n_cache_size) {
-        args->cache_sizes[args->n_cache_size++] =
-            (uint64_t)(wss * atof(token) * args->cache_size_ratio[args->n_cache_size]);
+        args->cache_sizes[n_cache_size] =
+            (wss * atof(token) * args->cache_size_ratio[0]);
+        n_cache_size++;
+      } else if (n_rate > n_cache_size) {
+        args->cache_sizes[n_cache_size] =
+            (uint64_t)(wss * atof(token) *
+                       args->cache_size_ratio[n_cache_size]);
+        n_cache_size++;
       } else {
-        ERROR("Number of cache size ratios should be equal to the number of cache sizes\n");
+        ERROR(
+            "Number of cache size ratios should be equal to the number of "
+            "cache sizes\n");
         exit(1);
       }
     } else {
-      if (n_rate==1) {
-        args->cache_sizes[args->n_cache_size++] = conv_size_str_to_byte_ul(token) * args->cache_size_ratio[0];
-      } else if (n_rate > args->n_cache_size) {
-        args->cache_sizes[args->n_cache_size++] = conv_size_str_to_byte_ul(token) * args->cache_size_ratio[args->n_cache_size];
+      if (n_rate == 1) {
+        args->cache_sizes[n_cache_size] =
+            conv_size_str_to_byte_ul(token) * args->cache_size_ratio[0];
+        n_cache_size++;
+      } else if (n_rate > n_cache_size) {
+        args->cache_sizes[n_cache_size] = conv_size_str_to_byte_ul(token) *
+                                          args->cache_size_ratio[n_cache_size];
+        n_cache_size++;
       } else {
-        ERROR("Number of cache size ratios should be equal to the number of cache sizes\n");
+        ERROR(
+            "Number of cache size ratios should be equal to the number of "
+            "cache sizes\n");
         exit(1);
       }
     }
 
-    token = strtok_r(NULL, ",",&saveptr2);
+    token = strtok_r(NULL, ",", &saveptr2);
   }
 
-  // if (args->n_cache_size == 1 && args->cache_sizes[0] == 0) {
-  //   set_cache_size(args, args->reader);
-  // }
+  args->n_cache_size = (int)n_cache_size;
 
   return args->n_cache_size;
 }
-
-
 
 /**
  * @brief print the parsed arguments
@@ -454,42 +490,55 @@ static int conv_cache_sizes(char *cache_size_str, char *rate_size_str, struct MI
 void print_parsed_args(struct MINI_arguments *args) {
 #define OUTPUT_STR_LEN 1024
   char output_str[OUTPUT_STR_LEN];
-  int n =
-      snprintf(output_str, OUTPUT_STR_LEN - 1,
-               "trace path: %s, trace_type %s, ofilepath "
-               "%s, %d threads, warmup %d sec, total %d algo x %d size = %d caches",
-               args->trace_path, g_trace_type_name[args->trace_type], args->ofilepath, args->n_thread, args->warmup_sec,
-               args->n_eviction_algo, args->n_cache_size, args->n_eviction_algo * args->n_cache_size);
+  int n = snprintf(
+      output_str, OUTPUT_STR_LEN - 1,
+      "trace path: %s, trace_type %s, ofilepath "
+      "%s, %d threads, warmup %d sec, total %d algo x %d size = %d caches",
+      args->trace_path, g_trace_type_name[args->trace_type], args->ofilepath,
+      args->n_thread, args->warmup_sec, args->n_eviction_algo,
+      args->n_cache_size, args->n_eviction_algo * args->n_cache_size);
 
   for (int i = 0; i < args->n_eviction_algo; i++) {
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", %s", args->eviction_algo[i]);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", %s",
+                  args->eviction_algo[i]);
   }
 
   if (args->trace_type_params != NULL)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", trace-type-params: %s", args->trace_type_params);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", trace-type-params: %s", args->trace_type_params);
 
   if (args->admission_algo != NULL)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", admission: %s", args->admission_algo);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", admission: %s",
+                  args->admission_algo);
 
   if (args->admission_params != NULL)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", admission-params: %s", args->admission_params);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", admission-params: %s", args->admission_params);
 
   if (args->prefetch_algo != NULL) {
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", prefetch: %s", args->prefetch_algo);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", prefetch: %s",
+                  args->prefetch_algo);
   }
 
   if (args->prefetch_params != NULL) {
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", prefetch-params: %s", args->prefetch_params);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", prefetch-params: %s", args->prefetch_params);
   }
 
   if (args->eviction_params != NULL)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", eviction-params: %s", args->eviction_params);
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", eviction-params: %s", args->eviction_params);
 
-  if (args->use_ttl) n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", use ttl");
+  if (args->use_ttl)
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", use ttl");
 
-  if (args->ignore_obj_size) n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", ignore object size");
+  if (args->ignore_obj_size)
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", ignore object size");
 
-  if (args->consider_obj_metadata) n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", consider object metadata");
+  if (args->consider_obj_metadata)
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
+                  ", consider object metadata");
 
   snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, "\n");
 

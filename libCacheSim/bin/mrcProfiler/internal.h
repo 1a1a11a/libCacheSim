@@ -26,10 +26,10 @@ struct arguments {
 
   /* profiler params */
   bool ignore_obj_size;
-  char *cache_algorithm_str;
-  char *mrc_size_str;
-  char *mrc_profiler_str;
-  char *mrc_profiler_params_str;
+  const char *cache_algorithm_str;
+  const char *mrc_size_str;
+  const char *mrc_profiler_str;
+  const char *mrc_profiler_params_str;
 
   mrcProfiler::mrc_profiler_e mrc_profiler_type;
   mrcProfiler::mrc_profiler_params_t mrc_profiler_params;

@@ -214,6 +214,14 @@ static bool FIFO_remove(cache_t *cache, const obj_id_t obj_id) {
   return true;
 }
 
+static void FIFO_parse_params(cache_t *cache,
+                              const char *cache_specific_params) {
+  if (cache_specific_params != NULL) {
+    ERROR("FIFO does not support any cache specific parameters\n");
+    exit(1);
+  }
+}
+
 #ifdef __cplusplus
 }
 #endif

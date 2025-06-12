@@ -238,14 +238,10 @@ void print_seg(cache_t *cache, segment_t *seg, int log_level) {
       "req/write rate %6.0lf/%4.2lf, "
       "miss ratio %.4lf, "
       "mean freq %4.2lf, total hit %6d, total active %4d, "
-      "%2d merges, utility %.4lf/%.4lf/%.4lf, %d obj have reuse, "
-      "n_hit/active window %d %d %d %d, \n",
+      "%2d merges, utility %.4lf/%.4lf/%.4lf, %d obj have reuse\n",
       seg->seg_id, (int)params->curr_rtime - seg->create_rtime,
       (double)seg->n_byte / seg->n_obj, seg->req_rate, seg->write_rate,
       seg->miss_ratio, (double)seg->n_hit / seg->n_obj, seg->n_hit,
       seg->n_active, seg->n_merge, seg->train_utility, seg->pred_utility,
-      cal_seg_utility(cache, seg, true), count_n_obj_reuse(cache, seg),
-
-      seg->feature.n_hit_per_min[0], seg->feature.n_hit_per_min[1],
-      seg->feature.n_hit_per_min[2], seg->feature.n_hit_per_min[3]);
+      cal_seg_utility(cache, seg, true), count_n_obj_reuse(cache, seg));
 }

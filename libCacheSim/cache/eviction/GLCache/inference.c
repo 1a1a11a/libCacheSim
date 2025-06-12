@@ -59,20 +59,23 @@ static int prepare_inference_data(cache_t *cache) {
       }
     }
   }
-  DEBUG_ASSERT(inv_sample_ratio > 1 || params->n_in_use_segs == n_segs);
+  DEBUG_ASSERT(inv_sample_ratio > 1 ||
+               params->n_in_use_segs == (int32_t)n_segs);
 
   if (params->learner.n_inference > 0) {
     safe_call(XGDMatrixFree(learner->inf_dm));
   }
   safe_call(XGDMatrixCreateFromMat(learner->inference_x, n_segs,
                                    learner->n_feature, -2, &learner->inf_dm));
-  
+
   // convert to array interface format
   char str_n_segs[128];
-  snprintf(str_n_segs, sizeof(str_n_segs),
-           "{\"data\": [%llu],\"shape\": [1],\"typestr\": \"<u4\",\"version\": 3}",
-           (unsigned long long)(uintptr_t)&n_segs);
-  safe_call(XGDMatrixSetInfoFromInterface(learner->inf_dm, "group", str_n_segs));
+  snprintf(
+      str_n_segs, sizeof(str_n_segs),
+      "{\"data\": [%llu],\"shape\": [1],\"typestr\": \"<u4\",\"version\": 3}",
+      (unsigned long long)(uintptr_t)&n_segs);
+  safe_call(
+      XGDMatrixSetInfoFromInterface(learner->inf_dm, "group", str_n_segs));
 
   return n_segs;
 }
@@ -97,7 +100,7 @@ void inference_xgboost(cache_t *cache) {
   // https://github.com/dmlc/xgboost/blob/36346f8f563ef79bae94604e60483fb0bf4c2661/demo/c-api/inference/inference.c
   safe_call(XGBoosterPredict(learner->booster, learner->inf_dm, 0, 0, 0,
                              &out_len, &pred));
-  DEBUG_ASSERT(out_len == n_segs);
+  DEBUG_ASSERT(out_len == (bst_ulong)n_segs);
 
   segment_t **ranked_segs = params->seg_sel.ranked_segs;
 

@@ -46,8 +46,8 @@ namespace traceAnalyzer {
 class PopularityDecay {
  public:
   /* params */
-  int warmup_rtime_;
   int time_window_;
+  int warmup_rtime_;
 
   PopularityDecay(std::string &path_base, int time_window = 300,
                   int warmup_rtime = 7200)

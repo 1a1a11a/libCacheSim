@@ -32,7 +32,8 @@ extern "C" {
 // ****                                                               ****
 // ***********************************************************************
 
-const char *OBL_default_params(void) { return "block-size=512, sequential-confidence-k=4"; }
+static const char *OBL_default_params(void) { return "block-size=512, sequential-confidence-k=4"; }
+
 
 static void set_OBL_default_init_params(OBL_init_params_t *init_params) {
   init_params->block_size = 512;
@@ -80,7 +81,6 @@ static void set_OBL_params(OBL_params_t *OBL_params, OBL_init_params_t *init_par
  **
  ** create, free, clone, handle_find, handle_insert, handle_evict, prefetch
  **************************************************************************/
-prefetcher_t *create_OBL_prefetcher(const char *init_params, uint64_t cache_size);
 /**
  check if the previous access is sequential. If true, set do_prefetch to true.
 
@@ -113,7 +113,7 @@ static void OBL_handle_find(cache_t *cache, const request_t *req, bool hit) {
  @param req the request containing the request
  @return
  */
-void OBL_prefetch(cache_t *cache, const request_t *req) {
+static void OBL_prefetch(cache_t *cache, const request_t *req) {
   OBL_params_t *OBL_params = (OBL_params_t *)(cache->prefetcher->params);
 
   if (OBL_params->do_prefetch) {
@@ -133,7 +133,7 @@ void OBL_prefetch(cache_t *cache, const request_t *req) {
   }
 }
 
-void free_OBL_prefetcher(prefetcher_t *prefetcher) {
+static void free_OBL_prefetcher(prefetcher_t *prefetcher) {
   OBL_params_t *OBL_params = (OBL_params_t *)prefetcher->params;
   free(OBL_params->prev_access_block);
 
@@ -144,7 +144,7 @@ void free_OBL_prefetcher(prefetcher_t *prefetcher) {
   my_free(sizeof(prefetcher_t), prefetcher);
 }
 
-prefetcher_t *clone_OBL_prefetcher(prefetcher_t *prefetcher, uint64_t cache_size) {
+static prefetcher_t *clone_OBL_prefetcher(prefetcher_t *prefetcher, uint64_t cache_size) {
   return create_OBL_prefetcher(prefetcher->init_params, cache_size);
 }
 

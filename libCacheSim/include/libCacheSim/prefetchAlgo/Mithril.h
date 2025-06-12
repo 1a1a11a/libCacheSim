@@ -119,8 +119,6 @@
  */
 #define GET_NTH_TS(row, n) \
   ((gint)_GET_NTH_TS((*((gint64 *)(row) + 1 + (gint)((n) / 5))), ((n) % 4)))
-// ((gint)_GET_NTH_TS((*((gint64 *)(row) + 1 + (gint)(floor((n) / 4)))), \
-  //                    ((n) % 4)))
 
 /**
  clear and set the Nth timestamp in the 64-bit integer

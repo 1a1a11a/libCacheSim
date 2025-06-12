@@ -20,7 +20,7 @@ typedef struct admissioner {
   admissioner_clone_func_ptr clone;
   admissioner_free_func_ptr free;
   admissioner_update_func_ptr update;
-  void *init_params;
+  char *init_params;
   char admissioner_name[CACHE_NAME_LEN];
 } admissioner_t;
 

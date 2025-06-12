@@ -112,8 +112,8 @@ static bool GDSF_get(cache_t *cache, const request_t *req) {
     }
   }
 
-  DEBUG_ASSERT(gdsf->pq.size() == cache->n_obj);
-  DEBUG_ASSERT(gdsf->pq_map.size() == cache->n_obj);
+  DEBUG_ASSERT((int64_t) gdsf->pq.size() == cache->n_obj);
+  DEBUG_ASSERT((int64_t) gdsf->pq_map.size() == cache->n_obj);
 
   return hit;
 }

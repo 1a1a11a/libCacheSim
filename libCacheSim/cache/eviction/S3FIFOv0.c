@@ -55,7 +55,6 @@ static const char *DEFAULT_CACHE_PARAMS = "small-size-ratio=0.10,ghost-size-rati
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *S3FIFOv0_init(const common_cache_params_t ccache_params, const char *cache_specific_params);
 static void S3FIFOv0_free(cache_t *cache);
 static bool S3FIFOv0_get(cache_t *cache, const request_t *req);
 
@@ -401,9 +400,10 @@ static void S3FIFOv0_evict(cache_t *cache, const request_t *req) {
   cache_t *main = params->main_fifo;
 
   if (main->get_occupied_byte(main) > main->cache_size || fifo->get_occupied_byte(fifo) == 0) {
-    return S3FIFOv0_evict_main(cache, req);
+    S3FIFOv0_evict_main(cache, req);
+  } else {
+    S3FIFOv0_evict_small(cache, req);
   }
-  return S3FIFOv0_evict_small(cache, req);
 }
 
 /**

@@ -89,7 +89,7 @@ static int minimalIncrementCBF_check_add(struct minimalIncrementCBF * CBF,
   register unsigned int a = XXH64(buffer, len, HASH_SEED0);
   register unsigned int b = XXH64(buffer, len, HASH_SEED1);
   register unsigned int x;
-  register unsigned int i;
+  register int i;
 
   //register unsigned int counter_num = CBF->counter_num;
   register unsigned int min_count = UINT_MAX;

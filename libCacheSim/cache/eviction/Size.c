@@ -52,7 +52,7 @@ static void Size_remove_obj(cache_t *cache, cache_obj_t *obj);
  * @param cache_specific_params Size specific parameters, should be NULL
  */
 cache_t *Size_init(const common_cache_params_t ccache_params,
-                     __attribute__((unused))
+                     
                      const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("Size", ccache_params, cache_specific_params);
   cache->cache_init = Size_init;
@@ -109,7 +109,7 @@ static void Size_free(cache_t *cache) {
  */
 static bool Size_get(cache_t *cache, const request_t *req) {
   Size_params_t *params = cache->eviction_params;
-  DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
+  DEBUG_ASSERT(cache->n_obj == (int64_t) params->pq->size - 1);
   bool ret = cache_get_base(cache, req);
 
   return ret;
@@ -182,8 +182,7 @@ static cache_obj_t *Size_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *Size_to_evict(cache_t *cache, __attribute__((unused))
-                                                    const request_t *req) {
+static cache_obj_t *Size_to_evict(cache_t *cache, const request_t *req) {
   Size_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *)pqueue_peek(params->pq);
   return hashtable_find_obj_id(cache->hashtable, node->obj_id);
@@ -198,7 +197,7 @@ static cache_obj_t *Size_to_evict(cache_t *cache, __attribute__((unused))
  * @param req not used
  */
 static void Size_evict(cache_t *cache,
-                         __attribute__((unused)) const request_t *req) {
+                         const request_t *req) {
   Size_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *)pqueue_pop(params->pq);
 

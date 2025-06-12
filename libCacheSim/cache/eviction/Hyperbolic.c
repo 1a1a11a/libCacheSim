@@ -195,7 +195,7 @@ static cache_obj_t *Hyperbolic_to_evict(cache_t *cache, const request_t *req) {
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
 static void Hyperbolic_evict(cache_t *cache,
-                             __attribute__((unused)) const request_t *req) {
+                             const request_t *req) {
   cache_obj_t *obj_to_evict = NULL;
   if (cache->to_evict_candidate_gen_vtime == cache->n_req) {
     obj_to_evict = cache->to_evict_candidate;

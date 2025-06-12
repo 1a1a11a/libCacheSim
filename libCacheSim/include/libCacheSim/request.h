@@ -116,11 +116,11 @@ static inline void free_request(request_t *req) { my_free(request_t, req); }
 
 static inline void print_request(const request_t *req) {
 #ifdef SUPPORT_TTL
-  LOGGING(DEBUG_LEVEL, "req clcok_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
+  LOGGING(DEBUG_LEVEL, "req clock_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
           (unsigned long)req->clock_time, (unsigned long long)req->obj_id, (long)req->obj_size, (long)req->ttl,
           req_op_str[req->op], req->valid);
 #else
-  LOGGING(DEBUG_LEVEL, "req clcok_time %lu, id %llu, size %ld, op %s, valid %d\n", (unsigned long)req->clock_time,
+  LOGGING(DEBUG_LEVEL, "req clock_time %lu, id %llu, size %ld, op %s, valid %d\n", (unsigned long)req->clock_time,
           (unsigned long long)req->obj_id, (long)req->obj_size, req_op_str[req->op], req->valid);
 #endif
 }

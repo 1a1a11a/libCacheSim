@@ -14,7 +14,7 @@ struct obj_info {
   int64_t last_access_vtime;
   obj_size_t obj_size;
   int32_t last_access_rtime;
-  uint32_t freq;
+  int32_t freq;
   int32_t create_rtime;
 } __attribute__((packed));
 

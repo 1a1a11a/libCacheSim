@@ -44,7 +44,7 @@ struct PARAM {
   float rate;
   bool ver;  // 0 means fixed rate, 1 means fixed size
   
-  uint64_t threshold;
+  int64_t threshold;
   //GHashTable* prio_hash;
   sTree_tuple* prio_tree;  // root of the splay tree
   sTree* distance_tree;

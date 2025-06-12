@@ -9,11 +9,11 @@
 extern "C" {
 #endif
 
-#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 
 typedef enum { my_false = 0, my_true = 1, my_unknown = 2 } my_bool;
-
-static const char *my_bool_str[] = {"false", "true", "unknown"};
+static const char* const my_bool_str[] = {"false", "true", "unknown"};
 
 typedef enum {
   BINARY_TRACE_FORMAT,
@@ -45,7 +45,7 @@ typedef enum {
   UNKNOWN_TRACE,
 } __attribute__((__packed__)) trace_type_e;
 
-static char *g_trace_type_name[UNKNOWN_TRACE + 2] = {
+static const char* const g_trace_type_name[UNKNOWN_TRACE + 2] = {
     "CSV_TRACE",
     "BIN_TRACE",
     "PLAIN_TXT_TRACE",
@@ -86,11 +86,15 @@ typedef enum {
   OP_INVALID = 255
 } req_op_e;
 
-static char *req_op_str[OP_INVALID + 2] = {"nop",     "get",    "gets", "set",  "add",  "cas",   "replace", "append",
-                                           "prepend", "delete", "incr", "decr", "read", "write", "update",  "invalid"};
+static const char* const req_op_str[OP_INVALID + 2] = {
+    "nop",     "get",    "gets", "set",  "add",  "cas",   "replace", "append",
+    "prepend", "delete", "incr", "decr", "read", "write", "update",  "invalid"};
 
 typedef enum { ERR, OK, MY_EOF } rstatus;
-static char *rstatus_str[3] = {"ERR", "OK", "MY_EOF"};
+static const char* const rstatus_str[3] = {"ERR", "OK", "MY_EOF"};
+
+// disable warning for unused variable
+#pragma GCC diagnostic pop
 
 #ifdef __cplusplus
 }

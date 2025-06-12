@@ -28,9 +28,9 @@ class ScanDetector {
     int n_req;
     std::vector<int64_t> req_vtime;
 
-    ScanStream(int64_t stream_start_vtime, int64_t stream_next_start_vtime)
-        : stream_start_vtime(stream_start_vtime),
-          stream_next_start_vtime(stream_next_start_vtime),
+    ScanStream(int64_t start_vtime, int64_t next_start_vtime)
+        : stream_start_vtime(start_vtime),
+          stream_next_start_vtime(next_start_vtime),
           n_req(1) {
       req_vtime.push_back(stream_start_vtime);
     }
@@ -84,10 +84,10 @@ class ScanDetector {
   //     next_access_vtime_deque_.push_back(req->next_access_vtime);
   // }
 
-  inline bool is_part_of_scan(struct ScanStream &ss, int64_t curr_vtime,
+  inline bool is_part_of_scan(struct ScanStream &ss, int64_t current_vtime,
                               int64_t next_access_vtime) {
-    if (curr_vtime > ss.stream_start_vtime + max_vtime_diff_ + ss.n_req ||
-        curr_vtime < ss.stream_start_vtime - max_vtime_diff_ - ss.n_req) {
+    if (current_vtime > ss.stream_start_vtime + max_vtime_diff_ + ss.n_req ||
+        current_vtime < ss.stream_start_vtime - max_vtime_diff_ - ss.n_req) {
       return false;
     }
 
@@ -117,10 +117,10 @@ class ScanDetector {
     }
 
     for (int i = 0; i < n_active_stream_; i++) {
-      if (is_part_of_scan(scan_stream_vec_[i], curr_vtime,
+      if (is_part_of_scan(scan_stream_vec_[i], this->curr_vtime,
                           req->next_access_vtime)) {
         scan_stream_vec_[i].n_req += 1;
-        scan_stream_vec_[i].req_vtime.push_back(curr_vtime);
+        scan_stream_vec_[i].req_vtime.push_back(this->curr_vtime);
         is_scan_req = true;
         break;
       }
@@ -130,7 +130,7 @@ class ScanDetector {
       int pos = 0;
       if (n_active_stream_ >= max_vtime_diff_ - 1) {
         while (pos < n_active_stream_) {
-          if (curr_vtime > scan_stream_vec_[pos].stream_start_vtime +
+          if (this->curr_vtime > scan_stream_vec_[pos].stream_start_vtime +
                                max_vtime_diff_ + scan_stream_vec_[pos].n_req) {
             // if (scan_stream_vec_[pos].n_req > 1)
             //     printf("%d\n", scan_stream_vec_[pos].n_req);
@@ -154,14 +154,14 @@ class ScanDetector {
         }
       }
 
-      scan_stream_vec_.emplace_back(curr_vtime,
+      scan_stream_vec_.emplace_back(this->curr_vtime,
                                     (int64_t)req->next_access_vtime);
       n_active_stream_ += 1;
     }
 
-    curr_vtime += 1;
-    // if (curr_vtime % 100000 == 0)
-    //     printf("%ld\n", curr_vtime);
+    this->curr_vtime += 1;
+    // if (this->curr_vtime % 100000 == 0)
+    //     printf("%ld\n", this->curr_vtime);
   }
 
   void dump(string &path_base) {

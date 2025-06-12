@@ -180,7 +180,7 @@ typedef struct profiler_params {
 
   std::vector<size_t> profile_size;
   std::vector<double> profile_wss_ratio;
-  char *cache_algorithm_str;
+  const char *cache_algorithm_str;
 
 } mrc_profiler_params_t;
 
@@ -193,6 +193,8 @@ class MRCProfilerBase {
         mrc_size_vec(params.profile_size),
         hit_cnt_vec(params.profile_size.size(), 0),
         hit_size_vec(params.profile_size.size(), 0) {}
+  
+  virtual ~MRCProfilerBase() = default;
   
   /**
    * run the profiler, and store the result to hit_cnt_vec and hit_size_vec
@@ -217,7 +219,7 @@ class MRCProfilerBase {
   std::string output_path_;
   mrc_profiler_params_t params_;
   bool has_run_ = false;
-  char *profiler_name_ = nullptr;
+  const char *profiler_name_ = nullptr;
 
   size_t n_req_ = 0;
   size_t sum_obj_size_req = 0;

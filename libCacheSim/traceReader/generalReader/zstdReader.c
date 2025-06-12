@@ -93,7 +93,6 @@ rstatus _decompress_from_buff(zstd_reader_t *reader) {
   memmove(reader->buff_out, buff_start, buff_left_sz);
   reader->output.pos = buff_left_sz;
   reader->buff_out_read_pos = 0;
-  size_t old_pos = buff_left_sz;
 
   if (reader->input.pos >= reader->input.size) {
     size_t read_sz = _read_from_file(reader);
@@ -114,7 +113,6 @@ rstatus _decompress_from_buff(zstd_reader_t *reader) {
       WARN("zstd decompression error: %s\n", ZSTD_getErrorName(ret));
     }
   }
-  //  DEBUG("decompress %zu - %zu bytes\n", reader->output.pos, old_pos);
 
   return OK;
 }

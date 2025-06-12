@@ -6,12 +6,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ReuseHistogram* init_histogram() {
+ReuseHistogram* init_histogram(void) {
   ReuseHistogram* hist = (ReuseHistogram*)malloc(sizeof(ReuseHistogram));
   hist->bins = g_hash_table_new(g_int64_hash, g_int64_equal);
   hist->cold_miss_bin = 0;
   hist->cold_miss_threshold = 0.0;
-  // hist->f = fopen("/users/Claire/libCacheSim/histogram.log", "w");
   return hist;
 }
 
@@ -49,7 +48,6 @@ void wrap_up_histogram(ReuseHistogram* hist, float rate) {
   gpointer key, value;
   g_hash_table_iter_init(&iter, hist->bins);
   while (g_hash_table_iter_next(&iter, &key, &value)) {
-    uint64_t distance = *(uint64_t*)key;
     BinEntry* bin = (BinEntry*)value;
     bin->frequency = (uint64_t)(bin->frequency * rate / bin->threshold);
   }

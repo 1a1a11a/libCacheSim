@@ -54,7 +54,7 @@ static void Belady_remove_obj(cache_t *cache, cache_obj_t *obj);
  * @param cache_specific_params Belady specific parameters, should be NULL
  */
 cache_t *Belady_init(const common_cache_params_t ccache_params,
-                     __attribute__((unused))
+                     
                      const char *cache_specific_params) {
   cache_t *cache = cache_struct_init("Belady", ccache_params, cache_specific_params);
   cache->cache_init = Belady_init;
@@ -114,7 +114,7 @@ static bool Belady_get(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(req->next_access_vtime != -2);
   Belady_params_t *params = cache->eviction_params;
 
-  DEBUG_ASSERT(cache->n_obj == params->pq->size - 1);
+  DEBUG_ASSERT(cache->n_obj == (int64_t) params->pq->size - 1);
   bool ret = cache_get_base(cache, req);
 
   return ret;
@@ -213,8 +213,7 @@ static cache_obj_t *Belady_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *Belady_to_evict(cache_t *cache, __attribute__((unused))
-                                                    const request_t *req) {
+static cache_obj_t *Belady_to_evict(cache_t *cache, const request_t *req) {
   Belady_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *)pqueue_peek(params->pq);
   return hashtable_find_obj_id(cache->hashtable, node->obj_id);
@@ -229,7 +228,7 @@ static cache_obj_t *Belady_to_evict(cache_t *cache, __attribute__((unused))
  * @param req not used
  */
 static void Belady_evict(cache_t *cache,
-                         __attribute__((unused)) const request_t *req) {
+                         const request_t *req) {
   Belady_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *)pqueue_pop(params->pq);
 

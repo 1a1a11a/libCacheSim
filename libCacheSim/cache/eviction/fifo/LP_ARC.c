@@ -449,11 +449,13 @@ static void _LP_ARC_evict_miss_on_all_queues(cache_t *cache,
       // we do not use t1_size < cache->cache_size
       // because it does not work for variable size objects
       params->B1->evict(params->B1, req);
-      return _LP_ARC_replace(cache, req);
+      _LP_ARC_replace(cache, req);
+      return;
     } else {
       // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
       // data
-      return params->T1->evict(params->T1, req);
+      params->T1->evict(params->T1, req);
+      return;
     }
   } else {
     int64_t t2_size = params->T2->get_occupied_byte(params->T2);
@@ -464,7 +466,8 @@ static void _LP_ARC_evict_miss_on_all_queues(cache_t *cache,
       // delete the LRU end of the L2 ghost
       params->B2->evict(params->B2, req);
     }
-    return _LP_ARC_replace(cache, req);
+    _LP_ARC_replace(cache, req);
+    return;
   }
 }
 

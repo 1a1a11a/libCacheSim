@@ -107,7 +107,6 @@ static void set_PG_params(PG_params_t *PG_params, PG_init_params_t *init_params,
 // ****                                                               ****
 // ****   create, free, clone, handle_find, handle_evict, prefetch    ****
 // ***********************************************************************
-prefetcher_t *create_PG_prefetcher(const char *init_params, uint64_t cache_size);
 /**
  1. record the request in cache_size_map for being aware of prefetching object's
  size in the future.
@@ -257,7 +256,7 @@ static inline void _graphNode_destroy(gpointer data) {
 static inline void _PG_add_to_graph(cache_t *cache, const request_t *req) {
   PG_params_t *PG_params = (PG_params_t *)(cache->prefetcher->params);
   guint64 block, current_block = 0;
-  char req_lbl[MAX_OBJ_ID_LEN], current_req_lbl[MAX_OBJ_ID_LEN];
+  char current_req_lbl[MAX_OBJ_ID_LEN] = "";
   graphNode_t *graphNode = NULL;
 
   current_block = get_Nth_past_request_l(PG_params, PG_params->past_request_pointer);
@@ -312,11 +311,11 @@ static inline void _PG_add_to_graph(cache_t *cache, const request_t *req) {
     } else {
       // there is no probability between current_block->block
       if (!PG_params->stop_recording) {
-        pq_node_t *pq_node = g_new0(pq_node_t, 1);
-        pq_node->obj_id = block;
-        pq_node->pri.pri = 1;
-        pqueue_insert(graphNode->pq, pq_node);
-        g_hash_table_insert(graphNode->graph, GINT_TO_POINTER(pq_node->obj_id), pq_node);
+        pq_node_t *pq_node2 = g_new0(pq_node_t, 1);
+        pq_node2->obj_id = block;
+        pq_node2->pri.pri = 1;
+        pqueue_insert(graphNode->pq, pq_node2);
+        g_hash_table_insert(graphNode->graph, GINT_TO_POINTER(pq_node2->obj_id), pq_node2);
         PG_params->cur_metadata_size += (8 + 8 * 3);
       } else {
         // no space for meta data

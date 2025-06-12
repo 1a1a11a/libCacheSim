@@ -18,6 +18,7 @@
 #include "const.h"
 #include "logging.h"
 #include "macro.h"
+#include "prefetchAlgo.h"
 #include "request.h"
 
 #ifdef __cplusplus
@@ -26,9 +27,6 @@ extern "C" {
 
 struct cache;
 typedef struct cache cache_t;
-
-struct prefetcher;
-typedef struct prefetcher prefetcher_t;
 
 typedef struct {
   uint64_t cache_size;
@@ -71,7 +69,6 @@ typedef void (*cache_print_cache_func_ptr)(const cache_t *);
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
 #define CACHE_NAME_ARRAY_LEN 64
-#define CACHE_STAT_NAME_ARRAY_LEN 640
 #define CACHE_INIT_PARAMS_LEN 256
 typedef struct {
   int64_t n_warmup_req;
@@ -89,7 +86,7 @@ typedef struct {
   int64_t expired_obj_cnt;
   int64_t expired_bytes;
 
-  char cache_name[CACHE_STAT_NAME_ARRAY_LEN];
+  char cache_name[CACHE_NAME_ARRAY_LEN];
 } cache_stat_t;
 
 struct hashtable;
@@ -113,7 +110,7 @@ struct cache {
 
   admissioner_t *admissioner;
 
-  prefetcher_t *prefetcher;
+  struct prefetcher *prefetcher;
 
   void *eviction_params;
 
@@ -149,7 +146,7 @@ struct cache {
   char cache_name[CACHE_NAME_ARRAY_LEN];
   char init_params[CACHE_INIT_PARAMS_LEN];
 
-  void *last_request_metadata;
+  const char *last_request_metadata;
 #if defined(TRACK_EVICTION_V_AGE)
   bool track_eviction_age;
 #endif
@@ -167,7 +164,7 @@ struct cache {
 static inline common_cache_params_t default_common_cache_params(void) {
   common_cache_params_t params;
   params.cache_size = 1 * GiB;
-  params.default_ttl = 364 * 86400;
+  params.default_ttl = (uint64_t)(364 * 86400);
   params.hashpower = 20;
   params.consider_obj_metadata = false;
   return params;
@@ -369,25 +366,16 @@ bool dump_eviction_age(const cache_t *cache, const char *ofilepath);
 bool dump_cached_obj_age(cache_t *cache, const request_t *req,
                          const char *ofilepath);
 
-static inline void generate_cache_name(cache_t *cache ,char *str_dest) {
-  char admis_name[CACHE_NAME_ARRAY_LEN] = "";
-  char admis_param[CACHE_INIT_PARAMS_LEN] = "";
-  if (cache->admissioner) {
-    strncpy(admis_name, cache->admissioner->admissioner_name, CACHE_NAME_ARRAY_LEN);
-    if (cache->admissioner->init_params) {
-      strncpy(admis_param, (const char *)cache->admissioner->init_params, CACHE_INIT_PARAMS_LEN);
-    }
-  } 
+/**
+ * @brief generate a detailed cache name with admission, prefetcher, and
+ * eviction parameters
+ *
+ * @param cache
+ * @param str_dest
+ * @param str_dest_len
+ */
+void generate_cache_name(cache_t *cache, char *str_dest, int str_dest_len);
 
-  snprintf(str_dest, CACHE_STAT_NAME_ARRAY_LEN, 
-    "evict:%s[%s] admit:%s[%s]",
-    cache->cache_name, 
-    cache->init_params, 
-    admis_name, 
-    admis_param
-  );
-}
-                        
 #ifdef __cplusplus
 }
 #endif

@@ -481,7 +481,8 @@ static void _ARCv0_evict_miss_on_all_queues(cache_t *cache,
       // we do not use t1_size < cache->cache_size
       // because it does not work for variable size objects
       params->B1->evict(params->B1, req);
-      return _ARCv0_replace(cache, req);
+      _ARCv0_replace(cache, req);
+      return;
     } else {
       // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
       // data
@@ -492,9 +493,11 @@ static void _ARCv0_evict_miss_on_all_queues(cache_t *cache,
       if (obj->misc.freq > 0) {
         params->T2->get(params->T2, params->req_local);
       }
-      return params->T1->evict(params->T1, req);
+      params->T1->evict(params->T1, req);
+      return;
 #else
-      return params->T1->evict(params->T1, req);
+      params->T1->evict(params->T1, req);
+      return;
 #endif
     }
   } else {
@@ -506,7 +509,8 @@ static void _ARCv0_evict_miss_on_all_queues(cache_t *cache,
       // delete the LRU end of the L2 ghost
       params->B2->evict(params->B2, req);
     }
-    return _ARCv0_replace(cache, req);
+    _ARCv0_replace(cache, req);
+    return;
   }
 }
 

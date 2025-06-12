@@ -43,8 +43,6 @@ static const char *DEFAULT_CACHE_PARAMS =
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
-cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params);
 static void LP_TwoQ_free(cache_t *cache);
 static bool LP_TwoQ_get(cache_t *cache, const request_t *req);
 
