@@ -5,12 +5,39 @@ Node.js bindings for libCacheSim.
 
 ## Installation
 
+### Local Installation (Development)
+
 ```bash
 cd libCacheSim-node
 npm install -g node-gyp
 npm install
 npm run build
 ```
+
+### Global Installation
+
+To install libcachesim-node globally and make the CLI available system-wide:
+
+```bash
+cd libCacheSim-node
+npm install -g .
+```
+
+After global installation, you can use the CLI from any directory:
+
+```bash
+libcachesim-cli --help
+libcachesim-cli --trace /path/to/trace.vscsi --algorithm lru --size 10mb
+```
+
+**Note:** Global installation requires the libCacheSim C++ library to be built first. Make sure you have:
+- CMake installed
+- A C++ compiler (gcc/clang)
+- The parent libCacheSim repository properly built
+
+If you encounter build issues during global installation, you can:
+1. First build locally: `npm run build`
+2. Then install globally: `npm install -g .`
 
 ## Usage
 
@@ -118,6 +145,37 @@ try {
 } catch (error) {
   console.error('Simulation failed:', error.message);
 }
+```
+
+## Command Line Interface
+
+After global installation, you can use the `libcachesim-cli` command:
+
+### CLI Usage
+
+```bash
+libcachesim-cli [options]
+```
+
+### CLI Options
+
+- `--trace, -t <path>`: Path to trace file (required)
+- `--type <type>`: Trace type (required)
+- `--algorithm, -a <alg>`: Cache algorithm (required)  
+- `--size, -s <size>`: Cache size (required)
+- `--help, -h`: Show help message
+
+### CLI Examples
+
+```bash
+# Basic simulation
+libcachesim-cli -t trace.vscsi --type vscsi -a lru -s 10mb
+
+# Compare S3-FIFO with larger cache
+libcachesim-cli --trace data.csv --type csv --algorithm s3fifo --size 50mb
+
+# Show help
+libcachesim-cli --help
 ```
 ## Development
 
