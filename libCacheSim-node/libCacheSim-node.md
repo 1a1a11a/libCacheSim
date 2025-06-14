@@ -27,7 +27,7 @@ After global installation, you can use the CLI from any directory:
 
 ```bash
 libcachesim-cli --help
-libcachesim-cli --trace /path/to/trace.vscsi --algorithm lru --size 10mb
+libcachesim-cli --trace /path/to/trace.vscsi --type vscsi --algorithm lru --size 10mb
 ```
 
 **Note:** Global installation requires the libCacheSim C++ library to be built first. Make sure you have:
@@ -154,7 +154,7 @@ After global installation, you can use the `libcachesim-cli` command:
 ### CLI Usage
 
 ```bash
-libcachesim-cli [options]
+libcachesim-cli --trace <path> --type <type> --algorithm <alg> --size <size>
 ```
 
 ### CLI Options
@@ -186,12 +186,13 @@ libcachesim-cli --help
 npm run clean
 npm run build
 
-# Development build with debugging
+# Debug build with debugging symbols
 DEBUG=1 npm run build
 ```
 
 ### Running Tests
 
 ```bash
-node index.js  # Runs example simulations
+# Run test suite
+npm test
 ```
