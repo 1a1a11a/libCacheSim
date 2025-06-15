@@ -90,6 +90,8 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
       exit(1);
     }
     cache = Belady_init(cc_params, eviction_params);
+  } else if (strcasecmp(eviction_algo, "beladyOnline") == 0) {
+    cache = BeladyOnline_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "nop") == 0) {
     cache = nop_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "beladySize") == 0) {

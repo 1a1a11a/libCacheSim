@@ -280,6 +280,14 @@ if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/belady)
     )
 endif()
 
+if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/BeladyOnline)
+    file(GLOB BeladyOnline_source
+        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/BeladyOnline/*.cpp)
+    set(cache_source
+        ${cache_source} ${BeladyOnline_source}
+    )
+endif()
+
 if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv)
     file(GLOB priv_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv/*.c)

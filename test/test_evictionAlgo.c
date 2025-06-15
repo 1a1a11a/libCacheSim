@@ -131,6 +131,27 @@ static void test_Belady(gconstpointer user_data) {
   my_free(sizeof(cache_stat_t), res);
 }
 
+static void test_BeladyOnline(gconstpointer user_data) {
+  /* the request byte is different from others because the oracleGeneral
+   * trace removes all object size changes (and use the size of last appearance
+   * of an object as the object size throughout the trace */
+  uint64_t req_cnt_true = 113872, req_byte_true = 4368040448;
+  uint64_t miss_cnt_true[] = {79194, 70670, 65476, 61570, 59615, 57576, 50854, 48974};
+  uint64_t miss_byte_true[] = {3472415232, 2995094528, 2726659584, 2537637888,
+                               2403420160, 2269202432, 2134984704, 2029769728};
+
+  reader_t *reader = (reader_t *)user_data;
+  common_cache_params_t cc_params = {.cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *cache = create_test_cache("BeladyOnline", cc_params, reader, NULL);
+  g_assert_true(cache != NULL);
+  cache_stat_t *res = simulate_at_multi_sizes_with_step_size(reader, cache, STEP_SIZE, NULL, 0, 0, _n_cores(), false);
+
+  print_results(cache, res);
+  _verify_profiler_results(res, CACHE_SIZE / STEP_SIZE, g_req_cnt_true, miss_cnt_true, g_req_byte_true, miss_byte_true);
+  cache->cache_free(cache);
+  my_free(sizeof(cache_stat_t), res);
+}
+
 static void test_BeladySize(gconstpointer user_data) {
   /* the request byte is different from others because the oracleGeneral
    * trace removes all object size changes (and use the size of last appearance
@@ -510,6 +531,7 @@ int main(int argc, char *argv[]) {
   // reader = setup_vscsi_reader();
 
   reader = setup_oracleGeneralBin_reader();
+  g_test_add_data_func("/libCacheSim/cacheAlgo_BeladyOnline", reader, test_BeladyOnline);
 
   g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
   g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
@@ -538,6 +560,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LFUCpp", reader, test_LFUCpp);
   g_test_add_data_func("/libCacheSim/cacheAlgo_GDSF", reader, test_GDSF);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
+  
 
   // /* Belady requires reader that has next access information and can only use
   //  * oracleGeneral trace */

@@ -83,6 +83,8 @@ set(sourceCPP
         cpp/GDSF.cpp
         LHD/lhd.cpp
         LHD/LHD_Interface.cpp
+        BeladyOnline/BeladyOnline_impl.cpp
+        BeladyOnline/BeladyOnline.cpp
         )
 
 if (ENABLE_LRB)
@@ -113,6 +115,7 @@ if (ENABLE_GLCACHE)
         GLCache/train.c
         )
 endif()
+
 
 
 add_library (evictionC ${sourceC})
