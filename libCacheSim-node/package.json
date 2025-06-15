@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "bin": {
-    "libcachesim-cli": "./cli.js"
+    "cachesim-js": "./cli.js"
   },
   "scripts": {
     "prebuild": "npm run ensure-libcachesim",

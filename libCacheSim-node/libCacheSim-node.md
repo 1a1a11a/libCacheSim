@@ -26,8 +26,8 @@ npm install -g .
 After global installation, you can use the CLI from any directory:
 
 ```bash
-libcachesim-cli --help
-libcachesim-cli --trace /path/to/trace.vscsi --type vscsi --algorithm lru --size 10mb
+cachesim-js --help
+cachesim-js --trace /path/to/trace.vscsi --type vscsi --algorithm lru --size 10mb
 ```
 
 **Note:** Global installation requires the libCacheSim C++ library to be built first. Make sure you have:
@@ -149,12 +149,12 @@ try {
 
 ## Command Line Interface
 
-After global installation, you can use the `libcachesim-cli` command:
+After global installation, you can use the `cachesim-js` command:
 
 ### CLI Usage
 
 ```bash
-libcachesim-cli --trace <path> --type <type> --algorithm <alg> --size <size>
+cachesim-js --trace <path> --type <type> --algorithm <alg> --size <size>
 ```
 
 ### CLI Options
@@ -169,13 +169,13 @@ libcachesim-cli --trace <path> --type <type> --algorithm <alg> --size <size>
 
 ```bash
 # Basic simulation
-libcachesim-cli -t trace.vscsi --type vscsi -a lru -s 10mb
+cachesim-js -t trace.vscsi --type vscsi -a lru -s 10mb
 
 # Compare S3-FIFO with larger cache
-libcachesim-cli --trace data.csv --type csv --algorithm s3fifo --size 50mb
+cachesim-js --trace data.csv --type csv --algorithm s3fifo --size 50mb
 
 # Show help
-libcachesim-cli --help
+cachesim-js --help
 ```
 ## Development
 

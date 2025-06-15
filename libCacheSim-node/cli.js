@@ -49,7 +49,7 @@ function showHelp() {
 libcachesim-node CLI
 
 Usage:
-  libcachesim-cli --trace <path> --type <type> --algorithm <alg> --size <size>
+  cachesim-js --trace <path> --type <type> --algorithm <alg> --size <size>
 
 Options:
   --trace, -t <path>     Path to trace file (required)
@@ -62,8 +62,8 @@ Options:
   --help, -h             Show this help message
 
 Examples:
-  libcachesim-cli -t trace.vscsi --type vscsi -a lru -s 10mb
-  libcachesim-cli --trace data.csv --type csv --algorithm s3fifo --size 50mb
+  cachesim-js -t trace.vscsi --type vscsi -a lru -s 10mb
+  cachesim-js --trace data.csv --type csv --algorithm s3fifo --size 50mb
 `);
 }
 
