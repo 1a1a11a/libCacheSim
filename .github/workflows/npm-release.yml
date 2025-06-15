@@ -1,0 +1,142 @@
+name: NPM Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+        default: '1.0.0'
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-and-publish:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: macos-latest
+            target: darwin-x64
+          - os: macos-13
+            target: darwin-arm64
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libglib2.0-dev libzstd-dev
+      
+      - name: Install system dependencies (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install cmake glib zstd
+      
+      - name: Set target architecture (macOS ARM64)
+        if: matrix.target == 'darwin-arm64'
+        run: |
+          echo "CMAKE_OSX_ARCHITECTURES=arm64" >> $GITHUB_ENV
+          echo "ARCHFLAGS=-arch arm64" >> $GITHUB_ENV
+          echo "npm_config_target_arch=arm64" >> $GITHUB_ENV
+      
+      - name: Build libCacheSim
+        run: |
+          mkdir -p _build
+          cd _build
+          if [ "${{ matrix.target }}" = "darwin-arm64" ]; then
+            cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_OSX_ARCHITECTURES=arm64 ..
+          else
+            cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ..
+          fi
+          make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu)
+      
+      - name: Install Node.js dependencies
+        working-directory: libCacheSim-node
+        run: npm install
+      
+      - name: Build and upload prebuilt binary
+        working-directory: libCacheSim-node
+        run: |
+          if [ "${{ matrix.target }}" = "darwin-arm64" ]; then
+            CFLAGS=-fPIC CXXFLAGS=-fPIC npx prebuild --target-arch arm64 --upload-all
+          else
+            CFLAGS=-fPIC CXXFLAGS=-fPIC npx prebuild --upload-all
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Test binary
+        working-directory: libCacheSim-node
+        run: node -e "console.log('Testing binary load...'); require('./index.js');"
+
+  publish-npm:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Prepare package for publishing
+        working-directory: libCacheSim-node
+        run: |
+          # Update version if provided via workflow dispatch
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          fi
+          
+          # Install production dependencies only
+          npm ci --only=production
+      
+      - name: Publish to NPM
+        working-directory: libCacheSim-node
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      
+      - name: Create GitHub Release (if workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          release_name: Release v${{ github.event.inputs.version }}
+          body: |
+            Release v${{ github.event.inputs.version }}
+            
+            ## Installation
+            ```bash
+            npm install libcachesim-node
+            ```
+            
+            ## Supported Platforms
+            - Linux x64
+            - macOS x64 (Intel)
+            - macOS arm64 (Apple Silicon)
+            
+            Pre-compiled binaries are automatically downloaded during installation.
+          draft: false
+          prerelease: false 
