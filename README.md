@@ -328,7 +328,7 @@ The compressed traces can be used with libCacheSim without decompression. And li
 | WikiCDN       | 2019 |   object  |          [link](https://wikitech.wikimedia.org/wiki/Analytics/Data_Lake/Traffic/Caching)          |     [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/wiki/)     |
 | Tencent CBS   | 2020 |   block   |                      [link](http://iotta.snia.org/traces/parallel?only=27917)                     | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/tencentBlock/) |
 | Alibaba Block | 2020 |   block   |                          [link](https://github.com/alibaba/block-traces)                          | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/alibabaBlock/) |
-| Twitter       | 2020 | key-value |                          [link](https://github.com/twitter/cache-traces)                          | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/twitter/)      |
+| Twitter       | 2020 | key-value |                          [link](https://github.com/twitter/cache-trace)                          | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/twitter/)      |
 | MetaKV        | 2022 | key-value | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaKV/)       |
 | MetaCDN       | 2023 | object    | [link](https://cachelib.org/docs/Cache_Library_User_Guides/Cachebench_FB_HW_eval/#list-of-traces) | [link](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/metaCDN/)      |
 
