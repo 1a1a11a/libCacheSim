@@ -3,8 +3,15 @@ name: NPM Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+        default: '1.0.0'
   push:
     branches:
+      - npm-release
       - develop
       - murphy/npm-release-0616
     paths:
