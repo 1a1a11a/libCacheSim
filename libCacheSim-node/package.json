@@ -1,6 +1,6 @@
 {
-  "name": "@realtmxi/libcachesim-node",
-  "version": "1.0.0-test.5",
+  "name": "libcachesim-node",
+  "version": "1.0.0",
   "main": "index.js",
   "bin": {
     "cachesim-js": "./cli.js"
@@ -25,9 +25,9 @@
   "description": "Node.js bindings for libCacheSim - A high-performance cache simulator and analysis library supporting LRU, FIFO, S3-FIFO, Sieve and other caching algorithms",
   "repository": {
     "type": "git",
-    "url": "https://github.com/realtmxi/libCacheSim"
+    "url": "https://github.com/1a1a11a/libCacheSim"
   },
-  "homepage": "https://github.com/realtmxi/libCacheSim/tree/npm-release/libCacheSim-node",
+  "homepage": "https://github.com/1a1a11a/libCacheSim/tree/main/libCacheSim-node",
   "bugs": {
     "url": "https://github.com/1a1a11a/libCacheSim/issues"
   },
@@ -53,7 +53,7 @@
   "binary": {
     "module_name": "cachesim-addon",
     "module_path": "./build/Release/",
-    "remote_path": "https://github.com/realtmxi/libCacheSim/releases/download/",
+    "remote_path": "https://github.com/1a1a11a/libCacheSim/releases/download/",
     "package_name": "{module_name}-v{version}-{node_abi}-{platform}-{arch}.tar.gz"
   },
   "publishConfig": {
