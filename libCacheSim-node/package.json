@@ -1,13 +1,13 @@
 {
   "name": "@realtmxi/libcachesim-node",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-test.5",
   "main": "index.js",
   "bin": {
     "cachesim-js": "./cli.js"
   },
   "scripts": {
     "test": "node test.js",
-    "install": "prebuild-install",
+    "install": "prebuild-install || node-gyp rebuild",
     "prebuild": "prebuild --all --strip --verbose"
   },
   "keywords": [
@@ -47,8 +47,15 @@
     "cli.js",
     "binding.cc",
     "binding.gyp",
-    "README.md"
+    "README.md",
+    "vendor"
   ],
+  "binary": {
+    "module_name": "cachesim-addon",
+    "module_path": "./build/Release/",
+    "remote_path": "https://github.com/realtmxi/libCacheSim/releases/download/",
+    "package_name": "{module_name}-v{version}-{node_abi}-{platform}-{arch}.tar.gz"
+  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   }
