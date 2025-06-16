@@ -5,7 +5,8 @@ on:
     types: [published]
   push:
     branches:
-      - main
+      - develop
+      - murphy/npm-release-0616
     paths:
       - 'libCacheSim-node/**'
 
