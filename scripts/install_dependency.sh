@@ -110,7 +110,7 @@ setup_ubuntu() {
     sudo apt update
     sudo apt install -yqq build-essential google-perftools xxhash
     sudo apt install -yqq libglib2.0-dev libunwind-dev
-    sudo apt install -yqq libgoogle-perftools-dev clang-tidy
+    sudo apt install -yqq libgoogle-perftools-dev
 }
 
 setup_centos() {
@@ -221,6 +221,13 @@ install_zstd() {
     popd > /dev/null
     popd > /dev/null
     popd > /dev/null
+}
+
+install_dev() {
+    log_info "Installing development dependencies..."
+    sudo apt install -yqq libglib2.0-dev libunwind-dev
+    sudo apt install -yqq libgoogle-perftools-dev clang-tidy
+    bash ./setup-hook.sh
 }
 
 # Main installation logic
