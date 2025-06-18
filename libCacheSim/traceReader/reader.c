@@ -39,7 +39,8 @@ extern "C" {
 // ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 // #endif
 
-reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_type,
+reader_t *setup_reader(const char *const trace_path,
+                       const trace_type_e trace_type,
                        const reader_init_param_t *const init_params) {
   static bool _info_printed = false;
 
@@ -84,7 +85,8 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
 
   if (init_params != NULL) {
     memcpy(&reader->init_params, init_params, sizeof(reader_init_param_t));
-    if (init_params->binary_fmt_str != NULL) reader->init_params.binary_fmt_str = strdup(init_params->binary_fmt_str);
+    if (init_params->binary_fmt_str != NULL)
+      reader->init_params.binary_fmt_str = strdup(init_params->binary_fmt_str);
 
     reader->ignore_obj_size = init_params->ignore_obj_size;
     reader->ignore_size_zero_req = init_params->ignore_size_zero_req;
@@ -94,7 +96,8 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
     reader->mmap_offset = init_params->trace_start_offset;
     reader->cap_at_n_req = init_params->cap_at_n_req;
     reader->block_size = init_params->block_size;
-    if (init_params->sampler != NULL) reader->sampler = init_params->sampler->clone(init_params->sampler);
+    if (init_params->sampler != NULL)
+      reader->sampler = init_params->sampler->clone(init_params->sampler);
   } else {
     memset(&reader->init_params, 0, sizeof(reader_init_param_t));
   }
@@ -114,7 +117,8 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
   }
   reader->file_size = st.st_size;
 
-  if (reader->trace_type == CSV_TRACE || reader->trace_type == PLAIN_TXT_TRACE) {
+  if (reader->trace_type == CSV_TRACE ||
+      reader->trace_type == PLAIN_TXT_TRACE) {
     reader->file = fopen(reader->trace_path, "rb");
     if (reader->file == 0) {
       ERROR("Failed to open %s: %s\n", reader->trace_path, strerror(errno));
@@ -137,7 +141,8 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
     if ((reader->mapped_file) == MAP_FAILED) {
       close(fd);
       reader->mapped_file = NULL;
-      ERROR("Unable to allocate %llu bytes of memory, %s\n", (unsigned long long)st.st_size, strerror(errno));
+      ERROR("Unable to allocate %llu bytes of memory, %s\n",
+            (unsigned long long)st.st_size, strerror(errno));
       abort();
     }
   }
@@ -147,7 +152,8 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
       reader->trace_format = TXT_TRACE_FORMAT;
       csv_setup_reader(reader);
       if (!check_delimiter(reader, init_params->delimiter)) {
-        ERROR("The trace does not use delimiter '%c', please check\n", init_params->delimiter);
+        ERROR("The trace does not use delimiter '%c', please check\n",
+              init_params->delimiter);
       }
       break;
     case PLAIN_TXT_TRACE:
@@ -194,7 +200,9 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
       WARN(
           "trace file size %lu - %lu is not multiple of item size %lu, mod "
           "%lu\n",
-          (unsigned long)reader->file_size, (unsigned long)reader->trace_start_offset, (unsigned long)reader->item_size,
+          (unsigned long)reader->file_size,
+          (unsigned long)reader->trace_start_offset,
+          (unsigned long)reader->item_size,
           (unsigned long)reader->file_size % reader->item_size);
     }
 
@@ -227,14 +235,15 @@ reader_t *setup_reader(const char *const trace_path, const trace_type_e trace_ty
  */
 int read_one_req(reader_t *const reader, request_t *const req) {
   if (reader->mmap_offset >= reader->file_size) {
-    DEBUG("read_one_req: end of file, current mmap_offset %zu, file size %zu\n", reader->mmap_offset,
-          reader->file_size);
+    DEBUG("read_one_req: end of file, current mmap_offset %zu, file size %zu\n",
+          reader->mmap_offset, reader->file_size);
     req->valid = false;
     return 1;
   }
 
   if (reader->cap_at_n_req > 1 && reader->n_read_req >= reader->cap_at_n_req) {
-    DEBUG("read_one_req: processed %ld requests capped by the user\n", (long)reader->n_read_req);
+    DEBUG("read_one_req: processed %ld requests capped by the user\n",
+          (long)reader->n_read_req);
     req->valid = false;
     return 1;
   }
@@ -305,8 +314,8 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     sampler_t *sampler = reader->sampler;
     reader->sampler = NULL;
     while (!sampler->sample(sampler, req)) {
-      VVERBOSE("skip one req: time %lu, obj_id %lu, size %lu at offset %zu\n", req->clock_time, req->obj_id,
-               req->obj_size, offset_before_read);
+      VVERBOSE("skip one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
+               req->clock_time, req->obj_id, req->obj_size, offset_before_read);
       if (reader->read_direction == READ_FORWARD) {
         status = read_one_req(reader, req);
       } else {
@@ -324,8 +333,8 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     req->obj_size = 1;
   }
 
-  VVERBOSE("read one req: time %lu, obj_id %lu, size %lu at offset %zu\n", req->clock_time, req->obj_id, req->obj_size,
-           offset_before_read);
+  VVERBOSE("read one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
+           req->clock_time, req->obj_id, req->obj_size, offset_before_read);
 
   return status;
 }
@@ -354,7 +363,8 @@ int go_back_one_req(reader_t *const reader) {
         seek_size = MIN(PER_SEEK_SIZE, max_seek_size - total_seek_size);
         total_seek_size += seek_size;
         fseek(reader->file, -seek_size, SEEK_CUR);
-        ssize_t read_size = fread(reader->line_buf, 1, seek_size - 1, reader->file);
+        ssize_t read_size =
+            fread(reader->line_buf, 1, seek_size - 1, reader->file);
         reader->line_buf[read_size - 1] = 0;
         char *last_line_end = strrchr(reader->line_buf, '\n');
 
@@ -385,7 +395,8 @@ int go_back_one_req(reader_t *const reader) {
       }
       break;
     case BINARY_TRACE_FORMAT:
-      if (reader->mmap_offset >= reader->trace_start_offset + reader->item_size) {
+      if (reader->mmap_offset >=
+          reader->trace_start_offset + reader->item_size) {
         reader->mmap_offset -= (reader->item_size);
         return 0;
       } else {
@@ -512,6 +523,8 @@ int64_t get_num_of_req(reader_t *const reader) {
     while (read_one_req(reader_copy, req) == 0) {
       n_req++;
     }
+    free_request(req);
+    close_reader(reader_copy);
   } else {
     ERROR("should not reach here\n");
     abort();
@@ -521,7 +534,8 @@ int64_t get_num_of_req(reader_t *const reader) {
 }
 
 reader_t *clone_reader(const reader_t *const reader_in) {
-  reader_t *reader = setup_reader(reader_in->trace_path, reader_in->trace_type, &reader_in->init_params);
+  reader_t *reader = setup_reader(reader_in->trace_path, reader_in->trace_type,
+                                  &reader_in->init_params);
   reader->n_total_req = reader_in->n_total_req;
 
   if (reader->trace_format != TXT_TRACE_FORMAT) {
@@ -636,7 +650,9 @@ void read_last_req(reader_t *reader, request_t *req) {
 
 bool is_str_num(const char *str, size_t len) {
   for (size_t i = 0; i < len; i++) {
-    if (!(isdigit(str[i]) || (str[i] >= 'a' && str[i] <= 'f') || (str[i] >= 'A' && str[i] <= 'F'))) return false;
+    if (!(isdigit(str[i]) || (str[i] >= 'a' && str[i] <= 'f') ||
+          (str[i] >= 'A' && str[i] <= 'F')))
+      return false;
   }
   return true;
 }

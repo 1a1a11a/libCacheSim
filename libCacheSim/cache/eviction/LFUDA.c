@@ -58,7 +58,8 @@ static void free_list_node(void *list_node);
  */
 cache_t *LFUDA_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LFUDA", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LFUDA", ccache_params, cache_specific_params);
   cache->cache_init = LFUDA_init;
   cache->cache_free = LFUDA_free;
   cache->get = LFUDA_get;
@@ -102,6 +103,7 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
 static void LFUDA_free(cache_t *cache) {
   LFUDA_params_t *params = (LFUDA_params_t *)(cache->eviction_params);
   g_hash_table_destroy(params->freq_map);
+  free(params);
   cache_struct_free(cache);
 }
 
@@ -216,7 +218,9 @@ static cache_obj_t *LFUDA_insert(cache_t *cache, const request_t *req) {
     memset(new_node, 0, sizeof(freq_node_t));
     new_node->freq = cache_obj->lfu.freq;
     g_hash_table_insert(params->freq_map, key, new_node);
-    params->max_freq = params->max_freq < cache_obj->lfu.freq ? cache_obj->lfu.freq : params->max_freq;
+    params->max_freq = params->max_freq < cache_obj->lfu.freq
+                           ? cache_obj->lfu.freq
+                           : params->max_freq;
   } else {
     DEBUG_ASSERT(new_node->freq == cache_obj->lfu.freq);
   }
@@ -354,7 +358,7 @@ static void update_min_freq(LFUDA_params_t *params) {
       break;
     }
   }
-  // If cache is empty, min_freq will be unchanged. 
+  // If cache is empty, min_freq will be unchanged.
   DEBUG_ASSERT(params->min_freq >= old_min_freq);
 }
 

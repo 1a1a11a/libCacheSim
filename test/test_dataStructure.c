@@ -27,14 +27,17 @@ void test_chained_hashtable_v2(gconstpointer user_data) {
   print_chained_hashtable_v2(hashtable);
   // cache_obj_t *obj = chained_hashtable_rand_obj_v2(hashtable);
   // printf("random object %lu\n", obj->obj_id);
+
+  // clean up
+  free_request(req);
+  free_chained_hashtable_v2(hashtable);
 }
 
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
-  reader_t *reader;
 
-  reader = setup_plaintxt_reader_num();
-  g_test_add_data_func("/libCacheSim/test_chained_hashtable_v2", NULL, test_chained_hashtable_v2);
+  g_test_add_data_func("/libCacheSim/test_chained_hashtable_v2", NULL,
+                       test_chained_hashtable_v2);
 
   return g_test_run();
 }

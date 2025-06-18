@@ -32,13 +32,19 @@ jobs:
       - uses: actions/checkout@v2
       - name: Prepare
         run: bash scripts/install_dependency.sh
-      - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - name: Configure CMake with LSan
+        run: |
+          cmake -B ${{github.workspace}}/build \
+                -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+                -DCMAKE_C_FLAGS="-fsanitize=leak" \
+                -DCMAKE_CXX_FLAGS="-fsanitize=leak"
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-      - name: Test
+      - name: Test with LSan
         working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{env.BUILD_TYPE}}
+        run: |
+          export ASAN_OPTIONS="detect_leaks=1:halt_on_error=1:verbosity=1"
+          ctest -C ${{env.BUILD_TYPE}} --output-on-failure
 
   selfhosted:
     runs-on: self-hosted

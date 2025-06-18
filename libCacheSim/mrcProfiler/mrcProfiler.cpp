@@ -324,4 +324,7 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
       hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte;
     }
   }
+  // clean up
+  my_free(sizeof(cache_stat_t) * mrc_size_vec.size(), result);
+  free_request(req);
 }
