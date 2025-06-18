@@ -105,6 +105,8 @@ else()
     add_compile_definitions(LOGLEVEL=7)
 endif()
 
+
+
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
 
 # string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
@@ -236,8 +238,13 @@ message(STATUS "========================================================")
 # #######################################
 # library compilation  #
 # #######################################
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include)
-set(ALL_MODULES cachelib admission prefetch evictionC evictionCPP traceReader profiler dataStructure ds_hash utils)
+# Define include directories for reuse in subdirectories
+set(libCacheSim_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include)
+set(libCacheSim_binary_include_dir ${CMAKE_CURRENT_BINARY_DIR}/libCacheSim/include)
+
+include_directories(${libCacheSim_include_dir})
+include_directories(${libCacheSim_binary_include_dir})
+set(ALL_MODULES cachelib admissionC admissionCpp prefetchC evictionC evictionCPP traceReader profiler dataStructure ds_hash utils)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/dataStructure)
