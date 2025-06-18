@@ -1,0 +1,62 @@
+{
+  "name": "libcachesim-node",
+  "version": "1.0.1",
+  "main": "index.js",
+  "bin": {
+    "cachesim-js": "./cli.js"
+  },
+  "scripts": {
+    "test": "node test.js",
+    "install": "prebuild-install || node-gyp rebuild",
+    "prebuild": "prebuild --all --strip --verbose"
+  },
+  "keywords": [
+    "cache",
+    "simulation",
+    "performance",
+    "lru",
+    "fifo",
+    "s3fifo",
+    "sieve",
+    "libcachesim"
+  ],
+  "author": "Murphy Tian",
+  "license": "MIT",
+  "description": "Node.js bindings for libCacheSim - A high-performance cache simulator and analysis library supporting LRU, FIFO, S3-FIFO, Sieve and other caching algorithms",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1a1a11a/libCacheSim"
+  },
+  "homepage": "https://github.com/1a1a11a/libCacheSim/tree/main/libCacheSim-node",
+  "bugs": {
+    "url": "https://github.com/1a1a11a/libCacheSim/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "node-addon-api": "^8.3.1",
+    "prebuild-install": "^7.1.2"
+  },
+  "devDependencies": {
+    "node-gyp": "^10.0.0",
+    "prebuild": "^13.0.1"
+  },
+  "files": [
+    "index.js",
+    "cli.js",
+    "binding.cc",
+    "binding.gyp",
+    "README.md",
+    "vendor"
+  ],
+  "binary": {
+    "module_name": "cachesim-addon",
+    "module_path": "./build/Release/",
+    "remote_path": "https://github.com/1a1a11a/libCacheSim/releases/download/",
+    "package_name": "{module_name}-v{version}-{node_abi}-{platform}-{arch}.tar.gz"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  }
+}

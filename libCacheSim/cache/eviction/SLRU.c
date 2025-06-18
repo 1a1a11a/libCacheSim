@@ -202,6 +202,7 @@ static void SLRU_free(cache_t *cache) {
   free(params->lru_tails);
   free(params->lru_n_objs);
   free(params->lru_n_bytes);
+  free(params);
   cache_struct_free(cache);
 }
 
@@ -450,8 +451,9 @@ static void SLRU_parse_params(cache_t *cache,
       params->n_seg = n_seg;
       params->lru_max_n_bytes = calloc(params->n_seg, sizeof(int64_t));
       for (int i = 0; i < n_seg; i++) {
-        params->lru_max_n_bytes[i] = (int64_t)(
-            (double)seg_size_array[i] / seg_size_sum * cache->cache_size);
+        params->lru_max_n_bytes[i] =
+            (int64_t)((double)seg_size_array[i] / seg_size_sum *
+                      cache->cache_size);
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SLRU_current_params(cache, params));

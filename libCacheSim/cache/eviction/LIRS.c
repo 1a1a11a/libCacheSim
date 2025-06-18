@@ -27,6 +27,13 @@ typedef struct LIRS_params {
   uint64_t nonresident;
 } LIRS_params_t;
 
+/**
+ * @brief local request for thread local storage
+ */
+static __thread request_t *req_local_hit_RD_HIRinQ = NULL;
+static __thread request_t *req_local_evictLIR = NULL;
+static __thread request_t *req_local_evictHIR = NULL;
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
@@ -125,6 +132,20 @@ static void LIRS_free(cache_t *cache) {
   params->LRU_s->cache_free(params->LRU_s);
   params->LRU_q->cache_free(params->LRU_q);
   params->LRU_nh->cache_free(params->LRU_nh);
+
+  if (req_local_hit_RD_HIRinQ != NULL) {
+    free_request(req_local_hit_RD_HIRinQ);
+    req_local_hit_RD_HIRinQ = NULL;
+  }
+  if (req_local_evictLIR != NULL) {
+    free_request(req_local_evictLIR);
+    req_local_evictLIR = NULL;
+  }
+  if (req_local_evictHIR != NULL) {
+    free_request(req_local_evictHIR);
+    req_local_evictHIR = NULL;
+  }
+
   my_free(sizeof(LIRS_params_t), params);
   cache_struct_free(cache);
 }
@@ -553,9 +574,10 @@ static cache_obj_t *hit_RD_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s,
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
   if (cache_obj_q != NULL) {
-    params->hirs_count -= cache_obj_q->obj_size;
+    int64_t obj_size = cache_obj_q->obj_size;
+    params->hirs_count -= obj_size;
     params->LRU_q->remove(params->LRU_q, cache_obj_q->obj_id);
-    cache->occupied_byte -= cache_obj_q->obj_size;
+    cache->occupied_byte -= obj_size;
     cache->n_obj--;
   }
 
@@ -583,19 +605,17 @@ static cache_obj_t *hit_NR_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s) {
 
 static cache_obj_t *hit_RD_HIRinQ(cache_t *cache, cache_obj_t *cache_obj_q) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
-
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
+  if (req_local_hit_RD_HIRinQ == NULL) {
+    req_local_hit_RD_HIRinQ = new_request();
   }
-  copy_cache_obj_to_request(req_local, cache_obj_q);
+  copy_cache_obj_to_request(req_local_hit_RD_HIRinQ, cache_obj_q);
 
   while (params->lirs_count + cache_obj_q->obj_size > params->lirs_limit) {
     evictLIR(cache);
   }
-  params->LRU_s->insert(params->LRU_s, req_local);
+  params->LRU_s->insert(params->LRU_s, req_local_hit_RD_HIRinQ);
   cache_obj_t *obj_to_update =
-      params->LRU_s->find(params->LRU_s, req_local, false);
+      params->LRU_s->find(params->LRU_s, req_local_hit_RD_HIRinQ, false);
   obj_to_update->LIRS.is_LIR = false;
   obj_to_update->LIRS.in_cache = true;
 
@@ -606,30 +626,30 @@ static void evictLIR(cache_t *cache) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
   cache_obj_t *obj_to_evict = params->LRU_s->to_evict(params->LRU_s, NULL);
 
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
+  if (req_local_evictLIR == NULL) {
+    req_local_evictLIR = new_request();
   }
-  copy_cache_obj_to_request(req_local, obj_to_evict);
+  copy_cache_obj_to_request(req_local_evictLIR, obj_to_evict);
   params->lirs_count -= obj_to_evict->obj_size;
   params->LRU_s->evict(params->LRU_s, NULL);
 
-  cache->occupied_byte -= (req_local->obj_size + cache->obj_md_size);
+  cache->occupied_byte -= (req_local_evictLIR->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 
-  if ((uint64_t)req_local->obj_size <= params->hirs_limit) {
-    while ((uint64_t)params->hirs_count + req_local->obj_size > params->hirs_limit) {
+  if ((uint64_t)req_local_evictLIR->obj_size <= params->hirs_limit) {
+    while ((uint64_t)params->hirs_count + req_local_evictLIR->obj_size >
+           params->hirs_limit) {
       evictHIR(cache);
     }
-    params->LRU_q->insert(params->LRU_q, req_local);
+    params->LRU_q->insert(params->LRU_q, req_local_evictLIR);
 
     cache_obj_t *obj_to_update =
-        params->LRU_q->find(params->LRU_q, req_local, false);
+        params->LRU_q->find(params->LRU_q, req_local_evictLIR, false);
     obj_to_update->LIRS.is_LIR = false;
     obj_to_update->LIRS.in_cache = true;
 
-    params->hirs_count += req_local->obj_size;
-    cache->occupied_byte += (req_local->obj_size + cache->obj_md_size);
+    params->hirs_count += req_local_evictLIR->obj_size;
+    cache->occupied_byte += (req_local_evictLIR->obj_size + cache->obj_md_size);
     cache->n_obj += 1;
   }
 
@@ -642,24 +662,23 @@ static bool evictHIR(cache_t *cache) {
   cache_obj_t *obj_to_evict = params->LRU_q->to_evict(params->LRU_q, NULL);
 
   // update the corresponding block in S to be non-resident
-  static __thread request_t *req_local = NULL;
-  if (req_local == NULL) {
-    req_local = new_request();
+  if (req_local_evictHIR == NULL) {
+    req_local_evictHIR = new_request();
   }
-  copy_cache_obj_to_request(req_local, obj_to_evict);
+  copy_cache_obj_to_request(req_local_evictHIR, obj_to_evict);
 
   params->hirs_count -= obj_to_evict->obj_size;
   params->LRU_q->evict(params->LRU_q, NULL);
 
   cache_obj_t *obj_to_update =
-      params->LRU_s->find(params->LRU_s, req_local, false);
+      params->LRU_s->find(params->LRU_s, req_local_evictHIR, false);
   if (obj_to_update != NULL) {
     obj_to_update->LIRS.in_cache = false;
-    params->LRU_nh->insert(params->LRU_nh, req_local);
+    params->LRU_nh->insert(params->LRU_nh, req_local_evictHIR);
     params->nonresident += obj_to_update->obj_size;
   }
 
-  cache->occupied_byte -= (req_local->obj_size + cache->obj_md_size);
+  cache->occupied_byte -= (req_local_evictHIR->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
 
   return true;

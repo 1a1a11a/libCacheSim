@@ -3,11 +3,11 @@ project(libCacheSim)
 set(DESCRIPTION "a high performance cache simulation library")
 set(PROJECT_WEB "http://cachesim.com")
 
-set(${PROJECT_NAME}_VERSION_MAJOR 0)
-set(${PROJECT_NAME}_VERSION_MINOR 1)
-set(${PROJECT_NAME}_VERSION_PATCH 0)
-set(${PROJECT_NAME}_RELEASE_VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR})
-set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_RELEASE_VERSION}.${${PROJECT_NAME}_VERSION_PATCH})
+# Include version utilities
+include(cmake/Version.cmake)
+
+# Setup version from version.txt
+setup_project_version(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/version.txt")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
