@@ -14,6 +14,7 @@ env:
 
 jobs:
   create-release:
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
@@ -70,6 +71,7 @@ jobs:
           prerelease: false
 
   build-and-publish:
+    if: github.event_name == 'release'
     needs: create-release
     runs-on: ubuntu-latest
     
@@ -130,6 +132,7 @@ jobs:
           node -e "console.log('Testing binary load...'); try { require('./index.js'); console.log('Binary loaded successfully!'); } catch(e) { console.error('Failed to load binary:', e); process.exit(1); }"
 
   publish-npm:
+    if: github.event_name == 'release'
     needs: build-and-publish
     runs-on: ubuntu-latest
     
@@ -160,6 +163,7 @@ jobs:
           mkdir -p libCacheSim-node/vendor/include
           cp _build/liblibCacheSim.a libCacheSim-node/vendor/
           cp -r libCacheSim/include/* libCacheSim-node/vendor/include/
+
 
       - name: Publish to NPM
         working-directory: libCacheSim-node
