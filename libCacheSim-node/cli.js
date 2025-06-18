@@ -11,7 +11,8 @@ function parseArgs() {
     type: null,
     algorithm: null,
     size: null,
-    help: false
+    help: false,
+    version: false
   };
 
   for (let i = 0; i < args.length; i++) {
@@ -34,6 +35,10 @@ function parseArgs() {
       case '--help':
       case '-h':
         options.help = true;
+        break;
+      case '--version':
+      case '-v':
+        options.version = true;
         break;
       default:
         console.error(`Unknown option: ${args[i]}`);
@@ -60,6 +65,7 @@ Options:
   --size, -s <size>      Cache size (required)
                          Examples: 1mb, 512kb, 2gb, 1024 (bytes)
   --help, -h             Show this help message
+  --version, -v          Show version information
 
 Examples:
   cachesim-js -t trace.vscsi --type vscsi -a lru -s 10mb
@@ -72,6 +78,11 @@ function main() {
 
   if (options.help) {
     showHelp();
+    return;
+  }
+
+  if (options.version) {
+    console.log(`libcachesim-node v${libCacheSim.getVersion()}`);
     return;
   }
 

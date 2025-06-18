@@ -53,7 +53,8 @@ function runTests() {
            assert(typeof libCacheSim.runSim === 'function', 'runSim function exists') &&
            assert(typeof libCacheSim.runSimulation === 'function', 'runSimulation function exists') &&
            assert(typeof libCacheSim.getSupportedAlgorithms === 'function', 'getSupportedAlgorithms function exists') &&
-           assert(typeof libCacheSim.getSupportedTraceTypes === 'function', 'getSupportedTraceTypes function exists');
+           assert(typeof libCacheSim.getSupportedTraceTypes === 'function', 'getSupportedTraceTypes function exists') &&
+           assert(typeof libCacheSim.getVersion === 'function', 'getVersion function exists');
   });
 
   // Test 2: Check supported algorithms
@@ -75,7 +76,15 @@ function runTests() {
            assert(traceTypes.includes('csv'), 'Includes CSV');
   });
 
-  // Test 4: Run default simulation
+  // Test 4: Check version function
+  test('Get version', () => {
+    const version = libCacheSim.getVersion();
+    return assert(typeof version === 'string', 'Returns a string') &&
+           assert(version.length > 0, 'Version is not empty') &&
+           assert(/^\d+\.\d+\.\d+/.test(version), 'Version follows semantic versioning format');
+  });
+
+  // Test 5: Run default simulation
   test('Run default simulation', () => {
     const result = libCacheSim.runSim();
     return assert(typeof result === 'object', 'Returns an object') &&
@@ -88,7 +97,7 @@ function runTests() {
            assert(Math.abs(result.hitRatio + result.missRatio - 1.0) < 0.0001, 'Hit ratio + miss ratio ≈ 1.0');
   });
 
-  // Test 5: Run custom simulation with different algorithms
+  // Test 6: Run custom simulation with different algorithms
   test('Run custom simulations with different algorithms', () => {
     const algorithms = ['lru', 'fifo', 's3fifo'];
     let allPassed = true;
@@ -110,7 +119,7 @@ function runTests() {
     return allPassed;
   });
 
-  // Test 6: Test different cache sizes
+  // Test 7: Test different cache sizes
   test('Test different cache sizes', () => {
     const sizes = ['512kb', '1mb', '2mb'];
     let allPassed = true;
@@ -131,7 +140,7 @@ function runTests() {
     return allPassed;
   });
 
-  // Test 7: Error handling - invalid trace file
+  // Test 8: Error handling - invalid trace file
   test('Error handling for invalid trace file', () => {
     try {
       libCacheSim.runSimulation('/nonexistent/file.vscsi', 'vscsi', 'lru', '1mb');
@@ -141,7 +150,7 @@ function runTests() {
     }
   });
 
-  // Test 8: Error handling - invalid algorithm
+  // Test 9: Error handling - invalid algorithm
   test('Error handling for invalid algorithm', () => {
     try {
       libCacheSim.runSimulation('../data/cloudPhysicsIO.vscsi', 'vscsi', 'invalid_algo', '1mb');
@@ -151,7 +160,7 @@ function runTests() {
     }
   });
 
-  // Test 9: Error handling - invalid trace type
+  // Test 10: Error handling - invalid trace type
   test('Error handling for invalid trace type', () => {
     try {
       libCacheSim.runSimulation('../data/cloudPhysicsIO.vscsi', 'invalid_type', 'lru', '1mb');
@@ -161,7 +170,7 @@ function runTests() {
     }
   });
 
-  // Test 10: Performance test - measure execution time
+  // Test 11: Performance test - measure execution time
   test('Performance measurement', () => {
     const startTime = process.hrtime.bigint();
     const result = libCacheSim.runSim();

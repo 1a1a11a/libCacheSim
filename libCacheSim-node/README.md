@@ -46,6 +46,12 @@ console.log('Simulation results:', result);
 
 ## API Reference
 
+### `getVersion()`
+
+Get the version of the libCacheSim Node.js binding.
+
+**Returns:** String containing the version number (e.g., "1.0.1")
+
 ### `runSimulation(tracePath, traceType, algorithm, cacheSize)`
 
 Run a cache simulation with specified parameters.
@@ -100,6 +106,9 @@ npm install -g libcachesim-node
 
 # Run simulation from command line
 cachesim-js --trace /path/to/trace.vscsi --algorithm s3fifo --size 1mb
+
+# Check version
+cachesim-js --version
 ```
 
 ## Development
@@ -131,6 +140,16 @@ npm test
 - System dependencies:
   - Linux: `build-essential cmake libglib2.0-dev libzstd-dev`
   - macOS: `cmake glib zstd` (via Homebrew)
+
+### Version Synchronization
+
+The Node.js binding version is automatically synchronized with the main libCacheSim project version. To manually sync versions, run:
+
+```bash
+python3 scripts/sync_node_version.py
+```
+
+This ensures that the Node.js binding version in `package.json` matches the version in the main project's `version.txt` file.
 
 ## Architecture
 
