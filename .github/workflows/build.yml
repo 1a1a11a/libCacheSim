@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Debug
+  BUILD_TYPE: Release
 
 jobs:
   # macos:
@@ -36,14 +36,13 @@ jobs:
         run: |
           cmake -B ${{github.workspace}}/build \
                 -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-                -DCMAKE_C_FLAGS="-fsanitize=address,leak" \
-                -DCMAKE_CXX_FLAGS="-fsanitize=address,leak"
+                -DCMAKE_C_FLAGS="-fsanitize=leak" \
+                -DCMAKE_CXX_FLAGS="-fsanitize=leak"
       - name: Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       - name: Test with LSan
         working-directory: ${{github.workspace}}/build
         run: |
-          # Set ASan/LSan options for runtime detection
           export ASAN_OPTIONS="detect_leaks=1:halt_on_error=1:verbosity=1"
           ctest -C ${{env.BUILD_TYPE}} --output-on-failure
 

@@ -574,7 +574,7 @@ static cache_obj_t *hit_RD_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s,
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
   if (cache_obj_q != NULL) {
-    int64_t obj_size = cache_obj_q->obj_size; 
+    int64_t obj_size = cache_obj_q->obj_size;
     params->hirs_count -= obj_size;
     params->LRU_q->remove(params->LRU_q, cache_obj_q->obj_id);
     cache->occupied_byte -= obj_size;
@@ -637,7 +637,8 @@ static void evictLIR(cache_t *cache) {
   cache->n_obj -= 1;
 
   if ((uint64_t)req_local_evictLIR->obj_size <= params->hirs_limit) {
-    while ((uint64_t)params->hirs_count + req_local_evictLIR->obj_size > params->hirs_limit) {
+    while ((uint64_t)params->hirs_count + req_local_evictLIR->obj_size >
+           params->hirs_limit) {
       evictHIR(cache);
     }
     params->LRU_q->insert(params->LRU_q, req_local_evictLIR);

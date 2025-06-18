@@ -36,7 +36,8 @@ void test_chained_hashtable_v2(gconstpointer user_data) {
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
 
-  g_test_add_data_func("/libCacheSim/test_chained_hashtable_v2", NULL, test_chained_hashtable_v2);
+  g_test_add_data_func("/libCacheSim/test_chained_hashtable_v2", NULL,
+                       test_chained_hashtable_v2);
 
   return g_test_run();
 }
