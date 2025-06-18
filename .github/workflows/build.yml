@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: Debug
 
 jobs:
   # macos:
@@ -45,7 +45,7 @@ jobs:
         run: |
           # Set ASan/LSan options for runtime detection
           export ASAN_OPTIONS="detect_leaks=1:halt_on_error=1:verbosity=1"
-          ctest -C ${{env.BUILD_TYPE}}
+          ctest -C ${{env.BUILD_TYPE}} --output-on-failure
 
   selfhosted:
     runs-on: self-hosted

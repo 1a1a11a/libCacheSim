@@ -512,6 +512,8 @@ int64_t get_num_of_req(reader_t *const reader) {
     while (read_one_req(reader_copy, req) == 0) {
       n_req++;
     }
+    free_request(req);
+    close_reader(reader_copy);
   } else {
     ERROR("should not reach here\n");
     abort();

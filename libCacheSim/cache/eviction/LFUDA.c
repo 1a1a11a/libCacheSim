@@ -102,6 +102,7 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
 static void LFUDA_free(cache_t *cache) {
   LFUDA_params_t *params = (LFUDA_params_t *)(cache->eviction_params);
   g_hash_table_destroy(params->freq_map);
+  free(params);
   cache_struct_free(cache);
 }
 

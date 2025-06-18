@@ -22,23 +22,26 @@ void test_distUtils_basic(gconstpointer user_data) {
   for (i = (long)get_num_of_req(reader) - 1, j = 0; j < N_TEST; i--, j++) {
     g_assert_cmpint(dist[i], ==, rd_true[j]);
   }
+  free(dist);
 
   dist = get_stack_dist(reader, FUTURE_STACK_DIST, &array_size);
   g_assert_cmpint(array_size, ==, get_num_of_req(reader));
   for (i = 6, j = 0; j < N_TEST; i++, j++) {
     g_assert_cmpint(dist[i], ==, frd_true[j]);
   }
+  free(dist);
 
   dist = get_access_dist(reader, DIST_SINCE_LAST_ACCESS, &array_size);
   g_assert_cmpint(array_size, ==, get_num_of_req(reader));
   for (i = (long)get_num_of_req(reader) - 1, j = 0; j < N_TEST; i--, j++) {
     g_assert_cmpint(dist[i], ==, last_dist_true[j]);
   }
-
+  free(dist);
   // dist = get_next_access_dist(reader);
   // for (i = 6, j = 0; j < N_TEST; i++, j++) {
   //   g_assert_cmpint(dist[i], ==, next_dist_true[j]);
   // }
+  // free(dist);
 }
 
 void test_distUtils_more1(gconstpointer user_data) {

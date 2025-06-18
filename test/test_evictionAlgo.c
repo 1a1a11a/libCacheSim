@@ -544,7 +544,7 @@ int main(int argc, char *argv[]) {
   // g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   // g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader, test_BeladySize);
 
-  // g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test, test_teardown);
+  g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test, test_teardown);
 
   return g_test_run();
 }

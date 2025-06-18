@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   // reader = setup_vscsi_reader_with_ignored_obj_size();
   g_test_add_data_func("/libCacheSim/cacheAlgo_Mithril", reader, test_Mithril);
   g_test_add_data_func("/libCacheSim/cacheAlgo_OBL", reader, test_OBL);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_PG", reader, test_PG);
+  g_test_add_data_func_full("/libCacheSim/cacheAlgo_PG", reader, test_PG, test_teardown);
 
   return g_test_run();
 }

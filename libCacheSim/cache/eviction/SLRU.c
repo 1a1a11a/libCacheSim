@@ -202,6 +202,7 @@ static void SLRU_free(cache_t *cache) {
   free(params->lru_tails);
   free(params->lru_n_objs);
   free(params->lru_n_bytes);
+  free(params);
   cache_struct_free(cache);
 }
 
