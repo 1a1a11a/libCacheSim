@@ -93,7 +93,7 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval, int warmup_
             (double)req_cnt / 1000000.0 / runtime);
   } else {
     snprintf(output_str, 1024,
-             "%s %s cache size %8" PRId64 ", %16lu req, miss ratio %.4lf, throughput "
+             "%s %s cache size %8ld, %16lu req, miss ratio %.4lf, throughput "
              "%.2lf MQPS\n",
             reader->trace_path, detailed_cache_name, cache->cache_size,
             (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,

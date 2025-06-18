@@ -99,7 +99,7 @@ void generate_shards_mrc(struct PARAM *params, char *path) {
   params->reader->init_params.sampler->sampling_ratio = 1.0;
   params->reader->sampler->sampling_ratio = 1.0;
   uint64_t n_req = get_num_of_req(params->reader);
-  printf("n_req: %" PRIu64 "\n", n_req);
+  printf("n_req: %lu\n", n_req);
   params->reader->init_params.sampler->sampling_ratio = params->rate;
   params->reader->sampler->sampling_ratio = params->rate;
 

@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
 
 ReuseHistogram* init_histogram(void) {
   ReuseHistogram* hist = (ReuseHistogram*)malloc(sizeof(ReuseHistogram));
@@ -64,7 +63,7 @@ void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
   fprintf(file, "Distance,Frequency\n");
 
   if (hist->cold_miss_bin > 0) {
-    fprintf(file, "ColdMiss,%" PRIu64 "\n", hist->cold_miss_bin);
+    fprintf(file, "ColdMiss,%lu\n", hist->cold_miss_bin);
   }
 
   GHashTableIter iter;
@@ -76,9 +75,9 @@ void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
     double scaled_distance = (double)(distance) / (double)rate;
 
     if (scaled_distance > (double)UINT64_MAX) {
-      fprintf(file, "Overflow,%" PRIu64 "\n", bin->frequency);
+      fprintf(file, "Overflow,%lu\n", bin->frequency);
     } else {
-      fprintf(file, "%" PRIu64 ",%" PRIu64 "\n", (uint64_t)scaled_distance, bin->frequency);
+      fprintf(file, "%lu,%lu\n", (uint64_t)scaled_distance, bin->frequency);
     }
   }
 

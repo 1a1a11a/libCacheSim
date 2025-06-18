@@ -40,8 +40,7 @@ extern "C" {
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)
 #define NEXT_OBJ(cur_obj) (((cache_obj_t *)(cur_obj))->hash_next)
 
-static void _copy_entries(hashtable_t *new_table, cache_obj_t **old_table,
-                          uint64_t old_size);
+static void _copy_entries(hashtable_t *new_table, cache_obj_t **old_table, uint64_t old_size);
 static void _chained_hashtable_shrink_v2(hashtable_t *hashtable);
 static void _chained_hashtable_expand_v2(hashtable_t *hashtable);
 static void print_hashbucket_item_distribution(const hashtable_t *hashtable);
@@ -50,8 +49,7 @@ static void print_hashbucket_item_distribution(const hashtable_t *hashtable);
 /**
  * get the last object in the hash bucket
  */
-static inline cache_obj_t *_last_obj_in_bucket(const hashtable_t *hashtable,
-                                               const uint64_t hv) {
+static inline cache_obj_t *_last_obj_in_bucket(const hashtable_t *hashtable, const uint64_t hv) {
   cache_obj_t *cur_obj_in_bucket = hashtable->ptr_table[hv];
   while (cur_obj_in_bucket->hash_next) {
     cur_obj_in_bucket = cur_obj_in_bucket->hash_next;
@@ -60,10 +58,8 @@ static inline cache_obj_t *_last_obj_in_bucket(const hashtable_t *hashtable,
 }
 
 /* add an object to the hashtable */
-static inline void add_to_table(hashtable_t *hashtable,
-                                cache_obj_t *cache_obj) {
-  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) &
-                hashmask(hashtable->hashpower);
+static inline void add_to_table(hashtable_t *hashtable, cache_obj_t *cache_obj) {
+  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == NULL) {
     hashtable->ptr_table[hv] = cache_obj;
     return;
@@ -96,9 +92,8 @@ hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
   size_t size = sizeof(cache_obj_t *) * hashsize(hashtable->hashpower);
   hashtable->ptr_table = my_malloc_n(cache_obj_t *, hashsize(hashpower));
   if (hashtable->ptr_table == NULL) {
-    ERROR("allocate hash table %zu entry * %lu B = %ld MiB failed\n",
-          sizeof(cache_obj_t *), (unsigned long)(hashsize(hashpower)),
-          (long)(sizeof(cache_obj_t *) * hashsize(hashpower) / 1024 / 1024));
+    ERROR("allocate hash table %zu entry * %lu B = %ld MiB failed\n", sizeof(cache_obj_t *),
+          (unsigned long)(hashsize(hashpower)), (long)(sizeof(cache_obj_t *) * hashsize(hashpower) / 1024 / 1024));
     exit(1);
   }
   memset(hashtable->ptr_table, 0, size);
@@ -112,8 +107,7 @@ hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
   return hashtable;
 }
 
-cache_obj_t *chained_hashtable_find_obj_id_v2(const hashtable_t *hashtable,
-                                              const obj_id_t obj_id) {
+cache_obj_t *chained_hashtable_find_obj_id_v2(const hashtable_t *hashtable, const obj_id_t obj_id) {
   cache_obj_t *cache_obj = NULL;
   uint64_t hv = get_hash_value_int_64(&obj_id);
   hv = hv & hashmask(hashtable->hashpower);
@@ -128,21 +122,17 @@ cache_obj_t *chained_hashtable_find_obj_id_v2(const hashtable_t *hashtable,
   return cache_obj;
 }
 
-cache_obj_t *chained_hashtable_find_v2(const hashtable_t *hashtable,
-                                       const request_t *req) {
+cache_obj_t *chained_hashtable_find_v2(const hashtable_t *hashtable, const request_t *req) {
   return chained_hashtable_find_obj_id_v2(hashtable, req->obj_id);
 }
 
-cache_obj_t *chained_hashtable_find_obj_v2(const hashtable_t *hashtable,
-                                           const cache_obj_t *obj_to_find) {
+cache_obj_t *chained_hashtable_find_obj_v2(const hashtable_t *hashtable, const cache_obj_t *obj_to_find) {
   return chained_hashtable_find_obj_id_v2(hashtable, obj_to_find->obj_id);
 }
 
 /* the user needs to make sure the added object is not in the hash table */
-cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable,
-                                         const request_t *req) {
-  if (hashtable->n_obj > (uint64_t)(hashsize(hashtable->hashpower) *
-                                    CHAINED_HASHTABLE_EXPAND_THRESHOLD)) {
+cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable, const request_t *req) {
+  if (hashtable->n_obj > (uint64_t)(hashsize(hashtable->hashpower) * CHAINED_HASHTABLE_EXPAND_THRESHOLD)) {
     _chained_hashtable_expand_v2(hashtable);
   }
 
@@ -153,11 +143,9 @@ cache_obj_t *chained_hashtable_insert_v2(hashtable_t *hashtable,
 }
 
 /* the user needs to make sure the added object is not in the hash table */
-cache_obj_t *chained_hashtable_insert_obj_v2(hashtable_t *hashtable,
-                                             cache_obj_t *cache_obj) {
+cache_obj_t *chained_hashtable_insert_obj_v2(hashtable_t *hashtable, cache_obj_t *cache_obj) {
   DEBUG_ASSERT(hashtable->external_obj);
-  if (hashtable->n_obj > (uint64_t)(hashsize(hashtable->hashpower) *
-                                    CHAINED_HASHTABLE_EXPAND_THRESHOLD))
+  if (hashtable->n_obj > (uint64_t)(hashsize(hashtable->hashpower) * CHAINED_HASHTABLE_EXPAND_THRESHOLD))
     _chained_hashtable_expand_v2(hashtable);
 
   add_to_table(hashtable, cache_obj);
@@ -166,11 +154,9 @@ cache_obj_t *chained_hashtable_insert_obj_v2(hashtable_t *hashtable,
 }
 
 /* you need to free the extra_metadata before deleting from hash table */
-void chained_hashtable_delete_v2(hashtable_t *hashtable,
-                                 cache_obj_t *cache_obj) {
+void chained_hashtable_delete_v2(hashtable_t *hashtable, cache_obj_t *cache_obj) {
   hashtable->n_obj -= 1;
-  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) &
-                hashmask(hashtable->hashpower);
+  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == cache_obj) {
     hashtable->ptr_table[hv] = cache_obj->hash_next;
     if (!hashtable->external_obj) free_cache_obj(cache_obj);
@@ -187,9 +173,8 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
 
   if (chain_len > max_chain_len) {
     max_chain_len = chain_len;
-    WARN("hashtable remove %lu chain len %d, hashtable load %ld/%ld %lf\n",
-         (unsigned long)cache_obj->obj_id, max_chain_len,
-         (long)hashtable->n_obj, (long)hashsize(hashtable->hashpower),
+    WARN("hashtable remove %lu chain len %d, hashtable load %ld/%ld %lf\n", (unsigned long)cache_obj->obj_id,
+         max_chain_len, (long)hashtable->n_obj, (long)hashsize(hashtable->hashpower),
          (double)hashtable->n_obj / hashsize(hashtable->hashpower));
 
     print_hashbucket_item_distribution(hashtable);
@@ -203,12 +188,10 @@ void chained_hashtable_delete_v2(hashtable_t *hashtable,
   }
 }
 
-bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
-                                     cache_obj_t *cache_obj) {
+bool chained_hashtable_try_delete_v2(hashtable_t *hashtable, cache_obj_t *cache_obj) {
   static int max_chain_len = 1;
 
-  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) &
-                hashmask(hashtable->hashpower);
+  uint64_t hv = get_hash_value_int_64(&cache_obj->obj_id) & hashmask(hashtable->hashpower);
   if (hashtable->ptr_table[hv] == cache_obj) {
     hashtable->ptr_table[hv] = cache_obj->hash_next;
     hashtable->n_obj -= 1;
@@ -265,8 +248,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
  *  @param  obj_id                             [The object id to remove]
  *  @return                                    [true or false]
  */
-bool chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
-                                        const obj_id_t obj_id) {
+bool chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable, const obj_id_t obj_id) {
   uint64_t hv = get_hash_value_int_64(&obj_id) & hashmask(hashtable->hashpower);
   cache_obj_t *cur_obj = hashtable->ptr_table[hv];
   // the hash bucket is empty
@@ -324,8 +306,7 @@ cache_obj_t *chained_hashtable_rand_obj_v2(hashtable_t *hashtable) {
   return cur_obj;
 }
 
-void chained_hashtable_foreach_v2(hashtable_t *hashtable,
-                                  hashtable_iter iter_func, void *user_data) {
+void chained_hashtable_foreach_v2(hashtable_t *hashtable, hashtable_iter iter_func, void *user_data) {
   cache_obj_t *cur_obj, *next_obj;
   for (uint64_t i = 0; i < hashsize(hashtable->hashpower); i++) {
     cur_obj = hashtable->ptr_table[i];
@@ -338,10 +319,8 @@ void chained_hashtable_foreach_v2(hashtable_t *hashtable,
 }
 
 void free_chained_hashtable_v2(hashtable_t *hashtable) {
-  if (!hashtable->external_obj)
-    chained_hashtable_foreach_v2(hashtable, foreach_free_obj, NULL);
-  my_free(sizeof(cache_obj_t *) * hashsize(hashtable->hashpower),
-          hashtable->ptr_table);
+  if (!hashtable->external_obj) chained_hashtable_foreach_v2(hashtable, foreach_free_obj, NULL);
+  my_free(sizeof(cache_obj_t *) * hashsize(hashtable->hashpower), hashtable->ptr_table);
   my_free(sizeof(hashtable_t), hashtable);
 }
 
@@ -353,8 +332,7 @@ void free_chained_hashtable_v2(hashtable_t *hashtable) {
  * @param old_size
  * @return * void
  */
-static void _copy_entries(hashtable_t *new_table, cache_obj_t **old_table,
-                          uint64_t old_size) {
+static void _copy_entries(hashtable_t *new_table, cache_obj_t **old_table, uint64_t old_size) {
   cache_obj_t *cur_obj, *next_obj;
   for (uint64_t i = 0; i < old_size; i++) {
     cur_obj = old_table[i];
@@ -369,24 +347,16 @@ static void _copy_entries(hashtable_t *new_table, cache_obj_t **old_table,
 
 static void _chained_hashtable_shrink_v2(hashtable_t *hashtable) {
   cache_obj_t **old_table = hashtable->ptr_table;
-  hashtable->ptr_table =
-      my_malloc_n(cache_obj_t *, hashsize(--hashtable->hashpower));
+  hashtable->ptr_table = my_malloc_n(cache_obj_t *, hashsize(--hashtable->hashpower));
 #ifdef USE_HUGEPAGE
-  madvise(hashtable->table,
-          sizeof(cache_obj_t *) * hashsize(hashtable->hashpower),
-          MADV_HUGEPAGE);
+  madvise(hashtable->table, sizeof(cache_obj_t *) * hashsize(hashtable->hashpower), MADV_HUGEPAGE);
 #endif
-  memset(hashtable->ptr_table, 0,
-         hashsize(hashtable->hashpower) * sizeof(cache_obj_t *));
-  ASSERT_NOT_NULL(hashtable->ptr_table,
-                  "unable to shrink hashtable to size %llu\n",
-                  hashsizeULL(hashtable->hashpower));
+  memset(hashtable->ptr_table, 0, hashsize(hashtable->hashpower) * sizeof(cache_obj_t *));
+  ASSERT_NOT_NULL(hashtable->ptr_table, "unable to shrink hashtable to size %llu\n", hashsizeULL(hashtable->hashpower));
 
-  DEBUG(
-      "shrink hash table size from %llu to %llu, new hashtable load %llu/%llu\n",
-      hashsizeULL((uint16_t)(hashtable->hashpower + 1)),
-      hashsizeULL(hashtable->hashpower), hashtable->n_obj,
-      hashsize(hashtable->hashpower));
+  DEBUG("shrink hash table size from %llu to %llu, new hashtable load %lu/%lu\n",
+        hashsizeULL((uint16_t)(hashtable->hashpower + 1)), hashsizeULL(hashtable->hashpower), hashtable->n_obj,
+        hashsize(hashtable->hashpower));
 
   _copy_entries(hashtable, old_table, hashsize(hashtable->hashpower + 1));
   my_free(sizeof(cache_obj_t) * hashsize(hashtable->hashpower + 1), old_table);
@@ -395,25 +365,16 @@ static void _chained_hashtable_shrink_v2(hashtable_t *hashtable) {
 /* grows the hashtable to the next power of 2. */
 static void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
   cache_obj_t **old_table = hashtable->ptr_table;
-  hashtable->ptr_table =
-      my_malloc_n(cache_obj_t *, hashsize(++hashtable->hashpower));
+  hashtable->ptr_table = my_malloc_n(cache_obj_t *, hashsize(++hashtable->hashpower));
 #ifdef USE_HUGEPAGE
-  madvise(hashtable->table,
-          sizeof(cache_obj_t *) * hashsize(hashtable->hashpower),
-          MADV_HUGEPAGE);
+  madvise(hashtable->table, sizeof(cache_obj_t *) * hashsize(hashtable->hashpower), MADV_HUGEPAGE);
 #endif
-  memset(hashtable->ptr_table, 0,
-         hashsize(hashtable->hashpower) * sizeof(cache_obj_t *));
-  ASSERT_NOT_NULL(hashtable->ptr_table,
-                  "unable to grow hashtable to size %llu\n",
-                  hashsizeULL(hashtable->hashpower));
+  memset(hashtable->ptr_table, 0, hashsize(hashtable->hashpower) * sizeof(cache_obj_t *));
+  ASSERT_NOT_NULL(hashtable->ptr_table, "unable to grow hashtable to size %llu\n", hashsizeULL(hashtable->hashpower));
 
-  DEBUG(
-      "expand hashtable from %llu to %llu entries, new hashtable load "
-      "%llu/%llu\n",
-      hashsizeULL((uint16_t)(hashtable->hashpower - 1)),
-      hashsizeULL(hashtable->hashpower), hashtable->n_obj,
-      hashsize(hashtable->hashpower));
+  DEBUG("expand hashtable from %llu to %llu entries, new hashtable load %lu/%lu\n",
+        hashsizeULL((uint16_t)(hashtable->hashpower - 1)), hashsizeULL(hashtable->hashpower), hashtable->n_obj,
+        hashsize(hashtable->hashpower));
 
   _copy_entries(hashtable, old_table, hashsize(hashtable->hashpower - 1));
   my_free(sizeof(cache_obj_t) * hashsize(hashtable->hashpower), old_table);
@@ -425,8 +386,7 @@ void check_hashtable_integrity_v2(const hashtable_t *hashtable) {
     cur_obj = hashtable->ptr_table[i];
     while (cur_obj != NULL) {
       next_obj = cur_obj->hash_next;
-      assert(i == (get_hash_value_int_64(&cur_obj->obj_id) &
-                   hashmask(hashtable->hashpower)));
+      assert(i == (get_hash_value_int_64(&cur_obj->obj_id) & hashmask(hashtable->hashpower)));
       cur_obj = next_obj;
     }
   }
@@ -439,8 +399,7 @@ static int count_n_obj_in_bucket(cache_obj_t *curr_obj) {
     obj_id_arr[chain_len] = curr_obj->obj_id;
     for (int i = 0; i < chain_len; i++) {
       if (obj_id_arr[i] == curr_obj->obj_id) {
-        ERROR("obj_id %lu is duplicated in hashtable\n",
-              (unsigned long)curr_obj->obj_id);
+        ERROR("obj_id %lu is duplicated in hashtable\n", (unsigned long)curr_obj->obj_id);
         abort();
       }
     }
@@ -476,7 +435,7 @@ void print_chained_hashtable_v2(const hashtable_t *hashtable) {
     if (cur_obj == NULL) {
       continue;
     }
-    printf("hash bucket %lu: ", (unsigned long)i);
+    printf("hash bucket %lu: ", (unsigned long) i);
     while (cur_obj != NULL) {
       printf("%lu, ", (unsigned long)cur_obj->obj_id);
       cur_obj = cur_obj->hash_next;
