@@ -711,7 +711,7 @@ static void LIRS_print_cache(cache_t *cache) {
          (unsigned long)params->hirs_count);
   cache_obj_t *obj = ((LRU_params_t *)params->LRU_s->eviction_params)->q_head;
   while (obj) {
-    printf("%ld(%" PRId64 ", %s, %s)->", (long)obj->obj_id, obj->obj_size,
+    printf("%" PRId64 "(%" PRId64 ", %s, %s)->", obj->obj_id, obj->obj_size,
            obj->LIRS.in_cache ? "R" : "N", obj->LIRS.is_LIR ? "L" : "H");
     obj = obj->queue.next;
   }
