@@ -7,7 +7,7 @@ add_subdirectory(admission)
 add_subdirectory(eviction)
 add_subdirectory(prefetch)
 
-add_library(cachelib cache.c cacheObj.c)
+add_library(cachelib cache.c)
 target_link_libraries(cachelib dataStructure)
 
 target_compile_options(cachelib PRIVATE -fPIC)
