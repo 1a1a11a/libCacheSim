@@ -279,9 +279,9 @@ static inline void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
                                     cache_obj_t *cache_obj) {
   if (*head == *tail) {
     // the list only has one element
-    assert(cache_obj == *head);
-    assert(cache_obj->queue.next == NULL);
-    assert(cache_obj->queue.prev == NULL);
+    DEBUG_ASSERT(cache_obj == *head);
+    DEBUG_ASSERT(cache_obj->queue.next == NULL);
+    DEBUG_ASSERT(cache_obj->queue.prev == NULL);
     return;
   }
   if (cache_obj == *head) {
