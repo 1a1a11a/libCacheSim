@@ -92,10 +92,9 @@ cache_t *ThreeLCache_init(const common_cache_params_t ccache_params,
   ThreeLCache_params_t *params = my_malloc(ThreeLCache_params_t);
   cache->eviction_params = params;
 
+  ThreeLCache_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
     ThreeLCache_parse_params(cache, cache_specific_params);
-  } else {
-    ThreeLCache_parse_params(cache, DEFAULT_PARAMS);
   }
 
   auto *ThreeLCache = new ThreeLCache::ThreeLCacheCache();
@@ -131,6 +130,9 @@ static void ThreeLCache_free(cache_t *cache) {
       static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
   delete ThreeLCache;
   free(cache->to_evict_candidate);
+  if (params->objective != NULL) {
+    free(params->objective);
+  }
   my_free(sizeof(ThreeLCache_params_t), params);
   cache_struct_free(cache);
 }
@@ -340,6 +342,9 @@ static void ThreeLCache_parse_params(cache_t *cache,
     }
 
     if (strcasecmp(key, "objective") == 0) {
+      if (params->objective != NULL) {
+        free(params->objective);
+      }
       params->objective = strdup(value);
       if (params->objective == NULL) {
         ERROR("out of memory %s\n", strerror(errno));

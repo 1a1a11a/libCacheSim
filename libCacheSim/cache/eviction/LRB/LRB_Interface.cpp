@@ -95,10 +95,9 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
   LRB_params_t *params = my_malloc(LRB_params_t);
   cache->eviction_params = params;
 
+  LRB_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
     LRB_parse_params(cache, cache_specific_params);
-  } else {
-    LRB_parse_params(cache, DEFAULT_PARAMS);
   }
 
   auto *lrb = new lrb::LRBCache();
@@ -133,6 +132,9 @@ static void LRB_free(cache_t *cache) {
   auto *LRB = static_cast<lrb::LRBCache *>(params->LRB_cache);
   delete LRB;
   free(cache->to_evict_candidate);
+  if (params->objective != NULL) {
+    free(params->objective);
+  }
   my_free(sizeof(LRB_params_t), params);
   cache_struct_free(cache);
 }
@@ -332,6 +334,9 @@ static void LRB_parse_params(cache_t *cache,
     }
 
     if (strcasecmp(key, "objective") == 0) {
+      if (params->objective != NULL) {
+        free(params->objective);
+      }
       params->objective = strdup(value);
       if (params->objective == NULL) {
         ERROR("out of memory %s\n", strerror(errno));
