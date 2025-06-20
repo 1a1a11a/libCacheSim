@@ -12,18 +12,22 @@
 extern "C" {
 #endif
 
-static inline cache_t *create_cache(const char *trace_path, const char *eviction_algo, const uint64_t cache_size,
-                                    const char *eviction_params, const bool consider_obj_metadata) {
+static inline cache_t *create_cache(const char *trace_path,
+                                    const char *eviction_algo,
+                                    const uint64_t cache_size,
+                                    const char *eviction_params,
+                                    const bool consider_obj_metadata) {
   common_cache_params_t cc_params = {
-    .cache_size = cache_size,
-    .default_ttl = 86400 * 300,
-    .hashpower = 24,
-    .consider_obj_metadata = consider_obj_metadata,
-};
+      .cache_size = cache_size,
+      .default_ttl = 86400 * 300,
+      .hashpower = 24,
+      .consider_obj_metadata = consider_obj_metadata,
+  };
   cache_t *cache;
 
   /* the trace provided is small */
-  if (trace_path != NULL && strstr(trace_path, "data/trace.") != NULL) cc_params.hashpower -= 8;
+  if (trace_path != NULL && strstr(trace_path, "data/trace.") != NULL)
+    cc_params.hashpower -= 8;
   typedef struct {
     const char *name;
     cache_t *(*init_func)(common_cache_params_t, const char *);
@@ -85,7 +89,8 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
     }
   }
 
-  // Initializing for algorithms which require special handling (not in simple_algos)
+  // Initializing for algorithms which require special handling (not in
+  // simple_algos)
   if (init_func) {
     cache = init_func(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "hyperbolic") == 0) {
@@ -104,7 +109,8 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
         cache = WTinyLFU_init(cc_params, eviction_params);
       }
     }
-  } else if (strcasecmp(eviction_algo, "belady") == 0 && strcasestr(trace_path, "lcs") == NULL) {
+  } else if (strcasecmp(eviction_algo, "belady") == 0 &&
+             strcasestr(trace_path, "lcs") == NULL) {
     if (strcasestr(trace_path, "oracleGeneral") == NULL) {
       WARN("belady is only supported for oracleGeneral and lcs trace\n");
       WARN("to convert a trace to lcs format\n");
@@ -114,7 +120,8 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
     }
     cache = Belady_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "beladySize") == 0) {
-    if (strcasestr(trace_path, "oracleGeneral") == NULL && strcasestr(trace_path, "lcs") == NULL) {
+    if (strcasestr(trace_path, "oracleGeneral") == NULL &&
+        strcasestr(trace_path, "lcs") == NULL) {
       WARN("beladySize is only supported for oracleGeneral and lcs trace\n");
       WARN("to convert a trace to lcs format\n");
       WARN("./bin/traceConv input_trace trace_format output_trace\n");
@@ -128,7 +135,8 @@ static inline cache_t *create_cache(const char *trace_path, const char *eviction
     cache = ThreeLCache_init(cc_params, eviction_params);
 #endif
 #ifdef ENABLE_GLCACHE
-  } else if (strcasecmp(eviction_algo, "GLCache") == 0 || strcasecmp(eviction_algo, "gl-cache") == 0) {
+  } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
+             strcasecmp(eviction_algo, "gl-cache") == 0) {
     cache = GLCache_init(cc_params, eviction_params);
 #endif
 #ifdef ENABLE_LRB
