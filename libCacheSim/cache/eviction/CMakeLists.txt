@@ -46,20 +46,6 @@ set(sourceC
         RandomLRU.c
 )
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/priv")
-    set(sourceC ${sourceC} 
-
-                priv/QDLPv0.c
-
-
-                priv/S3FIFOdv2.c
-
-                priv/myMQv1.c
-
-                priv/MClock.c
-                )
-endif()
-
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/fifo")
         set(sourceC ${sourceC} 
         fifo/LP_SFIFO.c
@@ -126,13 +112,6 @@ set_target_properties(evictionCPP
         CXX_EXTENSIONS NO
         )
 
-# set (evictionLib
-#         evictionC
-#         evictionCPP
-#         )
-
-
-        
-# add_library(eviction INTERFACE)
-# target_link_libraries(eviction INTERFACE ${evictionLib})
+add_library(eviction INTERFACE)
+target_link_libraries(eviction INTERFACE evictionC evictionCPP)
 
