@@ -4,9 +4,10 @@
 // Created by Juncheng Yang on 6/19/20.
 //
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "libCacheSim/const.h"
 
