@@ -99,15 +99,11 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -Wno-unused-variable -
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs")
 
-# if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-#     set(CFLAGS "$ENV{CFLAGS} " "-Wl,--export-dynamic ")
-# endif()
-
-# string(REPLACE "" "" LOCAL_CFLAGS ${CFLAGS})
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS} ${LOCAL_CFLAGS}")
-
 # Find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+# Include GNUInstallDirs for standard installation directories
+include(GNUInstallDirs)
 
 find_package(GLib REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
@@ -121,14 +117,13 @@ if(OPT_SUPPORT_ZSTD_TRACE)
     add_compile_definitions(SUPPORT_ZSTD_TRACE=1)
     find_package(ZSTD)
 
-    # https://stackoverflow.com/questions/61377055/cannot-find-gflags-gflags-h-while-building-library-osx/61379123#61379123
     include_directories(${ZSTD_INCLUDE_DIR})
 
     if("${ZSTD_LIBRARIES}" STREQUAL "")
         message(FATAL_ERROR "zstd not found")
     endif()
 
-    link_libraries(${ZSTD_LIBRARIES})
+    set(LIBS ${LIBS} ${ZSTD_LIBRARIES})
     message(STATUS "ZSTD_INCLUDE_DIR ${ZSTD_INCLUDE_DIR}, ZSTD_LIBRARIES ${ZSTD_LIBRARIES}")
 endif()
 
@@ -152,7 +147,7 @@ find_package(Threads)
 if(ENABLE_GLCACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
-    link_libraries(xgboost::xgboost)
+    set(LIBS ${LIBS} xgboost::xgboost)
     add_compile_definitions(ENABLE_GLCACHE=1)
     message(STATUS "XGBOOST_INCLUDE_DIR=${XGBOOST_INCLUDE_DIR}")
 endif()
@@ -169,7 +164,7 @@ foreach(FEATURE ENABLE_LRB ENABLE_3L_CACHE)
         if(NOT LIGHTGBM_LIB)
             message(FATAL_ERROR "LIGHTGBM_LIB not found")
         endif()
-        link_libraries(${LIGHTGBM_LIB})
+        set(LIBS ${LIBS} ${LIGHTGBM_LIB})
         add_compile_definitions(${FEATURE}=1)
     endif()
 endforeach()
@@ -308,11 +303,16 @@ set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${reader_source}
     ${dataStructure_source} ${profiler_source} ${utils_source})
 
 # Build configuration
-# # https://stackoverflow.com/questions/32469953/why-is-cmake-designed-so-that-it-removes-runtime-path-when-installing
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(${PROJECT_NAME} ${LIB_SOURCE})
 target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic)
+
+# Link against found dependencies
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS})
+if(CMAKE_THREAD_LIBS_INIT)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/libCacheSim/include/libCacheSim.h)
@@ -321,12 +321,16 @@ configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINAR
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake @ONLY)
 
 # Install configuration
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION include)
-install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
-install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME} COMPONENT dev)
 
 install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 # Testing configuration
