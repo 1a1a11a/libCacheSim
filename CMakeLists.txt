@@ -16,10 +16,7 @@ set(CMAKE_CXX_EXTENSIONS Off)
 # export compile commands, useful for IDEs
 set(EXPORT_COMPILE_COMMANDS ON)
 
-# #######################################
-# define options #
-# options are cached variables https://stackoverflow.com/questions/35744647/disabling-cmake-option-has-no-effect
-# #######################################
+# Define build options
 # echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 option(USE_HUGEPAGE "use transparent hugepage" ON)
 option(ENABLE_TESTS "whether enable test" ON)
@@ -31,9 +28,7 @@ option(ENABLE_3L_CACHE "enable 3LCache" OFF)
 set(LOG_LEVEL NONE CACHE STRING "change the logging level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
 
-# #######################################
-# detect platform #
-# #######################################
+# Platform detection
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     message(STATUS "Mac OS X detected, version ${CMAKE_SYSTEM_VERSION}")
     add_definitions(-DOS_DARWIN)
@@ -64,20 +59,14 @@ configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 
 if(SUPPORT_TTL)
     add_compile_definitions(SUPPORT_TTL=1)
-else()
-    remove_definitions(SUPPORT_TTL)
-endif(SUPPORT_TTL)
+endif()
 
 if(USE_HUGEPAGE)
     add_compile_definitions(USE_HUGEPAGE=1)
-else()
-    remove_definitions(USE_HUGEPAGE)
-endif(USE_HUGEPAGE)
+endif()
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache/eviction/priv")
     add_compile_definitions(INCLUDE_PRIV=1)
-else()
-    remove_definitions(INCLUDE_PRIV)
 endif()
 
 string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
@@ -105,19 +94,7 @@ else()
     add_compile_definitions(LOGLEVEL=7)
 endif()
 
-
-
-message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG} CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO} CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
-
-# string( REPLACE "/DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
-message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}, LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}, ENABLE_LRB ${ENABLE_LRB}, ENABLE_3L_CACHE ${ENABLE_3L_CACHE}, OPT_SUPPORT_ZSTD_TRACE ${OPT_SUPPORT_ZSTD_TRACE}")
-
-# add_compile_options(-fsanitize=address)
-# add_link_options(-fsanitize=address)
-
-# #######################################
-# compiler flags #
-# #######################################
+# Compiler flags
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs")
@@ -129,9 +106,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wno-deprecated-co
 # string(REPLACE "" "" LOCAL_CFLAGS ${CFLAGS})
 # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{CFLAGS} ${LOCAL_CFLAGS}")
 
-# #######################################
-# find dependency #
-# #######################################
+# Find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 find_package(GLib REQUIRED)
@@ -155,14 +130,12 @@ if(OPT_SUPPORT_ZSTD_TRACE)
 
     link_libraries(${ZSTD_LIBRARIES})
     message(STATUS "ZSTD_INCLUDE_DIR ${ZSTD_INCLUDE_DIR}, ZSTD_LIBRARIES ${ZSTD_LIBRARIES}")
-else()
-    remove_definitions(SUPPORT_ZSTD_TRACE)
-endif(OPT_SUPPORT_ZSTD_TRACE)
+endif()
 
-# libgoogle-perftools-dev google-perftools
-# tcmalloc causes trouble with valgrind https://github.com/gperftools/gperftools/issues/792
-# when using valgrind, we should not compile with tcmalloc
-# maybe disable tcmalloc under debug model
+# TCMalloc (libgoogle-perftools-dev google-perftools)
+# Note: tcmalloc causes trouble with valgrind
+# https://github.com/gperftools/gperftools/issues/792
+# When using valgrind, we should not compile with tcmalloc
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
     find_package(Tcmalloc)
 
@@ -176,41 +149,41 @@ endif()
 
 find_package(Threads)
 
-# find_package(Boost REQUIRED)
-# message(STATUS "boost found? " ${Boost_FOUND} ", library " ${Boost_LIBRARIES} ", header " ${Boost_INCLUDE_DIRS})
-# include_directories(${Boost_INCLUDE_DIRS})
 if(ENABLE_GLCACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
     link_libraries(xgboost::xgboost)
     add_compile_definitions(ENABLE_GLCACHE=1)
     message(STATUS "XGBOOST_INCLUDE_DIR=${XGBOOST_INCLUDE_DIR}")
-else()
-    remove_definitions(ENABLE_GLCACHE)
 endif()
 
-foreach (FEATURE ENABLE_LRB ENABLE_3L_CACHE)
-    if (${FEATURE})
+foreach(FEATURE ENABLE_LRB ENABLE_3L_CACHE)
+    if(${FEATURE})
         find_path(LIGHTGBM_PATH LightGBM)
-        if (NOT LIGHTGBM_PATH)
+        if(NOT LIGHTGBM_PATH)
             message(FATAL_ERROR "LIGHTGBM_PATH not found")
-        endif ()
+        endif()
         include_directories(${LIGHTGBM_PATH})
 
         find_library(LIGHTGBM_LIB _lightgbm)
-        if (NOT LIGHTGBM_LIB)
+        if(NOT LIGHTGBM_LIB)
             message(FATAL_ERROR "LIGHTGBM_LIB not found")
-        endif ()
+        endif()
         link_libraries(${LIGHTGBM_LIB})
         add_compile_definitions(${FEATURE}=1)
-    else()
-        remove_definitions(${FEATURE})
     endif()
 endforeach()
-# link_libraries("-ldl -lm ${LIBS}")
-
-# put binary in bin directory
+# Put binary in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# Status messages
+message(STATUS "CMAKE_CXX_FLAGS_DEBUG ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+message(STATUS "CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}")
+message(STATUS "LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}")
+message(STATUS "ENABLE_LRB ${ENABLE_LRB}, ENABLE_3L_CACHE ${ENABLE_3L_CACHE}")
+message(STATUS "OPT_SUPPORT_ZSTD_TRACE ${OPT_SUPPORT_ZSTD_TRACE}")
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")
 message(STATUS "<<++              libCacheSim summary             ++>>")
@@ -235,9 +208,7 @@ message(STATUS "========================================================")
 message(STATUS "============= Status of optional features ==============")
 message(STATUS "========================================================")
 
-# #######################################
-# library compilation  #
-# #######################################
+# Library compilation
 # Define include directories for reuse in subdirectories
 set(libCacheSim_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include)
 set(libCacheSim_binary_include_dir ${CMAKE_CURRENT_BINARY_DIR}/libCacheSim/include)
@@ -255,10 +226,8 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/bin)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/traceAnalyzer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/mrcProfiler)
 
-# #######################################
-# library install  #
-# #######################################
-# compile a single library
+# Library installation
+# Compile a single library
 file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*.c)
 
 file(GLOB cache_source
@@ -274,50 +243,38 @@ file(GLOB cache_source
 if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/fifo)
     file(GLOB fifo_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/fifo/*.c)
-    set(cache_source
-        ${cache_source} ${fifo_source}
-    )
+    set(cache_source ${cache_source} ${fifo_source})
 endif()
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/belady)
     file(GLOB belady_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/belady/*.c)
-    set(cache_source
-        ${cache_source} ${belady_source}
-    )
+    set(cache_source ${cache_source} ${belady_source})
 endif()
 
 if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv)
     file(GLOB priv_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv/*.c)
-    set(cache_source
-        ${cache_source} ${priv_source}
-    )
+    set(cache_source ${cache_source} ${priv_source})
 endif()
 
 if(ENABLE_GLCACHE)
     file(GLOB GLCache_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/GLCache/*.c)
-    set(cache_source
-        ${cache_source} ${GLCache_source}
-    )
-endif(ENABLE_GLCACHE)
+    set(cache_source ${cache_source} ${GLCache_source})
+endif()
 
 if(ENABLE_LRB)
     file(GLOB LRB_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LRB/*.cpp)
-    set(cache_source
-        ${cache_source} ${LRB_source}
-    )
-endif(ENABLE_LRB)
+    set(cache_source ${cache_source} ${LRB_source})
+endif()
 
 if(ENABLE_3L_CACHE)
     file(GLOB ThreeLCache_source
         ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/3LCache/*.cpp)
-    set(cache_source
-        ${cache_source} ${ThreeLCache_source}
-    )
-endif(ENABLE_3L_CACHE)
+    set(cache_source ${cache_source} ${ThreeLCache_source})
+endif()
 
 set(reader_source
     ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/reader.c
@@ -329,10 +286,9 @@ set(reader_source
 )
 
 if(OPT_SUPPORT_ZSTD_TRACE)
-    set(reader_source
-        ${reader_source} ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/zstdReader.c
-    )
-endif(OPT_SUPPORT_ZSTD_TRACE)
+    set(reader_source ${reader_source}
+        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/zstdReader.c)
+endif()
 
 file(GLOB dataStructure_source
     ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/*.c
@@ -348,18 +304,15 @@ file(GLOB utils_source
     ${PROJECT_SOURCE_DIR}/libCacheSim/utils/*.c
 )
 
-set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${reader_source} ${dataStructure_source} ${profiler_source} ${utils_source})
+set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${reader_source}
+    ${dataStructure_source} ${profiler_source} ${utils_source})
 
-# ##################
+# Build configuration
 # # https://stackoverflow.com/questions/32469953/why-is-cmake-designed-so-that-it-removes-runtime-path-when-installing
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(${PROJECT_NAME} ${LIB_SOURCE})
-# target_compile_options(${PROJECT_NAME} PRIVATE -fPIC)
 target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic)
-
-
-# add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/libCacheSim/include/libCacheSim.h)
@@ -367,8 +320,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${PROJECT_SOURCE_
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake @ONLY)
 
-# this overwrites the default config.h
-# configure_file(${PROJECT_SOURCE_DIR}/libCacheSim/include/config.h.in ${PROJECT_SOURCE_DIR}/libCacheSim/include/config.h @ONLY)
+# Install configuration
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/libCacheSim/include/ DESTINATION include)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION lib/pkgconfig)
 install(FILES ${CMAKE_BINARY_DIR}/Find${PROJECT_NAME}.cmake DESTINATION ${CMAKE_ROOT}/Modules/ COMPONENT dev)
@@ -377,7 +329,7 @@ install(TARGETS ${PROJECT_NAME}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-# ############################
+# Testing configuration
 if(ENABLE_TESTS)
     include(CTest)
     enable_testing()
