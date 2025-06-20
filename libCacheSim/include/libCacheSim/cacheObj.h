@@ -375,7 +375,7 @@ static inline void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
  */
 static inline void prepend_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
                                        cache_obj_t *cache_obj) {
-  assert(head != NULL);
+  DEBUG_ASSERT(head != NULL);
 
   cache_obj->queue.prev = NULL;
   cache_obj->queue.next = *head;
@@ -432,7 +432,7 @@ static inline void append_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
  */
 static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
                                              cache_obj_t *cache_obj) {
-  assert(head != cache_obj);
+  DEBUG_ASSERT(head != cache_obj);
   while (head != NULL && head->queue.next != cache_obj) head = head->queue.next;
   return head;
 }
