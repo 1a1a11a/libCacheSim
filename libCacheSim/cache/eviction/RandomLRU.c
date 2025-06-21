@@ -75,13 +75,14 @@ cache_t *RandomLRU_init(const common_cache_params_t ccache_params,
       (RandomLRU_params_t *)malloc(sizeof(RandomLRU_params_t));
   RandomLRU_params_t *params = (RandomLRU_params_t *)(cache->eviction_params);
   memset(params, 0, sizeof(RandomLRU_params_t));
-  params->eviction_candidates =
-      (cache_obj_t **)malloc(sizeof(cache_obj_t *) * params->n_samples);
 
   RandomLRU_parse_params(cache, DEFAULT_CACHE_PARAMS);
   if (cache_specific_params != NULL) {
     RandomLRU_parse_params(cache, cache_specific_params);
   }
+
+  params->eviction_candidates =
+      (cache_obj_t **)malloc(sizeof(cache_obj_t *) * params->n_samples);
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "RandomLRU-%d",
            params->n_samples);
@@ -94,7 +95,12 @@ cache_t *RandomLRU_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-static void RandomLRU_free(cache_t *cache) { cache_struct_free(cache); }
+static void RandomLRU_free(cache_t *cache) {
+  RandomLRU_params_t *params = (RandomLRU_params_t *)(cache->eviction_params);
+  free(params->eviction_candidates);
+  free(params);
+  cache_struct_free(cache);
+}
 
 /**
  * @brief this function is the user facing API

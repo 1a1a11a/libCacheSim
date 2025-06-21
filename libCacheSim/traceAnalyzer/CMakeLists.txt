@@ -9,7 +9,6 @@ set(traceAnalyzer_sources_cpp
     utils/utils.cpp 
     utils/utilsSys.cpp 
 
-    experimental/
     accessPattern.cpp
     analyzer.cpp
     popularity.cpp

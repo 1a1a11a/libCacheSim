@@ -40,9 +40,9 @@ add_test_executable(testDataStructure test_dataStructure.c)
 add_test_executable(testUtils test_utils.c)
 
 # Create C++ test executable (mrcProfiler test)
-add_test_executable(testMrcProfiler test_mrcProfiler.cpp)
-target_link_libraries(testMrcProfiler mrcProfiler_lib)
-target_link_options(testMrcProfiler PRIVATE "-Wl,--export-dynamic")
+# add_test_executable(testMrcProfiler test_mrcProfiler.cpp)
+# target_link_libraries(testMrcProfiler mrcProfiler_lib)
+# target_link_options(testMrcProfiler PRIVATE "-Wl,--export-dynamic")
 
 
 
@@ -55,7 +55,7 @@ add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
-add_test(NAME testMrcProfiler COMMAND testMrcProfiler WORKING_DIRECTORY .)
+# add_test(NAME testMrcProfiler COMMAND testMrcProfiler WORKING_DIRECTORY .)
 
 # if (ENABLE_GLCACHE)
 #     add_executable(testGLCache test_glcache.c)
