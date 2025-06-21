@@ -34,54 +34,72 @@ static inline cache_t *create_cache(const char *trace_path,
   } eviction_algo_entry_t;
 
   static const eviction_algo_entry_t simple_algos[] = {
-      {"lru", LRU_init},
-      {"fifo", FIFO_init},
-      {"arc", ARC_init},
-      {"arcv0", ARCv0_init},
-      {"lhd", LHD_init},
-      {"random", Random_init},
-      {"randomTwo", RandomTwo_init},
-      {"lfu", LFU_init},
-      {"gdsf", GDSF_init},
-      {"lfuda", LFUDA_init},
-      {"twoq", TwoQ_init},
-      {"2q", TwoQ_init},
-      {"slru", SLRU_init},
-      {"slruv0", SLRUv0_init},
-      {"lecar", LeCaR_init},
-      {"lecarv0", LeCaRv0_init},
-      {"RandomLRU", RandomLRU_init},
-      {"cacheus", Cacheus_init},
-      {"size", Size_init},
-      {"lfucpp", LFUCpp_init},
-      {"wtinyLFU", WTinyLFU_init},
-      {"nop", nop_init},
-      {"fifo-reinsertion", Clock_init},
-      {"clock", Clock_init},
-      {"second-chance", Clock_init},
-      {"clockpro", ClockPro_init},
-      {"lirs", LIRS_init},
-      {"fifomerge", FIFO_Merge_init},
-      {"fifo-merge", FIFO_Merge_init},
-      {"flashProb", flashProb_init},
-      {"sfifo", SFIFO_init},
-      {"sfifov0", SFIFOv0_init},
-      {"lru-prob", LRU_Prob_init},
-      {"fifo-belady", FIFO_Belady_init},
-      {"lru-belady", LRU_Belady_init},
-      {"sieve-belady", Sieve_Belady_init},
-      {"s3lru", S3LRU_init},
-      {"s3fifo", S3FIFO_init},
-      {"s3-fifo", S3FIFO_init},
-      {"s3fifov0", S3FIFOv0_init},
-      {"s3-fifov0", S3FIFOv0_init},
-      {"s3fifod", S3FIFOd_init},
-      {"qdlp", QDLP_init},
-      {"CAR", CAR_init},
-      {"sieve", Sieve_init},
-  };
+    {"lru", LRU_init},
+    {"fifo", FIFO_init},
+    {"arc", ARC_init},
+    {"arcv0", ARCv0_init},
+    {"lhd", LHD_init},
+    {"random", Random_init},
+    {"randomTwo", RandomTwo_init},
+    {"lfu", LFU_init},
+    {"gdsf", GDSF_init},
+    {"lfuda", LFUDA_init},
+    {"twoq", TwoQ_init},
+    {"2q", TwoQ_init},
+    {"slru", SLRU_init},
+    {"slruv0", SLRUv0_init},
+    {"lecar", LeCaR_init},
+    {"lecarv0", LeCaRv0_init},
+    {"RandomLRU", RandomLRU_init},
+    {"cacheus", Cacheus_init},
+    {"size", Size_init},
+    {"lfucpp", LFUCpp_init},
+    {"wtinyLFU", WTinyLFU_init},
+    {"nop", nop_init},
+    {"fifo-reinsertion", Clock_init},
+    {"clock", Clock_init},
+    {"second-chance", Clock_init},
+    {"clockpro", ClockPro_init},
+    {"lirs", LIRS_init},
+    {"fifomerge", FIFO_Merge_init},
+    {"fifo-merge", FIFO_Merge_init},
+    {"flashProb", flashProb_init},
+    {"sfifo", SFIFO_init},
+    {"sfifov0", SFIFOv0_init},
+    {"lru-prob", LRU_Prob_init},
+    {"fifo-belady", FIFO_Belady_init},
+    {"lru-belady", LRU_Belady_init},
+    {"sieve-belady", Sieve_Belady_init},
+    {"s3lru", S3LRU_init},
+    {"s3fifo", S3FIFO_init},
+    {"s3-fifo", S3FIFO_init},
+    {"s3fifov0", S3FIFOv0_init},
+    {"s3-fifov0", S3FIFOv0_init},
+    {"s3fifod", S3FIFOd_init},
+    {"qdlp", QDLP_init},
+    {"CAR", CAR_init},
+#ifdef ENABLE_3L_CACHE
+    {"3LCache", ThreeLCache_init},
+#endif
+#ifdef ENABLE_GLCACHE
+    {"GLCache", GLCache_init},
+    {"gl-cache", GLCache_init},
+#endif
+#ifdef ENABLE_LRB
+    {"lrb", LRB_init},
+#endif
+#ifdef INCLUDE_PRIV
+    {"mclock", MClock_init},
+    {"lp-sfifo", LP_SFIFO_init},
+    {"lp-arc", LP_ARC_init},
+    {"lp-twoq", LP_TwoQ_init},
+    {"qdlpv0", QDLPv0_init},
+    {"s3fifodv2", S3FIFOdv2_init},
+    {"myMQv1", myMQv1_init}
+#endif
+};
 
-  cache_t *(*init_func)(common_cache_params_t, const char *) = NULL;
+    cache_t * (*init_func)(common_cache_params_t, const char *) = NULL;
   for (size_t i = 0; i < sizeof(simple_algos) / sizeof(simple_algos[0]); ++i) {
     if (strcasecmp(eviction_algo, simple_algos[i].name) == 0) {
       init_func = simple_algos[i].init_func;
@@ -130,35 +148,6 @@ static inline cache_t *create_cache(const char *trace_path,
     }
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, eviction_params);
-#ifdef ENABLE_3L_CACHE
-  } else if (strcasecmp(eviction_algo, "3LCache") == 0) {
-    cache = ThreeLCache_init(cc_params, eviction_params);
-#endif
-#ifdef ENABLE_GLCACHE
-  } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
-             strcasecmp(eviction_algo, "gl-cache") == 0) {
-    cache = GLCache_init(cc_params, eviction_params);
-#endif
-#ifdef ENABLE_LRB
-  } else if (strcasecmp(eviction_algo, "lrb") == 0) {
-    cache = LRB_init(cc_params, eviction_params);
-#endif
-#ifdef INCLUDE_PRIV
-  } else if (strcasecmp(eviction_algo, "mclock") == 0) {
-    cache = MClock_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lp-sfifo") == 0) {
-    cache = LP_SFIFO_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lp-arc") == 0) {
-    cache = LP_ARC_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lp-twoq") == 0) {
-    cache = LP_TwoQ_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "qdlpv0") == 0) {
-    cache = QDLPv0_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifodv2") == 0) {
-    cache = S3FIFOdv2_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "myMQv1") == 0) {
-    cache = myMQv1_init(cc_params, eviction_params);
-#endif
   } else {
     ERROR("do not support algorithm %s\n", eviction_algo);
     abort();
