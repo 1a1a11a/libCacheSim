@@ -10,4 +10,5 @@ set(cachesim_sources_c
 )
 add_executable(cachesim ${cachesim_sources_c})
 target_link_libraries(cachesim ${all_modules} ${dependency_libs})
+target_link_options(cachesim PRIVATE "-Wl,--export-dynamic")
 install(TARGETS cachesim RUNTIME DESTINATION bin)
