@@ -65,8 +65,6 @@ static inline cache_t *create_cache(const char *trace_path,
       {"s3fifo", S3FIFO_init},
       {"s3fifod", S3FIFOd_init},
       {"s3fifov0", S3FIFOv0_init},
-      {"sfifo", SFIFO_init},
-      {"sfifov0", SFIFOv0_init},
       {"size", Size_init},
       {"slru", SLRU_init},
       {"slruv0", SLRUv0_init},
@@ -133,56 +131,6 @@ static inline cache_t *create_cache(const char *trace_path,
     }
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, eviction_params);
-<<<<<<< HEAD
-=======
-  } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0 ||
-             strcasecmp(eviction_algo, "clock") == 0 ||
-             strcasecmp(eviction_algo, "second-chance") == 0) {
-    cache = Clock_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "clockpro") == 0) {
-    cache = ClockPro_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lirs") == 0) {
-    cache = LIRS_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "fifomerge") == 0 ||
-             strcasecmp(eviction_algo, "fifo-merge") == 0) {
-    cache = FIFO_Merge_init(cc_params, eviction_params);
-    // } else if (strcasecmp(eviction_algo, "fifo-reinsertion") == 0) {
-    //   cache = FIFO_Reinsertion_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "flashProb") == 0) {
-    // used to measure application level write amp
-    cache = flashProb_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "lru-prob") == 0) {
-    cache = LRU_Prob_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3lru") == 0) {
-    cache = S3LRU_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifo") == 0 ||
-             strcasecmp(eviction_algo, "s3-fifo") == 0) {
-    cache = S3FIFO_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifov0") == 0 ||
-             strcasecmp(eviction_algo, "s3-fifov0") == 0) {
-    cache = S3FIFOv0_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "s3fifod") == 0) {
-    cache = S3FIFOd_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "qdlp") == 0) {
-    cache = QDLP_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "CAR") == 0) {
-    cache = CAR_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "sieve") == 0) {
-    cache = Sieve_init(cc_params, eviction_params);
-#ifdef ENABLE_3L_CACHE
-  } else if (strcasecmp(eviction_algo, "3LCache") == 0) {
-    cache = ThreeLCache_init(cc_params, eviction_params);
-#endif
-#ifdef ENABLE_GLCACHE
-  } else if (strcasecmp(eviction_algo, "GLCache") == 0 ||
-             strcasecmp(eviction_algo, "gl-cache") == 0) {
-    cache = GLCache_init(cc_params, eviction_params);
-#endif
-#ifdef ENABLE_LRB
-  } else if (strcasecmp(eviction_algo, "lrb") == 0) {
-    cache = LRB_init(cc_params, eviction_params);
-#endif
->>>>>>> 4b826ae (many fixes)
   } else {
     ERROR("do not support algorithm %s\n", eviction_algo);
     abort();
