@@ -112,10 +112,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 include(GNUInstallDirs)
 
 set(dependency_libs "")
-# set(dependency_includes "")
-if(CMAKE_THREAD_LIBS_INIT)
-    set(dependency_libs ${dependency_libs} ${CMAKE_THREAD_LIBS_INIT})
-endif()
+
+find_package(Threads REQUIRED)
+set(dependency_libs ${dependency_libs} ${CMAKE_THREAD_LIBS_INIT})
 
 find_package(GLib REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
