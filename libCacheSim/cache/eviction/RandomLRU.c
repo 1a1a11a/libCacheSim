@@ -98,7 +98,6 @@ cache_t *RandomLRU_init(const common_cache_params_t ccache_params,
 static void RandomLRU_free(cache_t *cache) {
   RandomLRU_params_t *params = (RandomLRU_params_t *)(cache->eviction_params);
   free(params->eviction_candidates);
-  free(params);
   cache_struct_free(cache);
 }
 

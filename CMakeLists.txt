@@ -216,7 +216,7 @@ message(STATUS "============= Status of optional features ==============")
 message(STATUS "========================================================")
 
 # Define include directories for reuse in subdirectories
-set(libCacheSim_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils/include)
+set(libCacheSim_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils/include ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim)
 set(libCacheSim_binary_include_dir ${CMAKE_CURRENT_BINARY_DIR}/libCacheSim/include)
 
 include_directories(${libCacheSim_include_dir})
