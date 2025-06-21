@@ -19,7 +19,6 @@ runtimes:
 lint:
   enabled:
     - taplo@0.9.3
-    - taplo@0.9.3
     - actionlint@1.7.7
     - bandit@1.8.5
     - black@25.1.0
