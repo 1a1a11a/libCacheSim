@@ -1,4 +1,10 @@
+# ==============================================================================
+# LessCache
+# ==============================================================================
 
+set(lesscache_sources_c
+    main.c
+)
 
-add_executable(lesscache main.c)
-target_link_libraries(lesscache ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+add_executable(lesscache ${lesscache_sources_c})
+target_link_libraries(lesscache ${all_modules} ${dependency_libs})

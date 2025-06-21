@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "../../include/libCacheSim/admissionAlgo.h"
-#include "adaptsize/adaptsize.h"
+#include "adaptsize.h"
+#include "libCacheSim/admissionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {

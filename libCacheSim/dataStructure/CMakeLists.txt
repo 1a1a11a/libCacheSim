@@ -2,9 +2,7 @@
 # Data Structure Library
 # ==============================================================================
 
-add_subdirectory(hash)
-
-set(DATASTRUCTURE_SOURCES
+set(dataStructure_sources_c
     pqueue.c
     splay.c
     bloom.c
@@ -16,10 +14,19 @@ set(DATASTRUCTURE_SOURCES
     hashtable/chainedHashTableV2.c
 )
 
-add_library(dataStructure ${DATASTRUCTURE_SOURCES})
-target_include_directories(dataStructure PUBLIC 
+add_library(dataStructure_lib ${dataStructure_sources_c})
+
+# Set target-specific compiler flags
+target_compile_options(dataStructure_lib PRIVATE
+    ${LIBCACHESIM_C_FLAGS}
+    ${tcmalloc_flags}
+)
+
+target_include_directories(dataStructure_lib PRIVATE 
     ${GLib_INCLUDE_DIRS}
     ${libCacheSim_include_dir}
     ${libCacheSim_binary_include_dir}
 )
 
+
+set(dataStructure_sources ${dataStructure_sources_c} PARENT_SCOPE)

@@ -90,10 +90,20 @@ else()
     add_compile_definitions(LOGLEVEL=7)
 endif()
 
-# Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs")
+# Define shared compiler flags for all targets
+set(LIBCACHESIM_C_FLAGS 
+    -Wall -Wextra -Werror 
+    -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable 
+    -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings 
+    -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs
+)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs")
+set(LIBCACHESIM_CXX_FLAGS 
+    -Wall -Wextra -Werror 
+    -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable 
+    -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs
+)
+
 
 # Find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -101,13 +111,19 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # Include GNUInstallDirs for standard installation directories
 include(GNUInstallDirs)
 
+set(dependency_libs "")
+# set(dependency_includes "")
+if(CMAKE_THREAD_LIBS_INIT)
+    set(dependency_libs ${dependency_libs} ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
 find_package(GLib REQUIRED)
 include_directories(${GLib_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${GLib_LIBRARY})
+set(dependency_libs ${dependency_libs} ${GLib_LIBRARY})
 
 find_package(argp REQUIRED)
 include_directories(${ARGP_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${ARGP_LIBRARY})
+set(dependency_libs ${dependency_libs} ${ARGP_LIBRARY})
 
 if(OPT_SUPPORT_ZSTD_TRACE)
     add_compile_definitions(SUPPORT_ZSTD_TRACE=1)
@@ -119,7 +135,7 @@ if(OPT_SUPPORT_ZSTD_TRACE)
         message(FATAL_ERROR "zstd not found")
     endif()
 
-    set(LIBS ${LIBS} ${ZSTD_LIBRARIES})
+    set(dependency_libs ${dependency_libs} ${ZSTD_LIBRARIES})
     message(STATUS "ZSTD_INCLUDE_DIR ${ZSTD_INCLUDE_DIR}, ZSTD_LIBRARIES ${ZSTD_LIBRARIES}")
 endif()
 
@@ -133,8 +149,9 @@ if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
     if("${Tcmalloc_LIBRARY}" STREQUAL "")
         message(STATUS "!!! cannot find tcmalloc")
     else()
-        set(LIBS ${LIBS} ${Tcmalloc_LIBRARIES})
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
+        set(dependency_libs ${dependency_libs} ${Tcmalloc_LIBRARIES})
+        # tcmalloc flags will be set per target instead of globally
+        set(tcmalloc_flags "-fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free")
     endif()
 endif()
 
@@ -143,7 +160,7 @@ find_package(Threads)
 if(ENABLE_GLCACHE)
     find_package(xgboost REQUIRED)
     include_directories(${XGBOOST_INCLUDE_DIR})
-    set(LIBS ${LIBS} xgboost::xgboost)
+    set(dependency_libs ${dependency_libs} xgboost::xgboost)
     add_compile_definitions(ENABLE_GLCACHE=1)
     message(STATUS "XGBOOST_INCLUDE_DIR=${XGBOOST_INCLUDE_DIR}")
 endif()
@@ -160,7 +177,7 @@ foreach(FEATURE ENABLE_LRB ENABLE_3L_CACHE)
         if(NOT LIGHTGBM_LIB)
             message(FATAL_ERROR "LIGHTGBM_LIB not found")
         endif()
-        set(LIBS ${LIBS} ${LIGHTGBM_LIB})
+        set(dependency_libs ${dependency_libs} ${LIGHTGBM_LIB})
         add_compile_definitions(${FEATURE}=1)
     endif()
 endforeach()
@@ -192,127 +209,64 @@ message(STATUS "cmake source      = ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "cmake compiler    = ${CMAKE_C_COMPILER}")
 message(STATUS "CMAKE_BUILD_TYPE  = ${CMAKE_BUILD_TYPE}")
 message(STATUS "CFLAGS            = ${CMAKE_C_FLAGS}")
-message(STATUS "LIBS              = ${LIBS}")
+message(STATUS "dependency_libs    = ${dependency_libs}")
 message(STATUS "Installation path = ${CMAKE_INSTALL_PREFIX}")
 
 message(STATUS "========================================================")
 message(STATUS "============= Status of optional features ==============")
 message(STATUS "========================================================")
 
-# Library compilation
 # Define include directories for reuse in subdirectories
-set(libCacheSim_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include)
+set(libCacheSim_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include ${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils/include)
 set(libCacheSim_binary_include_dir ${CMAKE_CURRENT_BINARY_DIR}/libCacheSim/include)
 
 include_directories(${libCacheSim_include_dir})
 include_directories(${libCacheSim_binary_include_dir})
-set(ALL_MODULES cachelib admissionC admissionCpp prefetchC evictionC evictionCPP traceReader profiler dataStructure ds_hash utils)
+set(all_modules cache_lib_c cache_lib_cpp traceReader_lib profiler_lib dataStructure_lib utils_lib traceAnalyzer_lib)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/dataStructure)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/traceReader)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/profiler)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/bin)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/traceAnalyzer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/mrcProfiler)
 
-# Library installation
-# Compile a single library
-file(GLOB LIB_SOURCE ${PROJECT_SOURCE_DIR}/libCacheSim/*.c)
+# libCacheSim binary / tool compilation
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/bin)
 
-file(GLOB cache_source
-    ${PROJECT_SOURCE_DIR}/libCacheSim/cache/*.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/*.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/cache/admission/*.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/cache/prefetch/*.c
+# libCacheSim test
+if(ENABLE_TESTS)
+    include(CTest)
+    enable_testing()
+    message(STATUS "Building with test")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
+else()
+    message(STATUS "Building without test")
+endif()
 
-    ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LHD/*
-    ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/cpp/*
+
+# libCacheSim unified library compilation and installation
+# Create a single library that combines all modular libraries
+add_library(${PROJECT_NAME} INTERFACE)
+
+# Link all modular libraries into the unified library
+target_link_libraries(${PROJECT_NAME} INTERFACE ${all_modules})
+
+# Set include directories for the unified library
+target_include_directories(${PROJECT_NAME} INTERFACE
+    $<BUILD_INTERFACE:${libCacheSim_include_dir}>
+    $<BUILD_INTERFACE:${libCacheSim_binary_include_dir}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/fifo)
-    file(GLOB fifo_source
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/fifo/*.c)
-    set(cache_source ${cache_source} ${fifo_source})
-endif()
+# Link dependencies for the unified library
+target_link_libraries(${PROJECT_NAME} INTERFACE ${dependency_libs})
 
-if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/belady)
-    file(GLOB belady_source
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/belady/*.c)
-    set(cache_source ${cache_source} ${belady_source})
-endif()
-
-if(EXISTS ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv)
-    file(GLOB priv_source
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/priv/*.c)
-    set(cache_source ${cache_source} ${priv_source})
-endif()
-
-if(ENABLE_GLCACHE)
-    file(GLOB GLCache_source
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/GLCache/*.c)
-    set(cache_source ${cache_source} ${GLCache_source})
-endif()
-
-if(ENABLE_LRB)
-    file(GLOB LRB_source
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/LRB/*.cpp)
-    set(cache_source ${cache_source} ${LRB_source})
-endif()
-
-if(ENABLE_3L_CACHE)
-    file(GLOB ThreeLCache_source
-        ${PROJECT_SOURCE_DIR}/libCacheSim/cache/eviction/3LCache/*.cpp)
-    set(cache_source ${cache_source} ${ThreeLCache_source})
-endif()
-
-set(reader_source
-    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/reader.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/binary.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/csv.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/customizedReader/lcs.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/libcsv.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/txt.c
-)
-
-if(OPT_SUPPORT_ZSTD_TRACE)
-    set(reader_source ${reader_source}
-        ${PROJECT_SOURCE_DIR}/libCacheSim/traceReader/generalReader/zstdReader.c)
-endif()
-
-file(GLOB dataStructure_source
-    ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/*.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hashtable/*.c
-    ${PROJECT_SOURCE_DIR}/libCacheSim/dataStructure/hash/murmur3.c
-)
-
-file(GLOB profiler_source
-    ${PROJECT_SOURCE_DIR}/libCacheSim/profiler/*.c
-)
-
-file(GLOB utils_source
-    ${PROJECT_SOURCE_DIR}/libCacheSim/utils/*.c
-)
-
-set(LIB_SOURCE ${LIB_SOURCE} ${cache_source} ${reader_source}
-    ${dataStructure_source} ${profiler_source} ${utils_source})
-
-# Build configuration
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-add_library(${PROJECT_NAME} ${LIB_SOURCE})
-target_link_options(${PROJECT_NAME} PRIVATE -Wl,--export-dynamic)
-
-# Link against found dependencies
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS})
-if(CMAKE_THREAD_LIBS_INIT)
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-endif()
+# Set version and properties
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
-set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE C)
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${PROJECT_SOURCE_DIR}/libCacheSim/include/libCacheSim.h)
 
+# Configuration files
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake @ONLY)
 
@@ -324,17 +278,17 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME} COMPONENT dev)
 
-install(TARGETS ${PROJECT_NAME}
+# Install all modular libraries and the unified interface library
+install(TARGETS ${PROJECT_NAME} ${all_modules}
+    EXPORT ${PROJECT_NAME}Targets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-# Testing configuration
-if(ENABLE_TESTS)
-    include(CTest)
-    enable_testing()
-    message(STATUS "Building with test")
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
-else()
-    message(STATUS "Building without test")
-endif()
+# Install the export file
+install(EXPORT ${PROJECT_NAME}Targets
+    FILE ${PROJECT_NAME}Targets.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+)
+

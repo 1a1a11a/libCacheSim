@@ -14,6 +14,7 @@ example/cacheSimulatorC/cmake-build-debug
 *.log
 fig/
 result/
+data_large/
 # Chaos
 sftp-config.json
 # Clangd cache

@@ -3,21 +3,32 @@
 # ==============================================================================
 
 # Collect all source files
-file(GLOB MRC_SOURCES *.cpp)
+set(mrcProfiler_sources_cpp
+    mrcProfiler.cpp
+)
 
-add_library(mrcProfilerLib ${MRC_SOURCES})
+add_library(mrcProfiler_lib ${mrcProfiler_sources_cpp})
 
 # Set C++ standard
-set_target_properties(mrcProfilerLib PROPERTIES
+set_target_properties(mrcProfiler_lib PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
 
-# Link dependencies and set include paths  
-target_link_libraries(mrcProfilerLib utils)
-target_include_directories(mrcProfilerLib PUBLIC 
+# Set target-specific compiler flags
+target_compile_options(mrcProfiler_lib PRIVATE
+    ${LIBCACHESIM_CXX_FLAGS}
+    ${tcmalloc_flags}
+)
+
+target_include_directories(mrcProfiler_lib PRIVATE 
     ${GLib_INCLUDE_DIRS}
     ${libCacheSim_include_dir}
     ${libCacheSim_binary_include_dir}
 )
+
+# Link dependencies  
+target_link_libraries(mrcProfiler_lib utils_lib traceReader_lib profiler_lib cache_lib_c cache_lib_cpp dataStructure_lib ${dependency_libs})
+
+set(mrcProfiler_sources ${mrcProfiler_sources_cpp} PARENT_SCOPE)

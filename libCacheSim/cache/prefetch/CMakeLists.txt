@@ -2,21 +2,15 @@
 # Prefetch Algorithms Library
 # ==============================================================================
 
-set(PREFETCH_C_SOURCES
+set(prefetch_sources_c
     Mithril.c
     OBL.c
     PG.c
 )
 
-add_library(prefetchC ${PREFETCH_C_SOURCES})
-# target_link_libraries(prefetchC cachelib utils)
-# target_include_directories(prefetchC PUBLIC
-#     ${GLib_INCLUDE_DIRS}
-#     ${libCacheSim_include_dir}
-#     ${libCacheSim_binary_include_dir}
-# )
+add_library(prefetch_lib_c ${prefetch_sources_c})
 
-add_library(prefetch INTERFACE)
-target_link_libraries(prefetch INTERFACE prefetchC)
+add_library(prefetch_lib INTERFACE)
+target_link_libraries(prefetch_lib INTERFACE prefetch_lib_c)
 
-
+set(cache_sources ${cache_sources} ${prefetch_sources_c} PARENT_SCOPE)

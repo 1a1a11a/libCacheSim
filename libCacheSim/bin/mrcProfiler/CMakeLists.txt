@@ -1,10 +1,22 @@
+# ==============================================================================
+# MRC Profiler
+# ==============================================================================
 
-add_executable(mrcProfiler main.cpp cli_parser.cpp ../cli_reader_utils.c)
-target_link_libraries(mrcProfiler mrcProfilerLib m zstd dl pthread 
-                -Wl,--whole-archive 
-                libCacheSim 
-                -Wl,--no-whole-archive
-                ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} utils )
+set(mrcProfiler_sources_cpp
+    main.cpp
+    cli_parser.cpp
+    ../cli_reader_utils.c
+)
+add_executable(mrcProfiler ${mrcProfiler_sources_cpp})
+
+# Set target-specific compiler flags for mixed C/C++ sources
+target_compile_options(mrcProfiler PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:${LIBCACHESIM_C_FLAGS}>
+    $<$<COMPILE_LANGUAGE:CXX>:${LIBCACHESIM_CXX_FLAGS}>
+    ${tcmalloc_flags}
+)
+
+target_link_libraries(mrcProfiler mrcProfiler_lib ${all_modules} ${dependency_libs} m dl)
 
 target_link_options(mrcProfiler PRIVATE "-Wl,--export-dynamic")
 install(TARGETS mrcProfiler RUNTIME DESTINATION bin)

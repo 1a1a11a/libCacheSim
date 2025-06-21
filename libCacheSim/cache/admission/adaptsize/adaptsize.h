@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../include/libCacheSim/request.h"
+#include "libCacheSim/request.h"
 
 class Adaptsize {
  public:

@@ -1,41 +1,47 @@
 
-set(coreLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
+# Helper function to create test executables with explicit compiler flags
+function(add_test_executable target_name source_file)
+    add_executable(${target_name} ${source_file})
+    
+    # Apply appropriate compiler flags based on source file language
+    get_filename_component(file_ext ${source_file} EXT)
+    if(file_ext STREQUAL ".cpp" OR file_ext STREQUAL ".cxx" OR file_ext STREQUAL ".cc")
+        # C++ source file
+        target_compile_options(${target_name} PRIVATE 
+            ${LIBCACHESIM_CXX_FLAGS}
+            ${tcmalloc_flags}
+        )
+        set_target_properties(${target_name} PROPERTIES
+            CXX_STANDARD 17
+            CXX_STANDARD_REQUIRED YES
+            CXX_EXTENSIONS NO
+        )
+    else()
+        # C source file
+        target_compile_options(${target_name} PRIVATE 
+            ${LIBCACHESIM_C_FLAGS}
+            ${tcmalloc_flags}
+        )
+    endif()
+    
+    target_link_libraries(${target_name} ${all_modules} ${dependency_libs})
+endfunction()
 
-message(STATUS  "coreLib: ${coreLib}")
+# Create C test executables
+add_test_executable(testReader test_traceReader.c)
+add_test_executable(testDistUtils test_dist.c)
+add_test_executable(testProfilerLRU test_profilerLRU.c)
+add_test_executable(testSimulator test_simulator.c)
+add_test_executable(testEvictionAlgo test_evictionAlgo.c)
+add_test_executable(testMRC test_MRC.c)
+add_test_executable(testAdmissionAlgo test_admissionAlgo.c)
+add_test_executable(testPrefetchAlgo test_prefetchAlgo.c)
+add_test_executable(testDataStructure test_dataStructure.c)
+add_test_executable(testUtils test_utils.c)
 
-add_executable(testReader test_traceReader.c)
-target_link_libraries(testReader ${coreLib})
-
-add_executable(testDistUtils test_dist.c)
-target_link_libraries(testDistUtils ${coreLib})
-
-add_executable(testProfilerLRU test_profilerLRU.c)
-target_link_libraries(testProfilerLRU ${coreLib})
-
-add_executable(testSimulator test_simulator.c)
-target_link_libraries(testSimulator ${coreLib})
-
-add_executable(testEvictionAlgo test_evictionAlgo.c)
-target_link_libraries(testEvictionAlgo ${coreLib})
-
-add_executable(testMRC test_MRC.c)
-target_link_libraries(testMRC ${coreLib})
-
-add_executable(testAdmissionAlgo test_admissionAlgo.c)
-target_link_libraries(testAdmissionAlgo ${coreLib})
-
-
-add_executable(testPrefetchAlgo test_prefetchAlgo.c)
-target_link_libraries(testPrefetchAlgo ${coreLib})
-
-add_executable(testDataStructure test_dataStructure.c)
-target_link_libraries(testDataStructure ${coreLib})
-
-add_executable(testUtils test_utils.c)
-target_link_libraries(testUtils ${coreLib})
-
-add_executable(testMrcProfiler test_mrcProfiler.cpp)
-target_link_libraries(testMrcProfiler mrcProfilerLib m zstd dl pthread -Wl,--whole-archive libCacheSim -Wl,--no-whole-archive ${coreLib})
+# Create C++ test executable (mrcProfiler test)
+add_test_executable(testMrcProfiler test_mrcProfiler.cpp)
+target_link_libraries(testMrcProfiler mrcProfiler_lib)
 target_link_options(testMrcProfiler PRIVATE "-Wl,--export-dynamic")
 
 
@@ -53,12 +59,12 @@ add_test(NAME testMrcProfiler COMMAND testMrcProfiler WORKING_DIRECTORY .)
 
 # if (ENABLE_GLCACHE)
 #     add_executable(testGLCache test_glcache.c)
-#     target_link_libraries(testGLCache ${coreLib})
+#     target_link_libraries(testGLCache ${all_modules} ${dependency_libs})
 #     add_test(NAME testGLCache COMMAND testGLCache WORKING_DIRECTORY .)
 # endif (ENABLE_GLCACHE)
 
 if (ENABLE_3L_CACHE)
     add_executable(test3LCache test_3lcache.c)
-    target_link_libraries(test3LCache ${coreLib})
+    target_link_libraries(test3LCache ${all_modules} ${dependency_libs})
     add_test(NAME test3LCache COMMAND test3LCache WORKING_DIRECTORY .)
 endif (ENABLE_3L_CACHE)
