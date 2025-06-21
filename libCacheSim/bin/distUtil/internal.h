@@ -2,12 +2,12 @@
 
 #include <inttypes.h>
 
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/enum.h"
-#include "../../include/libCacheSim/dist.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/admissionAlgo.h"
+#include "libCacheSim/admissionAlgo.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/dist.h"
+#include "libCacheSim/enum.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/reader.h"
 
 #define N_ARGS 5
 #define OFILEPATH_LEN 128
@@ -22,7 +22,7 @@ struct arguments {
   trace_type_e trace_type;
   dist_type_e dist_type;
   char *trace_type_params;
-  int64_t n_req;    /* number of requests to process */
+  int64_t n_req; /* number of requests to process */
   bool verbose;
 
   /* arguments generated */
@@ -31,7 +31,3 @@ struct arguments {
 };
 
 void parse_cmd(int argc, char *argv[], struct arguments *args);
-
-
-
-

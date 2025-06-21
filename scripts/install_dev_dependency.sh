@@ -35,12 +35,15 @@ trap cleanup EXIT
 
 # Store current directory
 CURR_DIR=$(pwd)
+FILE_DIR=$(dirname "$0")
 
 # Main installation logic
 main() {
 	# Detect OS and setup basic dependencies
 	if [[ -f /etc/os-release ]] && grep -qiE 'ubuntu|debian' /etc/os-release; then
 		sudo apt install -yqq gdb valgrind clang-tidy clang-format
+		# node js dependency for libCacheSim-js
+		sudo apt install -yqq nodejs npm
 	# trunk-ignore(shellcheck/SC2312)
 	elif [[ $(uname -a) == "Darwin" ]]; then
 		brew install gdb valgrind clang-format
@@ -51,7 +54,7 @@ main() {
 		log_error "Unsupported operating system. Only Ubuntu, Debian, WSL, and macOS are supported. Some dependencies may not be installed."
 	fi
 
-	bash ${CURR_DIR}/setup-hooks.sh
+	bash "${FILE_DIR}"/setup_hooks.sh
 
 	log_info "Installation completed successfully!"
 }

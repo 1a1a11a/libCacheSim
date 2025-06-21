@@ -2,10 +2,10 @@
 // Created by Juncheng Yang on 6/20/20.
 //
 
-#include "../include/libCacheSim/cache.h"
+#include "libCacheSim/cache.h"
 
 #include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/prefetchAlgo.h"
+#include "libCacheSim/prefetchAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,15 +25,16 @@ extern "C" {
  * @param init_params eviction algorithm specific parameters
  * @return cache_t* pointer to the cache
  */
-cache_t *cache_struct_init(const char *const cache_name, const common_cache_params_t params,
+cache_t *cache_struct_init(const char *const cache_name,
+                           const common_cache_params_t params,
                            const void *const init_params) {
   cache_t *cache = my_malloc(cache_t);
   memset(cache, 0, sizeof(cache_t));
-  strncpy(cache->cache_name, cache_name, CACHE_NAME_ARRAY_LEN-1);
-  cache->cache_name[CACHE_NAME_ARRAY_LEN-1] = '\0';
+  strncpy(cache->cache_name, cache_name, CACHE_NAME_ARRAY_LEN - 1);
+  cache->cache_name[CACHE_NAME_ARRAY_LEN - 1] = '\0';
   if (init_params != NULL) {
-    strncpy(cache->init_params, init_params, CACHE_INIT_PARAMS_LEN-1);
-    cache->init_params[CACHE_INIT_PARAMS_LEN-1] = '\0';
+    strncpy(cache->init_params, init_params, CACHE_INIT_PARAMS_LEN - 1);
+    cache->init_params[CACHE_INIT_PARAMS_LEN - 1] = '\0';
   }
   cache->cache_size = params.cache_size;
   cache->eviction_params = NULL;
@@ -60,7 +61,8 @@ cache_t *cache_struct_init(const char *const cache_name, const common_cache_para
 #endif
 
   int hash_power = HASH_POWER_DEFAULT;
-  if (params.hashpower > 0 && params.hashpower < 40) hash_power = params.hashpower;
+  if (params.hashpower > 0 && params.hashpower < 40)
+    hash_power = params.hashpower;
   cache->hashtable = create_hashtable(hash_power);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->q_head);
   hashtable_add_ptr_to_monitoring(cache->hashtable, &cache->q_tail);
@@ -112,7 +114,8 @@ cache_t *clone_cache(const cache_t *old_cache) {
  * @param new_size
  * @return cache_t* pointer to the new cache
  */
-cache_t *create_cache_with_new_size(const cache_t *old_cache, uint64_t new_size) {
+cache_t *create_cache_with_new_size(const cache_t *old_cache,
+                                    uint64_t new_size) {
   common_cache_params_t cc_params = {
       .cache_size = new_size,
       .hashpower = old_cache->hashtable->hashpower,
@@ -125,7 +128,8 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache, uint64_t new_size)
     cache->admissioner = old_cache->admissioner->clone(old_cache->admissioner);
   }
   if (old_cache->prefetcher != NULL) {
-    cache->prefetcher = old_cache->prefetcher->clone(old_cache->prefetcher, new_size);
+    cache->prefetcher =
+        old_cache->prefetcher->clone(old_cache->prefetcher, new_size);
   }
   cache->future_stack_dist = old_cache->future_stack_dist;
   cache->future_stack_dist_array_size = old_cache->future_stack_dist_array_size;
@@ -144,14 +148,17 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
   if (cache->admissioner != NULL) {
     admissioner_t *admissioner = cache->admissioner;
     if (admissioner->admit(admissioner, req) == false) {
-      DEBUG_ONCE("admission algorithm does not admit: req %ld, obj %lu, size %lu\n", (long)cache->n_req,
-                 (unsigned long)req->obj_id, (unsigned long)req->obj_size);
+      DEBUG_ONCE(
+          "admission algorithm does not admit: req %ld, obj %lu, size %lu\n",
+          (long)cache->n_req, (unsigned long)req->obj_id,
+          (unsigned long)req->obj_size);
       return false;
     }
   }
 
   if (req->obj_size + cache->obj_md_size > cache->cache_size) {
-    WARN_ONCE("%ld req, obj %lu, size %lu larger than cache size %lu\n", (long)cache->n_req, (unsigned long)req->obj_id,
+    WARN_ONCE("%ld req, obj %lu, size %lu larger than cache size %lu\n",
+              (long)cache->n_req, (unsigned long)req->obj_id,
               (unsigned long)req->obj_size, (unsigned long)cache->cache_size);
     return false;
   }
@@ -171,7 +178,8 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the found cache_obj_t* or NULL if not found
  */
-cache_obj_t *cache_find_base(cache_t *cache, const request_t *req, const bool update_cache) {
+cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
+                             const bool update_cache) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
   // "update_cache = true" means that it is a real user request, use handle_find
@@ -223,8 +231,9 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req, const bool up
 bool cache_get_base(cache_t *cache, const request_t *req) {
   cache->n_req += 1;
 
-  VERBOSE("******* %s req %ld, obj %ld, obj_size %ld, cache size %ld/%ld\n", cache->cache_name, cache->n_req,
-          req->obj_id, req->obj_size, cache->get_occupied_byte(cache), cache->cache_size);
+  VERBOSE("******* %s req %ld, obj %ld, obj_size %ld, cache size %ld/%ld\n",
+          cache->cache_name, cache->n_req, req->obj_id, req->obj_size,
+          cache->get_occupied_byte(cache), cache->cache_size);
 
   cache_obj_t *obj = cache->find(cache, req, true);
   bool hit = (obj != NULL);
@@ -236,9 +245,12 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
   if (hit) {
     VVERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
   } else if (!cache->can_insert(cache, req)) {
-    VVERBOSE("req %ld, obj %ld --- cache miss cannot insert\n", cache->n_req, req->obj_id);
+    VVERBOSE("req %ld, obj %ld --- cache miss cannot insert\n", cache->n_req,
+             req->obj_id);
   } else {
-    while (cache->get_occupied_byte(cache) + req->obj_size + cache->obj_md_size > cache->cache_size) {
+    while (cache->get_occupied_byte(cache) + req->obj_size +
+               cache->obj_md_size >
+           cache->cache_size) {
       cache->evict(cache, req);
     }
     cache->insert(cache, req);
@@ -263,7 +275,8 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
  */
 cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj_t *cache_obj = hashtable_insert(cache->hashtable, req);
-  cache->occupied_byte += (int64_t)cache_obj->obj_size + (int64_t)cache->obj_md_size;
+  cache->occupied_byte +=
+      (int64_t)cache_obj->obj_size + (int64_t)cache->obj_md_size;
   cache->n_obj += 1;
 
 #ifdef SUPPORT_TTL
@@ -272,7 +285,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   }
 #endif
 
-#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_DEMOTION) || defined(TRACK_CREATE_TIME)
+#if defined(TRACK_EVICTION_V_AGE) || defined(TRACK_DEMOTION) || \
+    defined(TRACK_CREATE_TIME)
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 
@@ -290,7 +304,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @param obj the object to be removed
  */
-void cache_evict_base(cache_t *cache, cache_obj_t *obj, bool remove_from_hashtable) {
+void cache_evict_base(cache_t *cache, cache_obj_t *obj,
+                      bool remove_from_hashtable) {
 #if defined(TRACK_EVICTION_V_AGE)
   if (cache->track_eviction_age) {
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
@@ -319,7 +334,8 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj, bool remove_from_hashtab
  * @param cache the cache
  * @param obj the object to be removed
  */
-void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj, bool remove_from_hashtable) {
+void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj,
+                           bool remove_from_hashtable) {
   DEBUG_ASSERT(cache->occupied_byte >= obj->obj_size + cache->obj_md_size);
   cache->occupied_byte -= (obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
@@ -337,9 +353,11 @@ void print_log2_eviction_age(const cache_t *cache) {
   printf("eviction age %d:%ld, ", 1, (long)cache->log_eviction_age_cnt[0]);
   for (int i = 1; i < EVICTION_AGE_ARRAY_SZE; i++) {
     if (cache->log_eviction_age_cnt[i] > 1000000)
-      printf("%lu:%.1lfm, ", 1lu << i, (double)cache->log_eviction_age_cnt[i] / 1000000.0);
+      printf("%lu:%.1lfm, ", 1lu << i,
+             (double)cache->log_eviction_age_cnt[i] / 1000000.0);
     else if (cache->log_eviction_age_cnt[i] > 1000)
-      printf("%lu:%.1lfk, ", 1lu << i, (double)cache->log_eviction_age_cnt[i] / 1000.0);
+      printf("%lu:%.1lfk, ", 1lu << i,
+             (double)cache->log_eviction_age_cnt[i] / 1000.0);
     else if (cache->log_eviction_age_cnt[i] > 0)
       printf("%lu:%ld, ", 1lu << i, (long)cache->log_eviction_age_cnt[i]);
   }
@@ -361,7 +379,8 @@ void print_eviction_age(const cache_t *cache) {
       printf("%lld:%.1lfk, ", (long long)(pow(EVICTION_AGE_LOG_BASE, i)),
              (double)cache->log_eviction_age_cnt[i] / 1000.0);
     else if (cache->log_eviction_age_cnt[i] > 0)
-      printf("%lld:%ld, ", (long long)(pow(EVICTION_AGE_LOG_BASE, i)), (long)cache->log_eviction_age_cnt[i]);
+      printf("%lld:%ld, ", (long long)(pow(EVICTION_AGE_LOG_BASE, i)),
+             (long)cache->log_eviction_age_cnt[i]);
   }
   printf("\n");
 }
@@ -381,7 +400,8 @@ bool dump_log2_eviction_age(const cache_t *cache, const char *ofilepath) {
     return false;
   }
 
-  fprintf(ofile, "%s, cache size: %lu, ", cache->cache_name, (unsigned long)cache->cache_size);
+  fprintf(ofile, "%s, cache size: %lu, ", cache->cache_name,
+          (unsigned long)cache->cache_size);
   fprintf(ofile, "%d:%ld, ", 1, (long)cache->log_eviction_age_cnt[0]);
   for (int i = 1; i < EVICTION_AGE_ARRAY_SZE; i++) {
     if (cache->log_eviction_age_cnt[i] == 0) {
@@ -411,12 +431,14 @@ bool dump_eviction_age(const cache_t *cache, const char *ofilepath) {
   }
 
   /* dump the objects' ages at eviction */
-  fprintf(ofile, "%s, eviction age, cache size: %lu, ", cache->cache_name, (unsigned long)cache->cache_size);
+  fprintf(ofile, "%s, eviction age, cache size: %lu, ", cache->cache_name,
+          (unsigned long)cache->cache_size);
   for (int i = 0; i < EVICTION_AGE_ARRAY_SZE; i++) {
     if (cache->log_eviction_age_cnt[i] == 0) {
       continue;
     }
-    fprintf(ofile, "%lld:%ld, ", (long long)pow(EVICTION_AGE_LOG_BASE, i), (long)cache->log_eviction_age_cnt[i]);
+    fprintf(ofile, "%lld:%ld, ", (long long)pow(EVICTION_AGE_LOG_BASE, i),
+            (long)cache->log_eviction_age_cnt[i]);
   }
   fprintf(ofile, "\n");
 
@@ -436,7 +458,8 @@ bool dump_eviction_age(const cache_t *cache, const char *ofilepath) {
  * @return true
  * @return false
  */
-bool dump_cached_obj_age(cache_t *cache, const request_t *req, const char *ofilepath) {
+bool dump_cached_obj_age(cache_t *cache, const request_t *req,
+                         const char *ofilepath) {
   FILE *ofile = fopen(ofilepath, "a");
   if (ofile == NULL) {
     perror("fopen failed");
@@ -459,13 +482,15 @@ bool dump_cached_obj_age(cache_t *cache, const request_t *req, const char *ofile
 
   int64_t n_ages = 0;
   /* dump the cached objects' ages */
-  fprintf(ofile, "%s, cached_obj age, cache size: %lu, ", cache->cache_name, (unsigned long)cache->cache_size);
+  fprintf(ofile, "%s, cached_obj age, cache size: %lu, ", cache->cache_name,
+          (unsigned long)cache->cache_size);
   for (int i = 0; i < EVICTION_AGE_ARRAY_SZE; i++) {
     if (cache->log_eviction_age_cnt[i] == 0) {
       continue;
     }
     n_ages += cache->log_eviction_age_cnt[i];
-    fprintf(ofile, "%lld:%ld, ", (long long)pow(EVICTION_AGE_LOG_BASE, i), (long)cache->log_eviction_age_cnt[i]);
+    fprintf(ofile, "%lld:%ld, ", (long long)pow(EVICTION_AGE_LOG_BASE, i),
+            (long)cache->log_eviction_age_cnt[i]);
   }
   fprintf(ofile, "\n");
   assert(n_ages == n_cached_obj);
@@ -479,11 +504,13 @@ void generate_cache_name(cache_t *cache, char *str_dest, int str_dest_len) {
   assert(len < str_dest_len);
 
   if (cache->admissioner) {
-    len += snprintf(str_dest + len, str_dest_len - len, "|%s", cache->admissioner->admissioner_name);
+    len += snprintf(str_dest + len, str_dest_len - len, "|%s",
+                    cache->admissioner->admissioner_name);
   }
 
   if (cache->prefetcher) {
-    len += snprintf(str_dest + len, str_dest_len - len, "|%s", cache->prefetcher->prefetcher_name);
+    len += snprintf(str_dest + len, str_dest_len - len, "|%s",
+                    cache->prefetcher->prefetcher_name);
   }
 }
 

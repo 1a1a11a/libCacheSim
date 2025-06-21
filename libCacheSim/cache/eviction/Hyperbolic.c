@@ -1,7 +1,7 @@
 /* Hyperbolic caching */
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +46,8 @@ cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.hashpower = MAX(12, ccache_params_local.hashpower - 8);
 
-  cache_t *cache = cache_struct_init("Hyperbolic", ccache_params_local, cache_specific_params);
+  cache_t *cache = cache_struct_init("Hyperbolic", ccache_params_local,
+                                     cache_specific_params);
   cache->cache_init = Hyperbolic_init;
   cache->cache_free = Hyperbolic_free;
   cache->get = Hyperbolic_get;
@@ -194,8 +195,7 @@ static cache_obj_t *Hyperbolic_to_evict(cache_t *cache, const request_t *req) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-static void Hyperbolic_evict(cache_t *cache,
-                             const request_t *req) {
+static void Hyperbolic_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj_to_evict = NULL;
   if (cache->to_evict_candidate_gen_vtime == cache->n_req) {
     obj_to_evict = cache->to_evict_candidate;

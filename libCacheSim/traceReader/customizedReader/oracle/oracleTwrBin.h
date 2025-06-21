@@ -24,8 +24,8 @@
 
 #pragma once
 
-#include "../../../include/libCacheSim/reader.h"
 #include "../binaryUtils.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +43,8 @@ static inline int oracleSimTwrBin_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleSimTwrBin_read_one_req(reader_t *reader, request_t *req) {
+static inline int oracleSimTwrBin_read_one_req(reader_t *reader,
+                                               request_t *req) {
   char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
@@ -60,7 +61,8 @@ static inline int oracleSimTwrBin_read_one_req(reader_t *reader, request_t *req)
     req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req && (req->op == OP_GET || req->op == OP_GETS) &&
+  if (req->val_size == 0 && reader->ignore_size_zero_req &&
+      (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD)
     return oracleSimTwrBin_read_one_req(reader, req);
 
@@ -78,7 +80,8 @@ static inline int oracleSysTwrBin_setup(reader_t *reader) {
   return 0;
 }
 
-static inline int oracleSysTwrBin_read_one_req(reader_t *reader, request_t *req) {
+static inline int oracleSysTwrBin_read_one_req(reader_t *reader,
+                                               request_t *req) {
   char *record = read_bytes(reader, reader->item_size);
 
   if (record == NULL) {
@@ -99,7 +102,8 @@ static inline int oracleSysTwrBin_read_one_req(reader_t *reader, request_t *req)
     req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req && (req->op == OP_GET || req->op == OP_GETS) &&
+  if (req->val_size == 0 && reader->ignore_size_zero_req &&
+      (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD)
     return oracleSimTwrBin_read_one_req(reader, req);
 

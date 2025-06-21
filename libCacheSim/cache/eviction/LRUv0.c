@@ -13,8 +13,8 @@
 #include <assert.h>
 #include <glib.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,7 +58,8 @@ static bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *LRUv0_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LRUv0", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LRUv0", ccache_params, cache_specific_params);
   cache->cache_init = LRUv0_init;
   cache->cache_free = LRUv0_free;
   cache->get = LRUv0_get;
@@ -118,8 +119,7 @@ static bool LRUv0_get(cache_t *cache, const request_t *req) {
   if (req->obj_size <= cache->cache_size) {
     if (!cache_hit) LRUv0_insert(cache, req);
 
-    while (cache->occupied_byte > cache->cache_size)
-      LRUv0_evict(cache, req);
+    while (cache->occupied_byte > cache->cache_size) LRUv0_evict(cache, req);
   } else {
     WARN("req %lld: obj size %ld larger than cache size %ld\n",
          (long long)req->obj_id, (long)req->obj_size, (long)cache->cache_size);

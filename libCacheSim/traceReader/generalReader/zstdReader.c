@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <zstd.h>
 
-#include "../../include/libCacheSim/logging.h"
+#include "libCacheSim/logging.h"
 
 #define LINE_DELIM '\n'
 
@@ -106,7 +106,8 @@ rstatus _decompress_from_buff(zstd_reader_t *reader) {
     }
   }
 
-  size_t const ret = ZSTD_decompressStream(reader->zds, &(reader->output), &(reader->input));
+  size_t const ret =
+      ZSTD_decompressStream(reader->zds, &(reader->output), &(reader->input));
   if (ret != 0) {
     if (ZSTD_isError(ret)) {
       printf("%zu\n", ret);
@@ -123,7 +124,8 @@ rstatus _decompress_from_buff(zstd_reader_t *reader) {
 
     @return the number of bytes read (include line ending byte)
 **/
-size_t zstd_reader_read_line(zstd_reader_t *reader, char **line_start, char **line_end) {
+size_t zstd_reader_read_line(zstd_reader_t *reader, char **line_start,
+                             char **line_end) {
   bool has_data_in_line_buff = false;
 
   if (reader->buff_out_read_pos < reader->output.pos) {
@@ -181,7 +183,8 @@ size_t zstd_reader_read_line(zstd_reader_t *reader, char **line_start, char **li
  * @param data_start
  * @return
  */
-size_t zstd_reader_read_bytes(zstd_reader_t *reader, size_t n_byte, char **data_start) {
+size_t zstd_reader_read_bytes(zstd_reader_t *reader, size_t n_byte,
+                              char **data_start) {
   size_t sz = 0;
   while (reader->buff_out_read_pos + n_byte > reader->output.pos) {
     rstatus status = _decompress_from_buff(reader);
@@ -204,7 +207,8 @@ size_t zstd_reader_read_bytes(zstd_reader_t *reader, size_t n_byte, char **data_
 
     return sz;
   } else {
-    ERROR("do not have enough bytes %zu < %zu\n", reader->output.pos - reader->buff_out_read_pos, n_byte);
+    ERROR("do not have enough bytes %zu < %zu\n",
+          reader->output.pos - reader->buff_out_read_pos, n_byte);
 
     return sz;
   }

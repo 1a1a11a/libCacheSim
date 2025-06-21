@@ -7,9 +7,9 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/reader.h"
 #include "internal.hpp"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/reader.h"
 
 namespace traceConv {
 typedef struct oracleGeneral_req {

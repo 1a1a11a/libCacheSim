@@ -2,10 +2,11 @@
 // Created by Juncheng on 6/5/21.
 //
 
+#include "analyzer.h"
+
 #include <algorithm>  // std::make_heap, std::pop_heap, std::push_heap, std::sort_heap
 #include <vector>  // std::vector
 
-#include "analyzer.h"
 #include "utils/include/utils.h"
 
 void traceAnalyzer::TraceAnalyzer::initialize() {
@@ -347,7 +348,7 @@ void traceAnalyzer::TraceAnalyzer::post_processing() {
   memset(popular_cnt_, 0, sizeof(uint64_t) * track_n_popular_);
 
   for (auto it : obj_map_) {
-    if ((int) it.second.freq <= track_n_hit_) {
+    if ((int)it.second.freq <= track_n_hit_) {
       n_hit_cnt_[it.second.freq - 1] += 1;
     }
   }

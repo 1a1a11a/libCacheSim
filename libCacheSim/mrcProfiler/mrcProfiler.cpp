@@ -13,7 +13,7 @@
 
 #include "../dataStructure/minvaluemap.hpp"
 #include "../dataStructure/splaytree.hpp"
-#include "../include/libCacheSim/const.h"
+#include "libCacheSim/const.h"
 
 mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
     mrc_profiler_e type, reader_t *reader, std::string output_path,

@@ -5,7 +5,7 @@
 #include <glib.h>
 #include <stdbool.h>
 
-#include "../../include/libCacheSim/admissionAlgo.h"
+#include "libCacheSim/admissionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {

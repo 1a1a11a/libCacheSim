@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../include/libCacheSim/reader.h"
 #include "../struct.h"
 #include "../utils/include/utils.h"
+#include "libCacheSim/reader.h"
 
 namespace traceAnalyzer {
 using namespace std;

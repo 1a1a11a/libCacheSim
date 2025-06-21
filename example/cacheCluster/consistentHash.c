@@ -4,23 +4,27 @@
 // modified from libketama
 //
 
-#include "include/consistentHash.h"
+#include "consistentHash.h"
 
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "include/md5.h"
+#include "md5.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int ch_ring_compare(const void *a, const void *b) {
-  vnode_t *node_a = (vnode_t *)a;
-  vnode_t *node_b = (vnode_t *)b;
-  return (node_a->point < node_b->point)
-             ? -1
-             : ((node_a->point > node_b->point) ? 1 : 0);
+int ch_ring_compare(const void *node_a_ptr, const void *node_b_ptr) {
+  vnode_t *node_a = (vnode_t *)node_a_ptr;
+  vnode_t *node_b = (vnode_t *)node_b_ptr;
+  if (node_a->point < node_b->point) {
+    return -1;
+  }
+  if (node_a->point > node_b->point) {
+    return 1;
+  }
+  return 0;
 }
 
 void md5_digest(const char *const inString, unsigned char md5pword[16]) {
@@ -38,7 +42,7 @@ unsigned int ketama_hash(const char *const inString) {
                         (digest[1] << 8) | digest[0]);
 }
 
-ring_t *ch_ring_create_ring(int n_server, double *weight) {
+ring_t *ch_ring_create_ring(int n_server, const double *weight) {
   vnode_t *vnodes =
       (vnode_t *)malloc(sizeof(vnode_t) * n_server * N_VNODE_PER_SERVER);
 
@@ -47,35 +51,38 @@ ring_t *ch_ring_create_ring(int n_server, double *weight) {
   ring->n_point = n_server * N_VNODE_PER_SERVER;
   ring->vnodes = vnodes;
 
-  int i;
-  unsigned int k, cnt = 0;
+  int server_idx;
+  unsigned int key_idx;
+  unsigned int cnt = 0;
 
-  for (i = 0; i < n_server; i++) {
+  for (server_idx = 0; server_idx < n_server; server_idx++) {
     // default all servers have the same weight
-    unsigned int ks = N_VNODE_PER_SERVER / 4;
+    unsigned int keys_per_server = N_VNODE_PER_SERVER / 4;
     if (weight != NULL)
-      ks = (unsigned int)floorf(weight[i] * (float)n_server *
-                                (N_VNODE_PER_SERVER / 4));
+      keys_per_server =
+          (unsigned int)floorf((float)(weight[server_idx] * (double)n_server *
+                                       (N_VNODE_PER_SERVER / 4)));
 
-    for (k = 0; k < ks; k++) {
+    for (key_idx = 0; key_idx < keys_per_server; key_idx++) {
       /* 40 hashes, 4 numbers per hash = 160 points per server */
-      char ss[30];
+      char string_buf[30];
       unsigned char digest[16];
 
-      sprintf(ss, "%u-%u", i, k);
-      md5_digest(ss, digest);
+      sprintf(string_buf, "%u-%u", server_idx, key_idx);
+      md5_digest(string_buf, digest);
 
       /* Use successive 4-bytes from hash as numbers for the points on the
        * circle: */
-      int h;
-      for (h = 0; h < 4; h++) {
+      int hash_idx;
+      for (hash_idx = 0; hash_idx < 4; hash_idx++) {
         // printf("%d i %d k %d h %d %d %d\n", cnt, i, k, h, ring->n_server,
         // ring->n_point);
-        vnodes[cnt].point = (digest[3 + h * 4] << 24) |
-                            (digest[2 + h * 4] << 16) |
-                            (digest[1 + h * 4] << 8) | digest[h * 4];
+        vnodes[cnt].point = (digest[3 + hash_idx * 4] << 24) |
+                            (digest[2 + hash_idx * 4] << 16) |
+                            (digest[1 + hash_idx * 4] << 8) |
+                            digest[hash_idx * 4];
 
-        vnodes[cnt].server_id = i;
+        vnodes[cnt].server_id = server_idx;
         cnt++;
       }
     }
@@ -136,10 +143,9 @@ int ch_ring_get_server(const char *const key, const ring_t *const ring) {
   return (ring->vnodes + ch_ring_get_vnode_idx(key, ring))->server_id;
 }
 
-int ch_ring_get_server_from_uint64(uint64_t obj_id,
-                                     const ring_t *const ring) {
-  char key[8]; 
-  memcpy(key, (char *) &obj_id, 8);
+int ch_ring_get_server_from_uint64(uint64_t obj_id, const ring_t *const ring) {
+  char key[8];
+  memcpy(key, (char *)&obj_id, 8);
   key[7] = 0;
   return (ring->vnodes + ch_ring_get_vnode_idx(key, ring))->server_id;
 }

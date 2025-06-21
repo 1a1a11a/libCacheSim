@@ -2,8 +2,8 @@
 // Created by Haocheng on 01/14/25.
 //
 
-#include "../libCacheSim/utils/include/mysys.h"
 #include "common.h"
+#include "utils/include/mysys.h"
 
 bool directory_exists(const char *path) {
   struct stat info;

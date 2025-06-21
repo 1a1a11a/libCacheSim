@@ -2,8 +2,8 @@
 // Created by Xiaojun Guo on 02/28/25.
 //
 
-#include "../libCacheSim/mrcProfiler/mrcProfiler.h"
 #include "common.h"
+#include "mrcProfiler/mrcProfiler.h"
 
 /**
  * this one for testing with the SHARDS profiler with fiexd sample rate

@@ -3,19 +3,18 @@
  *
  **/
 
-#include "../../../include/libCacheSim/cache.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
-#include "../../../include/libCacheSim/reader.h"
-#include "../../../include/libCacheSim/simulator.h"
-#include "../../../utils/include/mymath.h"
-#include "../../../utils/include/mysys.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/reader.h"
+#include "libCacheSim/simulator.h"
+#include "utils/include/mymath.h"
+#include "utils/include/mysys.h"
 
 // #define ADD_METADATA
 // #define NO_FRAGMENTATION
 // #define NO_CALCIFICATION
 // #define FIFO_REDUCE_METADATA
 // #define SAMPLING_RATIO 100   // 1 / SAMPLING_RATIO
-
 
 #ifdef NO_FRAGMENTATION
 static int alloc_sizes[47] = {
@@ -29,7 +28,6 @@ static int alloc_sizes[47] = {
 static int size_mapping[1048576];
 
 #endif  // NO_FRAGMENTATION
-
 
 void run_cache(reader_t *reader, cache_t *cache) {
   request_t *req = new_request();
@@ -46,7 +44,7 @@ void run_cache(reader_t *reader, cache_t *cache) {
 
 #ifdef FIFO_REDUCE_METADATA
     req->obj_size -= 12;
-#endif // FIFO_REDUCE_METADATA
+#endif  // FIFO_REDUCE_METADATA
 #ifdef ADD_METADATA
     req->obj_size += 32;
 #endif  // ADD_METADATA
@@ -55,21 +53,21 @@ void run_cache(reader_t *reader, cache_t *cache) {
 #ifdef NO_CALCIFICATION
 #ifndef ADD_METADATA
 #error "ERROR: NO_CALCIFICATION requires ADD_METADATA\n"
-#endif // ADD_METADATA
+#endif  // ADD_METADATA
     // value + key + metadata NO_CALCIFICATION
     req->obj_size = size_mapping[160 + 24 + 32];
-#else // NO NO_CALCIFICATION
+#else   // NO NO_CALCIFICATION
     // object size = value + key
     req->obj_size = size_mapping[req->obj_size];
-#endif // NO_CALCIFICATION
-#endif // NO_FRAGMENTATION
+#endif  // NO_CALCIFICATION
+#endif  // NO_FRAGMENTATION
 
 #ifdef SAMPLING_RATIO
     if (req->obj_id % (SAMPLING_RATIO * 100 + 1) > 100) {
-         read_one_req(reader, req);
-          continue;
+      read_one_req(reader, req);
+      continue;
     }
-#endif // SAMPLING_RATIO
+#endif  // SAMPLING_RATIO
 
     if (req->op == OP_SET || req->op == OP_REPLACE) {
       cache->get(cache, req);
@@ -122,8 +120,7 @@ int main(int argc, char **argv) {
   char *eviction_algo = argv[2];
   int cache_size_in_mb = atoi(argv[3]);
 
-  reader_t *reader =
-      setup_reader(trace_path, ORACLE_SYS_TWRNS_TRACE, NULL);
+  reader_t *reader = setup_reader(trace_path, ORACLE_SYS_TWRNS_TRACE, NULL);
 
   common_cache_params_t cc_params = {.cache_size = cache_size_in_mb * MiB,
                                      .hashpower = 28,
@@ -133,7 +130,7 @@ int main(int argc, char **argv) {
 
 #ifdef SAMPLING_RATIO
   cc_params.cache_size /= SAMPLING_RATIO;
-#endif // SAMPLING_RATIO
+#endif  // SAMPLING_RATIO
 
   if (strcasecmp(eviction_algo, "lru") == 0) {
     cache = LRU_init(cc_params, NULL);

@@ -9,8 +9,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +35,7 @@ typedef struct {
 static void FIFO_Belady_free(cache_t *cache);
 static bool FIFO_Belady_get(cache_t *cache, const request_t *req);
 static cache_obj_t *FIFO_Belady_find(cache_t *cache, const request_t *req,
-                                    const bool update_cache);
+                                     const bool update_cache);
 static cache_obj_t *FIFO_Belady_insert(cache_t *cache, const request_t *req);
 static void FIFO_Belady_evict(cache_t *cache, const request_t *req);
 static bool FIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id);
@@ -54,7 +54,7 @@ static void FIFO_Belady_print_cache(const cache_t *cache);
  * @param cache_specific_params FIFO_Belady specific parameters, should be NULL
  */
 cache_t *FIFO_Belady_init(const common_cache_params_t ccache_params,
-                         const char *cache_specific_params) {
+                          const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("FIFO_Belady", ccache_params, cache_specific_params);
   cache->cache_init = FIFO_Belady_init;
@@ -158,8 +158,7 @@ static bool should_insert(cache_t *cache, int64_t next_access_vtime) {
  * @return true on hit, false on miss
  */
 static cache_obj_t *FIFO_Belady_find(cache_t *cache, const request_t *req,
-                                    const bool update_cache) {
-
+                                     const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   return cache_obj;

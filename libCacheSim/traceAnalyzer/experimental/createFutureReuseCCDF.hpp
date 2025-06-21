@@ -4,12 +4,13 @@
  * distribution measures the probability of having future reuse y at age x */
 
 #include <assert.h>
+
 #include <unordered_map>
 #include <unordered_set>
 
-#include "../../include/libCacheSim/reader.h"
 #include "../struct.h"
 #include "../utils/include/utils.h"
+#include "libCacheSim/reader.h"
 
 namespace traceAnalyzer {
 

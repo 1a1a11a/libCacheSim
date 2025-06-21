@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../include/libCacheSim/reader.h"
 #include "../utils/include/utils.h"
+#include "libCacheSim/reader.h"
 
 namespace traceAnalyzer {
 class LifetimeDistribution {

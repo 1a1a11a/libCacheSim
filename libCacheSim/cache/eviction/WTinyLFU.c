@@ -14,9 +14,9 @@
 //  Created by Ziyue on 14/1/2023.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../dataStructure/minimalIncrementCBF.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "dataStructure/minimalIncrementCBF.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -223,7 +223,8 @@ static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
 
   if (obj_main != NULL) {
     // frequency update
-    minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t));
+    minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id,
+                            sizeof(obj_id_t));
 
     params->request_counter++;
     if (params->request_counter >= params->max_request_num) {

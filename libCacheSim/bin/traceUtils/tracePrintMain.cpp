@@ -5,9 +5,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../../include/libCacheSim/reader.h"
-#include "../../traceReader/customizedReader/lcs.h"
 #include "internal.hpp"
+#include "libCacheSim/reader.h"
+#include "traceReader/customizedReader/lcs.h"
 
 int main(int argc, char *argv[]) {
   struct arguments args;
@@ -40,7 +40,8 @@ int main(int argc, char *argv[]) {
     if (args.print_obj_id_only) {
       printf("%lu\n", (unsigned long)req->obj_id);
     } else {
-      printf("%lld%c%llu%c%lld", (long long)req->clock_time, args.delimiter, (unsigned long long)req->obj_id, args.delimiter,
+      printf("%lld%c%llu%c%lld", (long long)req->clock_time, args.delimiter,
+             (unsigned long long)req->obj_id, args.delimiter,
              (long long)req->obj_size);
       if (trace_has_next_access_vtime) {
         printf("%c%lld\n", args.delimiter, (long long)req->next_access_vtime);

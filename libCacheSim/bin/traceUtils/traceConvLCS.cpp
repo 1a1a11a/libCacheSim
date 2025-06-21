@@ -11,11 +11,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../traceReader/customizedReader/lcs.h"
-#include "../../utils/include/mymath.h"
 #include "internal.hpp"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/reader.h"
+#include "traceReader/customizedReader/lcs.h"
+#include "utils/include/mymath.h"
 
 namespace traceConv {
 
@@ -27,11 +27,15 @@ struct obj_info {
 
 typedef lcs_req_v3_t lcs_req_full_t;
 
-static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat, bool output_txt, int64_t lcs_ver);
-static void _write_lcs_header(std::ofstream &ofile, lcs_trace_stat_t &stat, int64_t lcs_ver);
-static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint64_t, struct obj_info> &obj_map,
-                           const std::unordered_map<int32_t, int32_t> &tenant_cnt,
-                           const std::unordered_map<int32_t, int32_t> &ttl_cnt);
+static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat,
+                          bool output_txt, int64_t lcs_ver);
+static void _write_lcs_header(std::ofstream &ofile, lcs_trace_stat_t &stat,
+                              int64_t lcs_ver);
+static void _analyze_trace(
+    lcs_trace_stat_t &stat,
+    const std::unordered_map<uint64_t, struct obj_info> &obj_map,
+    const std::unordered_map<int32_t, int32_t> &tenant_cnt,
+    const std::unordered_map<int32_t, int32_t> &ttl_cnt);
 
 /**
  * @brief Convert a trace to lcs format
@@ -43,9 +47,11 @@ static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint
  * @param remove_size_change
  * @param lcs_ver       the version of lcs format, see lcs.h for more details
  */
-void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bool remove_size_change, int lcs_ver) {
+void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
+                    bool remove_size_change, int lcs_ver) {
   request_t *req = new_request();
-  std::ofstream ofile_temp(ofilepath + ".reverse", std::ios::out | std::ios::binary | std::ios::trunc);
+  std::ofstream ofile_temp(ofilepath + ".reverse",
+                           std::ios::out | std::ios::binary | std::ios::trunc);
   std::unordered_map<uint64_t, struct obj_info> obj_map;
   std::unordered_map<int32_t, int32_t> tenant_cnt;
   std::unordered_map<int32_t, int32_t> ttl_cnt;
@@ -57,23 +63,31 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
   int64_t n_req_total = get_num_of_req(reader);
   obj_map.reserve(n_req_total / 100 + 1e4);
 
-  INFO("%s: %.2f M requests in total\n", reader->trace_path, (double)n_req_total / 1.0e6);
+  INFO("%s: %.2f M requests in total\n", reader->trace_path,
+       (double)n_req_total / 1.0e6);
 
   reader->read_direction = READ_BACKWARD;
   reader_set_read_pos(reader, 1.0);
   go_back_one_req(reader);
   read_one_req(reader, req);
 
-  // because we read backwards, the first request is the last request in the trace
+  // because we read backwards, the first request is the last request in the
+  // trace
   stat.end_timestamp = req->clock_time;
 
   while (true) {
     if (lcs_ver == 1 || lcs_ver == 2) {
       if (req->clock_time > UINT32_MAX) {
-        WARN("clock_time %ld > UINT32_MAX, may cause overflow consider using lcs_ver 3\n", req->clock_time);
+        WARN(
+            "clock_time %ld > UINT32_MAX, may cause overflow consider using "
+            "lcs_ver 3\n",
+            req->clock_time);
       }
       if (req->obj_size > UINT32_MAX) {
-        WARN("obj_size %ld > UINT32_MAX, may cause overflow consider using lcs_ver 3\n", req->obj_size);
+        WARN(
+            "obj_size %ld > UINT32_MAX, may cause overflow consider using "
+            "lcs_ver 3\n",
+            req->obj_size);
       }
     }
 
@@ -91,8 +105,10 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
       info_it->second.freq++;
       if (info_it->second.size != req->obj_size) {
         if (!remove_size_change) {
-          WARN("find object size change, prev %ld new %ld, please enable remove_size_change\n", info_it->second.size,
-               req->obj_size);
+          WARN(
+              "find object size change, prev %ld new %ld, please enable "
+              "remove_size_change\n",
+              info_it->second.size, req->obj_size);
         } else {
           req->obj_size = info_it->second.size;
         }
@@ -108,9 +124,11 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
     lcs_req.ttl = req->ttl;
     lcs_req.next_access_vtime = req->next_access_vtime;
 
-    if (lcs_req.op == OP_GET || lcs_req.op == OP_GETS || lcs_req.op == OP_READ) {
+    if (lcs_req.op == OP_GET || lcs_req.op == OP_GETS ||
+        lcs_req.op == OP_READ) {
       stat.n_read++;
-    } else if (lcs_req.op == OP_WRITE || lcs_req.op == OP_SET || lcs_req.op == OP_REPLACE || lcs_req.op == OP_ADD ||
+    } else if (lcs_req.op == OP_WRITE || lcs_req.op == OP_SET ||
+               lcs_req.op == OP_REPLACE || lcs_req.op == OP_ADD ||
                lcs_req.op == OP_UPDATE) {
       stat.n_write++;
     } else if (lcs_req.op == OP_DELETE) {
@@ -131,9 +149,11 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
       ttl_cnt[req->ttl]++;
     }
 
-    ofile_temp.write(reinterpret_cast<char *>(&lcs_req), sizeof(lcs_req_full_t));
+    ofile_temp.write(reinterpret_cast<char *>(&lcs_req),
+                     sizeof(lcs_req_full_t));
     for (int i = 0; i < n_features; i++) {
-      ofile_temp.write(reinterpret_cast<char *>(&req->features[i]), sizeof(int32_t));
+      ofile_temp.write(reinterpret_cast<char *>(&req->features[i]),
+                       sizeof(int32_t));
     }
 
     stat.n_req_byte += req->obj_size;
@@ -143,9 +163,10 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
       INFO(
           "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
           "object, %lld B (%.2lf GB)\n",
-          reader->trace_path, (long)(stat.n_req / 1e6), (double)stat.n_req_byte / GiB,
-          (long)(stat.end_timestamp - req->clock_time), (long long)stat.n_obj, (long long)stat.n_obj_byte,
-          (double)stat.n_obj_byte / GiB);
+          reader->trace_path, (long)(stat.n_req / 1e6),
+          (double)stat.n_req_byte / GiB,
+          (long)(stat.end_timestamp - req->clock_time), (long long)stat.n_obj,
+          (long long)stat.n_obj_byte, (double)stat.n_obj_byte / GiB);
     }
 
     if (stat.n_req > n_req_total * 2) {
@@ -171,7 +192,8 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt, bo
   _reverse_file(ofilepath, stat, output_txt, lcs_ver);
 }
 
-static void _write_lcs_header(std::ofstream &ofile, lcs_trace_stat_t &stat, int64_t lcs_ver) {
+static void _write_lcs_header(std::ofstream &ofile, lcs_trace_stat_t &stat,
+                              int64_t lcs_ver) {
   lcs_trace_header_t lcs_header;
   memset(&lcs_header, 0, sizeof(lcs_header));
   lcs_header.start_magic = LCS_TRACE_START_MAGIC;
@@ -179,21 +201,28 @@ static void _write_lcs_header(std::ofstream &ofile, lcs_trace_stat_t &stat, int6
   lcs_header.stat = stat;
   lcs_header.version = lcs_ver;
 
-  ofile.write(reinterpret_cast<char *>(&lcs_header), sizeof(lcs_trace_header_t));
+  ofile.write(reinterpret_cast<char *>(&lcs_header),
+              sizeof(lcs_trace_header_t));
 }
 
-static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint64_t, struct obj_info> &obj_map,
-                           const std::unordered_map<int32_t, int32_t> &tenant_cnt,
-                           const std::unordered_map<int32_t, int32_t> &ttl_cnt) {
+static void _analyze_trace(
+    lcs_trace_stat_t &stat,
+    const std::unordered_map<uint64_t, struct obj_info> &obj_map,
+    const std::unordered_map<int32_t, int32_t> &tenant_cnt,
+    const std::unordered_map<int32_t, int32_t> &ttl_cnt) {
   INFO("########################################\n");
-  INFO("trace stat: n_req %lld, n_obj %lld, n_byte %lld (%.2lf GiB), n_uniq_byte %lld (%.2lf GiB)\n",
-       (long long)stat.n_req, (long long)stat.n_obj, (long long)stat.n_req_byte, (double)stat.n_req_byte / GiB,
-       (long long)stat.n_obj_byte, (double)stat.n_obj_byte / GiB);
-  INFO("n_read %lld, n_write %lld, n_delete %lld\n", (long long)stat.n_read, (long long)stat.n_write,
-       (long long)stat.n_delete);
+  INFO(
+      "trace stat: n_req %lld, n_obj %lld, n_byte %lld (%.2lf GiB), "
+      "n_uniq_byte %lld (%.2lf GiB)\n",
+      (long long)stat.n_req, (long long)stat.n_obj, (long long)stat.n_req_byte,
+      (double)stat.n_req_byte / GiB, (long long)stat.n_obj_byte,
+      (double)stat.n_obj_byte / GiB);
+  INFO("n_read %lld, n_write %lld, n_delete %lld\n", (long long)stat.n_read,
+       (long long)stat.n_write, (long long)stat.n_delete);
 
-  INFO("start time %lld, end time %lld, duration %lld seconds %.2lf days\n", (long long)stat.start_timestamp,
-       (long long)stat.end_timestamp, (long long)(stat.end_timestamp - stat.start_timestamp),
+  INFO("start time %lld, end time %lld, duration %lld seconds %.2lf days\n",
+       (long long)stat.start_timestamp, (long long)stat.end_timestamp,
+       (long long)(stat.end_timestamp - stat.start_timestamp),
        (double)(stat.end_timestamp - stat.start_timestamp) / (24 * 3600.0));
 
   /**** analyze object size ****/
@@ -214,19 +243,26 @@ static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint
     }
   }
 
-  std::vector<std::pair<int64_t, int32_t>> size_cnt_vec(size_cnt.begin(), size_cnt.end());
-  std::sort(size_cnt_vec.begin(), size_cnt_vec.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
-  for (size_t i = 0; i < std::min(size_cnt_vec.size(), (size_t)N_MOST_COMMON); i++) {
+  std::vector<std::pair<int64_t, int32_t>> size_cnt_vec(size_cnt.begin(),
+                                                        size_cnt.end());
+  std::sort(size_cnt_vec.begin(), size_cnt_vec.end(),
+            [](const auto &a, const auto &b) { return a.second > b.second; });
+  for (size_t i = 0; i < std::min(size_cnt_vec.size(), (size_t)N_MOST_COMMON);
+       i++) {
     stat.most_common_obj_sizes[i] = size_cnt_vec[i].first;
-    stat.most_common_obj_size_ratio[i] = (float)size_cnt_vec[i].second / stat.n_obj;
+    stat.most_common_obj_size_ratio[i] =
+        (float)size_cnt_vec[i].second / stat.n_obj;
   }
 
-  INFO("object size: smallest %lld, largest %lld\n", (long long)stat.smallest_obj_size,
-       (long long)stat.largest_obj_size);
-  INFO("most common object sizes (req fraction): %ld(%.4lf) %ld(%.4lf) %ld(%.4lf) %ld(%.4lf)...\n",
-       stat.most_common_obj_sizes[0], stat.most_common_obj_size_ratio[0], stat.most_common_obj_sizes[1],
-       stat.most_common_obj_size_ratio[1], stat.most_common_obj_sizes[2], stat.most_common_obj_size_ratio[2],
-       stat.most_common_obj_sizes[3], stat.most_common_obj_size_ratio[3]);
+  INFO("object size: smallest %lld, largest %lld\n",
+       (long long)stat.smallest_obj_size, (long long)stat.largest_obj_size);
+  INFO(
+      "most common object sizes (req fraction): %ld(%.4lf) %ld(%.4lf) "
+      "%ld(%.4lf) %ld(%.4lf)...\n",
+      stat.most_common_obj_sizes[0], stat.most_common_obj_size_ratio[0],
+      stat.most_common_obj_sizes[1], stat.most_common_obj_size_ratio[1],
+      stat.most_common_obj_sizes[2], stat.most_common_obj_size_ratio[2],
+      stat.most_common_obj_sizes[3], stat.most_common_obj_size_ratio[3]);
 
   /**** analyze object popularity ****/
   std::unordered_map<int32_t, int32_t> freq_cnt;
@@ -239,9 +275,12 @@ static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint
   }
 
   // sort by freq
-  std::vector<std::pair<int32_t, int32_t>> freq_cnt_vec(freq_cnt.begin(), freq_cnt.end());
-  std::sort(freq_cnt_vec.begin(), freq_cnt_vec.end(), [](const auto &a, const auto &b) { return a.first > b.first; });
-  for (size_t i = 0; i < std::min(freq_cnt_vec.size(), (size_t)N_MOST_COMMON); i++) {
+  std::vector<std::pair<int32_t, int32_t>> freq_cnt_vec(freq_cnt.begin(),
+                                                        freq_cnt.end());
+  std::sort(freq_cnt_vec.begin(), freq_cnt_vec.end(),
+            [](const auto &a, const auto &b) { return a.first > b.first; });
+  for (size_t i = 0; i < std::min(freq_cnt_vec.size(), (size_t)N_MOST_COMMON);
+       i++) {
     stat.highest_freq[i] = freq_cnt_vec[i].first;
   }
 
@@ -264,57 +303,80 @@ static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint
   stat.skewness = -slope;
 
   // sort by freq count
-  std::sort(freq_cnt_vec.begin(), freq_cnt_vec.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
-  for (size_t i = 0; i < std::min(freq_cnt_vec.size(), (size_t)N_MOST_COMMON); i++) {
+  std::sort(freq_cnt_vec.begin(), freq_cnt_vec.end(),
+            [](const auto &a, const auto &b) { return a.second > b.second; });
+  for (size_t i = 0; i < std::min(freq_cnt_vec.size(), (size_t)N_MOST_COMMON);
+       i++) {
     stat.most_common_freq[i] = freq_cnt_vec[i].first;
     stat.most_common_freq_ratio[i] = (float)freq_cnt_vec[i].second / stat.n_obj;
   }
 
-  INFO("highest freq: %ld %ld %ld %ld skewness %.4lf\n", stat.highest_freq[0], stat.highest_freq[1],
-       stat.highest_freq[2], stat.highest_freq[3], stat.skewness);
-  INFO("most common freq (req fraction): %d(%.4lf) %d(%.4lf) %d(%.4lf) %d(%.4lf)...\n", stat.most_common_freq[0],
-       stat.most_common_freq_ratio[0], stat.most_common_freq[1], stat.most_common_freq_ratio[1],
-       stat.most_common_freq[2], stat.most_common_freq_ratio[2], stat.most_common_freq[3],
-       stat.most_common_freq_ratio[3]);
+  INFO("highest freq: %ld %ld %ld %ld skewness %.4lf\n", stat.highest_freq[0],
+       stat.highest_freq[1], stat.highest_freq[2], stat.highest_freq[3],
+       stat.skewness);
+  INFO(
+      "most common freq (req fraction): %d(%.4lf) %d(%.4lf) %d(%.4lf) "
+      "%d(%.4lf)...\n",
+      stat.most_common_freq[0], stat.most_common_freq_ratio[0],
+      stat.most_common_freq[1], stat.most_common_freq_ratio[1],
+      stat.most_common_freq[2], stat.most_common_freq_ratio[2],
+      stat.most_common_freq[3], stat.most_common_freq_ratio[3]);
 
   /**** analyze tenant ****/
   stat.n_tenant = tenant_cnt.size();
-  std::vector<std::pair<int32_t, int32_t>> tenant_cnt_vec(tenant_cnt.begin(), tenant_cnt.end());
+  std::vector<std::pair<int32_t, int32_t>> tenant_cnt_vec(tenant_cnt.begin(),
+                                                          tenant_cnt.end());
   std::sort(tenant_cnt_vec.begin(), tenant_cnt_vec.end(),
             [](const auto &a, const auto &b) { return a.second > b.second; });
-  for (size_t i = 0; i < std::min(tenant_cnt_vec.size(), (size_t)N_MOST_COMMON); i++) {
+  for (size_t i = 0; i < std::min(tenant_cnt_vec.size(), (size_t)N_MOST_COMMON);
+       i++) {
     stat.most_common_tenants[i] = tenant_cnt_vec[i].first;
-    stat.most_common_tenant_ratio[i] = (float)tenant_cnt_vec[i].second / stat.n_req;
+    stat.most_common_tenant_ratio[i] =
+        (float)tenant_cnt_vec[i].second / stat.n_req;
   }
   if (stat.n_tenant > 1) {
     INFO("#tenant: %ld\n", (long)stat.n_tenant);
-    INFO("most common tenants (req fraction): %d(%.4lf) %d(%.4lf) %d(%.4lf) %d(%.4lf)...\n",
-         stat.most_common_tenants[0], stat.most_common_tenant_ratio[0], stat.most_common_tenants[1],
-         stat.most_common_tenant_ratio[1], stat.most_common_tenants[2], stat.most_common_tenant_ratio[2],
-         stat.most_common_tenants[3], stat.most_common_tenant_ratio[3]);
+    INFO(
+        "most common tenants (req fraction): %d(%.4lf) %d(%.4lf) %d(%.4lf) "
+        "%d(%.4lf)...\n",
+        stat.most_common_tenants[0], stat.most_common_tenant_ratio[0],
+        stat.most_common_tenants[1], stat.most_common_tenant_ratio[1],
+        stat.most_common_tenants[2], stat.most_common_tenant_ratio[2],
+        stat.most_common_tenants[3], stat.most_common_tenant_ratio[3]);
   }
 
   /**** analyze ttl ****/
   stat.n_ttl = ttl_cnt.size();
-  std::vector<std::pair<int32_t, int32_t>> ttl_cnt_vec(ttl_cnt.begin(), ttl_cnt.end());
-  std::sort(ttl_cnt_vec.begin(), ttl_cnt_vec.end(), [](const auto &a, const auto &b) { return a.second > b.second; });
-  stat.smallest_ttl = std::min_element(ttl_cnt_vec.begin(), ttl_cnt_vec.end(), [](const auto &a, const auto &b) {
-                        return a.first < b.first;
-                      })->first;
-  stat.largest_ttl = std::max_element(ttl_cnt_vec.begin(), ttl_cnt_vec.end(), [](const auto &a, const auto &b) {
-                       return a.first < b.first;
-                     })->first;
-  for (size_t i = 0; i < std::min(ttl_cnt_vec.size(), (size_t)N_MOST_COMMON); i++) {
+  std::vector<std::pair<int32_t, int32_t>> ttl_cnt_vec(ttl_cnt.begin(),
+                                                       ttl_cnt.end());
+  std::sort(ttl_cnt_vec.begin(), ttl_cnt_vec.end(),
+            [](const auto &a, const auto &b) { return a.second > b.second; });
+  stat.smallest_ttl = std::min_element(ttl_cnt_vec.begin(), ttl_cnt_vec.end(),
+                                       [](const auto &a, const auto &b) {
+                                         return a.first < b.first;
+                                       })
+                          ->first;
+  stat.largest_ttl = std::max_element(ttl_cnt_vec.begin(), ttl_cnt_vec.end(),
+                                      [](const auto &a, const auto &b) {
+                                        return a.first < b.first;
+                                      })
+                         ->first;
+  for (size_t i = 0; i < std::min(ttl_cnt_vec.size(), (size_t)N_MOST_COMMON);
+       i++) {
     stat.most_common_ttls[i] = ttl_cnt_vec[i].first;
     stat.most_common_ttl_ratio[i] = (float)ttl_cnt_vec[i].second / stat.n_req;
   }
   if (stat.n_ttl > 1) {
     INFO("#ttl: %ld\n", (long)stat.n_ttl);
-    INFO("smallest ttl: %ld, largest ttl: %ld\n", (long)stat.smallest_ttl, (long)stat.largest_ttl);
-    INFO("most common ttls (req fraction): %d(%.4lf) %d(%.4lf) %d(%.4lf) %d(%.4lf)...\n", stat.most_common_ttls[0],
-         stat.most_common_ttl_ratio[0], stat.most_common_ttls[1], stat.most_common_ttl_ratio[1],
-         stat.most_common_ttls[2], stat.most_common_ttl_ratio[2], stat.most_common_ttls[3],
-         stat.most_common_ttl_ratio[3]);
+    INFO("smallest ttl: %ld, largest ttl: %ld\n", (long)stat.smallest_ttl,
+         (long)stat.largest_ttl);
+    INFO(
+        "most common ttls (req fraction): %d(%.4lf) %d(%.4lf) %d(%.4lf) "
+        "%d(%.4lf)...\n",
+        stat.most_common_ttls[0], stat.most_common_ttl_ratio[0],
+        stat.most_common_ttls[1], stat.most_common_ttl_ratio[1],
+        stat.most_common_ttls[2], stat.most_common_ttl_ratio[2],
+        stat.most_common_ttls[3], stat.most_common_ttl_ratio[3]);
   }
   INFO("########################################\n");
 }
@@ -327,17 +389,21 @@ static void _analyze_trace(lcs_trace_stat_t &stat, const std::unordered_map<uint
  * @param output_txt
  * @param lcs_ver
  */
-static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat, bool output_txt, int64_t lcs_ver) {
+static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat,
+                          bool output_txt, int64_t lcs_ver) {
   size_t file_size;
-  char *mapped_file = reinterpret_cast<char *>(utils::setup_mmap(ofilepath + ".reverse", &file_size));
+  char *mapped_file = reinterpret_cast<char *>(
+      utils::setup_mmap(ofilepath + ".reverse", &file_size));
   size_t pos = file_size;
 
-  std::ofstream ofile(ofilepath, std::ios::out | std::ios::binary | std::ios::trunc);
+  std::ofstream ofile(ofilepath,
+                      std::ios::out | std::ios::binary | std::ios::trunc);
   _write_lcs_header(ofile, stat, lcs_ver);
 
   INFO("start to reverse the trace...\n");
   std::ofstream ofile_txt;
-  if (output_txt) ofile_txt.open(ofilepath + ".txt", std::ios::out | std::ios::trunc);
+  if (output_txt)
+    ofile_txt.open(ofilepath + ".txt", std::ios::out | std::ios::trunc);
 
   lcs_req_full_t lcs_req_full;
   size_t lcs_full_req_entry_size = sizeof(lcs_req_full_t);
@@ -355,7 +421,8 @@ static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat, bool out
     memcpy(&lcs_req_full, mapped_file + pos, lcs_full_req_entry_size);
     if (lcs_req_full.next_access_vtime != INT64_MAX) {
       /* req.next_access_vtime is the vtime start from the end */
-      lcs_req_full.next_access_vtime = stat.n_req - lcs_req_full.next_access_vtime;
+      lcs_req_full.next_access_vtime =
+          stat.n_req - lcs_req_full.next_access_vtime;
     }
 
     if (lcs_ver == 1) {
@@ -398,13 +465,15 @@ static void _reverse_file(std::string ofilepath, lcs_trace_stat_t stat, bool out
       base.next_access_vtime = lcs_req_full.next_access_vtime;
 
       ofile.write(reinterpret_cast<char *>(&base), sizeof(lcs_req_v3));
-      ofile.write(mapped_file + pos + lcs_full_req_entry_size, n_features * sizeof(int32_t));
+      ofile.write(mapped_file + pos + lcs_full_req_entry_size,
+                  n_features * sizeof(int32_t));
     } else {
       ERROR("invalid lcs version %ld\n", lcs_ver);
     }
 
     if (output_txt) {
-      ofile_txt << lcs_req_full.clock_time << "," << lcs_req_full.obj_id << "," << lcs_req_full.obj_size << ","
+      ofile_txt << lcs_req_full.clock_time << "," << lcs_req_full.obj_id << ","
+                << lcs_req_full.obj_size << ","
                 << lcs_req_full.next_access_vtime << "\n";
     }
   }

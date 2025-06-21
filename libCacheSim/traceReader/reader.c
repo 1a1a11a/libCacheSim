@@ -8,7 +8,6 @@
 
 #include <ctype.h>
 
-#include "../include/libCacheSim/macro.h"
 #include "customizedReader/lcs.h"
 #include "customizedReader/oracle/oracleGeneralBin.h"
 #include "customizedReader/oracle/oracleTwrBin.h"
@@ -18,6 +17,7 @@
 #include "customizedReader/valpinBin.h"
 #include "customizedReader/vscsi.h"
 #include "generalReader/libcsv.h"
+#include "libCacheSim/macro.h"
 #include "readerInternal.h"
 
 #ifdef __cplusplus

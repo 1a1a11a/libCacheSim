@@ -8,14 +8,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../include/libCacheSim/reader.h"
+#include "libCacheSim/reader.h"
 #include "struct.h"
 #include "utils/include/utils.h"
 
 namespace traceAnalyzer {
 class ReuseDistribution {
  public:
-  explicit ReuseDistribution(std::string output_path, int time_window_param = 300,
+  explicit ReuseDistribution(std::string output_path,
+                             int time_window_param = 300,
                              int rtime_granularity_param = 5,
                              int vtime_granularity_param = 1000)
       : time_window_(time_window_param),

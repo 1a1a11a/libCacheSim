@@ -1,11 +1,12 @@
 
 
+#include "flash.hpp"
+
 #include <libgen.h>
 
 #include <unordered_set>
 
-#include "../../../../include/libCacheSim/evictionAlgo.h"
-#include "flash.hpp"
+#include "libCacheSim/evictionAlgo.h"
 
 #define REPORT_INTERVAL (4 * 3600)
 #define MILLION 1000000ul

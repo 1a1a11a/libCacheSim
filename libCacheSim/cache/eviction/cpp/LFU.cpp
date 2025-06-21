@@ -30,7 +30,8 @@ extern "C" {
 
 static void LFUCpp_free(cache_t *cache);
 static bool LFUCpp_get(cache_t *cache, const request_t *req);
-static cache_obj_t *LFUCpp_find(cache_t *cache, const request_t *req, const bool update_cache);
+static cache_obj_t *LFUCpp_find(cache_t *cache, const request_t *req,
+                                const bool update_cache);
 static cache_obj_t *LFUCpp_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LFUCpp_to_evict(cache_t *cache, const request_t *req);
 static void LFUCpp_evict(cache_t *cache, const request_t *req);
@@ -50,8 +51,10 @@ static bool LFUCpp_remove(cache_t *cache, const obj_id_t obj_id);
  * @param cache_specific_params cache specific parameters, see parse_params
  * function or use -e "print" with the cachesim binary
  */
-cache_t *LFUCpp_init(const common_cache_params_t ccache_params, const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LFUCpp", ccache_params, cache_specific_params);
+cache_t *LFUCpp_init(const common_cache_params_t ccache_params,
+                     const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("LFUCpp", ccache_params, cache_specific_params);
   auto *lfu = new eviction::LFUCpp();
   cache->eviction_params = lfu;
 
@@ -103,7 +106,9 @@ static void LFUCpp_free(cache_t *cache) {
  * @param req
  * @return true if cache hit, false if cache miss
  */
-static bool LFUCpp_get(cache_t *cache, const request_t *req) { return cache_get_base(cache, req); }
+static bool LFUCpp_get(cache_t *cache, const request_t *req) {
+  return cache_get_base(cache, req);
+}
 
 // ***********************************************************************
 // ****                                                               ****
@@ -121,14 +126,16 @@ static bool LFUCpp_get(cache_t *cache, const request_t *req) { return cache_get_
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t *LFUCpp_find(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *LFUCpp_find(cache_t *cache, const request_t *req,
+                                const bool update_cache) {
   auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != nullptr && update_cache) {
     obj->lfu.freq++;
     auto itr = lfu->pq_map[obj];
     lfu->pq.erase(itr);
-    eviction::pq_node_type new_node = {obj, (double)obj->lfu.freq, cache->n_req};
+    eviction::pq_node_type new_node = {obj, (double)obj->lfu.freq,
+                                       cache->n_req};
     lfu->pq.insert(new_node);
     lfu->pq_map[obj] = new_node;
   }
@@ -156,7 +163,7 @@ static cache_obj_t *LFUCpp_insert(cache_t *cache, const request_t *req) {
   eviction::pq_node_type new_node = {obj, 1.0, cache->n_req};
   lfu->pq.insert(new_node);
   lfu->pq_map[obj] = new_node;
-  DEBUG_ASSERT((int64_t) lfu->pq_map.size() == cache->n_obj);
+  DEBUG_ASSERT((int64_t)lfu->pq_map.size() == cache->n_obj);
 
   return obj;
 }

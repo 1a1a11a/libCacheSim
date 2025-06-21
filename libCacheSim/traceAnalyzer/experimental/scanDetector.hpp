@@ -15,8 +15,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "../../include/libCacheSim/macro.h"
-#include "../../include/libCacheSim/reader.h"
+#include "libCacheSim/macro.h"
+#include "libCacheSim/reader.h"
 
 using namespace std;
 
@@ -131,7 +131,8 @@ class ScanDetector {
       if (n_active_stream_ >= max_vtime_diff_ - 1) {
         while (pos < n_active_stream_) {
           if (this->curr_vtime > scan_stream_vec_[pos].stream_start_vtime +
-                               max_vtime_diff_ + scan_stream_vec_[pos].n_req) {
+                                     max_vtime_diff_ +
+                                     scan_stream_vec_[pos].n_req) {
             // if (scan_stream_vec_[pos].n_req > 1)
             //     printf("%d\n", scan_stream_vec_[pos].n_req);
             if (scan_stream_vec_[pos].n_req > min_scan_size_) {
@@ -225,4 +226,4 @@ class ScanDetector {
   std::vector<int32_t> scan_size_vec_;
 };
 
-}  // namespace analysis
+}  // namespace traceAnalyzer

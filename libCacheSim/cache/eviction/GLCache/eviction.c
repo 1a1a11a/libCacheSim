@@ -1,7 +1,7 @@
 
-#include "../../../dataStructure/hashtable/hashtable.h"
 #include "GLCacheInternal.h"
 #include "const.h"
+#include "dataStructure/hashtable/hashtable.h"
 #include "obj.h"
 
 /* choose which segment to evict */

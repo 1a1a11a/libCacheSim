@@ -11,8 +11,8 @@
 
 #include <assert.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +30,8 @@ typedef enum {
   RETAIN_NONE
 } retain_policy_t;
 
-static const char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY", "None"};
+static const char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY",
+                                            "None"};
 
 typedef struct FIFO_Merge_params {
   cache_obj_t *q_head;
@@ -56,11 +57,11 @@ typedef struct FIFO_Merge_params {
 // ***********************************************************************
 
 static void FIFO_Merge_parse_params(cache_t *cache,
-                                     const char *cache_specific_params);
+                                    const char *cache_specific_params);
 static void FIFO_Merge_free(cache_t *cache);
 static bool FIFO_Merge_get(cache_t *cache, const request_t *req);
 static cache_obj_t *FIFO_Merge_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache);
+                                    const bool update_cache);
 static cache_obj_t *FIFO_Merge_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *FIFO_Merge_to_evict(cache_t *cache, const request_t *req);
 static void FIFO_Merge_evict(cache_t *cache, const request_t *req);
@@ -88,7 +89,7 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj);
  * function or use -e "print" with the cachesim binary
  */
 cache_t *FIFO_Merge_init(const common_cache_params_t ccache_params,
-                          const char *cache_specific_params) {
+                         const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("FIFO_Merge", ccache_params, cache_specific_params);
   cache->cache_init = FIFO_Merge_init;
@@ -184,7 +185,7 @@ static bool FIFO_Merge_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *FIFO_Merge_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache) {
+                                    const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && update_cache) {
@@ -343,7 +344,7 @@ static const char *FIFO_Merge_current_params(FIFO_Merge_params_t *params) {
 }
 
 static void FIFO_Merge_parse_params(cache_t *cache,
-                                     const char *cache_specific_params) {
+                                    const char *cache_specific_params) {
   FIFO_Merge_params_t *params = (FIFO_Merge_params_t *)cache->eviction_params;
 
   char *params_str = strdup(cache_specific_params);

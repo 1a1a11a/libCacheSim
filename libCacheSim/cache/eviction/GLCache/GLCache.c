@@ -6,11 +6,11 @@
 #include <assert.h>
 #include <stdbool.h>
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
 #include "GLCacheInternal.h"
 #include "cacheState.h"
 #include "const.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 #include "obj.h"
 #include "utils.h"
 
@@ -128,7 +128,8 @@ static void GLCache_parse_init_params(const char *cache_specific_params,
  */
 cache_t *GLCache_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("GLCache", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("GLCache", ccache_params, cache_specific_params);
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 2 + 1 + 8;  // freq, bool, history

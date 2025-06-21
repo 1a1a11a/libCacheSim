@@ -25,8 +25,8 @@
  */
 #pragma once
 
-#include "../../../include/libCacheSim/reader.h"
 #include "../binaryUtils.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +59,8 @@ static int oracleSimTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
     req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req && (req->op == OP_GET || req->op == OP_GETS) &&
+  if (req->val_size == 0 && reader->ignore_size_zero_req &&
+      (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD)
     return oracleSimTwrNSBin_read_one_req(reader, req);
 
@@ -96,7 +97,8 @@ static int oracleSysTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
     req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req && (req->op == OP_GET || req->op == OP_GETS) &&
+  if (req->val_size == 0 && reader->ignore_size_zero_req &&
+      (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD) {
     ERROR("find size 0 request\n");
     print_request(req);

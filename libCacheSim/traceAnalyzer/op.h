@@ -1,16 +1,16 @@
 
 
-#include <iomanip>
 #include <algorithm>
 #include <fstream>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include "../include/libCacheSim/request.h"
+#include "libCacheSim/request.h"
 
 using namespace std;
 
@@ -43,10 +43,9 @@ class OpStat {
       stat_ss << "\n";
     }
     stat_ss << "write: " << n_write << "(" << (double)n_write / (double)n_req
-            << "), "
-            << "overwrite: " << n_overwrite << "("
-            << (double)n_overwrite / (double)n_req << "), "
-            << "del:" << n_del << "(" << (double)n_del / (double)n_req << ")\n";
+            << "), " << "overwrite: " << n_overwrite << "("
+            << (double)n_overwrite / (double)n_req << "), " << "del:" << n_del
+            << "(" << (double)n_del / (double)n_req << ")\n";
     os << stat_ss.str();
 
     return os;

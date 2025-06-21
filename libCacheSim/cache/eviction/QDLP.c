@@ -12,8 +12,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,7 +53,7 @@ static void QDLP_free(cache_t *cache);
 static bool QDLP_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                              const bool update_cache);
 static cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *QDLP_to_evict(cache_t *cache, const request_t *req);
 static void QDLP_evict(cache_t *cache, const request_t *req);
@@ -62,7 +62,7 @@ static inline int64_t QDLP_get_occupied_byte(const cache_t *cache);
 static inline int64_t QDLP_get_n_obj(const cache_t *cache);
 static inline bool QDLP_can_insert(cache_t *cache, const request_t *req);
 static void QDLP_parse_params(cache_t *cache,
-                                const char *cache_specific_params);
+                              const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -71,7 +71,7 @@ static void QDLP_parse_params(cache_t *cache,
 // ***********************************************************************
 
 cache_t *QDLP_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params) {
+                   const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("QDLP", ccache_params, cache_specific_params);
   cache->cache_init = QDLP_init;
@@ -229,7 +229,7 @@ static bool QDLP_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                              const bool update_cache) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the fifo and main caches
@@ -417,7 +417,8 @@ static inline int64_t QDLP_get_n_obj(const cache_t *cache) {
 static inline bool QDLP_can_insert(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
 
-  return req->obj_size <= params->fifo->cache_size && cache_can_insert_default(cache, req);
+  return req->obj_size <= params->fifo->cache_size &&
+         cache_can_insert_default(cache, req);
 }
 
 // ***********************************************************************
@@ -433,7 +434,7 @@ static const char *QDLP_current_params(QDLP_params_t *params) {
 }
 
 static void QDLP_parse_params(cache_t *cache,
-                                const char *cache_specific_params) {
+                              const char *cache_specific_params) {
   QDLP_params_t *params = (QDLP_params_t *)(cache->eviction_params);
 
   char *params_str = strdup(cache_specific_params);

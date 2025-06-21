@@ -1,6 +1,7 @@
 //
 //  FIFO_Reinsertion scans N objects and retains M objects, evict the rest
-//  Note that this is the same as CLOCK, please use CLOCK, this is a used to compare with FIFO Merge and is deprecated
+//  Note that this is the same as CLOCK, please use CLOCK, this is a used to
+//  compare with FIFO Merge and is deprecated
 //
 //
 //  FIFO_Reinsertion.c
@@ -12,8 +13,8 @@
 
 #include <assert.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,8 @@ typedef enum {
   RETAIN_NONE
 } retain_policy_t;
 
-static const char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY", "None"};
+static const char *retain_policy_names[] = {"RECENCY", "FREQUENCY", "BELADY",
+                                            "None"};
 
 typedef struct FIFO_Reinsertion_params {
   cache_obj_t *q_head;
@@ -59,15 +61,15 @@ typedef struct FIFO_Reinsertion_params {
 // ***********************************************************************
 
 static void FIFO_Reinsertion_parse_params(cache_t *cache,
-                                           const char *cache_specific_params);
+                                          const char *cache_specific_params);
 static void FIFO_Reinsertion_free(cache_t *cache);
 static bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req);
 static cache_obj_t *FIFO_Reinsertion_find(cache_t *cache, const request_t *req,
-                                           const bool update_cache);
+                                          const bool update_cache);
 static cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache,
-                                             const request_t *req);
+                                            const request_t *req);
 static cache_obj_t *FIFO_Reinsertion_to_evict(cache_t *cache,
-                                               const request_t *req);
+                                              const request_t *req);
 static void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req);
 static void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj);
 static bool FIFO_Reinsertion_remove(cache_t *cache, const obj_id_t obj_id);
@@ -94,8 +96,9 @@ static double retain_metric(cache_t *cache, cache_obj_t *cache_obj);
  * function or use -e "print" with the cachesim binary
  */
 cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
-                                const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("FIFO_Reinsertion", ccache_params, cache_specific_params);
+                               const char *cache_specific_params) {
+  cache_t *cache = cache_struct_init("FIFO_Reinsertion", ccache_params,
+                                     cache_specific_params);
   cache->cache_init = FIFO_Reinsertion_init;
   cache->cache_free = FIFO_Reinsertion_free;
   cache->get = FIFO_Reinsertion_get;
@@ -191,7 +194,7 @@ static bool FIFO_Reinsertion_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *FIFO_Reinsertion_find(cache_t *cache, const request_t *req,
-                                           const bool update_cache) {
+                                          const bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && update_cache) {
@@ -215,7 +218,7 @@ static cache_obj_t *FIFO_Reinsertion_find(cache_t *cache, const request_t *req,
  * @return the inserted object
  */
 static cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache,
-                                             const request_t *req) {
+                                            const request_t *req) {
   FIFO_Reinsertion_params_t *params =
       (FIFO_Reinsertion_params_t *)cache->eviction_params;
 
@@ -240,7 +243,7 @@ static cache_obj_t *FIFO_Reinsertion_insert(cache_t *cache,
  * @return the object to be evicted
  */
 static cache_obj_t *FIFO_Reinsertion_to_evict(cache_t *cache,
-                                               const request_t *req) {
+                                              const request_t *req) {
   ERROR("Undefined! Multiple objs will be evicted\n");
   abort();
   return NULL;
@@ -362,7 +365,7 @@ static const char *FIFO_Reinsertion_current_params(
 }
 
 static void FIFO_Reinsertion_parse_params(cache_t *cache,
-                                           const char *cache_specific_params) {
+                                          const char *cache_specific_params) {
   FIFO_Reinsertion_params_t *params =
       (FIFO_Reinsertion_params_t *)cache->eviction_params;
 

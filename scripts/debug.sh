@@ -1,8 +1,8 @@
-#!/bin/bash 
+#!/bin/bash
 set -euo pipefail
 
-SOURCE=$(readlink -f ${BASH_SOURCE[0]})
-SCRIPT_DIR=$(dirname ${SOURCE})
+SOURCE=$(readlink -f "${BASH_SOURCE[0]}")
+SCRIPT_DIR=$(dirname "${SOURCE}")
 CURR_DIR=$(pwd)
 
 usage() {
@@ -47,10 +47,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-cd ${SCRIPT_DIR}/../
+cd "${SCRIPT_DIR}"/../
 
 # Clean build directory if requested
-if [ $CLEAN -eq 1 ]; then
+if [[ ${CLEAN} -eq 1 ]]; then
     echo "Cleaning build directory..."
     rm -rf _build_dbg || true 2>/dev/null;
 fi
@@ -70,12 +70,12 @@ make -j
 
 # Return to script directory
 # cd ${DIR}
-cd ${CURR_DIR}
+cd "${CURR_DIR}"
 
-if [ ${#PROGRAM_ARGS[@]} -ne 0 ]; then
+if [[ ${#PROGRAM_ARGS[@]} -ne 0 ]]; then
     # Run the program with gdb and pass arguments
     echo "Starting debug session with arguments..."
-    gdb -ex "set print thread-events off" -ex r --args ${SCRIPT_DIR}/../_build_dbg/bin/cachesim "${PROGRAM_ARGS[@]}"
+    gdb -ex "set print thread-events off" -ex r --args "${SCRIPT_DIR}"/../_build_dbg/bin/cachesim "${PROGRAM_ARGS[@]}"
 else
     echo ''
     echo '########################################################'

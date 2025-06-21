@@ -1,4 +1,4 @@
-#include "createFutureReuseCCDF.h"
+#include "createFutureReuseCCDF.hpp"
 
 #include <cstdio>
 #include <cstdlib>

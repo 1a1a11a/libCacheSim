@@ -2,7 +2,7 @@
 
 #include <assert.h>
 
-#include "../../../dataStructure/hashtable/hashtable.h"
+#include "dataStructure/hashtable/hashtable.h"
 #include "lhd.hpp"
 #include "repl.hpp"
 
@@ -62,7 +62,8 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
   }
 #endif
 
-  cache_t *cache = cache_struct_init("LHD", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LHD", ccache_params, cache_specific_params);
   cache->cache_init = LHD_init;
   cache->cache_free = LHD_free;
   cache->get = LHD_get;
@@ -276,7 +277,6 @@ static void LHD_evict(cache_t *cache, const request_t *req) {
                         CURR_TIME(cache, req) - victim.create_time);
   }
 #endif
-
 
   lhd->replaced(victim);
   lhd->sizeMap.erase(victimItr);

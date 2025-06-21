@@ -2,13 +2,13 @@
 // Created by Juncheng Yang on 11/17/19.
 //
 
-#include "../include/libCacheSim/plugin.h"
+#include "libCacheSim/plugin.h"
 
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../include/libCacheSim/evictionAlgo.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {

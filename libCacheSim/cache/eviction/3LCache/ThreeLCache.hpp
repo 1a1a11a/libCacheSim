@@ -14,8 +14,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "../../../dataStructure/sparsepp/spp.h"
-#include "cache.h"
+#include "dataStructure/sparsepp/spp.h"
+#include "libCacheSim/cache.h"
 using namespace webcachesim;
 using namespace std;
 

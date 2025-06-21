@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../../include/libCacheSim/const.h"
-#include "../../include/libCacheSim/dist.h"
-#include "../../include/libCacheSim/prefetchAlgo.h"
-#include "../../utils/include/mystr.h"
-#include "../../utils/include/mysys.h"
 #include "../cachesim/cache_init.h"
 #include "../cli_reader_utils.h"
+#include "libCacheSim/const.h"
+#include "libCacheSim/dist.h"
+#include "libCacheSim/prefetchAlgo.h"
 #include "mrc_internal.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
 
 #ifdef __cplusplus
 extern "C" {

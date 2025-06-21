@@ -3,10 +3,10 @@
 #include <map>
 #include <string>
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/cache.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
-#include "ThreeLCache.h"
+#include "ThreeLCache.hpp"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {

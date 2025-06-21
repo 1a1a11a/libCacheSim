@@ -6,14 +6,15 @@
 extern "C" {
 #endif
 
+#include "libCacheSim/dist.h"
+
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <sys/stat.h>
 
 #include "../dataStructure/splay.h"
-#include "../include/libCacheSim/dist.h"
-#include "../include/libCacheSim/macro.h"
+#include "libCacheSim/macro.h"
 
 /***********************************************************
  * this function is called by _get_dist,
@@ -203,8 +204,7 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
   free(file_path);
 }
 
-void save_dist_txt(reader_t *const reader , 
-                  const int32_t *dist_array,
+void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
                    int64_t array_size, const char *const ofilepath,
                    const dist_type_e dist_type) {
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
@@ -262,7 +262,7 @@ void _write_dist_cnt(gpointer k, gpointer v, gpointer user_data) {
 void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
                           const int64_t array_size, const char *const ofilepath,
                           const dist_type_e dist_type) {
-  assert((int64_t) get_num_of_req(reader) == array_size);
+  assert((int64_t)get_num_of_req(reader) == array_size);
 
   char *file_path = (char *)malloc(strlen(ofilepath) + 128);
   sprintf(file_path, "%s.%s.cnt", ofilepath, g_dist_type_name[dist_type]);

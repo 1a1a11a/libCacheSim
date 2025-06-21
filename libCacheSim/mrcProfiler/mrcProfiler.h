@@ -5,12 +5,12 @@
 
 #include "../dataStructure/hash/hash.h"
 #include "../dataStructure/robin_hood.h"
-#include "../include/libCacheSim.h"
-#include "../include/libCacheSim/cache.h"
-#include "../include/libCacheSim/macro.h"
-#include "../include/libCacheSim/plugin.h"
-#include "../include/libCacheSim/reader.h"
-#include "../include/libCacheSim/simulator.h"
+#include "libCacheSim.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/macro.h"
+#include "libCacheSim/plugin.h"
+#include "libCacheSim/reader.h"
+#include "libCacheSim/simulator.h"
 
 namespace mrcProfiler {
 
@@ -24,9 +24,10 @@ typedef enum {
 } mrc_profiler_e;
 
 /**
- * @brief get hash value for a 64-bit integer. 
+ * @brief get hash value for a 64-bit integer.
  */
-static uint64_t get_hash_value_int_64_with_salt(uint64_t obj_id, uint64_t salt) {
+static uint64_t get_hash_value_int_64_with_salt(uint64_t obj_id,
+                                                uint64_t salt) {
   int64_t key = obj_id ^ salt;
   return get_hash_value_int_64(&key);
 }
@@ -186,16 +187,17 @@ typedef struct profiler_params {
 
 class MRCProfilerBase {
  public:
-  MRCProfilerBase(reader_t *reader, std::string output_path, const mrc_profiler_params_t &params)
+  MRCProfilerBase(reader_t *reader, std::string output_path,
+                  const mrc_profiler_params_t &params)
       : reader_(reader),
         output_path_(std::move(output_path)),
         params_(params),
         mrc_size_vec(params.profile_size),
         hit_cnt_vec(params.profile_size.size(), 0),
         hit_size_vec(params.profile_size.size(), 0) {}
-  
+
   virtual ~MRCProfilerBase() = default;
-  
+
   /**
    * run the profiler, and store the result to hit_cnt_vec and hit_size_vec
    */
@@ -203,10 +205,10 @@ class MRCProfilerBase {
 
   /**
    * print the result to output_path
-   * 
+   *
    * @param output_path: if nullptr, use stdout
    */
-  void print(const char * output_path = nullptr); 
+  void print(const char *output_path = nullptr);
 
   size_t get_n_req() { return n_req_; }
   size_t get_sum_obj_size_req() { return sum_obj_size_req; }
@@ -230,7 +232,8 @@ class MRCProfilerBase {
 
 class MRCProfilerSHARDS : public MRCProfilerBase {
  public:
-  explicit MRCProfilerSHARDS(reader_t *reader, std::string output_path, const mrc_profiler_params_t &params)
+  explicit MRCProfilerSHARDS(reader_t *reader, std::string output_path,
+                             const mrc_profiler_params_t &params)
       : MRCProfilerBase(reader, output_path, params) {
     profiler_name_ = "SHARDS";
   }
@@ -245,7 +248,8 @@ class MRCProfilerSHARDS : public MRCProfilerBase {
 
 class MRCProfilerMINISIM : public MRCProfilerBase {
  public:
-  explicit MRCProfilerMINISIM(reader_t *reader, std::string output_path, const mrc_profiler_params_t &params)
+  explicit MRCProfilerMINISIM(reader_t *reader, std::string output_path,
+                              const mrc_profiler_params_t &params)
       : MRCProfilerBase(reader, output_path, params) {
     profiler_name_ = "MINISIM";
   }
@@ -256,7 +260,8 @@ class MRCProfilerMINISIM : public MRCProfilerBase {
   cache_stat_t *result = nullptr;
 };
 
-MRCProfilerBase *create_mrc_profiler(mrc_profiler_e type, reader_t *reader, std::string output_path,
+MRCProfilerBase *create_mrc_profiler(mrc_profiler_e type, reader_t *reader,
+                                     std::string output_path,
                                      const mrc_profiler_params_t &params);
 
 }  // namespace mrcProfiler

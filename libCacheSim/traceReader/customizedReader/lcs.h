@@ -1,12 +1,12 @@
 //
-// Description: This file defines the lcs (libCacheSim) trace format for libCacheSim.
+// Description: This file defines the lcs (libCacheSim) trace format for
+// libCacheSim.
 //
 // A lcs trace file consists of a header and a sequence of requests.
-// The header is 1024 bytes, and the request is 24 bytes for v1 and 28 bytes for v2.
-// The header contains the trace statistics
-// The request contains the request information
-// The trace stat is defined in the lcs_trace_stat struct.
-// The request format is defined in the lcs_req_v1_t and lcs_req_v2_t structs.
+// The header is 1024 bytes, and the request is 24 bytes for v1 and 28 bytes for
+// v2. The header contains the trace statistics The request contains the request
+// information The trace stat is defined in the lcs_trace_stat struct. The
+// request format is defined in the lcs_req_v1_t and lcs_req_v2_t structs.
 
 // The LCSReader_setup function sets up the reader for reading lcs traces.
 // The lcs_read_one_req function reads one request from the trace file.
@@ -16,7 +16,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "../../include/libCacheSim/reader.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,7 +83,8 @@ typedef struct lcs_trace_stat {
   int64_t unused[897];
 } __attribute__((packed)) lcs_trace_stat_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_trace_stat_size[(sizeof(struct lcs_trace_stat) == 1000 * 8) ? 1 : -1];
+typedef char static_assert_lcs_trace_stat_size
+    [(sizeof(struct lcs_trace_stat) == 1000 * 8) ? 1 : -1];
 
 /******************************************************************************/
 /**                    lcs trace format header (8192 bytes)                  **/
@@ -102,7 +103,8 @@ typedef struct lcs_trace_header {
   uint64_t end_magic;
 } __attribute__((packed)) lcs_trace_header_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_trace_header_size[(sizeof(struct lcs_trace_header) == 1024 * 8) ? 1 : -1];
+typedef char static_assert_lcs_trace_header_size
+    [(sizeof(struct lcs_trace_header) == 1024 * 8) ? 1 : -1];
 
 /******************************************************************************/
 /**       v1 is the simplest trace format (same as oracleGeneral)            **/
@@ -121,7 +123,8 @@ typedef struct __attribute__((packed)) lcs_req_v1 {
   int64_t next_access_vtime;
 } lcs_req_v1_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v1_size[(sizeof(struct lcs_req_v1) == 24) ? 1 : -1];
+typedef char
+    static_assert_lcs_v1_size[(sizeof(struct lcs_req_v1) == 24) ? 1 : -1];
 
 /******************************************************************************/
 /**              v2 has more fields, operation and tenant                    **/
@@ -135,7 +138,8 @@ typedef struct __attribute__((packed)) lcs_req_v2 {
   int64_t next_access_vtime;
 } lcs_req_v2_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v2_size[(sizeof(struct lcs_req_v2) == 28) ? 1 : -1];
+typedef char
+    static_assert_lcs_v2_size[(sizeof(struct lcs_req_v2) == 28) ? 1 : -1];
 
 /******************************************************************************/
 /**              v3 uses int64_t for object size and adds ttl                **/
@@ -150,8 +154,8 @@ typedef struct __attribute__((packed)) lcs_req_v3 {
   int64_t next_access_vtime;
 } lcs_req_v3_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v3_size[(sizeof(struct lcs_req_v3) == 36) ? 1 : -1];
-
+typedef char
+    static_assert_lcs_v3_size[(sizeof(struct lcs_req_v3) == 36) ? 1 : -1];
 
 /******************************************************************************/
 /**              v4 has one feature field                                    **/
@@ -161,7 +165,8 @@ typedef struct __attribute__((packed)) lcs_req_v4 {
   uint32_t feature;
 } lcs_req_v4_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v4_size[(sizeof(struct lcs_req_v4) == 40) ? 1 : -1];
+typedef char
+    static_assert_lcs_v4_size[(sizeof(struct lcs_req_v4) == 40) ? 1 : -1];
 
 /******************************************************************************/
 /**              v5 has two feature fields                                   **/
@@ -171,7 +176,8 @@ typedef struct __attribute__((packed)) lcs_req_v5 {
   uint32_t features[2];
 } lcs_req_v5_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v5_size[(sizeof(struct lcs_req_v5) == 44) ? 1 : -1];
+typedef char
+    static_assert_lcs_v5_size[(sizeof(struct lcs_req_v5) == 44) ? 1 : -1];
 
 /******************************************************************************/
 /**              v6 has four feature fields                                  **/
@@ -181,7 +187,8 @@ typedef struct __attribute__((packed)) lcs_req_v6 {
   uint32_t features[4];
 } lcs_req_v6_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v6_size[(sizeof(struct lcs_req_v6) == 52) ? 1 : -1];
+typedef char
+    static_assert_lcs_v6_size[(sizeof(struct lcs_req_v6) == 52) ? 1 : -1];
 
 /******************************************************************************/
 /**              v7 has eight feature fields                                 **/
@@ -191,7 +198,8 @@ typedef struct __attribute__((packed)) lcs_req_v7 {
   uint32_t features[8];
 } lcs_req_v7_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v7_size[(sizeof(struct lcs_req_v7) == 68) ? 1 : -1];
+typedef char
+    static_assert_lcs_v7_size[(sizeof(struct lcs_req_v7) == 68) ? 1 : -1];
 
 /******************************************************************************/
 /**              v8 has sixteen feature fields                               **/
@@ -201,7 +209,8 @@ typedef struct __attribute__((packed)) lcs_req_v8 {
   uint32_t features[16];
 } lcs_req_v8_t;
 // assert the struct size at compile time
-typedef char static_assert_lcs_v8_size[(sizeof(struct lcs_req_v8) == 100) ? 1 : -1];
+typedef char
+    static_assert_lcs_v8_size[(sizeof(struct lcs_req_v8) == 100) ? 1 : -1];
 
 static int LCS_VER_TO_N_FEATURES[10] = {0, 0, 0, 0, 1, 2, 4, 8, 16, 0};
 

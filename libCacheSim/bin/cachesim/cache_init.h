@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -6,8 +6,8 @@
 #include <assert.h>
 #include <string.h>
 
-#include "../include/libCacheSim/reader.h"
-#include "../utils/include/mystr.h"
+#include "libCacheSim/reader.h"
+#include "utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {

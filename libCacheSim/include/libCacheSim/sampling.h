@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../include/libCacheSim/request.h"
+#include "libCacheSim/request.h"
 
 #ifdef __cplusplus
 extern "C" {

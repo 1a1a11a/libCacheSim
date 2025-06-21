@@ -2,9 +2,9 @@
 // Created by Juncheng Yang on 5/9/21.
 //
 
-#include "../../traceAnalyzer/analyzer.h"
 #include "../cli_reader_utils.h"
 #include "internal.h"
+#include "traceAnalyzer/analyzer.h"
 
 using namespace traceAnalyzer;
 

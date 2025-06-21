@@ -5,11 +5,11 @@
 #endif
 #include <assert.h>
 
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/dist.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../utils/include/mysys.h"
 #include "internal.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/dist.h"
+#include "libCacheSim/reader.h"
+#include "utils/include/mysys.h"
 
 int main(int argc, char **argv) {
   struct arguments args;

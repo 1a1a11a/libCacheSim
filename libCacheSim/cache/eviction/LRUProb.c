@@ -9,9 +9,9 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../utils/include/mymath.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/cache.h"
+#include "utils/include/mymath.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,11 +31,12 @@ typedef struct LRU_Prob_params {
 // ****                                                               ****
 // ***********************************************************************
 
-static void LRU_Prob_parse_params(cache_t *cache, const char *cache_specific_params);
+static void LRU_Prob_parse_params(cache_t *cache,
+                                  const char *cache_specific_params);
 static void LRU_Prob_free(cache_t *cache);
 static bool LRU_Prob_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_Prob_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                                  const bool update_cache);
 static cache_obj_t *LRU_Prob_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_Prob_to_evict(cache_t *cache, const request_t *req);
 static void LRU_Prob_evict(cache_t *cache, const request_t *req);
@@ -57,7 +58,8 @@ static bool LRU_Prob_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LRU_Prob", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LRU_Prob", ccache_params, cache_specific_params);
   cache->cache_init = LRU_Prob_init;
   cache->cache_free = LRU_Prob_free;
   cache->get = LRU_Prob_get;
@@ -137,8 +139,8 @@ static bool LRU_Prob_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t* LRU_Prob_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache) {
+static cache_obj_t *LRU_Prob_find(cache_t *cache, const request_t *req,
+                                  const bool update_cache) {
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
 
   cache_obj_t *cached_obj = cache_find_base(cache, req, update_cache);
@@ -282,7 +284,6 @@ static void LRU_Prob_parse_params(cache_t *cache,
   }
   free(old_params_str);
 }
-
 
 #ifdef __cplusplus
 }

@@ -11,23 +11,26 @@
 extern "C" {
 #endif
 
+#include <glib.h>
+#include <stdio.h>
+
 typedef struct {
   double **matrix;
-  gint32 xlim; // n_window
-  gint32 ylim; // n_pts
+  gint32 xlim;  // n_window
+  gint32 ylim;  // n_pts
   double log_scale;
 } heatmap_plot_matrix_t;
 
-static inline heatmap_plot_matrix_t *
-new_heatmap_plot_matrix(gint32 xlim, gint32 ylim, double log_scale) {
+static inline heatmap_plot_matrix_t *new_heatmap_plot_matrix(gint32 xlim,
+                                                             gint32 ylim,
+                                                             double log_scale) {
   heatmap_plot_matrix_t *hm_matrix = g_new0(heatmap_plot_matrix_t, 1);
   hm_matrix->xlim = xlim;
   hm_matrix->ylim = ylim;
   hm_matrix->log_scale = log_scale;
 
   hm_matrix->matrix = g_new0(double *, xlim);
-  for (gint32 i = 0; i < xlim; i++)
-    hm_matrix->matrix[i] = g_new0(double, ylim);
+  for (gint32 i = 0; i < xlim; i++) hm_matrix->matrix[i] = g_new0(double, ylim);
 
   return hm_matrix;
 }
@@ -66,4 +69,4 @@ static inline void normalize_heatmap_matrix(heatmap_plot_matrix_t *hm_matrix) {
 }
 #endif
 
-#endif // libCacheSim_HEATMAP_H
+#endif  // libCacheSim_HEATMAP_H

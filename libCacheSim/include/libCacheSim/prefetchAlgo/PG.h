@@ -15,34 +15,40 @@
 
 #include <glib.h>
 
-#include "../../../dataStructure/pqueue.h"
-#include "../../../traceReader/readerInternal.h"
 #include "../cache.h"
+#include "dataStructure/pqueue.h"
+#include "traceReader/readerInternal.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* check params valid */
-#define check_params(params)                                                                                   \
-  (assert(params->lookahead_range > 0 && params->lookahead_range <= 100 && params->max_metadata_size > 0 &&    \
-          params->max_metadata_size < 1 && params->prefetch_threshold > 0 && params->prefetch_threshold < 1 && \
+#define check_params(params)                                                  \
+  (assert(params->lookahead_range > 0 && params->lookahead_range <= 100 &&    \
+          params->max_metadata_size > 0 && params->max_metadata_size < 1 &&   \
+          params->prefetch_threshold > 0 && params->prefetch_threshold < 1 && \
           params->block_size > 0))
 
 #define PG_getPage(x) ((struct PG_Page*)g_hashtable_lookup())
 
 // #define get_Nth_past_request_c(PG_params, n)
 // ((char**)((PG_params)->past_requests))[(n)]
-#define get_Nth_past_request_c(PG_params, n, des) strcpy((des), ((char**)((PG_params)->past_requests))[(n)])
+#define get_Nth_past_request_c(PG_params, n, des) \
+  strcpy((des), ((char**)((PG_params)->past_requests))[(n)])
 
-#define get_Nth_past_request_l(PG_params, n) ((guint64*)((PG_params)->past_requests))[(n)]
-#define set_Nth_past_request_c(PG_params, n, v) strcpy(((char**)((PG_params)->past_requests))[(n)], (char*)(v))
-#define set_Nth_past_request_l(PG_params, n, v) ((guint64*)((PG_params)->past_requests))[(n)] = (v)
+#define get_Nth_past_request_l(PG_params, n) \
+  ((guint64*)((PG_params)->past_requests))[(n)]
+#define set_Nth_past_request_c(PG_params, n, v) \
+  strcpy(((char**)((PG_params)->past_requests))[(n)], (char*)(v))
+#define set_Nth_past_request_l(PG_params, n, v) \
+  ((guint64*)((PG_params)->past_requests))[(n)] = (v)
 
 typedef struct {
   uint8_t lookahead_range;
-  uint block_size;  // In the PG algorithm, the existence of block_size, like Mithril, is to correct the maximum
-                    // metadata size while ignoring object size
+  uint block_size;  // In the PG algorithm, the existence of block_size, like
+                    // Mithril, is to correct the maximum metadata size while
+                    // ignoring object size
   uint64_t cur_metadata_size;
   uint64_t max_metadata_size;  // unit byte
   double prefetch_threshold;

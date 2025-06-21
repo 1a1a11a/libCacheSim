@@ -2,9 +2,9 @@
  * a spatial sampler that samples sampling_ratio of objects from the trace
  **/
 
-#include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/sampling.h"
-#include "../../dataStructure/hash/hash.h"
+#include "dataStructure/hash/hash.h"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/sampling.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,8 +19,9 @@ bool SHARDS_sample(sampler_t *sampler, request_t *req) {
     req->hv = hash_value;
   }
 
-  bool result = (hash_value & ((1 << 24) - 1)) < (uint64_t)(sampler->sampling_ratio * (1 << 24) + 0.5);
-  
+  bool result = (hash_value & ((1 << 24) - 1)) <
+                (uint64_t)(sampler->sampling_ratio * (1 << 24) + 0.5);
+
   return result;
 }
 
@@ -38,7 +39,7 @@ sampler_t *create_SHARDS_sampler(double sampling_ratio) {
   if (sampling_ratio > 1 || sampling_ratio <= 0) {
     ERROR("sampling ratio range error get %lf (should be 0-1)\n",
           sampling_ratio);
-  }  
+  }
 
   sampler_t *s = my_malloc(sampler_t);
   memset(s, 0, sizeof(sampler_t));
@@ -54,8 +55,6 @@ sampler_t *create_SHARDS_sampler(double sampling_ratio) {
   VVERBOSE("create SHARDS sampler with ratio %lf\n", sampling_ratio);
   return s;
 }
-
-
 
 #ifdef __cplusplus
 }

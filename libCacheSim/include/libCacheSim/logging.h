@@ -117,30 +117,31 @@ extern pthread_mutex_t log_mtx;
   } while (0)
 
 static inline void log_header(int level, const char *file, int line) {
+  int n;
   switch (level) {
     case VVVERBOSE_LEVEL:
-      fprintf(stderr, "%s[VVV]   ", CYAN);
+      n = fprintf(stderr, "%s[VVV]   ", CYAN);
       break;
     case VVERBOSE_LEVEL:
-      fprintf(stderr, "%s[VV]    ", CYAN);
+      n = fprintf(stderr, "%s[VV]    ", CYAN);
       break;
     case VERBOSE_LEVEL:
-      fprintf(stderr, "%s[VERB]  ", MAGENTA);
+      n = fprintf(stderr, "%s[VERB]  ", MAGENTA);
       break;
     case DEBUG_LEVEL:
-      fprintf(stderr, "%s[DEBUG] ", CYAN);
+      n = fprintf(stderr, "%s[DEBUG] ", CYAN);
       break;
     case INFO_LEVEL:
-      fprintf(stderr, "%s[INFO]  ", GREEN);
+      n = fprintf(stderr, "%s[INFO]  ", GREEN);
       break;
     case WARN_LEVEL:
-      fprintf(stderr, "%s[WARN]  ", YELLOW);
+      n = fprintf(stderr, "%s[WARN]  ", YELLOW);
       break;
     case SEVERE_LEVEL:
-      fprintf(stderr, "%s[ERROR] ", RED);
+      n = fprintf(stderr, "%s[ERROR] ", RED);
       break;
     default:
-      fprintf(stderr, "in logging should not be here\n");
+      n = fprintf(stderr, "in logging should not be here\n");
       break;
   }
 

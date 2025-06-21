@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../include/libCacheSim/logging.h"
+#include "libCacheSim/logging.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,10 +59,12 @@ static inline unsigned long long log2_ull(unsigned long long n) {
 }
 
 static inline unsigned long long log2_v2(unsigned long long n) {
-  return (unsigned long long)(8 * sizeof(unsigned long long) - __builtin_clzll((n)));
+  return (unsigned long long)(8 * sizeof(unsigned long long) -
+                              __builtin_clzll((n)));
 }
 
-void linear_regression(double* x, double* y, int n, double* slope, double* intercept);
+void linear_regression(double* x, double* y, int n, double* slope,
+                       double* intercept);
 
 #ifdef __cplusplus
 }

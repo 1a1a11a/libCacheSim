@@ -15,7 +15,8 @@ extern "C" {
 /**
  * create a cache handler, using the cache replacement algorithm is baked into
  * libCacheSim
- * @param cache_alg_name name of the cache replacement algorithm (case sensitive)
+ * @param cache_alg_name name of the cache replacement algorithm (case
+ * sensitive)
  * @param cc_params general parameters that are used to initialize cache, such
  * as cache_size, obj_id_type, support_ttl
  * @param params a cache eviction algorithm specific params
@@ -28,7 +29,8 @@ cache_t *create_cache(const char *const cache_alg_name,
 /**
  * create a cache handler, using the cache replacement algorithm is baked into
  * libCacheSim
- * @param cache_alg_name name of the cache replacement algorithm (case sensitive)
+ * @param cache_alg_name name of the cache replacement algorithm (case
+ * sensitive)
  * @param cc_params general parameters that are used to initialize cache, such
  * as cache_size, obj_id_type, support_ttl
  * @param params a cache eviction algorithm specific params
@@ -44,7 +46,8 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
  * shared library and stored in the working directory and the name is <alg>.so
  * where alg is the name of the cache replacement algorithm passed to this
  * function
- * @param cache_alg_name name of the cache replacement algorithm (case sensitive)
+ * @param cache_alg_name name of the cache replacement algorithm (case
+ * sensitive)
  * @param cc_params general parameters that are used to initialize cache, such
  * as cache_size, obj_id_type, support_ttl
  * @param params a cache eviction algorithm specific params

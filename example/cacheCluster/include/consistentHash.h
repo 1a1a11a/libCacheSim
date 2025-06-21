@@ -9,11 +9,11 @@
 extern "C" {
 #endif
 
+#include <inttypes.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 #define N_VNODE_PER_SERVER 160
 

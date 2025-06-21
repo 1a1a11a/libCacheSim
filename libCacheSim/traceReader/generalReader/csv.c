@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <strings.h>
 
-#include "../../../libCacheSim/include/libCacheSim/macro.h"
-#include "../../dataStructure/hash/hash.h"
 #include "../readerInternal.h"
+#include "dataStructure/hash/hash.h"
+#include "libCacheSim/macro.h"
 #include "libcsv.h"
 
 #ifdef __cplusplus

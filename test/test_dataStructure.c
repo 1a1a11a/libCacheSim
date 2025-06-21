@@ -2,9 +2,9 @@
 // Created by Juncheng Yang on 11/24/24.
 //
 
-#include "../libCacheSim/dataStructure/hashtable/chainedHashTableV2.h"
-#include "../libCacheSim/dataStructure/hashtable/hashtable.h"
 #include "common.h"
+#include "dataStructure/hashtable/chainedHashTableV2.h"
+#include "dataStructure/hashtable/hashtable.h"
 
 void test_chained_hashtable_v2(gconstpointer user_data) {
   set_rand_seed(rand());

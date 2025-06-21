@@ -17,8 +17,8 @@
 
 #include <string.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -519,7 +519,6 @@ static void _ARC_evict_L2_ghost(cache_t *cache, const request_t *req) {
 static void _ARC_replace(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
-
   bool cond1 = params->L1_data_size > 0;
   bool cond2 = params->L1_data_size > params->p;
   bool cond3 =
@@ -773,7 +772,6 @@ static inline void _ARC_sanity_check_full(cache_t *cache,
 }
 
 static bool ARC_get_debug(cache_t *cache, const request_t *req) {
-
   cache->n_req += 1;
 
   _ARC_sanity_check_full(cache, req);

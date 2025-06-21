@@ -4,6 +4,7 @@
 //
 
 #include <inttypes.h>
+#include <stddef.h>
 
 /**
  * convert size to an appropriate string with unit, for example 1048576 will be

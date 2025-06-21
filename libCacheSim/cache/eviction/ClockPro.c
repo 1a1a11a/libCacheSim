@@ -5,8 +5,8 @@
 // Inspirations are taken from
 // https://blog.yufeng.info/wp-content/uploads/2010/08/8-Clock-Pro.pdf
 //
-// compared with https://bitbucket.org/SamiLehtinen/pyclockpro/src/master/ using --ignore-obj-size
-// using cloudPhysicsIO as traces
+// compared with https://bitbucket.org/SamiLehtinen/pyclockpro/src/master/ using
+// --ignore-obj-size using cloudPhysicsIO as traces
 //
 //    Size	      This Implementation	PyClockPro
 //   ======	    =======================	==========
@@ -21,9 +21,11 @@
 //    44076	            0.4384	          0.4302
 //    48974	            0.4301	          0.4301
 //
-// one thing to note is the difference in the clock hand movement (this implementation vs PyClockPro)
-// this implementation checks the object pointed by the hand first before moving the hand (as per the material in blog.yufeng.info)
-// PyClockPro implementation moves the hand first before checking the object pointed by the hand
+// one thing to note is the difference in the clock hand movement (this
+// implementation vs PyClockPro) this implementation checks the object pointed
+// by the hand first before moving the hand (as per the material in
+// blog.yufeng.info) PyClockPro implementation moves the hand first before
+// checking the object pointed by the hand
 //
 // libCacheSim
 //
@@ -31,14 +33,14 @@
 // Copyright © 2025 Marthen. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//#define USE_BELADY
+// #define USE_BELADY
 #undef USE_BELADY
 
 typedef struct ClockPro_params {
@@ -64,10 +66,12 @@ static const char *DEFAULT_PARAMS = "init-ref=0,init-ratio-cold=1";
 // ****                                                               ****
 // ***********************************************************************
 
-static void ClockPro_parse_params(cache_t *cache, const char *cache_specific_params);
+static void ClockPro_parse_params(cache_t *cache,
+                                  const char *cache_specific_params);
 static void ClockPro_free(cache_t *cache);
 static bool ClockPro_get(cache_t *cache, const request_t *req);
-static cache_obj_t *ClockPro_find(cache_t *cache, const request_t *req, bool update_cache);
+static cache_obj_t *ClockPro_find(cache_t *cache, const request_t *req,
+                                  bool update_cache);
 static cache_obj_t *ClockPro_insert(cache_t *cache, const request_t *req);
 static void ClockPro_evict(cache_t *cache, const request_t *req);
 static bool ClockPro_remove(cache_t *cache, obj_id_t obj_id);
@@ -84,13 +88,15 @@ static void ClockPro_run_hot(cache_t *cache);
 // ***********************************************************************
 
 /**
-* @brief initialize a ClockPro cache
-*
-* @param ccache_params some common cache parameters
-* @param cache_specific_params Clock specific parameters as a string
-*/
-cache_t *ClockPro_init(const common_cache_params_t ccache_params, const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("ClockPro", ccache_params, cache_specific_params);
+ * @brief initialize a ClockPro cache
+ *
+ * @param ccache_params some common cache parameters
+ * @param cache_specific_params Clock specific parameters as a string
+ */
+cache_t *ClockPro_init(const common_cache_params_t ccache_params,
+                       const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("ClockPro", ccache_params, cache_specific_params);
   cache->cache_init = ClockPro_init;
   cache->cache_free = ClockPro_free;
   cache->get = ClockPro_get;
@@ -112,7 +118,8 @@ cache_t *ClockPro_init(const common_cache_params_t ccache_params, const char *ca
   params->mem_cold = 0;
   params->mem_test = 0;
   params->mem_hot = 0;
-  params->mem_cold_max = cache->cache_size; // default to the cache size (fallback)
+  params->mem_cold_max =
+      cache->cache_size;  // default to the cache size (fallback)
   params->ht_test = create_hashtable(HASH_POWER_DEFAULT);
 
   ClockPro_parse_params(cache, DEFAULT_PARAMS);
@@ -174,7 +181,8 @@ static bool ClockPro_get(cache_t *cache, const request_t *req) {
  * and if the object is expired, it is removed from the cache
  * @return true on hit, false on miss
  */
-static cache_obj_t *ClockPro_find(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *ClockPro_find(cache_t *cache, const request_t *req,
+                                  const bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
   if (obj != NULL && update_cache) {
@@ -210,7 +218,7 @@ static cache_obj_t *ClockPro_insert(cache_t *cache, const request_t *req) {
   obj->clockpro.referenced = params->init_ref;
   obj->clockpro.status = CLOCKPRO_COLD;
 
-  if (params->hand_hot == NULL) { // Initial insertion
+  if (params->hand_hot == NULL) {  // Initial insertion
     prepend_obj_to_head(&params->hand_hot, &params->hand_hot, obj);
     params->hand_hot->queue.next = params->hand_hot;
     params->hand_hot->queue.prev = params->hand_hot;
@@ -310,7 +318,8 @@ static bool ClockPro_remove(cache_t *cache, const obj_id_t obj_id) {
 
 static bool ClockPro_can_insert(cache_t *cache, const request_t *req) {
   ClockPro_params_t *params = (ClockPro_params_t *)cache->eviction_params;
-  return cache_can_insert_default(cache, req) && (params->mem_cold + req->obj_size <= params->mem_cold_max);
+  return cache_can_insert_default(cache, req) &&
+         (params->mem_cold + req->obj_size <= params->mem_cold_max);
 }
 
 static void ClockPro_run_test(cache_t *cache) {
@@ -439,7 +448,8 @@ static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
     }
   }
 
-  while ((params->mem_hot + obj->obj_size) > (cache->cache_size - params->mem_cold_max)) {
+  while ((params->mem_hot + obj->obj_size) >
+         (cache->cache_size - params->mem_cold_max)) {
     ClockPro_run_hot(cache);
   }
 
@@ -455,7 +465,7 @@ static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
   obj->clockpro.referenced = params->init_ref;
   cache_obj_t *hand_hot_next = params->hand_hot->queue.next;
   move_obj_to_tail(&hand_hot_next, &params->hand_hot, obj);
-  obj->queue.next  = hand_hot_next;
+  obj->queue.next = hand_hot_next;
   hand_hot_next->queue.prev = obj;
 
   params->hand_hot = obj->queue.next;
@@ -474,13 +484,15 @@ static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
 // ****                  parameter set up functions                   ****
 // ****                                                               ****
 // ***********************************************************************
-static const char *ClockPro_current_params(cache_t *cache, ClockPro_params_t *params) {
+static const char *ClockPro_current_params(cache_t *cache,
+                                           ClockPro_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "init-ref=%d\n", params->init_ref);
   return params_str;
 }
 
-static void ClockPro_parse_params(cache_t *cache, const char *cache_specific_params) {
+static void ClockPro_parse_params(cache_t *cache,
+                                  const char *cache_specific_params) {
   ClockPro_params_t *params = (ClockPro_params_t *)(cache->eviction_params);
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
@@ -500,7 +512,8 @@ static void ClockPro_parse_params(cache_t *cache, const char *cache_specific_par
       const double ratio = strtod(value, &end);
       params->mem_cold_max = (int64_t)((double)cache->cache_size * ratio);
     } else if (strcasecmp(key, "print") == 0) {
-      printf("current parameters: %s\n", ClockPro_current_params(cache, params));
+      printf("current parameters: %s\n",
+             ClockPro_current_params(cache, params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

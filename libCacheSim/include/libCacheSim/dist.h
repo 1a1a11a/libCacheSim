@@ -67,8 +67,8 @@ void save_dist(reader_t *const reader, const int32_t *dist_array,
  * this function is similar to save_dist, but it uses the text format
  */
 void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
-               const int64_t array_size, const char *const ofilepath,
-               const dist_type_e dist_type);
+                   const int64_t array_size, const char *const ofilepath,
+                   const dist_type_e dist_type);
 
 /***********************************************************
  * this function is used for loading distance from the input file
@@ -81,8 +81,8 @@ int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
                    int64_t *array_size);
 
 void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
-                      const int64_t array_size, const char *const ofilepath,
-                      const dist_type_e dist_type);
+                          const int64_t array_size, const char *const ofilepath,
+                          const dist_type_e dist_type);
 
 #ifdef __cplusplus
 }

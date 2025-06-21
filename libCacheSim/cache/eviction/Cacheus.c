@@ -1,12 +1,12 @@
 /* Cacheus: FAST'21 */
 
-#include "../../include/libCacheSim/evictionAlgo/Cacheus.h"
+#include "libCacheSim/evictionAlgo/Cacheus.h"
 
 #include <assert.h>
 #include <math.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +74,8 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
   /* reduce the hash table size */
   updated_cc_params.hashpower -= 2;
 
-  cache_t *cache = cache_struct_init("Cacheus", updated_cc_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("Cacheus", updated_cc_params, cache_specific_params);
   cache->cache_init = Cacheus_init;
   cache->cache_free = Cacheus_free;
   cache->get = Cacheus_get;

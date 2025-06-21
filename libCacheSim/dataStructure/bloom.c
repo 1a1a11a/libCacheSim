@@ -13,6 +13,8 @@
  * Refer to bloom.h for documentation on the public interfaces.
  */
 
+#include "bloom.h"
+
 #include <assert.h>
 #include <fcntl.h>
 #include <math.h>
@@ -24,7 +26,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "bloom.h"
 #include "hash/hash.h"
 #define XXH_INLINE_ALL
 #include "hash/xxh3.h"

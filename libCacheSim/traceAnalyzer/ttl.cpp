@@ -8,14 +8,14 @@
 #include <string>
 #include <vector>
 
-#include "../include/libCacheSim/request.h"
+#include "libCacheSim/request.h"
 
 namespace traceAnalyzer {
 using namespace std;
 
 void TtlStat::add_req(request_t *req) {
   printf("req->ttl: %d\n", req->ttl);
-  
+
   if (req->ttl > 0) {
     auto it = ttl_cnt_.find(req->ttl);
     if (it == ttl_cnt_.end()) {

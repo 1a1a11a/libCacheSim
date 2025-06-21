@@ -6,8 +6,9 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
+#include "libCacheSim/profilerLRU.h"
+
 #include "../dataStructure/splay.h"
-#include "../include/libCacheSim/profilerLRU.h"
 
 #ifdef __cplusplus
 extern "C" {

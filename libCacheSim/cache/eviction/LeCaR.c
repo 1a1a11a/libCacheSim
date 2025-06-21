@@ -10,9 +10,9 @@
 #include <glib.h>
 #include <math.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/logging.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/logging.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -2,15 +2,13 @@
 // Created by Xiaojun Guo on 25/2/25.
 //
 
-#include "../../traceAnalyzer/analyzer.h"
 #include "../cli_reader_utils.h"
 #include "internal.h"
+#include "traceAnalyzer/analyzer.h"
 
 using namespace traceAnalyzer;
 
-
 void print_args(struct arguments *args) {
-
   printf("args: \n");
   for (int i = 0; i < N_ARGS; i++) {
     printf("%s\n", args->args[i]);
@@ -26,12 +24,14 @@ void print_args(struct arguments *args) {
   printf("profiler_str: %s\n", args->mrc_profiler_str);
   printf("mrc_profiler_params_str: %s\n", args->mrc_profiler_params_str);
 
-  for(size_t i = 0; i < args->mrc_profiler_params.profile_size.size(); i++){
+  for (size_t i = 0; i < args->mrc_profiler_params.profile_size.size(); i++) {
     printf("profile_size: %ld\n", args->mrc_profiler_params.profile_size[i]);
   }
   printf("====\n");
-  for(size_t i = 0; i < args->mrc_profiler_params.profile_wss_ratio.size(); i++){
-    printf("profile_wss_ratio: %f\n", args->mrc_profiler_params.profile_wss_ratio[i]);
+  for (size_t i = 0; i < args->mrc_profiler_params.profile_wss_ratio.size();
+       i++) {
+    printf("profile_wss_ratio: %f\n",
+           args->mrc_profiler_params.profile_wss_ratio[i]);
   }
 
   args->mrc_profiler_params.shards_params.print();
@@ -42,7 +42,9 @@ int main(int argc, char *argv[]) {
   struct arguments args;
   parse_cmd(argc, argv, &args);
 
-  mrcProfiler::MRCProfilerBase * profiler = create_mrc_profiler(args.mrc_profiler_type, args.reader, args.ofilepath, args.mrc_profiler_params);
+  mrcProfiler::MRCProfilerBase *profiler =
+      create_mrc_profiler(args.mrc_profiler_type, args.reader, args.ofilepath,
+                          args.mrc_profiler_params);
 
   profiler->run();
 

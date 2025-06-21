@@ -9,50 +9,38 @@
 #ifndef splay_h
 #define splay_h
 
-
-
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
-#define node_value(x) (((x)==NULL) ? 0 : ((x)->value))
-#define key_cmp(i,j) ((i)-(j))
+#define node_value(x) (((x) == NULL) ? 0 : ((x)->value))
+#define key_cmp(i, j) ((i) - (j))
 
 typedef long long key_type;
 
+typedef struct sTree {
+  struct sTree *left, *right;
+  key_type key;
+  long value;
+} sTree;
 
-typedef struct sTree{
-    struct sTree * left, * right;
-    key_type key;
-    long value;
-}sTree;
+static inline void free_node(sTree* t) { free(t); }
+static inline void assign_key(sTree* t, key_type k) { t->key = k; }
 
-
-static inline void free_node(sTree* t){
-    free(t);
-}
-static inline void assign_key(sTree* t, key_type k){
-    t->key=k;
-}
-
-
-sTree * splay (key_type i, sTree *t);
-sTree * insert(key_type i, sTree * t);
-sTree * splay_delete(key_type i, sTree *t);
-sTree *find_node(key_type r, sTree *t);
+sTree* splay(key_type i, sTree* t);
+sTree* insert(key_type i, sTree* t);
+sTree* splay_delete(key_type i, sTree* t);
+sTree* find_node(key_type r, sTree* t);
 void check_sTree(sTree* t);
-void print_sTree(sTree * t, int d);
+void print_sTree(sTree* t, int d);
 void free_sTree(sTree* t);
-
 
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* splay_h */

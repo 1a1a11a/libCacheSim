@@ -1,4 +1,3 @@
-#include "../libCacheSim/utils/include/mymath.h"
 #include "common.h"
 
 static const uint64_t g_req_cnt_true = 113872, g_req_byte_true = 4368040448;

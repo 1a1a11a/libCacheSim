@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../include/libCacheSim/logging.h"
+#include "libCacheSim/logging.h"
 #include "struct.h"
 #include "utils/include/linReg.h"
 

@@ -9,9 +9,9 @@
 // Created by Juncheng Yang on 3/30/21.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../dataStructure/pqueue.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "dataStructure/pqueue.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,9 +54,10 @@ static void Belady_remove_obj(cache_t *cache, cache_obj_t *obj);
  * @param cache_specific_params Belady specific parameters, should be NULL
  */
 cache_t *Belady_init(const common_cache_params_t ccache_params,
-                     
+
                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Belady", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("Belady", ccache_params, cache_specific_params);
   cache->cache_init = Belady_init;
   cache->cache_free = Belady_free;
   cache->get = Belady_get;
@@ -114,7 +115,7 @@ static bool Belady_get(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(req->next_access_vtime != -2);
   Belady_params_t *params = cache->eviction_params;
 
-  DEBUG_ASSERT(cache->n_obj == (int64_t) params->pq->size - 1);
+  DEBUG_ASSERT(cache->n_obj == (int64_t)params->pq->size - 1);
   bool ret = cache_get_base(cache, req);
 
   return ret;
@@ -227,8 +228,7 @@ static cache_obj_t *Belady_to_evict(cache_t *cache, const request_t *req) {
  * @param cache
  * @param req not used
  */
-static void Belady_evict(cache_t *cache,
-                         const request_t *req) {
+static void Belady_evict(cache_t *cache, const request_t *req) {
   Belady_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *)pqueue_pop(params->pq);
 

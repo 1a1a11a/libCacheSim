@@ -15,8 +15,7 @@ namespace CDNSimulator {
 
 bool CacheCluster::get(request_t *req) {
   // find the server idx
-  uint64_t idx =
-      ch_ring_get_server_from_uint64(req->obj_id, this->_ring);
+  uint64_t idx = ch_ring_get_server_from_uint64(req->obj_id, this->_ring);
 
   // find the server
   CacheServer &server = this->_cache_servers_vec.at(idx);

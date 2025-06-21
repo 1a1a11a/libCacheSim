@@ -3,9 +3,9 @@
 //
 
 #include "bulkChainHashTable.h"
-#include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/request.h"
-#include "../../include/libCacheSim/cacheObj.h"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/request.h"
+#include "libCacheSim/cacheObj.h"
 #include "hashtableStruct.h"
 #include <assert.h>
 #include <stdbool.h>

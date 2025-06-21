@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../../../include/libCacheSim/logging.h"
+#include "libCacheSim/logging.h"
 
 using namespace std;
 

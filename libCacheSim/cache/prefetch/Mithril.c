@@ -8,6 +8,8 @@
 //  Created by Zhelong on 23/8/15.
 //  Copyright © 2023 Zhelong. All rights reserved.
 //
+#include "libCacheSim/prefetchAlgo/Mithril.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,9 +18,7 @@
 #include <strings.h>
 #include <sys/types.h>
 
-#include "../../include/libCacheSim/prefetchAlgo.h"
-#include "../../include/libCacheSim/prefetchAlgo/Mithril.h"
-#include "glibconfig.h"
+#include "libCacheSim/prefetchAlgo.h"
 
 #define TRACK_BLOCK 192618l
 #define SANITY_CHECK 1
@@ -569,7 +569,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
 #ifdef SANITY_CHECK
     gint64 *row_in_mtable =
         GET_ROW_IN_MTABLE(Mithril_params, rmtable->mining_table->len - 1);
-    if (req->obj_id != (obj_id_t) row_in_mtable[0]) {
+    if (req->obj_id != (obj_id_t)row_in_mtable[0]) {
       ERROR("after inserting, hashtable mining not consistent %ld %ld\n",
             (long)req->obj_id, (long)row_in_mtable[0]);
       abort();
@@ -580,7 +580,7 @@ static inline void _Mithril_rec_min_support_one(cache_t *cache,
     gint64 *row_in_mtable = GET_ROW_IN_MTABLE(Mithril_params, index - 1);
 
 #ifdef SANITY_CHECK
-    if (req->obj_id != (obj_id_t) row_in_mtable[0]) {
+    if (req->obj_id != (obj_id_t)row_in_mtable[0]) {
       ERROR("ts %lu, hashtable mining found position not correct %ld %ld\n",
             (unsigned long)Mithril_params->ts, (long)req->obj_id,
             (long)row_in_mtable[0]);
@@ -715,7 +715,7 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
         gint64 *row_in_mtable = GET_ROW_IN_MTABLE(Mithril_params, -index - 1);
 
 #ifdef SANITY_CHECK
-        if (req->obj_id != (obj_id_t) row_in_mtable[0]) {
+        if (req->obj_id != (obj_id_t)row_in_mtable[0]) {
           ERROR(
               "inconsistent entry in mtable "
               "and mining hashtable current request %ld, "
@@ -766,9 +766,9 @@ static inline void _Mithril_record_entry(cache_t *cache, const request_t *req) {
         int timestamps_length = 0;
 
 #ifdef SANITY_CHECK
-        if (req->obj_id != (obj_id_t) row_in_rtable[0]) {
+        if (req->obj_id != (obj_id_t)row_in_rtable[0]) {
           ERROR("Hashtable recording found position not correct %ld %ld\n",
-                (long)req->obj_id, (long) row_in_rtable[0]);
+                (long)req->obj_id, (long)row_in_rtable[0]);
           abort();
         }
 #endif

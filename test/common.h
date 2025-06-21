@@ -18,8 +18,9 @@
 #include <sys/types.h>
 #endif
 
-#include "../libCacheSim/include/libCacheSim.h"
-#include "../libCacheSim/include/libCacheSim/prefetchAlgo.h"
+#include "libCacheSim.h"
+#include "libCacheSim/prefetchAlgo.h"
+#include "utils/include/mymath.h"
 
 #define BLOCK_UNIT_SIZE 0   // 16 * 1024
 #define DISK_SECTOR_SIZE 0  // 512

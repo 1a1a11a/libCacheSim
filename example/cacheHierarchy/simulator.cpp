@@ -16,8 +16,10 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size,
   uint64_t n_req = 0, n_hit = 0;
   std::ofstream miss_ofs(miss_output_path);
 
-  reader_init_param_t reader_init_params = {
-      .time_field = 1, .obj_id_field = 2, .obj_size_field = 3, .next_access_vtime_field = 4};
+  reader_init_param_t reader_init_params = {.time_field = 1,
+                                            .obj_id_field = 2,
+                                            .obj_size_field = 3,
+                                            .next_access_vtime_field = 4};
   // see the cacheSimulator example for using csv trace
   reader_init_params.binary_fmt_str = "<IQIQ";
   reader_t *reader =
@@ -62,9 +64,9 @@ void Simulator::output_mrc(string &algo, vector<uint64_t> cache_sizes,
   uint64_t cache_size_array[cache_sizes.size()];
   std::copy(cache_sizes.begin(), cache_sizes.end(), cache_size_array);
 
-  auto mrc = simulate_at_multi_sizes(reader, cache, cache_sizes.size(),
-                                     cache_size_array, nullptr, 0, 0,
-                                     std::thread::hardware_concurrency(), false);
+  auto mrc = simulate_at_multi_sizes(
+      reader, cache, cache_sizes.size(), cache_size_array, nullptr, 0, 0,
+      std::thread::hardware_concurrency(), false);
 
   std::ofstream mrc_ofs(mrc_output_path);
   mrc_ofs << "# L2, " << mrc[0].n_req << " req, " << mrc[0].n_req_byte

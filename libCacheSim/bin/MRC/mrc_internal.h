@@ -4,15 +4,15 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include "../../dataStructure/histogram.h"
-#include "../../dataStructure/splay.h"
-#include "../../dataStructure/splay_tuple.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/enum.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/admissionAlgo.h"
+
+#include "dataStructure/histogram.h"
+#include "dataStructure/splay.h"
+#include "dataStructure/splay_tuple.h"
+#include "libCacheSim/admissionAlgo.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/enum.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/reader.h"
 
 #define N_ARGS 4
 #define N_MAX_ALGO 16
@@ -22,7 +22,6 @@
 // Forward declaration of struct Params
 struct PARAM;
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,11 +30,11 @@ struct SHARD_arguments {
   bool verver;
   long size;
   float rate;
-  char* mrc_algo;
-  char* trace_file;
+  char *mrc_algo;
+  char *trace_file;
   char *trace_type_str;
   trace_type_e trace_type;
-  char* trace_type_params;
+  char *trace_type_params;
   bool ignore_obj_size;
   int64_t n_req;
 };
@@ -43,16 +42,16 @@ struct SHARD_arguments {
 struct PARAM {
   float rate;
   bool ver;  // 0 means fixed rate, 1 means fixed size
-  
+
   int64_t threshold;
-  //GHashTable* prio_hash;
-  sTree_tuple* prio_tree;  // root of the splay tree
-  sTree* distance_tree;
-  ReuseHistogram* data;
-  GHashTable* lookup_hash;
+  // GHashTable* prio_hash;
+  sTree_tuple *prio_tree;  // root of the splay tree
+  sTree *distance_tree;
+  ReuseHistogram *data;
+  GHashTable *lookup_hash;
   reader_t *reader;
   int64_t (*compute_distance)(struct PARAM *, request_t *, uint64_t);
-  void (*mrc_algo)(struct PARAM*, char* path);
+  void (*mrc_algo)(struct PARAM *, char *path);
 };
 
 struct MINI_arguments {
@@ -88,20 +87,21 @@ struct MINI_arguments {
   /* arguments generated */
   reader_t *reader;
   cache_t *caches[N_MAX_ALGO * N_MAX_CACHE_SIZE];
-
 };
 
-int64_t compute_distance_fixed_rate(struct PARAM *params, request_t *req, uint64_t timestamp);
+int64_t compute_distance_fixed_rate(struct PARAM *params, request_t *req,
+                                    uint64_t timestamp);
 
-int64_t compute_distance_fixed_size(struct PARAM *params, request_t *req, uint64_t timestamp);
+int64_t compute_distance_fixed_size(struct PARAM *params, request_t *req,
+                                    uint64_t timestamp);
 
-void generate_shards_mrc(struct PARAM* params, char* path);
+void generate_shards_mrc(struct PARAM *params, char *path);
 
-cache_stat_t * generate_mini_mrc(struct MINI_arguments* args);
+cache_stat_t *generate_mini_mrc(struct MINI_arguments *args);
 
 void parse_mrc_cmd(int argc, char **argv, struct PARAM *args);
 
-void parse_mini_cmd(int argc, char* argv[], struct MINI_arguments* args);
+void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args);
 
 #ifdef __cplusplus
 }

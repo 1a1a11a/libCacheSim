@@ -5,12 +5,12 @@
 #include <string>
 #include <vector>
 
-#include "../../include/libCacheSim/const.h"
-#include "../../mrcProfiler/mrcProfiler.h"
-#include "../../utils/include/mystr.h"
-#include "../../utils/include/mysys.h"
 #include "../cli_reader_utils.h"
 #include "./internal.h"
+#include "libCacheSim/const.h"
+#include "mrcProfiler/mrcProfiler.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
 
 #ifdef __cplusplus
 extern "C" {

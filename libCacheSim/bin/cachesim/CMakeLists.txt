@@ -9,6 +9,7 @@ set(cachesim_sources_c
     ../cli_reader_utils.c
 )
 add_executable(cachesim ${cachesim_sources_c})
+target_include_directories(cachesim PRIVATE ../)
 target_link_libraries(cachesim ${all_modules} ${dependency_libs})
 target_link_options(cachesim PRIVATE "-Wl,--export-dynamic")
 install(TARGETS cachesim RUNTIME DESTINATION bin)

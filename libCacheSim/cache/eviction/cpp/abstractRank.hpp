@@ -12,9 +12,9 @@
 #include <unordered_set>
 #include <vector>
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/cache.h"
-#include "../../../include/libCacheSim/cacheObj.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/cacheObj.h"
 
 using namespace std;
 
@@ -33,16 +33,20 @@ struct pq_node_type {
     last_request_vtime = -1;
   };
 
-  pq_node_type(cache_obj_t *obj_param, double priority_param, int64_t last_request_vtime_param)
-      : obj(obj_param), priority(priority_param), last_request_vtime(last_request_vtime_param) {};
+  pq_node_type(cache_obj_t *obj_param, double priority_param,
+               int64_t last_request_vtime_param)
+      : obj(obj_param),
+        priority(priority_param),
+        last_request_vtime(last_request_vtime_param){};
 
   void print() const {
-    printf("obj %lu, priority %f, last_request_vtime %ld\n", (unsigned long)obj->obj_id, priority,
-           (long)last_request_vtime);
+    printf("obj %lu, priority %f, last_request_vtime %ld\n",
+           (unsigned long)obj->obj_id, priority, (long)last_request_vtime);
   }
 
   bool operator<(const pq_node_type &rhs) const {
-    DEBUG_ASSERT(this->last_request_vtime != rhs.last_request_vtime || this->obj->obj_id == rhs.obj->obj_id);
+    DEBUG_ASSERT(this->last_request_vtime != rhs.last_request_vtime ||
+                 this->obj->obj_id == rhs.obj->obj_id);
     if (this->priority == rhs.priority) {
       /* use FIFO when objects have the same priority */
       return this->last_request_vtime < rhs.last_request_vtime;

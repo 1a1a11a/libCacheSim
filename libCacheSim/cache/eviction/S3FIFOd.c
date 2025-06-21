@@ -17,8 +17,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +54,7 @@ static void S3FIFOd_free(cache_t *cache);
 static bool S3FIFOd_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *S3FIFOd_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                                 const bool update_cache);
 static cache_obj_t *S3FIFOd_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *S3FIFOd_to_evict(cache_t *cache, const request_t *req);
 static void S3FIFOd_evict(cache_t *cache, const request_t *req);
@@ -63,7 +63,7 @@ static inline int64_t S3FIFOd_get_occupied_byte(const cache_t *cache);
 static inline int64_t S3FIFOd_get_n_obj(const cache_t *cache);
 static inline bool S3FIFOd_can_insert(cache_t *cache, const request_t *req);
 static void S3FIFOd_parse_params(cache_t *cache,
-                                const char *cache_specific_params);
+                                 const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -72,8 +72,9 @@ static void S3FIFOd_parse_params(cache_t *cache,
 // ***********************************************************************
 
 cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("S3FIFOd", ccache_params, cache_specific_params);
+                      const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("S3FIFOd", ccache_params, cache_specific_params);
   cache->cache_init = S3FIFOd_init;
   cache->cache_free = S3FIFOd_free;
   cache->get = S3FIFOd_get;
@@ -259,11 +260,11 @@ static bool S3FIFOd_get(cache_t *cache, const request_t *req) {
   // static __thread int64_t last_print_rtime = 0;
   // if (req->clock_time - last_print_rtime >= 24 * 3600) {
   //   printf(
-  //       "%ld %ld day: evictHit %d %d, fifo size %ld/%ld main size %ld/%ld, ghost "
-  //       "size %ld/%ld\n",
-  //       cache->n_req, req->clock_time / 86400, params->fifo_eviction_hit,
-  //       params->main_eviction_hit,
-  //       params->fifo->get_occupied_byte(params->fifo), params->fifo->cache_size,
+  //       "%ld %ld day: evictHit %d %d, fifo size %ld/%ld main size %ld/%ld,
+  //       ghost " "size %ld/%ld\n", cache->n_req, req->clock_time / 86400,
+  //       params->fifo_eviction_hit, params->main_eviction_hit,
+  //       params->fifo->get_occupied_byte(params->fifo),
+  //       params->fifo->cache_size,
   //       params->main_cache->get_occupied_byte(params->main_cache),
   //       params->main_cache->cache_size,
   //       params->fifo_ghost->get_occupied_byte(params->fifo_ghost),
@@ -293,7 +294,7 @@ static bool S3FIFOd_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *S3FIFOd_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                                 const bool update_cache) {
   S3FIFOd_params_t *params = (S3FIFOd_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the fifo and main caches
@@ -513,7 +514,8 @@ static inline int64_t S3FIFOd_get_n_obj(const cache_t *cache) {
 static inline bool S3FIFOd_can_insert(cache_t *cache, const request_t *req) {
   S3FIFOd_params_t *params = (S3FIFOd_params_t *)cache->eviction_params;
 
-  return req->obj_size <= params->fifo->cache_size && cache_can_insert_default(cache, req);
+  return req->obj_size <= params->fifo->cache_size &&
+         cache_can_insert_default(cache, req);
 }
 
 // ***********************************************************************
@@ -529,7 +531,7 @@ static const char *S3FIFOd_current_params(S3FIFOd_params_t *params) {
 }
 
 static void S3FIFOd_parse_params(cache_t *cache,
-                                const char *cache_specific_params) {
+                                 const char *cache_specific_params) {
   S3FIFOd_params_t *params = (S3FIFOd_params_t *)(cache->eviction_params);
 
   char *params_str = strdup(cache_specific_params);

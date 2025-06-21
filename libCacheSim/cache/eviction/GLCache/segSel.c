@@ -2,8 +2,8 @@
    it uses FIFO, weighted FIFO, rand, ranking to choose segments
  */
 
-#include "../../../utils/include/mymath.h"
 #include "utils.h"
+#include "utils/include/mymath.h"
 
 static inline int cmp_seg(const void *p1, const void *p2) {
   segment_t *seg1 = *(segment_t **)p1;

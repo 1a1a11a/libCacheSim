@@ -2,9 +2,9 @@
  * a spatial sampler that samples sampling_ratio of objects from the trace
  **/
 
-#include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/sampling.h"
-#include "../../dataStructure/hash/hash.h"
+#include "dataStructure/hash/hash.h"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/sampling.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -12,18 +12,16 @@ extern "C" {
 
 bool spatial_sample(sampler_t *sampler, request_t *req) {
   uint64_t hash_value = req->hv;
-  if(sampler->sampling_salt == 0){
+  if (sampler->sampling_salt == 0) {
     if (hash_value == 0) {
       hash_value = get_hash_value_int_64(&(req->obj_id));
       req->hv = hash_value;
     }
-  }
-  else{
+  } else {
     // hacked: for some sampeld trace, the hash value mod 10 is always 0.
     int64_t key = req->obj_id ^ sampler->sampling_salt;
     hash_value = get_hash_value_int_64(&(key));
   }
-
 
   return hash_value % sampler->sampling_ratio_inv == 0;
 }
@@ -65,7 +63,6 @@ sampler_t *create_spatial_sampler(double sampling_ratio) {
   VVERBOSE("create spatial sampler with ratio %lf\n", sampling_ratio);
   return s;
 }
-
 
 void set_spatial_sampler_salt(sampler_t *sampler, uint64_t salt) {
   if (sampler->type != SPATIAL_SAMPLER) {

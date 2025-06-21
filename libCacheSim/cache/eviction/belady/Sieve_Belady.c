@@ -1,7 +1,7 @@
 
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/cache.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/cache.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,7 +129,6 @@ static bool Sieve_Belady_get(cache_t *cache, const request_t *req) {
     params->n_miss++;
   }
 
-
   // if (cache->n_req % 100000 == 0) {
   //   // printf("sieve %ld %ld %lf\n", cache->cache_size, cache->n_req,
   //   //        (double)params->n_new_obj / (double)cache->cache_size);
@@ -147,11 +146,13 @@ static bool Sieve_Belady_get(cache_t *cache, const request_t *req) {
 // ***********************************************************************
 
 static bool should_insert(cache_t *cache, const int64_t next_access_vtime) {
-  Sieve_Belady_params_t *params = (Sieve_Belady_params_t *)cache->eviction_params;
+  Sieve_Belady_params_t *params =
+      (Sieve_Belady_params_t *)cache->eviction_params;
   double miss_ratio = (double)(params->n_miss) / (double)(cache->n_req);
   int64_t n_req_thresh = (double)(cache->cache_size) / miss_ratio;
-  // printf("%ld %ld %lf %ld\n", 
-  //        next_access_vtime - cache->n_req, cache->cache_size, miss_ratio, n_req_thresh);
+  // printf("%ld %ld %lf %ld\n",
+  //        next_access_vtime - cache->n_req, cache->cache_size, miss_ratio,
+  //        n_req_thresh);
   if (next_access_vtime - cache->n_req <= n_req_thresh) {
     return true;
   } else {

@@ -8,11 +8,11 @@
 extern "C" {
 #endif
 
-#include "../../include/config.h"
-#include "../../include/libCacheSim/cacheObj.h"
-#include "../../include/libCacheSim/request.h"
-#include "../../utils/include/mymath.h"
 #include "hashtableStruct.h"
+#include "include/config.h"
+#include "libCacheSim/cacheObj.h"
+#include "libCacheSim/request.h"
+#include "utils/include/mymath.h"
 
 #if HASHTABLE_TYPE == CHAINED_HASHTABLE
 #include "chainedHashTable.h"

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+
 #include "logging.h"
 
 namespace analysis {
@@ -16,22 +17,17 @@ class Heatmap {
   };
 
   const std::string heatmap_type_names[INVALID_HEATMAP + 1] = {
-      "working_set_reuse_heatmap",
-      "size_distribution_heatmap",
-      "reuse_distance_heatmap",
-      "invalid_heatmap"
-  };
+      "working_set_reuse_heatmap", "size_distribution_heatmap",
+      "reuse_distance_heatmap", "invalid_heatmap"};
 
  public:
   double **heatval;
   int32_t x_dim, y_dim;
   bool initialized = false;
 
-  Heatmap(int32_t x_dim, int32_t y_dim) {
-    set_dim(x_dim, y_dim);
-  }
+  Heatmap(int32_t x_dim, int32_t y_dim) { set_dim(x_dim, y_dim); }
 
-  Heatmap() {};
+  Heatmap(){};
 
   void set_dim(int32_t x_dim_, int32_t y_dim_) {
     if (initialized) {
@@ -50,9 +46,7 @@ class Heatmap {
     initialized = true;
   }
 
-  inline void set_val(int32_t x, int32_t y, double v) {
-    heatval[x][y] = v;
-  }
+  inline void set_val(int32_t x, int32_t y, double v) { heatval[x][y] = v; }
 
   void save_heatmap(std::string ofile_path) {
     std::ofstream ofs(ofile_path, std::ios::out);
@@ -71,12 +65,11 @@ class Heatmap {
   }
 
   ~Heatmap() {
-    if (!initialized)
-      return;
+    if (!initialized) return;
     for (int i = 0; i < x_dim; i++) {
       delete[] heatval[i];
     }
     delete heatval;
   }
 };
-}// namespace analysis
+}  // namespace analysis

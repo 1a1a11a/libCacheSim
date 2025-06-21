@@ -9,7 +9,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/libCacheSim/const.h"
+#include "libCacheSim/const.h"
 
 /**
  * convert size to an appropriate string with unit, for example 1048576 will be

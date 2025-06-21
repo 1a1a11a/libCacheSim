@@ -99,8 +99,9 @@ sTree_tuple *splay_t(splay_key_type_t i, sTree_tuple *t) {
 
   // TODO: there should be a better way to do this!!!!!!!!!
 
-  l_size += node_value_t(t->left);  /* Now l_size and r_size are the sizes of */
-  r_size += node_value_t(t->right); /* the left and right sTrees we just built.*/
+  l_size += node_value_t(t->left); /* Now l_size and r_size are the sizes of */
+  r_size +=
+      node_value_t(t->right); /* the left and right sTrees we just built.*/
   t->value = l_size + r_size + 1;
 
   l->right = r->left = NULL;
@@ -168,12 +169,14 @@ sTree_tuple *insert_t(splay_key_type_t i, sTree_tuple *t) {
     return new;
   }
   t = splay_t(i, t);
-  if (key_cmp_t(i, t->key) < 0 || ((key_cmp_t(i, t->key) == 0) && (i->L < t->key->L))) {
+  if (key_cmp_t(i, t->key) < 0 ||
+      ((key_cmp_t(i, t->key) == 0) && (i->L < t->key->L))) {
     new->left = t->left;
     new->right = t;
     t->left = NULL;
     t->value = 1 + node_value_t(t->right);
-  } else if (key_cmp_t(i, t->key) > 0 || ((key_cmp_t(i, t->key) == 0) && (i->L > t->key->L))) {
+  } else if (key_cmp_t(i, t->key) > 0 ||
+             ((key_cmp_t(i, t->key) == 0) && (i->L > t->key->L))) {
     new->right = t->right;
     new->left = t;
     t->right = NULL;
@@ -231,7 +234,8 @@ sTree_tuple *splay_delete_t(splay_key_type_t i, sTree_tuple *t) {
     }
 
     parent = current;
-    if (key_cmp_t(i, current->key) < 0 || (key_cmp_t(i, current->key) == 0 && i->L < current->key->L))
+    if (key_cmp_t(i, current->key) < 0 ||
+        (key_cmp_t(i, current->key) == 0 && i->L < current->key->L))
       current = current->left;
     else
       current = current->right;
@@ -279,7 +283,8 @@ void print_sTree_t(sTree_tuple *t, int d) {
 }
 
 void check_sTree_t(sTree_tuple *t) {
-  /* check the value of sTree node, make sure all values are correct in the sTree */
+  /* check the value of sTree node, make sure all values are correct in the
+   * sTree */
   if (t == NULL) return;
   assert(node_value_t(t) == node_value_t(t->left) + node_value_t(t->right) + 1);
   if (t->left != NULL) check_sTree_t(t->left);

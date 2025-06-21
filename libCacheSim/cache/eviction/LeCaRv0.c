@@ -11,8 +11,8 @@
 
 #include <math.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,7 +79,8 @@ static inline int64_t LeCaRv0_get_occupied_byte(const cache_t *cache) {
  */
 cache_t *LeCaRv0_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LeCaRv0", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LeCaRv0", ccache_params, cache_specific_params);
   cache->cache_init = LeCaRv0_init;
   cache->cache_free = LeCaRv0_free;
   cache->get = LeCaRv0_get;

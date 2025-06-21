@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+
 #include <algorithm>
 #include <fstream>
 #include <functional>
@@ -15,9 +16,9 @@
 #include <string>
 #include <vector>
 
-#include "../../dataStructure/robin_hood.h"
-#include "../../include/libCacheSim/request.h"
 #include "../utils/include/utils.h"
+#include "dataStructure/robin_hood.h"
+#include "libCacheSim/request.h"
 
 namespace traceAnalyzer {
 

@@ -5,7 +5,7 @@
 #include <cmath>
 #include <cstdint>
 
-#include "../../utils/include/mymath.h"
+#include "utils/include/mymath.h"
 
 #define MAX_MODULE 10000000
 

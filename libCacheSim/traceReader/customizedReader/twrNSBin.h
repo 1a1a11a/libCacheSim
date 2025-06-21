@@ -15,8 +15,8 @@
 
 #pragma once
 
-#include "../../include/libCacheSim/reader.h"
 #include "binaryUtils.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {

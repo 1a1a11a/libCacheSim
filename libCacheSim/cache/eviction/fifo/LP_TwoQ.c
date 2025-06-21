@@ -12,8 +12,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,7 +72,8 @@ static void LP_TwoQ_parse_params(cache_t *cache,
  */
 cache_t *LP_TwoQ_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LP-TwoQv2", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LP-TwoQv2", ccache_params, cache_specific_params);
   cache->cache_init = LP_TwoQ_init;
   cache->cache_free = LP_TwoQ_free;
   cache->get = LP_TwoQ_get;

@@ -5,6 +5,7 @@
 #ifndef WEBCACHESIM_UTILS_H
 #define WEBCACHESIM_UTILS_H
 
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 
@@ -55,6 +56,6 @@ inline int get_n_fields(const std::string& filename) {
     ++object_metric;                                        \
   }
 
-//#define LOG_SAMPLE_RATE 0.01
+// #define LOG_SAMPLE_RATE 0.01
 
 #endif  // WEBCACHESIM_UTILS_H
