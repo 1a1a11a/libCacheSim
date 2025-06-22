@@ -20,7 +20,8 @@ class ReuseDistribution {
                              int rtime_granularity_param = 5,
                              int vtime_granularity_param = 1000)
       : time_window_(time_window_param),
-        rtime_granularity_(rtime_granularity_param) {
+        rtime_granularity_(rtime_granularity_param),
+        vtime_granularity_(vtime_granularity_param) {
     turn_on_stream_dump(output_path);
   };
 
@@ -47,7 +48,7 @@ class ReuseDistribution {
   const double log_log_base_ = log(log_base_);
   const int time_window_;
   const int rtime_granularity_;
-  // const int vtime_granularity_;  // unused
+  const int vtime_granularity_;
   int64_t next_window_ts_ = -1;
 
   std::vector<uint32_t> window_reuse_rtime_req_cnt_;

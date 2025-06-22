@@ -46,6 +46,7 @@ main() {
 		sudo apt install -yqq nodejs npm
 	# trunk-ignore(shellcheck/SC2312)
 	elif [[ $(uname -a) == *"Darwin"* ]]; then
+		# note that clang-format version on macOS might be newer than the one in ubuntu, and it can cause different formatting results
 		brew install gdb clang-format flock nodejs npm
 	elif grep -qi 'microsoft' /proc/version 2>/dev/null; then
 		# WSL detection
