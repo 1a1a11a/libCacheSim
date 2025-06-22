@@ -41,20 +41,6 @@ else()
     message(FATAL_ERROR "unsupported operating system ${CMAKE_SYSTEM_NAME}")
 endif()
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-
-    if(LOG_LEVEL STREQUAL "NONE")
-        set(LOG_LEVEL INFO)
-    endif()
-elseif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    if(LOG_LEVEL STREQUAL "NONE")
-        set(LOG_LEVEL DEBUG)
-    endif()
-else()
-    set(LOG_LEVEL INFO)
-endif()
-
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 
 if(SUPPORT_TTL)
@@ -67,7 +53,15 @@ endif()
 
 string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
 
-if(LOG_LEVEL_LOWER STREQUAL "verbose")
+if(LOG_LEVEL_LOWER STREQUAL "")
+    if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+        message(STATUS "LOG_LEVEL is not set, use DEBUG as default for debug build")
+        add_compile_definitions(LOGLEVEL=6)
+    else()
+        message(STATUS "LOG_LEVEL is not set, use INFO as default for release build")
+        add_compile_definitions(LOGLEVEL=7)
+    endif()
+elseif(LOG_LEVEL_LOWER STREQUAL "verbose")
     add_compile_definitions(LOGLEVEL=5)
 elseif(LOG_LEVEL_LOWER STREQUAL "debug")
     add_compile_definitions(LOGLEVEL=6)
@@ -77,14 +71,17 @@ elseif(LOG_LEVEL_LOWER STREQUAL "warn")
     add_compile_definitions(LOGLEVEL=8)
 elseif(LOG_LEVEL_LOWER STREQUAL "error")
     add_compile_definitions(LOGLEVEL=9)
-
-# default none is info
-elseif(LOG_LEVEL_LOWER STREQUAL "none")
-    add_compile_definitions(LOGLEVEL=7)
 else()
     message(WARNING "unknown log level ${LOG_LEVEL}, use INFO as default")
     add_compile_definitions(LOGLEVEL=7)
 endif()
+
+
+if(NOT CMAKE_BUILD_TYPE)
+    # we can also consider RelWithDebInfo, but it will be too slow for release build
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 
 # Define shared compiler flags for all targets
 set(LIBCACHESIM_C_FLAGS 
