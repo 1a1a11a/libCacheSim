@@ -20,10 +20,11 @@ jobs:
       - name: Prepare
         run: bash scripts/install_dependency.sh
       - name: Build
-        run: bash scripts/install_libcachesim.sh
-      - name: Run
-        continue-on-error: true
-        run: make test
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: |
+          ctest -C ${{env.BUILD_TYPE}} --output-on-failure
 
   ubuntu:
     runs-on: ubuntu-latest
