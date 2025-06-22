@@ -13,8 +13,6 @@ jobs:
   macos:
     name: macos / clang
     runs-on: macos-latest
-    env:
-      CC: clang
     steps:
       - uses: actions/checkout@v4
       - name: Prepare
