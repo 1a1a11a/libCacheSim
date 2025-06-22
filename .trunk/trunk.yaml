@@ -37,6 +37,7 @@ lint:
     - svgo@3.3.2
     - trufflehog@3.89.2
     - yamllint@1.37.1
+    - eslint@8.56.0
 actions:
   disabled:
     - trunk-announce
