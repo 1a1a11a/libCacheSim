@@ -78,24 +78,21 @@ extern "C" {
     (b) = _tmp;               \
   } while (0)
 
-#define CHECK_CONDITION(a, op, b, FMT, ...)  \
+#define CHECK_CONDITION(a, op, b, ...)       \
   do {                                       \
     if ((a)op(b)) {                          \
       printf("%s: %d ", __FILE__, __LINE__); \
-      printf(FMT, ##__VA_ARGS__);            \
+      printf(__VA_ARGS__);                   \
       fflush(stdout);                        \
       abort();                               \
     }                                        \
   } while (0)
 
-#define ASSERT_NOT_NULL(x, FMT, ...) \
-  CHECK_CONDITION(x, ==, NULL, FMT, ##__VA_ARGS__)
+#define ASSERT_NOT_NULL(x, ...) CHECK_CONDITION(x, ==, NULL, __VA_ARGS__)
 
-#define ASSERT_EQUAL(a, b, FMT, ...) \
-  CHECK_CONDITION(a, !=, b, FMT, ##__VA_ARGS__)
-#define ASSERT_TRUE(x, FMT, ...) \
-  CHECK_CONDITION(x, !=, true, FMT, ##__VA_ARGS__)
-#define ASSERT_ZERO(x, FMT, ...) CHECK_CONDITION(a, !=, 0, FMT, ##__VA_ARGS__)
+#define ASSERT_EQUAL(a, b, ...) CHECK_CONDITION(a, !=, b, __VA_ARGS__)
+#define ASSERT_TRUE(x, ...) CHECK_CONDITION(x, !=, true, __VA_ARGS__)
+#define ASSERT_ZERO(x, ...) CHECK_CONDITION(x, !=, 0, __VA_ARGS__)
 
 #if LOGLEVEL < INFO_LEVEL
 #define DEBUG_ASSERT(x) \
@@ -126,24 +123,24 @@ extern "C" {
 #define THIS_IS_DEBUG3_FUNC
 #endif
 
-#define PRINT_ONCE(FMT, ...)      \
-  do {                            \
-    static bool printed = false;  \
-    if (!printed) {               \
-      printf(FMT, ##__VA_ARGS__); \
-      printed = true;             \
-      fflush(stdout);             \
-    }                             \
+#define PRINT_ONCE(...)          \
+  do {                           \
+    static bool printed = false; \
+    if (!printed) {              \
+      printf(__VA_ARGS__);       \
+      printed = true;            \
+      fflush(stdout);            \
+    }                            \
   } while (0)
 
-#define PRINT_N_TIMES(N, FMT, ...) \
-  do {                             \
-    static int n_printed = 0;      \
-    if (n_printed < N) {           \
-      printf(FMT, ##__VA_ARGS__);  \
-      n_printed += 1;              \
-      fflush(stdout);              \
-    }                              \
+#define PRINT_N_TIMES(N, ...) \
+  do {                        \
+    static int n_printed = 0; \
+    if (n_printed < N) {      \
+      printf(__VA_ARGS__);    \
+      n_printed += 1;         \
+      fflush(stdout);         \
+    }                         \
   } while (0)
 
 /*  count the number of one’s(set bits) in an integer */

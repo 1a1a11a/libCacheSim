@@ -7,4 +7,4 @@ set(lesscache_sources_c
 )
 
 add_executable(lesscache ${lesscache_sources_c})
-target_link_libraries(lesscache ${all_modules} ${dependency_libs})
+target_link_libraries(lesscache ${core_libs} ${dependency_libs})

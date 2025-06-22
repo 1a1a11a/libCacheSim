@@ -432,7 +432,7 @@ static void SLRUv0_print_cache(cache_t *cache) {
     cache_obj_t *obj =
         ((LRU_params_t *)params->LRUs[i]->eviction_params)->q_head;
     while (obj) {
-      printf("%ld(%lu)->", (long)obj->obj_id, obj->obj_size);
+      printf("%ld(%lld)->", (long)obj->obj_id, (long long)obj->obj_size);
       obj = obj->queue.next;
     }
     printf(" | ");

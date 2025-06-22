@@ -68,7 +68,7 @@ void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
   fprintf(file, "Distance,Frequency\n");
 
   if (hist->cold_miss_bin > 0) {
-    fprintf(file, "ColdMiss,%lu\n", hist->cold_miss_bin);
+    fprintf(file, "ColdMiss,%llu\n", (unsigned long long)hist->cold_miss_bin);
   }
 
   GHashTableIter iter;
@@ -80,9 +80,10 @@ void export_histogram_to_csv(ReuseHistogram* hist, float rate, char* path) {
     double scaled_distance = (double)(distance) / (double)rate;
 
     if (scaled_distance > (double)UINT64_MAX) {
-      fprintf(file, "Overflow,%lu\n", bin->frequency);
+      fprintf(file, "Overflow,%llu\n", (unsigned long long)bin->frequency);
     } else {
-      fprintf(file, "%lu,%lu\n", (uint64_t)scaled_distance, bin->frequency);
+      fprintf(file, "%llu,%llu\n", (unsigned long long)scaled_distance,
+              (unsigned long long)bin->frequency);
     }
   }
 

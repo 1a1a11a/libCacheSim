@@ -383,10 +383,12 @@ static void _chained_hashtable_shrink_v2(hashtable_t *hashtable) {
                   hashsizeULL(hashtable->hashpower));
 
   DEBUG(
-      "shrink hash table size from %llu to %llu, new hashtable load %lu/%lu\n",
-      hashsizeULL((uint16_t)(hashtable->hashpower + 1)),
-      hashsizeULL(hashtable->hashpower), hashtable->n_obj,
-      hashsize(hashtable->hashpower));
+      "shrink hash table size from %llu to %llu, new hashtable load "
+      "%llu/%llu\n",
+      (unsigned long long)hashsizeULL((uint16_t)(hashtable->hashpower + 1)),
+      (unsigned long long)hashsizeULL(hashtable->hashpower),
+      (unsigned long long)hashtable->n_obj,
+      (unsigned long long)hashsize(hashtable->hashpower));
 
   _copy_entries(hashtable, old_table, hashsize(hashtable->hashpower + 1));
   my_free(sizeof(cache_obj_t) * hashsize(hashtable->hashpower + 1), old_table);
@@ -410,10 +412,11 @@ static void _chained_hashtable_expand_v2(hashtable_t *hashtable) {
 
   DEBUG(
       "expand hashtable from %llu to %llu entries, new hashtable load "
-      "%lu/%lu\n",
-      hashsizeULL((uint16_t)(hashtable->hashpower - 1)),
-      hashsizeULL(hashtable->hashpower), hashtable->n_obj,
-      hashsize(hashtable->hashpower));
+      "%llu/%llu\n",
+      (unsigned long long)hashsizeULL((uint16_t)(hashtable->hashpower - 1)),
+      (unsigned long long)hashsizeULL(hashtable->hashpower),
+      (unsigned long long)hashtable->n_obj,
+      (unsigned long long)hashsize(hashtable->hashpower));
 
   _copy_entries(hashtable, old_table, hashsize(hashtable->hashpower - 1));
   my_free(sizeof(cache_obj_t) * hashsize(hashtable->hashpower), old_table);

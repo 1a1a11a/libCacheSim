@@ -22,6 +22,7 @@ target_include_directories(profiler_lib PRIVATE
     ${libCacheSim_binary_include_dir}
 )
 
-target_link_libraries(profiler_lib cache_lib_c cache_lib_cpp traceReader_lib utils_lib dataStructure_lib ${dependency_libs})
+# Use PUBLIC linking so dependencies are available to targets that link to profiler_lib
+target_link_libraries(profiler_lib PUBLIC cache_lib_c cache_lib_cpp traceReader_lib ${dependency_libs})
 
 set(profiler_sources ${profiler_sources_c} PARENT_SCOPE)

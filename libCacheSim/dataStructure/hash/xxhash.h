@@ -954,9 +954,9 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size) {
 /* *************************************
  *  Compiler Specific Options
  ***************************************/
-#ifdef _MSC_VER /* Visual Studio warning fix */
-#pragma warning( \
-    disable : 4127) /* disable: C4127: conditional expression is constant */
+#ifdef _MSC_VER                 /* Visual Studio warning fix */
+#pragma warning(disable : 4127) /* disable: C4127: conditional expression is \
+                                   constant */
 #endif
 
 #if XXH_NO_INLINE_HINTS /* disable inlining hints */

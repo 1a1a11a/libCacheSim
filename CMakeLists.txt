@@ -104,6 +104,9 @@ set(LIBCACHESIM_CXX_FLAGS
     -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs
 )
 
+# make sure the symbols are exported so that we can use dlsym
+set(CMAKE_C_VISIBILITY_PRESET default)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 0)
 
 # Find dependencies
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -221,7 +224,13 @@ set(libCacheSim_binary_include_dir ${CMAKE_CURRENT_BINARY_DIR}/libCacheSim/inclu
 
 include_directories(${libCacheSim_include_dir})
 include_directories(${libCacheSim_binary_include_dir})
-set(all_modules cache_lib_c cache_lib_cpp traceReader_lib profiler_lib dataStructure_lib utils_lib traceAnalyzer_lib)
+# Restructured to avoid transitive dependency duplicates
+# profiler_lib already includes cache_lib_c, cache_lib_cpp, traceReader_lib (which includes utils_lib)
+# Only include top-level libraries to avoid duplicates
+set(all_modules cache_lib_c cache_lib_cpp traceReader_lib profiler_lib dataStructure_lib utils_lib traceAnalyzer_lib mrcProfiler_lib)
+# For linking: use minimal sets to avoid transitive dependency duplicates
+set(core_libs cache_lib_c cache_lib_cpp traceReader_lib dataStructure_lib utils_lib)
+set(high_level_libs profiler_lib traceAnalyzer_lib)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/cache)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/dataStructure)
@@ -250,7 +259,7 @@ endif()
 add_library(${PROJECT_NAME} INTERFACE)
 
 # Link all modular libraries into the unified library
-target_link_libraries(${PROJECT_NAME} INTERFACE ${all_modules})
+target_link_libraries(${PROJECT_NAME} INTERFACE ${high_level_libs})
 
 # Set include directories for the unified library
 target_include_directories(${PROJECT_NAME} INTERFACE

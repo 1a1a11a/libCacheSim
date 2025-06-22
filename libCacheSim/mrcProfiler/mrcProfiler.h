@@ -42,9 +42,9 @@ typedef struct profiler_params {
     void print() {
       printf("shards params:\n");
       printf("  enable_fix_size: %d\n", enable_fix_size);
-      printf("  sample_size: %ld\n", sample_size);
+      printf("  sample_size: %lld\n", (long long)sample_size);
       printf("  sample_rate: %f\n", sample_rate);
-      printf("  salt: %ld\n", salt);
+      printf("  salt: %lld\n", (long long)salt);
     }
 
     void parse_params(const char *str) {
@@ -118,7 +118,7 @@ typedef struct profiler_params {
     void print() {
       printf("minisim params:\n");
       printf("  sample_rate: %f\n", sample_rate);
-      printf("  thread_num: %ld\n", thread_num);
+      printf("  thread_num: %lld\n", (long long)thread_num);
     }
 
     void parse_params(const char *str) {

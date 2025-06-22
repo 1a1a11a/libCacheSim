@@ -16,9 +16,9 @@ target_compile_options(mrcProfiler PRIVATE
     ${tcmalloc_flags}
 )
 
-target_link_libraries(mrcProfiler mrcProfiler_lib ${all_modules} ${dependency_libs} m dl)
+target_link_libraries(mrcProfiler mrcProfiler_lib m dl)
 
-target_link_options(mrcProfiler PRIVATE "-Wl,--export-dynamic")
+# target_link_options(mrcProfiler PRIVATE "-Wl,--export-dynamic")  # Not supported on macOS
 install(TARGETS mrcProfiler RUNTIME DESTINATION bin)
 
 set_target_properties(mrcProfiler

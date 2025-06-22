@@ -48,7 +48,7 @@ class AccessPattern {
   void dump(string &path_base);
 
  private:
-  int64_t n_obj_ = 0;
+  // int64_t n_obj_ = 0;  // unused
   int64_t n_seen_req_ = 0;
   int sample_ratio_ = 1001;
 

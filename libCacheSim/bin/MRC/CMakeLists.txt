@@ -15,5 +15,5 @@ set(mrc_sources_c
 )
 
 add_executable(MRC ${mrc_sources_c})
-target_link_libraries(MRC ${all_modules} ${dependency_libs})
+target_link_libraries(MRC ${core_libs} ${dependency_libs})
 install(TARGETS MRC RUNTIME DESTINATION bin)

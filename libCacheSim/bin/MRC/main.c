@@ -51,8 +51,8 @@ int main(int argc, char **argv) {
           (double)return_value[i].n_miss / (double)return_value[i].n_req;
       double miss_ratio_byte = (double)return_value[i].n_miss_byte /
                                (double)return_value[i].n_req_byte;
-      fprintf(output_file, "%ld,%f, %f\n", cache_size, miss_ratio,
-              miss_ratio_byte);
+      fprintf(output_file, "%llu,%f, %f\n", (unsigned long long)cache_size,
+              miss_ratio, miss_ratio_byte);
     }
 
     fclose(output_file);

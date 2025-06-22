@@ -56,16 +56,21 @@ static void _lcs_print_trace_stat(lcs_trace_stat_t *stat) {
   printf("object size: smallest %lld, largest %lld\n",
          (long long)stat->smallest_obj_size, (long long)stat->largest_obj_size);
   printf(
-      "most common object sizes (req fraction): %ld(%.4lf) %ld(%.4lf) "
-      "%ld(%.4lf) %ld(%.4lf)...\n",
-      stat->most_common_obj_sizes[0], stat->most_common_obj_size_ratio[0],
-      stat->most_common_obj_sizes[1], stat->most_common_obj_size_ratio[1],
-      stat->most_common_obj_sizes[2], stat->most_common_obj_size_ratio[2],
-      stat->most_common_obj_sizes[3], stat->most_common_obj_size_ratio[3]);
+      "most common object sizes (req fraction): %lld(%.4lf) %lld(%.4lf) "
+      "%lld(%.4lf) %lld(%.4lf)...\n",
+      (long long)stat->most_common_obj_sizes[0],
+      stat->most_common_obj_size_ratio[0],
+      (long long)stat->most_common_obj_sizes[1],
+      stat->most_common_obj_size_ratio[1],
+      (long long)stat->most_common_obj_sizes[2],
+      stat->most_common_obj_size_ratio[2],
+      (long long)stat->most_common_obj_sizes[3],
+      stat->most_common_obj_size_ratio[3]);
 
-  printf("highest freq: %ld %ld %ld %ld skewness %.4lf\n",
-         stat->highest_freq[0], stat->highest_freq[1], stat->highest_freq[2],
-         stat->highest_freq[3], stat->skewness);
+  printf("highest freq: %lld %lld %lld %lld skewness %.4lf\n",
+         (long long)stat->highest_freq[0], (long long)stat->highest_freq[1],
+         (long long)stat->highest_freq[2], (long long)stat->highest_freq[3],
+         stat->skewness);
   printf(
       "most common freq (req fraction): %d(%.4lf) %d(%.4lf) %d(%.4lf) "
       "%d(%.4lf)...\n",

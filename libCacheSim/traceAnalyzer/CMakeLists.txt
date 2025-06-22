@@ -28,7 +28,7 @@ add_library(traceAnalyzer_lib ${traceAnalyzer_sources_cpp})
 target_include_directories(traceAnalyzer_lib PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-target_link_libraries(traceAnalyzer_lib ${dependency_libs})
+target_link_libraries(traceAnalyzer_lib PUBLIC ${dependency_libs})
 set_target_properties(traceAnalyzer_lib PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED YES

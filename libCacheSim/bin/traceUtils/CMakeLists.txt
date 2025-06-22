@@ -5,8 +5,12 @@
 add_library(cliReaderLib ../cli_reader_utils.c)
 
 
-add_executable(tracePrint tracePrintMain.cpp cli_parser.cpp)
-target_link_libraries(tracePrint cliReaderLib ${all_modules} ${dependency_libs})
+set(tracePrint_sources_cpp
+    tracePrintMain.cpp
+    cli_parser.cpp
+)
+add_executable(tracePrint ${tracePrint_sources_cpp})
+target_link_libraries(tracePrint cliReaderLib ${core_libs} ${dependency_libs})
 set_target_properties(tracePrint
         PROPERTIES
         CXX_STANDARD 17
@@ -14,9 +18,17 @@ set_target_properties(tracePrint
         CXX_EXTENSIONS NO
         )
 
+install(TARGETS tracePrint RUNTIME DESTINATION bin)
 
-add_executable(traceConv traceConvMain.cpp traceConvOracleGeneral.cpp traceConvLCS.cpp cli_parser.cpp utils.cpp)
-target_link_libraries(traceConv cliReaderLib ${all_modules} ${dependency_libs})
+set(traceConv_sources_cpp
+    traceConvMain.cpp
+    traceConvOracleGeneral.cpp
+    traceConvLCS.cpp
+    cli_parser.cpp
+    utils.cpp
+)
+add_executable(traceConv ${traceConv_sources_cpp})
+target_link_libraries(traceConv cliReaderLib ${core_libs} ${dependency_libs})
 set_target_properties(traceConv
         PROPERTIES
         CXX_STANDARD 17
@@ -24,8 +36,14 @@ set_target_properties(traceConv
         CXX_EXTENSIONS NO
         )
 
-add_executable(traceFilter traceFilterMain.cpp cli_parser.cpp)
-target_link_libraries(traceFilter cliReaderLib ${all_modules} ${dependency_libs})
+install(TARGETS traceConv RUNTIME DESTINATION bin)
+
+set(traceFilter_sources_cpp
+    traceFilterMain.cpp
+    cli_parser.cpp
+)
+add_executable(traceFilter ${traceFilter_sources_cpp})
+target_link_libraries(traceFilter cliReaderLib ${core_libs} ${dependency_libs})
 set_target_properties(traceFilter
         PROPERTIES
         CXX_STANDARD 17
@@ -33,7 +51,5 @@ set_target_properties(traceFilter
         CXX_EXTENSIONS NO
         )
 
-install(TARGETS traceConv RUNTIME DESTINATION bin)
-install(TARGETS tracePrint RUNTIME DESTINATION bin)
 install(TARGETS traceFilter RUNTIME DESTINATION bin)
 

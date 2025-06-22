@@ -17,17 +17,17 @@ extern "C" {
  * @param size
  * @param str a 8 byte char array
  */
-void convert_size_to_str(unsigned long long size, char *str) {
+void convert_size_to_str(unsigned long long size, char *str, size_t str_len) {
   if (size >= TiB) {
-    sprintf(str, "%.0lfTiB", (double)size / TiB);
+    snprintf(str, str_len, "%.0lfTiB", (double)size / TiB);
   } else if (size >= GiB) {
-    sprintf(str, "%.0lfGiB", (double)size / GiB);
+    snprintf(str, str_len, "%.0lfGiB", (double)size / GiB);
   } else if (size >= MiB) {
-    sprintf(str, "%.0lfMiB", (double)size / MiB);
+    snprintf(str, str_len, "%.0lfMiB", (double)size / MiB);
   } else if (size >= KiB) {
-    sprintf(str, "%.0lfKiB", (double)size / KiB);
+    snprintf(str, str_len, "%.0lfKiB", (double)size / KiB);
   } else {
-    sprintf(str, "%lldB", size);
+    snprintf(str, str_len, "%lldB", size);
   }
 }
 

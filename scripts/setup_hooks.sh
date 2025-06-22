@@ -8,7 +8,7 @@ HOOKS_DIR="${REPO_ROOT}/.git/hooks"
 echo "Installing git hooks..."
 
 # Create pre-commit hook
-cat > "${HOOKS_DIR}/pre-commit" << 'EOL'
+cat >"${HOOKS_DIR}/pre-commit" <<'EOL'
 #!/bin/bash
 set -e
 
@@ -70,8 +70,17 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
           exit 1
       }
 
-# Determine the number of processors
-NUM_CPUS=$(nproc)
+# Determine the number of processors (cross-platform)
+if command -v nproc >/dev/null 2>&1; then
+    # Linux/most Unix systems
+    NUM_CPUS=$(nproc)
+elif [ "$(uname)" = "Darwin" ]; then
+    # macOS
+    NUM_CPUS=$(sysctl -n hw.logicalcpu)
+else
+    # Fallback for other systems
+    NUM_CPUS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo "4")
+fi
 MAX_JOBS=$((NUM_CPUS > 8 ? 8 : NUM_CPUS))  # Limit to 8 concurrent jobs to avoid overloading
 
 # Function to show elapsed time
@@ -292,4 +301,4 @@ echo "Git hooks installed successfully!"
 echo "The pre-commit hook will now run automatically on each commit to check for linting issues."
 echo "You can bypass the checks with: SKIP_LINT=1 git commit"
 echo "Linting logs are stored in .lint-logs/ for future reference."
-echo "Note: clang-tidy and clang-format will be used if they're installed on your system." 
+echo "Note: clang-tidy and clang-format will be used if they're installed on your system."

@@ -1,6 +1,5 @@
-
-#ifndef _MINIMAL_INCREMENR_CBF_H
-#define _MINIMAL_INCREMENR_CBF_H
+#ifndef _MINIMAL_INCREMENT_CBF_H
+#define _MINIMAL_INCREMENT_CBF_H
 
 #ifdef __cplusplus
 extern "C" {

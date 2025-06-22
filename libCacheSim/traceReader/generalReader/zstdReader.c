@@ -1,4 +1,3 @@
-
 #include "zstdReader.h"
 
 #include <assert.h>
