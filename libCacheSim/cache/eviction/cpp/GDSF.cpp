@@ -201,8 +201,9 @@ static bool GDSF_can_insert(cache_t *cache, const request_t *req) {
 
   if ((n_insert + n_cannot_insert) % 100000 == 0) {
     if ((double)n_cannot_insert / (n_insert + n_cannot_insert) > 0.01)
-      DEBUG("size %ld n_insert %ld, n_cannot_insert %ld, ratio %.2f\n",
-            cache->cache_size, n_insert, n_cannot_insert,
+      DEBUG("size %lld n_insert %lld, n_cannot_insert %lld, ratio %.2f\n",
+            (long long)cache->cache_size, (long long)n_insert,
+            (long long)n_cannot_insert,
             (double)n_cannot_insert / (n_insert + n_cannot_insert));
   }
 

@@ -278,7 +278,7 @@ void print_sTree_t(sTree_tuple *t, int d) {
   if (t == NULL) return;
   print_sTree_t(t->right, d + 1);
   for (i = 0; i < d; i++) printf("  ");
-  printf("%lu(%ld)\n", t->key->Tmax, t->value);
+  printf("%llu(%lld)\n", (unsigned long long)t->key->Tmax, (long long)t->value);
   print_sTree_t(t->left, d + 1);
 }
 

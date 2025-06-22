@@ -153,7 +153,7 @@ void test_unaligned_read_mmap(char* filepath) {
          time_read_uint16_unaligned);
   printf("uint8_t    aligned read time: %.4f sec\n", time_read_uint8_aligned);
   printf("uint8_t  unaligned read time: %.4f sec\n", time_read_uint8_unaligned);
-  printf("s: %ld\n", s);
+  printf("s: %lld\n", (long long)s);
 
   close(fd);
 }
@@ -210,8 +210,8 @@ struct __attribute__((packed)) unaligned_struct {
 // };
 
 void test_unaligned_read_mmap_struct(char* filepath) {
-  printf("aligned struct size: %lu\n", sizeof(struct aligned_struct));
-  printf("unaligned struct size: %lu\n", sizeof(struct unaligned_struct));
+  printf("aligned struct size: %zu\n", sizeof(struct aligned_struct));
+  printf("unaligned struct size: %zu\n", sizeof(struct unaligned_struct));
 
   int fd = open(filepath, O_RDONLY);
   if (fd < 0) {
@@ -277,7 +277,7 @@ void test_unaligned_read_mmap_struct(char* filepath) {
   printf("struct   aligned read time: %.4f sec\n", time_read_struct_aligned);
   printf("struct unaligned read time: %.4f sec\n", time_read_struct_unaligned);
 
-  printf("s: %ld\n", s);
+  printf("s: %lld\n", (long long)s);
   close(fd);
 }
 
@@ -329,14 +329,14 @@ void test_unaligned_read_struct(char* filepath) {
   printf("struct   aligned read time: %.4f sec\n", time_read_struct_aligned);
   printf("struct unaligned read time: %.4f sec\n", time_read_struct_unaligned);
 
-  printf("s: %ld\n", s);
+  printf("s: %lld\n", (long long)s);
 }
 
 int main(int argc, char* argv[]) {
-  printf("lcs_req_v1_t size: %lu\n", sizeof(lcs_req_v1_t));
-  printf("lcs_req_v2_t size: %lu\n", sizeof(lcs_req_v2_t));
-  printf("lcs_trace_stat size: %lu\n", sizeof(lcs_trace_stat_t));
-  printf("lcs_trace_header size: %lu\n", sizeof(lcs_trace_header_t));
+  printf("lcs_req_v1_t size: %zu\n", sizeof(lcs_req_v1_t));
+  printf("lcs_req_v2_t size: %zu\n", sizeof(lcs_req_v2_t));
+  printf("lcs_trace_stat size: %zu\n", sizeof(lcs_trace_stat_t));
+  printf("lcs_trace_header size: %zu\n", sizeof(lcs_trace_header_t));
 
   if (argc < 2) {
     printf("Usage: %s <trace_file>\n", argv[0]);

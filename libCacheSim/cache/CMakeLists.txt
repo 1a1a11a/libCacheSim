@@ -178,8 +178,8 @@ target_include_directories(cache_lib_cpp PRIVATE
     ${libCacheSim_binary_include_dir}
 )
 
-target_link_libraries(cache_lib_c dataStructure_lib utils_lib ${dependency_libs})
-target_link_libraries(cache_lib_cpp dataStructure_lib utils_lib ${dependency_libs})
+target_link_libraries(cache_lib_c PRIVATE dataStructure_lib utils_lib ${dependency_libs})
+target_link_libraries(cache_lib_cpp PRIVATE dataStructure_lib utils_lib ${dependency_libs})
 
 # Set C++ standard for C++ library
 set_target_properties(cache_lib_cpp PROPERTIES

@@ -70,8 +70,17 @@ cmake -DCMAKE_BUILD_TYPE=Debug \
           exit 1
       }
 
-# Determine the number of processors
-NUM_CPUS=$(nproc)
+# Determine the number of processors (cross-platform)
+if command -v nproc >/dev/null 2>&1; then
+    # Linux/most Unix systems
+    NUM_CPUS=$(nproc)
+elif [ "$(uname)" = "Darwin" ]; then
+    # macOS
+    NUM_CPUS=$(sysctl -n hw.logicalcpu)
+else
+    # Fallback for other systems
+    NUM_CPUS=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo "4")
+fi
 MAX_JOBS=$((NUM_CPUS > 8 ? 8 : NUM_CPUS))  # Limit to 8 concurrent jobs to avoid overloading
 
 # Function to show elapsed time

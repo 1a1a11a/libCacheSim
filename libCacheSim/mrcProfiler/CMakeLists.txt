@@ -28,7 +28,7 @@ target_include_directories(mrcProfiler_lib PRIVATE
     ${libCacheSim_binary_include_dir}
 )
 
-# Link dependencies  
-target_link_libraries(mrcProfiler_lib utils_lib traceReader_lib profiler_lib cache_lib_c cache_lib_cpp dataStructure_lib ${dependency_libs})
+# Link dependencies - profiler_lib already brings in cache_lib_c, cache_lib_cpp, traceReader_lib, utils_lib, dataStructure_lib and dependency_libs
+target_link_libraries(mrcProfiler_lib PUBLIC profiler_lib)
 
 set(mrcProfiler_sources ${mrcProfiler_sources_cpp} PARENT_SCOPE)

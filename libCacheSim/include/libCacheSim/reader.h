@@ -285,14 +285,14 @@ static inline void print_reader(reader_t *reader) {
   printf(
       "trace_type: %s, trace_path: %s, trace_start_offset: %d, mmap_offset: "
       "%lu, is_zstd_file: %d, item_size: %zu, file: %p, line_buf: "
-      "%p, line_buf_size: %zu, csv_delimiter: %c, csv_has_header: %d, "
+      "%s, line_buf_size: %zu, csv_delimiter: %c, csv_has_header: %d, "
       "obj_id_is_num: %d, ignore_size_zero_req: %d, ignore_obj_size: %d, "
       "n_req_left: %d, last_req_clock_time: %ld\n",
       g_trace_type_name[reader->trace_type], reader->trace_path,
       reader->trace_start_offset, (long)reader->mmap_offset,
       reader->is_zstd_file, reader->item_size, (void *)reader->file,
-      reader->line_buf, reader->line_buf_size, reader->csv_delimiter,
-      reader->csv_has_header, reader->obj_id_is_num,
+      reader->line_buf ? reader->line_buf : "NULL", reader->line_buf_size,
+      reader->csv_delimiter, reader->csv_has_header, reader->obj_id_is_num,
       reader->ignore_size_zero_req, reader->ignore_obj_size, reader->n_req_left,
       (long)reader->last_req_clock_time);
 }

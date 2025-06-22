@@ -21,15 +21,15 @@ namespace utilsStr {
  */
 static inline void convert_size_to_str(long long size, char *str) {
   if (size >= TiB) {
-    sprintf(str, "%.0lf TiB", (double)size / TiB);
+    snprintf(str, 16, "%.0lf TiB", (double)size / TiB);
   } else if (size >= GiB) {
-    sprintf(str, "%.0lf GiB", (double)size / GiB);
+    snprintf(str, 16, "%.0lf GiB", (double)size / GiB);
   } else if (size >= MiB) {
-    sprintf(str, "%.0lf MiB", (double)size / MiB);
+    snprintf(str, 16, "%.0lf MiB", (double)size / MiB);
   } else if (size >= KiB) {
-    sprintf(str, "%.0lf KiB", (double)size / KiB);
+    snprintf(str, 16, "%.0lf KiB", (double)size / KiB);
   } else {
-    sprintf(str, "%lld B", size);
+    snprintf(str, 16, "%lld B", size);
   }
 }
 

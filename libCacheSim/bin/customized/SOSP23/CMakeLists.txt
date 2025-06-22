@@ -19,4 +19,4 @@ set(flash_sources_cpp
 )
 add_executable(flash ${flash_sources_cpp})
 target_include_directories(flash PRIVATE ../../)
-target_link_libraries(flash ${all_modules} utils_lib ${dependency_libs})
+target_link_libraries(flash ${core_libs} ${dependency_libs})

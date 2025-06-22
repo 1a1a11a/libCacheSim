@@ -711,7 +711,7 @@ static void LIRS_print_cache(cache_t *cache) {
          (unsigned long)params->hirs_count);
   cache_obj_t *obj = ((LRU_params_t *)params->LRU_s->eviction_params)->q_head;
   while (obj) {
-    printf("%ld(%lu, %s, %s)->", (long)obj->obj_id, obj->obj_size,
+    printf("%ld(%lld, %s, %s)->", (long)obj->obj_id, (long long)obj->obj_size,
            obj->LIRS.in_cache ? "R" : "N", obj->LIRS.is_LIR ? "L" : "H");
     obj = obj->queue.next;
   }
@@ -720,8 +720,9 @@ static void LIRS_print_cache(cache_t *cache) {
   printf("Q Stack: \n");
   cache_obj_t *obj_q = ((LRU_params_t *)params->LRU_q->eviction_params)->q_head;
   while (obj_q) {
-    printf("%ld(%lu, %s, %s)->", (long)obj_q->obj_id, obj_q->obj_size,
-           obj_q->LIRS.in_cache ? "R" : "N", obj_q->LIRS.is_LIR ? "L" : "H");
+    printf("%ld(%lld, %s, %s)->", (long)obj_q->obj_id,
+           (long long)obj_q->obj_size, obj_q->LIRS.in_cache ? "R" : "N",
+           obj_q->LIRS.is_LIR ? "L" : "H");
     obj_q = obj_q->queue.next;
   }
   printf("\n");
@@ -730,8 +731,9 @@ static void LIRS_print_cache(cache_t *cache) {
   cache_obj_t *obj_nh =
       ((LRU_params_t *)params->LRU_nh->eviction_params)->q_head;
   while (obj_nh) {
-    printf("%ld(%lu, %s, %s)->", (long)obj_nh->obj_id, obj_nh->obj_size,
-           obj_nh->LIRS.in_cache ? "R" : "N", obj_nh->LIRS.is_LIR ? "L" : "H");
+    printf("%ld(%lld, %s, %s)->", (long)obj_nh->obj_id,
+           (long long)obj_nh->obj_size, obj_nh->LIRS.in_cache ? "R" : "N",
+           obj_nh->LIRS.is_LIR ? "L" : "H");
     obj_nh = obj_nh->queue.next;
   }
   printf("\n\n");

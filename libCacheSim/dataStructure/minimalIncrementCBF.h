@@ -1,4 +1,3 @@
-
 #ifndef _MINIMAL_INCREMENR_CBF_H
 #define _MINIMAL_INCREMENR_CBF_H
 

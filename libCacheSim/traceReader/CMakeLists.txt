@@ -30,7 +30,7 @@ target_include_directories(traceReader_lib PRIVATE
     ${libCacheSim_binary_include_dir}
 )
 
-target_link_libraries(traceReader_lib utils_lib ${ZSTD_LIBRARIES})
+target_link_libraries(traceReader_lib PRIVATE utils_lib ${ZSTD_LIBRARIES})
 
 set(traceReader_sources ${traceReader_sources_c} PARENT_SCOPE)
 

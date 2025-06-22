@@ -122,9 +122,9 @@ class SplayTree {
   }
   iterator end() { return iterator(); }
   void swap(SplayTree &other) {
-    node_ptr temp = move(root_);
-    root_ = move(other.root_);
-    other.root_ = move(temp);
+    node_ptr temp = std::move(root_);
+    root_ = std::move(other.root_);
+    other.root_ = std::move(temp);
   }
   V sum;
 
@@ -151,25 +151,25 @@ class SplayTree {
 template <typename K, typename V>
 void SplayTree<K, V>::leftRotate(node *rt) {
   node *pivot = rt->right.get();
-  node_ptr pv = move(rt->right);
+  node_ptr pv = std::move(rt->right);
   node *grand_pa = rt->parent;
   if (pv->left) {
-    rt->right = move(pv->left);
+    rt->right = std::move(pv->left);
     rt->right->parent = rt;
   }
 
   if (!grand_pa) {
-    pv->left = move(root_);
-    root_ = move(pv);
+    pv->left = std::move(root_);
+    root_ = std::move(pv);
     pivot->parent = nullptr;
     rt->parent = pivot;
   } else {
     if (grand_pa->right.get() == rt) {
-      pv->left = move(grand_pa->right);
-      grand_pa->right = move(pv);
+      pv->left = std::move(grand_pa->right);
+      grand_pa->right = std::move(pv);
     } else {
-      pv->left = move(grand_pa->left);
-      grand_pa->left = move(pv);
+      pv->left = std::move(grand_pa->left);
+      grand_pa->left = std::move(pv);
     }
     pivot->parent = grand_pa;
     rt->parent = pivot;
@@ -182,27 +182,27 @@ void SplayTree<K, V>::leftRotate(node *rt) {
 template <typename K, typename V>
 void SplayTree<K, V>::rightRotate(node *rt) {
   node *pivot = rt->left.get();
-  node_ptr pv = move(rt->left);
+  node_ptr pv = std::move(rt->left);
   node *grand_pa = rt->parent;
   if (pv->right) {  // right node of pv to left node of rt
-    rt->left = move(pv->right);
+    rt->left = std::move(pv->right);
     rt->left->parent = rt;
   }
   if (!grand_pa) {  // if rt is really root of the tree
-    pv->right = move(root_);
-    root_ = move(pv);
+    pv->right = std::move(root_);
+    root_ = std::move(pv);
     pivot->parent = nullptr;
     rt->parent = pivot;
   } else {
     if (grand_pa->right.get() ==
         rt) {  // rt is in right branch from his grandparent
-      pv->right = move(grand_pa->right);
-      grand_pa->right = move(pv);
+      pv->right = std::move(grand_pa->right);
+      grand_pa->right = std::move(pv);
       pivot->parent = grand_pa;
       rt->parent = pivot;
     } else {  // rt is in left branch from his grandparent
-      pv->right = move(grand_pa->left);
-      grand_pa->left = move(pv);
+      pv->right = std::move(grand_pa->left);
+      grand_pa->left = std::move(pv);
       pivot->parent = grand_pa;
       rt->parent = pivot;
     }
@@ -344,13 +344,13 @@ void SplayTree<K, V>::insert(const K &key, const V &val) {
   sum += val;
 
   if (prev == nullptr) {
-    root_ = move(n);
+    root_ = std::move(n);
   } else if (key < prev->first) {
-    prev->left = move(n);
+    prev->left = std::move(n);
     prev->left->parent = prev;
     splay(prev->left.get());
   } else {
-    prev->right = move(n);
+    prev->right = std::move(n);
     prev->right->parent = prev;
     splay(prev->right.get());
   }
@@ -383,16 +383,16 @@ void SplayTree<K, V>::remove(node *n) {
     return;
   }
   if (!n->left) {
-    root_ = move(n->right);
+    root_ = std::move(n->right);
     root_->parent = nullptr;
     return;
   } else if (!n->right) {
-    root_ = move(n->left);
+    root_ = std::move(n->left);
     root_->parent = nullptr;
   } else {
     node *nxt = subtreeMin(n->right.get());
     splay(nxt);
-    root_->left = move(root_->left->left);
+    root_->left = std::move(root_->left->left);
     root_->left->parent = root_.get();
   }
   root_->maintain();

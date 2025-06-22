@@ -19,7 +19,7 @@ void test_chained_hashtable_v2(gconstpointer user_data) {
   for (int i = 0; i < 1280; i++) {
     cache_obj_t *obj = chained_hashtable_rand_obj_v2(hashtable);
     if (!seen_bit[obj->obj_id]) {
-      printf("object %lu at %d\n", obj->obj_id, i);
+      printf("object %llu at %d\n", (unsigned long long)obj->obj_id, i);
     }
     seen_bit[obj->obj_id] = true;
   }

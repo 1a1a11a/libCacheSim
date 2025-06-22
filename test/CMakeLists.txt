@@ -1,4 +1,3 @@
-
 # Helper function to create test executables with explicit compiler flags
 function(add_test_executable target_name source_file)
     add_executable(${target_name} ${source_file})
@@ -24,7 +23,7 @@ function(add_test_executable target_name source_file)
         )
     endif()
     
-    target_link_libraries(${target_name} ${all_modules} ${dependency_libs})
+    target_link_libraries(${target_name} profiler_lib)
 endfunction()
 
 # Create C test executables
@@ -65,6 +64,6 @@ add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
 
 if (ENABLE_3L_CACHE)
     add_executable(test3LCache test_3lcache.c)
-    target_link_libraries(test3LCache ${all_modules} ${dependency_libs})
+    target_link_libraries(test3LCache ${core_libs} ${dependency_libs})
     add_test(NAME test3LCache COMMAND test3LCache WORKING_DIRECTORY .)
 endif (ENABLE_3L_CACHE)
