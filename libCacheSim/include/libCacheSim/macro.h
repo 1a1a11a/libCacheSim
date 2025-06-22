@@ -92,7 +92,7 @@ extern "C" {
 
 #define ASSERT_EQUAL(a, b, ...) CHECK_CONDITION(a, !=, b, __VA_ARGS__)
 #define ASSERT_TRUE(x, ...) CHECK_CONDITION(x, !=, true, __VA_ARGS__)
-#define ASSERT_ZERO(x, ...) CHECK_CONDITION(a, !=, 0, __VA_ARGS__)
+#define ASSERT_ZERO(x, ...) CHECK_CONDITION(x, !=, 0, __VA_ARGS__)
 
 #if LOGLEVEL < INFO_LEVEL
 #define DEBUG_ASSERT(x) \
