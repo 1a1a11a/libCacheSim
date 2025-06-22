@@ -103,8 +103,6 @@ extern "C" {
 #define DEBUG_ASSERT(x)
 #endif
 
-// #pragma message "current LOGLEVEL: " XSTR(LOGLEVEL)
-
 #if LOGLEVEL > DEBUG_LEVEL
 #define THIS_IS_DEBUG_FUNC return
 #else
@@ -112,15 +110,9 @@ extern "C" {
 #endif
 
 #if LOGLEVEL > VERBOSE_LEVEL
-#define THIS_IS_DEBUG2_FUNC return
+#define THIS_IS_VERBOSE_FUNC return
 #else
-#define THIS_IS_DEBUG2_FUNC
-#endif
-
-#if LOGLEVEL > VVERBOSE_LEVEL
-#define THIS_IS_DEBUG3_FUNC return
-#else
-#define THIS_IS_DEBUG3_FUNC
+#define THIS_IS_VERBOSE_FUNC
 #endif
 
 #define PRINT_ONCE(...)          \
@@ -164,7 +156,7 @@ extern "C" {
 // int ffsl(long int i);
 // int ffsll(long long int i);
 
-#define find_max(array, n_elem, max_elem_ptr, max_elem_idx_ptr)               \
+#define FIND_MAX(array, n_elem, max_elem_ptr, max_elem_idx_ptr)               \
   do {                                                                        \
     *(max_elem_idx_ptr) = 0;                                                  \
     for (uint64_t i = 0; i < (uint64_t)(n_elem); i++)                         \
@@ -172,7 +164,7 @@ extern "C" {
     *(max_elem_ptr) = (array)[*(max_elem_idx_ptr)];                           \
   } while (0)
 
-#define find_min(array, n_elem, min_elem_ptr, min_elem_idx_ptr)               \
+#define FIND_MIN(array, n_elem, min_elem_ptr, min_elem_idx_ptr)               \
   do {                                                                        \
     *(min_elem_idx_ptr) = 0;                                                  \
     for (uint64_t i = 0; i < (uint64_t)(n_elem); i++)                         \

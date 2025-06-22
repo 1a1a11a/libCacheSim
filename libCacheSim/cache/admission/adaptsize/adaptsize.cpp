@@ -188,7 +188,7 @@ void Adaptsize::reconfigure() {
     total_obj_size += it->second.obj_size;
     ++it;
   }
-  VVERBOSE(
+  VERBOSE(
       "Reconfiguring over %zu objects - log2 total size %f log2 statsize %f\n",
       longterm_metadata.size(), log2(total_obj_size), log2(stat_size));
   // END Prepare for reconf
@@ -249,10 +249,10 @@ void Adaptsize::reconfigure() {
     WARN("BUG: NaN h1:%f h2:%f\n", h1, h2);
   } else if (h1 > h2) {
     c_param = pow(2, x1);
-    VVERBOSE("C = %f (log2: %f )\n", c_param, x1);
+    VERBOSE("C = %f (log2: %f )\n", c_param, x1);
   } else {
     c_param = pow(2, x2);
-    VVERBOSE("C = %f (log2: %f )\n", c_param, x2);
+    VERBOSE("C = %f (log2: %f )\n", c_param, x2);
   }
   // END Check for result
 }
