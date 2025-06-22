@@ -1,5 +1,5 @@
 ---
-name: Cleanup
+name: 🧹 Cleanup
 about: Report code cleanup, refactoring, or maintenance tasks
 title: '[CLEANUP: '
 labels: 'cleanup'
