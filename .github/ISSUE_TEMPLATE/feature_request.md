@@ -1,8 +1,8 @@
 ---
 name: Feature request
 about: Suggest an idea for libCacheSim
-title: '[FEATURE] '
-labels: 'enhancement'
+title: '[FEATURE]: '
+labels: 'feature'
 assignees: ''
 
 ---
