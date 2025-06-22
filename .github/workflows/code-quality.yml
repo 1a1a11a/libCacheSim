@@ -2,23 +2,20 @@ name: Code Quality
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
+permissions:
+  contents: read
 
 jobs:
   code-quality:
     name: Code Quality Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for proper git diff
-
-      - name: Trunk Check
-        uses: trunk-io/trunk-action@v1
-        with:
-          check-mode: all
+          fetch-depth: 0 # Fetch all history for proper git diff
 
       - name: Install dependencies
         run: |
@@ -45,7 +42,7 @@ jobs:
         run: |
           echo "Running clang-format checks..."
           FORMAT_ERRORS=0
-          
+
           for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
             echo "Checking formatting for $file"
             if ! clang-format --dry-run --Werror "$file" >> logs/format.log 2>&1; then
@@ -53,7 +50,7 @@ jobs:
               FORMAT_ERRORS=$((FORMAT_ERRORS + 1))
             fi
           done
-          
+
           if [ $FORMAT_ERRORS -gt 0 ]; then
             echo "Found formatting issues in $FORMAT_ERRORS files."
             echo "You can fix these issues with: clang-format -i <file>"
@@ -77,11 +74,11 @@ jobs:
       #   run: |
       #     echo "Running clang-tidy checks..."
       #     FILES_WITH_ISSUES=0
-          
+
       #     for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
       #       echo "Checking $file with clang-tidy"
       #       LOG_FILE="logs/tidy_$(basename "$file").log"
-            
+
       #       # Run clang-tidy with selected checks (same as pre-commit hook)
       #       if ! clang-tidy -p=build \
       #         -checks='-*,bugprone-*,cert-*,clang-analyzer-*,cppcoreguidelines-*,performance-*,portability-*,readability-*,-readability-magic-numbers,-readability-braces-around-statements,-cppcoreguidelines-avoid-magic-numbers,-readability-identifier-length,-clang-diagnostic-unused-command-line-argument' \
@@ -91,7 +88,7 @@ jobs:
       #         FILES_WITH_ISSUES=$((FILES_WITH_ISSUES + 1))
       #       fi
       #     done
-          
+
       #     if [ $FILES_WITH_ISSUES -gt 0 ]; then
       #       echo "clang-tidy found issues in $FILES_WITH_ISSUES files."
       #       exit 1
@@ -109,4 +106,11 @@ jobs:
             echo "Compilation failed. Please fix the warnings."
             cat logs/compile.log
             exit 1
-          fi 
+          fi
+
+      - name: Trunk Check
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: trunk-io/trunk-action@v1
+        with:
+          check-mode: all
+
