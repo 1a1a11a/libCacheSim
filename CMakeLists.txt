@@ -58,9 +58,10 @@ endif()
 
 
 string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
+string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
 
 if(LOG_LEVEL_LOWER STREQUAL "default")
-    if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    if(CMAKE_BUILD_TYPE_LOWER MATCHES "Debug")
         message(STATUS "LOG_LEVEL is not set, use DEBUG as default for debug build")
         add_compile_definitions(LOGLEVEL=6)
     else()
