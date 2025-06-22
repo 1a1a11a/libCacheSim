@@ -1,7 +1,7 @@
 ---
 name: 📚 Documentation
 about: Report an issue related to libCacheSim documentation
-title: '[Doc]: '
+title: '[DOC]: '
 labels: 'documentation'
 assignees: ''
 
