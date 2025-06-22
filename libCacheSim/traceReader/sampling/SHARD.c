@@ -29,7 +29,7 @@ sampler_t *clone_SHARDS_sampler(const sampler_t *sampler) {
   sampler_t *cloned_sampler = my_malloc(sampler_t);
   memcpy(cloned_sampler, sampler, sizeof(sampler_t));
 
-  VERBOSE("clone spatial sampler\n");
+  VERBOSE("clone SHARDS sampler\n");
   return cloned_sampler;
 }
 
