@@ -33,7 +33,7 @@ extern "C" {
 
 #define BIT(x) (1 << (x))
 #define GETNAME(var) #var
-#define OFFSETOF(type, element) ((size_t)&(((type *)0)->element))
+#define OFFSETOF(type, element) ((size_t) & (((type *)0)->element))
 #define OFFSETOF2(t, d) __builtin_offsetof(t, d)
 
 #define PASTE(a, b) a##b
