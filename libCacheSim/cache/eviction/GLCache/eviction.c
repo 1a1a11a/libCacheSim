@@ -142,7 +142,7 @@ void GLCache_merge_segs(cache_t *cache, bucket_t *bucket, segment_t **segs) {
 // different from clean_one_seg because this function also updates cache state
 int evict_one_seg(cache_t *cache, segment_t *seg) {
   VERBOSE("req %lu, evict one seg id %d occupied size %lu/%lu\n", cache->n_req,
-           seg->seg_id, cache->occupied_byte, cache->cache_size);
+          seg->seg_id, cache->occupied_byte, cache->cache_size);
   GLCache_params_t *params = cache->eviction_params;
   bucket_t *bucket = &params->buckets[seg->bucket_id];
 

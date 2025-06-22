@@ -653,7 +653,7 @@ static inline void update_LFU_min_freq(LeCaR_params_t *params) {
     }
   }
   VERBOSE("update LFU min freq from %ld to %ld\n", old_min_freq,
-           params->min_freq);
+          params->min_freq);
   // if the object is the only object in the cache, we may have min_freq == 1
   DEBUG_ASSERT(params->min_freq > old_min_freq ||
                params->q_head == params->q_tail);
@@ -683,7 +683,7 @@ static inline void remove_obj_from_freq_node(LeCaR_params_t *params,
   DEBUG_ASSERT(freq_node->freq == cache_obj->LeCaR.freq);
   DEBUG_ASSERT(freq_node->n_obj > 0);
   VERBOSE("remove object from freq node %p (freq %ld, %u obj)\n", freq_node,
-           freq_node->freq, freq_node->n_obj);
+          freq_node->freq, freq_node->n_obj);
   freq_node->n_obj--;
 
   if (cache_obj == freq_node->first_obj) {

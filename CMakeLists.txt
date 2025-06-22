@@ -53,7 +53,7 @@ endif()
 
 string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
 
-if(LOG_LEVEL_LOWER STREQUAL "")
+if(LOG_LEVEL_LOWER STREQUAL "none")
     if(${CMAKE_BUILD_TYPE} MATCHES "Debug")
         message(STATUS "LOG_LEVEL is not set, use DEBUG as default for debug build")
         add_compile_definitions(LOGLEVEL=6)
