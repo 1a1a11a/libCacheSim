@@ -104,7 +104,7 @@ set(LIBCACHESIM_CXX_FLAGS
     -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs
 )
 
-# maek sure the symbols are exported so that we can use dlsym
+# make sure the symbols are exported so that we can use dlsym
 set(CMAKE_C_VISIBILITY_PRESET default)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 0)
 
