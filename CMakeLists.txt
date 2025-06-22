@@ -26,7 +26,7 @@ option(OPT_SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
 option(ENABLE_3L_CACHE "enable 3LCache" OFF)
 set(LOG_LEVEL NONE CACHE STRING "change the logging level")
-set_property(CACHE LOG_LEVEL PROPERTY STRINGS VERBOSE DEBUG INFO WARN ERROR)
+set_property(CACHE LOG_LEVEL PROPERTY STRINGS ERROR WARN INFO DEBUG VERBOSE)
 
 # Platform detection
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
