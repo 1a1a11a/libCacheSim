@@ -95,10 +95,11 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req);
 // ****                                                               ****
 // ***********************************************************************
 /**
- * @brief initialize a LRU cache
+ * @brief initialize a SLRU cache
  *
  * @param ccache_params some common cache parameters
- * @param cache_specific_params LRU specific parameters, should be NULL
+ * @param cache_specific_params SLRU specific parameters, see parse_params
+ * function or use -e "print" with the cachesim binary
  */
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
