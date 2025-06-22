@@ -1,4 +1,5 @@
-cmake_minimum_re# Collect source files
+cmake_minimum_required(VERSION 3.10)
+# Collect source files
 project(cacheCluster)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
