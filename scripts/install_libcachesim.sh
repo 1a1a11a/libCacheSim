@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-SORUCE=$(readlink -f "${BASH_SOURCE[0]}")
-DIR=$(dirname "${SORUCE}")
+SOURCE=$(readlink -f "${BASH_SOURCE[0]}")
+DIR=$(dirname "${SOURCE}")
 
 cd "${DIR}"/../
 mkdir -p _build
