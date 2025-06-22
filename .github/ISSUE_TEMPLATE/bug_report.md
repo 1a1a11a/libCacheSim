@@ -12,7 +12,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Build libCacheSim with: `bsah scripts/debug.sh`
+1. Build libCacheSim with: `bash scripts/debug.sh`
 2. Run the command: `./_build_dbg/bin/cachesim ...`
 3. Provide input parameters and trace file: `...`
 4. See error
