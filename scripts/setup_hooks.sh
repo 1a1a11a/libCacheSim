@@ -8,7 +8,7 @@ HOOKS_DIR="${REPO_ROOT}/.git/hooks"
 echo "Installing git hooks..."
 
 # Create pre-commit hook
-cat > "${HOOKS_DIR}/pre-commit" << 'EOL'
+cat >"${HOOKS_DIR}/pre-commit" <<'EOL'
 #!/bin/bash
 set -e
 
@@ -301,4 +301,4 @@ echo "Git hooks installed successfully!"
 echo "The pre-commit hook will now run automatically on each commit to check for linting issues."
 echo "You can bypass the checks with: SKIP_LINT=1 git commit"
 echo "Linting logs are stored in .lint-logs/ for future reference."
-echo "Note: clang-tidy and clang-format will be used if they're installed on your system." 
+echo "Note: clang-tidy and clang-format will be used if they're installed on your system."

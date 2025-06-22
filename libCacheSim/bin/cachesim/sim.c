@@ -77,9 +77,9 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
   double runtime = gettime() - start_time;
 
   char output_str[1024];
-  char size_str[8];
+  char size_str[64];
 
-  if (!ignore_obj_size) convert_size_to_str(cache->cache_size, size_str);
+  if (!ignore_obj_size) convert_size_to_str(cache->cache_size, size_str, 64);
 #pragma GCC diagnostic push
   // Removed unknown pragma warning
   if (!ignore_obj_size) {

@@ -19,17 +19,18 @@ namespace utilsStr {
  * @param size
  * @param str a 8 byte char array
  */
-static inline void convert_size_to_str(long long size, char *str) {
+static inline void convert_size_to_str(long long size, char *str,
+                                       size_t str_len) {
   if (size >= TiB) {
-    snprintf(str, 16, "%.0lf TiB", (double)size / TiB);
+    snprintf(str, str_len, "%.0lf TiB", (double)size / TiB);
   } else if (size >= GiB) {
-    snprintf(str, 16, "%.0lf GiB", (double)size / GiB);
+    snprintf(str, str_len, "%.0lf GiB", (double)size / GiB);
   } else if (size >= MiB) {
-    snprintf(str, 16, "%.0lf MiB", (double)size / MiB);
+    snprintf(str, str_len, "%.0lf MiB", (double)size / MiB);
   } else if (size >= KiB) {
-    snprintf(str, 16, "%.0lf KiB", (double)size / KiB);
+    snprintf(str, str_len, "%.0lf KiB", (double)size / KiB);
   } else {
-    snprintf(str, 16, "%lld B", size);
+    snprintf(str, str_len, "%lld B", size);
   }
 }
 

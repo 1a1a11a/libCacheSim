@@ -13,7 +13,7 @@
 namespace utils {
 void *setup_mmap(const std::string &file_path, size_t *size) {
   int fd;
-  struct stat st{};
+  struct stat st {};
   void *mapped_file;
 
   // set up mmap region

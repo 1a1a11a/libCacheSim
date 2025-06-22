@@ -12,7 +12,7 @@
  * @param size
  * @param str a 8 byte char array
  */
-void convert_size_to_str(unsigned long long size, char *str);
+void convert_size_to_str(unsigned long long size, char *str, size_t str_len);
 
 /**
  * @brief convert a string to a uint64_t

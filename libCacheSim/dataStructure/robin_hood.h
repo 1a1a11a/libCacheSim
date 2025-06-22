@@ -615,27 +615,24 @@ struct pair {
 
   // pair constructors are explicit so we don't accidentally call this ctor when
   // we don't have to.
-  explicit constexpr pair(std::pair<T1, T2> const& o) noexcept(
-      noexcept(T1(std::declval<T1 const&>())) &&
-      noexcept(T2(std::declval<T2 const&>())))
+  explicit constexpr pair(std::pair<T1, T2> const& o) noexcept(noexcept(
+      T1(std::declval<T1 const&>())) && noexcept(T2(std::declval<T2 const&>())))
       : first(o.first), second(o.second) {}
 
   // pair constructors are explicit so we don't accidentally call this ctor when
   // we don't have to.
-  explicit constexpr pair(std::pair<T1, T2>&& o) noexcept(
-      noexcept(T1(std::move(std::declval<T1&&>()))) &&
-      noexcept(T2(std::move(std::declval<T2&&>()))))
+  explicit constexpr pair(std::pair<T1, T2>&& o) noexcept(noexcept(T1(std::move(
+      std::declval<T1&&>()))) && noexcept(T2(std::move(std::declval<T2&&>()))))
       : first(std::move(o.first)), second(std::move(o.second)) {}
 
-  constexpr pair(T1&& a, T2&& b) noexcept(
-      noexcept(T1(std::move(std::declval<T1&&>()))) &&
-      noexcept(T2(std::move(std::declval<T2&&>()))))
+  constexpr pair(T1&& a, T2&& b) noexcept(noexcept(T1(std::move(
+      std::declval<T1&&>()))) && noexcept(T2(std::move(std::declval<T2&&>()))))
       : first(std::move(a)), second(std::move(b)) {}
 
   template <typename U1, typename U2>
   constexpr pair(U1&& a, U2&& b) noexcept(
-      noexcept(T1(std::forward<U1>(std::declval<U1&&>()))) &&
-      noexcept(T2(std::forward<U2>(std::declval<U2&&>()))))
+      noexcept(T1(std::forward<U1>(std::declval<U1&&>()))) && noexcept(
+          T2(std::forward<U2>(std::declval<U2&&>()))))
       : first(std::forward<U1>(a)), second(std::forward<U2>(b)) {}
 
   template <typename... U1, typename... U2>
@@ -658,17 +655,13 @@ struct pair {
 
   // constructor called from the std::piecewise_construct_t ctor
   template <typename... U1, size_t... I1, typename... U2, size_t... I2>
-  pair(
-      std::tuple<U1...>& a, std::tuple<U2...>& b,
-      ROBIN_HOOD_STD::index_sequence<I1...> /*unused*/,
-      ROBIN_HOOD_STD::index_sequence<
-          I2...> /*unused*/) noexcept(noexcept(T1(std::
-                                                      forward<U1>(std::get<I1>(
-                                                          std::declval<std::tuple<
-                                                              U1...>&>()))...)) &&
-                                      noexcept(T2(std::forward<U2>(std::get<I2>(
-                                          std::declval<
-                                              std::tuple<U2...>&>()))...)))
+  pair(std::tuple<U1...>& a, std::tuple<U2...>& b, ROBIN_HOOD_STD::index_sequence<I1...> /*unused*/, ROBIN_HOOD_STD::index_sequence<I2...> /*unused*/) noexcept(
+      noexcept(T1(std::forward<U1>(std::get<I1>(
+          std::declval<std::tuple<
+              U1...>&>()))...)) && noexcept(T2(std::
+                                                   forward<U2>(std::get<I2>(
+                                                       std::declval<std::tuple<
+                                                           U2...>&>()))...)))
       : first(std::forward<U1>(std::get<I1>(a))...),
         second(std::forward<U2>(std::get<I2>(b))...) {
     // make visual studio compiler happy about warning about unused a & b.
@@ -705,8 +698,9 @@ inline constexpr bool operator!=(pair<A, B> const& x, pair<A, B> const& y) {
 template <typename A, typename B>
 inline constexpr bool
 operator<(pair<A, B> const& x, pair<A, B> const& y) noexcept(
-    noexcept(std::declval<A const&>() < std::declval<A const&>()) &&
-    noexcept(std::declval<B const&>() < std::declval<B const&>())) {
+    noexcept(std::declval<A const&>() <
+             std::declval<A const&>()) && noexcept(std::declval<B const&>() <
+                                                   std::declval<B const&>())) {
   return x.first < y.first || (!(y.first < x.first) && x.second < y.second);
 }
 template <typename A, typename B>
@@ -1552,8 +1546,8 @@ class Table
   // we can ignore it.
   explicit Table(
       size_t ROBIN_HOOD_UNUSED(bucket_count) /*unused*/, const Hash& h = Hash{},
-      const KeyEqual& equal = KeyEqual{}) noexcept(noexcept(Hash(h)) &&
-                                                   noexcept(KeyEqual(equal)))
+      const KeyEqual& equal =
+          KeyEqual{}) noexcept(noexcept(Hash(h)) && noexcept(KeyEqual(equal)))
       : WHash(h), WKeyEqual(equal) {
     ROBIN_HOOD_TRACE(this)
   }

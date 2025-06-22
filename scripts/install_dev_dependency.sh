@@ -46,7 +46,7 @@ main() {
 		sudo apt install -yqq nodejs npm
 	# trunk-ignore(shellcheck/SC2312)
 	elif [[ $(uname -a) == *"Darwin"* ]]; then
-		brew install gdb clang-format nodejs npm
+		brew install gdb clang-format flock nodejs npm
 	elif grep -qi 'microsoft' /proc/version 2>/dev/null; then
 		# WSL detection
 		sudo apt install -yqq gdb valgrind clang-tidy clang-format
