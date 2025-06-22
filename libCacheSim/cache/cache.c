@@ -243,10 +243,10 @@ bool cache_get_base(cache_t *cache, const request_t *req) {
   }
 
   if (hit) {
-    VVERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
+    VERBOSE("req %ld, obj %ld --- cache hit\n", cache->n_req, req->obj_id);
   } else if (!cache->can_insert(cache, req)) {
-    VVERBOSE("req %ld, obj %ld --- cache miss cannot insert\n", cache->n_req,
-             req->obj_id);
+    VERBOSE("req %ld, obj %ld --- cache miss cannot insert\n", cache->n_req,
+            req->obj_id);
   } else {
     while (cache->get_occupied_byte(cache) + req->obj_size +
                cache->obj_md_size >
