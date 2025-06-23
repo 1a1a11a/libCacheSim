@@ -24,7 +24,7 @@ jobs:
       - name: Test
         working-directory: ${{github.workspace}}/build
         run: |
-          ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+          ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
   ubuntu:
     runs-on: ubuntu-latest
@@ -44,7 +44,7 @@ jobs:
         working-directory: ${{github.workspace}}/build
         run: |
           export ASAN_OPTIONS="detect_leaks=1:halt_on_error=1:verbosity=1"
-          ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+          ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
   selfhosted:
     runs-on: self-hosted
@@ -56,7 +56,7 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{env.BUILD_TYPE}} -j
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
 
 
