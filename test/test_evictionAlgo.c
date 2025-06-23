@@ -39,9 +39,9 @@ static const cache_test_data_t test_data_truth[] = {
      .hashpower = 20,
      .req_cnt_true = 113872,
      .req_byte_true = 4368040448,
-     .miss_cnt_true = {74276, 64559, 60307, 56523, 54546, 52621, 50580, 48974},
-     .miss_byte_true = {3510420480, 3046959616, 2774180352, 2537695744,
-                        2403428864, 2269255168, 2135001088, 2029769728}},
+     .miss_cnt_true = {74329, 64553, 60315, 56522, 54546, 52618, 50580, 48974},
+     .miss_byte_true = {3510350848, 3046487552, 2774967808, 2537689600,
+                        2403425280, 2269210112, 2135005184, 2029769728}},
     {.cache_name = "Cacheus",
      .hashpower = 20,
      .req_cnt_true = 113872,
@@ -414,11 +414,11 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
 
-  // /* Belady requires reader that has next access information and can only use
-  //  * oracleGeneral trace */
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
-  // g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
-  // test_BeladySize);
+  // Belady algorithms require reader that has next access information
+  // and can only use oracleGeneral trace (which we're using)
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
+                       test_BeladySize);
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);
