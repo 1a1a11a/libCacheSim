@@ -25,8 +25,8 @@ option(SUPPORT_TTL "whether support TTL" OFF)
 option(OPT_SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
 option(ENABLE_3L_CACHE "enable 3LCache" OFF)
-set(LOG_LEVEL NONE CACHE STRING "change the logging level")
-set_property(CACHE LOG_LEVEL PROPERTY STRINGS INFO WARN ERROR DEBUG VERBOSE VVERBOSE VVVERBOSE)
+set(LOG_LEVEL "default" CACHE STRING "change the logging level")
+set_property(CACHE LOG_LEVEL PROPERTY STRINGS ERROR WARN INFO DEBUG VERBOSE DEFAULT)
 
 # Platform detection
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -41,20 +41,6 @@ else()
     message(FATAL_ERROR "unsupported operating system ${CMAKE_SYSTEM_NAME}")
 endif()
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-
-    if(LOG_LEVEL STREQUAL "NONE")
-        set(LOG_LEVEL INFO)
-    endif()
-elseif(${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    if(LOG_LEVEL STREQUAL "NONE")
-        set(LOG_LEVEL DEBUG)
-    endif()
-else()
-    set(LOG_LEVEL INFO)
-endif()
-
 configure_file(libCacheSim/include/config.h.in libCacheSim/include/config.h)
 
 if(SUPPORT_TTL)
@@ -65,12 +51,23 @@ if(USE_HUGEPAGE)
     add_compile_definitions(USE_HUGEPAGE=1)
 endif()
 
-string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
+if(NOT CMAKE_BUILD_TYPE)
+    # we can also consider RelWithDebInfo, but it will be too slow for release build
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 
-if(LOG_LEVEL_LOWER STREQUAL "vvverbose")
-    add_compile_definitions(LOGLEVEL=3)
-elseif(LOG_LEVEL_LOWER STREQUAL "vverbose")
-    add_compile_definitions(LOGLEVEL=4)
+
+string(TOLOWER "${LOG_LEVEL}" LOG_LEVEL_LOWER)
+string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
+
+if(LOG_LEVEL_LOWER STREQUAL "default")
+    if(CMAKE_BUILD_TYPE_LOWER MATCHES "debug")
+        message(STATUS "LOG_LEVEL is not set, use DEBUG as default for debug build")
+        add_compile_definitions(LOGLEVEL=6)
+    else()
+        message(STATUS "LOG_LEVEL is not set, use INFO as default for release build")
+        add_compile_definitions(LOGLEVEL=7)
+    endif()
 elseif(LOG_LEVEL_LOWER STREQUAL "verbose")
     add_compile_definitions(LOGLEVEL=5)
 elseif(LOG_LEVEL_LOWER STREQUAL "debug")
@@ -81,14 +78,12 @@ elseif(LOG_LEVEL_LOWER STREQUAL "warn")
     add_compile_definitions(LOGLEVEL=8)
 elseif(LOG_LEVEL_LOWER STREQUAL "error")
     add_compile_definitions(LOGLEVEL=9)
-
-# default none is info
-elseif(LOG_LEVEL_LOWER STREQUAL "none")
-    add_compile_definitions(LOGLEVEL=7)
 else()
     message(WARNING "unknown log level ${LOG_LEVEL}, use INFO as default")
     add_compile_definitions(LOGLEVEL=7)
 endif()
+
+
 
 # Define shared compiler flags for all targets
 set(LIBCACHESIM_C_FLAGS 

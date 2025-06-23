@@ -28,22 +28,6 @@ extern pthread_mutex_t log_mtx;
     pthread_mutex_unlock(&log_mtx);        \
   } while (0)
 
-#if LOGLEVEL <= VVVERBOSE_LEVEL
-#define VVVERBOSE(...) LOGGING(VVVERBOSE_LEVEL, __VA_ARGS__)
-#else
-#define VVVERBOSE(...) \
-  do {                 \
-  } while (0)
-#endif
-
-#if LOGLEVEL <= VVERBOSE_LEVEL
-#define VVERBOSE(...) LOGGING(VVERBOSE_LEVEL, __VA_ARGS__)
-#else
-#define VVERBOSE(...) \
-  do {                \
-  } while (0)
-#endif
-
 #if LOGLEVEL <= VERBOSE_LEVEL
 #define VERBOSE(...) LOGGING(VERBOSE_LEVEL, __VA_ARGS__)
 #else
@@ -76,11 +60,11 @@ extern pthread_mutex_t log_mtx;
   } while (0)
 #endif
 
-#if LOGLEVEL <= SEVERE_LEVEL
-#define ERROR(...)                      \
-  {                                     \
-    LOGGING(SEVERE_LEVEL, __VA_ARGS__); \
-    abort();                            \
+#if LOGLEVEL <= ERROR_LEVEL
+#define ERROR(...)                     \
+  {                                    \
+    LOGGING(ERROR_LEVEL, __VA_ARGS__); \
+    abort();                           \
   }
 #else
 #define ERROR(...)
@@ -119,12 +103,6 @@ extern pthread_mutex_t log_mtx;
 static inline void log_header(int level, const char *file, int line) {
   int n;
   switch (level) {
-    case VVVERBOSE_LEVEL:
-      n = fprintf(stderr, "%s[VVV]   ", CYAN);
-      break;
-    case VVERBOSE_LEVEL:
-      n = fprintf(stderr, "%s[VV]    ", CYAN);
-      break;
     case VERBOSE_LEVEL:
       n = fprintf(stderr, "%s[VERB]  ", MAGENTA);
       break;
@@ -137,7 +115,7 @@ static inline void log_header(int level, const char *file, int line) {
     case WARN_LEVEL:
       n = fprintf(stderr, "%s[WARN]  ", YELLOW);
       break;
-    case SEVERE_LEVEL:
+    case ERROR_LEVEL:
       n = fprintf(stderr, "%s[ERROR] ", RED);
       break;
     default:

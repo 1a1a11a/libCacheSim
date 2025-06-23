@@ -29,7 +29,7 @@ sampler_t *clone_SHARDS_sampler(const sampler_t *sampler) {
   sampler_t *cloned_sampler = my_malloc(sampler_t);
   memcpy(cloned_sampler, sampler, sizeof(sampler_t));
 
-  VVERBOSE("clone spatial sampler\n");
+  VERBOSE("clone SHARDS sampler\n");
   return cloned_sampler;
 }
 
@@ -52,7 +52,7 @@ sampler_t *create_SHARDS_sampler(double sampling_ratio) {
 
   print_sampler(s);
 
-  VVERBOSE("create SHARDS sampler with ratio %lf\n", sampling_ratio);
+  VERBOSE("create SHARDS sampler with ratio %lf\n", sampling_ratio);
   return s;
 }
 

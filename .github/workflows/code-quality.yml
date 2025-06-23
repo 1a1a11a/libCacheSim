@@ -1,10 +1,6 @@
 name: Code Quality
 
-on:
-  push:
-    branches: [ main, master, develop ]
-  pull_request:
-    branches: [ main, master, develop ]
+on: [push, pull_request]
 
 jobs:
   code-quality:

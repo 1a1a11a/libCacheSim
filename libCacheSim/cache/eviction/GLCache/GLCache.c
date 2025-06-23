@@ -397,8 +397,8 @@ static cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req) {
 
     seg = allocate_new_seg(cache, bucket->bucket_id);
     append_seg_to_bucket(params, bucket, seg);
-    VVERBOSE("%lu allocate new seg, %d in use seg\n", cache->n_req,
-             params->n_in_use_segs);
+    VERBOSE("%lu allocate new seg, %d in use seg\n", cache->n_req,
+            params->n_in_use_segs);
   }
 
   cache_obj_t *cache_obj = &seg->objs[seg->n_obj];
