@@ -28,14 +28,14 @@ static void print_results(const cache_t *cache, const cache_stat_t *res) {
   }
   printf("};\n");
 
-  printf("uint64_t miss_cnt_true[] = {");
+  printf("uint64_t miss_cnt[] = {");
   printf("%ld", (long)res[0].n_miss);
   for (uint64_t i = 1; i < CACHE_SIZE / STEP_SIZE; i++) {
     printf(", %ld", (long)res[i].n_miss);
   }
   printf("};\n");
 
-  printf("uint64_t miss_byte_true[] = {");
+  printf("uint64_t miss_byte[] = {");
   printf("%ld", (long)res[0].n_miss_byte);
   for (uint64_t i = 1; i < CACHE_SIZE / STEP_SIZE; i++) {
     printf(", %ld", (long)res[i].n_miss_byte);
@@ -327,10 +327,10 @@ static void test_LeCaR(gconstpointer user_data) {
 }
 
 static void test_Cacheus(gconstpointer user_data) {
-  uint64_t miss_cnt_true[] = {89776, 82725, 78839, 73048,
-                              69329, 69184, 69117, 66048};
-  uint64_t miss_byte_true[] = {4048868864, 3727920128, 3489738752, 3184179200,
-                               2981198336, 2968055296, 2925565440, 2789046784};
+  uint64_t miss_cnt_true[] = {90052, 82866, 77130, 77115,
+                              69828, 68435, 67930, 66993};
+  uint64_t miss_byte_true[] = {4068200448, 3757362176, 3439912448, 3359079424,
+                               3018722816, 2928907776, 2867576832, 2834809856};
 
   reader_t *reader = (reader_t *)user_data;
   common_cache_params_t cc_params = {
@@ -607,8 +607,8 @@ static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
-  srand(0);  // for reproducibility
-  set_rand_seed(rand());
+  srand(0);           // for reproducibility
+  set_rand_seed(42);  // Use fixed seed for cross-platform consistency
 
   reader_t *reader;
 
