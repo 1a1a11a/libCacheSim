@@ -87,6 +87,7 @@ static void Belady_free(cache_t *cache) {
     node = pqueue_pop(params->pq);
   }
   pqueue_free(params->pq);
+  my_free(sizeof(Belady_params_t), params);
 
   cache_struct_free(cache);
 }
