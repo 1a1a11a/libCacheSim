@@ -1,0 +1,89 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/libCacheSim/include",
+                "${workspaceFolder}/libCacheSim/utils/include",
+                "${workspaceFolder}/libCacheSim",
+                "${workspaceFolder}/libCacheSim/dataStructure",
+                "${workspaceFolder}/libCacheSim/cache/eviction",
+                "/usr/local/include",
+                "/usr/include",
+                "/usr/include/glib-2.0",
+                "/usr/lib/*/glib-2.0/include",
+                "/usr/include/*-linux-gnu"
+            ],
+            "defines": [
+                "LOGLEVEL=6",
+                "USE_HUGEPAGE=1",
+                "SUPPORT_ZSTD_TRACE=1"
+            ],
+            "compilerPath": "${default}",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "${default}",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+        },
+        {
+            "name": "macOS",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/libCacheSim/include",
+                "${workspaceFolder}/libCacheSim/utils/include",
+                "${workspaceFolder}/libCacheSim",
+                "${workspaceFolder}/libCacheSim/dataStructure",
+                "${workspaceFolder}/libCacheSim/cache/eviction",
+                "${workspaceFolder}/build/_deps/*/include",
+                "/usr/local/include",
+                "/opt/homebrew/include",
+                "/usr/include",
+                "/usr/local/include/glib-2.0",
+                "/opt/homebrew/include/glib-2.0",
+                "/usr/local/lib/glib-2.0/include",
+                "/opt/homebrew/lib/glib-2.0/include"
+            ],
+            "defines": [
+                "LOGLEVEL=6",
+                "USE_HUGEPAGE=1",
+                "SUPPORT_ZSTD_TRACE=1",
+                "OS_DARWIN"
+            ],
+            "compilerPath": "${default}",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "${default}",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+        },
+        {
+            "name": "Windows",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/libCacheSim/include",
+                "${workspaceFolder}/libCacheSim/utils/include",
+                "${workspaceFolder}/libCacheSim",
+                "${workspaceFolder}/libCacheSim/dataStructure",
+                "${workspaceFolder}/libCacheSim/cache/eviction",
+                "${workspaceFolder}/build/_deps/*/include"
+            ],
+            "defines": [
+                "LOGLEVEL=6",
+                "USE_HUGEPAGE=1",
+                "SUPPORT_ZSTD_TRACE=1",
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "${default}",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "${default}",
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+        }
+    ],
+    "version": 4
+}
