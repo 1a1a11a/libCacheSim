@@ -26,6 +26,7 @@ option(SUPPORT_TTL "whether support TTL" OFF)
 option(OPT_SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
 option(ENABLE_3L_CACHE "enable 3LCache" OFF)
+option(BUILD_SHARED_LIBS "build shared library" ON)
 set(LOG_LEVEL "default" CACHE STRING "change the logging level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS ERROR WARN INFO DEBUG VERBOSE DEFAULT)
 
@@ -260,17 +261,6 @@ add_library(${PROJECT_NAME} STATIC
     $<TARGET_OBJECTS:mrcProfiler_lib>
 )
 
-add_library(${PROJECT_NAME}_shared SHARED
-    $<TARGET_OBJECTS:cache_lib_c>
-    $<TARGET_OBJECTS:cache_lib_cpp>
-    $<TARGET_OBJECTS:traceReader_lib>
-    $<TARGET_OBJECTS:profiler_lib>
-    $<TARGET_OBJECTS:dataStructure_lib>
-    $<TARGET_OBJECTS:utils_lib>
-    $<TARGET_OBJECTS:traceAnalyzer_lib>
-    $<TARGET_OBJECTS:mrcProfiler_lib>
-)
-
 # Set include directories for the unified library
 target_include_directories(${PROJECT_NAME} INTERFACE
     # Use separate BUILD_INTERFACE for each directory to avoid list expansion issues
@@ -280,20 +270,53 @@ target_include_directories(${PROJECT_NAME} INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_include_directories(${PROJECT_NAME}_shared INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
 
 # Link the static library to all required dependencies
 target_link_libraries(${PROJECT_NAME} PUBLIC ${dependency_libs})
-target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${dependency_libs})
 
 # Set version and properties
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
-set_target_properties(${PROJECT_NAME}_shared PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
+
+# Install the static library
+install(TARGETS ${PROJECT_NAME}
+    EXPORT ${PROJECT_NAME}Targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+
+if(BUILD_SHARED_LIBS)
+    add_library(${PROJECT_NAME}_shared SHARED
+        $<TARGET_OBJECTS:cache_lib_c>
+        $<TARGET_OBJECTS:cache_lib_cpp>
+        $<TARGET_OBJECTS:traceReader_lib>
+        $<TARGET_OBJECTS:profiler_lib>
+        $<TARGET_OBJECTS:dataStructure_lib>
+        $<TARGET_OBJECTS:utils_lib>
+        $<TARGET_OBJECTS:traceAnalyzer_lib>
+        $<TARGET_OBJECTS:mrcProfiler_lib>
+    )
+
+    target_include_directories(${PROJECT_NAME}_shared INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/utils/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim/>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
+
+    target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${dependency_libs})
+
+    set_target_properties(${PROJECT_NAME}_shared PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
+
+    install(TARGETS ${PROJECT_NAME}_shared
+        EXPORT ${PROJECT_NAME}Targets
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endif()
+
 
 # Configuration files
 configure_file(${PROJECT_SOURCE_DIR}/${PROJECT_NAME}.pc.in ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc @ONLY)
@@ -306,21 +329,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Find${PROJECT_NAME}.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME} COMPONENT dev)
-
-# Install the unified library
-install(TARGETS ${PROJECT_NAME}
-    EXPORT ${PROJECT_NAME}Targets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-install(TARGETS ${PROJECT_NAME}_shared
-    EXPORT ${PROJECT_NAME}Targets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
 
 # Install the export file
 install(EXPORT ${PROJECT_NAME}Targets
