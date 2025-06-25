@@ -46,20 +46,20 @@ if(NOT LIBCACHESIM_LIBRARY OR NOT LIBCACHESIM_INCLUDE_DIR)
     message(FATAL_ERROR "libCacheSim not found! Please install libCacheSim first.")
 endif()
 
-add_executable(cacheH main.cpp myconfig.cpp simulator.cpp utils.cpp)
+add_executable(cacheHierarchy main.cpp myconfig.cpp simulator.cpp utils.cpp)
 
-target_include_directories(cacheH PRIVATE
+target_include_directories(cacheHierarchy PRIVATE
     ${ZSTD_INCLUDE_DIR}
     ${LIBCACHESIM_INCLUDE_DIR}
 )
 
 # Add GLib compile and link flags
-target_compile_options(cacheH PRIVATE ${GLIB_CFLAGS_OTHER})
-target_include_directories(cacheH PRIVATE ${GLIB_INCLUDE_DIRS})
-target_link_directories(cacheH PRIVATE ${GLIB_LIBRARY_DIRS})
+target_compile_options(cacheHierarchy PRIVATE ${GLIB_CFLAGS_OTHER})
+target_include_directories(cacheHierarchy PRIVATE ${GLIB_INCLUDE_DIRS})
+target_link_directories(cacheHierarchy PRIVATE ${GLIB_LIBRARY_DIRS})
 
 
-target_link_libraries(cacheH
+target_link_libraries(cacheHierarchy
     ${LIBCACHESIM_LIBRARY}
     m
     ${GLIB_LIBRARIES}
