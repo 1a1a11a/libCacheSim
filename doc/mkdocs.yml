@@ -1,0 +1,38 @@
+site_name: libCacheSim
+site_url: https://libCacheSim.com
+repo_url: https://github.com/1a1a11a/libCacheSim
+repo_name: 1a1a11a/libCacheSim
+
+nav:
+  - Getting Started:
+    - Overview: index.md
+    - Installation: getting-started/install.md
+    - Quick Start Tutorial: getting-started/quickstart/quickstart_cachesim
+  - API Reference:
+    - Overview: api/API.md
+
+theme:
+  name: material
+  palette:
+    scheme: default
+    primary: custom
+    accent: custom
+  font:
+    text: Open Sans
+  features:
+    - header.autohide
+    - navigation.tabs
+    - navigation.instant
+    - navigation.footer
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [../src]
+
+copyright: Copyright &copy; 2025 libCacheSim Team

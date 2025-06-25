@@ -1,0 +1,2 @@
+mkdocs-material>=9.6.5
+mkdocstrings-python>=1.16.2

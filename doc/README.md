@@ -1,15 +1,8 @@
+# libCacheSim documentation
 
-## Main tools
-* [cachesim](quickstart_cachesim.md)
-* [trace utils](quickstart_traceUtils.md)
-* [trace analysis](quickstart_traceAnalysis.md)
+## Build docs locally
 
-## Using libCacheSim as a library
-* [library](lib.md)
-* [add a new algorithm](lib_extend.md)
-* [API](lib_api.md)
-
-
-## Benchmarks
-* [benchmarks](quickstart_benchmarks.md)
-
+```
+pip install -r ./requirements.txt
+mkdocs serve
+```

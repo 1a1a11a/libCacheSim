@@ -1,0 +1,46 @@
+:root {
+    /* Primary colors (UChicago Maroon) */
+    --md-primary-fg-color:        #800000; /* UChicago Maroon */
+    --md-primary-fg-color--light: #a52a2a; /* Lighter maroon */
+    --md-primary-fg-color--dark:  #4a0000; /* Darker maroon */
+
+    /* Accent colors (Black & White for contrast) */
+    --md-accent-fg-color:         #000000; /* Black */
+    --md-accent-fg-color--light:  #333333; /* Dark gray */
+    --md-accent-fg-color--dark:   #ffffff; /* White */
+
+    /* Background and text */
+    --md-default-bg-color:        #ffffff; /* White background */
+    --md-default-fg-color:        #212121; /* Dark text */
+    
+    /* Custom link colors */
+    --md-typeset-a-color:         #800000; /* Default link color (Maroon) */
+    --md-typeset-a-color--hover:  #a52a2a; /* Lighter Maroon on hover */
+}
+
+/* Explicitly style hovered links */
+.md-typeset a {
+    color: var(--md-typeset-a-color);
+    text-decoration: none;
+}
+
+.md-typeset a:hover {
+    color: var(--md-typeset-a-color--hover);
+    text-decoration: underline; /* Optional: Adds an underline on hover */
+}
+
+/* Sidebar link color (default state) */
+.md-nav__link {
+    color: var(--md-primary-fg-color); /* UChicago Maroon */
+}
+
+/* Sidebar link on hover */
+.md-nav__link:hover {
+    color: var(--md-primary-fg-color--light); /* Lighter Maroon */
+}
+
+/* Active sidebar link (current page) */
+.md-nav__link--active {
+    color: var(--md-primary-fg-color--dark); /* Darker Maroon */
+    font-weight: bold;
+}
