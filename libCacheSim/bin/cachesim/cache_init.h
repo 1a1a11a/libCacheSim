@@ -1,6 +1,8 @@
 
 #include <strings.h>
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -105,9 +107,19 @@ static inline cache_t *create_cache(const char *trace_path,
     } else {
       const char *window_size = strstr(eviction_params, "window-size=");
       if (window_size == NULL) {
-        char *new_params = malloc(strlen(eviction_params) + 20);
-        sprintf(new_params, "%s,window-size=0.01", eviction_params);
+        // Calculate exact size needed: original + ",window-size=0.01" + null
+        // terminator
+        size_t new_params_len =
+            strlen(eviction_params) + strlen(",window-size=0.01") + 1;
+        char *new_params = (char *)malloc(new_params_len);
+        if (new_params == NULL) {
+          ERROR("failed to allocate memory for new_params\n");
+          abort();
+        }
+        snprintf(new_params, new_params_len, "%s,window-size=0.01",
+                 eviction_params);
         cache = WTinyLFU_init(cc_params, new_params);
+        free(new_params);  // Free the allocated memory
       } else {
         cache = WTinyLFU_init(cc_params, eviction_params);
       }
