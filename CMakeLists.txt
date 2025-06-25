@@ -289,6 +289,7 @@ target_include_directories(${PROJECT_NAME}_shared INTERFACE
 
 # Link the static library to all required dependencies
 target_link_libraries(${PROJECT_NAME} PUBLIC ${dependency_libs})
+target_link_libraries(${PROJECT_NAME}_shared PUBLIC ${dependency_libs})
 
 # Set version and properties
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION})
