@@ -1,6 +1,6 @@
 # a cache hierarchy example
-This simulates several L1 caches (each with one trace) and one L2 cache by first generating the misses of the L1 caches and feed in the L2 cache. 
-It outputs the L2 miss ratio curve. 
+This simulates several L1 caches (each with one trace) and one L2 cache by first generating the misses of the L1 caches and feed in the L2 cache.
+It outputs the L2 miss ratio curve.
 
 
 ## Dependency
@@ -11,12 +11,11 @@ It outputs the L2 miss ratio curve.
 ```bash
 mkdir _build/;
 cd _build/;
-cmake ../;
-make -j;
+cmake -G Ninja ../;
+ninja;
 
 ```
 
 
-## Run 
+## Run
 ./layeredCache ../config.yaml
-

@@ -61,12 +61,12 @@ cd _build_dbg
 
 # Configure and build with warning flags
 echo "Configuring and building project with strict warnings..."
-cmake -DCMAKE_BUILD_TYPE=Debug \
+cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug \
 	-DCMAKE_C_FLAGS="-Wall -Wextra -Werror -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs" \
 	-DCMAKE_CXX_FLAGS="-Wall -Wextra -Werror -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs" \
 	..
 
-make -j
+ninja
 
 # Return to script directory
 # cd ${DIR}

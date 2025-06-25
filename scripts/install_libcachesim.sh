@@ -7,6 +7,6 @@ DIR=$(dirname "${SOURCE}")
 cd "${DIR}"/../
 mkdir -p _build
 cd _build
-cmake ..
-make -j
+cmake -G Ninja ..
+ninja
 cd "${DIR}"

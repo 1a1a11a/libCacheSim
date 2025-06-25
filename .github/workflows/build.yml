@@ -18,9 +18,9 @@ jobs:
       - name: Prepare
         run: bash scripts/install_dependency.sh
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -G Ninja -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: ninja -C ${{github.workspace}}/build
       - name: Test
         working-directory: ${{github.workspace}}/build
         run: |
@@ -34,12 +34,12 @@ jobs:
         run: bash scripts/install_dependency.sh
       - name: Configure CMake with LSan
         run: |
-          cmake -B ${{github.workspace}}/build \
+          cmake -G Ninja -B ${{github.workspace}}/build \
                 -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
                 -DCMAKE_C_FLAGS="-fsanitize=leak" \
                 -DCMAKE_CXX_FLAGS="-fsanitize=leak"
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: ninja -C ${{github.workspace}}/build
       - name: Test with LSan
         working-directory: ${{github.workspace}}/build
         run: |
@@ -51,12 +51,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_GLCACHE=on -DENABLE_LRB=on
+        run: cmake -G Ninja -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_GLCACHE=on -DENABLE_LRB=on
       - name: Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: ninja -C ${{github.workspace}}/build
       - name: Test
         working-directory: ${{github.workspace}}/build
         run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
-
-
-

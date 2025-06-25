@@ -102,7 +102,7 @@ fi
 setup_ubuntu() {
 	log_info "Setting up Ubuntu dependencies..."
 	sudo apt update
-	sudo apt install -yqq build-essential google-perftools xxhash
+	sudo apt install -yqq build-essential google-perftools xxhash ninja-build
 	sudo apt install -yqq libglib2.0-dev libunwind-dev
 	sudo apt install -yqq libgoogle-perftools-dev
 }
@@ -124,7 +124,7 @@ setup_macOS() {
 		log_error "Homebrew is not installed. Please install Homebrew first."
 		exit 1
 	fi
-	brew install glib google-perftools argp-standalone xxhash llvm wget cmake zstd xgboost lightgbm
+	brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm
 }
 
 # Install CMake
@@ -165,13 +165,13 @@ install_xgboost() {
 	pushd xgboost >/dev/null
 	mkdir -p build
 	pushd build >/dev/null
-	cmake ..
+	cmake -G Ninja ..
 	if [[ ${GITHUB_ACTIONS-} == "true" ]]; then
-		make
+		ninja
 	else
-		make -j
+		ninja
 	fi
-	sudo make install
+	sudo ninja install
 	popd >/dev/null
 	popd >/dev/null
 	popd >/dev/null
@@ -187,13 +187,13 @@ install_lightgbm() {
 	pushd LightGBM >/dev/null
 	mkdir -p build
 	pushd build >/dev/null
-	cmake ..
+	cmake -G Ninja ..
 	if [[ ${GITHUB_ACTIONS-} == "true" ]]; then
-		make
+		ninja
 	else
-		make -j
+		ninja
 	fi
-	sudo make install
+	sudo ninja install
 	popd >/dev/null
 	popd >/dev/null
 	popd >/dev/null
@@ -211,9 +211,9 @@ install_zstd() {
 	pushd "zstd-${zstd_version}/build/cmake/" >/dev/null
 	mkdir -p _build
 	pushd _build >/dev/null
-	cmake ..
-	make -j
-	sudo make install
+	cmake -G Ninja ..
+	ninja
+	sudo ninja install
 	popd >/dev/null
 	popd >/dev/null
 	popd >/dev/null

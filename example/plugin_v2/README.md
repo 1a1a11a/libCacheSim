@@ -15,8 +15,8 @@ To compile the plugin into a shared library:
 ```bash
 mkdir build
 cd build
-cmake ..
-make
+cmake -G Ninja ..
+ninja
 ```
 
 This will create:

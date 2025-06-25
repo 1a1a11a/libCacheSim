@@ -19,16 +19,16 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       version: ${{ steps.package.outputs.version }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Synchronize Node.js binding version
         run: |
           echo "Synchronizing Node.js binding version with main project..."
           python3 scripts/sync_node_version.py
-      
+
       - name: Get package version
         id: package
         working-directory: libCacheSim-node
@@ -36,7 +36,7 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
-      
+
       - name: Check if release exists
         id: check_release
         run: |
@@ -50,7 +50,7 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Create GitHub Release
         id: release
         if: steps.check_release.outputs.exists == 'false'
@@ -62,15 +62,15 @@ jobs:
           release_name: Release v${{ steps.package.outputs.version }}
           body: |
             Release v${{ steps.package.outputs.version }}
-            
+
             ## Installation
             ```bash
             npm install libcachesim-node
             ```
-            
+
             ## Supported Platforms
             - Linux x64
-            
+
             Pre-compiled binaries are automatically downloaded during installation.
           draft: false
           prerelease: false
@@ -79,48 +79,48 @@ jobs:
     if: github.event_name == 'release'
     needs: create-release
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Synchronize Node.js binding version
         run: |
           echo "Synchronizing Node.js binding version with main project..."
           python3 scripts/sync_node_version.py
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
-      
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libglib2.0-dev libzstd-dev
-      
+          sudo apt-get install -y build-essential cmake ninja-build libglib2.0-dev libzstd-dev
+
       - name: Build libCacheSim
         run: |
           echo "Building libCacheSim for Linux x64..."
           mkdir -p _build
           cd _build
-          cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} .. -DCMAKE_VERBOSE_MAKEFILE=ON
+          cmake -G Ninja -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} .. -DCMAKE_VERBOSE_MAKEFILE=ON
           echo "Starting build..."
-          make -j$(nproc) VERBOSE=1
-      
+          ninja -v
+
       - name: Prepare vendored library
         run: |
           mkdir -p libCacheSim-node/vendor/include
           cp _build/liblibCacheSim.a libCacheSim-node/vendor/
           cp -r libCacheSim/include/* libCacheSim-node/vendor/include/
-      
+
       - name: Install Node.js dependencies
         working-directory: libCacheSim-node
         run: npm install
-      
+
       - name: Build and upload prebuilt binary
         working-directory: libCacheSim-node
         run: |
@@ -132,7 +132,7 @@ jobs:
           CFLAGS=-fPIC CXXFLAGS=-fPIC npx prebuild --upload-all --verbose
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Test binary
         working-directory: libCacheSim-node
         run: |
@@ -145,33 +145,33 @@ jobs:
     if: github.event_name == 'release'
     needs: build-and-publish
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Synchronize Node.js binding version
         run: |
           echo "Synchronizing Node.js binding version with main project..."
           python3 scripts/sync_node_version.py
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
-          
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libglib2.0-dev libzstd-dev
+          sudo apt-get install -y build-essential cmake ninja-build libglib2.0-dev libzstd-dev
 
       - name: Build libCacheSim
         run: |
           mkdir -p _build
           cd _build
-          cmake -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ..
-          make -j$(nproc)
+          cmake -G Ninja -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} ..
+          ninja
 
       - name: Prepare vendored library
         run: |
@@ -184,4 +184,4 @@ jobs:
         working-directory: libCacheSim-node
         run: npm publish --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} 
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

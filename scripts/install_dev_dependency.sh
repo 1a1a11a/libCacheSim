@@ -41,16 +41,16 @@ FILE_DIR=$(dirname "$0")
 main() {
 	# Detect OS and setup basic dependencies
 	if [[ -f /etc/os-release ]] && grep -qiE 'ubuntu|debian' /etc/os-release; then
-		sudo apt install -yqq gdb valgrind clang-tidy clang-format
+		sudo apt install -yqq gdb valgrind clang-tidy clang-format ninja-build
 		# node js dependency for libCacheSim-js
 		sudo apt install -yqq nodejs npm
 	# trunk-ignore(shellcheck/SC2312)
 	elif [[ $(uname -a) == *"Darwin"* ]]; then
 		# note that clang-format version on macOS might be newer than the one in ubuntu, and it can cause different formatting results
-		brew install gdb clang-format flock nodejs npm
+		brew install gdb clang-format flock nodejs npm ninja
 	elif grep -qi 'microsoft' /proc/version 2>/dev/null; then
 		# WSL detection
-		sudo apt install -yqq gdb valgrind clang-tidy clang-format
+		sudo apt install -yqq gdb valgrind clang-tidy clang-format ninja-build
 	else
 		log_error "Unsupported operating system. Only Ubuntu, Debian, WSL, and macOS are supported. Some dependencies may not be installed."
 	fi
