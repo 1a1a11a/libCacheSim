@@ -1,27 +1,67 @@
-cmake_minimum_required (VERSION 3.2)
-project (cacheSimulatorMultiSize)
+cmake_minimum_required (VERSION 3.10)
+project (cacheSimulatorConcurrent)
+
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+set(CMAKE_CXX_EXTENSIONS Off)
 
+# Find required packages
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB REQUIRED glib-2.0)
 
-find_library(libCacheSim libCacheSim)
-find_path(libCacheSimInclude libCacheSim)
-include_directories(${libCacheSimInclude})
-message(STATUS "libCacheSim found? ${libCacheSim}, ${libCacheSimInclude}")
+# Find ZSTD library
+find_library(ZSTD_LIBRARY
+    NAMES zstd libzstd
+    PATHS /usr/local/lib /usr/lib /opt/homebrew/lib
+    DOC "ZSTD library"
+)
 
+find_path(ZSTD_INCLUDE_DIR
+    NAMES zstd.h
+    PATHS /usr/local/include /usr/include /opt/homebrew/include
+    DOC "ZSTD include directory"
+)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../../cmake/Modules/")
-find_package(GLib "2.40" REQUIRED)
-include_directories(${GLib_INCLUDE_DIRS})
-message(STATUS "glib found? ${GLib_FOUND}, lib = ${GLib_LIBRARY}, header = ${GLib_INCLUDE_DIRS}")
-
-find_package(ZSTD)
-# https://stackoverflow.com/questions/61377055/cannot-find-gflags-gflags-h-while-building-library-osx/61379123#61379123
 include_directories(${ZSTD_INCLUDE_DIR})
-if ("${ZSTD_LIBRARIES}" STREQUAL "") 
-    message(FATAL_ERROR "zstd not found")
+message(STATUS "ZSTD library: ${ZSTD_LIBRARY}")
+message(STATUS "ZSTD include: ${ZSTD_INCLUDE_DIR}")
+
+# Find libCacheSim
+find_library(LIBCACHESIM_LIBRARY
+    NAMES CacheSim libCacheSim
+    PATHS /usr/local/lib /usr/lib
+    DOC "libCacheSim unified library"
+)
+
+find_path(LIBCACHESIM_INCLUDE_DIR
+    NAMES libCacheSim.h
+    PATHS /usr/local/include /usr/include
+    DOC "libCacheSim include directory"
+)
+
+message(STATUS "libCacheSim library: ${LIBCACHESIM_LIBRARY}")
+message(STATUS "libCacheSim include: ${LIBCACHESIM_INCLUDE_DIR}")
+
+if(NOT LIBCACHESIM_LIBRARY OR NOT LIBCACHESIM_INCLUDE_DIR)
+    message(FATAL_ERROR "libCacheSim not found! Please install libCacheSim first.")
 endif()
 
-add_executable(cacheSimulatorMultiSize main.cpp)
-target_link_libraries(cacheSimulatorMultiSize libCacheSim m ${GLib_LIBRARY} ${ZSTD_LIBRARIES})
+add_executable(cacheSimulatorConcurrent main.cpp)
 
+target_include_directories(cacheSimulatorConcurrent PRIVATE
+    ${ZSTD_INCLUDE_DIR}
+    ${LIBCACHESIM_INCLUDE_DIR}
+)
+
+# Add GLib compile and link flags
+target_compile_options(cacheSimulatorConcurrent PRIVATE ${GLIB_CFLAGS_OTHER})
+target_include_directories(cacheSimulatorConcurrent PRIVATE ${GLIB_INCLUDE_DIRS})
+target_link_directories(cacheSimulatorConcurrent PRIVATE ${GLIB_LIBRARY_DIRS})
+
+
+target_link_libraries(cacheSimulatorConcurrent
+    ${LIBCACHESIM_LIBRARY}
+    m
+    ${GLIB_LIBRARIES}
+    ${ZSTD_LIBRARY}
+)

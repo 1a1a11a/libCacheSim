@@ -25,8 +25,9 @@ void run_one_cache_multiple_sizes(cache_t *cache, reader_t *reader) {
       "      cache name        cache size           num_miss        num_req"
       "        miss ratio      byte miss ratio\n");
   for (int i = 0; i < NUM_SIZES; i++) {
-    printf("%16s %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
-           result[i].cache_size, result[i].n_miss, result[i].n_req,
+    printf("%16s %16lld %16lld %16lld %16.4lf %16.4lf\n", result[i].cache_name,
+           (long long)result[i].cache_size, (long long)result[i].n_miss,
+           (long long)result[i].n_req,
            (double)(result[i].n_miss) / (double)result[i].n_req,
            (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
   }
@@ -61,8 +62,9 @@ void run_multiple_caches(reader_t *reader) {
       "      cache name        cache size           num_miss        num_req"
       "        miss ratio      byte miss ratio\n");
   for (int i = 0; i < NUM_SIZES; i++) {
-    printf("%16s %16lu %16lu %16lu %16.4lf %16.4lf\n", result[i].cache_name,
-           result[i].cache_size, result[i].n_miss, result[i].n_req,
+    printf("%16s %16lld %16lld %16lld %16.4lf %16.4lf\n", result[i].cache_name,
+           (long long)result[i].cache_size, (long long)result[i].n_miss,
+           (long long)result[i].n_req,
            (double)(result[i].n_miss) / (double)result[i].n_req,
            (double)(result[i].n_miss_byte / (double)result[i].n_req_byte));
   }

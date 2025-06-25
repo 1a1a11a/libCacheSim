@@ -37,7 +37,7 @@ typedef struct {
  * @param weight null if all servers have the same weight
  * @return ring_t*
  */
-ring_t *ch_ring_create_ring(int n_server, double *weight);
+ring_t *ch_ring_create_ring(int n_server, const double *weight);
 
 /**
  * @brief retrieve the server id from the consistent hash ring

@@ -21,7 +21,7 @@ double Simulator::gen_miss_trace(string algo, uint64_t cache_size,
                                             .obj_size_field = 3,
                                             .next_access_vtime_field = 4};
   // see the cacheSimulator example for using csv trace
-  reader_init_params.binary_fmt_str = "<IQIQ";
+  reader_init_params.binary_fmt_str = (char *)"<IQIQ";
   reader_t *reader =
       open_trace(trace_path.c_str(), BIN_TRACE, &reader_init_params);
   common_cache_params_t cc_params = {.cache_size = cache_size};
@@ -54,7 +54,7 @@ void Simulator::output_mrc(string &algo, vector<uint64_t> cache_sizes,
   char alg[] = "LRU";
   reader_init_param_t reader_init_params = {
       .time_field = 1, .obj_id_field = 2, .obj_size_field = 3};
-  reader_init_params.binary_fmt_str = "<III";
+  reader_init_params.binary_fmt_str = (char *)"<III";
   reader_t *reader =
       open_trace(trace_path.c_str(), BIN_TRACE, &reader_init_params);
 
