@@ -122,6 +122,7 @@ static inline void log_header(int level, const char *file, int line) {
       n = fprintf(stderr, "in logging should not be here\n");
       break;
   }
+  (void)n;  // explicitly mark as unused
 
   char buffer[30];
   struct timeval tv;

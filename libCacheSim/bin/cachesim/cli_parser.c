@@ -117,7 +117,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_EVICTION_PARAMS:
       arguments->eviction_params = strdup(arg);
       replace_char(arguments->eviction_params, ';', ',');
-      replace_char(arguments->eviction_params, '_', '-');
+      // replace_char(arguments->eviction_params, '_', '-');
       break;
     case OPTION_ADMISSION_ALGO:
       arguments->admission_algo = arg;
@@ -128,12 +128,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_ADMISSION_PARAMS:
       arguments->admission_params = strdup(arg);
       replace_char(arguments->admission_params, ';', ',');
-      replace_char(arguments->admission_params, '_', '-');
+      // replace_char(arguments->admission_params, '_', '-');
       break;
     case OPTION_PREFETCH_PARAMS:
       arguments->prefetch_params = strdup(arg);
       replace_char(arguments->prefetch_params, ';', ',');
-      replace_char(arguments->prefetch_params, '_', '-');
+      // replace_char(arguments->prefetch_params, '_', '-');
       break;
     case OPTION_OUTPUT_PATH:
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
