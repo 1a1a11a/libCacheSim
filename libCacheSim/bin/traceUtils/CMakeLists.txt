@@ -8,7 +8,7 @@ target_include_directories(cliReaderLib PRIVATE
     ${GLib_INCLUDE_DIRS}
 )
 target_compile_options(cliReaderLib PRIVATE ${LIBCACHESIM_C_FLAGS})
-target_link_libraries(cliReaderLib PRIVATE utils_lib)
+target_link_libraries(cliReaderLib PRIVATE ${PROJECT_NAME})
 
 set(tracePrint_sources_cpp
     tracePrintMain.cpp
