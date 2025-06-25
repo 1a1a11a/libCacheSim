@@ -8,18 +8,16 @@ set(profiler_sources_c
     dist.c
 )
 
-add_library(profiler_lib ${profiler_sources_c})
+add_library(profiler_lib OBJECT ${profiler_sources_c})
 
 # Set target-specific compiler flags
 target_compile_options(profiler_lib PRIVATE
     ${LIBCACHESIM_C_FLAGS}
-    ${tcmalloc_flags}
 )
 
-target_include_directories(profiler_lib PRIVATE 
+target_include_directories(profiler_lib PRIVATE
     ${GLib_INCLUDE_DIRS}
     ${libCacheSim_include_dir}
-    ${libCacheSim_binary_include_dir}
 )
 
 # Use PUBLIC linking so dependencies are available to targets that link to profiler_lib

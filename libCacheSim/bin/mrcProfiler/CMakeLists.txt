@@ -13,13 +13,9 @@ add_executable(mrcProfiler ${mrcProfiler_sources_cpp})
 target_compile_options(mrcProfiler PRIVATE
     $<$<COMPILE_LANGUAGE:C>:${LIBCACHESIM_C_FLAGS}>
     $<$<COMPILE_LANGUAGE:CXX>:${LIBCACHESIM_CXX_FLAGS}>
-    ${tcmalloc_flags}
 )
-
-target_link_libraries(mrcProfiler mrcProfiler_lib m dl)
-
-# target_link_options(mrcProfiler PRIVATE "-Wl,--export-dynamic")  # Not supported on macOS
-install(TARGETS mrcProfiler RUNTIME DESTINATION bin)
+target_include_directories(mrcProfiler PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(mrcProfiler ${PROJECT_NAME})
 
 set_target_properties(mrcProfiler
         PROPERTIES
@@ -27,3 +23,5 @@ set_target_properties(mrcProfiler
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
 )
+
+install(TARGETS mrcProfiler RUNTIME DESTINATION bin)

@@ -8,7 +8,6 @@ function(add_test_executable target_name source_file)
         # C++ source file
         target_compile_options(${target_name} PRIVATE 
             ${LIBCACHESIM_CXX_FLAGS}
-            ${tcmalloc_flags}
         )
         set_target_properties(${target_name} PROPERTIES
             CXX_STANDARD 17
@@ -19,11 +18,17 @@ function(add_test_executable target_name source_file)
         # C source file
         target_compile_options(${target_name} PRIVATE 
             ${LIBCACHESIM_C_FLAGS}
-            ${tcmalloc_flags}
         )
     endif()
     
-    target_link_libraries(${target_name} profiler_lib)
+    target_link_libraries(${target_name} ${PROJECT_NAME})
+
+    # Add include directories for test compilation
+    target_include_directories(${target_name} PRIVATE
+        ${CMAKE_SOURCE_DIR}/libCacheSim  # Add source dir to find utils/include/mymath.h
+        ${libCacheSim_include_dir}
+        ${GLib_INCLUDE_DIRS}
+    )
 endfunction()
 
 # Create C test executables

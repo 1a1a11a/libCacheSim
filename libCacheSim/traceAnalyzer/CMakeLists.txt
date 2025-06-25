@@ -24,15 +24,18 @@ set(traceAnalyzer_sources_cpp
     experimental/sizeChange.cpp
 )
 
-add_library(traceAnalyzer_lib ${traceAnalyzer_sources_cpp})
+add_library(traceAnalyzer_lib OBJECT ${traceAnalyzer_sources_cpp})
 target_include_directories(traceAnalyzer_lib PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${libCacheSim_include_dir}
+    ${GLib_INCLUDE_DIRS}
 )
-target_link_libraries(traceAnalyzer_lib PUBLIC ${dependency_libs})
+target_compile_options(traceAnalyzer_lib PRIVATE
+    ${LIBCACHESIM_CXX_FLAGS}
+)
+target_link_libraries(traceAnalyzer_lib PRIVATE ${dependency_libs})
 set_target_properties(traceAnalyzer_lib PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
-
-set(traceAnalyzer_sources ${traceAnalyzer_sources_cpp} PARENT_SCOPE)

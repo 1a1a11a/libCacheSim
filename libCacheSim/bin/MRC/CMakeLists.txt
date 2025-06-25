@@ -15,5 +15,6 @@ set(mrc_sources_c
 )
 
 add_executable(MRC ${mrc_sources_c})
-target_link_libraries(MRC ${core_libs} ${dependency_libs})
+target_include_directories(MRC PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(MRC ${PROJECT_NAME})
 install(TARGETS MRC RUNTIME DESTINATION bin)

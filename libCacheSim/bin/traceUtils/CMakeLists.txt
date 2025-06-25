@@ -3,14 +3,20 @@
 # ==============================================================================
 
 add_library(cliReaderLib ../cli_reader_utils.c)
-
+target_include_directories(cliReaderLib PRIVATE
+    ${libCacheSim_include_dir}
+    ${GLib_INCLUDE_DIRS}
+)
+target_compile_options(cliReaderLib PRIVATE ${LIBCACHESIM_C_FLAGS})
+target_link_libraries(cliReaderLib PRIVATE utils_lib)
 
 set(tracePrint_sources_cpp
     tracePrintMain.cpp
     cli_parser.cpp
 )
 add_executable(tracePrint ${tracePrint_sources_cpp})
-target_link_libraries(tracePrint cliReaderLib ${core_libs} ${dependency_libs})
+target_include_directories(tracePrint PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(tracePrint ${PROJECT_NAME} cliReaderLib)
 set_target_properties(tracePrint
         PROPERTIES
         CXX_STANDARD 17
@@ -28,7 +34,8 @@ set(traceConv_sources_cpp
     utils.cpp
 )
 add_executable(traceConv ${traceConv_sources_cpp})
-target_link_libraries(traceConv cliReaderLib ${core_libs} ${dependency_libs})
+target_include_directories(traceConv PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(traceConv ${PROJECT_NAME} cliReaderLib)
 set_target_properties(traceConv
         PROPERTIES
         CXX_STANDARD 17
@@ -43,7 +50,8 @@ set(traceFilter_sources_cpp
     cli_parser.cpp
 )
 add_executable(traceFilter ${traceFilter_sources_cpp})
-target_link_libraries(traceFilter cliReaderLib ${core_libs} ${dependency_libs})
+target_include_directories(traceFilter PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(traceFilter ${PROJECT_NAME} cliReaderLib)
 set_target_properties(traceFilter
         PROPERTIES
         CXX_STANDARD 17
@@ -52,4 +60,3 @@ set_target_properties(traceFilter
         )
 
 install(TARGETS traceFilter RUNTIME DESTINATION bin)
-

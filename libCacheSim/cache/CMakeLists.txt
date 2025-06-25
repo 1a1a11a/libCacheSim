@@ -152,30 +152,26 @@ set(cache_sources ${cache_sources} PARENT_SCOPE)
 message(STATUS "cache_sources_c = ${cache_sources_c}")
 message(STATUS "cache_sources_cpp = ${cache_sources_cpp}")
 
-add_library(cache_lib_c ${cache_sources_c})
-add_library(cache_lib_cpp ${cache_sources_cpp})
+add_library(cache_lib_c OBJECT ${cache_sources_c})
+add_library(cache_lib_cpp OBJECT ${cache_sources_cpp})
 
 # Set target-specific compiler flags
 target_compile_options(cache_lib_c PRIVATE
     ${LIBCACHESIM_C_FLAGS}
-    ${tcmalloc_flags}
 )
 
 target_compile_options(cache_lib_cpp PRIVATE
     ${LIBCACHESIM_CXX_FLAGS}
-    ${tcmalloc_flags}
 )
 
-target_include_directories(cache_lib_c PRIVATE 
+target_include_directories(cache_lib_c PRIVATE
     ${GLib_INCLUDE_DIRS}
     ${libCacheSim_include_dir}
-    ${libCacheSim_binary_include_dir}
 )
 
-target_include_directories(cache_lib_cpp PRIVATE 
+target_include_directories(cache_lib_cpp PRIVATE
     ${GLib_INCLUDE_DIRS}
     ${libCacheSim_include_dir}
-    ${libCacheSim_binary_include_dir}
 )
 
 target_link_libraries(cache_lib_c PRIVATE dataStructure_lib utils_lib ${dependency_libs})
@@ -187,4 +183,3 @@ set_target_properties(cache_lib_cpp PROPERTIES
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
-

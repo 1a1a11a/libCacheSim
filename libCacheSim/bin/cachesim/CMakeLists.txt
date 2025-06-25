@@ -9,8 +9,6 @@ set(cachesim_sources_c
     ../cli_reader_utils.c
 )
 add_executable(cachesim ${cachesim_sources_c})
-target_include_directories(cachesim PRIVATE ../)
-# Link just profiler_lib which now provides all needed libraries transitively
-target_link_libraries(cachesim profiler_lib)
-# target_link_options(cachesim PRIVATE "-Wl,--export-dynamic")  # Not supported on macOS
+target_include_directories(cachesim PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS} ../)
+target_link_libraries(cachesim ${PROJECT_NAME})
 install(TARGETS cachesim RUNTIME DESTINATION bin)

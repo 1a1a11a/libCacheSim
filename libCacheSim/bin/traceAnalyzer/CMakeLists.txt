@@ -8,7 +8,8 @@ set(traceAnalyzer_sources_cpp
     ../cli_reader_utils.c
 )
 add_executable(traceAnalyzer ${traceAnalyzer_sources_cpp})
-target_link_libraries(traceAnalyzer traceAnalyzer_lib ${core_libs} ${dependency_libs})
+target_include_directories(traceAnalyzer PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(traceAnalyzer ${PROJECT_NAME})
 install(TARGETS traceAnalyzer RUNTIME DESTINATION bin)
 
 set_target_properties(traceAnalyzer
