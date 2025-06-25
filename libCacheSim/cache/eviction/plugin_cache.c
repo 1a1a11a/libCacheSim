@@ -371,6 +371,12 @@ static void pluginCache_parse_params(cache_t *cache,
     char *key = strsep((char **)&params_str, "=");
     char *value = strsep((char **)&params_str, ",");
 
+    // Check if value is NULL
+    if (value == NULL) {
+      ERROR("Parameter '%s' is missing a value in cache '%s'\n", key,
+            cache->cache_name);
+      exit(1);
+    }
     // Skip whitespace
     while (params_str != NULL && *params_str == ' ') {
       params_str++;
