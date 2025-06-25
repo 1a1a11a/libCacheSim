@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.12)
 
 # Set the project name
-project(plugin_lru_hooks)
+project(plugin_lru_example)
+
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -55,14 +56,6 @@ target_link_libraries(plugin_lru_hooks
     ${LIBCACHESIM_LIBRARY}
 )
 
-# Set library properties
-# set_target_properties(plugin_lru_hooks PROPERTIES
-#     VERSION 1.0.0
-#     SOVERSION 1
-#     OUTPUT_NAME "plugin_lru_hooks"
-# )
-
-# Optional: Add test executable if test file exists
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test_hooks_plugin.c")
     add_executable(test_hooks_plugin test_hooks_plugin.c)
     target_include_directories(test_hooks_plugin PRIVATE
