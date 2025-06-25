@@ -49,13 +49,13 @@ static int twr_read_one_req(reader_t *reader, request_t *req) {
   uint32_t op = ((op_ttl >> 24) & (0x00000100 - 1));
   uint32_t ttl = op_ttl & (0x01000000 - 1);
 
-  req->key_size = key_size;
-  req->val_size = val_size;
+  req->kv.key_size = key_size;
+  req->kv.val_size = val_size;
   req->obj_size = key_size + val_size;
   req->op = (req_op_e)(op);
   req->ttl = (int32_t)ttl;
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req &&
+  if (req->kv.val_size == 0 && reader->ignore_size_zero_req &&
       (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD) {
     return twr_read_one_req(reader, req);

@@ -46,7 +46,7 @@ typedef struct request {
   struct {
     uint64_t key_size : 16;
     uint64_t val_size : 48;
-  };
+  } kv;
 
   int32_t ns;  // namespace
 

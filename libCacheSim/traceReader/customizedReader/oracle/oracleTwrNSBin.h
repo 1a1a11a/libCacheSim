@@ -59,7 +59,7 @@ static int oracleSimTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
     req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req &&
+  if (req->kv.val_size == 0 && reader->ignore_size_zero_req &&
       (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD)
     return oracleSimTwrNSBin_read_one_req(reader, req);
@@ -85,9 +85,9 @@ static int oracleSysTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
 
   req->clock_time = *(uint32_t *)record;
   req->obj_id = *(uint64_t *)(record + 4);
-  req->key_size = *(uint16_t *)(record + 12);
-  req->val_size = *(uint32_t *)(record + 14);
-  req->obj_size = req->key_size + req->val_size;
+  req->kv.key_size = *(uint16_t *)(record + 12);
+  req->kv.val_size = *(uint32_t *)(record + 14);
+  req->obj_size = req->kv.key_size + req->kv.val_size;
   req->op = *(uint16_t *)(record + 18);
   req->ns = *(uint16_t *)(record + 20);
   req->ttl = *(int32_t *)(record + 22);
@@ -97,7 +97,7 @@ static int oracleSysTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
     req->next_access_vtime = MAX_REUSE_DISTANCE;
   }
 
-  if (req->val_size == 0 && reader->ignore_size_zero_req &&
+  if (req->kv.val_size == 0 && reader->ignore_size_zero_req &&
       (req->op == OP_GET || req->op == OP_GETS) &&
       reader->read_direction == READ_FORWARD) {
     ERROR("find size 0 request\n");
