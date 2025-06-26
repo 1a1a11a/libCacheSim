@@ -1,21 +1,31 @@
 :root {
-    /* Primary colors (UChicago Maroon) */
-    --md-primary-fg-color:        #800000; /* UChicago Maroon */
-    --md-primary-fg-color--light: #a52a2a; /* Lighter maroon */
-    --md-primary-fg-color--dark:  #4a0000; /* Darker maroon */
+    /* Primary colors (Harvard Crimson) */
+    --md-primary-fg-color: #A51C30;
+    /* Harvard Crimson */
+    --md-primary-fg-color--light: #C41E3A;
+    /* Lighter Harvard Crimson */
+    --md-primary-fg-color--dark: #8B0000;
+    /* Darker Harvard Crimson */
 
-    /* Accent colors (Black & White for contrast) */
-    --md-accent-fg-color:         #000000; /* Black */
-    --md-accent-fg-color--light:  #333333; /* Dark gray */
-    --md-accent-fg-color--dark:   #ffffff; /* White */
+    /* Accent colors (Harvard Black & White for contrast) */
+    --md-accent-fg-color: #000000;
+    /* Harvard Black */
+    --md-accent-fg-color--light: #333333;
+    /* Dark gray */
+    --md-accent-fg-color--dark: #ffffff;
+    /* White */
 
     /* Background and text */
-    --md-default-bg-color:        #ffffff; /* White background */
-    --md-default-fg-color:        #212121; /* Dark text */
-    
-    /* Custom link colors */
-    --md-typeset-a-color:         #800000; /* Default link color (Maroon) */
-    --md-typeset-a-color--hover:  #a52a2a; /* Lighter Maroon on hover */
+    --md-default-bg-color: #ffffff;
+    /* White background */
+    --md-default-fg-color: #212121;
+    /* Dark text */
+
+    /* Custom link colors (Harvard Crimson variants) */
+    --md-typeset-a-color: #A51C30;
+    /* Harvard Crimson for links */
+    --md-typeset-a-color--hover: #C41E3A;
+    /* Lighter Harvard Crimson on hover */
 }
 
 /* Explicitly style hovered links */
@@ -26,21 +36,25 @@
 
 .md-typeset a:hover {
     color: var(--md-typeset-a-color--hover);
-    text-decoration: underline; /* Optional: Adds an underline on hover */
+    text-decoration: underline;
+    /* Optional: Adds an underline on hover */
 }
 
 /* Sidebar link color (default state) */
 .md-nav__link {
-    color: var(--md-primary-fg-color); /* UChicago Maroon */
+    color: var(--md-primary-fg-color);
+    /* Harvard Crimson */
 }
 
 /* Sidebar link on hover */
 .md-nav__link:hover {
-    color: var(--md-primary-fg-color--light); /* Lighter Maroon */
+    color: var(--md-primary-fg-color--light);
+    /* Lighter Harvard Crimson */
 }
 
 /* Active sidebar link (current page) */
 .md-nav__link--active {
-    color: var(--md-primary-fg-color--dark); /* Darker Maroon */
+    color: var(--md-primary-fg-color--dark);
+    /* Darker Harvard Crimson */
     font-weight: bold;
 }

@@ -7,10 +7,19 @@ nav:
   - Getting Started:
     - Overview: index.md
     - Installation: getting-started/install.md
-    - Quick Start Tutorial: getting-started/quickstart/quickstart_cachesim
+    - Cache Simulator: getting-started/quickstart/quickstart_cachesim.md
+    - MRC Profiler: getting-started/quickstart/quickstart_mrcProfiler.md
+    - Trace Analyzer: getting-started/quickstart/quickstart_traceAnalyzer.md
+    - Trace Utilities: getting-started/quickstart/quickstart_traceUtils.md
+    - Advanced: advanced/advanced_lib.md
+    - Advanced Extensions: advanced/advanced_lib_extend.md
   - API Reference:
     - Overview: api/API.md
-
+  - Profiling:
+    - Performance: profiling/performance.md
+    - Memory Usage: profiling/memory_usage_profiling.md
+  - Development:
+    - Debugging: develop/debug.md
 theme:
   name: material
   palette:
