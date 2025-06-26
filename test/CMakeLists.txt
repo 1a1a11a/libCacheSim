@@ -1,12 +1,12 @@
 # Helper function to create test executables with explicit compiler flags
 function(add_test_executable target_name source_file)
     add_executable(${target_name} ${source_file})
-    
+
     # Apply appropriate compiler flags based on source file language
     get_filename_component(file_ext ${source_file} EXT)
     if(file_ext STREQUAL ".cpp" OR file_ext STREQUAL ".cxx" OR file_ext STREQUAL ".cc")
         # C++ source file
-        target_compile_options(${target_name} PRIVATE 
+        target_compile_options(${target_name} PRIVATE
             ${LIBCACHESIM_CXX_FLAGS}
         )
         set_target_properties(${target_name} PROPERTIES
@@ -16,11 +16,11 @@ function(add_test_executable target_name source_file)
         )
     else()
         # C source file
-        target_compile_options(${target_name} PRIVATE 
+        target_compile_options(${target_name} PRIVATE
             ${LIBCACHESIM_C_FLAGS}
         )
     endif()
-    
+
     target_link_libraries(${target_name} ${PROJECT_NAME})
 
     # Add include directories for test compilation

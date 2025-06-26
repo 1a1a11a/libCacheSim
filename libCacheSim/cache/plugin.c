@@ -85,7 +85,7 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
     abort();
   }
 
-  VERBOSE("internal cache %s loaded\n", cache_alg_name);
+  INFO("internal cache %s loaded\n", cache_alg_name);
   cache_t *cache = cache_init(cc_params, cache_specific_params);
   return cache;
 }
