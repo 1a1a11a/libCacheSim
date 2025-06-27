@@ -9,6 +9,9 @@ on:
     paths:
       - 'libCacheSim-node/**'
 
+permissions:
+  contents: read  # Default permission for reading repository contents
+
 env:
   BUILD_TYPE: Release
 
@@ -16,6 +19,8 @@ jobs:
   create-release:
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed for creating GitHub releases
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       version: ${{ steps.package.outputs.version }}
@@ -79,6 +84,8 @@ jobs:
     if: github.event_name == 'release'
     needs: create-release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed for uploading prebuilt binaries to releases
 
     steps:
       - name: Checkout code
