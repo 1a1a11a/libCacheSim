@@ -9,6 +9,10 @@ on:
     paths:
       - 'libCacheSim-node/**'
 
+permissions:
+  contents: write  # Needed for creating releases and accessing repository contents
+  actions: read    # Needed for workflow actions
+
 env:
   BUILD_TYPE: Release
 
