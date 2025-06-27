@@ -158,6 +158,7 @@ install_cmake() {
 # Install XGBoost
 install_xgboost() {
 	log_info "Installing XGBoost..."
+	local cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 	pushd /tmp/ >/dev/null
 	if [[ ! -d "xgboost" ]]; then
 		git clone --recursive https://github.com/dmlc/xgboost
@@ -166,11 +167,7 @@ install_xgboost() {
 	mkdir -p build
 	pushd build >/dev/null
 	cmake -G Ninja ..
-	if [[ ${GITHUB_ACTIONS-} == "true" ]]; then
-		ninja
-	else
-		ninja
-	fi
+	ninja -j$((cores + 1))
 	sudo ninja install
 	popd >/dev/null
 	popd >/dev/null
@@ -180,6 +177,7 @@ install_xgboost() {
 # Install LightGBM
 install_lightgbm() {
 	log_info "Installing LightGBM..."
+	local cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 	pushd /tmp/ >/dev/null
 	if [[ ! -d "LightGBM" ]]; then
 		git clone --recursive https://github.com/microsoft/LightGBM
@@ -188,11 +186,7 @@ install_lightgbm() {
 	mkdir -p build
 	pushd build >/dev/null
 	cmake -G Ninja ..
-	if [[ ${GITHUB_ACTIONS-} == "true" ]]; then
-		ninja
-	else
-		ninja
-	fi
+	ninja -j$((cores + 1))
 	sudo ninja install
 	popd >/dev/null
 	popd >/dev/null
@@ -202,6 +196,7 @@ install_lightgbm() {
 # Install Zstd
 install_zstd() {
 	log_info "Installing Zstd..."
+	local cores=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 	pushd /tmp/ >/dev/null
 	local zstd_version="1.5.0"
 	if [[ ! -f "zstd-${zstd_version}.tar.gz" ]]; then
@@ -212,7 +207,7 @@ install_zstd() {
 	mkdir -p _build
 	pushd _build >/dev/null
 	cmake -G Ninja ..
-	ninja
+	ninja -j$((cores + 1))
 	sudo ninja install
 	popd >/dev/null
 	popd >/dev/null
