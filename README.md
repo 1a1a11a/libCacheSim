@@ -1,6 +1,7 @@
 # libCacheSim - building and running cache simulations
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/1a1a11a/libCacheSim/badge)](https://scorecard.dev/viewer/?uri=github.com/1a1a11a/libCacheSim)
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 - [libCacheSim - building and running cache simulations](#libcachesim---building-and-running-cache-simulations)
