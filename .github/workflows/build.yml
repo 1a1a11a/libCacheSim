@@ -20,14 +20,10 @@ jobs:
       - name: Configure CMake
         run: cmake -G Ninja -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
       - name: Build
-        run: |
-          cores=$(sysctl -n hw.ncpu)
-          ninja -C ${{github.workspace}}/build -j$((cores + 1))
+        run: ninja -C ${{github.workspace}}/build
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: |
-          cores=$(sysctl -n hw.ncpu)
-          ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel $cores
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
   ubuntu:
     runs-on: ubuntu-latest
@@ -42,15 +38,12 @@ jobs:
                 -DCMAKE_C_FLAGS="-fsanitize=leak" \
                 -DCMAKE_CXX_FLAGS="-fsanitize=leak"
       - name: Build
-        run: |
-          cores=$(nproc)
-          ninja -C ${{github.workspace}}/build -j$((cores + 1))
+        run: ninja -C ${{github.workspace}}/build
       - name: Test with LSan
         working-directory: ${{github.workspace}}/build
         run: |
           export ASAN_OPTIONS="detect_leaks=1:halt_on_error=1:verbosity=1"
-          cores=$(nproc)
-          ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel $cores
+          ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
   selfhosted:
     runs-on: self-hosted
@@ -59,11 +52,7 @@ jobs:
       - name: Configure CMake
         run: cmake -G Ninja -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_GLCACHE=on -DENABLE_LRB=on
       - name: Build
-        run: |
-          cores=$(nproc)
-          ninja -C ${{github.workspace}}/build -j$((cores + 1))
+        run: ninja -C ${{github.workspace}}/build
       - name: Test
         working-directory: ${{github.workspace}}/build
-        run: |
-          cores=$(nproc)
-          ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel $cores
+        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel

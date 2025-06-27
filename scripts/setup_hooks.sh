@@ -278,7 +278,7 @@ fi
 # cd "$TEMP_BUILD_DIR"
 
 # COMPILE_LOG="$LOG_DIR/compile.log"
-# if make -j$MAX_JOBS > "$COMPILE_LOG" 2>&1; then
+# if ninja > "$COMPILE_LOG" 2>&1; then
 #     echo -e "${GREEN}Compilation successful!${NC}"
 # else
 #     echo -e "${RED}Compilation failed. Please fix the warnings before committing.${NC}"

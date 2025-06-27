@@ -9,6 +9,10 @@ It outputs the L2 miss ratio curve.
 
 ## Build
 ```bash
+# Prerequisites: Install Ninja build system if not already available
+# Ubuntu/Debian: sudo apt install ninja-build
+# macOS: brew install ninja
+
 mkdir _build/;
 cd _build/;
 cmake -G Ninja ../;

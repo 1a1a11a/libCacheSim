@@ -118,6 +118,11 @@ Please see [install.md](/doc/install.md) for instructions on how to install the 
 ### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```bash
+# Prerequisites: Install Ninja build system
+# Ubuntu/Debian: sudo apt install ninja-build
+# macOS: brew install ninja
+# CentOS/RHEL: sudo yum install ninja-build
+
 git clone https://github.com/1a1a11a/libCacheSim
 pushd libCacheSim
 mkdir _build && cd _build

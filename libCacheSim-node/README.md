@@ -189,9 +189,9 @@ If you see binary loading errors:
 
 If source compilation fails:
 
-1. Install required system dependencies
+1. Install required system dependencies (including ninja-build)
 2. Ensure CMake 3.10+ is available
-3. Check that libCacheSim builds successfully: `cd .. && mkdir _build && cd _build && cmake .. && make`
+3. Check that libCacheSim builds successfully: `cd .. && mkdir _build && cd _build && cmake -G Ninja .. && ninja`
 
 ## Contributing
 
@@ -217,4 +217,4 @@ If you use libCacheSim in your research, please cite:
   year={2023},
   url={https://github.com/1a1a11a/libCacheSim}
 }
-``` 
+```

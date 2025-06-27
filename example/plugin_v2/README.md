@@ -13,6 +13,10 @@ This example demonstrates how to create a plugin for libCacheSim using the v2 ho
 To compile the plugin into a shared library:
 
 ```bash
+# Prerequisites: Install Ninja build system if not already available
+# Ubuntu/Debian: sudo apt install ninja-build
+# macOS: brew install ninja
+
 mkdir build
 cd build
 cmake -G Ninja ..

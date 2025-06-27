@@ -10,6 +10,10 @@ This example also shows how to use a csv reader to read a csv trace.
 
 ### Build
 ```bash
+# Prerequisites: Install Ninja build system if not already available
+# Ubuntu/Debian: sudo apt install ninja-build
+# macOS: brew install ninja
+
 mkdir _build;
 cd _build;
 cmake -G Ninja ..;

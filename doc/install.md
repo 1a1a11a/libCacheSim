@@ -1,16 +1,16 @@
 ## Install dependency
 
-libCacheSim uses [cmake](https://cmake.org/) build system and has a few dependencies:
+libCacheSim uses [cmake](https://cmake.org/) build system with [Ninja](https://ninja-build.org/) generator and has a few dependencies:
 [glib](https://developer.gnome.org/glib/)
 [tcmalloc](https://github.com/google/tcmalloc),
 [zstd](https://github.com/facebook/zstd).
 
 ### Install dependency on Ubuntu
 
-#### Install glib, tcmalloc and cmake
+#### Install glib, tcmalloc, cmake and ninja
 
 ```bash
-sudo apt install libglib2.0-dev libgoogle-perftools-dev cmake
+sudo apt install libglib2.0-dev libgoogle-perftools-dev cmake ninja-build
 ```
 
 #### Install zstd
@@ -22,8 +22,8 @@ wget https://github.com/facebook/zstd/releases/download/v1.5.0/zstd-1.5.0.tar.gz
 tar xvf zstd-1.5.0.tar.gz
 pushd zstd-1.5.0/build/cmake/
 mkdir _build && cd _build/
-cmake .. && make -j
-sudo make install
+cmake -G Ninja .. && ninja
+sudo ninja install
 popd
 ```
 
@@ -33,8 +33,8 @@ popd
 git clone --recursive https://github.com/dmlc/xgboost
 pushd xgboost
 mkdir _build && cd _build
-cmake .. && make -j
-sudo make install
+cmake -G Ninja .. && ninja
+sudo ninja install
 popd
 ```
 
@@ -44,8 +44,8 @@ popd
 git clone --recursive https://github.com/microsoft/LightGBM
 pushd LightGBM
 mkdir _build && cd _build
-cmake .. && make -j
-sudo make install
+cmake -G Ninja .. && ninja
+sudo ninja install
 popd
 ```
 
@@ -57,7 +57,7 @@ using [homebrew](https://brew.sh/) as an example. While the first line is necess
 - /usr/local/include/glib-2.0/glib/gtypes.h:34:10: fatal error: 'glibconfig.h' file not found
 
 ```bash
-brew install cmake glib google-perftools
+brew install cmake ninja glib google-perftools
 brew install argp-standalone
 brew install pkg-config
 ```
