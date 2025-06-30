@@ -17,9 +17,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "cache.h"
 #include "dataStructure/sparsepp/spp.h"
 #include "libCacheSim/cache.h"
-#include "cache.h"
 #include "request.h"
 
 using namespace std;
@@ -359,13 +359,9 @@ class ThreeLCacheCache : public webcachesim::Cache {
 
   void update_stat_periodic() override;
 
-  void setSize(const uint64_t &cs) {
-    _cacheSize = cs;
-  }
+  void setSize(const uint64_t &cs) { _cacheSize = cs; }
 
-  bool exist(const int64_t &key) {
-    return key_map.find(key) != key_map.end();
-  }
+  bool exist(const int64_t &key) { return key_map.find(key) != key_map.end(); }
 
   pair<uint64_t, int32_t> evict_predobj();
 
