@@ -191,12 +191,12 @@ int32_t ThreeLCacheCache::rank() {
   if (initial_queue_length == 0) {
     initial_queue_length = in_cache.metas.size();
   }
-  // 防止有trace在小缓存小只能存1-2个对象
+  // prevent the trace from having only 1-2 objects in the small cache
   if (sample_rate >= initial_queue_length * 0.01 + eviction_rate)
     sample_rate = initial_queue_length > 2
                       ? initial_queue_length * 0.01 + eviction_rate
                       : 1;
-  // 新对象的采样
+  // the sampling of the new object
   sampled_objects = quick_demotion();
 
   if (new_obj_size < _currentSize * reserved_space / 10) {
@@ -241,7 +241,7 @@ int32_t ThreeLCacheCache::rank() {
         int32_t eviciton_sum = 0, p99 = 0;
         for (int i = 0; i < 16; i++)
           eviciton_sum += object_distribution_n_eviction[i];
-        // 粗粒度划分频率
+        // coarse-grained frequency division
         for (int i = 0; i < 16; i++) {
           p99 += object_distribution_n_eviction[i];
           if (p99 >= 0.99 * eviciton_sum) {
@@ -283,7 +283,7 @@ int32_t ThreeLCacheCache::rank() {
 
 vector<int32_t> ThreeLCacheCache::quick_demotion() {
   vector<int32_t> sampled_objects;
-  int i, j = 0;
+  int i = 0, j = 0;
   while (new_obj_size > (uint64_t)(_currentSize * reserved_space / 100) &&
          j < (int)(sample_rate * 1.5) && (size_t)i < new_obj_keys.size()) {
     auto it = key_map.find(new_obj_keys[i])->second;
@@ -395,7 +395,7 @@ void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
     keys[idx_row] = meta._key;
     poses[idx_row] = pos;
     indices[idx_feature] = 0;
-    // 年龄
+    // age
     data[idx_feature++] = current_seq - meta._past_timestamp;
 
     past_timestamps[idx_row] = meta._past_timestamp;

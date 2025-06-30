@@ -7,17 +7,23 @@
 #include <cmath>
 #include <deque>
 #include <fstream>
+#include <iostream>
 #include <list>
+#include <map>
 #include <random>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "dataStructure/sparsepp/spp.h"
 #include "libCacheSim/cache.h"
-using namespace webcachesim;
+#include "cache.h"
+#include "request.h"
+
 using namespace std;
+using namespace webcachesim;
 
 using spp::sparse_hash_map;
 
@@ -177,7 +183,7 @@ class TrainingData {
     int32_t counter = indptr.back();
 
     indices.emplace_back(0);
-    // 等待时间
+    // waiting time
     data.emplace_back(sample_timestamp - meta._past_timestamp);
     ++counter;
     int j = 0;
@@ -220,20 +226,20 @@ struct KeyMapEntryT {
   int32_t list_pos;
 };
 
-class ThreeLCacheCache : public Cache {
+class ThreeLCacheCache : public webcachesim::Cache {
  public:
   uint64_t current_seq = -1;
   int32_t n_feature;
   sparse_hash_map<uint64_t, float> pred_map;
-  // 用于记录对象的预测结果, 同时记录id, 以保证状态切换
+  // used to record the prediction result, and the id of the object
   vector<HeapUint> pred_times;
-  // 驱逐候选对象采样步长与区间
+  // the step length and interval of the eviction candidate object sampling
   uint64_t scan_length = 0;
-  // 新对象
+  // new object
   vector<uint64_t> new_obj_keys;
-  // 新对象占用地缓存空间
+  // the size of the new object
   uint64_t new_obj_size = 0;
-  // 驱逐对象的数量
+  // the number of the eviction object
   int evict_nums = 0;
   uint16_t sample_rate = 1024;
   uint8_t eviction_rate = 2;
@@ -245,14 +251,14 @@ class ThreeLCacheCache : public Cache {
   int32_t initial_queue_length = 0;
   uint64_t origin_current_seq = 0;
   uint8_t reserved_space = 2;
-  // 采样指针
+  // the sampling pointer
   int32_t samplepointer = 0;
   uint8_t hsw = 2;
   uint64_t MAX_EVICTION_BOUNDARY[2] = {0, 0};
   int32_t max_out_cache_size = 2;
-  // 窗口满了后
+  // the window is full
   uint8_t is_full = 0;
-  // 对象命中率的时间基线
+  // the time baseline of the object hit rate
   uint64_t n_req = 0;
   uint64_t n_hit = 0;
   uint64_t n_window_hit = 0;
@@ -352,6 +358,14 @@ class ThreeLCacheCache : public Cache {
   void sample();
 
   void update_stat_periodic() override;
+
+  void setSize(const uint64_t &cs) {
+    _cacheSize = cs;
+  }
+
+  bool exist(const int64_t &key) {
+    return key_map.find(key) != key_map.end();
+  }
 
   pair<uint64_t, int32_t> evict_predobj();
 

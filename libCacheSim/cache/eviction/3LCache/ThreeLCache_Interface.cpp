@@ -4,9 +4,7 @@
 #include <string>
 
 #include "ThreeLCache.hpp"
-#include "dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/cache.h"
-#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +15,7 @@ typedef struct {
   char *objective;
   SimpleRequest ThreeLCache_req;
 
-  pair<uint64_t, int32_t> to_evict_pair;
+  std::pair<uint64_t, int32_t> to_evict_pair;
   cache_obj_t obj_tmp;
 } ThreeLCache_params_t;
 
@@ -236,7 +234,7 @@ static cache_obj_t *ThreeLCache_to_evict(cache_t *cache, const request_t *req) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
   auto *ThreeLCache =
       static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
-  // ThreeLCache rank变成了evict_preobj
+  // ThreeLCache rank becomes evict_predobj
   params->to_evict_pair = ThreeLCache->evict_predobj();
   auto &meta = ThreeLCache->in_cache.metas[params->to_evict_pair.second];
 
