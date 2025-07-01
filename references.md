@@ -37,10 +37,15 @@
 }
 
 @inproceedings{yazhuo2024-sieve,
-  title={FIFO queues are all you need for cache eviction},
-  author={Yang, Juncheng and Zhang, Yazhuo and Qiu, Ziyue and Yue, Yao and Rashmi, K.V.},
-  booktitle={Symposium on Operating Systems Principles (SOSP'23)},
-  year={2023}
+  author = {Yazhuo Zhang and Juncheng Yang and Yao Yue and Ymir Vigfusson and K.V. Rashmi},
+  title = {SIEVE is Simpler than LRU: an Efficient Turn-Key Eviction Algorithm for Web Caches},
+  booktitle = {21st USENIX Symposium on Networked Systems Design and Implementation (NSDI 24)},
+  year = {2024},
+  isbn = {978-1-939133-39-7},
+  pages = {1229--1246},
+  url = {https://www.usenix.org/conference/nsdi24/presentation/zhang-yazhuo},
+  publisher = {USENIX Association},
+  month = apr
 }
 
 
