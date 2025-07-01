@@ -46,6 +46,10 @@ struct MetaExtra {
     _past_distances = vector<int32_t>(1, distance);
   }
 
+  MetaExtra(const MetaExtra &other)
+      : _past_distances(other._past_distances),
+        _past_distance_idx(other._past_distance_idx) {}
+
   void update(const int32_t &distance) {
     uint8_t distance_idx = _past_distance_idx % max_n_past_distances;
     if (_past_distances.size() < max_n_past_distances)
@@ -77,13 +81,38 @@ class Meta {
     _sample_times = 0;
   }
 
-  virtual ~Meta() = default;
+  // deep copy
+  Meta(const Meta &other)
+      : _key(other._key),
+        _size(other._size),
+        _past_timestamp(other._past_timestamp),
+        _freq(other._freq),
+        _sample_times(other._sample_times) {
+    if (other._extra) {
+      _extra = new MetaExtra(*other._extra);
+    }
+  }
+
+  // copy assignment operator
+  Meta &operator=(const Meta &other) {
+    if (this != &other) {
+      _key = other._key;
+      _size = other._size;
+      _past_timestamp = other._past_timestamp;
+      _freq = other._freq;
+      _sample_times = other._sample_times;
+      if (_extra) delete _extra;
+      _extra = other._extra ? new MetaExtra(*other._extra) : nullptr;
+    }
+    return *this;
+  }
+
+  ~Meta() { delete _extra; }
 
   void emplace_sample(uint64_t &sample_t, uint8_t max_num = 1) {
     if (_sample_times == 0) _sample_times = sample_t;
   }
 
-  void free() { delete _extra; }
   void update(const uint64_t &past_timestamp) {
     if (max_n_past_distances > 0) {
       int32_t _distance = past_timestamp - _past_timestamp;
@@ -385,6 +414,13 @@ class ThreeLCacheCache : public webcachesim::Cache {
       }
     }
     return distribution;
+  }
+
+  ~ThreeLCacheCache() {
+    if (evcition_distribution) free(evcition_distribution);
+    if (object_distribution_n_eviction) free(object_distribution_n_eviction);
+    if (training_data) delete training_data;
+    if (booster) LGBM_BoosterFree(booster);
   }
 };
 

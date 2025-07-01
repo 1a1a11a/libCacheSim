@@ -195,7 +195,17 @@ static const cache_test_data_t test_data_truth[] = {
      .req_byte_true = 4368040448,
      .miss_cnt_true = {90043, 83978, 81482, 77727, 72611, 72059, 67836, 65739},
      .miss_byte_true = {4068758016, 3792818176, 3639756288, 3379609600,
-                        3165339648, 3058814976, 2862775296, 2774183936}}};
+                        3165339648, 3058814976, 2862775296, 2774183936}},
+#if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
+    {.cache_name = "3LCache",
+     .hashpower = 20,
+     .req_cnt_true = 113872,
+     .req_byte_true = 4368040448,
+     .miss_cnt_true = {93374, 89783, 83572, 81722, 72494, 72104, 71972, 71704},
+     .miss_byte_true = {4214303232, 4061242368, 3778040320, 3660569600,
+                        3100927488, 3078128640, 3075403776, 3061662720}},
+#endif /* ENABLE_3L_CACHE */
+};
 
 static void _verify_profiler_results(const cache_stat_t *res,
                                      uint64_t num_of_sizes,
@@ -255,7 +265,7 @@ static void test_cache_algorithm(gconstpointer user_data,
                            test_data->miss_byte_true);
 
   cache->cache_free(cache);
-  my_free(sizeof(cache_stat_t), res);
+  my_free(sizeof(cache_stat_t) * (CACHE_SIZE / STEP_SIZE), res);
 }
 
 // Individual test functions (ordered alphabetically)
@@ -364,6 +374,12 @@ static void test_SR_LRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[24]);
 }
 
+#if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
+static void test_3LCache(gconstpointer user_data) {
+  test_cache_algorithm(user_data, &test_data_truth[25]);
+}
+#endif /* ENABLE_3L_CACHE */
+
 static void test_WTinyLFU(gconstpointer user_data) {
   // TODO: to be implemented
 }
@@ -413,6 +429,10 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
+
+#if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
+  g_test_add_data_func("/libCacheSim/cacheAlgo_3LCache", reader, test_3LCache);
+#endif /* ENABLE_3L_CACHE */
 
   // Belady algorithms require reader that has next access information
   // and can only use oracleGeneral trace (which we're using)

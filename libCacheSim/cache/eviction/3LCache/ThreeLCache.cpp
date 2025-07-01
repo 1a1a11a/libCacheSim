@@ -145,7 +145,6 @@ void ThreeLCacheCache::erase_out_cache() {
         }
       }
       key_map.erase(meta._key);
-      meta.free();
     }
     out_cache.metas.pop_front();
     out_cache.front_index++;

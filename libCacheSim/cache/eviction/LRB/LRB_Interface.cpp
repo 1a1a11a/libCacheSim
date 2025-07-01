@@ -320,7 +320,7 @@ static void LRB_parse_params(cache_t *cache,
                              const char *cache_specific_params) {
   LRB_params_t *params = (LRB_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
-  char *end;
+  char *original_params_str = params_str;  // preserve the original pointer
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
@@ -343,13 +343,15 @@ static void LRB_parse_params(cache_t *cache,
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", LRB_current_params(cache, params));
+      free(original_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      free(original_params_str);
       exit(1);
     }
   }
-  free(params_str);
+  free(original_params_str);
 }
 #ifdef __cplusplus
 }

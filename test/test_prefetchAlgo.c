@@ -101,7 +101,7 @@ static void test_prefetch_algorithm(gconstpointer user_data,
                            test_data->miss_byte_true);
 
   cache->cache_free(cache);
-  my_free(sizeof(cache_stat_t), res);
+  my_free(sizeof(cache_stat_t) * (CACHE_SIZE / STEP_SIZE), res);
 }
 
 // Individual test functions (ordered alphabetically)
