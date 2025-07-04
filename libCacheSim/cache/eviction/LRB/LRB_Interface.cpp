@@ -95,6 +95,8 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
   LRB_params_t *params = my_malloc(LRB_params_t);
   cache->eviction_params = params;
 
+  params->objective = nullptr;
+
   LRB_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
     LRB_parse_params(cache, cache_specific_params);
@@ -311,7 +313,7 @@ static const char *LRB_current_params(cache_t *cache, LRB_params_t *params) {
   static __thread char params_str[128];
   int n = snprintf(params_str, 128, "objective=%s", params->objective);
 
-  snprintf(cache->cache_name + n, 128 - n, "\n");
+  snprintf(params_str + n, 128 - n, "\n");
 
   return params_str;
 }
@@ -327,6 +329,13 @@ static void LRB_parse_params(cache_t *cache,
      * key and value are separated by = */
     char *key = strsep((char **)&params_str, "=");
     char *value = strsep((char **)&params_str, ",");
+
+    if (key == NULL || value == NULL) {
+      ERROR("invalid parameter format in %s: %s\n", cache->cache_name,
+            cache_specific_params);
+      free(original_params_str);
+      exit(1);
+    }
 
     // skip the white space
     while (params_str != NULL && *params_str == ' ') {

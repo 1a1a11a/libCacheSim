@@ -323,7 +323,7 @@ static const char *ThreeLCache_current_params(cache_t *cache,
   static __thread char params_str[128];
   int n = snprintf(params_str, 128, "objective=%s", params->objective);
 
-  snprintf(cache->cache_name + n, 128 - n, "\n");
+  snprintf(params_str + n, 128 - n, "\n");
 
   return params_str;
 }
@@ -339,6 +339,13 @@ static void ThreeLCache_parse_params(cache_t *cache,
      * key and value are separated by = */
     char *key = strsep((char **)&params_str, "=");
     char *value = strsep((char **)&params_str, ",");
+
+    if (key == NULL || value == NULL) {
+      ERROR("invalid parameter format in %s: %s\n", cache->cache_name,
+            cache_specific_params);
+      free(original_params_str);
+      exit(1);
+    }
 
     // skip the white space
     while (params_str != NULL && *params_str == ' ') {
