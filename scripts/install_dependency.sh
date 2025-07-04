@@ -194,18 +194,18 @@ install_lightgbm() {
 # Install Zstd
 install_zstd() {
 	log_info "Installing Zstd..."
-        local zstd_version="1.5.0"
-        # Check if Zstd exists
-        if command -v zstd &>/dev/null; then
-                local installed_version
-                installed_version=$(zstd --version | grep -oP 'v\K[0-9.]+')
-                if [[ $installed_version == "$zstd_version" ]]; then
-                        log_info "Zstd version $zstd_version already installed."
-                        return 0
-                else
-                        log_info "Zstd is installed but version is $installed_version (expecting $zstd_version). Proceeding to install..."
-                fi
-        fi
+	local zstd_version="1.5.0"
+	# Check if Zstd exists
+	if command -v zstd &>/dev/null; then
+		local installed_version
+		installed_version=$(zstd --version | grep -oP 'v\K[0-9.]+')
+		if [[ $installed_version == "$zstd_version" ]]; then
+			log_info "Zstd version $zstd_version already installed."
+			return 0
+		else
+			log_info "Zstd is installed but version is $installed_version (expecting $zstd_version). Proceeding to install..."
+		fi
+	fi
 	# Install
 	pushd /tmp/ >/dev/null
 	if [[ ! -f "zstd-${zstd_version}.tar.gz" ]]; then
