@@ -198,7 +198,7 @@ install_zstd() {
 	# Check if Zstd exists
 	if command -v zstd &>/dev/null; then
 		local installed_version
-		installed_version=$(zstd --version | grep -oP 'v\K[0-9.]+')
+		installed_version=$(zstd --version | grep -oE 'v[0-9.]+' | sed 's/^v//')
 		if [[ $installed_version == "$zstd_version" ]]; then
 			log_info "Zstd version $zstd_version already installed."
 			return 0
