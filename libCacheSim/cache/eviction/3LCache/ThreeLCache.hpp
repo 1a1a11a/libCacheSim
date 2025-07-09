@@ -66,7 +66,7 @@ struct MetaExtra {
 class Meta {
  public:
   uint64_t _key;
-  int32_t _size;
+  uint64_t _size;
   uint64_t _past_timestamp;
   uint16_t _freq;
   MetaExtra *_extra = nullptr;

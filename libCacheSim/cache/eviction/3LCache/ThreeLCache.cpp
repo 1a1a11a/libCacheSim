@@ -307,10 +307,15 @@ void ThreeLCacheCache::evict() {
 }
 
 void ThreeLCacheCache::evict_with_candidate(pair<uint64_t, int32_t> &epair) {
+  int32_t old_pos = epair.second;
+  if (old_pos == -1) {
+    // No valid candidate to evict, avoid segfault
+    return;
+  }
+
   is_sampling = true;
   evict_nums -= 1;
   uint64_t key = epair.first;
-  int32_t old_pos = epair.second;
   _currentSize -= in_cache.metas[old_pos]._size;
 
   pred_map.erase(key);
