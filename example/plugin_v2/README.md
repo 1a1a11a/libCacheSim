@@ -43,6 +43,7 @@ The plugin implements these required hook functions:
 - `cache_miss_hook()` - Handle cache misses (insert new object)
 - `cache_eviction_hook()` - Evict least recently used object and return its ID
 - `cache_remove_hook()` - Remove specific object from cache
+- `cache_free_hook()` - Clean up and free the LRU cache data structure
 
 ## Usage
 

@@ -109,6 +109,7 @@ cache_t *create_cache_external(const char *const cache_alg_name,
  * - cache_miss_hook: Handle cache miss events
  * - cache_eviction_hook: Determine which object to evict
  * - cache_remove_hook: Clean up when objects are removed
+ * - cache_free_hook: Free plugin resources
  *
  * @see example/plugin_v2/plugin_lru.c for a complete implementation example
  * @{
@@ -185,6 +186,16 @@ typedef obj_id_t (*cache_eviction_hook_t)(void *data, const request_t *req);
  * @note This is called after the object has been removed from the cache
  */
 typedef void (*cache_remove_hook_t)(void *data, const obj_id_t obj_id);
+
+/**
+ * @brief Cache free hook function type
+ *
+ * Optional cleanup function called when the cache is being destroyed.
+ * The plugin should free any resources allocated in cache_init_hook.
+ *
+ * @param data Pointer to plugin's internal data (from cache_init_hook)
+ */
+typedef void (*cache_free_hook_t)(void *data);
 
 /** @} */  // end of v2_plugin_api group
 

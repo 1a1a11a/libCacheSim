@@ -13,6 +13,7 @@
  *   - cache_miss_hook: Handle cache miss events
  *   - cache_eviction_hook: Determine which object to evict
  *   - cache_remove_hook: Clean up when objects are removed
+ *   - cache_free_hook: Free plugin resources
  *
  * The plugin cache delegates core cache operations to these hooks, enabling
  * flexible and extensible cache policies.
@@ -52,6 +53,7 @@ typedef struct pluginCache_params {
   cache_miss_hook_t cache_miss_hook;  ///< Cache miss handler function
   cache_eviction_hook_t cache_eviction_hook;  ///< Eviction decision function
   cache_remove_hook_t cache_remove_hook;  ///< Object removal handler function
+  cache_free_hook_t cache_free_hook;      ///< Cache cleanup function
   char *cache_name;
 } pluginCache_params_t;
 
@@ -159,6 +161,10 @@ cache_t *pluginCache_init(const common_cache_params_t ccache_params,
     void *obj;
     cache_remove_hook_t func;
   } cache_remove_u;
+  union {
+    void *obj;
+    cache_free_hook_t func;
+  } cache_free_u;
 
   cache_init_u.obj = dlsym(handle, "cache_init_hook");
   params->cache_init_hook = cache_init_u.func;
@@ -174,6 +180,9 @@ cache_t *pluginCache_init(const common_cache_params_t ccache_params,
 
   cache_remove_u.obj = dlsym(handle, "cache_remove_hook");
   params->cache_remove_hook = cache_remove_u.func;
+
+  cache_free_u.obj = dlsym(handle, "cache_free_hook");
+  params->cache_free_hook = cache_free_u.func;
 
   // Initialize the plugin with cache parameters
   params->data = params->cache_init_hook(ccache_params);
@@ -205,6 +214,9 @@ cache_t *pluginCache_init(const common_cache_params_t ccache_params,
  */
 static void pluginCache_free(cache_t *cache) {
   pluginCache_params_t *params = (pluginCache_params_t *)cache->eviction_params;
+
+  if (params->cache_free_hook != NULL) params->cache_free_hook(params->data);
+
   if (params->plugin_path != NULL) free(params->plugin_path);
   if (params->cache_name != NULL) free(params->cache_name);
   free(cache->eviction_params);
@@ -398,8 +410,10 @@ static void pluginCache_parse_params(cache_t *cache,
 
     // Process recognized parameters
     if (strcasecmp(key, "plugin") == 0 || strcasecmp(key, "plugin_path") == 0) {
+      if (params->plugin_path != NULL) free(params->plugin_path);
       params->plugin_path = strdup(value);
     } else if (strcasecmp(key, "cache_name") == 0) {
+      if (params->cache_name != NULL) free(params->cache_name);
       params->cache_name = strdup(value);
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: plugin_path=%s\n", params->plugin_path);

@@ -134,4 +134,11 @@ void cache_remove_hook(void *data, const obj_id_t obj_id) {
   lru_cache->cache_remove(obj_id);
 }
 
+// implement the cache free hook
+void cache_free_hook(void *data) {
+  // free the LRU cache (destructor handles all cleanup)
+  StandaloneLRU *lru_cache = (StandaloneLRU *)data;
+  delete lru_cache;
+}
+
 }  // extern "C"
