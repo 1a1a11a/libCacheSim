@@ -190,7 +190,7 @@ typedef void (*cache_remove_hook_t)(void *data, const obj_id_t obj_id);
 /**
  * @brief Cache free hook function type
  *
- * Optional cleanup function called when the cache is being destroyed.
+ * Cleanup function called when the cache is being destroyed.
  * The plugin should free any resources allocated in cache_init_hook.
  *
  * @param data Pointer to plugin's internal data (from cache_init_hook)

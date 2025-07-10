@@ -47,7 +47,7 @@ extern "C" {
  */
 typedef struct pluginCache_params {
   char *plugin_path;                  ///< Path to the plugin shared library
-  void *handle;                       ///< Handle to the loaded plugin library
+  void *plugin_handle;                ///< Handle to the loaded plugin library
   void *data;                         ///< Plugin's internal data structure
   cache_init_hook_t cache_init_hook;  ///< Plugin initialization function
   cache_hit_hook_t cache_hit_hook;    ///< Cache hit handler function
@@ -140,7 +140,7 @@ cache_t *pluginCache_init(const common_cache_params_t ccache_params,
     ERROR("Failed to load plugin %s: %s\n", params->plugin_path, dlerror());
     exit(1);
   }
-  params->handle = handle;
+  params->plugin_handle = handle;
 
   // Load hook functions from the plugin using unions to avoid pedantic warnings
   union {
@@ -218,8 +218,8 @@ static void pluginCache_free(cache_t *cache) {
   pluginCache_params_t *params = (pluginCache_params_t *)cache->eviction_params;
 
   if (params->cache_free_hook != NULL) params->cache_free_hook(params->data);
-  if (params->handle != NULL)
-    dlclose(params->handle);  // Close the plugin shared library handle
+  if (params->plugin_handle != NULL)
+    dlclose(params->plugin_handle);  // Close the plugin shared library handle
   if (params->plugin_path != NULL) free(params->plugin_path);
   if (params->cache_name != NULL) free(params->cache_name);
   free(cache->eviction_params);
