@@ -52,11 +52,12 @@ typedef struct pluginCache_params {
   cache_miss_hook_t cache_miss_hook;  ///< Cache miss handler function
   cache_eviction_hook_t cache_eviction_hook;  ///< Eviction decision function
   cache_remove_hook_t cache_remove_hook;  ///< Object removal handler function
+  char *cache_name;
 } pluginCache_params_t;
 
 /** @brief Default plugin parameters if none specified */
 static const char *DEFAULT_CACHE_PARAMS =
-    "plugin_path=./libplugin_lru_hooks.so";
+    "plugin_path=./libplugin_lru_hooks.so,cache_name=pluginCache";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -177,9 +178,19 @@ cache_t *pluginCache_init(const common_cache_params_t ccache_params,
   // Initialize the plugin with cache parameters
   params->data = params->cache_init_hook(ccache_params);
 
-  // Set cache name to include plugin path for identification
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "pluginCache-%s",
-           params->plugin_path);
+  if (strcmp(params->cache_name, "pluginCache") != 0) {
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "%s", params->cache_name);
+  } else {
+    // Set cache name to include plugin name for identification
+    char *plugin_name = strrchr(params->plugin_path, '/');
+    if (plugin_name == NULL) {
+      plugin_name = params->plugin_path;
+    } else {
+      plugin_name++;
+    }
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "pluginCache-%s",
+             plugin_name);
+  }
 
   return cache;
 }
@@ -193,6 +204,9 @@ cache_t *pluginCache_init(const common_cache_params_t ccache_params,
  * @param cache Pointer to the cache instance to free
  */
 static void pluginCache_free(cache_t *cache) {
+  pluginCache_params_t *params = (pluginCache_params_t *)cache->eviction_params;
+  if (params->plugin_path != NULL) free(params->plugin_path);
+  if (params->cache_name != NULL) free(params->cache_name);
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
@@ -385,6 +399,8 @@ static void pluginCache_parse_params(cache_t *cache,
     // Process recognized parameters
     if (strcasecmp(key, "plugin") == 0 || strcasecmp(key, "plugin_path") == 0) {
       params->plugin_path = strdup(value);
+    } else if (strcasecmp(key, "cache_name") == 0) {
+      params->cache_name = strdup(value);
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: plugin_path=%s\n", params->plugin_path);
       exit(0);
