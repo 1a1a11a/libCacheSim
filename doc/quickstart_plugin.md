@@ -31,7 +31,7 @@ Your library **must** export the following C-symbols:
 | `cache_eviction_hook` | `obj_id_t cache_eviction_hook(void *data, const request_t *req);` | Cache is full – must return the object-ID to evict. |
 | `cache_remove_hook` | `void cache_remove_hook(void *data, const obj_id_t obj_id);` | An object is explicitly removed (not necessarily due to eviction). |
 
-The opaque pointer returned by `cache_init_hook` is passed back to every other hook via the `data` parameter, letting your plugin maintain arbitrary state (linked lists, hash maps, statistics, …).
+The opaque pointer returned by `cache_init_hook` is passed back to every other hook via the `data` parameter, letting your plugin maintain arbitrary state (linked lists, hash maps, statistics, …). For memory safety, your library can export `cache_free_hook` to free the resources used by your cache struct according to your demands.
 
 ---
 
