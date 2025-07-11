@@ -49,14 +49,15 @@ extern "C" {
  * @param cache_specific_params Algorithm-specific parameters (can be NULL)
  * @return Pointer to initialized cache handler, or NULL on failure
  */
-cache_t *create_cache(const char *const cache_alg_name,
-                      common_cache_params_t cc_params,
-                      void *cache_specific_params);
+cache_t *create_cache_using_plugin(const char *const cache_alg_name,
+                                   common_cache_params_t cc_params,
+                                   void *cache_specific_params);
 
 /**
  * @brief Internal cache creation function
  *
- * Similar to create_cache() but for internal use within libCacheSim.
+ * Similar to create_cache_using_plugin() but for internal use within
+ * libCacheSim.
  *
  * @param cache_alg_name Name of the cache replacement algorithm (case
  * sensitive)
