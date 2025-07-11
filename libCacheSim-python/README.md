@@ -5,13 +5,8 @@ Python bindings for libCacheSim, a high-performance cache simulator.
 ## Installation
 
 ```bash
-pip install .
-```
-
-## Development
-
-```bash
-pip install -e .
+cd ..
+bash scripts/install_python.sh
 ```
 
 Test
@@ -192,3 +187,48 @@ When implementing `PythonHookCachePolicy`, you need to provide these hook functi
 - **`free_hook(plugin_data: Any) -> None`**: [Optional] Clean up plugin resources
 
 The `plugin_data` is whatever object you return from `init_hook()` - it can be any Python object like a list, dict, class instance, etc.
+
+### Unified Interface
+
+All cache policies (both built-in and Python hook-based) share the same unified interface:
+
+```python
+import libcachesim as cachesim
+
+# All cache policies work the same way
+cache = cachesim.LRU(cache_size=1024*1024)
+# or
+cache = cachesim.PythonHookCachePolicy(cache_size=1024*1024)
+# cache.set_hooks(...) for Python hook cache
+
+# Unified interface for all caches:
+req = cachesim.Request()
+req.obj_id = 1
+req.obj_size = 100
+hit = cache.get(req)                    # Process single request
+
+reader = cachesim.open_trace("trace.bin", cachesim.TraceType.ORACLE_GENERAL_TRACE.value)
+miss_ratio = cache.process_trace(reader)  # Process entire trace efficiently
+
+# Unified properties for all caches:
+print(f"Cache size: {cache.cache_size}")
+print(f"Objects: {cache.n_obj}")
+print(f"Occupied bytes: {cache.occupied_byte}")
+print(f"Requests processed: {cache.n_req}")
+```
+
+### Efficient Trace Processing
+
+The `process_trace` method processes trace data entirely on the C++ side to minimize overhead:
+
+```python
+# Process entire trace with optional limits
+miss_ratio = cache.process_trace(
+    reader,
+    max_req=10000,      # Process max 10K requests
+    max_sec=3600,       # Process max 1 hour of trace
+    start_time=1000,    # Start from timestamp 1000
+    end_time=5000       # End at timestamp 5000
+)
+print(f"Miss ratio: {miss_ratio:.4f}")
+```

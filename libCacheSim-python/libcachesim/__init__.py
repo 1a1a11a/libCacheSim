@@ -8,6 +8,8 @@ from ._libcachesim import (
     __version__,
     create_cache,
     open_trace,
+    process_trace,
+    process_trace_python_hook,
 )
 from .const import TraceType
 from .eviction import (
@@ -44,5 +46,7 @@ __all__ = [
     "__version__",
     "create_cache",
     "open_trace",
+    "process_trace",
+    "process_trace_python_hook",
     # TODO(haocheng): add more eviction policies
 ]

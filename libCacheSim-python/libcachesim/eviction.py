@@ -31,6 +31,25 @@ class EvictionPolicyBase(ABC):
     def __repr__(self) -> str:
         pass
 
+    @abstractmethod
+    def process_trace(self, reader, max_req=-1, max_sec=-1, start_time=-1, end_time=-1):
+        """Process a trace with this cache and return miss ratio.
+
+        This method processes trace data entirely on the C++ side to avoid
+        data movement overhead between Python and C++.
+
+        Args:
+            reader: The trace reader instance
+            max_req: Maximum number of requests to process (-1 for no limit)
+            max_sec: Maximum seconds to process (-1 for no limit)
+            start_time: Start time filter (-1 for no filter)
+            end_time: End time filter (-1 for no filter)
+
+        Returns:
+            float: Miss ratio (0.0 to 1.0)
+        """
+        pass
+
 
 class EvictionPolicy(EvictionPolicyBase):
     """Base class for all eviction policies."""
@@ -44,8 +63,53 @@ class EvictionPolicy(EvictionPolicyBase):
     def get(self, req: Request) -> bool:
         return self.cache.get(req)
 
+    def process_trace(self, reader, max_req=-1, max_sec=-1, start_time=-1, end_time=-1):
+        """Process a trace with this cache and return miss ratio.
+
+        This method processes trace data entirely on the C++ side to avoid
+        data movement overhead between Python and C++.
+
+        Args:
+            reader: The trace reader instance
+            max_req: Maximum number of requests to process (-1 for no limit)
+            max_sec: Maximum seconds to process (-1 for no limit)
+            start_time: Start time filter (-1 for no filter)
+            end_time: End time filter (-1 for no filter)
+
+        Returns:
+            float: Miss ratio (0.0 to 1.0)
+
+        Example:
+            >>> cache = LRU(1024*1024)
+            >>> reader = open_trace("trace.csv", TraceType.CSV_TRACE)
+            >>> miss_ratio = cache.process_trace(reader)
+            >>> print(f"Miss ratio: {miss_ratio:.4f}")
+        """
+        from ._libcachesim import process_trace
+        return process_trace(self.cache, reader, max_req, max_sec, start_time, end_time)
+
     def __repr__(self):
         return f"{self.__class__.__name__}(cache_size={self.cache.cache_size})"
+
+    @property
+    def n_req(self):
+        """Number of requests processed."""
+        return self.cache.n_req
+
+    @property
+    def n_obj(self):
+        """Number of objects currently in cache."""
+        return self.cache.n_obj
+
+    @property
+    def occupied_byte(self):
+        """Number of bytes currently occupied in cache."""
+        return self.cache.occupied_byte
+
+    @property
+    def cache_size(self):
+        """Total cache size in bytes."""
+        return self.cache.cache_size
 
 
 class FIFO(EvictionPolicy):
@@ -356,7 +420,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
         >>> hit = cache.get(req)
     """
     def __init__(self, cache_size: int, cache_name: str = "PythonHookCache"):
-        self.cache_size = cache_size
+        self._cache_size = cache_size
         self.cache_name = cache_name
         self.cache = PythonHookCache(cache_size, cache_name)
         self._hooks_set = False
@@ -391,6 +455,38 @@ class PythonHookCachePolicy(EvictionPolicyBase):
             raise RuntimeError("Hooks must be set before using the cache. Call set_hooks() first.")
         return self.cache.get(req)
 
+    def process_trace(self, reader, max_req=-1, max_sec=-1, start_time=-1, end_time=-1):
+        """Process a trace with this cache and return miss ratio.
+
+        This method processes trace data entirely on the C++ side to avoid
+        data movement overhead between Python and C++.
+
+        Args:
+            reader: The trace reader instance
+            max_req: Maximum number of requests to process (-1 for no limit)
+            max_sec: Maximum seconds to process (-1 for no limit)
+            start_time: Start time filter (-1 for no filter)
+            end_time: End time filter (-1 for no filter)
+
+        Returns:
+            float: Miss ratio (0.0 to 1.0)
+
+        Raises:
+            RuntimeError: If hooks have not been set
+
+        Example:
+            >>> cache = PythonHookCachePolicy(1024*1024)
+            >>> cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
+            >>> reader = open_trace("trace.csv", TraceType.CSV_TRACE)
+            >>> miss_ratio = cache.process_trace(reader)
+            >>> print(f"Miss ratio: {miss_ratio:.4f}")
+        """
+        if not self._hooks_set:
+            raise RuntimeError("Hooks must be set before processing trace. Call set_hooks() first.")
+
+        from ._libcachesim import process_trace_python_hook
+        return process_trace_python_hook(self.cache, reader, max_req, max_sec, start_time, end_time)
+
     @property
     def n_req(self):
         """Number of requests processed."""
@@ -406,6 +502,11 @@ class PythonHookCachePolicy(EvictionPolicyBase):
         """Number of bytes currently occupied in cache."""
         return self.cache.occupied_byte
 
+    @property
+    def cache_size(self):
+        """Total cache size in bytes."""
+        return self.cache.cache_size
+
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self.cache_size}, " \
+        return f"{self.__class__.__name__}(cache_size={self._cache_size}, " \
                f"cache_name='{self.cache_name}', hooks_set={self._hooks_set})"

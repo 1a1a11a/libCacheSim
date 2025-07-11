@@ -168,14 +168,14 @@ def test_lru_comparison():
         print(f"Request {i+1}: obj_id={obj_id}")
         print(f"  Native LRU: {'HIT' if native_result else 'MISS'}")
         print(f"  Hook LRU:   {'HIT' if hook_result else 'MISS'}")
-        print(f"  Match: {'✓' if match else '✗'}")
+        print(f"  Match: {'PASS' if match else 'FAIL'}")
 
         # Compare cache statistics
         stats_match = (native_lru.cache.n_obj == hook_lru.n_obj and
                       native_lru.cache.occupied_byte == hook_lru.occupied_byte)
         print(f"  Native stats: {native_lru.cache.n_obj} objects, {native_lru.cache.occupied_byte} bytes")
         print(f"  Hook stats:   {hook_lru.n_obj} objects, {hook_lru.occupied_byte} bytes")
-        print(f"  Stats match: {'✓' if stats_match else '✗'}")
+        print(f"  Stats match: {'PASS' if stats_match else 'FAIL'}")
         print()
 
         if not match:
@@ -192,12 +192,8 @@ def test_lru_comparison():
     print(f"  Matching results: {hit_rate_matches}")
     print(f"  Accuracy: {accuracy:.1f}%")
 
-    if accuracy == 100.0:
-        print("✓ LRU comparison test PASSED - Both implementations behave identically!")
-        return True
-    else:
-        print("✗ LRU comparison test FAILED - Implementations differ!")
-        return False
+    assert accuracy == 100.0, f"LRU implementations differ! Accuracy: {accuracy:.1f}%"
+    print("PASS: LRU comparison test PASSED - Both implementations behave identically!")
 
 
 def test_lru_comparison_variable_sizes():
@@ -268,22 +264,18 @@ def test_lru_comparison_variable_sizes():
         print(f"Request {i+1}: obj_id={obj_id}, size={obj_size}")
         print(f"  Native LRU: {'HIT' if native_result else 'MISS'}")
         print(f"  Hook LRU:   {'HIT' if hook_result else 'MISS'}")
-        print(f"  Result match: {'✓' if result_match else '✗'}")
+        print(f"  Result match: {'PASS' if result_match else 'FAIL'}")
         print(f"  Native stats: {native_lru.cache.n_obj} objects, {native_lru.cache.occupied_byte} bytes")
         print(f"  Hook stats:   {hook_lru.n_obj} objects, {hook_lru.occupied_byte} bytes")
-        print(f"  Stats match: {'✓' if stats_match else '✗'}")
+        print(f"  Stats match: {'PASS' if stats_match else 'FAIL'}")
         print()
 
         if not result_match or not stats_match:
             all_match = False
             print(f"ERROR: Mismatch at request {i+1}")
 
-    if all_match:
-        print("✓ Variable size LRU comparison test PASSED!")
-        return True
-    else:
-        print("✗ Variable size LRU comparison test FAILED!")
-        return False
+    assert all_match, "Variable size LRU comparison failed - implementations differ!"
+    print("PASS: Variable size LRU comparison test PASSED!")
 
 
 if __name__ == "__main__":
