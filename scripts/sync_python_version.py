@@ -51,7 +51,11 @@ def update_pyproject_toml(version):
         pyproject_data = f.read()
 
     # Update the version line in pyproject.toml, make it can match any version in version.txt, like "0.3.1" or "dev"
-    current_version = re.search(r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+)\"", pyproject_data).group(1)
+    match = re.search(r"version = \"(dev|[0-9]+\.[0-9]+\.[0-9]+)\"", pyproject_data)
+    if not match:
+        print("Error: Could not find a valid version line in pyproject.toml", file=sys.stderr)
+        return False
+    current_version = match.group(1)
     if current_version == version:
         print(f"Python binding version already up to date: {version}")
         return False
@@ -77,9 +81,9 @@ def main():
         updated = update_pyproject_toml(main_version)
 
         if updated:
-            print("✓ Python binding version synchronized successfully")
+            print("Python binding version synchronized successfully")
         else:
-            print("✓ No changes needed")
+            print("No changes needed")
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

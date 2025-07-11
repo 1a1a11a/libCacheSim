@@ -164,8 +164,6 @@ struct ReaderDeleter {
   }
 };
 
-namespace py = pybind11;
-
 PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
   m.doc() = R"pbdoc(
         libCacheSim Python bindings
@@ -617,7 +615,8 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
   /**
    * @brief Create a TinyLFU cache instance.
    */
-  // mark evivtion parsing need change
+  // TODO: Review and update the eviction parsing logic in TinyLFU_init if
+  // necessary.
   m.def(
       "TinyLFU_init",
       [](uint64_t cache_size, std::string main_cache, double window_size) {

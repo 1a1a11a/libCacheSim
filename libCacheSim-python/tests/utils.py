@@ -9,9 +9,8 @@ def get_reference_data(eviction_algo, cache_size_ratio):
     )
     with open(data_file, "r") as f:  # noqa: PTH123
         lines = f.readlines()
+        key = "3LCache" if eviction_algo == "ThreeLCache" else eviction_algo
         for line in lines:
-            if eviction_algo == "ThreeLCache":
-                eviction_algo = "3LCache"
-            if line.startswith(f"{eviction_algo},{cache_size_ratio}"):
+            if line.startswith(f"{key},{cache_size_ratio}"):
                 return float(line.split(",")[-1])
     return None

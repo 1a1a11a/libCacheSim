@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Build the main libCacheSim C++ library first
 echo "Building main libCacheSim library..."
