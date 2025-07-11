@@ -21,6 +21,7 @@ from .eviction import (
     ThreeLCache,
     TinyLFU,
     TwoQ,
+    PythonHookCachePolicy,
 )
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     "TinyLFU",
     "TraceType",
     "TwoQ",
+    "PythonHookCachePolicy",
     "__doc__",
     "__version__",
     "create_cache",

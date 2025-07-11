@@ -1,6 +1,10 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/functional.h>
+#include <pybind11/stl.h>
 
 #include <iostream>
+#include <unordered_map>
+#include <memory>
 
 #include "config.h"
 #include "libCacheSim/cache.h"
@@ -33,6 +37,97 @@
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
+
+namespace py = pybind11;
+
+// Python Hook Cache Implementation
+class PythonHookCache {
+private:
+    uint64_t cache_size_;
+    std::string cache_name_;
+    std::unordered_map<uint64_t, uint64_t> objects_;  // obj_id -> obj_size
+    py::object plugin_data_;
+
+    // Hook functions
+    py::function init_hook_;
+    py::function hit_hook_;
+    py::function miss_hook_;
+    py::function eviction_hook_;
+    py::function remove_hook_;
+    py::object free_hook_;  // Changed to py::object to allow py::none()
+
+public:
+    uint64_t n_req = 0;
+    uint64_t n_obj = 0;
+    uint64_t occupied_byte = 0;
+    uint64_t cache_size;
+
+    PythonHookCache(uint64_t cache_size, const std::string& cache_name = "PythonHookCache")
+        : cache_size_(cache_size), cache_name_(cache_name), cache_size(cache_size),
+          free_hook_(py::none()) {}
+
+    void set_hooks(py::function init_hook, py::function hit_hook, py::function miss_hook,
+                   py::function eviction_hook, py::function remove_hook,
+                   py::object free_hook = py::none()) {
+        init_hook_ = init_hook;
+        hit_hook_ = hit_hook;
+        miss_hook_ = miss_hook;
+        eviction_hook_ = eviction_hook;
+        remove_hook_ = remove_hook;
+
+        // Handle free_hook properly
+        if (!free_hook.is_none()) {
+            free_hook_ = free_hook;
+        } else {
+            free_hook_ = py::none();
+        }
+
+        // Initialize plugin data
+        plugin_data_ = init_hook_(cache_size_);
+    }
+
+    bool get(const request_t& req) {
+        n_req++;
+
+        auto it = objects_.find(req.obj_id);
+        if (it != objects_.end()) {
+            // Cache hit
+            hit_hook_(plugin_data_, req.obj_id, req.obj_size);
+            return true;
+        } else {
+            // Cache miss - need to insert
+            // Check if eviction is needed
+            if (occupied_byte + req.obj_size > cache_size_ && !objects_.empty()) {
+                // Need to evict
+                uint64_t victim_id = eviction_hook_(plugin_data_, req.obj_id, req.obj_size).cast<uint64_t>();
+                auto victim_it = objects_.find(victim_id);
+                if (victim_it != objects_.end()) {
+                    occupied_byte -= victim_it->second;
+                    objects_.erase(victim_it);
+                    n_obj--;
+                    remove_hook_(plugin_data_, victim_id);
+                }
+            }
+
+            // Insert new object if there's space
+            if (occupied_byte + req.obj_size <= cache_size_) {
+                objects_[req.obj_id] = req.obj_size;
+                occupied_byte += req.obj_size;
+                n_obj++;
+            }
+
+            miss_hook_(plugin_data_, req.obj_id, req.obj_size);
+            return false;
+        }
+    }
+
+    ~PythonHookCache() {
+        if (!free_hook_.is_none()) {
+            py::function free_func = free_hook_.cast<py::function>();
+            free_func(plugin_data_);
+        }
+    }
+};
 
 struct CacheDeleter {
   void operator()(cache_t* ptr) const {
@@ -557,6 +652,46 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
             Returns:
                 Cache: A new TwoQ cache instance.
       )pbdoc");
+
+  /**
+   * @brief Create a Python hook-based cache instance.
+   */
+  py::class_<PythonHookCache>(m, "PythonHookCache")
+      .def(py::init<uint64_t, const std::string&>(), py::arg("cache_size"), py::arg("cache_name") = "PythonHookCache")
+      .def("set_hooks", &PythonHookCache::set_hooks,
+           py::arg("init_hook"), py::arg("hit_hook"), py::arg("miss_hook"),
+           py::arg("eviction_hook"), py::arg("remove_hook"), py::arg("free_hook") = py::none(),
+           R"pbdoc(
+            Set the hook functions for the cache.
+
+            Args:
+                init_hook (callable): Function called during cache initialization.
+                    Signature: init_hook(cache_size: int) -> Any
+                hit_hook (callable): Function called on cache hit.
+                    Signature: hit_hook(plugin_data: Any, obj_id: int, obj_size: int) -> None
+                miss_hook (callable): Function called on cache miss.
+                    Signature: miss_hook(plugin_data: Any, obj_id: int, obj_size: int) -> None
+                eviction_hook (callable): Function called to select eviction candidate.
+                    Signature: eviction_hook(plugin_data: Any, obj_id: int, obj_size: int) -> int
+                remove_hook (callable): Function called when object is removed.
+                    Signature: remove_hook(plugin_data: Any, obj_id: int) -> None
+                free_hook (callable, optional): Function called during cache cleanup.
+                    Signature: free_hook(plugin_data: Any) -> None
+      )pbdoc")
+      .def("get", &PythonHookCache::get, py::arg("req"),
+           R"pbdoc(
+            Process a cache request.
+
+            Args:
+                req (Request): The cache request to process.
+
+            Returns:
+                bool: True if cache hit, False if cache miss.
+      )pbdoc")
+      .def_readwrite("n_req", &PythonHookCache::n_req)
+      .def_readwrite("n_obj", &PythonHookCache::n_obj)
+      .def_readwrite("occupied_byte", &PythonHookCache::occupied_byte)
+      .def_readwrite("cache_size", &PythonHookCache::cache_size);
 
 #ifdef VERSION_INFO
   m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
