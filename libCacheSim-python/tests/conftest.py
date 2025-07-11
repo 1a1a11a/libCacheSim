@@ -26,7 +26,7 @@ def mock_reader():
         try:
             if hasattr(reader, 'close'):
                 reader.close()
-        except:
+        except Exception:  # Be specific about exception type
             pass
         # Don't explicitly del reader here, let Python handle it
         gc.collect()

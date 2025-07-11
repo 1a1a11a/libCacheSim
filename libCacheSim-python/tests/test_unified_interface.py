@@ -21,7 +21,11 @@ from collections import OrderedDict
 
 
 def create_trace_reader():
-    """Helper function to create a trace reader."""
+    """Helper function to create a trace reader.
+    
+    Returns:
+        Reader or None: A trace reader instance, or None if trace file not found.
+    """
     data_file = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
         "data",
@@ -33,24 +37,33 @@ def create_trace_reader():
 
 
 def create_test_lru_hooks():
-    """Create LRU hooks for testing."""
+    """Create LRU hooks for testing.
+    
+    Returns:
+        tuple: A tuple of (init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
+    """
 
     def init_hook(cache_size):
+        """Initialize LRU data structure."""
         return OrderedDict()
 
     def hit_hook(lru_dict, obj_id, obj_size):
+        """Handle cache hit by moving to end (most recently used)."""
         if obj_id in lru_dict:
             lru_dict.move_to_end(obj_id)
 
     def miss_hook(lru_dict, obj_id, obj_size):
+        """Handle cache miss by adding new object."""
         lru_dict[obj_id] = obj_size
 
     def eviction_hook(lru_dict, obj_id, obj_size):
+        """Return the least recently used object ID for eviction."""
         if lru_dict:
             return next(iter(lru_dict))
         return obj_id
 
     def remove_hook(lru_dict, obj_id):
+        """Remove object from LRU structure."""
         lru_dict.pop(obj_id, None)
 
     return init_hook, hit_hook, miss_hook, eviction_hook, remove_hook
@@ -86,22 +99,27 @@ def test_unified_process_trace_interface():
     results = {}
     for name, cache in caches.items():
         # Create fresh reader for each test
-        reader = create_trace_reader()
-        if not reader:
-            continue
+        test_reader = create_trace_reader()
+        if not test_reader:
+            pytest.skip(f"Cannot create reader for {name} test")
 
         # Test process_trace method exists
         assert hasattr(cache, 'process_trace'), f"{name} missing process_trace method"
 
         # Test process_trace functionality
-        miss_ratio = cache.process_trace(reader, max_req=max_requests)
+        miss_ratio = cache.process_trace(test_reader, max_req=max_requests)
         results[name] = miss_ratio
 
         print(f"{name:15s}: miss_ratio = {miss_ratio:.4f}")
         print(f"                cache stats: {cache.n_obj} objects, {cache.occupied_byte} bytes")
 
+        # Verify miss_ratio is valid
+        assert 0.0 <= miss_ratio <= 1.0, f"{name} returned invalid miss_ratio: {miss_ratio}"
+
     print(f"\nPASS: All {len(caches)} cache policies support unified process_trace interface!")
-    # Test passes - no explicit return needed for pytest
+    
+    # Verify we got results for all caches
+    assert len(results) == len(caches), "Not all caches were tested"
 
 
 def test_unified_properties_interface():
@@ -134,7 +152,6 @@ def test_unified_properties_interface():
         assert cache.cache_size == cache_size, f"{name} cache_size mismatch"
 
     print("PASS: All cache policies support unified properties interface!")
-    # Test passes - no explicit return needed for pytest
 
 
 def test_get_interface_consistency():
@@ -163,20 +180,33 @@ def test_get_interface_consistency():
     print("Testing get() method with test request...")
 
     for name, cache in caches.items():
+        # Reset cache state for consistent testing
+        initial_n_req = cache.n_req
+        initial_n_obj = cache.n_obj
+        initial_occupied = cache.occupied_byte
+        
         # Test get method exists
         assert hasattr(cache, 'get'), f"{name} missing get method"
 
-        # Test first access (should be miss)
+        # Test first access (should be miss for new object)
         result = cache.get(test_req)
         print(f"{name:15s}: first access = {'HIT' if result else 'MISS'}")
 
-        # Test properties updated
-        assert cache.n_req > 0, f"{name} n_req not updated"
-        assert cache.n_obj > 0, f"{name} n_obj not updated"
-        assert cache.occupied_byte > 0, f"{name} occupied_byte not updated"
+        # Test properties updated correctly
+        assert cache.n_req > initial_n_req, f"{name} n_req not updated"
+        if not result:  # If it was a miss, object should be added
+            assert cache.n_obj > initial_n_obj, f"{name} n_obj not updated after miss"
+            assert cache.occupied_byte > initial_occupied, f"{name} occupied_byte not updated after miss"
+
+        # Test second access to same object (should be hit)
+        second_result = cache.get(test_req)
+        print(f"{name:15s}: second access = {'HIT' if second_result else 'MISS'}")
+        
+        # Second access should be a hit (unless cache is too small)
+        if cache.cache_size >= test_req.obj_size:
+            assert second_result, f"{name} second access should be a hit"
 
     print("PASS: Get interface consistency test passed!")
-    # Test passes - no explicit return needed for pytest
 
 
 if __name__ == "__main__":

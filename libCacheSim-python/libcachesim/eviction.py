@@ -32,7 +32,7 @@ class EvictionPolicyBase(ABC):
         pass
 
     @abstractmethod
-    def process_trace(self, reader, max_req=-1, max_sec=-1, start_time=-1, end_time=-1):
+    def process_trace(self, reader, max_req: int = -1, max_sec: int = -1, start_time: int = -1, end_time: int = -1) -> float:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -63,7 +63,7 @@ class EvictionPolicy(EvictionPolicyBase):
     def get(self, req: Request) -> bool:
         return self.cache.get(req)
 
-    def process_trace(self, reader, max_req=-1, max_sec=-1, start_time=-1, end_time=-1):
+    def process_trace(self, reader, max_req: int = -1, max_sec: int = -1, start_time: int = -1, end_time: int = -1) -> float:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -150,9 +150,9 @@ class Clock(EvictionPolicy):
         return Clock_init(cache_size, n_bit_counter, init_freq)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, " \
-               f"n_bit_counter={self.n_bit_counter}, " \
-               f"init_freq={self.init_freq})"
+        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+                f"n_bit_counter={self.n_bit_counter}, "
+                f"init_freq={self.init_freq})")
 
 
 class TwoQ(EvictionPolicy):
@@ -183,9 +183,9 @@ class TwoQ(EvictionPolicy):
         return TwoQ_init(cache_size, ain_size_ratio, aout_size_ratio)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, " \
-               f"ain_size_ratio={self.ain_size_ratio}, " \
-               f"aout_size_ratio={self.aout_size_ratio})"
+        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+                f"ain_size_ratio={self.ain_size_ratio}, "
+                f"aout_size_ratio={self.aout_size_ratio})")
 
 
 class LRB(EvictionPolicy):
@@ -214,8 +214,8 @@ class LRB(EvictionPolicy):
         return LRB_init(cache_size, objective)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, " \
-               f"objective={self.objective})"
+        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+                f"objective={self.objective})")
 
 
 class LRU(EvictionPolicy):
@@ -286,10 +286,10 @@ class S3FIFO(EvictionPolicy):
         return S3FIFO_init(cache_size, fifo_size_ratio, ghost_size_ratio, move_to_main_threshold)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, " \
-               f"fifo_size_ratio={self.fifo_size_ratio}, " \
-               f"ghost_size_ratio={self.ghost_size_ratio}, " \
-               f"move_to_main_threshold={self.move_to_main_threshold})"
+        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+                f"fifo_size_ratio={self.fifo_size_ratio}, "
+                f"ghost_size_ratio={self.ghost_size_ratio}, "
+                f"move_to_main_threshold={self.move_to_main_threshold})")
 
 
 class Sieve(EvictionPolicy):
@@ -326,8 +326,8 @@ class ThreeLCache(EvictionPolicy):
         return ThreeLCache_init(cache_size, objective)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, " \
-               f"objective={self.objective})"
+        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+                f"objective={self.objective})")
 
 
 class TinyLFU(EvictionPolicy):
@@ -355,9 +355,9 @@ class TinyLFU(EvictionPolicy):
         return TinyLFU_init(cache_size, main_cache, window_size)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, " \
-               f"main_cache={self.main_cache}, " \
-               f"window_size={self.window_size})"
+        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+                f"main_cache={self.main_cache}, "
+                f"window_size={self.window_size})")
 
 
 
@@ -508,5 +508,5 @@ class PythonHookCachePolicy(EvictionPolicyBase):
         return self.cache.cache_size
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(cache_size={self._cache_size}, " \
-               f"cache_name='{self.cache_name}', hooks_set={self._hooks_set})"
+        return (f"{self.__class__.__name__}(cache_size={self._cache_size}, "
+                f"cache_name='{self.cache_name}', hooks_set={self._hooks_set})")
