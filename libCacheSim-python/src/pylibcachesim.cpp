@@ -364,29 +364,6 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
                 Reader: A new reader instance for the trace.
         )pbdoc");
 
-  /**
-   * @brief Generic function to create a cache instance.
-   */
-  m.def(
-      "create_cache",
-      [](const std::string& eviction_algo, const uint64_t cache_size,
-         const std::string& eviction_params,
-         bool consider_obj_metadata) { return nullptr; },
-      py::arg("eviction_algo"), py::arg("cache_size"),
-      py::arg("eviction_params"), py::arg("consider_obj_metadata"),
-      R"pbdoc(
-            Create a cache instance.
-
-            Args:
-                eviction_algo (str): Eviction algorithm to use (e.g., "LRU", "FIFO", "Random").
-                cache_size (int): Size of the cache in bytes.
-                eviction_params (str): Additional parameters for the eviction algorithm.
-                consider_obj_metadata (bool): Whether to consider object metadata in eviction decisions.
-
-            Returns:
-                Cache: A new cache instance.
-        )pbdoc");
-
   /* TODO(haocheng): should we support all parameters in the
    * common_cache_params_t? (hash_power, etc.) */
 

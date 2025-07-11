@@ -7,7 +7,6 @@ libCacheSim Python bindings
 .. autosummary::
     :toctree: _generate
 
-    create_cache
     open_trace
     ARC_init
     Clock_init
@@ -27,14 +26,6 @@ libCacheSim Python bindings
 """
 
 from .const import TraceType
-
-def create_cache(
-    eviction_algo: str,
-    cache_size: int,
-    eviction_params: str,
-    consider_obj_metadata: bool
-) -> Cache: ...
-
 
 def open_trace(
     trace_path: str,
