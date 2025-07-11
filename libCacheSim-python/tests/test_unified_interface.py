@@ -5,6 +5,7 @@ Test the unified interface for all cache policies.
 
 import sys
 import os
+import pytest
 
 # Add the parent directory to the Python path for development testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -65,8 +66,7 @@ def test_unified_process_trace_interface():
     # Create trace reader
     reader = create_trace_reader()
     if not reader:
-        print("Warning: Cannot open trace file for unified interface test")
-        return True
+        pytest.skip("Skipping test: Trace file not available")
 
     # Test different cache policies
     caches = {

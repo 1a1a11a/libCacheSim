@@ -5,6 +5,7 @@ Test file for PythonHookCachePolicy functionality.
 
 import sys
 import os
+import pytest
 
 # Add the parent directory to the Python path for development testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -87,11 +88,8 @@ def test_error_handling():
     req.obj_id = 1
     req.obj_size = 100
 
-    try:
+    with pytest.raises(RuntimeError):
         cache.get(req)
-        print("ERROR: Should have raised RuntimeError")
-    except RuntimeError as e:
-        print(f"Correctly caught error: {e}")
 
     print("Error handling test passed!")
 
