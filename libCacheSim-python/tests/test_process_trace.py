@@ -5,6 +5,7 @@ Test file for process_trace functionality.
 
 import sys
 import os
+import pytest
 
 # Add the parent directory to the Python path for development testing
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -28,7 +29,7 @@ def create_trace_reader():
     )
     if not os.path.exists(data_file):
         return None
-    return lcs.open_trace(data_file, lcs.TraceType.ORACLE_GENERAL_TRACE.value)
+    return lcs.open_trace(data_file, lcs.TraceType.ORACLE_GENERAL_TRACE)
 
 
 def test_process_trace_native():
@@ -38,8 +39,7 @@ def test_process_trace_native():
     # Open trace
     reader = create_trace_reader()
     if reader is None:
-        print("Warning: Test trace file not found, skipping test")
-        return  # Skip test
+        pytest.skip("Test trace file not found, skipping test")
 
     # Create LRU cache
     cache = lcs.LRU(1024*1024)  # 1MB cache
@@ -61,8 +61,7 @@ def test_process_trace_python_hook():
     # Open trace
     reader = create_trace_reader()
     if reader is None:
-        print("Warning: Test trace file not found, skipping test")
-        return  # Skip test
+        pytest.skip("Test trace file not found, skipping test")
 
     # Create Python hook LRU cache
     cache = lcs.PythonHookCachePolicy(1024*1024, "TestLRU")
@@ -126,8 +125,7 @@ def test_compare_native_vs_python_hook():
     native_cache = lcs.LRU(cache_size)
     reader1 = create_trace_reader()
     if reader1 is None:
-        print("Warning: Test trace file not found, skipping test")
-        return  # Skip test
+        pytest.skip("Test trace file not found, skipping test")
 
     native_miss_ratio = native_cache.process_trace(reader1, max_req=max_requests)
 
@@ -175,8 +173,7 @@ def test_error_handling():
 
     reader = create_trace_reader()
     if reader is None:
-        print("Warning: Test trace file not found, skipping error test")
-        return  # Skip test
+        pytest.skip("Test trace file not found, skipping error test")
 
     # Try to process trace without setting hooks
     try:
@@ -199,8 +196,7 @@ def test_lru_implementation_accuracy():
     reader2 = create_trace_reader()
 
     if not reader1 or not reader2:
-        print("Warning: Cannot open trace files for LRU accuracy test")
-        return
+        pytest.skip("Cannot open trace files for LRU accuracy test")
 
     # Test native LRU
     native_cache = lcs.LRU(cache_size)

@@ -29,7 +29,7 @@ def create_trace_reader():
     )
     if not os.path.exists(data_file):
         return None
-    return lcs.open_trace(data_file, lcs.TraceType.ORACLE_GENERAL_TRACE.value)
+    return lcs.open_trace(data_file, lcs.TraceType.ORACLE_GENERAL_TRACE)
 
 
 def create_test_lru_hooks():

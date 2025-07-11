@@ -161,8 +161,6 @@ struct ReaderDeleter {
   }
 };
 
-namespace py = pybind11;
-
 PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
   m.doc() = R"pbdoc(
         libCacheSim Python bindings
@@ -178,9 +176,19 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
 
   py::enum_<trace_type_e>(m, "TraceType")
       .value("CSV_TRACE", trace_type_e::CSV_TRACE)
-      .value("PLAIN_TXT_TRACE", trace_type_e::PLAIN_TXT_TRACE)
       .value("BIN_TRACE", trace_type_e::BIN_TRACE)
+      .value("PLAIN_TXT_TRACE", trace_type_e::PLAIN_TXT_TRACE)
+      .value("ORACLE_GENERAL_TRACE", trace_type_e::ORACLE_GENERAL_TRACE)
+      .value("LCS_TRACE", trace_type_e::LCS_TRACE)
       .value("VSCSI_TRACE", trace_type_e::VSCSI_TRACE)
+      .value("TWR_TRACE", trace_type_e::TWR_TRACE)
+      .value("TWRNS_TRACE", trace_type_e::TWRNS_TRACE)
+      .value("ORACLE_SIM_TWR_TRACE", trace_type_e::ORACLE_SIM_TWR_TRACE)
+      .value("ORACLE_SYS_TWR_TRACE", trace_type_e::ORACLE_SYS_TWR_TRACE)
+      .value("ORACLE_SIM_TWRNS_TRACE", trace_type_e::ORACLE_SIM_TWRNS_TRACE)
+      .value("ORACLE_SYS_TWRNS_TRACE", trace_type_e::ORACLE_SYS_TWRNS_TRACE)
+      .value("VALPIN_TRACE", trace_type_e::VALPIN_TRACE)
+      .value("UNKNOWN_TRACE", trace_type_e::UNKNOWN_TRACE)
       .export_values();
 
   // *************** structs ***************
