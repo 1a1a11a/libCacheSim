@@ -46,6 +46,7 @@ jobs:
           ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
   selfhosted:
+    if: github.repository == '1a1a11a/libCacheSim'
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
