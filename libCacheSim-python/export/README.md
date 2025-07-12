@@ -1,85 +1,47 @@
-# libCacheSim Python Binding Export
+# Python Binding Export System
 
-This directory contains the export mechanism for sharing variables between the main libCacheSim project and the Python binding.
+Build system bridge for sharing CMake variables between the main libCacheSim project and Python binding.
 
-## Overview
+## Purpose
 
-The `export/CMakeLists.txt` file serves as a bridge between the main libCacheSim project and the Python binding, ensuring that all necessary variables (source files, include directories, compiler flags, etc.) are properly exported and can be imported by the Python binding's CMakeLists.txt.
+The `export/CMakeLists.txt` exports all necessary build variables (source files, include directories, compiler flags, etc.) from the main project to the Python binding, enabling consistent builds without duplicating configuration.
 
 ## How It Works
 
-### 1. Variable Export Process
+1. **Export**: Main project writes variables to `export_vars.cmake`
+2. **Import**: Python binding includes this file during CMake configuration
+3. **Build**: Python binding uses shared variables for consistent compilation
 
-The export mechanism works in the following steps:
+## Key Exported Variables
 
-1. **Path Conversion**: Converts relative source file paths to absolute paths using the `convert_to_absolute_paths` function
-2. **Variable Collection**: Gathers all necessary variables from the main project
-3. **File Generation**: Writes all variables to `export_vars.cmake` in the build directory
-4. **Import**: The Python binding's CMakeLists.txt includes this file to access all variables
+### Source Files
+- Cache algorithms, data structures, trace readers
+- Profilers, utilities, analyzers
 
-### 2. Exported Variables
-
-The following categories of variables are exported:
-
-#### Source Files
-- `ABS_cache_sources` - Cache-related source files
-- `ABS_dataStructure_sources` - Data structure source files
-- `ABS_traceReader_sources` - Trace reader source files
-- `ABS_profiler_sources` - Profiler source files
-- `ABS_utils_sources` - Utility source files
-- `ABS_traceAnalyzer_sources` - Trace analyzer source files
-- `ABS_mrcProfiler_sources` - MRC profiler source files
-
-#### Project Metadata
-- `LIBCACHESIM_VERSION` - Version information
-
-#### Include Directories
-- `libCacheSim_include_dir` - Main include directory
-- `libCacheSim_binary_include_dir` - Binary include directory
-- `GLib_INCLUDE_DIRS` - GLib include directories
-- `XGBOOST_INCLUDE_DIR` - XGBoost include directory
-- `LIGHTGBM_PATH` - LightGBM include directory
-- `ZSTD_INCLUDE_DIR` - ZSTD include directory
-
-#### Dependencies
-- `dependency_libs` - Dependency libraries
-
-#### Compiler Flags
-- `LIBCACHESIM_C_FLAGS` - C compiler flags
-- `LIBCACHESIM_CXX_FLAGS` - C++ compiler flags
-
-#### Build Options
-- `USE_HUGEPAGE` - Hugepage usage
-- `ENABLE_TESTS` - Test enablement
-- `ENABLE_GLCACHE` - GLCache enablement
-- `SUPPORT_TTL` - TTL support
-- `OPT_SUPPORT_ZSTD_TRACE` - ZSTD trace support
-- `ENABLE_LRB` - LRB enablement
-- `ENABLE_3L_CACHE` - 3L Cache enablement
-- `LOG_LEVEL_LOWER` - Log level
+### Build Configuration
+- Include directories (main, GLib, ZSTD, XGBoost, LightGBM)
+- Compiler flags (C/C++)
+- Dependency libraries
+- Build options (hugepage, tests, optional features)
 
 ## Usage
 
-### In Main Project
-
-The main project's CMakeLists.txt includes this export directory:
-
+**Main Project** (`CMakeLists.txt`):
 ```cmake
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim-python/export)
 ```
 
-### In Python Binding
-
-The Python binding's CMakeLists.txt imports the exported variables:
-
+**Python Binding** (`libCacheSim-python/CMakeLists.txt`):
 ```cmake
-set(PARENT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build")
-set(EXPORT_FILE "${PARENT_BUILD_DIR}/export_vars.cmake")
-
-if(EXISTS "${EXPORT_FILE}")
-    include("${EXPORT_FILE}")
-    message(STATUS "Loaded variables from export_vars.cmake")
-else()
-    message(FATAL_ERROR "export_vars.cmake not found")
-endif()
+set(EXPORT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../build/export_vars.cmake")
+include("${EXPORT_FILE}")
 ```
+
+## For Developers
+
+This system ensures the Python binding automatically picks up changes to:
+- New source files added to the main project
+- Updated compiler flags or dependencies
+- Modified build options
+
+No manual synchronization needed between main project and Python binding builds.
