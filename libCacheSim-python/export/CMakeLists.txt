@@ -3,6 +3,11 @@
 set(EXPORT_FILE "${CMAKE_BINARY_DIR}/export_vars.cmake")
 file(WRITE "${EXPORT_FILE}" "")
 
+get_filename_component(MAIN_PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR} ABSOLUTE)
+file(WRITE ${CMAKE_BINARY_DIR}/export_vars.cmake "set(MAIN_PROJECT_SOURCE_DIR \"${MAIN_PROJECT_SOURCE_DIR}\")\n")
+file(APPEND ${CMAKE_BINARY_DIR}/export_vars.cmake "set(dependency_libs \"${dependency_libs}\")\n")
+file(APPEND ${CMAKE_BINARY_DIR}/export_vars.cmake "set(LIBCACHESIM_VERSION \"${LIBCACHESIM_VERSION}\")\n")
+
 # ==============================================================================
 # Export project metadata
 # ==============================================================================

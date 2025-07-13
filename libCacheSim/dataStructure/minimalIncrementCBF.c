@@ -53,7 +53,7 @@ int minimalIncrementCBF_init(struct minimalIncrementCBF *CBF, int entries,
     CBF->counter_num = CBF->hashes * 2;
   }
 
-  CBF->bf = (unsigned int *)calloc(sizeof(unsigned int), CBF->counter_num);
+  CBF->bf = (unsigned int *)calloc(CBF->counter_num, sizeof(unsigned int));
   // TODO: check whether unsigned int is enough for the size of each counter
 
   if (CBF->bf == NULL) {

@@ -22,7 +22,7 @@
 #elif HEAP_ALLOCATOR == HEAP_ALLOCATOR_MALLOC
 #include <stdlib.h>
 #define my_malloc(type) (type *)malloc(sizeof(type))
-#define my_malloc_n(type, n) (type *)calloc(sizeof(type), n)
+#define my_malloc_n(type, n) (type *)calloc(n, sizeof(type))
 #define my_free(size, addr) free(addr)
 
 #elif HEAP_ALLOCATOR == HEAP_ALLOCATOR_ALIGNED_MALLOC

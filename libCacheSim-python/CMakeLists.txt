@@ -1,7 +1,12 @@
 cmake_minimum_required(VERSION 3.15...3.27)
 
 # Include exported variables from cache
-set(PARENT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build")
+if(DEFINED LIBCB_BUILD_DIR)
+    set(PARENT_BUILD_DIR "${LIBCB_BUILD_DIR}")
+    message(STATUS "Using provided LIBCB_BUILD_DIR: ${LIBCB_BUILD_DIR}")
+else()
+    set(PARENT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build")
+endif()
 set(EXPORT_FILE "${PARENT_BUILD_DIR}/export_vars.cmake")
 
 if(EXISTS "${EXPORT_FILE}")
@@ -48,10 +53,10 @@ include_directories(${GLib_CONFIG_INCLUDE_DIR})
 include_directories(${XGBOOST_INCLUDE_DIR})
 include_directories(${LIGHTGBM_PATH})
 include_directories(${ZSTD_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../libCacheSim/bin)
+include_directories(${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin)
 
 # Find the main libCacheSim library
-set(MAIN_PROJECT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build")
+set(MAIN_PROJECT_BUILD_DIR "${PARENT_BUILD_DIR}")
 set(MAIN_PROJECT_LIB_PATH "${MAIN_PROJECT_BUILD_DIR}/liblibCacheSim.a")
 
 if(EXISTS "${MAIN_PROJECT_LIB_PATH}")
@@ -61,7 +66,7 @@ if(EXISTS "${MAIN_PROJECT_LIB_PATH}")
     add_library(libCacheSim_main STATIC IMPORTED)
     set_target_properties(libCacheSim_main PROPERTIES
         IMPORTED_LOCATION "${MAIN_PROJECT_LIB_PATH}"
-        INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/../libCacheSim/include;${CMAKE_CURRENT_SOURCE_DIR}/../libCacheSim/utils/include;${CMAKE_CURRENT_SOURCE_DIR}/../libCacheSim"
+        INTERFACE_INCLUDE_DIRECTORIES "${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/utils/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim"
     )
 
     # Link dependencies that the main library needs
@@ -74,7 +79,7 @@ endif()
 
 python_add_library(_libcachesim MODULE
     src/pylibcachesim.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../libCacheSim/bin/cli_reader_utils.c
+    ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/cli_reader_utils.c
     WITH_SOABI
 )
 

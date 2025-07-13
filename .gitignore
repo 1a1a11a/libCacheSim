@@ -20,3 +20,5 @@ sftp-config.json
 # Clangd cache
 *.cache/
 .lint-logs/
+# Python wheels
+*.whl

@@ -16,8 +16,6 @@ test = ["pytest"]
 
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
-minimum-version = "build-system.requires"
-cmake.args = ["-G", "Ninja"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -32,12 +30,23 @@ testpaths = ["tests"]
 
 
 [tool.cibuildwheel]
-build-frontend = "build[uv]"
-test-command = "pytest {project}/tests"
-test-extras = ["test"]
+build-frontend = "build"
+manylinux-x86_64-image = "quay.io/pypa/manylinux_2_34_x86_64"
+# Only build for x86_64 architectures
+build = "*-manylinux_x86_64"
+# Install build dependencies using dnf. This runs once per container.
+before-all = "dnf install -y ninja-build cmake libzstd-devel glib2-devel"
+# We add 'rm -rf build' to ensure a clean build inside the container.
+# The C++ core is built first, then the wheel build will use it.
+# Use absolute paths to avoid issues with the working directory.
+before-build = "rm -rf /project/build && cmake -S /project -B /project/build -G Ninja && cmake --build /project/build"
+# Set the environment variable for the wheel build step.
+environment = { LCS_BUILD_DIR = "/project/build" }
+# test-requires = "pytest"
+# test-command = "pytest {project}/tests"
 
-[tool.cibuildwheel.pyodide]
-build-frontend = {name = "build", args = ["--exports", "whole_archive"]}
+# [tool.cibuildwheel.pyodide]
+# build-frontend = {name = "build", args = ["--exports", "whole_archive"]}
 
 [tool.ruff.lint]
 extend-select = [
