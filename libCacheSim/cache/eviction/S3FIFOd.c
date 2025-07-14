@@ -187,10 +187,11 @@ static void S3FIFOd_update_fifo_size(cache_t *cache, const request_t *req) {
 
   int step = 20;
   step = MAX(
-      1, MIN(params->small_fifo->cache_size, params->main_fifo->cache_size) / 1000);
+      1, MIN(params->small_fifo->cache_size, params->main_fifo->cache_size) /
+             1000);
   bool cond1 = params->small_eviction_hit + params->main_eviction_hit > 100;
-  bool cond2 = params->main_eviction->get_occupied_byte(
-                   params->main_eviction) > 0;
+  bool cond2 =
+      params->main_eviction->get_occupied_byte(params->main_eviction) > 0;
   if (!cond2) {
     params->small_eviction_hit = 0;
     params->main_eviction_hit = 0;
@@ -224,7 +225,8 @@ static void S3FIFOd_update_fifo_size2(cache_t *cache, const request_t *req) {
   if (params->small_eviction_hit == 1 && params->main_fifo->cache_size > 1) {
     params->small_fifo->cache_size += 1;
     params->main_fifo->cache_size -= 1;
-  } else if (params->main_eviction_hit == 1 && params->small_fifo->cache_size > 1) {
+  } else if (params->main_eviction_hit == 1 &&
+             params->small_fifo->cache_size > 1) {
     params->main_fifo->cache_size += 1;
     params->small_fifo->cache_size -= 1;
   }
@@ -323,15 +325,14 @@ static cache_obj_t *S3FIFOd_find(cache_t *cache, const request_t *req,
 
   obj = params->main_fifo->find(params->main_fifo, req, update_cache);
 
-  if (params->small_eviction->find(params->small_eviction, req, false) != NULL) {
+  if (params->small_eviction->find(params->small_eviction, req, false) !=
+      NULL) {
     params->small_eviction->remove(params->small_eviction, req->obj_id);
     params->small_eviction_hit++;
   }
 
-  if (params->main_eviction->find(params->main_eviction, req,
-                                        true) != NULL) {
-    params->main_eviction->remove(params->main_eviction,
-                                        req->obj_id);
+  if (params->main_eviction->find(params->main_eviction, req, true) != NULL) {
+    params->main_eviction->remove(params->main_eviction, req->obj_id);
     params->main_eviction_hit++;
   }
 
@@ -411,8 +412,7 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
     copy_cache_obj_to_request(params->req_local, obj);
-    params->main_eviction->get(params->main_eviction,
-                                     params->req_local);
+    params->main_eviction->get(params->main_eviction, params->req_local);
     main_fifo->evict(main_fifo, req);
     return;
   }
@@ -436,8 +436,7 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
       // evict from main cache
       obj = main_fifo->to_evict(main_fifo, req);
       copy_cache_obj_to_request(params->req_local, obj);
-      params->main_eviction->get(params->main_eviction,
-                                       params->req_local);
+      params->main_eviction->get(params->main_eviction, params->req_local);
       main_fifo->evict(main_fifo, req);
     }
   } else {
@@ -464,8 +463,7 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
       // evict from main cache
       obj = main_fifo->to_evict(main_fifo, req);
       copy_cache_obj_to_request(params->req_local, obj);
-      params->main_eviction->get(params->main_eviction,
-                                       params->req_local);
+      params->main_eviction->get(params->main_eviction, params->req_local);
       main_fifo->evict(main_fifo, req);
     }
   } else {
@@ -549,7 +547,8 @@ static void S3FIFOd_parse_params(cache_t *cache,
       params_str++;
     }
 
-    if (strcasecmp(key, "fifo-size-ratio") == 0 || strcasecmp(key, "small-size-ratio") == 0) {
+    if (strcasecmp(key, "fifo-size-ratio") == 0 ||
+        strcasecmp(key, "small-size-ratio") == 0) {
       params->small_fifo_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "main-cache") == 0) {
       strncpy(params->main_fifo_type, value, 30);

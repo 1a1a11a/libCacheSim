@@ -111,11 +111,11 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
 
   if (ghost_cache_size > 0) {
     ccache_params_local.cache_size = ghost_cache_size;
-    params->ghost_cache= FIFO_init(ccache_params_local, NULL);
+    params->ghost_cache = FIFO_init(ccache_params_local, NULL);
     snprintf(params->ghost_cache->cache_name, CACHE_NAME_ARRAY_LEN,
              "FIFO-ghost");
   } else {
-    params->ghost_cache= NULL;
+    params->ghost_cache = NULL;
   }
 
   ccache_params_local.cache_size = main_cache_size;
@@ -152,7 +152,7 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   }
 
 #if defined(TRACK_EVICTION_V_AGE)
-  if (params->ghost_cache!= NULL) {
+  if (params->ghost_cache != NULL) {
     params->ghost->track_eviction_age = false;
   }
   params->small_cache->track_eviction_age = false;
@@ -175,7 +175,7 @@ static void QDLP_free(cache_t *cache) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
   free_request(params->req_local);
   params->small_cache->cache_free(params->small_cache);
-  if (params->ghost_cache!= NULL) {
+  if (params->ghost_cache != NULL) {
     params->ghost_cache->cache_free(params->ghost_cache);
   }
   params->main_cache->cache_free(params->main_cache);
@@ -234,7 +234,8 @@ static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
 
   // if update cache is false, we only check the fifo and main caches
   if (!update_cache) {
-    cache_obj_t *obj = params->small_cache->find(params->small_cache, req, false);
+    cache_obj_t *obj =
+        params->small_cache->find(params->small_cache, req, false);
     if (obj != NULL) {
       return obj;
     }
@@ -252,7 +253,7 @@ static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
     return obj;
   }
 
-  if (params->ghost_cache!= NULL &&
+  if (params->ghost_cache != NULL &&
       params->ghost_cache->remove(params->ghost_cache, req->obj_id)) {
     // if object in ghost, remove will return true
     params->hit_on_ghost = true;
@@ -396,8 +397,9 @@ static bool QDLP_remove(cache_t *cache, const obj_id_t obj_id) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->small_cache->remove(params->small_cache, obj_id);
-  removed = removed || (params->ghost_cache&&
-                        params->ghost_cache->remove(params->ghost_cache, obj_id));
+  removed =
+      removed || (params->ghost_cache &&
+                  params->ghost_cache->remove(params->ghost_cache, obj_id));
   removed = removed || params->main_cache->remove(params->main_cache, obj_id);
 
   return removed;
