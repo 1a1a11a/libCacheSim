@@ -1,6 +1,8 @@
 name: Python Package
 
 on:
+  push:
+  pull_request:
   release:
     types: [published]
   workflow_dispatch:  # Allow manual triggering
@@ -16,7 +18,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
     - uses: actions/checkout@v4
@@ -40,14 +42,6 @@ jobs:
     - name: Sync Python version
       run: python scripts/sync_python_version.py
 
-    - name: Build main libCacheSim library
-      run: |
-        sudo apt-get update && sudo apt-get install -y cmake ninja-build libglib2.0-dev || true
-        brew install cmake ninja glib || true
-        rm -rf ./build
-        cmake -G Ninja -B build
-        ninja -C build
-
     - name: Verify Docker (Linux only)
       if: runner.os == 'Linux'
       run: |
@@ -56,12 +50,6 @@ jobs:
         echo "Docker is ready for cibuildwheel"
 
     - name: Build wheels
-      env:
-        CIBW_SKIP: "*-musllinux* *-manylinux_i686"
-        CIBW_ARCHS_LINUX: "x86_64"
-        CIBW_BEFORE_ALL_LINUX: |
-          yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y  ninja-build cmake libzstd-devel glib2-devel
-        CIBW_TEST_COMMAND: "python -c 'import libcachesim; print(\"Import successful\")'"
       run: python -m cibuildwheel libCacheSim-python --output-dir wheelhouse
 
     - name: Upload wheels as artifacts

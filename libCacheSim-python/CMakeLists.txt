@@ -68,9 +68,8 @@ if(EXISTS "${MAIN_PROJECT_LIB_PATH}")
         IMPORTED_LOCATION "${MAIN_PROJECT_LIB_PATH}"
         INTERFACE_INCLUDE_DIRECTORIES "${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/utils/include;${MAIN_PROJECT_SOURCE_DIR}/libCacheSim"
     )
-
-    # Link dependencies that the main library needs
-    target_link_libraries(libCacheSim_main INTERFACE ${dependency_libs})
+    link_directories(${GLib_LIBRARY_DIRS})
+    link_directories(${ZSTD_LIBRARY_DIRS})
     set(LIBCACHESIM_TARGET libCacheSim_main)
 
 else()
@@ -96,8 +95,38 @@ target_link_libraries(_libcachesim PRIVATE
     ${LIBCACHESIM_TARGET}
     pybind11::headers
     pybind11::module
-    -Wl,--no-as-needed -ldl
+    ${GLib_LIBRARIES}
+    ${ZSTD_LIBRARIES}
 )
+
+# Add platform-specific link options and libraries
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # GNU ld option, only available on Linux
+    target_link_options(_libcachesim PRIVATE -Wl,--no-as-needed)
+    target_link_libraries(_libcachesim PRIVATE dl)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    # macOS doesn't need --no-as-needed
+    # dl functions are part of the system library on macOS
+    # No need to explicitly link dl
+
+    # Find argp library on macOS
+    find_library(ARGP_LIBRARY argp PATHS /opt/homebrew/lib /usr/local/lib)
+    if(ARGP_LIBRARY)
+        target_link_libraries(_libcachesim PRIVATE ${ARGP_LIBRARY})
+    endif()
+
+    # Find and link other dependencies that might be needed
+    find_library(INTL_LIBRARY intl PATHS /opt/homebrew/lib /usr/local/lib)
+    if(INTL_LIBRARY)
+        target_link_libraries(_libcachesim PRIVATE ${INTL_LIBRARY})
+    endif()
+else()
+    # Other platforms - try to link dl if available
+    find_library(DL_LIBRARY dl)
+    if(DL_LIBRARY)
+        target_link_libraries(_libcachesim PRIVATE ${DL_LIBRARY})
+    endif()
+endif()
 
 # install to wheel directory
 install(TARGETS _libcachesim LIBRARY DESTINATION libcachesim)

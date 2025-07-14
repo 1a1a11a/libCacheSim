@@ -23,6 +23,11 @@ endforeach()
 # ==============================================================================
 # Export dependency library variables
 # ==============================================================================
+file(APPEND "${EXPORT_FILE}" "set(GLib_LIBRARY_DIRS \"${GLib_LIBRARY_DIRS}\")\n")
+file(APPEND "${EXPORT_FILE}" "set(GLib_LIBRARIES \"${GLib_LIBRARIES}\")\n")
+get_filename_component(ZSTD_LIBRARY_DIR "${ZSTD_LIBRARIES}" DIRECTORY)
+file(APPEND "${EXPORT_FILE}" "set(ZSTD_LIBRARY_DIRS \"${ZSTD_LIBRARY_DIRS}\")\n")
+file(APPEND "${EXPORT_FILE}" "set(ZSTD_LIBRARIES \"${ZSTD_LIBRARIES}\")\n")
 file(APPEND "${EXPORT_FILE}" "set(dependency_libs \"${dependency_libs}\")\n")
 
 # ==============================================================================
