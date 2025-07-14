@@ -316,7 +316,7 @@ We encourage the users to check [deepWiki](https://deepwiki.com/1a1a11a/libCache
 <!-- TOC --><a name="python-package"></a>
 ## Python package
 
-If you are not extremely senstive to the performance, our python binding can offer you a easiler way to access the core feature of libCacheSim.
+If you are not extremely sensitive to the performance, our python binding can offer you an easier way to access the core feature of libCacheSim.
 
 ```shell
 pip install libcachesim
