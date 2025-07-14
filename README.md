@@ -326,9 +326,6 @@ If you are not extremely sensitive to the performance, our python binding can of
 pip install libcachesim
 ```
 
-> [!NOTE]
-> Built python package only support linux now. We will support more platform soon. You can also install it from source, see [instructions](./libCacheSim-python/README.md#installation-from-sources).
-
 ### Simulation with python
 
 ```python
