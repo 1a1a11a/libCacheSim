@@ -305,7 +305,8 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
                                        .default_ttl = 0,
                                        .hashpower = 20,
                                        .consider_obj_metadata = false};
-    caches[i] = create_cache(params_.cache_algorithm_str, cc_params, nullptr);
+    caches[i] = create_cache_using_plugin(params_.cache_algorithm_str,
+                                          cc_params, nullptr);
   }
   result = simulate_with_multi_caches(
       reader_, caches, mrc_size_vec.size(), NULL, 0, 0,

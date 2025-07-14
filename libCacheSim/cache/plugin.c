@@ -90,8 +90,9 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
   return cache;
 }
 
-cache_t *create_cache(const char *const cache_alg_name,
-                      common_cache_params_t cc_params, void *specific_params) {
+cache_t *create_cache_using_plugin(const char *const cache_alg_name,
+                                   common_cache_params_t cc_params,
+                                   void *specific_params) {
   cache_t *cache =
       create_cache_internal(cache_alg_name, cc_params, specific_params);
   if (cache == NULL) {
