@@ -1,13 +1,14 @@
 name: Python Package
 
 on:
-  push:
-    branches: ["*"]
-  pull_request:
-      branches: ["*"]
   release:
     types: [published]
   workflow_dispatch:  # Allow manual triggering
+
+permissions:
+  contents: read
+  actions: read
+  id-token: write
 
 jobs:
   build-wheels:
@@ -103,7 +104,7 @@ jobs:
     name: Publish to PyPI
     needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
-    # if: github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
     environment:
       name: pypi
       url: https://pypi.org/p/libcachesim
@@ -133,6 +134,7 @@ jobs:
     name: Publish to TestPyPI
     needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
     environment:
       name: testpypi
       url: https://test.pypi.org/p/libcachesim

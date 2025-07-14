@@ -10,7 +10,8 @@ on:
       - 'libCacheSim-node/**'
 
 permissions:
-  contents: read  # Default permission for reading repository contents
+  contents: read
+  actions: read
 
 env:
   BUILD_TYPE: Release
