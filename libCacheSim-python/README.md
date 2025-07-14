@@ -1,6 +1,7 @@
 # libCacheSim Python Binding
 
 [![Python Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml)
+[![Python Versions](https://img.shields.io/pypi/pyversions/libcachesim.svg?logo=python&logoColor=white)](https://pypi.org/project/libcachesim)
 [![PyPI Version](https://img.shields.io/pypi/v/libcachesim.svg?)](https://pypi.org/project/libcachesim)
 
 Python bindings for libCacheSim, a high-performance cache simulator and analysis library.
