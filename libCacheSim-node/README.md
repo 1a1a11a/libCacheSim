@@ -1,5 +1,8 @@
 # libCacheSim Node.js Bindings
 
+[![NPM Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml)
+[![NPM Version](https://nodei.co/npm/@realtmxi/libcachesim-node.svg?style=shields)](https://nodei.co/npm/@realtmxi/libcachesim-node/)
+
 Node.js bindings for libCacheSim - A high-performance cache simulator and analysis library supporting LRU, FIFO, S3-FIFO, Sieve and other caching algorithms.
 
 ## Features
