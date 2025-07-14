@@ -88,16 +88,16 @@ endif()
 
 
 # Define shared compiler flags for all targets
-set(LIBCACHESIM_C_FLAGS 
-    -Wall -Wextra -Werror 
-    -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable 
-    -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings 
+set(LIBCACHESIM_C_FLAGS
+    -Wall -Wextra -Werror
+    -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable
+    -Wpedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings
     -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs
 )
 
-set(LIBCACHESIM_CXX_FLAGS 
-    -Wall -Wextra -Werror 
-    -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable 
+set(LIBCACHESIM_CXX_FLAGS
+    -Wall -Wextra -Werror
+    -Wno-deprecated-copy -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter -Wno-unused-but-set-variable
     -Wno-pedantic -Wformat=2 -Wformat-security -Wshadow -Wwrite-strings -Wmissing-include-dirs
 )
 
@@ -119,10 +119,18 @@ list(APPEND dependency_libs ${CMAKE_THREAD_LIBS_INIT})
 # Link standard math and dl libraries universally
 list(APPEND dependency_libs m dl)
 
-find_package(GLib REQUIRED)
+# Find GLib using pkg-config
+find_package(PkgConfig REQUIRED)
+
+# Find glib-2.0 using pkg-config
+pkg_check_modules(GLib REQUIRED glib-2.0)
+
+# Add GLib library directories to the linker search path
+link_directories(${GLib_LIBRARY_DIRS})
+
 # Don't add GLib includes globally - add them to specific targets
 # include_directories(${GLib_INCLUDE_DIRS})
-list(APPEND dependency_libs ${GLib_LIBRARY})
+list(APPEND dependency_libs ${GLib_LIBRARIES})
 
 find_package(argp REQUIRED)
 # Don't add argp includes globally
