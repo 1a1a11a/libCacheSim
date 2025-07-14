@@ -300,7 +300,7 @@ static cache_obj_t *S3FIFO_to_evict(cache_t *cache, const request_t *req) {
 static void S3FIFO_evict_small(cache_t *cache, const request_t *req) {
   S3FIFO_params_t *params = (S3FIFO_params_t *)cache->eviction_params;
   cache_t *small_fifo = params->small_fifo;
-  cache_t *ghost = params->ghost_fifo;
+  cache_t *ghost_fifo = params->ghost_fifo;
   cache_t *main_fifo = params->main_fifo;
 
   bool has_evicted = false;
@@ -314,8 +314,8 @@ static void S3FIFO_evict_small(cache_t *cache, const request_t *req) {
       main_fifo->insert(main_fifo, params->req_local);
     } else {
       // insert to ghost
-      if (ghost != NULL) {
-        ghost->get(ghost, params->req_local);
+      if (ghost_fifo != NULL) {
+        ghost_fifo->get(ghost_fifo, params->req_local);
       }
       has_evicted = true;
     }
