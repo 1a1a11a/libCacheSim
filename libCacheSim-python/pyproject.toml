@@ -30,20 +30,29 @@ testpaths = ["tests"]
 
 
 [tool.cibuildwheel]
-build-frontend = "build"
 manylinux-x86_64-image = "quay.io/pypa/manylinux_2_34_x86_64"
-# Only build for x86_64 architectures
-build = "*-manylinux_x86_64"
-# Install build dependencies using dnf. This runs once per container.
-before-all = "dnf install -y ninja-build cmake libzstd-devel glib2-devel"
+manylinux-aarch64-image = "quay.io/pypa/manylinux_2_34_aarch64"
+
+build = ["*-manylinux_x86_64", "*-manylinux_aarch64"]
+skip = ["*-win32", "*-manylinux_i686"]
+
+# Install build dependencies. First install yum-utils to get yum-config-manager,
+# then enable the CRB repository to find ninja-build, finally install all packages.
+before-all = "yum install -y yum-utils && yum-config-manager --set-enabled crb && yum install -y ninja-build cmake libzstd-devel glib2-devel"
+
 # We add 'rm -rf build' to ensure a clean build inside the container.
 # The C++ core is built first, then the wheel build will use it.
 # Use absolute paths to avoid issues with the working directory.
-before-build = "rm -rf /project/build && cmake -S /project -B /project/build -G Ninja && cmake --build /project/build"
+before-build = "rm -rf {project}/build && cmake -S {project} -B {project}/build -G Ninja && cmake --build {project}/build"
+
 # Set the environment variable for the wheel build step.
-environment = { LCS_BUILD_DIR = "/project/build" }
-# test-requires = "pytest"
-# test-command = "pytest {project}/tests"
+environment = { LCS_BUILD_DIR = "{project}/build" }
+
+[tool.cibuildwheel.windows]
+before-build = "cmake -S {project} -B {project}/build -G Ninja && cmake --build {project}/build"
+
+[tool.cibuildwheel.macos]
+before-build = "brew install zstd && rm -rf {project}/build && cmake -S {project} -B {project}/build -G Ninja && cmake --build {project}/build"
 
 # [tool.cibuildwheel.pyodide]
 # build-frontend = {name = "build", args = ["--exports", "whole_archive"]}

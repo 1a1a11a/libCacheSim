@@ -29,6 +29,9 @@
     - [Miss ratio curves profiling](#miss-ratio-curves-profiling)
     - [Using libCacheSim as a library](#using-libcachesim-as-a-library)
     - [Extending libCacheSim (new algorithms and trace types)](#extending-libcachesim-new-algorithms-and-trace-types)
+  - [Python package](#python-package)
+    - [Simulation with python](#simulation-with-python)
+    - [Extending new algorithm](#extending-new-algorithm)
   - [Open source cache traces](#open-source-cache-traces)
   - [Contributions](#contributions)
   - [Reference](#reference)
@@ -309,6 +312,66 @@ If you need to add a new trace type or a new algorithm, please see [here](/doc/a
 
 We encourage the users to check [deepWiki](https://deepwiki.com/1a1a11a/libCacheSim) for a more detailed documentation.
 
+---
+<!-- TOC --><a name="python-package"></a>
+## Python package
+
+If you are not extremely senstive to the performance, our python binding can offer you a easiler way to access the core feature of libCacheSim.
+
+```shell
+pip install libcachesim
+```
+
+> [!NOTE]
+> Built python package only support linux now. We will support more platform soon. You can also install it from source, see [instructions](./libCacheSim-python/README.md#installation-from-sources).
+
+### Simulation with python
+
+```python
+import libcachesim as lcs
+
+reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin")
+cache = lcs.FIFO(cache_size=1024*1024)
+miss_ratio = cache.process_trace(reader)
+print(f"Miss ratio: {miss_ratio:.4f}")
+```
+
+### Extending new algorithm
+
+With python package, you can extend new algorithm to test your own eviction design *without any C/C++ compilation**.
+
+```python
+import libcachesim as lcs
+from collections import deque
+
+cache = lcs.PythonHookCachePolicy(cache_size=1024, cache_name="CustomFIFO")
+
+def init_hook(cache_size):
+    return deque()  # Use deque for FIFO order
+
+def hit_hook(fifo_queue, obj_id, obj_size):
+    pass  # FIFO doesn't reorder on hit
+
+def miss_hook(fifo_queue, obj_id, obj_size):
+    fifo_queue.append(obj_id)  # Add to end of queue
+
+def eviction_hook(fifo_queue, obj_id, obj_size):
+    return fifo_queue[0]  # Return first item (oldest)
+
+def remove_hook(fifo_queue, obj_id):
+    if fifo_queue and fifo_queue[0] == obj_id:
+        fifo_queue.popleft()
+
+# Set the hooks and test
+cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
+
+reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin")
+miss_ratio = cache.process_trace(reader)
+print(f"Miss ratio: {miss_ratio:.4f}")
+```
+
+
+See more information in [README.md](./libCacheSim-python/README.md) of the Python binding.
 
 ---
 <!-- TOC --><a name="open-source-cache-traces"></a>

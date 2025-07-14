@@ -17,7 +17,7 @@ def mock_reader():
     )
     reader: Reader = open_trace(
         data_file,
-        type=TraceType.ORACLE_GENERAL_TRACE.value,
+        type=TraceType.ORACLE_GENERAL_TRACE,
     )
     try:
         yield reader

@@ -32,7 +32,7 @@ class EvictionPolicyBase(ABC):
         pass
 
     @abstractmethod
-    def process_trace(self, reader, max_req: int = -1, max_sec: int = -1, start_time: int = -1, end_time: int = -1) -> float:
+    def process_trace(self, reader, start_req=0, max_req=-1) -> float:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -40,10 +40,8 @@ class EvictionPolicyBase(ABC):
 
         Args:
             reader: The trace reader instance
-            max_req: Maximum number of requests to process (-1 for no limit)
-            max_sec: Maximum seconds to process (-1 for no limit)
-            start_time: Start time filter (-1 for no filter)
-            end_time: End time filter (-1 for no filter)
+            start_req: Start request index (-1 for no limit)
+            max_req: Number of requests to process (-1 for no limit)
 
         Returns:
             float: Miss ratio (0.0 to 1.0)
@@ -63,7 +61,7 @@ class EvictionPolicy(EvictionPolicyBase):
     def get(self, req: Request) -> bool:
         return self.cache.get(req)
 
-    def process_trace(self, reader, max_req: int = -1, max_sec: int = -1, start_time: int = -1, end_time: int = -1) -> float:
+    def process_trace(self, reader, start_req=0, max_req=-1) -> float:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -71,10 +69,8 @@ class EvictionPolicy(EvictionPolicyBase):
 
         Args:
             reader: The trace reader instance
-            max_req: Maximum number of requests to process (-1 for no limit)
-            max_sec: Maximum seconds to process (-1 for no limit)
-            start_time: Start time filter (-1 for no filter)
-            end_time: End time filter (-1 for no filter)
+            start_req: Start request index (-1 for no limit)
+            max_req: Number of requests to process (-1 for no limit)
 
         Returns:
             float: Miss ratio (0.0 to 1.0)
@@ -86,7 +82,7 @@ class EvictionPolicy(EvictionPolicyBase):
             >>> print(f"Miss ratio: {miss_ratio:.4f}")
         """
         from ._libcachesim import process_trace
-        return process_trace(self.cache, reader, max_req, max_sec, start_time, end_time)
+        return process_trace(self.cache, reader, start_req, max_req)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(cache_size={self.cache.cache_size})"
@@ -455,7 +451,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
             raise RuntimeError("Hooks must be set before using the cache. Call set_hooks() first.")
         return self.cache.get(req)
 
-    def process_trace(self, reader, max_req=-1, max_sec=-1, start_time=-1, end_time=-1):
+    def process_trace(self, reader, start_req=0, max_req=-1) -> float:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -463,10 +459,8 @@ class PythonHookCachePolicy(EvictionPolicyBase):
 
         Args:
             reader: The trace reader instance
-            max_req: Maximum number of requests to process (-1 for no limit)
-            max_sec: Maximum seconds to process (-1 for no limit)
-            start_time: Start time filter (-1 for no filter)
-            end_time: End time filter (-1 for no filter)
+            start_req: Start request index (-1 for no limit)
+            n_req: Number of requests to process (-1 for no limit)
 
         Returns:
             float: Miss ratio (0.0 to 1.0)
@@ -485,7 +479,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
             raise RuntimeError("Hooks must be set before processing trace. Call set_hooks() first.")
 
         from ._libcachesim import process_trace_python_hook
-        return process_trace_python_hook(self.cache, reader, max_req, max_sec, start_time, end_time)
+        return process_trace_python_hook(self.cache, reader, start_req, max_req)
 
     @property
     def n_req(self):

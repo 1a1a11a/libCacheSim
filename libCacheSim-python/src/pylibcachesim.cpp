@@ -41,6 +41,39 @@
 
 namespace py = pybind11;
 
+// Helper functions
+
+// https://stackoverflow.com/questions/874134/find-out-if-string-ends-with-another-string-in-c
+static bool ends_with(std::string_view str, std::string_view suffix) {
+  return str.size() >= suffix.size() &&
+         str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+trace_type_e infer_trace_type(const std::string& trace_path) {
+  // Infer the trace type based on the file extension
+  if (trace_path.find("oracleGeneral") != std::string::npos) {
+    return trace_type_e::ORACLE_GENERAL_TRACE;
+  } else if (ends_with(trace_path, ".csv")) {
+    return trace_type_e::CSV_TRACE;
+  } else if (ends_with(trace_path, ".txt")) {
+    return trace_type_e::PLAIN_TXT_TRACE;
+  } else if (ends_with(trace_path, ".bin")) {
+    return trace_type_e::BIN_TRACE;
+  } else if (ends_with(trace_path, ".vscsi")) {
+    return trace_type_e::VSCSI_TRACE;
+  } else if (ends_with(trace_path, ".twr")) {
+    return trace_type_e::TWR_TRACE;
+  } else if (ends_with(trace_path, ".twrns")) {
+    return trace_type_e::TWRNS_TRACE;
+  } else if (ends_with(trace_path, ".lcs")) {
+    return trace_type_e::LCS_TRACE;
+  } else if (ends_with(trace_path, ".valpin")) {
+    return trace_type_e::VALPIN_TRACE;
+  } else {
+    return trace_type_e::UNKNOWN_TRACE;
+  }
+}
+
 // Python Hook Cache Implementation
 class PythonHookCache {
  private:
@@ -243,6 +276,29 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
             Returns:
                 int: The working set size of the trace.
       )pbdoc")
+      .def(
+          "seek",
+          [](reader_t& self, int64_t offset, bool from_beginning = false) {
+            int64_t offset_from_beginning = offset;
+            if (!from_beginning) {
+              offset_from_beginning += self.n_read_req;
+            }
+            reset_reader(&self);
+            skip_n_req(&self, offset_from_beginning);
+          },
+          py::arg("offset"), py::arg("from_beginning") = false,
+          R"pbdoc(
+            Seek to a specific offset in the trace file.
+            We only support seeking from current position or from the beginning.
+
+            Can only move forward, not backward.
+
+            Args:
+                offset (int): The offset to seek to the beginning.
+
+            Raises:
+                RuntimeError: If seeking fails.
+      )pbdoc")
       .def("__iter__", [](reader_t& self) -> reader_t& { return self; })
       .def("__next__", [](reader_t& self) {
         auto req = std::unique_ptr<request_t, RequestDeleter>(new_request());
@@ -289,7 +345,20 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
    */
   m.def(
       "open_trace",
-      [](const std::string& trace_path, int type, const py::object& params) {
+      [](const std::string& trace_path, py::object type, py::object params) {
+        trace_type_e c_type = UNKNOWN_TRACE;
+        if (!type.is_none()) {
+          c_type = type.cast<trace_type_e>();
+        } else {
+          // If type is None, we can try to infer the type from the file
+          // extension
+          c_type = infer_trace_type(trace_path);
+          if (c_type == UNKNOWN_TRACE) {
+            throw std::runtime_error("Could not infer trace type from path: " +
+                                     trace_path);
+          }
+        }
+
         // Create an init_param instance, it will be populated from Python
         reader_init_param_t init_param = {};
 
@@ -352,20 +421,18 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
             }
           }
         }
-        // ... (rest of open_trace function) ...
-        reader_t* ptr = open_trace(
-            trace_path.c_str(), static_cast<trace_type_e>(type), &init_param);
+        reader_t* ptr = open_trace(trace_path.c_str(), c_type, &init_param);
         return std::unique_ptr<reader_t, ReaderDeleter>(ptr);
       },
-      py::arg("trace_path"), py::arg("type"),
-      py::arg("reader_init_param") = py::none(),
+      py::arg("trace_path"), py::arg("type") = py::none(),
+      py::arg("params") = py::none(),
       R"pbdoc(
             Open a trace file for reading.
 
             Args:
                 trace_path (str): Path to the trace file.
-                type (int): Type of the trace (e.g., CSV_TRACE).
-                reader_init_param (Union[dict, reader_init_param_t, None]): Initialization parameters for the reader.
+                type (Union[trace_type_e, None]): Type of the trace (e.g., CSV_TRACE). If None, the type will be inferred.
+                params (Union[dict, reader_init_param_t, None]): Initialization parameters for the reader.
 
             Returns:
                 Reader: A new reader instance for the trace.
@@ -721,35 +788,34 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
    */
   m.def(
       "process_trace",
-      [](cache_t& cache, reader_t& reader, int max_req = -1, int max_sec = -1,
-         int64_t start_time = -1, int64_t end_time = -1) {
+      [](cache_t& cache, reader_t& reader, int64_t start_req = 0,
+         int64_t max_req = -1) {
         request_t* req = new_request();
-        int n_req = 0, n_hit = 0;
+        int64_t n_req = 0, n_hit = 0;
         bool hit;
+
+        reset_reader(&reader);
+        if (start_req > 0) {
+          skip_n_req(&reader, start_req);
+        }
 
         read_one_req(&reader, req);
         while (req->valid) {
-          // Check limits
-          if (max_req != -1 && n_req >= max_req) break;
-          if (max_sec != -1 && req->clock_time >= end_time) break;
-          if (start_time != -1 && req->clock_time < start_time) {
-            read_one_req(&reader, req);
-            continue;
-          }
-
           n_req += 1;
           hit = cache.get(&cache, req);
           if (hit) n_hit += 1;
           read_one_req(&reader, req);
+          if (max_req > 0 && n_req >= max_req) {
+            break;  // Stop if we reached the max request limit
+          }
         }
 
         free_request(req);
         // return the miss ratio
         return n_req > 0 ? 1.0 - (double)n_hit / n_req : 0.0;
       },
-      py::arg("cache"), py::arg("reader"), py::arg("max_req") = -1,
-      py::arg("max_sec") = -1, py::arg("start_time") = -1,
-      py::arg("end_time") = -1,
+      py::arg("cache"), py::arg("reader"), py::arg("start_req") = 0,
+      py::arg("max_req") = -1,
       R"pbdoc(
             Process a trace with a cache and return miss ratio.
 
@@ -759,10 +825,8 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
             Args:
                 cache (Cache): The cache instance to use for processing.
                 reader (Reader): The trace reader instance.
+                start_req (int): The starting request number to process from (default: 0, from the beginning).
                 max_req (int): Maximum number of requests to process (-1 for no limit).
-                max_sec (int): Maximum seconds to process (-1 for no limit).
-                start_time (int): Start time filter (-1 for no filter).
-                end_time (int): End time filter (-1 for no filter).
 
             Returns:
                 float: Miss ratio (0.0 to 1.0).
@@ -779,35 +843,34 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
    */
   m.def(
       "process_trace_python_hook",
-      [](PythonHookCache& cache, reader_t& reader, int max_req = -1,
-         int max_sec = -1, int64_t start_time = -1, int64_t end_time = -1) {
+      [](PythonHookCache& cache, reader_t& reader, int64_t start_req = 0,
+         int64_t max_req = -1) {
         request_t* req = new_request();
         int n_req = 0, n_hit = 0;
         bool hit;
 
+        reset_reader(&reader);
+        if (start_req > 0) {
+          skip_n_req(&reader, start_req);
+        }
+
         read_one_req(&reader, req);
         while (req->valid) {
-          // Check limits
-          if (max_req != -1 && n_req >= max_req) break;
-          if (max_sec != -1 && req->clock_time >= end_time) break;
-          if (start_time != -1 && req->clock_time < start_time) {
-            read_one_req(&reader, req);
-            continue;
-          }
-
           n_req += 1;
           hit = cache.get(*req);
           if (hit) n_hit += 1;
           read_one_req(&reader, req);
+          if (max_req > 0 && n_req >= max_req) {
+            break;  // Stop if we reached the max request limit
+          }
         }
 
         free_request(req);
         // return the miss ratio
         return n_req > 0 ? 1.0 - (double)n_hit / n_req : 0.0;
       },
-      py::arg("cache"), py::arg("reader"), py::arg("max_req") = -1,
-      py::arg("max_sec") = -1, py::arg("start_time") = -1,
-      py::arg("end_time") = -1,
+      py::arg("cache"), py::arg("reader"), py::arg("start_req") = 0,
+      py::arg("max_req") = -1,
       R"pbdoc(
             Process a trace with a Python hook cache and return miss ratio.
 
@@ -818,10 +881,8 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
             Args:
                 cache (PythonHookCache): The Python hook cache instance to use.
                 reader (Reader): The trace reader instance.
+                start_req (int): The starting request number to process from (0 for beginning).
                 max_req (int): Maximum number of requests to process (-1 for no limit).
-                max_sec (int): Maximum seconds to process (-1 for no limit).
-                start_time (int): Start time filter (-1 for no filter).
-                end_time (int): End time filter (-1 for no filter).
 
             Returns:
                 float: Miss ratio (0.0 to 1.0).

@@ -22,7 +22,7 @@ from collections import OrderedDict
 
 def create_trace_reader():
     """Helper function to create a trace reader.
-    
+
     Returns:
         Reader or None: A trace reader instance, or None if trace file not found.
     """
@@ -38,7 +38,7 @@ def create_trace_reader():
 
 def create_test_lru_hooks():
     """Create LRU hooks for testing.
-    
+
     Returns:
         tuple: A tuple of (init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
     """
@@ -117,7 +117,7 @@ def test_unified_process_trace_interface():
         assert 0.0 <= miss_ratio <= 1.0, f"{name} returned invalid miss_ratio: {miss_ratio}"
 
     print(f"\nPASS: All {len(caches)} cache policies support unified process_trace interface!")
-    
+
     # Verify we got results for all caches
     assert len(results) == len(caches), "Not all caches were tested"
 
@@ -184,7 +184,7 @@ def test_get_interface_consistency():
         initial_n_req = cache.n_req
         initial_n_obj = cache.n_obj
         initial_occupied = cache.occupied_byte
-        
+
         # Test get method exists
         assert hasattr(cache, 'get'), f"{name} missing get method"
 
@@ -201,7 +201,7 @@ def test_get_interface_consistency():
         # Test second access to same object (should be hit)
         second_result = cache.get(test_req)
         print(f"{name:15s}: second access = {'HIT' if second_result else 'MISS'}")
-        
+
         # Second access should be a hit (unless cache is too small)
         if cache.cache_size >= test_req.obj_size:
             assert second_result, f"{name} second access should be a hit"
