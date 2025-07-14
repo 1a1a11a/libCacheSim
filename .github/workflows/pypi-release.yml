@@ -1,8 +1,6 @@
 name: Python Package
 
 on:
-  push:
-  pull_request:
   release:
     types: [published]
   workflow_dispatch:  # Allow manual triggering
@@ -41,6 +39,7 @@ jobs:
 
     - name: Sync Python version
       run: python scripts/sync_python_version.py
+
 
     - name: Verify Docker (Linux only)
       if: runner.os == 'Linux'

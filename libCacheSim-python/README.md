@@ -304,6 +304,8 @@ cmake -G Ninja -B build && ninja -C build
 
 **Custom Cache Issues**: Validate your custom implementation against built-in algorithms using the test functions above.
 
+**Install with uv**: Since automatically building with `uv` will fail due to incomplete source code, please force install the binary file via `uv pip install libcachesim --only-binary=:all:`.
+
 ### Getting Help
 
 - Check the [main documentation](../doc/) for detailed guides
