@@ -342,7 +342,7 @@ print(f"Miss ratio: {miss_ratio:.4f}")
 
 ### Extending new algorithm
 
-With python package, you can extend new algorithm to test your own eviction design *without any C/C++ compilation**.
+With python package, you can extend new algorithm to test your own eviction design **without any C/C++ compilation**.
 
 ```python
 import libcachesim as lcs
