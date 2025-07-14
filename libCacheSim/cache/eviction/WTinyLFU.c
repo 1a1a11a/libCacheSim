@@ -261,7 +261,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
 
   cache_t *window = params->LRU;
-  cache_t *main = params->main_cache;
+  cache_t *main_cache = params->main_cache;
 
   bool evicted = false;
   while (!evicted) {
@@ -275,10 +275,10 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
       /** only when main_cache is full, evict an obj from the main_cache **/
 
       // if main_cache has enough space, insert the obj into main_cache
-      if (main->get_occupied_byte(main) + params->req_local->obj_size +
-              cache->obj_md_size <=
-          main->cache_size) {
-        main->insert(main, params->req_local);
+      if (main_cache->get_occupied_byte(main_cache) +
+              params->req_local->obj_size + cache->obj_md_size <=
+          main_cache->cache_size) {
+        main_cache->insert(main_cache, params->req_local);
 
 #if defined(TRACK_DEMOTION)
         printf("%ld keep %ld %ld\n", cache->n_req, window_victim->create_time,
@@ -290,7 +290,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
 
       } else {
         // compare the frequency of window_victim and main_cache_victim
-        cache_obj_t *main_cache_victim = main->to_evict(main, req);
+        cache_obj_t *main_cache_victim = main_cache->to_evict(main_cache, req);
         DEBUG_ASSERT(main_cache_victim != NULL);
         // if window_victim is more frequent, insert it into main_cache
         if (minimalIncrementCBF_estimate(params->CBF,
@@ -304,12 +304,13 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
                  window_victim->misc.next_access_vtime);
 #endif
 
-          main->evict(main, req);
+          main_cache->evict(main_cache, req);
 
           bool ret = window->remove(window, window_victim->obj_id);
           DEBUG_ASSERT(ret);
 
-          cache_obj_t *cache_obj = main->insert(main, params->req_local);
+          cache_obj_t *cache_obj =
+              main_cache->insert(main_cache, params->req_local);
           params->n_admit_bytes += params->req_local->obj_size;
 
         } else {
@@ -328,7 +329,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
                               sizeof(obj_id_t));
     } else {
       DEBUG_ASSERT(window->get_occupied_byte(window) == 0);
-      main->evict(main, req);
+      main_cache->evict(main_cache, req);
       return;
     }
   }

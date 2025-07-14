@@ -325,7 +325,7 @@ static void S3LRU_evict_LRU(cache_t *cache, const request_t *req) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
   cache_t *LRU = params->LRU;
   cache_t *ghost = params->LRU_ghost;
-  cache_t *main = params->main_cache;
+  cache_t *main_cache = params->main_cache;
 
   bool has_evicted = false;
 
@@ -341,7 +341,7 @@ static void S3LRU_evict_LRU(cache_t *cache, const request_t *req) {
              obj_to_evict->misc.next_access_vtime);
 #endif
 
-      main->insert(main, params->req_local);
+      main_cache->insert(main_cache, params->req_local);
     } else {
 #if defined(TRACK_DEMOTION)
       printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
@@ -362,14 +362,14 @@ static void S3LRU_evict_main(cache_t *cache, const request_t *req) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
   // cache_t *LRU = params->LRU;
   // cache_t *ghost = params->LRU_ghost;
-  cache_t *main = params->main_cache;
+  cache_t *main_cache = params->main_cache;
 
   // evict from main cache
   bool has_evicted = false;
-  while (!has_evicted && main->get_occupied_byte(main) > 0) {
-    cache_obj_t *obj_to_evict = main->to_evict(main, req);
+  while (!has_evicted && main_cache->get_occupied_byte(main_cache) > 0) {
+    cache_obj_t *obj_to_evict = main_cache->to_evict(main_cache, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
-    bool removed = main->remove(main, obj_to_evict->obj_id);
+    bool removed = main_cache->remove(main_cache, obj_to_evict->obj_id);
     if (!removed) {
       ERROR("cannot remove obj %ld\n", (long)obj_to_evict->obj_id);
     }
@@ -391,11 +391,11 @@ static void S3LRU_evict(cache_t *cache, const request_t *req) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
 
   cache_t *LRU = params->LRU;
-  cache_t *main = params->main_cache;
+  cache_t *main_cache = params->main_cache;
 
-  if (main->get_occupied_byte(main) > main->cache_size ||
+  if (main_cache->get_occupied_byte(main_cache) > main_cache->cache_size ||
       LRU->get_occupied_byte(LRU) == 0) {
-    main->evict(main, req);
+    main_cache->evict(main_cache, req);
     return;
   } else {
     S3LRU_evict_LRU(cache, req);

@@ -399,26 +399,26 @@ static cache_obj_t *S3FIFOd_to_evict(cache_t *cache, const request_t *req) {
 static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
   S3FIFOd_params_t *params = (S3FIFOd_params_t *)cache->eviction_params;
 
-  cache_t *fifo = params->fifo;
+  cache_t *small_fifo = params->fifo;
   cache_t *ghost = params->fifo_ghost;
-  cache_t *main = params->main_cache;
+  cache_t *main_cache = params->main_cache;
 
-  if (fifo->get_occupied_byte(fifo) == 0) {
-    assert(main->get_occupied_byte(main) <= cache->cache_size);
+  if (small_fifo->get_occupied_byte(small_fifo) == 0) {
+    assert(main_cache->get_occupied_byte(main_cache) <= cache->cache_size);
     // evict from main cache
-    cache_obj_t *obj = main->to_evict(main, req);
+    cache_obj_t *obj = main_cache->to_evict(main_cache, req);
 #if defined(TRACK_EVICTION_V_AGE)
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
     copy_cache_obj_to_request(params->req_local, obj);
     params->main_cache_eviction->get(params->main_cache_eviction,
                                      params->req_local);
-    main->evict(main, req);
+    main_cache->evict(main_cache, req);
     return;
   }
 
   // evict from FIFO
-  cache_obj_t *obj = fifo->to_evict(fifo, req);
+  cache_obj_t *obj = small_fifo->to_evict(small_fifo, req);
   assert(obj != NULL);
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
@@ -426,23 +426,23 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
 #if defined(TRACK_EVICTION_V_AGE)
   if (obj->misc.freq >= params->move_to_main_threshold) {
     // promote to main cache
-    cache_obj_t *new_obj = main->insert(main, params->req_local);
+    cache_obj_t *new_obj = main_cache->insert(main_cache, params->req_local);
     new_obj->create_time = obj->create_time;
     // evict from fifo, must be after copy eviction age
-    bool removed = fifo->remove(fifo, params->req_local->obj_id);
+    bool removed = small_fifo->remove(small_fifo, params->req_local->obj_id);
     assert(removed);
 
-    while (main->get_occupied_byte(main) > main->cache_size) {
+    while (main_cache->get_occupied_byte(main_cache) > main_cache->cache_size) {
       // evict from main cache
-      obj = main->to_evict(main, req);
+      obj = main_cache->to_evict(main_cache, req);
       copy_cache_obj_to_request(params->req_local, obj);
       params->main_cache_eviction->get(params->main_cache_eviction,
                                        params->req_local);
-      main->evict(main, req);
+      main_cache->evict(main_cache, req);
     }
   } else {
     // evict from fifo, must be after copy eviction age
-    bool removed = fifo->remove(fifo, params->req_local->obj_id);
+    bool removed = small_fifo->remove(small_fifo, params->req_local->obj_id);
     assert(removed);
 
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
@@ -453,20 +453,20 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
 
 #else
   // evict from fifo
-  bool removed = fifo->remove(fifo, params->req_local->obj_id);
+  bool removed = small_fifo->remove(small_fifo, params->req_local->obj_id);
   assert(removed);
 
   if (obj->misc.freq >= params->move_to_main_threshold) {
     // promote to main cache
-    main->insert(main, params->req_local);
+    main_cache->insert(main_cache, params->req_local);
 
-    while (main->get_occupied_byte(main) > main->cache_size) {
+    while (main_cache->get_occupied_byte(main_cache) > main_cache->cache_size) {
       // evict from main cache
-      obj = main->to_evict(main, req);
+      obj = main_cache->to_evict(main_cache, req);
       copy_cache_obj_to_request(params->req_local, obj);
       params->main_cache_eviction->get(params->main_cache_eviction,
                                        params->req_local);
-      main->evict(main, req);
+      main_cache->evict(main_cache, req);
     }
   } else {
     // insert to ghost

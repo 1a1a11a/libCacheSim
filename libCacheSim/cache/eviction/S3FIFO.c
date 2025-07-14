@@ -256,24 +256,24 @@ static cache_obj_t *S3FIFO_insert(cache_t *cache, const request_t *req) {
   S3FIFO_params_t *params = (S3FIFO_params_t *)cache->eviction_params;
   cache_obj_t *obj = NULL;
 
-  cache_t *small = params->small_fifo;
-  cache_t *main = params->main_fifo;
+  cache_t *small_fifo = params->small_fifo;
+  cache_t *main_fifo = params->main_fifo;
 
   if (params->hit_on_ghost) {
     /* insert into main FIFO */
     params->hit_on_ghost = false;
-    obj = main->insert(main, req);
+    obj = main_fifo->insert(main_fifo, req);
   } else {
     /* insert into small fifo */
-    if (req->obj_size >= small->cache_size) {
+    if (req->obj_size >= small_fifo->cache_size) {
       return NULL;
     }
 
     if (!params->has_evicted &&
-        small->get_occupied_byte(small) >= small->cache_size) {
-      obj = main->insert(main, req);
+        small_fifo->get_occupied_byte(small_fifo) >= small_fifo->cache_size) {
+      obj = main_fifo->insert(main_fifo, req);
     } else {
-      obj = small->insert(small, req);
+      obj = small_fifo->insert(small_fifo, req);
     }
   }
 
@@ -299,19 +299,19 @@ static cache_obj_t *S3FIFO_to_evict(cache_t *cache, const request_t *req) {
 
 static void S3FIFO_evict_small(cache_t *cache, const request_t *req) {
   S3FIFO_params_t *params = (S3FIFO_params_t *)cache->eviction_params;
-  cache_t *small = params->small_fifo;
+  cache_t *small_fifo = params->small_fifo;
   cache_t *ghost = params->ghost_fifo;
-  cache_t *main = params->main_fifo;
+  cache_t *main_fifo = params->main_fifo;
 
   bool has_evicted = false;
-  while (!has_evicted && small->get_occupied_byte(small) > 0) {
-    cache_obj_t *obj_to_evict = small->to_evict(small, req);
+  while (!has_evicted && small_fifo->get_occupied_byte(small_fifo) > 0) {
+    cache_obj_t *obj_to_evict = small_fifo->to_evict(small_fifo, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
     // need to copy the object before it is evicted
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
     if (obj_to_evict->S3FIFO.freq >= params->move_to_main_threshold) {
-      main->insert(main, params->req_local);
+      main_fifo->insert(main_fifo, params->req_local);
     } else {
       // insert to ghost
       if (ghost != NULL) {
@@ -321,32 +321,32 @@ static void S3FIFO_evict_small(cache_t *cache, const request_t *req) {
     }
 
     // remove from small fifo, but do not update stat
-    bool removed = small->remove(small, params->req_local->obj_id);
+    bool removed = small_fifo->remove(small_fifo, params->req_local->obj_id);
     DEBUG_ASSERT(removed);
   }
 }
 
 static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
   S3FIFO_params_t *params = (S3FIFO_params_t *)cache->eviction_params;
-  cache_t *main = params->main_fifo;
+  cache_t *main_fifo = params->main_fifo;
 
   bool has_evicted = false;
-  while (!has_evicted && main->get_occupied_byte(main) > 0) {
-    cache_obj_t *obj_to_evict = main->to_evict(main, req);
+  while (!has_evicted && main_fifo->get_occupied_byte(main_fifo) > 0) {
+    cache_obj_t *obj_to_evict = main_fifo->to_evict(main_fifo, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
     int freq = obj_to_evict->S3FIFO.freq;
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
     if (freq >= 1) {
       // we need to evict first because the object to insert has the same obj_id
-      main->remove(main, obj_to_evict->obj_id);
+      main_fifo->remove(main_fifo, obj_to_evict->obj_id);
       obj_to_evict = NULL;
 
-      cache_obj_t *new_obj = main->insert(main, params->req_local);
+      cache_obj_t *new_obj = main_fifo->insert(main_fifo, params->req_local);
       // clock with 2-bit counter
       new_obj->S3FIFO.freq = MIN(freq, 3) - 1;
 
     } else {
-      bool removed = main->remove(main, obj_to_evict->obj_id);
+      bool removed = main_fifo->remove(main_fifo, obj_to_evict->obj_id);
       DEBUG_ASSERT(removed);
 
       has_evicted = true;
@@ -367,11 +367,11 @@ static void S3FIFO_evict(cache_t *cache, const request_t *req) {
   S3FIFO_params_t *params = (S3FIFO_params_t *)cache->eviction_params;
   params->has_evicted = true;
 
-  cache_t *small = params->small_fifo;
-  cache_t *main = params->main_fifo;
+  cache_t *small_fifo = params->small_fifo;
+  cache_t *main_fifo = params->main_fifo;
 
-  if (main->get_occupied_byte(main) > main->cache_size ||
-      small->get_occupied_byte(small) == 0) {
+  if (main_fifo->get_occupied_byte(main_fifo) > main_fifo->cache_size ||
+      small_fifo->get_occupied_byte(small_fifo) == 0) {
     S3FIFO_evict_main(cache, req);
   } else {
     S3FIFO_evict_small(cache, req);

@@ -331,25 +331,25 @@ static cache_obj_t *QDLP_to_evict(cache_t *cache, const request_t *req) {
 static void QDLP_evict(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
 
-  cache_t *fifo = params->fifo;
-  cache_t *ghost = params->fifo_ghost;
-  cache_t *main = params->main_cache;
+  cache_t *small_fifo = params->fifo;
+  cache_t *ghost_fifo = params->fifo_ghost;
+  cache_t *main_cache = params->main_cache;
 
-  if (fifo->get_occupied_byte(fifo) == 0) {
+  if (small_fifo->get_occupied_byte(small_fifo) == 0) {
 #if defined(TRACK_EVICTION_V_AGE)
-    cache_obj_t *obj = main->to_evict(main, req);
+    cache_obj_t *obj = main_cache->to_evict(main_cache, req);
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
 
-    assert(main->get_occupied_byte(main) <= cache->cache_size);
+    assert(main_cache->get_occupied_byte(main_cache) <= cache->cache_size);
     // evict from main cache
-    main->evict(main, req);
+    main_cache->evict(main_cache, req);
 
     return;
   }
 
   // evict from FIFO
-  cache_obj_t *obj = fifo->to_evict(fifo, req);
+  cache_obj_t *obj = small_fifo->to_evict(small_fifo, req);
   assert(obj != NULL);
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
@@ -361,21 +361,22 @@ static void QDLP_evict(cache_t *cache, const request_t *req) {
 
     params->main_cache->get(params->main_cache, params->req_local);
 #if defined(TRACK_EVICTION_V_AGE)
-    main->find(main, params->req_local, false)->create_time = obj->create_time;
+    main_cache->find(main_cache, params->req_local, false)->create_time =
+        obj->create_time;
   } else {
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #else
   } else {
 #endif
     // insert to ghost
-    if (ghost != NULL) {
-      ghost->get(ghost, params->req_local);
+    if (ghost_fifo != NULL) {
+      ghost_fifo->get(ghost_fifo, params->req_local);
     }
   }
 
   // remove from fifo, but do not update stat
   // bool removed = fifo->remove(fifo, params->req_local->obj_id);
-  fifo->evict(fifo, req);
+  small_fifo->evict(small_fifo, req);
 }
 
 /**
