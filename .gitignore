@@ -22,3 +22,6 @@ sftp-config.json
 .lint-logs/
 # Python wheels
 *.whl
+# Python virtual environments
+venv/
+.venv/
