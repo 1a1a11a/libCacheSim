@@ -1,7 +1,11 @@
 # libCacheSim - building and running cache simulations
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
+[![Python-package GitHub Actions Build Status](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml)
+[![Python Versions](https://img.shields.io/pypi/pyversions/libcachesim.svg?logo=python&logoColor=white)](https://pypi.org/project/libcachesim)
+[![PyPI Version](https://img.shields.io/pypi/v/libcachesim.svg?logo=pypi&logoColor=white)](https://pypi.org/project/libcachesim)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/1a1a11a/libCacheSim/badge)](https://scorecard.dev/viewer/?uri=github.com/1a1a11a/libCacheSim)
+
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 - [libCacheSim - building and running cache simulations](#libcachesim---building-and-running-cache-simulations)

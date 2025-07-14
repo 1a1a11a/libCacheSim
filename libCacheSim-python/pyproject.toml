@@ -9,6 +9,15 @@ version = "0.3.1"
 description="Python bindings for libCacheSim"
 readme = "README.md"
 requires-python = ">=3.9"
+keywords = ["performance", "cache", "simulator"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
 
 [project.optional-dependencies]
 test = ["pytest"]
