@@ -25,3 +25,5 @@ sftp-config.json
 # Python virtual environments
 venv/
 .venv/
+# Doxygen build directories
+docs/xml
