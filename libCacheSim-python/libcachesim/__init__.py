@@ -4,13 +4,14 @@ from ._libcachesim import (
     Cache,
     Reader,
     Request,
+    ReqOp,
+    TraceType,
     __doc__,
     __version__,
     open_trace,
     process_trace,
     process_trace_python_hook,
 )
-from .const import TraceType, ReqOp
 from .eviction import (
     ARC,
     FIFO,
