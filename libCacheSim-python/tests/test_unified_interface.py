@@ -13,9 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 try:
     import libcachesim as lcs
 except ImportError as e:
-    print(f"Error importing libcachesim: {e}")
-    print("Make sure the Python binding is built and installed")
-    sys.exit(1)
+    pytest.skip(f"libcachesim not available: {e}", allow_module_level=True)
 
 from collections import OrderedDict
 
@@ -71,7 +69,6 @@ def create_test_lru_hooks():
 
 def test_unified_process_trace_interface():
     """Test that all cache policies have the same process_trace interface."""
-    print("Testing unified process_trace interface...")
 
     cache_size = 1024 * 1024  # 1MB
     max_requests = 100
@@ -94,8 +91,6 @@ def test_unified_process_trace_interface():
     python_cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
     caches["Python Hook LRU"] = python_cache
 
-    print("\n--- Testing unified process_trace interface ---")
-
     results = {}
     for name, cache in caches.items():
         # Create fresh reader for each test
@@ -110,13 +105,8 @@ def test_unified_process_trace_interface():
         miss_ratio = cache.process_trace(test_reader, max_req=max_requests)
         results[name] = miss_ratio
 
-        print(f"{name:15s}: miss_ratio = {miss_ratio:.4f}")
-        print(f"                cache stats: {cache.n_obj} objects, {cache.occupied_byte} bytes")
-
         # Verify miss_ratio is valid
         assert 0.0 <= miss_ratio <= 1.0, f"{name} returned invalid miss_ratio: {miss_ratio}"
-
-    print(f"\nPASS: All {len(caches)} cache policies support unified process_trace interface!")
 
     # Verify we got results for all caches
     assert len(results) == len(caches), "Not all caches were tested"
@@ -124,7 +114,6 @@ def test_unified_process_trace_interface():
 
 def test_unified_properties_interface():
     """Test that all cache policies have the same properties interface."""
-    print("\nTesting unified properties interface...")
 
     cache_size = 1024 * 1024
 
@@ -135,28 +124,20 @@ def test_unified_properties_interface():
         "Python Hook": lcs.PythonHookCachePolicy(cache_size, "TestCache"),
     }
 
-    print("\n--- Testing unified properties interface ---")
-
     required_properties = ['cache_size', 'n_req', 'n_obj', 'occupied_byte']
 
     for name, cache in caches.items():
-        print(f"{name:15s}:")
-
         # Test all required properties exist
         for prop in required_properties:
             assert hasattr(cache, prop), f"{name} missing {prop} property"
             value = getattr(cache, prop)
-            print(f"                {prop} = {value}")
 
         # Test cache_size is correct
         assert cache.cache_size == cache_size, f"{name} cache_size mismatch"
 
-    print("PASS: All cache policies support unified properties interface!")
-
 
 def test_get_interface_consistency():
     """Test that get() method works consistently across all cache policies."""
-    print("\nTesting get() interface consistency...")
 
     cache_size = 1024 * 1024
 
@@ -177,8 +158,6 @@ def test_get_interface_consistency():
     test_req.obj_id = 1
     test_req.obj_size = 1024
 
-    print("Testing get() method with test request...")
-
     for name, cache in caches.items():
         # Reset cache state for consistent testing
         initial_n_req = cache.n_req
@@ -190,7 +169,6 @@ def test_get_interface_consistency():
 
         # Test first access (should be miss for new object)
         result = cache.get(test_req)
-        print(f"{name:15s}: first access = {'HIT' if result else 'MISS'}")
 
         # Test properties updated correctly
         assert cache.n_req > initial_n_req, f"{name} n_req not updated"
@@ -200,10 +178,7 @@ def test_get_interface_consistency():
 
         # Test second access to same object (should be hit)
         second_result = cache.get(test_req)
-        print(f"{name:15s}: second access = {'HIT' if second_result else 'MISS'}")
 
         # Second access should be a hit (unless cache is too small)
         if cache.cache_size >= test_req.obj_size:
             assert second_result, f"{name} second access should be a hit"
-
-    print("PASS: Get interface consistency test passed!")

@@ -31,9 +31,9 @@ zipf_generator = lcs.create_zipf_requests(
 )
 
 # Test with LRU cache
-cache = lcs.LRU(cache_size=1000)
+cache = lcs.LRU(cache_size=50*1024*1024)  # 50MB cache for better hit ratio
 miss_count = sum(1 for req in zipf_generator if not cache.get(req))
-print(f"Final miss ratio: {miss_count / len(zipf_generator):.3f}")
+print(f"Final miss ratio: {miss_count / 10000:.3f}")
 ```
 
 **Features**:
@@ -119,35 +119,42 @@ def create_lru_cache(cache_size):
 
 ### 4. Zipf Trace Examples (`zipf_trace_example.py`)
 
-Shows traditional Zipf trace generation methods and algorithm comparison:
+Shows synthetic trace generation methods and algorithm comparison:
 
 ```python
 import libcachesim as lcs
 
-# Method 1: Generate object ID arrays
-obj_ids = lcs.gen_zipf(num_objects=1000, alpha=1.0, num_requests=10000)
-
-# Method 2: Create Reader object
-reader = lcs.create_zipf_reader(
+# Method 1: Create Zipf-distributed request generator
+zipf_generator = lcs.create_zipf_requests(
     num_objects=1000,
     num_requests=10000,
     alpha=1.0,
-    obj_size=4000
+    obj_size=1024,
+    seed=42
+)
+
+# Method 2: Create uniform-distributed request generator
+uniform_generator = lcs.create_uniform_requests(
+    num_objects=1000,
+    num_requests=10000,
+    obj_size=1024,
+    seed=42
 )
 
 # Compare different Zipf parameters
 alphas = [0.5, 1.0, 1.5, 2.0]
 for alpha in alphas:
-    reader = lcs.create_zipf_reader(1000, 10000, alpha)
+    generator = lcs.create_zipf_requests(1000, 10000, alpha=alpha, seed=42)
     cache = lcs.LRU(1024*1024)
-    miss_ratio = cache.process_trace(reader)
-    print(f"α={alpha}: Miss ratio={miss_ratio:.4f}")
+    hit_count = sum(1 for req in generator if cache.get(req))
+    hit_ratio = hit_count / 10000
+    print(f"α={alpha}: Hit ratio={hit_ratio:.4f}")
 ```
 
-**Zipf Distribution Features**:
+**Synthetic Trace Features**:
 - Higher α values create more skewed access patterns
-- Support for trace file saving and loading
-- ZipfGenerator class for individual generation
+- Memory efficient: No temporary files created
+- Request generators for flexible processing
 - Suitable for simulating real workloads
 
 ## Key Features
@@ -155,8 +162,6 @@ for alpha in alphas:
 ### Trace Generation
 - `create_zipf_requests()`: Create Zipf-distributed request generator
 - `create_uniform_requests()`: Create uniform-distributed request generator
-- `gen_zipf()`: Generate Zipf-distributed object ID arrays
-- `create_zipf_reader()`: Create Zipf trace reader
 
 ### Cache Algorithms
 - **Classic algorithms**: `LRU()`, `FIFO()`, `ARC()`, `Clock()`
@@ -174,14 +179,13 @@ for alpha in alphas:
 ```python
 import libcachesim as lcs
 
-# Create synthetic workload
-generator = lcs.create_zipf_requests(1000, 10000, alpha=1.0, seed=42)
-
 # Test different algorithms
 algorithms = ['LRU', 'FIFO', 'ARC', 'S3FIFO']
 cache_size = 1024*1024
 
 for algo_name in algorithms:
+    # Create fresh workload for each algorithm
+    generator = lcs.create_zipf_requests(1000, 10000, alpha=1.0, seed=42)
     cache = getattr(lcs, algo_name)(cache_size)
     hit_count = sum(1 for req in generator if cache.get(req))
     print(f"{algo_name}: {hit_count/10000:.3f}")
@@ -212,7 +216,7 @@ reader = lcs.open_trace("trace.csv", lcs.TraceType.CSV_TRACE)
 # Process with different cache sizes
 for cache_size in [1024*1024, 2*1024*1024, 4*1024*1024]:
     cache = lcs.LRU(cache_size)
-    miss_ratio = cache.process_trace(reader)
+    miss_ratio = lcs.process_trace(cache, reader)
     print(f"Cache {cache_size//1024//1024}MB: Miss ratio {miss_ratio:.4f}")
 ```
 
@@ -268,7 +272,7 @@ python -m pytest ../tests/ -v
 3. **Process large traces with C++ backend**:
    ```python
    # Fast: C++ processing
-   miss_ratio = cache.process_trace(reader)
+   miss_ratio = lcs.process_trace(cache, reader)
 
    # Slow: Python loop
    for req in reader:
@@ -289,9 +293,3 @@ python -m pytest ../tests/test_trace_generator.py -v
 python -m pytest ../tests/test_eviction.py -v
 python -m pytest ../tests/test_process_trace.py -v
 ```
-
-## Further Reading
-
-- [libCacheSim Documentation](https://github.com/1a1a11a/libCacheSim)
-- Algorithm papers and references
-- Performance benchmarking guides

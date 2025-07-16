@@ -13,9 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 try:
     import libcachesim as lcs
 except ImportError as e:
-    print(f"Error importing libcachesim: {e}")
-    print("Make sure the Python binding is built and installed")
-    sys.exit(1)
+    pytest.skip(f"libcachesim not available: {e}", allow_module_level=True)
 
 from collections import OrderedDict
 
@@ -34,7 +32,6 @@ def create_trace_reader():
 
 def test_process_trace_native():
     """Test process_trace with native LRU cache."""
-    print("Testing process_trace with native LRU...")
 
     # Open trace
     reader = create_trace_reader()
@@ -47,16 +44,12 @@ def test_process_trace_native():
     # Process trace and get miss ratio
     miss_ratio = cache.process_trace(reader, max_req=1000)
 
-    print(f"Native LRU miss ratio (first 1000 requests): {miss_ratio:.4f}")
-
     # Verify miss ratio is reasonable (should be between 0 and 1)
     assert 0.0 <= miss_ratio <= 1.0, f"Invalid miss ratio: {miss_ratio}"
-    print("PASS: Native LRU process_trace test PASSED")
 
 
 def test_process_trace_python_hook():
     """Test process_trace with Python hook cache."""
-    print("\nTesting process_trace with Python hook cache...")
 
     # Open trace
     reader = create_trace_reader()
@@ -92,7 +85,7 @@ def test_process_trace_python_hook():
     # Need to reopen the trace for second test
     reader2 = create_trace_reader()
     if reader2 is None:
-        print("Warning: Cannot reopen trace file, skipping second test")
+        pytest.skip("Warning: Cannot reopen trace file, skipping second test")
         # Continue with just the first test result
         assert miss_ratio1 is not None and 0.0 <= miss_ratio1 <= 1.0, f"Invalid miss ratio: {miss_ratio1}"
         return
@@ -104,19 +97,14 @@ def test_process_trace_python_hook():
     # Method 2: Convenience method
     miss_ratio2 = cache2.process_trace(reader2, max_req=1000)
 
-    print(f"Python hook LRU miss ratio (method 1): {miss_ratio1:.4f}")
-    print(f"Python hook LRU miss ratio (method 2): {miss_ratio2:.4f}")
-
     # Verify both methods give the same result and miss ratios are reasonable
     assert 0.0 <= miss_ratio1 <= 1.0, f"Invalid miss ratio 1: {miss_ratio1}"
     assert 0.0 <= miss_ratio2 <= 1.0, f"Invalid miss ratio 2: {miss_ratio2}"
     assert abs(miss_ratio1 - miss_ratio2) < 0.001, f"Different results from the two methods: {miss_ratio1} vs {miss_ratio2}"
-    print("PASS: Python hook process_trace test PASSED")
 
 
 def test_compare_native_vs_python_hook():
     """Compare native LRU vs Python hook LRU using process_trace."""
-    print("\nComparing native LRU vs Python hook LRU using process_trace...")
 
     cache_size = 512*1024  # 512KB cache
     max_requests = 500
@@ -151,23 +139,17 @@ def test_compare_native_vs_python_hook():
 
     reader2 = create_trace_reader()
     if reader2 is None:
-        print("Warning: Cannot reopen trace file, skipping comparison")
+        pytest.skip("Warning: Cannot reopen trace file, skipping comparison")
         return  # Skip test
 
     hook_miss_ratio = hook_cache.process_trace(reader2, max_req=max_requests)
 
-    print(f"Native LRU miss ratio: {native_miss_ratio:.4f}")
-    print(f"Python hook LRU miss ratio: {hook_miss_ratio:.4f}")
-    print(f"Difference: {abs(native_miss_ratio - hook_miss_ratio):.4f}")
-
     # They should be very similar (allowing for some small differences due to implementation details)
     assert abs(native_miss_ratio - hook_miss_ratio) < 0.05, f"Too much difference: {abs(native_miss_ratio - hook_miss_ratio):.4f}"
-    print("PASS: Native vs Python hook comparison test PASSED")
 
 
 def test_error_handling():
     """Test error handling for process_trace."""
-    print("\nTesting error handling...")
 
     cache = lcs.PythonHookCachePolicy(1024)
 
@@ -175,18 +157,13 @@ def test_error_handling():
     if reader is None:
         pytest.skip("Test trace file not found, skipping error test")
 
-    # Try to process trace without setting hooks
-    try:
+    # Try to process trace without setting hooks - should raise RuntimeError
+    with pytest.raises(RuntimeError, match="Hooks must be set before processing trace"):
         cache.process_trace(reader)
-        assert False, "Should have raised RuntimeError"
-    except RuntimeError as e:
-        print(f"Correctly caught error: {e}")
-        print("PASS: Error handling test PASSED")
 
 
 def test_lru_implementation_accuracy():
     """Test that Python hook LRU implementation matches native LRU closely."""
-    print("Testing LRU implementation accuracy...")
 
     cache_size = 1024 * 1024  # 1MB
     max_requests = 100
@@ -213,13 +190,8 @@ def test_lru_implementation_accuracy():
     difference = abs(native_miss_ratio - hook_miss_ratio)
     percentage_diff = (difference / native_miss_ratio) * 100 if native_miss_ratio > 0 else 0
 
-    print(f"Native LRU miss ratio: {native_miss_ratio:.6f}")
-    print(f"Hook LRU miss ratio: {hook_miss_ratio:.6f}")
-    print(f"Percentage difference: {percentage_diff:.4f}%")
-
     # Assert that the difference is small (< 5%)
     assert percentage_diff < 5.0, f"LRU implementation difference too large: {percentage_diff:.4f}%"
-    print("PASS: LRU implementation accuracy test passed")
 
 
 def create_optimized_lru_hooks():

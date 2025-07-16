@@ -10,6 +10,9 @@ import libcachesim as lcs
 class TestTraceGeneration:
     """Test trace generation functions."""
 
+    # Constants for test readability
+    NUM_SAMPLE_REQUESTS = 10  # Number of requests to check in detail
+
     def test_create_zipf_requests_basic(self):
         """Test basic Zipf request creation."""
         generator = lcs.create_zipf_requests(
@@ -24,7 +27,7 @@ class TestTraceGeneration:
         requests = list(generator)
         assert len(requests) == 1000
 
-        for req in requests[:10]:  # Check first 10 requests
+        for req in requests[:self.NUM_SAMPLE_REQUESTS]:  # Check first NUM_SAMPLE_REQUESTS
             assert isinstance(req, lcs.Request)
             assert 0 <= req.obj_id < 100
             assert req.obj_size == 4000
@@ -43,7 +46,7 @@ class TestTraceGeneration:
         requests = list(generator)
         assert len(requests) == 1000
 
-        for req in requests[:10]:  # Check first 10 requests
+        for req in requests[:self.NUM_SAMPLE_REQUESTS]:  # Check first NUM_SAMPLE_REQUESTS
             assert isinstance(req, lcs.Request)
             assert 0 <= req.obj_id < 100
             assert req.obj_size == 4000
@@ -138,7 +141,7 @@ class TestTraceGeneration:
         assert len(requests) == 200
 
         # Check custom parameters
-        for req in requests[:5]:
+        for req in requests[:self.NUM_SAMPLE_REQUESTS//2]:  # Check fewer for shorter test
             assert 1000 <= req.obj_id < 1050  # start_obj_id + num_objects
             assert req.obj_size == 2048
             assert req.clock_time <= 3600

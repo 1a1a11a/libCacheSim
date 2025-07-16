@@ -252,15 +252,10 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
       .def_readwrite("cache_size", &cache_t::cache_size)
       // Use proper accessor functions for private fields
       .def_property_readonly(
-          "n_obj",
-          [](const cache_t& self) {
-            return self.get_n_obj(const_cast<cache_t*>(&self));
-          })
+          "n_obj", [](const cache_t& self) { return self.get_n_obj(&self); })
       .def_property_readonly(
           "occupied_byte",
-          [](const cache_t& self) {
-            return self.get_occupied_byte(const_cast<cache_t*>(&self));
-          })
+          [](const cache_t& self) { return self.get_occupied_byte(&self); })
       // methods
       .def("get", [](cache_t& self, const request_t& req) {
         return self.get(&self, &req);

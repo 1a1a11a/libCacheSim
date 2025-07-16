@@ -55,7 +55,6 @@ def test_eviction_algo(eviction_algo, cache_size_ratio, mock_reader):
         assert abs(miss_ratio - reference_miss_ratio) < 0.01, f"Miss ratio {miss_ratio} is not close to reference {reference_miss_ratio}"
 
     except Exception as e:
-        print(f"Error in test_eviction_algo: {e}")
-        raise
+        pytest.fail(f"Error in test_eviction_algo: {e}")
     finally:
         pass
