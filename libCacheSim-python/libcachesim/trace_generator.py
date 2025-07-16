@@ -6,7 +6,8 @@ This module provides functions to generate synthetic traces with different distr
 
 import numpy as np
 import random
-from typing import Iterator, Optional
+from typing import Optional
+from collections.abc import Iterator
 from ._libcachesim import Request, ReqOp
 
 

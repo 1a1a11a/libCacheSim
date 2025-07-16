@@ -100,7 +100,8 @@ def test_process_trace_python_hook():
     # Verify both methods give the same result and miss ratios are reasonable
     assert 0.0 <= miss_ratio1 <= 1.0, f"Invalid miss ratio 1: {miss_ratio1}"
     assert 0.0 <= miss_ratio2 <= 1.0, f"Invalid miss ratio 2: {miss_ratio2}"
-    assert abs(miss_ratio1 - miss_ratio2) < 0.001, f"Different results from the two methods: {miss_ratio1} vs {miss_ratio2}"
+    assert abs(miss_ratio1 - miss_ratio2) < 0.001,\
+    f"Different results from the two methods: {miss_ratio1} vs {miss_ratio2}"
 
 
 def test_compare_native_vs_python_hook():
@@ -145,7 +146,8 @@ def test_compare_native_vs_python_hook():
     hook_miss_ratio = hook_cache.process_trace(reader2, max_req=max_requests)
 
     # They should be very similar (allowing for some small differences due to implementation details)
-    assert abs(native_miss_ratio - hook_miss_ratio) < 0.05, f"Too much difference: {abs(native_miss_ratio - hook_miss_ratio):.4f}"
+    assert abs(native_miss_ratio - hook_miss_ratio) < 0.05,\
+    f"Too much difference: {abs(native_miss_ratio - hook_miss_ratio):.4f}"
 
 
 def test_error_handling():

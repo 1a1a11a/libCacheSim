@@ -1,7 +1,4 @@
 import pytest
-import gc
-import sys
-import os
 
 from libcachesim import (
     ARC,
@@ -52,7 +49,8 @@ def test_eviction_algo(eviction_algo, cache_size_ratio, mock_reader):
         reference_miss_ratio = get_reference_data(eviction_algo.__name__, cache_size_ratio)
         if reference_miss_ratio is None:
             pytest.skip(f"No reference data for {eviction_algo.__name__} with cache size ratio {cache_size_ratio}")
-        assert abs(miss_ratio - reference_miss_ratio) < 0.01, f"Miss ratio {miss_ratio} is not close to reference {reference_miss_ratio}"
+        assert abs(miss_ratio - reference_miss_ratio) < 0.01,\
+        f"Miss ratio {miss_ratio} is not close to reference {reference_miss_ratio}"
 
     except Exception as e:
         pytest.fail(f"Error in test_eviction_algo: {e}")

@@ -130,7 +130,6 @@ def test_unified_properties_interface():
         # Test all required properties exist
         for prop in required_properties:
             assert hasattr(cache, prop), f"{name} missing {prop} property"
-            value = getattr(cache, prop)
 
         # Test cache_size is correct
         assert cache.cache_size == cache_size, f"{name} cache_size mismatch"

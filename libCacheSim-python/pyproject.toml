@@ -69,35 +69,37 @@ before-build = "rm -rf {project}/build && cmake -S {project} -B {project}/build 
 before-all = "brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm"
 before-build = "rm -rf {project}/build && cmake -S {project} -B {project}/build -G Ninja -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 && cmake --build {project}/build"
 
+[tool.ruff]
+# Allow lines to be as long as 120.
+line-length = 120
+
 [tool.ruff.lint]
-extend-select = [
-  "B",           # flake8-bugbear
-  "I",           # isort
-  "ARG",         # flake8-unused-arguments
-  "C4",          # flake8-comprehensions
-  "EM",          # flake8-errmsg
-  "ICN",         # flake8-import-conventions
-  "G",           # flake8-logging-format
-  "PGH",         # pygrep-hooks
-  "PIE",         # flake8-pie
-  "PL",          # pylint
-  "PT",          # flake8-pytest-style
-  "PTH",         # flake8-use-pathlib
-  "RET",         # flake8-return
-  "RUF",         # Ruff-specific
-  "SIM",         # flake8-simplify
-  "T20",         # flake8-print
-  "UP",          # pyupgrade
-  "YTT",         # flake8-2020
-  "EXE",         # flake8-executable
-  "NPY",         # NumPy specific rules
-  "PD",          # pandas-vet
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    # "I",
+    # flake8-logging-format
+    "G",
 ]
 ignore = [
-  "PLR09",    # Too many X
-  "PLR2004",  # Magic comparison
+    # star imports
+    "F405", "F403",
+    # lambda expression assignment
+    "E731",
+    # Loop control variable not used within loop body
+    "B007",
+    # f-string format
+    "UP032",
+    # Can remove once 3.10+ is the minimum Python version
+    "UP007",
+    "UP045"
 ]
-isort.required-imports = ["from __future__ import annotations"]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/**" = ["T20"]

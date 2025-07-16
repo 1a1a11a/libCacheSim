@@ -9,6 +9,7 @@ pure Python functions instead of C/C++ plugins.
 
 import libcachesim as lcs
 from collections import OrderedDict, deque
+from contextlib import suppress
 
 
 class LRUPolicy:
@@ -65,10 +66,8 @@ class FIFOPolicy:
 
     def on_remove(self, obj_id):
         """Remove object from tracking."""
-        try:
+        with suppress(ValueError):
             self.insertion_order.remove(obj_id)
-        except ValueError:
-            pass  # Object not in queue
 
 
 def create_lru_cache(cache_size):

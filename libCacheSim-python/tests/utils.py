@@ -7,7 +7,7 @@ def get_reference_data(eviction_algo, cache_size_ratio):
         "tests",
         "reference.csv"
     )
-    with open(data_file, "r") as f:  # noqa: PTH123
+    with open(data_file) as f:  # noqa: PTH123
         lines = f.readlines()
         key = "3LCache" if eviction_algo == "ThreeLCache" else eviction_algo
         for line in lines:

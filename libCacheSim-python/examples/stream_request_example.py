@@ -158,10 +158,10 @@ def main():
 
         print(f"{cache_size//1024//1024}MB{'':<8} {hit_ratio:<12.3f} ~{objects_fit}")
 
-    print(f"\nNotes:")
-    print(f"- Higher α values create more skewed access patterns")
-    print(f"- Skewed patterns generally have higher hit ratios")
-    print(f"- Cache size affects performance, but beyond a point diminishing returns")
+    print("\nNotes:")
+    print("- Higher α values create more skewed access patterns")
+    print("- Skewed patterns generally have higher hit ratios")
+    print("- Cache size affects performance, but beyond a point diminishing returns")
     print(f"- Working set: {num_objects} objects × {obj_size}B = {num_objects * obj_size // 1024}KB")
 
 

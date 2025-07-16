@@ -3,7 +3,6 @@
 Tests for trace generator module.
 """
 
-import pytest
 import libcachesim as lcs
 
 

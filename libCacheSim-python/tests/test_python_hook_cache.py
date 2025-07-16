@@ -6,14 +6,13 @@ Test file for PythonHookCachePolicy functionality.
 import pytest
 import libcachesim as lcs
 from dataclasses import dataclass
-from typing import Tuple
 from collections import OrderedDict
 
 
 @dataclass
 class CacheTestCase:
     """Represents a single test case for cache operations."""
-    request: Tuple[int, int]  # (obj_id, obj_size)
+    request: tuple[int, int]  # (obj_id, obj_size)
     expected_hit: bool
     expected_obj_count: int
     description: str = ""
@@ -85,8 +84,11 @@ def test_python_hook_cache():
         req = create_test_request(obj_id, obj_size)
 
         result = cache.get(req)
-        assert result == test_case.expected_hit, f"Request {i+1} (obj_id={obj_id}): Expected {'hit' if test_case.expected_hit else 'miss'} - {test_case.description}"
-        assert cache.n_obj == test_case.expected_obj_count, f"Request {i+1}: Expected {test_case.expected_obj_count} objects - {test_case.description}"
+        assert result == test_case.expected_hit,\
+        f"Request {i+1} (obj_id={obj_id}):"
+        f"Expected {'hit' if test_case.expected_hit else 'miss'} - {test_case.description}"
+        assert cache.n_obj == test_case.expected_obj_count,\
+        f"Request {i+1}: Expected {test_case.expected_obj_count} objects - {test_case.description}"
         assert cache.occupied_byte <= cache_size, f"Request {i+1}: Cache size exceeded"
 
 
@@ -142,11 +144,14 @@ def test_lru_comparison():
         hook_result = hook_lru.get(req_hook)
 
         # Compare results
-        assert native_result == hook_result, f"Request {i+1} (obj_id={obj_id}): Native and hook LRU differ - {test_case.description}"
+        assert native_result == hook_result,\
+        f"Request {i+1} (obj_id={obj_id}): Native and hook LRU differ - {test_case.description}"
 
         # Compare cache statistics
-        assert native_lru.n_obj == hook_lru.n_obj, f"Request {i+1}: Object count differs - {test_case.description}"
-        assert native_lru.occupied_byte == hook_lru.occupied_byte, f"Request {i+1}: Occupied bytes differ - {test_case.description}"
+        assert native_lru.n_obj == hook_lru.n_obj,\
+        f"Request {i+1}: Object count differs - {test_case.description}"
+        assert native_lru.occupied_byte == hook_lru.occupied_byte,\
+        f"Request {i+1}: Occupied bytes differ - {test_case.description}"
 
 
 def test_lru_comparison_variable_sizes():
@@ -186,8 +191,10 @@ def test_lru_comparison_variable_sizes():
         hook_result = hook_lru.get(req_hook)
 
         # Compare results
-        assert native_result == hook_result, f"Request {i+1} (obj_id={obj_id}, size={obj_size}): Results differ - {test_case.description}"
+        assert native_result == hook_result,\
+        f"Request {i+1} (obj_id={obj_id}, size={obj_size}): Results differ - {test_case.description}"
 
         # Compare cache statistics
         assert native_lru.n_obj == hook_lru.n_obj, f"Request {i+1}: Object count differs - {test_case.description}"
-        assert native_lru.occupied_byte == hook_lru.occupied_byte, f"Request {i+1}: Occupied bytes differ - {test_case.description}"
+        assert native_lru.occupied_byte == hook_lru.occupied_byte,\
+        f"Request {i+1}: Occupied bytes differ - {test_case.description}"

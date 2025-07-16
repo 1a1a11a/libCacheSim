@@ -31,7 +31,8 @@ libCacheSim Python bindings
 """
 
 from .const import TraceType
-from typing import Any, Callable, Optional, Union, Iterator
+from typing import Any, Callable, Optional, Union
+from collections.abc import Iterator
 
 def open_trace(
     trace_path: str,
@@ -217,7 +218,8 @@ class ARC(EvictionPolicyBase):
 
 class S3FIFO(EvictionPolicyBase):
     """S3FIFO replacement policy."""
-    def __init__(self, cache_size: int, fifo_size_ratio: float = 0.1, ghost_size_ratio: float = 0.9, move_to_main_threshold: int = 2) -> None: ...
+    def __init__(self, cache_size: int, fifo_size_ratio: float = 0.1,
+        ghost_size_ratio: float = 0.9, move_to_main_threshold: int = 2) -> None: ...
 
 
 class Sieve(EvictionPolicyBase):

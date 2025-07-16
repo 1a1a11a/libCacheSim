@@ -58,15 +58,6 @@ def example_compare_zipf_parameters():
     print("-" * 40)
 
     for alpha in alphas:
-        # Create requests with this alpha
-        zipf_requests = lcs.create_zipf_requests(
-            num_objects=num_objects,
-            num_requests=num_requests,
-            alpha=alpha,
-            obj_size=obj_size,
-            seed=42
-        )
-
         # Test with different cache policies
         policies = {
             'LRU': lcs.LRU(cache_size),
@@ -199,7 +190,8 @@ def example_uniform_vs_zipf():
     print(f"{'Uniform':<12} {uniform_hit_ratio:<12.4f} {'All objects equally likely'}")
     print(f"{'Zipf (α=1.0)':<12} {zipf_hit_ratio:<12.4f} {'Some objects much more popular'}")
 
-    print(f"\nObservation: Zipf typically shows {'higher' if zipf_hit_ratio > uniform_hit_ratio else 'lower'} hit ratios")
+    print(f"\nObservation: Zipf typically shows"
+          f"{'higher' if zipf_hit_ratio > uniform_hit_ratio else 'lower'} hit ratios")
     print("due to locality of reference (hot objects get cached)")
 
 
