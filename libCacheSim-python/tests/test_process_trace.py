@@ -244,27 +244,3 @@ def create_optimized_lru_hooks():
         lru_dict.pop(obj_id, None)
 
     return init_hook, hit_hook, miss_hook, eviction_hook, remove_hook
-
-
-if __name__ == "__main__":
-    tests = [
-        test_process_trace_native,
-        test_process_trace_python_hook,
-        test_compare_native_vs_python_hook,
-        test_error_handling,
-        test_lru_implementation_accuracy,
-    ]
-
-    all_passed = True
-    for test in tests:
-        try:
-            test()  # Just call the test, don't check return value
-            print(f"PASS: {test.__name__} passed")
-        except Exception as e:
-            print(f"FAIL: {test.__name__} failed with exception: {e}")
-            all_passed = False
-
-    if all_passed:
-        print("\nAll process_trace tests PASSED!")
-    else:
-        print("\nSome process_trace tests FAILED!")

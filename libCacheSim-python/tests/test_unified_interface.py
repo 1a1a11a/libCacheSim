@@ -207,25 +207,3 @@ def test_get_interface_consistency():
             assert second_result, f"{name} second access should be a hit"
 
     print("PASS: Get interface consistency test passed!")
-
-
-if __name__ == "__main__":
-    tests = [
-        test_unified_process_trace_interface,
-        test_unified_properties_interface,
-        test_get_interface_consistency,
-    ]
-
-    all_passed = True
-    for test in tests:
-        try:
-            test()  # Just call the test, don't check return value
-            print(f"PASS: {test.__name__} passed")
-        except Exception as e:
-            print(f"FAIL: {test.__name__} failed with exception: {e}")
-            all_passed = False
-
-    if all_passed:
-        print("\nAll unified interface tests PASSED!")
-    else:
-        print("\nSome unified interface tests FAILED!")

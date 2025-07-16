@@ -10,7 +10,7 @@ from ._libcachesim import (
     process_trace,
     process_trace_python_hook,
 )
-from .const import TraceType
+from .const import TraceType, ReqOp
 from .eviction import (
     ARC,
     FIFO,
@@ -24,6 +24,10 @@ from .eviction import (
     TwoQ,
     PythonHookCachePolicy,
 )
+from .trace_generator import (
+    create_zipf_requests,
+    create_uniform_requests,
+)
 
 __all__ = [
     "ARC",
@@ -35,6 +39,7 @@ __all__ = [
     "Clock",
     "Reader",
     "Request",
+    "ReqOp",
     "Sieve",
     "ThreeLCache",
     "TinyLFU",
@@ -46,5 +51,8 @@ __all__ = [
     "open_trace",
     "process_trace",
     "process_trace_python_hook",
+    # Trace generators
+    "create_zipf_requests",
+    "create_uniform_requests",
     # TODO(haocheng): add more eviction policies
 ]

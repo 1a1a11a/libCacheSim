@@ -13,41 +13,32 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 try:
     import libcachesim as lcs
 except ImportError as e:
-    print(f"Error importing libcachesim: {e}")
-    print("Make sure the Python binding is built and installed")
-    sys.exit(1)
+    pytest.skip(f"libcachesim not available: {e}", allow_module_level=True)
 
 from collections import OrderedDict
 
 
 def test_python_hook_cache():
     """Test the Python hook cache implementation."""
-    print("Testing PythonHookCachePolicy...")
-
     # Create cache
     cache_size = 300  # 3 objects of size 100 each
     cache = lcs.PythonHookCachePolicy(cache_size, "TestLRU")
 
     # Define LRU hooks
     def init_hook(cache_size):
-        print(f"Initializing LRU cache with size {cache_size}")
         return OrderedDict()
 
     def hit_hook(lru_dict, obj_id, obj_size):
-        print(f"Hit: object {obj_id}")
         lru_dict.move_to_end(obj_id)
 
     def miss_hook(lru_dict, obj_id, obj_size):
-        print(f"Miss: object {obj_id}, size {obj_size}")
         lru_dict[obj_id] = True
 
     def eviction_hook(lru_dict, obj_id, obj_size):
         victim = next(iter(lru_dict))
-        print(f"Evicting object {victim} to make room for {obj_id}")
         return victim
 
     def remove_hook(lru_dict, obj_id):
-        print(f"Removing object {obj_id}")
         lru_dict.pop(obj_id, None)
 
     # Set hooks
@@ -64,23 +55,24 @@ def test_python_hook_cache():
         (1, 100),  # Hit - move 1 to end
     ]
 
-    print("\n--- Starting cache simulation ---")
-    for obj_id, obj_size in test_requests:
+    expected_results = [False, False, False, True, False, False, True]
+    expected_objects = [1, 2, 3, 3, 3, 3, 3]
+
+    for i, ((obj_id, obj_size), expected_hit, expected_obj_count) in enumerate(
+        zip(test_requests, expected_results, expected_objects)
+    ):
         req = lcs.Request()
         req.obj_id = obj_id
         req.obj_size = obj_size
 
         result = cache.get(req)
-        print(f"Request {obj_id}: {'HIT' if result else 'MISS'}")
-        print(f"  Cache stats: {cache.n_obj} objects, {cache.occupied_byte} bytes\n")
-
-    print("Test completed successfully!")
+        assert result == expected_hit, f"Request {i+1} (obj_id={obj_id}): Expected {'hit' if expected_hit else 'miss'}"
+        assert cache.n_obj == expected_obj_count, f"Request {i+1}: Expected {expected_obj_count} objects"
+        assert cache.occupied_byte <= cache_size, f"Request {i+1}: Cache size exceeded"
 
 
 def test_error_handling():
     """Test error handling."""
-    print("\nTesting error handling...")
-
     cache = lcs.PythonHookCachePolicy(1000)
 
     # Try to use cache without setting hooks
@@ -91,13 +83,9 @@ def test_error_handling():
     with pytest.raises(RuntimeError):
         cache.get(req)
 
-    print("Error handling test passed!")
-
 
 def test_lru_comparison():
     """Test Python hook LRU against native LRU to verify identical behavior."""
-    print("\nTesting Python hook LRU vs Native LRU comparison...")
-
     cache_size = 300  # 3 objects of size 100 each
 
     # Create native LRU cache
@@ -141,10 +129,6 @@ def test_lru_comparison():
         (6, 100),  # Miss - should evict 5, insert 6
     ]
 
-    print("\n--- Comparing LRU implementations ---")
-    hit_rate_matches = 0
-    total_requests = len(test_requests)
-
     for i, (obj_id, obj_size) in enumerate(test_requests):
         # Test native LRU
         req_native = lcs.Request()
@@ -159,45 +143,15 @@ def test_lru_comparison():
         hook_result = hook_lru.get(req_hook)
 
         # Compare results
-        match = native_result == hook_result
-        if match:
-            hit_rate_matches += 1
-
-        print(f"Request {i+1}: obj_id={obj_id}")
-        print(f"  Native LRU: {'HIT' if native_result else 'MISS'}")
-        print(f"  Hook LRU:   {'HIT' if hook_result else 'MISS'}")
-        print(f"  Match: {'PASS' if match else 'FAIL'}")
+        assert native_result == hook_result, f"Request {i+1} (obj_id={obj_id}): Native and hook LRU differ"
 
         # Compare cache statistics
-        stats_match = (native_lru.cache.n_obj == hook_lru.n_obj and
-                      native_lru.cache.occupied_byte == hook_lru.occupied_byte)
-        print(f"  Native stats: {native_lru.cache.n_obj} objects, {native_lru.cache.occupied_byte} bytes")
-        print(f"  Hook stats:   {hook_lru.n_obj} objects, {hook_lru.occupied_byte} bytes")
-        print(f"  Stats match: {'PASS' if stats_match else 'FAIL'}")
-        print()
-
-        if not match:
-            print(f"ERROR: Hit/miss mismatch at request {i+1}")
-            return False
-
-        if not stats_match:
-            print(f"ERROR: Cache statistics mismatch at request {i+1}")
-            return False
-
-    accuracy = (hit_rate_matches / total_requests) * 100
-    print(f"LRU comparison test results:")
-    print(f"  Total requests: {total_requests}")
-    print(f"  Matching results: {hit_rate_matches}")
-    print(f"  Accuracy: {accuracy:.1f}%")
-
-    assert accuracy == 100.0, f"LRU implementations differ! Accuracy: {accuracy:.1f}%"
-    print("PASS: LRU comparison test PASSED - Both implementations behave identically!")
+        assert native_lru.cache.n_obj == hook_lru.n_obj, f"Request {i+1}: Object count differs"
+        assert native_lru.cache.occupied_byte == hook_lru.occupied_byte, f"Request {i+1}: Occupied bytes differ"
 
 
 def test_lru_comparison_variable_sizes():
     """Test Python hook LRU vs Native LRU with variable object sizes."""
-    print("\nTesting Python hook LRU vs Native LRU with variable object sizes...")
-
     cache_size = 1000  # Total cache capacity
 
     # Create native LRU cache
@@ -238,9 +192,6 @@ def test_lru_comparison_variable_sizes():
         (4, 200),  # Miss - 4 was evicted
     ]
 
-    print("\n--- Comparing LRU implementations with variable sizes ---")
-    all_match = True
-
     for i, (obj_id, obj_size) in enumerate(test_requests):
         # Test native LRU
         req_native = lcs.Request()
@@ -255,29 +206,8 @@ def test_lru_comparison_variable_sizes():
         hook_result = hook_lru.get(req_hook)
 
         # Compare results
-        result_match = native_result == hook_result
-        stats_match = (native_lru.cache.n_obj == hook_lru.n_obj and
-                      native_lru.cache.occupied_byte == hook_lru.occupied_byte)
+        assert native_result == hook_result, f"Request {i+1} (obj_id={obj_id}, size={obj_size}): Results differ"
 
-        print(f"Request {i+1}: obj_id={obj_id}, size={obj_size}")
-        print(f"  Native LRU: {'HIT' if native_result else 'MISS'}")
-        print(f"  Hook LRU:   {'HIT' if hook_result else 'MISS'}")
-        print(f"  Result match: {'PASS' if result_match else 'FAIL'}")
-        print(f"  Native stats: {native_lru.cache.n_obj} objects, {native_lru.cache.occupied_byte} bytes")
-        print(f"  Hook stats:   {hook_lru.n_obj} objects, {hook_lru.occupied_byte} bytes")
-        print(f"  Stats match: {'PASS' if stats_match else 'FAIL'}")
-        print()
-
-        if not result_match or not stats_match:
-            all_match = False
-            print(f"ERROR: Mismatch at request {i+1}")
-
-    assert all_match, "Variable size LRU comparison failed - implementations differ!"
-    print("PASS: Variable size LRU comparison test PASSED!")
-
-
-if __name__ == "__main__":
-    test_python_hook_cache()
-    test_error_handling()
-    test_lru_comparison()
-    test_lru_comparison_variable_sizes()
+        # Compare cache statistics
+        assert native_lru.cache.n_obj == hook_lru.n_obj, f"Request {i+1}: Object count differs"
+        assert native_lru.cache.occupied_byte == hook_lru.occupied_byte, f"Request {i+1}: Occupied bytes differ"

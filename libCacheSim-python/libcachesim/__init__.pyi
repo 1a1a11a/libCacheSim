@@ -26,10 +26,12 @@ libCacheSim Python bindings
     PythonHookCachePolicy
     process_trace
     process_trace_python_hook
+    create_zipf_requests
+    create_uniform_requests
 """
 
 from .const import TraceType
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, Iterator
 
 def open_trace(
     trace_path: str,
@@ -57,6 +59,55 @@ def process_trace_python_hook(
 ) -> float:
     """
     Process a trace with a Python hook cache and return miss ratio.
+    """
+
+
+# Trace generation functions
+def create_zipf_requests(
+    num_objects: int,
+    num_requests: int,
+    alpha: float = 1.0,
+    obj_size: int = 4000,
+    time_span: int = 86400 * 7,
+    start_obj_id: int = 0,
+    seed: Optional[int] = None
+) -> Iterator[Request]:
+    """Create a Zipf-distributed request generator.
+
+    Args:
+        num_objects (int): Number of unique objects
+        num_requests (int): Number of requests to generate
+        alpha (float): Zipf skewness parameter (alpha >= 0)
+        obj_size (int): Object size in bytes
+        time_span (int): Time span in seconds
+        start_obj_id (int): Starting object ID
+        seed (int, optional): Random seed for reproducibility
+
+    Returns:
+        Iterator[Request]: A generator that yields Request objects
+    """
+
+
+def create_uniform_requests(
+    num_objects: int,
+    num_requests: int,
+    obj_size: int = 4000,
+    time_span: int = 86400 * 7,
+    start_obj_id: int = 0,
+    seed: Optional[int] = None
+) -> Iterator[Request]:
+    """Create a uniform-distributed request generator.
+
+    Args:
+        num_objects (int): Number of unique objects
+        num_requests (int): Number of requests to generate
+        obj_size (int): Object size in bytes
+        time_span (int): Time span in seconds
+        start_obj_id (int): Starting object ID
+        seed (int, optional): Random seed for reproducibility
+
+    Returns:
+        Iterator[Request]: A generator that yields Request objects
     """
 
 

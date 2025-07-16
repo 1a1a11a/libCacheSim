@@ -19,6 +19,9 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
+dependencies = [
+  "numpy>=1.20.0",
+]
 
 [project.optional-dependencies]
 test = ["pytest"]
@@ -29,7 +32,7 @@ wheel.expand-macos-universal-tags = true
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config"]
+addopts = ["-ra", "--showlocals", "--strict-markers", "--strict-config", "-m", "not optional"]
 xfail_strict = true
 log_cli_level = "INFO"
 filterwarnings = [
@@ -37,6 +40,12 @@ filterwarnings = [
   "ignore::pytest.PytestCacheWarning",
 ]
 testpaths = ["tests"]
+markers = [
+  "optional: mark test as optional",
+]
+python_files = ["test.py", "test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
 
 
 [tool.cibuildwheel]

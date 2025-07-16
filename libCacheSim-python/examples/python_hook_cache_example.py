@@ -156,7 +156,7 @@ def test_cache_policy(cache, name):
 
 def main():
     """Main example function."""
-    cache_size = 400  # Bytes (can hold 4 objects of size 100 each)
+    cache_size = 500  # Bytes (can hold 5 objects of size 100 each)
 
     # Test LRU cache
     lru_cache = create_lru_cache(cache_size)

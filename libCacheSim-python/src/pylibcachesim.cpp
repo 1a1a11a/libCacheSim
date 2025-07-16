@@ -224,15 +224,43 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
       .value("UNKNOWN_TRACE", trace_type_e::UNKNOWN_TRACE)
       .export_values();
 
+  py::enum_<req_op_e>(m, "ReqOp")
+      .value("NOP", req_op_e::OP_NOP)
+      .value("GET", req_op_e::OP_GET)
+      .value("GETS", req_op_e::OP_GETS)
+      .value("SET", req_op_e::OP_SET)
+      .value("ADD", req_op_e::OP_ADD)
+      .value("CAS", req_op_e::OP_CAS)
+      .value("REPLACE", req_op_e::OP_REPLACE)
+      .value("APPEND", req_op_e::OP_APPEND)
+      .value("PREPEND", req_op_e::OP_PREPEND)
+      .value("DELETE", req_op_e::OP_DELETE)
+      .value("INCR", req_op_e::OP_INCR)
+      .value("DECR", req_op_e::OP_DECR)
+      .value("READ", req_op_e::OP_READ)
+      .value("WRITE", req_op_e::OP_WRITE)
+      .value("UPDATE", req_op_e::OP_UPDATE)
+      .value("INVALID", req_op_e::OP_INVALID)
+      .export_values();
+
   // *************** structs ***************
   /**
    * @brief Cache structure
    */
   py::class_<cache_t, std::unique_ptr<cache_t, CacheDeleter>>(m, "Cache")
       .def_readwrite("n_req", &cache_t::n_req)
-      .def_readwrite("n_obj", &cache_t::n_obj)
-      .def_readwrite("occupied_byte", &cache_t::occupied_byte)
       .def_readwrite("cache_size", &cache_t::cache_size)
+      // Use proper accessor functions for private fields
+      .def_property_readonly(
+          "n_obj",
+          [](const cache_t& self) {
+            return self.get_n_obj(const_cast<cache_t*>(&self));
+          })
+      .def_property_readonly(
+          "occupied_byte",
+          [](const cache_t& self) {
+            return self.get_occupied_byte(const_cast<cache_t*>(&self));
+          })
       // methods
       .def("get", [](cache_t& self, const request_t& req) {
         return self.get(&self, &req);
