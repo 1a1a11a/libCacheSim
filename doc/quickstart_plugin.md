@@ -8,6 +8,22 @@
 
 ## 1 . How the Plugin System Works
 
+A series of hook functions defines the behavior of the custom cache during cache hits and misses. In essence, `libCacheSim` maintains a basic cache that tracks whether an object is a hit or miss, whether the cache is full, and provides hooks accordingly. The actual cache management logic—such as deciding which object(s) to evict on a miss—is entirely delegated to the plugin via these hooks.
+
+```mermaid
+graph LR
+    C[Cache Request] --> D{Object in<br/>libCacheSim Cache?}
+    D -->|Yes| E["cache_hit_hook()<br/>Update plugin cache stats"]
+    D -->|No| F{libCacheSim Cache Full?}
+    F -->|Yes| G["cache_eviction_hook()<br/>plugin cache determines the object(s) to evict"]
+    F -->|No| H["cache_miss_hook()<br/>Update plugin cache stats"]
+    G --> H
+
+    style E fill:#bfb,stroke:#333,stroke-width:2px
+    style G fill:#fbb,stroke:#333,stroke-width:2px
+    style H fill:#bbf,stroke:#333,stroke-width:2px
+```
+
 libCacheSim supports two types of plugins:
 
 ### 1.1 C/C++ Plugins
