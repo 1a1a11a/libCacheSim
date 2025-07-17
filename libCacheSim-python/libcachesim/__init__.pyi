@@ -30,9 +30,11 @@ libCacheSim Python bindings
     create_uniform_requests
 """
 
-from .const import TraceType
 from typing import Any, Callable, Optional, Union
 from collections.abc import Iterator
+
+from _libcachesim import TraceType
+
 
 def open_trace(
     trace_path: str,
