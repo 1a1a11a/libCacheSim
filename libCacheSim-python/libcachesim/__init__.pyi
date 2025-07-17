@@ -33,7 +33,27 @@ libCacheSim Python bindings
 from typing import Any, Callable, Optional, Union
 from collections.abc import Iterator
 
-from _libcachesim import TraceType
+from _libcachesim import TraceType, ReqOp
+
+
+class ReqOp:
+    """Request operation types."""
+    NOP: int
+    GET: int
+    GETS: int
+    SET: int
+    ADD: int
+    CAS: int
+    REPLACE: int
+    APPEND: int
+    PREPEND: int
+    DELETE: int
+    INCR: int
+    DECR: int
+    READ: int
+    WRITE: int
+    UPDATE: int
+    INVALID: int
 
 
 def open_trace(
@@ -125,9 +145,11 @@ class reader_init_param_t:
 
 class Cache:
     n_req: int
-    n_obj: int
-    occupied_byte: int
     cache_size: int
+    @property
+    def n_obj(self) -> int: ...
+    @property
+    def occupied_byte(self) -> int: ...
     def get(self, req: Request) -> bool: ...
 
 
@@ -136,7 +158,22 @@ class Request:
     hv: int
     obj_id: int
     obj_size: int
-    op: int
+    op: ReqOp
+
+    def __init__(self) -> None: ...
+    def __init__(self, obj_id: int, obj_size: int = 1, clock_time: int = 0, hv: int = 0, op: ReqOp = ReqOp.GET) -> None:
+        """Create a request instance.
+
+        Args:
+            obj_id (int): The object ID.
+            obj_size (int): The object size. (default: 1)
+            clock_time (int): The clock time. (default: 0)
+            hv (int): The hash value. (default: 0)
+            op (ReqOp): The operation. (default: ReqOp.GET)
+
+        Returns:
+            Request: A new request instance.
+        """
 
 
 class Reader:

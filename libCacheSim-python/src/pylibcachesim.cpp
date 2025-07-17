@@ -267,6 +267,32 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
   py::class_<request_t, std::unique_ptr<request_t, RequestDeleter>>(m,
                                                                     "Request")
       .def(py::init([]() { return new_request(); }))
+      .def(py::init([](uint64_t obj_id, uint64_t obj_size, uint64_t clock_time,
+                       uint64_t hv, req_op_e op) {
+             request_t* req = new_request();
+             req->obj_id = obj_id;
+             req->obj_size = obj_size;
+             req->clock_time = clock_time;
+             req->hv = hv;
+             req->op = op;
+             return req;
+           }),
+           py::arg("obj_id"), py::arg("obj_size") = 1,
+           py::arg("clock_time") = 0, py::arg("hv") = 0,
+           py::arg("op") = req_op_e::OP_GET,
+           R"pbdoc(
+            Create a request instance.
+
+            Args:
+                obj_id (int): The object ID.
+                obj_size (int): The object size. (default: 1)
+                clock_time (int): The clock time. (default: 0)
+                hv (int): The hash value. (default: 0)
+                op (req_op_e): The operation. (default: OP_GET)
+
+            Returns:
+                Request: A new request instance.
+        )pbdoc")
       .def_readwrite("clock_time", &request_t::clock_time)
       .def_readwrite("hv", &request_t::hv)
       .def_readwrite("obj_id", &request_t::obj_id)
