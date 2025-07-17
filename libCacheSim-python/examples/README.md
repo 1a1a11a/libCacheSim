@@ -205,21 +205,6 @@ for alpha in [0.5, 1.0, 1.5, 2.0]:
     print(f"α={alpha}: Hit ratio={hit_count/10000:.3f}")
 ```
 
-### 3. Real Trace Analysis
-
-```python
-import libcachesim as lcs
-
-# Open real trace file
-reader = lcs.open_trace("trace.csv", lcs.TraceType.CSV_TRACE)
-
-# Process with different cache sizes
-for cache_size in [1024*1024, 2*1024*1024, 4*1024*1024]:
-    cache = lcs.LRU(cache_size)
-    miss_ratio = lcs.process_trace(cache, reader)
-    print(f"Cache {cache_size//1024//1024}MB: Miss ratio {miss_ratio:.4f}")
-```
-
 ## Parameters
 
 ### Trace Generation Parameters
@@ -231,7 +216,7 @@ for cache_size in [1024*1024, 2*1024*1024, 4*1024*1024]:
 
 ### Cache Parameters
 - `cache_size`: Cache capacity in bytes
-- Algorithm-specific parameters (e.g., `alpha` for ARC, `fifo_size_ratio` for S3FIFO)
+- Algorithm-specific parameters (e.g.,`fifo_size_ratio` for S3FIFO)
 
 ## Running Examples
 

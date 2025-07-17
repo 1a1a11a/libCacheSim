@@ -18,6 +18,7 @@ from ._libcachesim import (
     LRB_init,
     LRU_init,
     QDLP_init,
+    Reader,
     Request,
     S3FIFO_init,
     Sieve_init,
@@ -28,6 +29,8 @@ from ._libcachesim import (
     WTinyLFU_init,
     PythonHookCache,
 )
+
+from .trace_generator import _ZipfRequestGenerator, _UniformRequestGenerator
 
 
 class EvictionPolicyBase(ABC):
@@ -90,8 +93,19 @@ class EvictionPolicy(EvictionPolicyBase):
             >>> miss_ratio = cache.process_trace(reader)
             >>> print(f"Miss ratio: {miss_ratio:.4f}")
         """
-        from ._libcachesim import process_trace
-        return process_trace(self.cache, reader, start_req, max_req)
+        if not isinstance(reader, Reader):
+            # streaming generator
+            if (isinstance(reader, _ZipfRequestGenerator) or
+                isinstance(reader, _UniformRequestGenerator)):
+                miss_cnt = 0
+                for req in reader:
+                    hit = self.get(req)
+                    if not hit:
+                        miss_cnt += 1
+                return miss_cnt / len(reader)
+        else:
+            from ._libcachesim import process_trace
+            return process_trace(self.cache, reader, start_req, max_req)
 
     def __repr__(self):
         return f"{self.__class__.__name__}(cache_size={self.cache.cache_size})"

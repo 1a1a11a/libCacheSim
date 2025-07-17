@@ -3,6 +3,8 @@
 [![Python Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml)
 [![Python Versions](https://img.shields.io/pypi/pyversions/libcachesim.svg?logo=python&logoColor=white)](https://pypi.org/project/libcachesim)
 [![PyPI Version](https://img.shields.io/pypi/v/libcachesim.svg?)](https://pypi.org/project/libcachesim)
+![PyPI - Downloads](https://img.shields.io/pypi/dd/libcachesim)
+
 
 Python bindings for libCacheSim, a high-performance cache simulator and analysis library.
 
@@ -187,6 +189,7 @@ print(f"Cache hit: {hit}")  # Should be False (miss)
 - **Clock**: Clock/Second-chance algorithm
 
 #### Advanced Algorithms
+- **QDLP**: Queue Demotion with Lazy Promotion
 - **S3FIFO**: Simple, Fast, Fair FIFO (recommended for most workloads)
 - **Sieve**: High-performance eviction algorithm
 - **ARC**: Adaptive Replacement Cache
@@ -196,7 +199,6 @@ print(f"Cache hit: {hit}")  # Should be False (miss)
 - **WTinyLFU**: Windowed TinyLFU
 
 #### Research/ML Algorithms
-- **QDLP**: Queue Demotion with Lazy Promotion (2023)
 - **LeCaR**: Learning Cache Replacement (adaptive)
 - **Cacheus**: Cache replacement policy
 - **LRB**: Learning-based cache (if enabled)

@@ -330,7 +330,8 @@ pip install libcachesim
 ```python
 import libcachesim as lcs
 
-reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin")
+reader = lcs.create_zipf_requests(num_objects=1000, num_requests=10000) # synthetic trace
+# reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin") # real trace
 cache = lcs.FIFO(cache_size=1024*1024)
 miss_ratio = cache.process_trace(reader)
 print(f"Miss ratio: {miss_ratio:.4f}")
