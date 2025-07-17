@@ -183,6 +183,7 @@ print(f"Cache hit: {hit}")  # Should be False (miss)
 - **FIFO**: First-In-First-Out
 - **LRU**: Least Recently Used
 - **LFU**: Least Frequently Used
+- **LFUDA**: LFU with Dynamic Aging
 - **Clock**: Clock/Second-chance algorithm
 
 #### Advanced Algorithms
@@ -190,13 +191,21 @@ print(f"Cache hit: {hit}")  # Should be False (miss)
 - **Sieve**: High-performance eviction algorithm
 - **ARC**: Adaptive Replacement Cache
 - **TwoQ**: Two-Queue algorithm
-- **TinyLFU**: TinyLFU with window
 - **SLRU**: Segmented LRU
+- **TinyLFU**: TinyLFU with window
+- **WTinyLFU**: Windowed TinyLFU
 
 #### Research/ML Algorithms
+- **QDLP**: Queue Demotion with Lazy Promotion (2023)
+- **LeCaR**: Learning Cache Replacement (adaptive)
+- **Cacheus**: Cache replacement policy
 - **LRB**: Learning-based cache (if enabled)
 - **GLCache**: Machine learning-based cache
 - **ThreeLCache**: Three-level cache hierarchy (if enabled)
+
+#### Optimal Algorithms (for analysis)
+- **Belady**: Optimal offline algorithm
+- **BeladySize**: Size-aware optimal algorithm
 
 ```python
 import libcachesim as lcs
@@ -205,7 +214,7 @@ import libcachesim as lcs
 cache_size = 1024 * 1024  # 1MB
 
 lru_cache = lcs.LRU(cache_size)
-s3fifo_cache = lcs.S3FIFO(cache_size)      # Recommended
+s3fifo_cache = lcs.S3FIFO(cache_size)
 sieve_cache = lcs.Sieve(cache_size)
 arc_cache = lcs.ARC(cache_size)
 

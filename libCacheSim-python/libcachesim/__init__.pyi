@@ -186,8 +186,23 @@ class EvictionPolicyBase:
 
 
 # Eviction policy classes
-class FIFO(EvictionPolicyBase):
-    """First In First Out replacement policy."""
+class ARC(EvictionPolicyBase):
+    """Adaptive Replacement Cache policy."""
+    def __init__(self, cache_size: int) -> None: ...
+
+
+class Belady(EvictionPolicyBase):
+    """Belady replacement policy (optimal offline algorithm)."""
+    def __init__(self, cache_size: int) -> None: ...
+
+
+class BeladySize(EvictionPolicyBase):
+    """BeladySize replacement policy (optimal offline algorithm with size consideration)."""
+    def __init__(self, cache_size: int) -> None: ...
+
+
+class Cacheus(EvictionPolicyBase):
+    """Cacheus replacement policy."""
     def __init__(self, cache_size: int) -> None: ...
 
 
@@ -196,9 +211,24 @@ class Clock(EvictionPolicyBase):
     def __init__(self, cache_size: int, n_bit_counter: int = 1, init_freq: int = 0) -> None: ...
 
 
-class TwoQ(EvictionPolicyBase):
-    """2Q replacement policy."""
-    def __init__(self, cache_size: int, ain_size_ratio: float = 0.25, aout_size_ratio: float = 0.5) -> None: ...
+class FIFO(EvictionPolicyBase):
+    """First In First Out replacement policy."""
+    def __init__(self, cache_size: int) -> None: ...
+
+
+class LeCaR(EvictionPolicyBase):
+    """LeCaR (Learning Cache Replacement) adaptive replacement policy."""
+    def __init__(self, cache_size: int) -> None: ...
+
+
+class LFU(EvictionPolicyBase):
+    """LFU (Least Frequently Used) replacement policy."""
+    def __init__(self, cache_size: int) -> None: ...
+
+
+class LFUDA(EvictionPolicyBase):
+    """LFUDA (LFU with Dynamic Aging) replacement policy."""
+    def __init__(self, cache_size: int) -> None: ...
 
 
 class LRB(EvictionPolicyBase):
@@ -211,8 +241,8 @@ class LRU(EvictionPolicyBase):
     def __init__(self, cache_size: int) -> None: ...
 
 
-class ARC(EvictionPolicyBase):
-    """Adaptive Replacement Cache policy."""
+class QDLP(EvictionPolicyBase):
+    """QDLP (Queue Demotion with Lazy Promotion) replacement policy."""
     def __init__(self, cache_size: int) -> None: ...
 
 
@@ -227,6 +257,11 @@ class Sieve(EvictionPolicyBase):
     def __init__(self, cache_size: int) -> None: ...
 
 
+class SLRU(EvictionPolicyBase):
+    """SLRU (Segmented LRU) replacement policy."""
+    def __init__(self, cache_size: int) -> None: ...
+
+
 class ThreeLCache(EvictionPolicyBase):
     """ThreeL cache replacement policy."""
     def __init__(self, cache_size: int, objective: str = "byte-miss-ratio") -> None: ...
@@ -234,6 +269,16 @@ class ThreeLCache(EvictionPolicyBase):
 
 class TinyLFU(EvictionPolicyBase):
     """TinyLFU replacement policy."""
+    def __init__(self, cache_size: int, main_cache: str = "SLRU", window_size: float = 0.01) -> None: ...
+
+
+class TwoQ(EvictionPolicyBase):
+    """2Q replacement policy."""
+    def __init__(self, cache_size: int, ain_size_ratio: float = 0.25, aout_size_ratio: float = 0.5) -> None: ...
+
+
+class WTinyLFU(EvictionPolicyBase):
+    """WTinyLFU (Windowed TinyLFU) replacement policy."""
     def __init__(self, cache_size: int, main_cache: str = "SLRU", window_size: float = 0.01) -> None: ...
 
 

@@ -6,17 +6,26 @@ from abc import ABC, abstractmethod
 
 from ._libcachesim import (
     ARC_init,
+    Belady_init,
+    BeladySize_init,
+    Cacheus_init,
     Cache,
     Clock_init,
     FIFO_init,
+    LeCaR_init,
+    LFU_init,
+    LFUDA_init,
     LRB_init,
     LRU_init,
+    QDLP_init,
     Request,
     S3FIFO_init,
     Sieve_init,
+    SLRU_init,
     ThreeLCache_init,
     TinyLFU_init,
     TwoQ_init,
+    WTinyLFU_init,
     PythonHookCache,
 )
 
@@ -355,6 +364,119 @@ class TinyLFU(EvictionPolicy):
                 f"main_cache={self.main_cache}, "
                 f"window_size={self.window_size})")
 
+
+class LFU(EvictionPolicy):
+    """LFU (Least Frequently Used) replacement policy.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return LFU_init(cache_size)
+
+
+class LFUDA(EvictionPolicy):
+    """LFUDA (LFU with Dynamic Aging) replacement policy.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return LFUDA_init(cache_size)
+
+
+class SLRU(EvictionPolicy):
+    """SLRU (Segmented LRU) replacement policy.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return SLRU_init(cache_size)
+
+
+class Belady(EvictionPolicy):
+    """Belady replacement policy (optimal offline algorithm).
+
+    Note: Requires oracle trace with future access information.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return Belady_init(cache_size)
+
+
+class BeladySize(EvictionPolicy):
+    """BeladySize replacement policy (optimal offline algorithm with size consideration).
+
+    Note: Requires oracle trace with future access information.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return BeladySize_init(cache_size)
+
+
+class QDLP(EvictionPolicy):
+    """QDLP (Queue Demotion with Lazy Promotion) replacement policy.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return QDLP_init(cache_size)
+
+
+class LeCaR(EvictionPolicy):
+    """LeCaR (Learning Cache Replacement) adaptive replacement policy.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return LeCaR_init(cache_size)
+
+
+class Cacheus(EvictionPolicy):
+    """Cacheus replacement policy.
+
+    Args:
+        cache_size: Size of the cache
+    """
+    def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
+        return Cacheus_init(cache_size)
+
+
+class WTinyLFU(EvictionPolicy):
+    """WTinyLFU (Windowed TinyLFU) replacement policy.
+
+    Args:
+        cache_size: Size of the cache
+        main_cache: Main cache to use (default: "SLRU")
+        window_size: Window size for TinyLFU (default: 0.01)
+    """
+    def __init__(self, cache_size: int, main_cache: str = "SLRU", window_size: float = 0.01):
+        super().__init__(cache_size, main_cache=main_cache, window_size=window_size)
+
+    def init_cache(self, cache_size: int, **kwargs):
+        main_cache = kwargs.get('main_cache', "SLRU")
+        window_size = kwargs.get('window_size', 0.01)
+
+        if window_size <= 0:
+            msg = "window_size must be greater than 0"
+            raise ValueError(msg)
+
+        self.main_cache = main_cache
+        self.window_size = window_size
+
+        return WTinyLFU_init(cache_size, main_cache, window_size)
+
+    def __repr__(self):
+        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+                f"main_cache={self.main_cache}, "
+                f"window_size={self.window_size})")
 
 
 class PythonHookCachePolicy(EvictionPolicyBase):
