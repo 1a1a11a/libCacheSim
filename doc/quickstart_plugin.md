@@ -195,9 +195,7 @@ def remove_hook(lru_dict, obj_id):
 cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
 
 # Use it like any other cache
-req = lcs.Request()
-req.obj_id = 1
-req.obj_size = 100
+req = lcs.Request(obj_id=1, obj_size=100)
 hit = cache.get(req)
 print(f"Cache hit: {hit}")  # Should be False (miss)
 ```
@@ -230,9 +228,7 @@ def remove_hook(fifo_queue, obj_id):
 # Set the hooks and test
 cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
 
-req = lcs.Request()
-req.obj_id = 1
-req.obj_size = 100
+req = lcs.Request(obj_id=1, obj_size=100)
 hit = cache.get(req)
 print(f"Cache hit: {hit}")  # Should be False (miss)
 ```
@@ -256,9 +252,7 @@ miss_ratio = cache.process_trace(reader)
 print(f"Miss ratio: {miss_ratio:.4f}")
 
 # Or process individual requests
-req = lcs.Request()
-req.obj_id = 1
-req.obj_size = 100
+req = lcs.Request(obj_id=1, obj_size=100)
 hit = cache.get(req)
 ```
 
