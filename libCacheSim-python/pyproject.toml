@@ -25,6 +25,12 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+dev = [
+    "pytest",
+    "pre-commit",
+    "ruff>=0.7.0",
+    "mypy>=1.0.0",
+]
 
 
 [tool.scikit-build]
