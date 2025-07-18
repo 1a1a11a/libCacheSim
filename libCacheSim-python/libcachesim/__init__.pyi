@@ -30,30 +30,10 @@ libCacheSim Python bindings
     create_uniform_requests
 """
 
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, overload
 from collections.abc import Iterator
 
 from _libcachesim import TraceType, ReqOp
-
-
-class ReqOp:
-    """Request operation types."""
-    NOP: int
-    GET: int
-    GETS: int
-    SET: int
-    ADD: int
-    CAS: int
-    REPLACE: int
-    APPEND: int
-    PREPEND: int
-    DELETE: int
-    INCR: int
-    DECR: int
-    READ: int
-    WRITE: int
-    UPDATE: int
-    INVALID: int
 
 
 def open_trace(
@@ -160,12 +140,29 @@ class Request:
     obj_size: int
     op: ReqOp
 
+    @overload
     def __init__(self) -> None: ...
-    def __init__(self, obj_id: int, obj_size: int = 1, clock_time: int = 0, hv: int = 0, op: ReqOp = ReqOp.GET) -> None:
+    @overload
+    def __init__(
+        self,
+        obj_id: int,
+        obj_size: int = 1,
+        clock_time: int = 0,
+        hv: int = 0,
+        op: ReqOp = ReqOp.GET
+    ) -> None: ...
+    def __init__(
+        self,
+        obj_id: Optional[int] = None,
+        obj_size: int = 1,
+        clock_time: int = 0,
+        hv: int = 0,
+        op: ReqOp = ReqOp.GET
+    ) -> None:
         """Create a request instance.
 
         Args:
-            obj_id (int): The object ID.
+            obj_id (int, optional): The object ID.
             obj_size (int): The object size. (default: 1)
             clock_time (int): The clock time. (default: 0)
             hv (int): The hash value. (default: 0)

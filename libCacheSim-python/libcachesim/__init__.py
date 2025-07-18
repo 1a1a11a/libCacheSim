@@ -1,3 +1,5 @@
+"""libCacheSim Python bindings"""
+
 from __future__ import annotations
 
 from ._libcachesim import (
@@ -41,37 +43,19 @@ from .trace_generator import (
 )
 
 __all__ = [
-    "ARC",
-    "Belady",
-    "BeladySize",
-    "Cacheus",
-    "Cache",
-    "Clock",
-    "FIFO",
-    "LeCaR",
-    "LFU",
-    "LFUDA",
-    "LRB",
-    "LRU",
-    "PythonHookCachePolicy",
-    "QDLP",
-    "Reader",
-    "Request",
-    "ReqOp",
-    "S3FIFO",
-    "Sieve",
-    "SLRU",
-    "ThreeLCache",
-    "TinyLFU",
-    "TraceType",
-    "TwoQ",
-    "WTinyLFU",
-    "__doc__",
-    "__version__",
-    "open_trace",
-    "process_trace",
-    "process_trace_python_hook",
-    # Trace generators
-    "create_zipf_requests",
-    "create_uniform_requests",
+    # Core classes
+    'Cache', 'Reader', 'Request', 'ReaderInitParam',
+    # Trace types and operations
+    'TraceType', 'ReqOp',
+    # Cache policies
+    'LRU', 'FIFO', 'ARC', 'Clock', 'LFU', 'LFUDA', 'SLRU', 'S3FIFO', 'Sieve',
+    'TinyLFU', 'WTinyLFU', 'TwoQ', 'ThreeLCache', 'Belady', 'BeladySize',
+    'LRB', 'QDLP', 'LeCaR', 'Cacheus',
+    # Custom cache policy
+    'PythonHookCachePolicy',
+    # Functions
+    'open_trace', 'process_trace', 'process_trace_python_hook',
+    'create_zipf_requests', 'create_uniform_requests',
+    # Metadata
+    '__doc__', '__version__'
 ]

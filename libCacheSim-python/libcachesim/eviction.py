@@ -96,8 +96,7 @@ class EvictionPolicy(EvictionPolicyBase):
         byte_miss_ratio = 0.0
         if not isinstance(reader, Reader):
             # streaming generator
-            if (isinstance(reader, _ZipfRequestGenerator) or
-                isinstance(reader, _UniformRequestGenerator)):
+            if isinstance(reader, (_ZipfRequestGenerator, _UniformRequestGenerator)):
                 miss_cnt = 0
                 byte_miss_cnt = 0
                 total_byte = 0
@@ -627,8 +626,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
         byte_miss_ratio = 0.0
         if not isinstance(reader, Reader):
             # streaming generator
-            if (isinstance(reader, _ZipfRequestGenerator) or
-                isinstance(reader, _UniformRequestGenerator)):
+            if isinstance(reader, (_ZipfRequestGenerator, _UniformRequestGenerator)):
                 miss_cnt = 0
                 byte_miss_cnt = 0
                 total_byte = 0
