@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from typing import Union
 
 from ._libcachesim import (
     ARC_init,
@@ -110,8 +111,8 @@ class EvictionPolicy(EvictionPolicyBase):
                     if not hit:
                         miss_cnt += 1
                         byte_miss_cnt += req.obj_size
-                obj_miss_ratio = miss_cnt / len(reader)
-                byte_miss_ratio = byte_miss_cnt / total_byte
+                obj_miss_ratio = miss_cnt / len(reader) if len(reader) > 0 else 0.0
+                byte_miss_ratio = byte_miss_cnt / total_byte if total_byte > 0 else 0.0
 
         else:
             from ._libcachesim import process_trace
@@ -644,8 +645,8 @@ class PythonHookCachePolicy(EvictionPolicyBase):
                     if not hit:
                         miss_cnt += 1
                         byte_miss_cnt += req.obj_size
-                obj_miss_ratio = miss_cnt / len(reader)
-                byte_miss_ratio = byte_miss_cnt / total_byte
+                obj_miss_ratio = miss_cnt / len(reader) if len(reader) > 0 else 0.0
+                byte_miss_ratio = byte_miss_cnt / total_byte if total_byte > 0 else 0.0
 
         from ._libcachesim import process_trace_python_hook
         obj_miss_ratio, byte_miss_ratio = process_trace_python_hook(

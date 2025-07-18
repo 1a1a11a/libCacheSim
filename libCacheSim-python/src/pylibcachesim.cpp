@@ -1238,7 +1238,7 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
       [](PythonHookCache& cache, reader_t& reader, int64_t start_req = 0,
          int64_t max_req = -1) {
         request_t* req = new_request();
-        int n_req = 0, n_hit = 0;
+        int64_t n_req = 0, n_hit = 0;
         int64_t bytes_req = 0, bytes_hit = 0;
         bool hit;
 
