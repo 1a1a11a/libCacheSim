@@ -126,7 +126,11 @@ def test_cache_policy(cache, name):
 
     # Test requests: obj_id, obj_size
     test_requests = [
-        (1, 100), (2, 100), (3, 100), (4, 100), (5, 100),  # Fill cache
+        (1, 100),
+        (2, 100),
+        (3, 100),
+        (4, 100),
+        (5, 100),  # Fill cache
         (1, 100),  # Hit
         (6, 100),  # Miss, should evict something
         (2, 100),  # Hit or miss depending on policy

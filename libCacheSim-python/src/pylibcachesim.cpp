@@ -402,6 +402,8 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
       }
       std::string fmt = dict_params["binary_fmt_str"].cast<std::string>();
       if (!fmt.empty()) {
+        // Note: Using strdup for C-compatible memory allocation
+        // Memory is managed by reader_init_param_t destructor/cleanup
         params.binary_fmt_str = strdup(fmt.c_str());
         if (!params.binary_fmt_str) {
           throw std::runtime_error(
@@ -417,7 +419,8 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
                               std::to_string(N_MAX_FEATURES) + ")");
       }
       params.n_feature_fields = static_cast<int32_t>(ff.size());
-      std::copy(ff.begin(), ff.end(), params.feature_fields);
+      // Use copy_n for explicit bounds checking
+      std::copy_n(ff.begin(), params.n_feature_fields, params.feature_fields);
     }
   };
 
@@ -452,27 +455,42 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
            }),
            py::arg("params"), "Create from dictionary (backward compatibility)")
       .def("__repr__", [](const reader_init_param_t& params) {
-        // Return standard fields
         std::stringstream ss;
-        ss << "ReaderInitParam(";
-        ss << "time_field=" << params.time_field << ", ";
+        ss << "ReaderInitParam(\n";
+
+        // Group 1: Core fields
+        ss << "  # Core fields\n";
+        ss << "  time_field=" << params.time_field << ", ";
         ss << "obj_id_field=" << params.obj_id_field << ", ";
-        ss << "obj_size_field=" << params.obj_size_field << ", ";
-        ss << "has_header=" << params.has_header << ", ";
+        ss << "obj_size_field=" << params.obj_size_field << ",\n";
+
+        // Group 2: Flags and options
+        ss << "  # Flags and options\n";
+        ss << "  has_header=" << params.has_header << ", ";
         ss << "ignore_obj_size=" << params.ignore_obj_size << ", ";
         ss << "ignore_size_zero_req=" << params.ignore_size_zero_req << ", ";
-        ss << "obj_id_is_num=" << params.obj_id_is_num << ", ";
-        ss << "obj_id_is_num_set=" << params.obj_id_is_num_set << ", ";
-        ss << "has_header_set=" << params.has_header_set << ", ";
-        ss << "cap_at_n_req=" << params.cap_at_n_req << ", ";
+        ss << "obj_id_is_num=" << params.obj_id_is_num << ",\n";
+
+        // Group 3: Internal state flags
+        ss << "  # Internal state\n";
+        ss << "  obj_id_is_num_set=" << params.obj_id_is_num_set << ", ";
+        ss << "has_header_set=" << params.has_header_set << ",\n";
+
+        // Group 4: Optional fields
+        ss << "  # Optional fields\n";
+        ss << "  cap_at_n_req=" << params.cap_at_n_req << ", ";
         ss << "op_field=" << params.op_field << ", ";
         ss << "ttl_field=" << params.ttl_field << ", ";
-        ss << "cnt_field=" << params.cnt_field << ", ";
-        ss << "tenant_field=" << params.tenant_field << ", ";
+        ss << "cnt_field=" << params.cnt_field << ",\n";
+        ss << "  tenant_field=" << params.tenant_field << ", ";
         ss << "next_access_vtime_field=" << params.next_access_vtime_field
-           << ", ";
-        ss << "block_size=" << params.block_size << ", ";
-        ss << "trace_start_offset=" << params.trace_start_offset << ")";
+           << ",\n";
+
+        // Group 5: Miscellaneous
+        ss << "  # Miscellaneous\n";
+        ss << "  block_size=" << params.block_size << ", ";
+        ss << "trace_start_offset=" << params.trace_start_offset;
+        ss << "\n)";
         return ss.str();
       });
 

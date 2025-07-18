@@ -61,7 +61,7 @@ class _ZipfRequestGenerator:
         obj_size: int = 4000,
         time_span: int = 86400 * 7,
         start_obj_id: int = 0,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
     ):
         """Initialize Zipf request generator.
 
@@ -111,7 +111,7 @@ class _UniformRequestGenerator:
         obj_size: int = 4000,
         time_span: int = 86400 * 7,
         start_obj_id: int = 0,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
     ):
         """Initialize uniform request generator.
 
@@ -157,7 +157,7 @@ def create_zipf_requests(
     obj_size: int = 4000,
     time_span: int = 86400 * 7,
     start_obj_id: int = 0,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
 ) -> _ZipfRequestGenerator:
     """Create a Zipf-distributed request generator.
 
@@ -180,7 +180,7 @@ def create_zipf_requests(
         obj_size=obj_size,
         time_span=time_span,
         start_obj_id=start_obj_id,
-        seed=seed
+        seed=seed,
     )
 
 
@@ -190,7 +190,7 @@ def create_uniform_requests(
     obj_size: int = 4000,
     time_span: int = 86400 * 7,
     start_obj_id: int = 0,
-    seed: Optional[int] = None
+    seed: Optional[int] = None,
 ) -> _UniformRequestGenerator:
     """Create a uniform-distributed request generator.
 
@@ -211,5 +211,5 @@ def create_uniform_requests(
         obj_size=obj_size,
         time_span=time_span,
         start_obj_id=start_obj_id,
-        seed=seed
+        seed=seed,
     )

@@ -14,19 +14,13 @@ class TestTraceGeneration:
 
     def test_create_zipf_requests_basic(self):
         """Test basic Zipf request creation."""
-        generator = lcs.create_zipf_requests(
-            num_objects=100,
-            num_requests=1000,
-            alpha=1.0,
-            obj_size=4000,
-            seed=42
-        )
+        generator = lcs.create_zipf_requests(num_objects=100, num_requests=1000, alpha=1.0, obj_size=4000, seed=42)
 
         # Test iteration
         requests = list(generator)
         assert len(requests) == 1000
 
-        for req in requests[:self.NUM_SAMPLE_REQUESTS]:  # Check first NUM_SAMPLE_REQUESTS
+        for req in requests[: self.NUM_SAMPLE_REQUESTS]:  # Check first NUM_SAMPLE_REQUESTS
             assert isinstance(req, lcs.Request)
             assert 0 <= req.obj_id < 100
             assert req.obj_size == 4000
@@ -34,18 +28,13 @@ class TestTraceGeneration:
 
     def test_create_uniform_requests_basic(self):
         """Test basic uniform request creation."""
-        generator = lcs.create_uniform_requests(
-            num_objects=100,
-            num_requests=1000,
-            obj_size=4000,
-            seed=42
-        )
+        generator = lcs.create_uniform_requests(num_objects=100, num_requests=1000, obj_size=4000, seed=42)
 
         # Test iteration
         requests = list(generator)
         assert len(requests) == 1000
 
-        for req in requests[:self.NUM_SAMPLE_REQUESTS]:  # Check first NUM_SAMPLE_REQUESTS
+        for req in requests[: self.NUM_SAMPLE_REQUESTS]:  # Check first NUM_SAMPLE_REQUESTS
             assert isinstance(req, lcs.Request)
             assert 0 <= req.obj_id < 100
             assert req.obj_size == 4000
@@ -87,13 +76,13 @@ class TestTraceGeneration:
 
     def test_zipf_with_cache(self):
         """Test Zipf generator with cache simulation."""
-        cache = lcs.LRU(cache_size=50*1024)  # 50KB cache
+        cache = lcs.LRU(cache_size=50 * 1024)  # 50KB cache
         generator = lcs.create_zipf_requests(
             num_objects=100,
             num_requests=1000,
             alpha=1.0,
             obj_size=1000,  # 1KB objects
-            seed=42
+            seed=42,
         )
 
         hit_count = 0
@@ -107,12 +96,12 @@ class TestTraceGeneration:
 
     def test_uniform_with_cache(self):
         """Test uniform generator with cache simulation."""
-        cache = lcs.LRU(cache_size=50*1024)  # 50KB cache
+        cache = lcs.LRU(cache_size=50 * 1024)  # 50KB cache
         generator = lcs.create_uniform_requests(
             num_objects=100,
             num_requests=1000,
             obj_size=1000,  # 1KB objects
-            seed=42
+            seed=42,
         )
 
         hit_count = 0
@@ -133,14 +122,14 @@ class TestTraceGeneration:
             obj_size=2048,
             time_span=3600,  # 1 hour
             start_obj_id=1000,
-            seed=123
+            seed=123,
         )
 
         requests = list(generator)
         assert len(requests) == 200
 
         # Check custom parameters
-        for req in requests[:self.NUM_SAMPLE_REQUESTS//2]:  # Check fewer for shorter test
+        for req in requests[: self.NUM_SAMPLE_REQUESTS // 2]:  # Check fewer for shorter test
             assert 1000 <= req.obj_id < 1050  # start_obj_id + num_objects
             assert req.obj_size == 2048
             assert req.clock_time <= 3600

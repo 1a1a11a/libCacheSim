@@ -9,7 +9,7 @@ import sys
 import os
 
 # Add parent directory for development testing
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 try:
     import libcachesim as lcs
@@ -24,9 +24,7 @@ from collections import OrderedDict
 def create_trace_reader():
     """Helper function to create a trace reader."""
     data_file = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        "data",
-        "cloudPhysicsIO.oracleGeneral.bin"
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "cloudPhysicsIO.oracleGeneral.bin"
     )
     if not os.path.exists(data_file):
         print(f"Warning: Trace file not found at {data_file}")
@@ -98,8 +96,10 @@ def demo_unified_interface():
     print("   All caches provide: cache_size, n_obj, occupied_byte, n_req")
 
     for name, cache in caches.items():
-        print(f"   {name:20s}: size={cache.cache_size}, objs={cache.n_obj}, "
-              f"bytes={cache.occupied_byte}, reqs={cache.n_req}")
+        print(
+            f"   {name:20s}: size={cache.cache_size}, objs={cache.n_obj}, "
+            f"bytes={cache.occupied_byte}, reqs={cache.n_req}"
+        )
 
     # Demo 3: Efficient trace processing
     print("\n3. Efficient Trace Processing Interface:")

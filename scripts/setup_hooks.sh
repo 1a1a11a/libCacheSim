@@ -35,15 +35,17 @@ cd "$GIT_ROOT"
 
 # Get a list of staged files
 STAGED_CPP_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.([ch](pp)?|cc)$' || true)
+# Convert Python files to array for proper handling of filenames with spaces
+readarray -t STAGED_PY_FILES_ARRAY < <(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
 STAGED_PY_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
 
-if [ -z "$STAGED_CPP_FILES" ] && [ -z "$STAGED_PY_FILES" ]; then
+if [ -z "$STAGED_CPP_FILES" ] && [ ${#STAGED_PY_FILES_ARRAY[@]} -eq 0 ]; then
     echo -e "${GREEN}No C/C++ or Python files to check.${NC}"
     exit 0
 fi
 
 NUM_CPP_FILES=$(echo "$STAGED_CPP_FILES" | grep -c . || echo "0")
-NUM_PY_FILES=$(echo "$STAGED_PY_FILES" | grep -c . || echo "0")
+NUM_PY_FILES=${#STAGED_PY_FILES_ARRAY[@]}
 echo -e "${BLUE}Found ${NUM_CPP_FILES} C/C++ files and ${NUM_PY_FILES} Python files to check${NC}"
 
 # Create a temporary build directory for linting
@@ -185,7 +187,7 @@ else
 fi
 
 # Check Python files with ruff
-if [ -n "$STAGED_PY_FILES" ]; then
+if [ ${#STAGED_PY_FILES_ARRAY[@]} -gt 0 ]; then
     if command -v ruff >/dev/null 2>&1; then
         echo -e "${BLUE}Running ruff checks on Python files...${NC}"
         RUFF_TIME=$(date +%s)
@@ -198,7 +200,7 @@ if [ -n "$STAGED_PY_FILES" ]; then
 
         # Run ruff check (linting)
         echo -e "${BLUE}Running ruff linting...${NC}"
-        if ! ruff check $STAGED_PY_FILES > "$RUFF_LOG" 2>&1; then
+        if ! ruff check "${STAGED_PY_FILES_ARRAY[@]}" > "$RUFF_LOG" 2>&1; then
             echo -e "${RED}ruff found linting issues. Commit blocked.${NC}"
             echo -e "  See ruff log at: $RUFF_LOG"
             echo -e "  You can fix some issues automatically with: ruff check --fix"
@@ -208,7 +210,7 @@ if [ -n "$STAGED_PY_FILES" ]; then
 
         # Run ruff format check
         echo -e "${BLUE}Running ruff format check...${NC}"
-        if ! ruff format --check $STAGED_PY_FILES > "$RUFF_FORMAT_LOG" 2>&1; then
+        if ! ruff format --check "${STAGED_PY_FILES_ARRAY[@]}" > "$RUFF_FORMAT_LOG" 2>&1; then
             echo -e "${RED}ruff found formatting issues. Commit blocked.${NC}"
             echo -e "  See ruff format log at: $RUFF_FORMAT_LOG"
             echo -e "  You can fix formatting issues with: ruff format <files>"

@@ -5,7 +5,7 @@ def get_reference_data(eviction_algo, cache_size_ratio):
     data_file = os.path.join(  # noqa: PTH118
         (os.path.dirname(os.path.dirname(__file__))),  # noqa: PTH120
         "tests",
-        "reference.csv"
+        "reference.csv",
     )
     with open(data_file) as f:  # noqa: PTH123
         lines = f.readlines()

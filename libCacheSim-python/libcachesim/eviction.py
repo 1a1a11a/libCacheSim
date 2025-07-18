@@ -32,9 +32,13 @@ from ._libcachesim import (
 
 from .trace_generator import _ZipfRequestGenerator, _UniformRequestGenerator
 
+# Define generator types once to avoid repeated tuple creation
+_GENERATOR_TYPES = (_ZipfRequestGenerator, _UniformRequestGenerator)
+
 
 class EvictionPolicyBase(ABC):
     """Abstract base class for all eviction policies."""
+
     @abstractmethod
     def get(self, req: Request) -> bool:
         pass
@@ -63,6 +67,7 @@ class EvictionPolicyBase(ABC):
 
 class EvictionPolicy(EvictionPolicyBase):
     """Base class for all eviction policies."""
+
     def __init__(self, cache_size: int, **kwargs) -> None:
         self.cache: Cache = self.init_cache(cache_size, **kwargs)
 
@@ -96,7 +101,7 @@ class EvictionPolicy(EvictionPolicyBase):
         byte_miss_ratio = 0.0
         if not isinstance(reader, Reader):
             # streaming generator
-            if isinstance(reader, (_ZipfRequestGenerator, _UniformRequestGenerator)):
+            if isinstance(reader, _GENERATOR_TYPES):
                 miss_cnt = 0
                 byte_miss_cnt = 0
                 total_byte = 0
@@ -111,8 +116,8 @@ class EvictionPolicy(EvictionPolicyBase):
                 return obj_miss_ratio, byte_miss_ratio
         else:
             from ._libcachesim import process_trace
-            obj_miss_ratio, byte_miss_ratio = process_trace(self.cache, reader,
-                                                            start_req, max_req)
+
+            obj_miss_ratio, byte_miss_ratio = process_trace(self.cache, reader, start_req, max_req)
 
         return obj_miss_ratio, byte_miss_ratio
 
@@ -146,6 +151,7 @@ class FIFO(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs) -> Cache:  # noqa: ARG002
         return FIFO_init(cache_size)
 
@@ -158,12 +164,13 @@ class Clock(EvictionPolicy):
         n_bit_counter: Number of bits for counter (default: 1)
         init_freq: Initial frequency value (default: 0)
     """
+
     def __init__(self, cache_size: int, n_bit_counter: int = 1, init_freq: int = 0):
         super().__init__(cache_size, n_bit_counter=n_bit_counter, init_freq=init_freq)
 
     def init_cache(self, cache_size: int, **kwargs):
-        init_freq = kwargs.get('init_freq', 0)
-        n_bit_counter = kwargs.get('n_bit_counter', 1)
+        init_freq = kwargs.get("init_freq", 0)
+        n_bit_counter = kwargs.get("n_bit_counter", 1)
 
         if n_bit_counter < 1 or n_bit_counter > 32:
             msg = "n_bit_counter must be between 1 and 32"
@@ -178,9 +185,11 @@ class Clock(EvictionPolicy):
         return Clock_init(cache_size, n_bit_counter, init_freq)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
-                f"n_bit_counter={self.n_bit_counter}, "
-                f"init_freq={self.init_freq})")
+        return (
+            f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+            f"n_bit_counter={self.n_bit_counter}, "
+            f"init_freq={self.init_freq})"
+        )
 
 
 class TwoQ(EvictionPolicy):
@@ -194,12 +203,13 @@ class TwoQ(EvictionPolicy):
         ain_size_ratio: Size ratio for Ain queue (default: 0.25)
         aout_size_ratio: Size ratio for Aout queue (default: 0.5)
     """
+
     def __init__(self, cache_size: int, ain_size_ratio: float = 0.25, aout_size_ratio: float = 0.5):
         super().__init__(cache_size, ain_size_ratio=ain_size_ratio, aout_size_ratio=aout_size_ratio)
 
     def init_cache(self, cache_size: int, **kwargs):
-        ain_size_ratio = kwargs.get('ain_size_ratio', 0.25)
-        aout_size_ratio = kwargs.get('aout_size_ratio', 0.5)
+        ain_size_ratio = kwargs.get("ain_size_ratio", 0.25)
+        aout_size_ratio = kwargs.get("aout_size_ratio", 0.5)
 
         if ain_size_ratio <= 0 or aout_size_ratio <= 0:
             msg = "ain_size_ratio and aout_size_ratio must be greater than 0"
@@ -211,9 +221,11 @@ class TwoQ(EvictionPolicy):
         return TwoQ_init(cache_size, ain_size_ratio, aout_size_ratio)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
-                f"ain_size_ratio={self.ain_size_ratio}, "
-                f"aout_size_ratio={self.aout_size_ratio})")
+        return (
+            f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+            f"ain_size_ratio={self.ain_size_ratio}, "
+            f"aout_size_ratio={self.aout_size_ratio})"
+        )
 
 
 class LRB(EvictionPolicy):
@@ -227,11 +239,12 @@ class LRB(EvictionPolicy):
         cache_size: Size of the cache
         objective: Objective function to optimize (default: "byte-miss-ratio")
     """
+
     def __init__(self, cache_size: int, objective: str = "byte-miss-ratio"):
         super().__init__(cache_size, objective=objective)
 
     def init_cache(self, cache_size: int, **kwargs) -> Cache:
-        objective = kwargs.get('objective', "byte-miss-ratio")
+        objective = kwargs.get("objective", "byte-miss-ratio")
 
         if objective not in ["byte-miss-ratio", "byte-hit-ratio"]:
             msg = "objective must be either 'byte-miss-ratio' or 'byte-hit-ratio'"
@@ -242,8 +255,7 @@ class LRB(EvictionPolicy):
         return LRB_init(cache_size, objective)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
-                f"objective={self.objective})")
+        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, objective={self.objective})"
 
 
 class LRU(EvictionPolicy):
@@ -252,6 +264,7 @@ class LRU(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return LRU_init(cache_size)
 
@@ -267,6 +280,7 @@ class ARC(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return ARC_init(cache_size)
 
@@ -289,16 +303,25 @@ class S3FIFO(EvictionPolicy):
         ghost_size_ratio: Size ratio for ghost queue (default: 0.9)
         move_to_main_threshold: Threshold for moving obj from ghost to main (default: 2)
     """
-    def __init__(self, cache_size: int, fifo_size_ratio: float = 0.1,
-                 ghost_size_ratio: float = 0.9, move_to_main_threshold: int = 2):
-        super().__init__(cache_size, fifo_size_ratio=fifo_size_ratio,
-                         ghost_size_ratio=ghost_size_ratio,
-                         move_to_main_threshold=move_to_main_threshold)
+
+    def __init__(
+        self,
+        cache_size: int,
+        fifo_size_ratio: float = 0.1,
+        ghost_size_ratio: float = 0.9,
+        move_to_main_threshold: int = 2,
+    ):
+        super().__init__(
+            cache_size,
+            fifo_size_ratio=fifo_size_ratio,
+            ghost_size_ratio=ghost_size_ratio,
+            move_to_main_threshold=move_to_main_threshold,
+        )
 
     def init_cache(self, cache_size: int, **kwargs):
-        fifo_size_ratio = kwargs.get('fifo_size_ratio', 0.1)
-        ghost_size_ratio = kwargs.get('ghost_size_ratio', 0.9)
-        move_to_main_threshold = kwargs.get('move_to_main_threshold', 2)
+        fifo_size_ratio = kwargs.get("fifo_size_ratio", 0.1)
+        ghost_size_ratio = kwargs.get("ghost_size_ratio", 0.9)
+        move_to_main_threshold = kwargs.get("move_to_main_threshold", 2)
 
         if fifo_size_ratio <= 0 or ghost_size_ratio <= 0:
             msg = "fifo_size_ratio and ghost_size_ratio must be greater than 0"
@@ -314,10 +337,12 @@ class S3FIFO(EvictionPolicy):
         return S3FIFO_init(cache_size, fifo_size_ratio, ghost_size_ratio, move_to_main_threshold)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
-                f"fifo_size_ratio={self.fifo_size_ratio}, "
-                f"ghost_size_ratio={self.ghost_size_ratio}, "
-                f"move_to_main_threshold={self.move_to_main_threshold})")
+        return (
+            f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+            f"fifo_size_ratio={self.fifo_size_ratio}, "
+            f"ghost_size_ratio={self.ghost_size_ratio}, "
+            f"move_to_main_threshold={self.move_to_main_threshold})"
+        )
 
 
 class Sieve(EvictionPolicy):
@@ -328,6 +353,7 @@ class Sieve(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return Sieve_init(cache_size)
 
@@ -339,11 +365,12 @@ class ThreeLCache(EvictionPolicy):
         cache_size: Size of the cache
         objective: Objective function to optimize (default: "byte-miss-ratio")
     """
+
     def __init__(self, cache_size: int, objective: str = "byte-miss-ratio"):
         super().__init__(cache_size, objective=objective)
 
     def init_cache(self, cache_size: int, **kwargs):
-        objective = kwargs.get('objective', "byte-miss-ratio")
+        objective = kwargs.get("objective", "byte-miss-ratio")
 
         if objective not in ["byte-miss-ratio", "byte-hit-ratio"]:
             msg = "objective must be either 'byte-miss-ratio' or 'byte-hit-ratio'"
@@ -354,8 +381,7 @@ class ThreeLCache(EvictionPolicy):
         return ThreeLCache_init(cache_size, objective)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
-                f"objective={self.objective})")
+        return f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, objective={self.objective})"
 
 
 class TinyLFU(EvictionPolicy):
@@ -366,12 +392,13 @@ class TinyLFU(EvictionPolicy):
         main_cache: Main cache to use (default: "SLRU")
         window_size: Window size for TinyLFU (default: 0.01)
     """
+
     def __init__(self, cache_size: int, main_cache: str = "SLRU", window_size: float = 0.01):
         super().__init__(cache_size, main_cache=main_cache, window_size=window_size)
 
     def init_cache(self, cache_size: int, **kwargs):
-        main_cache = kwargs.get('main_cache', "SLRU")
-        window_size = kwargs.get('window_size', 0.01)
+        main_cache = kwargs.get("main_cache", "SLRU")
+        window_size = kwargs.get("window_size", 0.01)
 
         if window_size <= 0:
             msg = "window_size must be greater than 0"
@@ -383,9 +410,11 @@ class TinyLFU(EvictionPolicy):
         return TinyLFU_init(cache_size, main_cache, window_size)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
-                f"main_cache={self.main_cache}, "
-                f"window_size={self.window_size})")
+        return (
+            f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+            f"main_cache={self.main_cache}, "
+            f"window_size={self.window_size})"
+        )
 
 
 class LFU(EvictionPolicy):
@@ -394,6 +423,7 @@ class LFU(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return LFU_init(cache_size)
 
@@ -404,6 +434,7 @@ class LFUDA(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return LFUDA_init(cache_size)
 
@@ -414,6 +445,7 @@ class SLRU(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return SLRU_init(cache_size)
 
@@ -426,6 +458,7 @@ class Belady(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return Belady_init(cache_size)
 
@@ -438,6 +471,7 @@ class BeladySize(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return BeladySize_init(cache_size)
 
@@ -448,6 +482,7 @@ class QDLP(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return QDLP_init(cache_size)
 
@@ -458,6 +493,7 @@ class LeCaR(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return LeCaR_init(cache_size)
 
@@ -468,6 +504,7 @@ class Cacheus(EvictionPolicy):
     Args:
         cache_size: Size of the cache
     """
+
     def init_cache(self, cache_size: int, **kwargs):  # noqa: ARG002
         return Cacheus_init(cache_size)
 
@@ -480,12 +517,13 @@ class WTinyLFU(EvictionPolicy):
         main_cache: Main cache to use (default: "SLRU")
         window_size: Window size for TinyLFU (default: 0.01)
     """
+
     def __init__(self, cache_size: int, main_cache: str = "SLRU", window_size: float = 0.01):
         super().__init__(cache_size, main_cache=main_cache, window_size=window_size)
 
     def init_cache(self, cache_size: int, **kwargs):
-        main_cache = kwargs.get('main_cache', "SLRU")
-        window_size = kwargs.get('window_size', 0.01)
+        main_cache = kwargs.get("main_cache", "SLRU")
+        window_size = kwargs.get("window_size", 0.01)
 
         if window_size <= 0:
             msg = "window_size must be greater than 0"
@@ -497,9 +535,11 @@ class WTinyLFU(EvictionPolicy):
         return WTinyLFU_init(cache_size, main_cache, window_size)
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
-                f"main_cache={self.main_cache}, "
-                f"window_size={self.window_size})")
+        return (
+            f"{self.__class__.__name__}(cache_size={self.cache.cache_size}, "
+            f"main_cache={self.main_cache}, "
+            f"window_size={self.window_size})"
+        )
 
 
 class PythonHookCachePolicy(EvictionPolicyBase):
@@ -560,6 +600,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
         >>> req.obj_size = 100
         >>> hit = cache.get(req)
     """
+
     def __init__(self, cache_size: int, cache_name: str = "PythonHookCache"):
         self._cache_size = cache_size
         self.cache_name = cache_name
@@ -626,7 +667,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
         byte_miss_ratio = 0.0
         if not isinstance(reader, Reader):
             # streaming generator
-            if isinstance(reader, (_ZipfRequestGenerator, _UniformRequestGenerator)):
+            if isinstance(reader, _GENERATOR_TYPES):
                 miss_cnt = 0
                 byte_miss_cnt = 0
                 total_byte = 0
@@ -641,8 +682,8 @@ class PythonHookCachePolicy(EvictionPolicyBase):
                 return obj_miss_ratio, byte_miss_ratio
         else:
             from ._libcachesim import process_trace_python_hook
-            obj_miss_ratio, byte_miss_ratio = process_trace_python_hook(
-                self.cache, reader, start_req, max_req)
+
+            obj_miss_ratio, byte_miss_ratio = process_trace_python_hook(self.cache, reader, start_req, max_req)
         return obj_miss_ratio, byte_miss_ratio
 
     @property
@@ -666,5 +707,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
         return self.cache.cache_size
 
     def __repr__(self):
-        return (f"{self.__class__.__name__}(cache_size={self._cache_size}, "
-                f"cache_name='{self.cache_name}', hooks_set={self._hooks_set})")
+        return (
+            f"{self.__class__.__name__}(cache_size={self._cache_size}, "
+            f"cache_name='{self.cache_name}', hooks_set={self._hooks_set})"
+        )

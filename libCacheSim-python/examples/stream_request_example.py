@@ -32,9 +32,9 @@ def main():
     zipf_generator = lcs.create_zipf_requests(
         num_objects=num_objects,
         num_requests=num_requests,
-        alpha=1.0,             # Zipf skewness
-        obj_size=obj_size,     # Object size in bytes
-        seed=42                # For reproducibility
+        alpha=1.0,  # Zipf skewness
+        obj_size=obj_size,  # Object size in bytes
+        seed=42,  # For reproducibility
     )
 
     print(f"Cache size: {cache_size // 1024 // 1024}MB")
@@ -61,10 +61,7 @@ def main():
 
     # Create a uniform-distributed request generator
     uniform_generator = lcs.create_uniform_requests(
-        num_objects=num_objects,
-        num_requests=num_requests,
-        obj_size=obj_size,
-        seed=42
+        num_objects=num_objects, num_requests=num_requests, obj_size=obj_size, seed=42
     )
 
     print(f"Generated {num_requests} uniform requests for {num_objects} objects")
@@ -94,11 +91,7 @@ def main():
 
     for alpha in alphas:
         generator = lcs.create_zipf_requests(
-            num_objects=num_objects,
-            num_requests=num_requests,
-            alpha=alpha,
-            obj_size=obj_size,
-            seed=42
+            num_objects=num_objects, num_requests=num_requests, alpha=alpha, obj_size=obj_size, seed=42
         )
 
         cache = lcs.LRU(cache_size=cache_size)
@@ -123,16 +116,12 @@ def main():
 
     # Fixed workload
     generator = lcs.create_zipf_requests(
-        num_objects=num_objects,
-        num_requests=num_requests,
-        alpha=1.0,
-        obj_size=obj_size,
-        seed=42
+        num_objects=num_objects, num_requests=num_requests, alpha=1.0, obj_size=obj_size, seed=42
     )
 
     cache_sizes = [
-        1 * 1024 * 1024,   # 1MB
-        5 * 1024 * 1024,   # 5MB
+        1 * 1024 * 1024,  # 1MB
+        5 * 1024 * 1024,  # 5MB
         10 * 1024 * 1024,  # 10MB
         50 * 1024 * 1024,  # 50MB
     ]
@@ -145,18 +134,14 @@ def main():
 
         # Create fresh generator for each test
         test_generator = lcs.create_zipf_requests(
-            num_objects=num_objects,
-            num_requests=num_requests,
-            alpha=1.0,
-            obj_size=obj_size,
-            seed=42
+            num_objects=num_objects, num_requests=num_requests, alpha=1.0, obj_size=obj_size, seed=42
         )
 
         hit_count = sum(1 for req in test_generator if cache.get(req))
         hit_ratio = hit_count / num_requests
         objects_fit = cache_size // obj_size
 
-        print(f"{cache_size//1024//1024}MB{'':<8} {hit_ratio:<12.3f} ~{objects_fit}")
+        print(f"{cache_size // 1024 // 1024}MB{'':<8} {hit_ratio:<12.3f} ~{objects_fit}")
 
     print("\nNotes:")
     print("- Higher α values create more skewed access patterns")

@@ -23,18 +23,14 @@ def example_basic_trace_generation():
 
     # Create Zipf-distributed requests
     zipf_requests = lcs.create_zipf_requests(
-        num_objects=num_objects,
-        num_requests=num_requests,
-        alpha=alpha,
-        obj_size=obj_size,
-        seed=42
+        num_objects=num_objects, num_requests=num_requests, alpha=alpha, obj_size=obj_size, seed=42
     )
 
     print(f"Generated {num_requests} Zipf requests with α={alpha}")
     print(f"Object size: {obj_size}B, Number of unique objects: {num_objects}")
 
     # Use the requests with a cache
-    cache = lcs.LRU(cache_size=50*1024*1024)  # 50MB cache
+    cache = lcs.LRU(cache_size=50 * 1024 * 1024)  # 50MB cache
     hit_count = sum(1 for req in zipf_requests if cache.get(req))
     hit_ratio = hit_count / num_requests
     print(f"LRU cache hit ratio: {hit_ratio:.4f}")
@@ -48,7 +44,7 @@ def example_compare_zipf_parameters():
 
     num_objects = 1000
     num_requests = 10000
-    cache_size = 50*1024*1024  # 50MB
+    cache_size = 50 * 1024 * 1024  # 50MB
     obj_size = 1024  # 1KB objects
 
     alphas = [0.5, 1.0, 1.5, 2.0]
@@ -60,10 +56,10 @@ def example_compare_zipf_parameters():
     for alpha in alphas:
         # Test with different cache policies
         policies = {
-            'LRU': lcs.LRU(cache_size),
-            'FIFO': lcs.FIFO(cache_size),
-            'ARC': lcs.ARC(cache_size),
-            'Clock': lcs.Clock(cache_size)
+            "LRU": lcs.LRU(cache_size),
+            "FIFO": lcs.FIFO(cache_size),
+            "ARC": lcs.ARC(cache_size),
+            "Clock": lcs.Clock(cache_size),
         }
 
         results[alpha] = {}
@@ -71,11 +67,7 @@ def example_compare_zipf_parameters():
         for name, cache in policies.items():
             # Create fresh request iterator for each cache
             test_requests = lcs.create_zipf_requests(
-                num_objects=num_objects,
-                num_requests=num_requests,
-                alpha=alpha,
-                obj_size=obj_size,
-                seed=42
+                num_objects=num_objects, num_requests=num_requests, alpha=alpha, obj_size=obj_size, seed=42
             )
             hit_count = sum(1 for req in test_requests if cache.get(req))
             hit_ratio = hit_count / num_requests
@@ -96,20 +88,20 @@ def example_algorithm_comparison():
     num_requests = 10000
     alpha = 1.0
     obj_size = 1024
-    cache_size = 10*1024*1024  # 10MB
+    cache_size = 10 * 1024 * 1024  # 10MB
 
     # Available algorithms
     algorithms = {
-        'LRU': lcs.LRU,
-        'FIFO': lcs.FIFO,
-        'ARC': lcs.ARC,
-        'Clock': lcs.Clock,
-        'S3FIFO': lcs.S3FIFO,
-        'Sieve': lcs.Sieve,
+        "LRU": lcs.LRU,
+        "FIFO": lcs.FIFO,
+        "ARC": lcs.ARC,
+        "Clock": lcs.Clock,
+        "S3FIFO": lcs.S3FIFO,
+        "Sieve": lcs.Sieve,
     }
 
     print(f"Testing with: {num_objects} objects, {num_requests} requests")
-    print(f"Cache size: {cache_size//1024//1024}MB, Object size: {obj_size}B")
+    print(f"Cache size: {cache_size // 1024 // 1024}MB, Object size: {obj_size}B")
     print(f"Zipf alpha: {alpha}")
     print()
 
@@ -121,11 +113,7 @@ def example_algorithm_comparison():
         try:
             # Create fresh requests for each algorithm
             requests = lcs.create_zipf_requests(
-                num_objects=num_objects,
-                num_requests=num_requests,
-                alpha=alpha,
-                obj_size=obj_size,
-                seed=42
+                num_objects=num_objects, num_requests=num_requests, alpha=alpha, obj_size=obj_size, seed=42
             )
 
             cache = cache_class(cache_size)
@@ -135,12 +123,12 @@ def example_algorithm_comparison():
 
             # Add descriptions
             descriptions = {
-                'LRU': 'Least Recently Used',
-                'FIFO': 'First In First Out',
-                'ARC': 'Adaptive Replacement Cache',
-                'Clock': 'Clock/Second Chance',
-                'S3FIFO': 'Simple Scalable FIFO',
-                'Sieve': 'Lazy Promotion'
+                "LRU": "Least Recently Used",
+                "FIFO": "First In First Out",
+                "ARC": "Adaptive Replacement Cache",
+                "Clock": "Clock/Second Chance",
+                "S3FIFO": "Simple Scalable FIFO",
+                "Sieve": "Lazy Promotion",
             }
 
             print(f"{name:<10} {hit_ratio:<12.4f} {descriptions.get(name, '')}")
@@ -158,14 +146,11 @@ def example_uniform_vs_zipf():
     num_objects = 1000
     num_requests = 10000
     obj_size = 1024
-    cache_size = 10*1024*1024
+    cache_size = 10 * 1024 * 1024
 
     # Test uniform distribution
     uniform_requests = lcs.create_uniform_requests(
-        num_objects=num_objects,
-        num_requests=num_requests,
-        obj_size=obj_size,
-        seed=42
+        num_objects=num_objects, num_requests=num_requests, obj_size=obj_size, seed=42
     )
 
     cache = lcs.LRU(cache_size)
@@ -174,11 +159,7 @@ def example_uniform_vs_zipf():
 
     # Test Zipf distribution
     zipf_requests = lcs.create_zipf_requests(
-        num_objects=num_objects,
-        num_requests=num_requests,
-        alpha=1.0,
-        obj_size=obj_size,
-        seed=42
+        num_objects=num_objects, num_requests=num_requests, alpha=1.0, obj_size=obj_size, seed=42
     )
 
     cache = lcs.LRU(cache_size)
@@ -190,8 +171,9 @@ def example_uniform_vs_zipf():
     print(f"{'Uniform':<12} {uniform_hit_ratio:<12.4f} {'All objects equally likely'}")
     print(f"{'Zipf (α=1.0)':<12} {zipf_hit_ratio:<12.4f} {'Some objects much more popular'}")
 
-    print(f"\nObservation: Zipf typically shows"
-          f"{'higher' if zipf_hit_ratio > uniform_hit_ratio else 'lower'} hit ratios")
+    print(
+        f"\nObservation: Zipf typically shows{'higher' if zipf_hit_ratio > uniform_hit_ratio else 'lower'} hit ratios"
+    )
     print("due to locality of reference (hot objects get cached)")
 
 
@@ -205,11 +187,11 @@ def example_cache_size_analysis():
     obj_size = 1024
 
     cache_sizes = [
-        1*1024*1024,    # 1MB
-        5*1024*1024,    # 5MB
-        10*1024*1024,   # 10MB
-        25*1024*1024,   # 25MB
-        50*1024*1024,   # 50MB
+        1 * 1024 * 1024,  # 1MB
+        5 * 1024 * 1024,  # 5MB
+        10 * 1024 * 1024,  # 10MB
+        25 * 1024 * 1024,  # 25MB
+        50 * 1024 * 1024,  # 50MB
     ]
 
     print(f"{'Cache Size':<12} {'Objects Fit':<12} {'Hit Ratio':<12} {'Efficiency'}")
@@ -217,20 +199,16 @@ def example_cache_size_analysis():
 
     for cache_size in cache_sizes:
         requests = lcs.create_zipf_requests(
-            num_objects=num_objects,
-            num_requests=num_requests,
-            alpha=alpha,
-            obj_size=obj_size,
-            seed=42
+            num_objects=num_objects, num_requests=num_requests, alpha=alpha, obj_size=obj_size, seed=42
         )
 
         cache = lcs.LRU(cache_size)
         hit_count = sum(1 for req in requests if cache.get(req))
         hit_ratio = hit_count / num_requests
         objects_fit = cache_size // obj_size
-        efficiency = hit_ratio / (cache_size / (1024*1024))  # hit ratio per MB
+        efficiency = hit_ratio / (cache_size / (1024 * 1024))  # hit ratio per MB
 
-        print(f"{cache_size//1024//1024}MB{'':<8} {objects_fit:<12} {hit_ratio:<12.4f} {efficiency:<12.4f}")
+        print(f"{cache_size // 1024 // 1024}MB{'':<8} {objects_fit:<12} {hit_ratio:<12.4f} {efficiency:<12.4f}")
 
 
 def main():
@@ -257,6 +235,7 @@ def main():
     except Exception as e:
         print(f"Error running examples: {e}")
         import traceback
+
         traceback.print_exc()
 
 
