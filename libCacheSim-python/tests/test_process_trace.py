@@ -42,10 +42,10 @@ def test_process_trace_native():
     cache = lcs.LRU(1024*1024)  # 1MB cache
 
     # Process trace and get miss ratio
-    miss_ratio = cache.process_trace(reader, max_req=1000)
+    obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader, max_req=1000)
 
     # Verify miss ratio is reasonable (should be between 0 and 1)
-    assert 0.0 <= miss_ratio <= 1.0, f"Invalid miss ratio: {miss_ratio}"
+    assert 0.0 <= obj_miss_ratio <= 1.0, f"Invalid miss ratio: {obj_miss_ratio}"
 
 
 def test_process_trace_python_hook():
@@ -95,7 +95,7 @@ def test_process_trace_python_hook():
     cache2.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
 
     # Method 2: Convenience method
-    miss_ratio2 = cache2.process_trace(reader2, max_req=1000)
+    miss_ratio2 = cache2.process_trace(reader2, max_req=1000)[0]
 
     # Verify both methods give the same result and miss ratios are reasonable
     assert 0.0 <= miss_ratio1 <= 1.0, f"Invalid miss ratio 1: {miss_ratio1}"
@@ -116,7 +116,7 @@ def test_compare_native_vs_python_hook():
     if reader1 is None:
         pytest.skip("Test trace file not found, skipping test")
 
-    native_miss_ratio = native_cache.process_trace(reader1, max_req=max_requests)
+    native_obj_miss_ratio, native_byte_miss_ratio = native_cache.process_trace(reader1, max_req=max_requests)
 
     # Test Python hook LRU
     hook_cache = lcs.PythonHookCachePolicy(cache_size, "HookLRU")
@@ -143,11 +143,11 @@ def test_compare_native_vs_python_hook():
         pytest.skip("Warning: Cannot reopen trace file, skipping comparison")
         return  # Skip test
 
-    hook_miss_ratio = hook_cache.process_trace(reader2, max_req=max_requests)
+    hook_obj_miss_ratio, hook_byte_miss_ratio = hook_cache.process_trace(reader2, max_req=max_requests)
 
     # They should be very similar (allowing for some small differences due to implementation details)
-    assert abs(native_miss_ratio - hook_miss_ratio) < 0.05,\
-    f"Too much difference: {abs(native_miss_ratio - hook_miss_ratio):.4f}"
+    assert abs(native_obj_miss_ratio - hook_obj_miss_ratio) < 0.05,\
+    f"Too much difference: {abs(native_obj_miss_ratio - hook_obj_miss_ratio):.4f}"
 
 
 def test_error_handling():
@@ -179,18 +179,18 @@ def test_lru_implementation_accuracy():
 
     # Test native LRU
     native_cache = lcs.LRU(cache_size)
-    native_miss_ratio = native_cache.process_trace(reader1, max_req=max_requests)
+    native_obj_miss_ratio, native_byte_miss_ratio = native_cache.process_trace(reader1, max_req=max_requests)
 
     # Test Python hook LRU
     hook_cache = lcs.PythonHookCachePolicy(cache_size, "AccuracyTestLRU")
     init_hook, hit_hook, miss_hook, eviction_hook, remove_hook = create_optimized_lru_hooks()
     hook_cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
 
-    hook_miss_ratio = hook_cache.process_trace(reader2, max_req=max_requests)
+    hook_obj_miss_ratio, hook_byte_miss_ratio = hook_cache.process_trace(reader2, max_req=max_requests)
 
     # Calculate difference
-    difference = abs(native_miss_ratio - hook_miss_ratio)
-    percentage_diff = (difference / native_miss_ratio) * 100 if native_miss_ratio > 0 else 0
+    difference = abs(native_obj_miss_ratio - hook_obj_miss_ratio)
+    percentage_diff = (difference / native_obj_miss_ratio) * 100 if native_obj_miss_ratio > 0 else 0
 
     # Assert that the difference is small (< 5%)
     assert percentage_diff < 5.0, f"LRU implementation difference too large: {percentage_diff:.4f}%"

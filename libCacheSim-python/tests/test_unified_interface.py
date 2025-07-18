@@ -102,11 +102,11 @@ def test_unified_process_trace_interface():
         assert hasattr(cache, 'process_trace'), f"{name} missing process_trace method"
 
         # Test process_trace functionality
-        miss_ratio = cache.process_trace(test_reader, max_req=max_requests)
-        results[name] = miss_ratio
+        obj_miss_ratio, byte_miss_ratio = cache.process_trace(test_reader, max_req=max_requests)
+        results[name] = obj_miss_ratio
 
         # Verify miss_ratio is valid
-        assert 0.0 <= miss_ratio <= 1.0, f"{name} returned invalid miss_ratio: {miss_ratio}"
+        assert 0.0 <= obj_miss_ratio <= 1.0, f"{name} returned invalid miss_ratio: {obj_miss_ratio}"
 
     # Verify we got results for all caches
     assert len(results) == len(caches), "Not all caches were tested"

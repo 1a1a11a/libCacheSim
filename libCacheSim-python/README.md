@@ -62,6 +62,12 @@ print(cache.get(req))  # True (second access)
 
 ### Trace Processing
 
+To simulate with traces, we need to read the request of traces correctly. `open_trace` is an unified interface for trace reading, which accepet three parameters:
+
+- `trace_path`: trace path, can be relative or absolutive path.
+- `type` (optional): if not given, we will automatically infer the type of trace according to the suffix of the trace file.
+- `params` (optional): if not given, default params are applied.
+
 ```python
 import libcachesim as lcs
 
@@ -74,17 +80,17 @@ reader = lcs.open_trace(
 cache = lcs.S3FIFO(cache_size=1024*1024)
 
 # Process entire trace efficiently (C++ backend)
-miss_ratio = cache.process_trace(reader)
-print(f"Miss ratio: {miss_ratio:.4f}")
+obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
 
 cache = lcs.S3FIFO(cache_size=1024*1024)
 # Process with limits and time ranges
-miss_ratio = cache.process_trace(
+obj_miss_ratio, byte_miss_ratio = cache.process_trace(
     reader,
     start_req=0,
     max_req=1000
 )
-print(f"Miss ratio: {miss_ratio:.4f}")
+print(f"Object miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
 ```
 
 ## Custom Cache Policies
@@ -241,8 +247,8 @@ def compare_algorithms(trace_path):
     algorithms = ['LRU', 'S3FIFO', 'Sieve', 'ARC']
     for algo_name in algorithms:
         cache = getattr(lcs, algo_name)(cache_size=1024*1024)
-        miss_ratio = cache.process_trace(reader)
-        print(f"{algo_name}\t\t{miss_ratio:.4f}")
+        obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+        print(f"{algo_name}\t\tObj: {obj_miss_ratio:.4f}, Byte: {byte_miss_ratio:.4f}")
 
 compare_algorithms("./data/cloudPhysicsIO.vscsi")
 ```
@@ -302,8 +308,8 @@ caches = [
 ]
 
 for i, cache in enumerate(caches):
-    miss_ratio_oracle = cache.process_trace(oracle_reader)
-    miss_ratio_csv = cache.process_trace(csv_reader)
+    miss_ratio_oracle = cache.process_trace(oracle_reader)[0]
+    miss_ratio_csv = cache.process_trace(csv_reader)[0]
     print(f"Cache {i} miss ratio: {miss_ratio_oracle:.4f}, {miss_ratio_csv:.4f}")
 ```
 

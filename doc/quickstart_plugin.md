@@ -264,8 +264,8 @@ cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
 
 # Process traces efficiently
 reader = lcs.open_trace("./data/cloudPhysicsIO.vscsi", lcs.TraceType.VSCSI_TRACE)
-miss_ratio = cache.process_trace(reader)
-print(f"Miss ratio: {miss_ratio:.4f}")
+obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
 
 # Or process individual requests
 req = lcs.Request(obj_id=1, obj_size=100)

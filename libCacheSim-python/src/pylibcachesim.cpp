@@ -1074,15 +1074,15 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
       "process_trace",
       [](cache_t& cache, reader_t& reader, int64_t start_req = 0,
          int64_t max_req = -1) {
-        request_t* req = new_request();
-        int64_t n_req = 0, n_hit = 0;
-        int64_t bytes_req = 0, bytes_hit = 0;
-        bool hit;
-
         reset_reader(&reader);
         if (start_req > 0) {
           skip_n_req(&reader, start_req);
         }
+
+        request_t* req = new_request();
+        int64_t n_req = 0, n_hit = 0;
+        int64_t bytes_req = 0, bytes_hit = 0;
+        bool hit;
 
         read_one_req(&reader, req);
         while (req->valid) {
@@ -1138,15 +1138,15 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
       "process_trace_python_hook",
       [](PythonHookCache& cache, reader_t& reader, int64_t start_req = 0,
          int64_t max_req = -1) {
-        request_t* req = new_request();
-        int64_t n_req = 0, n_hit = 0;
-        int64_t bytes_req = 0, bytes_hit = 0;
-        bool hit;
-
         reset_reader(&reader);
         if (start_req > 0) {
           skip_n_req(&reader, start_req);
         }
+
+        request_t* req = new_request();
+        int64_t n_req = 0, n_hit = 0;
+        int64_t bytes_req = 0, bytes_hit = 0;
+        bool hit;
 
         read_one_req(&reader, req);
         while (req->valid) {

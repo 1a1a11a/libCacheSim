@@ -68,8 +68,7 @@ def process_trace(
     reader: Reader,
     start_req: int = 0,
     max_req: int = -1,
-    return_byte_miss_ratio: bool = False
-) -> Union[float, tuple[float, float]]:
+) -> tuple[float, float]:
     """
     Process a trace with a cache and return miss ratio.
     """
@@ -80,8 +79,7 @@ def process_trace_python_hook(
     reader: Reader,
     start_req: int = 0,
     max_req: int = -1,
-    return_byte_miss_ratio: bool = False
-) -> Union[float, tuple[float, float]]:
+) -> tuple[float, float]:
     """
     Process a trace with a Python hook cache and return miss ratio.
     """
@@ -214,7 +212,7 @@ class PythonHookCache:
 class EvictionPolicyBase:
     """Abstract base class for all eviction policies."""
     def get(self, req: Request) -> bool: ...
-    def process_trace(self, reader: Reader, start_req: int = 0, max_req: int = -1, return_byte_miss_ratio: bool = False) -> Union[float, tuple[float, float]]: ...
+    def process_trace(self, reader: Reader, start_req: int = 0, max_req: int = -1) -> tuple[float, float]: ...
     @property
     def n_req(self) -> int: ...
     @property

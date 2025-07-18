@@ -114,8 +114,8 @@ def demo_unified_interface():
             print(f"   {name:20s}: trace file not available")
             continue
 
-        miss_ratio = cache.process_trace(reader, max_req=max_requests)
-        print(f"   {name:20s}: miss_ratio={miss_ratio:.4f}")
+        obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader, max_req=max_requests)
+        print(f"   {name:20s}: obj_miss_ratio={obj_miss_ratio:.4f}, byte_miss_ratio={byte_miss_ratio:.4f}")
 
     print("\nKey Benefits of Unified Interface:")
     print("   • Same API for all cache policies (built-in + custom)")

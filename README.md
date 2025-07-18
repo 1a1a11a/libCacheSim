@@ -333,8 +333,8 @@ import libcachesim as lcs
 reader = lcs.create_zipf_requests(num_objects=1000, num_requests=10000) # synthetic trace
 # reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin") # real trace
 cache = lcs.FIFO(cache_size=1024*1024)
-miss_ratio = cache.process_trace(reader)
-print(f"Miss ratio: {miss_ratio:.4f}")
+obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
 ```
 
 ### Extending new algorithm
@@ -371,8 +371,8 @@ reader = lcs.open_trace(
     trace_path="./data/cloudPhysicsIO.oracleGeneral.bin",
     params=lcs.ReaderInitParam(ignore_obj_size=True)
 )
-miss_ratio = cache.process_trace(reader)
-print(f"Miss ratio: {miss_ratio:.4f}")
+obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
 ```
 
 

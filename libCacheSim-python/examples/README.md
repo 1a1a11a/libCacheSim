@@ -257,7 +257,7 @@ python -m pytest ../tests/ -v
 3. **Process large traces with C++ backend**:
    ```python
    # Fast: C++ processing
-   miss_ratio = lcs.process_trace(cache, reader)
+   obj_miss_ratio, byte_miss_ratio = lcs.process_trace(cache, reader)
 
    # Slow: Python loop
    for req in reader:
