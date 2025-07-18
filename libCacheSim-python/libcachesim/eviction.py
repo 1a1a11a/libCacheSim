@@ -44,7 +44,7 @@ class EvictionPolicyBase(ABC):
         pass
 
     @abstractmethod
-    def process_trace(self, reader, start_req=0, max_req=-1) -> float:
+    def process_trace(self, reader, start_req=0, max_req=-1, return_byte_miss_ratio=False) -> Union[float, tuple[float, float]]:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -54,9 +54,11 @@ class EvictionPolicyBase(ABC):
             reader: The trace reader instance
             start_req: Start request index (-1 for no limit)
             max_req: Number of requests to process (-1 for no limit)
+            return_byte_miss_ratio: Whether to return byte miss ratio
 
         Returns:
-            float: Miss ratio (0.0 to 1.0)
+            float: Object miss ratio (0.0 to 1.0)
+            float: Byte miss ratio (0.0 to 1.0) if return_byte_miss_ratio is True
         """
         pass
 
@@ -73,7 +75,7 @@ class EvictionPolicy(EvictionPolicyBase):
     def get(self, req: Request) -> bool:
         return self.cache.get(req)
 
-    def process_trace(self, reader, start_req=0, max_req=-1) -> float:
+    def process_trace(self, reader, start_req=0, max_req=-1, return_byte_miss_ratio=False) -> Union[float, tuple[float, float]]:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -83,29 +85,43 @@ class EvictionPolicy(EvictionPolicyBase):
             reader: The trace reader instance
             start_req: Start request index (-1 for no limit)
             max_req: Number of requests to process (-1 for no limit)
+            return_byte_miss_ratio: Whether to return byte miss ratio
 
         Returns:
-            float: Miss ratio (0.0 to 1.0)
+            float: Object miss ratio (0.0 to 1.0)
+            float: Byte miss ratio (0.0 to 1.0) if return_byte_miss_ratio is True
 
         Example:
             >>> cache = LRU(1024*1024)
             >>> reader = open_trace("trace.csv", TraceType.CSV_TRACE)
-            >>> miss_ratio = cache.process_trace(reader)
-            >>> print(f"Miss ratio: {miss_ratio:.4f}")
+            >>> obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader, return_byte_miss_ratio=True)
+            >>> print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
         """
         if not isinstance(reader, Reader):
             # streaming generator
             if (isinstance(reader, _ZipfRequestGenerator) or
                 isinstance(reader, _UniformRequestGenerator)):
                 miss_cnt = 0
+                byte_miss_cnt = 0
+                total_byte = 0
                 for req in reader:
                     hit = self.get(req)
+                    total_byte += req.obj_size
                     if not hit:
                         miss_cnt += 1
-                return miss_cnt / len(reader)
+                        byte_miss_cnt += req.obj_size
+                obj_miss_ratio = miss_cnt / len(reader)
+                byte_miss_ratio = byte_miss_cnt / total_byte
+
         else:
             from ._libcachesim import process_trace
-            return process_trace(self.cache, reader, start_req, max_req)
+            obj_miss_ratio, byte_miss_ratio = process_trace(self.cache, reader,
+                                                            start_req, max_req)
+
+        if return_byte_miss_ratio:
+            return obj_miss_ratio, byte_miss_ratio
+        else:
+            return obj_miss_ratio
 
     def __repr__(self):
         return f"{self.__class__.__name__}(cache_size={self.cache.cache_size})"
@@ -587,7 +603,7 @@ class PythonHookCachePolicy(EvictionPolicyBase):
             raise RuntimeError("Hooks must be set before using the cache. Call set_hooks() first.")
         return self.cache.get(req)
 
-    def process_trace(self, reader, start_req=0, max_req=-1) -> float:
+    def process_trace(self, reader, start_req=0, max_req=-1, return_byte_miss_ratio=False) -> Union[float, tuple[float, float]]:
         """Process a trace with this cache and return miss ratio.
 
         This method processes trace data entirely on the C++ side to avoid
@@ -599,7 +615,8 @@ class PythonHookCachePolicy(EvictionPolicyBase):
             n_req: Number of requests to process (-1 for no limit)
 
         Returns:
-            float: Miss ratio (0.0 to 1.0)
+            float: Object miss ratio (0.0 to 1.0)
+            float: Byte miss ratio (0.0 to 1.0) if return_byte_miss_ratio is True
 
         Raises:
             RuntimeError: If hooks have not been set
@@ -608,14 +625,35 @@ class PythonHookCachePolicy(EvictionPolicyBase):
             >>> cache = PythonHookCachePolicy(1024*1024)
             >>> cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
             >>> reader = open_trace("trace.csv", TraceType.CSV_TRACE)
-            >>> miss_ratio = cache.process_trace(reader)
-            >>> print(f"Miss ratio: {miss_ratio:.4f}")
+            >>> obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader, return_byte_miss_ratio=True)
+            >>> print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
         """
         if not self._hooks_set:
             raise RuntimeError("Hooks must be set before processing trace. Call set_hooks() first.")
 
+        if not isinstance(reader, Reader):
+            # streaming generator
+            if (isinstance(reader, _ZipfRequestGenerator) or
+                isinstance(reader, _UniformRequestGenerator)):
+                miss_cnt = 0
+                byte_miss_cnt = 0
+                total_byte = 0
+                for req in reader:
+                    hit = self.get(req)
+                    total_byte += req.obj_size
+                    if not hit:
+                        miss_cnt += 1
+                        byte_miss_cnt += req.obj_size
+                obj_miss_ratio = miss_cnt / len(reader)
+                byte_miss_ratio = byte_miss_cnt / total_byte
+
         from ._libcachesim import process_trace_python_hook
-        return process_trace_python_hook(self.cache, reader, start_req, max_req)
+        obj_miss_ratio, byte_miss_ratio = process_trace_python_hook(
+            self.cache, reader, start_req, max_req)
+        if return_byte_miss_ratio:
+            return obj_miss_ratio, byte_miss_ratio
+        else:
+            return obj_miss_ratio
 
     @property
     def n_req(self):

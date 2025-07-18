@@ -307,15 +307,15 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
       .def_readwrite("n_total_req", &reader_t::n_total_req)
       .def_readwrite("trace_path", &reader_t::trace_path)
       .def_readwrite("file_size", &reader_t::file_size)
+      .def_readwrite("ignore_obj_size", &reader_t::ignore_obj_size)
       // methods
       .def(
           "get_wss",
-          [](reader_t& self, bool ignore_obj_size) {
+          [](reader_t& self) {
             int64_t wss_obj = 0, wss_byte = 0;
             cal_working_set_size(&self, &wss_obj, &wss_byte);
-            return ignore_obj_size ? wss_obj : wss_byte;
+            return self.ignore_obj_size ? wss_obj : wss_byte;
           },
-          py::arg("ignore_obj_size") = false,
           R"pbdoc(
             Get the working set size of the trace.
 
@@ -355,38 +355,247 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
         if (ret != 0) {
           throw py::stop_iteration();
         }
-        // std::cout << "Read request: " << req->obj_id
-        //           << ", size: " << req->obj_size << std::endl;
         return req;
       });
 
-  py::class_<reader_init_param_t>(m, "reader_init_param_t")
-      .def(py::init<>())
-      .def_readwrite("time_field", &reader_init_param_t::time_field)
-      .def_readwrite("obj_id_field", &reader_init_param_t::obj_id_field)
-      .def_readwrite("obj_size_field", &reader_init_param_t::obj_size_field)
-      .def_readwrite("delimiter", &reader_init_param_t::delimiter)
-      .def_readwrite("has_header", &reader_init_param_t::has_header)
+  py::class_<reader_init_param_t>(m, "ReaderInitParam")
+      // === CONSTRUCTORS ===
+      .def(py::init([]() {
+             reader_init_param_t params;
+             set_default_reader_init_params(&params);
+             return params;
+           }),
+           "Create with default parameters")
+
+      .def(py::init([](py::kwargs kwargs) {
+             reader_init_param_t params;
+             set_default_reader_init_params(&params);
+
+             // Unified field setter with proper type handling
+             auto set_if_present = [&](const char* key, auto& field) {
+               if (kwargs.contains(key)) {
+                 field = kwargs[key]
+                             .cast<std::remove_reference_t<decltype(field)>>();
+               }
+             };
+
+             // Core fields (most commonly used)
+             set_if_present("time_field", params.time_field);
+             set_if_present("obj_id_field", params.obj_id_field);
+             set_if_present("obj_size_field", params.obj_size_field);
+             set_if_present("has_header", params.has_header);
+             set_if_present("ignore_obj_size", params.ignore_obj_size);
+             set_if_present("ignore_size_zero_req",
+                            params.ignore_size_zero_req);
+             set_if_present("obj_id_is_num", params.obj_id_is_num);
+
+             // Advanced fields
+             set_if_present("cap_at_n_req", params.cap_at_n_req);
+             set_if_present("op_field", params.op_field);
+             set_if_present("ttl_field", params.ttl_field);
+             set_if_present("cnt_field", params.cnt_field);
+             set_if_present("tenant_field", params.tenant_field);
+             set_if_present("next_access_vtime_field",
+                            params.next_access_vtime_field);
+             set_if_present("block_size", params.block_size);
+             set_if_present("trace_start_offset", params.trace_start_offset);
+
+             // Special fields
+             if (kwargs.contains("delimiter")) {
+               std::string delim = kwargs["delimiter"].cast<std::string>();
+               params.delimiter = delim.empty() ? ',' : delim[0];
+             }
+             if (kwargs.contains("binary_fmt_str")) {
+               std::string fmt = kwargs["binary_fmt_str"].cast<std::string>();
+               params.binary_fmt_str =
+                   fmt.empty() ? nullptr : strdup(fmt.c_str());
+             }
+             if (kwargs.contains("feature_fields")) {
+               auto ff = kwargs["feature_fields"].cast<std::vector<int32_t>>();
+               if (ff.size() > N_MAX_FEATURES) {
+                 throw py::value_error("Too many feature fields (max " +
+                                       std::to_string(N_MAX_FEATURES) + ")");
+               }
+               params.n_feature_fields = static_cast<int32_t>(ff.size());
+               std::copy(ff.begin(), ff.end(), params.feature_fields);
+             }
+
+             return params;
+           }),
+           "Create with keyword arguments")
+
+      .def(py::init([](py::dict dict_params) {
+             reader_init_param_t params;
+             set_default_reader_init_params(&params);
+
+             // Manual field setting (same logic as kwargs constructor)
+             auto set_if_present = [&](const char* key, auto& field) {
+               if (dict_params.contains(key)) {
+                 field = dict_params[key]
+                             .cast<std::remove_reference_t<decltype(field)>>();
+               }
+             };
+
+             // Core fields
+             set_if_present("time_field", params.time_field);
+             set_if_present("obj_id_field", params.obj_id_field);
+             set_if_present("obj_size_field", params.obj_size_field);
+             set_if_present("has_header", params.has_header);
+             set_if_present("ignore_obj_size", params.ignore_obj_size);
+             set_if_present("ignore_size_zero_req",
+                            params.ignore_size_zero_req);
+             set_if_present("obj_id_is_num", params.obj_id_is_num);
+
+             // Advanced fields
+             set_if_present("cap_at_n_req", params.cap_at_n_req);
+             set_if_present("op_field", params.op_field);
+             set_if_present("ttl_field", params.ttl_field);
+             set_if_present("cnt_field", params.cnt_field);
+             set_if_present("tenant_field", params.tenant_field);
+             set_if_present("next_access_vtime_field",
+                            params.next_access_vtime_field);
+             set_if_present("block_size", params.block_size);
+             set_if_present("trace_start_offset", params.trace_start_offset);
+
+             // Special fields
+             if (dict_params.contains("delimiter")) {
+               std::string delim = dict_params["delimiter"].cast<std::string>();
+               params.delimiter = delim.empty() ? ',' : delim[0];
+             }
+             if (dict_params.contains("binary_fmt_str")) {
+               std::string fmt =
+                   dict_params["binary_fmt_str"].cast<std::string>();
+               params.binary_fmt_str =
+                   fmt.empty() ? nullptr : strdup(fmt.c_str());
+             }
+             if (dict_params.contains("feature_fields")) {
+               auto ff =
+                   dict_params["feature_fields"].cast<std::vector<int32_t>>();
+               if (ff.size() > N_MAX_FEATURES) {
+                 throw py::value_error("Too many feature fields (max " +
+                                       std::to_string(N_MAX_FEATURES) + ")");
+               }
+               params.n_feature_fields = static_cast<int32_t>(ff.size());
+               std::copy(ff.begin(), ff.end(), params.feature_fields);
+             }
+
+             return params;
+           }),
+           py::arg("params"), "Create from dictionary (backward compatibility)")
+      // === CORE PROPERTIES (with descriptive names) ===
       .def_property(
-          "binary_fmt_str",
-          // Getter: C char* to Python string (returns copy)
+          "time_field",
+          [](const reader_init_param_t& self) { return self.time_field; },
+          [](reader_init_param_t& self, int val) { self.time_field = val; },
+          "Column/field index for timestamp")
+
+      .def_property(
+          "obj_id_field",
+          [](const reader_init_param_t& self) { return self.obj_id_field; },
+          [](reader_init_param_t& self, int val) { self.obj_id_field = val; },
+          "Column/field index for object ID")
+
+      .def_property(
+          "obj_size_field",
+          [](const reader_init_param_t& self) { return self.obj_size_field; },
+          [](reader_init_param_t& self, int val) { self.obj_size_field = val; },
+          "Column/field index for object size")
+
+      .def_property(
+          "has_header",
+          [](const reader_init_param_t& self) { return self.has_header; },
+          [](reader_init_param_t& self, bool val) {
+            self.has_header = val;
+            self.has_header_set = true;
+          },
+          "Whether trace file has header row")
+
+      .def_property(
+          "delimiter",
+          [](const reader_init_param_t& self) {
+            return std::string(1, self.delimiter);
+          },
+          [](reader_init_param_t& self, const std::string& val) {
+            self.delimiter = val.empty() ? ',' : val[0];
+          },
+          "Field delimiter character")
+
+      .def_property(
+          "binary_format",
           [](const reader_init_param_t& self) {
             return self.binary_fmt_str ? std::string(self.binary_fmt_str) : "";
           },
-          // Setter: Python string to C char* (handles deep copy and old memory)
-          [](reader_init_param_t& self, const std::string& value) {
-            // Free existing memory if any
-            if (self.binary_fmt_str != nullptr) {
-              free(self.binary_fmt_str);  // Use free() since it was
-                                          // strdup'd/malloc'd
+          [](reader_init_param_t& self, const std::string& val) {
+            if (self.binary_fmt_str) free(self.binary_fmt_str);
+            self.binary_fmt_str = val.empty() ? nullptr : strdup(val.c_str());
+          },
+          "Binary format string (e.g., 'III' for 3 int32s)")
+
+      .def_property(
+          "feature_fields",
+          [](const reader_init_param_t& self) {
+            return std::vector<int32_t>(
+                self.feature_fields,
+                self.feature_fields +
+                    std::min(self.n_feature_fields, (int32_t)N_MAX_FEATURES));
+          },
+          [](reader_init_param_t& self, const std::vector<int32_t>& vals) {
+            if (vals.size() > N_MAX_FEATURES) {
+              throw py::value_error("Too many feature fields");
             }
-            // Deep copy the new string
-            self.binary_fmt_str = strdup(value.c_str());
-            if (self.binary_fmt_str == nullptr && !value.empty()) {
-              throw std::runtime_error(
-                  "Failed to allocate memory for binary_fmt_str");
+            self.n_feature_fields = static_cast<int32_t>(vals.size());
+            std::copy(vals.begin(), vals.end(), self.feature_fields);
+          },
+          "List of feature field indices")
+
+      // === UTILITY METHODS ===
+      .def(
+          "to_dict",
+          [](const reader_init_param_t& self) {
+            py::dict result;
+
+            // Core fields
+            result["time_field"] = self.time_field;
+            result["obj_id_field"] = self.obj_id_field;
+            result["obj_size_field"] = self.obj_size_field;
+            result["has_header"] = self.has_header;
+            result["delimiter"] = std::string(1, self.delimiter);
+
+            // Flags
+            result["ignore_obj_size"] = self.ignore_obj_size;
+            result["ignore_size_zero_req"] = self.ignore_size_zero_req;
+            result["obj_id_is_num"] = self.obj_id_is_num;
+
+            // Advanced fields (only include non-default values)
+            if (self.cap_at_n_req != -1)
+              result["cap_at_n_req"] = self.cap_at_n_req;
+            if (self.op_field != -1) result["op_field"] = self.op_field;
+            if (self.ttl_field != -1) result["ttl_field"] = self.ttl_field;
+            if (self.binary_fmt_str)
+              result["binary_format"] = std::string(self.binary_fmt_str);
+            if (self.n_feature_fields > 0) {
+              result["feature_fields"] = std::vector<int32_t>(
+                  self.feature_fields,
+                  self.feature_fields + self.n_feature_fields);
             }
-          });
+
+            return result;
+          },
+          "Convert to dictionary representation")
+      .def_readwrite("ignore_obj_size", &reader_init_param_t::ignore_obj_size)
+      .def_readwrite("ignore_size_zero_req",
+                     &reader_init_param_t::ignore_size_zero_req)
+      .def_readwrite("obj_id_is_num", &reader_init_param_t::obj_id_is_num)
+      .def_readwrite("cap_at_n_req", &reader_init_param_t::cap_at_n_req)
+      .def_readwrite("op_field", &reader_init_param_t::op_field)
+      .def_readwrite("ttl_field", &reader_init_param_t::ttl_field)
+      .def_readwrite("cnt_field", &reader_init_param_t::cnt_field)
+      .def_readwrite("tenant_field", &reader_init_param_t::tenant_field)
+      .def_readwrite("next_access_vtime_field",
+                     &reader_init_param_t::next_access_vtime_field)
+      .def_readwrite("block_size", &reader_init_param_t::block_size)
+      .def_readwrite("trace_start_offset",
+                     &reader_init_param_t::trace_start_offset);
 
   // *************** functions ***************
   /**
@@ -408,67 +617,62 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
           }
         }
 
-        // Create an init_param instance, it will be populated from Python
-        reader_init_param_t init_param = {};
+        // Handle different parameter types
+        reader_init_param_t init_param;
+        set_default_reader_init_params(&init_param);
 
-        // === IMPORTANT: Initialize binary_fmt_str to nullptr ===
-        // This is crucial if it's not always set from Python,
-        // so that free() won't be called on uninitialized memory if not set
-        // later.
-        init_param.binary_fmt_str = nullptr;
-
-        // Populate other fields from Python dict or object
         if (py::isinstance<py::dict>(params)) {
+          // Dictionary parameters - apply values manually
           py::dict dict_params = params.cast<py::dict>();
-          init_param.time_field = dict_params["time_field"].cast<int>();
-          init_param.obj_id_field = dict_params["obj_id_field"].cast<int>();
-          init_param.obj_size_field = dict_params["obj_size_field"].cast<int>();
-          init_param.delimiter =
-              dict_params["delimiter"].cast<std::string>()[0];
-          init_param.has_header = dict_params["has_header"].cast<bool>();
-          // If binary_fmt_str is in dict_params, set it via property setter
+
+          auto set_field = [&](const char* name, auto& field) {
+            if (dict_params.contains(name)) {
+              field = dict_params[name]
+                          .cast<std::remove_reference_t<decltype(field)>>();
+            }
+          };
+
+          // Apply all fields
+          set_field("ignore_obj_size", init_param.ignore_obj_size);
+          set_field("ignore_size_zero_req", init_param.ignore_size_zero_req);
+          set_field("obj_id_is_num", init_param.obj_id_is_num);
+          set_field("obj_id_is_num_set", init_param.obj_id_is_num_set);
+          set_field("has_header", init_param.has_header);
+          set_field("has_header_set", init_param.has_header_set);
+          set_field("cap_at_n_req", init_param.cap_at_n_req);
+          set_field("time_field", init_param.time_field);
+          set_field("obj_id_field", init_param.obj_id_field);
+          set_field("obj_size_field", init_param.obj_size_field);
+          set_field("op_field", init_param.op_field);
+          set_field("ttl_field", init_param.ttl_field);
+          set_field("cnt_field", init_param.cnt_field);
+          set_field("tenant_field", init_param.tenant_field);
+          set_field("next_access_vtime_field",
+                    init_param.next_access_vtime_field);
+          set_field("block_size", init_param.block_size);
+          set_field("trace_start_offset", init_param.trace_start_offset);
+
+          // Special fields
+          if (dict_params.contains("delimiter"))
+            init_param.delimiter =
+                dict_params["delimiter"].cast<std::string>()[0];
           if (dict_params.contains("binary_fmt_str") &&
               !dict_params["binary_fmt_str"].is_none()) {
-            std::string bfs_val =
-                dict_params["binary_fmt_str"].cast<std::string>();
-            if (init_param.binary_fmt_str != nullptr)
-              free(init_param.binary_fmt_str);
-            init_param.binary_fmt_str = strdup(bfs_val.c_str());
-            if (init_param.binary_fmt_str == nullptr && !bfs_val.empty()) {
-              throw std::runtime_error(
-                  "Failed to allocate memory for binary_fmt_str from dict");
-            }
+            std::string val = dict_params["binary_fmt_str"].cast<std::string>();
+            init_param.binary_fmt_str = strdup(val.c_str());
+          }
+          if (dict_params.contains("feature_fields")) {
+            auto ff =
+                dict_params["feature_fields"].cast<std::vector<int32_t>>();
+            if (ff.size() > N_MAX_FEATURES)
+              throw std::runtime_error("Too many feature fields");
+            init_param.n_feature_fields = static_cast<int32_t>(ff.size());
+            std::copy(ff.begin(), ff.end(), init_param.feature_fields);
           }
         } else if (!params.is_none()) {
-          // If using a reader_init_param_t object from Python, its members are
-          // already set via def_property (No need to copy here, just ensure
-          // it's reader_init_param_t object) If `params` is a
-          // `reader_init_param_t` object, Pybind11 will pass its fields
-          // directly We need to ensure that the `binary_fmt_str` member of
-          // `params` is correctly handled. The direct `getattr` below is for
-          // other fields, for binary_fmt_str, the `def_property` takes care.
-          init_param.time_field = py::getattr(params, "time_field").cast<int>();
-          init_param.obj_id_field =
-              py::getattr(params, "obj_id_field").cast<int>();
-          init_param.obj_size_field =
-              py::getattr(params, "obj_size_field").cast<int>();
-          init_param.delimiter =
-              py::getattr(params, "delimiter").cast<std::string>()[0];
-          init_param.has_header =
-              py::getattr(params, "has_header").cast<bool>();
-          // Handle binary_fmt_str if it's set on the Python object
-          if (py::hasattr(params, "binary_fmt_str") &&
-              !py::getattr(params, "binary_fmt_str").is_none()) {
-            std::string bfs_val =
-                py::getattr(params, "binary_fmt_str").cast<std::string>();
-            if (init_param.binary_fmt_str != nullptr)
-              free(init_param.binary_fmt_str);
-            init_param.binary_fmt_str = strdup(bfs_val.c_str());
-            if (init_param.binary_fmt_str == nullptr && !bfs_val.empty()) {
-              throw std::runtime_error(
-                  "Failed to allocate memory for binary_fmt_str from object");
-            }
-          }
+          // reader_init_param_t object - direct cast (pybind11 handles
+          // conversion)
+          init_param = params.cast<reader_init_param_t>();
         }
         reader_t* ptr = open_trace(trace_path.c_str(), c_type, &init_param);
         return std::unique_ptr<reader_t, ReaderDeleter>(ptr);
@@ -1036,6 +1240,7 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
          int64_t max_req = -1) {
         request_t* req = new_request();
         int64_t n_req = 0, n_hit = 0;
+        int64_t bytes_req = 0, bytes_hit = 0;
         bool hit;
 
         reset_reader(&reader);
@@ -1046,8 +1251,12 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
         read_one_req(&reader, req);
         while (req->valid) {
           n_req += 1;
+          bytes_req += req->obj_size;
           hit = cache.get(&cache, req);
-          if (hit) n_hit += 1;
+          if (hit) {
+            n_hit += 1;
+            bytes_hit += req->obj_size;
+          }
           read_one_req(&reader, req);
           if (max_req > 0 && n_req >= max_req) {
             break;  // Stop if we reached the max request limit
@@ -1056,7 +1265,10 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
 
         free_request(req);
         // return the miss ratio
-        return n_req > 0 ? 1.0 - (double)n_hit / n_req : 0.0;
+        double obj_miss_ratio = n_req > 0 ? 1.0 - (double)n_hit / n_req : 0.0;
+        double byte_miss_ratio =
+            bytes_req > 0 ? 1.0 - (double)bytes_hit / bytes_req : 0.0;
+        return std::make_tuple(obj_miss_ratio, byte_miss_ratio);
       },
       py::arg("cache"), py::arg("reader"), py::arg("start_req") = 0,
       py::arg("max_req") = -1,
@@ -1073,13 +1285,14 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
                 max_req (int): Maximum number of requests to process (-1 for no limit).
 
             Returns:
-                float: Miss ratio (0.0 to 1.0).
+                float: Object miss ratio (0.0 to 1.0).
+                float: Byte miss ratio (0.0 to 1.0).
 
             Example:
                 >>> cache = libcachesim.LRU(1024*1024)
                 >>> reader = libcachesim.open_trace("trace.csv", libcachesim.TraceType.CSV_TRACE)
-                >>> miss_ratio = libcachesim.process_trace(cache, reader)
-                >>> print(f"Miss ratio: {miss_ratio:.4f}")
+                >>> obj_miss_ratio, byte_miss_ratio = libcachesim.process_trace(cache, reader)
+                >>> print(f"Obj miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
       )pbdoc");
 
   /**
@@ -1091,6 +1304,7 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
          int64_t max_req = -1) {
         request_t* req = new_request();
         int n_req = 0, n_hit = 0;
+        int64_t bytes_req = 0, bytes_hit = 0;
         bool hit;
 
         reset_reader(&reader);
@@ -1101,8 +1315,12 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
         read_one_req(&reader, req);
         while (req->valid) {
           n_req += 1;
+          bytes_req += req->obj_size;
           hit = cache.get(*req);
-          if (hit) n_hit += 1;
+          if (hit) {
+            n_hit += 1;
+            bytes_hit += req->obj_size;
+          }
           read_one_req(&reader, req);
           if (max_req > 0 && n_req >= max_req) {
             break;  // Stop if we reached the max request limit
@@ -1111,7 +1329,10 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
 
         free_request(req);
         // return the miss ratio
-        return n_req > 0 ? 1.0 - (double)n_hit / n_req : 0.0;
+        double obj_miss_ratio = n_req > 0 ? 1.0 - (double)n_hit / n_req : 0.0;
+        double byte_miss_ratio =
+            bytes_req > 0 ? 1.0 - (double)bytes_hit / bytes_req : 0.0;
+        return std::make_tuple(obj_miss_ratio, byte_miss_ratio);
       },
       py::arg("cache"), py::arg("reader"), py::arg("start_req") = 0,
       py::arg("max_req") = -1,
@@ -1129,14 +1350,15 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
                 max_req (int): Maximum number of requests to process (-1 for no limit).
 
             Returns:
-                float: Miss ratio (0.0 to 1.0).
+                float: Object miss ratio (0.0 to 1.0).
+                float: Byte miss ratio (0.0 to 1.0).
 
             Example:
                 >>> cache = libcachesim.PythonHookCachePolicy(1024*1024)
                 >>> cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
                 >>> reader = libcachesim.open_trace("trace.csv", libcachesim.TraceType.CSV_TRACE)
-                >>> miss_ratio = libcachesim.process_trace_python_hook(cache.cache, reader)
-                >>> print(f"Miss ratio: {miss_ratio:.4f}")
+                >>> obj_miss_ratio, byte_miss_ratio = libcachesim.process_trace_python_hook(cache.cache, reader)
+                >>> print(f"Obj miss ratio: {obj_miss_ratio:.4f}, Byte miss ratio: {byte_miss_ratio:.4f}")
       )pbdoc");
 
 #ifdef VERSION_INFO

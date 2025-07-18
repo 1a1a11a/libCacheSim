@@ -3,6 +3,7 @@ from __future__ import annotations
 from ._libcachesim import (
     Cache,
     Reader,
+    ReaderInitParam,
     Request,
     ReqOp,
     TraceType,

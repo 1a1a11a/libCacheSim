@@ -344,6 +344,7 @@ With python package, you can extend new algorithm to test your own eviction desi
 ```python
 import libcachesim as lcs
 from collections import deque
+from contextlib import suppress
 
 cache = lcs.PythonHookCachePolicy(cache_size=1024, cache_name="CustomFIFO")
 
@@ -360,13 +361,16 @@ def eviction_hook(fifo_queue, obj_id, obj_size):
     return fifo_queue[0]  # Return first item (oldest)
 
 def remove_hook(fifo_queue, obj_id):
-    if fifo_queue and fifo_queue[0] == obj_id:
-        fifo_queue.popleft()
+    with suppress(ValueError):
+        fifo_queue.remove(obj_id)
 
 # Set the hooks and test
 cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
 
-reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin")
+reader = lcs.open_trace(
+    trace_path="./data/cloudPhysicsIO.oracleGeneral.bin",
+    params=lcs.ReaderInitParam(ignore_obj_size=True)
+)
 miss_ratio = cache.process_trace(reader)
 print(f"Miss ratio: {miss_ratio:.4f}")
 ```

@@ -80,7 +80,7 @@ def test_process_trace_python_hook():
 
     # Test both methods
     # Method 1: Direct function call
-    miss_ratio1 = lcs.process_trace_python_hook(cache.cache, reader, max_req=1000)
+    miss_ratio1 = lcs.process_trace_python_hook(cache.cache, reader, max_req=1000)[0]
 
     # Need to reopen the trace for second test
     reader2 = create_trace_reader()
