@@ -1,0 +1,300 @@
+name: Rust Bindings
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'libcachesim-rs/**'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'libcachesim-rs/**'
+      - '.github/workflows/rust.yml'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test Rust Bindings
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        rust: [stable, beta, 1.70.0]  # MSRV and latest
+        libcachesim-version: [main, v0.9.0, v0.8.0]
+        exclude:
+          # Reduce matrix size - only test MSRV on Ubuntu with main
+          - os: macos-latest
+            rust: 1.70.0
+          - os: macos-latest
+            libcachesim-version: v0.9.0
+          - rust: beta
+            libcachesim-version: v0.9.0
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: ${{ matrix.rust }}
+        components: rustfmt, clippy
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          libcachesim-rs/target/
+        key: ${{ runner.os }}-cargo-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Install system dependencies (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libglib2.0-dev libtcmalloc-minimal4 libzstd-dev pkg-config
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install cmake ninja glib zstd pkg-config
+
+    - name: Build libCacheSim
+      run: |
+        if [ "${{ matrix.libcachesim-version }}" != "main" ]; then
+          git checkout ${{ matrix.libcachesim-version }}
+        fi
+        mkdir -p _build
+        cd _build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..
+        ninja
+        sudo ninja install
+
+        # Ensure pkg-config can find the library
+        if [ "$RUNNER_OS" = "Linux" ]; then
+          sudo ldconfig
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+        elif [ "$RUNNER_OS" = "macOS" ]; then
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+          export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+        fi
+
+        # Verify installation
+        pkg-config --exists libcachesim
+        pkg-config --cflags --libs libcachesim
+
+    - name: Check Rust formatting
+      working-directory: libcachesim-rs
+      run: cargo fmt --all -- --check
+
+    - name: Run Clippy
+      working-directory: libcachesim-rs
+      run: cargo clippy --all-targets --all-features -- -D warnings
+
+    - name: Build Rust bindings
+      working-directory: libcachesim-rs
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+          export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+        fi
+        cargo build --verbose
+
+    - name: Run tests
+      working-directory: libcachesim-rs
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+          export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+        fi
+        cargo test --verbose
+
+    - name: Run documentation tests
+      working-directory: libcachesim-rs
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+          export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+        fi
+        cargo test --doc
+
+    - name: Build documentation
+      working-directory: libcachesim-rs
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+          export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+        fi
+        cargo doc --no-deps --all-features
+
+    - name: Run examples
+      working-directory: libcachesim-rs
+      run: |
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+          export DYLD_LIBRARY_PATH=/usr/local/lib:$DYLD_LIBRARY_PATH
+        fi
+        cargo run --example basic_cache
+        cargo run --example trace_processing
+        cargo run --example algorithm_comparison
+
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: llvm-tools-preview
+
+    - name: Install cargo-llvm-cov
+      uses: taiki-e/install-action@cargo-llvm-cov
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libglib2.0-dev libtcmalloc-minimal4 libzstd-dev pkg-config
+
+    - name: Build libCacheSim
+      run: |
+        mkdir -p _build
+        cd _build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..
+        ninja
+        sudo ninja install
+        sudo ldconfig
+
+    - name: Generate code coverage
+      working-directory: libcachesim-rs
+      run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: libcachesim-rs/lcov.info
+        fail_ci_if_error: true
+
+  publish-check:
+    name: Check Publish Readiness
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libglib2.0-dev libtcmalloc-minimal4 libzstd-dev pkg-config
+
+    - name: Build libCacheSim
+      run: |
+        mkdir -p _build
+        cd _build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..
+        ninja
+        sudo ninja install
+        sudo ldconfig
+
+    - name: Check package
+      working-directory: libcachesim-rs
+      run: |
+        cargo package --allow-dirty
+        cargo package --list
+
+    - name: Verify package contents
+      working-directory: libcachesim-rs
+      run: |
+        # Extract the package and verify contents
+        tar -tf target/package/libcachesim-*.crate | head -20
+
+        # Check that essential files are included
+        tar -tf target/package/libcachesim-*.crate | grep -E "(Cargo.toml|README.md|src/|examples/)" || exit 1
+
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libglib2.0-dev libtcmalloc-minimal4 libzstd-dev pkg-config
+
+    - name: Build libCacheSim
+      run: |
+        mkdir -p _build
+        cd _build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..
+        ninja
+        sudo ninja install
+        sudo ldconfig
+
+    - name: Run benchmarks
+      working-directory: libcachesim-rs
+      run: |
+        # Add benchmark when available
+        echo "Benchmarks would run here"
+        # cargo bench --all-features
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install cargo-audit
+      run: cargo install cargo-audit
+
+    - name: Run security audit
+      working-directory: libcachesim-rs
+      run: cargo audit
+
+  msrv-check:
+    name: MSRV Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install MSRV Rust
+      uses: dtolnay/rust-toolchain@1.70.0
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libglib2.0-dev libtcmalloc-minimal4 libzstd-dev pkg-config
+
+    - name: Build libCacheSim
+      run: |
+        mkdir -p _build
+        cd _build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON ..
+        ninja
+        sudo ninja install
+        sudo ldconfig
+
+    - name: Check MSRV compatibility
+      working-directory: libcachesim-rs
+      run: |
+        cargo check --all-features
+        cargo test --lib --all-features

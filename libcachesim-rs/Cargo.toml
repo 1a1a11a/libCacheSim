@@ -1,0 +1,75 @@
+[package]
+name = "libcachesim"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+authors = ["libCacheSim Contributors <libcachesim@example.com>"]
+description = "Safe Rust bindings for libCacheSim - a high-performance cache simulation library with 30+ algorithms"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/cacheMon/libCacheSim"
+homepage = "https://github.com/cacheMon/libCacheSim"
+documentation = "https://docs.rs/libcachesim"
+readme = "README.md"
+keywords = ["cache", "simulation", "performance", "storage", "algorithms"]
+categories = ["algorithms", "simulation", "development-tools", "science"]
+exclude = [
+    "target/",
+    "tests/data/",
+    "*.log",
+    ".DS_Store",
+    "libcachesim-sys/target/",
+]
+
+[workspace]
+members = ["libcachesim-sys"]
+
+[dependencies]
+libcachesim-sys = { path = "libcachesim-sys" }
+thiserror = "1.0"
+
+[dev-dependencies]
+proptest = "1.0"
+tempfile = "3.0"
+
+[build-dependencies]
+bindgen = "0.65"
+cc = "1.0"
+pkg-config = "0.3"
+
+[[example]]
+name = "basic_cache"
+path = "examples/basic_cache.rs"
+
+[[example]]
+name = "trace_processing"
+path = "examples/trace_processing.rs"
+
+[[example]]
+name = "comprehensive_examples"
+path = "examples/comprehensive_examples.rs"
+
+[[example]]
+name = "algorithm_comparison"
+path = "examples/algorithm_comparison.rs"
+
+[[example]]
+name = "error_handling"
+path = "examples/error_handling.rs"
+
+[[example]]
+name = "thread_safety"
+path = "examples/thread_safety.rs"
+
+[features]
+default = []
+3l-cache = []
+lrb = []
+glcache = []
+docs = []
+
+[package.metadata.docs.rs]
+features = ["docs"]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.crates-io]
+maintenance = { status = "actively-developed" }

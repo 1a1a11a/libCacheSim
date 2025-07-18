@@ -1,0 +1,34 @@
+[package]
+name = "libcachesim-sys"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+authors = ["libCacheSim Contributors <libcachesim@example.com>"]
+description = "Low-level FFI bindings for libCacheSim - unsafe C bindings for cache simulation"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/cacheMon/libCacheSim"
+homepage = "https://github.com/cacheMon/libCacheSim"
+documentation = "https://docs.rs/libcachesim-sys"
+readme = "../README.md"
+keywords = ["cache", "ffi", "bindings", "simulation", "c"]
+categories = ["external-ffi-bindings", "algorithms"]
+links = "cachesim"
+exclude = [
+    "target/",
+    "*.log",
+    ".DS_Store",
+]
+
+[build-dependencies]
+bindgen = "0.65"
+cc = "1.0"
+pkg-config = "0.3"
+
+[dependencies]
+# No dependencies for the sys crate - just raw FFI bindings
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+
+[package.metadata.crates-io]
+maintenance = { status = "actively-developed" }
