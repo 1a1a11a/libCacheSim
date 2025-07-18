@@ -422,7 +422,6 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
   };
 
   py::class_<reader_init_param_t>(m, "ReaderInitParam")
-      // === CONSTRUCTORS ===
       .def(py::init([]() {
              reader_init_param_t params;
              set_default_reader_init_params(&params);
@@ -452,128 +451,30 @@ PYBIND11_MODULE(_libcachesim, m) {  // NOLINT(readability-named-parameter)
              return params;
            }),
            py::arg("params"), "Create from dictionary (backward compatibility)")
-      // === CORE PROPERTIES (with descriptive names) ===
-      .def_property(
-          "time_field",
-          [](const reader_init_param_t& self) { return self.time_field; },
-          [](reader_init_param_t& self, int val) { self.time_field = val; },
-          "Column/field index for timestamp")
-
-      .def_property(
-          "obj_id_field",
-          [](const reader_init_param_t& self) { return self.obj_id_field; },
-          [](reader_init_param_t& self, int val) { self.obj_id_field = val; },
-          "Column/field index for object ID")
-
-      .def_property(
-          "obj_size_field",
-          [](const reader_init_param_t& self) { return self.obj_size_field; },
-          [](reader_init_param_t& self, int val) { self.obj_size_field = val; },
-          "Column/field index for object size")
-
-      .def_property(
-          "has_header",
-          [](const reader_init_param_t& self) { return self.has_header; },
-          [](reader_init_param_t& self, bool val) {
-            self.has_header = val;
-            self.has_header_set = true;
-          },
-          "Whether trace file has header row")
-
-      .def_property(
-          "delimiter",
-          [](const reader_init_param_t& self) {
-            return std::string(1, self.delimiter);
-          },
-          [](reader_init_param_t& self, const std::string& val) {
-            self.delimiter = val.empty() ? ',' : val[0];
-          },
-          "Field delimiter character")
-
-      .def_property(
-          "binary_format",
-          [](const reader_init_param_t& self) {
-            return self.binary_fmt_str ? std::string(self.binary_fmt_str) : "";
-          },
-          [](reader_init_param_t& self, const std::string& val) {
-            if (self.binary_fmt_str) free(self.binary_fmt_str);
-            if (!val.empty()) {
-              self.binary_fmt_str = strdup(val.c_str());
-              if (!self.binary_fmt_str) {
-                throw std::runtime_error(
-                    "Failed to allocate memory for binary_fmt_str");
-              }
-            } else {
-              self.binary_fmt_str = nullptr;
-            }
-          },
-          "Binary format string (e.g., 'III' for 3 int32s)")
-
-      .def_property(
-          "feature_fields",
-          [](const reader_init_param_t& self) {
-            return std::vector<int32_t>(
-                self.feature_fields,
-                self.feature_fields +
-                    std::min(self.n_feature_fields, (int32_t)N_MAX_FEATURES));
-          },
-          [](reader_init_param_t& self, const std::vector<int32_t>& vals) {
-            if (vals.size() > N_MAX_FEATURES) {
-              throw py::value_error("Too many feature fields");
-            }
-            self.n_feature_fields = static_cast<int32_t>(vals.size());
-            std::copy(vals.begin(), vals.end(), self.feature_fields);
-          },
-          "List of feature field indices")
-
-      // === UTILITY METHODS ===
-      .def(
-          "to_dict",
-          [](const reader_init_param_t& self) {
-            py::dict result;
-
-            // Core fields
-            result["time_field"] = self.time_field;
-            result["obj_id_field"] = self.obj_id_field;
-            result["obj_size_field"] = self.obj_size_field;
-            result["has_header"] = self.has_header;
-            result["delimiter"] = std::string(1, self.delimiter);
-
-            // Flags
-            result["ignore_obj_size"] = self.ignore_obj_size;
-            result["ignore_size_zero_req"] = self.ignore_size_zero_req;
-            result["obj_id_is_num"] = self.obj_id_is_num;
-
-            // Advanced fields (only include non-default values)
-            if (self.cap_at_n_req != -1)
-              result["cap_at_n_req"] = self.cap_at_n_req;
-            if (self.op_field != -1) result["op_field"] = self.op_field;
-            if (self.ttl_field != -1) result["ttl_field"] = self.ttl_field;
-            if (self.binary_fmt_str)
-              result["binary_format"] = std::string(self.binary_fmt_str);
-            if (self.n_feature_fields > 0) {
-              result["feature_fields"] = std::vector<int32_t>(
-                  self.feature_fields,
-                  self.feature_fields + self.n_feature_fields);
-            }
-
-            return result;
-          },
-          "Convert to dictionary representation")
-      .def_readwrite("ignore_obj_size", &reader_init_param_t::ignore_obj_size)
-      .def_readwrite("ignore_size_zero_req",
-                     &reader_init_param_t::ignore_size_zero_req)
-      .def_readwrite("obj_id_is_num", &reader_init_param_t::obj_id_is_num)
-      .def_readwrite("cap_at_n_req", &reader_init_param_t::cap_at_n_req)
-      .def_readwrite("op_field", &reader_init_param_t::op_field)
-      .def_readwrite("ttl_field", &reader_init_param_t::ttl_field)
-      .def_readwrite("cnt_field", &reader_init_param_t::cnt_field)
-      .def_readwrite("tenant_field", &reader_init_param_t::tenant_field)
-      .def_readwrite("next_access_vtime_field",
-                     &reader_init_param_t::next_access_vtime_field)
-      .def_readwrite("block_size", &reader_init_param_t::block_size)
-      .def_readwrite("trace_start_offset",
-                     &reader_init_param_t::trace_start_offset);
+      .def("__repr__", [](const reader_init_param_t& params) {
+        // Return standard fields
+        std::stringstream ss;
+        ss << "ReaderInitParam(";
+        ss << "time_field=" << params.time_field << ", ";
+        ss << "obj_id_field=" << params.obj_id_field << ", ";
+        ss << "obj_size_field=" << params.obj_size_field << ", ";
+        ss << "has_header=" << params.has_header << ", ";
+        ss << "ignore_obj_size=" << params.ignore_obj_size << ", ";
+        ss << "ignore_size_zero_req=" << params.ignore_size_zero_req << ", ";
+        ss << "obj_id_is_num=" << params.obj_id_is_num << ", ";
+        ss << "obj_id_is_num_set=" << params.obj_id_is_num_set << ", ";
+        ss << "has_header_set=" << params.has_header_set << ", ";
+        ss << "cap_at_n_req=" << params.cap_at_n_req << ", ";
+        ss << "op_field=" << params.op_field << ", ";
+        ss << "ttl_field=" << params.ttl_field << ", ";
+        ss << "cnt_field=" << params.cnt_field << ", ";
+        ss << "tenant_field=" << params.tenant_field << ", ";
+        ss << "next_access_vtime_field=" << params.next_access_vtime_field
+           << ", ";
+        ss << "block_size=" << params.block_size << ", ";
+        ss << "trace_start_offset=" << params.trace_start_offset << ")";
+        return ss.str();
+      });
 
   // *************** functions ***************
   /**
