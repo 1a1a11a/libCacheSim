@@ -221,8 +221,8 @@ print(f"Cache hit: {hit}")  # Should be False (miss)
 ```python
 import libcachesim as lcs
 from collections import deque
+from contextlib import suppress
 
-# Create a custom FIFO cache
 cache = lcs.PythonHookCachePolicy(cache_size=1024, cache_name="CustomFIFO")
 
 def init_hook(cache_size):
@@ -238,8 +238,8 @@ def eviction_hook(fifo_queue, obj_id, obj_size):
     return fifo_queue[0]  # Return first item (oldest)
 
 def remove_hook(fifo_queue, obj_id):
-    if fifo_queue and fifo_queue[0] == obj_id:
-        fifo_queue.popleft()
+    with suppress(ValueError):
+        fifo_queue.remove(obj_id)
 
 # Set the hooks and test
 cache.set_hooks(init_hook, hit_hook, miss_hook, eviction_hook, remove_hook)
