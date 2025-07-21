@@ -23,7 +23,6 @@ typedef struct reader {
   size_t file_size;
 
   trace_type_e trace_type;   /* possible types see trace_type_t  */
-  obj_id_type_e obj_id_type; /* possible types see obj_id_type_e in request.h */
 
   size_t item_size; /* the size of one record, used to
                      * locate the memory location of next element,
@@ -53,21 +52,18 @@ typedef struct reader {
  * @param trace_path
  * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
  * TWR_BIN_TRACE
- * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR
  * @param setup_params
  * @return a pointer to reader_t struct, the returned reader needs to be
  * explicitly closed by calling close_reader or close_trace
  */
 reader_t *setup_reader(const char *trace_path, const trace_type_e trace_type,
-                       const obj_id_type_e obj_id_type,
                        const reader_init_param_t *const reader_init_param);
 
 /* this is the same function as setup_reader */
 static inline reader_t *
 open_trace(const char *path, const trace_type_e type,
-           const obj_id_type_e obj_id_type,
            const reader_init_param_t *const reader_init_param) {
-  return setup_reader(path, type, obj_id_type, reader_init_param);
+  return setup_reader(path, type, reader_init_param);
 }
 
 /**
@@ -84,15 +80,6 @@ uint64_t get_num_of_req(reader_t *const reader);
  */
 static inline trace_type_e get_trace_type(const reader_t *const reader) {
   return reader->trace_type;
-}
-
-/**
- * as the name suggests
- * @param reader
- * @return
- */
-static inline obj_id_type_e get_obj_id_type(const reader_t *const reader) {
-  return reader->obj_id_type;
 }
 
 /**
@@ -159,7 +146,3 @@ simulate_at_multi_sizes_with_step_size(reader_t *const reader_in,
 
 
 profiler:
-
-
-
-
