@@ -1,6 +1,10 @@
 """Wrapper of Analyzer"""
+from __future__ import annotations
 
-from .protocols import ReaderProtocol, AnalyzerProtocol
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .protocols import ReaderProtocol
 
 from .libcachesim_python import (
     Analyzer,
@@ -9,13 +13,13 @@ from .libcachesim_python import (
 )
 
 
-class TraceAnalyzer(AnalyzerProtocol):
+class TraceAnalyzer:
     _analyzer: Analyzer
 
     def __init__(
         self,
         analyzer: Analyzer,
-        reader: "ReaderProtocol",
+        reader: ReaderProtocol,
         output_path: str,
         analysis_param: AnalysisParam,
         analysis_option: AnalysisOption,

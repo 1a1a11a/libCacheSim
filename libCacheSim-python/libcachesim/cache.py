@@ -40,11 +40,11 @@ from .libcachesim_python import (
     c_process_trace,
 )
 
-from .protocols import CacheProtocol, ReaderProtocol
+from .protocols import ReaderProtocol
 
 
-class CacheBase(CacheProtocol):
-    """Base class for all cache implementations that implements CacheProtocol"""
+class CacheBase(ABC):
+    """Base class for all cache implementations"""
 
     _cache: Cache  # Internal C++ cache object
 

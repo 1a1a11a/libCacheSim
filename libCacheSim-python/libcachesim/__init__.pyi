@@ -3,7 +3,7 @@ from typing import bool, int, str, tuple
 from collections.abc import Iterator
 
 from .libcachesim_python import ReqOp, TraceType, SamplerType
-from .protocols import ReaderProtocol, CacheProtocol
+from .protocols import ReaderProtocol
 
 class Request:
     clock_time: int
@@ -59,8 +59,8 @@ class Cache:
     def get_n_obj(self) -> int: ...
     def print_cache(self) -> str: ...
 
-class CacheBase(CacheProtocol):
-    """Base class implementing CacheProtocol"""
+class CacheBase:
+    """Base class for all cache implementations"""
     def __init__(self, _cache: Cache): ...
     def get(self, req: Request) -> bool: ...
     def find(self, req: Request, update_cache: bool = True) -> CacheObject: ...
@@ -219,6 +219,7 @@ def create_zipf_requests(
     start_obj_id: int = 0,
     seed: int | None = None,
 ) -> Iterator[Request]: ...
+
 def create_uniform_requests(
     num_objects: int,
     num_requests: int,
@@ -230,8 +231,9 @@ def create_uniform_requests(
 
 # Analyzer
 class TraceAnalyzer:
-    def __init__(self, analyzer): ...
-    def analyze(self, reader: ReaderProtocol, output_path: str, analysis_param, analysis_option) -> None: ...
+    def __init__(self, analyzer, reader: ReaderProtocol, output_path: str, analysis_param, analysis_option): ...
+    def run(self) -> None: ...
+    def cleanup(self) -> None: ...
 
 # Utilities
 class Util:

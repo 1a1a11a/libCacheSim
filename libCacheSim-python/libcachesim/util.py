@@ -1,9 +1,11 @@
 """Wrapper misc functions"""
+from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .protocols import CacheProtocol, ReaderProtocol
+    from .protocols import ReaderProtocol
+    from .cache import CacheBase
 
 from .libcachesim_python import convert_to_oracleGeneral, convert_to_lcs, c_process_trace
 
@@ -28,9 +30,7 @@ class Util:
         return convert_to_lcs(reader, ofilepath, output_txt, remove_size_change, lcs_ver)
 
     @staticmethod
-    def process_trace(
-        cache: "CacheProtocol", reader: "ReaderProtocol", start_req: int = 0, max_req: int = -1
-    ) -> tuple[float, float]:
+    def process_trace(cache: CacheBase, reader: ReaderProtocol, start_req: int = 0, max_req: int = -1) -> tuple[float, float]:
         """
         Process a trace with a cache.
 
@@ -44,7 +44,7 @@ class Util:
             tuple[float, float]: The object miss ratio and byte miss ratio.
         """
         # Check if reader is C++ reader
-        if not hasattr(reader, "c_reader") or not reader.c_reader:
+        if not hasattr(reader, 'c_reader') or not reader.c_reader:
             raise ValueError("Reader must be a C++ reader")
 
         return c_process_trace(cache._cache, reader._reader, start_req, max_req)
