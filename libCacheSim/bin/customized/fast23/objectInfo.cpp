@@ -38,7 +38,7 @@ struct map_val {
 std::vector<fast23::obj_reuse_stat> objectInfo::compute_obj_reuse_stat(
     std::string trace_path) {
   reader_t *reader =
-      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, OBJ_ID_NUM, nullptr);
+      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, nullptr);
   request_t *req = new_request();
   int64_t n_req = 0;
   unordered_map<uint64_t, shared_ptr<struct map_val>> objmap;
@@ -93,7 +93,7 @@ int64_t objectInfo::convert_trace_to_requests(
     std::string trace_path, fast23::request_info *request_info,
     int64_t request_info_size, int64_t n_skip) {
   reader_t *reader =
-      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, OBJ_ID_NUM, nullptr);
+      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, nullptr);
   request_t *req = new_request();
   int64_t n_req = n_skip;
 
