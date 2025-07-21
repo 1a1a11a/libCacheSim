@@ -42,7 +42,14 @@ struct RequestDeleter {
 
 struct ReaderInitParamDeleter {
   void operator()(reader_init_param_t* ptr) const {
-    if (ptr != nullptr) free(ptr);
+    if (ptr != nullptr) {
+      // Free the strdup'ed string if it exists
+      if (ptr->binary_fmt_str != nullptr) {
+        free(ptr->binary_fmt_str);
+        ptr->binary_fmt_str = nullptr;
+      }
+      free(ptr);
+    }
   }
 };
 
@@ -123,9 +130,16 @@ void export_reader(py::module& m) {
                        const std::string& delimiter, ssize_t trace_start_offset,
                        sampler_t* sampler) {
              reader_init_param_t params = default_reader_init_params();
+
+             // Safe string handling with proper error checking
              if (!binary_fmt_str.empty()) {
-               params.binary_fmt_str = strdup(binary_fmt_str.c_str());
+               char* fmt_str = strdup(binary_fmt_str.c_str());
+               if (!fmt_str) {
+                 throw std::bad_alloc();
+               }
+               params.binary_fmt_str = fmt_str;
              }
+
              params.ignore_obj_size = ignore_obj_size;
              params.ignore_size_zero_req = ignore_size_zero_req;
              params.obj_id_is_num = obj_id_is_num;

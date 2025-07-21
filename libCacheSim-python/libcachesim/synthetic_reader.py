@@ -95,7 +95,7 @@ class SyntheticReader(ReaderProtocol):
         req.obj_id = obj_id
         req.obj_size = self.obj_size
         req.clock_time = self.current_pos * self.time_span // self.num_of_req
-        req.op = ReqOp.OP_NOP
+        req.op = ReqOp.OP_READ
         req.valid = True
 
         self.current_pos += 1
@@ -132,7 +132,7 @@ class SyntheticReader(ReaderProtocol):
         req.obj_id = obj_id
         req.obj_size = self.obj_size
         req.clock_time = 0
-        req.op = ReqOp.OP_NOP
+        req.op = ReqOp.OP_READ
         req.valid = True
         return req
 
@@ -146,7 +146,7 @@ class SyntheticReader(ReaderProtocol):
         req.obj_id = obj_id
         req.obj_size = self.obj_size
         req.clock_time = (self.num_of_req - 1) * self.time_span // self.num_of_req
-        req.op = ReqOp.OP_NOP
+        req.op = ReqOp.OP_READ
         req.valid = True
         return req
 
@@ -165,7 +165,7 @@ class SyntheticReader(ReaderProtocol):
         req.obj_id = obj_id
         req.obj_size = self.obj_size
         req.clock_time = (self.current_pos + 1) * self.time_span // self.num_of_req
-        req.op = ReqOp.OP_NOP
+        req.op = ReqOp.OP_READ
         req.valid = True
         return req
 
@@ -207,7 +207,7 @@ class SyntheticReader(ReaderProtocol):
         req.obj_id = obj_id
         req.obj_size = self.obj_size
         req.clock_time = index * self.time_span // self.num_of_req
-        req.op = ReqOp.OP_NOP
+        req.op = ReqOp.OP_READ
         req.valid = True
         return req
 
@@ -256,7 +256,8 @@ def _gen_uniform(m: int, n: int, start: int = 0) -> np.ndarray:
     """
     if m <= 0 or n <= 0:
         raise ValueError("num_objects and num_requests must be positive")
-    return np.random.randint(0, m, n) + start
+    # Optimized: directly generate in the target range for better performance
+    return np.random.randint(start, start + m, n)
 
 
 class _BaseRequestGenerator:
@@ -302,7 +303,7 @@ class _BaseRequestGenerator:
             req.clock_time = i * self.time_span // self.num_requests
             req.obj_id = obj_id
             req.obj_size = self.obj_size
-            req.op = ReqOp.OP_NOP
+            req.op = ReqOp.OP_READ
             req.valid = True
             yield req
 

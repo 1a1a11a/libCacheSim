@@ -11,6 +11,7 @@
 #include <pybind11/stl.h>
 
 #include <iostream>
+#include <memory>
 #include <sstream>
 
 #include "config.h"
@@ -58,7 +59,10 @@ struct RequestDeleter {
 // ****             Python plugin cache implementation BEGIN          ****
 // ***********************************************************************
 
-typedef struct pypluginCache_params {
+// Forward declaration with appropriate visibility
+struct pypluginCache_params;
+
+typedef struct __attribute__((visibility("hidden"))) pypluginCache_params {
   py::object data;  ///< Plugin's internal data structure (python object)
   py::function cache_init_hook;
   py::function cache_hit_hook;
@@ -68,6 +72,23 @@ typedef struct pypluginCache_params {
   py::function cache_free_hook;
   std::string cache_name;
 } pypluginCache_params_t;
+
+// Custom deleter for pypluginCache_params_t
+struct PypluginCacheParamsDeleter {
+  void operator()(pypluginCache_params_t* ptr) const {
+    if (ptr != nullptr) {
+      // Call the free hook if available before deletion
+      if (!ptr->cache_free_hook.is_none()) {
+        try {
+          ptr->cache_free_hook(ptr->data);
+        } catch (...) {
+          // Ignore exceptions during cleanup to prevent double-fault
+        }
+      }
+      delete ptr;
+    }
+  }
+};
 
 static void pypluginCache_free(cache_t* cache);
 static bool pypluginCache_get(cache_t* cache, const request_t* req);
@@ -84,47 +105,71 @@ cache_t* pypluginCache_init(
     py::function cache_init_hook, py::function cache_hit_hook,
     py::function cache_miss_hook, py::function cache_eviction_hook,
     py::function cache_remove_hook, py::function cache_free_hook) {
-  // Initialize base cache structure
-  cache_t* cache = cache_struct_init(cache_name.c_str(), ccache_params, NULL);
+  // Initialize base cache structure with exception safety
+  cache_t* cache = nullptr;
+  std::unique_ptr<pypluginCache_params_t, PypluginCacheParamsDeleter> params;
 
-  // Set function pointers for cache operations
-  cache->cache_init = NULL;
-  cache->cache_free = pypluginCache_free;
-  cache->get = pypluginCache_get;
-  cache->find = pypluginCache_find;
-  cache->insert = pypluginCache_insert;
-  cache->evict = pypluginCache_evict;
-  cache->remove = pypluginCache_remove;
-  cache->to_evict = pypluginCache_to_evict;
-  cache->get_occupied_byte = cache_get_occupied_byte_default;
-  cache->get_n_obj = cache_get_n_obj_default;
-  cache->can_insert = cache_can_insert_default;
-  cache->obj_md_size = 0;
+  try {
+    cache = cache_struct_init(cache_name.c_str(), ccache_params, NULL);
+    if (!cache) {
+      throw std::runtime_error("Failed to initialize cache structure");
+    }
 
-  // Allocate and initialize plugin parameters
-  pypluginCache_params_t* params = new pypluginCache_params_t();
-  params->cache_name = cache_name;
-  params->cache_init_hook = cache_init_hook;
-  params->cache_hit_hook = cache_hit_hook;
-  params->cache_miss_hook = cache_miss_hook;
-  params->cache_eviction_hook = cache_eviction_hook;
-  params->cache_remove_hook = cache_remove_hook;
-  params->cache_free_hook = cache_free_hook;
-  params->data = cache_init_hook(ccache_params);
+    // Set function pointers for cache operations
+    cache->cache_init = NULL;
+    cache->cache_free = pypluginCache_free;
+    cache->get = pypluginCache_get;
+    cache->find = pypluginCache_find;
+    cache->insert = pypluginCache_insert;
+    cache->evict = pypluginCache_evict;
+    cache->remove = pypluginCache_remove;
+    cache->to_evict = pypluginCache_to_evict;
+    cache->get_occupied_byte = cache_get_occupied_byte_default;
+    cache->get_n_obj = cache_get_n_obj_default;
+    cache->can_insert = cache_can_insert_default;
+    cache->obj_md_size = 0;
 
-  cache->eviction_params = params;
+    // Allocate and initialize plugin parameters using smart pointer with custom
+    // deleter
+    params =
+        std::unique_ptr<pypluginCache_params_t, PypluginCacheParamsDeleter>(
+            new pypluginCache_params_t(), PypluginCacheParamsDeleter());
+    params->cache_name = cache_name;
+    params->cache_init_hook = cache_init_hook;
+    params->cache_hit_hook = cache_hit_hook;
+    params->cache_miss_hook = cache_miss_hook;
+    params->cache_eviction_hook = cache_eviction_hook;
+    params->cache_remove_hook = cache_remove_hook;
+    params->cache_free_hook = cache_free_hook;
 
-  return cache;
+    // Initialize the cache data - this might throw
+    params->data = cache_init_hook(ccache_params);
+
+    // Transfer ownership to the cache structure
+    cache->eviction_params = params.release();
+
+    return cache;
+
+  } catch (...) {
+    // Clean up on exception
+    if (cache) {
+      cache_struct_free(cache);
+    }
+    // params will be automatically cleaned up by smart pointer destructor
+    throw;  // Re-throw the exception
+  }
 }
 
 static void pypluginCache_free(cache_t* cache) {
-  pypluginCache_params_t* params =
-      (pypluginCache_params_t*)cache->eviction_params;
-
-  if (!params->cache_free_hook.is_none()) {
-    params->cache_free_hook(params->data);
+  if (!cache || !cache->eviction_params) {
+    return;
   }
-  delete params;
+
+  // Use smart pointer for automatic cleanup
+  std::unique_ptr<pypluginCache_params_t, PypluginCacheParamsDeleter> params(
+      static_cast<pypluginCache_params_t*>(cache->eviction_params));
+
+  // The smart pointer destructor will handle cleanup automatically
   cache_struct_free(cache);
 }
 
