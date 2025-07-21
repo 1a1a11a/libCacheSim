@@ -76,22 +76,32 @@ else()
     message(FATAL_ERROR "Pre-built libCacheSim library not found. Please build the main project first: cd .. && cmake -G Ninja -B build && ninja -C build")
 endif()
 
-python_add_library(_libcachesim MODULE
-    src/pylibcachesim.cpp
+include_directories(src)
+
+python_add_library(libcachesim_python MODULE
+    src/export.cpp
+    src/export_cache.cpp
+    src/export_reader.cpp
+    src/export_analyzer.cpp
+    src/export_misc.cpp
+    src/exception.cpp
     ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/cli_reader_utils.c
+    ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/traceUtils/traceConvLCS.cpp
+    ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/traceUtils/traceConvOracleGeneral.cpp
+    ${MAIN_PROJECT_SOURCE_DIR}/libCacheSim/bin/traceUtils/utils.cpp
     WITH_SOABI
 )
 
-set_target_properties(_libcachesim PROPERTIES
+set_target_properties(libcachesim_python PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     INSTALL_RPATH_USE_LINK_PATH TRUE
     BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_RPATH "$ORIGIN"
 )
 
-target_compile_definitions(_libcachesim PRIVATE VERSION_INFO=${PROJECT_VERSION})
+target_compile_definitions(libcachesim_python PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
-target_link_libraries(_libcachesim PRIVATE
+target_link_libraries(libcachesim_python PRIVATE
     ${LIBCACHESIM_TARGET}
     pybind11::headers
     pybind11::module
@@ -102,8 +112,8 @@ target_link_libraries(_libcachesim PRIVATE
 # Add platform-specific link options and libraries
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     # GNU ld option, only available on Linux
-    target_link_options(_libcachesim PRIVATE -Wl,--no-as-needed)
-    target_link_libraries(_libcachesim PRIVATE dl)
+    target_link_options(libcachesim_python PRIVATE -Wl,--no-as-needed)
+    target_link_libraries(libcachesim_python PRIVATE dl)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # macOS doesn't need --no-as-needed
     # dl functions are part of the system library on macOS
@@ -112,21 +122,21 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     # Find argp library on macOS
     find_library(ARGP_LIBRARY argp PATHS /opt/homebrew/lib /usr/local/lib)
     if(ARGP_LIBRARY)
-        target_link_libraries(_libcachesim PRIVATE ${ARGP_LIBRARY})
+        target_link_libraries(libcachesim_python PRIVATE ${ARGP_LIBRARY})
     endif()
 
     # Find and link other dependencies that might be needed
     find_library(INTL_LIBRARY intl PATHS /opt/homebrew/lib /usr/local/lib)
     if(INTL_LIBRARY)
-        target_link_libraries(_libcachesim PRIVATE ${INTL_LIBRARY})
+        target_link_libraries(libcachesim_python PRIVATE ${INTL_LIBRARY})
     endif()
 else()
     # Other platforms - try to link dl if available
     find_library(DL_LIBRARY dl)
     if(DL_LIBRARY)
-        target_link_libraries(_libcachesim PRIVATE ${DL_LIBRARY})
+        target_link_libraries(libcachesim_python PRIVATE ${DL_LIBRARY})
     endif()
 endif()
 
 # install to wheel directory
-install(TARGETS _libcachesim LIBRARY DESTINATION libcachesim)
+install(TARGETS libcachesim_python LIBRARY DESTINATION libcachesim)
