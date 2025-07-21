@@ -108,7 +108,10 @@
     "editor.formatOnSave": true,
     "editor.insertSpaces": true,
     "editor.detectIndentation": true,
-    "editor.rulers": [80, 100],
+    "editor.rulers": [
+        80,
+        100
+    ],
     "editor.wordWrap": "wordWrapColumn",
     "editor.wordWrapColumn": 100,
     "files.trimTrailingWhitespace": true,
@@ -133,5 +136,6 @@
         "**/*.code-search": true
     },
     "git.ignoreLimitWarning": true,
-    "terminal.integrated.cwd": "${workspaceFolder}"
+    "terminal.integrated.cwd": "${workspaceFolder}",
+    "python.formatting.provider": "yapf"
 }

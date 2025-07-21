@@ -3,9 +3,9 @@
 # ==============================================================================
 
 set(traceReader_sources_c
-    generalReader/binary.c 
-    generalReader/csv.c 
-    generalReader/txt.c 
+    generalReader/binary.c
+    generalReader/csv.c
+    generalReader/txt.c
     generalReader/libcsv.c
     customizedReader/lcs.c
     reader.c

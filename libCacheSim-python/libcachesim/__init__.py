@@ -2,83 +2,89 @@
 
 from __future__ import annotations
 
-from ._libcachesim import (
+from .libcachesim_python import (
     Cache,
-    Reader,
-    ReaderInitParam,
     Request,
     ReqOp,
     TraceType,
+    SamplerType,
     __doc__,
     __version__,
-    open_trace,
-    process_trace,
-    process_trace_python_hook,
 )
-from .eviction import (
-    ARC,
-    Belady,
-    BeladySize,
-    Cacheus,
-    Clock,
-    FIFO,
-    LeCaR,
-    LFU,
-    LFUDA,
-    LRB,
+
+from .cache import (
+    CacheBase,
+    # Core algorithms
     LRU,
-    PythonHookCachePolicy,
-    QDLP,
+    FIFO,
+    LFU,
+    ARC,
+    Clock,
+    Random,
+    # Advanced algorithms
     S3FIFO,
     Sieve,
-    SLRU,
-    ThreeLCache,
-    TinyLFU,
+    LIRS,
     TwoQ,
+    SLRU,
     WTinyLFU,
+    LeCaR,
+    LFUDA,
+    ClockPro,
+    Cacheus,
+    # Optimal algorithms
+    Belady,
+    BeladySize,
+    # Plugin cache
+    PythonHookCachePolicy,
 )
-from .trace_generator import (
-    create_zipf_requests,
-    create_uniform_requests,
-)
+
+from .trace_reader import TraceReader
+from .trace_analyzer import TraceAnalyzer
+from .synthetic_reader import SyntheticReader, create_zipf_requests, create_uniform_requests
+from .util import Util
 
 __all__ = [
     # Core classes
     "Cache",
-    "Reader",
     "Request",
-    "ReaderInitParam",
-    # Trace types and operations
-    "TraceType",
     "ReqOp",
-    # Cache policies
+    "TraceType",
+    "SamplerType",
+    # Cache base class
+    "CacheBase",
+    # Core cache algorithms
     "LRU",
     "FIFO",
+    "LFU",
     "ARC",
     "Clock",
-    "LFU",
-    "LFUDA",
-    "SLRU",
+    "Random",
+    # Advanced cache algorithms
     "S3FIFO",
     "Sieve",
-    "TinyLFU",
-    "WTinyLFU",
+    "LIRS",
     "TwoQ",
-    "ThreeLCache",
+    "SLRU",
+    "WTinyLFU",
+    "LeCaR",
+    "LFUDA",
+    "ClockPro",
+    "Cacheus",
+    # Optimal algorithms
     "Belady",
     "BeladySize",
-    "LRB",
-    "QDLP",
-    "LeCaR",
-    "Cacheus",
-    # Custom cache policy
+    # Plugin cache
     "PythonHookCachePolicy",
-    # Functions
-    "open_trace",
-    "process_trace",
-    "process_trace_python_hook",
+    # Readers and analyzers
+    "TraceReader",
+    "TraceAnalyzer",
+    "SyntheticReader",
+    # Trace generators
     "create_zipf_requests",
     "create_uniform_requests",
+    # Utilities
+    "Util",
     # Metadata
     "__doc__",
     "__version__",
