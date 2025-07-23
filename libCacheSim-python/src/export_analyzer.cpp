@@ -92,8 +92,8 @@ void export_analyzer(py::module& m) {
                                    AnalysisOptionDeleter>(
                 new traceAnalyzer::analysis_option_t(option));
           }),
-          "req_rate"_a = false, "access_pattern"_a = false, "size"_a = false,
-          "reuse"_a = false, "popularity"_a = false, "ttl"_a = false,
+          "req_rate"_a = true, "access_pattern"_a = true, "size"_a = true,
+          "reuse"_a = true, "popularity"_a = true, "ttl"_a = false,
           "popularity_decay"_a = false, "lifetime"_a = false,
           "create_future_reuse_ccdf"_a = false, "prob_at_age"_a = false,
           "size_change"_a = false)
@@ -119,18 +119,17 @@ void export_analyzer(py::module& m) {
   py::class_<traceAnalyzer::TraceAnalyzer,
              std::unique_ptr<traceAnalyzer::TraceAnalyzer>>(m, "Analyzer")
       .def(py::init([](reader_t* reader, std::string output_path,
-                       const traceAnalyzer::analysis_param_t& param,
-                       const traceAnalyzer::analysis_option_t& option) {
+                       const traceAnalyzer::analysis_option_t& option,
+                       const traceAnalyzer::analysis_param_t& param) {
              traceAnalyzer::TraceAnalyzer* analyzer =
                  new traceAnalyzer::TraceAnalyzer(reader, output_path, option,
                                                   param);
              return std::unique_ptr<traceAnalyzer::TraceAnalyzer>(analyzer);
            }),
            "reader"_a, "output_path"_a,
-           "param"_a = traceAnalyzer::default_param(),
-           "option"_a = traceAnalyzer::default_option())
-      .def("run", &traceAnalyzer::TraceAnalyzer::run)
-      .def("cleanup", &traceAnalyzer::TraceAnalyzer::cleanup);
+           "option"_a = traceAnalyzer::default_option(),
+           "param"_a = traceAnalyzer::default_param())
+      .def("run", &traceAnalyzer::TraceAnalyzer::run);
 }
 
 }  // namespace libcachesim

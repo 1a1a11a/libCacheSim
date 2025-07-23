@@ -8,6 +8,8 @@ from .libcachesim_python import (
     ReqOp,
     TraceType,
     SamplerType,
+    AnalysisParam,
+    AnalysisOption,
     __doc__,
     __version__,
 )
@@ -43,6 +45,7 @@ from .trace_reader import TraceReader
 from .trace_analyzer import TraceAnalyzer
 from .synthetic_reader import SyntheticReader, create_zipf_requests, create_uniform_requests
 from .util import Util
+from .data_loader import DataLoader
 
 __all__ = [
     # Core classes
@@ -51,6 +54,8 @@ __all__ = [
     "ReqOp",
     "TraceType",
     "SamplerType",
+    "AnalysisParam",
+    "AnalysisOption",
     # Cache base class
     "CacheBase",
     # Core cache algorithms
@@ -85,6 +90,8 @@ __all__ = [
     "create_uniform_requests",
     # Utilities
     "Util",
+    # Data loader
+    "DataLoader",
     # Metadata
     "__doc__",
     "__version__",
