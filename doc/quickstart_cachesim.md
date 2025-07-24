@@ -1,17 +1,17 @@
 
-# cachesim user guide 
-cachesim is a tool provided by libCacheSim to quickly run some cache simulations, it supports 
-* a variety of eviction algorithms such as FIFO, LRU, LFU, ARC, SLRU, LeCaR, CACHEUS, Hyperbolic, LHD, TinyLFU, Belady, LRB and GLCache. 
-* a variety of admission algorithms such as size, bloomFilter and adaptSize. 
-* text, csv trace as well as binary traces. 
-* automatic multi-threaded simulations. 
+# cachesim user guide
+cachesim is a tool provided by libCacheSim to quickly run some cache simulations, it supports
+* a variety of eviction algorithms such as FIFO, LRU, LFU, ARC, SLRU, LeCaR, CACHEUS, Hyperbolic, LHD, TinyLFU, Belady, LRB and GLCache.
+* a variety of admission algorithms such as size, bloomFilter and adaptSize.
+* text, csv trace as well as binary traces.
+* automatic multi-threaded simulations.
 
-Meanwhile, cachesim has high-performance with low resource usages. 
+Meanwhile, cachesim has high-performance with low resource usages.
 
 ---
 
 ## Installation
-First, [build libCacheSim](/doc/install.md). After building libCacheSim, `cachesim` should be in the build directory. 
+First, [build libCacheSim](/doc/install.md). After building libCacheSim, `cachesim` should be in the build directory.
 
 ---
 
@@ -24,12 +24,12 @@ use `./cachesim --help` to get more information.
 
 ### Run a single cache simulation
 
-Run the example vscsi trace with LRU eviction algorithm and 1GB cache size. 
-Note that vscsi is a trace format, we also support csv traces. 
+Run the example vscsi trace with LRU eviction algorithm and 1GB cache size.
+Note that vscsi is a trace format, we also support csv traces.
 
 ```bash
 # Note that no space between the cache size and the unit, unit is not case sensitive
-./cachesim ../data/trace.vscsi vscsi lru 1gb 
+./cachesim ../data/trace.vscsi vscsi lru 1gb
 ```
 
 ### Run multiple cache simulations
@@ -55,7 +55,7 @@ Note that vscsi is a trace format, we also support csv traces.
 
 
 ### Auto detect cache sizes
-cachesim can detect the working set of the trace and automatically generate cache sizes at 0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3 of the working set size. 
+cachesim can detect the working set of the trace and automatically generate cache sizes at 0.001, 0.003, 0.01, 0.03, 0.1, 0.2, 0.4, 0.8 of the working set size.
 You can enable this feature by setting cache size to 0 or auto.
 
 ```bash
@@ -81,7 +81,7 @@ cachesim supports the following algorithms:
 * [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
 
-You can just use the algorithm name as the eviction algorithm parameter, for example  
+You can just use the algorithm name as the eviction algorithm parameter, for example
 
 ```bash
 ./cachesim ../data/trace.vscsi vscsi lecar auto
@@ -94,12 +94,12 @@ You can just use the algorithm name as the eviction algorithm parameter, for exa
 ```
 
 
-### Use different trace types 
+### Use different trace types
 We have demonstrated the use of cachesim with vscsi trace. We also support csv traces.
-To use a csv trace, we need to provide the column of *time*, *obj-id*, and *obj-size*. 
+To use a csv trace, we need to provide the column of *time*, *obj-id*, and *obj-size*.
 Both time and size are optional, but many algorithms rely on time and size to work properly.
 The column starts from 1, the first column is 1, the second is 2, etc.
-Besides the column information, a csv reader also requires the delimiter and whether the csv file has a header. 
+Besides the column information, a csv reader also requires the delimiter and whether the csv file has a header.
 cachesim builds in a simple delimiter and header detector, if the detected result is not correct, you can provide the correct information using `delimiter=,`, `has-header=true`.
 
 
@@ -115,7 +115,7 @@ cachesim builds in a simple delimiter and header detector, if the detected resul
 ./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
 ```
 
-Besides csv trace, we also support txt trace and binary trace. 
+Besides csv trace, we also support txt trace and binary trace.
 ```bash
 # txt trace is a simple format that stores obj-id in each line
 ./cachesim ../data/trace.txt txt lru 1gb
@@ -133,7 +133,7 @@ Besides csv trace, we also support txt trace and binary trace.
 ## Advanced usage
 
 cachesim supports many advanced features, you can use `./cachesim --help` to get more information.
-Here we give some examples. 
+Here we give some examples.
 
 ### Setting parameters for eviction algorithms
 Some eviction algorithms have parameters, you can set the parameters by using `-e "k1=v1,k2=v2"` or `--eviction-params "k1=v1,k2=v2"` format.
@@ -148,7 +148,7 @@ Some eviction algorithms have parameters, you can set the parameters by using `-
 
 ### Admission algorithm
 cachesim supports the following admission algorithms: size, probabilistic, bloomFilter, adaptSize.
-You can use `-a` or `--admission` to set the admission algorithm. 
+You can use `-a` or `--admission` to set the admission algorithm.
 ```bash
 # add a bloom filter to filter out objects on first access
 ./cachesim ../data/trace.vscsi vscsi lru 1gb -a bloomFilter
@@ -156,21 +156,21 @@ You can use `-a` or `--admission` to set the admission algorithm.
 
 ### Prefetching algorithm
 cachesim supports the following prefetching algorithms: OBL, Mithril, PG (and AMP is on the way).
-You can use `-p` or `--prefetch` to set the prefetching algorithm. 
+You can use `-p` or `--prefetch` to set the prefetching algorithm.
 ```bash
 # add a mithril to record object association information and fetch objects that are likely to be accessed in the future
 ./cachesim ../data/trace.vscsi vscsi lru 1gb -p Mithril
 ```
 
-### Advanced features 
+### Advanced features
 ```bash
-# change number of threads 
+# change number of threads
 ./cachesim ../data/trace.vscsi vscsi lru 1gb --num-thread=4
 
 # cap the number of requests read from the trace
 ./cachesim ../data/trace.vscsi vscsi lru 1gb --num-req=1000000
 
-# change output 
+# change output
 ./cachesim ../data/trace.vscsi vscsi lru 1gb -o my-output
 
 # ignore object size, each object has size one
@@ -188,8 +188,3 @@ You can use `-p` or `--prefetch` to set the prefetching algorithm.
 # Disable the print of the first few requests
 ./cachesim ../data/trace.vscsi vscsi lru 1gb --print-head-req=false
 ```
-
-
-
-
-
