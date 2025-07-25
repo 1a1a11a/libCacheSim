@@ -99,8 +99,8 @@ static const char* const req_op_str[OP_INVALID + 2] = {
     "prepend", "delete",
     "incr",    "decr",
     "read",    "write",
-    "update",  INV_X64 INV_X64 INV_X64 INV_X16 INV_X16 INV_X16
-    "invalid", "invalid"};
+    "update",  INV_X64 INV_X64 INV_X64 INV_X16 INV_X16 INV_X16 "invalid",
+    "invalid"};
 
 typedef enum { ERR, OK, MY_EOF } rstatus;
 static const char* const rstatus_str[3] = {"ERR", "OK", "MY_EOF"};
