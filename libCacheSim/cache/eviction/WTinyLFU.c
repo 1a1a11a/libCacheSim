@@ -305,6 +305,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
 #endif
 
           main_cache->evict(main_cache, req);
+          evicted = true;
 
           bool ret = window->remove(window, window_victim->obj_id);
           DEBUG_ASSERT(ret);
