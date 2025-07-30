@@ -8,11 +8,11 @@
 
 static void debug_print_feature_matrix(const DMatrixHandle handle,
                                        int print_n_row) {
-  unsigned long out_len;
+  bst_ulong out_len;
   const float *out_data;
   XGDMatrixGetFloatInfo(handle, "label", &out_len, &out_data);
 
-  printf("out_len: %lu\n", out_len);
+  printf("out_len: %llu\n", (unsigned long long)out_len);
   for (int i = 0; i < print_n_row; i++) {
     printf("%.4f, ", out_data[i]);
   }
