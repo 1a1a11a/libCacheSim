@@ -1,7 +1,5 @@
 
 
-
-
 ## data collection 
 
 
@@ -15,9 +13,10 @@ and calculates the segment utility over time using U_seg = \sum \frac{1}{D_obj \
 Note that `D_obj` is the distance/time _since snapshot_. Each object is counted for calculating 
 segment utility, when it has been counted, we mark the `seen_after_snapshot' and does not count again. 
 
-Notce that the X (features) used in training is the features of the 
-snapshotted segments *at the snapshot time*, 
-and the Y (utility) is calculated over time as objects are requested again, 
+Notce that the X (features)
+used in training is the features of the snapshotted segments *at the
+    snapshot time *,
+    and the Y(utility) is calculated over time as objects are requested again, 
 and the calculated Y is for *the features at the snapshot time* too.
 Because both features and segment utility are time-dependent, it is very important that they match each other.
 
@@ -55,7 +54,3 @@ We perform inference periodically, each time we rank all segments,
 then we merge evict segments one by one in the ranked order, until `rank_intvl * n_in_use_segs` 
 (rank_intvl fraction of all segments) are evicted. In other words, we only need `1/rank_intvl` inferences
 to evict/write `cache_size`' bytes. 
-
-
-
-

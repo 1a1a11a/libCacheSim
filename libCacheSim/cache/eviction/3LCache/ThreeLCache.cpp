@@ -437,8 +437,9 @@ void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
   inference_params_str.pop_back();  // Remove trailing space
   const char *inference_params_cstr = inference_params_str.c_str();
   LGBM_BoosterPredictForCSR(
-      booster, static_cast<void *>(indptr.data()), C_API_DTYPE_INT32, indices.data(),
-      static_cast<void *>(data.data()), C_API_DTYPE_FLOAT64, idx_row + 1, idx_feature,
+      booster, static_cast<void *>(indptr.data()), C_API_DTYPE_INT32,
+      indices.data(), static_cast<void *>(data.data()), C_API_DTYPE_FLOAT64,
+      idx_row + 1, idx_feature,
       n_feature,  // remove future t
       C_API_PREDICT_NORMAL, 0, 0, inference_params_cstr, &len, scores.data());
   float _distance;

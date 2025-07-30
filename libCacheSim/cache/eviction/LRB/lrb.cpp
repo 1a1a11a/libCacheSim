@@ -370,8 +370,9 @@ pair<uint64_t, uint32_t> LRBCache::rank() {
   // sample to measure inference time
   if (!(current_seq % 10000)) timeBegin = chrono::system_clock::now();
   LGBM_BoosterPredictForCSR(
-      booster, static_cast<void *>(indptr.data()), C_API_DTYPE_INT32, indices.data(),
-      static_cast<void *>(data.data()), C_API_DTYPE_FLOAT64, idx_row + 1, idx_feature,
+      booster, static_cast<void *>(indptr.data()), C_API_DTYPE_INT32,
+      indices.data(), static_cast<void *>(data.data()), C_API_DTYPE_FLOAT64,
+      idx_row + 1, idx_feature,
       n_feature,  // remove future t
       C_API_PREDICT_NORMAL, 0, atoi(training_params["num_iterations"].c_str()),
       map_to_string(inference_params).c_str(), &len, scores.data());

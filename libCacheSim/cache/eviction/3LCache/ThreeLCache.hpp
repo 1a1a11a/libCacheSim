@@ -390,7 +390,9 @@ class ThreeLCacheCache : public webcachesim::Cache {
 
   void setSize(const uint64_t &cs) override { _cacheSize = cs; }
 
-  bool exist(const int64_t &key) override { return key_map.find(key) != key_map.end(); }
+  bool exist(const int64_t &key) override {
+    return key_map.find(key) != key_map.end();
+  }
 
   pair<uint64_t, int32_t> evict_predobj();
 
