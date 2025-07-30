@@ -433,7 +433,7 @@ class LRBCache : public Cache {
   void remove_from_outcache_metas(Meta &meta, unsigned int &pos,
                                   const uint64_t &key);
 
-  bool has(const uint64_t &id) {
+  bool has(const uint64_t &id) override {
     auto it = key_map.find(id);
     if (it == key_map.end()) return false;
     return !it->second.list_idx;
