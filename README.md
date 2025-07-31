@@ -11,7 +11,6 @@
 </div>
 
 
-<a name="news"></a>
 ## News
 * **2024 Oct**: **S3-FIFO** gets an upgrade! Please try out the new version (the old is now renamed to S3-FIFOv0).
 * **2023 June**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
@@ -19,7 +18,6 @@
 * **2024 Jan**: We compiled a list of open-source cache datasets at the bottom of this page
 ---
 
-<a name="what-is-libcachesim"></a>
 ## What is libCacheSim
 * a high-performance **cache simulator** for running cache simulations.
 * a high-performance and versatile trace analyzer for **analyzing different cache traces**.
@@ -27,7 +25,6 @@
 
 ---
 
-<a name="libcachesim-features"></a>
 ## libCacheSim features
 * **High performance** - over 20M requests/sec for a realistic trace replay.
 * **High memory efficiency** - predictable and small memory footprint.
@@ -39,7 +36,6 @@
 * **Efficient Miss Ratio Curve profiler** - quickly build highly accurate miss ratio curves on large-scale workloads; see [here](/doc/quickstart_mrcProfiler.md).
 ---
 
-<a name="supported-algorithms"></a>
 ## Supported algorithms
 cachesim supports the following algorithms:
 ### Eviction algorithms
@@ -71,9 +67,7 @@ cachesim supports the following algorithms:
 ---
 
 
-<a name="build-and-install-libcachesim"></a>
 ## Build and Install libCacheSim
-<a name="one-line-install"></a>
 ### One-line install
 We provide some scripts for quick installation of libCacheSim.
 ```bash
@@ -83,13 +77,14 @@ If this does not work, please
 1. let us know what system you are using and what error you get
 2. read the following sections for self-installation.
 
-<a name="install-dependency"></a>
+<details>
+<summary>Step-by-step installation guide </summary>
+
 ### Install dependency
 libCacheSim uses [cmake](https://cmake.org/) build system and has a few dependencies: [glib](https://developer.gnome.org/glib/), [tcmalloc](https://github.com/google/tcmalloc), [zstd](https://github.com/facebook/zstd).
 Please see [install.md](/doc/install.md) for instructions on how to install the dependencies.
 
 
-<a name="build-libcachesim"></a>
 ### Build libCacheSim
 cmake recommends **out-of-source build**, so we do it in a new directory:
 ```bash
@@ -105,10 +100,14 @@ cmake -G Ninja .. && ninja
 [sudo] ninja install
 popd
 ```
+</details>
 
-<a name="developer-setup"></a>
+
+<details>
+<summary> Developer setup </summary>
+
 ### Developer Setup
-For developers, we provide tools to ensure code quality and consistent formatting:
+If you contribute to libCacheSim, we provide tools to ensure code quality and consistent formatting:
 
 #### Pre-commit Hooks
 We provide a git pre-commit hook that runs linting checks before each commit, helping catch issues early:
@@ -125,14 +124,13 @@ The pre-commit hook:
 - Prevents committing code with formatting, static analysis, or compiler issues
 - Logs are preserved for debugging in `.lint-logs/` directory
 
+</details>
+
 ---
 
-<a name="usage"></a>
 ## Usage
-<a name="cachesim-a-high-performance-cache-simulator"></a>
 ### cachesim (a high-performance cache simulator)
 After building and installing libCacheSim, `cachesim` should be in the `_build/bin/` directory.
-<a name="basic-usage"></a>
 #### basic usage
 ```
 ./bin/cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
@@ -140,7 +138,6 @@ After building and installing libCacheSim, `cachesim` should be in the `_build/b
 
 use `./bin/cachesim --help` to get more information.
 
-<a name="run-a-single-cache-simulation"></a>
 #### Run a single cache simulation
 Run the example traces using the LRU eviction algorithm and a 1 GB cache size.
 
@@ -149,7 +146,6 @@ Run the example traces using the LRU eviction algorithm and a 1 GB cache size.
 ./bin/cachesim ../data/trace.vscsi vscsi lru 1gb
 ```
 
-<a name="run-multiple-cache-simulations-with-different-cache-sizes"></a>
 #### Run multiple cache simulations with different cache sizes
 ```bash
 # Note that there is no space between the cache sizes
@@ -170,7 +166,6 @@ Run the example traces using the LRU eviction algorithm and a 1 GB cache size.
 
 See [quick start cachesim](/doc/quickstart_cachesim.md) for more usages.
 
-<a name="debug-cachesim"></a>
 #### Debug cachesim
 We provide a debug script to help you debug cachesim with GDB. For detailed usage instructions, see [debug guide](/doc/usage.md).
 
@@ -182,7 +177,6 @@ We provide a debug script to help you debug cachesim with GDB. For detailed usag
 ./scripts/debug.sh -- data/cloudPhysicsIO.vscsi vscsi lru,s3fifo 100mb,1gb
 ```
 
-<a name="plot-miss-ratio-curve"></a>
 #### Plot miss ratio curve
 You can plot miss ratios of different algorithms and sizes, and plot the miss ratios over time.
 
@@ -203,7 +197,6 @@ python3 plot_appr_mrc.py MINI ../data/twitter_cluster52.vscsi vscsi s3fifo "0.00
 
 ---
 
-<a name="trace-analysis"></a>
 ### Trace analysis
 libCacheSim also has a trace analyzer that provides a lot of useful information about the trace.
 And it is very fast, designed to work with billions of requests.
@@ -212,7 +205,6 @@ See [trace analysis](/doc/quickstart_traceAnalyzer.md) for more details.
 
 ---
 
-<a name="miss-ratio-curves-profiling"></a>
 ### Miss ratio curves profiling
 
 Constructing fine-grained miss ratio curves for large-scale workloads is very demanding on CPU and memory resources. libCacheSim provides advanced miss ratio curves profiling tools to help you quickly build miss ratio curves for large-scale workloads. See [mrcProfiler](/doc/quickstart_mrcProfiler.md) for more details.
@@ -221,7 +213,6 @@ Constructing fine-grained miss ratio curves for large-scale workloads is very de
 
 ---
 
-<a name="using-libcachesim-as-a-library"></a>
 ### Using libCacheSim as a library
 libCacheSim can be used as a library for building cache simulators.
 For example, you can build a cache cluster with consistent hashing or a multi-layer cache simulator.
@@ -273,7 +264,6 @@ See [here](/doc/advanced_lib.md) for more details, and see [example folder](/exa
 ---
 
 
-<a name="extending-libcachesim-new-algorithms-and-trace-types"></a>
 ### Extending libCacheSim (new algorithms and trace types)
 libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces because they allow libCacheSim to run faster, and the traces are more compact.
 
@@ -284,7 +274,6 @@ If you need to add a new trace type or a new algorithm, please see [here](/doc/a
 We encourage the users to check [deepWiki](https://deepwiki.com/1a1a11a/libCacheSim) for a more detailed documentation.
 
 ---
-<a name="python-package"></a>
 ## Python package
 
 If you are not extremely sensitive to the performance, our python binding can offer you an easier way to access the core feature of libCacheSim.
@@ -347,7 +336,6 @@ print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:
 See more information in [README.md](./libCacheSim-python/README.md) of the Python binding.
 
 ---
-<a name="open-source-cache-traces"></a>
 ## Open source cache traces
 In the [repo](/data/), there are sample traces in different formats (`csv`, `txt`, `vscsi`, and `oracleGeneral`). Note that the sampled traces are **very small** and __should not be used for evaluating different algorithms' miss ratios__. The full traces can be found either with the original release or the processed `oracleGeneral` format.
 
@@ -368,7 +356,6 @@ We provide a more comprehensive cache datasets at [https://github.com/cacheMon/c
 
 
 ---
-<a name="contributions"></a>
 ## Contributions
 We gladly welcome pull requests.
 Before making any large changes, we recommend opening an issue and discussing your proposed changes.
@@ -376,7 +363,6 @@ If the changes are minor, then feel free to make them without discussion.
 This project adheres to Google's coding style. By participating, you are expected to uphold this code.
 
 ---
-<a name="reference"></a>
 ## Reference
 ```
 @inproceedings{yang2020-workload,
@@ -418,11 +404,9 @@ If you used libCacheSim in your research, please cite the above papers. And we w
 ---
 
 
-<a name="license"></a>
 ## License
 See [LICENSE](LICENSE) for details.
 
-<a name="related"></a>
 ## Related
 * [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated
 ---
