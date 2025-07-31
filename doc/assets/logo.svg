@@ -1,6 +1,0 @@
-<svg width="200" height="100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="200" height="100" fill="#f0f8ff" stroke="#4682b4" stroke-width="2"/>
-  <text x="100" y="40" font-family="Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#2c3e50">libCacheSim</text>
-  <text x="100" y="65" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#2c3e50">PLACEHOLDER LOGO</text>
-  <text x="100" y="80" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#7f8c8d">Replace with actual logo</text>
-</svg>

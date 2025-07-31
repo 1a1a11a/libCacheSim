@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="doc/assets/logo.svg" alt="libCacheSim Logo" width="200">
+  <img src="doc/assets/logo.jpg" alt="libCacheSim Logo" width="200">
 </div>
 
 # libCacheSim - building and running cache simulations
