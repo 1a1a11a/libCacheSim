@@ -1,9 +1,14 @@
-<div align="center">
-  <img src="doc/assets/logo.jpg" alt="libCacheSim Logo" width="640">
-</div>
+<p align="center">
+  <picture>
+    <img alt="libCacheSim" src="doc/assets/logo.jpg" width=55%>
+  </picture>
+</p>
 
+<h3 align="center">
+A high-performance library for building and running cache simulations
+</h3>
 
-# libCacheSim - building and running cache simulations
+---
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
 [![Python Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml)
