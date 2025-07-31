@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="doc/assets/logo.svg" alt="libCacheSim Logo" width="200">
+</div>
+
 # libCacheSim - building and running cache simulations
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
