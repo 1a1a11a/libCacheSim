@@ -1,14 +1,14 @@
+<div align="center">
+  <img src="doc/assets/logo.jpg" alt="libCacheSim Logo" width="640">
+</div>
+
+
 # libCacheSim - building and running cache simulations
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
 [![Python Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml)
 [![NPM Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/1a1a11a/libCacheSim/badge)](https://scorecard.dev/viewer/?uri=github.com/1a1a11a/libCacheSim)
-
-
-<div align="center">
-  <img src="doc/assets/logo.jpg" alt="libCacheSim Logo" width="640">
-</div>
 
 
 ## News
@@ -217,6 +217,9 @@ Constructing fine-grained miss ratio curves for large-scale workloads is very de
 libCacheSim can be used as a library for building cache simulators.
 For example, you can build a cache cluster with consistent hashing or a multi-layer cache simulator.
 
+<details>
+<summary> See a code example </summary>
+
 Here is a simplified example showing the basic APIs.
 ```c
 #include <libCacheSim.h>
@@ -258,6 +261,7 @@ To run the executable,
 ```bash
 ./test.out
 ```
+</details>
 
 See [here](/doc/advanced_lib.md) for more details, and see [example folder](/example) for examples on how to use libCacheSim, such as building a cache cluster with consistent hashing, multi-layer cache simulators.
 
@@ -297,6 +301,8 @@ print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:
 ### Extending new algorithm
 
 With python package, you can extend new algorithm to test your own eviction design **without any C/C++ compilation**.
+<details>
+<summary> See an example below </summary>
 
 ```python
 import libcachesim as lcs
@@ -332,6 +338,7 @@ obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
 print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
 ```
 
+</details>
 
 See more information in [README.md](./libCacheSim-python/README.md) of the Python binding.
 
@@ -364,6 +371,9 @@ This project adheres to Google's coding style. By participating, you are expecte
 
 ---
 ## Reference
+<details>
+<summary> Please cite the following papers if you use libCacheSim. </summary>
+
 ```
 @inproceedings{yang2020-workload,
     author = {Juncheng Yang and Yao Yue and K. V. Rashmi},
@@ -399,7 +409,9 @@ This project adheres to Google's coding style. By participating, you are expecte
   numpages = {10},
 }
 ```
-If you used libCacheSim in your research, please cite the above papers. And we welcome you to send us a link to your paper and add a reference to [references.md](references.md).
+If you used libCacheSim in your research, please cite the above papers.
+
+</details>
 
 ---
 
