@@ -208,9 +208,13 @@ static cache_obj_t *SR_LRU_find(cache_t *cache, const request_t *req,
     params->C_demoted -= 1;
   }
 
-  if (cache_hit_R || cache_hit_SR) {
+  if (cache_hit_R || (cache_hit_SR && likely(update_cache))) {
+    // if not update_cache obj_SR will not be updated to obj_R
     DEBUG_ASSERT(obj_R != NULL);
     return obj_R;
+  } else if (cache_hit_SR) {
+    // if not update_cache, directly return obj_SR
+    return obj_SR;
   }
   return NULL;
 }
