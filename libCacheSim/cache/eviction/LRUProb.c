@@ -25,6 +25,8 @@ typedef struct LRU_Prob_params {
   int threshold;
 } LRU_Prob_params_t;
 
+static const char *DEFAULT_CACHE_PARAMS = "prob=0.5";
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
@@ -79,8 +81,8 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)(cache->eviction_params);
   params->q_head = NULL;
   params->q_tail = NULL;
-  params->prob = 0.5;
 
+  LRU_Prob_parse_params(cache, DEFAULT_CACHE_PARAMS);
   if (cache_specific_params != NULL) {
     LRU_Prob_parse_params(cache, cache_specific_params);
   }
