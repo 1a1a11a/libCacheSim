@@ -255,9 +255,6 @@ else()
     message(STATUS "Building without test")
 endif()
 
-# Export variables for scikit-build -> build/export_vars.cmake
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libCacheSim-python/export)
-
 # libCacheSim unified library compilation and installation
 # Create a single library that combines all modular libraries
 add_library(${PROJECT_NAME} STATIC
