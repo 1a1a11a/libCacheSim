@@ -296,11 +296,11 @@ pip install libcachesim
 ### Simulation with python
 
 ```python
-import libcachesim as lcs
+from libcachesim import SyntheticReader, TraceReader, FIFO
 
-reader = lcs.SyntheticReader(num_objects=1000, num_of_req=10000) # synthetic trace
-# reader = lcs.open_trace("./data/cloudPhysicsIO.oracleGeneral.bin") # real trace
-cache = lcs.FIFO(cache_size=1024*1024)
+reader = SyntheticReader(num_objects=1000, num_of_req=10000) # synthetic trace
+# reader = TraceReader("./data/cloudPhysicsIO.oracleGeneral.bin") # real trace
+cache = FIFO(cache_size=1024*1024)
 obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
 print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
 ```
@@ -313,17 +313,38 @@ With python package, you can extend new algorithm to test your own eviction desi
 
 ```python
 from collections import OrderedDict
-from libcachesim import PluginCache, LRU
+from typing import Any
+
+from libcachesim import PluginCache, LRU, CommonCacheParams, Request
+
+def init_hook(_: CommonCacheParams) -> Any:
+    return OrderedDict()
+
+def hit_hook(data: Any, req: Request) -> None:
+    data.move_to_end(req.obj_id, last=True)
+
+def miss_hook(data: Any, req: Request) -> None:
+    data.__setitem__(req.obj_id, req.obj_size)
+
+def eviction_hook(data: Any, _: Request) -> int:
+    return data.popitem(last=False)[0]
+
+def remove_hook(data: Any, obj_id: int) -> None:
+    data.pop(obj_id, None)
+
+def free_hook(data: Any) -> None:
+    data.clear()
+
 
 plugin_lru_cache = PluginCache(
     cache_size=128,
-    cache_name="LRU",
-    cache_init_hook=lambda _: OrderedDict(),
-    cache_hit_hook=lambda data, req: data.move_to_end(req.obj_id, last=True) if req.obj_id in data else None,
-    cache_miss_hook=lambda data, req: data.__setitem__(req.obj_id, req.obj_size),
-    cache_eviction_hook=lambda data, _: data.popitem(last=False)[0],
-    cache_remove_hook=lambda data, obj_id: data.pop(obj_id, None),
-    cache_free_hook=lambda data: data.clear(),
+    cache_init_hook=init_hook,
+    cache_hit_hook=hit_hook,
+    cache_miss_hook=miss_hook,
+    cache_eviction_hook=eviction_hook,
+    cache_remove_hook=remove_hook,
+    cache_free_hook=free_hook,
+    cache_name="Plugin_LRU",
 )
 
 reader = lcs.SyntheticReader(num_objects=1000, num_of_req=10000, obj_size=1)
