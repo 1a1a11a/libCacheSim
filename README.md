@@ -298,7 +298,7 @@ pip install libcachesim
 ```python
 from libcachesim import SyntheticReader, TraceReader, FIFO
 
-reader = SyntheticReader(num_objects=1000, num_of_req=10000) # synthetic trace
+reader = SyntheticReader(num_objects=1000, num_of_req=10000, alpha=1.0, dist="zipf") # synthetic trace
 # reader = TraceReader("./data/cloudPhysicsIO.oracleGeneral.bin") # real trace
 cache = FIFO(cache_size=1024*1024)
 obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
@@ -347,7 +347,7 @@ plugin_lru_cache = PluginCache(
     cache_name="Plugin_LRU",
 )
 
-reader = lcs.SyntheticReader(num_objects=1000, num_of_req=10000, obj_size=1)
+reader = lcs.SyntheticReader(num_objects=1000, num_of_req=10000, obj_size=1, alpha=1.0, dist="zipf")
 req_miss_ratio, byte_miss_ratio = plugin_lru_cache.process_trace(reader)
 ref_req_miss_ratio, ref_byte_miss_ratio = LRU(128).process_trace(reader)
 print(f"plugin req miss ratio {req_miss_ratio}, ref req miss ratio {ref_req_miss_ratio}")
