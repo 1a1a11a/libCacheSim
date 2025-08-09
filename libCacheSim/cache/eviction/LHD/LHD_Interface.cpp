@@ -205,7 +205,7 @@ static cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   cache->occupied_byte += req->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
-  return NULL;
+  return reinterpret_cast<cache_obj_t *>(0x1);
 }
 
 /**
