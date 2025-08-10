@@ -8,8 +8,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -25,34 +25,31 @@
 
 #include <chrono>
 
-namespace spp
-{
-    template<typename time_unit = std::milli>
-    class Timer 
-    {
-    public:
-        Timer()                 { reset(); }
-        void reset()            { _start = _snap = clock::now();  }
-        void snap()             { _snap = clock::now();  }
+namespace spp {
+template <typename time_unit = std::milli>
+class Timer {
+ public:
+  Timer() { reset(); }
+  void reset() { _start = _snap = clock::now(); }
+  void snap() { _snap = clock::now(); }
 
-        float get_total() const { return get_diff<float>(_start, clock::now()); }
-        float get_delta() const { return get_diff<float>(_snap, clock::now());  }
-        
-    private:
-        using clock = std::chrono::high_resolution_clock;
-        using point = std::chrono::time_point<clock>;
+  float get_total() const { return get_diff<float>(_start, clock::now()); }
+  float get_delta() const { return get_diff<float>(_snap, clock::now()); }
 
-        template<typename T>
-        static T get_diff(const point& start, const point& end) 
-        {
-            using duration_t = std::chrono::duration<T, time_unit>;
+ private:
+  using clock = std::chrono::high_resolution_clock;
+  using point = std::chrono::time_point<clock>;
 
-            return std::chrono::duration_cast<duration_t>(end - start).count();
-        }
+  template <typename T>
+  static T get_diff(const point& start, const point& end) {
+    using duration_t = std::chrono::duration<T, time_unit>;
 
-        point _start;
-        point _snap;
-    };
-}
+    return std::chrono::duration_cast<duration_t>(end - start).count();
+  }
 
-#endif // spp_timer_h_guard
+  point _start;
+  point _snap;
+};
+}  // namespace spp
+
+#endif  // spp_timer_h_guard

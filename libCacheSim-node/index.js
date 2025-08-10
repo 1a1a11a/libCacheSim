@@ -37,16 +37,30 @@ function getSupportedTraceTypes() {
   return ['vscsi', 'csv', 'txt', 'binary', 'oracle'];
 }
 
+/**
+ * Get the version of the libCacheSim Node.js binding
+ * @returns {string} Version string
+ */
+function getVersion() {
+  try {
+    const packageJson = require('./package.json');
+    return packageJson.version;
+  } catch (error) {
+    return 'unknown';
+  }
+}
+
 module.exports = {
   runSimulation,
   runSim,
   getSupportedAlgorithms,
-  getSupportedTraceTypes
+  getSupportedTraceTypes,
+  getVersion
 };
 
 // Example usage if run directly
 if (require.main === module) {
-  console.log('libCacheSim Node.js Bindings');
+  console.log(`libCacheSim Node.js Bindings v${getVersion()}`);
   console.log('Supported algorithms:', getSupportedAlgorithms());
   console.log('Supported trace types:', getSupportedTraceTypes());
   

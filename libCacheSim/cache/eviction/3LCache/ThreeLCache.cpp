@@ -1,4 +1,4 @@
-#include "ThreeLCache.h"
+#include "ThreeLCache.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -145,7 +145,6 @@ void ThreeLCacheCache::erase_out_cache() {
         }
       }
       key_map.erase(meta._key);
-      meta.free();
     }
     out_cache.metas.pop_front();
     out_cache.front_index++;
@@ -191,12 +190,12 @@ int32_t ThreeLCacheCache::rank() {
   if (initial_queue_length == 0) {
     initial_queue_length = in_cache.metas.size();
   }
-  // 防止有trace在小缓存小只能存1-2个对象
+  // prevent the trace from having only 1-2 objects in the small cache
   if (sample_rate >= initial_queue_length * 0.01 + eviction_rate)
     sample_rate = initial_queue_length > 2
                       ? initial_queue_length * 0.01 + eviction_rate
                       : 1;
-  // 新对象的采样
+  // the sampling of the new object
   sampled_objects = quick_demotion();
 
   if (new_obj_size < _currentSize * reserved_space / 10) {
@@ -241,7 +240,7 @@ int32_t ThreeLCacheCache::rank() {
         int32_t eviciton_sum = 0, p99 = 0;
         for (int i = 0; i < 16; i++)
           eviciton_sum += object_distribution_n_eviction[i];
-        // 粗粒度划分频率
+        // coarse-grained frequency division
         for (int i = 0; i < 16; i++) {
           p99 += object_distribution_n_eviction[i];
           if (p99 >= 0.99 * eviciton_sum) {
@@ -283,7 +282,7 @@ int32_t ThreeLCacheCache::rank() {
 
 vector<int32_t> ThreeLCacheCache::quick_demotion() {
   vector<int32_t> sampled_objects;
-  int i, j = 0;
+  int i = 0, j = 0;
   while (new_obj_size > (uint64_t)(_currentSize * reserved_space / 100) &&
          j < (int)(sample_rate * 1.5) && (size_t)i < new_obj_keys.size()) {
     auto it = key_map.find(new_obj_keys[i])->second;
@@ -308,10 +307,15 @@ void ThreeLCacheCache::evict() {
 }
 
 void ThreeLCacheCache::evict_with_candidate(pair<uint64_t, int32_t> &epair) {
+  int32_t old_pos = epair.second;
+  if (old_pos == -1) {
+    // No valid candidate to evict, avoid segfault
+    return;
+  }
+
   is_sampling = true;
   evict_nums -= 1;
   uint64_t key = epair.first;
-  int32_t old_pos = epair.second;
   _currentSize -= in_cache.metas[old_pos]._size;
 
   pred_map.erase(key);
@@ -378,14 +382,13 @@ pair<uint64_t, int32_t> ThreeLCacheCache::evict_predobj() {
 
 void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
   int32_t sample_nums = sampled_objects.size();
-  int32_t indptr[sample_nums + 1];
-  indptr[0] = 0;
-  int32_t indices[sample_nums * n_feature];
-  double data[sample_nums * n_feature];
-  int32_t past_timestamps[sample_nums];
-  int32_t sizes[sample_nums];
-  uint64_t keys[sample_nums];
-  int32_t poses[sample_nums];
+  std::vector<int32_t> indptr(sample_nums + 1, 0);
+  std::vector<int32_t> indices(sample_nums * n_feature);
+  std::vector<double> data(sample_nums * n_feature);
+  std::vector<int32_t> past_timestamps(sample_nums);
+  std::vector<int32_t> sizes(sample_nums);
+  std::vector<uint64_t> keys(sample_nums);
+  std::vector<int32_t> poses(sample_nums);
   unsigned int idx_feature = 0;
   int32_t pos;
   unsigned int idx_row = 0;
@@ -395,7 +398,7 @@ void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
     keys[idx_row] = meta._key;
     poses[idx_row] = pos;
     indices[idx_feature] = 0;
-    // 年龄
+    // age
     data[idx_feature++] = current_seq - meta._past_timestamp;
 
     past_timestamps[idx_row] = meta._past_timestamp;
@@ -426,7 +429,7 @@ void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
     indptr[idx_row + 1] = idx_feature;
   }
   int64_t len = 0;
-  double scores[sample_nums];
+  std::vector<double> scores(sample_nums);
   std::string inference_params_str;
   for (const auto &param : inference_params) {
     inference_params_str += param.first + "=" + param.second + " ";
@@ -434,10 +437,11 @@ void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
   inference_params_str.pop_back();  // Remove trailing space
   const char *inference_params_cstr = inference_params_str.c_str();
   LGBM_BoosterPredictForCSR(
-      booster, static_cast<void *>(indptr), C_API_DTYPE_INT32, indices,
-      static_cast<void *>(data), C_API_DTYPE_FLOAT64, idx_row + 1, idx_feature,
+      booster, static_cast<void *>(indptr.data()), C_API_DTYPE_INT32,
+      indices.data(), static_cast<void *>(data.data()), C_API_DTYPE_FLOAT64,
+      idx_row + 1, idx_feature,
       n_feature,  // remove future t
-      C_API_PREDICT_NORMAL, 0, 0, inference_params_cstr, &len, scores);
+      C_API_PREDICT_NORMAL, 0, 0, inference_params_cstr, &len, scores.data());
   float _distance;
   if (objective == byte_miss_ratio) {
     for (int i = 0; i < sample_nums; ++i) {

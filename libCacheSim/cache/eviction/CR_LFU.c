@@ -1,9 +1,9 @@
 #include <glib.h>
 #include <math.h>
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/evictionAlgo/Cacheus.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/evictionAlgo/Cacheus.h"
 // CR_LFU is used by Cacheus.
 
 #ifdef __cplusplus

@@ -1,7 +1,7 @@
 # Profiling Memory Usage in CacheSim with Massif
 
 ## 1. Introduction
-This guide explains how to analyze memory usage in the `cachesim` project using Valgrind's **massif** tool and identifies critical memory overhead areas as potential optimization targets. The workflow consists of the following steps:  
+This guide explains how to analyze memory usage in the `cachesim` project using Valgrind's **massif** tool and identifies critical memory overhead areas as potential optimization targets. The workflow consists of the following steps:
 
 - Heap memory profiling
 - Identifying memory hotspots
@@ -15,8 +15,8 @@ This guide explains how to analyze memory usage in the `cachesim` project using 
 ```sh
 # Compile with debug symbols
 mkdir _build && cd _build
-cmake .. -DCMAKE_BUILD_TYPE=Debug
-make -j
+cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug
+ninja
 ```
 
 2. Run `massif` for a specific algorithm (e.g., S3-FIFO):
@@ -38,7 +38,7 @@ The generated report primarily includes a bar chart of memory usage (with instru
 
 ```sh
     MB
-519.4^                                        :                               
+519.4^                                        :
      |#:::::::::::::@::::::::::::::::@::@@::::::::::::::::::::::::@::@::@::@::
      |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
      |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
@@ -76,22 +76,22 @@ The generated report primarily includes a bar chart of memory usage (with instru
 |   | | ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
 |   | |   ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
 |   | |     ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
-|   | |       
+|   | |
 |   | ->24.74% (134,217,728B) 0x4238C0: S3FIFO_init (S3FIFO.c:118)
 |   | | ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
 |   | |   ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
 |   | |     ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
-|   | |       
+|   | |
 |   | ->24.74% (134,217,728B) 0x423921: S3FIFO_init (S3FIFO.c:125)
 |   |   ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
 |   |     ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
 |   |       ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
-|   |         
+|   |
 |   ->24.74% (134,217,728B) 0x4236BB: S3FIFO_init (S3FIFO.c:81)
 |     ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
 |       ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
 |         ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
-|           
+|
 ->00.84% (4,541,568B) in 1+ places, all below ms_print's threshold (01.00%)
 ```
 
@@ -105,7 +105,7 @@ The above report indicates that the memory usage of S3-FIFO remains nearly const
 
 ### 3.1. Memory Usage of Various Algorithms
 
-We conducted tests using the `wiki_2019t` workload (available at [CMU's dataset repository](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/wiki/)) to evaluate the memory usage of various algorithms with a cache size of 1GB. 
+We conducted tests using the `wiki_2019t` workload (available at [CMU's dataset repository](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/wiki/)) to evaluate the memory usage of various algorithms with a cache size of 1GB.
 
 
 | Algorithm   | Peak Memory Usage (MB) | Observations                                                                 |

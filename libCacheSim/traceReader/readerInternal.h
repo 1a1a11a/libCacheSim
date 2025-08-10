@@ -3,7 +3,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-#include "../include/libCacheSim/reader.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {

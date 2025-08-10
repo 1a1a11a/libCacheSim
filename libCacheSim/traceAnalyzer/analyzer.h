@@ -18,8 +18,8 @@
 #include <utility>
 #include <vector>
 
-#include "../include/libCacheSim/reader.h"
 #include "accessPattern.h"
+#include "libCacheSim/reader.h"
 #include "op.h"
 #include "popularity.h"
 #include "popularityDecay.h"
@@ -30,15 +30,15 @@
 #include "ttl.h"
 
 /* experimental module */
-#include "experimental/createFutureReuseCCDF.h"
-#include "experimental/lifetime.h"
-#include "experimental/probAtAge.h"
-#include "experimental/scanDetector.h"
-#include "experimental/sizeChange.h"
+#include "experimental/createFutureReuseCCDF.hpp"
+#include "experimental/lifetime.hpp"
+#include "experimental/probAtAge.hpp"
+#include "experimental/scanDetector.hpp"
+#include "experimental/sizeChange.hpp"
 
 // /* deprecated module */
-// #include "dep/writeFutureReuse.h"
-// #include "dep/writeReuse.h"
+// #include "dep/writeFutureReuse.hpp"
+// #include "dep/writeReuse.hpp"
 
 namespace traceAnalyzer {
 typedef struct analysis_option {
@@ -81,19 +81,17 @@ static analysis_param_t default_param() {
 };
 
 static struct analysis_option default_option() {
-  struct analysis_option option = {
-    .req_rate = false,
-    .access_pattern = false,
-    .size = false,
-    .reuse = false,
-    .popularity = false,
-    .ttl = false,
-    .popularity_decay = false,
-    .lifetime = false,
-    .create_future_reuse_ccdf = false,
-    .prob_at_age = false,
-    .size_change = false
-  };
+  struct analysis_option option = {.req_rate = false,
+                                   .access_pattern = false,
+                                   .size = false,
+                                   .reuse = false,
+                                   .popularity = false,
+                                   .ttl = false,
+                                   .popularity_decay = false,
+                                   .lifetime = false,
+                                   .create_future_reuse_ccdf = false,
+                                   .prob_at_age = false,
+                                   .size_change = false};
 
   return option;
 };

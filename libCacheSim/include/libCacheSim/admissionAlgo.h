@@ -9,7 +9,9 @@ extern "C" {
 struct admissioner;
 typedef struct admissioner *(*admissioner_create_func_ptr)(const char *);
 typedef struct admissioner *(*admissioner_clone_func_ptr)(struct admissioner *);
-typedef void (*admissioner_update_func_ptr)(struct admissioner *, const request_t *, const uint64_t cache_size);
+typedef void (*admissioner_update_func_ptr)(struct admissioner *,
+                                            const request_t *,
+                                            const uint64_t cache_size);
 typedef bool (*cache_admit_func_ptr)(struct admissioner *, const request_t *);
 typedef void (*admissioner_free_func_ptr)(struct admissioner *);
 
@@ -30,15 +32,19 @@ admissioner_t *create_size_admissioner(const char *init_params);
 admissioner_t *create_size_probabilistic_admissioner(const char *init_params);
 admissioner_t *create_adaptsize_admissioner(const char *init_params);
 
-static inline admissioner_t *create_admissioner(const char *admission_algo, const char *admission_params) {
+static inline admissioner_t *create_admissioner(const char *admission_algo,
+                                                const char *admission_params) {
   admissioner_t *admissioner = NULL;
-  if (strcasecmp(admission_algo, "bloomfilter") == 0 || strcasecmp(admission_algo, "bloom-filter") == 0) {
+  if (strcasecmp(admission_algo, "bloomfilter") == 0 ||
+      strcasecmp(admission_algo, "bloom-filter") == 0) {
     admissioner = create_bloomfilter_admissioner(admission_params);
-  } else if (strcasecmp(admission_algo, "prob") == 0 || strcasecmp(admission_algo, "probabilistic") == 0) {
+  } else if (strcasecmp(admission_algo, "prob") == 0 ||
+             strcasecmp(admission_algo, "probabilistic") == 0) {
     admissioner = create_prob_admissioner(admission_params);
   } else if (strcasecmp(admission_algo, "size") == 0) {
     admissioner = create_size_admissioner(admission_params);
-  } else if (strcasecmp(admission_algo, "sizeProbabilistic") == 0 || strcasecmp(admission_algo, "sizeProb") == 0) {
+  } else if (strcasecmp(admission_algo, "sizeProbabilistic") == 0 ||
+             strcasecmp(admission_algo, "sizeProb") == 0) {
     admissioner = create_size_probabilistic_admissioner(admission_params);
   } else if (strcasecmp(admission_algo, "adaptsize") == 0) {
     admissioner = create_adaptsize_admissioner(admission_params);

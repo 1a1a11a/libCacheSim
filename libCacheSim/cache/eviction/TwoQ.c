@@ -12,8 +12,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -312,7 +312,8 @@ static inline int64_t TwoQ_get_n_obj(const cache_t *cache) {
 static inline bool TwoQ_can_insert(cache_t *cache, const request_t *req) {
   TwoQ_params_t *params = (TwoQ_params_t *)cache->eviction_params;
 
-  return req->obj_size <= params->Ain->cache_size && cache_can_insert_default(cache, req);
+  return req->obj_size <= params->Ain->cache_size &&
+         cache_can_insert_default(cache, req);
 }
 
 // ***********************************************************************

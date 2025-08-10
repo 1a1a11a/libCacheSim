@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-#include "../include/libCacheSim/dist.h"
+#include "libCacheSim/dist.h"
 
 #include <assert.h>
 #include <math.h>
@@ -14,10 +14,10 @@ extern "C" {
 #include <sys/stat.h>
 
 #include "../dataStructure/splay.h"
-#include "../include/conversion.h"
-#include "../include/libCacheSim/hashmap.h"
-#include "../include/libCacheSim/hashmap_defs.h"
-#include "../include/libCacheSim/macro.h"
+#include "conversion.h"
+#include "libCacheSim/hashmap.h"
+#include "libCacheSim/hashmap_defs.h"
+#include "libCacheSim/macro.h"
 
 /***********************************************************
  * this function is called by _get_dist,

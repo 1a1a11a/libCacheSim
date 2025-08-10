@@ -1,13 +1,14 @@
 
-#include "utilsSys.h"
-#include "logging.h"
-#include <thread>
-#include <iostream>
-#include <fstream>
+#include "include/utilsSys.h"
+
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include <string>
+#include <thread>
 
+#include "libCacheSim/logging.h"
 
 #ifdef __linux__
 #include <sys/sysinfo.h>
@@ -15,36 +16,37 @@
 
 int utilsSys::set_thread_affinity(pthread_t tid) {
 #ifdef __linux__
-    static int last_core_id = -1;
-    int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
+  static int last_core_id = -1;
+  int num_cores = sysconf(_SC_NPROCESSORS_ONLN);
 
-    last_core_id++;
-    last_core_id %= num_cores;
-    DEBUG("assign thread affinity %d/%d\n", last_core_id, num_cores);
+  last_core_id++;
+  last_core_id %= num_cores;
+  DEBUG("assign thread affinity %d/%d\n", last_core_id, num_cores);
 
-    cpu_set_t cpuset;
-    CPU_ZERO(&cpuset);
-    CPU_SET(last_core_id, &cpuset);
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_SET(last_core_id, &cpuset);
 
-    int rc = pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset);
-    if (rc != 0) {
-        WARN("Error calling pthread_setaffinity_np: %d\n", rc);
-    }
+  int rc = pthread_setaffinity_np(tid, sizeof(cpu_set_t), &cpuset);
+  if (rc != 0) {
+    WARN("Error calling pthread_setaffinity_np: %d\n", rc);
+  }
 #endif
-    return 0;
+  return 0;
 }
 
 int utilsSys::get_n_cores() {
 #ifdef __linux__
 
-    INFO("This system has %d processors configured and "
-         "%d processors available.\n",
-         get_nprocs_conf(), get_nprocs());
+  INFO(
+      "This system has %d processors configured and "
+      "%d processors available.\n",
+      get_nprocs_conf(), get_nprocs());
 
-    return get_nprocs();
+  return get_nprocs();
 #else
-//    WARN("non linux system, use 4 threads as default\n");
-    return static_cast<int>(std::thread::hardware_concurrency());
+  //    WARN("non linux system, use 4 threads as default\n");
+  return static_cast<int>(std::thread::hardware_concurrency());
 #endif
 }
 
@@ -65,18 +67,17 @@ int utilsSys::get_n_available_cores() {
 }
 
 void utilsSys::print_cwd() {
-    char cwd[1024];
-    if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-        printf("Current working dir: %s\n", cwd);
-    } else {
-        perror("getcwd() error");
-    }
+  char cwd[1024];
+  if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+    printf("Current working dir: %s\n", cwd);
+  } else {
+    perror("getcwd() error");
+  }
 }
-
 
 #ifdef HAS_GLIB
 void print_glib_ver(void) {
-    printf("glib version %d.%d.%d %d\n", glib_major_version, glib_minor_version,
-           glib_micro_version, glib_binary_age);
+  printf("glib version %d.%d.%d %d\n", glib_major_version, glib_minor_version,
+         glib_micro_version, glib_binary_age);
 }
 #endif

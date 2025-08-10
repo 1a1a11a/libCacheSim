@@ -1,7 +1,14 @@
+# ==============================================================================
+# Cachesim
+# ==============================================================================
 
-add_executable(cachesim main.c cli_parser.c sim.c ../cli_reader_utils.c)
-target_link_libraries(cachesim ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} utils)
+set(cachesim_sources_c
+    main.c
+    cli_parser.c
+    sim.c
+    ../cli_reader_utils.c
+)
+add_executable(cachesim ${cachesim_sources_c})
+target_include_directories(cachesim PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS} ../)
+target_link_libraries(cachesim ${PROJECT_NAME})
 install(TARGETS cachesim RUNTIME DESTINATION bin)
-
-# add_executable(flash flash.cpp cli_parser.c sim.c ../cli_reader_utils.c)
-# target_link_libraries(flash ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} utils)

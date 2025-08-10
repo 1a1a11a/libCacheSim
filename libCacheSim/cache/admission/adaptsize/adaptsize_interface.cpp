@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "../../include/libCacheSim/admissionAlgo.h"
-#include "adaptsize/adaptsize.h"
+#include "adaptsize.h"
+#include "libCacheSim/admissionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -89,8 +89,9 @@ static void adaptsize_admissioner_parse_params(
       } else if (strcasecmp(key, "reconf-interval") == 0) {
         pa->reconf_interval = strtoull(value, &end, 10);
       } else if (strcasecmp(key, "print") == 0) {
-        printf("max-iteration=%lu,reconf-interval=%lu", pa->max_iteration,
-               pa->reconf_interval);
+        printf("max-iteration=%llu,reconf-interval=%llu",
+               (unsigned long long)pa->max_iteration,
+               (unsigned long long)pa->reconf_interval);
         exit(0);
       } else {
         ERROR("adaptsize admission does not have parameter %s\n", key);

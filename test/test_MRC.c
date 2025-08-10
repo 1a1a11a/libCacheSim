@@ -76,7 +76,7 @@ typedef struct {
  */
 static void test_shards_csv_integration(void) {
   const char *cmd =
-      "../bin/MRC SHARDS ../histograms/histogram_test.csv "
+      "../_build/bin/MRC SHARDS ../histograms/histogram_test.csv "
       "../data/cloudPhysicsIO.vscsi vscsi 0.1";
   int ret = system(cmd);
   g_assert_cmpint(ret, ==, 0);
@@ -155,8 +155,8 @@ static void test_shards_csv_integration(void) {
  */
 static void test_miniatures_integration(void) {
   const char *cmd =
-      "../bin/MRC MINI ../data/cloudPhysicsIO.vscsi vscsi s3fifo "
-      "1000,2000,5000,10000 0.1 ../histograms/histogram_test.csv "
+      "../_build/bin/MRC MINI ../data/cloudPhysicsIO.vscsi vscsi s3fifo "
+      "1000,2000,5000,10000 0.1 ../histograms-mini/histogram_test.csv "
       "--ignore-obj-size 1";
   int ret = system(cmd);
   g_assert_cmpint(ret, ==, 0);
@@ -165,8 +165,8 @@ static void test_miniatures_integration(void) {
   gchar *contents = NULL;
   gsize length = 0;
   GError *error = NULL;
-  gboolean success = g_file_get_contents("../histograms/histogram_test.csv",
-                                         &contents, &length, &error);
+  gboolean success = g_file_get_contents(
+      "../histograms-mini/histogram_test.csv", &contents, &length, &error);
   g_assert_true(success);
   g_assert_nonnull(contents);
 

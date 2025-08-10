@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #if ___STDC_VERSION__ >= 199901L
 #include <stdint.h>
 #else
-#define SIZE_MAX ((size_t)-1) /* C89 doesn't have stdint.h or SIZE_MAX */
+#define SIZE_MAX ((size_t) - 1) /* C89 doesn't have stdint.h or SIZE_MAX */
 #endif
 
 #include "libcsv.h"
@@ -71,10 +71,10 @@ extern "C" {
 
 #define SUBMIT_CHAR(p, c) ((p)->entry_buf[entry_pos++] = (c))
 
-static const char *csv_errors[] = {"success",
-                             "error parsing data while strict checking enabled",
-                             "memory exhausted while increasing buffer size",
-                             "data size too large", "invalid status code"};
+static const char *csv_errors[] = {
+    "success", "error parsing data while strict checking enabled",
+    "memory exhausted while increasing buffer size", "data size too large",
+    "invalid status code"};
 
 int csv_error(struct csv_parser *p) {
   /* Return the current status of the parser */

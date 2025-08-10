@@ -9,8 +9,8 @@
 
 #include <math.h>
 
-#include "../../include/libCacheSim/admissionAlgo.h"
-#include "../../utils/include/mymath.h"
+#include "libCacheSim/admissionAlgo.h"
+#include "utils/include/mymath.h"
 
 #ifdef __cplusplus
 extern "C" {

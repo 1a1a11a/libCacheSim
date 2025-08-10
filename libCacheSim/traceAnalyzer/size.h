@@ -8,8 +8,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "../include/libCacheSim/macro.h"
-#include "../include/libCacheSim/reader.h"
+#include "libCacheSim/macro.h"
+#include "libCacheSim/reader.h"
 #include "struct.h"
 
 namespace traceAnalyzer {

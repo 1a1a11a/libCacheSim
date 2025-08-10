@@ -1,5 +1,5 @@
-## Building a cache simulator 
-This tutorial shows how to build a cache simulator using libCacheSim. 
+## Building a cache simulator
+This tutorial shows how to build a cache simulator using libCacheSim.
 There are three data structures required to build a cache simulator:
 1. create a trace reader using `open_trace()`
 2. create a cache using `LRU_init()` where LRU can be replaced by other cache replacement policies
@@ -17,15 +17,19 @@ while (read_one_req(reader, req) == 0) {
 ```
 See [main.c](main.c) for a complete example.
 
-### Build 
+### Build
 ```bash
-mkdir _build; 
+# Prerequisites: Install Ninja build system if not already available
+# Ubuntu/Debian: sudo apt install ninja-build
+# macOS: brew install ninja
+
+mkdir _build;
 cd _build;
-cmake ..;
-make;
+cmake -G Ninja ..;
+ninja;
 ```
 
-### Run 
+### Run
 ```bash
 ./cacheSimulator
 ```
@@ -35,6 +39,4 @@ make;
 Solution
 * run `sudo ldconfig`
 * check whether the library is under /usr/local/lib
-* 
-
- 
+*

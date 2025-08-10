@@ -10,8 +10,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,10 +28,12 @@ static const char *DEFAULT_PARAMS = "init-freq=0,n-bit-counter=1";
 // ****                                                               ****
 // ***********************************************************************
 
-static void Clock_parse_params(cache_t *cache, const char *cache_specific_params);
+static void Clock_parse_params(cache_t *cache,
+                               const char *cache_specific_params);
 static void Clock_free(cache_t *cache);
 static bool Clock_get(cache_t *cache, const request_t *req);
-static cache_obj_t *Clock_find(cache_t *cache, const request_t *req, const bool update_cache);
+static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
+                               const bool update_cache);
 static cache_obj_t *Clock_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req);
 static void Clock_evict(cache_t *cache, const request_t *req);
@@ -49,8 +51,10 @@ static bool Clock_remove(cache_t *cache, const obj_id_t obj_id);
  * @param ccache_params some common cache parameters
  * @param cache_specific_params Clock specific parameters as a string
  */
-cache_t *Clock_init(const common_cache_params_t ccache_params, const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Clock", ccache_params, cache_specific_params);
+cache_t *Clock_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("Clock", ccache_params, cache_specific_params);
   cache->cache_init = Clock_init;
   cache->cache_free = Clock_free;
   cache->get = Clock_get;
@@ -82,7 +86,8 @@ cache_t *Clock_init(const common_cache_params_t ccache_params, const char *cache
   }
 
   if (params->n_bit_counter != 1) {
-    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Clock-%d-%d", params->n_bit_counter, params->init_freq);
+    snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Clock-%d-%d",
+             params->n_bit_counter, params->init_freq);
   }
 
   return cache;
@@ -117,7 +122,9 @@ static void Clock_free(cache_t *cache) {
  * @param req
  * @return true if cache hit, false if cache miss
  */
-static bool Clock_get(cache_t *cache, const request_t *req) { return cache_get_base(cache, req); }
+static bool Clock_get(cache_t *cache, const request_t *req) {
+  return cache_get_base(cache, req);
+}
 
 // ***********************************************************************
 // ****                                                               ****
@@ -135,7 +142,8 @@ static bool Clock_get(cache_t *cache, const request_t *req) { return cache_get_b
  *  and if the object is expired, it is removed from the cache
  * @return true on hit, false on miss
  */
-static cache_obj_t *Clock_find(cache_t *cache, const request_t *req, const bool update_cache) {
+static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
+                               const bool update_cache) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
@@ -281,14 +289,16 @@ static bool Clock_remove(cache_t *cache, const obj_id_t obj_id) {
 // ****                  parameter set up functions                   ****
 // ****                                                               ****
 // ***********************************************************************
-static const char *Clock_current_params(cache_t *cache, Clock_params_t *params) {
+static const char *Clock_current_params(cache_t *cache,
+                                        Clock_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-bit-counter=%d\n", params->n_bit_counter);
 
   return params_str;
 }
 
-static void Clock_parse_params(cache_t *cache, const char *cache_specific_params) {
+static void Clock_parse_params(cache_t *cache,
+                               const char *cache_specific_params) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
@@ -320,8 +330,8 @@ static void Clock_parse_params(cache_t *cache, const char *cache_specific_params
       printf("current parameters: %s\n", Clock_current_params(cache, params));
       exit(0);
     } else {
-      ERROR("%s does not have parameter %s, example parameters %s\n", cache->cache_name, key,
-            Clock_current_params(cache, params));
+      ERROR("%s does not have parameter %s, example parameters %s\n",
+            cache->cache_name, key, Clock_current_params(cache, params));
       exit(1);
     }
   }

@@ -9,9 +9,9 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../utils/include/mymath.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/cache.h"
+#include "utils/include/mymath.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,17 +25,20 @@ typedef struct LRU_Prob_params {
   int threshold;
 } LRU_Prob_params_t;
 
+static const char *DEFAULT_CACHE_PARAMS = "prob=0.5";
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
 // ****                                                               ****
 // ***********************************************************************
 
-static void LRU_Prob_parse_params(cache_t *cache, const char *cache_specific_params);
+static void LRU_Prob_parse_params(cache_t *cache,
+                                  const char *cache_specific_params);
 static void LRU_Prob_free(cache_t *cache);
 static bool LRU_Prob_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_Prob_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                                  const bool update_cache);
 static cache_obj_t *LRU_Prob_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_Prob_to_evict(cache_t *cache, const request_t *req);
 static void LRU_Prob_evict(cache_t *cache, const request_t *req);
@@ -57,7 +60,8 @@ static bool LRU_Prob_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LRU_Prob", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("LRU_Prob", ccache_params, cache_specific_params);
   cache->cache_init = LRU_Prob_init;
   cache->cache_free = LRU_Prob_free;
   cache->get = LRU_Prob_get;
@@ -75,8 +79,10 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
   cache->eviction_params =
       (LRU_Prob_params_t *)malloc(sizeof(LRU_Prob_params_t));
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)(cache->eviction_params);
-  params->prob = 0.5;
+  params->q_head = NULL;
+  params->q_tail = NULL;
 
+  LRU_Prob_parse_params(cache, DEFAULT_CACHE_PARAMS);
   if (cache_specific_params != NULL) {
     LRU_Prob_parse_params(cache, cache_specific_params);
   }
@@ -137,8 +143,8 @@ static bool LRU_Prob_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return the object or NULL if not found
  */
-static cache_obj_t* LRU_Prob_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache) {
+static cache_obj_t *LRU_Prob_find(cache_t *cache, const request_t *req,
+                                  const bool update_cache) {
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
 
   cache_obj_t *cached_obj = cache_find_base(cache, req, update_cache);
@@ -167,6 +173,7 @@ static cache_obj_t* LRU_Prob_find(cache_t *cache, const request_t *req,
  */
 static cache_obj_t *LRU_Prob_insert(cache_t *cache, const request_t *req) {
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
+
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
@@ -201,6 +208,8 @@ static cache_obj_t *LRU_Prob_to_evict(cache_t *cache, const request_t *req) {
 static void LRU_Prob_evict(cache_t *cache, const request_t *req) {
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = params->q_tail;
+  DEBUG_ASSERT(params->q_tail != NULL);
+
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
   cache_remove_obj_base(cache, obj_to_evict, true);
 }
@@ -282,7 +291,6 @@ static void LRU_Prob_parse_params(cache_t *cache,
   }
   free(old_params_str);
 }
-
 
 #ifdef __cplusplus
 }

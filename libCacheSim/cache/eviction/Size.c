@@ -9,9 +9,9 @@
 // Created by Juncheng Yang on 3/30/21.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../dataStructure/pqueue.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "dataStructure/pqueue.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +31,7 @@ typedef struct Size_params {
 static void Size_free(cache_t *cache);
 static bool Size_get(cache_t *cache, const request_t *req);
 static cache_obj_t *Size_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                              const bool update_cache);
 static cache_obj_t *Size_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *Size_to_evict(cache_t *cache, const request_t *req);
 static void Size_evict(cache_t *cache, const request_t *req);
@@ -52,9 +52,10 @@ static void Size_remove_obj(cache_t *cache, cache_obj_t *obj);
  * @param cache_specific_params Size specific parameters, should be NULL
  */
 cache_t *Size_init(const common_cache_params_t ccache_params,
-                     
-                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("Size", ccache_params, cache_specific_params);
+
+                   const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("Size", ccache_params, cache_specific_params);
   cache->cache_init = Size_init;
   cache->cache_free = Size_free;
   cache->get = Size_get;
@@ -109,7 +110,7 @@ static void Size_free(cache_t *cache) {
  */
 static bool Size_get(cache_t *cache, const request_t *req) {
   Size_params_t *params = cache->eviction_params;
-  DEBUG_ASSERT(cache->n_obj == (int64_t) params->pq->size - 1);
+  DEBUG_ASSERT(cache->n_obj == (int64_t)params->pq->size - 1);
   bool ret = cache_get_base(cache, req);
 
   return ret;
@@ -132,7 +133,7 @@ static bool Size_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *Size_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                              const bool update_cache) {
   Size_params_t *params = cache->eviction_params;
   cache_obj_t *cached_obj = cache_find_base(cache, req, update_cache);
 
@@ -196,8 +197,7 @@ static cache_obj_t *Size_to_evict(cache_t *cache, const request_t *req) {
  * @param cache
  * @param req not used
  */
-static void Size_evict(cache_t *cache,
-                         const request_t *req) {
+static void Size_evict(cache_t *cache, const request_t *req) {
   Size_params_t *params = cache->eviction_params;
   pq_node_t *node = (pq_node_t *)pqueue_pop(params->pq);
 

@@ -1,5 +1,6 @@
 
 #include "include/threadPool.h"
+
 #include "include/utilsSys.h"
 
 utilsSys::ThreadPool::ThreadPool(int n_thread) : n_set_thread_(n_thread) {
@@ -14,17 +15,16 @@ utilsSys::ThreadPool::ThreadPool(int n_thread) : n_set_thread_(n_thread) {
 
 void utilsSys::ThreadPool::shutdown() {
   std::unique_lock<std::mutex> lock(mtx_);
-  if (stopped_)
-    return;
+  if (stopped_) return;
 
   printf("thread pool shutdown now\n");
-  stopped_ = true; // use this flag in condition.wait
+  stopped_ = true;  // use this flag in condition.wait
   lock.unlock();
 
-  cond_.notify_all(); // wake up all threads.
+  cond_.notify_all();  // wake up all threads.
 
   // Join all threads.
-  for(std::thread &th : pool_) {
+  for (std::thread& th : pool_) {
     th.join();
   }
 
@@ -35,12 +35,9 @@ void utilsSys::ThreadPool::wait_job() {
   while (true) {
     std::unique_lock<std::mutex> lock(mtx_);
 
-    cond_.wait(lock, [this](){
-      return !job_queue.empty() || stopped_;
-    });
+    cond_.wait(lock, [this]() { return !job_queue.empty() || stopped_; });
 
-    if (stopped_)
-      return;
+    if (stopped_) return;
 
     auto job = job_queue.front();
     n_running_jobs.fetch_add(1);
@@ -49,7 +46,7 @@ void utilsSys::ThreadPool::wait_job() {
     while (n_set_thread_ == -1 && get_n_available_cores() <= 1) {
       /* only run when the load is not more than cores */
       printf("throttle due to high load\n");
-      std::this_thread::sleep_for(std::chrono::seconds (8));
+      std::this_thread::sleep_for(std::chrono::seconds(8));
     }
 
     job();
@@ -71,6 +68,7 @@ void utilsSys::ThreadPool::wait_for_finish() {
       return;
     }
     lock.unlock();
-    std::this_thread::sleep_for(std::chrono::microseconds (20 + job_queue.size() * 100));
+    std::this_thread::sleep_for(
+        std::chrono::microseconds(20 + job_queue.size() * 100));
   }
 }

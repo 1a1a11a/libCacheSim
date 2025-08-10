@@ -2,9 +2,9 @@
 
 #include <inttypes.h>
 
-#include "../../mrcProfiler/mrcProfiler.h"
-#include "../../include/libCacheSim/enum.h"
-#include "../../include/libCacheSim/reader.h"
+#include "libCacheSim/enum.h"
+#include "libCacheSim/reader.h"
+#include "mrcProfiler/mrcProfiler.h"
 
 #define N_ARGS 2
 #define OFILEPATH_LEN 128

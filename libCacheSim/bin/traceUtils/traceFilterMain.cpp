@@ -11,14 +11,14 @@
 #include <iostream>
 #include <string>
 
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../utils/include/mymath.h"
-#include "../../utils/include/mystr.h"
-#include "../../utils/include/mysys.h"
 #include "../cli_reader_utils.h"
 #include "internal.hpp"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/reader.h"
+#include "utils/include/mymath.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
 
 namespace TraceFilter {
 struct output_format {
@@ -53,8 +53,8 @@ void filter(reader_t *reader, cache_t *cache, std::string ofilepath) {
     read_one_req(reader, req);
   }
 
-  INFO("write %ld/%ld %.4lf requests to file %s\n", (long) n_written_req, (long) n_req,
-       (double)n_written_req / n_req, ofilepath.c_str());
+  INFO("write %ld/%ld %.4lf requests to file %s\n", (long)n_written_req,
+       (long)n_req, (double)n_written_req / n_req, ofilepath.c_str());
   free_request(req);
   output_file.close();
 }

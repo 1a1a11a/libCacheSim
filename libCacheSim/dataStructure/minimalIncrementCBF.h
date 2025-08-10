@@ -1,11 +1,9 @@
-
-#ifndef _MINIMAL_INCREMENR_CBF_H
-#define _MINIMAL_INCREMENR_CBF_H
+#ifndef _MINIMAL_INCREMENT_CBF_H
+#define _MINIMAL_INCREMENT_CBF_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /** ***************************************************************************
  * Structure to keep track of one minimal increment CBF.  Caller needs to
@@ -13,8 +11,7 @@ extern "C" {
  * every struct must be to minimalIncrementCBF_init().
  *
  */
-struct minimalIncrementCBF
-{
+struct minimalIncrementCBF {
   // These fields are part of the public interface of this structure.
   // Client code may read these values if desired. Client code MUST NOT
   // modify any of these.
@@ -29,10 +26,9 @@ struct minimalIncrementCBF
   // change incompatibly at any moment. Client code MUST NOT access or rely
   // on these.
   double bpe;
-  unsigned int * bf;
+  unsigned int* bf;
   int ready;
 };
-
 
 /** ***************************************************************************
  * Initialize the minimal Increment CBF for use.
@@ -58,18 +54,18 @@ struct minimalIncrementCBF
  *     1 - on failure
  *
  */
-int minimalIncrementCBF_init(struct minimalIncrementCBF * CBF, int entries, double error);
-
+int minimalIncrementCBF_init(struct minimalIncrementCBF* CBF, int entries,
+                             double error);
 
 /** ***************************************************************************
  * Deprecated, use minimalIncrementCBF_init()
  *
  */
-int minimalIncrementCBF_init_size(struct minimalIncrementCBF * CBF, int entries, double error,
-                    unsigned int cache_size);
+int minimalIncrementCBF_init_size(struct minimalIncrementCBF* CBF, int entries,
+                                  double error, unsigned int cache_size);
 
-
-// /** ***************************************************************************
+// /**
+// ***************************************************************************
 //  * Check if the given element is in the bloom filter. Remember this may
 //  * return false positive if a collision occurred.
 //  *
@@ -85,8 +81,8 @@ int minimalIncrementCBF_init_size(struct minimalIncrementCBF * CBF, int entries,
 //  *    -1 - bloom not initialized
 //  *
 //  */
-int minimalIncrementCBF_estimate(struct minimalIncrementCBF * CBF, const void * buffer, int len);
-
+int minimalIncrementCBF_estimate(struct minimalIncrementCBF* CBF,
+                                 const void* buffer, int len);
 
 /** ***************************************************************************
  * Add the given element to the bloom filter.
@@ -94,15 +90,14 @@ int minimalIncrementCBF_estimate(struct minimalIncrementCBF * CBF, const void * 
  * so for the common check+add use case, no need to call check separately.
  *
  */
-int minimalIncrementCBF_add(struct minimalIncrementCBF * CBF, const void * buffer, int len);
-
+int minimalIncrementCBF_add(struct minimalIncrementCBF* CBF, const void* buffer,
+                            int len);
 
 /** ***************************************************************************
  * Print (to stdout) info about this bloom filter. Debugging aid.
  *
  */
-void minimalIncrementCBF_print(struct minimalIncrementCBF * CBF);
-
+void minimalIncrementCBF_print(struct minimalIncrementCBF* CBF);
 
 /** ***************************************************************************
  * Deallocate internal storage.
@@ -117,7 +112,7 @@ void minimalIncrementCBF_print(struct minimalIncrementCBF * CBF);
  * Return: none
  *
  */
-void minimalIncrementCBF_free(struct minimalIncrementCBF * CBF);
+void minimalIncrementCBF_free(struct minimalIncrementCBF* CBF);
 
 /** ***************************************************************************
  * Decay internal storage.
@@ -133,8 +128,7 @@ void minimalIncrementCBF_free(struct minimalIncrementCBF * CBF);
  *     1 - on failure
  *
  */
-int minimalIncrementCBF_decay(struct minimalIncrementCBF * bloom);
-
+int minimalIncrementCBF_decay(struct minimalIncrementCBF* bloom);
 
 /** ***************************************************************************
  * Returns version string compiled into library.
@@ -142,7 +136,7 @@ int minimalIncrementCBF_decay(struct minimalIncrementCBF * bloom);
  * Return: version string
  *
  */
-const char * minimalIncrementCBF_version(void);
+const char* minimalIncrementCBF_version(void);
 
 #ifdef __cplusplus
 }

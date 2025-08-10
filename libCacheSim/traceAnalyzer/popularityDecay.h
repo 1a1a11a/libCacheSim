@@ -35,8 +35,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../include/libCacheSim/macro.h"
-#include "../include/libCacheSim/request.h"
+#include "libCacheSim/macro.h"
+#include "libCacheSim/request.h"
 #include "struct.h"
 
 // #define USE_REQ_METRIC 1

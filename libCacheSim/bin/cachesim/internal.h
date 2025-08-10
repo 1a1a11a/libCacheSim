@@ -2,11 +2,11 @@
 
 #include <inttypes.h>
 
-#include "../../include/libCacheSim/admissionAlgo.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/enum.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/reader.h"
+#include "libCacheSim/admissionAlgo.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/enum.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {

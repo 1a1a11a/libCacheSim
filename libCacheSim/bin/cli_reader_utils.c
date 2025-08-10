@@ -6,11 +6,11 @@
 #include <assert.h>
 #include <string.h>
 
-#include "../include/conversion.h"
-#include "../include/libCacheSim/hashmap.h"
-#include "../include/libCacheSim/hashmap_defs.h"
-#include "../include/libCacheSim/reader.h"
-#include "../utils/include/mystr.h"
+#include "conversion.h"
+#include "libCacheSim/hashmap.h"
+#include "libCacheSim/hashmap_defs.h"
+#include "libCacheSim/reader.h"
+#include "utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {

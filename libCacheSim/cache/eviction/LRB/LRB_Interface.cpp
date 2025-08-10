@@ -5,8 +5,8 @@
 #include <map>
 #include <string>
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/cache.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/cache.h"
 #include "lrb.h"
 
 // using namespace webcachesim;
@@ -95,10 +95,11 @@ cache_t *LRB_init(const common_cache_params_t ccache_params,
   LRB_params_t *params = my_malloc(LRB_params_t);
   cache->eviction_params = params;
 
+  params->objective = nullptr;
+
+  LRB_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
     LRB_parse_params(cache, cache_specific_params);
-  } else {
-    LRB_parse_params(cache, DEFAULT_PARAMS);
   }
 
   auto *lrb = new lrb::LRBCache();
@@ -133,6 +134,9 @@ static void LRB_free(cache_t *cache) {
   auto *LRB = static_cast<lrb::LRBCache *>(params->LRB_cache);
   delete LRB;
   free(cache->to_evict_candidate);
+  if (params->objective != NULL) {
+    free(params->objective);
+  }
   my_free(sizeof(LRB_params_t), params);
   cache_struct_free(cache);
 }
@@ -309,7 +313,7 @@ static const char *LRB_current_params(cache_t *cache, LRB_params_t *params) {
   static __thread char params_str[128];
   int n = snprintf(params_str, 128, "objective=%s", params->objective);
 
-  snprintf(cache->cache_name + n, 128 - n, "\n");
+  snprintf(params_str + n, 128 - n, "\n");
 
   return params_str;
 }
@@ -318,7 +322,7 @@ static void LRB_parse_params(cache_t *cache,
                              const char *cache_specific_params) {
   LRB_params_t *params = (LRB_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
-  char *end;
+  char *original_params_str = params_str;  // preserve the original pointer
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
@@ -326,25 +330,37 @@ static void LRB_parse_params(cache_t *cache,
     char *key = strsep((char **)&params_str, "=");
     char *value = strsep((char **)&params_str, ",");
 
+    if (key == NULL || value == NULL) {
+      ERROR("invalid parameter format in %s: %s\n", cache->cache_name,
+            cache_specific_params);
+      free(original_params_str);
+      exit(1);
+    }
+
     // skip the white space
     while (params_str != NULL && *params_str == ' ') {
       params_str++;
     }
 
     if (strcasecmp(key, "objective") == 0) {
+      if (params->objective != NULL) {
+        free(params->objective);
+      }
       params->objective = strdup(value);
       if (params->objective == NULL) {
         ERROR("out of memory %s\n", strerror(errno));
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", LRB_current_params(cache, params));
+      free(original_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      free(original_params_str);
       exit(1);
     }
   }
-  free(params_str);
+  free(original_params_str);
 }
 #ifdef __cplusplus
 }

@@ -3,9 +3,9 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "../../../include/libCacheSim/cacheObj.h"
-#include "../../../include/libCacheSim/request.h"
 #include "constants.hpp"
+#include "libCacheSim/cacheObj.h"
+#include "libCacheSim/request.h"
 
 namespace repl {
 

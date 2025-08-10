@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <zstd.h>
 
-#include "../../include/libCacheSim/enum.h"
+#include "libCacheSim/enum.h"
 
 #ifdef __cplusplus
 extern "C" {

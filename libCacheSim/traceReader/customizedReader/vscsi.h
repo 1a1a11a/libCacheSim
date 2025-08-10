@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "../../include/libCacheSim/reader.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,12 +130,12 @@ static inline int vscsi_read_ver1(reader_t *reader, request_t *req) {
   req->obj_size = record->len;
   uint16_t cmd = record->cmd;
   if (cmd == 40 || cmd == 8 || cmd == 136 || cmd == 45 || cmd == 168) {
-      req->op = OP_READ;
-  } else if (cmd == 42 || cmd == 63 || cmd == 138 || cmd == 142 ||
-             cmd == 154 || cmd == 156 || cmd == 170 || cmd == 174) {
-      req->op = OP_WRITE;
+    req->op = OP_READ;
+  } else if (cmd == 42 || cmd == 63 || cmd == 138 || cmd == 142 || cmd == 154 ||
+             cmd == 156 || cmd == 170 || cmd == 174) {
+    req->op = OP_WRITE;
   } else {
-      req->op = OP_INVALID;
+    req->op = OP_INVALID;
   }
   req->obj_id = record->lbn;
   (reader->mmap_offset) += reader->item_size;
@@ -149,12 +149,12 @@ static inline int vscsi_read_ver2(reader_t *reader, request_t *req) {
   req->obj_size = record->len;
   uint16_t cmd = record->cmd;
   if (cmd == 40 || cmd == 8 || cmd == 136 || cmd == 45 || cmd == 168) {
-      req->op = OP_READ;
-  } else if (cmd == 42 || cmd == 63 || cmd == 138 || cmd == 142 ||
-             cmd == 154 || cmd == 156 || cmd == 170 || cmd == 174) {
-      req->op = OP_WRITE;
+    req->op = OP_READ;
+  } else if (cmd == 42 || cmd == 63 || cmd == 138 || cmd == 142 || cmd == 154 ||
+             cmd == 156 || cmd == 170 || cmd == 174) {
+    req->op = OP_WRITE;
   } else {
-      req->op = OP_INVALID;
+    req->op = OP_INVALID;
   }
   req->obj_id = record->lbn;
   (reader->mmap_offset) += reader->item_size;

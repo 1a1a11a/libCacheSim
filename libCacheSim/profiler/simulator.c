@@ -10,17 +10,17 @@
 extern "C" {
 #endif
 
-#include "../include/libCacheSim/simulator.h"
+#include "libCacheSim/simulator.h"
 
 #include <math.h>
 
 #include "../cache/cacheUtils.h"
-#include "../include/conversion.h"
-#include "../include/libCacheSim/evictionAlgo.h"
-#include "../include/libCacheSim/plugin.h"
 #include "../utils/include/myprint.h"
 #include "../utils/include/mystr.h"
 #include "../utils/include/threadpool.h"
+#include "conversion.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/plugin.h"
 
 typedef struct simulator_multithreading_params {
   reader_t *reader;
@@ -225,8 +225,8 @@ cache_stat_t *simulate_at_multi_sizes(
   }
 
   char start_cache_size[64], end_cache_size[64];
-  convert_size_to_str(cache_sizes[0], start_cache_size);
-  convert_size_to_str(cache_sizes[num_of_sizes - 1], end_cache_size);
+  convert_size_to_str(cache_sizes[0], start_cache_size, 64);
+  convert_size_to_str(cache_sizes[num_of_sizes - 1], end_cache_size, 64);
 
   INFO(
       "%s starts computation %s, num_warmup_req %lld, start cache size %s, "
@@ -309,8 +309,8 @@ cache_stat_t *simulate_with_multi_caches(
   }
 
   char start_cache_size[64], end_cache_size[64];
-  convert_size_to_str(result[0].cache_size, start_cache_size);
-  convert_size_to_str(result[num_of_caches - 1].cache_size, end_cache_size);
+  convert_size_to_str(result[0].cache_size, start_cache_size, 64);
+  convert_size_to_str(result[num_of_caches - 1].cache_size, end_cache_size, 64);
 
   INFO(
       "%s starts computation, num_warmup_req %lld, start cache %s size %s, "
@@ -377,8 +377,8 @@ cache_stat_t *simulate_with_multi_caches_scaling(
   }
 
   char start_cache_size[64], end_cache_size[64];
-  convert_size_to_str(result[0].cache_size, start_cache_size);
-  convert_size_to_str(result[num_of_caches - 1].cache_size, end_cache_size);
+  convert_size_to_str(result[0].cache_size, start_cache_size, 64);
+  convert_size_to_str(result[num_of_caches - 1].cache_size, end_cache_size, 64);
 
   INFO(
       "simulate_with_multi_caches_scaling starts computation, num_warmup_req "

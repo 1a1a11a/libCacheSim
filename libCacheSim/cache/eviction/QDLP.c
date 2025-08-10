@@ -12,28 +12,28 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct {
-  cache_t *fifo;
-  cache_t *fifo_ghost;
+  cache_t *small_cache;
+  cache_t *ghost_cache;
   cache_t *main_cache;
   bool hit_on_ghost;
 
-  int64_t n_obj_admit_to_fifo;
+  int64_t n_obj_admit_to_small;
   int64_t n_obj_admit_to_main;
   int64_t n_obj_move_to_main;
-  int64_t n_byte_admit_to_fifo;
+  int64_t n_byte_admit_to_small;
   int64_t n_byte_admit_to_main;
   int64_t n_byte_move_to_main;
 
   int move_to_main_threshold;
-  double fifo_size_ratio;
+  double small_size_ratio;
   double ghost_size_ratio;
   char main_cache_type[32];
 
@@ -53,7 +53,7 @@ static void QDLP_free(cache_t *cache);
 static bool QDLP_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                              const bool update_cache);
 static cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *QDLP_to_evict(cache_t *cache, const request_t *req);
 static void QDLP_evict(cache_t *cache, const request_t *req);
@@ -62,7 +62,7 @@ static inline int64_t QDLP_get_occupied_byte(const cache_t *cache);
 static inline int64_t QDLP_get_n_obj(const cache_t *cache);
 static inline bool QDLP_can_insert(cache_t *cache, const request_t *req);
 static void QDLP_parse_params(cache_t *cache,
-                                const char *cache_specific_params);
+                              const char *cache_specific_params);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -71,7 +71,7 @@ static void QDLP_parse_params(cache_t *cache,
 // ***********************************************************************
 
 cache_t *QDLP_init(const common_cache_params_t ccache_params,
-                     const char *cache_specific_params) {
+                   const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("QDLP", ccache_params, cache_specific_params);
   cache->cache_init = QDLP_init;
@@ -100,22 +100,22 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   }
 
   int64_t fifo_cache_size =
-      (int64_t)ccache_params.cache_size * params->fifo_size_ratio;
+      (int64_t)ccache_params.cache_size * params->small_size_ratio;
   int64_t main_cache_size = ccache_params.cache_size - fifo_cache_size;
-  int64_t fifo_ghost_cache_size =
+  int64_t ghost_cache_size =
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
-  params->fifo = FIFO_init(ccache_params_local, NULL);
+  params->small_cache = FIFO_init(ccache_params_local, NULL);
 
-  if (fifo_ghost_cache_size > 0) {
-    ccache_params_local.cache_size = fifo_ghost_cache_size;
-    params->fifo_ghost = FIFO_init(ccache_params_local, NULL);
-    snprintf(params->fifo_ghost->cache_name, CACHE_NAME_ARRAY_LEN,
+  if (ghost_cache_size > 0) {
+    ccache_params_local.cache_size = ghost_cache_size;
+    params->ghost_cache = FIFO_init(ccache_params_local, NULL);
+    snprintf(params->ghost_cache->cache_name, CACHE_NAME_ARRAY_LEN,
              "FIFO-ghost");
   } else {
-    params->fifo_ghost = NULL;
+    params->ghost_cache = NULL;
   }
 
   ccache_params_local.cache_size = main_cache_size;
@@ -152,15 +152,15 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   }
 
 #if defined(TRACK_EVICTION_V_AGE)
-  if (params->fifo_ghost != NULL) {
-    params->fifo_ghost->track_eviction_age = false;
+  if (params->ghost_cache != NULL) {
+    params->ghost->track_eviction_age = false;
   }
-  params->fifo->track_eviction_age = false;
+  params->small_cache->track_eviction_age = false;
   params->main_cache->track_eviction_age = false;
 #endif
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "QDLP-%.4lf-%.4lf-%s-%d",
-           params->fifo_size_ratio, params->ghost_size_ratio,
+           params->small_size_ratio, params->ghost_size_ratio,
            params->main_cache_type, params->move_to_main_threshold);
 
   return cache;
@@ -174,9 +174,9 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
 static void QDLP_free(cache_t *cache) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
   free_request(params->req_local);
-  params->fifo->cache_free(params->fifo);
-  if (params->fifo_ghost != NULL) {
-    params->fifo_ghost->cache_free(params->fifo_ghost);
+  params->small_cache->cache_free(params->small_cache);
+  if (params->ghost_cache != NULL) {
+    params->ghost_cache->cache_free(params->ghost_cache);
   }
   params->main_cache->cache_free(params->main_cache);
   free(cache->eviction_params);
@@ -204,7 +204,7 @@ static void QDLP_free(cache_t *cache) {
  */
 static bool QDLP_get(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
-  DEBUG_ASSERT(params->fifo->get_occupied_byte(params->fifo) +
+  DEBUG_ASSERT(params->small_cache->get_occupied_byte(params->small_cache) +
                    params->main_cache->get_occupied_byte(params->main_cache) <=
                cache->cache_size);
 
@@ -229,12 +229,13 @@ static bool QDLP_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                              const bool update_cache) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the fifo and main caches
   if (!update_cache) {
-    cache_obj_t *obj = params->fifo->find(params->fifo, req, false);
+    cache_obj_t *obj =
+        params->small_cache->find(params->small_cache, req, false);
     if (obj != NULL) {
       return obj;
     }
@@ -247,14 +248,14 @@ static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
 
   /* update cache is true from now */
   params->hit_on_ghost = false;
-  cache_obj_t *obj = params->fifo->find(params->fifo, req, true);
+  cache_obj_t *obj = params->small_cache->find(params->small_cache, req, true);
   if (obj != NULL) {
     return obj;
   }
 
-  if (params->fifo_ghost != NULL &&
-      params->fifo_ghost->remove(params->fifo_ghost, req->obj_id)) {
-    // if object in fifo_ghost, remove will return true
+  if (params->ghost_cache != NULL &&
+      params->ghost_cache->remove(params->ghost_cache, req->obj_id)) {
+    // if object in ghost, remove will return true
     params->hit_on_ghost = true;
   }
 
@@ -287,12 +288,12 @@ static cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req) {
     obj = params->main_cache->find(params->main_cache, req, false);
   } else {
     /* insert into the fifo */
-    if (req->obj_size >= params->fifo->cache_size) {
+    if (req->obj_size >= params->small_cache->cache_size) {
       return NULL;
     }
-    params->n_obj_admit_to_fifo += 1;
-    params->n_byte_admit_to_fifo += req->obj_size;
-    obj = params->fifo->insert(params->fifo, req);
+    params->n_obj_admit_to_small += 1;
+    params->n_byte_admit_to_small += req->obj_size;
+    obj = params->small_cache->insert(params->small_cache, req);
   }
 
 #if defined(TRACK_EVICTION_V_AGE)
@@ -331,25 +332,25 @@ static cache_obj_t *QDLP_to_evict(cache_t *cache, const request_t *req) {
 static void QDLP_evict(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
 
-  cache_t *fifo = params->fifo;
-  cache_t *ghost = params->fifo_ghost;
-  cache_t *main = params->main_cache;
+  cache_t *small_cache = params->small_cache;
+  cache_t *ghost_cache = params->ghost_cache;
+  cache_t *main_cache = params->main_cache;
 
-  if (fifo->get_occupied_byte(fifo) == 0) {
+  if (small_cache->get_occupied_byte(small_cache) == 0) {
 #if defined(TRACK_EVICTION_V_AGE)
-    cache_obj_t *obj = main->to_evict(main, req);
+    cache_obj_t *obj = main_cache->to_evict(main_cache, req);
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #endif
 
-    assert(main->get_occupied_byte(main) <= cache->cache_size);
+    assert(main_cache->get_occupied_byte(main_cache) <= cache->cache_size);
     // evict from main cache
-    main->evict(main, req);
+    main_cache->evict(main_cache, req);
 
     return;
   }
 
   // evict from FIFO
-  cache_obj_t *obj = fifo->to_evict(fifo, req);
+  cache_obj_t *obj = small_cache->to_evict(small_cache, req);
   assert(obj != NULL);
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
@@ -361,21 +362,22 @@ static void QDLP_evict(cache_t *cache, const request_t *req) {
 
     params->main_cache->get(params->main_cache, params->req_local);
 #if defined(TRACK_EVICTION_V_AGE)
-    main->find(main, params->req_local, false)->create_time = obj->create_time;
+    main_cache->find(main_cache, params->req_local, false)->create_time =
+        obj->create_time;
   } else {
     record_eviction_age(cache, obj, CURR_TIME(cache, req) - obj->create_time);
 #else
   } else {
 #endif
     // insert to ghost
-    if (ghost != NULL) {
-      ghost->get(ghost, params->req_local);
+    if (ghost_cache != NULL) {
+      ghost_cache->get(ghost_cache, params->req_local);
     }
   }
 
   // remove from fifo, but do not update stat
   // bool removed = fifo->remove(fifo, params->req_local->obj_id);
-  fifo->evict(fifo, req);
+  small_cache->evict(small_cache, req);
 }
 
 /**
@@ -394,9 +396,10 @@ static void QDLP_evict(cache_t *cache, const request_t *req) {
 static bool QDLP_remove(cache_t *cache, const obj_id_t obj_id) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
   bool removed = false;
-  removed = removed || params->fifo->remove(params->fifo, obj_id);
-  removed = removed || (params->fifo_ghost &&
-                        params->fifo_ghost->remove(params->fifo_ghost, obj_id));
+  removed = removed || params->small_cache->remove(params->small_cache, obj_id);
+  removed =
+      removed || (params->ghost_cache &&
+                  params->ghost_cache->remove(params->ghost_cache, obj_id));
   removed = removed || params->main_cache->remove(params->main_cache, obj_id);
 
   return removed;
@@ -404,20 +407,21 @@ static bool QDLP_remove(cache_t *cache, const obj_id_t obj_id) {
 
 static inline int64_t QDLP_get_occupied_byte(const cache_t *cache) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
-  return params->fifo->get_occupied_byte(params->fifo) +
+  return params->small_cache->get_occupied_byte(params->small_cache) +
          params->main_cache->get_occupied_byte(params->main_cache);
 }
 
 static inline int64_t QDLP_get_n_obj(const cache_t *cache) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
-  return params->fifo->get_n_obj(params->fifo) +
+  return params->small_cache->get_n_obj(params->small_cache) +
          params->main_cache->get_n_obj(params->main_cache);
 }
 
 static inline bool QDLP_can_insert(cache_t *cache, const request_t *req) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
 
-  return req->obj_size <= params->fifo->cache_size && cache_can_insert_default(cache, req);
+  return req->obj_size <= params->small_cache->cache_size &&
+         cache_can_insert_default(cache, req);
 }
 
 // ***********************************************************************
@@ -428,12 +432,12 @@ static inline bool QDLP_can_insert(cache_t *cache, const request_t *req) {
 static const char *QDLP_current_params(QDLP_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "fifo-size-ratio=%.4lf,main-cache=%s\n",
-           params->fifo_size_ratio, params->main_cache->cache_name);
+           params->small_size_ratio, params->main_cache->cache_name);
   return params_str;
 }
 
 static void QDLP_parse_params(cache_t *cache,
-                                const char *cache_specific_params) {
+                              const char *cache_specific_params) {
   QDLP_params_t *params = (QDLP_params_t *)(cache->eviction_params);
 
   char *params_str = strdup(cache_specific_params);
@@ -451,7 +455,7 @@ static void QDLP_parse_params(cache_t *cache,
     }
 
     if (strcasecmp(key, "fifo-size-ratio") == 0) {
-      params->fifo_size_ratio = strtod(value, NULL);
+      params->small_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
       params->ghost_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "move-to-main-threshold") == 0) {

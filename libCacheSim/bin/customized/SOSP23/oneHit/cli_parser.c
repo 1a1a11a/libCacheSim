@@ -3,11 +3,11 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../../../../include/libCacheSim/const.h"
-#include "../../../../utils/include/mystr.h"
-#include "../../../../utils/include/mysys.h"
-#include "../../../cli_reader_utils.h"
+#include "cli_reader_utils.h"
 #include "internal.h"
+#include "libCacheSim/const.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +33,7 @@ static struct argp_option options[] = {
      "\"obj-id-col=1;delimiter=,\"", 0,
      "Parameters used for csv trace, e.g., \"obj-id-col=1;delimiter=,\"", 2},
     {"num-req", OPTION_NUM_REQ, "-1", 0,
-     "Num of requests to process, default -1 means all requests in the trace",
+     "Num of requests to process, default -1 means alls requests in the trace",
      2},
 
     {"output", OPTION_OUTPUT_PATH, "output", 0, "Output path", 2},

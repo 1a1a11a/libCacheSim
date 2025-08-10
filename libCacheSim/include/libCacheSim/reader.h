@@ -55,7 +55,8 @@ typedef struct {
   int32_t feature_fields[N_MAX_FEATURES];
 
   // block cache, 0 and -1 means ignore this field, 1 is also invalid
-  // block_size breaks a large request for multiple blocks into multiple requests
+  // block_size breaks a large request for multiple blocks into multiple
+  // requests
   int32_t block_size;
 
   // csv reader
@@ -130,7 +131,8 @@ typedef struct reader {
   /* if true, ignore the obj_size in the trace, and use size one */
   bool ignore_obj_size;
 
-  // used by block cache trace to split a large request into multiple requests to multiple blocks
+  // used by block cache trace to split a large request into multiple requests
+  // to multiple blocks
   int32_t block_size;
 
   /* this is used when
@@ -180,9 +182,6 @@ static inline reader_init_param_t default_reader_init_params(void) {
  * @param trace_path path to the trace
  * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
  *  TWR_BIN_TRACE, see libCacheSim/enum.h for more
- * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR,
- *  used by CSV_TRACE and PLAIN_TXT_TRACE, whether the obj_id in the trace is a
- *  number or not, if it is not a number then we will map it to uint64_t
  * @param reader_init_param some initialization parameters used by csv and
  * binary traces these include time_field, obj_id_field, obj_size_field,
  * op_field, ttl_field, has_header, delimiter, binary_fmt_str
@@ -190,11 +189,13 @@ static inline reader_init_param_t default_reader_init_params(void) {
  * @return a pointer to reader_t struct, the returned reader needs to be
  * explicitly closed by calling close_reader or close_trace
  */
-reader_t *setup_reader(const char *trace_path, trace_type_e trace_type, const reader_init_param_t *reader_init_param);
+reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
+                       const reader_init_param_t *reader_init_param);
 
 /* this is the same function as setup_reader */
-static inline reader_t *open_trace(const char *path, const trace_type_e type,
-                                   const reader_init_param_t *reader_init_param) {
+static inline reader_t *open_trace(
+    const char *path, const trace_type_e type,
+    const reader_init_param_t *reader_init_param) {
   return setup_reader(path, type, reader_init_param);
 }
 
@@ -210,14 +211,18 @@ int64_t get_num_of_req(reader_t *reader);
  * @param reader
  * @return
  */
-static inline trace_type_e get_trace_type(const reader_t *const reader) { return reader->trace_type; }
+static inline trace_type_e get_trace_type(const reader_t *const reader) {
+  return reader->trace_type;
+}
 
 /**
  * whether the object id is numeric (only applies to txt and csv traces)
  * @param reader
  * @return
  */
-static inline bool obj_id_is_num(const reader_t *const reader) { return reader->obj_id_is_num; }
+static inline bool obj_id_is_num(const reader_t *const reader) {
+  return reader->obj_id_is_num;
+}
 
 /**
  * read one request from reader/trace, stored the info in pre-allocated req
@@ -233,7 +238,9 @@ int read_one_req(reader_t *reader, request_t *req);
  * @param req
  * return 0 on success and 1 if reach end of trace
  */
-static inline int read_trace(reader_t *const reader, request_t *const req) { return read_one_req(reader, req); }
+static inline int read_trace(reader_t *const reader, request_t *const req) {
+  return read_one_req(reader, req);
+}
 
 /**
  * reset reader, so we can read from the beginning
@@ -248,7 +255,9 @@ void reset_reader(reader_t *reader);
  */
 int close_reader(reader_t *reader);
 
-static inline int close_trace(reader_t *const reader) { return close_reader(reader); }
+static inline int close_trace(reader_t *const reader) {
+  return close_reader(reader);
+}
 
 /**
  * clone a reader, mostly used in multithreading
@@ -273,13 +282,16 @@ static inline void print_reader(reader_t *reader) {
   printf(
       "trace_type: %s, trace_path: %s, trace_start_offset: %d, mmap_offset: "
       "%lu, is_zstd_file: %d, item_size: %zu, file: %p, line_buf: "
-      "%p, line_buf_size: %zu, csv_delimiter: %c, csv_has_header: %d, "
+      "%s, line_buf_size: %zu, csv_delimiter: %c, csv_has_header: %d, "
       "obj_id_is_num: %d, ignore_size_zero_req: %d, ignore_obj_size: %d, "
       "n_req_left: %d, last_req_clock_time: %ld\n",
-      g_trace_type_name[reader->trace_type], reader->trace_path, reader->trace_start_offset, (long)reader->mmap_offset,
-      reader->is_zstd_file, reader->item_size, (void *)reader->file, reader->line_buf, reader->line_buf_size,
-      reader->csv_delimiter, reader->csv_has_header, reader->obj_id_is_num, reader->ignore_size_zero_req,
-      reader->ignore_obj_size, reader->n_req_left, (long)reader->last_req_clock_time);
+      g_trace_type_name[reader->trace_type], reader->trace_path,
+      reader->trace_start_offset, (long)reader->mmap_offset,
+      reader->is_zstd_file, reader->item_size, (void *)reader->file,
+      reader->line_buf ? reader->line_buf : "NULL", reader->line_buf_size,
+      reader->csv_delimiter, reader->csv_has_header, reader->obj_id_is_num,
+      reader->ignore_size_zero_req, reader->ignore_obj_size, reader->n_req_left,
+      (long)reader->last_req_clock_time);
 }
 
 #ifdef __cplusplus

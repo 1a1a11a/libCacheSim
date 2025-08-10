@@ -1,6 +1,15 @@
+# ==============================================================================
+# Trace Analyzer
+# ==============================================================================
 
-add_executable(traceAnalyzer main.cpp cli_parser.cpp ../cli_reader_utils.c)
-target_link_libraries(traceAnalyzer traceAnalyzerLib ${ALL_MODULES} ${LIBS} ${CMAKE_THREAD_LIBS_INIT} utils)
+set(traceAnalyzer_sources_cpp
+    main.cpp
+    cli_parser.cpp
+    ../cli_reader_utils.c
+)
+add_executable(traceAnalyzer ${traceAnalyzer_sources_cpp})
+target_include_directories(traceAnalyzer PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(traceAnalyzer ${PROJECT_NAME})
 install(TARGETS traceAnalyzer RUNTIME DESTINATION bin)
 
 set_target_properties(traceAnalyzer

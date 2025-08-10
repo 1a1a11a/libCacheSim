@@ -434,7 +434,7 @@ struct XXH32_state_s {
   XXH32_hash_t memsize;
   XXH32_hash_t
       reserved; /* never read nor write, might be removed in a future version */
-};              /* typedef'd to XXH32_state_t */
+}; /* typedef'd to XXH32_state_t */
 
 #ifndef XXH_NO_LONG_LONG /* defined when there is no 64-bit support */
 
@@ -449,7 +449,7 @@ struct XXH64_state_s {
   XXH32_hash_t reserved32; /* required for padding anyway */
   XXH64_hash_t reserved64; /* never read nor write, might be removed in a future
                               version */
-};                         /* typedef'd to XXH64_state_t */
+}; /* typedef'd to XXH64_state_t */
 
 /*-**********************************************************************
  *  XXH3
@@ -954,9 +954,9 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size) {
 /* *************************************
  *  Compiler Specific Options
  ***************************************/
-#ifdef _MSC_VER /* Visual Studio warning fix */
-#pragma warning( \
-    disable : 4127) /* disable: C4127: conditional expression is constant */
+#ifdef _MSC_VER                 /* Visual Studio warning fix */
+#pragma warning(disable : 4127) /* disable: C4127: conditional expression is \
+                                   constant */
 #endif
 
 #if XXH_NO_INLINE_HINTS /* disable inlining hints */

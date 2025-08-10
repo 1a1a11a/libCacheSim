@@ -6,7 +6,7 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../include/libCacheSim/profilerLRU.h"
+#include "libCacheSim/profilerLRU.h"
 
 #include "../dataStructure/splay.h"
 #include "../include/libCacheSim/hashmap.h"

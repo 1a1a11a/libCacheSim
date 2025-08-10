@@ -11,11 +11,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../include/libCacheSim/cacheObj.h"
-#include "../../include/libCacheSim/macro.h"
-#include "../../utils/include/mymath.h"
 #include "../hash/hash.h"
 #include "hashtableStruct.h"
+#include "libCacheSim/cacheObj.h"
+#include "libCacheSim/macro.h"
+#include "utils/include/mymath.h"
 
 #define OBJ_EMPTY(cache_obj) ((cache_obj)->obj_size == 0)
 

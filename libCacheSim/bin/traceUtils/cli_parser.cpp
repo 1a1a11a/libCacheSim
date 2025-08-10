@@ -7,10 +7,10 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../../include/libCacheSim/const.h"
-#include "../../utils/include/mysys.h"
 #include "../cli_reader_utils.h"
 #include "internal.hpp"
+#include "libCacheSim/const.h"
+#include "utils/include/mysys.h"
 
 namespace cli {
 const char *argp_program_version = "traceUtil 0.0.1";

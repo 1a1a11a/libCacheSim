@@ -1,8 +1,6 @@
-
-
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/mem.h"
 #include "const.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/mem.h"
 #include "obj.h"
 #include "utils.h"
 
@@ -14,8 +12,10 @@ static void seg_feature_shift(GLCache_params_t *params, segment_t *seg) {
   /* whether it is a new min window now */
   shift = (params->curr_rtime - seg->feature.last_min_window_ts) / 60;
   if (shift <= 0) return;
-  for (int i = N_FEATURE_TIME_WINDOW - 2; i >= 0; i--) {
-    seg->feature.n_hit_per_min[i + 1] = seg->feature.n_hit_per_min[i];
+  for (int window_idx = N_FEATURE_TIME_WINDOW - 2; window_idx >= 0;
+       window_idx--) {
+    seg->feature.n_hit_per_min[window_idx + 1] =
+        seg->feature.n_hit_per_min[window_idx];
   }
   seg->feature.n_hit_per_min[0] = 0;
   seg->feature.last_min_window_ts = params->curr_rtime;
@@ -23,8 +23,10 @@ static void seg_feature_shift(GLCache_params_t *params, segment_t *seg) {
   /* whether it is a new 10-min window now */
   shift = (params->curr_rtime - seg->feature.last_ten_min_window_ts) / 600;
   if (shift <= 0) return;
-  for (int i = N_FEATURE_TIME_WINDOW - 2; i >= 0; i--) {
-    seg->feature.n_hit_per_ten_min[i + 1] = seg->feature.n_hit_per_ten_min[i];
+  for (int window_idx = N_FEATURE_TIME_WINDOW - 2; window_idx >= 0;
+       window_idx--) {
+    seg->feature.n_hit_per_ten_min[window_idx + 1] =
+        seg->feature.n_hit_per_ten_min[window_idx];
   }
   seg->feature.n_hit_per_ten_min[0] = 0;
   seg->feature.last_ten_min_window_ts = params->curr_rtime;
@@ -32,8 +34,10 @@ static void seg_feature_shift(GLCache_params_t *params, segment_t *seg) {
   /* whether it is a new hour window now */
   shift = (params->curr_rtime - seg->feature.last_hour_window_ts) / 3600;
   if (shift <= 0) return;
-  for (int i = N_FEATURE_TIME_WINDOW - 2; i >= 0; i--) {
-    seg->feature.n_hit_per_hour[i + 1] = seg->feature.n_hit_per_hour[i];
+  for (int window_idx = N_FEATURE_TIME_WINDOW - 2; window_idx >= 0;
+       window_idx--) {
+    seg->feature.n_hit_per_hour[window_idx + 1] =
+        seg->feature.n_hit_per_hour[window_idx];
   }
   seg->feature.n_hit_per_hour[0] = 0;
   seg->feature.last_hour_window_ts = params->curr_rtime;
@@ -63,8 +67,8 @@ int clean_one_seg(cache_t *cache, segment_t *seg) {
   GLCache_params_t *params = cache->eviction_params;
   int n_cleaned = 0;
 
-  for (int i = 0; i < seg->n_obj; i++) {
-    cache_obj_t *cache_obj = &seg->objs[i];
+  for (int obj_idx = 0; obj_idx < seg->n_obj; obj_idx++) {
+    cache_obj_t *cache_obj = &seg->objs[obj_idx];
     if (hashtable_try_delete(cache->hashtable, cache_obj)) {
       n_cleaned += 1;
     }
@@ -80,12 +84,13 @@ void clear_dynamic_features(cache_t *cache) {
   GLCache_params_t *params = cache->eviction_params;
   segment_t *curr_seg = NULL;
 
-  for (int bi = 0; bi < MAX_N_BUCKET; bi++) {
-    curr_seg = params->buckets[bi].first_seg;
-    for (int si = 0; si < params->buckets[bi].n_in_use_segs; si++) {
+  for (int bucket_idx = 0; bucket_idx < MAX_N_BUCKET; bucket_idx++) {
+    curr_seg = params->buckets[bucket_idx].first_seg;
+    for (int seg_idx = 0; seg_idx < params->buckets[bucket_idx].n_in_use_segs;
+         seg_idx++) {
       DEBUG_ASSERT(curr_seg != NULL);
-      for (int i = 0; i < curr_seg->n_obj; i++) {
-        curr_seg->objs[i].GLCache.active = false;
+      for (int obj_idx = 0; obj_idx < curr_seg->n_obj; obj_idx++) {
+        curr_seg->objs[obj_idx].GLCache.active = false;
       }
       curr_seg->n_hit = 0;
       curr_seg->n_active = 0;
@@ -150,24 +155,26 @@ double find_cutoff(cache_t *cache, obj_score_type_e obj_score_type,
   segment_t *seg;
   int pos = 0;
 
-  for (int i = 0; i < n_segs; i++) {
-    seg = segs[i];
-    for (int j = 0; j < seg->n_obj; j++) {
+  for (int seg_idx = 0; seg_idx < n_segs; seg_idx++) {
+    seg = segs[seg_idx];
+    for (int obj_idx = 0; obj_idx < seg->n_obj; obj_idx++) {
 #ifdef RANDOMIZE_MERGE
-      double r = 1.0;
+      double random_factor = 1.0;
       // if (params->type != LOGCACHE_TWO_ORACLE || params->type !=
       // LOGCACHE_ITEM_ORACLE)
-      r = 1 + ((double)(next_rand() % RAND_MAX) / ((double)(RAND_MAX)) - 0.5) *
+      random_factor =
+          1 + ((double)(next_rand() % RAND_MAX) / ((double)(RAND_MAX)) - 0.5) *
                   0.001;
 
       params->obj_sel.score_array[pos] =
-          cal_obj_score(params, obj_score_type, &seg->objs[j]) * r;
+          cal_obj_score(params, obj_score_type, &seg->objs[obj_idx]) *
+          random_factor;
       params->obj_sel.score_array_offset[pos] =
           params->obj_sel.score_array[pos];
       pos++;
 #else
       params->obj_sel.score_array[pos++] =
-          cal_obj_score(params, obj_score_type, &seg->objs[j]);
+          cal_obj_score(params, obj_score_type, &seg->objs[obj_idx]);
 #endif
     }
   }
@@ -190,16 +197,16 @@ double cal_seg_utility(cache_t *cache, segment_t *seg, bool oracle_obj_sel) {
   /* array of object score pair, the first is online score, the second is oracle
    * score */
   dd_pair_t *obj_score_online_oracle = params->obj_sel.dd_pair_array;
-  for (int j = 0; j < seg->n_obj; j++) {
+  for (int obj_idx = 0; obj_idx < seg->n_obj; obj_idx++) {
     if (oracle_obj_sel) {
-      obj_score_online_oracle[j].x =
-          cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j]);
-      obj_score_online_oracle[j].y = obj_score_online_oracle[j].x;
+      obj_score_online_oracle[obj_idx].x =
+          cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[obj_idx]);
+      obj_score_online_oracle[obj_idx].y = obj_score_online_oracle[obj_idx].x;
     } else {
-      obj_score_online_oracle[j].x =
-          cal_obj_score(params, params->obj_score_type, &seg->objs[j]);
-      obj_score_online_oracle[j].y =
-          cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[j]);
+      obj_score_online_oracle[obj_idx].x =
+          cal_obj_score(params, params->obj_score_type, &seg->objs[obj_idx]);
+      obj_score_online_oracle[obj_idx].y =
+          cal_obj_score(params, OBJ_SCORE_ORACLE, &seg->objs[obj_idx]);
     }
   }
 

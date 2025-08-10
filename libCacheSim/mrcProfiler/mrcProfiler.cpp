@@ -13,7 +13,7 @@
 
 #include "../dataStructure/minvaluemap.hpp"
 #include "../dataStructure/splaytree.hpp"
-#include "../include/libCacheSim/const.h"
+#include "libCacheSim/const.h"
 
 mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
     mrc_profiler_e type, reader_t *reader, std::string output_path,
@@ -305,7 +305,8 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
                                        .default_ttl = 0,
                                        .hashpower = 20,
                                        .consider_obj_metadata = false};
-    caches[i] = create_cache(params_.cache_algorithm_str, cc_params, nullptr);
+    caches[i] = create_cache_using_plugin(params_.cache_algorithm_str,
+                                          cc_params, nullptr);
   }
   result = simulate_with_multi_caches(
       reader_, caches, mrc_size_vec.size(), NULL, 0, 0,
@@ -324,4 +325,7 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
       hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte;
     }
   }
+  // clean up
+  my_free(sizeof(cache_stat_t) * mrc_size_vec.size(), result);
+  free_request(req);
 }

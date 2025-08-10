@@ -5,16 +5,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "../../dataStructure/histogram.h"
-#include "../../dataStructure/splay.h"
-#include "../../dataStructure/splay_tuple.h"
-#include "../../include/libCacheSim/admissionAlgo.h"
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/enum.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
-#include "../../include/libCacheSim/hashmap.h"
-#include "../../include/libCacheSim/hashmap_defs.h"
-#include "../../include/libCacheSim/reader.h"
+#include "dataStructure/histogram.h"
+#include "dataStructure/splay.h"
+#include "dataStructure/splay_tuple.h"
+#include "libCacheSim/admissionAlgo.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/enum.h"
+#include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/hashmap.h"
+#include "libCacheSim/hashmap_defs.h"
+#include "libCacheSim/reader.h"
 
 #define N_ARGS 4
 #define N_MAX_ALGO 16

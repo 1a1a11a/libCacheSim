@@ -8,8 +8,8 @@
 //
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,11 +32,11 @@ static const char *DEFAULT_PARAMS = "n-seg=4,seg-size=1:1:1:1";
 // ****                                                               ****
 // ***********************************************************************
 static void LP_SFIFO_parse_params(cache_t *cache,
-                                 const char *cache_specific_params);
+                                  const char *cache_specific_params);
 static void LP_SFIFO_free(cache_t *cache);
 static bool LP_SFIFO_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_SFIFO_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache);
+                                  const bool update_cache);
 static cache_obj_t *LP_SFIFO_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_SFIFO_to_evict(cache_t *cache, const request_t *req);
 static void LP_SFIFO_evict(cache_t *cache, const request_t *req);
@@ -59,8 +59,9 @@ static void LP_SFIFO_demote(cache_t *cache, const request_t *req, int seg_id);
  * @param cache_specific_params LP_SFIFO specific parameters, e.g., "n-seg=4"
  */
 cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
-                      const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("LP-SFIFO", ccache_params, cache_specific_params);
+                       const char *cache_specific_params) {
+  cache_t *cache =
+      cache_struct_init("LP-SFIFO", ccache_params, cache_specific_params);
   cache->cache_init = LP_SFIFO_init;
   cache->cache_free = LP_SFIFO_free;
   cache->get = LP_SFIFO_get;
@@ -75,7 +76,8 @@ cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
 
   cache->obj_md_size = 0;
 
-  cache->eviction_params = (LP_SFIFO_params_t *)malloc(sizeof(LP_SFIFO_params_t));
+  cache->eviction_params =
+      (LP_SFIFO_params_t *)malloc(sizeof(LP_SFIFO_params_t));
   LP_SFIFO_params_t *params = (LP_SFIFO_params_t *)(cache->eviction_params);
   memset(params, 0, sizeof(LP_SFIFO_params_t));
   params->req_local = new_request();
@@ -89,7 +91,7 @@ cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.hashpower -= 2;
   params->fifos = malloc(sizeof(cache_t *) * params->n_seg);
-  
+
   for (int i = 0; i < params->n_seg; i++) {
     ccache_params_local.cache_size = params->per_seg_max_size[i];
     params->fifos[i] = FIFO_init(ccache_params_local, NULL);
@@ -160,7 +162,7 @@ static bool LP_SFIFO_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LP_SFIFO_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache) {
+                                  const bool update_cache) {
   LP_SFIFO_params_t *params = (LP_SFIFO_params_t *)(cache->eviction_params);
   cache_obj_t *obj = NULL;
   for (int i = 0; i < params->n_seg; i++) {
@@ -343,7 +345,7 @@ static bool LP_SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
 // ****                                                               ****
 // ***********************************************************************
 static const char *LP_SFIFO_current_params(cache_t *cache,
-                                          LP_SFIFO_params_t *params) {
+                                           LP_SFIFO_params_t *params) {
   static __thread char params_str[128];
   int n =
       snprintf(params_str, 128, "n-seg=%d;seg-size=%d\n", params->n_seg,
@@ -359,7 +361,7 @@ static const char *LP_SFIFO_current_params(cache_t *cache,
 }
 
 static void LP_SFIFO_parse_params(cache_t *cache,
-                                 const char *cache_specific_params) {
+                                  const char *cache_specific_params) {
   LP_SFIFO_params_t *params = (LP_SFIFO_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
@@ -397,11 +399,13 @@ static void LP_SFIFO_parse_params(cache_t *cache,
       }
       params->per_seg_max_size = calloc(params->n_seg, sizeof(int64_t));
       for (int i = 0; i < n_seg; i++) {
-        params->per_seg_max_size[i] = (int64_t)(
-            (double)seg_size_array[i] / seg_size_sum * cache->cache_size);
+        params->per_seg_max_size[i] =
+            (int64_t)((double)seg_size_array[i] / seg_size_sum *
+                      cache->cache_size);
       }
     } else if (strcasecmp(key, "print") == 0) {
-      printf("current parameters: %s\n", LP_SFIFO_current_params(cache, params));
+      printf("current parameters: %s\n",
+             LP_SFIFO_current_params(cache, params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
@@ -442,7 +446,6 @@ static inline int64_t LP_SFIFO_get_n_obj(const cache_t *cache) {
   }
   return n_obj;
 }
-
 
 #ifdef __cplusplus
 extern "C"

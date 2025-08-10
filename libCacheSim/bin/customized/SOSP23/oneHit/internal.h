@@ -2,9 +2,9 @@
 
 #include <inttypes.h>
 
-#include "../../../../include/libCacheSim/cache.h"
-#include "../../../../include/libCacheSim/enum.h"
-#include "../../../../include/libCacheSim/reader.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/enum.h"
+#include "libCacheSim/reader.h"
 
 #define N_ARGS 3
 #define OFILEPATH_LEN 128

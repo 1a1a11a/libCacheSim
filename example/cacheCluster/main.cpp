@@ -75,8 +75,10 @@ void simulate(int argc, char *argv[]) {
     n_req_byte += req->obj_size;
   }
 
-  std::cout << n_req << " requests, " << n_miss << " misses, miss ratio: " << (double)n_miss / n_req
-            << ", byte miss ratio: " << (double)n_miss_byte / n_req_byte << std::endl;
+  std::cout << n_req << " requests, " << n_miss
+            << " misses, miss ratio: " << (double)n_miss / n_req
+            << ", byte miss ratio: " << (double)n_miss_byte / n_req_byte
+            << std::endl;
 
   close_trace(reader);
 }

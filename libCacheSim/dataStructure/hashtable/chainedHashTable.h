@@ -15,9 +15,9 @@ extern "C" {
 #include <assert.h>
 #include <stdbool.h>
 
-#include "../../include/libCacheSim/cacheObj.h"
-#include "../../include/libCacheSim/request.h"
 #include "hashtableStruct.h"
+#include "libCacheSim/cacheObj.h"
+#include "libCacheSim/request.h"
 
 hashtable_t *create_chained_hashtable(const uint16_t hashpower_init);
 

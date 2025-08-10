@@ -28,22 +28,6 @@ extern pthread_mutex_t log_mtx;
     pthread_mutex_unlock(&log_mtx);        \
   } while (0)
 
-#if LOGLEVEL <= VVVERBOSE_LEVEL
-#define VVVERBOSE(...) LOGGING(VVVERBOSE_LEVEL, __VA_ARGS__)
-#else
-#define VVVERBOSE(...) \
-  do {                 \
-  } while (0)
-#endif
-
-#if LOGLEVEL <= VVERBOSE_LEVEL
-#define VVERBOSE(...) LOGGING(VVERBOSE_LEVEL, __VA_ARGS__)
-#else
-#define VVERBOSE(...) \
-  do {                \
-  } while (0)
-#endif
-
 #if LOGLEVEL <= VERBOSE_LEVEL
 #define VERBOSE(...) LOGGING(VERBOSE_LEVEL, __VA_ARGS__)
 #else
@@ -76,11 +60,11 @@ extern pthread_mutex_t log_mtx;
   } while (0)
 #endif
 
-#if LOGLEVEL <= SEVERE_LEVEL
-#define ERROR(...)                      \
-  {                                     \
-    LOGGING(SEVERE_LEVEL, __VA_ARGS__); \
-    abort();                            \
+#if LOGLEVEL <= ERROR_LEVEL
+#define ERROR(...)                     \
+  {                                    \
+    LOGGING(ERROR_LEVEL, __VA_ARGS__); \
+    abort();                           \
   }
 #else
 #define ERROR(...)
@@ -117,32 +101,28 @@ extern pthread_mutex_t log_mtx;
   } while (0)
 
 static inline void log_header(int level, const char *file, int line) {
+  int n;
   switch (level) {
-    case VVVERBOSE_LEVEL:
-      fprintf(stderr, "%s[VVV]   ", CYAN);
-      break;
-    case VVERBOSE_LEVEL:
-      fprintf(stderr, "%s[VV]    ", CYAN);
-      break;
     case VERBOSE_LEVEL:
-      fprintf(stderr, "%s[VERB]  ", MAGENTA);
+      n = fprintf(stderr, "%s[VERB]  ", MAGENTA);
       break;
     case DEBUG_LEVEL:
-      fprintf(stderr, "%s[DEBUG] ", CYAN);
+      n = fprintf(stderr, "%s[DEBUG] ", CYAN);
       break;
     case INFO_LEVEL:
-      fprintf(stderr, "%s[INFO]  ", GREEN);
+      n = fprintf(stderr, "%s[INFO]  ", GREEN);
       break;
     case WARN_LEVEL:
-      fprintf(stderr, "%s[WARN]  ", YELLOW);
+      n = fprintf(stderr, "%s[WARN]  ", YELLOW);
       break;
-    case SEVERE_LEVEL:
-      fprintf(stderr, "%s[ERROR] ", RED);
+    case ERROR_LEVEL:
+      n = fprintf(stderr, "%s[ERROR] ", RED);
       break;
     default:
-      fprintf(stderr, "in logging should not be here\n");
+      n = fprintf(stderr, "in logging should not be here\n");
       break;
   }
+  (void)n;  // explicitly mark as unused
 
   char buffer[30];
   struct timeval tv;

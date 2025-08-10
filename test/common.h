@@ -18,8 +18,9 @@
 #include <sys/types.h>
 #endif
 
-#include "../libCacheSim/include/libCacheSim.h"
-#include "../libCacheSim/include/libCacheSim/prefetchAlgo.h"
+#include "../libCacheSim/utils/include/mymath.h"
+#include "libCacheSim.h"
+#include "libCacheSim/prefetchAlgo.h"
 
 #define BLOCK_UNIT_SIZE 0   // 16 * 1024
 #define DISK_SECTOR_SIZE 0  // 512
@@ -100,20 +101,18 @@ static reader_t *setup_GLCacheTestData_reader(void) {
 
 static reader_t *setup_3LCacheTestData_reader(void) {
   const char *url =
-      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/"
-      "tencentBlock/"
-      "tencentBlock.ns3964.oracleGeneral.zst";
+      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/"
+      ".w68.oracleGeneral.bin.zst";
   int ret = system(
-      "if [ ! -f tencentBlock.ns3964.oracleGeneral.zst ]; then wget "
-      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/"
-      "tencentBlock/"
-      "tencentBlock.ns3964.oracleGeneral.zst; fi");
+      "if [ ! -f .w68.oracleGeneral.bin.zst ]; then wget "
+      "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/"
+      ".w68.oracleGeneral.bin.zst; fi");
   if (ret != 0) {
     ERROR("downloading data failed\n");
   }
 
-  reader_t *reader_oracle = setup_reader(
-      "tencentBlock.ns3964.oracleGeneral.zst", ORACLE_GENERAL_TRACE, NULL);
+  reader_t *reader_oracle =
+      setup_reader(".w68.oracleGeneral.bin.zst", ORACLE_GENERAL_TRACE, NULL);
   return reader_oracle;
 }
 

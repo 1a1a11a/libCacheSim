@@ -2,13 +2,13 @@
 // Created by Juncheng Yang on 11/17/19.
 //
 
-#include "../include/libCacheSim/plugin.h"
+#include "libCacheSim/plugin.h"
 
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../include/libCacheSim/evictionAlgo.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,13 +85,14 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
     abort();
   }
 
-  VERBOSE("internal cache %s loaded\n", cache_alg_name);
+  INFO("internal cache %s loaded\n", cache_alg_name);
   cache_t *cache = cache_init(cc_params, cache_specific_params);
   return cache;
 }
 
-cache_t *create_cache(const char *const cache_alg_name,
-                      common_cache_params_t cc_params, void *specific_params) {
+cache_t *create_cache_using_plugin(const char *const cache_alg_name,
+                                   common_cache_params_t cc_params,
+                                   void *specific_params) {
   cache_t *cache =
       create_cache_internal(cache_alg_name, cc_params, specific_params);
   if (cache == NULL) {

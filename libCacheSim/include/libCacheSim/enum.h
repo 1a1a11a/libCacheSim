@@ -86,9 +86,21 @@ typedef enum {
   OP_INVALID = 255
 } req_op_e;
 
+#define INV "invalid",
+#define INV_X16 INV INV INV INV INV INV INV INV INV INV INV INV INV INV INV INV
+#define INV_X64 INV_X16 INV_X16 INV_X16 INV_X16
+#define INV_X256 INV_X64 INV_X64 INV_X64 INV_X64
+
 static const char* const req_op_str[OP_INVALID + 2] = {
-    "nop",     "get",    "gets", "set",  "add",  "cas",   "replace", "append",
-    "prepend", "delete", "incr", "decr", "read", "write", "update",  "invalid"};
+    "nop",     "get",
+    "gets",    "set",
+    "add",     "cas",
+    "replace", "append",
+    "prepend", "delete",
+    "incr",    "decr",
+    "read",    "write",
+    "update",  INV_X64 INV_X64 INV_X64 INV_X16 INV_X16 INV_X16 "invalid",
+    "invalid"};
 
 typedef enum { ERR, OK, MY_EOF } rstatus;
 static const char* const rstatus_str[3] = {"ERR", "OK", "MY_EOF"};

@@ -5,12 +5,37 @@
 #include <string>
 #include <vector>
 
-#include "../../include/libCacheSim/const.h"
-#include "../../mrcProfiler/mrcProfiler.h"
-#include "../../utils/include/mystr.h"
-#include "../../utils/include/mysys.h"
 #include "../cli_reader_utils.h"
 #include "./internal.h"
+#include "libCacheSim/const.h"
+#include "mrcProfiler/mrcProfiler.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
+
+/**
+ * @brief split string by char
+ *
+ * @param input
+ * @param c
+ */
+std::vector<std::string> split_by_char(const char *input, const char &c) {
+  std::vector<std::string> result;
+  if (!input) return result;  // if input is null, return empty vector
+
+  const char *start = input;
+  const char *current = input;
+
+  while (*current) {
+    if (*current == c) {
+      result.emplace_back(start, current - start);
+      start = current + 1;
+    }
+    ++current;
+  }
+
+  if (current != start) result.emplace_back(start, current - start);
+  return result;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -154,31 +179,6 @@ static char doc[] =
     "only SHARDS support fix_size sampling\n"
     "size: "
     "profiling working set size related mrc or fixed size mrc\n\n";
-
-/**
- * @brief split string by char
- *
- * @param input
- * @param c
- */
-std::vector<std::string> split_by_char(const char *input, const char &c) {
-  std::vector<std::string> result;
-  if (!input) return result;  // if input is null, return empty vector
-
-  const char *start = input;
-  const char *current = input;
-
-  while (*current) {
-    if (*current == c) {
-      result.emplace_back(start, current - start);
-      start = current + 1;
-    }
-    ++current;
-  }
-
-  if (current != start) result.emplace_back(start, current - start);
-  return result;
-}
 
 /**
  *

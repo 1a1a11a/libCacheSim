@@ -2,8 +2,8 @@
 
 #include <sstream>
 
-#include "../../../utils/include/mymath.h"
 #include "constants.hpp"
+#include "utils/include/mymath.h"
 
 namespace repl {
 

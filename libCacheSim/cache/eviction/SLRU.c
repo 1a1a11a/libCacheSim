@@ -7,8 +7,8 @@
 //
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,10 +95,11 @@ bool SLRU_get_debug(cache_t *cache, const request_t *req);
 // ****                                                               ****
 // ***********************************************************************
 /**
- * @brief initialize a LRU cache
+ * @brief initialize a SLRU cache
  *
  * @param ccache_params some common cache parameters
- * @param cache_specific_params LRU specific parameters, should be NULL
+ * @param cache_specific_params SLRU specific parameters, see parse_params
+ * function or use -e "print" with the cachesim binary
  */
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
@@ -202,6 +203,7 @@ static void SLRU_free(cache_t *cache) {
   free(params->lru_tails);
   free(params->lru_n_objs);
   free(params->lru_n_bytes);
+  free(params);
   cache_struct_free(cache);
 }
 
@@ -450,8 +452,9 @@ static void SLRU_parse_params(cache_t *cache,
       params->n_seg = n_seg;
       params->lru_max_n_bytes = calloc(params->n_seg, sizeof(int64_t));
       for (int i = 0; i < n_seg; i++) {
-        params->lru_max_n_bytes[i] = (int64_t)(
-            (double)seg_size_array[i] / seg_size_sum * cache->cache_size);
+        params->lru_max_n_bytes[i] =
+            (int64_t)((double)seg_size_array[i] / seg_size_sum *
+                      cache->cache_size);
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SLRU_current_params(cache, params));

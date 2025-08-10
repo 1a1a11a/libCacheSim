@@ -8,7 +8,6 @@
 
 #include <ctype.h>
 
-#include "../include/libCacheSim/macro.h"
 #include "customizedReader/lcs.h"
 #include "customizedReader/oracle/oracleGeneralBin.h"
 #include "customizedReader/oracle/oracleTwrBin.h"
@@ -18,6 +17,7 @@
 #include "customizedReader/valpinBin.h"
 #include "customizedReader/vscsi.h"
 #include "generalReader/libcsv.h"
+#include "libCacheSim/macro.h"
 #include "readerInternal.h"
 
 #ifdef __cplusplus
@@ -301,7 +301,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         break;
       default:
         ERROR(
-            "cannot recognize reader obj_id_type, given reader obj_id_type: "
+            "cannot recognize reader trace_type, given reader trace_type: "
             "%c\n",
             reader->trace_type);
         abort();
@@ -314,8 +314,8 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     sampler_t *sampler = reader->sampler;
     reader->sampler = NULL;
     while (!sampler->sample(sampler, req)) {
-      VVERBOSE("skip one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
-               req->clock_time, req->obj_id, req->obj_size, offset_before_read);
+      VERBOSE("skip one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
+              req->clock_time, req->obj_id, req->obj_size, offset_before_read);
       if (reader->read_direction == READ_FORWARD) {
         status = read_one_req(reader, req);
       } else {
@@ -333,8 +333,8 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     req->obj_size = 1;
   }
 
-  VVERBOSE("read one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
-           req->clock_time, req->obj_id, req->obj_size, offset_before_read);
+  VERBOSE("read one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
+          req->clock_time, req->obj_id, req->obj_size, offset_before_read);
 
   return status;
 }
@@ -523,6 +523,8 @@ int64_t get_num_of_req(reader_t *const reader) {
     while (read_one_req(reader_copy, req) == 0) {
       n_req++;
     }
+    free_request(req);
+    close_reader(reader_copy);
   } else {
     ERROR("should not reach here\n");
     abort();

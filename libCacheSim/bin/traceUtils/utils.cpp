@@ -1,14 +1,16 @@
 
-#include <string>
-#include <cstring>
+#include <errno.h>
+#include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <errno.h>
-#include "../../include/libCacheSim/logging.h"
 
-namespace utils{
+#include <cstring>
+#include <string>
+
+#include "libCacheSim/logging.h"
+
+namespace utils {
 void *setup_mmap(const std::string &file_path, size_t *size) {
   int fd;
   struct stat st {};
@@ -31,12 +33,14 @@ void *setup_mmap(const std::string &file_path, size_t *size) {
   if ((mapped_file) == MAP_FAILED) {
     close(fd);
     mapped_file = nullptr;
-    ERROR("Unable to allocate %llu bytes of memory, %s\n", (unsigned long long)st.st_size, strerror(errno));
+    ERROR("Unable to allocate %llu bytes of memory, %s\n",
+          (unsigned long long)st.st_size, strerror(errno));
     abort();
   }
 
 #ifdef MADV_HUGEPAGE
-  int mstatus = madvise(mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
+  int mstatus =
+      madvise(mapped_file, st.st_size, MADV_HUGEPAGE | MADV_SEQUENTIAL);
   if (mstatus != 0) {
     WARN("cannot turn on hugepage %s\n", strerror(errno));
   }
@@ -46,4 +50,4 @@ void *setup_mmap(const std::string &file_path, size_t *size) {
   return mapped_file;
 }
 
-}
+}  // namespace utils

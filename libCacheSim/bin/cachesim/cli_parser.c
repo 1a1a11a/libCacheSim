@@ -4,14 +4,14 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "../../include/libCacheSim/const.h"
-#include "../../include/libCacheSim/dist.h"
-#include "../../include/libCacheSim/prefetchAlgo.h"
-#include "../../utils/include/mystr.h"
-#include "../../utils/include/mysys.h"
-#include "../cli_reader_utils.h"
 #include "cache_init.h"
+#include "cli_reader_utils.h"
 #include "internal.h"
+#include "libCacheSim/const.h"
+#include "libCacheSim/dist.h"
+#include "libCacheSim/prefetchAlgo.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,7 +117,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_EVICTION_PARAMS:
       arguments->eviction_params = strdup(arg);
       replace_char(arguments->eviction_params, ';', ',');
-      replace_char(arguments->eviction_params, '_', '-');
+      // replace_char(arguments->eviction_params, '_', '-');
       break;
     case OPTION_ADMISSION_ALGO:
       arguments->admission_algo = arg;
@@ -128,12 +128,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_ADMISSION_PARAMS:
       arguments->admission_params = strdup(arg);
       replace_char(arguments->admission_params, ';', ',');
-      replace_char(arguments->admission_params, '_', '-');
+      // replace_char(arguments->admission_params, '_', '-');
       break;
     case OPTION_PREFETCH_PARAMS:
       arguments->prefetch_params = strdup(arg);
       replace_char(arguments->prefetch_params, ';', ',');
-      replace_char(arguments->prefetch_params, '_', '-');
+      // replace_char(arguments->prefetch_params, '_', '-');
       break;
     case OPTION_OUTPUT_PATH:
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
@@ -456,6 +456,7 @@ static int conv_cache_sizes(char *cache_size_str, struct arguments *args) {
     token = strtok(NULL, ",");
   }
 
+  // detection of cache size set to 0 or auto
   if (args->n_cache_size == 1 && args->cache_sizes[0] == 0) {
     set_cache_size(args, args->reader);
   }

@@ -9,8 +9,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,7 +86,11 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-static void LRU_free(cache_t *cache) { cache_struct_free(cache); }
+static void LRU_free(cache_t *cache) {
+  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
+  free(params);
+  cache_struct_free(cache);
+}
 
 /**
  * @brief this function is the user facing API

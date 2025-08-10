@@ -6,12 +6,12 @@
 #include <assert.h>
 #include <libgen.h>
 
-#include "../../include/libCacheSim/cache.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/simulator.h"
-#include "../../utils/include/mystr.h"
-#include "../../utils/include/mysys.h"
 #include "internal.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/reader.h"
+#include "libCacheSim/simulator.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
 
 int main(int argc, char **argv) {
   struct arguments args;
@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
     ERROR("no cache size found\n");
   }
   if (args.n_cache_size * args.n_eviction_algo == 1) {
-    simulate(args.reader, args.caches[0], args.report_interval, args.warmup_sec, args.ofilepath, args.ignore_obj_size,
-             args.print_head_req);
+    simulate(args.reader, args.caches[0], args.report_interval, args.warmup_sec,
+             args.ofilepath, args.ignore_obj_size, args.print_head_req);
 
     free_arg(&args);
     return 0;
@@ -80,7 +80,8 @@ int main(int argc, char **argv) {
   fclose(output_file);
 
   if (args.n_cache_size * args.n_eviction_algo > 0)
-    my_free(sizeof(cache_stat_t) * args.n_cache_size * args.n_eviction_algo, result);
+    my_free(sizeof(cache_stat_t) * args.n_cache_size * args.n_eviction_algo,
+            result);
 
   free_arg(&args);
 

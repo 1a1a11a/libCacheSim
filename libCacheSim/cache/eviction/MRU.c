@@ -8,8 +8,8 @@
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
-#include "../../dataStructure/hashtable/hashtable.h"
-#include "../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef _cplusplus
 extern "C" {
@@ -51,7 +51,8 @@ static bool MRU_remove(cache_t *cache, const obj_id_t obj_id);
  */
 cache_t *MRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("MRU", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("MRU", ccache_params, cache_specific_params);
   cache->cache_init = MRU_init;
   cache->cache_free = MRU_free;
   cache->get = MRU_get;
@@ -120,10 +121,9 @@ bool MRU_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *MRU_find(cache_t *cache, const request_t *req,
-                      const bool update_cache) {
+                             const bool update_cache) {
   MRU_params_t *params = (MRU_params_t *)cache->eviction_params;
-  cache_obj_t *cache_obj =
-      cache_find_base(cache, req, update_cache);
+  cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && likely(update_cache)) {
     move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);

@@ -30,5 +30,4 @@ void print_resource_usage(void);
 
 void print_rusage_diff(struct rusage *r1, struct rusage *r2);
 
-
 #endif /* UTILS_h */

@@ -11,7 +11,7 @@ extern "C" {
 
 #include <stdbool.h>
 
-#include "../../include/libCacheSim/cacheObj.h"
+#include "libCacheSim/cacheObj.h"
 
 #define hashsize(n) ((uint64_t)1 << (uint16_t)(n))
 #define hashsizeULL(n) ((unsigned long long)1 << (uint16_t)(n))

@@ -1,6 +1,5 @@
 #include "reqRate.h"
 
-
 namespace traceAnalyzer {
 
 using namespace std;

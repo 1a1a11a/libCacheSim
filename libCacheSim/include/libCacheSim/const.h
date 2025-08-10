@@ -39,13 +39,11 @@ extern "C" {
 #define MAGENTA "\x1B[35m"
 #define CYAN "\x1B[36m"
 
-#define VVVERBOSE_LEVEL 3
-#define VVERBOSE_LEVEL 4
 #define VERBOSE_LEVEL 5
 #define DEBUG_LEVEL 6
 #define INFO_LEVEL 7
 #define WARN_LEVEL 8
-#define SEVERE_LEVEL 9
+#define ERROR_LEVEL 9
 
 // this is correct, to change to this, need to update test
 #define KiB 1024LL

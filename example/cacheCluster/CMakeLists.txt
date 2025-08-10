@@ -1,29 +1,66 @@
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.10)
 project (cacheCluster)
-# set(CMAKE_BUILD_TYPE Debug)
+
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+set(CMAKE_CXX_EXTENSIONS Off)
 
+# Find required packages
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB REQUIRED glib-2.0)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../../cmake/Modules/")
-find_package(GLib "2.40" REQUIRED)
-include_directories(${GLib_INCLUDE_DIRS})
-message(STATUS "glib found? " ${GLib_FOUND} ", GLIB = " ${GLib_LIBRARY} ", header = " ${GLib_INCLUDE_DIRS})
+# Find ZSTD library
+find_library(ZSTD_LIBRARY
+    NAMES zstd libzstd
+    PATHS /usr/local/lib /usr/lib /opt/homebrew/lib
+    DOC "ZSTD library"
+)
 
+find_path(ZSTD_INCLUDE_DIR
+    NAMES zstd.h
+    PATHS /usr/local/include /usr/include /opt/homebrew/include
+    DOC "ZSTD include directory"
+)
 
-find_package(ZSTD)
-# https://stackoverflow.com/questions/61377055/cannot-find-gflags-gflags-h-while-building-library-osx/61379123#61379123
 include_directories(${ZSTD_INCLUDE_DIR})
-if ("${ZSTD_LIBRARIES}" STREQUAL "") 
-    message(FATAL_ERROR "zstd not found")
+message(STATUS "ZSTD library: ${ZSTD_LIBRARY}")
+message(STATUS "ZSTD include: ${ZSTD_INCLUDE_DIR}")
+
+# Find libCacheSim
+find_library(LIBCACHESIM_LIBRARY
+    NAMES CacheSim libCacheSim
+    PATHS /usr/local/lib /usr/lib
+    DOC "libCacheSim unified library"
+)
+
+find_path(LIBCACHESIM_INCLUDE_DIR
+    NAMES libCacheSim.h
+    PATHS /usr/local/include /usr/include
+    DOC "libCacheSim include directory"
+)
+
+message(STATUS "libCacheSim library: ${LIBCACHESIM_LIBRARY}")
+message(STATUS "libCacheSim include: ${LIBCACHESIM_INCLUDE_DIR}")
+
+if(NOT LIBCACHESIM_LIBRARY OR NOT LIBCACHESIM_INCLUDE_DIR)
+    message(FATAL_ERROR "libCacheSim not found! Please install libCacheSim first.")
 endif()
 
+add_executable(cacheCluster main.cpp cacheCluster.cpp consistentHash.c ketama.c md5.c)
 
-################ this mode compiles the external cache replacement algorithm together with the simulator ############
-message(STATUS "project_source dir = " ${PROJECT_SOURCE_DIR})
-file(GLOB ALL_CXX_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
-file(GLOB ALL_C_SRC ${PROJECT_SOURCE_DIR}/*.c)
+target_include_directories(cacheCluster PRIVATE
+    ${ZSTD_INCLUDE_DIR}
+    ${LIBCACHESIM_INCLUDE_DIR}
+)
 
-add_executable(cacheCluster ${ALL_CXX_SRC} ${ALL_C_SRC})
-target_link_libraries(cacheCluster libCacheSim m ${GLib_LIBRARY} pthread dl ${ZSTD_LIBRARIES})
+# Add GLib compile and link flags
+target_compile_options(cacheCluster PRIVATE ${GLIB_CFLAGS_OTHER})
+target_include_directories(cacheCluster PRIVATE ${GLIB_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+target_link_directories(cacheCluster PRIVATE ${GLIB_LIBRARY_DIRS})
 
+
+target_link_libraries(cacheCluster
+    ${LIBCACHESIM_LIBRARY}
+    ${GLIB_LIBRARIES}
+    ${ZSTD_LIBRARY}
+)

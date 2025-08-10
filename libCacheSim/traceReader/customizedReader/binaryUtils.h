@@ -4,7 +4,7 @@
 #include "../generalReader/zstdReader.h"
 #endif
 
-#include "../../include/libCacheSim/reader.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,8 +26,7 @@ static inline char *_read_bytes(reader_t *reader, size_t size) {
 /* read zstd compressed data */
 static inline char *_read_bytes_zstd(reader_t *reader, size_t size) {
   char *start;
-  size_t sz =
-      zstd_reader_read_bytes(reader->zstd_reader_p, size, &start);
+  size_t sz = zstd_reader_read_bytes(reader->zstd_reader_p, size, &start);
   if (sz == 0) {
     if (reader->zstd_reader_p->status != MY_EOF) {
       ERROR("fail to read zstd trace\n");

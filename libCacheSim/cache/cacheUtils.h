@@ -12,8 +12,8 @@ extern "C" {
 #include <glib.h>
 
 #include "../dataStructure/hashtable/hashtable.h"
-#include "../include/libCacheSim/cache.h"
-#include "../include/libCacheSim/cacheObj.h"
+#include "libCacheSim/cache.h"
+#include "libCacheSim/cacheObj.h"
 
 /****************** find obj expiration related info ******************/
 static inline void _get_cache_state_ht_iter(cache_obj_t *cache_obj,

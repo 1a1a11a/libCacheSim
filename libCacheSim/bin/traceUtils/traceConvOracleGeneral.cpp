@@ -7,9 +7,9 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/reader.h"
 #include "internal.hpp"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/reader.h"
 
 namespace traceConv {
 typedef struct oracleGeneral_req {
@@ -100,7 +100,8 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
     }
 
     if (n_req_curr > n_req_total * 2) {
-      ERROR("n_req_curr (%ld) > n_req_total (%ld)\n", n_req_curr, n_req_total);
+      ERROR("n_req_curr (%lld) > n_req_total (%lld)\n", (long long)n_req_curr,
+            (long long)n_req_total);
     }
 
     if (read_one_req_above(reader, req) != 0) {

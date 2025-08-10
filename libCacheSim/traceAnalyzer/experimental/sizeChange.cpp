@@ -1,5 +1,5 @@
 
-#include "sizeChange.h"
+#include "sizeChange.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-#include "../../dataStructure/robin_hood.h"
-#include "../../include/libCacheSim/request.h"
 #include "../utils/include/utils.h"
+#include "dataStructure/robin_hood.h"
+#include "libCacheSim/request.h"
 
 namespace traceAnalyzer {
 

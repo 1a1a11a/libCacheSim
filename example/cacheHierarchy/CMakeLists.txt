@@ -1,30 +1,67 @@
-cmake_minimum_required (VERSION 3.2)
-project (layeredCache)
+cmake_minimum_required (VERSION 3.10)
+project (cacheHierarchy)
+
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+set(CMAKE_CXX_EXTENSIONS Off)
 
-message("****************** this example only works after libCacheSim has been installed ******************")
+# Find required packages
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB REQUIRED glib-2.0)
 
+# Find ZSTD library
+find_library(ZSTD_LIBRARY
+    NAMES zstd libzstd
+    PATHS /usr/local/lib /usr/lib /opt/homebrew/lib
+    DOC "ZSTD library"
+)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../../cmake/Modules/")
-find_package(GLib "2.40" REQUIRED)
-include_directories(${GLib_INCLUDE_DIRS})
-message(STATUS "glib found? " ${GLib_FOUND} ", GLIB = " ${GLib_LIBRARY} ", header = " ${GLib_INCLUDE_DIRS})
+find_path(ZSTD_INCLUDE_DIR
+    NAMES zstd.h
+    PATHS /usr/local/include /usr/include /opt/homebrew/include
+    DOC "ZSTD include directory"
+)
 
-find_package(ZSTD)
 include_directories(${ZSTD_INCLUDE_DIR})
-if ("${ZSTD_LIBRARIES}" STREQUAL "") 
-    message(FATAL_ERROR "zstd not found")
+message(STATUS "ZSTD library: ${ZSTD_LIBRARY}")
+message(STATUS "ZSTD include: ${ZSTD_INCLUDE_DIR}")
+
+# Find libCacheSim
+find_library(LIBCACHESIM_LIBRARY
+    NAMES CacheSim libCacheSim
+    PATHS /usr/local/lib /usr/lib
+    DOC "libCacheSim unified library"
+)
+
+find_path(LIBCACHESIM_INCLUDE_DIR
+    NAMES libCacheSim.h
+    PATHS /usr/local/include /usr/include
+    DOC "libCacheSim include directory"
+)
+
+message(STATUS "libCacheSim library: ${LIBCACHESIM_LIBRARY}")
+message(STATUS "libCacheSim include: ${LIBCACHESIM_INCLUDE_DIR}")
+
+if(NOT LIBCACHESIM_LIBRARY OR NOT LIBCACHESIM_INCLUDE_DIR)
+    message(FATAL_ERROR "libCacheSim not found! Please install libCacheSim first.")
 endif()
 
+add_executable(cacheHierarchy main.cpp myconfig.cpp simulator.cpp utils.cpp)
+
+target_include_directories(cacheHierarchy PRIVATE
+    ${ZSTD_INCLUDE_DIR}
+    ${LIBCACHESIM_INCLUDE_DIR}
+)
+
+# Add GLib compile and link flags
+target_compile_options(cacheHierarchy PRIVATE ${GLIB_CFLAGS_OTHER})
+target_include_directories(cacheHierarchy PRIVATE ${GLIB_INCLUDE_DIRS})
+target_link_directories(cacheHierarchy PRIVATE ${GLIB_LIBRARY_DIRS})
 
 
-file(GLOB ALL_SRC ${PROJECT_SOURCE_DIR}/*.cpp)
-message(STATUS "all sources " ${ALL_SRC})
-add_executable(layeredCache ${ALL_SRC})
-target_link_libraries(layeredCache 
-                    -Wl,--whole-archive 
-                    libCacheSim 
-                    -Wl,--no-whole-archive
-                    dl m ${GLib_LIBRARY} ${ZSTD_LIBRARIES} pthread)
-
+target_link_libraries(cacheHierarchy
+    ${LIBCACHESIM_LIBRARY}
+    m
+    ${GLIB_LIBRARIES}
+    ${ZSTD_LIBRARY}
+)

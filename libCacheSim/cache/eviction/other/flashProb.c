@@ -1,6 +1,6 @@
 //
 //  LRU cache in DRAM and use probability to admit objects to flash
-//  this is used to calculate the write amplification 
+//  this is used to calculate the write amplification
 //
 //
 //  flashProb.c
@@ -10,8 +10,8 @@
 //  Copyright © 2018 Juncheng. All rights reserved.
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +65,8 @@ static void flashProb_parse_params(cache_t *cache,
 
 cache_t *flashProb_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("flashProb", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("flashProb", ccache_params, cache_specific_params);
   cache->cache_init = flashProb_init;
   cache->cache_free = flashProb_free;
   cache->get = flashProb_get;
@@ -134,10 +135,9 @@ cache_t *flashProb_init(const common_cache_params_t ccache_params,
     ERROR("flashProb does not support %s\n", params->disk_cache_type);
   }
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "flashProb-%.4lf-%s-%.4lf-%s",
-           params->ram_size_ratio, 
-           params->ram_cache_type, 
-           params->disk_admit_prob,
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN,
+           "flashProb-%.4lf-%s-%.4lf-%s", params->ram_size_ratio,
+           params->ram_cache_type, params->disk_admit_prob,
            params->disk_cache_type);
 
   return cache;
@@ -177,7 +177,6 @@ static void flashProb_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool flashProb_get(cache_t *cache, const request_t *req) {
-
   bool cache_hit = cache_get_base(cache, req);
 
   return cache_hit;
@@ -341,7 +340,8 @@ static inline int64_t flashProb_get_n_obj(const cache_t *cache) {
          params->disk->get_n_obj(params->disk);
 }
 
-// static inline bool flashProb_can_insert(cache_t *cache, const request_t *req) {
+// static inline bool flashProb_can_insert(cache_t *cache, const request_t *req)
+// {
 //   flashProb_params_t *params = (flashProb_params_t *)cache->eviction_params;
 
 //   return req->obj_size <= params->fifo->cache_size;
@@ -354,8 +354,10 @@ static inline int64_t flashProb_get_n_obj(const cache_t *cache) {
 // ***********************************************************************
 static const char *flashProb_current_params(flashProb_params_t *params) {
   static __thread char params_str[128];
-  snprintf(params_str, 128, "ram-size-ratio=%.4lf,disk-admit-prob=%.4lf,ram-cache=%s\n",
-           params->ram_size_ratio, params->disk_admit_prob, params->ram->cache_name);
+  snprintf(params_str, 128,
+           "ram-size-ratio=%.4lf,disk-admit-prob=%.4lf,ram-cache=%s\n",
+           params->ram_size_ratio, params->disk_admit_prob,
+           params->ram->cache_name);
   return params_str;
 }
 
@@ -381,7 +383,7 @@ static void flashProb_parse_params(cache_t *cache,
       params->ram_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "disk-admit-prob") == 0) {
       params->disk_admit_prob = strtod(value, NULL);
-      params->inv_prob = (int) (1.0 / params->disk_admit_prob);
+      params->inv_prob = (int)(1.0 / params->disk_admit_prob);
     } else if (strcasecmp(key, "ram-cache") == 0) {
       strncpy(params->ram_cache_type, value, 15);
     } else if (strcasecmp(key, "disk-cache") == 0) {

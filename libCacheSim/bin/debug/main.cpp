@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "../../include/libCacheSim/reader.h"
+#include "libCacheSim/reader.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,7 +25,6 @@ extern "C" {
 using namespace std;
 
 int main(int argc, char* argv[]) {
-
   if (argc < 2) {
     printf("Usage: %s <trace_file>\n", argv[0]);
     return 1;

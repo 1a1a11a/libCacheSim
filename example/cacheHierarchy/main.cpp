@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
   string cache_algo = "LRU";
 
   if (argc < 2) {
-    std::cout << "usage: ./" << argv[0] << " path/to/config/file" << std::endl;
+    std::cout << "usage: " << argv[0] << " path/to/config/file" << std::endl;
     return 0;
   }
 

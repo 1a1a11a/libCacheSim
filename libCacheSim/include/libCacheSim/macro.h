@@ -78,24 +78,21 @@ extern "C" {
     (b) = _tmp;               \
   } while (0)
 
-#define CHECK_CONDITION(a, op, b, FMT, ...)  \
+#define CHECK_CONDITION(a, op, b, ...)       \
   do {                                       \
     if ((a)op(b)) {                          \
       printf("%s: %d ", __FILE__, __LINE__); \
-      printf(FMT, ##__VA_ARGS__);            \
+      printf(__VA_ARGS__);                   \
       fflush(stdout);                        \
       abort();                               \
     }                                        \
   } while (0)
 
-#define ASSERT_NOT_NULL(x, FMT, ...) \
-  CHECK_CONDITION(x, ==, NULL, FMT, ##__VA_ARGS__)
+#define ASSERT_NOT_NULL(x, ...) CHECK_CONDITION(x, ==, NULL, __VA_ARGS__)
 
-#define ASSERT_EQUAL(a, b, FMT, ...) \
-  CHECK_CONDITION(a, !=, b, FMT, ##__VA_ARGS__)
-#define ASSERT_TRUE(x, FMT, ...) \
-  CHECK_CONDITION(x, !=, true, FMT, ##__VA_ARGS__)
-#define ASSERT_ZERO(x, FMT, ...) CHECK_CONDITION(a, !=, 0, FMT, ##__VA_ARGS__)
+#define ASSERT_EQUAL(a, b, ...) CHECK_CONDITION(a, !=, b, __VA_ARGS__)
+#define ASSERT_TRUE(x, ...) CHECK_CONDITION(x, !=, true, __VA_ARGS__)
+#define ASSERT_ZERO(x, ...) CHECK_CONDITION(x, !=, 0, __VA_ARGS__)
 
 #if LOGLEVEL < INFO_LEVEL
 #define DEBUG_ASSERT(x) \
@@ -106,8 +103,6 @@ extern "C" {
 #define DEBUG_ASSERT(x)
 #endif
 
-//#pragma message "current LOGLEVEL: " XSTR(LOGLEVEL)
-
 #if LOGLEVEL > DEBUG_LEVEL
 #define THIS_IS_DEBUG_FUNC return
 #else
@@ -115,35 +110,29 @@ extern "C" {
 #endif
 
 #if LOGLEVEL > VERBOSE_LEVEL
-#define THIS_IS_DEBUG2_FUNC return
+#define THIS_IS_VERBOSE_FUNC return
 #else
-#define THIS_IS_DEBUG2_FUNC
+#define THIS_IS_VERBOSE_FUNC
 #endif
 
-#if LOGLEVEL > VVERBOSE_LEVEL
-#define THIS_IS_DEBUG3_FUNC return
-#else
-#define THIS_IS_DEBUG3_FUNC
-#endif
-
-#define PRINT_ONCE(FMT, ...)      \
-  do {                            \
-    static bool printed = false;  \
-    if (!printed) {               \
-      printf(FMT, ##__VA_ARGS__); \
-      printed = true;             \
-      fflush(stdout);             \
-    }                             \
+#define PRINT_ONCE(...)          \
+  do {                           \
+    static bool printed = false; \
+    if (!printed) {              \
+      printf(__VA_ARGS__);       \
+      printed = true;            \
+      fflush(stdout);            \
+    }                            \
   } while (0)
 
-#define PRINT_N_TIMES(N, FMT, ...) \
-  do {                             \
-    static int n_printed = 0;      \
-    if (n_printed < N) {           \
-      printf(FMT, ##__VA_ARGS__);  \
-      n_printed += 1;              \
-      fflush(stdout);              \
-    }                              \
+#define PRINT_N_TIMES(N, ...) \
+  do {                        \
+    static int n_printed = 0; \
+    if (n_printed < N) {      \
+      printf(__VA_ARGS__);    \
+      n_printed += 1;         \
+      fflush(stdout);         \
+    }                         \
   } while (0)
 
 /*  count the number of one’s(set bits) in an integer */
@@ -167,7 +156,7 @@ extern "C" {
 // int ffsl(long int i);
 // int ffsll(long long int i);
 
-#define find_max(array, n_elem, max_elem_ptr, max_elem_idx_ptr)               \
+#define FIND_MAX(array, n_elem, max_elem_ptr, max_elem_idx_ptr)               \
   do {                                                                        \
     *(max_elem_idx_ptr) = 0;                                                  \
     for (uint64_t i = 0; i < (uint64_t)(n_elem); i++)                         \
@@ -175,7 +164,7 @@ extern "C" {
     *(max_elem_ptr) = (array)[*(max_elem_idx_ptr)];                           \
   } while (0)
 
-#define find_min(array, n_elem, min_elem_ptr, min_elem_idx_ptr)               \
+#define FIND_MIN(array, n_elem, min_elem_ptr, min_elem_idx_ptr)               \
   do {                                                                        \
     *(min_elem_idx_ptr) = 0;                                                  \
     for (uint64_t i = 0; i < (uint64_t)(n_elem); i++)                         \
@@ -189,12 +178,10 @@ extern "C" {
     (instance).has_##field = 1;      \
   } while (0)
 
-
 #define CHECK_PARSER_STATE(end)                                           \
   if (strlen(end) > 2) {                                                  \
     ERROR("param parsing error, find string \"%s\" after number\n", end); \
   }
-
 
 #ifdef __cplusplus
 }

@@ -7,8 +7,8 @@
 //
 //
 
-#include "../../../dataStructure/hashtable/hashtable.h"
-#include "../../../include/libCacheSim/evictionAlgo.h"
+#include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,9 +24,9 @@ extern "C" {
 #ifdef DEBUG_MODE
 #define DEBUG_PRINT_CACHE_STATE(cache, params, req)                   \
   do {                                                                \
-    if (cache->n_req > 0) {                                          \
+    if (cache->n_req > 0) {                                           \
       printf("%ld %ld %s: %s: ", cache->n_req, req->obj_id, __func__, \
-             cache->last_request_metadata);                   \
+             cache->last_request_metadata);                           \
       for (int i = 0; i < params->n_seg; i++) {                       \
         printf("%ld/%ld/%p/%p, ", params->fifo_n_objs[i],             \
                params->fifo_n_bytes[i], params->fifo_heads[i],        \
@@ -73,7 +73,7 @@ static void SFIFO_parse_params(cache_t *cache,
 static void SFIFO_free(cache_t *cache);
 static bool SFIFO_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SFIFO_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                               const bool update_cache);
 static cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *SFIFO_to_evict(cache_t *cache, const request_t *req);
 static void SFIFO_evict(cache_t *cache, const request_t *req);
@@ -118,7 +118,8 @@ static void SFIFO_free(cache_t *cache) {
  */
 cache_t *SFIFO_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
-  cache_t *cache = cache_struct_init("SFIFO", ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init("SFIFO", ccache_params, cache_specific_params);
   cache->cache_init = SFIFO_init;
   cache->cache_free = SFIFO_free;
   cache->get = SFIFO_get;
@@ -206,7 +207,7 @@ static bool SFIFO_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *SFIFO_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                               const bool update_cache) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 

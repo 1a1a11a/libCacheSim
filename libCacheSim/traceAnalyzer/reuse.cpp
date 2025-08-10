@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "../include/libCacheSim/macro.h"
+#include "libCacheSim/macro.h"
 
 namespace traceAnalyzer {
 using namespace std;

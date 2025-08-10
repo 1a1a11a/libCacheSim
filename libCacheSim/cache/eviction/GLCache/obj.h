@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../../include/libCacheSim/cacheObj.h"
 #include "GLCacheInternal.h"
+#include "libCacheSim/cacheObj.h"
 
 static inline void obj_init(cache_t *cache, const request_t *req,
                             cache_obj_t *cache_obj, segment_t *seg) {

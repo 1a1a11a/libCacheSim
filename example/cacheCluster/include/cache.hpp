@@ -10,9 +10,10 @@
 #ifndef CDNSIMULATOR_CACHE_HPP
 #define CDNSIMULATOR_CACHE_HPP
 
+#include <inttypes.h>
+
 #include <algorithm>
 #include <iostream>
-#include <inttypes.h>
 
 #include "libCacheSim/cache.h"
 #include "libCacheSim/evictionAlgo.h"

@@ -2,8 +2,8 @@
 
 #include <stdbool.h>
 
-#include "../../include/libCacheSim/logging.h"
-#include "../../include/libCacheSim/sampling.h"
+#include "libCacheSim/logging.h"
+#include "libCacheSim/sampling.h"
 
 #ifdef __cplusplus
 extern "C" {

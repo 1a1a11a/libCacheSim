@@ -37,15 +37,12 @@ extern "C" {
  * @param num_of_threads
  * @return
  */
-cache_stat_t *simulate_at_multi_sizes(reader_t *reader, 
-                                      const cache_t *cache,
+cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
                                       int num_of_sizes,
                                       const uint64_t *cache_sizes,
                                       reader_t *warmup_reader,
-                                      double warmup_frac, 
-                                      int warmup_sec,
-                                      int num_of_threads, 
-                                      bool use_random_seed);
+                                      double warmup_frac, int warmup_sec,
+                                      int num_of_threads, bool use_random_seed);
 
 /**
  * this function performs cache_size/step_size simulations to obtain miss ratio,
@@ -67,14 +64,10 @@ cache_stat_t *simulate_at_multi_sizes(reader_t *reader,
  * @return an array of cache_stat_t, each corresponds to one simulation
  */
 
-cache_stat_t *simulate_at_multi_sizes_with_step_size(reader_t *reader_in, 
-                                                     const cache_t *cache_in, 
-                                                     uint64_t step_size,
-                                                     reader_t *warmup_reader, 
-                                                     double warmup_frac, 
-                                                     int warmup_sec, 
-                                                     int num_of_threads, 
-                                                     bool use_random_seed);
+cache_stat_t *simulate_at_multi_sizes_with_step_size(
+    reader_t *reader_in, const cache_t *cache_in, uint64_t step_size,
+    reader_t *warmup_reader, double warmup_frac, int warmup_sec,
+    int num_of_threads, bool use_random_seed);
 
 /**
  * this function performs num_of_caches simulations with the caches,
@@ -89,15 +82,10 @@ cache_stat_t *simulate_at_multi_sizes_with_step_size(reader_t *reader_in,
  * @param num_of_threads
  * @return
  */
-cache_stat_t *simulate_with_multi_caches(reader_t *reader, 
-                                         cache_t *caches[],
-                                         int num_of_caches,
-                                         reader_t *warmup_reader,
-                                         double warmup_frac, 
-                                         int warmup_sec,
-                                         int num_of_threads, 
-                                         bool free_cache_when_finish, 
-                                         bool use_random_seed);
+cache_stat_t *simulate_with_multi_caches(
+    reader_t *reader, cache_t *caches[], int num_of_caches,
+    reader_t *warmup_reader, double warmup_frac, int warmup_sec,
+    int num_of_threads, bool free_cache_when_finish, bool use_random_seed);
 
 #ifdef __cplusplus
 }

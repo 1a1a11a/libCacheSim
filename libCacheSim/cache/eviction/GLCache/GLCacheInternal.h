@@ -2,8 +2,8 @@
 
 #include <xgboost/c_api.h>
 
-#include "../../../include/libCacheSim/cache.h"
 #include "const.h"
+#include "libCacheSim/cache.h"
 
 typedef float feature_t;
 typedef float pred_t;

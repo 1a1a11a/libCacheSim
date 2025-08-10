@@ -8,22 +8,23 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
 /**
@@ -40,11 +41,13 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+
 #include "../include/config.h"
 
 /** priority data type */
 struct pqueue_pri {
-    double pri;
+  double pri;
 };
 typedef struct pqueue_pri pqueue_pri_t;
 
@@ -79,9 +82,7 @@ typedef struct node_t {
   size_t pos;
 } pq_node_t;
 
-pqueue_t *
-pqueue_init(size_t n);
-
+pqueue_t *pqueue_init(size_t n);
 
 /**
  * initialize the queue
@@ -98,13 +99,9 @@ pqueue_init(size_t n);
  *
  * @return the handle or NULL for insufficient memory
  */
-pqueue_t *
-pqueue_init_full(size_t n,
-            pqueue_cmp_pri_f cmppri,
-            pqueue_get_pri_f getpri,
-            pqueue_set_pri_f setpri,
-            pqueue_get_pos_f getpos,
-            pqueue_set_pos_f setpos);
+pqueue_t *pqueue_init_full(size_t n, pqueue_cmp_pri_f cmppri,
+                           pqueue_get_pri_f getpri, pqueue_set_pri_f setpri,
+                           pqueue_get_pos_f getpos, pqueue_set_pos_f setpos);
 
 /**
  * free all memory used by the queue
@@ -132,9 +129,7 @@ int pqueue_insert(pqueue_t *q, void *d);
  * @param new_pri the new priority
  * @param d the entry
  */
-void pqueue_change_priority(pqueue_t *q,
-                            pqueue_pri_t new_pri,
-                            void *d);
+void pqueue_change_priority(pqueue_t *q, pqueue_pri_t new_pri, void *d);
 
 /**
  * pop the highest-ranking item from the queue.
@@ -166,9 +161,7 @@ void *pqueue_peek(pqueue_t *q);
  * @param out the output handle
  * @param print the callback function to print the entry
  */
-void pqueue_print(pqueue_t *q,
-                  FILE *out,
-                  pqueue_print_entry_f print);
+void pqueue_print(pqueue_t *q, FILE *out, pqueue_print_entry_f print);
 
 /**
  * dump the queue and it's internal structure
@@ -178,9 +171,7 @@ void pqueue_print(pqueue_t *q,
  * @param out the output handle
  * @param print callback function to print the entry
  */
-void pqueue_dump(pqueue_t *q,
-                 FILE *out,
-                 pqueue_print_entry_f print);
+void pqueue_dump(pqueue_t *q, FILE *out, pqueue_print_entry_f print);
 
 /**
  * checks that the pq is in the right order, etc
@@ -190,21 +181,21 @@ void pqueue_dump(pqueue_t *q,
  */
 int pqueue_is_valid(pqueue_t *q);
 
-
 /******************* priority queue structs and def **********************/
 
 static inline int cmp_pri(pqueue_pri_t next, pqueue_pri_t curr) {
   return (next.pri < curr.pri);
 }
 
-static inline pqueue_pri_t get_pri(void *a) { return ((pq_node_t *) a)->pri; }
+static inline pqueue_pri_t get_pri(void *a) { return ((pq_node_t *)a)->pri; }
 
-static inline void set_pri(void *a, pqueue_pri_t pri) { ((pq_node_t *) a)->pri = pri; }
+static inline void set_pri(void *a, pqueue_pri_t pri) {
+  ((pq_node_t *)a)->pri = pri;
+}
 
-static inline size_t get_pos(void *a) { return ((pq_node_t *) a)->pos; }
+static inline size_t get_pos(void *a) { return ((pq_node_t *)a)->pos; }
 
-static inline void set_pos(void *a, size_t pos) { ((pq_node_t *) a)->pos = pos; }
-
+static inline void set_pos(void *a, size_t pos) { ((pq_node_t *)a)->pos = pos; }
 
 #ifdef __cplusplus
 }

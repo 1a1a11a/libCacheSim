@@ -2,17 +2,16 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../../dataStructure/histogram.h"
-#include "../../dataStructure/splay.h"
-#include "../../dataStructure/splay_tuple.h"  ///users/Claire/libCacheSim/libCacheSim/profiler/dist.c
-#include "../../include/conversion.h"
-#include "../../include/libCacheSim/reader.h"
-#include "../../include/libCacheSim/sampling.h"
-#include "../../profiler/dist.c"  // for get_stack_dist_add_req, etc.
-#include "../../utils/include/mymath.h"
-#include "../../utils/include/mystr.h"
-#include "../../utils/include/mysys.h"
+#include "dataStructure/histogram.h"
+#include "dataStructure/splay.h"
+#include "dataStructure/splay_tuple.h"  ///users/Claire/libCacheSim/libCacheSim/profiler/dist.c
+#include "libCacheSim/reader.h"
+#include "libCacheSim/sampling.h"
 #include "mrc_internal.h"
+#include "profiler/dist.c"  // for get_stack_dist_add_req, etc.
+#include "utils/include/mymath.h"
+#include "utils/include/mystr.h"
+#include "utils/include/mysys.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,7 +109,7 @@ void generate_shards_mrc(struct PARAM *params, char *path) {
   params->reader->init_params.sampler->sampling_ratio = 1.0;
   params->reader->sampler->sampling_ratio = 1.0;
   uint64_t n_req = get_num_of_req(params->reader);
-  printf("n_req: %lu\n", n_req);
+  printf("n_req: %llu\n", (unsigned long long)n_req);
   params->reader->init_params.sampler->sampling_ratio = params->rate;
   params->reader->sampler->sampling_ratio = params->rate;
 
