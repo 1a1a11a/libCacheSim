@@ -302,7 +302,7 @@ For Python examples, see the `libCacheSim-python/README.md` file which contains 
 * **Custom Cache Issues**: Validate your custom implementation against built-in algorithms using test functions.
 * **Implementation Issues**: When re-implementing an eviction algorithm in libCacheSim using the plugin system, note that the core hook functions are simplified. This may introduce some challenges.
 
-  The central function for cache simulation is get:
+  The central function for cache simulation is `get` and its common internal logic is:
 
   !!! note
   Cache state is updated automatically, since update_cache = true by default.

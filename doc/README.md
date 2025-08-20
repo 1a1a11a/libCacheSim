@@ -1,15 +1,19 @@
+# CacheSim Documentation
 
-## Main tools
-* [cachesim](quickstart_cachesim.md)
-* [trace utils](quickstart_traceUtils.md)
-* [trace analysis](quickstart_traceAnalysis.md)
+## Quickstart Guides
+- [CacheSim: Command-line cache simulator](quickstart_cachesim.md)
+- [Trace Utilities](quickstart_traceUtils.md)
+- [Trace Analyzer](quickstart_traceAnalyzer.md)
+- [MRC Profiler](quickstart_mrcProfiler.md)
+- [Plugin System](quickstart_plugin.md)
 
-## Using libCacheSim as a library
-* [library](lib.md)
-* [add a new algorithm](lib_extend.md)
-* [API](lib_api.md)
+## Advanced Usage
+- [Library Usage Guide](advanced_lib.md)
+- [How to Add a New Algorithm](advanced_lib_extend.md)
+- [API Reference (C)](API.md)
+- [Performance Tuning](performance.md)
+- [Memory Usage Profiling](memory_usage_profiling.md)
 
-
-## Benchmarks
-* [benchmarks](quickstart_benchmarks.md)
-
+## Developer Documentation
+- [Debugging Guide](debug.md)
+- [Install & Build](install.md)
