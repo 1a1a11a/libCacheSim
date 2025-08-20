@@ -17,7 +17,7 @@ graph LR
     D -->|No| F{libCacheSim Cache Full?}
     F -->|Yes| G["cache_eviction_hook()<br/>plugin cache determines the object(s) to evict"]
     F -->|No| H["cache_miss_hook()<br/>Update plugin cache stats"]
-    G --> H
+    G --> F
 
     style E fill:#bfb,stroke:#333,stroke-width:2px
     style G fill:#fbb,stroke:#333,stroke-width:2px
@@ -300,6 +300,28 @@ For Python examples, see the `libCacheSim-python/README.md` file which contains 
 * **Performance Issues**: Use `process_trace()` for large workloads instead of individual `get()` calls for better performance.
 * **Memory Usage**: Monitor cache statistics (`cache.occupied_byte`) and ensure proper cache size limits for your system.
 * **Custom Cache Issues**: Validate your custom implementation against built-in algorithms using test functions.
+* **Implementation Issues**: When re-implementing an eviction algorithm in libCacheSim using the plugin system, note that the core hook functions are simplified. This may introduce some challenges.
+
+  The central function for cache simulation is get:
+
+  !!! note
+  Cache state is updated automatically, since update_cache = true by default.
+
+  ```mermaid
+  graph LR
+      C[find] --> D{Found in cache?}
+      D -->|Yes| E["cache_hit_hook()"]
+      D -->|No| F{"Cache full?"}
+      F -->|"Yes (no space for new object)"| G["cache_eviction_hook()"]
+      F -->|No| H["cache_miss_hook()"]
+      G --> F
+
+      style E fill:#bfb,stroke:#333,stroke-width:2px
+      style G fill:#fbb,stroke:#333,stroke-width:2px
+      style H fill:#bbf,stroke:#333,stroke-width:2px
+  ```
+
+  Because find is not exposed to plugins, any state-update logic that normally happens inside find must instead be implemented inside the relevant hook functions (cache_hit_hook, cache_eviction_hook, or cache_miss_hook) according to your algorithm’s needs.
 
 ---
 
