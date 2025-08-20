@@ -300,16 +300,11 @@ For Python examples, see the `libCacheSim-python/README.md` file which contains 
 * **Performance Issues**: Use `process_trace()` for large workloads instead of individual `get()` calls for better performance.
 * **Memory Usage**: Monitor cache statistics (`cache.occupied_byte`) and ensure proper cache size limits for your system.
 * **Custom Cache Issues**: Validate your custom implementation against built-in algorithms using test functions.
-* **Implementation Issues**: When re-implementing an eviction algorithm in libCacheSim using the plugin system, note that the core hook functions are simplified. This may introduce some challenges.
-
-  The central function for cache simulation is `get` and its common internal logic is:
-
-  !!! note
-  Cache state is updated automatically, since update_cache = true by default.
+* **Implementation Issues**: When re-implementing an eviction algorithm in libCacheSim using the plugin system, note that the core hook functions are simplified. This may introduce some challenges. The central function for cache simulation is `get` and its common internal logic is:
 
   ```mermaid
   graph LR
-      C[find] --> D{Found in cache?}
+      C["find() (Cache state is updated automatically, since update_cache = true by default)"] --> D{Found in cache?}
       D -->|Yes| E["cache_hit_hook()"]
       D -->|No| F{"Cache full?"}
       F -->|"Yes (no space for new object)"| G["cache_eviction_hook()"]
