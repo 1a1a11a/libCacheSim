@@ -1,3 +1,13 @@
+/**
+ * @file mrcProfiler.cpp
+ * @brief Implements the Miss Ratio Curve (MRC) profiler.
+ *
+ * This file contains the implementation for different MRC profiling techniques,
+ * including SHARDS and Miniature Simulation (MINISIM). It provides a factory
+ * function to create the appropriate profiler and a base class for common
+ * functionalities like printing the results.
+ */
+
 #include "./mrcProfiler.h"
 
 #include <stdio.h>
@@ -15,6 +25,15 @@
 #include "../dataStructure/splaytree.hpp"
 #include "libCacheSim/const.h"
 
+/**
+ * @brief Factory function to create an MRC profiler.
+ *
+ * @param type The type of profiler to create (e.g., SHARDS_PROFILER, MINISIM_PROFILER).
+ * @param reader A pointer to the trace reader.
+ * @param output_path The path for the output file.
+ * @param params The parameters for the profiler.
+ * @return A pointer to the created MRCProfilerBase instance.
+ */
 mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
     mrc_profiler_e type, reader_t *reader, std::string output_path,
     const mrc_profiler_params_t &params) {
@@ -29,6 +48,11 @@ mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
   }
 }
 
+/**
+ * @brief Prints the generated Miss Ratio Curve to a file or stdout.
+ *
+ * @param output_path The path to the output file. If NULL or empty, prints to stdout.
+ */
 void mrcProfiler::MRCProfilerBase::print(const char *output_path) {
   if (!has_run_) {
     ERROR("MRCProfiler has not been run\n");
@@ -77,6 +101,12 @@ void mrcProfiler::MRCProfilerBase::print(const char *output_path) {
   }
 }
 
+/**
+ * @brief Runs the SHARDS profiling algorithm.
+ *
+ * This method dispatches to either a fixed sample rate or fixed sample size
+ * implementation based on the parameters.
+ */
 void mrcProfiler::MRCProfilerSHARDS::run() {
   if (has_run_) return;
 
@@ -89,6 +119,13 @@ void mrcProfiler::MRCProfilerSHARDS::run() {
   has_run_ = true;
 }
 
+/**
+ * @brief Implements the SHARDS algorithm with a fixed sampling rate.
+ *
+ * It samples requests from the trace at a fixed rate and uses a splay tree
+ * to calculate reuse distances for the sampled requests. These distances are
+ * then used to estimate the hit rate at various cache sizes.
+ */
 void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
   // 1. init
   request_t *req = new_request();
@@ -152,13 +189,13 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
     read_one_req(reader_, req);
   } while (req->valid);
 
-  // 3. adjust the hit cnt and hit size
+  // 3. adjust the hit cnt and hit size for unsampled requests
   local_hit_cnt_vec[0] += n_req_ - sampled_cnt;
   local_hit_size_vec[0] += sum_obj_size_req - sampled_size;
 
   free_request(req);
 
-  // 4. calculate the mrc
+  // 4. calculate the cumulative MRC
   int64_t accu_hit_cnt = 0, accu_hit_size = 0;
   for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     accu_hit_cnt += local_hit_cnt_vec[i];
@@ -168,6 +205,13 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
   }
 }
 
+/**
+ * @brief Implements the SHARDS algorithm with a fixed sample size.
+ *
+ * This method uses a min-heap (via MinValueMap) to maintain a sample of objects
+ * with the smallest hash values. This keeps the sample size fixed while dynamically
+ * adjusting the sampling rate.
+ */
 void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
   // 1. init
   request_t *req = new_request();
@@ -184,7 +228,6 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
 
   // 2. go through the trace
   read_one_req(reader_, req);
-  /* going through the trace */
   do {
     DEBUG_ASSERT(req->obj_size != 0);
     n_req_ += 1;
@@ -202,7 +245,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
         bool poped = false;
         int64_t poped_id = min_value_map.insert(req->obj_id, hash_value, poped);
         if (poped) {
-          // this is a sampled req
+          // An object was popped from the sample to make space for the new one.
+          // Remove it from the tracking data structures.
           int64_t poped_id_access_time = last_access_time_map[poped_id];
           rd_tree.erase(poped_id_access_time);
           last_access_time_map.erase(poped_id);
@@ -210,10 +254,10 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
       }
 
       if (!min_value_map.full()) {
-        sample_rate = 1.0;  // still 100% sample rate
+        sample_rate = 1.0;  // 100% sample rate until sample is full
       } else {
-        sample_rate = min_value_map.get_max_value() * 1.0 /
-                      UINT64_MAX;  // adjust the sample rate
+        // Dynamically adjust sample rate based on the largest hash in the sample
+        sample_rate = min_value_map.get_max_value() * 1.0 / UINT64_MAX;
       }
 
       sampled_cnt += 1.0 / sample_rate;
@@ -254,7 +298,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
 
   free_request(req);
 
-  // 4. calculate the mrc
+  // 4. calculate the cumulative MRC
   int64_t accu_hit_cnt = 0, accu_hit_size = 0;
   for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     accu_hit_cnt += local_hit_cnt_vec[i];
@@ -264,6 +308,13 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
   }
 }
 
+/**
+ * @brief Runs the Miniature Simulation (MINISIM) profiling algorithm.
+ *
+ * This method works by sampling the trace and then running full cache simulations
+ * on the smaller, sampled trace for each target cache size. The results are then
+ * scaled up to estimate the MRC for the full trace.
+ */
 void mrcProfiler::MRCProfilerMINISIM::run() {
   has_run_ = true;
 
@@ -271,15 +322,14 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
   double sample_rate = params_.minisim_params.sample_rate;
   double sampled_cnt = 0, sampled_size = 0;
   sampler_t *sampler = nullptr;
-  if (sample_rate > 0.5) {
-    INFO("sample_rate is too large, do not sample\n");
+  if (sample_rate >= 1.0) {
+    INFO("sample_rate is >= 1, do not sample\n");
   } else {
     sampler = create_spatial_sampler(sample_rate);
-    set_spatial_sampler_salt(sampler,
-                             10000019);  // TODO: salt can be changed by params
+    set_spatial_sampler_salt(sampler, 10000019);
   }
 
-  // 1. obtain the n_req_, sum_obj_size_req, sampled_cnt and sampled_size
+  // 1. First pass: get total request count and size
   read_one_req(reader_, req);
   do {
     DEBUG_ASSERT(req->obj_size != 0);
@@ -289,17 +339,18 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
       sampled_cnt += 1;
       sampled_size += req->obj_size;
     }
-
     read_one_req(reader_, req);
   } while (req->valid);
-  // 2. set spatial sampling to the reader
+
+  // 2. Configure the reader to use the sampler for the simulation pass
   reset_reader(reader_);
   reader_->init_params.sampler = sampler;
   reader_->sampler = sampler;
 
-  // 3. run the simulate_with_multi_caches
+  // 3. Run parallel cache simulations on the sampled trace
   cache_t *caches[MAX_MRC_PROFILE_POINTS];
   for (size_t i = 0; i < params_.profile_size.size(); i++) {
+    // Scale cache size by sample rate for the miniature simulation
     size_t _cache_size = mrc_size_vec[i] * sample_rate;
     common_cache_params_t cc_params = {.cache_size = _cache_size,
                                        .default_ttl = 0,
@@ -312,7 +363,7 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
       reader_, caches, mrc_size_vec.size(), NULL, 0, 0,
       params_.minisim_params.thread_num, true, true);
 
-  // 4. adjust hit cnt and hit size
+  // 4. Scale up the results from the sampled simulation
   for (size_t i = 0; i < mrc_size_vec.size(); i++) {
     if (sampler) {
       hit_cnt_vec[i] =
@@ -325,6 +376,7 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
       hit_size_vec[i] = sum_obj_size_req - result[i].n_miss_byte;
     }
   }
+
   // clean up
   my_free(sizeof(cache_stat_t) * mrc_size_vec.size(), result);
   free_request(req);

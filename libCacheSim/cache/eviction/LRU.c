@@ -1,13 +1,12 @@
-//
-//  a LRU module that supports different obj size
-//
-//
-//  LRU.c
-//  libCacheSim
-//
-//  Created by Juncheng on 12/4/18.
-//  Copyright © 2018 Juncheng. All rights reserved.
-//
+/**
+ * @file LRU.c
+ * @brief Implementation of the Least Recently Used (LRU) cache eviction algorithm.
+ *
+ * This implementation maintains a doubly linked list of cache objects.
+ * When an object is accessed, it is moved to the head of the list.
+ * When eviction is needed, the object at the tail of the list (the least recently used)
+ * is selected for removal.
+ */
 
 #include "dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/evictionAlgo.h"
@@ -16,35 +15,26 @@
 extern "C" {
 #endif
 
-// #define USE_BELADY
-
-// ***********************************************************************
-// ****                                                               ****
-// ****                   function declarations                       ****
-// ****                                                               ****
-// ***********************************************************************
-
+// Forward declarations for static functions
 static void LRU_free(cache_t *cache);
 static bool LRU_get(cache_t *cache, const request_t *req);
-static cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+static cache_obj_t *LRU_find(cache_t *cache, const request_t *req, const bool update_cache);
 static cache_obj_t *LRU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req);
 static void LRU_evict(cache_t *cache, const request_t *req);
 static bool LRU_remove(cache_t *cache, const obj_id_t obj_id);
 static void LRU_print_cache(const cache_t *cache);
 
-// ***********************************************************************
-// ****                                                               ****
-// ****                   end user facing functions                   ****
-// ****                                                               ****
-// ****                       init, free, get                         ****
-// ***********************************************************************
 /**
- * @brief initialize a LRU cache
+ * @brief Initializes an LRU cache.
  *
- * @param ccache_params some common cache parameters
- * @param cache_specific_params LRU specific parameters, should be NULL
+ * This function allocates the necessary structures for the LRU cache and sets up
+ * the function pointers in the main cache_t structure to point to the LRU-specific
+ * implementations.
+ *
+ * @param ccache_params Common cache parameters (e.g., size).
+ * @param cache_specific_params Algorithm-specific parameters (not used for LRU).
+ * @return A pointer to the initialized cache_t structure.
  */
 cache_t *LRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
@@ -64,14 +54,11 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
   cache->print_cache = LRU_print_cache;
 
   if (ccache_params.consider_obj_metadata) {
-    cache->obj_md_size = 8 * 2;
+    // 2 pointers for the doubly linked list
+    cache->obj_md_size = sizeof(void*) * 2;
   } else {
     cache->obj_md_size = 0;
   }
-
-#ifdef USE_BELADY
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LRU_Belady");
-#endif
 
   LRU_params_t *params = malloc(sizeof(LRU_params_t));
   params->q_head = NULL;
@@ -82,9 +69,8 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
 }
 
 /**
- * free resources used by this cache
- *
- * @param cache
+ * @brief Frees the resources used by the LRU cache.
+ * @param cache The cache to free.
  */
 static void LRU_free(cache_t *cache) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
@@ -93,43 +79,30 @@ static void LRU_free(cache_t *cache) {
 }
 
 /**
- * @brief this function is the user facing API
- * it performs the following logic
+ * @brief Handles a get request for the LRU cache.
  *
- * ```
- * if obj in cache:
- *    update_metadata
- *    return true
- * else:
- *    if cache does not have enough space:
- *        evict until it has space to insert
- *    insert the object
- *    return false
- * ```
+ * This function implements the core logic: find the object, and if it's a miss,
+ * evict if necessary and insert the new object. It uses the `cache_get_base`
+ * helper which encapsulates this logic.
  *
- * @param cache
- * @param req
- * @return true if cache hit, false if cache miss
+ * @param cache The cache.
+ * @param req The request to process.
+ * @return True if it was a cache hit, false otherwise.
  */
 static bool LRU_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-// ***********************************************************************
-// ****                                                               ****
-// ****       developer facing APIs (used by cache developer)         ****
-// ****                                                               ****
-// ***********************************************************************
-
 /**
- * @brief check whether an object is in the cache
+ * @brief Finds an object in the cache and updates its position in the LRU list.
  *
- * @param cache
- * @param req
- * @param update_cache whether to update the cache,
- *  if true, the object is promoted
- *  and if the object is expired, it is removed from the cache
- * @return true on hit, false on miss
+ * If the object is found (`cache_obj` is not NULL) and `update_cache` is true,
+ * the object is moved to the head of the LRU list to mark it as most recently used.
+ *
+ * @param cache The cache.
+ * @param req The request containing the object ID to find.
+ * @param update_cache If true, update the object's position on a hit.
+ * @return A pointer to the cache object if found, otherwise NULL.
  */
 static cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
                              const bool update_cache) {
@@ -137,24 +110,21 @@ static cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && likely(update_cache)) {
-    /* lru_head is the newest, move cur obj to lru_head */
-#ifdef USE_BELADY
-    if (req->next_access_vtime != INT64_MAX)
-#endif
-      move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
+    // Move the accessed object to the head of the list (most recent).
+    move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
   }
   return cache_obj;
 }
 
 /**
- * @brief insert an object into the cache,
- * update the hash table and cache metadata
- * this function assumes the cache has enough space
- * and eviction is not part of this function
+ * @brief Inserts a new object into the cache.
  *
- * @param cache
- * @param req
- * @return the inserted object
+ * The new object is added to the head of the LRU list, as it is the most
+ * recently used. This function assumes there is enough space in the cache.
+ *
+ * @param cache The cache.
+ * @param req The request containing the object to insert.
+ * @return A pointer to the newly created and inserted cache object.
  */
 static cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
@@ -166,95 +136,55 @@ static cache_obj_t *LRU_insert(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief find the object to be evicted
- * this function does not actually evict the object or update metadata
- * not all eviction algorithms support this function
- * because the eviction logic cannot be decoupled from finding eviction
- * candidate, so use assert(false) if you cannot support this function
+ * @brief Identifies the object to be evicted.
  *
- * @param cache the cache
- * @return the object to be evicted
+ * For LRU, the eviction candidate is always the object at the tail of the list.
+ *
+ * @param cache The cache.
+ * @param req The current request (not used in this LRU implementation).
+ * @return A pointer to the cache object that should be evicted.
  */
 static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
-
   DEBUG_ASSERT(params->q_tail != NULL || cache->occupied_byte == 0);
-
-  cache->to_evict_candidate_gen_vtime = cache->n_req;
   return params->q_tail;
 }
 
 /**
- * @brief evict an object from the cache
- * it needs to call cache_evict_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
+ * @brief Evicts the least recently used object from the cache.
  *
- * @param cache
- * @param req not used
+ * This function removes the object from the tail of the LRU list and then
+ * calls `cache_evict_base` to handle the generic parts of eviction
+ * (updating stats, removing from hash table, freeing memory).
+ *
+ * @param cache The cache.
+ * @param req The current request (not used in this LRU implementation).
  */
 static void LRU_evict(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = params->q_tail;
   DEBUG_ASSERT(params->q_tail != NULL);
 
-  // we can simply call remove_obj_from_list here, but for the best performance,
-  // we chose to do it manually
-  // remove_obj_from_list(&params->q_head, &params->q_tail, obj)
-
+  // Remove the object from the tail of the list
   params->q_tail = params->q_tail->queue.prev;
   if (likely(params->q_tail != NULL)) {
     params->q_tail->queue.next = NULL;
   } else {
-    /* cache->n_obj has not been updated */
-    DEBUG_ASSERT(cache->n_obj == 1);
+    // The list is now empty
     params->q_head = NULL;
   }
-
-#if defined(TRACK_DEMOTION)
-  if (cache->track_demotion)
-    printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
-           obj_to_evict->misc.next_access_vtime);
-#endif
 
   cache_evict_base(cache, obj_to_evict, true);
 }
 
 /**
- * @brief remove the given object from the cache
- * note that eviction should not call this function, but rather call
- * `cache_evict_base` because we track extra metadata during eviction
+ * @brief Removes a specific object from the cache by its ID.
  *
- * and this function is different from eviction
- * because it is used to for user trigger
- * remove, and eviction is used by the cache to make space for new objects
+ * This is for user-initiated removal, not for eviction during insertion.
  *
- * it needs to call cache_remove_obj_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
- *
- * @param cache
- * @param obj
- */
-static void LRU_remove_obj(cache_t *cache, cache_obj_t *obj) {
-  assert(obj != NULL);
-
-  LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
-
-  remove_obj_from_list(&params->q_head, &params->q_tail, obj);
-  cache_remove_obj_base(cache, obj, true);
-}
-
-/**
- * @brief remove an object from the cache
- * this is different from cache_evict because it is used to for user trigger
- * remove, and eviction is used by the cache to make space for new objects
- *
- * it needs to call cache_remove_obj_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
- *
- * @param cache
- * @param obj_id
- * @return true if the object is removed, false if the object is not in the
- * cache
+ * @param cache The cache.
+ * @param obj_id The ID of the object to remove.
+ * @return True if the object was found and removed, false otherwise.
  */
 static bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
@@ -263,22 +193,32 @@ static bool LRU_remove(cache_t *cache, const obj_id_t obj_id) {
   }
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
 
+  // Remove the object from the LRU list
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);
+  // Handle the generic parts of removal
   cache_remove_obj_base(cache, obj, true);
 
   return true;
 }
 
+/**
+ * @brief Prints the contents of the cache for debugging.
+ *
+ * Traverses the LRU list from head (most recent) to tail (least recent)
+ * and prints the object IDs.
+ *
+ * @param cache The cache.
+ */
 static void LRU_print_cache(const cache_t *cache) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
   cache_obj_t *cur = params->q_head;
-  // print from the most recent to the least recent
+  printf("LRU Queue (MRU -> LRU): ");
   if (cur == NULL) {
     printf("empty\n");
     return;
   }
   while (cur != NULL) {
-    printf("%lu->", (unsigned long)cur->obj_id);
+    printf("%lu -> ", (unsigned long)cur->obj_id);
     cur = cur->queue.next;
   }
   printf("END\n");

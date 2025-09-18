@@ -1,3 +1,28 @@
+"""
+This script benchmarks the throughput and other performance metrics of different
+caching algorithms using `perf stat`.
+
+It can either generate synthetic Zipfian traces or use existing trace files.
+For each combination of trace, algorithm, and cache size, it runs `cachesim`
+under `perf stat`, parses the performance data, and aggregates the results
+into a CSV file.
+
+Example Usage:
+    # Using a pre-existing trace
+    python3 scripts/benchmark_throughput.py \\
+        --tracepath ../data/twitter_cluster52.csv.zst \\
+        --algos=lru,s3fifo \\
+        --sizes=0.1
+
+    # Generating synthetic traces and running on them
+    python3 scripts/benchmark_throughput.py \\
+        --num-objects=1000000 \\
+        --num-requests=10000000 \\
+        --alpha=0.8,1.0 \\
+        --algos=lru,s3fifo \\
+        --sizes=0.1
+"""
+
 import subprocess
 import logging
 import argparse
@@ -12,8 +37,18 @@ import pandas as pd
 logger = logging.getLogger("cache_sim_monitor")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def generate_trace(args):
-    """Call data_gen.py with specific parameters (for multiprocessing)."""
+def generate_trace(args: Tuple[int, int, float, str]) -> Optional[str]:
+    """
+    Generates a single synthetic trace file using data_gen.py.
+
+    This function is designed to be called by a multiprocessing pool.
+
+    Args:
+        args: A tuple containing (num_objects, num_requests, alpha, output_dir).
+
+    Returns:
+        The path to the generated trace file, or None if generation failed.
+    """
     m, n, a, output_dir = args
     trace_filename = f"{output_dir}/zipf_{a}_{m}_{n}.oracleGeneral"
     
@@ -39,7 +74,18 @@ def generate_trace(args):
     return trace_filename
 
 
-def generate_synthetic_traces(num_objects, num_requests, alpha):
+def generate_synthetic_traces(num_objects: str, num_requests: str, alpha: str) -> List[str]:
+    """
+    Generates multiple synthetic trace files in parallel.
+
+    Args:
+        num_objects: Comma-separated string of the number of unique objects.
+        num_requests: Comma-separated string of the total number of requests.
+        alpha: Comma-separated string of Zipfian distribution parameters.
+
+    Returns:
+        A list of paths to the generated trace files.
+    """
     num_objects = [int(x) for x in num_objects.split(",")]
     num_requests = [int(x) for x in num_requests.split(",")]
     alpha = [float(x) for x in alpha.split(",")]
@@ -59,7 +105,16 @@ def generate_synthetic_traces(num_objects, num_requests, alpha):
     return traces
     
     
-def parse_perf_stat(perf_stat_output: str) -> Dict[str, float]:    
+def parse_perf_stat(perf_stat_output: str) -> Dict[str, float]:
+    """
+    Parses the output of `perf stat` to extract performance metrics.
+
+    Args:
+        perf_stat_output: The stderr string from the `perf stat` command.
+
+    Returns:
+        A dictionary mapping metric names to their values.
+    """
     metrics_regex = {
         "cpu_utilization": r"([\d\.]+)\s+CPUs utilized",
         "task_clock_msec": r"([\d\.]+)\s+msec task-clock",
@@ -88,6 +143,21 @@ def parse_perf_stat(perf_stat_output: str) -> Dict[str, float]:
     return perf_data
     
 def run_cachesim(trace: str, algo: str, cache_size: str, ignore_obj_size: bool, num_thread: int, trace_format: str, trace_format_params: str) -> Dict[str, float]:
+    """
+    Runs a single cachesim instance under `perf stat` and captures the output.
+
+    Args:
+        trace: Path to the trace file.
+        algo: The caching algorithm to benchmark.
+        cache_size: The cache size to use.
+        ignore_obj_size: Whether to treat all objects as size 1.
+        num_thread: Number of threads for the simulation.
+        trace_format: The format of the trace file.
+        trace_format_params: Additional parameters for the trace format.
+
+    Returns:
+        A dictionary of performance metrics from `parse_perf_stat`.
+    """
     logger.info(f"Running perf with trace={trace}, algo={algo}, size={cache_size}")
 
     run_args = [
@@ -118,7 +188,19 @@ def run_cachesim(trace: str, algo: str, cache_size: str, ignore_obj_size: bool, 
     return perf_json
 
 
-def generate_summary(results):
+def generate_summary(results: List[Dict]):
+    """
+    Generates CSV summary files from the collected performance data.
+
+    Creates two files:
+    - result/throughput_log.csv: Contains the raw results for every run.
+    - result/throughput_avg.csv: Contains results averaged across all traces
+      for each algorithm and cache size combination.
+
+    Args:
+        results: A list of dictionaries, where each dictionary holds the
+                 performance data for a single run.
+    """
     summary_file = "result/throughput_log.csv"
     os.makedirs("result", exist_ok=True)
     
@@ -138,6 +220,9 @@ def generate_summary(results):
     
         
 def main():
+    """
+    Main function to parse command-line arguments and orchestrate the benchmark.
+    """
     default_args = {
         "algos": "fifo,lfu,lhd,GLCache",
         "sizes": "0.1",

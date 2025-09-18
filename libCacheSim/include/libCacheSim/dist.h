@@ -1,6 +1,12 @@
-//
-// Created by Juncheng Yang on 11/24/19.
-//
+/**
+ * @file dist.h
+ * @brief Provides functions for calculating, saving, and loading trace distances.
+ *
+ * This file contains utilities to compute various types of distances for each
+ * request in a trace. These distances, such as stack distance (reuse distance)
+ * or time since last access, are crucial for certain types of cache analysis
+ * and for some eviction algorithms like Belady's.
+ */
 
 #ifndef libCacheSim_DISTUTILS_H
 #define libCacheSim_DISTUTILS_H
@@ -12,13 +18,19 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Enumerates the different types of distances that can be calculated.
+ */
 typedef enum {
-  DIST_SINCE_LAST_ACCESS,
-  DIST_SINCE_FIRST_ACCESS,
-  STACK_DIST,
-  FUTURE_STACK_DIST,
+  DIST_SINCE_LAST_ACCESS,   /**< The number of requests since the last access to the same object. */
+  DIST_SINCE_FIRST_ACCESS,  /**< The number of requests since the first access to the same object. */
+  STACK_DIST,               /**< The number of unique objects seen since the last access to the same object. */
+  FUTURE_STACK_DIST,        /**< The number of unique objects that will be seen until the next access to the same object. */
 } dist_type_e;
 
+/**
+ * @brief String representations for the dist_type_e enum.
+ */
 static const char *g_dist_type_name[] = {
     "DIST_SINCE_LAST_ACCESS",
     "DIST_SINCE_FIRST_ACCESS",
@@ -26,60 +38,89 @@ static const char *g_dist_type_name[] = {
     "FUTURE_STACK_DIST",
 };
 
-/***********************************************************
- * get the stack distance (number of uniq objects) since last access or till
- * next request,
+/**
+ * @brief Gets the stack distance for each request in a trace.
  *
- * @param reader
- * @param dist_type STACK_DIST or FUTURE_STACK_DIST
+ * Stack distance (or reuse distance) is the number of unique objects seen
+ * between consecutive accesses to the same object. Future stack distance
+ * looks forward instead of backward. This requires a full pass over the trace.
  *
- * @return an array of int32_t with size of n_req
+ * @param reader The trace reader, positioned at the beginning of the trace.
+ * @param dist_type The type of stack distance to compute (STACK_DIST or FUTURE_STACK_DIST).
+ * @param array_size A pointer to a variable that will be filled with the size of the returned array.
+ * @return An array of `int32_t` with the computed distance for each request. The
+ *         caller is responsible for freeing this array.
  */
 int32_t *get_stack_dist(reader_t *reader, const dist_type_e dist_type,
                         int64_t *array_size);
 
-/***********************************************************
- * get the distance (the num of requests) since last/first access
-
- * @param reader
- * @param dist_type DIST_SINCE_LAST_ACCESS or DIST_SINCE_FIRST_ACCESS
+/**
+ * @brief Gets the access distance for each request in a trace.
  *
- * @return an array of int32_t with size of n_req
+ * Access distance is the number of requests (not unique objects) seen since
+ * a previous access to the same object. This requires a full pass over the trace.
+ *
+ * @param reader The trace reader, positioned at the beginning of the trace.
+ * @param dist_type The type of access distance to compute (DIST_SINCE_LAST_ACCESS or DIST_SINCE_FIRST_ACCESS).
+ * @param array_size A pointer to a variable that will be filled with the size of the returned array.
+ * @return An array of `int32_t` with the computed distance for each request. The
+ *         caller is responsible for freeing this array.
  */
 int32_t *get_access_dist(reader_t *reader, const dist_type_e dist_type,
                          int64_t *array_size);
 
-/***********************************************************
- * save the distance array to file to avoid future computation
+/**
+ * @brief Saves a distance array to a file in a binary format.
  *
- * @param reader            the reader for data
- * @param dist_array        distance array to save into file
- * @param path              the output file path
- * @param dist_type         distance type
- * @return
+ * This allows pre-computed distances to be reused without recalculating them.
+ *
+ * @param reader The trace reader (used for metadata).
+ * @param dist_array The array of distances to save.
+ * @param array_size The size of the distance array.
+ * @param ofilepath The path to the output file.
+ * @param dist_type The type of distance being saved.
  */
 void save_dist(reader_t *const reader, const int32_t *dist_array,
                const int64_t array_size, const char *const ofilepath,
                const dist_type_e dist_type);
 
-/***********************************************************
- * save the distance array to file to avoid future computation,
- * this function is similar to save_dist, but it uses the text format
+/**
+ * @brief Saves a distance array to a file in a text format.
+ *
+ * @param reader The trace reader (used for metadata).
+ * @param dist_array The array of distances to save.
+ * @param array_size The size of the distance array.
+ * @param ofilepath The path to the output file.
+ * @param dist_type The type of distance being saved.
  */
 void save_dist_txt(reader_t *const reader, const int32_t *dist_array,
                    const int64_t array_size, const char *const ofilepath,
                    const dist_type_e dist_type);
 
-/***********************************************************
- * this function is used for loading distance from the input file
+/**
+ * @brief Loads a pre-computed distance array from a file.
  *
- * @param reader                the reader for data
- * @param dist_type             type of distance
- * @return                      distance array in int32_t array
+ * @param reader The trace reader (used for metadata).
+ * @param ifilepath The path to the input distance file.
+ * @param array_size A pointer to a variable that will be filled with the size of the loaded array.
+ * @return An array of `int32_t` with the loaded distances. The caller is
+ *         responsible for freeing this array.
  */
 int32_t *load_dist(reader_t *const reader, const char *const ifilepath,
                    int64_t *array_size);
 
+/**
+ * @brief Saves a distance array as a frequency count in text format.
+ *
+ * Instead of writing one line per request, this function computes a histogram
+ * of the distances and writes the counts to the output file.
+ *
+ * @param reader The trace reader (used for metadata).
+ * @param dist_array The array of distances.
+ * @param array_size The size of the distance array.
+ * @param ofilepath The path to the output file.
+ * @param dist_type The type of distance being saved.
+ */
 void save_dist_as_cnt_txt(reader_t *const reader, const int32_t *dist_array,
                           const int64_t array_size, const char *const ofilepath,
                           const dist_type_e dist_type);

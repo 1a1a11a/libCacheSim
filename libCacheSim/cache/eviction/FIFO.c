@@ -1,13 +1,12 @@
-//
-//  first in first out
-//
-//
-//  FIFO.c
-//  libCacheSim
-//
-//  Created by Juncheng on 12/4/18.
-//  Copyright © 2018 Juncheng. All rights reserved.
-//
+/**
+ * @file FIFO.c
+ * @brief Implementation of the First-In, First-Out (FIFO) cache eviction algorithm.
+ *
+ * This algorithm evicts the object that has been in the cache the longest,
+ * regardless of how frequently or recently it was accessed. It is implemented
+ * using a simple queue. New objects are added to the head of the queue, and
+ * eviction removes objects from the tail.
+ */
 
 #include "dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/evictionAlgo.h"
@@ -16,35 +15,24 @@
 extern "C" {
 #endif
 
-// ***********************************************************************
-// ****                                                               ****
-// ****                   function declarations                       ****
-// ****                                                               ****
-// ***********************************************************************
-
-static void FIFO_parse_params(cache_t *cache,
-                              const char *cache_specific_params);
+// Forward declarations for static functions
 static void FIFO_free(cache_t *cache);
 static bool FIFO_get(cache_t *cache, const request_t *req);
-static cache_obj_t *FIFO_find(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+static cache_obj_t *FIFO_find(cache_t *cache, const request_t *req, const bool update_cache);
 static cache_obj_t *FIFO_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *FIFO_to_evict(cache_t *cache, const request_t *req);
 static void FIFO_evict(cache_t *cache, const request_t *req);
 static bool FIFO_remove(cache_t *cache, const obj_id_t obj_id);
 
-// ***********************************************************************
-// ****                                                               ****
-// ****                   end user facing functions                   ****
-// ****                                                               ****
-// ****                       init, free, get                         ****
-// ***********************************************************************
-
 /**
- * @brief initialize a FIFO cache
+ * @brief Initializes a FIFO cache.
  *
- * @param ccache_params some common cache parameters
- * @param cache_specific_params FIFO specific parameters, should be NULL
+ * Allocates the necessary structures and sets up the function pointers in the
+ * main cache_t structure to point to the FIFO-specific implementations.
+ *
+ * @param ccache_params Common cache parameters (e.g., size).
+ * @param cache_specific_params Algorithm-specific parameters (not used for FIFO).
+ * @return A pointer to the initialized cache_t structure.
  */
 cache_t *FIFO_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
@@ -61,7 +49,7 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
   cache->can_insert = cache_can_insert_default;
-  cache->obj_md_size = 0;
+  cache->obj_md_size = 0; // FIFO doesn't need extra metadata per object
 
   cache->eviction_params = malloc(sizeof(FIFO_params_t));
   FIFO_params_t *params = (FIFO_params_t *)cache->eviction_params;
@@ -72,9 +60,8 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
 }
 
 /**
- * free resources used by this cache
- *
- * @param cache
+ * @brief Frees the resources used by the FIFO cache.
+ * @param cache The cache to free.
  */
 static void FIFO_free(cache_t *cache) {
   free(cache->eviction_params);
@@ -82,43 +69,30 @@ static void FIFO_free(cache_t *cache) {
 }
 
 /**
- * @brief this function is the user facing API
- * it performs the following logic
+ * @brief Handles a get request for the FIFO cache.
  *
- * ```
- * if obj in cache:
- *    update_metadata
- *    return true
- * else:
- *    if cache does not have enough space:
- *        evict until it has space to insert
- *    insert the object
- *    return false
- * ```
+ * This function uses the `cache_get_base` helper which encapsulates the
+ * standard logic: find the object, and if it's a miss, evict if necessary
+ * and insert the new object.
  *
- * @param cache
- * @param req
- * @return true if cache hit, false if cache miss
+ * @param cache The cache.
+ * @param req The request to process.
+ * @return True if it was a cache hit, false otherwise.
  */
 static bool FIFO_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
-// ***********************************************************************
-// ****                                                               ****
-// ****       developer facing APIs (used by cache developer)         ****
-// ****                                                               ****
-// ***********************************************************************
-
 /**
- * @brief find an object in the cache
+ * @brief Finds an object in the cache.
  *
- * @param cache
- * @param req
- * @param update_cache whether to update the cache,
- *  if true, the object is promoted
- *  and if the object is expired, it is removed from the cache
- * @return the object or NULL if not found
+ * For FIFO, finding an object does not change its position in the queue.
+ * This function simply calls the base find function.
+ *
+ * @param cache The cache.
+ * @param req The request containing the object ID to find.
+ * @param update_cache If true, checks for object expiration.
+ * @return A pointer to the cache object if found, otherwise NULL.
  */
 static cache_obj_t *FIFO_find(cache_t *cache, const request_t *req,
                               const bool update_cache) {
@@ -126,32 +100,30 @@ static cache_obj_t *FIFO_find(cache_t *cache, const request_t *req,
 }
 
 /**
- * @brief insert an object into the cache,
- * update the hash table and cache metadata
- * this function assumes the cache has enough space
- * and eviction is not part of this function
+ * @brief Inserts a new object into the cache.
  *
- * @param cache
- * @param req
- * @return the inserted object
+ * The new object is added to the head of the FIFO queue.
+ * This function assumes there is enough space in the cache.
+ *
+ * @param cache The cache.
+ * @param req The request containing the object to insert.
+ * @return A pointer to the newly created and inserted cache object.
  */
 static cache_obj_t *FIFO_insert(cache_t *cache, const request_t *req) {
   FIFO_params_t *params = (FIFO_params_t *)cache->eviction_params;
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
-
   return obj;
 }
 
 /**
- * @brief find the object to be evicted
- * this function does not actually evict the object or update metadata
- * not all eviction algorithms support this function
- * because the eviction logic cannot be decoupled from finding eviction
- * candidate, so use assert(false) if you cannot support this function
+ * @brief Identifies the object to be evicted.
  *
- * @param cache the cache
- * @return the object to be evicted
+ * For FIFO, the eviction candidate is always the object at the tail of the queue.
+ *
+ * @param cache The cache.
+ * @param req The current request (not used in this FIFO implementation).
+ * @return A pointer to the cache object that should be evicted.
  */
 static cache_obj_t *FIFO_to_evict(cache_t *cache, const request_t *req) {
   FIFO_params_t *params = (FIFO_params_t *)cache->eviction_params;
@@ -159,29 +131,25 @@ static cache_obj_t *FIFO_to_evict(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief evict an object from the cache
- * it needs to call cache_evict_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
+ * @brief Evicts the first-in object from the cache.
  *
- * @param cache
- * @param req not used
- * @param evicted_obj if not NULL, return the evicted object to caller
+ * This function removes the object from the tail of the FIFO queue and then
+ * calls `cache_evict_base` to handle the generic parts of eviction.
+ *
+ * @param cache The cache.
+ * @param req The current request (not used in this FIFO implementation).
  */
 static void FIFO_evict(cache_t *cache, const request_t *req) {
   FIFO_params_t *params = (FIFO_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = params->q_tail;
   DEBUG_ASSERT(params->q_tail != NULL);
 
-  // we can simply call remove_obj_from_list here, but for the best performance,
-  // we chose to do it manually
-  // remove_obj_from_list(&params->q_head, &params->q_tail, obj);
-
+  // Remove the object from the tail of the queue
   params->q_tail = params->q_tail->queue.prev;
   if (likely(params->q_tail != NULL)) {
     params->q_tail->queue.next = NULL;
   } else {
-    /* cache->n_obj has not been updated */
-    DEBUG_ASSERT(cache->n_obj == 1);
+    // The queue is now empty
     params->q_head = NULL;
   }
 
@@ -189,17 +157,11 @@ static void FIFO_evict(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief remove an object from the cache
- * this is different from cache_evict because it is used to for user trigger
- * remove, and eviction is used by the cache to make space for new objects
+ * @brief Removes a specific object from the cache by its ID.
  *
- * it needs to call cache_remove_obj_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
- *
- * @param cache
- * @param obj_id
- * @return true if the object is removed, false if the object is not in the
- * cache
+ * @param cache The cache.
+ * @param obj_id The ID of the object to remove.
+ * @return True if the object was found and removed, false otherwise.
  */
 static bool FIFO_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
@@ -208,19 +170,12 @@ static bool FIFO_remove(cache_t *cache, const obj_id_t obj_id) {
   }
 
   FIFO_params_t *params = (FIFO_params_t *)cache->eviction_params;
-
+  // Remove the object from the FIFO queue
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);
+  // Handle the generic parts of removal
   cache_remove_obj_base(cache, obj, true);
 
   return true;
-}
-
-static void FIFO_parse_params(cache_t *cache,
-                              const char *cache_specific_params) {
-  if (cache_specific_params != NULL) {
-    ERROR("FIFO does not support any cache specific parameters\n");
-    exit(1);
-  }
 }
 
 #ifdef __cplusplus

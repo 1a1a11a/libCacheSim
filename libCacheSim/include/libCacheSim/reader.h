@@ -1,10 +1,12 @@
-//
-//  reader.h
-//  libCacheSim
-//
-//  Created by Juncheng on 5/25/16.
-//  Copyright © 2016 Juncheng. All rights reserved.
-//
+/**
+ * @file reader.h
+ * @brief Defines the trace reader structures and functions.
+ *
+ * This file contains the definitions for `reader_t` and related structures
+ * used to read and parse various cache trace formats, including text, CSV,
+ * and different binary formats. It supports features like mmap for performance,
+ * zstd decompression, and trace sampling.
+ */
 
 #ifndef READER_H
 #define READER_H
@@ -33,15 +35,20 @@
 extern "C" {
 #endif
 
-/* this provides the info about each field or col in csv and binary trace
- * the field index start with 1 */
+/**
+ * @brief Initialization parameters for a trace reader.
+ *
+ * This structure is used to configure the reader's behavior, specifying
+ * field mappings for CSV/binary traces, and other options like sampling.
+ */
 typedef struct {
-  bool ignore_obj_size;
-  bool ignore_size_zero_req;
-  bool obj_id_is_num;
-  bool obj_id_is_num_set;  // whether the user has passed this parameter
-  int64_t cap_at_n_req;    // only process at most n_req requests
+  bool ignore_obj_size;       /**< If true, treat all object sizes as 1. */
+  bool ignore_size_zero_req;  /**< If true, ignore requests with an object size of 0. */
+  bool obj_id_is_num;         /**< If true, object IDs are treated as numeric values. */
+  bool obj_id_is_num_set;     /**< Internal flag to check if obj_id_is_num was user-specified. */
+  int64_t cap_at_n_req;       /**< Stop reading after this many requests. -1 for no limit. */
 
+  // Field indices (1-based) for various trace formats
   int32_t time_field;
   int32_t obj_id_field;
   int32_t obj_size_field;
@@ -54,101 +61,87 @@ typedef struct {
   int32_t n_feature_fields;
   int32_t feature_fields[N_MAX_FEATURES];
 
-  // block cache, 0 and -1 means ignore this field, 1 is also invalid
-  // block_size breaks a large request for multiple blocks into multiple
-  // requests
-  int32_t block_size;
+  int32_t block_size;         /**< For block caches, splits large requests into multiple requests of this size. */
 
-  // csv reader
-  bool has_header;
-  // whether the has_header is set, because false could indicate
-  // it is not set or it does not has a header
-  bool has_header_set;
+  // CSV specific parameters
+  bool has_header;            /**< If true, the CSV file has a header line to be skipped. */
+  bool has_header_set;        /**< Internal flag to check if has_header was user-specified. */
+  char delimiter;             /**< The delimiter character for CSV files. */
 
-  char delimiter;
-  // read the trace from the offset, this is used by some binary trace
-  // which stores metadata at the start of the trace
-  ssize_t trace_start_offset;
+  ssize_t trace_start_offset; /**< Start reading from this byte offset in the file. */
 
-  // binary reader
-  char *binary_fmt_str;
+  // Binary specific parameters
+  char *binary_fmt_str;       /**< A format string describing the binary trace structure. */
 
-  // sample some requests in the trace
-  sampler_t *sampler;
+  sampler_t *sampler;         /**< A sampler to apply to the trace. */
 } reader_init_param_t;
 
+/**
+ * @brief Direction for reading the trace file.
+ */
 enum read_direction {
-  READ_FORWARD = 0,
-  READ_BACKWARD = 1,
+  READ_FORWARD = 0,   /**< Read the trace from beginning to end. */
+  READ_BACKWARD = 1,  /**< Read the trace from end to beginning. */
 };
 
 struct zstd_reader;
+
+/**
+ * @brief The main trace reader structure.
+ *
+ * Holds the state for reading a trace file, including file handles,
+ * memory-mapped regions, and parsing state.
+ */
 typedef struct reader {
   /************* common fields *************/
-  int64_t n_read_req;
-  int64_t n_total_req; /* number of requests in the trace */
-  char *trace_path;
-  size_t file_size;
-  reader_init_param_t init_params;
-  void *reader_params;
-  trace_type_e trace_type; /* possible types see trace_type_t  */
-  trace_format_e trace_format;
-  int ver;
-  bool cloned;  // true if this is a cloned reader, else false
-  int64_t cap_at_n_req;
-  /* the offset of the first request in the trace, it should be 0 for
-   *    txt trace
-   *    csv trace with no header
-   *    customized binary traces
-   * but may not be 0 for
-   *    csv trace with header
-   *    LCS trace
-   * this is used when cloning reader and reading reversely */
-  int trace_start_offset;
+  int64_t n_read_req;       /**< Number of requests read so far. */
+  int64_t n_total_req;      /**< Total number of requests in the trace (if known). */
+  char *trace_path;         /**< Path to the trace file. */
+  size_t file_size;         /**< Size of the trace file in bytes. */
+  reader_init_param_t init_params; /**< The initialization parameters used. */
+  void *reader_params;      /**< Parameters for the specific trace format reader. */
+  trace_type_e trace_type;  /**< The type of the trace. */
+  trace_format_e trace_format; /**< The format of the trace (e.g., text, binary). */
+  int ver;                  /**< Version number for certain trace formats. */
+  bool cloned;              /**< True if this is a cloned reader instance. */
+  int64_t cap_at_n_req;     /**< The maximum number of requests to read. */
+  int trace_start_offset;   /**< The byte offset of the first request in the trace. */
 
   /************* used by binary trace *************/
-  /* mmap the file, this should not change during runtime */
-  char *mapped_file;
-  size_t mmap_offset;
-  struct zstd_reader *zstd_reader_p;
-  bool is_zstd_file;
-  /* the size of one request in binary trace */
-  size_t item_size;
+  char *mapped_file;        /**< Pointer to the memory-mapped file. */
+  size_t mmap_offset;       /**< Current offset in the memory-mapped file. */
+  struct zstd_reader *zstd_reader_p; /**< Pointer to the zstd decompression state. */
+  bool is_zstd_file;        /**< True if the trace file is zstd compressed. */
+  size_t item_size;         /**< The size of a single request record in a binary trace. */
 
   /************* used by txt trace *************/
-  FILE *file;
-  char *line_buf;
-  size_t line_buf_size;
-  char csv_delimiter;
-  bool csv_has_header;
+  FILE *file;               /**< File pointer for text-based traces. */
+  char *line_buf;           /**< Buffer for reading lines from the file. */
+  size_t line_buf_size;     /**< Size of the line buffer. */
+  char csv_delimiter;       /**< Delimiter for CSV traces. */
+  bool csv_has_header;      /**< Flag for CSV header. */
 
-  /* whether the object id is numeric value */
-  bool obj_id_is_num;
-  /* whether obj_id_is_num is set by user */
-  bool obj_id_is_num_set;
+  bool obj_id_is_num;       /**< Whether object IDs are numeric. */
+  bool obj_id_is_num_set;   /**< Whether obj_id_is_num was user-specified. */
 
-  bool ignore_size_zero_req;
-  /* if true, ignore the obj_size in the trace, and use size one */
-  bool ignore_obj_size;
+  bool ignore_size_zero_req;/**< Whether to ignore zero-sized requests. */
+  bool ignore_obj_size;     /**< Whether to ignore object sizes from the trace. */
 
-  // used by block cache trace to split a large request into multiple requests
-  // to multiple blocks
-  int32_t block_size;
+  int32_t block_size;       /**< Block size for block cache traces. */
 
-  /* this is used when
-   * a) the reader splits a large req into multiple chunked requests
-   * b) the trace file uses a count field */
-  int n_req_left;
-  int64_t last_req_clock_time;
+  int n_req_left;           /**< Number of sub-requests left to generate from a larger request. */
+  int64_t last_req_clock_time; /**< Timestamp of the last processed request. */
 
-  // lcs trace version, used only lcs reader
-  int64_t lcs_ver;
+  int64_t lcs_ver;          /**< Version of the LCS trace format. */
 
-  /* used for trace sampling */
-  sampler_t *sampler;
-  enum read_direction read_direction;
+  sampler_t *sampler;       /**< Sampler being used. */
+  enum read_direction read_direction; /**< The direction of reading. */
 } reader_t;
 
+/**
+ * @brief Sets the default values for reader initialization parameters.
+ * @param params A pointer to the `reader_init_param_t` struct to initialize.
+ */
 static inline void set_default_reader_init_params(reader_init_param_t *params) {
   memset(params, 0, sizeof(reader_init_param_t));
 
@@ -160,7 +153,6 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->trace_start_offset = 0;
 
   params->has_header = false;
-  /* whether the user has specified the has_header params */
   params->has_header_set = false;
   params->delimiter = ',';
 
@@ -170,29 +162,30 @@ static inline void set_default_reader_init_params(reader_init_param_t *params) {
   params->sampler = NULL;
 }
 
+/**
+ * @brief Returns a `reader_init_param_t` struct with default values.
+ * @return An initialized `reader_init_param_t` struct.
+ */
 static inline reader_init_param_t default_reader_init_params(void) {
   reader_init_param_t init_params;
   set_default_reader_init_params(&init_params);
-
   return init_params;
 }
 
 /**
- * setup a reader for reading trace
- * @param trace_path path to the trace
- * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
- *  TWR_BIN_TRACE, see libCacheSim/enum.h for more
- * @param reader_init_param some initialization parameters used by csv and
- * binary traces these include time_field, obj_id_field, obj_size_field,
- * op_field, ttl_field, has_header, delimiter, binary_fmt_str
- *
- * @return a pointer to reader_t struct, the returned reader needs to be
- * explicitly closed by calling close_reader or close_trace
+ * @brief Sets up a reader for a given trace file.
+ * @param trace_path Path to the trace file.
+ * @param trace_type The type of the trace (e.g., CSV, BINARY, VSCSI).
+ * @param reader_init_param Initialization parameters for the reader.
+ * @return A pointer to an initialized `reader_t` struct, or NULL on failure.
+ *         The returned reader must be freed with `close_reader`.
  */
 reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
                        const reader_init_param_t *reader_init_param);
 
-/* this is the same function as setup_reader */
+/**
+ * @brief An alias for `setup_reader`.
+ */
 static inline reader_t *open_trace(
     const char *path, const trace_type_e type,
     const reader_init_param_t *reader_init_param) {
@@ -200,84 +193,122 @@ static inline reader_t *open_trace(
 }
 
 /**
- * get the number of requests from the trace
- * @param reader
- * @return
+ * @brief Gets the total number of requests in the trace.
+ * @param reader The trace reader.
+ * @return The total number of requests.
  */
 int64_t get_num_of_req(reader_t *reader);
 
 /**
- * get the trace type
- * @param reader
- * @return
+ * @brief Gets the trace type.
+ * @param reader The trace reader.
+ * @return The `trace_type_e` enum value.
  */
 static inline trace_type_e get_trace_type(const reader_t *const reader) {
   return reader->trace_type;
 }
 
 /**
- * whether the object id is numeric (only applies to txt and csv traces)
- * @param reader
- * @return
+ * @brief Checks if the object IDs in the trace are numeric.
+ * @param reader The trace reader.
+ * @return True if object IDs are numeric, false otherwise.
  */
 static inline bool obj_id_is_num(const reader_t *const reader) {
   return reader->obj_id_is_num;
 }
 
 /**
- * read one request from reader/trace, stored the info in pre-allocated req
- * @param reader
- * @param req
- * return 0 on success and 1 if reach end of trace
+ * @brief Reads one request from the trace.
+ * @param reader The trace reader.
+ * @param req A pointer to a `request_t` struct to be filled with the request data.
+ * @return 0 on success, 1 if the end of the trace is reached.
  */
 int read_one_req(reader_t *reader, request_t *req);
 
 /**
- * read one request from reader/trace, stored the info in pre-allocated req
- * @param reader
- * @param req
- * return 0 on success and 1 if reach end of trace
+ * @brief An alias for `read_one_req`.
  */
 static inline int read_trace(reader_t *const reader, request_t *const req) {
   return read_one_req(reader, req);
 }
 
 /**
- * reset reader, so we can read from the beginning
- * @param reader
+ * @brief Resets the reader to the beginning of the trace.
+ * @param reader The trace reader to reset.
  */
 void reset_reader(reader_t *reader);
 
 /**
- * close reader and release resources
- * @param reader
- * @return
+ * @brief Closes the reader and releases all associated resources.
+ * @param reader The trace reader to close.
+ * @return 0 on success.
  */
 int close_reader(reader_t *reader);
 
+/**
+ * @brief An alias for `close_reader`.
+ */
 static inline int close_trace(reader_t *const reader) {
   return close_reader(reader);
 }
 
 /**
- * clone a reader, mostly used in multithreading
- * @param reader
- * @return
+ * @brief Creates a new reader that is a clone of an existing one.
+ *
+ * This is useful for multi-threaded simulations where each thread needs its own reader.
+ * @param reader The reader to clone.
+ * @return A pointer to the new `reader_t` instance.
  */
 reader_t *clone_reader(const reader_t *reader);
 
+/**
+ * @brief Reads the very first request of the trace.
+ * @param reader The trace reader.
+ * @param req A pointer to a `request_t` struct to store the result.
+ */
 void read_first_req(reader_t *reader, request_t *req);
 
+/**
+ * @brief Reads the very last request of the trace.
+ * @param reader The trace reader.
+ * @param req A pointer to a `request_t` struct to store the result.
+ */
 void read_last_req(reader_t *reader, request_t *req);
 
+/**
+ * @brief Skips a specified number of requests in the trace.
+ * @param reader The trace reader.
+ * @param N The number of requests to skip.
+ * @return 0 on success.
+ */
 int skip_n_req(reader_t *reader, int N);
 
+/**
+ * @brief Reads requests until one with a timestamp greater than the given request is found.
+ * @param reader The trace reader.
+ * @param c The request to compare against.
+ * @return 0 on success, 1 on end of trace.
+ */
 int read_one_req_above(reader_t *reader, request_t *c);
 
+/**
+ * @brief Moves the reader position back by one request.
+ * @param reader The trace reader.
+ * @return 0 on success.
+ */
 int go_back_one_req(reader_t *reader);
 
+/**
+ * @brief Sets the reader's position to a specified fraction of the trace.
+ * @param reader The trace reader.
+ * @param pos The position, from 0.0 (beginning) to 1.0 (end).
+ */
 void reader_set_read_pos(reader_t *reader, double pos);
 
+/**
+ * @brief Prints the current state of the reader for debugging.
+ * @param reader The trace reader.
+ */
 static inline void print_reader(reader_t *reader) {
   printf(
       "trace_type: %s, trace_path: %s, trace_start_offset: %d, mmap_offset: "

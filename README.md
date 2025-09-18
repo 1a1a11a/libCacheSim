@@ -359,6 +359,39 @@ print(f"plugin byte miss ratio {byte_miss_ratio}, ref byte miss ratio {ref_byte_
 See more information in [README.md](https://github.com/cacheMon/libCacheSim-python) of the Python binding.
 
 ---
+## Node.js package
+
+For JavaScript and TypeScript developers, we also provide a Node.js binding for running simulations.
+
+```shell
+npm install libcachesim
+```
+
+### Simulation with Node.js
+
+```javascript
+const libcachesim = require('libcachesim');
+
+console.log(`libCacheSim Node.js Bindings v${libcachesim.getVersion()}`);
+console.log('Supported algorithms:', libcachesim.getSupportedAlgorithms());
+console.log('Supported trace types:', libcachesim.getSupportedTraceTypes());
+
+try {
+  console.log('\\nRunning custom simulation...');
+  const customResult = libcachesim.runSimulation(
+    '../data/cloudPhysicsIO.vscsi', // Trace path
+    'vscsi',                        // Trace type
+    's3fifo',                       // Algorithm
+    '2mb'                           // Cache size
+  );
+  console.log('Custom Results:', customResult);
+} catch (error) {
+  console.error('Error running simulation:', error.message);
+}
+```
+See more information in the [README.md](/libCacheSim-node/README.md) of the Node.js binding.
+
+---
 ## Open source cache traces
 In the [repo](/data/), there are sample traces in different formats (`csv`, `txt`, `vscsi`, and `oracleGeneral`). Note that the sampled traces are **very small** and __should not be used for evaluating different algorithms' miss ratios__. The full traces can be found either with the original release or the processed `oracleGeneral` format.
 
@@ -379,11 +412,26 @@ We provide a more comprehensive cache datasets at [https://github.com/cacheMon/c
 
 
 ---
+## Documentation
+
+The C/C++ code in this repository is documented using Doxygen-style comments. To generate the documentation, you will need to have Doxygen installed.
+
+```bash
+# Install Doxygen (on Debian/Ubuntu)
+sudo apt-get install doxygen
+
+# Generate the documentation
+doxygen Doxyfile
+```
+The generated documentation will be in the `docs/html` directory.
+
 ## Contributions
-We gladly welcome pull requests.
-Before making any large changes, we recommend opening an issue and discussing your proposed changes.
-If the changes are minor, then feel free to make them without discussion.
-This project adheres to Google's coding style. By participating, you are expected to uphold this code.
+We gladly welcome contributions! Please follow these guidelines:
+
+- **Open an Issue:** For any significant changes (e.g., adding a new algorithm, changing a core API), please open an issue to discuss your proposal first.
+- **Coding Style:** This project adheres to Google's coding style for C++ and Python. Please ensure your code conforms to these standards. The `.clang-format` file in the root directory can be used to automatically format C/C++ code.
+- **Include Documentation:** All new public functions, classes, and modules should be documented using Doxygen (for C/C++) or Google-style docstrings (for Python).
+- **Write Tests:** When adding new features or fixing bugs, please add or update tests to validate your changes.
 
 ---
 ## Reference

@@ -1,3 +1,21 @@
+"""
+This script runs cache simulations for various algorithms across a range of cache
+sizes and plots the resulting miss ratio curves (MRCs).
+
+It serves as a command-line wrapper around the `cachesim` executable,
+parsing its output and using matplotlib to generate plots. This allows for
+easy comparison of the performance of different cache eviction algorithms on a
+given trace.
+
+Example Usage:
+    python3 scripts/plot_mrc_size.py \\
+        --tracepath ../data/twitter_cluster52.csv \\
+        --trace-format csv \\
+        --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=," \\
+        --algos=fifo,lru,lecar,s3fifo \\
+        --sizes=0.001,0.005,0.01,0.02,0.05,0.10,0.20,0.40
+"""
+
 import os
 import sys
 import itertools
@@ -20,7 +38,20 @@ from utils.cachesim_utils import algo_name_mapping_dict
 logger = logging.getLogger("plot_mrc_size")
 
 
-def _parse_cachesim_output(output: str):
+def _parse_cachesim_output(output: str) -> Tuple[str, Dict, bool]:
+    """
+    Parses the stdout from the cachesim executable to extract MRC data.
+
+    Args:
+        output: The string output from the cachesim process.
+
+    Returns:
+        A tuple containing:
+        - The name of the trace data.
+        - A dictionary where keys are algorithm names and values are lists of
+          (cache_size, miss_ratio, byte_miss_ratio) tuples.
+        - A boolean indicating if the parsed cache sizes included units (e.g., "MB", "GB").
+    """
     mrc_dict = defaultdict(list)
     dataname = None
     cache_size_has_unit = False
@@ -61,20 +92,22 @@ def run_cachesim_size(
     trace_format: str = "oracleGeneral",
     trace_format_params: str = "",
     num_thread: int = -1,
-) -> Dict[str, List[Tuple[int, float]]]:
-    """run the cachesim on the given trace
-    Args:
-        datapath: the path to the trace
-        algos: the algos to run, separated by comma
-        cache_sizes: the cache sizes to run, separated by comma
-        ignore_obj_size: whether to ignore the object size, default: True
-        trace_format: the trace format, default: oracleGeneral
-        trace_format_params: the trace format params, default: ""
-        num_thread: the number of threads to run, default: -1 (use all the cores)
-    Returns:
-        a dict of mrc, key is the algo name, value is a list of (cache_size, miss_ratio)
+) -> Tuple[str, Dict, bool]:
     """
+    Runs the cachesim executable with a specified set of parameters.
 
+    Args:
+        datapath: The path to the trace file.
+        algos: A comma-separated string of algorithms to simulate.
+        cache_sizes: A comma-separated string of cache sizes to simulate.
+        ignore_obj_size: If True, all objects are treated as size 1.
+        trace_format: The format of the trace file (e.g., "csv", "oracleGeneral").
+        trace_format_params: Additional parameters for the trace format.
+        num_thread: The number of threads to use for simulation. -1 uses all available cores.
+
+    Returns:
+        A tuple containing the results from `_parse_cachesim_output`.
+    """
     if num_thread < 0:
         num_thread = os.cpu_count()
 
@@ -111,49 +144,30 @@ def run_cachesim_size(
 
 
 def plot_mrc_size(
-    mrc_dict: Dict[str, List[Tuple[int, float]]],
+    mrc_dict: Dict[str, List[Tuple[int, float, float]]],
     cache_size_has_unit: bool = False,
     use_byte_miss_ratio: bool = False,
     name: str = "mrc",
 ) -> None:
-    """plot the miss ratio from the computation
-        X-axis is cache size, different lines are different algos
+    """
+    Plots a miss ratio curve from the simulation results.
+
+    The X-axis represents cache size, and each line on the plot represents a
+    different caching algorithm.
 
     Args:
-        mrc_dict: a dict of mrc, key is the algo name, value is a list of (cache_size, miss_ratio)
-        cache_size_has_unit: whether the cache size has unit, default: False
-        use_byte_miss_ratio: whether to plot the miss ratio in byte, default: False
-        name: the name of the plot, default: mrc
-    Returns:
-        None
-
+        mrc_dict: A dictionary of MRC data from `_parse_cachesim_output`.
+        cache_size_has_unit: If True, formats the X-axis label with a size unit (e.g., "GB").
+        use_byte_miss_ratio: If True, plots the byte miss ratio instead of the request miss ratio.
+        name: The base name for the output plot file (e.g., "my_trace_mrc").
     """
-
     linestyles = itertools.cycle(["-", "--", "-.", ":"])
     markers = itertools.cycle(
         [
-            "o",
-            "v",
-            "^",
-            "<",
-            ">",
-            "s",
-            "p",
-            "P",
-            "*",
-            "h",
-            "H",
-            "+",
-            "x",
-            "X",
-            "D",
-            "d",
-            "|",
-            "_",
+            "o", "v", "^", "<", ">", "s", "p", "P", "*", "h", "H",
+            "+", "x", "X", "D", "d", "|", "_",
         ]
     )
-    # MARKERS = itertools.cycle(Line2D.markers.keys())
-    # colors = itertools.cycle(["r", "g", "b", "c", "m", "y", "k"])
 
     first_size = int(list(mrc_dict.values())[0][0][0])
     if cache_size_has_unit:
@@ -164,14 +178,12 @@ def plot_mrc_size(
     for algo, mrc in mrc_dict.items():
         logger.debug(mrc)
 
-        miss_ratio = [x[1] for x in mrc]
-        byte_miss_ratio = [x[2] for x in mrc]
+        # mrc is a list of (cache_size, miss_ratio, byte_miss_ratio)
+        miss_ratio_idx = 2 if use_byte_miss_ratio else 1
         plt.plot(
             [x[0] / size_unit for x in mrc],
-            miss_ratio if not use_byte_miss_ratio else byte_miss_ratio,
+            [x[miss_ratio_idx] for x in mrc],
             linewidth=2.4,
-            #  marker=next(markers),
-            #  markersize=1,
             linestyle=next(linestyles),
             label=algo,
         )
@@ -179,93 +191,67 @@ def plot_mrc_size(
     if not cache_size_has_unit:
         plt.xlabel("Cache Size")
     else:
-        plt.xlabel("Cache Size ({})".format(size_unit_str))
+        plt.xlabel(f"Cache Size ({size_unit_str})")
     plt.xscale("log")
 
-    if use_byte_miss_ratio:
-        plt.ylabel("Byte Miss Ratio")
-    else:
-        plt.ylabel("Request Miss Ratio")
+    plt.ylabel("Byte Miss Ratio" if use_byte_miss_ratio else "Request Miss Ratio")
     legend = plt.legend()
     frame = legend.get_frame()
     frame.set_facecolor("0.96")
     frame.set_edgecolor("0.96")
     plt.grid(linestyle="--")
-    plt.savefig("{}.pdf".format(name), bbox_inches="tight")
+    plt.savefig(f"{name}.pdf", bbox_inches="tight")
     plt.show()
     plt.clf()
-    logger.info("plot is saved to {}.pdf".format(name))
+    logger.info(f"plot is saved to {name}.pdf")
 
 
-def run():
+def main():
     """
-    a function that runs the cachesim on all the traces in /disk/data
-
+    Main function to parse command-line arguments and run the plotting script.
     """
-
-    import glob
-
-    algos = "lru,slru,arc,lirs,lhd,tinylfu,s3fifo,sieve"
-    cache_sizes = "0.01,0.02,0.05,0.075,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.5,0.6,0.7,0.8"
-
-    for tracepath in glob.glob("/disk/data/*.zst"):
-        dataname = extract_dataname(tracepath)
-        mrc_dict = run_cachesim_size(tracepath, algos, cache_sizes,
-                                     ignore_obj_size=True)
-        # save the results in pickle
-        with open("{}.mrc".format(dataname), "wb") as f:
-            pickle.dump(mrc_dict, f)
-
-        plot_mrc_size(mrc_dict, dataname)
-
-
-if __name__ == "__main__":
     default_args = {
         "algos": "fifo,lru,arc,lhd,tinylfu,lecar,s3fifo,sieve",
         "sizes": "0.001,0.005,0.01,0.02,0.05,0.10,0.20,0.40",
     }
-    import argparse
-
     p = argparse.ArgumentParser(
-        description="plot miss ratio over size for different algorithms, "
-        "example: python3 {} ".format(sys.argv[0])
-        + "--tracepath ../data/twitter_cluster52.csv "
-        "--trace-format csv "
-        '--trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=,,obj-id-is-num=1" '
-        "--algos=fifo,lru,lecar,s3fifo "
-        "--sizes=0.001,0.005,0.01,0.02,0.05,0.10,0.20,0.40"
+        description="Plot miss ratio over size for different algorithms.",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="Example:\n"
+        "python3 {} --tracepath ../data/twitter_cluster52.csv \\\n"
+        "  --trace-format csv \\\n"
+        '  --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=," \\\n'
+        "  --algos=fifo,lru,lecar,s3fifo \\\n"
+        "  --sizes=0.001,0.005,0.01,0.02,0.05,0.10,0.20,0.40".format(sys.argv[0])
     )
-    p.add_argument("--tracepath", type=str, required=False)
+    p.add_argument("--tracepath", type=str, required=False, help="Path to the trace file.")
     p.add_argument(
-        "--algos",
-        type=str,
-        default=default_args["algos"],
-        help="the algorithms to run, separated by comma",
-    )
-    p.add_argument(
-        "--sizes",
-        type=str,
-        default=default_args["sizes"],
-        help="the cache sizes to run, separated by comma",
+        "--algos", type=str, default=default_args["algos"],
+        help="Comma-separated list of algorithms to run."
     )
     p.add_argument(
-        "--trace-format-params", type=str, default="", help="used by csv trace"
+        "--sizes", type=str, default=default_args["sizes"],
+        help="Comma-separated list of cache sizes or fractions of working set size."
     )
-    p.add_argument("--ignore-obj-size", action="store_true", default=False)
-    # p.add_argument("--byte-miss-ratio", action="store_true", default=False)
-    p.add_argument("--num-thread", type=int, default=-1)
-    p.add_argument("--trace-format", type=str, default="oracleGeneral")
-    p.add_argument("--name", type=str, default="")
-    p.add_argument("--verbose", action="store_true", default=False)
-    p.add_argument("--test", action="store_true", default=False)
     p.add_argument(
-        "--plot-result", type=str, default=None, help="plot using cachesim output"
+        "--trace-format-params", type=str, default="",
+        help="Parameters for the trace format, used by CSV traces."
+    )
+    p.add_argument("--ignore-obj-size", action="store_true", default=False,
+                   help="Treat all objects as size 1.")
+    p.add_argument("--num-thread", type=int, default=-1,
+                   help="Number of threads for simulation. -1 uses all cores.")
+    p.add_argument("--trace-format", type=str, default="oracleGeneral",
+                   help="Format of the trace file.")
+    p.add_argument("--name", type=str, default="",
+                   help="Base name for the output plot file.")
+    p.add_argument("--verbose", action="store_true", default=False,
+                   help="Enable debug logging.")
+    p.add_argument(
+        "--plot-result", type=str, default=None,
+        help="Plot directly from a cachesim output file instead of running simulation."
     )
     ap = p.parse_args()
-
-    if ap.test:
-        run()
-        sys.exit(0)
 
     if ap.verbose:
         logger.setLevel(logging.DEBUG)
@@ -273,10 +259,11 @@ if __name__ == "__main__":
         logger.setLevel(logging.INFO)
 
     if ap.plot_result:
-        dataname, mrc_dict, cache_size_has_unit = _parse_cachesim_output(
-            open(ap.plot_result, "r").read()
-        )
+        with open(ap.plot_result, "r") as f:
+            dataname, mrc_dict, cache_size_has_unit = _parse_cachesim_output(f.read())
     else:
+        if not ap.tracepath:
+            p.error("--tracepath is required when not using --plot-result.")
         dataname, mrc_dict, cache_size_has_unit = run_cachesim_size(
             ap.tracepath,
             ap.algos.replace(" ", ""),
@@ -288,27 +275,24 @@ if __name__ == "__main__":
         )
 
         if not mrc_dict:
-            logger.error("fail to compute mrc")
+            logger.error("Failed to compute MRC.")
             sys.exit(1)
 
     name = ap.name if ap.name else dataname
-    if cache_size_has_unit:
-        plot_mrc_size(
-            mrc_dict,
-            cache_size_has_unit=True,
-            use_byte_miss_ratio=False,
-            name=name + "_rmr",
-        )
-        plot_mrc_size(
-            mrc_dict,
-            cache_size_has_unit=True,
-            use_byte_miss_ratio=True,
-            name=name + "_bmr",
-        )
-    else:
-        plot_mrc_size(
-            mrc_dict,
-            cache_size_has_unit=False,
-            use_byte_miss_ratio=False,
-            name=name,
-        )
+    plot_mrc_size(
+        mrc_dict,
+        cache_size_has_unit=cache_size_has_unit,
+        use_byte_miss_ratio=False,
+        name=f"{name}_rmr"
+    )
+    plot_mrc_size(
+        mrc_dict,
+        cache_size_has_unit=cache_size_has_unit,
+        use_byte_miss_ratio=True,
+        name=f"{name}_bmr"
+    )
+
+
+if __name__ == "__main__":
+    import argparse
+    main()

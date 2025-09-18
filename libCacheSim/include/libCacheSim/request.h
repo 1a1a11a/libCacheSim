@@ -1,6 +1,11 @@
-//
-// Created by Juncheng Yang on 11/17/19.
-//
+/**
+ * @file request.h
+ * @brief Defines the request structure and related functions.
+ *
+ * This file contains the definition of `request_t`, which represents a single
+ * access request from a trace file. It also provides utility functions for
+ * creating, copying, and freeing requests.
+ */
 
 #ifndef libCacheSim_REQUEST_H
 #define libCacheSim_REQUEST_H
@@ -19,61 +24,63 @@ extern "C" {
 
 #define N_MAX_FEATURES 16
 
-/* need to optimize this for CPU cacheline */
+/**
+ * @brief Represents a single cache request.
+ *
+ * This structure holds all information related to a single access,
+ * such as object ID, size, and operation type. It is designed to be
+ * mindful of memory layout for performance.
+ */
 typedef struct request {
-  int64_t clock_time; /* use uint64_t because vscsi uses microsec timestamp */
+  int64_t clock_time;       /**< The timestamp of the request, typically in microseconds. */
 
-  uint64_t hv; /* hash value, used when offloading hash to reader */
+  uint64_t hv;              /**< Precomputed hash value of the object ID, can be offloaded to the trace reader. */
 
-  /* this represents the hash of the object id in key-value cache
-   * or the logical block address in block cache, note that LBA % block_size ==
-   * 0 */
-  obj_id_t obj_id;
+  obj_id_t obj_id;          /**< The unique identifier for the object. For block caches, this is the logical block address (LBA). */
 
-  int64_t obj_size;
+  int64_t obj_size;         /**< The size of the object in bytes. */
 
-  int32_t ttl;
+  int32_t ttl;              /**< The time-to-live for the object. */
 
-  req_op_e op;
+  req_op_e op;              /**< The operation type of the request (e.g., GET, SET, DELETE). */
 
-  int32_t tenant_id;
+  int32_t tenant_id;        /**< The ID of the tenant making the request. */
 
-  uint64_t n_req;
+  uint64_t n_req;           /**< Request sequence number. */
 
-  int64_t next_access_vtime;
+  int64_t next_access_vtime;/**< The virtual time of the next access to this object (-1 if no next access). */
 
-  // this is used by key-value cache traces
+  /**
+   * @brief Fields specific to key-value cache traces.
+   */
   struct {
-    uint64_t key_size : 16;
-    uint64_t val_size : 48;
+    uint64_t key_size : 16; /**< The size of the key. */
+    uint64_t val_size : 48; /**< The size of the value. */
   } kv;
 
-  int32_t ns;  // namespace
+  int32_t ns;               /**< Namespace identifier. */
 
-  // carry necessary data between the multiple functions of serving one request
-  void *eviction_algo_data;
+  void *eviction_algo_data; /**< A generic pointer to carry data for eviction algorithms between function calls. */
 
-  /* used in trace analysis */
-  int64_t vtime_since_last_access;
-  int64_t rtime_since_last_access;
-  int64_t prev_size; /* prev size */
-  int32_t create_rtime;
-  bool compulsory_miss;      /* use this field only when it is set */
-  bool overwrite;            // this request overwrites a previous object
-  bool first_seen_in_window; /* the first time see in the time window */
-  /* used in trace analysis */
+  /* Fields primarily used in trace analysis */
+  int64_t vtime_since_last_access; /**< Virtual time since the last access to this object. */
+  int64_t rtime_since_last_access; /**< Real time since the last access to this object. */
+  int64_t prev_size;            /**< The previous size of the object, if it was overwritten. */
+  int32_t create_rtime;         /**< The real time when the object was created. */
+  bool compulsory_miss;         /**< True if this is the first access to the object. */
+  bool overwrite;               /**< True if this request overwrites an existing object. */
+  bool first_seen_in_window;    /**< True if this is the first time the object is seen in a time window. */
 
-  bool valid; /* indicate whether request is valid request
-               * it is invalid if the trace reaches the end */
+  bool valid;                   /**< Indicates if the request is valid. Becomes false at the end of a trace. */
 
-  int32_t n_features;
-  int32_t features[N_MAX_FEATURES];
+  int32_t n_features;           /**< Number of features for ML-based algorithms. */
+  int32_t features[N_MAX_FEATURES]; /**< Array of features. */
 
 } request_t;
 
 /**
- * allocate a new request_t struct and fill in necessary field
- * @return
+ * @brief Allocates and initializes a new request_t struct.
+ * @return A pointer to the newly allocated request.
  */
 static inline request_t *new_request(void) {
   request_t *req = my_malloc(request_t);
@@ -84,24 +91,24 @@ static inline request_t *new_request(void) {
   req->obj_id = 0;
   req->clock_time = 0;
   req->hv = 0;
-  req->next_access_vtime = -2;
+  req->next_access_vtime = -2; // -2 indicates not set, -1 indicates no next access
   req->ttl = 0;
   return req;
 }
 
 /**
- * copy the req_src to req_dest
- * @param req_dest
- * @param req_src
+ * @brief Copies the content of one request to another.
+ * @param req_dest The destination request.
+ * @param req_src The source request.
  */
 static inline void copy_request(request_t *req_dest, const request_t *req_src) {
   memcpy(req_dest, req_src, sizeof(request_t));
 }
 
 /**
- * clone the given request
- * @param req
- * @return
+ * @brief Creates a new request that is a duplicate of an existing one.
+ * @param req The request to clone.
+ * @return A pointer to the newly allocated and copied request.
  */
 static inline request_t *clone_request(const request_t *req) {
   request_t *req_new = my_malloc(request_t);
@@ -110,11 +117,15 @@ static inline request_t *clone_request(const request_t *req) {
 }
 
 /**
- * free the memory used by req
- * @param req
+ * @brief Frees the memory used by a request struct.
+ * @param req The request to free.
  */
 static inline void free_request(request_t *req) { my_free(request_t, req); }
 
+/**
+ * @brief Prints the details of a request for debugging purposes.
+ * @param req The request to print.
+ */
 static inline void print_request(const request_t *req) {
 #ifdef SUPPORT_TTL
   LOGGING(DEBUG_LEVEL,

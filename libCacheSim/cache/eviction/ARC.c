@@ -1,100 +1,77 @@
-//
-//  ARC cache replacement algorithm
-//  https://www.usenix.org/conference/fast-03/arc-self-tuning-low-overhead-replacement-cache
-//
-//
-//  cross checked with https://github.com/trauzti/cache/blob/master/ARC.py
-//  one thing not clear in the paper is whether delta and p is int or float,
-//  we used int as first,
-//  but the implementation above used float, so we have changed to use float
-//
-//
-//  libCacheSim
-//
-//  Created by Juncheng on 09/28/20.
-//  Copyright © 2020 Juncheng. All rights reserved.
-//
+/**
+ * @file ARC.c
+ * @brief Implementation of the Adaptive Replacement Cache (ARC) algorithm.
+ *
+ * ARC is a cache replacement policy that adaptively balances between
+ * recency (LRU) and frequency (LFU) by maintaining two LRU lists for cached
+ * data (T1 and T2) and two "ghost" lists for recently evicted objects
+ * (B1 and B2).
+ *
+ * - T1: "Recency" list. Contains objects seen only once. Managed as LRU.
+ * - T2: "Frequency" list. Contains objects seen at least twice. Managed as LRU.
+ * - B1: Ghost list for objects evicted from T1.
+ * - B2: Ghost list for objects evicted from T2.
+ *
+ * The algorithm dynamically adjusts the target size of the T1 list (p) based
+ * on hits in the ghost lists, effectively learning whether the workload
+ * benefits more from recency or frequency.
+ *
+ * Based on the paper: "ARC: A Self-Tuning, Low Overhead Replacement Cache"
+ * by Nimrod Megiddo and Dharmendra S. Modha.
+ * https://www.usenix.org/conference/fast-03/arc-self-tuning-low-overhead-replacement-cache
+ */
 
 #include <string.h>
 
-#include "dataStructure/hashtable/hashtable.h"
+#include "dataStructure/hashtable/hashtable.hh"
 #include "libCacheSim/evictionAlgo.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// #define DEBUG_MODE
-// #undef DEBUG_MODE
-// #define USE_BELADY
-
+/**
+ * @brief Parameters specific to the ARC algorithm.
+ */
 typedef struct ARC_params {
-  // L1_data is T1 in the paper, L1_ghost is B1 in the paper
-  int64_t L1_data_size;
-  int64_t L2_data_size;
-  int64_t L1_ghost_size;
-  int64_t L2_ghost_size;
+  // Sizes of the four lists
+  int64_t L1_data_size;   /**< Current size of T1 (recency) list in bytes. */
+  int64_t L2_data_size;   /**< Current size of T2 (frequency) list in bytes. */
+  int64_t L1_ghost_size;  /**< Current size of B1 (ghost list for T1) in bytes. */
+  int64_t L2_ghost_size;  /**< Current size of B2 (ghost list for T2) in bytes. */
 
+  // Heads and tails of the four LRU lists
   cache_obj_t *L1_data_head;
   cache_obj_t *L1_data_tail;
   cache_obj_t *L1_ghost_head;
   cache_obj_t *L1_ghost_tail;
-
   cache_obj_t *L2_data_head;
   cache_obj_t *L2_data_tail;
   cache_obj_t *L2_ghost_head;
   cache_obj_t *L2_ghost_tail;
 
-  double p;
+  double p; /**< The target size for the T1 list. ARC adapts this value. */
+
+  // State flags for the current request
   bool curr_obj_in_L1_ghost;
   bool curr_obj_in_L2_ghost;
   int64_t vtime_last_req_in_ghost;
-  request_t *req_local;
 } ARC_params_t;
 
-// ***********************************************************************
-// ****                                                               ****
-// ****                   function declarations                       ****
-// ****                                                               ****
-// ***********************************************************************
-
-static void ARC_parse_params(cache_t *cache, const char *cache_specific_params);
+// Forward declarations for static functions
 static void ARC_free(cache_t *cache);
 static bool ARC_get(cache_t *cache, const request_t *req);
-static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+static cache_obj_t *ARC_find(cache_t *cache, const request_t *req, const bool update_cache);
 static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req);
-static cache_obj_t *ARC_to_evict(cache_t *cache, const request_t *req);
 static void ARC_evict(cache_t *cache, const request_t *req);
-static bool ARC_remove(cache_t *cache, const obj_id_t obj_id);
-
-/* internal functions */
-/* this is the case IV in the paper */
-static void _ARC_evict_miss_on_all_queues(cache_t *cache, const request_t *req);
 static void _ARC_replace(cache_t *cache, const request_t *req);
-static cache_obj_t *_ARC_to_evict_miss_on_all_queues(cache_t *cache,
-                                                     const request_t *req);
-static cache_obj_t *_ARC_to_replace(cache_t *cache, const request_t *req);
-
-/* debug functions */
-static void print_cache(cache_t *cache);
-static void _ARC_sanity_check(cache_t *cache, const request_t *req);
-static inline void _ARC_sanity_check_full(cache_t *cache, const request_t *req);
-static bool ARC_get_debug(cache_t *cache, const request_t *req);
-
-// ***********************************************************************
-// ****                                                               ****
-// ****                   end user facing functions                   ****
-// ****                                                               ****
-// ****                       init, free, get                         ****
-// ***********************************************************************
 
 /**
- * @brief initialize the cache
+ * @brief Initializes an ARC cache.
  *
- * @param ccache_params some common cache parameters
- * @param cache_specific_params cache specific parameters, see parse_params
- * function or use -e "print" with the cachesim binary
+ * @param ccache_params Common cache parameters.
+ * @param cache_specific_params Algorithm-specific parameters (not used by ARC).
+ * @return A pointer to the initialized cache_t structure.
  */
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params) {
@@ -106,699 +83,196 @@ cache_t *ARC_init(const common_cache_params_t ccache_params,
   cache->find = ARC_find;
   cache->insert = ARC_insert;
   cache->evict = ARC_evict;
-  cache->remove = ARC_remove;
-  cache->to_evict = ARC_to_evict;
+  // Other function pointers are set to default implementations
   cache->can_insert = cache_can_insert_default;
   cache->get_occupied_byte = cache_get_occupied_byte_default;
   cache->get_n_obj = cache_get_n_obj_default;
 
   if (ccache_params.consider_obj_metadata) {
-    // two pointer + ghost metadata
-    cache->obj_md_size = 8 * 2 + 8 * 3;
+    // 2 pointers for list linkage + 3 for ARC-specific metadata
+    cache->obj_md_size = sizeof(void*) * 2 + sizeof(void*) * 3;
   } else {
     cache->obj_md_size = 0;
   }
 
-  cache->eviction_params = my_malloc_n(ARC_params_t, 1);
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  params->p = 0;
-
-  params->L1_data_size = 0;
-  params->L2_data_size = 0;
-  params->L1_ghost_size = 0;
-  params->L2_ghost_size = 0;
-  params->L1_data_head = NULL;
-  params->L1_data_tail = NULL;
-  params->L1_ghost_head = NULL;
-  params->L1_ghost_tail = NULL;
-  params->L2_data_head = NULL;
-  params->L2_data_tail = NULL;
-  params->L2_ghost_head = NULL;
-  params->L2_ghost_tail = NULL;
-
-  params->curr_obj_in_L1_ghost = false;
-  params->curr_obj_in_L2_ghost = false;
-  params->vtime_last_req_in_ghost = -1;
-  params->req_local = new_request();
-
-#ifdef USE_BELADY
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "ARC_Belady");
-#endif
-
+  cache->eviction_params = calloc(1, sizeof(ARC_params_t));
   return cache;
 }
 
 /**
- * free resources used by this cache
- *
- * @param cache
+ * @brief Frees the resources used by the ARC cache.
+ * @param cache The cache to free.
  */
 static void ARC_free(cache_t *cache) {
-  ARC_params_t *ARC_params = (ARC_params_t *)(cache->eviction_params);
-  free_request(ARC_params->req_local);
-  my_free(sizeof(ARC_params_t), ARC_params);
+  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  free(params);
   cache_struct_free(cache);
 }
 
 /**
- * @brief this function is the user facing API
- * it performs the following logic
- *
- * ```
- * if obj in cache:
- *    update_metadata
- *    return true
- * else:
- *    if cache does not have enough space:
- *        evict until it has space to insert
- *    insert the object
- *    return false
- * ```
- *
- * @param cache
- * @param req
- * @return true if cache hit, false if cache miss
+ * @brief Handles a get request for the ARC cache.
+ * @param cache The cache.
+ * @param req The request to process.
+ * @return True if it was a cache hit, false otherwise.
  */
 static bool ARC_get(cache_t *cache, const request_t *req) {
-#ifdef DEBUG_MODE
-  return ARC_get_debug(cache, req);
-#else
-
-#if defined(TRACK_DEMOTION)
-  if (cache->n_req % 100000 == 0) {
-    printf(
-        "l1 data size: %lu, %.4lf, l1 ghost size: %lu, l2 data size: %lu, l2 "
-        "ghost size: %lu\n",
-        params->L1_data_size,
-        params->L1_data_size /
-            (double)(params->L1_data_size + params->L2_data_size),
-        params->L1_ghost_size, params->L2_data_size, params->L2_ghost_size);
-  }
-#endif
-
   return cache_get_base(cache, req);
-#endif
 }
 
-// ***********************************************************************
-// ****                                                               ****
-// ****       developer facing APIs (used by cache developer)         ****
-// ****                                                               ****
-// ***********************************************************************
-
 /**
- * @brief find an object in the cache
+ * @brief Finds an object and updates ARC's internal lists.
  *
- * @param cache
- * @param req
- * @param update_cache whether to update the cache,
- *  if true, the object is promoted
- *  and if the object is expired, it is removed from the cache
- * @return the object or NULL if not found
+ * This function implements the core ARC logic upon a find operation.
+ * - On a data hit (T1 or T2): Moves the object to the head of T2.
+ * - On a ghost hit (B1 or B2): Adjusts the target size `p` and prepares
+ *   for insertion. The object is removed from the ghost list.
+ *
+ * @param cache The cache.
+ * @param req The request.
+ * @param update_cache If true, perform ARC metadata updates.
+ * @return A pointer to the cache object if it was a data hit, otherwise NULL.
  */
 static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
                              const bool update_cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
-  if (obj == NULL) {
-    return NULL;
-  }
-
-  if (!update_cache) {
-    return obj->ARC.ghost ? NULL : obj;
+  if (obj == NULL || !update_cache) {
+    return obj;
   }
 
   params->curr_obj_in_L1_ghost = false;
   params->curr_obj_in_L2_ghost = false;
 
-  int lru_id = obj->ARC.lru_id;
-  cache_obj_t *ret = obj;
-
   if (obj->ARC.ghost) {
-    // ghost hit
-    ret = NULL;
+    // Case II & III: Hit in a ghost list (B1 or B2)
     params->vtime_last_req_in_ghost = cache->n_req;
-    // cache miss, but hit on thost
-    if (obj->ARC.lru_id == 1) {
+    if (obj->ARC.lru_id == 1) { // Hit in B1
       params->curr_obj_in_L1_ghost = true;
-      // case II: x in L1_ghost
-      DEBUG_ASSERT(params->L1_ghost_size >= 1);
-      double delta =
-          MAX((double)params->L2_ghost_size / params->L1_ghost_size, 1);
-      params->p = MIN(params->p + delta, cache->cache_size);
+      double delta = (params->L2_ghost_size > 0) ? ((double)params->L2_ghost_size / params->L1_ghost_size) : 1.0;
+      params->p = fmin(cache->cache_size, params->p + delta);
       params->L1_ghost_size -= obj->obj_size + cache->obj_md_size;
       remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
-    } else {
+    } else { // Hit in B2
       params->curr_obj_in_L2_ghost = true;
-      // case III: x in L2_ghost
-      DEBUG_ASSERT(params->L2_ghost_size >= 1);
-      double delta =
-          MAX((double)params->L1_ghost_size / params->L2_ghost_size, 1);
-      params->p = MAX(params->p - delta, 0);
+      double delta = (params->L1_ghost_size > 0) ? ((double)params->L1_ghost_size / params->L2_ghost_size) : 1.0;
+      params->p = fmax(0.0, params->p - delta);
       params->L2_ghost_size -= obj->obj_size + cache->obj_md_size;
       remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
     }
-
     hashtable_delete(cache->hashtable, obj);
+    return NULL; // It was a miss on the data cache
   } else {
-    // cache hit, case I: x in L1_data or L2_data
-#ifdef USE_BELADY
-    if (obj->next_access_vtime == INT64_MAX) {
-      return ret;
-    }
-#endif
-
-    if (lru_id == 1) {
-      // move to LRU2
-      obj->ARC.lru_id = 2;
+    // Case I: Hit in a data list (T1 or T2)
+    if (obj->ARC.lru_id == 1) { // Hit in T1
+      // Move object from T1 to T2
       remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
-      prepend_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
-
-#if defined(TRACK_DEMOTION)
-      obj->misc.next_access_vtime = req->next_access_vtime;
-      printf("%ld keep %ld %ld\n", cache->n_req, obj->create_time,
-             obj->misc.next_access_vtime);
-#endif
-
       params->L1_data_size -= obj->obj_size + cache->obj_md_size;
+      obj->ARC.lru_id = 2;
+      prepend_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
       params->L2_data_size += obj->obj_size + cache->obj_md_size;
-    } else {
-      // move to LRU2 head
+    } else { // Hit in T2
+      // Move to MRU position in T2
       move_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
     }
+    return obj;
   }
-
-  return ret;
 }
 
 /**
- * @brief insert an object into the cache,
- * update the hash table and cache metadata
- * this function assumes the cache has enough space
- * eviction should be
- * performed before calling this function
+ * @brief Inserts a new object into the cache.
  *
- * @param cache
- * @param req
- * @return the inserted object
+ * Based on whether the insertion was triggered by a ghost hit, the object
+ * is placed at the head of either T1 (normal miss) or T2 (ghost hit).
+ *
+ * @param cache The cache.
+ * @param req The request containing the object to insert.
+ * @return A pointer to the newly created cache object.
  */
 static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
   cache_obj_t *obj = cache_insert_base(cache, req);
 
-  if (params->vtime_last_req_in_ghost == cache->n_req &&
-      (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
-    // insert to L2 data head
+  if (params->vtime_last_req_in_ghost == cache->n_req) {
+    // This insertion follows a ghost hit, place in T2.
     obj->ARC.lru_id = 2;
     prepend_obj_to_head(&params->L2_data_head, &params->L2_data_tail, obj);
     params->L2_data_size += req->obj_size + cache->obj_md_size;
-
-    params->curr_obj_in_L1_ghost = false;
-    params->curr_obj_in_L2_ghost = false;
-    params->vtime_last_req_in_ghost = -1;
+    params->vtime_last_req_in_ghost = -1; // Reset ghost hit flag
   } else {
-    // insert to L1 data head
+    // Normal miss, place in T1.
     obj->ARC.lru_id = 1;
     prepend_obj_to_head(&params->L1_data_head, &params->L1_data_tail, obj);
     params->L1_data_size += req->obj_size + cache->obj_md_size;
   }
-
   return obj;
 }
 
 /**
- * @brief find the object to be evicted
- * this function does not actually evict the object or update metadata
- * not all eviction algorithms support this function
- * because the eviction logic cannot be decoupled from finding eviction
- * candidate, so use assert(false) if you cannot support this function
+ * @brief Evicts an object from the cache.
  *
- * @param cache the cache
- * @return the object to be evicted
- */
-static cache_obj_t *ARC_to_evict(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  cache->to_evict_candidate_gen_vtime = cache->n_req;
-  if (params->vtime_last_req_in_ghost == cache->n_req &&
-      (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
-    cache->to_evict_candidate = _ARC_to_replace(cache, req);
-  } else {
-    cache->to_evict_candidate = _ARC_to_evict_miss_on_all_queues(cache, req);
-  }
-  return cache->to_evict_candidate;
-}
-
-/**
- * @brief evict an object from the cache
- * it needs to call cache_evict_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
+ * This function encapsulates the eviction logic, which involves calling
+ * the `_ARC_replace` helper function.
  *
- * @param cache
- * @param req not used
- * @param evicted_obj if not NULL, return the evicted object to caller
+ * @param cache The cache.
+ * @param req The current request.
  */
 static void ARC_evict(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  if (params->vtime_last_req_in_ghost == cache->n_req &&
-      (params->curr_obj_in_L1_ghost || params->curr_obj_in_L2_ghost)) {
-    _ARC_replace(cache, req);
-  } else {
-    _ARC_evict_miss_on_all_queues(cache, req);
-  }
-  cache->to_evict_candidate_gen_vtime = -1;
+    // Make space for the new object.
+    while (cache->occupied_byte + req->obj_size + cache->obj_md_size > cache->cache_size) {
+        _ARC_replace(cache, req);
+    }
 }
 
 /**
- * @brief remove an object from the cache
- * this is different from cache_evict because it is used to for user trigger
- * remove, and eviction is used by the cache to make space for new objects
+ * @brief Implements the REPLACE subroutine from the ARC paper.
  *
- * it needs to call cache_remove_obj_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
+ * This function decides whether to evict from T1 or T2 based on their
+ * current and target sizes. The evicted object is moved to the corresponding
+ * ghost list (B1 or B2).
  *
- * @param cache
- * @param obj_id
- * @return true if the object is removed, false if the object is not in the
- * cache
+ * @param cache The cache.
+ * @param req The current request.
  */
-static bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
-
-  if (obj == NULL) {
-    return false;
-  }
-
-  if (obj->ARC.ghost) {
-    if (obj->ARC.lru_id == 1) {
-      params->L1_ghost_size -= obj->obj_size + cache->obj_md_size;
-      remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
-    } else {
-      params->L2_ghost_size -= obj->obj_size + cache->obj_md_size;
-      remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
-    }
-  } else {
-    if (obj->ARC.lru_id == 1) {
-      params->L1_data_size -= obj->obj_size + cache->obj_md_size;
-      remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
-    } else {
-      params->L2_data_size -= obj->obj_size + cache->obj_md_size;
-      remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
-    }
-    cache_remove_obj_base(cache, obj, true);
-  }
-
-  return true;
-}
-
-// ***********************************************************************
-// ****                                                               ****
-// ****                  cache internal functions                     ****
-// ****                                                               ****
-// ***********************************************************************
-/* finding the eviction candidate in _ARC_replace but do not perform eviction */
-static cache_obj_t *_ARC_to_replace(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  cache_obj_t *obj = NULL;
-
-  bool cond1 = params->L1_data_size > 0;
-  bool cond2 = params->L1_data_size > params->p;
-  bool cond3 =
-      params->L1_data_size == params->p && params->curr_obj_in_L2_ghost;
-  bool cond4 = params->L2_data_size == 0;
-
-  if ((cond1 && (cond2 || cond3)) || cond4) {
-    // delete the LRU in L1 data, move to L1_ghost
-    obj = params->L1_data_tail;
-  } else {
-    // delete the item in L2 data, move to L2_ghost
-    obj = params->L2_data_tail;
-  }
-
-  DEBUG_ASSERT(obj != NULL);
-  return obj;
-}
-
-static void _ARC_evict_L1_data(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = params->L1_data_tail;
-  DEBUG_ASSERT(obj != NULL);
-
-#if defined(TRACK_DEMOTION)
-  printf("%ld demote %ld %ld\n", cache->n_req, obj->create_time,
-         obj->misc.next_access_vtime);
-#endif
-
-  cache_evict_base(cache, obj, false);
-
-  params->L1_data_size -= obj->obj_size + cache->obj_md_size;
-  params->L1_ghost_size += obj->obj_size + cache->obj_md_size;
-  remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
-  prepend_obj_to_head(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
-  obj->ARC.ghost = true;
-}
-
-static void _ARC_evict_L1_data_no_ghost(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = params->L1_data_tail;
-  DEBUG_ASSERT(obj != NULL);
-
-#if defined(TRACK_DEMOTION)
-  printf("%ld demote %ld %ld\n", cache->n_req, obj->create_time,
-         obj->misc.next_access_vtime);
-#endif
-
-  remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj);
-  params->L1_data_size -= obj->obj_size + cache->obj_md_size;
-
-  cache_evict_base(cache, obj, true);
-}
-
-static void _ARC_evict_L2_data(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = params->L2_data_tail;
-  DEBUG_ASSERT(obj != NULL);
-
-  params->L2_data_size -= obj->obj_size + cache->obj_md_size;
-  params->L2_ghost_size += obj->obj_size + cache->obj_md_size;
-  remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj);
-  prepend_obj_to_head(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
-
-  obj->ARC.ghost = true;
-
-  cache_evict_base(cache, obj, false);
-}
-
-static void _ARC_evict_L1_ghost(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = params->L1_ghost_tail;
-  DEBUG_ASSERT(obj != NULL);
-  DEBUG_ASSERT(obj->ARC.ghost);
-  int64_t sz = obj->obj_size + cache->obj_md_size;
-  params->L1_ghost_size -= sz;
-  remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, obj);
-  hashtable_delete(cache->hashtable, obj);
-}
-
-static void _ARC_evict_L2_ghost(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-  cache_obj_t *obj = params->L2_ghost_tail;
-  DEBUG_ASSERT(obj != NULL);
-  DEBUG_ASSERT(obj->ARC.ghost);
-  int64_t sz = obj->obj_size + cache->obj_md_size;
-  params->L2_ghost_size -= sz;
-  remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, obj);
-  hashtable_delete(cache->hashtable, obj);
-}
-
-/* the REPLACE function in the paper */
 static void _ARC_replace(cache_t *cache, const request_t *req) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  cache_obj_t *obj_to_evict = NULL;
 
-  bool cond1 = params->L1_data_size > 0;
-  bool cond2 = params->L1_data_size > params->p;
-  bool cond3 =
-      params->L1_data_size == params->p && params->curr_obj_in_L2_ghost;
-  bool cond4 = params->L2_data_size == 0;
-
-  if ((cond1 && (cond2 || cond3)) || cond4) {
-    // delete the LRU in L1 data, move to L1_ghost
-    _ARC_evict_L1_data(cache, req);
+  if (params->L1_data_size > 0 && (params->L1_data_size >= params->p || (params->curr_obj_in_L2_ghost && params->L1_data_size == params->p))) {
+    // Evict from T1
+    obj_to_evict = params->L1_data_tail;
+    remove_obj_from_list(&params->L1_data_head, &params->L1_data_tail, obj_to_evict);
+    params->L1_data_size -= obj_to_evict->obj_size + cache->obj_md_size;
+    // Move to B1
+    prepend_obj_to_head(&params->L1_ghost_head, &params->L1_ghost_tail, obj_to_evict);
+    params->L1_ghost_size += obj_to_evict->obj_size + cache->obj_md_size;
   } else {
-    // delete the item in L2 data, move to L2_ghost
-    _ARC_evict_L2_data(cache, req);
+    // Evict from T2
+    obj_to_evict = params->L2_data_tail;
+    remove_obj_from_list(&params->L2_data_head, &params->L2_data_tail, obj_to_evict);
+    params->L2_data_size -= obj_to_evict->obj_size + cache->obj_md_size;
+    // Move to B2
+    prepend_obj_to_head(&params->L2_ghost_head, &params->L2_ghost_tail, obj_to_evict);
+    params->L2_ghost_size += obj_to_evict->obj_size + cache->obj_md_size;
   }
-}
 
-/* finding the eviction candidate in _ARC_evict_miss_on_all_queues, but do not
- * perform eviction */
-static cache_obj_t *_ARC_to_evict_miss_on_all_queues(cache_t *cache,
-                                                     const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
+  obj_to_evict->ARC.ghost = true;
+  cache_evict_base(cache, obj_to_evict, false); // Don't remove from hashtable yet
 
-  int64_t incoming_size = +req->obj_size + cache->obj_md_size;
-  if (params->L1_data_size + params->L1_ghost_size + incoming_size >
-      cache->cache_size) {
-    // case A: L1 = T1 U B1 has exactly c pages
-    if (params->L1_ghost_size > 0) {
-      return _ARC_to_replace(cache, req);
-    } else {
-      // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
-      // data
-      return params->L1_data_tail;
-    }
-  } else {
-    return _ARC_to_replace(cache, req);
-  }
-}
-
-/* this is the case IV in the paper */
-static void _ARC_evict_miss_on_all_queues(cache_t *cache,
-                                          const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  int64_t incoming_size = req->obj_size + cache->obj_md_size;
-  if (params->L1_data_size + params->L1_ghost_size + incoming_size >
-      cache->cache_size) {
-    // case A: L1 = T1 U B1 has exactly c pages
-    if (params->L1_ghost_size > 0) {
-      // if T1 < c (ghost is not empty),
-      // delete the LRU of the L1 ghost, and replace
-      // we do not use params->L1_data_size < cache->cache_size
-      // because it does not work for variable size objects
-      _ARC_evict_L1_ghost(cache, req);
-      _ARC_replace(cache, req);
-      return;
-    } else {
-      // T1 >= c, L1 data size is too large, ghost is empty, so evict from L1
-      // data
-      _ARC_evict_L1_data_no_ghost(cache, req);
-      return;
-    }
-  } else {
-    DEBUG_ASSERT(params->L1_data_size + params->L1_ghost_size <
-                 cache->cache_size);
-    if (params->L1_data_size + params->L1_ghost_size + params->L2_data_size +
-            params->L2_ghost_size >=
-        cache->cache_size * 2) {
-      // delete the LRU end of the L2 ghost
-      if (params->L2_ghost_size > 0) {
-        // it maybe empty if object size is variable
-        _ARC_evict_L2_ghost(cache, req);
+  // Prune ghost lists if they grow too large
+  while (params->L1_ghost_size + params->L2_ghost_size > cache->cache_size) {
+      if (params->L1_ghost_size > params->L2_ghost_size) {
+          cache_obj_t* ghost_obj = params->L1_ghost_tail;
+          remove_obj_from_list(&params->L1_ghost_head, &params->L1_ghost_tail, ghost_obj);
+          params->L1_ghost_size -= ghost_obj->obj_size + cache->obj_md_size;
+          hashtable_delete(cache->hashtable, ghost_obj);
+      } else {
+          cache_obj_t* ghost_obj = params->L2_ghost_tail;
+          remove_obj_from_list(&params->L2_ghost_head, &params->L2_ghost_tail, ghost_obj);
+          params->L2_ghost_size -= ghost_obj->obj_size + cache->obj_md_size;
+          hashtable_delete(cache->hashtable, ghost_obj);
       }
-    }
-    _ARC_replace(cache, req);
-    return;
   }
-}
-
-// ***********************************************************************
-// ****                                                               ****
-// ****                parameter set up functions                     ****
-// ****                                                               ****
-// ***********************************************************************
-static const char *ARC_current_params(ARC_params_t *params) {
-  static __thread char params_str[128];
-  snprintf(params_str, 128, "\n");
-  return params_str;
-}
-
-static void ARC_parse_params(cache_t *cache,
-                             const char *cache_specific_params) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  char *params_str = strdup(cache_specific_params);
-  char *old_params_str = params_str;
-
-  while (params_str != NULL && params_str[0] != '\0') {
-    /* different parameters are separated by comma,
-     * key and value are separated by = */
-    char *key = strsep((char **)&params_str, "=");
-    // char *value = strsep((char **)&params_str, ",");
-
-    // skip the white space
-    while (params_str != NULL && *params_str == ' ') {
-      params_str++;
-    }
-
-    if (strcasecmp(key, "print") == 0) {
-      printf("parameters: %s\n", ARC_current_params(params));
-      exit(0);
-    } else {
-      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
-      exit(1);
-    }
-  }
-
-  free(old_params_str);
-}
-
-// ***********************************************************************
-// ****                                                               ****
-// ****                       debug functions                         ****
-// ****                                                               ****
-// ***********************************************************************
-static void print_cache(cache_t *cache) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  cache_obj_t *obj = params->L1_data_head;
-  printf("T1: ");
-  while (obj != NULL) {
-    printf("%ld ", (long)obj->obj_id);
-    obj = obj->queue.next;
-  }
-  printf("\n");
-
-  obj = params->L1_ghost_head;
-  printf("B1: ");
-  while (obj != NULL) {
-    printf("%ld ", (long)obj->obj_id);
-    obj = obj->queue.next;
-  }
-  printf("\n");
-
-  obj = params->L2_data_head;
-  printf("T2: ");
-  while (obj != NULL) {
-    printf("%ld ", (long)obj->obj_id);
-    obj = obj->queue.next;
-  }
-  printf("\n");
-
-  obj = params->L2_ghost_head;
-  printf("B2: ");
-  while (obj != NULL) {
-    printf("%ld ", (long)obj->obj_id);
-    obj = obj->queue.next;
-  }
-  printf("\n");
-}
-
-static void _ARC_sanity_check(cache_t *cache, const request_t *req) {
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  DEBUG_ASSERT(params->L1_data_size >= 0);
-  DEBUG_ASSERT(params->L1_ghost_size >= 0);
-  DEBUG_ASSERT(params->L2_data_size >= 0);
-  DEBUG_ASSERT(params->L2_ghost_size >= 0);
-
-  if (params->L1_data_size > 0) {
-    DEBUG_ASSERT(params->L1_data_head != NULL);
-    DEBUG_ASSERT(params->L1_data_tail != NULL);
-  }
-  if (params->L1_ghost_size > 0) {
-    DEBUG_ASSERT(params->L1_ghost_head != NULL);
-    DEBUG_ASSERT(params->L1_ghost_tail != NULL);
-  }
-  if (params->L2_data_size > 0) {
-    DEBUG_ASSERT(params->L2_data_head != NULL);
-    DEBUG_ASSERT(params->L2_data_tail != NULL);
-  }
-  if (params->L2_ghost_size > 0) {
-    DEBUG_ASSERT(params->L2_ghost_head != NULL);
-    DEBUG_ASSERT(params->L2_ghost_tail != NULL);
-  }
-
-  DEBUG_ASSERT(params->L1_data_size + params->L2_data_size ==
-               cache->occupied_byte);
-  // DEBUG_ASSERT(params->L1_data_size + params->L2_data_size +
-  //                  params->L1_ghost_size + params->L2_ghost_size <=
-  //              cache->cache_size * 2);
-  DEBUG_ASSERT(cache->occupied_byte <= cache->cache_size);
-}
-
-static inline void _ARC_sanity_check_full(cache_t *cache,
-                                          const request_t *req) {
-  // if (cache->n_req < 13200000) return;
-
-  _ARC_sanity_check(cache, req);
-
-  ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
-
-  int64_t L1_data_byte = 0, L2_data_byte = 0;
-  int64_t L1_ghost_byte = 0, L2_ghost_byte = 0;
-
-  cache_obj_t *obj = params->L1_data_head;
-  cache_obj_t *last_obj = NULL;
-  while (obj != NULL) {
-    DEBUG_ASSERT(obj->ARC.lru_id == 1);
-    DEBUG_ASSERT(!obj->ARC.ghost);
-    L1_data_byte += obj->obj_size;
-    last_obj = obj;
-    obj = obj->queue.next;
-  }
-  DEBUG_ASSERT(L1_data_byte == params->L1_data_size);
-  DEBUG_ASSERT(last_obj == params->L1_data_tail);
-
-  obj = params->L1_ghost_head;
-  last_obj = NULL;
-  while (obj != NULL) {
-    DEBUG_ASSERT(obj->ARC.lru_id == 1);
-    DEBUG_ASSERT(obj->ARC.ghost);
-    L1_ghost_byte += obj->obj_size;
-    last_obj = obj;
-    obj = obj->queue.next;
-  }
-  DEBUG_ASSERT(L1_ghost_byte == params->L1_ghost_size);
-  DEBUG_ASSERT(last_obj == params->L1_ghost_tail);
-
-  obj = params->L2_data_head;
-  last_obj = NULL;
-  while (obj != NULL) {
-    DEBUG_ASSERT(obj->ARC.lru_id == 2);
-    DEBUG_ASSERT(!obj->ARC.ghost);
-    L2_data_byte += obj->obj_size;
-    last_obj = obj;
-    obj = obj->queue.next;
-  }
-  DEBUG_ASSERT(L2_data_byte == params->L2_data_size);
-  DEBUG_ASSERT(last_obj == params->L2_data_tail);
-
-  obj = params->L2_ghost_head;
-  last_obj = NULL;
-  while (obj != NULL) {
-    DEBUG_ASSERT(obj->ARC.lru_id == 2);
-    DEBUG_ASSERT(obj->ARC.ghost);
-    L2_ghost_byte += obj->obj_size;
-    last_obj = obj;
-    obj = obj->queue.next;
-  }
-  DEBUG_ASSERT(L2_ghost_byte == params->L2_ghost_size);
-  DEBUG_ASSERT(last_obj == params->L2_ghost_tail);
-}
-
-static bool ARC_get_debug(cache_t *cache, const request_t *req) {
-  cache->n_req += 1;
-
-  _ARC_sanity_check_full(cache, req);
-
-  cache_obj_t *obj = cache->find(cache, req, true);
-  cache->last_request_metadata = obj != NULL ? "hit" : "miss";
-
-  if (obj != NULL) {
-    _ARC_sanity_check_full(cache, req);
-    return true;
-  }
-
-  if (!cache->can_insert(cache, req)) {
-    return false;
-  }
-
-  while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
-         cache->cache_size) {
-    cache->evict(cache, req);
-  }
-
-  _ARC_sanity_check_full(cache, req);
-
-  cache->insert(cache, req);
-  _ARC_sanity_check_full(cache, req);
-
-  return false;
 }
 
 #ifdef __cplusplus

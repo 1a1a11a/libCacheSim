@@ -1,3 +1,9 @@
+"""
+Defines constants for data size units.
+
+This module provides convenient, shared constants for representing data sizes
+in both binary (KiB, MiB, etc.) and decimal (KB, MB, etc.) units.
+"""
 
 import os
 import sys

@@ -1,14 +1,18 @@
-//
-//  a PG module that supports different obj size
-//
-//
-//  PG.c
-//  libCacheSim
-//
-//  Created by Juncheng on 11/20/16.
-//  Copyright © 2016 Juncheng. All rights reserved.
-//
-//  Modified by Zhelong on 2/21/24.
+/**
+ * @file PG.c
+ * @brief Implementation of a Prefetch Graph (PG) prefetcher.
+ *
+ * This prefetcher builds a directed graph where nodes are object IDs. An edge
+ * from object A to object B is created and weighted if B is frequently accessed
+ * within a `lookahead_range` window after A. The weight of the edge represents
+ * the conditional probability P(B|A) of seeing B after A.
+ *
+ * When an object A is requested, the prefetcher looks up node A in the graph.
+ * It then traverses the outgoing edges and prefetches any neighbor B if the
+ * edge weight (probability) exceeds a configurable `prefetch_threshold`.
+ */
+
+#include "libCacheSim/prefetchAlgo/PG.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -19,229 +23,39 @@
 
 #include "libCacheSim/prefetchAlgo.h"
 
-#define TRACK_BLOCK 192618l
-#define SANITY_CHECK 1
-#define PROFILING
-// #define DEBUG
-
-#include "libCacheSim/prefetchAlgo/PG.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// ***********************************************************************
-// ****                                                               ****
-// ****               helper function declarations                    ****
-// ****                                                               ****
-// ***********************************************************************
-static inline void _graphNode_destroy(gpointer data);
-static inline void _PG_add_to_graph(cache_t *cache, const request_t *req);
-static inline GList *_PG_get_prefetch_list(cache_t *cache,
-                                           const request_t *req);
-
-const char *PG_default_params(void) {
-  return "lookahead-range=20, "
-         "block-size=1, max-metadata-size=0.1, "
-         "prefetch-threshold=0.05";
-}
-
-static void set_PG_default_init_params(PG_init_params_t *init_params) {
-  init_params->lookahead_range = 20;
-  init_params->block_size = 1;  // for general use
-  init_params->max_metadata_size = 0.1;
-  init_params->prefetch_threshold = 0.05;
-}
-
-static void PG_parse_init_params(const char *cache_specific_params,
-                                 PG_init_params_t *init_params) {
-  char *params_str = strdup(cache_specific_params);
-
-  while (params_str != NULL && params_str[0] != '\0') {
-    char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ",");
-    while (params_str != NULL && *params_str == ' ') {
-      params_str++;
-    }
-    if (strcasecmp(key, "lookahead-range") == 0) {
-      init_params->lookahead_range = atoi(value);
-    } else if (strcasecmp(key, "block-size") == 0) {
-      init_params->block_size = (unsigned long)atoi(value);
-    } else if (strcasecmp(key, "max-metadata-size") == 0) {
-      init_params->max_metadata_size = atof(value);
-    } else if (strcasecmp(key, "prefetch-threshold") == 0) {
-      init_params->prefetch_threshold = atof(value);
-    } else if (strcasecmp(key, "print") == 0 ||
-               strcasecmp(key, "default") == 0) {
-      printf("default params: %s\n", PG_default_params());
-      exit(0);
-    } else {
-      ERROR("pg does not have parameter %s\n", key);
-      printf("default params: %s\n", PG_default_params());
-      exit(1);
-    }
-  }
-}
-
-static void set_PG_params(PG_params_t *PG_params, PG_init_params_t *init_params,
-                          uint64_t cache_size) {
-  PG_params->lookahead_range = init_params->lookahead_range;
-  PG_params->block_size = init_params->block_size;
-  PG_params->cur_metadata_size = 0;
-  PG_params->max_metadata_size =
-      (uint64_t)(init_params->block_size * cache_size *
-                 init_params->max_metadata_size);
-  PG_params->prefetch_threshold = init_params->prefetch_threshold;
-
-  PG_params->stop_recording = FALSE;
-
-  PG_params->graph = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
-                                           _graphNode_destroy);
-  PG_params->prefetched =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-  PG_params->past_requests = g_new0(guint64, PG_params->lookahead_range);
-
-  PG_params->past_request_pointer = 0;
-  PG_params->num_of_hit = 0;
-  PG_params->num_of_prefetch = 0;
-
-  PG_params->cache_size_map =
-      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
-}
-
-// ***********************************************************************
-// ****                                                               ****
-// ****                     prefetcher interfaces                     ****
-// ****                                                               ****
-// ****   create, free, clone, handle_find, handle_evict, prefetch    ****
-// ***********************************************************************
-/**
- 1. record the request in cache_size_map for being aware of prefetching object's
- size in the future.
- 2. call `_PG_add_to_graph` to update graph.
-
- @param cache the cache struct
- @param req the request containing the request
- @return
-*/
-static void PG_handle_find(cache_t *cache, const request_t *req, bool hit) {
-  PG_params_t *PG_params = (PG_params_t *)(cache->prefetcher->params);
-
-  /*use cache_size_map to record the current requested obj's size*/
-  g_hash_table_insert(PG_params->cache_size_map, GINT_TO_POINTER(req->obj_id),
-                      GINT_TO_POINTER(req->obj_size));
-
-  _PG_add_to_graph(cache, req);
-
-  if (g_hash_table_contains(PG_params->prefetched,
-                            GINT_TO_POINTER(req->obj_id))) {
-    PG_params->num_of_hit++;
-    g_hash_table_remove(PG_params->prefetched, GINT_TO_POINTER(req->obj_id));
-    if (g_hash_table_contains(PG_params->prefetched,
-                              GINT_TO_POINTER(req->obj_id))) {
-      fprintf(stderr, "ERROR found prefetch\n");
-    }
-  }
-}
+// Forward declarations for static functions
+static void PG_handle_find(cache_t *cache, const request_t *req, bool hit);
+static void PG_handle_evict(cache_t *cache, const request_t *check_req);
+static void PG_prefetch(cache_t *cache, const request_t *req);
+static void free_PG_prefetcher(prefetcher_t *prefetcher);
+static prefetcher_t *clone_PG_prefetcher(prefetcher_t *prefetcher, uint64_t cache_size);
+static void _PG_add_to_graph(cache_t *cache, const request_t *req);
+static GList *_PG_get_prefetch_list(cache_t *cache, const request_t *req);
 
 /**
- remove this obj from `prefetched` if it was previously prefetched into cache.
-
- @param cache the cache struct
- @param req the request containing the request
- @return
-*/
-void PG_handle_evict(cache_t *cache, const request_t *check_req) {
-  PG_params_t *PG_params = (PG_params_t *)(cache->prefetcher->params);
-
-  g_hash_table_remove(PG_params->prefetched,
-                      GINT_TO_POINTER(check_req->obj_id));
-}
-
-/**
- prefetch some objects which are from `_PG_get_prefetch_list`
-
- @param cache the cache struct
- @param req the request containing the request
- @return
+ * @brief Creates a PG prefetcher instance.
+ * @param init_params A string containing initialization parameters.
+ * @param cache_size The size of the cache this prefetcher is attached to.
+ * @return A pointer to the newly created prefetcher_t structure.
  */
-void PG_prefetch(cache_t *cache, const request_t *req) {
-  PG_params_t *PG_params = (PG_params_t *)(cache->prefetcher->params);
-
-  // begin prefetching
-  GList *prefetch_list = _PG_get_prefetch_list(cache, req);
-  if (prefetch_list) {
-    GList *node = prefetch_list;
-    request_t *new_req = my_malloc(request_t);
-    copy_request(new_req, req);
-    while (node) {
-      new_req->obj_id = GPOINTER_TO_INT(node->data);
-      new_req->obj_size = GPOINTER_TO_INT(g_hash_table_lookup(
-          PG_params->cache_size_map, GINT_TO_POINTER(new_req->obj_id)));
-      if (!cache->find(cache, new_req, false)) {
-        while ((long)cache->get_occupied_byte(cache) + new_req->obj_size +
-                   cache->obj_md_size >
-               (long)cache->cache_size) {
-          cache->evict(cache, new_req);
-        }
-        cache->insert(cache, new_req);
-
-        PG_params->num_of_prefetch += 1;
-
-        g_hash_table_insert(PG_params->prefetched,
-                            GINT_TO_POINTER(new_req->obj_id),
-                            GINT_TO_POINTER(1));
-      }
-      node = node->next;
-    }
-
-    my_free(sizeof(request_t), new_req);
-    g_list_free(prefetch_list);
-  }
-}
-
-void free_PG_prefetcher(prefetcher_t *prefetcher) {
-  PG_params_t *PG_params = (PG_params_t *)prefetcher->params;
-
-  g_hash_table_destroy(PG_params->cache_size_map);
-  g_hash_table_destroy(PG_params->graph);
-  g_hash_table_destroy(PG_params->prefetched);
-
-  g_free(PG_params->past_requests);
-
-  my_free(sizeof(PG_params_t), PG_params);
-  if (prefetcher->init_params) {
-    free(prefetcher->init_params);
-  }
-  my_free(sizeof(prefetcher_t), prefetcher);
-}
-
-prefetcher_t *clone_PG_prefetcher(prefetcher_t *prefetcher,
-                                  uint64_t cache_size) {
-  return create_PG_prefetcher(prefetcher->init_params, cache_size);
-}
-
-prefetcher_t *create_PG_prefetcher(const char *init_params,
-                                   uint64_t cache_size) {
-  PG_init_params_t *PG_init_params = my_malloc(PG_init_params_t);
-  memset(PG_init_params, 0, sizeof(PG_init_params_t));
-
-  set_PG_default_init_params(PG_init_params);
+prefetcher_t *create_PG_prefetcher(const char *init_params, uint64_t cache_size) {
+  PG_init_params_t *pg_init_params = calloc(1, sizeof(PG_init_params_t));
+  set_PG_default_init_params(pg_init_params);
   if (init_params != NULL) {
-    PG_parse_init_params(init_params, PG_init_params);
-    check_params((PG_init_params));
+    PG_parse_init_params(init_params, pg_init_params);
   }
 
-  PG_params_t *PG_params = my_malloc(PG_params_t);
+  PG_params_t *pg_params = calloc(1, sizeof(PG_params_t));
+  set_PG_params(pg_params, pg_init_params, cache_size);
 
-  set_PG_params(PG_params, PG_init_params, cache_size);
-
-  prefetcher_t *prefetcher = (prefetcher_t *)my_malloc(prefetcher_t);
-  memset(prefetcher, 0, sizeof(prefetcher_t));
-  prefetcher->params = PG_params;
+  prefetcher_t *prefetcher = calloc(1, sizeof(prefetcher_t));
+  prefetcher->params = pg_params;
   prefetcher->prefetch = PG_prefetch;
   prefetcher->handle_find = PG_handle_find;
-  prefetcher->handle_insert = NULL;
   prefetcher->handle_evict = PG_handle_evict;
   prefetcher->free = free_PG_prefetcher;
   prefetcher->clone = clone_PG_prefetcher;
@@ -249,11 +63,109 @@ prefetcher_t *create_PG_prefetcher(const char *init_params,
     prefetcher->init_params = strdup(init_params);
   }
 
-  my_free(sizeof(PG_init_params_t), PG_init_params);
+  free(pg_init_params);
   return prefetcher;
 }
 
-/******************** PG help function ********************/
+/**
+ * @brief Frees all resources used by the PG prefetcher.
+ * @param prefetcher The prefetcher to free.
+ */
+static void free_PG_prefetcher(prefetcher_t *prefetcher) {
+  PG_params_t *params = (PG_params_t *)prefetcher->params;
+  g_hash_table_destroy(params->cache_size_map);
+  g_hash_table_destroy(params->graph);
+  g_hash_table_destroy(params->prefetched);
+  g_free(params->past_requests);
+  free(params);
+  if (prefetcher->init_params) {
+    free(prefetcher->init_params);
+  }
+  free(prefetcher);
+}
+
+/**
+ * @brief Clones a PG prefetcher instance.
+ */
+static prefetcher_t *clone_PG_prefetcher(prefetcher_t *prefetcher, uint64_t cache_size) {
+  return create_PG_prefetcher(prefetcher->init_params, cache_size);
+}
+
+/**
+ * @brief Handles a cache find event to update the prefetch graph.
+ *
+ * This function is the main entry point for learning patterns. It calls
+ * `_PG_add_to_graph` to update the weights of edges between the currently
+ * requested object and other objects in the recent access history.
+ *
+ * @param cache The cache instance.
+ * @param req The request being processed.
+ * @param hit Whether the request was a cache hit.
+ */
+static void PG_handle_find(cache_t *cache, const request_t *req, bool hit) {
+  PG_params_t *params = (PG_params_t *)(cache->prefetcher->params);
+  g_hash_table_insert(params->cache_size_map, GINT_TO_POINTER(req->obj_id), GINT_TO_POINTER(req->obj_size));
+  _PG_add_to_graph(cache, req);
+
+  // Track prefetch accuracy
+  if (g_hash_table_remove(params->prefetched, GINT_TO_POINTER(req->obj_id))) {
+    params->num_of_hit++;
+  }
+}
+
+/**
+ * @brief Handles a cache evict event.
+ *
+ * Removes the evicted object from the set of prefetched items to ensure
+ * accurate prefetch hit tracking.
+ *
+ * @param cache The cache instance.
+ * @param check_req The request object corresponding to the evicted item.
+ */
+static void PG_handle_evict(cache_t *cache, const request_t *check_req) {
+  PG_params_t *params = (PG_params_t *)(cache->prefetcher->params);
+  g_hash_table_remove(params->prefetched, GINT_TO_POINTER(check_req->obj_id));
+}
+
+/**
+ * @brief Issues prefetch requests for a given access.
+ *
+ * This function gets a list of candidate objects from `_PG_get_prefetch_list`
+ * and issues cache insertions for them.
+ *
+ * @param cache The cache instance.
+ * @param req The current request.
+ */
+static void PG_prefetch(cache_t *cache, const request_t *req) {
+  PG_params_t *params = (PG_params_t *)(cache->prefetcher->params);
+  GList *prefetch_list = _PG_get_prefetch_list(cache, req);
+
+  if (prefetch_list) {
+    request_t *pf_req = new_request();
+    for (GList *node = prefetch_list; node != NULL; node = node->next) {
+      pf_req->obj_id = GPOINTER_TO_INT(node->data);
+      pf_req->obj_size = GPOINTER_TO_INT(g_hash_table_lookup(params->cache_size_map, GINT_TO_POINTER(pf_req->obj_id)));
+
+      if (pf_req->obj_size == 0 || cache->find(cache, pf_req, false)) {
+        continue;
+      }
+
+      while (cache->get_occupied_byte(cache) + pf_req->obj_size > cache->cache_size) {
+        cache->evict(cache, pf_req);
+      }
+      cache->insert(cache, pf_req);
+
+      params->num_of_prefetch++;
+      g_hash_table_insert(params->prefetched, GINT_TO_POINTER(pf_req->obj_id), GINT_TO_POINTER(1));
+    }
+    free_request(pf_req);
+    g_list_free(prefetch_list);
+  }
+}
+
+/**
+ * @brief Helper function to destroy a graph node.
+ */
 static inline void _graphNode_destroy(gpointer data) {
   graphNode_t *graphNode = (graphNode_t *)data;
   g_hash_table_destroy(graphNode->graph);
@@ -262,141 +174,103 @@ static inline void _graphNode_destroy(gpointer data) {
 }
 
 /**
- 1. insert the `req->obj_id` to the past_request_pointer.
- 2. update the graph using `past_requests[past_request_pointer]` as the
- node and `node->past_requests[i]` as the directed arc.
-
- @param cache the cache struct
- @param req the request containing the request
- @return
+ * @brief Updates the prefetch graph based on the current request.
+ *
+ * This function looks at the current request and the `lookahead_range` of past
+ * requests. For each past request `P` and the current request `C`, it strengthens
+ * the directed edge `P -> C` in the graph, indicating that `C` followed `P`.
+ *
+ * @param cache The cache instance.
+ * @param req The current request.
  */
 static inline void _PG_add_to_graph(cache_t *cache, const request_t *req) {
-  PG_params_t *PG_params = (PG_params_t *)(cache->prefetcher->params);
-  guint64 block, current_block = 0;
-  char current_req_lbl[MAX_OBJ_ID_LEN] = "";
-  graphNode_t *graphNode = NULL;
+  PG_params_t *params = (PG_params_t *)(cache->prefetcher->params);
+  if (params->stop_recording) return;
 
-  current_block =
-      get_Nth_past_request_l(PG_params, PG_params->past_request_pointer);
-  if (current_block) {
-    graphNode = (graphNode_t *)g_hash_table_lookup(
-        PG_params->graph, GINT_TO_POINTER(current_block));
-  }
-
-  // now update past requests
-  set_Nth_past_request_l(PG_params, PG_params->past_request_pointer++,
-                         (guint64)(req->obj_id));
-
-  PG_params->past_request_pointer =
-      PG_params->past_request_pointer % PG_params->lookahead_range;
-
-  if (!(current_req_lbl[0] || current_block)) {
-    // this is the first request
-    return;
-  }
-
-  if (graphNode == NULL) {
-    if (!PG_params->stop_recording) {
-      // current block is not in graph, insert
-      gpointer key = GINT_TO_POINTER(current_block);
-      graphNode = g_new0(graphNode_t, 1);
-      graphNode->graph =
-          g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
-      graphNode->pq = pqueue_init(2);
-      graphNode->total_count = 0;
-      g_hash_table_insert(PG_params->graph, key, graphNode);
-      PG_params->cur_metadata_size += (8 + 8 * 3);
-    } else {
-      // no space for meta data
+  // Get the block that was accessed `lookahead_range` requests ago.
+  // This will be the source node for the new edges.
+  guint64 src_block = get_Nth_past_request_l(params, params->past_request_pointer);
+  if (src_block == 0) { // Not enough history yet
+      set_Nth_past_request_l(params, params->past_request_pointer++, (guint64)(req->obj_id));
+      params->past_request_pointer %= params->lookahead_range;
       return;
-    }
   }
 
-  for (int i = 0; i < PG_params->lookahead_range; i++) {
+  // Find or create the graph node for the source block
+  graphNode_t *graphNode = (graphNode_t *)g_hash_table_lookup(params->graph, GINT_TO_POINTER(src_block));
+  if (graphNode == NULL) {
+    graphNode = g_new0(graphNode_t, 1);
+    graphNode->graph = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
+    graphNode->pq = pqueue_init(2);
+    g_hash_table_insert(params->graph, GINT_TO_POINTER(src_block), graphNode);
+    params->cur_metadata_size += (8 + 8 * 3); // Approximate size
+  }
+
+  // For the source block, update edge weights to all other blocks in the lookahead window
+  for (int i = 0; i < params->lookahead_range; i++) {
+    guint64 dest_block = get_Nth_past_request_l(params, i);
+    if (dest_block == 0 || dest_block == src_block) continue;
+
     graphNode->total_count++;
-
-    block = get_Nth_past_request_l(PG_params, i);
-    if (block == 0) break;
-
-    pq_node_t *pq_node = (pq_node_t *)g_hash_table_lookup(
-        graphNode->graph, GINT_TO_POINTER(block));
+    pq_node_t *pq_node = (pq_node_t *)g_hash_table_lookup(graphNode->graph, GINT_TO_POINTER(dest_block));
     if (pq_node) {
-      // relation already exists
-      pq_node->pri.pri++;
+      pq_node->pri.pri++; // Increment edge weight
       pqueue_change_priority(graphNode->pq, pq_node->pri, pq_node);
-
-#ifdef SANITY_CHECK
-      if (pq_node->obj_id != block) {
-        ERROR("pq node content not equal block\n");
-      }
-#endif
-
     } else {
-      // there is no probability between current_block->block
-      if (!PG_params->stop_recording) {
-        pq_node_t *pq_node2 = g_new0(pq_node_t, 1);
-        pq_node2->obj_id = block;
-        pq_node2->pri.pri = 1;
-        pqueue_insert(graphNode->pq, pq_node2);
-        g_hash_table_insert(graphNode->graph, GINT_TO_POINTER(pq_node2->obj_id),
-                            pq_node2);
-        PG_params->cur_metadata_size += (8 + 8 * 3);
-      } else {
-        // no space for meta data
-        return;
-      }
+      pq_node_t *new_pq_node = g_new0(pq_node_t, 1);
+      new_pq_node->obj_id = dest_block;
+      new_pq_node->pri.pri = 1;
+      pqueue_insert(graphNode->pq, new_pq_node);
+      g_hash_table_insert(graphNode->graph, GINT_TO_POINTER(dest_block), new_pq_node);
+      params->cur_metadata_size += (8 + 8 * 3); // Approximate size
     }
   }
 
-  if (PG_params->max_metadata_size <= PG_params->cur_metadata_size) {
-    PG_params->stop_recording = TRUE;
+  // Update the circular buffer of past requests
+  set_Nth_past_request_l(params, params->past_request_pointer++, (guint64)(req->obj_id));
+  params->past_request_pointer %= params->lookahead_range;
+
+  if (params->max_metadata_size <= params->cur_metadata_size) {
+    params->stop_recording = TRUE;
   }
 }
 
 /**
- get some objs which are associated with req->obj_id and their probability
- is higher than `prefetch_threshold`.
-
- @param cache the cache struct
- @param req the request containing the request
- @return list containing all objs that should be prefetched
+ * @brief Gets a list of objects to prefetch for a given request.
+ *
+ * Looks up the requested object in the graph and returns a list of neighbors
+ * whose edge weight exceeds the `prefetch_threshold`.
+ *
+ * @param cache The cache instance.
+ * @param req The current request.
+ * @return A `GList` of object IDs to prefetch. The caller must free this list.
  */
-static inline GList *_PG_get_prefetch_list(cache_t *cache,
-                                           const request_t *req) {
-  PG_params_t *PG_params = (PG_params_t *)(cache->prefetcher->params);
+static inline GList *_PG_get_prefetch_list(cache_t *cache, const request_t *req) {
+  PG_params_t *params = (PG_params_t *)(cache->prefetcher->params);
   GList *list = NULL;
-  graphNode_t *graphNode =
-      g_hash_table_lookup(PG_params->graph, GINT_TO_POINTER(req->obj_id));
+  graphNode_t *graphNode = (graphNode_t *)g_hash_table_lookup(params->graph, GINT_TO_POINTER(req->obj_id));
 
-  if (graphNode == NULL) {
-    return list;
+  if (graphNode == NULL || graphNode->total_count == 0) {
+    return NULL;
   }
 
-  GList *pq_node_list = NULL;
-  while (1) {
-    pq_node_t *pqNode = pqueue_pop(graphNode->pq);
-    if (pqNode == NULL) {
-      break;
-    }
-    if ((double)(pqNode->pri.pri) / (graphNode->total_count) >
-        PG_params->prefetch_threshold) {
+  // Use a temporary list to check probabilities without permanently removing from priority queue
+  GList *temp_list = NULL;
+  pq_node_t *pqNode;
+  while ((pqNode = pqueue_pop(graphNode->pq)) != NULL) {
+    if ((double)(pqNode->pri.pri) / graphNode->total_count > params->prefetch_threshold) {
       list = g_list_prepend(list, GINT_TO_POINTER(pqNode->obj_id));
-      pq_node_list = g_list_prepend(pq_node_list, pqNode);
     } else {
-      //            printf("threshold %lf\n",
-      //            (double)(pqNode->pri)/(graphNode->total_count));
+      // Since priority queue is ordered, we can stop early
+      pqueue_insert(graphNode->pq, pqNode); // Put it back
       break;
     }
+    temp_list = g_list_prepend(temp_list, pqNode);
   }
 
-  if (pq_node_list) {
-    GList *node = pq_node_list;
-    while (node) {
-      pqueue_insert(graphNode->pq, node->data);
-      node = node->next;
-    }
-  }
-  g_list_free(pq_node_list);
+  // Re-insert the nodes back into the priority queue
+  g_list_foreach(temp_list, (GFunc)pqueue_insert, graphNode->pq);
+  g_list_free(temp_list);
 
   return list;
 }

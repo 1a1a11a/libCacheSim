@@ -1,3 +1,8 @@
+/**
+ * @file adaptsize.cpp
+ * @brief Implements the C++ class for the AdaptSize admission algorithm.
+ */
+
 #include "adaptsize.h"
 
 #include <sys/types.h>
@@ -9,15 +14,15 @@
 
 #define MAX_MODULE 10000000
 
-// Const used in original implementation
+// Constants used in the original implementation
 const double EWMA_DECAY = 0.3;
-const double gss_r = 0.61803399;
+const double gss_r = 0.61803399; // Golden section search ratio
 const double tol = 3.0e-8;
 
 /**
- * @brief Initialzie Adaptstat
- * @param max_iteration_param
- * @param reconf_interval_param
+ * @brief Constructs an Adaptsize admission controller.
+ * @param max_iteration_param The maximum number of iterations for the optimization search.
+ * @param reconf_interval_param The number of requests between reconfigurations.
  */
 Adaptsize::Adaptsize(const uint64_t max_iteration_param,
                      const uint64_t reconf_interval_param)
@@ -30,110 +35,47 @@ Adaptsize::Adaptsize(const uint64_t max_iteration_param,
       gss_v(1 - gss_r) {}
 
 /**
- * @brief Copy constructor
- * @param other The Adaptsize object to copy from
+ * @brief Copy constructor.
+ * @param other The Adaptsize object to copy from.
  */
-Adaptsize::Adaptsize(const Adaptsize& other)
-    : cache_size(other.cache_size),
-      max_iteration(other.max_iteration),
-      reconf_interval(other.reconf_interval),
-      next_reconf(other.next_reconf),
-      stat_size(other.stat_size),
-      c_param(other.c_param),
-      gss_v(other.gss_v),
-      interval_metadata(other.interval_metadata),
-      longterm_metadata(other.longterm_metadata),
-      aligned_obj_size(other.aligned_obj_size),
-      aligned_obj_seen_times(other.aligned_obj_seen_times),
-      aligned_admission_probs(other.aligned_admission_probs) {}
+Adaptsize::Adaptsize(const Adaptsize& other) = default;
 
 /**
- * @brief Move constructor
- * @param other The Adaptsize object to move from
+ * @brief Move constructor.
+ * @param other The Adaptsize object to move from.
  */
-Adaptsize::Adaptsize(Adaptsize&& other) noexcept
-    : cache_size(other.cache_size),
-      max_iteration(other.max_iteration),
-      reconf_interval(other.reconf_interval),
-      next_reconf(other.next_reconf),
-      stat_size(other.stat_size),
-      c_param(other.c_param),
-      gss_v(other.gss_v),
-      interval_metadata(std::move(other.interval_metadata)),
-      longterm_metadata(std::move(other.longterm_metadata)),
-      aligned_obj_size(std::move(other.aligned_obj_size)),
-      aligned_obj_seen_times(std::move(other.aligned_obj_seen_times)),
-      aligned_admission_probs(std::move(other.aligned_admission_probs)) {}
+Adaptsize::Adaptsize(Adaptsize&& other) noexcept = default;
 
 /**
- * @brief Copy assignment operator
- * @param other The Adaptsize object to copy from
- * @return Reference to this object
+ * @brief Copy assignment operator.
+ * @param other The Adaptsize object to copy from.
+ * @return Reference to this object.
  */
-Adaptsize& Adaptsize::operator=(const Adaptsize& other) {
-  if (this != &other) {
-    cache_size = other.cache_size;
-    max_iteration = other.max_iteration;
-    reconf_interval = other.reconf_interval;
-    next_reconf = other.next_reconf;
-    stat_size = other.stat_size;
-    c_param = other.c_param;
-    gss_v = other.gss_v;
-    interval_metadata = other.interval_metadata;
-    longterm_metadata = other.longterm_metadata;
-    aligned_obj_size = other.aligned_obj_size;
-    aligned_obj_seen_times = other.aligned_obj_seen_times;
-    aligned_admission_probs = other.aligned_admission_probs;
-  }
-  return *this;
-}
+Adaptsize& Adaptsize::operator=(const Adaptsize& other) = default;
 
 /**
- * @brief Move assignment operator
- * @param other The Adaptsize object to move from
- * @return Reference to this object
+ * @brief Move assignment operator.
+ * @param other The Adaptsize object to move from.
+ * @return Reference to this object.
  */
-Adaptsize& Adaptsize::operator=(Adaptsize&& other) noexcept {
-  if (this != &other) {
-    cache_size = other.cache_size;
-    max_iteration = other.max_iteration;
-    reconf_interval = other.reconf_interval;
-    next_reconf = other.next_reconf;
-    stat_size = other.stat_size;
-    c_param = other.c_param;
-    gss_v = other.gss_v;
-    interval_metadata = std::move(other.interval_metadata);
-    longterm_metadata = std::move(other.longterm_metadata);
-    aligned_obj_size = std::move(other.aligned_obj_size);
-    aligned_obj_seen_times = std::move(other.aligned_obj_seen_times);
-    aligned_admission_probs = std::move(other.aligned_admission_probs);
-  }
-  return *this;
-}
+Adaptsize& Adaptsize::operator=(Adaptsize&& other) noexcept = default;
 
 /**
- * @brief This function get called for every lookup to update adaptsize stats
- * @param req
- * @param cache_size current cache size
+ * @brief Updates statistics based on a new request and triggers reconfiguration if needed.
+ * @param req The request being processed.
+ * @param cache_size_param The current size of the cache.
  */
 void Adaptsize::updateStats(const request_t* req,
                             const uint64_t cache_size_param) {
   this->cache_size = cache_size_param;
   reconfigure();
-  if (interval_metadata.count(req->obj_id) == 0 &&
-      longterm_metadata.count(req->obj_id) == 0) {
-    stat_size += req->obj_size;
-  } else {
-    if (interval_metadata.count(req->obj_id) > 0 &&
-        interval_metadata[req->obj_id].obj_size != req->obj_size) {
+
+  // Update statistics for the current interval
+  if (interval_metadata.find(req->obj_id) == interval_metadata.end()) {
+      stat_size += req->obj_size;
+  } else if (interval_metadata[req->obj_id].obj_size != req->obj_size) {
       stat_size -= interval_metadata[req->obj_id].obj_size;
       stat_size += req->obj_size;
-    }
-    if (longterm_metadata.count(req->obj_id) > 0 &&
-        longterm_metadata[req->obj_id].obj_size != req->obj_size) {
-      stat_size -= longterm_metadata[req->obj_id].obj_size;
-      stat_size += req->obj_size;
-    }
   }
   auto& oinfo = interval_metadata[req->obj_id];
   oinfo.obj_seen_times += 1.0;
@@ -141,76 +83,65 @@ void Adaptsize::updateStats(const request_t* req,
 }
 
 /**
- * @brief This function get called before updating stats. Used to get the best C
- * for the interval
+ * @brief Reconfigures the admission parameter `c_param` by modeling the hit rate.
+ *
+ * This is the core of the AdaptSize algorithm. It is called periodically.
+ * It merges statistics from the last interval into a long-term view, uses
+ * Golden Section Search to find the optimal `c_param` that maximizes the
+ * modeled hit rate, and updates the `c_param` for the next interval.
  */
 void Adaptsize::reconfigure() {
-  // Check if its time for reconfiguration
-  --next_reconf;
-  if (next_reconf > 0) {
+  if (--next_reconf > 0) {
     return;
   }
-  if (stat_size <= cache_size * 3) {
-    next_reconf += 1000;
-    return;
-  }
-  // END Check if its time for reconfiguration
-  // Prepare for reconf
   next_reconf = reconf_interval;
+
+  if (stat_size <= cache_size * 3) {
+    return; // Not enough new data to justify a reconfiguration
+  }
+
+  // Merge interval stats into long-term stats using an exponential moving average
   for (auto& obj : longterm_metadata) {
     obj.second.obj_seen_times *= EWMA_DECAY;
   }
   for (auto& obj : interval_metadata) {
-    if (longterm_metadata.count(obj.first) == 0) {
+    if (longterm_metadata.find(obj.first) == longterm_metadata.end()) {
       longterm_metadata[obj.first] = obj.second;
-      continue;
+    } else {
+      longterm_metadata[obj.first].obj_seen_times += (1 - EWMA_DECAY) * obj.second.obj_seen_times;
+      longterm_metadata[obj.first].obj_size = obj.second.obj_size;
     }
-    longterm_metadata[obj.first].obj_seen_times +=
-        (1 - EWMA_DECAY) * obj.second.obj_seen_times;
-    longterm_metadata[obj.first].obj_size = obj.second.obj_size;
   }
   interval_metadata.clear();
+
+  // Prepare stats for modeling
   aligned_obj_seen_times.clear();
   aligned_obj_size.clear();
-
-  double total_seen_times = 0.0;
-  uint64_t total_obj_size = 0.0;
-
   for (auto it = longterm_metadata.begin(); it != longterm_metadata.end();) {
     if (it->second.obj_seen_times < 0.1) {
       stat_size -= it->second.obj_size;
       it = longterm_metadata.erase(it);
-      continue;
+    } else {
+      aligned_obj_seen_times.push_back(it->second.obj_seen_times);
+      aligned_obj_size.push_back(it->second.obj_size);
+      ++it;
     }
-    aligned_obj_seen_times.push_back(it->second.obj_seen_times);
-    total_seen_times += it->second.obj_seen_times;
-    aligned_obj_size.push_back(it->second.obj_size);
-    total_obj_size += it->second.obj_size;
-    ++it;
   }
-  VERBOSE(
-      "Reconfiguring over %zu objects - log2 total size %f log2 statsize %f\n",
-      longterm_metadata.size(), log2(total_obj_size), log2(stat_size));
-  // END Prepare for reconf
-  // Finding the value of C with the best hit rate
-  double x0 = 0;
-  double x1 = log2(cache_size);
-  double x2 = x1;
-  double x3 = x1;
 
+  // Find the optimal C value using Golden Section Search
+  double x0 = 0, x3 = log2(cache_size), x1 = x3, x2 = x3;
   double best_hit_rate = 0.0;
+
+  // Initial rough search for a good starting point
   for (int i = 2; i < x3; i += 4) {
-    const double next_log2c = i;
-    const double hit_rate = modelHitRate(next_log2c);
+    const double hit_rate = modelHitRate(i);
     if (hit_rate > best_hit_rate) {
       best_hit_rate = hit_rate;
-      x1 = next_log2c;
+      x1 = i;
     }
   }
 
-  double h1 = best_hit_rate;
-  double h2 = 0.0;
-
+  double h1 = best_hit_rate, h2 = 0.0;
   if (x3 - x1 > x1 - x0) {
     x2 = x1 + gss_v * (x3 - x1);
     h2 = modelHitRate(x2);
@@ -220,48 +151,36 @@ void Adaptsize::reconfigure() {
     x1 = x0 + gss_v * (x1 - x0);
     h1 = modelHitRate(x1);
   }
-  uint64_t current_iteration = 0;
-  while (current_iteration++ < max_iteration &&
-         fabs(x3 - x0) > tol * (fabs(x1) + fabs(x2))) {
-    if (h1 != h1 || h2 != h2) {
-      // Error NaN
-      WARN("BUG: NaN h1:%f h2:%f\n", h1, h2);
-      break;
-    }
+
+  // Golden Section Search main loop
+  for (uint64_t current_iteration = 0;
+       current_iteration < max_iteration && fabs(x3 - x0) > tol * (fabs(x1) + fabs(x2));
+       ++current_iteration) {
+    if (std::isnan(h1) || std::isnan(h2)) break;
     if (h2 > h1) {
-      x0 = x1;
-      x1 = x2;
-      x2 = gss_r * x1 + gss_v * x3;
-      h1 = h2;
-      h2 = modelHitRate(x2);
+      x0 = x1; x1 = x2; x2 = gss_r * x1 + gss_v * x3;
+      h1 = h2; h2 = modelHitRate(x2);
     } else {
-      x3 = x2;
-      x2 = x1;
-      x1 = gss_r * x2 + gss_v * x0;
-      h2 = h1;
-      h1 = modelHitRate(x1);
+      x3 = x2; x2 = x1; x1 = gss_r * x2 + gss_v * x0;
+      h2 = h1; h1 = modelHitRate(x1);
     }
   }
-  // END Finding the value of C with the best hit rate
-  // Check for result
-  if (h1 != h1 || h2 != h2) {
-    // Error NaN
-    WARN("BUG: NaN h1:%f h2:%f\n", h1, h2);
-  } else if (h1 > h2) {
-    c_param = pow(2, x1);
-    VERBOSE("C = %f (log2: %f )\n", c_param, x1);
+
+  // Set the new c_param based on the search result
+  if (std::isnan(h1) || std::isnan(h2)) {
+    WARN("BUG: NaN in Golden Section Search h1:%f h2:%f\n", h1, h2);
   } else {
-    c_param = pow(2, x2);
-    VERBOSE("C = %f (log2: %f )\n", c_param, x2);
+    c_param = pow(2, (h1 > h2) ? x1 : x2);
   }
-  // END Check for result
 }
 
 /**
- * @brief This function get called before admitting object. Using modified size
- * probability with C param
- * @param req
- * @return true / false
+ * @brief Decides whether to admit an object based on its size and the current `c_param`.
+ *
+ * The admission probability is calculated as `exp(-object_size / c_param)`.
+ *
+ * @param req The request to consider.
+ * @return True if the object should be admitted, false otherwise.
  */
 bool Adaptsize::admit(const request_t* req) {
   double prob = exp(-req->obj_size / c_param);
@@ -269,11 +188,9 @@ bool Adaptsize::admit(const request_t* req) {
   return roll < prob;
 }
 
-// Math formula used in original implementation
+// Mathematical formulas used in the hit rate model, based on the original paper.
 static inline double oP1(double T, double l, double p) {
-  return (
-      l * p * T *
-      (840.0 + 60.0 * l * T + 20.0 * l * l * T * T + l * l * l * T * T * T));
+  return (l * p * T * (840.0 + 60.0 * l * T + 20.0 * l * l * T * T + l * l * l * T * T * T));
 }
 static inline double oP2(double T, double l, double p) {
   return (840.0 + 120.0 * l * (-3.0 + 7.0 * p) * T +
@@ -283,65 +200,58 @@ static inline double oP2(double T, double l, double p) {
 }
 
 /**
- * @brief This function get called a lot in reconfigure function, used to
- * predict C hit rate
- * @param log2c
- * @return hit rate prediction
+ * @brief Models the expected hit rate for a given cache size parameter.
+ *
+ * This function implements the mathematical model from the AdaptSize paper to
+ * predict the cache hit rate given the current workload statistics and a
+ * potential `c_param` value (represented as `log2c`).
+ *
+ * @param log2c The log-base-2 of the `c_param` to model.
+ * @return The predicted hit rate as a double.
  */
 double Adaptsize::modelHitRate(double log2c) {
   double old_T, the_T, the_C;
   double sum_val = 0.;
-  double thparam = log2c;
+  double thparam = pow(2.0, log2c);
 
   for (size_t i = 0; i < aligned_obj_seen_times.size(); i++) {
     sum_val += aligned_obj_seen_times[i] *
-               (exp(-aligned_obj_size[i] / pow(2, thparam))) *
+               (exp(-aligned_obj_size[i] / thparam)) *
                aligned_obj_size[i];
   }
-  if (sum_val <= 0) {
-    return (0);
-  }
+  if (sum_val <= 0) return 0.0;
+
   the_T = cache_size / sum_val;
-  aligned_admission_probs.clear();
+  aligned_admission_probs.assign(aligned_obj_seen_times.size(), 0.0);
   for (size_t i = 0; i < aligned_obj_seen_times.size(); i++) {
-    aligned_admission_probs.push_back(
-        exp(-aligned_obj_size[i] / pow(2.0, thparam)));
+    aligned_admission_probs[i] = exp(-aligned_obj_size[i] / thparam);
   }
+
+  // Iteratively solve for the characteristic time T
   for (int j = 0; j < 20; j++) {
     the_C = 0;
-    if (the_T > 1e70) {
-      break;
-    }
+    if (the_T > 1e70) break;
     for (size_t i = 0; i < aligned_obj_seen_times.size(); i++) {
       const double reqTProd = aligned_obj_seen_times[i] * the_T;
       if (reqTProd > 150) {
         the_C += aligned_obj_size[i];
       } else {
-        const double expTerm = exp(reqTProd) - 1;
+        const double expTerm = exp(reqTProd) - 1.0;
         const double expAdmProd = aligned_admission_probs[i] * expTerm;
-        const double tmp = expAdmProd / (1 + expAdmProd);
-        the_C += aligned_obj_size[i] * tmp;
+        the_C += aligned_obj_size[i] * (expAdmProd / (1.0 + expAdmProd));
       }
     }
     old_T = the_T;
     the_T = cache_size * old_T / the_C;
   }
 
+  // Calculate the final weighted hit rate
   double weighted_hitratio_sum = 0;
   for (size_t i = 0; i < aligned_obj_seen_times.size(); i++) {
-    const double tmp01 =
-        oP1(the_T, aligned_obj_seen_times[i], aligned_admission_probs[i]);
-    const double tmp02 =
-        oP2(the_T, aligned_obj_seen_times[i], aligned_admission_probs[i]);
-    double tmp;
-    if (tmp01 != 0 && tmp02 == 0)
-      tmp = 0.0;
-    else
-      tmp = tmp01 / tmp02;
-    if (tmp < 0.0)
-      tmp = 0.0;
-    else if (tmp > 1.0)
-      tmp = 1.0;
+    const double tmp01 = oP1(the_T, aligned_obj_seen_times[i], aligned_admission_probs[i]);
+    const double tmp02 = oP2(the_T, aligned_obj_seen_times[i], aligned_admission_probs[i]);
+    double tmp = (tmp02 != 0) ? (tmp01 / tmp02) : 0.0;
+    tmp = std::max(0.0, std::min(1.0, tmp));
     weighted_hitratio_sum += aligned_obj_seen_times[i] * tmp;
   }
   return weighted_hitratio_sum;
