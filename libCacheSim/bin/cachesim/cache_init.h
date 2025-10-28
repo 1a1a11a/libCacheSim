@@ -125,9 +125,9 @@ static inline cache_t *create_cache(const char *trace_path,
         cache = WTinyLFU_init(cc_params, eviction_params);
       }
     }
-  } else if (strcasecmp(eviction_algo, "belady") == 0 &&
-             strcasestr(trace_path, "lcs") == NULL) {
-    if (strcasestr(trace_path, "oracleGeneral") == NULL) {
+  } else if (strcasecmp(eviction_algo, "belady") == 0) {
+    if (strcasestr(trace_path, "oracleGeneral") == NULL &&
+        strcasestr(trace_path, "lcs") == NULL) {
       WARN("belady is only supported for oracleGeneral and lcs trace\n");
       WARN("to convert a trace to lcs format\n");
       WARN("./bin/traceConv input_trace trace_format output_trace\n");
