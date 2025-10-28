@@ -301,7 +301,7 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         break;
       default:
         ERROR(
-            "cannot recognize reader obj_id_type, given reader obj_id_type: "
+            "cannot recognize reader trace_type, given reader trace_type: "
             "%c\n",
             reader->trace_type);
         abort();

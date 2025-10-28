@@ -44,7 +44,7 @@ extern "C" {
  *
  * @param cache_alg_name Name of the cache replacement algorithm (case
  * sensitive)
- * @param cc_params General cache parameters (cache_size, obj_id_type,
+ * @param cc_params General cache parameters (cache_size,
  * support_ttl, etc.)
  * @param cache_specific_params Algorithm-specific parameters (can be NULL)
  * @return Pointer to initialized cache handler, or NULL on failure

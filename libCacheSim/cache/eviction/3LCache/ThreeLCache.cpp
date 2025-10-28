@@ -382,14 +382,13 @@ pair<uint64_t, int32_t> ThreeLCacheCache::evict_predobj() {
 
 void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
   int32_t sample_nums = sampled_objects.size();
-  int32_t indptr[sample_nums + 1];
-  indptr[0] = 0;
-  int32_t indices[sample_nums * n_feature];
-  double data[sample_nums * n_feature];
-  int32_t past_timestamps[sample_nums];
-  int32_t sizes[sample_nums];
-  uint64_t keys[sample_nums];
-  int32_t poses[sample_nums];
+  std::vector<int32_t> indptr(sample_nums + 1, 0);
+  std::vector<int32_t> indices(sample_nums * n_feature);
+  std::vector<double> data(sample_nums * n_feature);
+  std::vector<int32_t> past_timestamps(sample_nums);
+  std::vector<int32_t> sizes(sample_nums);
+  std::vector<uint64_t> keys(sample_nums);
+  std::vector<int32_t> poses(sample_nums);
   unsigned int idx_feature = 0;
   int32_t pos;
   unsigned int idx_row = 0;
@@ -430,7 +429,7 @@ void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
     indptr[idx_row + 1] = idx_feature;
   }
   int64_t len = 0;
-  double scores[sample_nums];
+  std::vector<double> scores(sample_nums);
   std::string inference_params_str;
   for (const auto &param : inference_params) {
     inference_params_str += param.first + "=" + param.second + " ";
@@ -438,10 +437,11 @@ void ThreeLCacheCache::prediction(vector<int32_t> sampled_objects) {
   inference_params_str.pop_back();  // Remove trailing space
   const char *inference_params_cstr = inference_params_str.c_str();
   LGBM_BoosterPredictForCSR(
-      booster, static_cast<void *>(indptr), C_API_DTYPE_INT32, indices,
-      static_cast<void *>(data), C_API_DTYPE_FLOAT64, idx_row + 1, idx_feature,
+      booster, static_cast<void *>(indptr.data()), C_API_DTYPE_INT32,
+      indices.data(), static_cast<void *>(data.data()), C_API_DTYPE_FLOAT64,
+      idx_row + 1, idx_feature,
       n_feature,  // remove future t
-      C_API_PREDICT_NORMAL, 0, 0, inference_params_cstr, &len, scores);
+      C_API_PREDICT_NORMAL, 0, 0, inference_params_cstr, &len, scores.data());
   float _distance;
   if (objective == byte_miss_ratio) {
     for (int i = 0; i < sample_nums; ++i) {

@@ -265,6 +265,10 @@ static cache_obj_t *S3FIFO_insert(cache_t *cache, const request_t *req) {
     obj = main_fifo->insert(main_fifo, req);
   } else {
     /* insert into small fifo */
+    // NOTE: Inserting an object whose size equals the size of small fifo is
+    // NOT allowed. Doing so would completely fill the small fifo, causing all
+    // objects in small fifo to be evicted. This scenario may occur
+    // when using a tiny cache size.
     if (req->obj_size >= small_fifo->cache_size) {
       return NULL;
     }

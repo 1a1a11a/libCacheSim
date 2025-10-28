@@ -12,6 +12,13 @@ using namespace repl;
 extern "C" {
 #endif
 
+// NOTE: Since LHD uses internal data struct to reprensent cache_obj_t, to suit
+// the interface, we use a dummy pointer to represent the cache_obj_t.
+// Specifically, for find and insert, we return a dummy pointer when the object
+// is found or inserted and NULL when the object is not found.
+static cache_obj_t *const DUMMY_CACHE_OBJ_PTR =
+    reinterpret_cast<cache_obj_t *>(1);
+
 typedef struct {
   void *LHD_cache;
 
@@ -176,7 +183,7 @@ static cache_obj_t *LHD_find(cache_t *cache, const request_t *req,
     lhd->update(id, req);
   }
 
-  return reinterpret_cast<cache_obj_t *>(0x1);
+  return DUMMY_CACHE_OBJ_PTR;
 }
 
 /**
@@ -205,7 +212,7 @@ static cache_obj_t *LHD_insert(cache_t *cache, const request_t *req) {
   cache->occupied_byte += req->obj_size + cache->obj_md_size;
   cache->n_obj += 1;
 
-  return NULL;
+  return DUMMY_CACHE_OBJ_PTR;
 }
 
 /**

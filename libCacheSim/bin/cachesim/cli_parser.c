@@ -456,6 +456,7 @@ static int conv_cache_sizes(char *cache_size_str, struct arguments *args) {
     token = strtok(NULL, ",");
   }
 
+  // detection of cache size set to 0 or auto
   if (args->n_cache_size == 1 && args->cache_sizes[0] == 0) {
     set_cache_size(args, args->reader);
   }

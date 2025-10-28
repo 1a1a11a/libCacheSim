@@ -284,16 +284,16 @@ pair<uint64_t, uint32_t> LRBCache::rank() {
     }
   }
 
-  int32_t indptr[sample_rate + 1];
+  std::vector<int32_t> indptr(sample_rate + 1);
   indptr[0] = 0;
-  int32_t indices[sample_rate * n_feature];
-  double data[sample_rate * n_feature];
-  int32_t past_timestamps[sample_rate];
-  uint64_t sizes[sample_rate];
+  std::vector<int32_t> indices(sample_rate * n_feature);
+  std::vector<double> data(sample_rate * n_feature);
+  std::vector<int32_t> past_timestamps(sample_rate);
+  std::vector<uint64_t> sizes(sample_rate);
 
   unordered_set<uint64_t> key_set;
-  uint64_t keys[sample_rate];
-  uint32_t poses[sample_rate];
+  std::vector<uint64_t> keys(sample_rate);
+  std::vector<uint32_t> poses(sample_rate);
   // next_past_timestamp, next_size = next_indptr - 1
 
   unsigned int idx_feature = 0;
@@ -365,16 +365,17 @@ pair<uint64_t, uint32_t> LRBCache::rank() {
   }
 
   int64_t len;
-  double scores[sample_rate];
+  std::vector<double> scores(sample_rate);
   system_clock::time_point timeBegin;
   // sample to measure inference time
   if (!(current_seq % 10000)) timeBegin = chrono::system_clock::now();
   LGBM_BoosterPredictForCSR(
-      booster, static_cast<void *>(indptr), C_API_DTYPE_INT32, indices,
-      static_cast<void *>(data), C_API_DTYPE_FLOAT64, idx_row + 1, idx_feature,
+      booster, static_cast<void *>(indptr.data()), C_API_DTYPE_INT32,
+      indices.data(), static_cast<void *>(data.data()), C_API_DTYPE_FLOAT64,
+      idx_row + 1, idx_feature,
       n_feature,  // remove future t
       C_API_PREDICT_NORMAL, 0, atoi(training_params["num_iterations"].c_str()),
-      map_to_string(inference_params).c_str(), &len, scores);
+      map_to_string(inference_params).c_str(), &len, scores.data());
   if (!(current_seq % 10000))
     inference_time = 0.95 * inference_time +
                      0.05 * chrono::duration_cast<chrono::microseconds>(

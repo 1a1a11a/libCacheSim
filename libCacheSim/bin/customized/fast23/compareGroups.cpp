@@ -56,7 +56,7 @@ void compareGroups::cal_group_metric_utility_over_time(string trace_path,
                                                        string ofilepath,
                                                        int group_size) {
   reader_t *reader =
-      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, OBJ_ID_NUM, nullptr);
+      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, nullptr);
   request_t *req = new_request();
   int64_t n_skip = 0;
   int64_t n_req = n_skip;

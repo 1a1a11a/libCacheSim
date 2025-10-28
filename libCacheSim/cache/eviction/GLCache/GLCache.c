@@ -446,9 +446,10 @@ static void GLCache_evict(cache_t *cache, const request_t *req) {
     if (params->curr_rtime - last_print_time > 3600 * 6) {
       last_print_time = params->curr_rtime;
       WARN(
-          "%.2lf hour, cache size %lu MB, %d segs, evicting and cannot merge\n",
-          (double)params->curr_rtime / 3600.0, cache->cache_size / 1024 / 1024,
-          params->n_in_use_segs);
+          "%.2lf hour, cache size %lld MB, %d segs, evicting and cannot "
+          "merge\n",
+          (double)params->curr_rtime / 3600.0,
+          (long long)(cache->cache_size / 1024 / 1024), params->n_in_use_segs);
     }
 
     evict_one_seg(cache, params->obj_sel.segs_to_evict[0]);

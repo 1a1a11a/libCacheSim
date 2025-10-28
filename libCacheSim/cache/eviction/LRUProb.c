@@ -25,6 +25,8 @@ typedef struct LRU_Prob_params {
   int threshold;
 } LRU_Prob_params_t;
 
+static const char *DEFAULT_CACHE_PARAMS = "prob=0.5";
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
@@ -77,8 +79,10 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
   cache->eviction_params =
       (LRU_Prob_params_t *)malloc(sizeof(LRU_Prob_params_t));
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)(cache->eviction_params);
-  params->prob = 0.5;
+  params->q_head = NULL;
+  params->q_tail = NULL;
 
+  LRU_Prob_parse_params(cache, DEFAULT_CACHE_PARAMS);
   if (cache_specific_params != NULL) {
     LRU_Prob_parse_params(cache, cache_specific_params);
   }
@@ -169,6 +173,7 @@ static cache_obj_t *LRU_Prob_find(cache_t *cache, const request_t *req,
  */
 static cache_obj_t *LRU_Prob_insert(cache_t *cache, const request_t *req) {
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
+
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
@@ -203,6 +208,8 @@ static cache_obj_t *LRU_Prob_to_evict(cache_t *cache, const request_t *req) {
 static void LRU_Prob_evict(cache_t *cache, const request_t *req) {
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = params->q_tail;
+  DEBUG_ASSERT(params->q_tail != NULL);
+
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
   cache_remove_obj_base(cache, obj_to_evict, true);
 }

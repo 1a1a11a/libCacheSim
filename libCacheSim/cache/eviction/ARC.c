@@ -222,12 +222,12 @@ static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
 
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
-  if (!update_cache) {
-    return obj->ARC.ghost ? NULL : obj;
-  }
-
   if (obj == NULL) {
     return NULL;
+  }
+
+  if (!update_cache) {
+    return obj->ARC.ghost ? NULL : obj;
   }
 
   params->curr_obj_in_L1_ghost = false;

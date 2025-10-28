@@ -323,7 +323,7 @@ void compareGrouping::cal_group_metric_utility(string trace_path,
                                                vector<int> &group_sizes,
                                                int n_repeat, int n_thread) {
   reader_t *reader =
-      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, OBJ_ID_NUM, nullptr);
+      open_trace(trace_path.c_str(), ORACLE_GENERAL_BIN, nullptr);
   request_t *req = new_request();
   int64_t n_total_req = get_num_of_req(reader);
   int64_t n_skip = n_total_req / 10;

@@ -182,9 +182,6 @@ static inline reader_init_param_t default_reader_init_params(void) {
  * @param trace_path path to the trace
  * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
  *  TWR_BIN_TRACE, see libCacheSim/enum.h for more
- * @param obj_id_type OBJ_ID_NUM, OBJ_ID_STR,
- *  used by CSV_TRACE and PLAIN_TXT_TRACE, whether the obj_id in the trace is a
- *  number or not, if it is not a number then we will map it to uint64_t
  * @param reader_init_param some initialization parameters used by csv and
  * binary traces these include time_field, obj_id_field, obj_size_field,
  * op_field, ttl_field, has_header, delimiter, binary_fmt_str

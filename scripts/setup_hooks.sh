@@ -34,15 +34,19 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 cd "$GIT_ROOT"
 
 # Get a list of staged files
-STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.([ch](pp)?|cc)$' || true)
+STAGED_CPP_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.([ch](pp)?|cc)$' || true)
+# Convert Python files to array for proper handling of filenames with spaces
+readarray -t STAGED_PY_FILES_ARRAY < <(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
+STAGED_PY_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
 
-if [ -z "$STAGED_FILES" ]; then
-    echo -e "${GREEN}No C/C++ files to check.${NC}"
+if [ -z "$STAGED_CPP_FILES" ] && [ ${#STAGED_PY_FILES_ARRAY[@]} -eq 0 ]; then
+    echo -e "${GREEN}No C/C++ or Python files to check.${NC}"
     exit 0
 fi
 
-NUM_FILES=$(echo "$STAGED_FILES" | wc -l)
-echo -e "${BLUE}Found ${NUM_FILES} files to check${NC}"
+NUM_CPP_FILES=$(echo "$STAGED_CPP_FILES" | grep -c . || echo "0")
+NUM_PY_FILES=${#STAGED_PY_FILES_ARRAY[@]}
+echo -e "${BLUE}Found ${NUM_CPP_FILES} C/C++ files and ${NUM_PY_FILES} Python files to check${NC}"
 
 # Create a temporary build directory for linting
 TEMP_BUILD_DIR=$(mktemp -d)
@@ -89,8 +93,8 @@ show_elapsed() {
     echo -e "${BLUE}Time elapsed: ${elapsed}s${NC}"
 }
 
-# Check if clang-format exists
-if command -v clang-format >/dev/null 2>&1; then
+# Check if clang-format exists and there are C++ files to check
+if command -v clang-format >/dev/null 2>&1 && [ -n "$STAGED_CPP_FILES" ]; then
     echo -e "${BLUE}Running clang-format checks in parallel (max $MAX_JOBS jobs)...${NC}"
     FORMAT_TIME=$(date +%s)
 
@@ -108,7 +112,7 @@ if command -v clang-format >/dev/null 2>&1; then
     PIDS=()
     FILES_CHECKED=0
 
-    for FILE in $STAGED_FILES; do
+    for FILE in $STAGED_CPP_FILES; do
         # If we've hit the max jobs limit, wait for one to finish
         while [ ${#PIDS[@]} -ge $MAX_JOBS ]; do
             # Wait for any job to finish, then remove it from the array
@@ -123,7 +127,7 @@ if command -v clang-format >/dev/null 2>&1; then
 
         # Track progress
         FILES_CHECKED=$((FILES_CHECKED + 1))
-        PROGRESS=$((FILES_CHECKED * 100 / NUM_FILES))
+        PROGRESS=$((FILES_CHECKED * 100 / NUM_CPP_FILES))
         echo -e "  [${PROGRESS}%] Checking formatting for ${BLUE}$FILE${NC}"
 
         # Create a log file for this specific file
@@ -177,7 +181,51 @@ if command -v clang-format >/dev/null 2>&1; then
     echo -e "${BLUE}Format check completed in $(($(date +%s) - FORMAT_TIME))s${NC}"
     cd "$TEMP_BUILD_DIR"
 else
-    echo -e "${YELLOW}clang-format not found, skipping format checks${NC}"
+    if [ -n "$STAGED_CPP_FILES" ]; then
+        echo -e "${YELLOW}clang-format not found, skipping C++ format checks${NC}"
+    fi
+fi
+
+# Check Python files with ruff
+if [ ${#STAGED_PY_FILES_ARRAY[@]} -gt 0 ]; then
+    if command -v ruff >/dev/null 2>&1; then
+        echo -e "${BLUE}Running ruff checks on Python files...${NC}"
+        RUFF_TIME=$(date +%s)
+
+        cd "$GIT_ROOT"
+
+        # Create log file for ruff output
+        RUFF_LOG="$LOG_DIR/ruff.log"
+        RUFF_FORMAT_LOG="$LOG_DIR/ruff_format.log"
+
+        # Run ruff check (linting)
+        echo -e "${BLUE}Running ruff linting...${NC}"
+        if ! ruff check "${STAGED_PY_FILES_ARRAY[@]}" > "$RUFF_LOG" 2>&1; then
+            echo -e "${RED}ruff found linting issues. Commit blocked.${NC}"
+            echo -e "  See ruff log at: $RUFF_LOG"
+            echo -e "  You can fix some issues automatically with: ruff check --fix"
+            echo -e "  Or bypass this check with: SKIP_LINT=1 git commit"
+            exit 1
+        fi
+
+        # Run ruff format check
+        echo -e "${BLUE}Running ruff format check...${NC}"
+        if ! ruff format --check "${STAGED_PY_FILES_ARRAY[@]}" > "$RUFF_FORMAT_LOG" 2>&1; then
+            echo -e "${RED}ruff found formatting issues. Commit blocked.${NC}"
+            echo -e "  See ruff format log at: $RUFF_FORMAT_LOG"
+            echo -e "  You can fix formatting issues with: ruff format <files>"
+            echo -e "  Or bypass this check with: SKIP_LINT=1 git commit"
+            exit 1
+        fi
+
+        echo -e "${GREEN}Python ruff checks passed!${NC}"
+        echo -e "${BLUE}ruff checks completed in $(($(date +%s) - RUFF_TIME))s${NC}"
+    else
+        echo -e "${YELLOW}ruff not found, skipping Python code quality checks${NC}"
+        echo -e "${YELLOW}Install ruff with: pip install ruff${NC}"
+    fi
+else
+    echo -e "${GREEN}No Python files to check with ruff.${NC}"
 fi
 
 ## Todo(jason): disable clang-tidy checks for now because it reports too many CXX header not found
