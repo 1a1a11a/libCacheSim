@@ -45,15 +45,3 @@ jobs:
           export ASAN_OPTIONS="detect_leaks=1:halt_on_error=1:verbosity=1"
           ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
-  selfhosted:
-    if: github.repository == '1a1a11a/libCacheSim'
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Configure CMake
-        run: cmake -G Ninja -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DENABLE_GLCACHE=on -DENABLE_LRB=on
-      - name: Build
-        run: ninja -C ${{github.workspace}}/build
-      - name: Test
-        working-directory: ${{github.workspace}}/build
-        run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
