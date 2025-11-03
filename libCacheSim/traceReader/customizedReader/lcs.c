@@ -197,7 +197,7 @@ int lcs_read_one_req(reader_t *reader, request_t *req) {
     int32_t *features = (int32_t *)(record + sizeof(lcs_req_v3_t));
     req->n_features = n_features;
     for (int i = 0; i < n_features; i++) {
-      req->features[i] = *(int32_t *)(features + i * sizeof(int32_t));
+      req->features[i] = features[i];
     }
   } else {
     ERROR("invalid lcs version %ld\n", (unsigned long)reader->lcs_ver);
