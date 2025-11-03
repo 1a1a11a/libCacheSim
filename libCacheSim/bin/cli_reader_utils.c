@@ -130,13 +130,12 @@ void parse_reader_params(const char *reader_params_str,
     } else if (strcasecmp(key, "feature-cols") == 0) {
       // feature-cols=1|2|3
       char *feature_str = strdup(value);
-      char *feature = strsep(&feature_str, "|");
+      char *feature;
       int i = 0;
-      while (feature != NULL) {
+      while ((feature = strsep(&feature_str, "|")) != NULL) {
         params->feature_fields[i] = (int)strtol(feature, &end, 0);
         _check_parsed_result(end, params->feature_fields[i]);
         i++;
-        feature = strsep(&feature_str, ",");
       }
       params->n_feature_fields = i;
     } else if (strcasecmp(key, "ttl-col") == 0) {
