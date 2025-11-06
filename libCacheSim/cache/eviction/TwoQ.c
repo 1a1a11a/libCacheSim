@@ -259,7 +259,11 @@ static void TwoQ_evict(cache_t *cache, const request_t *req) {
   cache_t *Aout = params->Aout;
   cache_t *Am = params->Am;
 
-  if (Ain->get_occupied_byte(Ain) > params->Ain_cache_size) {
+  if (Am->get_occupied_byte(Am) > 0 &&
+      Ain->get_occupied_byte(Ain) <= params->Ain_cache_size) {
+    // evict from Am
+    Am->evict(Am, req);
+  } else {
     // evict from Ain cache
     cache_obj_t *obj = Ain->to_evict(Ain, req);
     assert(obj != NULL);
@@ -267,11 +271,7 @@ static void TwoQ_evict(cache_t *cache, const request_t *req) {
     copy_cache_obj_to_request(params->req_local, obj);
     Aout->get(Aout, params->req_local);
     Ain->evict(Ain, req);
-    return;
   }
-
-  // evict from Am
-  Am->evict(Am, req);
 }
 
 /**
