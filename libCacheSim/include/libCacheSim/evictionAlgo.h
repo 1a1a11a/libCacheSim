@@ -50,6 +50,9 @@ cache_t *Belady_init(const common_cache_params_t ccache_params,
 cache_t *BeladySize_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params);
 
+cache_t *BeladyCompute_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+
 cache_t *CAR_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 

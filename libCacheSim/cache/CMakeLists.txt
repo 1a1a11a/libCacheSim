@@ -29,6 +29,7 @@ set(eviction_sources_c
         eviction/ARCv0.c         # an inefficient version but easier to understand
         eviction/Belady.c
         eviction/BeladySize.c
+        eviction/BeladyCompute.c
         eviction/CAR.c
         eviction/Cacheus.c
         eviction/Clock.c

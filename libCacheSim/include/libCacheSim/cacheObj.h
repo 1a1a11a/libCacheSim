@@ -75,6 +75,7 @@ typedef struct {
 typedef struct Belady_obj_metadata {
   void *pq_node;
   int64_t next_access_vtime;
+  int32_t compute_intensity;  // for BeladyCompute algorithm
 } Belady_obj_metadata_t;
 
 typedef struct {
