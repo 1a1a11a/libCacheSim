@@ -11,6 +11,20 @@
 extern "C" {
 #endif
 
+#ifdef RECORD_EVICTION_PROCESS
+FILE *eviction_process_ofile = NULL;
+
+void set_new_record_eviction_process_file(const char *ofilepath) {
+  if (eviction_process_ofile != NULL) {
+    fclose(eviction_process_ofile);
+  }
+  eviction_process_ofile = fopen(ofilepath, "w");
+  if (eviction_process_ofile == NULL) {
+    ERROR("cannot open eviction process file %s\n", ofilepath);
+  }
+}
+#endif /* RECORD_EVICTION_PROCESS */
+
 /** this file contains both base function, which should be called by all
  *eviction algorithms, and the queue related functions, which should be called
  *by algorithm that uses only one queue and needs to update the queue such as
@@ -354,6 +368,11 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj,
  */
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj,
                            bool remove_from_hashtable) {
+#ifdef RECORD_EVICTION_PROCESS
+  if (eviction_process_ofile != NULL) {
+    fprintf(eviction_process_ofile, "%ld\n", (long)obj->obj_id);
+  }
+#endif /* RECORD_EVICTION_PROCESS */
   DEBUG_ASSERT(cache->occupied_byte >= obj->obj_size + cache->obj_md_size);
   cache->occupied_byte -= (obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
