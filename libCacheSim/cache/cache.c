@@ -23,6 +23,12 @@ void set_new_record_eviction_process_file(const char *ofilepath) {
     ERROR("cannot open eviction process file %s\n", ofilepath);
   }
 }
+
+void print_eviction_debug_message(const char *msg) {
+  if (eviction_process_ofile != NULL) {
+    fprintf(eviction_process_ofile, "%s\n", msg);
+  }
+}
 #endif /* RECORD_EVICTION_PROCESS */
 
 /** this file contains both base function, which should be called by all
