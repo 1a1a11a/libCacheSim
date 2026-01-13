@@ -246,11 +246,15 @@ static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req)
       int32_t compute_intensity = sampled_obj->Belady.compute_intensity;
       if (compute_intensity <= 0) compute_intensity = 1; // avoid division by zero
       
-      // Use log to handle large numbers and avoid overflow
-      sampled_obj_score = log((double)time_diff) - log((double)compute_intensity);
+      if (time_diff <= 0) {
+        sampled_obj_score = -DBL_MAX / 2;
+      } else {
+        // Use log to handle large numbers and avoid overflow
+        sampled_obj_score = log((double)time_diff) - log((double)compute_intensity);
+      }
     }
     
-    if (obj_to_evict_score < sampled_obj_score) {
+    if (obj_to_evict == NULL || obj_to_evict_score < sampled_obj_score) {
       obj_to_evict = sampled_obj;
       obj_to_evict_score = sampled_obj_score;
     }
