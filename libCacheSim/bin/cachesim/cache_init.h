@@ -103,8 +103,8 @@ static inline cache_t *create_cache(const char *trace_path,
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = Hyperbolic_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "tinyLFU") == 0) {
-    if (eviction_params == NULL) {
-      cache = WTinyLFU_init(cc_params, eviction_params);
+    if (eviction_params == NULL || eviction_params[0] == '\0') { 
+      cache = WTinyLFU_init(cc_params, "window-size=0.01");
     } else {
       const char *window_size = strstr(eviction_params, "window-size=");
       if (window_size == NULL) {
