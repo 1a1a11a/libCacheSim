@@ -110,6 +110,9 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
 cache_t *LHD_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
+cache_t *LHD_compute_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+
 cache_t *LIRS_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 

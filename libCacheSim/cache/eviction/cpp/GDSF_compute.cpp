@@ -153,7 +153,9 @@ static cache_obj_t *GDSF_compute_find(cache_t *cache, const request_t *req,
     auto node = gdsf->pq_map[obj];
     gdsf->pq.erase(node);
 
-    double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * obj->GDSF_compute.compute_intensity;
+    double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * sqrt((double)(obj->GDSF_compute.compute_intensity));
+    // double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * obj->GDSF_compute.compute_intensity;
+    // double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * (double)(obj->GDSF_compute.compute_intensity) / (1000 + obj->GDSF_compute.compute_intensity);
     eviction::pq_node_type new_node = {obj, pri, cache->n_req};
     gdsf->pq.insert(new_node);
     gdsf->pq_map[obj] = new_node;
