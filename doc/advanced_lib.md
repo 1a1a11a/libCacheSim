@@ -29,11 +29,11 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
 void LRU_free(cache_t *cache);
 bool LRU_get(cache_t *cache, const request_t *req);
 cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                             bool update_cache);
 cache_obj_t *LRU_insert(cache_t *cache, const request_t *req);
 cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req);
 void LRU_evict(cache_t *cache, const request_t *req);
-bool LRU_remove(cache_t *cache, const obj_id_t obj_id);
+bool LRU_remove(cache_t *cache, obj_id_t obj_id);
 ```
 
 #### Create Cache

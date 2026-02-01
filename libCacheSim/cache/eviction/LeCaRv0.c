@@ -41,11 +41,11 @@ typedef struct LeCaRv0_params {
 static void LeCaRv0_free(cache_t *cache);
 static bool LeCaRv0_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LeCaRv0_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache);
+                                 bool update_cache);
 static cache_obj_t *LeCaRv0_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LeCaRv0_to_evict(cache_t *cache, const request_t *req);
 static void LeCaRv0_evict(cache_t *cache, const request_t *req);
-static bool LeCaRv0_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LeCaRv0_remove(cache_t *cache, obj_id_t obj_id);
 
 /* internal functions */
 static void update_weight(cache_t *cache, int64_t t, double *w_update,

@@ -46,11 +46,11 @@ static void LP_ARC_parse_params(cache_t *cache,
 static void LP_ARC_free(cache_t *cache);
 static bool LP_ARC_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_ARC_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                                bool update_cache);
 static cache_obj_t *LP_ARC_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_ARC_to_evict(cache_t *cache, const request_t *req);
 static void LP_ARC_evict(cache_t *cache, const request_t *req);
-static bool LP_ARC_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LP_ARC_remove(cache_t *cache, obj_id_t obj_id);
 static int64_t LP_ARC_get_occupied_byte(const cache_t *cache);
 static int64_t LP_ARC_get_n_obj(const cache_t *cache);
 
@@ -183,7 +183,7 @@ static bool LP_ARC_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LP_ARC_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                                bool update_cache) {
   LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_t1 = params->T1->find(params->T1, req, false);
@@ -333,7 +333,7 @@ static void LP_ARC_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool LP_ARC_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool LP_ARC_remove(cache_t *cache, obj_id_t obj_id) {
   LP_ARC_params_t *params = (LP_ARC_params_t *)(cache->eviction_params);
   bool removed = false;
   removed |= params->T1->remove(params->T1, obj_id);

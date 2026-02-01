@@ -26,11 +26,11 @@ extern "C" {
 static void RandomTwo_free(cache_t *cache);
 static bool RandomTwo_get(cache_t *cache, const request_t *req);
 static cache_obj_t *RandomTwo_find(cache_t *cache, const request_t *req,
-                                   const bool update_cache);
+                                   bool update_cache);
 static cache_obj_t *RandomTwo_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req);
 static void RandomTwo_evict(cache_t *cache, const request_t *req);
-static bool RandomTwo_remove(cache_t *cache, const obj_id_t obj_id);
+static bool RandomTwo_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -110,7 +110,7 @@ static bool RandomTwo_get(cache_t *cache, const request_t *req) {
  * @return true on hit, false on miss
  */
 static cache_obj_t *RandomTwo_find(cache_t *cache, const request_t *req,
-                                   const bool update_cache) {
+                                   bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
     obj->Random.last_access_vtime = cache->n_req;
@@ -187,7 +187,7 @@ static void RandomTwo_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool RandomTwo_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool RandomTwo_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

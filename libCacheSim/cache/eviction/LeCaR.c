@@ -66,11 +66,11 @@ static void LeCaR_parse_params(cache_t *cache,
 static void LeCaR_free(cache_t *cache);
 static bool LeCaR_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LeCaR_find(cache_t *cache, const request_t *req,
-                               const bool update_cache);
+                               bool update_cache);
 static cache_obj_t *LeCaR_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LeCaR_to_evict(cache_t *cache, const request_t *req);
 static void LeCaR_evict(cache_t *cache, const request_t *req);
-static bool LeCaR_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LeCaR_remove(cache_t *cache, obj_id_t obj_id);
 
 /* internal */
 static void verify_ghost_lru_integrity(cache_t *cache, LeCaR_params_t *params);

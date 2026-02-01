@@ -15,7 +15,7 @@ void LRU_free(cache_t *cache);
 bool LRU_get(cache_t *cache, const request_t *req);
 
 /* find an object in the cache, return the cache object if found, NULL otherwise, update_cache means whether update the cache state, e.g., moving object to the head of the queue */
-cache_obj_t *LRU_find(cache_t *cache, const request_t *req, const bool update_cache);
+cache_obj_t *LRU_find(cache_t *cache, const request_t *req, bool update_cache);
 
 /* insert an object to the cache, return the cache object, this assumes the object is not in the cache */
 cache_obj_t *LRU_insert(cache_t *cache, const request_t *req);
@@ -27,7 +27,7 @@ cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req);
 void LRU_evict(cache_t *cache, const request_t *req);
 
 /* remove an object from the cache, return true if the object is found and removed, note that this is used for user-triggered remove, eviction should use evict */
-bool LRU_remove(cache_t *cache, const obj_id_t obj_id);
+bool LRU_remove(cache_t *cache, obj_id_t obj_id);
 ```
 
 Specifically, you can following the steps:

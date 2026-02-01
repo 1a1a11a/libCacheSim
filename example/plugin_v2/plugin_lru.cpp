@@ -133,7 +133,7 @@ obj_id_t cache_eviction_hook(void *data, const request_t *req) {
 }
 
 // implement the cache remove hook
-void cache_remove_hook(void *data, const obj_id_t obj_id) {
+void cache_remove_hook(void *data, obj_id_t obj_id) {
   // remove object from the cache
   StandaloneLRU *lru_cache = (StandaloneLRU *)data;
   lru_cache->cache_remove(obj_id);

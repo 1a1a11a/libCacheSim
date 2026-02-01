@@ -62,11 +62,11 @@ static void ARC_parse_params(cache_t *cache, const char *cache_specific_params);
 static void ARC_free(cache_t *cache);
 static bool ARC_get(cache_t *cache, const request_t *req);
 static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                             bool update_cache);
 static cache_obj_t *ARC_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *ARC_to_evict(cache_t *cache, const request_t *req);
 static void ARC_evict(cache_t *cache, const request_t *req);
-static bool ARC_remove(cache_t *cache, const obj_id_t obj_id);
+static bool ARC_remove(cache_t *cache, obj_id_t obj_id);
 
 /* internal functions */
 /* this is the case IV in the paper */
@@ -217,7 +217,7 @@ static bool ARC_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *ARC_find(cache_t *cache, const request_t *req,
-                             const bool update_cache) {
+                             bool update_cache) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
@@ -384,7 +384,7 @@ static void ARC_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool ARC_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool ARC_remove(cache_t *cache, obj_id_t obj_id) {
   ARC_params_t *params = (ARC_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 

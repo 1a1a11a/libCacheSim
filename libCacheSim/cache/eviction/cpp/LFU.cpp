@@ -31,11 +31,11 @@ extern "C" {
 static void LFUCpp_free(cache_t *cache);
 static bool LFUCpp_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LFUCpp_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                                bool update_cache);
 static cache_obj_t *LFUCpp_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LFUCpp_to_evict(cache_t *cache, const request_t *req);
 static void LFUCpp_evict(cache_t *cache, const request_t *req);
-static bool LFUCpp_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LFUCpp_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -127,7 +127,7 @@ static bool LFUCpp_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LFUCpp_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                                bool update_cache) {
   auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != nullptr && update_cache) {
@@ -208,7 +208,7 @@ static void LFUCpp_remove_obj(cache_t *cache, cache_obj_t *obj) {
   cache_remove_obj_base(cache, obj, true);
 }
 
-static bool LFUCpp_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool LFUCpp_remove(cache_t *cache, obj_id_t obj_id) {
   auto *lfu = static_cast<eviction::LFUCpp *>(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == nullptr) {

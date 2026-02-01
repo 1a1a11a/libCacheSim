@@ -33,11 +33,11 @@ static void Clock_parse_params(cache_t *cache,
 static void Clock_free(cache_t *cache);
 static bool Clock_get(cache_t *cache, const request_t *req);
 static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
-                               const bool update_cache);
+                               bool update_cache);
 static cache_obj_t *Clock_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req);
 static void Clock_evict(cache_t *cache, const request_t *req);
-static bool Clock_remove(cache_t *cache, const obj_id_t obj_id);
+static bool Clock_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -143,7 +143,7 @@ static bool Clock_get(cache_t *cache, const request_t *req) {
  * @return true on hit, false on miss
  */
 static cache_obj_t *Clock_find(cache_t *cache, const request_t *req,
-                               const bool update_cache) {
+                               bool update_cache) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
@@ -273,7 +273,7 @@ static void Clock_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool Clock_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool Clock_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

@@ -36,11 +36,11 @@ static void LRUv0_parse_params(cache_t *cache,
 static void LRUv0_free(cache_t *cache);
 static bool LRUv0_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LRUv0_find(cache_t *cache, const request_t *req,
-                               const bool update_cache);
+                               bool update_cache);
 static cache_obj_t *LRUv0_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LRUv0_to_evict(cache_t *cache, const request_t *req);
 static void LRUv0_evict(cache_t *cache, const request_t *req);
-static bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LRUv0_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -144,7 +144,7 @@ static bool LRUv0_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LRUv0_find(cache_t *cache, const request_t *req,
-                               const bool update_cache) {
+                               bool update_cache) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,
                                              GSIZE_TO_POINTER(req->obj_id));
@@ -249,7 +249,7 @@ static void LRUv0_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool LRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool LRUv0_remove(cache_t *cache, obj_id_t obj_id) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
   GList *node = (GList *)g_hash_table_lookup(LRUv0_params->hashtable,

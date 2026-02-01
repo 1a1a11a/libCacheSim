@@ -36,11 +36,11 @@ static void LP_SFIFO_parse_params(cache_t *cache,
 static void LP_SFIFO_free(cache_t *cache);
 static bool LP_SFIFO_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_SFIFO_find(cache_t *cache, const request_t *req,
-                                  const bool update_cache);
+                                  bool update_cache);
 static cache_obj_t *LP_SFIFO_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_SFIFO_to_evict(cache_t *cache, const request_t *req);
 static void LP_SFIFO_evict(cache_t *cache, const request_t *req);
-static bool LP_SFIFO_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LP_SFIFO_remove(cache_t *cache, obj_id_t obj_id);
 
 static inline bool LP_SFIFO_can_insert(cache_t *cache, const request_t *req);
 static inline int64_t LP_SFIFO_get_occupied_byte(const cache_t *cache);
@@ -162,7 +162,7 @@ static bool LP_SFIFO_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LP_SFIFO_find(cache_t *cache, const request_t *req,
-                                  const bool update_cache) {
+                                  bool update_cache) {
   LP_SFIFO_params_t *params = (LP_SFIFO_params_t *)(cache->eviction_params);
   cache_obj_t *obj = NULL;
   for (int i = 0; i < params->n_seg; i++) {
@@ -327,7 +327,7 @@ static void LP_SFIFO_demote(cache_t *cache, const request_t *req, int seg_id) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool LP_SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool LP_SFIFO_remove(cache_t *cache, obj_id_t obj_id) {
   LP_SFIFO_params_t *params = (LP_SFIFO_params_t *)(cache->eviction_params);
 
   for (int i = 0; i < params->n_seg; i++) {

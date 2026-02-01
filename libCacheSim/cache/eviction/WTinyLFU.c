@@ -55,7 +55,7 @@ static bool WTinyLFU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *WTinyLFU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *WTinyLFU_to_evict(cache_t *cache, const request_t *req);
 static void WTinyLFU_evict(cache_t *cache, const request_t *req);
-static bool WTinyLFU_remove(cache_t *cache, const obj_id_t obj_id);
+static bool WTinyLFU_remove(cache_t *cache, obj_id_t obj_id);
 static void WTinyLFU_parse_params(cache_t *cache,
                                   const char *cache_specific_params);
 
@@ -206,7 +206,7 @@ static bool WTinyLFU_get(cache_t *cache, const request_t *req) {
 }
 
 static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
-                                  const bool update_cache) {
+                                  bool update_cache) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_window = NULL;
@@ -335,7 +335,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
   }
 }
 
-static bool WTinyLFU_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool WTinyLFU_remove(cache_t *cache, obj_id_t obj_id) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
   if (params->LRU->remove(params->LRU, obj_id)) {
     return true;

@@ -186,7 +186,7 @@ typedef obj_id_t (*cache_eviction_hook_t)(void *data, const request_t *req);
  *
  * @note This is called after the object has been removed from the cache
  */
-typedef void (*cache_remove_hook_t)(void *data, const obj_id_t obj_id);
+typedef void (*cache_remove_hook_t)(void *data, obj_id_t obj_id);
 
 /**
  * @brief Cache free hook function type
