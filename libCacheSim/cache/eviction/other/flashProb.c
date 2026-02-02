@@ -91,8 +91,13 @@ cache_t *flashProb_init(const common_cache_params_t ccache_params,
   }
 
   int64_t ram_cache_size =
-      (int64_t)ccache_params.cache_size * params->ram_size_ratio;
+      (int64_t)(ccache_params.cache_size * params->ram_size_ratio);
   int64_t disk_cache_size = ccache_params.cache_size - ram_cache_size;
+
+  if (ram_cache_size <= 0 || disk_cache_size <= 0) {
+    ERROR("Invalid cache size configuration: ram=%ld bytes, disk=%ld bytes\n",
+          ram_cache_size, disk_cache_size);
+  }
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = ram_cache_size;

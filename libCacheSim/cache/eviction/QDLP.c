@@ -100,10 +100,15 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   }
 
   int64_t fifo_cache_size =
-      (int64_t)ccache_params.cache_size * params->small_size_ratio;
+      (int64_t)(ccache_params.cache_size * params->small_size_ratio);
   int64_t main_cache_size = ccache_params.cache_size - fifo_cache_size;
   int64_t ghost_cache_size =
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
+
+  if (fifo_cache_size <= 0 || main_cache_size <= 0) {
+    ERROR("Invalid cache size configuration: fifo=%ld bytes, main=%ld bytes\n",
+          fifo_cache_size, main_cache_size);
+  }
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;

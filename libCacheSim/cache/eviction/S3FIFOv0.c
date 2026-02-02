@@ -110,10 +110,15 @@ cache_t *S3FIFOv0_init(const common_cache_params_t ccache_params,
   }
 
   int64_t fifo_cache_size =
-      (int64_t)ccache_params.cache_size * params->small_size_ratio;
+      (int64_t)(ccache_params.cache_size * params->small_size_ratio);
   int64_t main_fifo_size = ccache_params.cache_size - fifo_cache_size;
   int64_t ghostfifo__cachee_siz =
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
+
+  if (fifo_cache_size <= 0 || main_fifo_size <= 0) {
+    ERROR("Invalid cache size configuration: fifo=%ld bytes, main_fifo=%ld bytes\n",
+          fifo_cache_size, main_fifo_size);
+  }
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;

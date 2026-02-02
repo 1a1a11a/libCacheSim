@@ -510,7 +510,7 @@ static void ClockPro_parse_params(cache_t *cache,
       params->init_ref = strtol(value, &end, 10);
     } else if (strcasecmp(key, "init-ratio-cold") == 0) {
       const double ratio = strtod(value, &end);
-      params->mem_cold_max = (int64_t)((double)cache->cache_size * ratio);
+      params->mem_cold_max = (int64_t)(cache->cache_size * ratio);
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n",
              ClockPro_current_params(cache, params));
