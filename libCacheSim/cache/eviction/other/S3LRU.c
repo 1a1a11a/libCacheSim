@@ -112,8 +112,8 @@ cache_t *S3LRU_init(const common_cache_params_t ccache_params,
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
 
   if (LRU_cache_size <= 0 || main_cache_size <= 0) {
-    ERROR("Invalid cache size configuration: LRU=%ld bytes, main=%ld bytes\n",
-          LRU_cache_size, main_cache_size);
+    ERROR("Invalid cache size configuration: LRU=%lld bytes, main=%lld bytes\n",
+          (long long)LRU_cache_size, (long long)main_cache_size);
   }
 
   common_cache_params_t ccache_params_local = ccache_params;

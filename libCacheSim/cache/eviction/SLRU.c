@@ -456,8 +456,8 @@ static void SLRU_parse_params(cache_t *cache,
             (int64_t)((double)seg_size_array[i] / seg_size_sum *
                       cache->cache_size);
         if (params->lru_max_n_bytes[i] <= 0) {
-          ERROR("Invalid segment size for segment %d: %ld bytes\n", i,
-                params->lru_max_n_bytes[i]);
+          ERROR("Invalid segment size for segment %d: %lld bytes\n", i,
+                (long long)params->lru_max_n_bytes[i]);
         }
       }
     } else if (strcasecmp(key, "print") == 0) {
