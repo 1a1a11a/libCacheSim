@@ -42,8 +42,7 @@ typedef void (*cache_free_func_ptr)(cache_t *);
 
 typedef bool (*cache_get_func_ptr)(cache_t *, const request_t *);
 
-typedef cache_obj_t *(*cache_find_func_ptr)(cache_t *, const request_t *,
-                                            bool);
+typedef cache_obj_t *(*cache_find_func_ptr)(cache_t *, const request_t *, bool);
 
 typedef bool (*cache_can_insert_func_ptr)(cache_t *cache, const request_t *req);
 
