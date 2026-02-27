@@ -76,7 +76,7 @@ cachesim supports the following algorithms:
 ### One-line install
 We provide some scripts for quick installation of libCacheSim.
 ```bash
-cd scripts && bash install_dependency.sh && bash install_libcachesim.sh
+cd scripts && . ./install_dependency.sh && ./install_libcachesim.sh
 ```
 If this does not work, please
 1. let us know what system you are using and what error you get

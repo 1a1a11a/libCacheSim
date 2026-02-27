@@ -6,7 +6,7 @@
 
 ---
 
-## 1 . How the Plugin System Works
+## 1. How the Plugin System Works
 
 A series of hook functions defines the behavior of the custom cache during cache hits and misses. In essence, `libCacheSim` maintains a basic cache that tracks whether an object is a hit or miss, whether the cache is full, and provides hooks accordingly. The actual cache management logic—such as deciding which object(s) to evict on a miss—is entirely delegated to the plugin via these hooks.
 
@@ -49,7 +49,10 @@ Because plugins are completely decoupled from core code you can:
 
 ---
 
-## 2 . C/C++ Plugin Development
+## 2. C/C++ Plugin Development
+
+> [!IMPORTANT]
+> Before we start, make sure you have followed [Build and Install libCacheSim](../README.md#build-and-install-libcachesim) to build the core *libCacheSim* library.
 
 ### 2.1 Required Hook Functions
 
@@ -67,107 +70,119 @@ The opaque pointer returned by `cache_init_hook` is passed back to every other h
 
 ### 2.2 Minimal Plugin Skeleton (C++)
 
-Below is an **abridged** version of the LRU example in `example/plugin_v2/plugin_lru.cpp`.  You can copy this as a starting point for your own policy:
+Below is a minimal FIFO plugin implementation in C++. You can follow this guide as a starting point for your own policy. Create a new file at `plugins/plugin_fifo.cpp` (you need to create the parent directory as well) and paste the following code:
 
 ```cpp
-#include <libCacheSim.h>   // public headers installed by libCacheSim
-#include <unordered_map>
+#include <libCacheSim.h>
 
-class MyPolicy {
-  /* your data structures */
-public:
-  MyPolicy() {/*init*/}
-  void on_hit(obj_id_t id) {/*...*/}
-  void on_miss(obj_id_t id, uint64_t size) {/*...*/}
-  obj_id_t evict() {/* decide victim */}
-  void on_remove(obj_id_t id) {/*...*/}
+#include <queue>
+
+class FifoCache {
+ private:
+  std::queue<obj_id_t> queue_;
+
+ public:
+  FifoCache() {}
+
+  void on_hit(obj_id_t id) {}
+
+  void on_miss(obj_id_t id, uint64_t size) { queue_.push(id); }
+
+  obj_id_t evict() {
+    if (queue_.empty()) {
+      return 0;
+    }
+    obj_id_t victim = queue_.front();
+    queue_.pop();
+    return victim;
+  }
+
+  void on_remove(obj_id_t id) {}
 };
 
 extern "C" {
 void *cache_init_hook(const common_cache_params_t /*params*/) {
-  return new MyPolicy();
+  return new FifoCache();
 }
 
 void cache_hit_hook(void *data, const request_t *req) {
-  static_cast<MyPolicy *>(data)->on_hit(req->obj_id);
+  static_cast<FifoCache *>(data)->on_hit(req->obj_id);
 }
 
 void cache_miss_hook(void *data, const request_t *req) {
-  static_cast<MyPolicy *>(data)->on_miss(req->obj_id, req->obj_size);
+  static_cast<FifoCache *>(data)->on_miss(req->obj_id, req->obj_size);
 }
 
 obj_id_t cache_eviction_hook(void *data, const request_t * /*req*/) {
-  return static_cast<MyPolicy *>(data)->evict();
+  return static_cast<FifoCache *>(data)->evict();
 }
 
 void cache_remove_hook(void *data, obj_id_t obj_id) {
-  static_cast<MyPolicy *>(data)->on_remove(obj_id);
+  static_cast<FifoCache *>(data)->on_remove(obj_id);
 }
-} // extern "C"
+}  // extern "C"
 ```
 
-*Notes*
+**Notes**
 1. The plugin can allocate dynamic memory; it will live until the cache is destroyed.
-2. Thread safety is up to you – core *libCacheSim* is single-threaded today.
+2. Thread safety is up to you - core *libCacheSim* is single-threaded today.
 
 ### 2.3 Building the Plugin
 
-#### 2.3.1 Dependencies
-
-* **CMake ≥ 3.12** (recommended)
-* A C/C++ compiler (``gcc``, ``clang``)
-
-#### 2.3.2 Sample `CMakeLists.txt`
+We will use CMake to build the plugin (though any build system that can produce a shared library with the required symbols will work). Create a `CMakeLists.txt` in the `plugins/` directory with the following content:
 
 ```cmake
 cmake_minimum_required(VERSION 3.12)
-project(my_cache_plugin CXX C)
+project(plugins CXX C)
 
-# Tell CMake to create a shared library
-add_library(plugin_my_policy SHARED plugin_my_policy.cpp)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GLIB REQUIRED glib-2.0)
 
-# Location of libCacheSim headers – adjust if you installed elsewhere
-target_include_directories(plugin_my_policy PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
+set(PLUGINS fifo)  # Add more plugins here when you create them
 
-# Position-independent code is implicit for shared libs but keep for clarity
-set_property(TARGET plugin_my_policy PROPERTY POSITION_INDEPENDENT_CODE ON)
+foreach(plugin IN LISTS PLUGINS)
+  add_library(plugin_${plugin} SHARED plugin_${plugin}.cpp)
 
-# Optional: strip symbols & set output name
-set_target_properties(plugin_my_policy PROPERTIES
-  OUTPUT_NAME "plugin_my_policy_hooks")
+  target_include_directories(plugin_${plugin} PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libCacheSim/include
+    ${GLIB_INCLUDE_DIRS})
+
+  set_target_properties(plugin_${plugin} PROPERTIES
+    OUTPUT_NAME "plugin_${plugin}_hooks")
+endforeach()
 ```
 
-#### 2.3.3 Build Commands
+Make sure you are currently in the `plugins/` directory. To build your plugin(s), run the following commands:
 
 ```bash
-mkdir build && cd build
-cmake -G Ninja ..   # or "cmake .. && make"
-ninja               # produces libplugin_my_policy_hooks.so
+mkdir -p build && cd build/
+cmake -G Ninja .. && ninja
 ```
 
-> On macOS the file extension will be `.dylib` instead of `.so`.
+This will produce `libplugin_fifo_hooks.so` in the `plugins/build/` directory (or `libplugin_fifo_hooks.dylib` on macOS).
 
 ### 2.4 Using the C/C++ Plugin with `cachesim`
 
-1. **Compile** the plugin (`libplugin_my_policy_hooks.so`).
-2. **Run** `cachesim` with `pluginCache` **and** supply `plugin_path=`:
+If you are in the `plugins/build/` directory, you can run `cachesim` with your plugin like this:
 
 ```bash
-./bin/cachesim data/cloudPhysicsIO.vscsi vscsi pluginCache 0.01 \
-  -e "plugin_path=/absolute/path/libplugin_my_policy_hooks.so,cache_name=myPolicy"
+../../_build/bin/cachesim ../../data/cloudPhysicsIO.vscsi vscsi pluginCache 0.01 \
+  -e "plugin_path=libplugin_fifo_hooks.so"
 ```
 
-* Keys after `-e` are comma-separated.  Supported keys today:
-  * `plugin_path` (required) – absolute or relative path to the `.so` / `.dylib`.
-  * `cache_name`   (optional) – override the cache's display name.
-  * `print`        – debug helper: print current parameters and exit.
+If you are in other directories, adjust the paths accordingly.
 
-If you omit `cache_name`, the runtime will default to `pluginCache-<fileName>` for easier identification in logs.
+Keys after `-e` are comma-separated. The supported keys today are:
+* `plugin_path` (required) – absolute or relative path to the `.so` / `.dylib`.
+* `cache_name` (optional) – override the cache's display name. If not provided, the runtime will default to `pluginCache-<fileName>` for easier identification in logs.
+* `print` – debug helper: print current parameters and exit.
 
 ---
 
-## 3 . Python Plugin Development
+## 3. Python Plugin Development
+
+> [!IMPORTANT]
+> Before we start, make sure you have followed [Build and Install libCacheSim](../README.md#build-and-install-libcachesim) to build the core *libCacheSim* library.
 
 ### 3.1 Required Hook Functions
 
