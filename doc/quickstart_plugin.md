@@ -75,29 +75,36 @@ Below is a minimal FIFO plugin implementation in C++. You can follow this guide 
 ```cpp
 #include <libCacheSim.h>
 
-#include <queue>
+#include <deque>
 
 class FifoCache {
  private:
-  std::queue<obj_id_t> queue_;
+  std::deque<obj_id_t> queue_;
 
  public:
   FifoCache() {}
 
   void on_hit(obj_id_t id) {}
 
-  void on_miss(obj_id_t id, uint64_t size) { queue_.push(id); }
+  void on_miss(obj_id_t id, uint64_t size) { queue_.push_back(id); }
 
   obj_id_t evict() {
     if (queue_.empty()) {
       return 0;
     }
     obj_id_t victim = queue_.front();
-    queue_.pop();
+    queue_.pop_front();
     return victim;
   }
 
-  void on_remove(obj_id_t id) {}
+  void on_remove(obj_id_t id) {
+    for (auto it = queue_.begin(); it != queue_.end(); ++it) {
+      if (*it == id) {
+        queue_.erase(it);
+        break;
+      }
+    }
+  }
 };
 
 extern "C" {
