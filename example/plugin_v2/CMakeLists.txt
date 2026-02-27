@@ -21,13 +21,13 @@ message(STATUS "GLIB include: ${GLIB_INCLUDE_DIRS}")
 # Find libCacheSim
 find_library(LIBCACHESIM_LIBRARY
     NAMES CacheSim libCacheSim
-    PATHS /usr/local/lib /usr/lib
+    PATHS ../../_build /usr/local/lib /usr/lib
     DOC "libCacheSim unified library"
 )
 
 find_path(LIBCACHESIM_INCLUDE_DIR
     NAMES libCacheSim.h
-    PATHS /usr/local/include /usr/include
+    PATHS ../../libCacheSim/include /usr/local/include /usr/include
     DOC "libCacheSim include directory"
 )
 
@@ -43,7 +43,7 @@ add_library(plugin_lru_hooks SHARED plugin_lru.cpp)
 
 # Set compiler flags
 target_compile_options(plugin_lru_hooks PRIVATE
-    -Wall -Wextra 
+    -Wall -Wextra
     -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter
 )
 target_include_directories(plugin_lru_hooks PRIVATE

@@ -8,19 +8,17 @@ This example demonstrates how to create a plugin for libCacheSim using the v2 ho
 - `test_hooks_plugin.c` - Comprehensive test program for the plugin
 - `CMakeLists.txt` - Build configuration for creating the shared library
 
+## Dependencies
+
+Make sure you have followed the root README instructions to set up development tools and install libCacheSim.
+
 ## Building
 
 To compile the plugin into a shared library:
 
 ```bash
-# Prerequisites: Install Ninja build system if not already available
-# Ubuntu/Debian: sudo apt install ninja-build
-# macOS: brew install ninja
-
-mkdir build
-cd build
-cmake -G Ninja ..
-ninja
+mkdir -p build && cd build/
+cmake -G Ninja .. && ninja
 ```
 
 This will create:
@@ -50,9 +48,8 @@ The plugin implements these required hook functions:
 ### With cachesim Binary
 
 ```bash
-# Run cachesim with the plugin
-./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru,pluginCache 0.01,0.1 \
-  -e "plugin_path=/path/to/libCacheSim/example/plugin_v2/build/libplugin_lru_hooks.so"
+../../../_build/bin/cachesim ../../../data/cloudPhysicsIO.vscsi vscsi lru,pluginCache 0.01,0.1 \
+  -e "plugin_path=libplugin_lru_hooks.so"
 ```
 
 ### Testing the Plugin
@@ -60,23 +57,10 @@ The plugin implements these required hook functions:
 Run the included test to verify plugin functionality:
 
 ```bash
-cd build
 ./test_hooks_plugin
 ```
 
 The test compares the plugin LRU implementation against libCacheSim's built-in LRU to ensure identical behavior.
-
-## Dependencies
-
-- **libCacheSim**: Headers and libraries from the main project
-- **CMake 3.12+**: Build system
-
-## Plugin Parameter Format
-
-When using the plugin with cachesim or other libCacheSim tools, use the format:
-```
-plugin_path=/full/path/to/libplugin_lru_hooks.so
-```
 
 ## Implementation Notes
 
@@ -89,4 +73,4 @@ plugin_path=/full/path/to/libplugin_lru_hooks.so
 
 - Ensure the plugin path uses the `plugin_path=` prefix format
 - Verify all dependencies are available (check with `ldd libplugin_lru_hooks.so`)
-- Use absolute paths when specifying the plugin location
+- If relative paths don't work, use absolute paths when specifying the plugin location
