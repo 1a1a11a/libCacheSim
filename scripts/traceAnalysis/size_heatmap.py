@@ -68,7 +68,11 @@ def _load_size_heatmap_data(datapath) -> Tuple[np.ndarray, int, float, int]:
 
     ifile.close()
 
-    dim = max([len(l) for l in size_distribution_over_time])
+    if not size_distribution_over_time:
+        raise ValueError(
+            f"no size heatmap data in {datapath} (trace may have time span 0)"
+        )
+    dim = max(len(l) for l in size_distribution_over_time)
     plot_data = np.zeros((len(size_distribution_over_time), dim))
 
     for idx, l in enumerate(size_distribution_over_time):

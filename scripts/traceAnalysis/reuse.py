@@ -127,7 +127,7 @@ def plot_reuse(datapath: str, figname_prefix: str = "") -> None:
     plt.xticks(
         np.array([60, 300, 3600, 86400, 86400 * 2, 86400 * 4]) / 3600,
         ["1 min", "5 min", "1 hour", "1 day", "", "4 day"],
-        rotation=28,
+        rotation=90,
     )
     plt.savefig(
         "{}/{}_reuse_rt_log.{}".format(FIG_DIR, figname_prefix, FIG_TYPE),

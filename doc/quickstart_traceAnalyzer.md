@@ -62,7 +62,7 @@ The trace analyzer will generate statistics of the trace and save them to `stat`
     write: 0(0), overwrite: 0(0), del:0(0)
     request rate min 1753.7533 req/s, max 1986.3433 req/s, window 300s
     object rate min 300.3567 obj/s, max 319.8633 obj/s, window 300s
-    popularity: Zipf linear fitting slope=0.9472
+    popularity: Zipf alpha=0.9472, R2=0.97
     X-hit (number of obj accessed X times): 323699(0.3606), 218436(0.2433), 51516(0.0574), 128181(0.1428), 48785(0.0543), 25172(0.0280), 14606(0.0163), 14769(0.0165), 
     freq (fraction) of the most popular obj: 546563(0.0547), 365140(0.0365), 221311(0.0221), 190811(0.0191), 154037(0.0154), 151832(0.0152), 127070(0.0127), 98851(0.0099), 
 </details>

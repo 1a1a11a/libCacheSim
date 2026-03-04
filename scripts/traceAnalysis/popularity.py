@@ -43,6 +43,11 @@ def load_popularity_data(datapath):
 
     ifile.close()
 
+    if len(sorted_freq) < 2:
+        raise ValueError(
+            f"insufficient popularity data in {datapath} "
+            "(need at least 2 objects, trace may have too few)"
+        )
     return sorted_freq, freq_cnt
 
 
@@ -75,17 +80,14 @@ def plot_popularity_Zipf(datapath, figname_prefix=""):
 
     x = np.log(np.arange(1, 1 + len(sorted_freq)))
     y = np.log(np.array(sorted_freq))
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+    reg_slope, _, r_value, p_value, std_err = stats.linregress(x, y)
+    alpha = -reg_slope
+    r2 = r_value * r_value
 
     if sorted_freq[0] < 100:
-        s = "{:48} {:12} obj alpha 0, r^2 0 (the most popular object has less than 100 requests)".format(
-            figname_prefix,
-            len(sorted_freq),
-        )
+        s = "popularity: Zipf alpha=0, R2=0 (the most popular object has less than 100 requests)"
     else:
-        s = "{:48} {:12} obj alpha {:.4f}, r^2 {:.4f}".format(
-            figname_prefix, len(sorted_freq), -slope, r_value * r_value
-        )
+        s = "popularity: Zipf alpha={:.4f}, R2={:.4f}".format(alpha, r2)
 
     logger.info(s)
 

@@ -47,8 +47,8 @@ class Popularity {
       os << popularity.fit_fail_reason_ << "\n";
     else
       os << std::setprecision(4)
-         << "popularity: Zipf linear fitting slope=" << popularity.slope_
-         << ", intercept=" << popularity.intercept_ << ", R2=" << popularity.r2_
+         << "popularity: Zipf alpha=" << popularity.slope_
+         << ", R2=" << popularity.r2_
          << "\n";
 
     return os;

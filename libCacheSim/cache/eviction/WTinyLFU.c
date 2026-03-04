@@ -312,6 +312,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
           cache_obj_t *cache_obj =
               main_cache->insert(main_cache, params->req_local);
           params->n_admit_bytes += params->req_local->obj_size;
+          evicted = true;
 
         } else {
 #if defined(TRACK_DEMOTION)
