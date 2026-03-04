@@ -73,13 +73,11 @@ cachesim supports the following algorithms:
 
 
 ## Build and Install libCacheSim
-### Quick install
+### One-line install
 We provide some scripts for quick installation of libCacheSim.
 ```bash
-cd scripts
-bash ./install_dependency.sh
-source ~/.bashrc # or source ~/.zshrc
-bash ./install_libcachesim.sh
+cd scripts && bash ./install_dependency.sh && source ~/.bashrc && bash ./install_libcachesim.sh
+# Replace ~/.bashrc with ~/.zshrc if you are using zsh on macos
 ```
 If this does not work, please
 1. let us know what system you are using and what error you get
