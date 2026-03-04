@@ -41,11 +41,11 @@ typedef struct Cacheus_params {
 static void Cacheus_free(cache_t *cache);
 static bool Cacheus_get(cache_t *cache, const request_t *req);
 static cache_obj_t *Cacheus_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache);
+                                 bool update_cache);
 static cache_obj_t *Cacheus_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *Cacheus_to_evict(cache_t *cache, const request_t *req);
 static void Cacheus_evict(cache_t *cache, const request_t *req);
-static bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id);
+static bool Cacheus_remove(cache_t *cache, obj_id_t obj_id);
 
 static inline int64_t Cacheus_get_occupied_byte(const cache_t *cache);
 static inline int64_t Cacheus_get_n_obj(const cache_t *cache);
@@ -315,7 +315,7 @@ static void Cacheus_evict(cache_t *cache, const request_t *req) {
   cache->to_evict_candidate_gen_vtime = -1;
 }
 
-static bool Cacheus_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool Cacheus_remove(cache_t *cache, obj_id_t obj_id) {
   Cacheus_params_t *params = (Cacheus_params_t *)(cache->eviction_params);
   params->req_local->obj_id = obj_id;
   bool lru_removed = params->LRU->remove(params->LRU, obj_id);

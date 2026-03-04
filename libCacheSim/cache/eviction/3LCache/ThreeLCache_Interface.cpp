@@ -31,11 +31,11 @@ static void ThreeLCache_free(cache_t *cache);
 static bool ThreeLCache_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *ThreeLCache_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache);
+                                     bool update_cache);
 static cache_obj_t *ThreeLCache_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *ThreeLCache_to_evict(cache_t *cache, const request_t *req);
 static void ThreeLCache_evict(cache_t *cache, const request_t *req);
-static bool ThreeLCache_remove(cache_t *cache, const obj_id_t obj_id);
+static bool ThreeLCache_remove(cache_t *cache, obj_id_t obj_id);
 static int64_t ThreeLCache_get_occupied_byte(const cache_t *cache);
 static int64_t ThreeLCache_get_n_obj(const cache_t *cache);
 
@@ -181,7 +181,7 @@ static bool ThreeLCache_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *ThreeLCache_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache) {
+                                     bool update_cache) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
   auto *ThreeLCache =
       static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);
@@ -288,7 +288,7 @@ static void ThreeLCache_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool ThreeLCache_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool ThreeLCache_remove(cache_t *cache, obj_id_t obj_id) {
   auto *params = static_cast<ThreeLCache_params_t *>(cache->eviction_params);
   auto *ThreeLCache =
       static_cast<ThreeLCache::ThreeLCacheCache *>(params->ThreeLCache_cache);

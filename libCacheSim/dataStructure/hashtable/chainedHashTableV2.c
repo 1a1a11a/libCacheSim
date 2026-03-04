@@ -113,7 +113,7 @@ hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
 }
 
 cache_obj_t *chained_hashtable_find_obj_id_v2(const hashtable_t *hashtable,
-                                              const obj_id_t obj_id) {
+                                              obj_id_t obj_id) {
   cache_obj_t *cache_obj = NULL;
   uint64_t hv = get_hash_value_int_64(&obj_id);
   hv = hv & hashmask(hashtable->hashpower);
@@ -266,7 +266,7 @@ bool chained_hashtable_try_delete_v2(hashtable_t *hashtable,
  *  @return                                    [true or false]
  */
 bool chained_hashtable_delete_obj_id_v2(hashtable_t *hashtable,
-                                        const obj_id_t obj_id) {
+                                        obj_id_t obj_id) {
   uint64_t hv = get_hash_value_int_64(&obj_id) & hashmask(hashtable->hashpower);
   cache_obj_t *cur_obj = hashtable->ptr_table[hv];
   // the hash bucket is empty

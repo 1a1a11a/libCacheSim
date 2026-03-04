@@ -38,11 +38,11 @@ static void LRU_Prob_parse_params(cache_t *cache,
 static void LRU_Prob_free(cache_t *cache);
 static bool LRU_Prob_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_Prob_find(cache_t *cache, const request_t *req,
-                                  const bool update_cache);
+                                  bool update_cache);
 static cache_obj_t *LRU_Prob_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_Prob_to_evict(cache_t *cache, const request_t *req);
 static void LRU_Prob_evict(cache_t *cache, const request_t *req);
-static bool LRU_Prob_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LRU_Prob_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -144,7 +144,7 @@ static bool LRU_Prob_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LRU_Prob_find(cache_t *cache, const request_t *req,
-                                  const bool update_cache) {
+                                  bool update_cache) {
   LRU_Prob_params_t *params = (LRU_Prob_params_t *)cache->eviction_params;
 
   cache_obj_t *cached_obj = cache_find_base(cache, req, update_cache);
@@ -235,7 +235,7 @@ static void LRU_Prob_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool LRU_Prob_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool LRU_Prob_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

@@ -47,11 +47,11 @@ static void LP_TwoQ_free(cache_t *cache);
 static bool LP_TwoQ_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *LP_TwoQ_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache);
+                                 bool update_cache);
 static cache_obj_t *LP_TwoQ_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LP_TwoQ_to_evict(cache_t *cache, const request_t *req);
 static void LP_TwoQ_evict(cache_t *cache, const request_t *req);
-static bool LP_TwoQ_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LP_TwoQ_remove(cache_t *cache, obj_id_t obj_id);
 static inline int64_t LP_TwoQ_get_occupied_byte(const cache_t *cache);
 static inline int64_t LP_TwoQ_get_n_obj(const cache_t *cache);
 static inline bool LP_TwoQ_can_insert(cache_t *cache, const request_t *req);
@@ -178,7 +178,7 @@ static bool LP_TwoQ_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LP_TwoQ_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache) {
+                                 bool update_cache) {
   LP_TwoQ_params_t *params = (LP_TwoQ_params_t *)cache->eviction_params;
 
   cache_obj_t *obj = params->Ain->find(params->Ain, req, false);
@@ -301,7 +301,7 @@ static void LP_TwoQ_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool LP_TwoQ_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool LP_TwoQ_remove(cache_t *cache, obj_id_t obj_id) {
   LP_TwoQ_params_t *params = (LP_TwoQ_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->Ain->remove(params->Ain, obj_id);

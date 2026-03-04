@@ -179,7 +179,7 @@ bool cache_can_insert_default(cache_t *cache, const request_t *req) {
  * @return the found cache_obj_t* or NULL if not found
  */
 cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
-                             const bool update_cache) {
+                             bool update_cache) {
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
 
   // "update_cache = true" means that it is a real user request, use handle_find

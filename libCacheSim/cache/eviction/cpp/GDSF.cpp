@@ -29,12 +29,12 @@ static void GDSF_free(cache_t *cache);
 static bool GDSF_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+                              bool update_cache);
 static cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *GDSF_to_evict(cache_t *cache, const request_t *req);
 static void GDSF_evict(cache_t *cache, const request_t *req);
 
-static bool GDSF_remove(cache_t *cache, const obj_id_t obj_id);
+static bool GDSF_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -139,7 +139,7 @@ static bool GDSF_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req,
-                              const bool update_cache) {
+                              bool update_cache) {
   cache->n_req += 1;
 
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
@@ -297,7 +297,7 @@ static void GDSF_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool GDSF_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool GDSF_remove(cache_t *cache, obj_id_t obj_id) {
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
   return gdsf->remove(cache, obj_id);
 }

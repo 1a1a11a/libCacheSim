@@ -30,11 +30,11 @@ FILE *ofile_cmp_y = NULL;
 static void GLCache_free(cache_t *cache);
 static bool GLCache_get(cache_t *cache, const request_t *req);
 static cache_obj_t *GLCache_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache);
+                                 bool update_cache);
 static cache_obj_t *GLCache_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *GLCache_to_evict(cache_t *cache, const request_t *req);
 static void GLCache_evict(cache_t *cache, const request_t *req);
-static bool GLCache_remove(cache_t *cache, const obj_id_t obj_id);
+static bool GLCache_remove(cache_t *cache, obj_id_t obj_id);
 
 static void set_default_params(GLCache_params_t *params) {
   params->segment_size = 100;
@@ -310,7 +310,7 @@ static bool GLCache_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *GLCache_find(cache_t *cache, const request_t *req,
-                                 const bool update_cache) {
+                                 bool update_cache) {
   GLCache_params_t *params = cache->eviction_params;
 
   cache_obj_t *cache_obj = hashtable_find(cache->hashtable, req);
@@ -470,7 +470,7 @@ void GLCache_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {
   abort();
 }
 
-bool GLCache_remove(cache_t *cache, const obj_id_t obj_id) {
+bool GLCache_remove(cache_t *cache, obj_id_t obj_id) {
   abort();
   return true;
 }

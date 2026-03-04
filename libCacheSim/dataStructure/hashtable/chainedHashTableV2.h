@@ -19,7 +19,7 @@ extern "C" {
 hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower_init);
 
 cache_obj_t *chained_hashtable_find_obj_id_v2(const hashtable_t *hashtable,
-                                              const obj_id_t obj_id);
+                                              obj_id_t obj_id);
 
 cache_obj_t *chained_hashtable_find_v2(const hashtable_t *hashtable,
                                        const request_t *req);

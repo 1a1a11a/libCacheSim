@@ -90,7 +90,11 @@ def _load_reuse_heatmap_data(datapath: str) -> Tuple[np.ndarray, int, int, float
 
     ifile.close()
 
-    dim = max([len(l) for l in reuse_time_distribution_list])
+    if not reuse_time_distribution_list:
+        raise ValueError(
+            f"no reuse heatmap data in {datapath} (trace may have time span 0)"
+        )
+    dim = max(len(l) for l in reuse_time_distribution_list)
     plot_data = np.ones((len(reuse_time_distribution_list), dim))
     for idx, l in enumerate(reuse_time_distribution_list):
         plot_data[idx][: len(l)] = np.cumsum(np.array(l) / sum(l))

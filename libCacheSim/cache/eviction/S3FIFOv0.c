@@ -60,11 +60,11 @@ static void S3FIFOv0_free(cache_t *cache);
 static bool S3FIFOv0_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *S3FIFOv0_find(cache_t *cache, const request_t *req,
-                                  const bool update_cache);
+                                  bool update_cache);
 static cache_obj_t *S3FIFOv0_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *S3FIFOv0_to_evict(cache_t *cache, const request_t *req);
 static void S3FIFOv0_evict(cache_t *cache, const request_t *req);
-static bool S3FIFOv0_remove(cache_t *cache, const obj_id_t obj_id);
+static bool S3FIFOv0_remove(cache_t *cache, obj_id_t obj_id);
 static inline int64_t S3FIFOv0_get_occupied_byte(const cache_t *cache);
 static inline int64_t S3FIFOv0_get_n_obj(const cache_t *cache);
 static inline bool S3FIFOv0_can_insert(cache_t *cache, const request_t *req);
@@ -110,10 +110,17 @@ cache_t *S3FIFOv0_init(const common_cache_params_t ccache_params,
   }
 
   int64_t fifo_cache_size =
-      (int64_t)ccache_params.cache_size * params->small_size_ratio;
+      (int64_t)(ccache_params.cache_size * params->small_size_ratio);
   int64_t main_fifo_size = ccache_params.cache_size - fifo_cache_size;
   int64_t ghostfifo__cachee_siz =
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
+
+  if (fifo_cache_size <= 0 || main_fifo_size <= 0) {
+    ERROR(
+        "Invalid cache size configuration: fifo=%lld bytes, main_fifo=%lld "
+        "bytes\n",
+        (long long)fifo_cache_size, (long long)main_fifo_size);
+  }
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
@@ -208,7 +215,7 @@ static bool S3FIFOv0_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *S3FIFOv0_find(cache_t *cache, const request_t *req,
-                                  const bool update_cache) {
+                                  bool update_cache) {
   S3FIFOv0_params_t *params = (S3FIFOv0_params_t *)cache->eviction_params;
 
   cache_t *small_fifo = params->small_fifo;
@@ -434,7 +441,7 @@ static void S3FIFOv0_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool S3FIFOv0_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool S3FIFOv0_remove(cache_t *cache, obj_id_t obj_id) {
   S3FIFOv0_params_t *params = (S3FIFOv0_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->small_fifo->remove(params->small_fifo, obj_id);

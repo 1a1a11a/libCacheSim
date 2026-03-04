@@ -37,11 +37,11 @@ typedef struct SLRU_params {
 static void SLRU_free(cache_t *cache);
 static bool SLRU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SLRU_find(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+                              bool update_cache);
 static cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *SLRU_to_evict(cache_t *cache, const request_t *req);
 static void SLRU_evict(cache_t *cache, const request_t *req);
-static bool SLRU_remove(cache_t *cache, const obj_id_t obj_id);
+static bool SLRU_remove(cache_t *cache, obj_id_t obj_id);
 
 /* internal function */
 static void SLRU_promote_to_next_seg(cache_t *cache, const request_t *req,
@@ -135,7 +135,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
     params->lru_max_n_bytes = calloc(params->n_seg, sizeof(int64_t));
     for (int i = 0; i < params->n_seg; i++) {
       params->lru_max_n_bytes[i] =
-          (int64_t)ccache_params.cache_size / params->n_seg;
+          (int64_t)(ccache_params.cache_size / params->n_seg);
     }
   }
 
@@ -240,7 +240,7 @@ static bool SLRU_get(cache_t *cache, const request_t *req) {
  * promote to the next segment if update_cache is true
  */
 static cache_obj_t *SLRU_find(cache_t *cache, const request_t *req,
-                              const bool update_cache) {
+                              bool update_cache) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
@@ -383,7 +383,7 @@ static void SLRU_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool SLRU_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool SLRU_remove(cache_t *cache, obj_id_t obj_id) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 
@@ -455,6 +455,10 @@ static void SLRU_parse_params(cache_t *cache,
         params->lru_max_n_bytes[i] =
             (int64_t)((double)seg_size_array[i] / seg_size_sum *
                       cache->cache_size);
+        if (params->lru_max_n_bytes[i] <= 0) {
+          ERROR("Invalid segment size for segment %d: %lld bytes\n", i,
+                (long long)params->lru_max_n_bytes[i]);
+        }
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SLRU_current_params(cache, params));

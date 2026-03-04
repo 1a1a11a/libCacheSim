@@ -21,11 +21,11 @@ static void CR_LFU_parse_params(cache_t *cache,
 static void CR_LFU_free(cache_t *cache);
 static bool CR_LFU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *CR_LFU_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                                bool update_cache);
 static cache_obj_t *CR_LFU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *CR_LFU_to_evict(cache_t *cache, const request_t *req);
 static void CR_LFU_evict(cache_t *cache, const request_t *req);
-static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id);
+static bool CR_LFU_remove(cache_t *cache, obj_id_t obj_id);
 
 static void free_list_node(void *list_node) {
   my_free(sizeof(freq_node_t), list_node);
@@ -137,7 +137,7 @@ static bool CR_LFU_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *CR_LFU_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                                bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   if (cache_obj && likely(update_cache)) {
@@ -381,7 +381,7 @@ static void CR_LFU_evict(cache_t *cache, const request_t *req) {
   }
 }
 
-static bool CR_LFU_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool CR_LFU_remove(cache_t *cache, obj_id_t obj_id) {
   CR_LFU_params_t *params = (CR_LFU_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);

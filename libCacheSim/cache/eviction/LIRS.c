@@ -43,11 +43,11 @@ static __thread request_t *req_local_evictHIR = NULL;
 static void LIRS_free(cache_t *cache);
 static bool LIRS_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LIRS_find(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+                              bool update_cache);
 static cache_obj_t *LIRS_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LIRS_to_evict(cache_t *cache, const request_t *req);
 static void LIRS_evict(cache_t *cache, const request_t *req);
-static bool LIRS_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LIRS_remove(cache_t *cache, obj_id_t obj_id);
 
 /* internal functions */
 bool LIRS_can_insert(cache_t *cache, const request_t *req);
@@ -220,7 +220,7 @@ static bool LIRS_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LIRS_find(cache_t *cache, const request_t *req,
-                              const bool update_cache) {
+                              bool update_cache) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_s = NULL;

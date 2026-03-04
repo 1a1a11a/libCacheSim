@@ -55,11 +55,11 @@ static void S3LRU_free(cache_t *cache);
 static bool S3LRU_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *S3LRU_find(cache_t *cache, const request_t *req,
-                               const bool update_cache);
+                               bool update_cache);
 static cache_obj_t *S3LRU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *S3LRU_to_evict(cache_t *cache, const request_t *req);
 static void S3LRU_evict(cache_t *cache, const request_t *req);
-static bool S3LRU_remove(cache_t *cache, const obj_id_t obj_id);
+static bool S3LRU_remove(cache_t *cache, obj_id_t obj_id);
 static inline int64_t S3LRU_get_occupied_byte(const cache_t *cache);
 static inline int64_t S3LRU_get_n_obj(const cache_t *cache);
 static inline bool S3LRU_can_insert(cache_t *cache, const request_t *req);
@@ -106,10 +106,15 @@ cache_t *S3LRU_init(const common_cache_params_t ccache_params,
   }
 
   int64_t LRU_cache_size =
-      (int64_t)ccache_params.cache_size * params->LRU_size_ratio;
+      (int64_t)(ccache_params.cache_size * params->LRU_size_ratio);
   int64_t main_cache_size = ccache_params.cache_size - LRU_cache_size;
   int64_t LRU_ghost_cache_size =
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
+
+  if (LRU_cache_size <= 0 || main_cache_size <= 0) {
+    ERROR("Invalid cache size configuration: LRU=%lld bytes, main=%lld bytes\n",
+          (long long)LRU_cache_size, (long long)main_cache_size);
+  }
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = LRU_cache_size;
@@ -214,7 +219,7 @@ static bool S3LRU_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *S3LRU_find(cache_t *cache, const request_t *req,
-                               const bool update_cache) {
+                               bool update_cache) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the LRU and main caches
@@ -415,7 +420,7 @@ static void S3LRU_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool S3LRU_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool S3LRU_remove(cache_t *cache, obj_id_t obj_id) {
   S3LRU_params_t *params = (S3LRU_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->LRU->remove(params->LRU, obj_id);

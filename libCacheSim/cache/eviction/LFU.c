@@ -48,11 +48,11 @@ typedef struct LFU_params {
 static void LFU_free(cache_t *cache);
 static bool LFU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *LFU_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                             bool update_cache);
 static cache_obj_t *LFU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LFU_to_evict(cache_t *cache, const request_t *req);
 static void LFU_evict(cache_t *cache, const request_t *req);
-static bool LFU_remove(cache_t *cache, const obj_id_t obj_id);
+static bool LFU_remove(cache_t *cache, obj_id_t obj_id);
 static void LFU_remove_obj(cache_t *cache, cache_obj_t *obj);
 
 /* internal functions */
@@ -164,7 +164,7 @@ static bool LFU_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LFU_find(cache_t *cache, const request_t *req,
-                             const bool update_cache) {
+                             bool update_cache) {
   LFU_params_t *params = (LFU_params_t *)(cache->eviction_params);
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 

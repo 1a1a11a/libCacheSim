@@ -73,11 +73,11 @@ static void pluginCache_parse_params(cache_t *cache,
 static void pluginCache_free(cache_t *cache);
 static bool pluginCache_get(cache_t *cache, const request_t *req);
 static cache_obj_t *pluginCache_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache);
+                                     bool update_cache);
 static cache_obj_t *pluginCache_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *pluginCache_to_evict(cache_t *cache, const request_t *req);
 static void pluginCache_evict(cache_t *cache, const request_t *req);
-static bool pluginCache_remove(cache_t *cache, const obj_id_t obj_id);
+static bool pluginCache_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -270,7 +270,7 @@ static bool pluginCache_get(cache_t *cache, const request_t *req) {
  * @return Pointer to the cache object if found, NULL otherwise
  */
 static cache_obj_t *pluginCache_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache) {
+                                     bool update_cache) {
   return cache_find_base(cache, req, update_cache);
 }
 
@@ -349,7 +349,7 @@ static void pluginCache_evict(cache_t *cache, const request_t *req) {
  * @param obj_id ID of the object to remove
  * @return true if the object was found and removed, false if not found
  */
-static bool pluginCache_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool pluginCache_remove(cache_t *cache, obj_id_t obj_id) {
   pluginCache_params_t *params = (pluginCache_params_t *)cache->eviction_params;
 
   // Notify plugin of the removal

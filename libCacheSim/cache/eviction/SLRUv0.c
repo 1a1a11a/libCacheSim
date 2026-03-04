@@ -33,11 +33,11 @@ static void SLRUv0_parse_params(cache_t *cache,
 static void SLRUv0_free(cache_t *cache);
 static bool SLRUv0_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SLRUv0_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                                bool update_cache);
 static cache_obj_t *SLRUv0_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *SLRUv0_to_evict(cache_t *cache, const request_t *req);
 static void SLRUv0_evict(cache_t *cache, const request_t *req);
-static bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id);
+static bool SLRUv0_remove(cache_t *cache, obj_id_t obj_id);
 static void SLRUv0_cool(cache_t *cache, const request_t *req, int i);
 
 /* SLRUv0 cannot an object larger than segment size */
@@ -162,7 +162,7 @@ static bool SLRUv0_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *SLRUv0_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                                bool update_cache) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj = NULL;
@@ -299,7 +299,7 @@ static void SLRUv0_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool SLRUv0_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool SLRUv0_remove(cache_t *cache, obj_id_t obj_id) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
   for (int i = 0; i < params->n_seg; i++) {
     cache_t *lru = params->LRUs[i];

@@ -17,11 +17,11 @@ extern "C" {
 static void SR_LRU_free(cache_t *cache);
 static bool SR_LRU_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SR_LRU_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                                bool update_cache);
 static cache_obj_t *SR_LRU_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *SR_LRU_to_evict(cache_t *cache, const request_t *req);
 static void SR_LRU_evict(cache_t *cache, const request_t *req);
-static bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id);
+static bool SR_LRU_remove(cache_t *cache, obj_id_t obj_id);
 
 static bool SR_LRU_can_insert(cache_t *cache, const request_t *req);
 static int64_t SR_LRU_get_occupied_byte(const cache_t *cache);
@@ -148,7 +148,7 @@ static bool SR_LRU_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *SR_LRU_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                                bool update_cache) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
   cache_t *R = params->R_list;
   cache_t *SR = params->SR_list;
@@ -417,7 +417,7 @@ static void SR_LRU_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool SR_LRU_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool SR_LRU_remove(cache_t *cache, obj_id_t obj_id) {
   SR_LRU_params_t *params = (SR_LRU_params_t *)(cache->eviction_params);
 
   cache_t *R = params->R_list;

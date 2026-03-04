@@ -37,11 +37,11 @@ static void CAR_parse_params(cache_t *cache, const char *cache_specific_params);
 static void CAR_free(cache_t *cache);
 static bool CAR_get(cache_t *cache, const request_t *req);
 static cache_obj_t *CAR_find(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                             bool update_cache);
 static cache_obj_t *CAR_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *CAR_to_evict(cache_t *cache, const request_t *req);
 static void CAR_evict(cache_t *cache, const request_t *req);
-static bool CAR_remove(cache_t *cache, const obj_id_t obj_id);
+static bool CAR_remove(cache_t *cache, obj_id_t obj_id);
 
 static void _CAR_discard_LRU_L1_ghost(cache_t *cache, const request_t *req);
 static void _CAR_discard_LRU_L2_ghost(cache_t *cache, const request_t *req);
@@ -118,7 +118,7 @@ cache_t *CAR_init(const common_cache_params_t ccache_params,
  * @param cache_specific_params Clock specific parameters as a string
  */
 static cache_obj_t *CAR_find(cache_t *cache, const request_t *req,
-                             const bool update_cache) {
+                             bool update_cache) {
   CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
@@ -304,7 +304,7 @@ static void CAR_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool CAR_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool CAR_remove(cache_t *cache, obj_id_t obj_id) {
   CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 

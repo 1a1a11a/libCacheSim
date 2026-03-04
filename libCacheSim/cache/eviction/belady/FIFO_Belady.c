@@ -35,10 +35,10 @@ typedef struct {
 static void FIFO_Belady_free(cache_t *cache);
 static bool FIFO_Belady_get(cache_t *cache, const request_t *req);
 static cache_obj_t *FIFO_Belady_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache);
+                                     bool update_cache);
 static cache_obj_t *FIFO_Belady_insert(cache_t *cache, const request_t *req);
 static void FIFO_Belady_evict(cache_t *cache, const request_t *req);
-static bool FIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id);
+static bool FIFO_Belady_remove(cache_t *cache, obj_id_t obj_id);
 static void FIFO_Belady_print_cache(const cache_t *cache);
 
 // ***********************************************************************
@@ -158,7 +158,7 @@ static bool should_insert(cache_t *cache, int64_t next_access_vtime) {
  * @return true on hit, false on miss
  */
 static cache_obj_t *FIFO_Belady_find(cache_t *cache, const request_t *req,
-                                     const bool update_cache) {
+                                     bool update_cache) {
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
   return cache_obj;
@@ -257,7 +257,7 @@ static void FIFO_Belady_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool FIFO_Belady_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool FIFO_Belady_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

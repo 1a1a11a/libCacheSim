@@ -73,11 +73,11 @@ static void SFIFO_parse_params(cache_t *cache,
 static void SFIFO_free(cache_t *cache);
 static bool SFIFO_get(cache_t *cache, const request_t *req);
 static cache_obj_t *SFIFO_find(cache_t *cache, const request_t *req,
-                               const bool update_cache);
+                               bool update_cache);
 static cache_obj_t *SFIFO_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *SFIFO_to_evict(cache_t *cache, const request_t *req);
 static void SFIFO_evict(cache_t *cache, const request_t *req);
-static bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id);
+static bool SFIFO_remove(cache_t *cache, obj_id_t obj_id);
 
 /* internal functions */
 static bool SFIFO_can_insert(cache_t *cache, const request_t *req);
@@ -207,7 +207,7 @@ static bool SFIFO_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *SFIFO_find(cache_t *cache, const request_t *req,
-                               const bool update_cache) {
+                               bool update_cache) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
 
@@ -339,7 +339,7 @@ static void SFIFO_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool SFIFO_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool SFIFO_remove(cache_t *cache, obj_id_t obj_id) {
   SFIFO_params_t *params = (SFIFO_params_t *)(cache->eviction_params);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
 

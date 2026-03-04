@@ -47,11 +47,11 @@ static void flashProb_free(cache_t *cache);
 static bool flashProb_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *flashProb_find(cache_t *cache, const request_t *req,
-                                   const bool update_cache);
+                                   bool update_cache);
 static cache_obj_t *flashProb_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *flashProb_to_evict(cache_t *cache, const request_t *req);
 static void flashProb_evict(cache_t *cache, const request_t *req);
-static bool flashProb_remove(cache_t *cache, const obj_id_t obj_id);
+static bool flashProb_remove(cache_t *cache, obj_id_t obj_id);
 static inline int64_t flashProb_get_occupied_byte(const cache_t *cache);
 static inline int64_t flashProb_get_n_obj(const cache_t *cache);
 static void flashProb_parse_params(cache_t *cache,
@@ -91,8 +91,13 @@ cache_t *flashProb_init(const common_cache_params_t ccache_params,
   }
 
   int64_t ram_cache_size =
-      (int64_t)ccache_params.cache_size * params->ram_size_ratio;
+      (int64_t)(ccache_params.cache_size * params->ram_size_ratio);
   int64_t disk_cache_size = ccache_params.cache_size - ram_cache_size;
+
+  if (ram_cache_size <= 0 || disk_cache_size <= 0) {
+    ERROR("Invalid cache size configuration: ram=%lld bytes, disk=%lld bytes\n",
+          (long long)ram_cache_size, (long long)disk_cache_size);
+  }
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = ram_cache_size;
@@ -198,7 +203,7 @@ static bool flashProb_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *flashProb_find(cache_t *cache, const request_t *req,
-                                   const bool update_cache) {
+                                   bool update_cache) {
   flashProb_params_t *params = (flashProb_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the ram and disk caches
@@ -319,7 +324,7 @@ static void flashProb_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool flashProb_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool flashProb_remove(cache_t *cache, obj_id_t obj_id) {
   flashProb_params_t *params = (flashProb_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->ram->remove(params->ram, obj_id);

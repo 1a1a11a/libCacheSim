@@ -135,7 +135,7 @@ static bool plugin_lru_get(cache_t *cache, const request_t *req) {
  * @return the cache object if found, NULL otherwise
  */
 static cache_obj_t *plugin_lru_find(cache_t *cache, const request_t *req,
-                                    const bool update_cache) {
+                                    bool update_cache) {
   plugin_lru_params_t *params = (plugin_lru_params_t *)cache->eviction_params;
   cache_obj_t *cache_obj = cache_find_base(cache, req, update_cache);
 
@@ -228,7 +228,7 @@ static void plugin_lru_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool plugin_lru_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool plugin_lru_remove(cache_t *cache, obj_id_t obj_id) {
   request_t req = {.obj_id = obj_id, .obj_size = 0};
   cache_obj_t *obj = cache_find_base(cache, &req, false);
 

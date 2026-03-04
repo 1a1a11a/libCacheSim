@@ -66,26 +66,30 @@ void Popularity::run(obj_info_map_type &obj_map) {
     WARN("%s\n", fit_fail_reason_.c_str());
   }
 
-  /* calculate Zipf alpha using linear regression */
-  vector<double> log_freq(obj_map.size());
-  vector<double> log_rank(obj_map.size());
+  /* calculate Zipf alpha using linear regression: log(freq) = -alpha*log(rank) + c */
+  const size_t n = freq_vec_.size();
+  vector<double> log_freq(n);
+  vector<double> log_rank(n);
 
-  int i = 0;
-  for_each(log_freq.begin(), log_freq.end(),
-           [&](double &item) { item = log(freq_vec_[i++]); });
-  i = 0;
-  for_each(log_rank.begin(), log_rank.end(), [&](double &item) {
-    ++i;
-    item = log(i);
-  });
+  for (size_t i = 0; i < n; i++) {
+    log_freq[i] = log(static_cast<double>(freq_vec_[i]));
+    log_rank[i] = log(static_cast<double>(i + 1));
+  }
 
-  /* TODO: a better linear regression with intercept and R2 */
-  slope_ = -PopularityUtils::slope(log_rank, log_freq);
+  double reg_slope, reg_intercept, r;
+  int err = linreg(static_cast<int>(n), log_rank.data(), log_freq.data(),
+                  &reg_slope, &reg_intercept, &r);
+  if (err != 0) {
+    fit_fail_reason_ = "popularity: singular regression matrix (e.g. uniform)";
+    WARN("%s\n", fit_fail_reason_.c_str());
+    return;
+  }
+  /* Zipf: log(freq) = -alpha*log(rank) + c, so reg_slope = -alpha */
+  slope_ = -reg_slope;
+  intercept_ = reg_intercept;
+  r2_ = (std::isfinite(r) ? r * r : 0.0);
 
   has_run = true;
 }
 
-vector<uint32_t> freq_vec_{};
-double slope_, intercept_, r2_;
-bool has_run = false;
 };  // namespace traceAnalyzer

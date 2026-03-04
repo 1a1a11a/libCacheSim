@@ -33,11 +33,11 @@ typedef struct Belady_params {
 static void Belady_free(cache_t *cache);
 static bool Belady_get(cache_t *cache, const request_t *req);
 static cache_obj_t *Belady_find(cache_t *cache, const request_t *req,
-                                const bool update_cache);
+                                bool update_cache);
 static cache_obj_t *Belady_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *Belady_to_evict(cache_t *cache, const request_t *req);
 static void Belady_evict(cache_t *cache, const request_t *req);
-static bool Belady_remove(cache_t *cache, const obj_id_t obj_id);
+static bool Belady_remove(cache_t *cache, obj_id_t obj_id);
 static void Belady_remove_obj(cache_t *cache, cache_obj_t *obj);
 
 // ***********************************************************************
@@ -139,7 +139,7 @@ static bool Belady_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *Belady_find(cache_t *cache, const request_t *req,
-                                const bool update_cache) {
+                                bool update_cache) {
   Belady_params_t *params = cache->eviction_params;
   cache_obj_t *cached_obj = cache_find_base(cache, req, update_cache);
 
@@ -270,7 +270,7 @@ static void Belady_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool Belady_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool Belady_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

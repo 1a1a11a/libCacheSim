@@ -42,8 +42,7 @@ typedef void (*cache_free_func_ptr)(cache_t *);
 
 typedef bool (*cache_get_func_ptr)(cache_t *, const request_t *);
 
-typedef cache_obj_t *(*cache_find_func_ptr)(cache_t *, const request_t *,
-                                            const bool);
+typedef cache_obj_t *(*cache_find_func_ptr)(cache_t *, const request_t *, bool);
 
 typedef bool (*cache_can_insert_func_ptr)(cache_t *cache, const request_t *req);
 
@@ -55,7 +54,7 @@ typedef void (*cache_evict_func_ptr)(cache_t *, const request_t *);
 
 typedef cache_obj_t *(*cache_to_evict_func_ptr)(cache_t *, const request_t *);
 
-typedef bool (*cache_remove_func_ptr)(cache_t *, const obj_id_t);
+typedef bool (*cache_remove_func_ptr)(cache_t *, obj_id_t);
 
 typedef void (*cache_remove_obj_func_ptr)(cache_t *, cache_obj_t *obj);
 
@@ -212,7 +211,7 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
  * @return
  */
 cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
-                             const bool update_cache);
+                             bool update_cache);
 
 /**
  * a common cache get function

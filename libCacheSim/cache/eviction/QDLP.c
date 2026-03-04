@@ -53,11 +53,11 @@ static void QDLP_free(cache_t *cache);
 static bool QDLP_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+                              bool update_cache);
 static cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *QDLP_to_evict(cache_t *cache, const request_t *req);
 static void QDLP_evict(cache_t *cache, const request_t *req);
-static bool QDLP_remove(cache_t *cache, const obj_id_t obj_id);
+static bool QDLP_remove(cache_t *cache, obj_id_t obj_id);
 static inline int64_t QDLP_get_occupied_byte(const cache_t *cache);
 static inline int64_t QDLP_get_n_obj(const cache_t *cache);
 static inline bool QDLP_can_insert(cache_t *cache, const request_t *req);
@@ -100,10 +100,16 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
   }
 
   int64_t fifo_cache_size =
-      (int64_t)ccache_params.cache_size * params->small_size_ratio;
+      (int64_t)(ccache_params.cache_size * params->small_size_ratio);
   int64_t main_cache_size = ccache_params.cache_size - fifo_cache_size;
   int64_t ghost_cache_size =
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
+
+  if (fifo_cache_size <= 0 || main_cache_size <= 0) {
+    ERROR(
+        "Invalid cache size configuration: fifo=%lld bytes, main=%lld bytes\n",
+        (long long)fifo_cache_size, (long long)main_cache_size);
+  }
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
@@ -229,7 +235,7 @@ static bool QDLP_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *QDLP_find(cache_t *cache, const request_t *req,
-                              const bool update_cache) {
+                              bool update_cache) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
 
   // if update cache is false, we only check the fifo and main caches
@@ -393,7 +399,7 @@ static void QDLP_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool QDLP_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool QDLP_remove(cache_t *cache, obj_id_t obj_id) {
   QDLP_params_t *params = (QDLP_params_t *)cache->eviction_params;
   bool removed = false;
   removed = removed || params->small_cache->remove(params->small_cache, obj_id);
