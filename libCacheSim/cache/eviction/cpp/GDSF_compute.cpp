@@ -25,12 +25,12 @@ extern "C" {
 // ***********************************************************************
 
 cache_t *GDSF_compute_init(const common_cache_params_t ccache_params,
-                   const char *cache_specific_params);
+                           const char *cache_specific_params);
 static void GDSF_compute_free(cache_t *cache);
 static bool GDSF_compute_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *GDSF_compute_find(cache_t *cache, const request_t *req,
-                              const bool update_cache);
+                                      const bool update_cache);
 static cache_obj_t *GDSF_compute_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *GDSF_compute_to_evict(cache_t *cache, const request_t *req);
 static void GDSF_compute_evict(cache_t *cache, const request_t *req);
@@ -52,7 +52,7 @@ static bool GDSF_compute_remove(cache_t *cache, const obj_id_t obj_id);
  * function or use -e "print" with the cachesim binary
  */
 cache_t *GDSF_compute_init(const common_cache_params_t ccache_params,
-                   const char *cache_specific_params) {
+                           const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("GDSF_compute", ccache_params, cache_specific_params);
   cache->eviction_params = reinterpret_cast<void *>(new eviction::GDSF_compute);
@@ -106,7 +106,8 @@ static void GDSF_compute_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool GDSF_compute_get(cache_t *cache, const request_t *req) {
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
   cache_obj_t *obj = cache->find(cache, req, true);
   bool hit = (obj != NULL);
 
@@ -140,22 +141,20 @@ static bool GDSF_compute_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *GDSF_compute_find(cache_t *cache, const request_t *req,
-                              const bool update_cache) {
+                                      const bool update_cache) {
   cache->n_req += 1;
 
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   /* this does not consider object size change */
   if (obj != nullptr && update_cache) {
     /* misc frequency is updated in cache_find_base */
-    // obj->misc.freq += 1;
 
     auto node = gdsf->pq_map[obj];
     gdsf->pq.erase(node);
 
-    double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * sqrt((double)(obj->GDSF_compute.compute_intensity));
-    // double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * obj->GDSF_compute.compute_intensity;
-    // double pri = gdsf->pri_last_evict + (double)(obj->misc.freq) * (double)(obj->GDSF_compute.compute_intensity) / (1000 + obj->GDSF_compute.compute_intensity);
+    double pri = gdsf->pri_last_evict + (obj->misc.freq * obj->cost);
     eviction::pq_node_type new_node = {obj, pri, cache->n_req};
     gdsf->pq.insert(new_node);
     gdsf->pq_map[obj] = new_node;
@@ -166,7 +165,8 @@ static cache_obj_t *GDSF_compute_find(cache_t *cache, const request_t *req,
 
 static bool GDSF_compute_can_insert(cache_t *cache, const request_t *req) {
   static __thread int64_t n_insert = 0, n_cannot_insert = 0;
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
   if (cache->get_occupied_byte(cache) + req->obj_size <= cache->cache_size) {
     return true;
   }
@@ -224,7 +224,8 @@ static bool GDSF_compute_can_insert(cache_t *cache, const request_t *req) {
  * @return the inserted object
  */
 static cache_obj_t *GDSF_compute_insert(cache_t *cache, const request_t *req) {
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
 
   // this does not affect insertion for most workloads unless object size is too
   // large however, when it have effect, it often increases miss ratio because a
@@ -236,7 +237,7 @@ static cache_obj_t *GDSF_compute_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   DEBUG_ASSERT(obj != nullptr);
   obj->misc.freq = 1;
-  obj->GDSF_compute.compute_intensity = req->cost;
+  obj->cost = req->cost;
 
   double pri = gdsf->pri_last_evict + req->cost;
   eviction::pq_node_type new_node = {obj, pri, cache->n_req};
@@ -257,8 +258,10 @@ static cache_obj_t *GDSF_compute_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *GDSF_compute_to_evict(cache_t *cache, const request_t *req) {
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+static cache_obj_t *GDSF_compute_to_evict(cache_t *cache,
+                                          const request_t *req) {
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
   eviction::pq_node_type p = gdsf->peek_lowest_score();
 
   return p.obj;
@@ -274,16 +277,23 @@ static cache_obj_t *GDSF_compute_to_evict(cache_t *cache, const request_t *req) 
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
 static void GDSF_compute_evict(cache_t *cache, const request_t *req) {
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
   eviction::pq_node_type p = gdsf->pop_lowest_score();
   cache_obj_t *obj = p.obj;
 
+  // printf(
+  //     "GDSF_compute_evict: evicting obj_id %lu with priority %f, freq %d,
+  //     cost "
+  //     "%d\n",
+  //     (unsigned long)obj->obj_id, p.priority, obj->misc.freq, obj->cost);
   gdsf->pri_last_evict = p.priority;
   cache_remove_obj_base(cache, obj, true);
 }
 
 static void GDSF_compute_remove_obj(cache_t *cache, cache_obj_t *obj) {
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
   gdsf->remove_obj(cache, obj);
 }
 
@@ -301,7 +311,8 @@ static void GDSF_compute_remove_obj(cache_t *cache, cache_obj_t *obj) {
  * cache
  */
 static bool GDSF_compute_remove(cache_t *cache, const obj_id_t obj_id) {
-  auto *gdsf = reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
+  auto *gdsf =
+      reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
   return gdsf->remove(cache, obj_id);
 }
 

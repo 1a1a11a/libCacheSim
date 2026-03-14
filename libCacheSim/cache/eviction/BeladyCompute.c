@@ -38,7 +38,8 @@ static bool BeladyCompute_get(cache_t *cache, const request_t *req);
 static cache_obj_t *BeladyCompute_find(cache_t *cache, const request_t *req,
                                        const bool update_cache);
 static cache_obj_t *BeladyCompute_insert(cache_t *cache, const request_t *req);
-static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req);
+static cache_obj_t *BeladyCompute_to_evict(cache_t *cache,
+                                           const request_t *req);
 static void BeladyCompute_evict(cache_t *cache, const request_t *req);
 static bool BeladyCompute_remove(cache_t *cache, const obj_id_t obj_id);
 static void BeladyCompute_remove_obj(cache_t *cache, cache_obj_t *obj);
@@ -54,8 +55,8 @@ static void BeladyCompute_remove_obj(cache_t *cache, cache_obj_t *obj);
  * @brief initialize a BeladyCompute cache
  *
  * @param ccache_params some common cache parameters
- * @param cache_specific_params BeladyCompute specific parameters, see parse_params
- * function or use -e "print" with the cachesim binary
+ * @param cache_specific_params BeladyCompute specific parameters, see
+ * parse_params function or use -e "print" with the cachesim binary
  */
 cache_t *BeladyCompute_init(const common_cache_params_t ccache_params,
                             const char *cache_specific_params) {
@@ -138,7 +139,7 @@ static cache_obj_t *BeladyCompute_find(cache_t *cache, const request_t *req,
   if (obj != NULL && likely(update_cache)) {
     // store the compute intensity in the cache object for eviction decisions
     if (req->n_features > 0) {
-      obj->Belady.compute_intensity = req->cost;
+      obj->cost = req->cost;
     }
 
     if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
@@ -165,11 +166,7 @@ static cache_obj_t *BeladyCompute_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
 
   // store the compute intensity for eviction decisions
-  if (req->n_features > 0) {
-    obj->Belady.compute_intensity = req->cost;
-  } else {
-    obj->Belady.compute_intensity = 1; // default to 1 to avoid division by zero
-  }
+  obj->cost = req->cost;
 
   if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
     obj->Belady.next_access_vtime = -1;
@@ -197,9 +194,11 @@ static void hashtable_iter_Belady_compute(cache_obj_t *cache_obj,
   if (cache_obj->Belady.next_access_vtime == -1) {
     obj_score = DBL_MAX;
   } else {
-    int64_t time_diff = cache_obj->Belady.next_access_vtime - iter_userdata->curr_vtime;
-    int32_t compute_intensity = cache_obj->Belady.compute_intensity;
-    if (compute_intensity <= 0) compute_intensity = 1; // avoid division by zero
+    int64_t time_diff =
+        cache_obj->Belady.next_access_vtime - iter_userdata->curr_vtime;
+    int32_t compute_intensity = cache_obj->cost;
+    if (compute_intensity <= 0)
+      compute_intensity = 1;  // avoid division by zero
     obj_score = (double)time_diff / (double)compute_intensity;
   }
 
@@ -219,7 +218,8 @@ static void hashtable_iter_Belady_compute(cache_obj_t *cache_obj,
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req) {
+static cache_obj_t *BeladyCompute_to_evict(cache_t *cache,
+                                           const request_t *req) {
   struct hash_iter_user_data iter_userdata;
   iter_userdata.curr_vtime = cache->n_req;
   iter_userdata.max_score = 0.0;
@@ -232,8 +232,10 @@ static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req)
 }
 
 #else
-static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req) {
-  BeladyCompute_params_t *params = (BeladyCompute_params_t *)cache->eviction_params;
+static cache_obj_t *BeladyCompute_to_evict(cache_t *cache,
+                                           const request_t *req) {
+  BeladyCompute_params_t *params =
+      (BeladyCompute_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = NULL, *sampled_obj;
   double obj_to_evict_score = -DBL_MAX, sampled_obj_score = -1;
 
@@ -241,16 +243,32 @@ static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req)
     sampled_obj = hashtable_rand_obj(cache->hashtable);
     if (sampled_obj->Belady.next_access_vtime == -1) {
       sampled_obj_score = DBL_MAX;
+      obj_to_evict = sampled_obj;
+      break;  // no need to continue sampling if we find an object that will
+              // never be accessed again
     } else {
       int64_t time_diff = sampled_obj->Belady.next_access_vtime - cache->n_req;
-      int32_t compute_intensity = sampled_obj->Belady.compute_intensity;
-      if (compute_intensity <= 0) compute_intensity = 1; // avoid division by zero
+      int32_t compute_intensity = sampled_obj->cost;
+      if (compute_intensity <= 0) {
+        ERROR(
+            "BeladyCompute_to_evict: compute_intensity is %d for obj_id %lu, "
+            "this may cause division by zero, default to 1\n",
+            compute_intensity, (unsigned long)sampled_obj->obj_id);
+
+        compute_intensity = 1;  // avoid division by zero
+      }
 
       if (time_diff <= 0) {
+        ERROR(
+            "BeladyCompute_to_evict: time_diff is %ld for obj_id %lu, this may "
+            "cause "
+            "negative or zero score, default to 1\n",
+            (long)time_diff, (unsigned long)sampled_obj->obj_id);
         sampled_obj_score = -DBL_MAX / 2;
       } else {
         // Use log to handle large numbers and avoid overflow
-        sampled_obj_score = log((double)time_diff) - log((double)compute_intensity);
+        sampled_obj_score =
+            log((double)time_diff) - log((double)compute_intensity);
       }
     }
 
@@ -311,7 +329,8 @@ bool BeladyCompute_remove(cache_t *cache, const obj_id_t obj_id) {
  * @brief print the default parameters
  *
  */
-static const char *BeladyCompute_current_params(BeladyCompute_params_t *params) {
+static const char *BeladyCompute_current_params(
+    BeladyCompute_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-sample=%d\n", params->n_sample);
   return params_str;
@@ -325,7 +344,8 @@ static const char *BeladyCompute_current_params(BeladyCompute_params_t *params) 
  */
 static void BeladyCompute_parse_params(cache_t *cache,
                                        const char *cache_specific_params) {
-  BeladyCompute_params_t *params = (BeladyCompute_params_t *)cache->eviction_params;
+  BeladyCompute_params_t *params =
+      (BeladyCompute_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
   char *end;

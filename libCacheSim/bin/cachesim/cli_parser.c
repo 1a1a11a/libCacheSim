@@ -253,7 +253,7 @@ static char doc[] =
     "example: ./cachesim /trace/path csv LRU 100MB\n\n"
     "trace can be zstd compressed\n"
     "cache_size is in byte, but also support KB/MB/GB\n"
-    "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin/syn\n"
+    "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin/syn/lcs/lcsllm\n"
     "supported eviction_algo: LRU/LFU/FIFO/ARC/LeCaR/Cacheus/Merlin\n"
     "print-head-req: Print the first few requests when simulating start\n";
 
