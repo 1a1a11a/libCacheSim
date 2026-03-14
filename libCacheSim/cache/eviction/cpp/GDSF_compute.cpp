@@ -176,7 +176,7 @@ static bool GDSF_compute_can_insert(cache_t *cache, const request_t *req) {
 
   int64_t to_evict_size =
       req->obj_size - (cache->cache_size - cache->get_occupied_byte(cache));
-  double pri = gdsf->pri_last_evict + req->features[0];
+  double pri = gdsf->pri_last_evict + req->cost;
   bool can_insert = true;
   auto iter = gdsf->pq.begin();
 
@@ -236,9 +236,9 @@ static cache_obj_t *GDSF_compute_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   DEBUG_ASSERT(obj != nullptr);
   obj->misc.freq = 1;
-  obj->GDSF_compute.compute_intensity = req->features[0];
+  obj->GDSF_compute.compute_intensity = req->cost;
 
-  double pri = gdsf->pri_last_evict + req->features[0];
+  double pri = gdsf->pri_last_evict + req->cost;
   eviction::pq_node_type new_node = {obj, pri, cache->n_req};
   auto r = gdsf->pq.insert(new_node);
   DEBUG_ASSERT(r.second);

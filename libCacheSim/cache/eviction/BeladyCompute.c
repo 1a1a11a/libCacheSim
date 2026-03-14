@@ -2,8 +2,8 @@
 //  BeladyCompute.c
 //  libCacheSim
 //
-//  sample object and compare reuse_distance / compute_intensity, then evict the greatest one
-//  compute_intensity is taken from req->features[0]
+//  sample object and compare reuse_distance / compute_intensity, then evict the
+//  greatest one compute_intensity is taken from req->cost
 //
 //
 
@@ -138,9 +138,9 @@ static cache_obj_t *BeladyCompute_find(cache_t *cache, const request_t *req,
   if (obj != NULL && likely(update_cache)) {
     // store the compute intensity in the cache object for eviction decisions
     if (req->n_features > 0) {
-      obj->Belady.compute_intensity = req->features[0];
+      obj->Belady.compute_intensity = req->cost;
     }
-    
+
     if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
       obj->Belady.next_access_vtime = -1;
     } else {
@@ -163,10 +163,10 @@ static cache_obj_t *BeladyCompute_find(cache_t *cache, const request_t *req,
  */
 static cache_obj_t *BeladyCompute_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
-  
+
   // store the compute intensity for eviction decisions
   if (req->n_features > 0) {
-    obj->Belady.compute_intensity = req->features[0];
+    obj->Belady.compute_intensity = req->cost;
   } else {
     obj->Belady.compute_intensity = 1; // default to 1 to avoid division by zero
   }
@@ -236,7 +236,7 @@ static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req)
   BeladyCompute_params_t *params = (BeladyCompute_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = NULL, *sampled_obj;
   double obj_to_evict_score = -DBL_MAX, sampled_obj_score = -1;
-  
+
   for (int i = 0; i < params->n_sample; i++) {
     sampled_obj = hashtable_rand_obj(cache->hashtable);
     if (sampled_obj->Belady.next_access_vtime == -1) {
@@ -245,7 +245,7 @@ static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req)
       int64_t time_diff = sampled_obj->Belady.next_access_vtime - cache->n_req;
       int32_t compute_intensity = sampled_obj->Belady.compute_intensity;
       if (compute_intensity <= 0) compute_intensity = 1; // avoid division by zero
-      
+
       if (time_diff <= 0) {
         sampled_obj_score = -DBL_MAX / 2;
       } else {
@@ -253,13 +253,13 @@ static cache_obj_t *BeladyCompute_to_evict(cache_t *cache, const request_t *req)
         sampled_obj_score = log((double)time_diff) - log((double)compute_intensity);
       }
     }
-    
+
     if (obj_to_evict == NULL || obj_to_evict_score < sampled_obj_score) {
       obj_to_evict = sampled_obj;
       obj_to_evict_score = sampled_obj_score;
     }
   }
-  
+
   if (obj_to_evict == NULL) {
     WARN(
         "BeladyCompute_to_evict: obj_to_evict is NULL, "

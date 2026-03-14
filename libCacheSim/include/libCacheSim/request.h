@@ -31,6 +31,7 @@ typedef struct request {
   obj_id_t obj_id;
 
   int64_t obj_size;
+  int32_t cost;
 
   int64_t obj_cost;
 

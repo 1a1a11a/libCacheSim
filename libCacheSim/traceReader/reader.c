@@ -10,6 +10,7 @@
 #include <math.h>
 
 #include "customizedReader/lcs.h"
+#include "customizedReader/llmReader.h"
 #include "customizedReader/oracle/oracleGeneralBin.h"
 #include "customizedReader/oracle/oracleTwrBin.h"
 #include "customizedReader/oracle/oracleTwrNSBin.h"
@@ -199,6 +200,9 @@ reader_t *setup_reader(const char *const trace_path,
       break;
     case VALPIN_TRACE:
       valpinReader_setup(reader);
+      break;
+    case LLM_TRACE:
+      llmReader_setup(reader);
       break;
     default:
       ERROR("cannot recognize trace type: %c\n", reader->trace_type);

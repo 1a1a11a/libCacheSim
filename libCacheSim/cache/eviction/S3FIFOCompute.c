@@ -302,10 +302,10 @@ static cache_obj_t *S3FIFOCompute_insert(cache_t *cache, const request_t *req) {
     // Higher obj_size -> higher ratio -> harder to promote
     // Modified: ratio = mean_obj_size_in_small / req_compute_intensity
     // Higher compute_intensity -> lower ratio -> easier to promote
-    double compute_intensity = req->features[0];
+    double compute_intensity = req->cost;
     if (compute_intensity <= 0) compute_intensity = 1.0; // Avoid division by zero
     double ratio = mean_obj_size_in_small / compute_intensity;
-    
+
     if ((ghost_obj->S3FIFO.freq) / ratio >= params->move_to_main_threshold) {
       // insert to main
       params->n_byte_admit_to_main += req->obj_size;
@@ -390,7 +390,7 @@ static void S3FIFOCompute_evict_fifo(cache_t *cache, const request_t *req) {
 
   int64_t obj_size = obj_to_evict->obj_size;
   // MODIFIED: Apply compute intensity logic
-  double compute_intensity = req->features[0];
+  double compute_intensity = req->cost;
   if (compute_intensity <= 0) compute_intensity = 1.0; // Avoid division by zero
   double ratio = mean_obj_size / compute_intensity;
 
@@ -426,7 +426,7 @@ static void S3FIFOCompute_evict_main(cache_t *cache, const request_t *req) {
   double mean_obj_size = cache_byte / cache_n_obj;
 
   // MODIFIED: Apply compute intensity logic
-  double compute_intensity = req->features[0];
+  double compute_intensity = req->cost;
   if (compute_intensity <= 0) compute_intensity = 1.0; // Avoid division by zero
   double ratio = mean_obj_size / compute_intensity;
 
@@ -534,7 +534,7 @@ static bool S3FIFOCompute_can_insert(cache_t *cache, const request_t *req) {
   cal_mean_obj_size(cache, req->obj_size, &mean_obj_size_in_small, &mean_obj_size_in_main, &mean_obj_size);
 
   // MODIFIED: Apply compute intensity logic for admission
-  double compute_intensity = req->features[0];
+  double compute_intensity = req->cost;
   if (compute_intensity <= 0) compute_intensity = 1.0; // Avoid division by zero
   double ratio = mean_obj_size_in_small / compute_intensity;
 

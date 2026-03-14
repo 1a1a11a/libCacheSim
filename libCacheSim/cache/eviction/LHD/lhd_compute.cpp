@@ -111,7 +111,7 @@ void LHDCompute::update(candidate_t id, const request_t* req) {
   tag->timestamp = timestamp;
   tag->app = DEFAULT_APP_ID % APP_CLASSES;
   tag->size = 1;
-  tag->compute_intensity = req->features[0];
+  tag->compute_intensity = req->cost;
 
   // with some probability, some candidates will never be evicted
   // ... but limit how many resources we spend on doing this

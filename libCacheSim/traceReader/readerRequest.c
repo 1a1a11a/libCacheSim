@@ -7,6 +7,7 @@
 //
 
 #include "customizedReader/lcs.h"
+#include "customizedReader/llmReader.h"
 #include "customizedReader/oracle/oracleGeneralBin.h"
 #include "customizedReader/oracle/oracleTwrBin.h"
 #include "customizedReader/oracle/oracleTwrNSBin.h"
@@ -94,6 +95,9 @@ int read_one_req(reader_t *const reader, request_t *const req) {
         break;
       case VALPIN_TRACE:
         status = valpin_read_one_req(reader, req);
+        break;
+      case LLM_TRACE:
+        status = llm_read_one_req(reader, req);
         break;
       case SYNTHETIC_TRACE:
         status = synthetic_read_one_req(reader, req);
