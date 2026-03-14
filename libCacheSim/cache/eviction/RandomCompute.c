@@ -1,21 +1,25 @@
 //
-//  RandomTwo.c
+//  RandomCompute.c
 //  libCacheSim
 //
 //  Picks two objects at random and evicts the one that is the least recently
-//  used RandomTwo eviction
+//  used RandomCompute eviction
 //
 //  Created by Juncheng on 8/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
 //
 
 #include "dataStructure/hashtable/hashtable.h"
+#include "float.h"
 #include "libCacheSim/evictionAlgo.h"
 #include "libCacheSim/macro.h"
+#include "math.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define RANDOM_COMPUTE_N_SAMPLE 128
 
 // ***********************************************************************
 // ****                                                               ****
@@ -23,14 +27,15 @@ extern "C" {
 // ****                                                               ****
 // ***********************************************************************
 
-static void RandomTwo_free(cache_t *cache);
-static bool RandomTwo_get(cache_t *cache, const request_t *req);
-static cache_obj_t *RandomTwo_find(cache_t *cache, const request_t *req,
-                                   bool update_cache);
-static cache_obj_t *RandomTwo_insert(cache_t *cache, const request_t *req);
-static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req);
-static void RandomTwo_evict(cache_t *cache, const request_t *req);
-static bool RandomTwo_remove(cache_t *cache, obj_id_t obj_id);
+static void RandomCompute_free(cache_t *cache);
+static bool RandomCompute_get(cache_t *cache, const request_t *req);
+static cache_obj_t *RandomCompute_find(cache_t *cache, const request_t *req,
+                                       bool update_cache);
+static cache_obj_t *RandomCompute_insert(cache_t *cache, const request_t *req);
+static cache_obj_t *RandomCompute_to_evict(cache_t *cache,
+                                           const request_t *req);
+static void RandomCompute_evict(cache_t *cache, const request_t *req);
+static bool RandomCompute_remove(cache_t *cache, obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -39,26 +44,27 @@ static bool RandomTwo_remove(cache_t *cache, obj_id_t obj_id);
 // ****                       init, free, get                         ****
 // ***********************************************************************
 /**
- * @brief initialize a RandomTwo cache
+ * @brief initialize a RandomCompute cache
  *
  * @param ccache_params some common cache parameters
- * @param cache_specific_params RandomTwo specific parameters, should be NULL
+ * @param cache_specific_params RandomCompute specific parameters, should be
+ * NULL
  */
-cache_t *RandomTwo_init(const common_cache_params_t ccache_params,
-                        const char *cache_specific_params) {
+cache_t *RandomCompute_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params) {
   common_cache_params_t ccache_params_copy = ccache_params;
   ccache_params_copy.hashpower = MAX(12, ccache_params_copy.hashpower - 8);
 
-  cache_t *cache =
-      cache_struct_init("RandomTwo", ccache_params_copy, cache_specific_params);
-  cache->cache_init = RandomTwo_init;
-  cache->cache_free = RandomTwo_free;
-  cache->get = RandomTwo_get;
-  cache->find = RandomTwo_find;
-  cache->insert = RandomTwo_insert;
-  cache->to_evict = RandomTwo_to_evict;
-  cache->evict = RandomTwo_evict;
-  cache->remove = RandomTwo_remove;
+  cache_t *cache = cache_struct_init("RandomCompute", ccache_params_copy,
+                                     cache_specific_params);
+  cache->cache_init = RandomCompute_init;
+  cache->cache_free = RandomCompute_free;
+  cache->get = RandomCompute_get;
+  cache->find = RandomCompute_find;
+  cache->insert = RandomCompute_insert;
+  cache->to_evict = RandomCompute_to_evict;
+  cache->evict = RandomCompute_evict;
+  cache->remove = RandomCompute_remove;
 
   return cache;
 }
@@ -68,7 +74,7 @@ cache_t *RandomTwo_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-static void RandomTwo_free(cache_t *cache) { cache_struct_free(cache); }
+static void RandomCompute_free(cache_t *cache) { cache_struct_free(cache); }
 
 /**
  * @brief this function is the user facing API
@@ -89,7 +95,7 @@ static void RandomTwo_free(cache_t *cache) { cache_struct_free(cache); }
  * @param req
  * @return true if cache hit, false if cache miss
  */
-static bool RandomTwo_get(cache_t *cache, const request_t *req) {
+static bool RandomCompute_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -109,10 +115,11 @@ static bool RandomTwo_get(cache_t *cache, const request_t *req) {
  *  and if the object is expired, it is removed from the cache
  * @return true on hit, false on miss
  */
-static cache_obj_t *RandomTwo_find(cache_t *cache, const request_t *req,
-                                   bool update_cache) {
+static cache_obj_t *RandomCompute_find(cache_t *cache, const request_t *req,
+                                       bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
-  if (obj != NULL && update_cache) {
+
+  if (obj != NULL) {
     obj->Random.last_access_vtime = cache->n_req;
   }
 
@@ -129,8 +136,9 @@ static cache_obj_t *RandomTwo_find(cache_t *cache, const request_t *req,
  * @param req
  * @return the inserted object
  */
-static cache_obj_t *RandomTwo_insert(cache_t *cache, const request_t *req) {
+static cache_obj_t *RandomCompute_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
+
   obj->Random.last_access_vtime = cache->n_req;
 
   return obj;
@@ -146,14 +154,26 @@ static cache_obj_t *RandomTwo_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req) {
-  cache_obj_t *obj_to_evict1 = hashtable_rand_obj(cache->hashtable);
-  cache_obj_t *obj_to_evict2 = hashtable_rand_obj(cache->hashtable);
-  if (obj_to_evict1->Random.last_access_vtime <
-      obj_to_evict2->Random.last_access_vtime)
-    return obj_to_evict1;
-  else
-    return obj_to_evict2;
+static inline double _rc_cost(cache_t *cache, cache_obj_t *obj) {
+  return (double)obj->cost * (obj->misc.freq + 1) /
+         (cache->n_req - obj->Random.last_access_vtime + 1);
+}
+
+static cache_obj_t *RandomCompute_to_evict(cache_t *cache,
+                                           const request_t *req) {
+  cache_obj_t *obj_to_evict = NULL;
+  double min_cost = DBL_MAX;
+
+  for (int i = 0; i < RANDOM_COMPUTE_N_SAMPLE; i++) {
+    cache_obj_t *obj = hashtable_rand_obj(cache->hashtable);
+    double cost = _rc_cost(cache, obj);
+    if (cost < min_cost) {
+      min_cost = cost;
+      obj_to_evict = obj;
+    }
+  }
+
+  return obj_to_evict;
 }
 
 /**
@@ -164,14 +184,20 @@ static cache_obj_t *RandomTwo_to_evict(cache_t *cache, const request_t *req) {
  * @param cache
  * @param req not used
  */
-static void RandomTwo_evict(cache_t *cache, const request_t *req) {
-  cache_obj_t *obj_to_evict1 = hashtable_rand_obj(cache->hashtable);
-  cache_obj_t *obj_to_evict2 = hashtable_rand_obj(cache->hashtable);
-  if (obj_to_evict1->Random.last_access_vtime <
-      obj_to_evict2->Random.last_access_vtime)
-    cache_evict_base(cache, obj_to_evict1, true);
-  else
-    cache_evict_base(cache, obj_to_evict2, true);
+static void RandomCompute_evict(cache_t *cache, const request_t *req) {
+  cache_obj_t *obj_to_evict = NULL;
+  double min_cost = DBL_MAX;
+
+  for (int i = 0; i < RANDOM_COMPUTE_N_SAMPLE; i++) {
+    cache_obj_t *obj = hashtable_rand_obj(cache->hashtable);
+    double cost = _rc_cost(cache, obj);
+    if (cost < min_cost) {
+      min_cost = cost;
+      obj_to_evict = obj;
+    }
+  }
+
+  cache_evict_base(cache, obj_to_evict, true);
 }
 
 /**
@@ -187,7 +213,7 @@ static void RandomTwo_evict(cache_t *cache, const request_t *req) {
  * @return true if the object is removed, false if the object is not in the
  * cache
  */
-static bool RandomTwo_remove(cache_t *cache, obj_id_t obj_id) {
+static bool RandomCompute_remove(cache_t *cache, obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

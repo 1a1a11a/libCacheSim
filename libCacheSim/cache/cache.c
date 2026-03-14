@@ -241,6 +241,11 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
     if (update_cache) {
       cache_obj->next_access_vtime = req->next_access_vtime;
       cache_obj->freq += 1;
+      if (req->cost != cache_obj->cost) {
+        ERROR("req %ld, obj %lu, cost updated from %d to %d\n",
+              (long)cache->n_req, (unsigned long)req->obj_id, cache_obj->cost,
+              req->cost);
+      }
     }
   }
 
@@ -330,6 +335,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 
   cache_obj->next_access_vtime = req->next_access_vtime;
   cache_obj->freq = 0;
+  cache_obj->cost = req->cost;
 
   return cache_obj;
 }
