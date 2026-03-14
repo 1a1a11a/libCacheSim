@@ -44,6 +44,7 @@ set(eviction_sources_c
         eviction/LRUProb.c       # a probabilistic version of LRU
         eviction/LRUv0.c         # an inefficient version but easier to understand
         eviction/MRU.c
+        eviction/MultiQueue.c
         eviction/nop.c
         eviction/plugin_cache.c  # plugin cache that allows user to implement custom cache
         eviction/QDLP.c

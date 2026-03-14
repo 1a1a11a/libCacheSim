@@ -116,6 +116,9 @@ cache_t *LRUv0_init(const common_cache_params_t ccache_params,
 cache_t *MRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
+cache_t *MultiQueue_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+
 cache_t *nop_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
