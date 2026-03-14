@@ -329,7 +329,7 @@ static inline void record_eviction_age(cache_t *cache, cache_obj_t *obj,
 #if defined(TRACK_EVICTION_V_AGE)
   // note that the frequency is not correct for QDLP and Clock
   if (obj->obj_id % 101 == 0) {
-    printf("%ld: %lu %ld %d\n", cache->n_req, obj->obj_id, age, obj->misc.freq);
+    printf("%ld: %lu %ld %d\n", cache->n_req, obj->obj_id, age, obj->freq);
   }
 #endif
 

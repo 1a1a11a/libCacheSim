@@ -146,14 +146,13 @@ static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req,
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   /* this does not consider object size change */
   if (obj != nullptr && update_cache) {
-    /* misc frequency is updated in cache_find_base */
-    // obj->misc.freq += 1;
+    /* frequency is updated in cache_find_base */
 
     auto node = gdsf->pq_map[obj];
     gdsf->pq.erase(node);
 
     double pri =
-        gdsf->pri_last_evict + (double)(obj->misc.freq) * 1.0e6 / obj->obj_size;
+        gdsf->pri_last_evict + (double)(obj->freq) * 1.0e6 / obj->obj_size;
     eviction::pq_node_type new_node = {obj, pri, cache->n_req};
     gdsf->pq.insert(new_node);
     gdsf->pq_map[obj] = new_node;
@@ -233,7 +232,10 @@ static cache_obj_t *GDSF_insert(cache_t *cache, const request_t *req) {
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   DEBUG_ASSERT(obj != nullptr);
-  obj->misc.freq = 1;
+  // default freq is 0, we need to set it to 1 because GDSF uses freq as part of
+  // priority calculation and if it is 0, the object will have the same priority
+  // as an object that is not accessed at all and it will be evicted immediately
+  obj->freq = 1;
 
   double pri = gdsf->pri_last_evict + 1.0e6 / obj->obj_size;
   eviction::pq_node_type new_node = {obj, pri, cache->n_req};

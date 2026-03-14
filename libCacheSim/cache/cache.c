@@ -201,8 +201,8 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
 #endif
 
     if (update_cache) {
-      cache_obj->misc.next_access_vtime = req->next_access_vtime;
-      cache_obj->misc.freq += 1;
+      cache_obj->next_access_vtime = req->next_access_vtime;
+      cache_obj->freq += 1;
     }
   }
 
@@ -290,8 +290,8 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   cache_obj->create_time = CURR_TIME(cache, req);
 #endif
 
-  cache_obj->misc.next_access_vtime = req->next_access_vtime;
-  cache_obj->misc.freq = 0;
+  cache_obj->next_access_vtime = req->next_access_vtime;
+  cache_obj->freq = 0;
 
   return cache_obj;
 }

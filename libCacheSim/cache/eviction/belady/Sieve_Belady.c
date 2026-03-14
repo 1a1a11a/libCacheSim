@@ -232,7 +232,7 @@ static void Sieve_Belady_evict(cache_t *cache, const request_t *req) {
   }
 
   /* find the first untouched */
-  while (obj != NULL && should_insert(cache, obj->misc.next_access_vtime)) {
+  while (obj != NULL && should_insert(cache, obj->next_access_vtime)) {
     // while (obj != NULL && obj->sieve.freq > 0) {
     obj->sieve.freq -= 1;
     obj = obj->queue.prev;
@@ -241,7 +241,7 @@ static void Sieve_Belady_evict(cache_t *cache, const request_t *req) {
   /* if we have finished one around, start from the tail */
   if (obj == NULL) {
     obj = params->q_tail;
-    while (obj != NULL && should_insert(cache, obj->misc.next_access_vtime)) {
+    while (obj != NULL && should_insert(cache, obj->next_access_vtime)) {
       // while (obj != NULL && obj->sieve.freq > 0) {
       obj->sieve.freq -= 1;
       obj = obj->queue.prev;

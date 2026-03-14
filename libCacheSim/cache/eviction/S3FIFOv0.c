@@ -332,7 +332,7 @@ static void S3FIFOv0_evict_small(cache_t *cache, const request_t *req) {
     if (obj_to_evict->S3FIFO.freq >= params->move_to_main_threshold) {
 #if defined(TRACK_DEMOTION)
       printf("%ld keep %ld %ld\n", cache->n_req, obj_to_evict->create_time,
-             obj_to_evict->misc.next_access_vtime);
+             obj_to_evict->next_access_vtime);
 #endif
       params->n_obj_move_to_main += 1;
       params->n_byte_move_to_main += obj_to_evict->obj_size;
@@ -349,7 +349,7 @@ static void S3FIFOv0_evict_small(cache_t *cache, const request_t *req) {
 
 #if defined(TRACK_DEMOTION)
       printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
-             obj_to_evict->misc.next_access_vtime);
+             obj_to_evict->next_access_vtime);
 #endif
 
       // insert to ghost

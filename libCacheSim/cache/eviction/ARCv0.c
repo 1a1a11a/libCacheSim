@@ -255,7 +255,7 @@ static cache_obj_t *ARCv0_find(cache_t *cache, const request_t *req,
   } else {
     // cache hit, case I: x in L1_data or L2_data
     if (obj_t1 != NULL) {
-      obj_t1->misc.freq = 1;
+      obj_t1->freq = 1;
 #ifndef LAZY_PROMOTION
       // move to LRU2
       params->T1->remove(params->T1, obj_t1->obj_id);
@@ -297,7 +297,6 @@ static cache_obj_t *ARCv0_insert(cache_t *cache, const request_t *req) {
   } else {
     // insert to L1 data head
     obj = params->T1->insert(params->T1, req);
-    obj->misc.freq = 0;
   }
 
   return obj;
@@ -421,7 +420,7 @@ static void _ARCv0_replace(cache_t *cache, const request_t *req) {
     DEBUG_ASSERT(obj != NULL);
     copy_cache_obj_to_request(params->req_local, obj);
 #ifdef LAZY_PROMOTION
-    if (obj->misc.freq > 0) {
+    if (obj->freq > 0) {
       params->T2->get(params->T2, params->req_local);
     } else {
       params->B1->get(params->B1, params->req_local);
@@ -490,7 +489,7 @@ static void _ARCv0_evict_miss_on_all_queues(cache_t *cache,
       cache_obj_t *obj = params->T1->to_evict(params->T1, req);
       DEBUG_ASSERT(obj != NULL);
       copy_cache_obj_to_request(params->req_local, obj);
-      if (obj->misc.freq > 0) {
+      if (obj->freq > 0) {
         params->T2->get(params->T2, params->req_local);
       }
       params->T1->evict(params->T1, req);

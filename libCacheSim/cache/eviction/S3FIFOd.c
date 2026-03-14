@@ -371,7 +371,7 @@ static cache_obj_t *S3FIFOd_insert(cache_t *cache, const request_t *req) {
     obj = params->small_fifo->insert(params->small_fifo, req);
   }
 
-  assert(obj->misc.freq == 0);
+  assert(obj->freq == 0);
 
 #if defined(TRACK_EVICTION_V_AGE)
   obj->create_time = CURR_TIME(cache, req);
@@ -431,7 +431,7 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
   copy_cache_obj_to_request(params->req_local, obj);
 
 #if defined(TRACK_EVICTION_V_AGE)
-  if (obj->misc.freq >= params->move_to_main_threshold) {
+  if (obj->freq >= params->move_to_main_threshold) {
     // promote to main cache
     cache_obj_t *new_obj = main_fifo->insert(main_fifo, params->req_local);
     new_obj->create_time = obj->create_time;
@@ -462,7 +462,7 @@ static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
   bool removed = small_fifo->remove(small_fifo, params->req_local->obj_id);
   assert(removed);
 
-  if (obj->misc.freq >= params->move_to_main_threshold) {
+  if (obj->freq >= params->move_to_main_threshold) {
     // promote to main cache
     main_fifo->insert(main_fifo, params->req_local);
 

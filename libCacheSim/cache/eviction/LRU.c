@@ -213,7 +213,7 @@ static void LRU_evict(cache_t *cache, const request_t *req) {
 #if defined(TRACK_DEMOTION)
   if (cache->track_demotion)
     printf("%ld demote %ld %ld\n", cache->n_req, obj_to_evict->create_time,
-           obj_to_evict->misc.next_access_vtime);
+           obj_to_evict->next_access_vtime);
 #endif
 
   cache_evict_base(cache, obj_to_evict, true);

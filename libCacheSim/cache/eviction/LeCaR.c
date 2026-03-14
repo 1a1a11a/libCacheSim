@@ -362,9 +362,9 @@ static cache_obj_t *LeCaR_to_evict(cache_t *cache, const request_t *req) {
 
   // we divide by 1,000,000 to avoid overflow when next_access_vtime is
   // INT64_MAX
-  double lru_belady_metric = lru_choice->misc.next_access_vtime - cache->n_req;
+  double lru_belady_metric = lru_choice->next_access_vtime - cache->n_req;
   lru_belady_metric = lru_belady_metric / 1000000.0 * lru_choice->obj_size;
-  double lfu_belady_metric = lfu_choice->misc.next_access_vtime - cache->n_req;
+  double lfu_belady_metric = lfu_choice->next_access_vtime - cache->n_req;
   lfu_belady_metric = lfu_belady_metric / 1000000.0 * lfu_choice->obj_size;
 
   if (lru_belady_metric > lfu_belady_metric) {
@@ -394,9 +394,9 @@ static void LeCaR_evict(cache_t *cache, const request_t *req) {
 
   // we divide by 1,000,000 to avoid overflow when next_access_vtime is
   // INT64_MAX
-  double lru_belady_metric = lru_choice->misc.next_access_vtime - cache->n_req;
+  double lru_belady_metric = lru_choice->next_access_vtime - cache->n_req;
   lru_belady_metric = lru_belady_metric / 1000000.0 * lru_choice->obj_size;
-  double lfu_belady_metric = lfu_choice->misc.next_access_vtime - cache->n_req;
+  double lfu_belady_metric = lfu_choice->next_access_vtime - cache->n_req;
   lfu_belady_metric = lfu_belady_metric / 1000000.0 * lfu_choice->obj_size;
 
   if (lru_belady_metric > lfu_belady_metric) {

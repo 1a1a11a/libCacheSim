@@ -143,11 +143,6 @@ typedef struct {
   int32_t freq;
 } __attribute__((packed)) Sieve_obj_params_t;
 
-typedef struct {
-  int64_t next_access_vtime;
-  int32_t freq;
-} __attribute__((packed)) misc_metadata_t;
-
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {
@@ -158,6 +153,10 @@ typedef struct cache_obj {
     struct cache_obj *prev;
     struct cache_obj *next;
   } queue;  // for LRU, FIFO, etc.
+
+  int64_t next_access_vtime;
+  int32_t freq;
+
 #ifdef SUPPORT_TTL
   uint32_t exp_time;
 #endif
@@ -166,8 +165,6 @@ typedef struct cache_obj {
     defined(TRACK_CREATE_TIME)
   int64_t create_time;
 #endif
-  // used by belady related algorithms
-  misc_metadata_t misc;
 
   union {
     LFU_obj_metadata_t lfu;            // for LFU
@@ -209,7 +206,7 @@ static inline void copy_cache_obj_to_request(request_t *req_dest,
                                              const cache_obj_t *cache_obj) {
   req_dest->obj_id = cache_obj->obj_id;
   req_dest->obj_size = cache_obj->obj_size;
-  req_dest->next_access_vtime = cache_obj->misc.next_access_vtime;
+  req_dest->next_access_vtime = cache_obj->next_access_vtime;
   req_dest->valid = true;
 }
 

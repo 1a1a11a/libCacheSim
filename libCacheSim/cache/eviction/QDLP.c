@@ -306,7 +306,7 @@ static cache_obj_t *QDLP_insert(cache_t *cache, const request_t *req) {
   obj->create_time = CURR_TIME(cache, req);
 #endif
 
-  assert(obj->misc.freq == 0);
+  assert(obj->freq == 0);
 
   return obj;
 }
@@ -361,7 +361,7 @@ static void QDLP_evict(cache_t *cache, const request_t *req) {
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
 
-  if (obj->misc.freq >= params->move_to_main_threshold) {
+  if (obj->freq >= params->move_to_main_threshold) {
     // get will insert to and evict from main cache
     params->n_obj_move_to_main += 1;
     params->n_byte_move_to_main += obj->obj_size;

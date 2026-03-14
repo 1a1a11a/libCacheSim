@@ -282,7 +282,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
 
 #if defined(TRACK_DEMOTION)
         printf("%ld keep %ld %ld\n", cache->n_req, window_victim->create_time,
-               window_victim->misc.next_access_vtime);
+               window_victim->next_access_vtime);
 #endif
         params->n_admit_bytes += params->req_local->obj_size;
 
@@ -301,7 +301,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
                                          sizeof(main_cache_victim->obj_id))) {
 #if defined(TRACK_DEMOTION)
           printf("%ld keep %ld %ld\n", cache->n_req, window_victim->create_time,
-                 window_victim->misc.next_access_vtime);
+                 window_victim->next_access_vtime);
 #endif
 
           main_cache->evict(main_cache, req);
@@ -317,8 +317,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
         } else {
 #if defined(TRACK_DEMOTION)
           printf("%ld demote %ld %ld\n", cache->n_req,
-                 window_victim->create_time,
-                 window_victim->misc.next_access_vtime);
+                 window_victim->create_time, window_victim->next_access_vtime);
 #endif
 
           window->evict(window, req);

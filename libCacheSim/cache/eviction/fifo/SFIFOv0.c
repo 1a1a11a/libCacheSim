@@ -193,9 +193,9 @@ static cache_obj_t *SFIFOv0_find(cache_t *cache, const request_t *req,
           SFIFOv0_cool(cache, req, i + 1);
 
         cache_obj_t *new_obj = next_fifo->insert(next_fifo, req);
-        new_obj->misc.next_access_vtime = req->next_access_vtime;
+        new_obj->next_access_vtime = req->next_access_vtime;
       } else {
-        obj->misc.next_access_vtime = req->next_access_vtime;
+        obj->next_access_vtime = req->next_access_vtime;
       }
 
       return obj;
@@ -224,7 +224,7 @@ static cache_obj_t *SFIFOv0_insert(cache_t *cache, const request_t *req) {
     if (fifo->get_occupied_byte(fifo) + req->obj_size + cache->obj_md_size <=
         fifo->cache_size) {
       cache_obj_t *obj = fifo->insert(fifo, req);
-      obj->misc.next_access_vtime = req->next_access_vtime;
+      obj->next_access_vtime = req->next_access_vtime;
       return obj;
     }
   }
@@ -232,7 +232,7 @@ static cache_obj_t *SFIFOv0_insert(cache_t *cache, const request_t *req) {
   // If all FIFOs are filled, insert into the lowest FIFO.
   cache_t *fifo = params->FIFOs[0];
   cache_obj_t *obj = fifo->insert(fifo, req);
-  obj->misc.next_access_vtime = req->next_access_vtime;
+  obj->next_access_vtime = req->next_access_vtime;
   return obj;
 }
 

@@ -222,7 +222,7 @@ static void LRU_Belady_evict(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(params->q_tail != NULL);
 
 #ifdef USE_BELADY_EVICTION
-  if (should_insert(cache, obj_to_evict->misc.next_access_vtime)) {
+  if (should_insert(cache, obj_to_evict->next_access_vtime)) {
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
   } else {
     remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
