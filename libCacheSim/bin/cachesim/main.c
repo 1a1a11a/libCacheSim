@@ -84,7 +84,9 @@ int main(int argc, char **argv) {
     if (!args.ignore_obj_size)
       n += snprintf(
           output_str + n, sizeof(output_str) - n, ", byte miss ratio %.4lf",
-          (double)result[i].n_miss_byte / (double)result[i].n_req_byte);
+          result[i].n_req_byte > 0
+              ? (double)result[i].n_miss_byte / (double)result[i].n_req_byte
+              : 0.0);
     if (show_cost)
       n += snprintf(output_str + n, sizeof(output_str) - n,
                     ", cost saving ratio %.4lf", cost_saving_ratio);
