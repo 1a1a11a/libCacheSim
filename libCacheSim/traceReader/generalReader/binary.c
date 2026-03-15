@@ -80,6 +80,15 @@ int binaryReader_setup(reader_t *const reader) {
     params->obj_size_offset = -1;
   }
 
+  params->obj_cost_field_idx = reader->init_params.obj_cost_field;
+  if (params->obj_cost_field_idx > 0) {
+    params->obj_cost_format = fmt_str[params->obj_cost_field_idx - 1];
+    params->obj_cost_offset = cal_offset(fmt_str, params->obj_cost_field_idx);
+  } else {
+    params->obj_cost_format = '\0';
+    params->obj_cost_offset = -1;
+  }
+
   params->op_field_idx = reader->init_params.op_field;
   if (params->op_field_idx > 0) {
     params->op_format = fmt_str[params->op_field_idx - 1];
@@ -147,6 +156,12 @@ int binaryReader_setup(reader_t *const reader) {
                   params->obj_size_field_idx,
                   format_to_size(params->obj_size_format),
                   params->obj_size_offset);
+  }
+  if (params->obj_cost_field_idx > 0) {
+    n += snprintf(output + n, 1024 - n, ", obj_cost_field %d,%d,%d",
+                  params->obj_cost_field_idx,
+                  format_to_size(params->obj_cost_format),
+                  params->obj_cost_offset);
   }
   if (params->op_field_idx > 0) {
     n += snprintf(output + n, 1024 - n, ", op_field %d,%d,%d",
@@ -224,6 +239,12 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
   if (params->obj_size_field_idx > 0) {
     req->obj_size =
         read_data(start + params->obj_size_offset, params->obj_size_format);
+  }
+
+  /* read object cost */
+  if (params->obj_cost_field_idx > 0) {
+    req->obj_cost =
+        read_data(start + params->obj_cost_offset, params->obj_cost_format);
   }
 
   /* read operation */

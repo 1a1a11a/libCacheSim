@@ -73,8 +73,10 @@ typedef struct {
   int64_t n_warmup_req;
   int64_t n_req;
   int64_t n_req_byte;
+  double n_req_cost;
   int64_t n_miss;
   int64_t n_miss_byte;
+  double n_miss_cost;
 
   int64_t n_obj;
   int64_t occupied_byte;

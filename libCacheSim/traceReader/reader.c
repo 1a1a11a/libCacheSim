@@ -258,6 +258,8 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     reader->n_read_req += 1;
     req->hv = 0;
     req->ttl = 0;
+    req->obj_size = 1;
+    req->obj_cost = 1;
     req->valid = true;
 
     switch (reader->trace_type) {
@@ -333,8 +335,14 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     req->obj_size = 1;
   }
 
-  VERBOSE("read one req: time %lu, obj_id %lu, size %lu at offset %zu\n",
-          req->clock_time, req->obj_id, req->obj_size, offset_before_read);
+  if (reader->init_params.obj_cost_field <= 0) {
+    req->obj_cost = 1;
+  }
+
+  VERBOSE(
+      "read one req: time %lu, obj_id %lu, size %lu, cost %lu at offset %zu\n",
+      req->clock_time, req->obj_id, req->obj_size, req->obj_cost,
+      offset_before_read);
 
   return status;
 }

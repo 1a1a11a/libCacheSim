@@ -45,6 +45,7 @@ typedef struct {
   int32_t time_field;
   int32_t obj_id_field;
   int32_t obj_size_field;
+  int32_t obj_cost_field;
   int32_t op_field;
   int32_t ttl_field;
   int32_t cnt_field;

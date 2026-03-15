@@ -119,6 +119,10 @@ void parse_reader_params(const char *reader_params_str,
                strcasecmp(key, "size-col") == 0) {
       params->obj_size_field = (int)strtol(value, &end, 0);
       _check_parsed_result(end, params->obj_size_field);
+    } else if (strcasecmp(key, "obj-cost-col") == 0 ||
+               strcasecmp(key, "cost-col") == 0) {
+      params->obj_cost_field = (int)strtol(value, &end, 0);
+      _check_parsed_result(end, params->obj_cost_field);
     } else if (strcasecmp(key, "cnt-col") == 0) {
       params->cnt_field = (int)strtol(value, &end, 0);
     } else if (strcasecmp(key, "op-col") == 0) {

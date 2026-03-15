@@ -25,6 +25,7 @@ typedef struct {
   int time_field_idx;
   int obj_id_field_idx;
   int obj_size_field_idx;
+  int obj_cost_field_idx;
   int op_field_idx;
   int cnt_field_idx;
   int ttl_field_idx;
@@ -108,6 +109,10 @@ typedef struct {
   int32_t obj_size_offset;
   int8_t obj_size_field_idx;
   char obj_size_format;
+
+  int32_t obj_cost_offset;
+  int8_t obj_cost_field_idx;
+  char obj_cost_format;
 
   int32_t n_fields;
   int32_t item_size;

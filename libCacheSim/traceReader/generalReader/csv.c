@@ -237,6 +237,11 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
     if (req->obj_size == 0 && end == s) {
       WARN("csvReader obj_size is not a number: \"%s\"\n", (char *)s);
     }
+  } else if (csv_params->curr_field_idx == csv_params->obj_cost_field_idx) {
+    req->obj_cost = (int64_t)strtoll((char *)s, &end, 0);
+    if (req->obj_cost == 0 && end == s) {
+      WARN("csvReader obj_cost is not a number: \"%s\"\n", (char *)s);
+    }
   } else if (csv_params->curr_field_idx == csv_params->op_field_idx) {
     if (strncasecmp((char *)s, "read", len) == 0) {
       req->op = OP_READ;
@@ -298,6 +303,7 @@ void csv_setup_reader(reader_t *const reader) {
   csv_params->time_field_idx = init_params->time_field;
   csv_params->obj_id_field_idx = init_params->obj_id_field;
   csv_params->obj_size_field_idx = init_params->obj_size_field;
+  csv_params->obj_cost_field_idx = init_params->obj_cost_field;
   csv_params->op_field_idx = init_params->op_field;
   csv_params->ttl_field_idx = init_params->ttl_field;
   csv_params->cnt_field_idx = init_params->cnt_field;

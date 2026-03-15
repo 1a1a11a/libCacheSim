@@ -97,11 +97,13 @@ static void _simulate(gpointer data, gpointer user_data) {
   while (req->valid) {
     result[idx].n_req++;
     result[idx].n_req_byte += req->obj_size;
+    result[idx].n_req_cost += req->obj_cost;
 
     req->clock_time -= start_ts;
     if (local_cache->get(local_cache, req) == false) {
       result[idx].n_miss++;
       result[idx].n_miss_byte += req->obj_size;
+      result[idx].n_miss_cost += req->obj_cost;
     }
     read_one_req(cloned_reader, req);
   }

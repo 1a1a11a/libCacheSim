@@ -25,6 +25,7 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
   uint64_t req_cnt = 0, miss_cnt = 0;
   uint64_t last_req_cnt = 0, last_miss_cnt = 0;
   uint64_t req_byte = 0, miss_byte = 0;
+  double req_cost = 0, miss_cost = 0;
 
   read_one_req(reader, req);
   uint64_t start_ts = (uint64_t)req->clock_time;
@@ -52,9 +53,11 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
 
     req_cnt++;
     req_byte += req->obj_size;
+    req_cost += req->obj_cost;
     if (cache->get(cache, req) == false) {
       miss_cnt++;
       miss_byte += req->obj_size;
+      miss_cost += req->obj_cost;
     }
     if (req->clock_time - last_report_ts >= (uint64_t)report_interval &&
         req->clock_time != 0) {
@@ -78,28 +81,30 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
 
   char output_str[1024];
   char size_str[64];
+  double miss_ratio = req_cnt > 0 ? (double)miss_cnt / (double)req_cnt : 0.0;
+  double byte_miss_ratio =
+      req_byte > 0 ? (double)miss_byte / (double)req_byte : 0.0;
+  double cost_saving_ratio = 1.0 - (req_cost > 0 ? miss_cost / req_cost : 0.0);
 
-  if (!ignore_obj_size) convert_size_to_str(cache->cache_size, size_str, 64);
-#pragma GCC diagnostic push
-  // Removed unknown pragma warning
-  if (!ignore_obj_size) {
-    snprintf(output_str, 1024,
-             "%s %s cache size %8s, %16lu req, miss ratio %.4lf, throughput "
-             "%.2lf MQPS\n",
-             reader->trace_path, detailed_cache_name, size_str,
-             (unsigned long)req_cnt, (double)miss_cnt / (double)req_cnt,
-             (double)req_cnt / 1000000.0 / runtime);
-  } else {
-    snprintf(output_str, 1024,
-             "%s %s cache size %8lld, %16lu req, miss ratio %.4lf, throughput "
-             "%.2lf MQPS\n",
-             reader->trace_path, detailed_cache_name,
-             (long long)cache->cache_size, (unsigned long)req_cnt,
-             (double)miss_cnt / (double)req_cnt,
-             (double)req_cnt / 1000000.0 / runtime);
-  }
+  if (!ignore_obj_size)
+    convert_size_to_str(cache->cache_size, size_str, 64);
+  else
+    snprintf(size_str, sizeof(size_str), "%lld", (long long)cache->cache_size);
 
-#pragma GCC diagnostic pop
+  bool show_cost = fabs(1 - cost_saving_ratio - miss_ratio) > 1e-9;
+
+  int n = snprintf(output_str, sizeof(output_str),
+                   "%s %s cache size %8s, %16lu req, miss ratio %.4lf",
+                   reader->trace_path, detailed_cache_name, size_str,
+                   (unsigned long)req_cnt, miss_ratio);
+  if (!ignore_obj_size)
+    n += snprintf(output_str + n, sizeof(output_str) - n,
+                  ", byte miss ratio %.4lf", byte_miss_ratio);
+  if (show_cost)
+    n += snprintf(output_str + n, sizeof(output_str) - n,
+                  ", cost saving ratio %.4lf", cost_saving_ratio);
+  snprintf(output_str + n, sizeof(output_str) - n, ", throughput %.2lf MQPS\n",
+           (double)req_cnt / 1000000.0 / runtime);
   printf("%s", output_str);
   char *output_dir = rindex(ofilepath, '/');
   if (output_dir != NULL) {

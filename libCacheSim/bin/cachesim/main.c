@@ -5,6 +5,7 @@
 #endif
 #include <assert.h>
 #include <libgen.h>
+#include <math.h>
 
 #include "internal.h"
 #include "libCacheSim/cache.h"
@@ -66,14 +67,29 @@ int main(int argc, char **argv) {
 
   printf("\n");
   for (int i = 0; i < args.n_cache_size * args.n_eviction_algo; i++) {
-    snprintf(output_str, 1024,
-             "%s %s cache size %8ld%s, %lld req, miss ratio %.4lf, byte miss "
-             "ratio %.4lf\n",
-             args.reader->trace_path, result[i].cache_name,
-             (long)(result[i].cache_size / size_unit), size_unit_str,
-             (long long)result[i].n_req,
-             (double)result[i].n_miss / (double)result[i].n_req,
-             (double)result[i].n_miss_byte / (double)result[i].n_req_byte);
+    double miss_ratio = result[i].n_req > 0
+                            ? (double)result[i].n_miss / (double)result[i].n_req
+                            : 0.0;
+    double cost_saving_ratio =
+        result[i].n_req_cost > 0
+            ? 1.0 - result[i].n_miss_cost / result[i].n_req_cost
+            : 0.0;
+    bool show_cost = fabs(1 - cost_saving_ratio - miss_ratio) > 1e-9;
+
+    int n = snprintf(output_str, sizeof(output_str),
+                     "%s %s cache size %8ld%s, %lld req, miss ratio %.4lf",
+                     args.reader->trace_path, result[i].cache_name,
+                     (long)(result[i].cache_size / size_unit), size_unit_str,
+                     (long long)result[i].n_req, miss_ratio);
+    if (!args.ignore_obj_size)
+      n += snprintf(
+          output_str + n, sizeof(output_str) - n, ", byte miss ratio %.4lf",
+          (double)result[i].n_miss_byte / (double)result[i].n_req_byte);
+    if (show_cost)
+      n += snprintf(output_str + n, sizeof(output_str) - n,
+                    ", cost saving ratio %.4lf", cost_saving_ratio);
+    snprintf(output_str + n, sizeof(output_str) - n, "\n");
+
     printf("%s", output_str);
     fprintf(output_file, "%s", output_str);
   }

@@ -32,6 +32,8 @@ typedef struct request {
 
   int64_t obj_size;
 
+  int64_t obj_cost;
+
   int32_t ttl;
 
   req_op_e op;
@@ -79,6 +81,7 @@ static inline request_t *new_request(void) {
   request_t *req = my_malloc(request_t);
   memset(req, 0, sizeof(request_t));
   req->obj_size = 1;
+  req->obj_cost = 1;
   req->op = OP_NOP;
   req->valid = true;
   req->obj_id = 0;
@@ -118,14 +121,17 @@ static inline void free_request(request_t *req) { my_free(request_t, req); }
 static inline void print_request(const request_t *req) {
 #ifdef SUPPORT_TTL
   LOGGING(DEBUG_LEVEL,
-          "req clock_time %lu, id %llu, size %ld, ttl %ld, op %s, valid %d\n",
+          "req clock_time %lu, id %llu, size %ld, cost %ld, ttl %ld, op %s, "
+          "valid %d\n",
           (unsigned long)req->clock_time, (unsigned long long)req->obj_id,
-          (long)req->obj_size, (long)req->ttl, req_op_str[req->op], req->valid);
+          (long)req->obj_size, (long)req->obj_cost, (long)req->ttl,
+          req_op_str[req->op], req->valid);
 #else
   LOGGING(DEBUG_LEVEL,
-          "req clock_time %lu, id %llu, size %ld, op %s, valid %d\n",
+          "req clock_time %lu, id %llu, size %ld, cost %ld, op %s, valid %d\n",
           (unsigned long)req->clock_time, (unsigned long long)req->obj_id,
-          (long)req->obj_size, req_op_str[req->op], req->valid);
+          (long)req->obj_size, (long)req->obj_cost, req_op_str[req->op],
+          req->valid);
 #endif
 }
 
