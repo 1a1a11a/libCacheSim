@@ -164,7 +164,7 @@ Run the example traces using the LRU eviction algorithm and a 1 GB cache size.
 ./bin/cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
 
 # use a csv trace, note the quotation marks when you have multiple options
-./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
+./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-cost-col=6"
 
 # use a csv trace with more options
 ./bin/cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
@@ -189,7 +189,7 @@ You can plot miss ratios of different algorithms and sizes, and plot the miss ra
 ```bash
 # plot miss ratio over size
 cd scripts
-python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,delimiter=," --algos=fifo,lru,lecar,s3fifo --sizes=0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4
+python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,obj-cost-col=4,delimiter=," --algos=fifo,lru,lecar,s3fifo --sizes=0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4
 
 # plot miss ratio over time
 python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1, obj-id-col=2, obj-size-col=3, delimiter=,," --algos=fifo,lru,lecar,s3fifo --report-interval=30 --miss-ratio-type="accu"
