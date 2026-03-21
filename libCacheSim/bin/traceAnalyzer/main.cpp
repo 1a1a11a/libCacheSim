@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
       args.reader, args.ofilepath, args.analysis_option, args.analysis_param);
   stat->run();
 
-  ofstream ofs("traceStat", ios::out | ios::app);
+  ofstream ofs(args.ofilepath + string(".traceStat"), ios::out | ios::app);
   ofs << *stat << endl;
   ofs.close();
   cout << *stat;

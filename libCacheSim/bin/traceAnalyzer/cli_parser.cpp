@@ -74,11 +74,13 @@ static struct argp_option options[] = {
      "enable popularity analysis, output freq:cnt in dataname.popularity file, "
      "and prints the skewness to stdout and stat file",
      3},
-    {"popularityDacay", OPTION_ENABLE_POPULARITY_DECAY, NULL,
+    {"popularityDecay", OPTION_ENABLE_POPULARITY_DECAY, NULL,
      OPTION_ARG_OPTIONAL,
      "enable popularity decay analysis, this calculates popularity fade as a "
      "heatmap. It is an expensive analysis, enable only when needed.",
      3},
+    {"popularityDacay", OPTION_ENABLE_POPULARITY_DECAY, NULL,
+     OPTION_ARG_OPTIONAL | OPTION_HIDDEN, NULL, 3},
     {"reuse", OPTION_ENABLE_REUSE, NULL, OPTION_ARG_OPTIONAL,
      "reuse analysis, output a reuse distribution (both real time and virtual "
      "time) in dataname.reuse file",
@@ -110,8 +112,8 @@ static struct argp_option options[] = {
 
     {NULL, 0, NULL, 0, "common parameters:", 0},
 
-    {"output", OPTION_OUTPUT_PATH, "", OPTION_ARG_OPTIONAL, "Output path", 8},
-    {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
+    {"output", OPTION_OUTPUT_PATH, "PATH", 0, "Output path prefix", 8},
+    {"verbose", OPTION_VERBOSE, NULL, 0,
      "Produce verbose output", 8},
     {NULL, 0, NULL, 0, NULL, 0}};
 
@@ -128,6 +130,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->trace_type_params = arg;
       break;
     case OPTION_OUTPUT_PATH:
+      if (arg == nullptr) {
+        argp_usage(state);
+        exit(1);
+      }
       strncpy(arguments->ofilepath, arg, OFILEPATH_LEN - 1);
       arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
@@ -148,6 +154,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case OPTION_TRACK_N_HIT:
       arguments->analysis_param.track_n_hit = atoi(arg);
+      break;
+    case OPTION_TRACK_N_POPULAR:
+      arguments->analysis_param.track_n_popular = atoi(arg);
       break;
     case OPTION_ENABLE_ALL:
       arguments->analysis_option.req_rate = true;
@@ -187,7 +196,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
 
     case OPTION_VERBOSE:
-      arguments->verbose = is_true(arg) ? true : false;
+      arguments->verbose = true;
       break;
     case ARGP_KEY_ARG:
       if (state->arg_num >= N_ARGS) {
@@ -236,7 +245,6 @@ static void init_arg(struct arguments *args) {
 
   args->trace_path = NULL;
   args->trace_type_params = NULL;
-  args->verbose = true;
   memset(args->ofilepath, 0, OFILEPATH_LEN);
   args->n_req = -1;
   args->verbose = false;

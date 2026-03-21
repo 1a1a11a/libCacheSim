@@ -89,8 +89,76 @@ void traceAnalyzer::TraceAnalyzer::cleanup() {
 void traceAnalyzer::TraceAnalyzer::run() {
   if (has_run_) return;
 
+  auto dump_outputs = [&]() {
+    ofstream ofs(output_path_ + ".stat", ios::out | ios::app);
+    ofs << gen_stat_str() << endl;
+    ofs.close();
+
+    if (ttl_stat_ != nullptr) {
+      ttl_stat_->dump(output_path_);
+    }
+
+    if (req_rate_stat_ != nullptr) {
+      req_rate_stat_->dump(output_path_);
+    }
+
+    if (reuse_stat_ != nullptr) {
+      reuse_stat_->dump(output_path_);
+    }
+
+    if (size_stat_ != nullptr) {
+      size_stat_->dump(output_path_);
+    }
+
+    if (access_stat_ != nullptr) {
+      access_stat_->dump(output_path_);
+    }
+
+    if (popularity_stat_ != nullptr) {
+      popularity_stat_->dump(output_path_);
+    }
+
+    if (popularity_decay_stat_ != nullptr) {
+      popularity_decay_stat_->dump(output_path_);
+    }
+
+    if (prob_at_age_ != nullptr) {
+      prob_at_age_->dump(output_path_);
+    }
+
+    if (lifetime_stat_ != nullptr) {
+      lifetime_stat_->dump(output_path_);
+    }
+
+    if (create_future_reuse_ != nullptr) {
+      create_future_reuse_->dump(output_path_);
+    }
+
+    // if (write_reuse_stat_ != nullptr) {
+    //   write_reuse_stat_->dump(output_path_);
+    // }
+
+    // if (write_future_reuse_stat_ != nullptr) {
+    //   write_future_reuse_stat_->dump(output_path_);
+    // }
+
+    if (scan_detector_ != nullptr) {
+      scan_detector_->dump(output_path_);
+    }
+
+    has_run_ = true;
+  };
+
   request_t *req = new_request();
   read_one_req(reader_, req);
+  if (!req->valid) {
+    start_ts_ = 0;
+    end_ts_ = 0;
+    post_processing();
+    free_request(req);
+    dump_outputs();
+    return;
+  }
   start_ts_ = req->clock_time;
   int32_t curr_time_window_idx = 0;
   int next_time_window_ts = time_window_;
@@ -226,67 +294,35 @@ void traceAnalyzer::TraceAnalyzer::run() {
 
   free_request(req);
 
-  ofstream ofs("stat", ios::out | ios::app);
-  ofs << gen_stat_str() << endl;
-  ofs.close();
-
-  if (ttl_stat_ != nullptr) {
-    ttl_stat_->dump(output_path_);
-  }
-
-  if (req_rate_stat_ != nullptr) {
-    req_rate_stat_->dump(output_path_);
-  }
-
-  if (reuse_stat_ != nullptr) {
-    reuse_stat_->dump(output_path_);
-  }
-
-  if (size_stat_ != nullptr) {
-    size_stat_->dump(output_path_);
-  }
-
-  if (access_stat_ != nullptr) {
-    access_stat_->dump(output_path_);
-  }
-
-  if (popularity_stat_ != nullptr) {
-    popularity_stat_->dump(output_path_);
-  }
-
-  if (popularity_decay_stat_ != nullptr) {
-    popularity_decay_stat_->dump(output_path_);
-  }
-
-  if (prob_at_age_ != nullptr) {
-    prob_at_age_->dump(output_path_);
-  }
-
-  if (lifetime_stat_ != nullptr) {
-    lifetime_stat_->dump(output_path_);
-  }
-
-  if (create_future_reuse_ != nullptr) {
-    create_future_reuse_->dump(output_path_);
-  }
-
-  // if (write_reuse_stat_ != nullptr) {
-  //   write_reuse_stat_->dump(output_path_);
-  // }
-
-  // if (write_future_reuse_stat_ != nullptr) {
-  //   write_future_reuse_stat_->dump(output_path_);
-  // }
-
-  if (scan_detector_ != nullptr) {
-    scan_detector_->dump(output_path_);
-  }
-
-  has_run_ = true;
+  dump_outputs();
 }
 
 string traceAnalyzer::TraceAnalyzer::gen_stat_str() {
   stat_ss_.clear();
+  if (n_req_ == 0) {
+    stat_ss_ << setprecision(4) << fixed << "dat: " << reader_->trace_path
+             << "\n"
+             << "number of requests: 0, number of objects: 0\n"
+             << "number of req GiB: 0.0000, number of obj GiB: 0.0000\n"
+             << "compulsory miss ratio (req/byte): 0.0000/0.0000\n"
+             << "object size weighted by req/obj: 0/0\n"
+             << "frequency mean: 0.0000\n"
+             << "time span: 0(0.0000 day)\n"
+             << "write: 0(0.0000), overwrite: 0(0.0000), del:0(0.0000)\n"
+             << "X-hit (number of obj accessed X times): ";
+    for (int i = 0; i < track_n_hit_; i++) {
+      stat_ss_ << "0(0.0000), ";
+    }
+    stat_ss_ << "\n";
+
+    stat_ss_ << "freq (fraction) of the most popular obj: ";
+    for (int i = 0; i < track_n_popular_; i++) {
+      stat_ss_ << "0(0.0000), ";
+    }
+    stat_ss_ << "\n";
+    return stat_ss_.str();
+  }
+
   double cold_miss_ratio = (double)obj_map_.size() / (double)n_req_;
   double byte_cold_miss_ratio =
       (double)sum_obj_size_obj / (double)sum_obj_size_req;
@@ -354,7 +390,7 @@ void traceAnalyzer::TraceAnalyzer::post_processing() {
     }
   }
 
-  if (option_.popularity) {
+  if (option_.popularity && !obj_map_.empty()) {
     popularity_stat_ = new Popularity(obj_map_);
     auto &sorted_freq = popularity_stat_->get_sorted_freq();
     int n = std::min(track_n_popular_, (int)sorted_freq.size());

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 function help() {
     echo "Usage: $0 <tracepath> <trace_format> [<trace_format_parameters>]"
 }
@@ -9,20 +11,33 @@ if [ $# -lt 2 ]; then
     exit 1;
 fi
 
-CURR_DIR=$(cd $(dirname $0); pwd)
+CURR_DIR=$(cd "$(dirname "$0")"; pwd)
+REPO_DIR=$(cd "${CURR_DIR}/.."; pwd)
+TRACE_ANALYZER="${REPO_DIR}/_build/bin/traceAnalyzer"
+
+if [ ! -x "${TRACE_ANALYZER}" ]; then
+    echo "traceAnalyzer binary not found at ${TRACE_ANALYZER}; build the project first" >&2
+    exit 1
+fi
+
 tracepath=$1
 trace_format=$2
-trace_format_parameters=${@:3}
+shift 2
 
-./_build/bin/traceAnalyzer ${tracepath} ${trace_format} ${trace_format_parameters} --common
+analyzer_args=("${tracepath}" "${trace_format}" "--common")
+if [ $# -gt 0 ]; then
+    analyzer_args+=("--trace-type-params" "$*")
+fi
 
-dataname=$(basename ${tracepath})
-python3 ${CURR_DIR}/traceAnalysis/access_pattern.py ${dataname}.accessRtime
-python3 ${CURR_DIR}/traceAnalysis/access_pattern.py ${dataname}.accessVtime
-python3 ${CURR_DIR}/traceAnalysis/req_rate.py ${dataname}.reqRate_w300
-python3 ${CURR_DIR}/traceAnalysis/size.py ${dataname}.size
-python3 ${CURR_DIR}/traceAnalysis/reuse.py ${dataname}.reuse
-python3 ${CURR_DIR}/traceAnalysis/popularity.py ${dataname}.popularity
+"${TRACE_ANALYZER}" "${analyzer_args[@]}"
+
+dataname=$(basename "${tracepath}")
+python3 "${CURR_DIR}/traceAnalysis/access_pattern.py" "${dataname}.accessRtime"
+python3 "${CURR_DIR}/traceAnalysis/access_pattern.py" "${dataname}.accessVtime"
+python3 "${CURR_DIR}/traceAnalysis/req_rate.py" "${dataname}.reqRate_w300"
+python3 "${CURR_DIR}/traceAnalysis/size.py" "${dataname}.size"
+python3 "${CURR_DIR}/traceAnalysis/reuse.py" "${dataname}.reuse"
+python3 "${CURR_DIR}/traceAnalysis/popularity.py" "${dataname}.popularity"
 # python3 ${CURR_DIR}/traceAnalysis/requestAge.py ${dataname}.requestAge
 # python3 ${CURR_DIR}/traceAnalysis/size_heatmap.py ${dataname}.sizeWindow_w300
 # python3 ${CURR_DIR}/traceAnalysis/futureReuse.py ${dataname}.access

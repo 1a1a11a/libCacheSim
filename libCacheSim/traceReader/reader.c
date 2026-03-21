@@ -241,7 +241,8 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     return 1;
   }
 
-  if (reader->cap_at_n_req > 1 && reader->n_read_req >= reader->cap_at_n_req) {
+  if (reader->cap_at_n_req >= 0 &&
+      reader->n_read_req >= reader->cap_at_n_req) {
     DEBUG("read_one_req: processed %ld requests capped by the user\n",
           (long)reader->n_read_req);
     req->valid = false;
