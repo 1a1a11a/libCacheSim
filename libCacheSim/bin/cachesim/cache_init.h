@@ -56,6 +56,7 @@ static inline cache_t *create_cache(const char *trace_path,
       {"lfuda", LFUDA_init},
       {"lirs", LIRS_init},
       {"lru", LRU_init},
+      {"lru-k", LRU_K_init},
       {"lru-prob", LRU_Prob_init},
       {"nop", nop_init},
       // plugin cache that allows user to implement custom cache

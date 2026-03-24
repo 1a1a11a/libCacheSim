@@ -227,10 +227,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = Random_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "MRU") == 0) {
     cache = MRU_init(cc_params, NULL);
-    //  } else if (strcmp(alg_name, "LRU_K") == 0) {
-    //    cache = LRU_K_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "LFU") == 0) {
-    cache = LFU_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "LRU_K") == 0) {
+    cache = LRU_K_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFU") == 0) {
     cache = LFU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LFUDA") == 0) {

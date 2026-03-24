@@ -140,6 +140,13 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_cnt_true = {93374, 89783, 83572, 81722, 72494, 72104, 71972, 71704},
      .miss_byte_true = {4214303232, 4061242368, 3778040320, 3660569600,
                         3100927488, 3078128640, 3075403776, 3061662720}},
+    {.cache_name = "LRU_K",
+     .hashpower = 20,
+     .req_cnt_true = 113872,
+     .req_byte_true = 4368040448,
+     .miss_cnt_true = {91699, 86720, 78578, 76707, 69945, 66221, 64445, 64376},
+     .miss_byte_true = {4158632960, 3917211648, 3536227840, 3455379968,
+                        3035580416, 2801699328, 2699456000, 2696345600}},
     {.cache_name = "MRU",
      .hashpower = 20,
      .req_cnt_true = 113872,
@@ -342,41 +349,45 @@ static void test_LRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[16]);
 }
 
-static void test_MRU(gconstpointer user_data) {
+static void test_LRU_K(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[17]);
 }
 
-static void test_QDLP_FIFO(gconstpointer user_data) {
+static void test_MRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[18]);
 }
 
-static void test_Random(gconstpointer user_data) {
+static void test_QDLP_FIFO(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[19]);
 }
 
-static void test_S3FIFO(gconstpointer user_data) {
+static void test_Random(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[20]);
 }
 
-static void test_S3FIFOv0(gconstpointer user_data) {
+static void test_S3FIFO(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[21]);
 }
 
-static void test_Sieve(gconstpointer user_data) {
+static void test_S3FIFOv0(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[22]);
 }
 
-static void test_SLRU(gconstpointer user_data) {
+static void test_Sieve(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[23]);
 }
 
-static void test_SR_LRU(gconstpointer user_data) {
+static void test_SLRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[24]);
+}
+
+static void test_SR_LRU(gconstpointer user_data) {
+  test_cache_algorithm(user_data, &test_data_truth[25]);
 }
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
 static void test_3LCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[25]);
+  test_cache_algorithm(user_data, &test_data_truth[26]);
 }
 #endif /* ENABLE_3L_CACHE */
 
@@ -419,6 +430,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LRU_K", reader, test_LRU_K);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,
                        test_QDLP_FIFO);
