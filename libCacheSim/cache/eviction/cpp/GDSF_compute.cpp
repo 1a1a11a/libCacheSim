@@ -154,7 +154,7 @@ static cache_obj_t *GDSF_compute_find(cache_t *cache, const request_t *req,
     auto node = gdsf->pq_map[obj];
     gdsf->pq.erase(node);
 
-    double pri = gdsf->pri_last_evict + (obj->misc.freq * obj->cost);
+    double pri = gdsf->pri_last_evict + (double(obj->misc.freq) * obj->cost);
     eviction::pq_node_type new_node = {obj, pri, cache->n_req};
     gdsf->pq.insert(new_node);
     gdsf->pq_map[obj] = new_node;
