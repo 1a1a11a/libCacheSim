@@ -1,145 +1,225 @@
-# Claude Code Skills for libCacheSim
+# libCacheSim Skills for Agents
 
-This file documents the Claude Code slash-command skills available to agents working in this repository. Skills are pre-built behaviors that extend Claude Code; invoke them with the `/skill-name` syntax in any Claude Code session.
-
-## Quick Reference
-
-| Skill | Command | Purpose |
-|---|---|---|
-| `update-config` | `/update-config` | Configure the Claude Code harness via `settings.json` |
-| `session-start-hook` | `/session-start-hook` | Set up `SessionStart` hooks (build checks, linters) |
-| `simplify` | `/simplify` | Review changed code for quality, reuse, and efficiency |
-| `loop` | `/loop [interval] [cmd]` | Run a command repeatedly on a timed interval |
-| `schedule` | `/schedule` | Create scheduled remote agents on a cron schedule |
-| `claude-api` | `/claude-api` | Build tools or integrations using the Anthropic SDK |
-| `keybindings-help` | `/keybindings-help` | Customize keyboard shortcuts |
+What you can do in this repository. Each section maps to a concrete capability, the tool or API that provides it, and the commands to invoke it.
 
 ---
 
-## Skills
+## Build
 
-### `update-config` — Configure the harness
-
-Use this when you want to add automated behaviors: "before every commit run the linter", "after each edit rebuild", etc. Automated behaviors are executed by the **harness** (not by Claude at prompt time), so they must be registered in `settings.json` via hooks—asking Claude to remember something is not sufficient.
-
-```
-/update-config
-```
-
-**When to use:**
-- Setting up pre/post-tool hooks (e.g., run `cmake --build` after file edits)
-- Storing project-level defaults or allowed tool lists
-- Enabling or disabling specific capabilities for automated sessions
-
----
-
-### `session-start-hook` — Ensure the project is ready at session start
-
-Sets up a `SessionStart` hook so every new Claude Code session begins by verifying the project is in a known-good state: dependencies installed, build passing, tests green.
-
-```
-/session-start-hook
-```
-
-**When to use:**
-- First-time setup of a repo for Claude Code on the web
-- Ensuring `cmake` configuration and build succeed before an agent starts editing C code
-- Running `ctest` at session start to confirm no pre-existing failures
-
-**libCacheSim example hook:**
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc)
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+```
+
+Produces three binaries in `build/bin/`: `cachesim`, `traceAnalyzer`, `mrcProfiler`.  
+Optional features require XGBoost/LightGBM; omit them unless the algorithm specifically needs it.
+
+Install dependencies first if not present:
+
+```bash
+bash scripts/install_dependency.sh
 ```
 
 ---
 
-### `simplify` — Code review after changes
+## Simulate a cache
 
-After making edits, invoke this skill to review the changed code for redundancy, reuse opportunities, and inefficiencies. The skill finds issues and fixes them in place.
+`cachesim` runs one or more eviction algorithms against a trace file and reports hit/miss ratios.
 
+```bash
+# Single algorithm, one cache size
+./build/bin/cachesim trace.oracleGeneral oracleGeneral 1073741824 LRU
+
+# Multiple algorithms in parallel
+./build/bin/cachesim trace.oracleGeneral oracleGeneral 1073741824 LRU,S3-FIFO,Sieve
+
+# Auto-detect working set, sweep a range of sizes
+./build/bin/cachesim trace.oracleGeneral oracleGeneral 0 LRU --num-thread 4
+
+# CSV trace with custom column mapping
+./build/bin/cachesim trace.csv csv 1073741824 LRU \
+  -t "time-col=0, obj-id-col=1, obj-size-col=2, delimiter=,"
 ```
-/simplify
-```
 
-**When to use:**
-- After adding a new eviction algorithm to check for duplicated logic
-- After editing `CMakeLists.txt` to verify build targets aren't redundant
-- As a final pass before committing
+**Supported eviction algorithms** (pass by name):  
+FIFO, LRU, Clock, SLRU, LFU, LFUDA, ARC, TwoQ, CLOCK-PRO, Belady, BeladySize, GDSF,  
+Hyperbolic, LeCaR, Cacheus, LHD, LRB, GLCache, WTinyLFU, 3LCache, QD-LP, S3-FIFO, Sieve
+
+**Admission algorithms** (combine with `-a`): Adaptsize, Bloomfilter, Prob, Size
+
+Full parameter reference: `./build/bin/cachesim --help`
 
 ---
 
-### `loop` — Recurring tasks
+## Analyze a trace
 
-Runs a prompt or slash command on a repeating interval. Defaults to every 10 minutes if no interval is specified.
+`traceAnalyzer` extracts statistics and generates plot-ready data from a trace.
 
-```
-/loop [interval] [command or prompt]
+```bash
+# Overall statistics
+./build/bin/traceAnalyzer trace.oracleGeneral oracleGeneral --task stat
+
+# Request rate over time (window = 300 s)
+./build/bin/traceAnalyzer trace.oracleGeneral oracleGeneral --task reqRate -w 300
+
+# Object size distribution
+./build/bin/traceAnalyzer trace.oracleGeneral oracleGeneral --task size
+
+# Reuse distance / reuse time distribution
+./build/bin/traceAnalyzer trace.oracleGeneral oracleGeneral --task reuse
+
+# Popularity (frequency distribution)
+./build/bin/traceAnalyzer trace.oracleGeneral oracleGeneral --task popularity
+
+# Run all analysis tasks and write output files for plotting
+./build/bin/traceAnalyzer trace.oracleGeneral oracleGeneral --task all
 ```
 
-**Examples:**
-```
-/loop 5m /simplify
-/loop 2m check if the cmake build is still passing and report any errors
-```
-
-**When to use:**
-- Watching a long `ctest` run and summarizing new failures as they appear
-- Periodically re-running the trace analyzer on a data file and diffing results
+Output files are written to the current directory and consumed by scripts in `scripts/traceAnalysis/`.
 
 ---
 
-### `schedule` — Cron-based remote agents
+## Profile a miss ratio curve (MRC)
 
-Creates, updates, lists, or runs scheduled remote agents that execute on a cron schedule. Unlike `/loop` (which runs in the current session), scheduled agents persist and run independently.
+`mrcProfiler` builds an MRC without simulating every cache size from scratch.
 
+```bash
+# SHARDS sampler — fast, LRU only
+./build/bin/mrcProfiler trace.oracleGeneral oracleGeneral SHARDS
+
+# MINISIM sampler — supports any algorithm, multi-threaded
+./build/bin/mrcProfiler trace.oracleGeneral oracleGeneral MINISIM --num-thread 8
+
+# MRC relative to working set size
+./build/bin/mrcProfiler trace.oracleGeneral oracleGeneral SHARDS --use-wss
 ```
-/schedule
-```
 
-**When to use:**
-- Nightly performance regression checks against reference traces in `data/`
-- Weekly sweeps to ensure all example projects still build cleanly
-- Automated benchmark runs on a fixed schedule
+SHARDS achieves ~23× speedup over full replay at <0.1% MAE.  
+MINISIM supports all algorithms that `cachesim` supports.
 
 ---
 
-### `claude-api` — Build tools with the Anthropic SDK
+## Plot results
 
-Triggered automatically when code imports `anthropic` or `@anthropic-ai/sdk`. Also invoke manually when you want to build a script or integration that calls Claude programmatically.
+Python scripts in `scripts/` consume output from `traceAnalyzer` and `mrcProfiler`.
 
+```bash
+# Miss ratio curve vs cache size
+python3 scripts/plot_mrc_size.py --input result.mrc
+
+# MRC over time
+python3 scripts/plot_mrc_time.py --input result.mrc
+
+# Approximate MRC (SHARDS / MINISIM output)
+python3 scripts/plot_appr_mrc.py --input result.mrc
+
+# Trace-level plots (run after traceAnalyzer --task all)
+python3 scripts/traceAnalysis/access_pattern.py
+python3 scripts/traceAnalysis/req_rate.py
+python3 scripts/traceAnalysis/popularity.py
+python3 scripts/traceAnalysis/reuse.py
 ```
-/claude-api
-```
-
-**When to use in libCacheSim context:**
-- Writing a Python script that uses Claude to analyze cache trace output and suggest algorithm tuning
-- Building a Node.js tool on top of `libcachesim-node` that calls Claude to interpret miss-ratio curves
-- Generating synthetic trace files with LLM assistance
 
 ---
 
-### `keybindings-help` — Customize keyboard shortcuts
+## Generate a synthetic trace
 
-Modifies `~/.claude/keybindings.json` to rebind keys, add chord shortcuts, or change the submit key.
-
+```bash
+# Zipf workload: 1M requests, 100K objects, alpha=1.0
+python3 scripts/data_gen.py --num-req 1000000 --num-obj 100000 --alpha 1.0 \
+  --output synthetic.oracleGeneral
 ```
-/keybindings-help
-```
-
-**When to use:**
-- Rebinding a key that conflicts with your terminal emulator
-- Adding a chord shortcut for a frequently used command like `/simplify`
 
 ---
 
-## Hooks vs. Asking Claude
+## Inspect or convert a trace
 
-A common confusion: asking Claude "always run the linter after you edit a file" does **not** persist beyond the current session. To make a behavior automatic and durable, it must be registered as a hook in `settings.json`. Use `/update-config` or `/session-start-hook` to set this up correctly.
+```bash
+# Print trace as human-readable text
+./build/bin/tracePrint trace.oracleGeneral oracleGeneral | head -20
 
-| Goal | Right approach |
+# Convert between trace formats
+./build/bin/traceConv trace.csv csv trace.oracleGeneral oracleGeneral
+```
+
+---
+
+## Use the C API in code
+
+The library API lets you build custom simulators. See `example/` for complete working programs.
+
+```c
+#include "libCacheSim.h"
+
+// Open a trace
+reader_t *reader = open_trace("trace.oracleGeneral", ORACLE_GENERAL_TRACE, NULL);
+
+// Create a cache (e.g. 1 GiB LRU)
+common_cache_params_t params = default_common_cache_params();
+params.cache_size = 1 * GiB;
+cache_t *cache = LRU_init(params, NULL);
+
+// Simulate
+request_t *req = new_request();
+while (read_one_req(reader, req) == 0) {
+    cache->get(cache, req);  // returns true on hit
+}
+
+free_request(req);
+free_cache(cache);
+close_trace(reader);
+```
+
+**Multi-size simulation** (runs N cache sizes in one pass):
+
+```c
+simulate_at_multi_sizes(reader, cache, n_sizes, cache_sizes, NULL, 0, 4 /*threads*/);
+```
+
+See `example/cacheSimulator/` for a minimal single-cache example and  
+`example/cacheSimulatorConcurrent/` for multi-size and CSV trace usage.
+
+---
+
+## Add a new eviction algorithm
+
+1. Create `libCacheSim/cache/eviction/MyAlgo.c` — implement `init`, `get`, `find`, `insert`, `evict`, `remove`, `free`.
+2. Register it in `libCacheSim/cache/cacheObj.c` and the algo name map.
+3. Add it to `CMakeLists.txt`.
+4. Rebuild and verify with `cachesim`.
+
+See `doc/advanced_lib_extend.md` for the full walkthrough and `doc/advanced_lib.md` for internal data structures.
+
+---
+
+## Write a plugin (without modifying core)
+
+The plugin system lets you implement an algorithm as a shared library loaded at runtime.
+
+```bash
+cd example/plugin_v2
+cmake -S . -B build && cmake --build build
+./build/test_plugin trace.oracleGeneral oracleGeneral 1073741824
+```
+
+Implement the six hooks in your plugin: `plugin_init`, `plugin_hit`, `plugin_miss`, `plugin_eviction`, `plugin_remove`, `plugin_free`. See `example/plugin_v2/myPlugin.cpp`.
+
+---
+
+## Run tests
+
+```bash
+cd build && ctest --output-on-failure
+```
+
+---
+
+## Trace formats
+
+| Format | Description |
 |---|---|
-| Run `cmake --build` after every file edit | `/update-config` → PostToolUse hook |
-| Verify build at the start of every session | `/session-start-hook` |
-| One-off code review | `/simplify` |
-| Recurring check during a session | `/loop` |
-| Persistent scheduled agent | `/schedule` |
+| `oracleGeneral` | Binary struct: `{uint32 timestamp, uint64 obj_id, uint32 obj_size, int64 next_access_vtime}`. Supports `.zst` compression. |
+| `csv` | Plain text; column mapping required via `-t` flag. |
+| `binary` | Raw fixed-width binary records. |
+
+Object IDs in oracleGeneral are hashed values. `next_access_vtime` is logical time (request count, not wall clock).
