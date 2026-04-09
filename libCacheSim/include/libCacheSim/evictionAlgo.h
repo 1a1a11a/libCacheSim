@@ -41,6 +41,21 @@ typedef struct {
   int64_t n_byte_rewritten;
 } Clock_params_t;
 
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+
+  // points to the eviction position
+  cache_obj_t *next_to_merge;
+  // the number of objects to examine at each eviction
+  int n_exam_obj;
+  // reinsertion ratio: fraction of examined objects to reinsert
+  double reinsertion_ratio;
+
+  int64_t n_obj_rewritten;
+  int64_t n_byte_rewritten;
+} ClockRI_params_t;
+
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
@@ -61,6 +76,9 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
 
 cache_t *Clock_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params);
+
+cache_t *ClockRI_init(const common_cache_params_t ccache_params,
+                      const char *cache_specific_params);
 
 cache_t *ClockPro_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params);
