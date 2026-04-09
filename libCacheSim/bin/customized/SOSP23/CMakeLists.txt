@@ -29,3 +29,21 @@ target_include_directories(flash PRIVATE
     ${GLib_INCLUDE_DIRS}
 )
 target_link_libraries(flash ${PROJECT_NAME} ${dependency_libs})
+
+set(flashMetrics_sources_cpp
+    flash/metrics.cpp
+    ../../cachesim/cli_parser.c
+    ../../cli_reader_utils.c
+)
+add_executable(flashMetrics ${flashMetrics_sources_cpp})
+target_include_directories(flashMetrics PRIVATE
+    ../../
+    ${libCacheSim_include_dir}
+    ${GLib_INCLUDE_DIRS}
+)
+target_link_libraries(flashMetrics ${PROJECT_NAME} ${dependency_libs})
+set_target_properties(flashMetrics PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED YES
+    CXX_EXTENSIONS NO
+)

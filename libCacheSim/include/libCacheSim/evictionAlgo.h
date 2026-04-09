@@ -15,6 +15,9 @@ typedef struct {
 typedef struct {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
+
+  int64_t n_obj_promoted;
+  int64_t n_byte_promoted;
 } LRU_params_t;
 
 /* used by LFU related */

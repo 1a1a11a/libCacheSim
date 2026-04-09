@@ -74,8 +74,7 @@ cache_t *LRU_init(const common_cache_params_t ccache_params,
 #endif
 
   LRU_params_t *params = malloc(sizeof(LRU_params_t));
-  params->q_head = NULL;
-  params->q_tail = NULL;
+  memset(params, 0, sizeof(LRU_params_t));
   cache->eviction_params = params;
 
   return cache;
@@ -141,7 +140,11 @@ static cache_obj_t *LRU_find(cache_t *cache, const request_t *req,
 #ifdef USE_BELADY
     if (req->next_access_vtime != INT64_MAX)
 #endif
-      move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
+      if (cache_obj != params->q_head) {
+        params->n_obj_promoted += 1;
+        params->n_byte_promoted += cache_obj->obj_size;
+        move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
+      }
   }
   return cache_obj;
 }
