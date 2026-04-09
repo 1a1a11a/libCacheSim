@@ -56,6 +56,16 @@ typedef struct {
   int64_t n_byte_rewritten;
 } ClockRI_params_t;
 
+typedef struct {
+  cache_obj_t *q_head;
+  cache_obj_t *q_tail;
+
+  int64_t n_miss;
+
+  int64_t n_obj_rewritten;
+  int64_t n_byte_rewritten;
+} ClockOracle_params_t;
+
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
@@ -158,6 +168,25 @@ cache_t *RandomTwo_init(const common_cache_params_t ccache_params,
 
 cache_t *Random_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
+
+typedef struct {
+  cache_t *small_fifo;
+  cache_t *ghost_fifo;
+  cache_t *main_fifo;
+  bool hit_on_ghost;
+
+  int move_to_main_threshold;
+  double small_size_ratio;
+  double ghost_size_ratio;
+
+  bool has_evicted;
+  request_t *req_local;
+
+  int64_t n_obj_promoted;
+  int64_t n_byte_promoted;
+  int64_t n_obj_rewritten;
+  int64_t n_byte_rewritten;
+} S3FIFO_params_t;
 
 cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);

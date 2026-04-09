@@ -36,20 +36,6 @@
 extern "C" {
 #endif
 
-typedef struct {
-  cache_t *small_fifo;
-  cache_t *ghost_fifo;
-  cache_t *main_fifo;
-  bool hit_on_ghost;
-
-  int move_to_main_threshold;
-  double small_size_ratio;
-  double ghost_size_ratio;
-
-  bool has_evicted;
-  request_t *req_local;
-} S3FIFO_params_t;
-
 static const char *DEFAULT_CACHE_PARAMS =
     "small-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=2";
 
@@ -323,6 +309,8 @@ static void S3FIFO_evict_small(cache_t *cache, const request_t *req) {
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
     if (obj_to_evict->S3FIFO.freq >= params->move_to_main_threshold) {
+      params->n_obj_promoted += 1;
+      params->n_byte_promoted += obj_to_evict->obj_size;
       main_fifo->insert(main_fifo, params->req_local);
     } else {
       // insert to ghost
@@ -349,6 +337,8 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
     int freq = obj_to_evict->S3FIFO.freq;
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
     if (freq >= 1) {
+      params->n_obj_rewritten += 1;
+      params->n_byte_rewritten += obj_to_evict->obj_size;
       // we need to evict first because the object to insert has the same obj_id
       main_fifo->remove(main_fifo, obj_to_evict->obj_id);
       obj_to_evict = NULL;

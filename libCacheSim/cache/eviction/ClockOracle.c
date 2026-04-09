@@ -1,10 +1,15 @@
 //
 //  ClockOracle
 //
-//  An oracle-assisted CLOCK that uses next_access_vtime to decide reinsertion.
-//  During eviction scan, an object is reinserted only if:
-//      next_access_vtime - current_vtime <= cache_size / miss_ratio
-//  Objects whose next access is beyond this threshold are evicted.
+//  An oracle-assisted CLOCK that combines the visited bit with oracle
+//  reuse distance to decide reinsertion.
+//
+//  An object is reinserted only if BOTH conditions hold:
+//    1. The visited bit is set (object was accessed since last eviction scan)
+//    2. next_access_vtime - current_vtime <= cache_size / miss_ratio
+//
+//  The visited bit is cleared on reinsertion (like standard CLOCK).
+//  Objects failing either condition are evicted.
 //
 //  Requires oracle traces (oracleGeneral / lcs) that provide next_access_vtime.
 //
@@ -18,16 +23,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef struct {
-  cache_obj_t *q_head;
-  cache_obj_t *q_tail;
-
-  int64_t n_miss;
-
-  int64_t n_obj_rewritten;
-  int64_t n_byte_rewritten;
-} ClockOracle_params_t;
 
 // ***********************************************************************
 // ****                                                               ****
@@ -83,32 +78,8 @@ static void ClockOracle_free(cache_t *cache) {
   cache_struct_free(cache);
 }
 
-/**
- * @brief custom get that tracks misses for miss ratio computation
- */
 static bool ClockOracle_get(cache_t *cache, const request_t *req) {
-  ClockOracle_params_t *params =
-      (ClockOracle_params_t *)cache->eviction_params;
-
-  cache->n_req += 1;
-
-  cache_obj_t *obj = cache->find(cache, req, true);
-  bool hit = (obj != NULL);
-
-  if (!hit) {
-    params->n_miss += 1;
-
-    if (cache->can_insert(cache, req)) {
-      while (cache->get_occupied_byte(cache) + req->obj_size +
-                 cache->obj_md_size >
-             cache->cache_size) {
-        cache->evict(cache, req);
-      }
-      cache->insert(cache, req);
-    }
-  }
-
-  return hit;
+  return cache_get_base(cache, req);
 }
 
 // ***********************************************************************
@@ -121,6 +92,8 @@ static cache_obj_t *ClockOracle_find(cache_t *cache, const request_t *req,
                                      bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && update_cache) {
+    /* set visited bit */
+    obj->clock.freq = 1;
     obj->next_access_vtime = req->next_access_vtime;
   }
   return obj;
@@ -130,9 +103,13 @@ static cache_obj_t *ClockOracle_insert(cache_t *cache, const request_t *req) {
   ClockOracle_params_t *params =
       (ClockOracle_params_t *)cache->eviction_params;
 
+  params->n_miss += 1;
+
   cache_obj_t *obj = cache_insert_base(cache, req);
   prepend_obj_to_head(&params->q_head, &params->q_tail, obj);
 
+  /* new objects start with visited bit clear */
+  obj->clock.freq = 0;
   obj->next_access_vtime = req->next_access_vtime;
 
   return obj;
@@ -145,23 +122,21 @@ static cache_obj_t *ClockOracle_to_evict(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief evict using oracle information
+ * @brief evict using oracle + visited bit
  *
- * Scan from the tail. For each object, compute the reinsertion threshold:
- *   threshold = cache_size / miss_ratio
- * If next_access_vtime - current_vtime > threshold, evict the object.
- * Otherwise, reinsert it to the head.
+ * Scan from the tail. An object is reinserted only if BOTH:
+ *   1. visited bit is set (freq >= 1)
+ *   2. next_access_vtime - current_vtime <= cache_size / miss_ratio
  *
- * Objects with next_access_vtime == INT64_MAX (no future access) are always
- * evicted.
+ * On reinsertion, the visited bit is cleared.
+ * Objects failing either condition are evicted.
  */
 static void ClockOracle_evict(cache_t *cache, const request_t *req) {
   ClockOracle_params_t *params =
       (ClockOracle_params_t *)cache->eviction_params;
 
-  /* compute the reinsertion threshold: cache_size / miss_ratio
-   * miss_ratio = n_miss / n_req, so threshold = cache_size * n_req / n_miss
-   * when n_miss == 0, use cache_size as the threshold (conservative) */
+  /* threshold = cache_size / miss_ratio = cache_size * n_req / n_miss
+   * when n_miss == 0, use cache_size as the threshold */
   int64_t threshold;
   if (params->n_miss > 0) {
     threshold = (int64_t)((double)cache->cache_size * (double)cache->n_req /
@@ -170,23 +145,31 @@ static void ClockOracle_evict(cache_t *cache, const request_t *req) {
     threshold = cache->cache_size;
   }
 
-  /* scan at most n_obj objects to avoid infinite loop */
-  int64_t n_scanned = 0;
+
   cache_obj_t *obj_to_evict = params->q_tail;
+  int64_t n_scanned = 0;
   while (obj_to_evict != NULL && n_scanned < cache->n_obj) {
-    int64_t reuse_dist = obj_to_evict->next_access_vtime - cache->n_req;
     n_scanned++;
 
-    /* evict if no future access or reuse distance exceeds threshold */
-    if (obj_to_evict->next_access_vtime == INT64_MAX || reuse_dist > threshold) {
-      break;
+    bool no_future_access = (obj_to_evict->next_access_vtime == -1 ||
+                             obj_to_evict->next_access_vtime == INT64_MAX);
+    bool visited = (obj_to_evict->clock.freq >= 1);
+    int64_t reuse_dist = obj_to_evict->next_access_vtime - cache->n_req;
+    bool within_threshold = (!no_future_access && reuse_dist <= threshold);
+
+    /* reinsert only if visited AND within threshold */
+    if (visited && within_threshold) {
+      /* clear visited bit, reinsert to head */
+      obj_to_evict->clock.freq = 0;
+      params->n_obj_rewritten += 1;
+      params->n_byte_rewritten += obj_to_evict->obj_size;
+      move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
+      obj_to_evict = params->q_tail;
+      continue;
     }
 
-    /* reinsert: move to head */
-    params->n_obj_rewritten += 1;
-    params->n_byte_rewritten += obj_to_evict->obj_size;
-    move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
-    obj_to_evict = params->q_tail;
+    /* evict: either not visited, no future access, or too far away */
+    break;
   }
 
   /* safety: if everything was reinserted, evict the tail */

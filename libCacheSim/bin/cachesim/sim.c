@@ -1,4 +1,5 @@
 #include "libCacheSim/cache.h"
+#include "libCacheSim/evictionAlgo.h"
 #include "libCacheSim/reader.h"
 #include "utils/include/mymath.h"
 #include "utils/include/mystr.h"
@@ -103,6 +104,32 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
   if (show_cost)
     n += snprintf(output_str + n, sizeof(output_str) - n,
                   ", cost saving ratio %.4lf", cost_saving_ratio);
+
+  /* compute extra write bytes for flash write ratio reporting */
+  int64_t extra_write_byte = 0;
+  if (cache->cache_init == Clock_init) {
+    extra_write_byte = ((Clock_params_t *)cache->eviction_params)->n_byte_rewritten;
+  } else if (cache->cache_init == ClockRI_init) {
+    extra_write_byte = ((ClockRI_params_t *)cache->eviction_params)->n_byte_rewritten;
+  } else if (cache->cache_init == ClockOracle_init) {
+    extra_write_byte = ((ClockOracle_params_t *)cache->eviction_params)->n_byte_rewritten;
+  } else if (cache->cache_init == LRU_init) {
+    extra_write_byte = ((LRU_params_t *)cache->eviction_params)->n_byte_promoted;
+  } else if (cache->cache_init == S3FIFO_init) {
+    S3FIFO_params_t *p = (S3FIFO_params_t *)cache->eviction_params;
+    extra_write_byte = p->n_byte_promoted + p->n_byte_rewritten;
+  }
+
+  if (cache->cache_init == FIFO_init || cache->cache_init == Sieve_init ||
+      cache->cache_init == Clock_init || cache->cache_init == ClockRI_init ||
+      cache->cache_init == ClockOracle_init || cache->cache_init == LRU_init ||
+      cache->cache_init == S3FIFO_init) {
+    double write_ratio = req_byte > 0
+        ? (double)(miss_byte + extra_write_byte) / (double)req_byte : 0.0;
+    n += snprintf(output_str + n, sizeof(output_str) - n,
+                  ", write ratio %.4lf", write_ratio);
+  }
+
   snprintf(output_str + n, sizeof(output_str) - n, ", throughput %.2lf MQPS\n",
            (double)req_cnt / 1000000.0 / runtime);
   printf("%s", output_str);
