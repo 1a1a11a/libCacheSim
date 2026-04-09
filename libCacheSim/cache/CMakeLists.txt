@@ -33,6 +33,7 @@ set(eviction_sources_c
         eviction/Cacheus.c
         eviction/Clock.c
         eviction/ClockRI.c
+        eviction/ClockOracle.c
         eviction/ClockPro.c
         eviction/FIFO.c
         eviction/Hyperbolic.c

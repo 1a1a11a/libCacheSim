@@ -80,6 +80,9 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
 cache_t *ClockRI_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);
 
+cache_t *ClockOracle_init(const common_cache_params_t ccache_params,
+                          const char *cache_specific_params);
+
 cache_t *ClockPro_init(const common_cache_params_t ccache_params,
                        const char *cache_specific_params);
 
