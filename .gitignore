@@ -22,3 +22,4 @@ sftp-config.json
 .lint-logs/
 # Python wheels
 *.whl
+2024_google/*
