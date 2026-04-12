@@ -43,6 +43,8 @@ typedef struct FIFO_Merge_params {
   int n_exam_obj;
   // of the n_exam_obj, we keep n_keep_obj and evict the rest
   int n_keep_obj;
+
+  double retain_ratio;
   // used to sort the n_exam_obj objects
   struct sort_list_node *metric_list;
   // the policy to determine the n_keep_obj objects
@@ -113,8 +115,9 @@ cache_t *FIFO_Merge_init(const common_cache_params_t ccache_params,
 
   /* TODO: can we make this parameter adaptive to trace? */
   params->n_exam_obj = 100;
-  params->n_keep_obj = params->n_exam_obj / 2;
-  params->retain_policy = RETAIN_POLICY_FREQUENCY;
+  params->retain_ratio = 0.25;
+  params->n_keep_obj = (int)(params->n_exam_obj * params->retain_ratio);
+  params->retain_policy = RETAIN_POLICY_RECENCY;
   params->next_to_exam = NULL;
   params->pos_in_metric_list = INT32_MAX;
 
@@ -125,8 +128,8 @@ cache_t *FIFO_Merge_init(const common_cache_params_t ccache_params,
   assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);
   assert(params->n_keep_obj <= params->n_exam_obj);
 
-  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO_Merge_%s",
-           retain_policy_names[params->retain_policy]);
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO_Merge_%s-%.4lf",
+           retain_policy_names[params->retain_policy], params->retain_ratio);
   params->metric_list = my_malloc_n(struct sort_list_node, params->n_exam_obj);
 
   return cache;
@@ -378,8 +381,8 @@ static void FIFO_Merge_parse_params(cache_t *cache,
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
       }
-    } else if (strcasecmp(key, "n-keep") == 0) {
-      params->n_keep_obj = (int)strtol(value, &end, 0);
+    } else if (strcasecmp(key, "retain-ratio") == 0) {
+      params->retain_ratio = strtod(value, &end);
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
       }

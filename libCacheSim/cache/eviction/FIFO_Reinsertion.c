@@ -40,22 +40,19 @@ typedef struct FIFO_Reinsertion_params {
   cache_obj_t *q_tail;
 
   // points to the eviction position
-  cache_obj_t *next_to_exam;
-  // the number of bytes to examine at each eviction round
-  int64_t n_exam_byte;
-  // of the n_exam_byte examined, we keep n_keep_byte and evict the rest
-  int64_t n_keep_byte;
-  // used to sort the objects collected in the current batch
+  cache_obj_t *next_to_merge;
+  // the number of object to examine at each eviction
+  int n_exam_obj;
+  // of the n_exam_obj, we keep n_keep_obj and evict the rest
+  int n_keep_obj;
+
+  double retain_ratio;
+  // used to sort the n_exam_obj objects
   struct sort_list_node *metric_list;
-  // current allocated capacity (in entries) of metric_list
-  int metric_list_capacity;
-  // the policy to determine which objects to keep
+  // the policy to determine the n_keep_obj objects
   retain_policy_t retain_policy;
+
   int pos_in_metric_list;
-  // number of objects in the eviction portion of the current sorted batch
-  int n_collected_in_batch;
-  // number of bytes already evicted from the current sorted batch
-  int64_t bytes_evicted_in_batch;
 
   int64_t n_obj_rewritten;
   int64_t n_byte_rewritten;
@@ -125,30 +122,25 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
   memset(params, 0, sizeof(FIFO_Reinsertion_params_t));
   cache->eviction_params = params;
 
-  params->n_exam_byte = 100LL * 1024 * 1024;  // 100 MB
-  params->n_keep_byte = 25LL * 1024 * 1024;   // 25 MB
+  params->n_exam_obj = 100;
+  params->retain_ratio = 0.25;
+  params->n_keep_obj = (int)(params->n_exam_obj * params->retain_ratio);
   params->retain_policy = RETAIN_POLICY_RECENCY;
-  params->next_to_exam = NULL;
+  params->next_to_merge = NULL;
+  params->pos_in_metric_list = INT32_MAX;
   params->q_head = NULL;
   params->q_tail = NULL;
-  params->pos_in_metric_list = INT32_MAX;
-  params->n_collected_in_batch = 0;
-  params->bytes_evicted_in_batch = 0;
 
   if (cache_specific_params != NULL) {
     FIFO_Reinsertion_parse_params(cache, cache_specific_params);
   }
 
-  assert(params->n_exam_byte > 0 && params->n_keep_byte >= 0);
-  assert(params->n_keep_byte <= params->n_exam_byte);
+  assert(params->n_exam_obj > 0 && params->n_keep_obj >= 0);
+  assert(params->n_keep_obj <= params->n_exam_obj);
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO_Reinsertion_%s-%.4lf",
-           retain_policy_names[params->retain_policy],
-           (double)params->n_keep_byte / (double)params->n_exam_byte);
-  // initial capacity guess; grows on demand in the eviction routine
-  params->metric_list_capacity = 1024;
-  params->metric_list =
-      my_malloc_n(struct sort_list_node, params->metric_list_capacity);
+           retain_policy_names[params->retain_policy], params->retain_ratio);
+  params->metric_list = my_malloc_n(struct sort_list_node, params->n_exam_obj);
 
   return cache;
 }
@@ -161,7 +153,7 @@ cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
 static void FIFO_Reinsertion_free(cache_t *cache) {
   FIFO_Reinsertion_params_t *params =
       (FIFO_Reinsertion_params_t *)cache->eviction_params;
-  my_free(sizeof(struct sort_list_node) * params->metric_list_capacity,
+  my_free(sizeof(struct sort_list_node) * params->n_exam_obj,
           params->metric_list);
   my_free(sizeof(FIFO_Reinsertion_params_t), params);
   cache_struct_free(cache);
@@ -273,94 +265,84 @@ static void FIFO_Reinsertion_evict(cache_t *cache, const request_t *req) {
   FIFO_Reinsertion_params_t *params =
       (FIFO_Reinsertion_params_t *)cache->eviction_params;
   cache_obj_t *cache_obj = NULL;
-  // Collect ~n_exam_byte objects, sort them, then:
-  //   - reinsert the keep-set to head immediately (no cache-size change)
-  //   - store the evict-set and drain it one object per call
-  const int64_t bytes_to_evict_per_batch =
-      params->n_exam_byte - params->n_keep_byte;
+  int n_evict = params->n_exam_obj - params->n_keep_obj;
 
-  if (params->pos_in_metric_list < params->n_collected_in_batch &&
-      params->bytes_evicted_in_batch < bytes_to_evict_per_batch) {
+  // check if we have objects identified to evict from a previous scan
+  if (params->pos_in_metric_list < n_evict) {
     cache_obj = params->metric_list[params->pos_in_metric_list++].cache_obj;
-    params->bytes_evicted_in_batch += cache_obj->obj_size;
-    remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
-    cache_evict_base(cache, cache_obj, true);
+    FIFO_Reinsertion_remove_obj(cache, cache_obj);
+
+    // if this was the last eviction in the batch, reinsert the kept objects
+    if (params->pos_in_metric_list >= n_evict) {
+      for (int i = n_evict; i < params->n_exam_obj; i++) {
+        cache_obj = params->metric_list[i].cache_obj;
+        move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
+        cache_obj->FIFO_Reinsertion.freq =
+            (cache_obj->FIFO_Reinsertion.freq + 1) / 2;
+
+        params->n_obj_rewritten += 1;
+        params->n_byte_rewritten += cache_obj->obj_size;
+      }
+      params->pos_in_metric_list = INT32_MAX;
+    }
     return;
   }
 
-  if (cache->get_occupied_byte(cache) <= params->n_exam_byte) {
-    // cache is too small for a useful merge - fall back to plain FIFO
-    cache_obj = params->q_tail;
-    params->next_to_exam = NULL;
-    remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
-    cache_evict_base(cache, cache_obj, true);
-    return;
-  }
-
-  // collect ~n_exam_byte worth of objects from the merge cursor
-  int n_loop = 0;
-  int64_t bytes_collected = 0;
-  int n_collected = 0;
-  cache_obj = params->next_to_exam;
-  while (bytes_collected < params->n_exam_byte) {
+  if (cache->n_obj <= params->n_exam_obj) {
+    // just evict one object - this is fifo
+    cache_obj = params->next_to_merge;
     if (cache_obj == NULL) {
       cache_obj = params->q_tail;
-      n_loop += 1;
-      DEBUG_ASSERT(n_loop <= 2);
     }
-
-    // grow metric_list if needed
-    if (n_collected >= params->metric_list_capacity) {
-      int new_capacity = params->metric_list_capacity * 2;
-      struct sort_list_node *new_list =
-          my_malloc_n(struct sort_list_node, new_capacity);
-      memcpy(new_list, params->metric_list,
-             sizeof(struct sort_list_node) * params->metric_list_capacity);
-      my_free(sizeof(struct sort_list_node) * params->metric_list_capacity,
-              params->metric_list);
-      params->metric_list = new_list;
-      params->metric_list_capacity = new_capacity;
-    }
-
-    params->metric_list[n_collected].metric = retain_metric(cache, cache_obj);
-    params->metric_list[n_collected].cache_obj = cache_obj;
-    bytes_collected += cache_obj->obj_size;
-    n_collected += 1;
-    cache_obj = cache_obj->queue.prev;
+    params->next_to_merge = cache_obj->queue.prev;
+    FIFO_Reinsertion_remove_obj(cache, cache_obj);
+    return;
   }
-  params->next_to_exam = cache_obj;
 
-  // sort by metric ascending - low metric (least worth keeping) first
-  qsort(params->metric_list, n_collected, sizeof(struct sort_list_node),
+  // collect metric for n_exam obj, we will keep objects with larger metric
+  int n_loop = 0;
+  cache_obj = params->next_to_merge;
+  if (cache_obj == NULL) {
+    params->next_to_merge = params->q_tail;
+    cache_obj = params->q_tail;
+    n_loop = 1;
+  }
+
+  for (int i = 0; i < params->n_exam_obj; i++) {
+    assert(cache_obj != NULL);
+    params->metric_list[i].metric = retain_metric(cache, cache_obj);
+    params->metric_list[i].cache_obj = cache_obj;
+    cache_obj = cache_obj->queue.prev;
+
+    if (cache_obj == NULL) {
+      cache_obj = params->q_tail;
+      DEBUG_ASSERT(n_loop++ <= 2);
+    }
+  }
+  params->next_to_merge = cache_obj;
+
+  // sort metrics
+  qsort(params->metric_list, params->n_exam_obj, sizeof(struct sort_list_node),
         cmp_list_node);
 
-  // find the split point: evict [0..n_evict), reinsert [n_evict..n_collected)
-  int n_evict = 0;
-  int64_t bytes_evict_counted = 0;
-  while (n_evict < n_collected && bytes_evict_counted < bytes_to_evict_per_batch) {
-    bytes_evict_counted += params->metric_list[n_evict].cache_obj->obj_size;
-    n_evict++;
-  }
-
-  // reinsert the keep-set to head now (size unchanged, so safe to do eagerly)
-  for (int i = n_evict; i < n_collected; i++) {
-    cache_obj = params->metric_list[i].cache_obj;
-    move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
-    cache_obj->FIFO_Reinsertion.freq =
-        (cache_obj->FIFO_Reinsertion.freq + 1) / 2;
-    params->n_obj_rewritten += 1;
-    params->n_byte_rewritten += cache_obj->obj_size;
-  }
-
-  // begin draining the evict-set one object per call
-  params->n_collected_in_batch = n_evict;
-  params->bytes_evicted_in_batch = 0;
+  // evict the first object, save state for subsequent calls
   params->pos_in_metric_list = 1;
-
   cache_obj = params->metric_list[0].cache_obj;
-  params->bytes_evicted_in_batch += cache_obj->obj_size;
-  remove_obj_from_list(&params->q_head, &params->q_tail, cache_obj);
-  cache_evict_base(cache, cache_obj, true);
+  FIFO_Reinsertion_remove_obj(cache, cache_obj);
+
+  // if only one object to evict in the batch, reinsert the kept objects now
+  if (params->pos_in_metric_list >= n_evict) {
+    for (int i = n_evict; i < params->n_exam_obj; i++) {
+      cache_obj = params->metric_list[i].cache_obj;
+      move_obj_to_head(&params->q_head, &params->q_tail, cache_obj);
+      cache_obj->FIFO_Reinsertion.freq =
+          (cache_obj->FIFO_Reinsertion.freq + 1) / 2;
+
+      params->n_obj_rewritten += 1;
+      params->n_byte_rewritten += cache_obj->obj_size;
+    }
+    params->pos_in_metric_list = INT32_MAX;
+  }
 }
 
 static void FIFO_Reinsertion_remove_obj(cache_t *cache, cache_obj_t *obj) {
@@ -404,42 +386,10 @@ static bool FIFO_Reinsertion_remove(cache_t *cache, obj_id_t obj_id) {
 static const char *FIFO_Reinsertion_current_params(
     FIFO_Reinsertion_params_t *params) {
   static __thread char params_str[128];
-  snprintf(params_str, 128,
-           "n-exam-byte=%lld, n-keep-byte=%lld, retain-policy=%s",
-           (long long)params->n_exam_byte, (long long)params->n_keep_byte,
+  snprintf(params_str, 128, "n-exam=%d, n-keep=%d, retain-policy=%s",
+           params->n_exam_obj, params->n_keep_obj,
            retain_policy_names[params->retain_policy]);
   return params_str;
-}
-
-/* Parse a human-readable byte size like "100", "100KB", "100MB", "2GB".
- * Suffix is case-insensitive; binary (1024) units are used.
- * Returns the parsed value, or aborts on parse error. */
-static int64_t FIFO_Reinsertion_parse_byte_size(const char *value) {
-  char *end = NULL;
-  int64_t n = (int64_t)strtoll(value, &end, 0);
-  if (end == value) {
-    ERROR("param parsing error: expected number, got \"%s\"\n", value);
-    exit(1);
-  }
-  while (*end == ' ') end++;
-  if (*end == '\0') return n;
-
-  int64_t mult = 1;
-  if (strcasecmp(end, "B") == 0) {
-    mult = 1;
-  } else if (strcasecmp(end, "K") == 0 || strcasecmp(end, "KB") == 0) {
-    mult = 1024LL;
-  } else if (strcasecmp(end, "M") == 0 || strcasecmp(end, "MB") == 0) {
-    mult = 1024LL * 1024;
-  } else if (strcasecmp(end, "G") == 0 || strcasecmp(end, "GB") == 0) {
-    mult = 1024LL * 1024 * 1024;
-  } else if (strcasecmp(end, "T") == 0 || strcasecmp(end, "TB") == 0) {
-    mult = 1024LL * 1024 * 1024 * 1024;
-  } else {
-    ERROR("param parsing error: unknown size suffix \"%s\"\n", end);
-    exit(1);
-  }
-  return n * mult;
 }
 
 static void FIFO_Reinsertion_parse_params(cache_t *cache,
@@ -449,6 +399,7 @@ static void FIFO_Reinsertion_parse_params(cache_t *cache,
 
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
+  char *end;
 
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
@@ -470,15 +421,21 @@ static void FIFO_Reinsertion_parse_params(cache_t *cache,
         params->retain_policy = RETAIN_POLICY_BELADY;
       else if (strcasecmp(value, "none") == 0) {
         params->retain_policy = RETAIN_NONE;
-        params->n_keep_byte = 0;
+        params->n_keep_obj = 0;
       } else {
         ERROR("unknown retain-policy %s\n", value);
         exit(1);
       }
-    } else if (strcasecmp(key, "n-exam-byte") == 0) {
-      params->n_exam_byte = FIFO_Reinsertion_parse_byte_size(value);
-    } else if (strcasecmp(key, "n-keep-byte") == 0) {
-      params->n_keep_byte = FIFO_Reinsertion_parse_byte_size(value);
+    } else if (strcasecmp(key, "n-exam") == 0) {
+      params->n_exam_obj = (int)strtol(value, &end, 0);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
+    } else if (strcasecmp(key, "retain-ratio") == 0) {
+      params->retain_ratio = strtod(value, &end);
+      if (strlen(end) > 2) {
+        ERROR("param parsing error, find string \"%s\" after number\n", end);
+      }
     } else if (strcasecmp(key, "print") == 0) {
       printf("%s parameters: %s\n", cache->cache_name,
              FIFO_Reinsertion_current_params(params));
