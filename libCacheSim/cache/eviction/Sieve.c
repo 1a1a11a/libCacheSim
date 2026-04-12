@@ -7,11 +7,18 @@
 extern "C" {
 #endif
 
+#define USE_BELADY
+// #undef USE_BELADY
+
 typedef struct {
   cache_obj_t *q_head;
   cache_obj_t *q_tail;
 
   cache_obj_t *pointer;
+
+#ifdef USE_BELADY
+  int64_t n_miss;
+#endif
 } Sieve_params_t;
 
 // ***********************************************************************
@@ -68,6 +75,10 @@ cache_t *Sieve_init(const common_cache_params_t ccache_params,
   params->q_head = NULL;
   params->q_tail = NULL;
 
+#ifdef USE_BELADY
+  snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Sieve_Belady");
+#endif
+
   return cache;
 }
 
@@ -103,6 +114,12 @@ static void Sieve_free(cache_t *cache) {
 
 static bool Sieve_get(cache_t *cache, const request_t *req) {
   bool ck_hit = cache_get_base(cache, req);
+#ifdef USE_BELADY
+  if (!ck_hit) {
+    Sieve_params_t *params = cache->eviction_params;
+    params->n_miss++;
+  }
+#endif
   return ck_hit;
 }
 
@@ -215,13 +232,37 @@ static cache_obj_t *Sieve_to_evict(cache_t *cache, const request_t *req) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
+#ifdef USE_BELADY
+static inline bool Sieve_should_retain(cache_t *cache, cache_obj_t *obj) {
+  Sieve_params_t *params = cache->eviction_params;
+
+  // if (obj->sieve.freq == 0) return false;
+
+  if (obj->next_access_vtime == -1 || obj->next_access_vtime == INT64_MAX) {
+    return false;
+  }
+
+  double miss_ratio = (double)params->n_miss / (double)cache->n_req;
+  int64_t next_access_dist = obj->next_access_vtime - cache->n_req;
+  int64_t thresh = (int64_t)((double)cache->cache_size / miss_ratio);
+  if (next_access_dist > thresh) {
+    return false;
+  }
+  return true;
+}
+#endif
+
 static void Sieve_evict(cache_t *cache, const request_t *req) {
   Sieve_params_t *params = cache->eviction_params;
 
   /* if we have run one full around or first eviction */
   cache_obj_t *obj = params->pointer == NULL ? params->q_tail : params->pointer;
 
+#ifdef USE_BELADY
+  while (Sieve_should_retain(cache, obj)) {
+#else
   while (obj->sieve.freq > 0) {
+#endif
     obj->sieve.freq -= 1;
     obj = obj->queue.prev == NULL ? params->q_tail : obj->queue.prev;
   }

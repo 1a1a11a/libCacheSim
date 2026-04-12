@@ -17,8 +17,8 @@
 extern "C" {
 #endif
 
-// #define USE_BELADY
-#undef USE_BELADY
+#define USE_BELADY
+// #undef USE_BELADY
 
 static const char *DEFAULT_PARAMS = "init-freq=0,n-bit-counter=1";
 
@@ -123,7 +123,14 @@ static void Clock_free(cache_t *cache) {
  * @return true if cache hit, false if cache miss
  */
 static bool Clock_get(cache_t *cache, const request_t *req) {
-  return cache_get_base(cache, req);
+  bool ck_hit = cache_get_base(cache, req);
+#ifdef USE_BELADY
+  if (!ck_hit) {
+    Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
+    params->n_miss++;
+  }
+#endif
+  return ck_hit;
 }
 
 // ***********************************************************************
@@ -221,11 +228,36 @@ static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
+#ifdef USE_BELADY
+static inline bool Clock_should_retain(cache_t *cache, cache_obj_t *obj) {
+  Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
+
+  // if (obj->clock.freq == 0) return false;
+
+  if (obj->next_access_vtime == -1 || obj->next_access_vtime == INT64_MAX) {
+    return false;
+  }
+
+  /* oracle check: if next access is too far away, don't retain */
+  double miss_ratio = (double)params->n_miss / (double)cache->n_req;
+  int64_t next_access_dist = obj->next_access_vtime - cache->n_req;
+  int64_t thresh = (int64_t)((double)cache->cache_size / miss_ratio);
+  if (next_access_dist > thresh) {
+    return false;
+  }
+  return true;
+}
+#endif
+
 static void Clock_evict(cache_t *cache, const request_t *req) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
   cache_obj_t *obj_to_evict = params->q_tail;
+#ifdef USE_BELADY
+  while (Clock_should_retain(cache, obj_to_evict)) {
+#else
   while (obj_to_evict->clock.freq >= 1) {
+#endif
     obj_to_evict->clock.freq -= 1;
     params->n_obj_rewritten += 1;
     params->n_byte_rewritten += obj_to_evict->obj_size;
