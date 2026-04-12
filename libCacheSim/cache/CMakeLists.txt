@@ -83,7 +83,7 @@ set(eviction_sources_cpp
 
 # LRB
 if (ENABLE_LRB)
-    set (eviction_sources_cpp ${eviction_sources_cpp} 
+    set (eviction_sources_cpp ${eviction_sources_cpp}
         eviction/LRB/lrb.cpp
         eviction/LRB/LRB_Interface.cpp
         )
@@ -91,7 +91,7 @@ endif()
 
 # 3L Cache
 if (ENABLE_3L_CACHE)
-    set (eviction_sources_cpp ${eviction_sources_cpp} 
+    set (eviction_sources_cpp ${eviction_sources_cpp}
         eviction/3LCache/ThreeLCache_Interface.cpp
         eviction/3LCache/ThreeLCache.cpp
         )
@@ -99,8 +99,8 @@ endif()
 
 # GLCache
 if (ENABLE_GLCACHE)
-    set(eviction_sources_c 
-        ${eviction_sources_c} 
+    set(eviction_sources_c
+        ${eviction_sources_c}
         eviction/GLCache/bucket.c
         eviction/GLCache/dataPrep.c
         eviction/GLCache/eviction.c
