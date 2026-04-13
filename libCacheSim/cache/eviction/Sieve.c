@@ -19,6 +19,19 @@ typedef struct {
 #ifdef USE_BELADY
   int64_t n_miss;
 #endif
+
+  // tracking stats for hand position / retention ratio plotting
+  int64_t n_obj_examined_interval;
+  int64_t n_obj_retained_interval;
+  int64_t n_evictions_interval;
+  FILE *tracking_file;
+  int64_t last_report_vtime;
+
+  // position-binned retention tracking
+#define SIEVE_N_POS_BINS 20
+  int64_t examined_per_bin[20];
+  int64_t retained_per_bin[20];
+  FILE *binned_file;
 } Sieve_params_t;
 
 // ***********************************************************************
@@ -79,6 +92,38 @@ cache_t *Sieve_init(const common_cache_params_t ccache_params,
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "Sieve_Belady");
 #endif
 
+  // open tracking file
+  {
+    char fname[256];
+    const char *trace_name = getenv("TRACKING_TRACE_NAME");
+    if (trace_name)
+      snprintf(fname, sizeof(fname), "tracking_%s_%s_%lld.csv", trace_name,
+               cache->cache_name, (long long)cache->cache_size);
+    else
+      snprintf(fname, sizeof(fname), "tracking_%s_%lld.csv",
+               cache->cache_name, (long long)cache->cache_size);
+    params->tracking_file = fopen(fname, "w");
+    if (params->tracking_file) {
+      fprintf(params->tracking_file, "vtime,n_obj,avg_scan_depth,retention_ratio,hand_pos\n");
+    }
+
+    // open binned retention file
+    char bfname[256];
+    if (trace_name)
+      snprintf(bfname, sizeof(bfname), "tracking_%s_%s_%lld_binned.csv",
+               trace_name, cache->cache_name, (long long)cache->cache_size);
+    else
+      snprintf(bfname, sizeof(bfname), "tracking_%s_%lld_binned.csv",
+               cache->cache_name, (long long)cache->cache_size);
+    params->binned_file = fopen(bfname, "w");
+    if (params->binned_file) {
+      fprintf(params->binned_file, "vtime");
+      for (int b = 0; b < SIEVE_N_POS_BINS; b++)
+        fprintf(params->binned_file, ",ret_%d", b * 5);
+      fprintf(params->binned_file, "\n");
+    }
+  }
+
   return cache;
 }
 
@@ -88,6 +133,9 @@ cache_t *Sieve_init(const common_cache_params_t ccache_params,
  * @param cache
  */
 static void Sieve_free(cache_t *cache) {
+  Sieve_params_t *params = (Sieve_params_t *)cache->eviction_params;
+  if (params->tracking_file) fclose(params->tracking_file);
+  if (params->binned_file) fclose(params->binned_file);
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
@@ -254,22 +302,103 @@ static inline bool Sieve_should_retain(cache_t *cache, cache_obj_t *obj) {
 
 static void Sieve_evict(cache_t *cache, const request_t *req) {
   Sieve_params_t *params = cache->eviction_params;
+  int64_t n_obj = cache->get_n_obj(cache);
 
   /* if we have run one full around or first eviction */
   cache_obj_t *obj = params->pointer == NULL ? params->q_tail : params->pointer;
+
+  // compute distance from current obj to tail for position binning
+  int64_t dist_to_tail = 0;
+  {
+    cache_obj_t *p = obj;
+    while (p->queue.next != NULL) {
+      dist_to_tail++;
+      p = p->queue.next;
+    }
+  }
 
 #ifdef USE_BELADY
   while (Sieve_should_retain(cache, obj)) {
 #else
   while (obj->sieve.freq > 0) {
 #endif
+    // track position-binned retention
+    if (params->binned_file && n_obj > 0) {
+      int bin = (int)((double)dist_to_tail / n_obj * SIEVE_N_POS_BINS);
+      if (bin >= SIEVE_N_POS_BINS) bin = SIEVE_N_POS_BINS - 1;
+      params->examined_per_bin[bin]++;
+      params->retained_per_bin[bin]++;
+    }
+
     obj->sieve.freq -= 1;
     obj = obj->queue.prev == NULL ? params->q_tail : obj->queue.prev;
+    // update distance: prev goes toward head (further from tail)
+    // wrap to tail resets to 0
+    if (obj == params->q_tail)
+      dist_to_tail = 0;
+    else
+      dist_to_tail++;
+
+    params->n_obj_examined_interval++;
+    params->n_obj_retained_interval++;
   }
+
+  // the evicted object
+  if (params->binned_file && n_obj > 0) {
+    int bin = (int)((double)dist_to_tail / n_obj * SIEVE_N_POS_BINS);
+    if (bin >= SIEVE_N_POS_BINS) bin = SIEVE_N_POS_BINS - 1;
+    params->examined_per_bin[bin]++;
+  }
+
+  params->n_obj_examined_interval++;
+  params->n_evictions_interval++;
 
   params->pointer = obj->queue.prev;
   remove_obj_from_list(&params->q_head, &params->q_tail, obj);
   cache_evict_base(cache, obj, true);
+
+  if (params->tracking_file &&
+      cache->n_req - params->last_report_vtime >= 100000) {
+    double avg_scan = params->n_evictions_interval > 0
+        ? (double)params->n_obj_examined_interval / params->n_evictions_interval
+        : 0.0;
+    double retention = params->n_obj_examined_interval > 0
+        ? (double)params->n_obj_retained_interval / params->n_obj_examined_interval
+        : 0.0;
+    // compute hand position: walk from pointer to tail
+    double hand_pos = 0.0;
+    int64_t cur_n_obj = cache->get_n_obj(cache);
+    if (cur_n_obj > 0 && params->pointer != NULL) {
+      int64_t pos = 0;
+      cache_obj_t *p = params->pointer;
+      while (p->queue.next != NULL) {
+        pos++;
+        p = p->queue.next;
+      }
+      hand_pos = (double)pos / cur_n_obj;
+    }
+    fprintf(params->tracking_file, "%ld,%ld,%.4f,%.4f,%.4f\n",
+            (long)cache->n_req, (long)cur_n_obj,
+            avg_scan, retention, hand_pos);
+    params->n_obj_examined_interval = 0;
+    params->n_obj_retained_interval = 0;
+    params->n_evictions_interval = 0;
+    params->last_report_vtime = cache->n_req;
+
+    // dump binned retention
+    if (params->binned_file) {
+      fprintf(params->binned_file, "%ld", (long)cache->n_req);
+      for (int b = 0; b < SIEVE_N_POS_BINS; b++) {
+        double bin_ret = params->examined_per_bin[b] > 0
+            ? (double)params->retained_per_bin[b] / params->examined_per_bin[b]
+            : -1.0;
+        fprintf(params->binned_file, ",%.4f", bin_ret);
+      }
+      fprintf(params->binned_file, "\n");
+      memset(params->examined_per_bin, 0, sizeof(params->examined_per_bin));
+      memset(params->retained_per_bin, 0, sizeof(params->retained_per_bin));
+    }
+  }
 }
 
 static void Sieve_remove_obj(cache_t *cache, cache_obj_t *obj_to_remove) {

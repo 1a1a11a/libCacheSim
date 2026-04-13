@@ -117,6 +117,12 @@ cache_t *GroupMerge_init(const common_cache_params_t ccache_params,
 cache_t *GroupMergeHead_init(const common_cache_params_t ccache_params,
                              const char *cache_specific_params);
 
+cache_t *GroupMergeAdaptive_init(const common_cache_params_t ccache_params,
+                                 const char *cache_specific_params);
+
+cache_t *GroupMergeAdaptive2_init(const common_cache_params_t ccache_params,
+                                  const char *cache_specific_params);
+
 cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
                                const char *cache_specific_params);
 

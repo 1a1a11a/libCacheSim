@@ -69,6 +69,8 @@ set(eviction_sources_c
         eviction/FIFO_Reinsertion.c
         eviction/GroupMerge.c
         eviction/GroupMergeHead.c
+        eviction/GroupMergeAdaptive.c
+        eviction/GroupMergeAdaptive2.c
         eviction/S3FIFOv0.c
         eviction/S3FIFOd.c
         eviction/other/flashProb.c

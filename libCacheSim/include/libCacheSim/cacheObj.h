@@ -98,6 +98,12 @@ typedef struct {
 } GroupMerge_obj_metadata_t;
 
 typedef struct {
+  int32_t freq;
+  int32_t last_access_vtime;
+  int8_t seen;  // 1 = accessed since scanner last cleared it
+} GroupMergeAdaptive2_obj_metadata_t;
+
+typedef struct {
   void *segment;
   int32_t freq;
   int32_t last_access_rtime;
@@ -191,6 +197,7 @@ typedef struct cache_obj {
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
     GroupMerge_obj_metadata_t GroupMerge;
+    GroupMergeAdaptive2_obj_metadata_t GroupMergeAdaptive2;
     SFIFO_obj_metadata_t SFIFO;
     SLRU_obj_metadata_t SLRU;
     QDLP_obj_metadata_t QDLP;

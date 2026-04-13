@@ -52,6 +52,11 @@ typedef struct GroupMergeHead_params {
   int n_objs_to_evict;
   int pos_in_metric_list;
 
+  int64_t n_obj_inserted;
+  int64_t n_byte_inserted;
+  int64_t n_obj_retained;
+  int64_t n_byte_retained;
+
   int64_t n_obj_rewritten;
   int64_t n_byte_rewritten;
 } GroupMergeHead_params_t;
@@ -108,7 +113,9 @@ cache_t *GroupMergeHead_init(const common_cache_params_t ccache_params,
   memset(params, 0, sizeof(GroupMergeHead_params_t));
   cache->eviction_params = params;
 
-  params->group_size = 20 * 1024 * 1024;  // 20 MiB
+  // default group_size = cache_size / 1000
+  params->group_size = (int64_t)ccache_params.cache_size / 1000;
+  if (params->group_size < 1) params->group_size = 1;
   params->n_exam_groups = 4;
   params->retain_policy = RETAIN_POLICY_RECENCY;
   params->next_to_exam = NULL;
@@ -126,6 +133,20 @@ cache_t *GroupMergeHead_init(const common_cache_params_t ccache_params,
 
   assert(params->group_size > 0 && params->n_exam_groups >= 2);
 
+  // clamp group_size so it cannot exceed a fraction of the cache; otherwise
+  // each scan covers ~the whole cache while retaining everything, forcing
+  // batched evictions of 1, which is O(N^2) per pass.
+  int64_t max_group_size = (int64_t)ccache_params.cache_size /
+                           (int64_t)(params->n_exam_groups * 2);
+  if (max_group_size < 1) max_group_size = 1;
+  if (params->group_size > max_group_size) {
+    WARN("GroupMergeHead: group-size %ld too large for cache size %lu; "
+         "clamping to %ld (cache_size / (2*E))\n",
+         (long)params->group_size, (unsigned long)ccache_params.cache_size,
+         (long)max_group_size);
+    params->group_size = max_group_size;
+  }
+
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN,
            "GroupMergeHead_gs%ld_E%d_%s", (long)params->group_size,
            params->n_exam_groups,
@@ -137,6 +158,15 @@ cache_t *GroupMergeHead_init(const common_cache_params_t ccache_params,
 static void GroupMergeHead_free(cache_t *cache) {
   GroupMergeHead_params_t *params =
       (GroupMergeHead_params_t *)cache->eviction_params;
+  double retain_ratio = params->n_byte_inserted > 0
+      ? (double)params->n_byte_retained / (double)params->n_byte_inserted
+      : 0.0;
+  INFO(
+      "%s: inserted %ld obj / %ld bytes, retained %ld obj / %ld bytes "
+      "(retained/inserted byte ratio = %.4f)\n",
+      cache->cache_name, (long)params->n_obj_inserted,
+      (long)params->n_byte_inserted, (long)params->n_obj_retained,
+      (long)params->n_byte_retained, retain_ratio);
   free(params->metric_list);
   my_free(sizeof(GroupMergeHead_params_t), params);
   cache_struct_free(cache);
@@ -174,6 +204,9 @@ static cache_obj_t *GroupMergeHead_insert(cache_t *cache,
   cache_obj->GroupMerge.freq = 0;
   cache_obj->GroupMerge.last_access_vtime = (int32_t)cache->n_req;
 
+  params->n_obj_inserted += 1;
+  params->n_byte_inserted += cache_obj->obj_size;
+
   return cache_obj;
 }
 
@@ -204,6 +237,8 @@ static void GroupMergeHead_evict(cache_t *cache, const request_t *req) {
 
         params->n_obj_rewritten += 1;
         params->n_byte_rewritten += retained->obj_size;
+        params->n_obj_retained += 1;
+        params->n_byte_retained += retained->obj_size;
       }
       params->pos_in_metric_list = INT32_MAX;
     }
@@ -304,6 +339,8 @@ static void GroupMergeHead_evict(cache_t *cache, const request_t *req) {
 
       params->n_obj_rewritten += 1;
       params->n_byte_rewritten += retained->obj_size;
+      params->n_obj_retained += 1;
+      params->n_byte_retained += retained->obj_size;
     }
     params->pos_in_metric_list = INT32_MAX;
   }

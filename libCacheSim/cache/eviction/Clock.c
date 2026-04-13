@@ -17,8 +17,8 @@
 extern "C" {
 #endif
 
-#define USE_BELADY
-// #undef USE_BELADY
+// #define USE_BELADY
+#undef USE_BELADY
 
 static const char *DEFAULT_PARAMS = "init-freq=0,n-bit-counter=1";
 
@@ -90,6 +90,23 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
              params->n_bit_counter, params->init_freq);
   }
 
+  // open tracking file
+  {
+    char fname[256];
+    const char *trace_name = getenv("TRACKING_TRACE_NAME");
+    if (trace_name)
+      snprintf(fname, sizeof(fname), "tracking_%s_%s_%lld.csv", trace_name,
+               cache->cache_name, (long long)cache->cache_size);
+    else
+      snprintf(fname, sizeof(fname), "tracking_%s_%lld.csv", cache->cache_name,
+               (long long)cache->cache_size);
+    params->tracking_file = fopen(fname, "w");
+    if (params->tracking_file) {
+      fprintf(params->tracking_file,
+              "vtime,n_obj,avg_scan_depth,retention_ratio\n");
+    }
+  }
+
   return cache;
 }
 
@@ -99,6 +116,8 @@ cache_t *Clock_init(const common_cache_params_t ccache_params,
  * @param cache
  */
 static void Clock_free(cache_t *cache) {
+  Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
+  if (params->tracking_file) fclose(params->tracking_file);
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
@@ -263,10 +282,33 @@ static void Clock_evict(cache_t *cache, const request_t *req) {
     params->n_byte_rewritten += obj_to_evict->obj_size;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
     obj_to_evict = params->q_tail;
+    params->n_obj_examined_interval++;
+    params->n_obj_retained_interval++;
   }
+
+  params->n_obj_examined_interval++;
+  params->n_evictions_interval++;
 
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);
   cache_evict_base(cache, obj_to_evict, true);
+
+  if (params->tracking_file &&
+      cache->n_req - params->last_report_vtime >= 100000) {
+    double avg_scan = params->n_evictions_interval > 0
+                          ? (double)params->n_obj_examined_interval /
+                                params->n_evictions_interval
+                          : 0.0;
+    double retention = params->n_obj_examined_interval > 0
+                           ? (double)params->n_obj_retained_interval /
+                                 params->n_obj_examined_interval
+                           : 0.0;
+    fprintf(params->tracking_file, "%ld,%ld,%.4f,%.4f\n", (long)cache->n_req,
+            (long)cache->get_n_obj(cache), avg_scan, retention);
+    params->n_obj_examined_interval = 0;
+    params->n_obj_retained_interval = 0;
+    params->n_evictions_interval = 0;
+    params->last_report_vtime = cache->n_req;
+  }
 }
 
 /**

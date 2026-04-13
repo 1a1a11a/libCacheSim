@@ -23,3 +23,6 @@ sftp-config.json
 # Python wheels
 *.whl
 2024_google/*
+.nfs*
+figure/*
+results/*
