@@ -39,6 +39,15 @@ typedef struct {
 
   int64_t n_obj_rewritten;
   int64_t n_byte_rewritten;
+
+  int64_t n_miss;
+
+  // tracking stats for hand position / retention ratio plotting
+  int64_t n_obj_examined_interval;
+  int64_t n_obj_retained_interval;
+  int64_t n_evictions_interval;
+  FILE *tracking_file;
+  int64_t last_report_vtime;
 } Clock_params_t;
 
 typedef struct {
@@ -101,6 +110,12 @@ cache_t *CR_LFU_init(const common_cache_params_t ccache_params,
 
 cache_t *FIFO_Merge_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params);
+
+cache_t *GroupMerge_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+
+cache_t *GroupMergeHead_init(const common_cache_params_t ccache_params,
+                             const char *cache_specific_params);
 
 cache_t *FIFO_Reinsertion_init(const common_cache_params_t ccache_params,
                                const char *cache_specific_params);

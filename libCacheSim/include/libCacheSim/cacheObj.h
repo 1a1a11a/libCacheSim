@@ -93,6 +93,11 @@ typedef struct {
 } FIFO_Reinsertion_obj_metadata_t;
 
 typedef struct {
+  int32_t freq;
+  int32_t last_access_vtime;
+} GroupMerge_obj_metadata_t;
+
+typedef struct {
   void *segment;
   int32_t freq;
   int32_t last_access_rtime;
@@ -185,6 +190,7 @@ typedef struct cache_obj {
     Belady_obj_metadata_t Belady;
     FIFO_Merge_obj_metadata_t FIFO_Merge;
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
+    GroupMerge_obj_metadata_t GroupMerge;
     SFIFO_obj_metadata_t SFIFO;
     SLRU_obj_metadata_t SLRU;
     QDLP_obj_metadata_t QDLP;

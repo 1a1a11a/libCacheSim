@@ -67,6 +67,8 @@ set(eviction_sources_c
         # these are algorithms used for comparison
         eviction/FIFO_Merge.c
         eviction/FIFO_Reinsertion.c
+        eviction/GroupMerge.c
+        eviction/GroupMergeHead.c
         eviction/S3FIFOv0.c
         eviction/S3FIFOd.c
         eviction/other/flashProb.c
