@@ -112,7 +112,8 @@ cache_t *Clock2QPlus_init(const common_cache_params_t ccache_params,
       (int64_t)(ccache_params.cache_size * params->ghost_size_ratio);
   params->corr_window_size_upper_bound = (int64_t)(fifo_cache_size * 0.5);
   params->corr_window_size_lower_bound = (int64_t)(fifo_cache_size * 0.1);
-  params->corr_window_size = (double)(fifo_cache_size * params->corr_window_ratio);
+  params->corr_window_size =
+      (double)(fifo_cache_size * params->corr_window_ratio);
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
