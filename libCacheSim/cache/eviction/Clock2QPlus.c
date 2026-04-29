@@ -489,6 +489,11 @@ static void Clock2QPlus_parse_params(cache_t *cache,
       params_str++;
     }
 
+    if (key == NULL || value == NULL) {
+      ERROR("invalid parameter string: missing key or value\n");
+      exit(1);
+    }
+
     if (strcasecmp(key, "fifo-size-ratio") == 0) {
       params->fifo_size_ratio = strtod(value, NULL);
     } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
