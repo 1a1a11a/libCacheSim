@@ -31,9 +31,10 @@ typedef struct {
   double fifo_size_ratio;
   double ghost_size_ratio;
   double corr_window_ratio;
+  // bounds for dynamic corr_window_size adjustment (0.5x and 0.1x of fifo size)
   int64_t corr_window_size_upper_bound;
   int64_t corr_window_size_lower_bound;
-  double corr_window_size;
+  double corr_window_size;  // current correlation window (in # of FIFO inserts)
   // used to indicate whether the cache is full
   bool has_evicted;
   char main_cache_type[32];
@@ -229,7 +230,7 @@ static cache_obj_t *Clock2QPlus_find(cache_t *cache, const request_t *req,
   cache_obj_t *obj = params->fifo->find(params->fifo, req, true);
 
   if (obj != NULL) {
-    int time_since_insertion =
+    int64_t time_since_insertion =
         params->n_obj_admit_to_fifo - obj->Clock2QPlus.insertion_time;
     if (time_since_insertion >= params->corr_window_size) {
       obj->Clock2QPlus.freq += 1;
@@ -376,9 +377,10 @@ static void Clock2QPlus_evict_main(cache_t *cache, const request_t *req) {
       new_obj->Clock2QPlus.freq = 0;
       new_obj->freq = freq;
     } else {
-      bool removed = main->remove(main, obj_to_evict->obj_id);
+      obj_id_t obj_id = obj_to_evict->obj_id;
+      bool removed = main->remove(main, obj_id);
       if (!removed) {
-        ERROR("cannot remove obj %" PRIu64 "\n", obj_to_evict->obj_id);
+        ERROR("cannot remove obj %" PRIu64 "\n", obj_id);
       }
 
       has_evicted = true;
