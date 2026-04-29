@@ -378,7 +378,7 @@ static void Clock2QPlus_evict_main(cache_t *cache, const request_t *req) {
     } else {
       bool removed = main->remove(main, obj_to_evict->obj_id);
       if (!removed) {
-        ERROR("cannot remove obj %ld\n", obj_to_evict->obj_id);
+        ERROR("cannot remove obj %" PRIu64 "\n", obj_to_evict->obj_id);
       }
 
       has_evicted = true;
