@@ -140,6 +140,11 @@ typedef struct {
 } CAR_obj_metadata_t;
 
 typedef struct {
+  int64_t insertion_time;  // measured in number of objects inserted
+  int64_t freq;
+} Clock2QPlus_obj_metadata_t;
+
+typedef struct {
   int32_t freq;
 } __attribute__((packed)) Sieve_obj_params_t;
 
@@ -188,6 +193,7 @@ typedef struct cache_obj {
     S3FIFO_obj_metadata_t S3FIFO;
     Sieve_obj_params_t sieve;
     CAR_obj_metadata_t CAR;
+    Clock2QPlus_obj_metadata_t Clock2QPlus;
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;
