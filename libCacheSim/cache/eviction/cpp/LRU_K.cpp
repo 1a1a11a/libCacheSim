@@ -68,7 +68,7 @@ static void LRU_K_free(cache_t *cache);
 static bool LRU_K_get(cache_t *cache, const request_t *req);
 
 static cache_obj_t *LRU_K_find(cache_t *cache, const request_t *req,
-                                bool update_cache);
+                               bool update_cache);
 static cache_obj_t *LRU_K_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *LRU_K_to_evict(cache_t *cache, const request_t *req);
 static void LRU_K_evict(cache_t *cache, const request_t *req);
@@ -208,9 +208,8 @@ static bool LRU_K_get(cache_t *cache, const request_t *req) {
  * @return the object or NULL if not found
  */
 static cache_obj_t *LRU_K_find(cache_t *cache, const request_t *req,
-                                bool update_cache) {
-  auto *lruk =
-      reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
+                               bool update_cache) {
+  auto *lruk = reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
   if (obj != nullptr && update_cache) {
@@ -259,8 +258,7 @@ static cache_obj_t *LRU_K_find(cache_t *cache, const request_t *req,
  * @return the inserted object
  */
 static cache_obj_t *LRU_K_insert(cache_t *cache, const request_t *req) {
-  auto *lruk =
-      reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
+  auto *lruk = reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
 
   cache_obj_t *obj = cache_insert_base(cache, req);
 
@@ -288,8 +286,7 @@ static cache_obj_t *LRU_K_insert(cache_t *cache, const request_t *req) {
  * @return the object to be evicted
  */
 static cache_obj_t *LRU_K_to_evict(cache_t *cache, const request_t *req) {
-  auto *lruk =
-      reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
+  auto *lruk = reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
 
   if (!lruk->fifo_queue.empty()) {
     return lruk->fifo_queue.front();
@@ -311,8 +308,7 @@ static cache_obj_t *LRU_K_to_evict(cache_t *cache, const request_t *req) {
  * @param req not used
  */
 static void LRU_K_evict(cache_t *cache, const request_t *req) {
-  auto *lruk =
-      reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
+  auto *lruk = reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
 
   cache_obj_t *obj;
 
@@ -344,8 +340,7 @@ static void LRU_K_evict(cache_t *cache, const request_t *req) {
  * @return true if removed, false if not found
  */
 static bool LRU_K_remove(cache_t *cache, obj_id_t obj_id) {
-  auto *lruk =
-      reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
+  auto *lruk = reinterpret_cast<eviction::LRU_K *>(cache->eviction_params);
 
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == nullptr) {
