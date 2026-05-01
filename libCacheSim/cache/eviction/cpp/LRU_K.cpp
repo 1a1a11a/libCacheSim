@@ -16,6 +16,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <iterator>
 #include <list>
 #include <set>
 #include <string>
@@ -332,7 +333,7 @@ static void LRU_K_evict(cache_t *cache, const request_t *req) {
   }
 
   lruk->history.erase(obj);
-  cache_remove_obj_base(cache, obj, true);
+  cache_evict_base(cache, obj, true);
 }
 
 /**
