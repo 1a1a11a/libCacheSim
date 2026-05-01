@@ -289,6 +289,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = S3FIFOv0_init(cc_params, "move-to-main-threshold=2");
   } else if (strcasecmp(alg_name, "S3-FIFO") == 0) {
     cache = S3FIFO_init(cc_params, "move-to-main-threshold=2");
+  } else if (strcasecmp(alg_name, "Clock2QPlus") == 0) {
+    cache = Clock2QPlus_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Sieve") == 0) {
     cache = Sieve_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Mithril") == 0) {
