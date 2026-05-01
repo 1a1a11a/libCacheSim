@@ -110,6 +110,9 @@ cache_t *LRU_Prob_init(const common_cache_params_t ccache_params,
 cache_t *LRU_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
+cache_t *LRU_K_init(const common_cache_params_t ccache_params,
+                    const char *cache_specific_params);
+
 cache_t *LRUv0_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params);
 
