@@ -1,0 +1,50 @@
+name: CodeQL
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Match .github/workflows/build.yml (plain Release; no LSan — avoids sanitizer/CodeQL interaction)
+  BUILD_TYPE: Release
+
+jobs:
+  analyze:
+    name: Analyze (cpp)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: cpp
+          build-mode: manual
+          config: |
+            paths-ignore:
+              - libCacheSim-node
+
+      - name: Install build dependencies
+        run: bash scripts/install_dependency.sh
+
+      - name: Configure CMake
+        run: cmake -G Ninja -B "${{ github.workspace }}/build" -DCMAKE_BUILD_TYPE="${{ env.BUILD_TYPE }}"
+
+      - name: Build
+        run: ninja -C "${{ github.workspace }}/build"
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:cpp"
