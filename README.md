@@ -11,7 +11,7 @@ A high-performance library for building and running cache simulations
 ---
 
 [![build](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/build.yml)
-[![Python Release](https://github.com/cacheMon/libCacheSim-python/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/pypi-release.yml)
+[![Python Release](https://github.com/cacheMon/libCacheSim-python/actions/workflows/pypi-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim-python/actions/workflows/pypi-release.yml)
 [![NPM Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/1a1a11a/libCacheSim/badge)](https://scorecard.dev/viewer/?uri=github.com/1a1a11a/libCacheSim)
 
