@@ -2,6 +2,8 @@
 //  add a correlation window to filter out correlated requests
 //  objects inserted in the small queue do not set bit during correlation window
 //
+//  NOTE: Clock2QPlus only works correctly with --ignore-obj-size
+//  (uniform object sizes).
 //
 //  Clock2QPlus.c
 //  libCacheSim
