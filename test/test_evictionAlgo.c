@@ -203,6 +203,13 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_cnt_true = {90043, 83978, 81482, 77727, 72611, 72059, 67836, 65739},
      .miss_byte_true = {4068758016, 3792818176, 3639756288, 3379609600,
                         3165339648, 3058814976, 2862775296, 2774183936}},
+    {.cache_name = "Clock2QPlus",
+     .hashpower = 20,
+     .req_cnt_true = 113872,
+     .req_byte_true = 4368040448,
+     .miss_cnt_true = {90600, 81357, 75287, 72430, 70057, 65671, 60864, 55864},
+     .miss_byte_true = {4061047808, 3577076736, 3242227712, 3061383680,
+                        2898187264, 2624986112, 2422187008, 2322797568}},
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
     {.cache_name = "3LCache",
      .hashpower = 20,
@@ -385,9 +392,13 @@ static void test_SR_LRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[25]);
 }
 
+static void test_Clock2QPlus(gconstpointer user_data) {
+  test_cache_algorithm(user_data, &test_data_truth[26]);
+}
+
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
 static void test_3LCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[26]);
+  test_cache_algorithm(user_data, &test_data_truth[27]);
 }
 #endif /* ENABLE_3L_CACHE */
 
@@ -441,6 +452,8 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Clock2QPlus", reader,
+                       test_Clock2QPlus);
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
   g_test_add_data_func("/libCacheSim/cacheAlgo_3LCache", reader, test_3LCache);

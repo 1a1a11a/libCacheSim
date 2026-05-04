@@ -32,6 +32,7 @@ set(eviction_sources_c
         eviction/CAR.c
         eviction/Cacheus.c
         eviction/Clock.c
+        eviction/Clock2QPlus.c
         eviction/ClockPro.c
         eviction/FIFO.c
         eviction/Hyperbolic.c
