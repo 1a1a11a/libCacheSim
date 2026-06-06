@@ -93,7 +93,7 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req);
             return hp;
             }
 
-cache_t *S3FIFO_init(const common_cacheparams_t ccache_params,
+cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("S3FIFO", ccache_params, cache_specific_params);
