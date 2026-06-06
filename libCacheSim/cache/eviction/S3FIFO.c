@@ -82,7 +82,18 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req);
 // ****                                                               ****
 // ***********************************************************************
 
-cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
+/* Compute initial hashpower for a sub-cache of the given byte size.
+ * Sizes the table to hold roughly size_bytes/8 entries (8-byte ptr per slot),
+  * clamped to [1, HASH_POWER_DEFAULT]. */
+  static inline int s3fifo_hashpower_for_size(int64_t size_bytes) {
+    if (size_bytes <= 0) return 1;
+      int hp = 1;
+        int64_t slots = size_bytes / 8;
+          while ((1LL << hp) < slots && hp < HASH_POWER_DEFAULT) hp++;
+            return hp;
+            }
+
+cache_t *S3FIFO_init(const common_cacheparams_t ccache_params,
                      const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("S3FIFO", ccache_params, cache_specific_params);
@@ -127,11 +138,13 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = small_fifo_size;
+    ccache_params_local.hashpower = s3fifo_hashpower_for_size(small_fifo_size);
   params->small_fifo = FIFO_init(ccache_params_local, NULL);
   params->has_evicted = false;
 
   if (ghost_fifo_size > 0) {
     ccache_params_local.cache_size = ghost_fifo_size;
+        ccache_params_local.hashpower = s3fifo_hashpower_for_size(ghost_fifo_size);
     params->ghost_fifo = FIFO_init(ccache_params_local, NULL);
     snprintf(params->ghost_fifo->cache_name, CACHE_NAME_ARRAY_LEN,
              "FIFO-ghost");
@@ -140,6 +153,7 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
   }
 
   ccache_params_local.cache_size = main_fifo_size;
+    ccache_params_local.hashpower = s3fifo_hashpower_for_size(main_fifo_size);
   params->main_fifo = FIFO_init(ccache_params_local, NULL);
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S3FIFO-%.4lf-%d",
