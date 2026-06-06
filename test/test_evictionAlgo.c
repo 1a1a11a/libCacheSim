@@ -406,6 +406,21 @@ static void test_WTinyLFU(gconstpointer user_data) {
   // TODO: to be implemented
 }
 
+static void test_create_cache_using_plugin_lowercase(gconstpointer user_data) {
+  common_cache_params_t cc_params = {
+      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+  cache_t *lru_cache = create_cache_using_plugin("lru", cc_params, NULL);
+  cache_t *fifo_cache = create_cache_using_plugin("fifo", cc_params, NULL);
+
+  g_assert_nonnull(lru_cache);
+  g_assert_nonnull(fifo_cache);
+  g_assert_cmpstr(lru_cache->cache_name, ==, "LRU");
+  g_assert_cmpstr(fifo_cache->cache_name, ==, "FIFO");
+
+  lru_cache->cache_free(lru_cache);
+  fifo_cache->cache_free(fifo_cache);
+}
+
 static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
@@ -464,6 +479,9 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
                        test_BeladySize);
+
+  g_test_add_data_func("/libCacheSim/create_cache_using_plugin_lowercase",
+                       reader, test_create_cache_using_plugin_lowercase);
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);

@@ -73,6 +73,7 @@ mrcProfiler supports both `WSS-based` and `fixed-size` MRC generation for specif
 ### Profiling Non-LRU Algorithms with MINISIM
 
 **Miniature Simulation** uses spatial sampling to downsample the workload and estimates miss ratios via scaled-down replay. It supports **non-LRU** algorithms.
+For built-in eviction algorithms, MINISIM uses the same algorithm registry as `cachesim`, so names are case-insensitive, e.g., `--algo=FIFO` and `--algo=fifo` are equivalent.
 In the example below, `FIX_RATE,0.01,10` sets a `1%` sampling rate and `10` threads. Note: Sampling rates above 0.5 disable sampling (full trace replay).
 
 ```bash
