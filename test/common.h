@@ -293,6 +293,8 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = Clock2QPlus_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Sieve") == 0) {
     cache = Sieve_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "MQ") == 0) {
+    cache = MQ_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Mithril") == 0) {
     cache = LRU_init(cc_params, NULL);
     cache->prefetcher =

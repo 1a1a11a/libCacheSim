@@ -108,6 +108,13 @@ typedef struct {
 } SLRU_obj_metadata_t;
 
 typedef struct {
+  // written on every queue entry for uniformity; Adjust() never reads it
+  // for objects in queue 0 (there is no lower queue to demote to)
+  int64_t expire_time;
+  int16_t queue_id;
+} MQ_obj_metadata_t;
+
+typedef struct {
   int64_t last_access_vtime;
   int64_t insertion_time;
   int32_t oracle_idx;
@@ -188,6 +195,7 @@ typedef struct cache_obj {
     FIFO_Reinsertion_obj_metadata_t FIFO_Reinsertion;
     SFIFO_obj_metadata_t SFIFO;
     SLRU_obj_metadata_t SLRU;
+    MQ_obj_metadata_t MQ;
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;

@@ -46,7 +46,7 @@ cachesim supports the following algorithms:
 ### Eviction algorithms
 * [FIFO](/libCacheSim/cache/eviction/FIFO.c), [LRU](/libCacheSim/cache/eviction/LRU.c), [Clock](/libCacheSim/cache/eviction/Clock.c), [SLRU](/libCacheSim/cache/eviction/SLRU.c)
 * [LFU](/libCacheSim/cache/eviction/LFU.c), [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c)
-* [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c), [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c)
+* [ARC](/libCacheSim/cache/eviction/ARC.c), [TwoQ](/libCacheSim/cache/eviction/TwoQ.c), [MQ](/libCacheSim/cache/eviction/MQ.c), [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c)
 * [Belady](/libCacheSim/cache/eviction/Belady.c), [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 * [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp)
 * [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)

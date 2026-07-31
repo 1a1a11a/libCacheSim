@@ -59,6 +59,8 @@ static inline cache_t *create_cache(const char *trace_path,
       {"lru", LRU_init},
       {"lru-k", LRU_K_init},
       {"lru-prob", LRU_Prob_init},
+      {"mq", MQ_init},
+      {"multiqueue", MQ_init},
       {"nop", nop_init},
       // plugin cache that allows user to implement custom cache
       {"pluginCache", pluginCache_init},
