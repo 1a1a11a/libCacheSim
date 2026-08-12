@@ -380,6 +380,13 @@ We provide a more comprehensive cache datasets at [https://github.com/cacheMon/c
 
 
 ---
+## Who uses libCacheSim
+See the [adoption census](/doc/adoption-census.md) for a source-linked inventory of documented
+libCacheSim adoption — research artifacts built on it, distribution channels, and downstream
+adoption of algorithms designed in it. Every entry carries its evidence, source URL, verification
+date, and confidence grade.
+
+---
 ## Contributions
 We gladly welcome pull requests.
 Before making any large changes, we recommend opening an issue and discussing your proposed changes.

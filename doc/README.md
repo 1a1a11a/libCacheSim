@@ -18,3 +18,6 @@
 ## Developer Documentation
 - [Debugging Guide](debug.md)
 - [Install & Build](install.md)
+
+## Project
+- [Adoption Census](adoption-census.md) — source-linked inventory of documented libCacheSim adoption
