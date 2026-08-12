@@ -26,8 +26,11 @@ logger = logging.getLogger("plot_mrc_size")
 # ", cost saving ratio <csr>" when the trace carries per-request costs, and
 # ", throughput <x> MQPS" for a single simulation. The optional fields mean the
 # values have to be located by name rather than by position.
+# The trace path is printed verbatim and may contain spaces, so the prefix is
+# split off the right (the algorithm name never contains a space).
 RESULT_REGEX = re.compile(
-    r"cache size\s+(?P<cache_size>\S+?),\s+\d+ req, miss ratio (?P<miss_ratio>\d+\.\d+)"
+    r"^(?P<prefix>.+?)\s+cache size\s+(?P<cache_size>\S+?),"
+    r"\s+\d+ req, miss ratio (?P<miss_ratio>\d+\.\d+)"
 )
 BYTE_MISS_RATIO_REGEX = re.compile(r"byte miss ratio (\d+\.\d+)")
 
@@ -44,8 +47,13 @@ def _parse_cachesim_output(output: str):
             continue
         m = RESULT_REGEX.search(line)
         if m:
-            ls = line.split()
-            curr_dataname = extract_dataname(ls[0])
+            prefix = m.group("prefix").rsplit(None, 1)
+            if len(prefix) != 2:
+                logger.warning("cannot parse trace and algo from: " + line)
+                continue
+            trace_path, algo = prefix
+
+            curr_dataname = extract_dataname(trace_path)
             if dataname is None:
                 dataname = curr_dataname
             else:
@@ -53,7 +61,7 @@ def _parse_cachesim_output(output: str):
                     curr_dataname == dataname
                 ), f"dataname mismatch {curr_dataname} {dataname}"
 
-            algo = algo_name_mapping_dict.get(ls[1], ls[1])
+            algo = algo_name_mapping_dict.get(algo, algo)
             cache_size = m.group("cache_size")
             if "b" in cache_size.lower():
                 cache_size_has_unit = True

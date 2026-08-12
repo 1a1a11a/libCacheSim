@@ -146,7 +146,7 @@ The pre-commit hook:
 ## Usage
 ### cachesim (a high-performance cache simulator)
 After building and installing libCacheSim, `cachesim` should be in the `_build/bin/` directory.
-The examples below are run from `_build/`, so the sample traces in [data/](/data/) are at `../data/`.
+The `cachesim` commands in this section are run from `_build/`, so the sample traces in [data/](/data/) are at `../data/`. The debug and plotting scripts further below are run from the repository root instead.
 #### basic usage
 ```
 ./bin/cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
@@ -185,7 +185,7 @@ Object ids are hashed unless you tell the reader they are already numeric, so ad
 See [quick start cachesim](/doc/quickstart_cachesim.md) for more usages.
 
 #### Debug cachesim
-We provide a debug script to help you debug cachesim with GDB. For detailed usage instructions, see [debug guide](/doc/debug.md).
+We provide a debug script to help you debug cachesim with GDB. For detailed usage instructions, see [debug guide](/doc/debug.md). Run it from the repository root:
 
 ```bash
 # Basic usage
@@ -197,7 +197,7 @@ We provide a debug script to help you debug cachesim with GDB. For detailed usag
 
 #### Plot miss ratio curve
 You can plot miss ratios of different algorithms and sizes, and plot the miss ratios over time.
-These scripts need the Python dependencies in [requirements.txt](/requirements.txt) (`pip install -r requirements.txt`).
+These scripts need the Python dependencies in [requirements.txt](/requirements.txt) (`pip install -r requirements.txt`), and are run from `scripts/` in the repository root.
 
 ```bash
 # plot miss ratio over size
