@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import itertools
 from collections import defaultdict
@@ -19,6 +20,17 @@ from utils.cachesim_utils import algo_name_mapping_dict
 
 logger = logging.getLogger("plot_mrc_size")
 
+# a result line looks like
+#   <trace> <algo> cache size <size>, <n> req, miss ratio <mr>
+# followed by ", byte miss ratio <bmr>" unless object sizes are ignored,
+# ", cost saving ratio <csr>" when the trace carries per-request costs, and
+# ", throughput <x> MQPS" for a single simulation. The optional fields mean the
+# values have to be located by name rather than by position.
+RESULT_REGEX = re.compile(
+    r"cache size\s+(?P<cache_size>\S+?),\s+\d+ req, miss ratio (?P<miss_ratio>\d+\.\d+)"
+)
+BYTE_MISS_RATIO_REGEX = re.compile(r"byte miss ratio (\d+\.\d+)")
+
 
 def _parse_cachesim_output(output: str):
     mrc_dict = defaultdict(list)
@@ -30,9 +42,8 @@ def _parse_cachesim_output(output: str):
 
         if "[INFO]" in line[:16]:
             continue
-        # a result line looks like
-        # <trace> <algo> cache size <size>, <n> req, miss ratio <mr>[, byte miss ratio <bmr>]
-        if "cache size" in line and "miss ratio" in line:
+        m = RESULT_REGEX.search(line)
+        if m:
             ls = line.split()
             curr_dataname = extract_dataname(ls[0])
             if dataname is None:
@@ -43,14 +54,15 @@ def _parse_cachesim_output(output: str):
                 ), f"dataname mismatch {curr_dataname} {dataname}"
 
             algo = algo_name_mapping_dict.get(ls[1], ls[1])
-            cache_size = ls[4].strip(",")
+            cache_size = m.group("cache_size")
             if "b" in cache_size.lower():
                 cache_size_has_unit = True
             cache_size = conv_size_str_to_int(cache_size)
 
-            miss_ratio = float(ls[9].strip(","))
-            # byte miss ratio is not reported when object size is ignored
-            byte_miss_ratio = float(ls[13].strip(",")) if len(ls) > 13 else 0.0
+            miss_ratio = float(m.group("miss_ratio"))
+            # byte miss ratio is not reported when object sizes are ignored
+            bmr_match = BYTE_MISS_RATIO_REGEX.search(line)
+            byte_miss_ratio = float(bmr_match.group(1)) if bmr_match else 0.0
             mrc_dict[algo].append((cache_size, miss_ratio, byte_miss_ratio))
 
     return dataname, mrc_dict, cache_size_has_unit

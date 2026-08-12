@@ -52,7 +52,7 @@ The name in `code` is what you pass to `cachesim` on the command line (names are
 * [LFU](/libCacheSim/cache/eviction/LFU.c) `lfu`, [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c) `lfuda`
 * [ARC](/libCacheSim/cache/eviction/ARC.c) `arc`, [TwoQ](/libCacheSim/cache/eviction/TwoQ.c) `2q`, [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c) `clockpro`, [CAR](/libCacheSim/cache/eviction/CAR.c) `car`, [LIRS](/libCacheSim/cache/eviction/LIRS.c) `lirs`, [Clock2QPlus](/libCacheSim/cache/eviction/Clock2QPlus.c) `clock2qplus`
 * [LRU-K](/libCacheSim/cache/eviction/cpp/LRU_K.cpp) `lru-k`, [LRU-Prob](/libCacheSim/cache/eviction/LRUProb.c) `lru-prob`, [Size](/libCacheSim/cache/eviction/Size.c) `size`
-* [FIFO-Merge](/libCacheSim/cache/eviction/FIFO_Merge.c) `fifo-merge`, [FIFO-Reinsertion](/libCacheSim/cache/eviction/FIFO_Reinsertion.c) `fifo-reinsertion`
+* [FIFO-Merge](/libCacheSim/cache/eviction/FIFO_Merge.c) `fifo-merge`
 * [Belady](/libCacheSim/cache/eviction/Belady.c) `belady`, [BeladySize](/libCacheSim/cache/eviction/BeladySize.c) `beladysize` — these need future information, so they only work on oracle traces such as `oracleGeneral`
 * [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp) `gdsf`
 * [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c) `hyperbolic`
@@ -383,7 +383,7 @@ See more information in the [README.md](https://github.com/cacheMon/libCacheSim-
 ---
 ## Node.js package
 
-Node.js bindings are also available, shipping pre-compiled binaries for Linux (x64) and macOS (x64, ARM64).
+Node.js bindings are also available. Releases ship a pre-compiled binary for Linux x64; on other platforms `npm install` falls back to building from source, which needs the build dependencies above.
 
 ```shell
 npm install libcachesim-node
