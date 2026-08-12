@@ -1,3 +1,4 @@
 # Core dependencies with security-patched versions
 numpy>=1.22.0  # CVE-2021-34141 fix (GHSA-fpfv-jqm9-f5jm)
 matplotlib>=3.3.0
+pandas>=1.3.0  # used by scripts/plot_appr_mrc.py

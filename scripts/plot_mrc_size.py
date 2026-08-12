@@ -30,7 +30,9 @@ def _parse_cachesim_output(output: str):
 
         if "[INFO]" in line[:16]:
             continue
-        if line.startswith("result"):
+        # a result line looks like
+        # <trace> <algo> cache size <size>, <n> req, miss ratio <mr>[, byte miss ratio <bmr>]
+        if "cache size" in line and "miss ratio" in line:
             ls = line.split()
             curr_dataname = extract_dataname(ls[0])
             if dataname is None:
@@ -47,7 +49,8 @@ def _parse_cachesim_output(output: str):
             cache_size = conv_size_str_to_int(cache_size)
 
             miss_ratio = float(ls[9].strip(","))
-            byte_miss_ratio = float(ls[13].strip(","))
+            # byte miss ratio is not reported when object size is ignored
+            byte_miss_ratio = float(ls[13].strip(",")) if len(ls) > 13 else 0.0
             mrc_dict[algo].append((cache_size, miss_ratio, byte_miss_ratio))
 
     return dataname, mrc_dict, cache_size_has_unit
