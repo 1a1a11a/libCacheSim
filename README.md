@@ -17,10 +17,10 @@ A high-performance library for building and running cache simulations
 
 
 ## News
-* **2024 Oct**: **S3-FIFO** gets an upgrade! Please try out the new version (the old is now renamed to S3-FIFOv0).
-* **2023 June**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
-* **2023 Oct**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **SIEVE(https://sievecache.com)** are available! These are very simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
 * **Aug 2025**: We compiled a list of open-source [cache datasets](https://github.com/cacheMon/cache_dataset) at the bottom of this page.
+* **2024 Oct**: **S3-FIFO** gets an upgrade! Please try out the new version (the old is now renamed to S3-FIFOv0).
+* **2023 Oct**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **SIEVE(https://sievecache.com)** are available! These are very simple algorithms that are very effective in reducing cache misses. Try them out in libCacheSim and your production!
+* **2023 June**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
 ---
 
 ## What is libCacheSim
