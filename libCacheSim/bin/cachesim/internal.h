@@ -47,6 +47,7 @@ struct arguments {
   bool consider_obj_metadata;
   bool use_ttl;
   bool print_head_req;
+  int hashpower;
 
   /* arguments generated */
   reader_t *reader;

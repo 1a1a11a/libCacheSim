@@ -193,4 +193,12 @@ You can use `-p` or `--prefetch` to set the prefetching algorithm.
 
 # Disable the print of the first few requests
 ./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --print-head-req=false
+
+# size the hash table: --hashpower is log2 of the number of entries, default 24
+# (16M). Lowering it cuts memory substantially on small traces — replaying the
+# sample trace drops from about 106 MB to 8 MB at --hashpower=16
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --hashpower=16
 ```
+
+> [!NOTE]
+> Sampling-based algorithms such as `RandomLRU` and `hyperbolic` draw eviction candidates from the hash table, so their miss ratios shift slightly with `--hashpower`. Keep it fixed when comparing results.
