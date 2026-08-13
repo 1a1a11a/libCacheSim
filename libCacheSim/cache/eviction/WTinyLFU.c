@@ -149,8 +149,15 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
      * cache_can_insert_default() uses, so take the larger of the two: an object
      * that does not fit under the heavier policy does not fit in this cache.
      * WTinyLFU_can_insert() checks each sub-cache against its own overhead. */
-    cache->obj_md_size =
-        MAX(params->LRU->obj_md_size, params->main_cache->obj_md_size);
+    /* Every incoming object is inserted into the window, and this field is
+     * what cache_get_base()'s capacity loop charges an incoming object, so it
+     * is the window's overhead rather than the pair's maximum. The other two
+     * sites each charge the cache the object is actually entering:
+     * WTinyLFU_can_insert() the window, WTinyLFU_evict() the main cache on
+     * promotion. Using the maximum here made the loop reserve up to 40 bytes
+     * for a 16-byte window insertion with an ARC, LeCaR or Cacheus main
+     * cache. */
+    cache->obj_md_size = params->LRU->obj_md_size;
   }
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "WTinyLFU-w%.2lf-%s",
