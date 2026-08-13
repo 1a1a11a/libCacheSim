@@ -15,6 +15,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Prepare
         run: bash scripts/install_dependency.sh
       - name: Configure CMake
@@ -29,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Prepare
         run: bash scripts/install_dependency.sh
       - name: Configure CMake with LSan
