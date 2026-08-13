@@ -1,14 +1,17 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.7
+**Census version:** 1.0.8
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
-A source-linked inventory of documented libCacheSim adoption. Every entry below carries a
-public URL, the quoted evidence that supports it, the date the evidence was checked, and a
-confidence grade. Entries that could not be verified are recorded as such rather than dropped
-silently, and claims that were checked and found to be false are listed in
-[Checked and excluded](#6-checked-and-excluded).
+A source-linked inventory of documented libCacheSim adoption. Every entry in
+**Sections 2–5** carries a public URL, the quoted evidence that supports it, the date the evidence
+was checked, and a confidence grade.
+
+**Section 6 is different by design.** It holds candidates that were investigated and *rejected*,
+so it records a **disposition** instead of a grade — grading a paper that turned out not to
+mention libCacheSim would imply it belongs in the census. Rejected candidates are kept rather than
+deleted, so a later revision does not re-investigate them.
 
 This document is versioned with the source tree, so any commit of this file is a citable
 snapshot. See [How to cite this census](#how-to-cite-this-census).
@@ -299,14 +302,24 @@ Recorded so that future revisions do not re-investigate the same dead ends. The 
 column matters most here: a dead end is only worth trusting as recently as its last check, and a
 paper that did not mention libCacheSim in one snapshot may cite it in a later version.
 
+These rows carry a **disposition**, not a confidence grade — the A/B/C/U rubric measures how well
+a source supports an entry that belongs in the census, and nothing here does. The vocabulary:
+
+| Disposition | Meaning |
+| --- | --- |
+| **Excluded** | Checked and refuted: the source does not support the claim. Re-check only if the source is revised. |
+| **Unverified** | Could not be checked at all. Neither confirmed nor refuted; retained as a lead. |
+| **Deferred** | Blocked by the environment the snapshot ran in, not by the source. Retry from a host without that restriction. |
+| **Substituted** | Primary source unreachable; an equivalent source was used and the entry lives in the census proper. |
+
 | Candidate | Why it surfaced | Finding | Date checked | Disposition |
 | --- | --- | --- | --- | --- |
-| *RAC: Relation-Aware Cache Replacement for LLMs*, [arXiv:2602.21547](https://arxiv.org/pdf/2602.21547) | Returned by a search for libCacheSim evaluations | Full-text search found no mention of libCacheSim | 2026-08-12 | Excluded |
-| *2DIO: A Cache-Accurate Storage Microbenchmark*, [arXiv:2603.19971](https://arxiv.org/pdf/2603.19971) | Returned by a search for libCacheSim usage | Full-text search found no mention of libCacheSim | 2026-08-12 | Excluded |
-| Chameleon Trovi artifact [`1a05c09b…`](https://trovi.chameleoncloud.org/dashboard/artifacts/1a05c09b-f149-4555-b133-a4114155746b) ("Clock-Pro Implementation on libCacheSim") | Title indicates libCacheSim use | Page is client-rendered; content could not be retrieved by fetch, and the API path returned 404 | 2026-08-12 | **U** — manual check needed |
-| Chameleon Trovi artifact [`bac62a10…`](https://trovi.chameleoncloud.org/dashboard/artifacts/bac62a10-3868-4a77-9075-7e9247dd199b) ("Clock with Adaptive Replacement Cache Implementation") | Title indicates libCacheSim use | Same as above | 2026-08-12 | **U** — manual check needed |
-| PyPI download statistics | Would quantify consumption | pypistats.org returned HTTP 429 | 2026-08-12 | Deferred to next revision |
-| USENIX-hosted PDFs (SIEVE NSDI '24, 3L-Cache FAST '25) | Primary sources for evaluation details | Fetches returned HTTP 403 from this environment | 2026-08-12 | Substituted with artifact repositories and program pages |
+| *RAC: Relation-Aware Cache Replacement for LLMs*, [arXiv:2602.21547](https://arxiv.org/pdf/2602.21547) | Returned by a search for libCacheSim evaluations | Full-text search found no mention of libCacheSim | 2026-08-12 | **Excluded** |
+| *2DIO: A Cache-Accurate Storage Microbenchmark*, [arXiv:2603.19971](https://arxiv.org/pdf/2603.19971) | Returned by a search for libCacheSim usage | Full-text search found no mention of libCacheSim | 2026-08-12 | **Excluded** |
+| Chameleon Trovi artifact [`1a05c09b…`](https://trovi.chameleoncloud.org/dashboard/artifacts/1a05c09b-f149-4555-b133-a4114155746b) ("Clock-Pro Implementation on libCacheSim") | Title indicates libCacheSim use | Page is client-rendered; content could not be retrieved by fetch, and the API path returned 404 | 2026-08-12 | **Unverified** |
+| Chameleon Trovi artifact [`bac62a10…`](https://trovi.chameleoncloud.org/dashboard/artifacts/bac62a10-3868-4a77-9075-7e9247dd199b) ("Clock with Adaptive Replacement Cache Implementation") | Title indicates libCacheSim use | Same as above | 2026-08-12 | **Unverified** |
+| PyPI download statistics | Would quantify consumption | pypistats.org returned HTTP 429 | 2026-08-12 | **Deferred** |
+| USENIX-hosted PDFs (SIEVE NSDI '24, 3L-Cache FAST '25) | Primary sources for evaluation details | Fetches returned HTTP 403 from this environment | 2026-08-12 | **Substituted** — artifact repositories and program pages used instead |
 
 ---
 
@@ -362,7 +375,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.7},
+  version      = {1.0.8},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -371,7 +384,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.7, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.8, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -383,6 +396,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.8 | 2026-08-13 | Exempted Section 6 from the grading promise and gave it a defined disposition vocabulary (Excluded / Unverified / Deferred / Substituted) — grading a refuted candidate would imply it belongs in the census, and four rows carried no grade at all. Corrected the v1.0.0 changelog entry: Section 2 has seven distribution signals, not six. |
 | 1.0.7 | 2026-08-13 | Split Section 2 out of the "claims use of libCacheSim" grouping introduced in 1.0.6: stars, package releases and dependency counts are distribution signals, so an A there certifies only that the value was read correctly. Added that grades are not comparable across sections. Parameterized the update checklist by target section — a Section 5 entry cannot supply a libCacheSim-use quote without committing the conflation the rules forbid, and upstream independence is now recorded for Section 3 only. |
 | 1.0.6 | 2026-08-13 | Redefined the grade rubric in terms of *the relationship each section claims* rather than "use of libCacheSim". The old wording made a Section 5.2 Grade A read as certifying libCacheSim adoption, which is the exact conflation Section 1 forbids; grades there certify a SIEVE implementation and nothing more. Also scoped the pinning claim to the Grade A GitHub links it actually covers — the two Grade U rows are unpinned on purpose, and SkiftOS keeps a branch URL because reproducing its 404 is the evidence. |
 | 1.0.5 | 2026-08-13 | Pinned the 3L-Cache README quote to revision `134cd15`, since that quote is also repository text that can change. Replaced the immudb evidence link: a merged pull request is not immutable, since GitHub titles stay editable after merge, so quoting a PR title is not a durable citation. The row now cites `embedded/cache/cache.go` pinned at `1a5f54e`, verified to read "Cache implements the SIEVE cache replacement policy" with a `hand` pointer and per-entry `visited` flags. Every GitHub link in Section 5.2 is now pinned; only the PostgREST docs URL remains mutable. |
@@ -390,4 +404,4 @@ For reading rather than citing, the current version always lives at
 | 1.0.3 | 2026-08-13 | Pinned six of the seven GitHub evidence links in Section 5.2 to commit SHAs via `git ls-remote`, closing most of limitation 5 rather than deferring it; re-fetched the pinned TiDB and Ceph URLs to confirm the quoted text is present at those revisions. Limitation 5 now covers only the PostgREST `latest` docs URL. Added pinning to the update protocol as a standing rule. |
 | 1.0.2 | 2026-08-13 | Added the missing `Date checked` column to Section 5.1. Recorded a new limitation 5: Section 5.2's evidence links are branch URLs, not commit permalinks, so they can drift from what was verified — the SkiftOS 404 is that failure already realized. Pinning was attempted and blocked by the snapshot environment (`api.github.com` returned 403; blob pages render SHAs client-side), so the method is documented for the next revision instead of being left implicit. |
 | 1.0.1 | 2026-08-13 | Individually fetched all ten Section 5.2 adopter links instead of inheriting them: 8 graded A against primary artifacts, Pelikan and SkiftOS downgraded to U (repo-root-only link; HTTP 404 link rot). Added grades to Section 5.2 so every entry carries one, as the introduction promises. Cited SCION by its arXiv abstract page and flagged that arXiv's stated submission date disagrees with its identifier prefix. Citation example now uses a commit permalink rather than a branch URL. Downgraded the Harvard SEAS aggregate claim from B to C: editorial independence does not make an aggregate claim auditable, and the rubric grades auditability. |
-| 1.0.0 | 2026-08-12 | Initial census: 5 confirmed direct users, 6 distribution signals, 2 self-reported aggregate claims, 10 named algorithm-lineage adopters, 6 excluded or deferred candidates. |
+| 1.0.0 | 2026-08-12 | Initial census: 5 confirmed direct users, 7 distribution signals, 2 self-reported aggregate claims, 10 named algorithm-lineage adopters, 6 excluded or deferred candidates. |
