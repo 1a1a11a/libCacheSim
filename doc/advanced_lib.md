@@ -116,13 +116,13 @@ open_trace(data_path, PLAIN_TXT_TRACE, NULL);
 ```c
 reader_init_param_t init_params_csv =
     {.delimiter=',', .time_field=2, .obj_id_field=6, .obj_size_field=4, .has_header=FALSE};
-reader_t *reader_csv_c = open_trace("data/trace.csv", CSV_TRACE, &init_params_csv);
+reader_t *reader_csv_c = open_trace("data/cloudPhysicsIO.csv", CSV_TRACE, &init_params_csv);
 ```
 
 ##### Setup a binary reader
 ```c
 reader_init_param_t init_params_bin = {.binary_fmt="<3I2H2Q", .obj_size_field=2, .obj_id_field=6, };
-reader_t *reader_bin_l = setup_reader("data/trace.vscsi", BIN_TRACE, &init_params_bin);
+reader_t *reader_bin_l = setup_reader("data/cloudPhysicsIO.vscsi", BIN_TRACE, &init_params_bin);
 ```
 The format of a binary trace is the same as
 [Python struct format specifier](https://docs.python.org/3/library/struct.html).

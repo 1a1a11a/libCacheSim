@@ -260,11 +260,11 @@ The Request curve is weighted by request count, and the Object curve is weighted
 ### Advanced features 
 ```bash
 # cap the number of requests read from the trace
-./traceAnalyzer --num-req=1000000 ../data/trace.vscsi vscsi
+./bin/traceAnalyzer --num-req=1000000 ../data/cloudPhysicsIO.vscsi vscsi
 
 # change output 
-./traceAnalyzer -o my-output ../data/trace.vscsi vscsi
+./bin/traceAnalyzer -o my-output ../data/cloudPhysicsIO.vscsi vscsi
 
 # use part of the trace to warm up the cache
-./traceAnalyzer --warmup-sec=86400 ../data/trace.vscsi vscsi
+./bin/traceAnalyzer --warmup-sec=86400 ../data/cloudPhysicsIO.vscsi vscsi
 ```

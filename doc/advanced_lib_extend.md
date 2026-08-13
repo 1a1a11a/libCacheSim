@@ -35,7 +35,7 @@ Specifically, you can following the steps:
 2. If your cache eviction algorithm needs extra metadata, add a new object metadata struct in 
    [include/libCacheSim/cacheObj.h](/libCacheSim/include/libCacheSim/cacheObj.h).
 3. Add `myCache_init()` function to [include/libCacheSim/evictionAlgo.h](/libCacheSim/include/libCacheSim/evictionAlgo.h).
-4. Add mycache.c to [CMakeLists.txt](/libCacheSim/cache/eviction/CMakeLists.txt) so that it can be compiled.
+4. Add mycache.c to [CMakeLists.txt](/libCacheSim/cache/CMakeLists.txt) so that it can be compiled.
 5. Add command line option in [bin/cachesim/cache_init.h](/libCacheSim/bin/cachesim/cache_init.h) so that you can use `cachesim` binary. You may also want to take a look at [bin/cachesim/cli_parser.c](/libCacheSim/bin/cachesim/cli_parser.c). 
 6. Remember to add a test in [test/test_evictionAlgo.c](/test/test_evictionAlgo.c) and add the algorithm to this [README](README.md). 
 
@@ -66,7 +66,7 @@ There are two steps you can follow,
 libCacheSim supports [txt](/libCacheSim/traceReader/generalReader/txt.c), [csv](/libCacheSim/traceReader/generalReader/csv.c), and binary traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
 For binary traces, libCacheSim also supports zstd compressed traces without decompression.
 
-But if you ever need to implement a new trace type, please see [here](/libCacheSim/traceReader/customizedReader/akamaiBin.h) for an example reader. 
+But if you ever need to implement a new trace type, see [twrBin.h](/libCacheSim/traceReader/customizedReader/twrBin.h) for a compact example reader, or [vscsi.h](/libCacheSim/traceReader/customizedReader/vscsi.h) and [oracleGeneralBin.h](/libCacheSim/traceReader/customizedReader/oracle/oracleGeneralBin.h) for the formats used by the sample traces in [data/](/data/). 
 
 To implement a reader, you need to implement two functions:
 ```c
