@@ -329,6 +329,20 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
     sampler = create_spatial_sampler(sample_rate);
     set_spatial_sampler_salt(sampler,
                              10000019);  // TODO: salt can be changed by params
+
+    /* the sampler keeps one object in sampling_ratio_inv, an integer, so it can
+     * only represent rates of the form 1/n: create_spatial_sampler truncates
+     * 1/0.3 to 3 and then keeps a third. Sizing the caches by the rate that was
+     * asked for rather than the one in force makes them too small by that
+     * ratio -- 10% at 0.3 -- and the curve is reported against the size that
+     * was asked for, so the error is invisible in the output. Take the rate the
+     * sampler actually applies. */
+    double effective_rate = 1.0 / sampler->sampling_ratio_inv;
+    if (effective_rate != sample_rate) {
+      INFO("sample rate %.6f is not of the form 1/n, using %.6f\n", sample_rate,
+           effective_rate);
+      sample_rate = effective_rate;
+    }
   }
 
   // 1. obtain the n_req_, sum_obj_size_req, sampled_cnt and sampled_size
