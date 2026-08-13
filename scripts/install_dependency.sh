@@ -124,7 +124,8 @@ setup_macOS() {
 		log_error "Homebrew is not installed. Please install Homebrew first."
 		exit 1
 	fi
-	brew install glib google-perftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm pkgconf
+	# tcmalloc is packaged as gperftools on Homebrew; google-perftools is the apt name
+	brew install glib gperftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm pkgconf
 }
 
 # Install CMake
