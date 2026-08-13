@@ -99,12 +99,14 @@ recorded for trend-tracking across census editions, not as a user count.
 
 ---
 
-## 4. Ecosystem projects built on libCacheSim
+## 4. Ecosystem projects and datasets
 
 | Project | Class | Evidence | Source |
 |---|---|---|---|
 | **CacheBench** — benchmarking suite evaluating 18 eviction algorithms across thousands of traces, developed by Haocheng Xia (UIUC, visiting Harvard) under the UCSC OSPO Summer of Reproducibility | B | Report describes libCacheSim as a core component and the project as "a Python package that allows users to easily download traces and run simulation analyses using libCacheSim" | [UCSC OSPO report](https://ucsc-ospo.github.io/report/osre25/harvard/cachebench/2025-08-06-haochengxia/) |
-| **cache_dataset** — open collection of production cache traces (Meta, Twitter, CloudPhysics, Microsoft, Wikimedia, Alibaba, Tencent) | B | "We provide both plain text format that is human readable and `oracleGeneral` format that is suitable for using with [libCacheSim] platform"; ships libCacheSim tutorials and notes it reads compressed traces directly | [cacheMon/cache_dataset](https://github.com/cacheMon/cache_dataset) |
+| **cache_dataset** — open collection of production cache traces (Meta, Twitter, CloudPhysics, Microsoft, Wikimedia, Alibaba, Tencent) | C | Ships three tutorial notebooks that run libCacheSim — "Using libCacheSim to read the dataset", "…to analyze and plot the trace", "…to run cache simulation". The dataset itself is *format-compatible* rather than built on the library: "We provide both plain text format … and `oracleGeneral` format that is suitable for using with [libCacheSim] platform." | [cacheMon/cache_dataset](https://github.com/cacheMon/cache_dataset) |
+
+Note the class distinction between these two rows: CacheBench is implemented on top of libCacheSim (B), whereas cache_dataset publishes traces in a libCacheSim-readable format and drives the tool from tutorials (C). Shipping a compatible format alone would not qualify for either class.
 
 ---
 
@@ -184,7 +186,7 @@ part of the census: it prevents re-checking and makes the inclusion bar auditabl
 | CacheMind ([arXiv:2602.12422](https://arxiv.org/abs/2602.12422)) | Uses ChampSim and gem5; no libCacheSim reference |
 | LearnedCache ([arXiv:2605.26168](https://arxiv.org/abs/2605.26168)) | eBPF/`cache_ext`-based; no libCacheSim reference |
 | [project-kona/KCacheSim](https://github.com/project-kona/KCacheSim) | Name collision only — built on Valgrind's Cachegrind, unrelated to this project |
-| PyPI [`cachebench`](https://pypi.org/project/cachebench/) | Name collision only — an unrelated LLM prompt-cache observability package, not the CacheBench in [§4](#4-ecosystem-projects-built-on-libcachesim) |
+| PyPI [`cachebench`](https://pypi.org/project/cachebench/) | Name collision only — an unrelated LLM prompt-cache observability package, not the CacheBench in [§4](#4-ecosystem-projects-and-datasets) |
 | SL-Cache (Springer, [10.1007/978-981-92-0363-5_36](https://doi.org/10.1007/978-981-92-0363-5_36)) | Plausible but **unverified** — full text is paywalled, so no usage statement could be read. Recheck in a later edition |
 
 ---
@@ -220,13 +222,27 @@ verified it. Bump the census version and append to the changelog below.
 
 ## How to cite this census
 
-Cite the commit-pinned permalink, not the branch, so the citation resolves to the exact
-edition you read:
+This document is revised in place, so the `develop` URL below always resolves to the
+*newest* edition. To cite the exact edition you read, resolve it to a commit permalink
+first — a document cannot contain its own commit hash, so the pin is something the
+citing reader produces:
+
+- **On GitHub:** open the file and press <kbd>y</kbd>. The URL rewrites from
+  `.../blob/develop/doc/adoption.md` to `.../blob/<commit>/doc/adoption.md`, which is
+  immutable.
+- **From a clone:** `git log -1 --format=%H -- doc/adoption.md` gives the commit of the
+  edition you have checked out.
+- **Rule:** each edition's permalink is the commit that bumped its census version — the
+  same commit that added its row to the [changelog](#changelog). Earlier editions stay
+  reachable through the file's History view.
+
+Fill the pinned commit into the `url` field when citing:
 
 ```
-libCacheSim Adoption Census, version 1.0.0 (2026-08-13).
+libCacheSim Adoption Census, version 1.0.0 (census date 2026-08-13).
 libCacheSim project documentation, doc/adoption.md.
-https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption.md
+Newest edition: https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption.md
+Cited edition:  https://github.com/1a1a11a/libCacheSim/blob/<commit>/doc/adoption.md
 ```
 
 ```bibtex
@@ -238,10 +254,15 @@ https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption.md
   number      = {census v1.0.0},
   year        = {2026},
   month       = aug,
-  url         = {https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption.md},
-  note        = {Census date 2026-08-13; repository snapshot 7c169cf}
+  % replace <commit> with the permalink commit of the edition you read (see above);
+  % https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption.md is the newest
+  url         = {https://github.com/1a1a11a/libCacheSim/blob/<commit>/doc/adoption.md},
+  note        = {Census date 2026-08-13; repository snapshot at census time 7c169cf}
 }
 ```
+
+`7c169cf` in the header is the repository state the census describes, **not** a
+permalink for this file — that commit predates the file and will not resolve.
 
 To cite libCacheSim itself, use the BibTeX entries in [`references.md`](/references.md).
 
@@ -251,4 +272,4 @@ To cite libCacheSim itself, use the BibTeX entries in [`references.md`](/referen
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0.0 | 2026-08-13 | First edition. 8 adoption entries across research, distribution, and ecosystem; 6 candidates examined and rejected; repository signals and downstream algorithm adoption recorded separately. |
+| 1.0.0 | 2026-08-13 | First edition. **14 sourced entries** — 9 research (3 first-party artifacts, 5 third-party works, 1 independent cross-validation), 3 distribution channels, 2 ecosystem projects — of which 8 are third-party. By evidence class: 4×A, 5×B, 3×C, 3×D (15 class assignments over 14 rows — the 3L-Cache row carries both A and B). 6 candidates examined and rejected. Repository signals and downstream algorithm adoption recorded separately and excluded from these counts. |
