@@ -86,7 +86,7 @@ model ablation (`gaurav-2408`), and a hand-rolled pybind11 wrapper from Princeto
 (`0austinli4`) that upstream's own bindings later superseded.
 
 **Excluded: the maintainer's own course.** Seventeen forks carry a `cs2640` branch of
-student cache-competition projects — plugin-API policies, tuning sweeps, and in one case a
+student cache-competition projects — fourteen with commits of their own — — plugin-API policies, tuning sweeps, and in one case a
 report reading "Does replacing S3-FIFO's hardcoded $S \to M$ promotion rule with a tiny
 online linear classifier deliver reliable miss-ratio improvements across heterogeneous cache
 workloads?" ([Minkai25/caching_competition](https://github.com/Minkai25/caching_competition/tree/3bdf0b56bb03bf46444bd3c80607b7e1ff24fe4f)).
@@ -165,10 +165,12 @@ both as weak proxies, not user counts.
 by [ecosyste.ms](https://packages.ecosyste.ms/api/v1/packages/lookup?name=libcachesim) —
 Debian, Ubuntu, Alpine, nixpkgs, Guix, Homebrew, spack, vcpkg, conan, conda-forge, AUR,
 crates.io and the rest — returns exactly one row, the project's own PyPI package. Reverse
-dependencies are zero everywhere checked:
-[deps.dev](https://api.deps.dev/v3alpha/systems/pypi/packages/libcachesim/versions/0.3.3:dependents)
-reports `{"dependentCount":0,...}` for both the PyPI and npm packages, and
-`dependent_packages_count` is 0 at ecosyste.ms. Three near-misses are worth naming so they
+dependencies are zero everywhere checked: deps.dev returns the same
+`{"dependentCount":0,"directDependentCount":0,"indirectDependentCount":0}` for
+[`libcachesim` on PyPI](https://api.deps.dev/v3alpha/systems/pypi/packages/libcachesim/versions/0.3.3:dependents)
+and for
+[`libcachesim-node` on npm](https://api.deps.dev/v3alpha/systems/npm/packages/libcachesim-node/versions/0.3.2:dependents),
+and `dependent_packages_count` is 0 at ecosyste.ms. Three near-misses are worth naming so they
 are not mistaken for ports: `proxy.golang.org`
 [serves five versions](https://proxy.golang.org/github.com/1a1a11a/libcachesim/@v/list) of a
 Go module synthesised from the git tags, which nothing imports (`?tab=importedby` is a 404)
@@ -246,7 +248,7 @@ refs. **Fifty-three carry no such commit** — plain mirrors. The other fifty-ei
 | Smaller but genuine third-party work — a WATT policy, sampled LRU and SIEVE variants, a Rust MRC tool, Docker packaging, a pybind11 wrapper, a 3L-Cache ablation, a standalone driver, 2021 work on the `exec` driver | 8 |
 | Tied to an entry counted elsewhere in this census, through its paper or its author | 8 |
 | Project members, co-authors, and alternate accounts | 6 |
-| Student projects from the maintainer's course | 14 |
+| Student projects from the maintainer's course — 14 of the 17 forks that carry a `cs2640` branch; the other three carry the branch with no commits of their own, so they are counted among the 53 mirrors | 14 |
 | A novel tip but no novel work: stale copies of upstream branches, editor and config edits, one machine-generated Rust port, and one 0-byte "algorithm" file | 12 |
 
 Counting pull-request refs as upstream is what makes that table honest in the other
