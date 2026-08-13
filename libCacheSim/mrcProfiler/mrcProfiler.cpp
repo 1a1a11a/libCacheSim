@@ -21,11 +21,17 @@
  * rounds to this value and warns under -Wimplicit-const-int-float-conversion */
 static constexpr double kHashSpaceSize = 18446744073709551616.0;
 
-/* whether a reader of this type fills in req->next_access_vtime, which the
- * Belady policies need. These are the formats whose readers set it; every other
- * reader leaves it at -2. */
-static bool trace_type_has_next_access_vtime(trace_type_e trace_type) {
-  switch (trace_type) {
+/* whether a reader fills in req->next_access_vtime, which the Belady policies
+ * need; every other reader leaves it at -2.
+ *
+ * Most oracle formats carry it unconditionally, so the trace type alone
+ * answers for them. The generic binary reader is the exception: it populates
+ * the field only when the caller points next_access_vtime_field at the right
+ * column, so a BIN_TRACE has to be asked rather than assumed. That is a
+ * library-only configuration today — no CLI exposes the field — but the
+ * profiler is part of the library, so a caller can set it up. */
+static bool reader_has_next_access_vtime(const reader_t *reader) {
+  switch (reader->trace_type) {
     case ORACLE_GENERAL_TRACE:
     case LCS_TRACE:
     case ORACLE_SIM_TWR_TRACE:
@@ -33,6 +39,8 @@ static bool trace_type_has_next_access_vtime(trace_type_e trace_type) {
     case ORACLE_SIM_TWRNS_TRACE:
     case ORACLE_SYS_TWRNS_TRACE:
       return true;
+    case BIN_TRACE:
+      return reader->init_params.next_access_vtime_field > 0;
     default:
       return false;
   }
@@ -335,7 +343,7 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
    * the cache; do the same here. */
   if (strcasecmp(params_.cache_algorithm_str, "belady") == 0 ||
       strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
-    if (!trace_type_has_next_access_vtime(reader_->trace_type)) {
+    if (!reader_has_next_access_vtime(reader_)) {
       ERROR(
           "%s needs future information, which %s traces do not carry; use an "
           "oracle format such as oracleGeneral or lcs, or convert with "

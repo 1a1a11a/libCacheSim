@@ -10,7 +10,7 @@ libCacheSim ships three things:
 
 New here? Start with [Install & Build](install.md), then [the cachesim guide](quickstart_cachesim.md).
 
-The commands throughout these pages are run from the build directory (`_build/` if you followed the [README](https://github.com/1a1a11a/libCacheSim#build-and-install-libcachesim)), so the sample traces in `data/` are at `../data/`.
+Commands that invoke a built binary — `./bin/cachesim`, `./bin/traceAnalyzer`, `./bin/mrcProfiler` — are run from the build directory (`_build/` if you followed the [README](https://github.com/1a1a11a/libCacheSim#build-and-install-libcachesim)), which is why the sample traces in `data/` appear as `../data/`. The helper scripts under `scripts/`, such as the plotting scripts and `debug.sh`, are run from the repository root instead, and those pages write the paths accordingly.
 
 ```{toctree}
 :maxdepth: 2
