@@ -403,14 +403,28 @@ static bool SLRU_remove(cache_t *cache, obj_id_t obj_id) {
 // ****                  parameter set up functions                   ****
 // ****                                                               ****
 // ***********************************************************************
+/* share of the cache given to one segment, in percent. lru_max_n_bytes is only
+ * allocated after the parameters are parsed, so it is still NULL when the user
+ * asks for the parameters with `-e print`; until seg-size says otherwise the
+ * segments are evenly sized */
+static int SLRU_seg_pct(const cache_t *cache, const SLRU_params_t *params,
+                        const int seg) {
+  if (params->lru_max_n_bytes == NULL) {
+    return 100 / params->n_seg;
+  }
+  return (int)(params->lru_max_n_bytes[seg] * 100 / cache->cache_size);
+}
+
 static const char *SLRU_current_params(cache_t *cache, SLRU_params_t *params) {
   static __thread char params_str[128];
-  int n = snprintf(params_str, 128, "n-seg=%d,seg-size=%d", params->n_seg,
-                   (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
 
-  for (int i = 1; i < params->n_seg; i++) {
-    n += snprintf(params_str + n, 128 - n, ":%d",
-                  (int)(params->lru_max_n_bytes[i] * 100 / cache->cache_size));
+  int n = snprintf(params_str, sizeof(params_str), "n-seg=%d,seg-size=%d",
+                   params->n_seg, SLRU_seg_pct(cache, params, 0));
+
+  for (int i = 1; i < params->n_seg && n > 0 && n < (int)sizeof(params_str);
+       i++) {
+    n += snprintf(params_str + n, sizeof(params_str) - n, ":%d",
+                  SLRU_seg_pct(cache, params, i));
   }
 
   return params_str;

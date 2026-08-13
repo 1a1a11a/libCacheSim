@@ -530,8 +530,12 @@ static inline bool S3FIFOd_can_insert(cache_t *cache, const request_t *req) {
 // ***********************************************************************
 static const char *S3FIFOd_current_params(S3FIFOd_params_t *params) {
   static __thread char params_str[128];
+  /* main_fifo is only built after the parameters are parsed, so report the
+   * configured type, which is what `-e print` runs against */
   snprintf(params_str, 128, "fifo-size-ratio=%.4lf,main-cache=%s\n",
-           params->small_fifo_size_ratio, params->main_fifo->cache_name);
+           params->small_fifo_size_ratio,
+           params->main_fifo == NULL ? params->main_fifo_type
+                                     : params->main_fifo->cache_name);
   return params_str;
 }
 

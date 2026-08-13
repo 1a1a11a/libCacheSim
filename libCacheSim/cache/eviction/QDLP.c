@@ -437,8 +437,12 @@ static inline bool QDLP_can_insert(cache_t *cache, const request_t *req) {
 // ***********************************************************************
 static const char *QDLP_current_params(QDLP_params_t *params) {
   static __thread char params_str[128];
+  /* main_cache is only built after the parameters are parsed, so report the
+   * configured type, which is what `-e print` runs against */
   snprintf(params_str, 128, "fifo-size-ratio=%.4lf,main-cache=%s\n",
-           params->small_size_ratio, params->main_cache->cache_name);
+           params->small_size_ratio,
+           params->main_cache == NULL ? params->main_cache_type
+                                      : params->main_cache->cache_name);
   return params_str;
 }
 
