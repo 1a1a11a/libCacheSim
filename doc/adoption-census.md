@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.3
+**Census version:** 1.0.4
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -263,16 +263,18 @@ accurate when added, then drift as the linked code moves.
 
 ## 6. Checked and excluded
 
-Recorded so that future revisions do not re-investigate the same dead ends.
+Recorded so that future revisions do not re-investigate the same dead ends. The `Date checked`
+column matters most here: a dead end is only worth trusting as recently as its last check, and a
+paper that did not mention libCacheSim in one snapshot may cite it in a later version.
 
-| Candidate | Why it surfaced | Finding | Disposition |
-| --- | --- | --- | --- |
-| *RAC: Relation-Aware Cache Replacement for LLMs*, [arXiv:2602.21547](https://arxiv.org/pdf/2602.21547) | Returned by a search for libCacheSim evaluations | Full-text search found no mention of libCacheSim | Excluded |
-| *2DIO: A Cache-Accurate Storage Microbenchmark*, [arXiv:2603.19971](https://arxiv.org/pdf/2603.19971) | Returned by a search for libCacheSim usage | Full-text search found no mention of libCacheSim | Excluded |
-| Chameleon Trovi artifact [`1a05c09b…`](https://trovi.chameleoncloud.org/dashboard/artifacts/1a05c09b-f149-4555-b133-a4114155746b) ("Clock-Pro Implementation on libCacheSim") | Title indicates libCacheSim use | Page is client-rendered; content could not be retrieved by fetch, and the API path returned 404 | **U** — manual check needed |
-| Chameleon Trovi artifact [`bac62a10…`](https://trovi.chameleoncloud.org/dashboard/artifacts/bac62a10-3868-4a77-9075-7e9247dd199b) ("Clock with Adaptive Replacement Cache Implementation") | Title indicates libCacheSim use | Same as above | **U** — manual check needed |
-| PyPI download statistics | Would quantify consumption | pypistats.org returned HTTP 429 | Deferred to next revision |
-| USENIX-hosted PDFs (SIEVE NSDI '24, 3L-Cache FAST '25) | Primary sources for evaluation details | Fetches returned HTTP 403 from this environment | Substituted with artifact repositories and program pages |
+| Candidate | Why it surfaced | Finding | Date checked | Disposition |
+| --- | --- | --- | --- | --- |
+| *RAC: Relation-Aware Cache Replacement for LLMs*, [arXiv:2602.21547](https://arxiv.org/pdf/2602.21547) | Returned by a search for libCacheSim evaluations | Full-text search found no mention of libCacheSim | 2026-08-12 | Excluded |
+| *2DIO: A Cache-Accurate Storage Microbenchmark*, [arXiv:2603.19971](https://arxiv.org/pdf/2603.19971) | Returned by a search for libCacheSim usage | Full-text search found no mention of libCacheSim | 2026-08-12 | Excluded |
+| Chameleon Trovi artifact [`1a05c09b…`](https://trovi.chameleoncloud.org/dashboard/artifacts/1a05c09b-f149-4555-b133-a4114155746b) ("Clock-Pro Implementation on libCacheSim") | Title indicates libCacheSim use | Page is client-rendered; content could not be retrieved by fetch, and the API path returned 404 | 2026-08-12 | **U** — manual check needed |
+| Chameleon Trovi artifact [`bac62a10…`](https://trovi.chameleoncloud.org/dashboard/artifacts/bac62a10-3868-4a77-9075-7e9247dd199b) ("Clock with Adaptive Replacement Cache Implementation") | Title indicates libCacheSim use | Same as above | 2026-08-12 | **U** — manual check needed |
+| PyPI download statistics | Would quantify consumption | pypistats.org returned HTTP 429 | 2026-08-12 | Deferred to next revision |
+| USENIX-hosted PDFs (SIEVE NSDI '24, 3L-Cache FAST '25) | Primary sources for evaluation details | Fetches returned HTTP 403 from this environment | 2026-08-12 | Substituted with artifact repositories and program pages |
 
 ---
 
@@ -324,7 +326,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.3},
+  version      = {1.0.4},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -333,7 +335,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.3, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.4, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -345,6 +347,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.4 | 2026-08-13 | Added the missing `Date checked` column to Section 6, completing the coverage the introduction promises: every table in the document now records when its evidence was last checked. Noted why that column matters most for excluded candidates — a dead end is only trustworthy as of its last check, and a paper may cite libCacheSim in a later version. |
 | 1.0.3 | 2026-08-13 | Pinned six of the seven GitHub evidence links in Section 5.2 to commit SHAs via `git ls-remote`, closing most of limitation 5 rather than deferring it; re-fetched the pinned TiDB and Ceph URLs to confirm the quoted text is present at those revisions. Limitation 5 now covers only the PostgREST `latest` docs URL. Added pinning to the update protocol as a standing rule. |
 | 1.0.2 | 2026-08-13 | Added the missing `Date checked` column to Section 5.1. Recorded a new limitation 5: Section 5.2's evidence links are branch URLs, not commit permalinks, so they can drift from what was verified — the SkiftOS 404 is that failure already realized. Pinning was attempted and blocked by the snapshot environment (`api.github.com` returned 403; blob pages render SHAs client-side), so the method is documented for the next revision instead of being left implicit. |
 | 1.0.1 | 2026-08-13 | Individually fetched all ten Section 5.2 adopter links instead of inheriting them: 8 graded A against primary artifacts, Pelikan and SkiftOS downgraded to U (repo-root-only link; HTTP 404 link rot). Added grades to Section 5.2 so every entry carries one, as the introduction promises. Cited SCION by its arXiv abstract page and flagged that arXiv's stated submission date disagrees with its identifier prefix. Citation example now uses a commit permalink rather than a branch URL. Downgraded the Harvard SEAS aggregate claim from B to C: editorial independence does not make an aggregate claim auditable, and the rubric grades auditability. |
