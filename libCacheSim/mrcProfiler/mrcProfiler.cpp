@@ -106,7 +106,8 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
     INFO("sample_rate is 1, no need to sample\n");
     sample_max = UINT64_MAX;
   } else {
-    /* the product is exact and stays below 2^64 because sample_rate < 1 */
+    /* parse_params restricts sample_rate to (0, 1], so the product here is
+     * exact and stays below 2^64 */
     sample_max = static_cast<uint64_t>(kHashSpaceSize * sample_rate);
   }
   double sampled_cnt = 0, sampled_size = 0;

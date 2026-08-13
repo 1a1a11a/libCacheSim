@@ -90,7 +90,8 @@ typedef struct profiler_params {
               }
             } else {
               sample_rate = atof(buffer);
-              if (sample_rate <= 0 || sample_rate > 1) {
+              /* negated form so that NaN is rejected as well */
+              if (!(sample_rate > 0 && sample_rate <= 1)) {
                 ERROR("invalid sample rate for shards: %s\n", str);
                 exit(1);
               }
@@ -155,7 +156,8 @@ typedef struct profiler_params {
           } else if (current_param_idx == 1) {
             // check the sample rate or sample size
             sample_rate = atof(buffer);
-            if (sample_rate <= 0 || sample_rate > 1) {
+            /* negated form so that NaN is rejected as well */
+            if (!(sample_rate > 0 && sample_rate <= 1)) {
               ERROR("invalid sample rate for minisim: %s\n", str);
               exit(1);
             }
