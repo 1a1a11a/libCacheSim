@@ -283,6 +283,11 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
   sampler_t *sampler = nullptr;
   if (sample_rate > 0.5) {
     INFO("sample_rate is too large, do not sample\n");
+    /* the whole trace is replayed, so the miniature caches have to be
+     * full-sized; leaving the requested rate in place would scale them down
+     * while every request still reached them, reporting the miss ratios of
+     * smaller caches than were asked for */
+    sample_rate = 1.0;
   } else {
     sampler = create_spatial_sampler(sample_rate);
     set_spatial_sampler_salt(sampler,
@@ -306,6 +311,21 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
   reset_reader(reader_);
   reader_->init_params.sampler = sampler;
   reader_->sampler = sampler;
+
+  /* Belady and BeladySize read next_access_vtime, which ordinary readers leave
+   * at -2, so on any other trace they would produce a plausible-looking but
+   * meaningless curve rather than failing. cachesim checks this before building
+   * the cache; do the same here. */
+  if (strcasecmp(params_.cache_algorithm_str, "belady") == 0 ||
+      strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
+    if (reader_->trace_type != ORACLE_GENERAL_TRACE &&
+        reader_->trace_type != LCS_TRACE) {
+      ERROR(
+          "%s needs future information, so it only works on oracleGeneral and "
+          "lcs traces; convert with ./bin/traceConv\n",
+          params_.cache_algorithm_str);
+    }
+  }
 
   // 3. run the simulate_with_multi_caches
   cache_t *caches[MAX_MRC_PROFILE_POINTS];

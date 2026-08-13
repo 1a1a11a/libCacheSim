@@ -346,6 +346,44 @@ if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
 		--algo=nosuchalgo --profiler=MINISIM --profiler-params=FIX_RATE,0.01,4 \
 		--size=0.1,0.5,10
 
+	# Above 0.5 MINISIM stops sampling and replays the whole trace, so the
+	# miniature caches have to be full-sized. Scaling them by the requested rate
+	# reported the miss ratios of smaller caches than were asked for.
+	for rate in 0.6 0.75 1; do
+		expect_ok "mrcProfiler MINISIM unsampled at rate ${rate}" \
+			"${BIN_DIR}/mrcProfiler" "${TRACE_ORACLE}" oracleGeneral \
+			--algo=LRU --profiler=MINISIM --profiler-params="FIX_RATE,${rate},4" \
+			--size=100MB,500MB,3
+	done
+
+	# With sampling off MINISIM replays everything, so it should agree with a
+	# straight cachesim run rather than approximate it.
+	# first row is the 100MB point; 104857600B
+	_minisim_unsampled=$("${BIN_DIR}/mrcProfiler" "${TRACE_ORACLE}" oracleGeneral \
+		--algo=LRU --profiler=MINISIM --profiler-params=FIX_RATE,0.75,4 \
+		--size=100MB,500MB,3 2>/dev/null | grep '^104857600B' | awk '{printf "%.4f", $2}')
+	_cachesim_exact=$("${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral lru 100mb \
+		2>/dev/null | tail -1 | grep -oE 'miss ratio [0-9.]+' | head -1 | awk '{printf "%.4f", $3}')
+	if [[ "${_minisim_unsampled}" == "${_cachesim_exact}" ]]; then
+		_report 0 ""
+	else
+		_report 1 "unsampled MINISIM (${_minisim_unsampled}) should match cachesim (${_cachesim_exact})"
+	fi
+
+	# belady and beladySize read next_access_vtime, which ordinary readers leave
+	# unset, so on a non-oracle trace they must be refused rather than producing
+	# a plausible-looking curve.
+	for algo in belady beladySize; do
+		expect_clean_error "mrcProfiler MINISIM rejects ${algo} on a vscsi trace" \
+			"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
+			--algo="${algo}" --profiler=MINISIM --profiler-params=FIX_RATE,0.01,4 \
+			--size=0.1,0.5,10
+		expect_ok "mrcProfiler MINISIM accepts ${algo} on an oracle trace" \
+			"${BIN_DIR}/mrcProfiler" "${TRACE_ORACLE}" oracleGeneral \
+			--algo="${algo}" --profiler=MINISIM --profiler-params=FIX_RATE,0.01,4 \
+			--size=0.1,0.5,10
+	done
+
 	expect_ok "mrcProfiler SHARDS FIX_SIZE" \
 		"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
 		--algo=LRU --profiler=SHARDS --profiler-params=FIX_SIZE,2048,42 --size=100MB,1GB,10
