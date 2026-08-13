@@ -20,7 +20,7 @@ keywords:
   - eviction algorithm
   - miss ratio curve
   - trace analysis
-license: GPL-3.0
+license: GPL-3.0-only
 preferred-citation:
   type: conference-paper
   title: FIFO Queues Are All You Need for Cache Eviction

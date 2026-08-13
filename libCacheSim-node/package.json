@@ -21,7 +21,7 @@
     "libcachesim"
   ],
   "author": "Murphy Tian",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "description": "Node.js bindings for libCacheSim - A high-performance cache simulator and analysis library supporting LRU, FIFO, S3-FIFO, Sieve and other caching algorithms",
   "repository": {
     "type": "git",
