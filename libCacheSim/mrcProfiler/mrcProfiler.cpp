@@ -21,6 +21,9 @@
  * rounds to this value and warns under -Wimplicit-const-int-float-conversion */
 static constexpr double kHashSpaceSize = 18446744073709551616.0;
 
+/* log2 of the hash table size for the miniature caches MINISIM simulates */
+static constexpr int kMiniSimHashPower = 20;
+
 /* whether a reader fills in req->next_access_vtime, which the Belady policies
  * need; every other reader leaves it at -2.
  *
@@ -352,13 +355,24 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
     }
   }
 
+  /* BeladySize picks its victim by drawing samples from the hash table, so an
+   * oversized table costs memory and leaves the sampler probing empty buckets.
+   * cachesim shrinks it by 8 before constructing the cache; do the same here,
+   * since the miniature caches are built straight from the registry and would
+   * otherwise get a 1M-slot table each. Hyperbolic needs no such line because
+   * Hyperbolic_init already shrinks its own. */
+  int minisim_hashpower = kMiniSimHashPower;
+  if (strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
+    minisim_hashpower = MAX(minisim_hashpower - 8, 16);
+  }
+
   // 3. run the simulate_with_multi_caches
   cache_t *caches[MAX_MRC_PROFILE_POINTS];
   for (size_t i = 0; i < params_.profile_size.size(); i++) {
     size_t _cache_size = mrc_size_vec[i] * sample_rate;
     common_cache_params_t cc_params = {.cache_size = _cache_size,
                                        .default_ttl = 0,
-                                       .hashpower = 20,
+                                       .hashpower = minisim_hashpower,
                                        .consider_obj_metadata = false};
     caches[i] = create_cache_using_plugin(params_.cache_algorithm_str,
                                           cc_params, nullptr);
