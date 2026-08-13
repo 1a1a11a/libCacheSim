@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.6
+**Census version:** 1.0.7
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -38,12 +38,20 @@ an order of magnitude, and the distinction is the single most important integrit
 | **U** | Lead identified, but the cited source does not substantiate it; retained for manual follow-up. |
 
 **A grade measures evidence strength for the relationship its own section claims — never for
-libCacheSim adoption in general.** The two relationships differ by section:
+libCacheSim adoption in general.** Each section claims something different:
 
-- Sections 2–4 claim **use of libCacheSim**, so a grade there speaks to that.
-- Section 5 claims **adoption of an algorithm designed in libCacheSim**, so an A there certifies
-  a SIEVE implementation and says nothing about whether that project uses libCacheSim. Reading a
-  Section 5.2 A as libCacheSim adoption would commit exactly the conflation the rule above forbids.
+- **Section 2** claims only that a **published fact was measured as stated** on the date given.
+  Stars, package releases and dependency counts describe how libCacheSim is *distributed*; none of
+  them shows that anyone uses it. An A there means the number was read correctly, nothing more.
+- **Sections 3–4** claim **use of libCacheSim**, so a grade there speaks to that.
+- **Section 5** claims **adoption of an algorithm designed in libCacheSim**, so an A there
+  certifies a SIEVE implementation and says nothing about whether that project uses libCacheSim.
+  Reading a Section 5.2 A as libCacheSim adoption would commit exactly the conflation the rule
+  above forbids.
+
+Grades are therefore not comparable across sections. Counting every A in this document as an
+adopter would inflate the census with star counts and SIEVE ports — the failure this rubric exists
+to prevent.
 
 ### Verification protocol
 
@@ -95,7 +103,12 @@ than inherited from the upstream list, which is how the two ungraded entries the
 
 ## 2. Distribution and repository signals
 
-Measured facts about how libCacheSim is published and consumed. All figures fetched 2026-08-12.
+Measured facts about how libCacheSim is **published**. All figures fetched 2026-08-12.
+
+These are distribution signals, not adoption evidence: a star, a package release, or the existence
+of a binding repository shows availability, not that anyone runs the simulator. A Grade A here
+certifies that the value was read correctly on the date shown — see
+[Confidence grades](#confidence-grades).
 
 | Signal | Value | Source | Grade |
 | --- | --- | --- | --- |
@@ -301,9 +314,13 @@ paper that did not mention libCacheSim in one snapshot may cite it in a later ve
 
 1. Bump **Census version** (semver: patch for corrections, minor for new entries, major for a
    changed methodology) and set a new **Snapshot date**.
-2. For every new entry, record: artifact identity, a verbatim quote showing libCacheSim use, the
-   source URL, the verification date, a confidence grade, and whether the adopter is independent
-   of the upstream project.
+2. For every new entry, record: artifact identity, the source URL, the verification date, a
+   confidence grade, and **a verbatim quote establishing the relationship its section claims** —
+   libCacheSim use for Sections 3–4, an algorithm implementation for Section 5, the measured value
+   for Section 2. Do not demand a libCacheSim-use quote from a Section 5 entry; an algorithm
+   adopter need not be a libCacheSim user, and requiring one would force the conflation rule 5
+   forbids. Record upstream independence for **Section 3 entries only** — it is what distinguishes
+   third-party validation from the project's own work, and it is meaningless for the others.
 3. Re-fetch every source before restating it. Do not carry an unverified entry forward with a
    fresh date.
 4. Move anything that fails re-verification into [Section 6](#6-checked-and-excluded) with the
@@ -345,7 +362,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.6},
+  version      = {1.0.7},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -354,7 +371,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.6, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.7, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -366,6 +383,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.7 | 2026-08-13 | Split Section 2 out of the "claims use of libCacheSim" grouping introduced in 1.0.6: stars, package releases and dependency counts are distribution signals, so an A there certifies only that the value was read correctly. Added that grades are not comparable across sections. Parameterized the update checklist by target section — a Section 5 entry cannot supply a libCacheSim-use quote without committing the conflation the rules forbid, and upstream independence is now recorded for Section 3 only. |
 | 1.0.6 | 2026-08-13 | Redefined the grade rubric in terms of *the relationship each section claims* rather than "use of libCacheSim". The old wording made a Section 5.2 Grade A read as certifying libCacheSim adoption, which is the exact conflation Section 1 forbids; grades there certify a SIEVE implementation and nothing more. Also scoped the pinning claim to the Grade A GitHub links it actually covers — the two Grade U rows are unpinned on purpose, and SkiftOS keeps a branch URL because reproducing its 404 is the evidence. |
 | 1.0.5 | 2026-08-13 | Pinned the 3L-Cache README quote to revision `134cd15`, since that quote is also repository text that can change. Replaced the immudb evidence link: a merged pull request is not immutable, since GitHub titles stay editable after merge, so quoting a PR title is not a durable citation. The row now cites `embedded/cache/cache.go` pinned at `1a5f54e`, verified to read "Cache implements the SIEVE cache replacement policy" with a `hand` pointer and per-entry `visited` flags. Every GitHub link in Section 5.2 is now pinned; only the PostgREST docs URL remains mutable. |
 | 1.0.4 | 2026-08-13 | Added the missing `Date checked` column to Section 6, completing the coverage the introduction promises: every table in the document now records when its evidence was last checked. Noted why that column matters most for excluded candidates — a dead end is only trustworthy as of its last check, and a paper may cite libCacheSim in a later version. |
