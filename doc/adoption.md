@@ -123,8 +123,9 @@ link, which is the default when none can be shown.
 ### Contributed from outside the project
 
 Algorithms and infrastructure given back upstream by people with no project affiliation.
-Counted here rather than above, because contributing a feature is a different claim from
-adopting the tool.
+**These are counted separately from the adoption total**, because contributing a feature is a
+different claim from adopting the tool, and for some of these rows the contribution is the
+only evidence there is.
 
 | Who | Contribution | Evidence | Source |
 |---|---|---|---|
@@ -279,6 +280,6 @@ source, and the date you verified it. Bump the version and append to the changel
 
 | Version | Date | Change |
 |---|---|---|
-| 1.2.0 | 2026-08-13 | Added 20 entries from a GitHub sweep: all 111 forks triaged against upstream's object graph, ~80 public code-search queries, the repository's own 318 issues and PRs and 7 discussions, dependency and archive graphs, the citation graphs of four papers, and the Chameleon Trovi catalogue. New: two journal papers (SIGMETRICS '26 and IEEE TMC), 11 third-party forks including MongoDB's WiredTiger emulation, the SOSP '23 artifact-evaluation committee, 5 outside contributors, 4 trace-format borrowers, and Apache Traffic Server. Corrected the claim that forks are almost all dormant — 56 of 111 carry novel commits. 39 entries, all third-party, plus 4 distribution channels. |
+| 1.2.0 | 2026-08-13 | Added 20 entries from a GitHub sweep: all 111 forks triaged against upstream's object graph, ~80 public code-search queries, the repository's own 318 issues and PRs and 7 discussions, dependency and archive graphs, the citation graphs of four papers, and the Chameleon Trovi catalogue. New: two journal papers (SIGMETRICS '26 and IEEE TMC), 11 third-party forks including MongoDB's WiredTiger emulation, the SOSP '23 artifact-evaluation committee, 5 outside contributors, 4 trace-format borrowers, and Apache Traffic Server. Corrected the claim that forks are almost all dormant — 56 of 111 carry novel commits. 34 third-party adoption entries — 15 research, 11 forks, 8 practitioner and community — plus 5 outside contributions, 4 distribution channels, 10 borrowed-implementation and downstream rows, and repository signals, each counted separately. |
 | 1.1.0 | 2026-08-13 | Removed first-party entries: the section of the project's own papers and artifacts, two Chameleon artifacts by project co-authors, and the CacheBench and cache_dataset ecosystem rows. Every remaining entry is third-party. 19 entries — 13 third-party research, 6 practitioner, community, and ecosystem — plus 4 distribution channels. Repository signals refreshed. |
 | 1.0.0 | 2026-08-13 | First edition. 31 entries — 8 first-party papers and artifacts, 13 third-party works, 7 practitioner and community entries, 3 ecosystem projects — of which 19 are third-party, plus 4 distribution channels. Separately recorded and not counted: the OSDI '20 paper that introduced the simulator, 4 borrowed-implementation and trace-format rows, 2 downstream algorithm adopters, and repository signals. |
