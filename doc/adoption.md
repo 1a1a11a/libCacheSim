@@ -132,7 +132,7 @@ only evidence there is.
 | Zhelong Zhao (`zztaki`) — Huazhong University of Science and Technology | The entire prefetch module and its three algorithms — Mithril, OBL and PG — negotiated through the `handle_find`/`handle_evict` interface over five merged PRs. A third-party SIGMETRICS '26 paper now uses them as baselines ([§1](#1-third-party-research)) | "I will add the `Mithril` algorithm that was mentioned in [the previous issue](https://github.com/1a1a11a/PyMimircache/issues/17). … Based on the above, I will submit a pull request. 😀" [`prefetch/`](/libCacheSim/cache/prefetch) ships here | [PR #17](https://github.com/1a1a11a/libCacheSim/pull/17), [#57](https://github.com/1a1a11a/libCacheSim/pull/57), [#59](https://github.com/1a1a11a/libCacheSim/pull/59) |
 | Nathaniel Filardo (`nwf-msr`) — Microsoft | Found and fixed a parameter-propagation bug in the Random policies by reading the eviction sources | "`ccache_params_copy` in `Random.c` is set but not used thereafter: … I suspect the `ccache_params` on line 51 wants to be `ccache_params_copy` instead?" | [issue #51](https://github.com/1a1a11a/libCacheSim/issues/51), [PR #52](https://github.com/1a1a11a/libCacheSim/pull/52) |
 | Liu Yang (`YangLiuWillow`) — Yale University | The first Rust bindings, working through `bindgen`'s `static inline` limitation and filing context upstream with rust-bindgen | "I created a new directory `libcachesim-rs` … With these, I write a Rust equivalent `test.c` file in `main.rs`" Closed unmerged; the design preceded the official bindings | [issue #125](https://github.com/1a1a11a/libCacheSim/issues/125#issuecomment-2746566305), [YangLiuWillow/libCacheSim](https://github.com/YangLiuWillow/libCacheSim/tree/a824c93630b7780a4f087460fd6d3a4d03b61de2) |
-| Mack Wang (`mack-w`) | Took on removing the GLib dependency: audited every call site, chose a header-only hash map, and migrated the reader and MRC code | "forked repo: [mack-w/libCacheSim](https://github.com/mack-w/libCacheSim) … I checked compiled binaries and found that the majority of references to gLib are hash table functions." His fork carries `include/libCacheSim/hashmap.h`, which upstream does not | [issue #133](https://github.com/1a1a11a/libCacheSim/issues/133#issuecomment-2879434943), [mack-w/libCacheSim](https://github.com/mack-w/libCacheSim/tree/6cecdd854fecead337638c6b513f353c57222d5e) |
+| Mack Wang (`mack-w`) | Took on removing the GLib dependency: audited every call site, chose a header-only hash map, and migrated the reader and MRC code | "forked repo: [mack-w/libCacheSim](https://github.com/mack-w/libCacheSim) … I checked compiled binaries and found that the majority of references to gLib are hash table functions." His fork carries `include/libCacheSim/hashmap.h`, a path that no commit on upstream `develop` has ever touched | [issue #133](https://github.com/1a1a11a/libCacheSim/issues/133#issuecomment-2879434943), [mack-w/libCacheSim](https://github.com/mack-w/libCacheSim/tree/6cecdd854fecead337638c6b513f353c57222d5e) |
 | Mohammad Elsharqawy | An implementation of MultiQueue (ATC '01) with a validation table and documented deviations from the paper | "MQ with `n-queue=1` reproduces LRU exactly, as the paper predicts. Both give miss ratio 0.8299 and byte miss ratio 0.9730 on cloudPhysicsIO at 32 MiB." Open at the census date | [PR #318](https://github.com/1a1a11a/libCacheSim/pull/318) |
 
 Smaller merged fixes came from outside too — a WTinyLFU over-eviction bug found by one
@@ -235,14 +235,30 @@ From the GitHub API on 2026-08-13. These measure attention, not deployment.
 The issue and PR counts are split because the API's `open_issues_count` field — 30 here —
 sums both, and reading it as an issue count overstates the backlog.
 
-**Forks, measured rather than assumed.** All 111 were resolved with `git ls-remote` and
-compared against upstream's own object graph. Fifty-six have at least one branch tip that is
-not an ancestor of any upstream ref; of those, eleven carry substantive third-party work and
-are listed in [§2](#2-third-party-forks), seventeen are student projects from the
-maintainer's course, and the remainder are stale copies of upstream branches, branches of
-already-merged PRs, or editor- and doc-only edits. The fifty-five with no novel commits are
-plain mirrors. A count of forks is therefore not a count of users in either direction: it
-overstates adoption by a factor of ten, and it hides the forks that matter.
+**Forks, measured rather than assumed.** `forks_count` is 111; the API lists 109, the other
+two being forks of a fork. All 111 were resolved with `git ls-remote`, and every branch tip
+was checked for commits reachable from none of upstream's 30 branches and 244 pull-request
+refs. **Fifty-three carry no such commit** — plain mirrors. The other fifty-eight:
+
+| Fork group | Count |
+|---|---|
+| Substantive independent third-party work — the ten forks in [§2](#2-third-party-forks) | 10 |
+| Smaller but genuine third-party work — a WATT policy, sampled LRU and SIEVE variants, a Rust MRC tool, Docker packaging, a pybind11 wrapper, a 3L-Cache ablation, a standalone driver, 2021 work on the `exec` driver | 8 |
+| Tied to an entry counted elsewhere in this census, through its paper or its author | 8 |
+| Project members, co-authors, and alternate accounts | 6 |
+| Student projects from the maintainer's course | 14 |
+| A novel tip but no novel work: stale copies of upstream branches, editor and config edits, one machine-generated Rust port, and one 0-byte "algorithm" file | 12 |
+
+Counting pull-request refs as upstream is what makes that table honest in the other
+direction: work offered upstream as a PR is reachable from `refs/pull/*/head`, so the GLib
+removal in [§3](#contributed-from-outside-the-project) scores zero novel commits here even
+though it is absent from `develop` — a mirror by this measure, real work by any other.
+
+A fork count is therefore not a user count, and the multiple depends entirely on where the
+threshold sits: **26 of 111** carry independent third-party work, roughly a quarter, and
+**10 of 111** carry substantive research work, an order of magnitude fewer. The earlier
+editions of this census said of forks that "almost all are dormant copies of upstream text"; that
+was wrong, and wrong in the direction that flatters nobody — it hid the forks that matter.
 
 ---
 
@@ -280,6 +296,6 @@ source, and the date you verified it. Bump the version and append to the changel
 
 | Version | Date | Change |
 |---|---|---|
-| 1.2.0 | 2026-08-13 | Added 20 entries from a GitHub sweep: all 111 forks triaged against upstream's object graph, ~80 public code-search queries, the repository's own 318 issues and PRs and 7 discussions, dependency and archive graphs, the citation graphs of four papers, and the Chameleon Trovi catalogue. New: two journal papers (SIGMETRICS '26 and IEEE TMC), 11 third-party forks including MongoDB's WiredTiger emulation, the SOSP '23 artifact-evaluation committee, 5 outside contributors, 4 trace-format borrowers, and Apache Traffic Server. Corrected the claim that forks are almost all dormant — 56 of 111 carry novel commits. 34 third-party adoption entries — 15 research, 11 forks, 8 practitioner and community — plus 5 outside contributions, 4 distribution channels, 10 borrowed-implementation and downstream rows, and repository signals, each counted separately. |
+| 1.2.0 | 2026-08-13 | Added 20 entries from a GitHub sweep: all 111 forks triaged against upstream's object graph, ~80 public code-search queries, the repository's own 318 issues and PRs and 7 discussions, dependency and archive graphs, the citation graphs of four papers, and the Chameleon Trovi catalogue. New: two journal papers (SIGMETRICS '26 and IEEE TMC), a third-party forks section with 11 rows including MongoDB's WiredTiger emulation, the SOSP '23 artifact-evaluation committee, 5 outside contributors, 4 trace-format borrowers, and Apache Traffic Server. Corrected the claim that forks are almost all dormant: 58 of 111 carry a commit reachable from no upstream ref, and the 58 are partitioned in §6. 34 third-party adoption entries — 15 research, 11 forks, 8 practitioner and community — plus 5 outside contributions, 4 distribution channels, 10 borrowed-implementation and downstream rows, and repository signals, each counted separately. |
 | 1.1.0 | 2026-08-13 | Removed first-party entries: the section of the project's own papers and artifacts, two Chameleon artifacts by project co-authors, and the CacheBench and cache_dataset ecosystem rows. Every remaining entry is third-party. 19 entries — 13 third-party research, 6 practitioner, community, and ecosystem — plus 4 distribution channels. Repository signals refreshed. |
 | 1.0.0 | 2026-08-13 | First edition. 31 entries — 8 first-party papers and artifacts, 13 third-party works, 7 practitioner and community entries, 3 ecosystem projects — of which 19 are third-party, plus 4 distribution channels. Separately recorded and not counted: the OSDI '20 paper that introduced the simulator, 4 borrowed-implementation and trace-format rows, 2 downstream algorithm adopters, and repository signals. |
