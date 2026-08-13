@@ -14,9 +14,9 @@ absence of one is the finding. Those rows record what the source *failed* to sho
 root with no implementing file, or a link that now returns 404.
 
 **Section 6 is different by design.** It holds candidates that were **investigated** but did not
-enter the census — some refuted, some never reachable at all — and records a **disposition**
-rather than a grade — grading a paper that turned out not to
-mention libCacheSim would imply it belongs here. Only the **Excluded** rows are settled; the
+enter the census: some refuted, some never reachable at all. Those rows record a **disposition**
+rather than a grade, because grading a paper that turned out not to mention libCacheSim would
+imply it belongs here. Only the **Excluded** rows are settled; the
 **Unverified** and **Deferred** rows are open follow-up work, and appear in the
 [next-revision priorities](#7-how-to-update-this-census). Nothing in the section is deleted, so a
 later revision can tell a refuted candidate from one that was never checked.
