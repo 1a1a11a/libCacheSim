@@ -216,6 +216,30 @@ for algo in wtinyLFU qdlp s3fifo slru lru; do
 		--num-req=20000 --consider-obj-metadata=true
 done
 
+# WTinyLFU holds a window and a main cache whose per-object overheads differ
+# (LRU and SLRU reserve 16 bytes, FIFO and Clock none), so each admission check
+# has to use its own.
+for main in FIFO LRU SLRU sieve ARC clock; do
+	expect_ok "wtinyLFU main-cache=${main} with metadata" \
+		"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral wtinyLFU 10mb \
+		--num-req=20000 -e "main-cache=${main}" --consider-obj-metadata=true
+done
+
+echo "running hash table sizing tests"
+
+# --hashpower replaces a heuristic that keyed off the trace path. Sizing the
+# table down is the point of it, so check the range is usable and validated.
+for hp in 24 20 16 12; do
+	expect_output "cachesim --hashpower=${hp}" "miss ratio" \
+		"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral lru 10mb \
+		--num-req=20000 "--hashpower=${hp}"
+done
+for hp in 0 -1 40 99; do
+	expect_clean_error "cachesim rejects --hashpower=${hp}" \
+		"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral lru 10mb \
+		--num-req=20000 "--hashpower=${hp}"
+done
+
 echo "running SLRU parameter validation tests"
 
 # n-seg divides the cache size and the reported percentages, and seg-size fills
@@ -284,10 +308,21 @@ if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
 			--size=0.1,0.5,10
 	done
 
-	# Not covered: --profiler=MINISIM. It resolves cache constructors with
-	# dlsym() against the mrcProfiler executable, but those live in the static
-	# library and nothing references them, so the linker never pulls them in and
-	# it aborts with "undefined symbol: FIFO_init". Broken on develop too.
+	# MINISIM looks its eviction algorithm up by name. It used to do that with
+	# dlsym() against this executable, which cannot work when the constructors
+	# sit in an unreferenced archive member, so every run aborted with
+	# "undefined symbol: FIFO_init". Cover the non-LRU algorithms it exists for.
+	for algo in FIFO ARC S3FIFO sieve twoq clock lfu; do
+		expect_ok "mrcProfiler MINISIM with ${algo}" \
+			"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
+			--algo="${algo}" --profiler=MINISIM --profiler-params=FIX_RATE,0.01,4 \
+			--size=0.1,0.5,10
+	done
+
+	expect_clean_error "mrcProfiler MINISIM with an unknown algorithm" \
+		"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
+		--algo=nosuchalgo --profiler=MINISIM --profiler-params=FIX_RATE,0.01,4 \
+		--size=0.1,0.5,10
 
 	expect_ok "mrcProfiler SHARDS FIX_SIZE" \
 		"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
