@@ -44,35 +44,18 @@ static inline cache_t *create_cache(const char *trace_path,
   /* The name to constructor mapping lives in the library
    * (cache/cacheAlgoRegistry.c) so that the MINISIM profiler, which only knows
    * the algorithm by name, shares one table with the CLI. The cases below need
-   * more than a lookup — a smaller hash table, a default parameter, or a check
-   * that the trace carries the future information the algorithm needs — so
-   * they are handled here rather than in the registry. */
+   * more than a lookup — a smaller hash table, or a check that the trace
+   * carries the future information the algorithm needs — so they are handled
+   * here rather than in the registry.
+   *
+   * tinyLFU used to be one of them, appending window-size=0.01 when the caller
+   * had not given one. WTinyLFU's DEFAULT_PARAMS already sets exactly that
+   * before applying the caller's parameters, so the append never changed
+   * anything; it is a plain alias in the registry now, which is also what makes
+   * it reachable from the MRC profiler. */
   if (strcasecmp(eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = Hyperbolic_init(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "tinyLFU") == 0) {
-    if (eviction_params == NULL || eviction_params[0] == '\0') {
-      cache = WTinyLFU_init(cc_params, NULL);
-    } else {
-      const char *window_size = strstr(eviction_params, "window-size=");
-      if (window_size == NULL) {
-        // Calculate exact size needed: original + ",window-size=0.01" + null
-        // terminator
-        size_t new_params_len =
-            strlen(eviction_params) + strlen(",window-size=0.01") + 1;
-        char *new_params = (char *)malloc(new_params_len);
-        if (new_params == NULL) {
-          ERROR("failed to allocate memory for new_params\n");
-          abort();
-        }
-        snprintf(new_params, new_params_len, "%s,window-size=0.01",
-                 eviction_params);
-        cache = WTinyLFU_init(cc_params, new_params);
-        free(new_params);  // Free the allocated memory
-      } else {
-        cache = WTinyLFU_init(cc_params, eviction_params);
-      }
-    }
   } else if (strcasecmp(eviction_algo, "belady") == 0) {
     if (strcasestr(trace_path, "oracleGeneral") == NULL &&
         strcasestr(trace_path, "lcs") == NULL) {

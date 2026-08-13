@@ -75,7 +75,13 @@ static inline reader_t *open_trace(const char *path, trace_type_e type,
                                    const reader_init_param_t *reader_init_param);
 ```
 
-Object ids are hashed unless you set `obj_id_is_num`, which you should do when the id field holds numbers.
+> [!IMPORTANT]
+> `default_reader_init_params()` sets `obj_id_is_num` to **true**, which is the opposite of what `cachesim` does. Set it to `false` yourself if the id field holds strings. The csv reader hashes string ids only on the `false` path; with `true` it runs them through `strtoull()`, which warns and yields `0`, so every object collapses into one and the miss ratio is meaningless.
+
+```c
+reader_init_param_t p = default_reader_init_params();
+p.obj_id_is_num = false;   /* string ids: hash them */
+```
 
 ### Iterating over requests
 

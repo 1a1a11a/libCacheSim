@@ -134,6 +134,23 @@ expect_clean_error "cachesim csv without obj-id-is-num" \
 	"${BIN_DIR}/cachesim" "${TRACE_CSV}" csv lru 1gb \
 	-t "time-col=2, obj-id-col=5, obj-size-col=4"
 
+# String ids must be hashed, not run through strtoull. Getting this wrong
+# collapses every object onto id 0, which shows up as an implausibly low miss
+# ratio rather than an error. Four distinct objects in six requests, so a cache
+# large enough to hold them all misses exactly four times.
+cat >str-ids.csv <<'CSV'
+time,id,size
+1,alpha,100
+2,beta,200
+3,alpha,100
+4,gamma,300
+5,beta,200
+6,delta,400
+CSV
+expect_output "cachesim hashes string object ids" "miss ratio 0\.6667" \
+	"${BIN_DIR}/cachesim" str-ids.csv csv lru 1mb \
+	-t "time-col=1,obj-id-col=2,obj-size-col=3,has-header=true"
+
 echo "running -e print tests"
 
 # `-e print` runs before the cache is fully built, so the reporting path must
@@ -159,7 +176,7 @@ ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
 	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob nop
 	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifod s3fifov0
-	sieve size slru slruv0 twoq wtinyLFU"
+	sieve size slru slruv0 tinyLFU twoq wtinyLFU"
 
 n_skipped=0
 for algo in ${ALL_ALGOS}; do
@@ -334,7 +351,9 @@ if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
 	# dlsym() against this executable, which cannot work when the constructors
 	# sit in an unreferenced archive member, so every run aborted with
 	# "undefined symbol: FIFO_init". Cover the non-LRU algorithms it exists for.
-	for algo in FIFO ARC S3FIFO sieve twoq clock lfu; do
+	# tinyLFU included: it is a cachesim alias, so name-based lookup has to
+	# accept it too, or the promise the registry documents is not kept.
+	for algo in FIFO ARC S3FIFO sieve twoq clock lfu tinyLFU; do
 		expect_ok "mrcProfiler MINISIM with ${algo}" \
 			"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
 			--algo="${algo}" --profiler=MINISIM --profiler-params=FIX_RATE,0.01,4 \

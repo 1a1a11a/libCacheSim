@@ -113,7 +113,9 @@ open_trace(data_path, PLAIN_TXT_TRACE, NULL);
 ```
 
 #### Setup a csv reader
-The fields are 1-indexed and must match the trace. The sample `data/cloudPhysicsIO.csv` has the header `version,time,op,size,lbn`, so time is field 2, size is field 4, and the object id is field 5. Set `obj_id_is_num` when the id column holds numbers, otherwise the ids are hashed.
+The fields are 1-indexed and must match the trace. The sample `data/cloudPhysicsIO.csv` has the header `version,time,op,size,lbn`, so time is field 2, size is field 4, and the object id is field 5.
+
+`obj_id_is_num` says whether the id column holds numbers. Note that `default_reader_init_params()` sets it to **true**, unlike `cachesim`, so a trace with string ids needs it set to `false` explicitly — otherwise the reader parses them with `strtoull()` and every id becomes `0` rather than being hashed.
 
 ```c
 reader_init_param_t init_params_csv = {.delimiter = ',',

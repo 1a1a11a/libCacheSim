@@ -69,6 +69,7 @@ static const cache_algo_entry_t g_cache_algos[] = {
     {"size", Size_init},
     {"slru", SLRU_init},
     {"slruv0", SLRUv0_init},
+    {"tinyLFU", WTinyLFU_init},
     {"twoq", TwoQ_init},
     {"wtinyLFU", WTinyLFU_init},
     /* these need future information and are only valid on oracle traces, so
