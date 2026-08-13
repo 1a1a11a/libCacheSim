@@ -1,7 +1,7 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.0
-**Snapshot date:** 2026-08-12
+**Census version:** 1.0.1
+**Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
 A source-linked inventory of documented libCacheSim adoption. Every entry below carries a
@@ -42,6 +42,10 @@ an order of magnitude, and the distinction is the single most important integrit
 Each source URL was fetched and read on the verification date shown. Where a source is a PDF,
 the full text was searched for `libCacheSim` / `libcachesim` before the entry was accepted. Two
 candidate papers surfaced by search engines were rejected this way (Section 6).
+
+Third-party lists are not taken on trust: every per-file link in
+[Section 5.2](#52-named-sieve-adopters-with-direct-source-links) was fetched individually rather
+than inherited from the upstream list, which is how the two ungraded entries there were found.
 
 ### Known limitations
 
@@ -127,8 +131,10 @@ Public artifacts that build on, fork, or run libCacheSim. Verified 2026-08-12.
 ### 3.4 SCION (PingCAP)
 
 - **Artifact:** *SCION: Size-aware Policy Orchestration for Nonstationary Object Caches*,
-  [arXiv:2605.01055v1](https://arxiv.org/html/2605.01055) (2026-03-27). Qizhi Wang, PingCAP
-  Data & AI-Innovation Lab.
+  [arXiv:2605.01055v1](https://arxiv.org/abs/2605.01055). Qizhi Wang, PingCAP
+  Data & AI-Innovation Lab. Submission history on the arXiv abstract page reads
+  "Fri, 27 Mar 2026"; note that this does not match the `2605` (May 2026) identifier prefix.
+  The date above is arXiv's own stated submission date, not an inference from the identifier.
 - **Evidence (quoted):** "We implement a trace-driven benchmark in C++ on top of libCacheSim."
   The authors additionally report integrating AdaptiveClimb/DynamicAdaptiveClimb into libCacheSim
   and building a trace conversion pipeline.
@@ -197,31 +203,36 @@ because implementing an algorithm is not using the simulator.
 
 ### 5.2 Named SIEVE adopters with direct source links
 
-From the SIEVE project's adopters list ([sievecache.com](https://sievecache.com/), which redirects
-to [cachemon.github.io/SIEVE-website](https://cachemon.github.io/SIEVE-website/)), fetched
-2026-08-12. Each entry below links to the specific implementing file or pull request, so each is
-independently checkable.
+Entries originate from the SIEVE project's adopters list
+([sievecache.com](https://sievecache.com/), which redirects to
+[cachemon.github.io/SIEVE-website](https://cachemon.github.io/SIEVE-website/)), fetched 2026-08-12.
+**Every link below was then fetched individually on 2026-08-13** and graded on what that fetch
+actually showed — the list itself is treated as a lead, not as evidence.
 
-| System | Evidence link |
-| --- | --- |
-| immudb | [PR #1971](https://github.com/codenotary/immudb/pull/1971) |
-| TiDB | [`pkg/infoschema/sieve.go`](https://github.com/pingcap/tidb/blob/master/pkg/infoschema/sieve.go) |
-| Pelikan | [pelikan-io/pelikan](https://github.com/pelikan-io/pelikan) |
-| Nyrkiö | [`backend/core/sieve.py`](https://github.com/nyrkio/nyrkio/blob/main/backend/core/sieve.py) |
-| SkiftOS | [`src/libs/karm-base/sieve.h`](https://github.com/skift-org/skift/blob/main/src/libs/karm-base/sieve.h) |
-| Dragonfly | [`src/core/compact_object.h`](https://github.com/dragonflydb/dragonfly/blob/main/src/core/compact_object.h#L124) |
-| dnscrypt-proxy | [`dnscrypt-proxy/plugin_cache.go`](https://github.com/DNSCrypt/dnscrypt-proxy/blob/master/dnscrypt-proxy/plugin_cache.go) |
-| encrypted-dns-server | [`src/cache.rs`](https://github.com/DNSCrypt/encrypted-dns-server/blob/master/src/cache.rs) |
-| PostgREST | [JWT cache docs](https://docs.postgrest.org/en/latest/references/auth.html#jwt-cache) |
-| Ceph | [`src/common/web_cache.h`](https://github.com/ceph/ceph/blob/main/src/common/web_cache.h) |
+| System | Evidence link | What the fetch showed | Grade |
+| --- | --- | --- | --- |
+| immudb | [PR #1971](https://github.com/codenotary/immudb/pull/1971) | "Replace LRU with SIEVE replacement policy", merged 2024-05-17 | A |
+| TiDB | [`pkg/infoschema/sieve.go`](https://github.com/pingcap/tidb/blob/master/pkg/infoschema/sieve.go) | `type Sieve[K comparable, V any] struct`; comment cites the SIEVE paper | A |
+| Nyrkiö | [`backend/core/sieve.py`](https://github.com/nyrkio/nyrkio/blob/main/backend/core/sieve.py) | "An implementation of the SIEVE cache eviction algorithm" | A |
+| Dragonfly | [`src/core/compact_object.h`](https://github.com/dragonflydb/dragonfly/blob/main/src/core/compact_object.h#L124) | `TOUCHED` hot/cold bit, comment links `nsdi24-SIEVE.pdf` | A |
+| dnscrypt-proxy | [`dnscrypt-proxy/plugin_cache.go`](https://github.com/DNSCrypt/dnscrypt-proxy/blob/master/dnscrypt-proxy/plugin_cache.go) | Imports `go-sieve-cache`; uses `sievecache.NewSharded` | A |
+| encrypted-dns-server | [`src/cache.rs`](https://github.com/DNSCrypt/encrypted-dns-server/blob/master/src/cache.rs) | `use sieve_cache::SieveCache` | A |
+| PostgREST | [JWT cache docs](https://docs.postgrest.org/en/latest/references/auth.html#jwt-cache) | "The JWT cache is bounded and uses the SIEVE algorithm for efficient eviction." | A |
+| Ceph | [`src/common/web_cache.h`](https://github.com/ceph/ceph/blob/main/src/common/web_cache.h) | "The implementation is based on SIEVE [0] with additional TTL expiration support"; cites NSDI '24 | A |
+| Pelikan | [pelikan-io/pelikan](https://github.com/pelikan-io/pelikan) | Upstream list links only the repository root; no specific implementing file located | **U** |
+| SkiftOS | [`src/libs/karm-base/sieve.h`](https://github.com/skift-org/skift/blob/main/src/libs/karm-base/sieve.h) | Path returns **HTTP 404** — link rot since the entry was added | **U** |
+
+Eight of ten resolve to a primary artifact naming SIEVE. The two graded **U** are retained as
+leads: they may well be genuine adopters, but the links as published do not substantiate them.
 
 The same source lists roughly twenty further standalone SIEVE cache libraries across Rust, Go,
 Java, C#, Swift, Zig, D, Elixir, Nim, Ruby, Python, JavaScript/TypeScript and C++; see the
-[full list](https://cachemon.github.io/SIEVE-website/) rather than duplicating it here.
+[full list](https://cachemon.github.io/SIEVE-website/) rather than duplicating it here. Those
+were **not** individually fetched and carry no grade in this revision.
 
-**Caveat:** the adopters list is maintained by the SIEVE authors. Individual entries are
-verifiable through the links, but the list's completeness and currency are not independently
-audited, and linked files may have changed since the entries were added.
+**Caveat:** the upstream adopters list is maintained by the SIEVE authors, and its completeness
+is not independently audited. The 404 above shows the practical failure mode — entries are
+accurate when added, then drift as the linked code moves.
 
 ---
 
@@ -278,16 +289,16 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.0},
+  version      = {1.0.1},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
-  note         = {Snapshot dated 2026-08-12},
+  note         = {Snapshot dated 2026-08-13},
   year         = {2026}
 }
 ```
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.0, snapshot 2026-08-12,
+> libCacheSim Adoption Census, version 1.0.1, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -299,4 +310,5 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.1 | 2026-08-13 | Individually fetched all ten Section 5.2 adopter links instead of inheriting them: 8 graded A against primary artifacts, Pelikan and SkiftOS downgraded to U (repo-root-only link; HTTP 404 link rot). Added grades to Section 5.2 so every entry carries one, as the introduction promises. Cited SCION by its arXiv abstract page and flagged that arXiv's stated submission date disagrees with its identifier prefix. Citation example now uses a commit permalink rather than a branch URL. |
 | 1.0.0 | 2026-08-12 | Initial census: 5 confirmed direct users, 6 distribution signals, 2 self-reported aggregate claims, 10 named algorithm-lineage adopters, 6 excluded or deferred candidates. |
