@@ -202,7 +202,7 @@ Contributions are welcome! Please see the main [libCacheSim repository](https://
 
 ## License
 
-GPL-3.0 - see the [LICENSE](https://github.com/1a1a11a/libCacheSim/blob/develop/LICENSE) file for details. This addon links libCacheSim statically, so the same terms apply to it.
+Apache-2.0 - see the [LICENSE](https://github.com/1a1a11a/libCacheSim/blob/develop/LICENSE) file for details. This addon links libCacheSim statically, so the same terms apply to it.
 
 ## Related Projects
 

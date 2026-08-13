@@ -246,16 +246,15 @@ There are two versions of the plots, one is line plot, and the other is a heatma
 python3 scripts/traceAnalysis/popularity_decay.py ${dataname}.popularityDecay_w300_obj
 ```
 
-<!-- Some example plots are shown below:
+An example plot is shown below:
 <div style="display: flex; justify-content: center; align-items: center;">
-<img src="/doc/plot/twitter_cluster52_10m_popularityDecayLineLog.svg" alt="popularity twitter" width="40%">
+<img src="/doc/plot/w92_popularityDecayLineLog.svg" alt="popularity decay w92" width="40%">
 </div>
 <div style="text-align: center; color: grey;">
-Left: a block cache workload (w92), right: the first 10m requests of the Twitter cluster52 trace. <br>
-The block workload has most objects being 4 KiB and 64 KiB, while the Twitter workload has most objects around 64 B. <br>
-The Request curve is weighted by request count, and the Object curve is weighted by object count. 
+A block cache workload (w92): the mean probability that an object is requested, plotted against its age. <br>
+Both axes are log scale, with age ticked from 5 minutes to 4 days. The downward slope is the decay — the older an object is, the less likely it is to be requested again. <br>
 </div>
-<br> -->
+<br>
 
 ## Advanced features 
 ```bash

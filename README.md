@@ -477,7 +477,7 @@ GitHub's **Cite this repository** button uses [CITATION.cff](/CITATION.cff); [re
 
 
 ## License
-See [LICENSE](LICENSE) for details.
+libCacheSim is licensed under the [Apache License 2.0](LICENSE).
 
 ## Related
 * [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated

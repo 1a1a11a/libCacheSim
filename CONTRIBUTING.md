@@ -95,4 +95,4 @@ Security issues should **not** be filed as public issues — see [SECURITY.md](S
 
 ## License
 
-libCacheSim is [GPL-3.0](LICENSE) licensed. By contributing, you agree that your contributions are licensed under the same terms.
+libCacheSim is [Apache-2.0](LICENSE) licensed. By contributing, you agree that your contributions are licensed under the same terms.
