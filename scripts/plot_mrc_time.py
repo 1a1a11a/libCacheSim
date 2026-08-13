@@ -79,11 +79,11 @@ def run_cachesim_time(
         logger.warning("cachesim may have crashed with segfault")
 
     stderr_str = p.stderr.decode("utf-8")
-    if stderr_str != "":
-        logger.warning(stderr_str)
-
     stdout_str = p.stdout.decode("utf-8")
-    for line in stdout_str.split("\n"):
+
+    # cachesim prints the periodic reports we parse here as INFO logs, which go
+    # to stderr, while the final result line goes to stdout
+    for line in (stdout_str + "\n" + stderr_str).split("\n"):
         logger.debug("cachesim log: " + line)
 
         if "[INFO]" in line[:16]:
