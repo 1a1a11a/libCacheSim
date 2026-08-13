@@ -264,14 +264,23 @@ environment that can reach usenix.org.
 ## How to cite this census
 
 This file is versioned with the source tree; cite the census version together with the commit
-that contains it. A commit permalink to `doc/adoption-census.md` is an immutable snapshot.
+that contains it. **Always cite a commit permalink, never a branch URL** — a branch moves, so a
+`blob/develop` link does not identify the snapshot you actually read.
+
+Get the SHA of the commit that last changed this file:
+
+```bash
+git log -1 --format=%H -- doc/adoption-census.md
+```
+
+Then substitute it for `<commit-sha>`:
 
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
   version      = {1.0.0},
-  howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption-census.md}},
-  note         = {Snapshot dated 2026-08-12; cite the commit permalink for an immutable version},
+  howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
+  note         = {Snapshot dated 2026-08-12},
   year         = {2026}
 }
 ```
@@ -279,7 +288,10 @@ that contains it. A commit permalink to `doc/adoption-census.md` is an immutable
 Plain-text form:
 
 > libCacheSim Adoption Census, version 1.0.0, snapshot 2026-08-12,
-> `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim.
+> `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
+
+For reading rather than citing, the current version always lives at
+[`doc/adoption-census.md` on `develop`](https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption-census.md).
 
 ---
 
