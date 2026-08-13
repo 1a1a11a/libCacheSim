@@ -21,8 +21,17 @@
  * rounds to this value and warns under -Wimplicit-const-int-float-conversion */
 static constexpr double kHashSpaceSize = 18446744073709551616.0;
 
-/* log2 of the hash table size for the miniature caches MINISIM simulates */
+/* log2 of the hash table size for the miniature caches MINISIM simulates. The
+ * caches are small, so a smaller table than cachesim's is appropriate. */
 static constexpr int kMiniSimHashPower = 20;
+
+/* what cachesim uses, mirroring DEFAULT_HASHPOWER in bin/cachesim/cache_init.h.
+ * Above sample rate 0.5 MINISIM replays the whole trace, and that run is meant
+ * to be exact rather than approximate, so it has to size the table the way
+ * cachesim would: Random, RandomTwo, RandomLRU and Hyperbolic draw eviction
+ * candidates through the hash mask, so a different table gives a different
+ * curve. */
+static constexpr int kCacheSimHashPower = 24;
 
 /* whether a reader fills in req->next_access_vtime, which the Belady policies
  * need; every other reader leaves it at -2.
@@ -359,9 +368,15 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
    * oversized table costs memory and leaves the sampler probing empty buckets.
    * cachesim shrinks it by 8 before constructing the cache; do the same here,
    * since the miniature caches are built straight from the registry and would
-   * otherwise get a 1M-slot table each. Hyperbolic needs no such line because
-   * Hyperbolic_init already shrinks its own. */
-  int minisim_hashpower = kMiniSimHashPower;
+   * otherwise get a 1M-slot table each. Hyperbolic gets it for a different
+   * reason: Hyperbolic_init shrinks its own table as well, so cachesim ends up
+   * two reductions down, and matching that is what makes an unsampled run
+   * reproduce cachesim rather than land 0.0001 away. */
+  int minisim_hashpower =
+      (sampler == nullptr) ? kCacheSimHashPower : kMiniSimHashPower;
+  if (strcasecmp(params_.cache_algorithm_str, "hyperbolic") == 0) {
+    minisim_hashpower = MAX(minisim_hashpower - 8, 16);
+  }
   if (strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
     minisim_hashpower = MAX(minisim_hashpower - 8, 16);
 

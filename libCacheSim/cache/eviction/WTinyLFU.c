@@ -285,8 +285,13 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
       /** only when main_cache is full, evict an obj from the main_cache **/
 
       // if main_cache has enough space, insert the obj into main_cache
+      /* charge the main cache its own per-object overhead, not the composite's.
+       * cache->obj_md_size is the larger of the two sub-caches, so that a
+       * caller asking the composite what it reserves is not told less than it
+       * really does; using it here would bill a FIFO or Clock main cache for
+       * the window's 16 bytes and call it full early. */
       if (main_cache->get_occupied_byte(main_cache) +
-              params->req_local->obj_size + cache->obj_md_size <=
+              params->req_local->obj_size + main_cache->obj_md_size <=
           main_cache->cache_size) {
         main_cache->insert(main_cache, params->req_local);
 
