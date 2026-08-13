@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.2
+**Census version:** 1.0.3
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -63,17 +63,20 @@ than inherited from the upstream list, which is how the two ungraded entries the
    that population is not publicly enumerable.
 4. **Download statistics are absent.** pypistats.org returned HTTP 429 during this snapshot; PyPI
    download counts should be added in the next revision.
-5. **External evidence links are branch URLs, not commit permalinks.** The file-level links in
-   [Section 5.2](#52-named-sieve-adopters-with-direct-source-links) point at `main`/`master`, so
-   they can drift away from what was verified — the same failure this document warns about for its
-   own citation. The SkiftOS row is that failure already realized: its linked path returned 404 on
-   re-check. Pinning was attempted for this snapshot and could not be completed —
-   `api.github.com` was unreachable (HTTP 403) from the environment that ran it, and GitHub blob
-   pages render the commit SHA client-side, so no SHA could be read. The next revision should pin
-   each link with `git ls-remote` or
-   `GET /repos/{owner}/{repo}/commits?path={file}&per_page=1`, rewriting
-   `blob/main/...` to `blob/{sha}/...`. Until then, treat Section 5.2's Grade A entries as verified
-   **as of 2026-08-13**, not as permanently reproducible.
+5. **Two evidence links remain unpinned.** Six of the seven GitHub file links in
+   [Section 5.2](#52-named-sieve-adopters-with-direct-source-links) are pinned to commit SHAs, so
+   they cannot drift. Two targets could not be pinned and stay mutable:
+   - The **PostgREST** link points at `docs.postgrest.org/en/latest/`, which tracks the newest
+     release. Pin it to a versioned docs URL once the version carrying the JWT-cache text is
+     identified.
+   - The **immudb** entry links a merged pull request, whose title and merge state are already
+     immutable; no pin is needed.
+
+   Pinning matters here because the drift is not hypothetical: the SkiftOS row's branch URL
+   returned 404 on re-check, which is how that entry lost its grade. Use
+   `git ls-remote https://github.com/{owner}/{repo} refs/heads/{branch}` for future entries —
+   `api.github.com` is unreachable (HTTP 403) from this environment and blob pages render SHAs
+   client-side, so `ls-remote` is the method that works here.
 
 ---
 
@@ -226,16 +229,21 @@ Entries originate from the SIEVE project's adopters list
 **Every link below was then fetched individually on 2026-08-13** and graded on what that fetch
 actually showed — the list itself is treated as a lead, not as evidence.
 
+GitHub file links are **pinned to commit SHAs**, not branches, so each one keeps showing the
+revision that was verified. The pinned TiDB and Ceph URLs were re-fetched after pinning to confirm
+the quoted text is present at those exact revisions. Two links remain unpinned for the reasons in
+limitation 5.
+
 | System | Evidence link | What the fetch showed | Grade |
 | --- | --- | --- | --- |
 | immudb | [PR #1971](https://github.com/codenotary/immudb/pull/1971) | "Replace LRU with SIEVE replacement policy", merged 2024-05-17 | A |
-| TiDB | [`pkg/infoschema/sieve.go`](https://github.com/pingcap/tidb/blob/master/pkg/infoschema/sieve.go) | `type Sieve[K comparable, V any] struct`; comment cites the SIEVE paper | A |
-| Nyrkiö | [`backend/core/sieve.py`](https://github.com/nyrkio/nyrkio/blob/main/backend/core/sieve.py) | "An implementation of the SIEVE cache eviction algorithm" | A |
-| Dragonfly | [`src/core/compact_object.h`](https://github.com/dragonflydb/dragonfly/blob/main/src/core/compact_object.h#L124) | `TOUCHED` hot/cold bit, comment links `nsdi24-SIEVE.pdf` | A |
-| dnscrypt-proxy | [`dnscrypt-proxy/plugin_cache.go`](https://github.com/DNSCrypt/dnscrypt-proxy/blob/master/dnscrypt-proxy/plugin_cache.go) | Imports `go-sieve-cache`; uses `sievecache.NewSharded` | A |
-| encrypted-dns-server | [`src/cache.rs`](https://github.com/DNSCrypt/encrypted-dns-server/blob/master/src/cache.rs) | `use sieve_cache::SieveCache` | A |
+| TiDB | [`pkg/infoschema/sieve.go`](https://github.com/pingcap/tidb/blob/d5f9ca5690c0a53cac36002f9d2d2bdcba25f4fc/pkg/infoschema/sieve.go) | `type Sieve[K comparable, V any] struct`; comment cites the SIEVE paper | A |
+| Nyrkiö | [`backend/core/sieve.py`](https://github.com/nyrkio/nyrkio/blob/f17320128b357c1d18c7f7b889a3f3d2b3115120/backend/core/sieve.py) | "An implementation of the SIEVE cache eviction algorithm" | A |
+| Dragonfly | [`src/core/compact_object.h`](https://github.com/dragonflydb/dragonfly/blob/f4019d7fec0ddcd1e6484dd6eeade7d52b146af6/src/core/compact_object.h#L124) | `TOUCHED` hot/cold bit, comment links `nsdi24-SIEVE.pdf` | A |
+| dnscrypt-proxy | [`dnscrypt-proxy/plugin_cache.go`](https://github.com/DNSCrypt/dnscrypt-proxy/blob/1a3ace9ac88461f76e1e66d1270ae645cbe2993b/dnscrypt-proxy/plugin_cache.go) | Imports `go-sieve-cache`; uses `sievecache.NewSharded` | A |
+| encrypted-dns-server | [`src/cache.rs`](https://github.com/DNSCrypt/encrypted-dns-server/blob/3754243bf96db5873ab49b58c057f00ef3a16a52/src/cache.rs) | `use sieve_cache::SieveCache` | A |
 | PostgREST | [JWT cache docs](https://docs.postgrest.org/en/latest/references/auth.html#jwt-cache) | "The JWT cache is bounded and uses the SIEVE algorithm for efficient eviction." | A |
-| Ceph | [`src/common/web_cache.h`](https://github.com/ceph/ceph/blob/main/src/common/web_cache.h) | "The implementation is based on SIEVE [0] with additional TTL expiration support"; cites NSDI '24 | A |
+| Ceph | [`src/common/web_cache.h`](https://github.com/ceph/ceph/blob/5995d21863b3992bd9f463b5a0f774869351be36/src/common/web_cache.h) | "The implementation is based on SIEVE [0] with additional TTL expiration support"; cites NSDI '24 | A |
 | Pelikan | [pelikan-io/pelikan](https://github.com/pelikan-io/pelikan) | Upstream list links only the repository root; no specific implementing file located | **U** |
 | SkiftOS | [`src/libs/karm-base/sieve.h`](https://github.com/skift-org/skift/blob/main/src/libs/karm-base/sieve.h) | Path returns **HTTP 404** — link rot since the entry was added | **U** |
 
@@ -282,15 +290,20 @@ Recorded so that future revisions do not re-investigate the same dead ends.
 5. Keep Sections 3 and 5 strictly separate: simulator use versus algorithm use.
 6. Add a row to the changelog below.
 
-Priority work for the next revision, in order of expected yield: repository-wide code search for
-forks and vendored copies (limitation 1), pinning Section 5.2's evidence links to commit SHAs
-(limitation 5), PyPI/npm download statistics (limitation 4), manual verification of the two Trovi
-artifacts, and full-text retrieval of the USENIX PDFs from an environment that can reach
-usenix.org.
+Pin every new GitHub evidence link at the time you add it —
+`git ls-remote https://github.com/{owner}/{repo} refs/heads/{branch}` — and re-fetch the pinned
+URL to confirm the quoted text is present at that revision. A branch URL is not evidence; it is a
+promise that decays.
 
-Note that limitations 4 and 5 were both blocked by the *environment* the snapshot ran in, not by
-the sources themselves. Re-running from a host with unrestricted access to `api.github.com`,
-`pypistats.org`, and `usenix.org` would close three open items in a single pass.
+Priority work for the next revision, in order of expected yield: repository-wide code search for
+forks and vendored copies (limitation 1), PyPI/npm download statistics (limitation 4), manual
+verification of the two Trovi artifacts, full-text retrieval of the USENIX PDFs from an
+environment that can reach usenix.org, and pinning the PostgREST docs link to a versioned URL
+(limitation 5).
+
+Limitations 1 and 4 are blocked by the *environment* a snapshot runs in, not by the sources.
+Re-running from a host with repository-search access and unrestricted reach to `pypistats.org`
+and `usenix.org` closes several open items in a single pass.
 
 ---
 
@@ -311,7 +324,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.2},
+  version      = {1.0.3},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -320,7 +333,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.2, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.3, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -332,6 +345,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.3 | 2026-08-13 | Pinned six of the seven GitHub evidence links in Section 5.2 to commit SHAs via `git ls-remote`, closing most of limitation 5 rather than deferring it; re-fetched the pinned TiDB and Ceph URLs to confirm the quoted text is present at those revisions. Limitation 5 now covers only the PostgREST `latest` docs URL. Added pinning to the update protocol as a standing rule. |
 | 1.0.2 | 2026-08-13 | Added the missing `Date checked` column to Section 5.1. Recorded a new limitation 5: Section 5.2's evidence links are branch URLs, not commit permalinks, so they can drift from what was verified — the SkiftOS 404 is that failure already realized. Pinning was attempted and blocked by the snapshot environment (`api.github.com` returned 403; blob pages render SHAs client-side), so the method is documented for the next revision instead of being left implicit. |
 | 1.0.1 | 2026-08-13 | Individually fetched all ten Section 5.2 adopter links instead of inheriting them: 8 graded A against primary artifacts, Pelikan and SkiftOS downgraded to U (repo-root-only link; HTTP 404 link rot). Added grades to Section 5.2 so every entry carries one, as the introduction promises. Cited SCION by its arXiv abstract page and flagged that arXiv's stated submission date disagrees with its identifier prefix. Citation example now uses a commit permalink rather than a branch URL. Downgraded the Harvard SEAS aggregate claim from B to C: editorial independence does not make an aggregate claim auditable, and the rubric grades auditability. |
 | 1.0.0 | 2026-08-12 | Initial census: 5 confirmed direct users, 6 distribution signals, 2 self-reported aggregate claims, 10 named algorithm-lineage adopters, 6 excluded or deferred candidates. |
