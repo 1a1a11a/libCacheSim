@@ -185,6 +185,9 @@ static void S3FIFOd_free(cache_t *cache) {
   params->small_fifo->cache_free(params->small_fifo);
   params->ghost_fifo->cache_free(params->ghost_fifo);
   params->main_fifo->cache_free(params->main_fifo);
+  /* init also builds these two to track evicted objects */
+  params->small_eviction->cache_free(params->small_eviction);
+  params->main_eviction->cache_free(params->main_eviction);
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
@@ -567,6 +570,7 @@ static void S3FIFOd_parse_params(cache_t *cache,
       params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "print") == 0) {
       printf("parameters: %s\n", S3FIFOd_current_params(params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

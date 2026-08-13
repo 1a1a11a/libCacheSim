@@ -96,13 +96,11 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
   cache->eviction_params =
       (WTinyLFU_params_t *)malloc(sizeof(WTinyLFU_params_t));
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
+  memset(params, 0, sizeof(WTinyLFU_params_t));
 
-  if (ccache_params.consider_obj_metadata) {
-    cache->obj_md_size = params->main_cache->obj_md_size;
-    // TODO: not sure whether it works
-  } else {
-    cache->obj_md_size = 0;
-  }
+  /* obj_md_size is set once main_cache exists; it is read from main_cache,
+   * which is only built further down */
+  cache->obj_md_size = 0;
 
   WTinyLFU_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
@@ -142,6 +140,10 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
     params->main_cache = Sieve_init(ccache_params_local, NULL);
   } else {
     ERROR("WTinyLFU does not support %s \n", params->main_cache_type);
+  }
+
+  if (ccache_params.consider_obj_metadata) {
+    cache->obj_md_size = params->main_cache->obj_md_size;
   }
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "WTinyLFU-w%.2lf-%s",
@@ -192,6 +194,7 @@ static void WTinyLFU_free(cache_t *cache) {
   minimalIncrementCBF_free(params->CBF);
   free(params->CBF);
   free_request(params->req_local);
+  free(params);
 
   cache_struct_free(cache);
 }
@@ -346,6 +349,17 @@ static bool WTinyLFU_remove(cache_t *cache, obj_id_t obj_id) {
   return false;
 }
 
+/* main_cache is only built after the parameters are parsed, so report the
+ * configured type, which is what `-e print` runs against */
+static const char *WTinyLFU_current_params(WTinyLFU_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "main-cache=%s,window-size=%.4lf",
+           params->main_cache == NULL ? params->main_cache_type
+                                      : params->main_cache->cache_name,
+           params->window_size);
+  return params_str;
+}
+
 static void WTinyLFU_parse_params(cache_t *cache,
                                   const char *cache_specific_params) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
@@ -353,6 +367,7 @@ static void WTinyLFU_parse_params(cache_t *cache,
   // params->max_request_num = 32 * cache->cache_size; // 32 * cache_size
 
   char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
      * key and value are separated by = */
@@ -372,12 +387,17 @@ static void WTinyLFU_parse_params(cache_t *cache,
         ERROR("window_size must be in [0, 1)\n");
         exit(1);
       }
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", WTinyLFU_current_params(params));
+      free(old_params_str);
+      exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      free(old_params_str);
       exit(1);
     }
   }
-  return;
+  free(old_params_str);
 }
 
 /* WTinyLFU cannot an object larger than segment size */

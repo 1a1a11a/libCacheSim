@@ -406,6 +406,7 @@ static void LP_SFIFO_parse_params(cache_t *cache,
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n",
              LP_SFIFO_current_params(cache, params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

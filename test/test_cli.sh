@@ -151,9 +151,69 @@ expect_output "qdlp -e print" "fifo-size-ratio=" \
 expect_output "s3fifod -e print" "fifo-size-ratio=" \
 	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral s3fifod 1gb -e print
 
-for algo in arc car clock clockpro lecar lru-prob beladysize fifo-merge s3fifo 2q; do
-	expect_ok "${algo} -e print" \
-		"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 1gb -e print
+# Sweep every algorithm the CLI registers rather than a hand-picked list: the
+# crashes this covers were found in variants that a shorter list missed
+# (s3fifov0, flashProb). Algorithms behind an optional build flag report
+# "do not support algorithm" and are skipped.
+ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
+	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
+	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob nop
+	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifod s3fifov0
+	sieve size slru slruv0 twoq wtinyLFU"
+
+n_skipped=0
+for algo in ${ALL_ALGOS}; do
+	out=$("${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 1gb -e print 2>&1)
+	rc=$?
+	if [[ ${rc} -ne 0 ]] && grep -qi "do not support algorithm" <<<"${out}"; then
+		n_skipped=$((n_skipped + 1))
+		continue
+	fi
+	if [[ ${rc} -eq 0 ]]; then
+		_report 0 ""
+	else
+		_report 1 "${algo} -e print (exit ${rc})"
+		echo "${out}" | tail -3 | sed 's/^/        /'
+	fi
+done
+echo "  (${n_skipped} algorithms not compiled in, skipped)"
+
+echo "running per-algorithm replay tests"
+
+# Actually replay a trace with each algorithm, not just parse its parameters.
+# Under the LeakSanitizer build CI uses, this is what catches allocations that
+# init makes and free forgets — the `-e print` cases above exit early, so the
+# cache is never torn down and a missing free stays invisible.
+n_skipped=0
+for algo in ${ALL_ALGOS}; do
+	# pluginCache loads an eviction policy from an external .so that is not
+	# built here; see doc/quickstart_plugin.md
+	if [[ "${algo}" == "pluginCache" ]]; then
+		n_skipped=$((n_skipped + 1))
+		continue
+	fi
+	out=$("${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 10mb \
+		--num-req=20000 2>&1)
+	rc=$?
+	if [[ ${rc} -ne 0 ]] && grep -qi "do not support algorithm" <<<"${out}"; then
+		n_skipped=$((n_skipped + 1))
+		continue
+	fi
+	if [[ ${rc} -eq 0 ]]; then
+		_report 0 ""
+	else
+		_report 1 "${algo} replay (exit ${rc})"
+		echo "${out}" | tail -3 | sed 's/^/        /'
+	fi
+done
+echo "  (${n_skipped} algorithms not compiled in, skipped)"
+
+# Object metadata accounting reads from the sub-cache, which some algorithms
+# only build partway through init.
+for algo in wtinyLFU qdlp s3fifo slru lru; do
+	expect_ok "${algo} replay with --consider-obj-metadata=true" \
+		"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 10mb \
+		--num-req=20000 --consider-obj-metadata=true
 done
 
 echo "running SLRU parameter validation tests"

@@ -27,9 +27,14 @@ static inline cache_t *create_cache(const char *trace_path,
   };
   cache_t *cache;
 
-  /* the trace provided is small */
-  if (trace_path != NULL && strstr(trace_path, "data/trace.") != NULL)
-    cc_params.hashpower -= 8;
+  /* NOTE: there used to be a heuristic here shrinking hashpower by 8 when the
+   * trace path contained "data/trace.", to save memory on the sample traces.
+   * No such file has existed for a long time, so it never fired. Pointing it at
+   * the current sample traces is not a free fix: a smaller hash table changes
+   * which candidates sampling-based algorithms (RandomLRU, Hyperbolic, ...)
+   * draw, so miss ratios shift. Left out rather than silently changing results;
+   * re-add deliberately if the memory saving is worth that. */
+
   typedef struct {
     const char *name;
     cache_t *(*init_func)(common_cache_params_t, const char *);
