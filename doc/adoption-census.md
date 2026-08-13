@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.11
+**Census version:** 1.0.12
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -304,7 +304,7 @@ accurate when added, then drift as the linked code moves.
 
 ---
 
-## 6. Checked and excluded
+## 6. Investigated candidates
 
 Investigated candidates that did not enter the census. Recorded so that a later revision knows
 which dead ends are settled and which are still open — **Excluded** rows need no re-work, while
@@ -352,7 +352,7 @@ a source supports an entry that belongs in the census, and nothing here does. Th
 4. When a source fails re-verification, the response depends on *how* it failed. Never delete
    either way:
    - **Refuted** — the source is reachable but does not support the claim → move the entry to
-     [Section 6](#6-checked-and-excluded) as **Excluded**, with the reason.
+     [Section 6](#6-investigated-candidates) as **Excluded**, with the reason.
    - **Unreachable** — 404, paywall, or withdrawn → **downgrade to Grade U in place** and record
      what failed, when the entry sits in a named list where its absence is itself informative.
      SkiftOS in Section 5.2 is the worked example: the 404 is the finding, and moving the row to
@@ -395,7 +395,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.11},
+  version      = {1.0.12},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -404,7 +404,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.11, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.12, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -416,6 +416,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.12 | 2026-08-13 | Renamed Section 6 from "Checked and excluded" to "Investigated candidates". Two of its rows were never checked and three are not excluded, so a maintainer navigating by heading could have written the whole section off as settled and skipped the open follow-up work. Internal anchors updated to match. |
 | 1.0.11 | 2026-08-13 | Stopped calling every Section 6 candidate "checked" — two were never reachable, which the Unverified definition says outright; they are *investigated* instead, and the `Date checked` column is stated to mean checked-or-attempted. Qualified the failed-re-verification rule: a refuted source moves to Section 6, but an unreachable one is downgraded to Grade U in place when its absence is informative, as with the SkiftOS 404. The unconditional rule would have told a maintainer to undo that row. |
 | 1.0.10 | 2026-08-13 | Pinned every arXiv link to the version actually read: SCION was labelled v1 but linked the unversioned endpoint, and the PolicySmith, DynamicAdaptiveClimb and 2DIO links had the same exposure. The RAC row now states that its version was not recorded rather than implying one. Made the Grade A definition allow measured evidence, since Section 2 rows are read rather than quoted, and exempted Grade U rows from the verbatim-quote promise — for those, the absence of a quote is the finding. |
 | 1.0.9 | 2026-08-13 | Stopped describing all of Section 6 as rejected: only the Excluded rows are settled, while Unverified and Deferred rows are open follow-up work and now point at the next-revision priorities, so a maintainer does not skip them. Narrowed the evidence promise — Section 2 records a measured value, not a verbatim quote, since a star count is a number to read rather than a sentence to quote; the update checklist says the same. Scoped the README's grade promise to match. |
