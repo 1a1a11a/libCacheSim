@@ -113,16 +113,23 @@ open_trace(data_path, PLAIN_TXT_TRACE, NULL);
 ```
 
 ##### Setup a csv reader
+The fields are 1-indexed and must match the trace. The sample `data/cloudPhysicsIO.csv` has the header `version,time,op,size,lbn`, so time is field 2, size is field 4, and the object id is field 5. Set `obj_id_is_num` when the id column holds numbers, otherwise the ids are hashed.
+
 ```c
-reader_init_param_t init_params_csv =
-    {.delimiter=',', .time_field=2, .obj_id_field=6, .obj_size_field=4, .has_header=FALSE};
-reader_t *reader_csv_c = open_trace("data/cloudPhysicsIO.csv", CSV_TRACE, &init_params_csv);
+reader_init_param_t init_params_csv = {.delimiter = ',',
+                                       .time_field = 2,
+                                       .obj_size_field = 4,
+                                       .obj_id_field = 5,
+                                       .obj_id_is_num = true,
+                                       .has_header = true};
+reader_t *reader_csv = open_trace("data/cloudPhysicsIO.csv", CSV_TRACE, &init_params_csv);
 ```
 
 ##### Setup a binary reader
 ```c
-reader_init_param_t init_params_bin = {.binary_fmt="<3I2H2Q", .obj_size_field=2, .obj_id_field=6, };
-reader_t *reader_bin_l = setup_reader("data/cloudPhysicsIO.vscsi", BIN_TRACE, &init_params_bin);
+reader_init_param_t init_params_bin = {
+    .binary_fmt_str = "<IIIHHQQ", .obj_size_field = 2, .obj_id_field = 6};
+reader_t *reader_bin = open_trace("data/cloudPhysicsIO.vscsi", BIN_TRACE, &init_params_bin);
 ```
 The format of a binary trace is the same as
 [Python struct format specifier](https://docs.python.org/3/library/struct.html).

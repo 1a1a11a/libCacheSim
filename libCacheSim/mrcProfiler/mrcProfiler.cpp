@@ -95,7 +95,10 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
   double sample_rate = params_.shards_params.sample_rate;
   std::vector<double> local_hit_cnt_vec(mrc_size_vec.size(), 0);
   std::vector<double> local_hit_size_vec(mrc_size_vec.size(), 0);
-  uint64_t sample_max = UINT64_MAX * sample_rate;
+  /* UINT64_MAX has no exact double representation, so make the widening
+   * explicit; clang errors on the implicit form under -Werror */
+  uint64_t sample_max =
+      static_cast<uint64_t>(static_cast<double>(UINT64_MAX) * sample_rate);
   if (sample_rate == 1) {
     INFO("sample_rate is 1, no need to sample\n");
     sample_max = UINT64_MAX;
@@ -212,8 +215,9 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
       if (!min_value_map.full()) {
         sample_rate = 1.0;  // still 100% sample rate
       } else {
-        sample_rate = min_value_map.get_max_value() * 1.0 /
-                      UINT64_MAX;  // adjust the sample rate
+        sample_rate =
+            min_value_map.get_max_value() * 1.0 /
+            static_cast<double>(UINT64_MAX);  // adjust the sample rate
       }
 
       sampled_cnt += 1.0 / sample_rate;

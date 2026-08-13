@@ -453,15 +453,26 @@ static void SLRU_parse_params(cache_t *cache,
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
       }
+      /* n_seg divides the cache size and the reported percentages */
+      if (params->n_seg < 1 || params->n_seg > SLRU_MAX_N_SEG) {
+        ERROR("n-seg must be between 1 and %d, got %d\n", SLRU_MAX_N_SEG,
+              params->n_seg);
+      }
     } else if (strcasecmp(key, "seg-size") == 0) {
       int n_seg = 0;
       int64_t seg_size_sum = 0;
       int64_t seg_size_array[SLRU_MAX_N_SEG];
       char *v = strsep((char **)&value, ":");
       while (v != NULL) {
+        if (n_seg >= SLRU_MAX_N_SEG) {
+          ERROR("seg-size accepts at most %d segments\n", SLRU_MAX_N_SEG);
+        }
         seg_size_array[n_seg++] = (int64_t)strtol(v, &end, 0);
         seg_size_sum += seg_size_array[n_seg - 1];
         v = strsep((char **)&value, ":");
+      }
+      if (n_seg < 1 || seg_size_sum <= 0) {
+        ERROR("seg-size needs at least one segment with a positive size\n");
       }
       params->n_seg = n_seg;
       params->lru_max_n_bytes = calloc(params->n_seg, sizeof(int64_t));
