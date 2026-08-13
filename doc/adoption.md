@@ -160,11 +160,22 @@ Docker Hub returns one image, the project's own. deps.dev and GitHub's dependenc
 report zero reverse dependencies for the PyPI package. Whatever reach the library has, it
 is not through downstream packaging.
 
-The npm query is pinned to an explicit date range rather than a rolling one such as
-`last-year`, so re-running that link reproduces this edition's number rather than a window
-that moves with the reader. pypistats offers no equivalent fixed-range endpoint — it
-serves a rolling window — so the PyPI figure states its start and end dates above, and
-reproducing it means summing those same dates out of the response.
+The two figures differ in how checkable they are, and the difference is worth stating
+rather than glossing.
+
+The **npm** query is pinned to an explicit date range rather than a rolling one such as
+`last-year`, so re-running that link reproduces this edition's number exactly.
+
+The **PyPI** figure is not reproducible and cannot be made so. pypistats offers no
+fixed-range endpoint; it serves a rolling window roughly 180 days wide, which drops its
+earliest days as it advances. By the time you read this the 2026-02-12 → 2026-08-11
+interval will have partly aged out of the API, so summing the stated dates will not
+return 1,805. Treat it as a **point-in-time observation recorded on the census date**,
+not as a verifiable claim. Committing the raw response alongside this file would preserve
+provenance but would not make the number independently checkable — a reader would be
+trusting this project's own copy — so it is left out and the limitation stated instead.
+A future edition can compare like for like only by re-reading the same endpoint on its
+own census date and recording the window it saw.
 
 The two figures are not filtered alike, so do not add them or compare them directly. The
 PyPI figure excludes the mirrors pypistats recognizes; the npm endpoint applies no mirror
