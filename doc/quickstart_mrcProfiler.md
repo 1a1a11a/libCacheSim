@@ -81,6 +81,10 @@ In the example below, `FIX_RATE,0.01,10` sets a `1%` sampling rate and `10` thre
 
 `--algo` accepts the same names as `cachesim`, so any built-in algorithm works — ARC, S3FIFO, sieve, twoq, and the rest. See the [README](/README.md#supported-algorithms) for the full list.
 
+`belady` and `beladySize` need a trace that carries future access times, so they only run on an oracle format such as `oracleGeneral` or `lcs`; the profiler says so and stops otherwise.
+
+`beladySize` is additionally approximate under sampling, beyond the usual sampling error, and warns when you ask for it. It ranks candidates by reuse distance, computed as `next_access_vtime - n_req`, but `next_access_vtime` counts requests in the full trace while `n_req` counts only the requests the sampler kept, so the distance comes out inflated. On `cloudPhysicsIO` at a 100 MB cache, sample rate 0.5 puts it 0.0126 away from the unsampled miss ratio, against 0.0003 for `belady` and 0.0023 for LRU. Use `FIX_RATE,1,<threads>` for an exact run, or `belady`, which compares future times directly and is unaffected.
+
 ### Ignoring Object Sizes
 
 To ignore object sizes (treat all objects as 1-byte):

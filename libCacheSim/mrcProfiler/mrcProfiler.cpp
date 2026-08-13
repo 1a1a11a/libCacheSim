@@ -364,6 +364,26 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
   int minisim_hashpower = kMiniSimHashPower;
   if (strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
     minisim_hashpower = MAX(minisim_hashpower - 8, 16);
+
+    /* BeladySize scores a candidate with next_access_vtime - cache->n_req.
+     * next_access_vtime counts requests in the full trace, but once the
+     * sampler drops requests, n_req counts only the ones that survived, so the
+     * two are in different units and the reuse distance comes out inflated.
+     * Belady is unaffected because it uses next_access_vtime as an ordering
+     * and never takes a difference. Measured on cloudPhysicsIO at a 100MB
+     * cache: at sample rate 0.5 BeladySize is off by 0.0126 against the
+     * unsampled miss ratio, where Belady is off by 0.0003 and LRU by 0.0023.
+     * Warn rather than refuse -- the curve is still in the right region, and
+     * remapping future times into sampled virtual time is a change to the
+     * sampler that belongs to the maintainers, not a silent correction here. */
+    if (sampler != nullptr) {
+      WARN(
+          "beladySize scores candidates by reuse distance, which spatial "
+          "sampling distorts because next_access_vtime stays in full-trace "
+          "request numbers; the curve is approximate beyond the usual sampling "
+          "error. Use --profiler-params=FIX_RATE,1,<threads> for an exact "
+          "run, or belady, which is not affected.\n");
+    }
   }
 
   // 3. run the simulate_with_multi_caches
