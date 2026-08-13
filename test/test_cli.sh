@@ -176,8 +176,15 @@ expect_output "s3fifod -e print" "fifo-size-ratio=" \
 
 # Sweep every algorithm the CLI registers rather than a hand-picked list: the
 # crashes this covers were found in variants that a shorter list missed
-# (s3fifov0, flashProb). Algorithms behind an optional build flag report
-# "do not support algorithm" and are skipped.
+# (s3fifov0, flashProb).
+#
+# Only these four sit behind a build flag (ENABLE_3L_CACHE, ENABLE_GLCACHE,
+# ENABLE_LRB) and may legitimately be absent. Skipping on the "do not support
+# algorithm" message alone would also skip a mandatory algorithm that had
+# silently dropped out of the registry, which is precisely the regression this
+# sweep exists to catch.
+OPTIONAL_ALGOS=" 3LCache GLCache gl-cache lrb "
+
 ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
 	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob nop
@@ -189,7 +196,8 @@ n_skipped=0
 for algo in ${ALL_ALGOS}; do
 	out=$("${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 1gb -e print 2>&1)
 	rc=$?
-	if [[ ${rc} -ne 0 ]] && grep -qi "do not support algorithm" <<<"${out}"; then
+	if [[ ${rc} -ne 0 ]] && grep -qi "do not support algorithm" <<<"${out}" &&
+		[[ ${OPTIONAL_ALGOS} == *" ${algo} "* ]]; then
 		n_skipped=$((n_skipped + 1))
 		continue
 	fi
@@ -219,7 +227,8 @@ for algo in ${ALL_ALGOS}; do
 	out=$("${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 10mb \
 		--num-req=20000 2>&1)
 	rc=$?
-	if [[ ${rc} -ne 0 ]] && grep -qi "do not support algorithm" <<<"${out}"; then
+	if [[ ${rc} -ne 0 ]] && grep -qi "do not support algorithm" <<<"${out}" &&
+		[[ ${OPTIONAL_ALGOS} == *" ${algo} "* ]]; then
 		n_skipped=$((n_skipped + 1))
 		continue
 	fi
