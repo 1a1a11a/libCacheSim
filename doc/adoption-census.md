@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.4
+**Census version:** 1.0.5
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -63,20 +63,20 @@ than inherited from the upstream list, which is how the two ungraded entries the
    that population is not publicly enumerable.
 4. **Download statistics are absent.** pypistats.org returned HTTP 429 during this snapshot; PyPI
    download counts should be added in the next revision.
-5. **Two evidence links remain unpinned.** Six of the seven GitHub file links in
-   [Section 5.2](#52-named-sieve-adopters-with-direct-source-links) are pinned to commit SHAs, so
-   they cannot drift. Two targets could not be pinned and stay mutable:
-   - The **PostgREST** link points at `docs.postgrest.org/en/latest/`, which tracks the newest
-     release. Pin it to a versioned docs URL once the version carrying the JWT-cache text is
-     identified.
-   - The **immudb** entry links a merged pull request, whose title and merge state are already
-     immutable; no pin is needed.
+5. **One evidence link remains unpinned.** Every GitHub link in
+   [Section 5.2](#52-named-sieve-adopters-with-direct-source-links) is pinned to a commit SHA, so
+   none of them can drift. The exception is **PostgREST**, whose link points at
+   `docs.postgrest.org/en/latest/` and therefore tracks the newest release; pin it to a versioned
+   docs URL once the version carrying the JWT-cache text is identified.
 
    Pinning matters here because the drift is not hypothetical: the SkiftOS row's branch URL
-   returned 404 on re-check, which is how that entry lost its grade. Use
-   `git ls-remote https://github.com/{owner}/{repo} refs/heads/{branch}` for future entries —
-   `api.github.com` is unreachable (HTTP 403) from this environment and blob pages render SHAs
-   client-side, so `ls-remote` is the method that works here.
+   returned 404 on re-check, which is how that entry lost its grade. Note also that a merged pull
+   request is **not** an immutable citation — GitHub titles stay editable after merge, so evidence
+   quoted from a PR title can silently change. Cite the code, not the pull request. Use
+   `git ls-remote https://github.com/{owner}/{repo} refs/heads/{branch}` (or
+   `refs/pull/{n}/head` for a specific PR revision) — `api.github.com` is unreachable (HTTP 403)
+   from this environment and blob pages render SHAs client-side, so `ls-remote` is the method
+   that works here.
 
 ---
 
@@ -119,10 +119,12 @@ Public artifacts that build on, fork, or run libCacheSim. Verified 2026-08-12.
 
 - **Artifact:** *3L-Cache: Low Overhead and Precise Learning-based Eviction Policy for Caches*,
   USENIX FAST '25 ([program page](https://www.usenix.org/conference/fast25/presentation/zhou-wenbin)).
-  Artifact repository: [github.com/optiq-lab/3L-Cache](https://github.com/optiq-lab/3L-Cache).
-- **Evidence (quoted):** "3L-Cache is implemented in the libCacheSim library, and its experimental
+  Artifact repository: [github.com/optiq-lab/3L-Cache](https://github.com/optiq-lab/3L-Cache),
+  pinned at [`134cd15`](https://github.com/optiq-lab/3L-Cache/blob/134cd159b635cdab75419a4281bed1a330fef31f/README.md).
+- **Evidence (quoted):** "3L Cache is implemented in the libCacheSim library, and its experimental
   environment configuration is consistent with libCacheSim." The repository layout is annotated
-  "3L-Cache/ -- Forked from LibCacheSim, which is a platform for cache evaluation."
+  "3L-Cache/ -- Forked from LibCacheSim, which is a platform for cache evaluation." (Quoted from
+  the pinned README revision; the project spells its name both with and without the hyphen.)
 - **Use:** Whole-project fork of libCacheSim used as the evaluation platform (reported 4855 traces,
   twelve comparison policies).
 - **Upstreamed:** tracked in [issue #119](https://github.com/1a1a11a/libCacheSim/issues/119)
@@ -229,14 +231,14 @@ Entries originate from the SIEVE project's adopters list
 **Every link below was then fetched individually on 2026-08-13** and graded on what that fetch
 actually showed — the list itself is treated as a lead, not as evidence.
 
-GitHub file links are **pinned to commit SHAs**, not branches, so each one keeps showing the
-revision that was verified. The pinned TiDB and Ceph URLs were re-fetched after pinning to confirm
-the quoted text is present at those exact revisions. Two links remain unpinned for the reasons in
-limitation 5.
+GitHub links are **pinned to commit SHAs**, not branches or pull requests, so each one keeps
+showing the revision that was verified. The pinned TiDB, Ceph and immudb URLs were re-fetched
+after pinning to confirm the quoted text is present at those exact revisions. Only the PostgREST
+link remains unpinned, for the reason in limitation 5.
 
 | System | Evidence link | What the fetch showed | Grade |
 | --- | --- | --- | --- |
-| immudb | [PR #1971](https://github.com/codenotary/immudb/pull/1971) | "Replace LRU with SIEVE replacement policy", merged 2024-05-17 | A |
+| immudb | [`embedded/cache/cache.go`](https://github.com/codenotary/immudb/blob/1a5f54e83219b2e1a3d6810ca2f879cb2163c714/embedded/cache/cache.go) | "Cache implements the SIEVE cache replacement policy"; `hand` pointer and per-entry `visited` flags | A |
 | TiDB | [`pkg/infoschema/sieve.go`](https://github.com/pingcap/tidb/blob/d5f9ca5690c0a53cac36002f9d2d2bdcba25f4fc/pkg/infoschema/sieve.go) | `type Sieve[K comparable, V any] struct`; comment cites the SIEVE paper | A |
 | Nyrkiö | [`backend/core/sieve.py`](https://github.com/nyrkio/nyrkio/blob/f17320128b357c1d18c7f7b889a3f3d2b3115120/backend/core/sieve.py) | "An implementation of the SIEVE cache eviction algorithm" | A |
 | Dragonfly | [`src/core/compact_object.h`](https://github.com/dragonflydb/dragonfly/blob/f4019d7fec0ddcd1e6484dd6eeade7d52b146af6/src/core/compact_object.h#L124) | `TOUCHED` hot/cold bit, comment links `nsdi24-SIEVE.pdf` | A |
@@ -326,7 +328,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.4},
+  version      = {1.0.5},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -335,7 +337,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.4, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.5, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -347,6 +349,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.5 | 2026-08-13 | Pinned the 3L-Cache README quote to revision `134cd15`, since that quote is also repository text that can change. Replaced the immudb evidence link: a merged pull request is not immutable, since GitHub titles stay editable after merge, so quoting a PR title is not a durable citation. The row now cites `embedded/cache/cache.go` pinned at `1a5f54e`, verified to read "Cache implements the SIEVE cache replacement policy" with a `hand` pointer and per-entry `visited` flags. Every GitHub link in Section 5.2 is now pinned; only the PostgREST docs URL remains mutable. |
 | 1.0.4 | 2026-08-13 | Added the missing `Date checked` column to Section 6, completing the coverage the introduction promises: every table in the document now records when its evidence was last checked. Noted why that column matters most for excluded candidates — a dead end is only trustworthy as of its last check, and a paper may cite libCacheSim in a later version. |
 | 1.0.3 | 2026-08-13 | Pinned six of the seven GitHub evidence links in Section 5.2 to commit SHAs via `git ls-remote`, closing most of limitation 5 rather than deferring it; re-fetched the pinned TiDB and Ceph URLs to confirm the quoted text is present at those revisions. Limitation 5 now covers only the PostgREST `latest` docs URL. Added pinning to the update protocol as a standing rule. |
 | 1.0.2 | 2026-08-13 | Added the missing `Date checked` column to Section 5.1. Recorded a new limitation 5: Section 5.2's evidence links are branch URLs, not commit permalinks, so they can drift from what was verified — the SkiftOS 404 is that failure already realized. Pinning was attempted and blocked by the snapshot environment (`api.github.com` returned 403; blob pages render SHAs client-side), so the method is documented for the next revision instead of being left implicit. |
