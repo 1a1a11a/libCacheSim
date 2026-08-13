@@ -383,8 +383,9 @@ We provide a more comprehensive cache datasets at [https://github.com/cacheMon/c
 ## Who uses libCacheSim
 See the [adoption census](/doc/adoption-census.md) for a source-linked inventory of documented
 libCacheSim adoption — research artifacts built on it, distribution channels, and downstream
-adoption of algorithms designed in it. Every entry carries its evidence, source URL, verification
-date, and confidence grade.
+adoption of algorithms designed in it. Every census entry carries its evidence, source URL,
+verification date, and confidence grade; candidates that were checked but did not qualify are kept
+in a separate section with a disposition instead, so they are not silently dropped.
 
 ---
 ## Contributions
