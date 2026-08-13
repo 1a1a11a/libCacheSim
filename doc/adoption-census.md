@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.9
+**Census version:** 1.0.10
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -8,6 +8,10 @@ A source-linked inventory of documented libCacheSim adoption. Every entry in **S
 carries a public URL, the date the evidence was checked, a confidence grade, and the evidence
 itself — a **verbatim quote** in Sections 3–5, and in Section 2 the **measured value**, since a
 star count or release date is a number to read rather than a sentence to quote.
+
+**Grade U rows are the deliberate exception**: they have no substantiating quote, because the
+absence of one is the finding. Those rows record what the source *failed* to show — a repository
+root with no implementing file, or a link that now returns 404.
 
 **Section 6 is different by design.** It holds candidates that were checked but did not enter the
 census, and records a **disposition** rather than a grade — grading a paper that turned out not to
@@ -38,7 +42,7 @@ an order of magnitude, and the distinction is the single most important integrit
 
 | Grade | Meaning |
 | --- | --- |
-| **A** | Primary source, quoted verbatim, establishes the relationship claimed by that section unambiguously. |
+| **A** | Primary source establishes the relationship claimed by that section unambiguously — quoted verbatim where the source is prose, or read directly where it is a measured value (Section 2). |
 | **B** | Primary source confirms the relationship, but its extent is inferred. |
 | **C** | Self-reported or aggregate claim with no public per-entry roster to audit. |
 | **U** | Lead identified, but the cited source does not substantiate it; retained for manual follow-up. |
@@ -138,7 +142,7 @@ Public artifacts that build on, fork, or run libCacheSim. Verified 2026-08-12.
 ### 3.1 PolicySmith — LLM-generated cache policies (UT Austin)
 
 - **Artifact:** *Man-Made Heuristics Are Dead. Long Live Code Generators!*,
-  [arXiv:2510.08803](https://arxiv.org/abs/2510.08803) (2025-10-13). Dwivedula, Saxena, Akella,
+  [arXiv:2510.08803v1](https://arxiv.org/abs/2510.08803v1) (2025-10-13). Dwivedula, Saxena, Akella,
   Chaudhuri, Kim.
 - **Evidence (quoted):** "Our prototype is built on libCacheSim, a high-performance web cache
   simulator with an event-driven interface." ([full text](https://arxiv.org/html/2510.08803v1))
@@ -167,7 +171,7 @@ Public artifacts that build on, fork, or run libCacheSim. Verified 2026-08-12.
 ### 3.3 DynamicAdaptiveClimb (Ben-Gurion University et al.)
 
 - **Artifact:** *DynamicAdaptiveClimb: Adaptive Cache Replacement with Dynamic Resizing*,
-  [arXiv:2511.21235v1](https://arxiv.org/abs/2511.21235) (2025-11-26). Berend, Dolev, Kumari,
+  [arXiv:2511.21235v1](https://arxiv.org/abs/2511.21235v1) (2025-11-26). Berend, Dolev, Kumari,
   Mishra, Kogan-Sadetsky, Somani.
 - **Evidence (quoted):** "We conduct all evaluations using libCacheSim, an open-source,
   high-performance, and extensible cache simulator widely adopted in recent caching research."
@@ -179,7 +183,7 @@ Public artifacts that build on, fork, or run libCacheSim. Verified 2026-08-12.
 ### 3.4 SCION (PingCAP)
 
 - **Artifact:** *SCION: Size-aware Policy Orchestration for Nonstationary Object Caches*,
-  [arXiv:2605.01055v1](https://arxiv.org/abs/2605.01055). Qizhi Wang, PingCAP
+  [arXiv:2605.01055v1](https://arxiv.org/abs/2605.01055v1). Qizhi Wang, PingCAP
   Data & AI-Innovation Lab. Submission history on the arXiv abstract page reads
   "Fri, 27 Mar 2026"; note that this does not match the `2605` (May 2026) identifier prefix.
   The date above is arXiv's own stated submission date, not an inference from the identifier.
@@ -317,8 +321,8 @@ a source supports an entry that belongs in the census, and nothing here does. Th
 
 | Candidate | Why it surfaced | Finding | Date checked | Disposition |
 | --- | --- | --- | --- | --- |
-| *RAC: Relation-Aware Cache Replacement for LLMs*, [arXiv:2602.21547](https://arxiv.org/pdf/2602.21547) | Returned by a search for libCacheSim evaluations | Full-text search found no mention of libCacheSim | 2026-08-12 | **Excluded** |
-| *2DIO: A Cache-Accurate Storage Microbenchmark*, [arXiv:2603.19971](https://arxiv.org/pdf/2603.19971) | Returned by a search for libCacheSim usage | Full-text search found no mention of libCacheSim | 2026-08-12 | **Excluded** |
+| *RAC: Relation-Aware Cache Replacement for LLMs*, [arXiv:2602.21547](https://arxiv.org/pdf/2602.21547) | Returned by a search for libCacheSim evaluations | Full-text search found no mention of libCacheSim (version current on the check date; the specific version was not recorded) | 2026-08-12 | **Excluded** |
+| *2DIO: A Cache-Accurate Storage Microbenchmark*, [arXiv:2603.19971v1](https://arxiv.org/pdf/2603.19971v1) | Returned by a search for libCacheSim usage | Full-text search found no mention of libCacheSim | 2026-08-12 | **Excluded** |
 | Chameleon Trovi artifact [`1a05c09b…`](https://trovi.chameleoncloud.org/dashboard/artifacts/1a05c09b-f149-4555-b133-a4114155746b) ("Clock-Pro Implementation on libCacheSim") | Title indicates libCacheSim use | Page is client-rendered; content could not be retrieved by fetch, and the API path returned 404 | 2026-08-12 | **Unverified** |
 | Chameleon Trovi artifact [`bac62a10…`](https://trovi.chameleoncloud.org/dashboard/artifacts/bac62a10-3868-4a77-9075-7e9247dd199b) ("Clock with Adaptive Replacement Cache Implementation") | Title indicates libCacheSim use | Same as above | 2026-08-12 | **Unverified** |
 | PyPI download statistics | Would quantify consumption | pypistats.org returned HTTP 429 | 2026-08-12 | **Deferred** |
@@ -379,7 +383,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.9},
+  version      = {1.0.10},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -388,7 +392,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.9, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.10, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -400,6 +404,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.10 | 2026-08-13 | Pinned every arXiv link to the version actually read: SCION was labelled v1 but linked the unversioned endpoint, and the PolicySmith, DynamicAdaptiveClimb and 2DIO links had the same exposure. The RAC row now states that its version was not recorded rather than implying one. Made the Grade A definition allow measured evidence, since Section 2 rows are read rather than quoted, and exempted Grade U rows from the verbatim-quote promise — for those, the absence of a quote is the finding. |
 | 1.0.9 | 2026-08-13 | Stopped describing all of Section 6 as rejected: only the Excluded rows are settled, while Unverified and Deferred rows are open follow-up work and now point at the next-revision priorities, so a maintainer does not skip them. Narrowed the evidence promise — Section 2 records a measured value, not a verbatim quote, since a star count is a number to read rather than a sentence to quote; the update checklist says the same. Scoped the README's grade promise to match. |
 | 1.0.8 | 2026-08-13 | Exempted Section 6 from the grading promise and gave it a defined disposition vocabulary (Excluded / Unverified / Deferred / Substituted) — grading a refuted candidate would imply it belongs in the census, and four rows carried no grade at all. Corrected the v1.0.0 changelog entry: Section 2 has seven distribution signals, not six. |
 | 1.0.7 | 2026-08-13 | Split Section 2 out of the "claims use of libCacheSim" grouping introduced in 1.0.6: stars, package releases and dependency counts are distribution signals, so an A there certifies only that the value was read correctly. Added that grades are not comparable across sections. Parameterized the update checklist by target section — a Section 5 entry cannot supply a libCacheSim-use quote without committing the conflation the rules forbid, and upstream independence is now recorded for Section 3 only. |
