@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.10
+**Census version:** 1.0.11
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -13,8 +13,9 @@ star count or release date is a number to read rather than a sentence to quote.
 absence of one is the finding. Those rows record what the source *failed* to show — a repository
 root with no implementing file, or a link that now returns 404.
 
-**Section 6 is different by design.** It holds candidates that were checked but did not enter the
-census, and records a **disposition** rather than a grade — grading a paper that turned out not to
+**Section 6 is different by design.** It holds candidates that were **investigated** but did not
+enter the census — some refuted, some never reachable at all — and records a **disposition**
+rather than a grade — grading a paper that turned out not to
 mention libCacheSim would imply it belongs here. Only the **Excluded** rows are settled; the
 **Unverified** and **Deferred** rows are open follow-up work, and appear in the
 [next-revision priorities](#7-how-to-update-this-census). Nothing in the section is deleted, so a
@@ -305,9 +306,13 @@ accurate when added, then drift as the linked code moves.
 
 ## 6. Checked and excluded
 
-Recorded so that future revisions do not re-investigate the same dead ends. The `Date checked`
-column matters most here: a dead end is only worth trusting as recently as its last check, and a
-paper that did not mention libCacheSim in one snapshot may cite it in a later version.
+Investigated candidates that did not enter the census. Recorded so that a later revision knows
+which dead ends are settled and which are still open — **Excluded** rows need no re-work, while
+**Unverified** and **Deferred** rows are waiting for someone with a way through.
+
+The `Date checked` column is when the check was *made or attempted*, and it matters most here: a
+dead end is only worth trusting as recently as that date, and a paper that did not mention
+libCacheSim in one version may cite it in a later one.
 
 These rows carry a **disposition**, not a confidence grade — the A/B/C/U rubric measures how well
 a source supports an entry that belongs in the census, and nothing here does. The vocabulary:
@@ -344,8 +349,15 @@ a source supports an entry that belongs in the census, and nothing here does. Th
    third-party validation from the project's own work, and it is meaningless for the others.
 3. Re-fetch every source before restating it. Do not carry an unverified entry forward with a
    fresh date.
-4. Move anything that fails re-verification into [Section 6](#6-checked-and-excluded) with the
-   reason, rather than deleting it.
+4. When a source fails re-verification, the response depends on *how* it failed. Never delete
+   either way:
+   - **Refuted** — the source is reachable but does not support the claim → move the entry to
+     [Section 6](#6-checked-and-excluded) as **Excluded**, with the reason.
+   - **Unreachable** — 404, paywall, or withdrawn → **downgrade to Grade U in place** and record
+     what failed, when the entry sits in a named list where its absence is itself informative.
+     SkiftOS in Section 5.2 is the worked example: the 404 is the finding, and moving the row to
+     Section 6 would hide that a published adopters list has rotted. Move an unreachable entry to
+     Section 6 only when it has no place in a census table to begin with.
 5. Keep Sections 3 and 5 strictly separate: simulator use versus algorithm use.
 6. Add a row to the changelog below.
 
@@ -383,7 +395,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.10},
+  version      = {1.0.11},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -392,7 +404,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.10, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.11, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -404,6 +416,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.11 | 2026-08-13 | Stopped calling every Section 6 candidate "checked" — two were never reachable, which the Unverified definition says outright; they are *investigated* instead, and the `Date checked` column is stated to mean checked-or-attempted. Qualified the failed-re-verification rule: a refuted source moves to Section 6, but an unreachable one is downgraded to Grade U in place when its absence is informative, as with the SkiftOS 404. The unconditional rule would have told a maintainer to undo that row. |
 | 1.0.10 | 2026-08-13 | Pinned every arXiv link to the version actually read: SCION was labelled v1 but linked the unversioned endpoint, and the PolicySmith, DynamicAdaptiveClimb and 2DIO links had the same exposure. The RAC row now states that its version was not recorded rather than implying one. Made the Grade A definition allow measured evidence, since Section 2 rows are read rather than quoted, and exempted Grade U rows from the verbatim-quote promise — for those, the absence of a quote is the finding. |
 | 1.0.9 | 2026-08-13 | Stopped describing all of Section 6 as rejected: only the Excluded rows are settled, while Unverified and Deferred rows are open follow-up work and now point at the next-revision priorities, so a maintainer does not skip them. Narrowed the evidence promise — Section 2 records a measured value, not a verbatim quote, since a star count is a number to read rather than a sentence to quote; the update checklist says the same. Scoped the README's grade promise to match. |
 | 1.0.8 | 2026-08-13 | Exempted Section 6 from the grading promise and gave it a defined disposition vocabulary (Excluded / Unverified / Deferred / Substituted) — grading a refuted candidate would imply it belongs in the census, and four rows carried no grade at all. Corrected the v1.0.0 changelog entry: Section 2 has seven distribution signals, not six. |
