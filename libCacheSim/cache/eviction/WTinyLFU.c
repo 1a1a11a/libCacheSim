@@ -143,6 +143,13 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
   }
 
   if (ccache_params.consider_obj_metadata) {
+    /* NOTE: one value stands in for two sub-caches. WTinyLFU_can_insert()
+     * charges this against params->LRU->cache_size, so when the main policy's
+     * per-object metadata differs from the window LRU's the window check is
+     * off: main-cache=FIFO reports 0 while the window LRU charges 16 bytes.
+     * Splitting it (window metadata for window admission, main for transfers)
+     * would change admission decisions and therefore miss ratios, so it is
+     * left as the original accounting rather than changed in passing. */
     cache->obj_md_size = params->main_cache->obj_md_size;
   }
 
