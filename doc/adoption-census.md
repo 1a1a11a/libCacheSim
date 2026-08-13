@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.5
+**Census version:** 1.0.6
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -32,10 +32,18 @@ an order of magnitude, and the distinction is the single most important integrit
 
 | Grade | Meaning |
 | --- | --- |
-| **A** | Primary source, quoted verbatim, states use of libCacheSim unambiguously. |
-| **B** | Primary source confirms the relationship, but the extent of use is inferred. |
+| **A** | Primary source, quoted verbatim, establishes the relationship claimed by that section unambiguously. |
+| **B** | Primary source confirms the relationship, but its extent is inferred. |
 | **C** | Self-reported or aggregate claim with no public per-entry roster to audit. |
-| **U** | Lead identified but not verifiable by automated fetch; retained for manual follow-up. |
+| **U** | Lead identified, but the cited source does not substantiate it; retained for manual follow-up. |
+
+**A grade measures evidence strength for the relationship its own section claims — never for
+libCacheSim adoption in general.** The two relationships differ by section:
+
+- Sections 2–4 claim **use of libCacheSim**, so a grade there speaks to that.
+- Section 5 claims **adoption of an algorithm designed in libCacheSim**, so an A there certifies
+  a SIEVE implementation and says nothing about whether that project uses libCacheSim. Reading a
+  Section 5.2 A as libCacheSim adoption would commit exactly the conflation the rule above forbids.
 
 ### Verification protocol
 
@@ -63,11 +71,16 @@ than inherited from the upstream list, which is how the two ungraded entries the
    that population is not publicly enumerable.
 4. **Download statistics are absent.** pypistats.org returned HTTP 429 during this snapshot; PyPI
    download counts should be added in the next revision.
-5. **One evidence link remains unpinned.** Every GitHub link in
-   [Section 5.2](#52-named-sieve-adopters-with-direct-source-links) is pinned to a commit SHA, so
-   none of them can drift. The exception is **PostgREST**, whose link points at
-   `docs.postgrest.org/en/latest/` and therefore tracks the newest release; pin it to a versioned
-   docs URL once the version carrying the JWT-cache text is identified.
+5. **Three links are unpinned, one of them fixable.** Every **GitHub** link backing a **Grade A**
+   entry in [Section 5.2](#52-named-sieve-adopters-with-direct-source-links) is pinned to a commit
+   SHA and cannot drift. The exceptions:
+   - **PostgREST** (Grade A) — not a GitHub link; it points at `docs.postgrest.org/en/latest/`,
+     which tracks the newest release. Pin it to a versioned docs URL once the version carrying the
+     JWT-cache text is identified. **This is the one worth fixing.**
+   - **Pelikan** (Grade U) — links a repository root because no implementing file was located, so
+     there is nothing specific to pin. Pinning the root would manufacture false precision.
+   - **SkiftOS** (Grade U) — deliberately keeps its `blob/main` URL, because reproducing the
+     **404 is the evidence** for its grade. A pinned SHA would hide the link rot being documented.
 
    Pinning matters here because the drift is not hypothetical: the SkiftOS row's branch URL
    returned 404 on re-check, which is how that entry lost its grade. Note also that a merged pull
@@ -231,10 +244,14 @@ Entries originate from the SIEVE project's adopters list
 **Every link below was then fetched individually on 2026-08-13** and graded on what that fetch
 actually showed — the list itself is treated as a lead, not as evidence.
 
-GitHub links are **pinned to commit SHAs**, not branches or pull requests, so each one keeps
-showing the revision that was verified. The pinned TiDB, Ceph and immudb URLs were re-fetched
-after pinning to confirm the quoted text is present at those exact revisions. Only the PostgREST
-link remains unpinned, for the reason in limitation 5.
+Every GitHub link backing a **Grade A** row below is **pinned to a commit SHA**, not a branch or a
+pull request, so each keeps showing the revision that was verified; the pinned TiDB, Ceph and
+immudb URLs were re-fetched after pinning to confirm the quoted text is present at those exact
+revisions. The **Grade U** rows are intentionally left unpinned — see limitation 5 — as is the
+PostgREST row, which points at a docs site rather than a repository.
+
+Grades in this table certify a **SIEVE implementation**, not libCacheSim use; see
+[Confidence grades](#confidence-grades).
 
 | System | Evidence link | What the fetch showed | Grade |
 | --- | --- | --- | --- |
@@ -328,7 +345,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.5},
+  version      = {1.0.6},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -337,7 +354,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.5, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.6, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -349,6 +366,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.6 | 2026-08-13 | Redefined the grade rubric in terms of *the relationship each section claims* rather than "use of libCacheSim". The old wording made a Section 5.2 Grade A read as certifying libCacheSim adoption, which is the exact conflation Section 1 forbids; grades there certify a SIEVE implementation and nothing more. Also scoped the pinning claim to the Grade A GitHub links it actually covers — the two Grade U rows are unpinned on purpose, and SkiftOS keeps a branch URL because reproducing its 404 is the evidence. |
 | 1.0.5 | 2026-08-13 | Pinned the 3L-Cache README quote to revision `134cd15`, since that quote is also repository text that can change. Replaced the immudb evidence link: a merged pull request is not immutable, since GitHub titles stay editable after merge, so quoting a PR title is not a durable citation. The row now cites `embedded/cache/cache.go` pinned at `1a5f54e`, verified to read "Cache implements the SIEVE cache replacement policy" with a `hand` pointer and per-entry `visited` flags. Every GitHub link in Section 5.2 is now pinned; only the PostgREST docs URL remains mutable. |
 | 1.0.4 | 2026-08-13 | Added the missing `Date checked` column to Section 6, completing the coverage the introduction promises: every table in the document now records when its evidence was last checked. Noted why that column matters most for excluded candidates — a dead end is only trustworthy as of its last check, and a paper may cite libCacheSim in a later version. |
 | 1.0.3 | 2026-08-13 | Pinned six of the seven GitHub evidence links in Section 5.2 to commit SHAs via `git ls-remote`, closing most of limitation 5 rather than deferring it; re-fetched the pinned TiDB and Ceph URLs to confirm the quoted text is present at those revisions. Limitation 5 now covers only the PostgREST `latest` docs URL. Added pinning to the update protocol as a standing rule. |
