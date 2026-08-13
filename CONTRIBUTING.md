@@ -53,6 +53,12 @@ CI additionally builds Ubuntu with LeakSanitizer, so please check that new alloc
 
 Every new eviction, admission, or prefetching algorithm needs a test in the matching file under [`test/`](test/) — for eviction algorithms that is [`test/test_evictionAlgo.c`](test/test_evictionAlgo.c).
 
+[`test/test_cli.sh`](test/test_cli.sh) (the `testCLI` target) covers the command-line tools rather than the library: option parsing, `-e print` parameter reporting, and eviction parameter validation. If you add an algorithm parameter or a CLI option, add a case there. It runs from the build directory and skips itself if the binaries or the sample traces are not where it expects, so it can also be run by hand:
+
+```bash
+cd _build && bash ../test/test_cli.sh
+```
+
 ## Code style
 
 * The project follows **Google style**: 2-space indent, 80-column limit, configured in [`.clang-format`](.clang-format) and [`.clang-tidy`](.clang-tidy). Run `clang-format -i <file>` before committing.

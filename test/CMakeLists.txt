@@ -59,6 +59,13 @@ add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
+
+# Exercises the command-line tools themselves: argument handling, `-e print`
+# parameter reporting, and eviction parameter validation. Runs from the build
+# directory so it can find bin/ and ../data/; skips itself if either is absent.
+add_test(NAME testCLI
+         COMMAND ${CMAKE_COMMAND} -E env bash ${CMAKE_CURRENT_SOURCE_DIR}/test_cli.sh
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 # add_test(NAME testMrcProfiler COMMAND testMrcProfiler WORKING_DIRECTORY .)
 
 # if (ENABLE_GLCACHE)
