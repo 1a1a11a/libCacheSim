@@ -43,6 +43,7 @@
     "prebuild": "^13.0.1"
   },
   "files": [
+    "LICENSE",
     "index.js",
     "cli.js",
     "binding.cc",
