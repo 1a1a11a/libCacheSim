@@ -271,6 +271,8 @@ To cite the edition you read, pin it to a commit: open the file on GitHub and pr
 <kbd>y</kbd>, or run `git log -1 --format=%H -- doc/adoption.md` in a clone. Each edition's
 permalink is the commit that bumped its version in the changelog below.
 
+Replace `<commit>` below with the permalink of the edition you read.
+
 ```bibtex
 @techreport{libcachesim-adoption-census-2026,
   title       = {libCacheSim Adoption Census},
@@ -279,7 +281,6 @@ permalink is the commit that bumped its version in the changelog below.
   number      = {census v1.2.0},
   year        = {2026},
   month       = aug,
-  % replace <commit> with the permalink of the edition you read
   url         = {https://github.com/1a1a11a/libCacheSim/blob/<commit>/doc/adoption.md},
   note        = {Census date 2026-08-13}
 }
