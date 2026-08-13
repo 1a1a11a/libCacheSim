@@ -120,9 +120,16 @@ contribution, not deployment, and are listed apart from sourced adoption for tha
 | Stars | 339 |
 | Forks | 111 |
 | Contributors (non-anonymous) | 36 |
-| Open issues | 28 |
+| Open issues (excluding pull requests) | 21 |
+| Open pull requests | 8 |
 | Created | 2020-06-19 |
 | License | GPL-3.0 |
+
+The two counts are split deliberately. The repository endpoint's `open_issues_count`
+field — 29 at census time — is **not** an issue count: GitHub counts pull requests as
+issues there, so the field is the sum of the two rows above. Reading it as "open issues"
+would overstate the backlog and corrupt trend comparisons between editions. The 8 open
+pull requests include the one that added this document.
 
 Forks were enumerated and are *not* treated as adoption: nearly all are dormant
 snapshots with no divergent description or activity. Known research forks that do carry
@@ -197,10 +204,16 @@ Repository signals:
 
 ```bash
 curl -s https://api.github.com/repos/1a1a11a/libCacheSim |
-  python3 -c "import sys,json;d=json.load(sys.stdin);print({k:d[k] for k in ['stargazers_count','forks_count','open_issues_count','created_at']})"
+  python3 -c "import sys,json;d=json.load(sys.stdin);print({k:d[k] for k in ['stargazers_count','forks_count','created_at']})"
 
 # contributor count: read the rel="last" page number
 curl -sI "https://api.github.com/repos/1a1a11a/libCacheSim/contributors?per_page=1" | grep -i '^link'
+
+# open issues vs open PRs: /issues returns both, PRs carry a `pull_request` key.
+# Do NOT use the repo endpoint's open_issues_count for this — it sums the two.
+# Add &page=N if the repo ever exceeds 100 open items, or the count silently truncates.
+curl -s "https://api.github.com/repos/1a1a11a/libCacheSim/issues?state=open&per_page=100" |
+  python3 -c "import sys,json;d=json.load(sys.stdin);p=[i for i in d if 'pull_request' in i];print('issues',len(d)-len(p),'| prs',len(p))"
 ```
 
 Package state:
