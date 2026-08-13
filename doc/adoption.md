@@ -40,8 +40,10 @@ labelled in [§7](#7-downstream-algorithm-adoption-not-libcachesim-adoption).
 | **D — distributes** | The project ships libCacheSim to users as a package or binding |
 | **E — cites only** | The work cites libCacheSim without a checkable statement of use |
 
-Class E entries are recorded but are *not* counted as adoption; they are listed under
-[§8](#8-examined-and-not-included) so that a later edition does not re-litigate them.
+Class E entries would be recorded but *not* counted as adoption. This edition has none:
+every candidate that got as far as being read either cleared class C or turned out not to
+reference libCacheSim at all, so [§8](#8-examined-and-not-included) lists outright
+rejections rather than E rows. The class is kept defined for editions that need it.
 
 ---
 
@@ -51,7 +53,7 @@ Class E entries are recorded but are *not* counted as adoption; they are listed 
 
 | Work | Venue | Class | Evidence | Source |
 |---|---|---|---|---|
-| GL-Cache: Group-level learning for efficient and high-performance caching | FAST '23 | A | Artifact README on the micro-implementation: "It is a snapshot of [libCacheSim](https://github.com/1a1a11a/libCacheSim)." The directory reproduces libCacheSim's own README and `doc/` tree. | [Thesys-lab/fast23-GLCache](https://github.com/Thesys-lab/fast23-GLCache), [USENIX](https://www.usenix.org/conference/fast23/presentation/yang-juncheng) |
+| GL-Cache: Group-level learning for efficient and high-performance caching | FAST '23 | A | Artifact README, on the micro-implementation half of the artifact: "It is a snapshot of [libCacheSim](https://github.com/1a1a11a/libCacheSim)." That directory reproduces libCacheSim's own README and `doc/` tree. | [Thesys-lab/fast23-GLCache](https://github.com/Thesys-lab/fast23-GLCache), [USENIX](https://www.usenix.org/conference/fast23/presentation/yang-juncheng) |
 | FIFO queues are all you need for cache eviction (S3-FIFO) | SOSP '23 | A | Artifact README: "The repo is a snapshot of [libCacheSim](https://github.com/cacheMon/libCacheSim), modified cachelib, and distComp." Simulations are run through its `cachesim` binary. | [Thesys-lab/sosp23-s3fifo](https://github.com/Thesys-lab/sosp23-s3fifo), [ACM DL](https://dl.acm.org/doi/10.1145/3600006.3613147) |
 | SIEVE is Simpler than LRU | NSDI '24 | A | Artifact README lists its simulator as "a snapshot of libCacheSim", and directs readers to libCacheSim for build instructions. | [Thesys-lab/NSDI24-SIEVE](https://github.com/Thesys-lab/NSDI24-SIEVE), [USENIX](https://www.usenix.org/conference/nsdi24/presentation/zhang-yazhuo) |
 
@@ -64,11 +66,11 @@ re-verified for this edition, so they are not tabulated above.
 
 | Work | Venue / date | Class | Evidence | Source |
 |---|---|---|---|---|
-| 3L-Cache: Low Overhead and Precise Learning-based Eviction Policy for Caches — Wenbin Zhou, Zhixiong Niu, Yongqiang Xiong, Juan Fang, Qian Wang (Beijing Univ. of Technology; Microsoft Research) | FAST '25 | A + B | Artifact README: "3L-Cache is implemented in the libCacheSim library, and its experimental environment configuration is consistent with libCacheSim"; repository layout notes "Forked from LibCacheSim". The algorithm was subsequently upstreamed into this repository. | [optiq-lab/3L-Cache](https://github.com/optiq-lab/3L-Cache), [USENIX](https://www.usenix.org/conference/fast25/presentation/zhou-wenbin), [issue #119](https://github.com/1a1a11a/libCacheSim/issues/119), [`3LCache/`](/libCacheSim/cache/eviction/3LCache/) |
+| 3L-Cache: Low Overhead and Precise Learning-based Eviction Policy for Caches — Wenbin Zhou, Zhixiong Niu, Yongqiang Xiong, Juan Fang, Qian Wang (Beijing Univ. of Technology; Microsoft Research) | FAST '25 | A + B | Artifact README: "3L Cache is implemented in the [libCacheSim] library, and its experimental environment configuration is consistent with libCacheSim"; repository layout notes "Forked from LibCacheSim, which is a platform for cache evaluation". The algorithm was subsequently upstreamed into this repository. | [optiq-lab/3L-Cache](https://github.com/optiq-lab/3L-Cache), [USENIX](https://www.usenix.org/conference/fast25/presentation/zhou-wenbin), [issue #119](https://github.com/1a1a11a/libCacheSim/issues/119), [`3LCache/`](/libCacheSim/cache/eviction/3LCache/) |
 | Man-Made Heuristics Are Dead. Long Live Code Generators! (PolicySmith) — Dwivedula, Saxena, Akella, Chaudhuri, Kim | arXiv, Oct 2025 | B | "Our prototype is built on libCacheSim, a high-performance web cache simulator with an event-driven interface." | [arXiv:2510.08803](https://arxiv.org/abs/2510.08803) |
 | Vulcan: Instance-specialized, Verifiable Systems Heuristics Through LLM-driven Search — Dwivedula, Saxena, Yadalam, Campbell, Kim, Akella | arXiv, Dec 2025 | B | "The scaffolding, implemented on top of `libCacheSim`, is responsible for instantiating the queues that are a part of the topology"; libCacheSim measures object hit rate for candidate heuristics. | [arXiv:2512.25065](https://arxiv.org/abs/2512.25065) |
-| DynamicAdaptiveClimb: Adaptive Cache Replacement with Dynamic Resizing — Berend, Dolev, Kumari, Mishra, Kogan-Sadetsky, Somani | arXiv, Nov 2025 | C | "We use the libcachesim simulator for our experiments." | [arXiv:2511.21235](https://arxiv.org/abs/2511.21235) |
-| SCION: Size-aware Policy Orchestration for Nonstationary Object Caches — Qizhi Wang (PingCAP) | arXiv, 2026 | B | "We implement a trace-driven benchmark in C++ on top of libCacheSim"; the authors also "integrated AdaptiveClimb/DynamicAdaptiveClimb into libCacheSim". | [arXiv:2605.01055](https://arxiv.org/abs/2605.01055) |
+| DynamicAdaptiveClimb: Adaptive Cache Replacement with Dynamic Resizing — Berend, Dolev, Kumari, Mishra, Kogan-Sadetsky, Somani | arXiv, Nov 2025 | C | "Simulator: We conduct all evaluations using libCacheSim [46], an open-source, high-performance, and extensible cache simulator widely adopted in recent caching research." Its related-work table also attributes SIEVE, 3L, ILRU, and both of its own policies to libCacheSim as the evaluation platform. See the [citation note](#6-known-gaps-and-limitations) on this paper's reference [46]. | [arXiv:2511.21235](https://arxiv.org/abs/2511.21235) |
+| SCION: Size-aware Policy Orchestration for Nonstationary Object Caches — Qizhi Wang (PingCAP) | arXiv, 2026 | B | "We implement a trace-driven benchmark in C++ on top of libCacheSim [25]." The artifact contribution is stated as "We integrate DynamicAdaptiveClimb into libCacheSim, build a trace-conversion and evaluation pipeline for HR-Cache". | [arXiv:2605.01055](https://arxiv.org/abs/2605.01055) |
 
 ### 2.3 Independent cross-validation
 
@@ -84,18 +86,30 @@ recording separately from citation-style use.
 
 ## 3. Distribution channels
 
+These rows are **first-party reach, not third-party adoption** — the project publishing
+itself. They are tabulated because availability is what adoption elsewhere depends on,
+and because release cadence and download volume are the only quantitative series this
+census can track over time. The counts in the [changelog](#changelog) keep them separate
+from the adoption entries in [§2](#2-research-artifacts-and-publications) and
+[§4](#4-ecosystem-projects-and-datasets).
+
 | Channel | Package | Class | State on 2026-08-13 | Source |
 |---|---|---|---|---|
 | PyPI | `libcachesim` (Python bindings, maintained under the cacheMon org) | D | Latest `0.3.3.post4` (2026-02-17); first release `0.3.2` (2025-07-14); 5 releases; requires Python ≥ 3.10; GPLv3+ | [PyPI](https://pypi.org/project/libcachesim/), [cacheMon/libCacheSim-python](https://github.com/cacheMon/libCacheSim-python) |
 | npm | `libcachesim-node` (Node.js bindings, in-tree at [`libCacheSim-node/`](/libCacheSim-node)) | D | Latest `0.3.2` (2025-07-14); first publish `1.0.0` (2025-06-18); MIT | [npm](https://www.npmjs.com/package/libcachesim-node) |
 | GitHub Releases | source releases | D | 5 releases, `v0.1` → `v0.3.5` (2026-03-15) | [Releases](https://github.com/1a1a11a/libCacheSim/releases) |
 
-**Download volume** (PyPI, mirrors excluded, via [pypistats.org](https://pypistats.org/packages/libcachesim)):
-1,805 downloads over the 2026-02-12 → 2026-08-11 window available from the API, 258 of
-them in the trailing 30 days. npm `libcachesim-node`: 173 downloads in the trailing
-year ([npm downloads API](https://api.npmjs.org/downloads/point/last-year/libcachesim-node)).
-Download counts include CI and mirror traffic and are a weak proxy for use; they are
-recorded for trend-tracking across census editions, not as a user count.
+**Download volume.** PyPI, via [pypistats.org](https://pypistats.org/packages/libcachesim)
+with `mirrors=false`: 1,805 downloads over the 2026-02-12 → 2026-08-11 window the API
+exposes, 258 of them in the trailing 30 days. npm `libcachesim-node`: 173 downloads in
+the trailing year
+([npm downloads API](https://api.npmjs.org/downloads/point/last-year/libcachesim-node)).
+
+The two figures are not filtered alike, so do not add them or compare them directly. The
+PyPI figure excludes the mirrors pypistats recognizes; the npm endpoint applies no mirror
+filter at all. Neither excludes CI, container builds, or other automated installs, which
+on a research library plausibly dominate. Treat both as a weak proxy recorded for
+trend-tracking across editions, never as a user count.
 
 ---
 
@@ -152,11 +166,18 @@ Stated so that later editions know what this one did not cover.
    no source to link, so it is absent by construction.
 4. **Paywalled sources are excluded, not judged.** See
    [§8](#8-examined-and-not-included).
-5. **libCacheSim has no DOI.** No Zenodo (or equivalent) archival record was found for
-   the software, and the repository carries no `CITATION.cff`. Citation of the software
-   currently relies on the repository URL and the BibTeX in
-   [`references.md`](/references.md); citation of *this census* relies on the commit
-   permalink below. Minting a DOI would give both a stable archival identifier.
+5. **libCacheSim has no DOI, and downstream citations are already drifting.** No Zenodo
+   (or equivalent) archival record was found for the software, and the repository carries
+   no `CITATION.cff`. The cost is visible in the corpus: of the entries surveyed here,
+   PolicySmith and Vulcan cite the software correctly as *Juncheng Yang (1a1a11a), 2023,
+   libCacheSim: a high performance library for building cache simulators*, while
+   [DynamicAdaptiveClimb](https://arxiv.org/abs/2511.21235) attributes it in its
+   reference [46] to *"S. A. Zekavat and A. Jog (2020), LibCacheSim: a configurable and
+   extensible cache simulator"* — an attribution to authors unconnected to this project.
+   That entry still describes real use of the tool, so the row stands, but it is a
+   citation defect this project can fix at the source. Shipping a `CITATION.cff` and
+   minting a DOI would give the software one canonical form to copy and give this census
+   a stable archival identifier.
 
 ---
 
@@ -196,6 +217,11 @@ part of the census: it prevents re-checking and makes the inclusion bar auditabl
 | PyPI [`cachebench`](https://pypi.org/project/cachebench/) | Name collision only — an unrelated LLM prompt-cache observability package, not the CacheBench in [§4](#4-ecosystem-projects-and-datasets) |
 | SL-Cache (Springer, [10.1007/978-981-92-0363-5_36](https://doi.org/10.1007/978-981-92-0363-5_36)) | Plausible but **unverified** — full text is paywalled, so no usage statement could be read. Recheck in a later edition |
 
+**Leads for the next edition.** DynamicAdaptiveClimb's related-work table attributes
+ILRU (2025) to libCacheSim as its evaluation platform. That is a third party's claim
+about a *third* paper, which is not evidence under this census's rules — it needs the
+ILRU paper itself. Recorded here so the lead is not lost.
+
 ---
 
 ## 9. Reproducing this census
@@ -224,12 +250,34 @@ curl -s https://registry.npmjs.org/libcachesim-node | python3 -m json.tool | hea
 curl -s "https://pypistats.org/api/packages/libcachesim/overall?mirrors=false"
 ```
 
-Publication evidence: each row's source URL was opened and the quoted sentence read in
-place. A row is only promoted past class E when such a sentence exists.
+**Publication evidence.** Every quotation in this document was matched against the raw
+source — `raw.githubusercontent.com` for READMEs, the arXiv HTML full text for papers,
+the file itself for code — and not against a rendered summary or a search-result
+snippet. That distinction is load-bearing: during preparation of this edition, two
+quotations produced by summarizing a source were found to be paraphrases that appear
+nowhere in the original, and were replaced with the sentences the papers actually
+contain. A quotation you cannot locate in the raw text is a defect, not a formatting
+difference — report it.
+
+For any row, the check is:
+
+```bash
+# READMEs and code
+curl -s https://raw.githubusercontent.com/<owner>/<repo>/<branch>/README.md | grep -in libcachesim
+
+# arXiv papers: strip tags from the HTML full text, then search the sentence
+curl -sL https://arxiv.org/html/<id> |
+  python3 -c "import sys,re,html;t=re.sub(r'<[^>]+>',' ',sys.stdin.read());print(re.sub(r'\s+',' ',html.unescape(t)))" |
+  grep -io '.\{200\}libcachesim.\{120\}'
+```
+
+A row is only promoted past class E when such a sentence exists and reads in context as
+a statement of use rather than a citation in passing.
 
 **To add an entry:** open a PR editing this file with (a) the source URL, (b) the
-verbatim sentence supporting the claim, (c) the evidence class, and (d) the date you
-verified it. Bump the census version and append to the changelog below.
+verbatim sentence supporting the claim, located in the raw source, (c) the evidence
+class, and (d) the date you verified it. Bump the census version and append to the
+changelog below.
 
 ---
 
@@ -285,4 +333,4 @@ To cite libCacheSim itself, use the BibTeX entries in [`references.md`](/referen
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0.0 | 2026-08-13 | First edition. **14 sourced entries** — 9 research (3 first-party artifacts, 5 third-party works, 1 independent cross-validation), 3 distribution channels, 2 ecosystem projects — of which 8 are third-party. By evidence class: 4×A, 5×B, 3×C, 3×D (15 class assignments over 14 rows — the 3L-Cache row carries both A and B). 6 candidates examined and rejected. Repository signals and downstream algorithm adoption recorded separately and excluded from these counts. |
+| 1.0.0 | 2026-08-13 | First edition. **11 adoption entries** — 9 research (3 first-party artifacts, 5 third-party works, 1 independent cross-validation) and 2 ecosystem projects — of which **8 are third-party**. Plus 3 first-party distribution channels, which are reach rather than adoption, for **14 sourced rows** total. By evidence class: 4×A, 5×B, 3×C, 3×D (15 assignments over 14 rows — the 3L-Cache row carries both A and B). 6 candidates examined and rejected, 1 lead recorded as unverified. Repository signals and downstream algorithm adoption are recorded separately and excluded from every count above. |
