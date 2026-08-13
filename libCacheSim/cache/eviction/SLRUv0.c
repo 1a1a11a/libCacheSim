@@ -93,7 +93,8 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size /= params->n_seg;
-  ccache_params_local.hashpower = MIN(16, ccache_params_local.hashpower - 4);
+  ccache_params_local.hashpower =
+      MAX(4, MIN(16, ccache_params_local.hashpower - 4));
   params->LRUs[0] = LRU_init(ccache_params_local, NULL);
   for (int i = 1; i < params->n_seg; i++) {
     params->LRUs[i] = LRU_init(ccache_params_local, NULL);

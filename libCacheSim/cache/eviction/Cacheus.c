@@ -72,7 +72,7 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
   common_cache_params_t updated_cc_params = ccache_params;
   /* reduce the hash table size */
-  updated_cc_params.hashpower -= 2;
+  updated_cc_params.hashpower = MAX(4, updated_cc_params.hashpower - 2);
 
   cache_t *cache =
       cache_struct_init("Cacheus", updated_cc_params, cache_specific_params);

@@ -240,6 +240,18 @@ for hp in 0 -1 40 99; do
 		--num-req=20000 "--hashpower=${hp}"
 done
 
+# Composite policies size their sub-caches by subtracting from this. Without a
+# floor the result reached zero, which cache_struct_init reads as "unset" and
+# replaces with the full-size default — so asking for a small table allocated
+# several large ones instead. slruv0 at hashpower 4 took 18 MB against 6 MB at 5.
+for algo in slruv0 s3fifod cacheus lru; do
+	for hp in 4 5 6 8; do
+		expect_ok "${algo} at --hashpower=${hp}" \
+			"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 10mb \
+			--num-req=20000 "--hashpower=${hp}"
+	done
+done
+
 echo "running SLRU parameter validation tests"
 
 # n-seg divides the cache size and the reported percentages, and seg-size fills
@@ -303,6 +315,16 @@ if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
 	# that does not fit back into uint64_t.
 	for rate in 1 0.999 0.5 0.0001; do
 		expect_ok "mrcProfiler SHARDS at sample rate ${rate}" \
+			"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
+			--algo=LRU --profiler=SHARDS --profiler-params="FIX_RATE,${rate},42" \
+			--size=0.1,0.5,10
+	done
+
+	# Rates outside (0, 1] are rejected. nan needs the negated comparison, since
+	# every ordinary comparison against it is false and it otherwise slipped
+	# through to produce an all-1.0 curve and a zero exit.
+	for rate in 0 -1 2 nan; do
+		expect_clean_error "mrcProfiler rejects sample rate ${rate}" \
 			"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
 			--algo=LRU --profiler=SHARDS --profiler-params="FIX_RATE,${rate},42" \
 			--size=0.1,0.5,10

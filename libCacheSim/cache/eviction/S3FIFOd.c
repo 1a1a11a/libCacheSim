@@ -152,7 +152,7 @@ cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
   }
 
   ccache_params_local.cache_size = ccache_params.cache_size / 10;
-  ccache_params_local.hashpower -= 4;
+  ccache_params_local.hashpower = MAX(4, ccache_params_local.hashpower - 4);
   params->small_eviction = FIFO_init(ccache_params_local, NULL);
   params->main_eviction = FIFO_init(ccache_params_local, NULL);
   snprintf(params->small_eviction->cache_name, CACHE_NAME_ARRAY_LEN,
