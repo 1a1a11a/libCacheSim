@@ -473,6 +473,8 @@ If you used libCacheSim in your research, please cite the above papers.
 
 GitHub's **Cite this repository** button uses [CITATION.cff](/CITATION.cff); [references.md](/references.md) has the same entries as BibTeX, including the SIEVE paper.
 
+**Who uses libCacheSim**: a source-linked inventory of the third-party papers, forks, and projects built on libCacheSim is maintained in [doc/adoption.md](/doc/adoption.md).
+
 ---
 
 

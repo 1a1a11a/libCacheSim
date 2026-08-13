@@ -53,7 +53,7 @@ CI additionally builds Ubuntu with LeakSanitizer, so please check that new alloc
 
 Every new eviction, admission, or prefetching algorithm needs a test in the matching file under [`test/`](test/) — for eviction algorithms that is [`test/test_evictionAlgo.c`](test/test_evictionAlgo.c).
 
-[`test/test_cli.sh`](test/test_cli.sh) (the `testCLI` target) covers the command-line tools rather than the library: option parsing, `-e print` parameter reporting, and eviction parameter validation. If you add an algorithm parameter or a CLI option, add a case there. It runs from the build directory and skips itself if the binaries or the sample traces are not where it expects, so it can also be run by hand:
+Changes to the command-line tools need their own coverage, and the library tests will not catch them: option parsing, `-e print` parameter reporting, and eviction parameter validation all live between the command line and the point where the C tests build a cache. The `testCLI` target covers that ground — if you add an algorithm parameter or a CLI option, add a case there. Check that invalid input is rejected with a message rather than a signal, since `ERROR()` aborts and a deliberate rejection is easy to confuse with a crash. It runs from the build directory and skips itself if the binaries or the sample traces are not where it expects, so it can also be run by hand:
 
 ```bash
 cd _build && bash ../test/test_cli.sh

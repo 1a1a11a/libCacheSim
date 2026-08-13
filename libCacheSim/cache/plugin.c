@@ -50,6 +50,9 @@ cache_t *create_cache_external(const char *const cache_alg_name,
   if ((error = dlerror()) != NULL) {
     WARN("cannot find %s in %s: %s\n", cache_init_func_name, shared_lib_path,
          error);
+    /* nothing from the library is in use on this path, unlike the success path
+     * below, so the handle can be closed rather than leaked */
+    dlclose(handle);
     return NULL;
   } else {
     INFO("external cache %s loaded\n", cache_alg_name);

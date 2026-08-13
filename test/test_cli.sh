@@ -43,7 +43,7 @@ TRACE_ORACLE="${DATA_DIR}/cloudPhysicsIO.oracleGeneral.bin"
 TRACE_CSV="${DATA_DIR}/cloudPhysicsIO.csv"
 TRACE_TXT="${DATA_DIR}/cloudPhysicsIO.txt"
 
-WORK_DIR=$(mktemp -d)
+WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/libcachesim_cli_test.XXXXXX")
 trap 'rm -rf "${WORK_DIR}"' EXIT
 cd "${WORK_DIR}" || exit 1
 
@@ -176,7 +176,8 @@ ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
 	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob nop
 	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifod s3fifov0
-	sieve size slru slruv0 tinyLFU twoq wtinyLFU"
+	sieve size slru slruv0 tinyLFU twoq wtinyLFU
+	hyperbolic belady beladySize"
 
 n_skipped=0
 for algo in ${ALL_ALGOS}; do
