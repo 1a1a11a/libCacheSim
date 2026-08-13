@@ -114,13 +114,22 @@ artifacts that add an algorithm to libCacheSim without an accompanying paper.
 | `gws8820` | Fork extending the simulator to two cache levels | A | README: "runs in 2-Level so can set different replacement algorithm and cache size for each level." | [gws8820/2-Level-libCacheSim](https://github.com/gws8820/2-Level-libCacheSim/tree/d93106ca12b6b7f9593ab1db7aaa5482c73356df) |
 
 The three Chameleon artifacts were found by scanning all 460 public Trovi artifacts, and
-are dated within ten days of each other in April 2025. They are **project-affiliated, not
-independent**: two of the three authors turn up as co-authors on libCacheSim-team papers —
-Bintang Dwi Marthen on the OSDI '26 paper (listed at Harvard and Institut Teknologi
-Bandung) and Muhammad Haekal Muhyidin Al-Araby on the PVLDB '26 paper — so the cohort is
-a course or mentorship programme around the project. They are excluded from the
-third-party subtotal for that reason. Marc Brooker, `gws8820`, and the VU Amsterdam
-thesis are unaffiliated and count as third-party.
+are dated within ten days of each other in April 2025. Their affiliation to the project
+differs by author, and is stated per row rather than assumed for the group:
+
+- **Bintang Dwi Marthen** (Bandung Institute of Technology, per the artifact metadata) is
+  a co-author on the OSDI '26 paper above, listed there at Harvard University and
+  Institut Teknologi Bandung — **project-affiliated**.
+- **Muhammad Haekal Muhyidin Al-Araby** (Sepuluh Nopember Institute of Technology) is a
+  co-author on the PVLDB '26 paper above — **project-affiliated**.
+- **Raden Rafly Hanggaraksa Budiarto** (Bandung Institute of Technology) has **no
+  established link** to the project. He shares an institution with Marthen and published
+  within ten days of him, which is suggestive of a shared course, but no source found for
+  this edition demonstrates it. Counted as third-party, which is the default when no
+  affiliation can be shown.
+
+Marc Brooker, `gws8820`, and the VU Amsterdam thesis are unaffiliated and count as
+third-party.
 
 ---
 
@@ -310,4 +319,4 @@ To cite libCacheSim itself, use the BibTeX entries in [`references.md`](/referen
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0.0 | 2026-08-13 | First edition. **28 adoption entries** — 8 first-party artifacts, 10 third-party works, 1 independent cross-validation, 6 practitioner and community entries, and 3 ecosystem projects — of which **15 are third-party**. Plus 3 first-party distribution channels, which are reach rather than adoption, for **31 classed rows**. By evidence class: 11×A, 9×B, 13×C, 3×D (36 assignments over 31 rows; five rows carry two classes). Recorded but counted nowhere: the OSDI '20 row that introduced the simulator, 4 derived-implementation and trace-format rows, repository signals, and downstream algorithm adoption. |
+| 1.0.0 | 2026-08-13 | First edition. **28 adoption entries** — 8 first-party artifacts, 10 third-party works, 1 independent cross-validation, 6 practitioner and community entries, and 3 ecosystem projects — of which **16 are third-party**. Plus 3 first-party distribution channels, which are reach rather than adoption, for **31 classed rows**. By evidence class: 11×A, 9×B, 13×C, 3×D (36 assignments over 31 rows; five rows carry two classes). Recorded but counted nowhere: the OSDI '20 row that introduced the simulator, 4 derived-implementation and trace-format rows, repository signals, and downstream algorithm adoption. |
