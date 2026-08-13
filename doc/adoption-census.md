@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.1
+**Census version:** 1.0.2
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -63,6 +63,17 @@ than inherited from the upstream list, which is how the two ungraded entries the
    that population is not publicly enumerable.
 4. **Download statistics are absent.** pypistats.org returned HTTP 429 during this snapshot; PyPI
    download counts should be added in the next revision.
+5. **External evidence links are branch URLs, not commit permalinks.** The file-level links in
+   [Section 5.2](#52-named-sieve-adopters-with-direct-source-links) point at `main`/`master`, so
+   they can drift away from what was verified — the same failure this document warns about for its
+   own citation. The SkiftOS row is that failure already realized: its linked path returned 404 on
+   re-check. Pinning was attempted for this snapshot and could not be completed —
+   `api.github.com` was unreachable (HTTP 403) from the environment that ran it, and GitHub blob
+   pages render the commit SHA client-side, so no SHA could be read. The next revision should pin
+   each link with `git ls-remote` or
+   `GET /repos/{owner}/{repo}/commits?path={file}&per_page=1`, rewriting
+   `blob/main/...` to `blob/{sha}/...`. Until then, treat Section 5.2's Grade A entries as verified
+   **as of 2026-08-13**, not as permanently reproducible.
 
 ---
 
@@ -196,10 +207,10 @@ because implementing an algorithm is not using the simulator.
 
 ### 5.1 Aggregate statements
 
-| Claim (quoted) | Source | Grade |
-| --- | --- | --- |
-| "S3-FIFO and SIEVE are adopted for production at Google, VMware, Redpanda, and several others, with over 60 open-source libraries and packages in 18 programming languages available on GitHub." | [junchengyang.com](https://junchengyang.com/) | C |
-| "These algorithms have seen broad industry adoption — including in Android, the TiDB database, and many others — and have been implemented in dozens of open-source systems and libraries, including over 60 across more than 16 programming languages on GitHub." | [Harvard SEAS news, 2025-10-27](https://seas.harvard.edu/news/2025/10/juncheng-yang-winner-acm-award-dissertation-most-impact) | C |
+| Claim (quoted) | Source | Date checked | Grade |
+| --- | --- | --- | --- |
+| "S3-FIFO and SIEVE are adopted for production at Google, VMware, Redpanda, and several others, with over 60 open-source libraries and packages in 18 programming languages available on GitHub." | [junchengyang.com](https://junchengyang.com/) | 2026-08-12 | C |
+| "These algorithms have seen broad industry adoption — including in Android, the TiDB database, and many others — and have been implemented in dozens of open-source systems and libraries, including over 60 across more than 16 programming languages on GitHub." | [Harvard SEAS news, 2025-10-27](https://seas.harvard.edu/news/2025/10/juncheng-yang-winner-acm-award-dissertation-most-impact) | 2026-08-12 | C |
 
 Both are aggregate claims with no public per-entry roster, which is Grade C by this document's
 rubric. A university news office is editorially independent of the researcher, but that affects
@@ -272,9 +283,14 @@ Recorded so that future revisions do not re-investigate the same dead ends.
 6. Add a row to the changelog below.
 
 Priority work for the next revision, in order of expected yield: repository-wide code search for
-forks and vendored copies (limitation 1), PyPI/npm download statistics (limitation 4), manual
-verification of the two Trovi artifacts, and full-text retrieval of the USENIX PDFs from an
-environment that can reach usenix.org.
+forks and vendored copies (limitation 1), pinning Section 5.2's evidence links to commit SHAs
+(limitation 5), PyPI/npm download statistics (limitation 4), manual verification of the two Trovi
+artifacts, and full-text retrieval of the USENIX PDFs from an environment that can reach
+usenix.org.
+
+Note that limitations 4 and 5 were both blocked by the *environment* the snapshot ran in, not by
+the sources themselves. Re-running from a host with unrestricted access to `api.github.com`,
+`pypistats.org`, and `usenix.org` would close three open items in a single pass.
 
 ---
 
@@ -295,7 +311,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.1},
+  version      = {1.0.2},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -304,7 +320,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.1, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.2, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -316,5 +332,6 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.2 | 2026-08-13 | Added the missing `Date checked` column to Section 5.1. Recorded a new limitation 5: Section 5.2's evidence links are branch URLs, not commit permalinks, so they can drift from what was verified — the SkiftOS 404 is that failure already realized. Pinning was attempted and blocked by the snapshot environment (`api.github.com` returned 403; blob pages render SHAs client-side), so the method is documented for the next revision instead of being left implicit. |
 | 1.0.1 | 2026-08-13 | Individually fetched all ten Section 5.2 adopter links instead of inheriting them: 8 graded A against primary artifacts, Pelikan and SkiftOS downgraded to U (repo-root-only link; HTTP 404 link rot). Added grades to Section 5.2 so every entry carries one, as the introduction promises. Cited SCION by its arXiv abstract page and flagged that arXiv's stated submission date disagrees with its identifier prefix. Citation example now uses a commit permalink rather than a branch URL. Downgraded the Harvard SEAS aggregate claim from B to C: editorial independence does not make an aggregate claim auditable, and the rubric grades auditability. |
 | 1.0.0 | 2026-08-12 | Initial census: 5 confirmed direct users, 6 distribution signals, 2 self-reported aggregate claims, 10 named algorithm-lineage adopters, 6 excluded or deferred candidates. |
