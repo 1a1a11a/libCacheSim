@@ -419,10 +419,13 @@ We provide more comprehensive cache datasets at [https://github.com/cacheMon/cac
 
 ---
 ## Contributions
-We gladly welcome pull requests.
+We gladly welcome pull requests. See [CONTRIBUTING.md](/CONTRIBUTING.md) for how to build, test, and submit changes, and [doc/advanced_lib_extend.md](/doc/advanced_lib_extend.md) for adding a new algorithm or trace reader.
+
 Before making any large changes, we recommend opening an issue and discussing your proposed changes.
 If the changes are minor, then feel free to make them without discussion.
-This project adheres to Google's coding style. By participating, you are expected to uphold this code.
+This project adheres to Google's coding style, and participants are expected to follow our [Code of Conduct](/CODE_OF_CONDUCT.md).
+
+Found a security issue? Please report it privately — see [SECURITY.md](/SECURITY.md).
 
 ---
 ## Reference
@@ -467,6 +470,8 @@ This project adheres to Google's coding style. By participating, you are expecte
 If you used libCacheSim in your research, please cite the above papers.
 
 </details>
+
+GitHub's **Cite this repository** button uses [CITATION.cff](/CITATION.cff); [references.md](/references.md) has the same entries as BibTeX, including the SIEVE paper.
 
 ---
 
