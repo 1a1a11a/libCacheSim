@@ -20,4 +20,4 @@
 - [Install & Build](install.md)
 
 ## Project
-- [Adoption Census (who uses libCacheSim, with sources)](adoption.md)
+- [Adoption Census (who outside the project uses libCacheSim, with sources)](adoption.md)

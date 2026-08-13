@@ -1,14 +1,14 @@
 # libCacheSim Adoption Census
 
-A source-linked inventory of where libCacheSim is used. Every entry quotes the sentence in
-a primary source that supports it and links to that source. Entries without a checkable
-source do not appear.
+A source-linked inventory of who, outside this project, uses libCacheSim. Every entry quotes
+the sentence in a primary source that supports it and links to that source. Entries without a
+checkable source do not appear.
 
 | | |
 |---|---|
-| **Census version** | `1.0.0` |
+| **Census version** | `1.1.0` |
 | **Census date** | 2026-08-13 |
-| **Repository snapshot** | `develop` @ [`7c169cf`](https://github.com/1a1a11a/libCacheSim/commit/7c169cf596fa9aa7ad3a47dee18bc6b243db1834); latest release [`v0.3.5`](https://github.com/1a1a11a/libCacheSim/releases/tag/v0.3.5) (2026-03-15) |
+| **Repository snapshot** | `develop` @ [`dc80ebf`](https://github.com/1a1a11a/libCacheSim/commit/dc80ebf695c54601f9d00f815a730e080186a23f); latest release [`v0.3.5`](https://github.com/1a1a11a/libCacheSim/releases/tag/v0.3.5) (2026-03-15) |
 | **Canonical location** | [`doc/adoption.md`](https://github.com/1a1a11a/libCacheSim/blob/develop/doc/adoption.md) |
 
 **Scope.** A work is listed if a primary source shows it builds on, bundles, forks,
@@ -16,30 +16,20 @@ distributes, or runs libCacheSim. Quotations were matched against raw source tex
 summary — and every GitHub link is pinned to a commit so a later upstream edit cannot
 strand a quotation.
 
+**First-party work is excluded.** libCacheSim's own papers and artifacts — the OSDI '20
+paper that introduced the simulator, GL-Cache, S3-FIFO, SIEVE, QD-LP, S4-FIFO, Lazy
+Promotion, Clock2Q+, and Juncheng Yang's dissertation — are not entries here: they are the
+project, not evidence of its reach. The same rule excludes artifacts and ecosystem projects
+authored by the project's own members and co-authors. Every entry below is third-party.
+
 **Not adoption.** SIEVE and S3-FIFO were designed and evaluated with libCacheSim and are
 now reimplemented in many third-party systems. Those systems are not libCacheSim users.
 They, and work that borrows only the trace format or an algorithm implementation, are
-recorded in [§6](#6-related-but-not-adoption) and counted separately.
+recorded in [§4](#4-related-but-not-adoption) and counted separately.
 
 ---
 
-## 1. First-party papers and artifacts
-
-| Work | Venue | Evidence | Source |
-|---|---|---|---|
-| A large-scale analysis of hundreds of in-memory key-value cache clusters at Twitter — Yang, Yue, Rashmi | OSDI '20 / ACM TOS '21 | The paper that introduced the simulator: "We built an open-source simulator called libCacheSim [71] to study the steady-state miss ratio of the different eviction algorithms." Recorded as the origin, not as adoption. | [USENIX](https://www.usenix.org/conference/osdi20/presentation/yang), [ACM DL](https://doi.org/10.1145/3468521) |
-| GL-Cache: Group-level learning for efficient and high-performance caching | FAST '23 | Artifact README, on the micro-implementation half: "It is a snapshot of [libCacheSim](https://github.com/1a1a11a/libCacheSim)." That directory reproduces libCacheSim's own README and `doc/` tree. | [Thesys-lab/fast23-GLCache](https://github.com/Thesys-lab/fast23-GLCache/tree/fbb824091209f390f7c921aadee1fbf0d35209c2), [USENIX](https://www.usenix.org/conference/fast23/presentation/yang-juncheng) |
-| FIFO queues are all you need for cache eviction (S3-FIFO) | SOSP '23 | Artifact README: "The repo is a snapshot of [libCacheSim](https://github.com/cacheMon/libCacheSim), modified cachelib, and distComp." Simulations run through its `cachesim` binary. | [Thesys-lab/sosp23-s3fifo](https://github.com/Thesys-lab/sosp23-s3fifo/tree/6bc49d9630572721b41cd08adfa982775f3cb1de), [ACM DL](https://dl.acm.org/doi/10.1145/3600006.3613147) |
-| SIEVE is Simpler than LRU | NSDI '24 | Artifact README lists its simulator as "a snapshot of libCacheSim", and directs readers here for build instructions. | [Thesys-lab/NSDI24-SIEVE](https://github.com/Thesys-lab/NSDI24-SIEVE/tree/7137cfef66a19dc7e65ba7575807616c1d942383), [USENIX](https://www.usenix.org/conference/nsdi24/presentation/zhang-yazhuo) |
-| FIFO can be Better than LRU: the Power of Lazy Promotion and Quick Demotion (QD-LP) | HotOS '23 | Artifact README: "The repo is a snapshot of [libCacheSim](https://github.com/1a1a11a/libCacheSim), which contains the implementation of the algorithms compared in the paper." Ships here as [`QDLP.c`](/libCacheSim/cache/eviction/QDLP.c). | [Thesys-lab/HotOS23-QD-LP](https://github.com/Thesys-lab/HotOS23-QD-LP/tree/83aa8def9912a7b8d63fbfcda36bf2a648cc5cd5), [ACM DL](https://doi.org/10.1145/3593856.3595887) |
-| Learning-Augmented Heuristics: Simple Yet Smart, Robust and Interpretable Cache Eviction (S4-FIFO) — Xia, Nixon, Marthen, Bhandari, Yang (Harvard, UIUC, U Chicago, ITB, Meta) | OSDI '26 | "We implement S4-FIFO in both libCacheSim for simulation-based evaluation and Meta Cachelib for prototype evaluation and production deployment"; "All miss ratio results are from libCacheSim because most state-of-the-art eviction algorithms are not available in open-source caches such as Cachelib." | [USENIX](https://www.usenix.org/conference/osdi26/presentation/xia), [cacheMon/osdi26-s4-fifo](https://github.com/cacheMon/osdi26-s4-fifo/tree/000095fc3c96a95ff1b9a19d101fb1411c7f4d54) |
-| Demystifying and Improving Lazy Promotion in Cache Eviction — Chen, Qiu, Chen, Vinayak (CMU), Al-Araby (ITS Surabaya), Yang (Harvard) | PVLDB 19(4), 549–562 | "We implemented each Lazy Promotion technique on top of libCacheSim [5] and replayed the traces in our dataset to measure miss ratio." | [PVLDB](https://www.vldb.org/pvldb/vol19/p549-yang.pdf), [DOI](https://doi.org/10.14778/3785297.3785299), [cacheMon/Lazy-Promotions](https://github.com/cacheMon/Lazy-Promotions/tree/7e503984e41994f03880a12153b86827aaf7e680) |
-| Clock2Q+: A Simple and Efficient Replacement Algorithm for Metadata Cache in VMware vSAN — Zhai, Marthen, Balivada, Bojji, Knauft, Rohilla, Zuo, Liu, Austruy, Wang, Yang | arXiv, Nov 2025 | "We implemented Clock2Q+ in the cache simulator libCacheSim [52]. This ensures a fair and accurate comparison with state-of-the-art algorithms." Ships here as [`Clock2QPlus.c`](/libCacheSim/cache/eviction/Clock2QPlus.c). | [arXiv:2511.21958](https://arxiv.org/abs/2511.21958) |
-| Designing Efficient and Scalable Key-value Cache Management Systems — Juncheng Yang (PhD thesis, CMU-CS-24-149) | CMU, 2024 | "Simulator. We implemented S3-FIFO and the state-of-the-art eviction algorithms … in libCacheSim [368]." | [PDL](https://www.pdl.cmu.edu/ftp/Storage/CMU-CS-24-149-juncheny.pdf), [DOI](https://doi.org/10.1184/R1/28500515.v1) |
-
----
-
-## 2. Third-party research
+## 1. Third-party research
 
 | Work | Venue | Evidence | Source |
 |---|---|---|---|
@@ -59,7 +49,7 @@ recorded in [§6](#6-related-but-not-adoption) and counted separately.
 
 ---
 
-## 3. Practitioner and community use
+## 2. Practitioner, community, and ecosystem use
 
 Use outside the publication record.
 
@@ -68,31 +58,18 @@ Use outside the publication record.
 | Ben Manes — maintainer of [Caffeine](https://github.com/ben-manes/caffeine) | Ran libCacheSim beside Caffeine's own simulator to re-check published S3-FIFO/SIEVE results, and reported a size-accounting discrepancy back to this project | "I used libcachesim at 0f4d135 (current master) … with this patch to include the new trace formats." | [issue #18](https://github.com/1a1a11a/libCacheSim/issues/18) |
 | Marc Brooker — engineer at Amazon Web Services | Designed a SIEVE-k variant, evaluated it here, and published his implementation as a fork | "Using the excellent open source libCacheSim I tried SIEVE-2 against SIEVE on a range of real-world traces"; "I've implemented SIEVE-k in a fork of libCacheSim." The fork carries [`Sieve_k.c`](https://github.com/mbrooker/libCacheSim/blob/0147d1e93d411165492554a4e2cccbcb1d610fb0/libCacheSim/cache/eviction/Sieve_k.c). | [brooker.co.za](https://brooker.co.za/blog/2023/12/15/sieve.html), [mbrooker/libCacheSim](https://github.com/mbrooker/libCacheSim/tree/0147d1e93d411165492554a4e2cccbcb1d610fb0) |
 | L. Stampf — BSc thesis, Vrije Universiteit Amsterdam, 2025 | Compared eviction primitives on Zipf-like workloads, and fixed the macOS build upstream while doing it | "The building and execution of cache simulations was performed using the cache simulator provided by libCacheSim." Its upstream PRs [#179](https://github.com/1a1a11a/libCacheSim/pull/179) and [#181](https://github.com/1a1a11a/libCacheSim/pull/181) were merged; [#183](https://github.com/1a1a11a/libCacheSim/pull/183) was not. | [thesis PDF](https://www.cs.vu.nl/~wanf/theses/stampf-bscthesis.pdf) |
-| Bintang Dwi Marthen (ITB) | Chameleon Cloud artifact implementing CLOCK-Pro | "This artifact is my implementation of ClockPro on libCacheSim" | [Trovi](https://chameleoncloud.org/experiment/share/1a05c09b-f149-4555-b133-a4114155746b) |
 | Raden Rafly Hanggaraksa Budiarto (ITB) | Chameleon Cloud artifact implementing CAR | "Implemented the CAR (Clock with Adaptive Replacement) cache implementation on LibCacheSim" | [Trovi](https://chameleoncloud.org/experiment/share/bac62a10-3868-4a77-9075-7e9247dd199b) |
-| Muhammad Haekal Muhyidin Al-Araby (ITS) | Chameleon Cloud artifact demonstrating AdaptSize | "This artifact contain an example on how to run AdaptSize on LibCacheSim." | [Trovi](https://chameleoncloud.org/experiment/share/f9cdc812-0c61-46ab-848d-295e47a4954c) |
 | `gws8820` | Fork extending the simulator to two cache levels | README: "runs in 2-Level so can set different replacement algorithm and cache size for each level." | [gws8820/2-Level-libCacheSim](https://github.com/gws8820/2-Level-libCacheSim/tree/d93106ca12b6b7f9593ab1db7aaa5482c73356df) |
+| **system-intelligence-benchmark** — suite scoring LLM-designed systems heuristics; its `cache_algo_bench` task scores candidate eviction policies | Shells out to the built binary from `benchmarks/cache_algo_bench/src/cache_simulator/utils.py` | `command = f"""{LIBCACHSIM_PATH}/_build/bin/cachesim {cache_trace} oracleGeneral {cache_alg} {cache_cap} --ignore-obj-size 1 …"""` | [sys-intelligence/system-intelligence-benchmark](https://github.com/sys-intelligence/system-intelligence-benchmark/tree/46596edd8113a3eaf5646e49a42cc2a9fae3de4d) |
 
-The three Chameleon artifacts were found by scanning all 460 public Trovi artifacts and
-are dated within ten days of each other. Marthen and Al-Araby are co-authors on the
-OSDI '26 and PVLDB papers above, so they are project-affiliated; Budiarto has no
-established link and counts as third-party, which is the default when none can be shown.
-
----
-
-## 4. Ecosystem projects and datasets
-
-| Project | Evidence | Source |
-|---|---|---|
-| **CacheBench** — benchmarking suite evaluating 18 eviction algorithms across thousands of traces, built by Haocheng Xia under the UCSC OSPO Summer of Reproducibility | Describes libCacheSim as a core component, and the project as "a Python package that allows users to easily download traces and run simulation analyses using libCacheSim" | [UCSC OSPO report](https://ucsc-ospo.github.io/report/osre25/harvard/cachebench/2025-08-06-haochengxia/) |
-| **system-intelligence-benchmark** — suite scoring LLM-designed systems heuristics; its `cache_algo_bench` task scores candidate eviction policies | Shells out to the built binary from `benchmarks/cache_algo_bench/src/cache_simulator/utils.py`: `command = f"""{LIBCACHSIM_PATH}/_build/bin/cachesim {cache_trace} oracleGeneral {cache_alg} {cache_cap} --ignore-obj-size 1 …"""` | [sys-intelligence/system-intelligence-benchmark](https://github.com/sys-intelligence/system-intelligence-benchmark/tree/46596edd8113a3eaf5646e49a42cc2a9fae3de4d) |
-| **cache_dataset** — production cache traces (Meta, Twitter, CloudPhysics, Microsoft, Wikimedia, Alibaba, Tencent) | Ships three tutorial notebooks named "Using libCacheSim to read the dataset", "Using libCacheSim to analyze and plot the trace", and "Using libCacheSim to run cache simulation", and publishes traces in a compatible format: "We provide both plain text format that is human readable and `oracleGeneral` format that is suitable for using with [libCacheSim] platform." | [README](https://github.com/cacheMon/cache_dataset/blob/a005343f26f47110de5c8d78d645ee89bee1e7ed/README.md) |
-
-CacheBench and cache_dataset are project-affiliated; system-intelligence-benchmark is not.
+Budiarto's artifact was found by scanning all 460 public Trovi artifacts. Two others in the
+same ten-day window — CLOCK-Pro and AdaptSize on libCacheSim — are by authors who co-write
+with the project, so they are excluded as first-party; Budiarto has no established link and
+counts as third-party, which is the default when none can be shown.
 
 ---
 
-## 5. Distribution
+## 3. Distribution
 
 The project publishing itself — reach rather than third-party adoption.
 
@@ -115,12 +92,12 @@ both as weak proxies, not user counts.
 Debian, Homebrew, Nix, and crates.io carry no libCacheSim port; the single Docker Hub
 image is the project's own; deps.dev and GitHub's dependency graph report zero reverse
 dependencies for the PyPI package. The one third-party redistribution found anywhere is
-outside package management: the T3-LRU fork in [§2](#2-third-party-research), archived
+outside package management: the T3-LRU fork in [§1](#1-third-party-research), archived
 with a DOI on Zenodo.
 
 ---
 
-## 6. Related but not adoption
+## 4. Related but not adoption
 
 **Borrowed implementations and trace formats.** These take something from libCacheSim
 without running or building on it, and count toward no total above — recorded because
@@ -149,25 +126,25 @@ and partly self-reported, and apart from the two rows above was not independentl
 
 ---
 
-## 7. Repository signals
+## 5. Repository signals
 
 From the GitHub API on 2026-08-13. These measure attention, not deployment.
 
 | Signal | Value |
 |---|---|
-| Stars | 339 |
+| Stars | 340 |
 | Forks | 111 |
 | Contributors | 36 |
 | Open issues (excluding pull requests) | 21 |
-| Open pull requests | 8 |
+| Open pull requests | 9 |
 | Created | 2020-06-19 |
 | License | GPL-3.0 |
 
-The issue and PR counts are split because the API's `open_issues_count` field — 29 here —
+The issue and PR counts are split because the API's `open_issues_count` field — 30 here —
 sums both, and reading it as an issue count overstates the backlog. Forks are not counted
 as adoption: their READMEs were fetched and almost all are dormant copies of upstream
-text. The ones carrying real work are named in [§2](#2-third-party-research) and
-[§3](#3-practitioner-and-community-use) instead.
+text. The ones carrying real work are named in [§1](#1-third-party-research) and
+[§2](#2-practitioner-community-and-ecosystem-use) instead.
 
 ---
 
@@ -183,7 +160,7 @@ permalink is the commit that bumped its version in the changelog below.
   title       = {libCacheSim Adoption Census},
   author      = {{libCacheSim maintainers}},
   institution = {libCacheSim project},
-  number      = {census v1.0.0},
+  number      = {census v1.1.0},
   year        = {2026},
   month       = aug,
   % replace <commit> with the permalink of the edition you read
@@ -192,8 +169,8 @@ permalink is the commit that bumped its version in the changelog below.
 }
 ```
 
-`7c169cf` in the header is the repository state the census describes, not a permalink for
-this file — it predates the file and will not resolve. To cite libCacheSim itself, use
+`dc80ebf` in the header is the repository state the census describes, not a permalink for
+this file — that commit does not contain it. To cite libCacheSim itself, use
 [`references.md`](/references.md).
 
 **To add an entry:** open a PR with the source URL, the verbatim sentence located in raw
@@ -205,4 +182,5 @@ source, and the date you verified it. Bump the version and append to the changel
 
 | Version | Date | Change |
 |---|---|---|
+| 1.1.0 | 2026-08-13 | Removed first-party entries: the section of the project's own papers and artifacts, two Chameleon artifacts by project co-authors, and the CacheBench and cache_dataset ecosystem rows. Every remaining entry is third-party. 19 entries — 13 third-party research, 6 practitioner, community, and ecosystem — plus 4 distribution channels. Repository signals refreshed. |
 | 1.0.0 | 2026-08-13 | First edition. 31 entries — 8 first-party papers and artifacts, 13 third-party works, 7 practitioner and community entries, 3 ecosystem projects — of which 19 are third-party, plus 4 distribution channels. Separately recorded and not counted: the OSDI '20 paper that introduced the simulator, 4 borrowed-implementation and trace-format rows, 2 downstream algorithm adopters, and repository signals. |
