@@ -15,6 +15,12 @@
 #include "../dataStructure/splaytree.hpp"
 #include "libCacheSim/const.h"
 
+/* the number of distinct 64-bit hash values (2^64), used to convert between
+ * hash values and sampling rates. UINT64_MAX itself cannot be represented
+ * exactly as a double, so using it in floating point arithmetic silently
+ * rounds to this value and warns under -Wimplicit-const-int-float-conversion */
+static constexpr double kHashSpaceSize = 18446744073709551616.0;
+
 mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
     mrc_profiler_e type, reader_t *reader, std::string output_path,
     const mrc_profiler_params_t &params) {
@@ -95,10 +101,13 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
   double sample_rate = params_.shards_params.sample_rate;
   std::vector<double> local_hit_cnt_vec(mrc_size_vec.size(), 0);
   std::vector<double> local_hit_size_vec(mrc_size_vec.size(), 0);
-  uint64_t sample_max = UINT64_MAX * sample_rate;
-  if (sample_rate == 1) {
+  uint64_t sample_max;
+  if (sample_rate >= 1) {
     INFO("sample_rate is 1, no need to sample\n");
     sample_max = UINT64_MAX;
+  } else {
+    /* the product is exact and stays below 2^64 because sample_rate < 1 */
+    sample_max = static_cast<uint64_t>(kHashSpaceSize * sample_rate);
   }
   double sampled_cnt = 0, sampled_size = 0;
   int64_t current_time = 0;
@@ -213,7 +222,7 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
         sample_rate = 1.0;  // still 100% sample rate
       } else {
         sample_rate = min_value_map.get_max_value() * 1.0 /
-                      UINT64_MAX;  // adjust the sample rate
+                      kHashSpaceSize;  // adjust the sample rate
       }
 
       sampled_cnt += 1.0 / sample_rate;
