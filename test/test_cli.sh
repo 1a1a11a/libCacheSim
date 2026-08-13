@@ -109,6 +109,12 @@ expect_clean_error() {
 		_report 1 "${desc} crashed with signal (exit ${rc})"
 	elif [[ ${rc} -eq 0 ]]; then
 		_report 1 "${desc} was accepted but should have been rejected"
+	elif grep -qE "(AddressSanitizer|LeakSanitizer|ThreadSanitizer|MemorySanitizer|UndefinedBehaviorSanitizer|runtime error:)" <<<"${out}"; then
+		# a sanitizer turns a crash into exit 1 with "ERROR: AddressSanitizer",
+		# which the generic check below would read as a clean rejection. Test
+		# this first so a crash cannot pass merely by printing the word error.
+		_report 1 "${desc} tripped a sanitizer (exit ${rc})"
+		grep -E "(Sanitizer|runtime error:)" <<<"${out}" | head -2 | sed 's/^/        /'
 	elif ! grep -qi "error" <<<"${out}"; then
 		_report 1 "${desc} failed without an error message (exit ${rc})"
 	else

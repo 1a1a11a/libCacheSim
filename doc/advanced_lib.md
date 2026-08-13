@@ -117,13 +117,18 @@ The fields are 1-indexed and must match the trace. The sample `data/cloudPhysics
 
 `obj_id_is_num` says whether the id column holds numbers. Note that `default_reader_init_params()` sets it to **true**, unlike `cachesim`, so a trace with string ids needs it set to `false` explicitly — otherwise the reader parses them with `strtoull()` and every id becomes `0` rather than being hashed.
 
+Start from `default_reader_init_params()` rather than a bare designated initializer: the defaults for `cap_at_n_req`, `block_size` and `ignore_size_zero_req` are not zero, and a struct literal would silently set them to zero. `has_header` and `obj_id_is_num` are each paired with a `_set` flag; the reader auto-detects unless you raise the flag, so assigning the value alone has no effect.
+
 ```c
-reader_init_param_t init_params_csv = {.delimiter = ',',
-                                       .time_field = 2,
-                                       .obj_size_field = 4,
-                                       .obj_id_field = 5,
-                                       .obj_id_is_num = true,
-                                       .has_header = true};
+reader_init_param_t init_params_csv = default_reader_init_params();
+init_params_csv.delimiter = ',';
+init_params_csv.time_field = 2;
+init_params_csv.obj_size_field = 4;
+init_params_csv.obj_id_field = 5;
+init_params_csv.obj_id_is_num = true;
+init_params_csv.obj_id_is_num_set = true;
+init_params_csv.has_header = true;
+init_params_csv.has_header_set = true;
 reader_t *reader_csv = open_trace("data/cloudPhysicsIO.csv", CSV_TRACE, &init_params_csv);
 ```
 
