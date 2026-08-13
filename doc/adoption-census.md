@@ -199,7 +199,13 @@ because implementing an algorithm is not using the simulator.
 | Claim (quoted) | Source | Grade |
 | --- | --- | --- |
 | "S3-FIFO and SIEVE are adopted for production at Google, VMware, Redpanda, and several others, with over 60 open-source libraries and packages in 18 programming languages available on GitHub." | [junchengyang.com](https://junchengyang.com/) | C |
-| "These algorithms have seen broad industry adoption — including in Android, the TiDB database, and many others — and have been implemented in dozens of open-source systems and libraries, including over 60 across more than 16 programming languages on GitHub." | [Harvard SEAS news, 2025-10-27](https://seas.harvard.edu/news/2025/10/juncheng-yang-winner-acm-award-dissertation-most-impact) | B |
+| "These algorithms have seen broad industry adoption — including in Android, the TiDB database, and many others — and have been implemented in dozens of open-source systems and libraries, including over 60 across more than 16 programming languages on GitHub." | [Harvard SEAS news, 2025-10-27](https://seas.harvard.edu/news/2025/10/juncheng-yang-winner-acm-award-dissertation-most-impact) | C |
+
+Both are aggregate claims with no public per-entry roster, which is Grade C by this document's
+rubric. A university news office is editorially independent of the researcher, but that affects
+who vouches for the claim, not whether it can be audited entry by entry — so it does not lift the
+grade. Note that one system named in the second claim, TiDB, is independently verified at Grade A
+in Section 5.2; the aggregate figures around it are not.
 
 ### 5.2 Named SIEVE adopters with direct source links
 
@@ -310,5 +316,5 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
-| 1.0.1 | 2026-08-13 | Individually fetched all ten Section 5.2 adopter links instead of inheriting them: 8 graded A against primary artifacts, Pelikan and SkiftOS downgraded to U (repo-root-only link; HTTP 404 link rot). Added grades to Section 5.2 so every entry carries one, as the introduction promises. Cited SCION by its arXiv abstract page and flagged that arXiv's stated submission date disagrees with its identifier prefix. Citation example now uses a commit permalink rather than a branch URL. |
+| 1.0.1 | 2026-08-13 | Individually fetched all ten Section 5.2 adopter links instead of inheriting them: 8 graded A against primary artifacts, Pelikan and SkiftOS downgraded to U (repo-root-only link; HTTP 404 link rot). Added grades to Section 5.2 so every entry carries one, as the introduction promises. Cited SCION by its arXiv abstract page and flagged that arXiv's stated submission date disagrees with its identifier prefix. Citation example now uses a commit permalink rather than a branch URL. Downgraded the Harvard SEAS aggregate claim from B to C: editorial independence does not make an aggregate claim auditable, and the rubric grades auditability. |
 | 1.0.0 | 2026-08-12 | Initial census: 5 confirmed direct users, 6 distribution signals, 2 self-reported aggregate claims, 10 named algorithm-lineage adopters, 6 excluded or deferred candidates. |
