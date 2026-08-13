@@ -134,6 +134,7 @@ set(cache_sources_c
     ${eviction_sources_c}
     ${prefetch_sources_c}
     cache.c
+    cacheAlgoRegistry.c
     plugin.c
 )
 

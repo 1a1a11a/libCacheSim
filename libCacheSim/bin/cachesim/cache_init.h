@@ -14,99 +14,40 @@
 extern "C" {
 #endif
 
+/* log2 of the hash table size; 24 gives 16M entries */
+#define DEFAULT_HASHPOWER 24
+
+/**
+ * @brief create a cache for the CLI, given the algorithm name
+ *
+ * @param hashpower log2 of the hash table size. This used to be adjusted by
+ * sniffing the trace path for "data/trace.", a file that has not existed for a
+ * long time, so the adjustment never fired. It is a --hashpower option now
+ * rather than a hidden rule, because sampling-based algorithms draw candidates
+ * from the hash table and so their miss ratios depend on its size — not
+ * something to change silently based on where a trace happens to live.
+ */
 static inline cache_t *create_cache(const char *trace_path,
                                     const char *eviction_algo,
                                     const uint64_t cache_size,
                                     const char *eviction_params,
-                                    const bool consider_obj_metadata) {
+                                    const bool consider_obj_metadata,
+                                    const int hashpower) {
   common_cache_params_t cc_params = {
       .cache_size = cache_size,
       .default_ttl = 86400 * 300,
-      .hashpower = 24,
+      .hashpower = hashpower,
       .consider_obj_metadata = consider_obj_metadata,
   };
   cache_t *cache;
 
-  /* NOTE: there used to be a heuristic here shrinking hashpower by 8 when the
-   * trace path contained "data/trace.", to save memory on the sample traces.
-   * No such file has existed for a long time, so it never fired. Pointing it at
-   * the current sample traces is not a free fix: a smaller hash table changes
-   * which candidates sampling-based algorithms (RandomLRU, Hyperbolic, ...)
-   * draw, so miss ratios shift. Left out rather than silently changing results;
-   * re-add deliberately if the memory saving is worth that. */
-
-  typedef struct {
-    const char *name;
-    cache_t *(*init_func)(common_cache_params_t, const char *);
-  } eviction_algo_entry_t;
-  static const eviction_algo_entry_t simple_algos[] = {
-      {"2q", TwoQ_init},
-      {"arc", ARC_init},
-      {"arcv0", ARCv0_init},
-      {"CAR", CAR_init},
-      {"cacheus", Cacheus_init},
-      {"clock", Clock_init},
-      {"clock2qplus", Clock2QPlus_init},
-      {"clockpro", ClockPro_init},
-      {"fifo", FIFO_init},
-      {"fifo-merge", FIFO_Merge_init},
-      {"fifo-reinsertion", Clock_init},
-      {"fifomerge", FIFO_Merge_init},
-      {"flashProb", flashProb_init},
-      {"gdsf", GDSF_init},
-      {"lhd", LHD_init},
-      {"lecar", LeCaR_init},
-      {"lecarv0", LeCaRv0_init},
-      {"lfu", LFU_init},
-      {"lfucpp", LFUCpp_init},
-      {"lfuda", LFUDA_init},
-      {"lirs", LIRS_init},
-      {"lru", LRU_init},
-      {"lru-k", LRU_K_init},
-      {"lru-prob", LRU_Prob_init},
-      {"nop", nop_init},
-      // plugin cache that allows user to implement custom cache
-      {"pluginCache", pluginCache_init},
-      {"qdlp", QDLP_init},
-      {"random", Random_init},
-      {"RandomLRU", RandomLRU_init},
-      {"randomTwo", RandomTwo_init},
-      {"s3-fifo", S3FIFO_init},
-      {"s3-fifov0", S3FIFOv0_init},
-      {"s3fifo", S3FIFO_init},
-      {"s3fifod", S3FIFOd_init},
-      {"s3fifov0", S3FIFOv0_init},
-      {"sieve", Sieve_init},
-      {"size", Size_init},
-      {"slru", SLRU_init},
-      {"slruv0", SLRUv0_init},
-      {"twoq", TwoQ_init},
-      {"wtinyLFU", WTinyLFU_init},
-#ifdef ENABLE_3L_CACHE
-      {"3LCache", ThreeLCache_init},
-#endif
-#ifdef ENABLE_GLCACHE
-      {"GLCache", GLCache_init},
-      {"gl-cache", GLCache_init},
-#endif
-#ifdef ENABLE_LRB
-      {"lrb", LRB_init},
-#endif
-  };
-
-  cache_t *(*init_func)(common_cache_params_t, const char *) = NULL;
-  for (size_t i = 0; i < sizeof(simple_algos) / sizeof(simple_algos[0]); ++i) {
-    if (strcasecmp(eviction_algo, simple_algos[i].name) == 0) {
-      init_func = simple_algos[i].init_func;
-      break;
-    }
-  }
-
-  // Initializing for algorithms which require special handling (not in
-  // simple_algos)
-  if (init_func) {
-    cache = init_func(cc_params, eviction_params);
-  } else if (strcasecmp(eviction_algo, "hyperbolic") == 0) {
+  /* The name to constructor mapping lives in the library
+   * (cache/cacheAlgoRegistry.c) so that the MINISIM profiler, which only knows
+   * the algorithm by name, shares one table with the CLI. The cases below need
+   * more than a lookup — a smaller hash table, a default parameter, or a check
+   * that the trace carries the future information the algorithm needs — so
+   * they are handled here rather than in the registry. */
+  if (strcasecmp(eviction_algo, "hyperbolic") == 0) {
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = Hyperbolic_init(cc_params, eviction_params);
   } else if (strcasecmp(eviction_algo, "tinyLFU") == 0) {
@@ -154,8 +95,11 @@ static inline cache_t *create_cache(const char *trace_path,
     cc_params.hashpower = MAX(cc_params.hashpower - 8, 16);
     cache = BeladySize_init(cc_params, eviction_params);
   } else {
-    ERROR("do not support algorithm %s\n", eviction_algo);
-    abort();
+    cache = create_cache_by_name(eviction_algo, cc_params, eviction_params);
+    if (cache == NULL) {
+      ERROR("do not support algorithm %s\n", eviction_algo);
+      abort();
+    }
   }
 
   return cache;

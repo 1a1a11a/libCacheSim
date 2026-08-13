@@ -23,13 +23,18 @@ cache_t *create_cache_external(const char *const cache_alg_name,
 
   char shared_lib_path[256];
   char cache_init_func_name[256];
-  sprintf(shared_lib_path, "./lib%s.so", cache_alg_name);
-  sprintf(cache_init_func_name, "%s_init", cache_alg_name);
+  snprintf(shared_lib_path, sizeof(shared_lib_path), "./lib%s.so",
+           cache_alg_name);
+  snprintf(cache_init_func_name, sizeof(cache_init_func_name), "%s_init",
+           cache_alg_name);
 
+  /* Failure returns NULL, as the header documents, so the caller can report
+   * which algorithm it could not find. Exiting here instead made that
+   * reporting unreachable and left the user with a bare dlerror string. */
   handle = dlopen(shared_lib_path, RTLD_LAZY);
   if (!handle) {
-    fprintf(stderr, "%s\n", dlerror());
-    exit(EXIT_FAILURE);
+    WARN("cannot load %s: %s\n", shared_lib_path, dlerror());
+    return NULL;
   }
   dlerror(); /* Clear any existing error */
 
@@ -43,8 +48,9 @@ cache_t *create_cache_external(const char *const cache_alg_name,
   cache_init = dlsym_ptr.func_ptr;
 
   if ((error = dlerror()) != NULL) {
-    fprintf(stderr, "%s\n", error);
-    exit(EXIT_FAILURE);
+    WARN("cannot find %s in %s: %s\n", cache_init_func_name, shared_lib_path,
+         error);
+    return NULL;
   } else {
     INFO("external cache %s loaded\n", cache_alg_name);
   }
@@ -59,15 +65,25 @@ cache_t *create_cache_external(const char *const cache_alg_name,
 cache_t *create_cache_internal(const char *const cache_alg_name,
                                common_cache_params_t cc_params,
                                void *cache_specific_params) {
-  cache_t *(*cache_init)(common_cache_params_t, void *) = NULL;
-  char *err = NULL;
+  /* Built-in algorithms are looked up in the registry rather than through
+   * dlsym(). Their constructors live in an archive member that nothing else
+   * references, so in a statically linked build the linker never pulls them in
+   * and dlsym() cannot find them however the executable is linked. */
+  cache_t *cache = create_cache_by_name(cache_alg_name, cc_params,
+                                        (const char *)cache_specific_params);
+  if (cache != NULL) {
+    return cache;
+  }
 
+  /* Fall back to dlsym for an algorithm that is not built in, e.g. one loaded
+   * into the process from elsewhere. */
   char cache_init_func_name[256];
   void *handle = dlopen(NULL, RTLD_GLOBAL);
   /* should not check err here, otherwise ubuntu will report err even though
    * everything is OK */
 
-  sprintf(cache_init_func_name, "%s_init", cache_alg_name);
+  snprintf(cache_init_func_name, sizeof(cache_init_func_name), "%s_init",
+           cache_alg_name);
 
   // ISO C compliant way to convert void* to function pointer
   union {
@@ -76,18 +92,16 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
   } dlsym_ptr;
 
   dlsym_ptr.obj_ptr = dlsym(handle, cache_init_func_name);
-  cache_init = dlsym_ptr.func_ptr;
-
-  err = dlerror();
+  cache_t *(*cache_init)(common_cache_params_t, void *) = dlsym_ptr.func_ptr;
 
   if (cache_init == NULL) {
-    WARN("cannot load internal cache %s: error %s\n", cache_alg_name, err);
-    abort();
+    /* Not an error yet: the caller falls back to loading a shared library. */
+    (void)dlerror();
+    return NULL;
   }
 
   INFO("internal cache %s loaded\n", cache_alg_name);
-  cache_t *cache = cache_init(cc_params, cache_specific_params);
-  return cache;
+  return cache_init(cc_params, cache_specific_params);
 }
 
 cache_t *create_cache_using_plugin(const char *const cache_alg_name,

@@ -79,8 +79,7 @@ In the example below, `FIX_RATE,0.01,10` sets a `1%` sampling rate and `10` thre
 ./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=FIFO --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=0.1,0.5,10
 ```
 
-> [!WARNING]
-> MINISIM currently aborts with `cannot load internal cache FIFO: undefined symbol: FIFO_init` in a standard build. It looks its eviction algorithms up with `dlsym()` against the `mrcProfiler` executable, but those constructors live in the static library and nothing in `mrcProfiler` references them, so the linker never pulls them in. Use `--profiler=SHARDS` in the meantime; it covers LRU.
+`--algo` accepts the same names as `cachesim`, so any built-in algorithm works — ARC, S3FIFO, sieve, twoq, and the rest. See the [README](/README.md#supported-algorithms) for the full list.
 
 ### Ignoring Object Sizes
 
