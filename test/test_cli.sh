@@ -273,6 +273,25 @@ if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
 		"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
 		--algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=0.1,0.5,10 \
 		--ignore-obj-size
+
+	# A sample rate of 1 means no sampling. UINT64_MAX rounds up to 2^64 as a
+	# double, so scaling by the rate before special-casing this converts a value
+	# that does not fit back into uint64_t.
+	for rate in 1 0.999 0.5 0.0001; do
+		expect_ok "mrcProfiler SHARDS at sample rate ${rate}" \
+			"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
+			--algo=LRU --profiler=SHARDS --profiler-params="FIX_RATE,${rate},42" \
+			--size=0.1,0.5,10
+	done
+
+	# Not covered: --profiler=MINISIM. It resolves cache constructors with
+	# dlsym() against the mrcProfiler executable, but those live in the static
+	# library and nothing references them, so the linker never pulls them in and
+	# it aborts with "undefined symbol: FIFO_init". Broken on develop too.
+
+	expect_ok "mrcProfiler SHARDS FIX_SIZE" \
+		"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
+		--algo=LRU --profiler=SHARDS --profiler-params=FIX_SIZE,2048,42 --size=100MB,1GB,10
 fi
 
 echo

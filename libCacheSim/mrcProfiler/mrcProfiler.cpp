@@ -95,13 +95,18 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_rate_run() {
   double sample_rate = params_.shards_params.sample_rate;
   std::vector<double> local_hit_cnt_vec(mrc_size_vec.size(), 0);
   std::vector<double> local_hit_size_vec(mrc_size_vec.size(), 0);
-  /* UINT64_MAX has no exact double representation, so make the widening
-   * explicit; clang errors on the implicit form under -Werror */
-  uint64_t sample_max =
-      static_cast<uint64_t>(static_cast<double>(UINT64_MAX) * sample_rate);
-  if (sample_rate == 1) {
+  /* UINT64_MAX has no exact double representation: it rounds up to 2^64, which
+   * is out of range for uint64_t. Take full sampling before scaling, so the
+   * conversion below only ever runs on a rate < 1, where the product is at most
+   * 2^64 - 2048 and converts cleanly. Doing it the other way round is undefined
+   * behaviour even though the result is immediately overwritten. */
+  uint64_t sample_max;
+  if (sample_rate >= 1) {
     INFO("sample_rate is 1, no need to sample\n");
     sample_max = UINT64_MAX;
+  } else {
+    sample_max =
+        static_cast<uint64_t>(static_cast<double>(UINT64_MAX) * sample_rate);
   }
   double sampled_cnt = 0, sampled_size = 0;
   int64_t current_time = 0;
