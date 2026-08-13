@@ -9,13 +9,14 @@
 //  USENIX Annual Technical Conference, 2001
 //  https://www.usenix.org/legacy/publications/library/proceedings/usenix01/full_papers/zhou/zhou.pdf
 //
-//  MQ maintains m LRU queues Q[0]..Q[m-1]. An object with access frequency f
+//  MQ maintains m LRU-ordered queues Q[0]..Q[m-1], each with its head at the
+//  MRU end and its tail at the LRU end. An object with access frequency f
 //  resides in queue QueueNum(f) = min(log2(f), m-1), so frequently accessed
 //  objects live in higher queues and are less likely to be evicted.
-//  Each object has an expireTime; when the head (LRU end) of a queue expires,
-//  it is demoted one queue down (the Adjust routine), which captures temporal
-//  locality: objects not accessed for a long time gradually descend and are
-//  eventually evicted.
+//  Each object has an expireTime; when the object at the tail (LRU end) of a
+//  queue expires, it is demoted one queue down (the Adjust routine), which
+//  captures temporal locality: objects not accessed for a long time gradually
+//  descend and are eventually evicted.
 //  Evicted objects' ids and frequencies are remembered in a FIFO history
 //  buffer Qout; if an object is re-admitted while still in Qout, its previous
 //  frequency is restored.
@@ -270,7 +271,10 @@ static cache_obj_t *MQ_insert(cache_t *cache, const request_t *req) {
 
   if (params->hit_on_ghost && params->ghost_obj_id == req->obj_id) {
     /* restore the remembered frequency from the history buffer */
-    obj->freq = params->ghost_freq + 1;
+    obj->freq = params->ghost_freq;
+    if (obj->freq < INT32_MAX) {
+      obj->freq++;
+    }
   } else {
     obj->freq = 1;
   }
