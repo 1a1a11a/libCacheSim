@@ -1,6 +1,6 @@
 # libCacheSim Adoption Census
 
-**Census version:** 1.0.12
+**Census version:** 1.0.13
 **Snapshot date:** 2026-08-13
 **Maintained at:** `doc/adoption-census.md` in [1a1a11a/libCacheSim](https://github.com/1a1a11a/libCacheSim)
 
@@ -395,7 +395,7 @@ Then substitute it for `<commit-sha>`:
 ```bibtex
 @misc{libcachesim-adoption-census,
   title        = {libCacheSim Adoption Census},
-  version      = {1.0.12},
+  version      = {1.0.13},
   howpublished = {\url{https://github.com/1a1a11a/libCacheSim/blob/<commit-sha>/doc/adoption-census.md}},
   note         = {Snapshot dated 2026-08-13},
   year         = {2026}
@@ -404,7 +404,7 @@ Then substitute it for `<commit-sha>`:
 
 Plain-text form:
 
-> libCacheSim Adoption Census, version 1.0.12, snapshot 2026-08-13,
+> libCacheSim Adoption Census, version 1.0.13, snapshot 2026-08-13,
 > `doc/adoption-census.md` in github.com/1a1a11a/libCacheSim at commit `<commit-sha>`.
 
 For reading rather than citing, the current version always lives at
@@ -416,6 +416,7 @@ For reading rather than citing, the current version always lives at
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.0.13 | 2026-08-13 | Corrected the v1.0.5 changelog entry, which claimed every GitHub link in Section 5.2 was pinned — the two Grade U rows were not, then or now. A changelog that audits what each revision established has to be accurate about it. Also changed the README from "checked" to "investigated", matching the Section 6 vocabulary. |
 | 1.0.12 | 2026-08-13 | Renamed Section 6 from "Checked and excluded" to "Investigated candidates". Two of its rows were never checked and three are not excluded, so a maintainer navigating by heading could have written the whole section off as settled and skipped the open follow-up work. Internal anchors updated to match. |
 | 1.0.11 | 2026-08-13 | Stopped calling every Section 6 candidate "checked" — two were never reachable, which the Unverified definition says outright; they are *investigated* instead, and the `Date checked` column is stated to mean checked-or-attempted. Qualified the failed-re-verification rule: a refuted source moves to Section 6, but an unreachable one is downgraded to Grade U in place when its absence is informative, as with the SkiftOS 404. The unconditional rule would have told a maintainer to undo that row. |
 | 1.0.10 | 2026-08-13 | Pinned every arXiv link to the version actually read: SCION was labelled v1 but linked the unversioned endpoint, and the PolicySmith, DynamicAdaptiveClimb and 2DIO links had the same exposure. The RAC row now states that its version was not recorded rather than implying one. Made the Grade A definition allow measured evidence, since Section 2 rows are read rather than quoted, and exempted Grade U rows from the verbatim-quote promise — for those, the absence of a quote is the finding. |
@@ -423,7 +424,7 @@ For reading rather than citing, the current version always lives at
 | 1.0.8 | 2026-08-13 | Exempted Section 6 from the grading promise and gave it a defined disposition vocabulary (Excluded / Unverified / Deferred / Substituted) — grading a refuted candidate would imply it belongs in the census, and four rows carried no grade at all. Corrected the v1.0.0 changelog entry: Section 2 has seven distribution signals, not six. |
 | 1.0.7 | 2026-08-13 | Split Section 2 out of the "claims use of libCacheSim" grouping introduced in 1.0.6: stars, package releases and dependency counts are distribution signals, so an A there certifies only that the value was read correctly. Added that grades are not comparable across sections. Parameterized the update checklist by target section — a Section 5 entry cannot supply a libCacheSim-use quote without committing the conflation the rules forbid, and upstream independence is now recorded for Section 3 only. |
 | 1.0.6 | 2026-08-13 | Redefined the grade rubric in terms of *the relationship each section claims* rather than "use of libCacheSim". The old wording made a Section 5.2 Grade A read as certifying libCacheSim adoption, which is the exact conflation Section 1 forbids; grades there certify a SIEVE implementation and nothing more. Also scoped the pinning claim to the Grade A GitHub links it actually covers — the two Grade U rows are unpinned on purpose, and SkiftOS keeps a branch URL because reproducing its 404 is the evidence. |
-| 1.0.5 | 2026-08-13 | Pinned the 3L-Cache README quote to revision `134cd15`, since that quote is also repository text that can change. Replaced the immudb evidence link: a merged pull request is not immutable, since GitHub titles stay editable after merge, so quoting a PR title is not a durable citation. The row now cites `embedded/cache/cache.go` pinned at `1a5f54e`, verified to read "Cache implements the SIEVE cache replacement policy" with a `hand` pointer and per-entry `visited` flags. Every GitHub link in Section 5.2 is now pinned; only the PostgREST docs URL remains mutable. |
+| 1.0.5 | 2026-08-13 | Pinned the 3L-Cache README quote to revision `134cd15`, since that quote is also repository text that can change. Replaced the immudb evidence link: a merged pull request is not immutable, since GitHub titles stay editable after merge, so quoting a PR title is not a durable citation. The row now cites `embedded/cache/cache.go` pinned at `1a5f54e`, verified to read "Cache implements the SIEVE cache replacement policy" with a `hand` pointer and per-entry `visited` flags. Every GitHub link backing a Grade A row in Section 5.2 is now pinned; the two Grade U rows stay unpinned by design and the PostgREST docs URL remains mutable. |
 | 1.0.4 | 2026-08-13 | Added the missing `Date checked` column to Section 6, completing the coverage the introduction promises: every table in the document now records when its evidence was last checked. Noted why that column matters most for excluded candidates — a dead end is only trustworthy as of its last check, and a paper may cite libCacheSim in a later version. |
 | 1.0.3 | 2026-08-13 | Pinned six of the seven GitHub evidence links in Section 5.2 to commit SHAs via `git ls-remote`, closing most of limitation 5 rather than deferring it; re-fetched the pinned TiDB and Ceph URLs to confirm the quoted text is present at those revisions. Limitation 5 now covers only the PostgREST `latest` docs URL. Added pinning to the update protocol as a standing rule. |
 | 1.0.2 | 2026-08-13 | Added the missing `Date checked` column to Section 5.1. Recorded a new limitation 5: Section 5.2's evidence links are branch URLs, not commit permalinks, so they can drift from what was verified — the SkiftOS 404 is that failure already realized. Pinning was attempted and blocked by the snapshot environment (`api.github.com` returned 403; blob pages render SHAs client-side), so the method is documented for the next revision instead of being left implicit. |
