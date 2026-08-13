@@ -85,8 +85,8 @@ established link and counts as third-party, which is the default when none can b
 | Project | Evidence | Source |
 |---|---|---|
 | **CacheBench** — benchmarking suite evaluating 18 eviction algorithms across thousands of traces, built by Haocheng Xia under the UCSC OSPO Summer of Reproducibility | Describes libCacheSim as a core component, and the project as "a Python package that allows users to easily download traces and run simulation analyses using libCacheSim" | [UCSC OSPO report](https://ucsc-ospo.github.io/report/osre25/harvard/cachebench/2025-08-06-haochengxia/) |
-| **system-intelligence-benchmark** — suite scoring LLM-designed systems heuristics; its `cache_algo_bench` task scores candidate eviction policies | Shells out to the built binary: `{LIBCACHSIM_PATH}/_build/bin/cachesim {cache_trace} oracleGeneral {cache_alg} {cache_cap} …` | [sys-intelligence/system-intelligence-benchmark](https://github.com/sys-intelligence/system-intelligence-benchmark/tree/46596edd8113a3eaf5646e49a42cc2a9fae3de4d) |
-| **cache_dataset** — production cache traces (Meta, Twitter, CloudPhysics, Microsoft, Wikimedia, Alibaba, Tencent) | Ships tutorial notebooks that run libCacheSim, and publishes traces in its `oracleGeneral` format | [cacheMon/cache_dataset](https://github.com/cacheMon/cache_dataset/tree/a005343f26f47110de5c8d78d645ee89bee1e7ed) |
+| **system-intelligence-benchmark** — suite scoring LLM-designed systems heuristics; its `cache_algo_bench` task scores candidate eviction policies | Shells out to the built binary from `benchmarks/cache_algo_bench/src/cache_simulator/utils.py`: `command = f"""{LIBCACHSIM_PATH}/_build/bin/cachesim {cache_trace} oracleGeneral {cache_alg} {cache_cap} --ignore-obj-size 1 …"""` | [sys-intelligence/system-intelligence-benchmark](https://github.com/sys-intelligence/system-intelligence-benchmark/tree/46596edd8113a3eaf5646e49a42cc2a9fae3de4d) |
+| **cache_dataset** — production cache traces (Meta, Twitter, CloudPhysics, Microsoft, Wikimedia, Alibaba, Tencent) | Ships three tutorial notebooks named "Using libCacheSim to read the dataset", "Using libCacheSim to analyze and plot the trace", and "Using libCacheSim to run cache simulation", and publishes traces in a compatible format: "We provide both plain text format that is human readable and `oracleGeneral` format that is suitable for using with [libCacheSim] platform." | [README](https://github.com/cacheMon/cache_dataset/blob/a005343f26f47110de5c8d78d645ee89bee1e7ed/README.md) |
 
 CacheBench and cache_dataset are project-affiliated; system-intelligence-benchmark is not.
 
@@ -111,10 +111,12 @@ serves only a rolling ~180-day window, so that interval ages out and the number 
 re-derived later. The two are filtered differently and neither excludes CI traffic; treat
 both as weak proxies, not user counts.
 
-**No third-party redistribution exists.** AUR, conda-forge, vcpkg, conan-center-index,
+**No third-party packaging exists.** AUR, conda-forge, vcpkg, conan-center-index,
 Debian, Homebrew, Nix, and crates.io carry no libCacheSim port; the single Docker Hub
 image is the project's own; deps.dev and GitHub's dependency graph report zero reverse
-dependencies for the PyPI package.
+dependencies for the PyPI package. The one third-party redistribution found anywhere is
+outside package management: the T3-LRU fork in [§2](#2-third-party-research), archived
+with a DOI on Zenodo.
 
 ---
 
@@ -129,7 +131,7 @@ without running or building on it, and count toward no total above — recorded 
 | **Cache is King: Smart Page Eviction with eBPF** — Zussman et al. (Columbia; IBM Research) | The LHD implementation, ported to eBPF | "We implement LHD using cachebpf, based on the implementation in libcachesim [69, 70, 72]." The paper shows no run of the tool. | [arXiv:2502.02750](https://arxiv.org/abs/2502.02750) |
 | **Pelikan** `cachesim` (Rust) | The binary trace formats | "cachesim can import libCacheSim's binary trace formats"; "The `op` column uses the same integer encoding as libCacheSim's `req_op_e`" | [pelikan-io/cachesim](https://github.com/pelikan-io/cachesim/tree/9997462b2b3746fbd826837702027afbdea57d7a) |
 | **Otter** (Go) | The trace formats | A `libcachesim` parser package: `OracleGeneralFormat = "oracleGeneral"`, `LibcachesimCSVFormat = "libcachesimCSV"` | [maypok86/otter](https://github.com/maypok86/otter/tree/8c526307556486ea0337280a4211135720bc29cc) |
-| **Caffeine** (Java) | The trace formats | Registers `LCS_TRACE`, `LCS_ORACLE_GENERAL`, `LCS_TWITTER` readers, backed by a `parser/libcachesim/` package tree | [ben-manes/caffeine](https://github.com/ben-manes/caffeine/tree/9da6581ee366aa63c51e0dc96692d02f9c29ccff) |
+| **Caffeine** (Java) | The trace formats | `TraceFormat.java` imports "com.github.benmanes.caffeine.cache.simulator.parser.libcachesim.csv.LibCacheSimCsvTraceReader" and registers `LCS_TRACE`, `LCS_ORACLE_GENERAL`, and `LCS_TWITTER` | [ben-manes/caffeine](https://github.com/ben-manes/caffeine/tree/9da6581ee366aa63c51e0dc96692d02f9c29ccff) |
 
 **Downstream algorithm adoption.** SIEVE and S3-FIFO are reimplemented in third-party
 systems. **Those systems do not use libCacheSim** — conflating the two is the most likely
@@ -138,7 +140,7 @@ way this census gets misread.
 | System | Evidence | Source |
 |---|---|---|
 | Ceph | `src/common/web_cache.h`: "The implementation is based on SIEVE [0] with additional TTL", citing the NSDI '24 paper | [ceph/ceph](https://github.com/ceph/ceph/blob/5995d21863b3992bd9f463b5a0f774869351be36/src/common/web_cache.h) |
-| TiDB | `pkg/infoschema/sieve.go` implements a SIEVE cache | [pingcap/tidb](https://github.com/pingcap/tidb/blob/d5f9ca5690c0a53cac36002f9d2d2bdcba25f4fc/pkg/infoschema/sieve.go) |
+| TiDB | `pkg/infoschema/sieve.go` implements SIEVE — the file is named for the algorithm and its cache entry carries the algorithm's reference bit, "visited bool" | [pingcap/tidb](https://github.com/pingcap/tidb/blob/d5f9ca5690c0a53cac36002f9d2d2bdcba25f4fc/pkg/infoschema/sieve.go) |
 
 A broader list — immudb, DragonFly, dnscrypt-proxy, PostgREST, Pelikan, SkiftOS, Nyrkiö,
 and 20+ language-level cache libraries — is maintained on the
