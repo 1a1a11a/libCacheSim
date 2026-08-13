@@ -1,148 +1,225 @@
-traceReader:
-```C
+# C API reference
+
+The public C API is exposed through a single header:
+
+```c
+#include <libCacheSim.h>
+```
+
+Compile against it with pkg-config:
+
+```bash
+gcc your_program.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o your_program -lm -lzstd
+```
+
+See [advanced_lib.md](advanced_lib.md) for a walkthrough and [the example folder](/example) for complete programs. The declarations below are the commonly used subset; the headers under [libCacheSim/include/libCacheSim/](/libCacheSim/include/libCacheSim/) are authoritative.
+
+---
+
+## Reading traces
+
+### Opening a trace
+
+`reader_init_param_t` describes how to interpret a trace. Field indices are 1-based, and `0` means the field is absent. Start from `default_reader_init_params()` rather than zero-initializing, so the defaults for delimiter, sampling, and the "was this set by the user" flags are correct.
+
+```c
 typedef struct {
-  int time_field;
-  int obj_id_field;
-  int obj_size_field;
-  int op_field;
-  int ttl_field;
+  bool ignore_obj_size;
+  bool ignore_size_zero_req;
+  bool obj_id_is_num;
+  bool obj_id_is_num_set;   // whether the user passed this parameter
+  int64_t cap_at_n_req;     // process at most n requests
+
+  int32_t time_field;
+  int32_t obj_id_field;
+  int32_t obj_size_field;
+  int32_t obj_cost_field;
+  int32_t op_field;
+  int32_t ttl_field;
+  int32_t cnt_field;
+  int32_t tenant_field;
+  int32_t next_access_vtime_field;
+
+  int32_t n_feature_fields;
+  int32_t feature_fields[N_MAX_FEATURES];
+
+  // block cache; breaks a large request into per-block requests
+  int32_t block_size;
 
   // csv reader
-  gboolean has_header;
+  bool has_header;
+  bool has_header_set;      // false alone cannot distinguish "unset"
   char delimiter;
 
-  // binary reader
-  char binary_fmt[MAX_BIN_FMT_STR_LEN];
+  // skip metadata at the start of a binary trace
+  ssize_t trace_start_offset;
+
+  // binary reader, a Python struct format string
+  char *binary_fmt_str;
+
+  sampler_t *sampler;
 } reader_init_param_t;
 
-typedef struct reader {
-  char *mapped_file; /* mmap the file, this should not change during runtime */
-  uint64_t mmap_offset;
-
-  FILE *file;
-  size_t file_size;
-
-  trace_type_e trace_type;   /* possible types see trace_type_t  */
-
-  size_t item_size; /* the size of one record, used to
-                     * locate the memory location of next element,
-                     * when used in vscsiReaser and binaryReader,
-                     * it is a const value,
-                     * when it is used in plainReader or csvReader,
-                     * it is the size of last record, it does not
-                     * include LFCR or \0 */
-
-  uint64_t n_total_req; /* number of requests in the trace */
-  uint64_t n_uniq_obj;  /* number of objects in the trace */
-
-  char trace_path[MAX_FILE_PATH_LEN];
-  reader_init_param_t init_params;
-
-  void *reader_params;
-  void *other_params; /* currently not used */
-
-  gint ver;
-
-  bool cloned; // true if this is a cloned reader, else false
-
-} reader_t;
+static inline reader_init_param_t default_reader_init_params(void);
 
 /**
- * setup the reader struct for reading trace
- * @param trace_path
+ * open a trace for reading; the reader must be released with close_trace()
  * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
- * TWR_BIN_TRACE
- * @param setup_params
- * @return a pointer to reader_t struct, the returned reader needs to be
- * explicitly closed by calling close_reader or close_trace
+ *                   ORACLE_GENERAL_TRACE, TWR_BIN_TRACE, LCS_TRACE, ...
  */
-reader_t *setup_reader(const char *trace_path, const trace_type_e trace_type,
-                       const reader_init_param_t *const reader_init_param);
+reader_t *setup_reader(const char *trace_path, trace_type_e trace_type,
+                       const reader_init_param_t *reader_init_param);
 
-/* this is the same function as setup_reader */
-static inline reader_t *
-open_trace(const char *path, const trace_type_e type,
-           const reader_init_param_t *const reader_init_param) {
-  return setup_reader(path, type, reader_init_param);
-}
-
-/**
- * read one request from reader, and store it in the pre-allocated request_t req
- * @param reader
- * @param req
- */
-uint64_t get_num_of_req(reader_t *const reader);
-
-/**
- * as the name suggests
- * @param reader
- * @return
- */
-static inline trace_type_e get_trace_type(const reader_t *const reader) {
-  return reader->trace_type;
-}
-
-/**
- * read one request from reader/trace, stored the info in pre-allocated req
- * @param reader
- * @param req
- * return 0 on success and 1 if reach end of trace
- */
-int read_one_req(reader_t *const reader, request_t *const req);
-
-/**
- * reset reader, so we can read from the beginning
- * @param reader
- */
-void reset_reader(reader_t *const reader);
-
-/**
- * close reader and release resources
- * @param reader
- * @return
- */
-int close_reader(reader_t *const reader);
-
-/**
- * clone a reader, mostly used in multithreading
- * @param reader
- * @return
- */
-reader_t *clone_reader(const reader_t *const reader);
-
+/* same function as setup_reader, and the more commonly used name */
+static inline reader_t *open_trace(const char *path, trace_type_e type,
+                                   const reader_init_param_t *reader_init_param);
 ```
 
-cache and cacheAlgo:
+Object ids are hashed unless you set `obj_id_is_num`, which you should do when the id field holds numbers.
 
-```C
-static inline request_t *new_request();
-static inline void copy_request(request_t *req_dest, request_t *req_src);
-static inline request_t *clone_request(request_t *req);
+### Iterating over requests
+
+```c
+/* read one request into the pre-allocated req; returns 0 on success,
+ * 1 at end of trace */
+int read_one_req(reader_t *reader, request_t *req);
+
+/* number of requests in the trace */
+int64_t get_num_of_req(reader_t *reader);
+
+static inline trace_type_e get_trace_type(const reader_t *reader);
+static inline bool obj_id_is_num(const reader_t *reader);
+
+/* rewind so the trace can be read again */
+void reset_reader(reader_t *reader);
+
+/* clone a reader; the usual way to feed one trace to several threads */
+reader_t *clone_reader(const reader_t *reader);
+
+int close_reader(reader_t *reader);
+static inline int close_trace(reader_t *reader);
+```
+
+Positioning helpers, used mostly by the analysis tools:
+
+```c
+void read_first_req(reader_t *reader, request_t *req);
+void read_last_req(reader_t *reader, request_t *req);
+int skip_n_req(reader_t *reader, int N);
+int go_back_one_req(reader_t *reader);
+void reader_set_read_pos(reader_t *reader, double pos);  /* pos in [0, 1] */
+```
+
+---
+
+## Requests
+
+A `request_t` is the container `read_one_req()` fills in. Allocate one up front and reuse it for the whole trace.
+
+```c
+static inline request_t *new_request(void);
+static inline void copy_request(request_t *req_dest, const request_t *req_src);
+static inline request_t *clone_request(const request_t *req);
 static inline void free_request(request_t *req);
-static inline void print_request(request_t *req);
+static inline void print_request(const request_t *req);
 ```
 
-simulator:
-```C
-sim_res_t *
-simulate_at_multi_sizes(reader_t *const reader,
-                     const cache_t *const cache,
-                     const gint num_of_sizes,
-                     const guint64 *const cache_sizes,
-                     reader_t *const warmup_reader,
-                     const double warmup_perc,
-                     const gint num_of_threads);
+The fields you normally read are `obj_id`, `obj_size`, `clock_time`, `next_access_vtime` (oracle traces only), and `obj_cost`.
 
+---
 
-sim_res_t *
-simulate_at_multi_sizes_with_step_size(reader_t *const reader_in,
-                                    const cache_t *const cache_in,
-                                    const guint64 step_size,
-                                    reader_t *const warmup_reader,
-                                    const double warmup_perc,
-                                    const gint num_of_threads);
+## Caches
+
+Every eviction algorithm exposes an `_init` function taking the common parameters plus an optional algorithm-specific parameter string — the same string `cachesim` takes with `-e`.
+
+```c
+typedef struct {
+  uint64_t cache_size;
+  uint64_t default_ttl;
+  int32_t hashpower;
+  bool consider_obj_metadata;
+} common_cache_params_t;
+
+common_cache_params_t default_common_cache_params(void);
+
+cache_t *LRU_init(common_cache_params_t ccache_params,
+                  const char *cache_specific_params);
+/* ... and FIFO_init, ARC_init, S3FIFO_init, Sieve_init, and the rest;
+ * see libCacheSim/include/libCacheSim/evictionAlgo.h */
 ```
 
+A `cache_t` is used through its function pointers:
 
+```c
+/* the whole interface: lookup plus on-demand insert and evict.
+ * returns true on a cache hit */
+bool (*get)(cache_t *, const request_t *);
 
-profiler:
+/* look up without the insert/evict; update_cache controls whether the
+ * lookup also updates state such as recency */
+cache_obj_t *(*find)(cache_t *, const request_t *, bool update_cache);
+
+bool (*can_insert)(cache_t *, const request_t *);
+cache_obj_t *(*insert)(cache_t *, const request_t *);
+
+/* which object would be evicted, without evicting it */
+cache_obj_t *(*to_evict)(cache_t *, const request_t *);
+void (*evict)(cache_t *, const request_t *);
+
+/* user-triggered removal; eviction should go through evict instead */
+bool (*remove)(cache_t *, obj_id_t);
+
+void (*cache_free)(cache_t *);
+```
+
+Most programs only need `get()`. See [advanced_lib_extend.md](advanced_lib_extend.md) to implement a new algorithm.
+
+---
+
+## Simulator
+
+Rather than driving the loop yourself, you can hand a trace and a cache to the simulator, which parallelizes across cache sizes or across caches.
+
+```c
+/* one cache, many sizes */
+cache_stat_t *simulate_at_multi_sizes(reader_t *reader, const cache_t *cache,
+                                      int num_of_sizes,
+                                      const uint64_t *cache_sizes,
+                                      reader_t *warmup_reader,
+                                      double warmup_frac, int warmup_sec,
+                                      int num_of_threads, bool use_random_seed);
+
+/* one cache, sizes at a fixed step up to the working set size */
+cache_stat_t *simulate_at_multi_sizes_with_step_size(
+    reader_t *reader_in, const cache_t *cache_in, uint64_t step_size,
+    reader_t *warmup_reader, double warmup_frac, int warmup_sec,
+    int num_of_threads, bool use_random_seed);
+
+/* many caches, each at its own configured size */
+cache_stat_t *simulate_with_multi_caches(
+    reader_t *reader, cache_t *caches[], int num_of_caches,
+    reader_t *warmup_reader, double warmup_frac, int warmup_sec,
+    int num_of_threads, bool free_cache_when_finish, bool use_random_seed);
+```
+
+Each returns an array with one `cache_stat_t` per simulation, which the caller frees:
+
+```c
+typedef struct {
+  int64_t n_warmup_req;
+  int64_t n_req;
+  int64_t n_req_byte;
+  double n_req_cost;
+  int64_t n_miss;
+  int64_t n_miss_byte;
+  double n_miss_cost;
+
+  int64_t n_obj;
+  int64_t occupied_byte;
+  int64_t cache_size;
+  float sampler_ratio;
+  /* ... */
+} cache_stat_t;
+```
+
+Object miss ratio is `n_miss / n_req`, and byte miss ratio is `n_miss_byte / n_req_byte`.

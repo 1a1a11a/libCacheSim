@@ -16,6 +16,7 @@ sftp-config.json
 !.vscode/tasks.json
 
 # Caches and generated files
+doc/_build/
 __pycache__
 *.cache/
 .lint-logs/

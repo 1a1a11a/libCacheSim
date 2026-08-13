@@ -1,0 +1,6 @@
+# Documentation build only. The plotting/analysis scripts use the root
+# requirements.txt instead.
+sphinx>=7.0
+myst-parser>=2.0
+sphinx-rtd-theme>=2.0
+sphinxcontrib-mermaid>=0.9
