@@ -143,14 +143,14 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
   }
 
   if (ccache_params.consider_obj_metadata) {
-    /* NOTE: one value stands in for two sub-caches. WTinyLFU_can_insert()
-     * charges this against params->LRU->cache_size, so when the main policy's
-     * per-object metadata differs from the window LRU's the window check is
-     * off: main-cache=FIFO reports 0 while the window LRU charges 16 bytes.
-     * Splitting it (window metadata for window admission, main for transfers)
-     * would change admission decisions and therefore miss ratios, so it is
-     * left as the original accounting rather than changed in passing. */
-    cache->obj_md_size = params->main_cache->obj_md_size;
+    /* The window and the main cache can charge different per-object overheads
+     * (LRU and SLRU reserve 16 bytes, FIFO none), so neither value alone
+     * describes the pair. This one is what the parent-level size check in
+     * cache_can_insert_default() uses, so take the larger of the two: an object
+     * that does not fit under the heavier policy does not fit in this cache.
+     * WTinyLFU_can_insert() checks each sub-cache against its own overhead. */
+    cache->obj_md_size =
+        MAX(params->LRU->obj_md_size, params->main_cache->obj_md_size);
   }
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "WTinyLFU-w%.2lf-%s",
@@ -412,8 +412,12 @@ bool WTinyLFU_can_insert(cache_t *cache, const request_t *req) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
 
+  /* An object enters through the window, so the window's own per-object
+   * overhead decides whether it fits there — not the main cache's, which can
+   * differ. The main cache checks itself with its own overhead. */
   return can_insert &&
-         (req->obj_size + cache->obj_md_size <= params->LRU->cache_size) &&
+         (req->obj_size + params->LRU->obj_md_size <=
+          params->LRU->cache_size) &&
          (params->main_cache->can_insert(params->main_cache, req));
 }
 
