@@ -55,11 +55,12 @@ reference libCacheSim at all. The class is kept defined for editions that need i
 | GL-Cache: Group-level learning for efficient and high-performance caching | FAST '23 | A | Artifact README, on the micro-implementation half of the artifact: "It is a snapshot of [libCacheSim](https://github.com/1a1a11a/libCacheSim)." That directory reproduces libCacheSim's own README and `doc/` tree. | [Thesys-lab/fast23-GLCache](https://github.com/Thesys-lab/fast23-GLCache), [USENIX](https://www.usenix.org/conference/fast23/presentation/yang-juncheng) |
 | FIFO queues are all you need for cache eviction (S3-FIFO) | SOSP '23 | A | Artifact README: "The repo is a snapshot of [libCacheSim](https://github.com/cacheMon/libCacheSim), modified cachelib, and distComp." Simulations are run through its `cachesim` binary. | [Thesys-lab/sosp23-s3fifo](https://github.com/Thesys-lab/sosp23-s3fifo), [ACM DL](https://dl.acm.org/doi/10.1145/3600006.3613147) |
 | SIEVE is Simpler than LRU | NSDI '24 | A | Artifact README lists its simulator as "a snapshot of libCacheSim", and directs readers to libCacheSim for build instructions. | [Thesys-lab/NSDI24-SIEVE](https://github.com/Thesys-lab/NSDI24-SIEVE), [USENIX](https://www.usenix.org/conference/nsdi24/presentation/zhang-yazhuo) |
+| FIFO can be Better than LRU: the Power of Lazy Promotion and Quick Demotion (QD-LP) | HotOS '23 | A | Artifact README: "The repo is a snapshot of [libCacheSim](https://github.com/1a1a11a/libCacheSim), which contains the implementation of the algorithms compared in the paper." The algorithm also ships here as [`QDLP.c`](/libCacheSim/cache/eviction/QDLP.c). | [Thesys-lab/HotOS23-QD-LP](https://github.com/Thesys-lab/HotOS23-QD-LP), [ACM DL](https://doi.org/10.1145/3593856.3595887) |
+| S4-FIFO | OSDI '26 | A | Artifact README: "The repo is a snapshot of [libCacheSim](https://github.com/cacheMon/libCacheSim), modified cachelib, and distComp", built via `pushd libCacheSim/scripts && bash install_dependency.sh && bash install_libcachesim.sh` | [cacheMon/osdi26-s4-fifo](https://github.com/cacheMon/osdi26-s4-fifo) |
+| Demystifying and Improving Lazy Promotion in Cache Eviction | VLDB '26 | B | Artifact README: "`simulator/`: Contains the implementation of various lazy promotion techniques on a cache simulator based on [libCacheSim](https://github.com/1a1a11a/libCacheSim)." Its build produces `simulator/_build/bin/cachesim`. | [cacheMon/Lazy-Promotions](https://github.com/cacheMon/Lazy-Promotions) |
 
-The remaining first-party papers in [`references.md`](/references.md) (OSDI '20 workload
-analysis, HotOS '23 QD-LP) ship their algorithms in this repository — e.g.
-[`QDLP.c`](/libCacheSim/cache/eviction/QDLP.c) — but their standalone artifacts were not
-re-verified for this edition, so they are not tabulated above.
+The OSDI '20 workload analysis in [`references.md`](/references.md) has no separate
+libCacheSim-based artifact recorded here.
 
 ### 2.2 Third-party
 
@@ -67,12 +68,11 @@ re-verified for this edition, so they are not tabulated above.
 |---|---|---|---|---|
 | 3L-Cache: Low Overhead and Precise Learning-based Eviction Policy for Caches — Wenbin Zhou, Zhixiong Niu, Yongqiang Xiong, Juan Fang, Qian Wang (Beijing Univ. of Technology; Microsoft Research) | FAST '25 | A + B | Artifact README: "3L Cache is implemented in the [libCacheSim] library, and its experimental environment configuration is consistent with libCacheSim"; repository layout notes "Forked from LibCacheSim, which is a platform for cache evaluation". The algorithm was subsequently upstreamed into this repository. | [optiq-lab/3L-Cache](https://github.com/optiq-lab/3L-Cache), [USENIX](https://www.usenix.org/conference/fast25/presentation/zhou-wenbin), [issue #119](https://github.com/1a1a11a/libCacheSim/issues/119), [`3LCache/`](/libCacheSim/cache/eviction/3LCache/) |
 | Man-Made Heuristics Are Dead. Long Live Code Generators! (PolicySmith) — Dwivedula, Saxena, Akella, Chaudhuri, Kim (UT Austin) | HotNets '25 | A + B | "Our prototype is built on libCacheSim, a high-performance web cache simulator with an event-driven interface." The artifact — "All code used for these case studies is available at https://github.com/ldos-project/policysmith" — vendors libCacheSim as a submodule: `[submodule "webcache/libCacheSim"] … url = git@github.com:ldos-project/libcachesim.git`. | [ACM DL](https://doi.org/10.1145/3772356.3772413), [arXiv:2510.08803](https://arxiv.org/abs/2510.08803), [ldos-project/policysmith](https://github.com/ldos-project/policysmith) |
-| Cache is King: Smart Page Eviction with eBPF — Zussman, Zarkadas, Carin, Cheng, Franke, Pfefferle, Cidon (Columbia; IBM Research) | arXiv, Feb 2025 | B | "We implement LHD using cachebpf, based on the implementation in libcachesim [69, 70, 72]." The eBPF page-cache port is derived from libCacheSim's LHD implementation. | [arXiv:2502.02750](https://arxiv.org/abs/2502.02750) |
 | MetaMuse: Algorithm Generation via Creative Ideation — Ruiying Ma, Chieh-Jan Mike Liang, Yanjie Gao, Francis Y. Yan (Microsoft Research) | arXiv, Oct 2025 | C | "For cache replacement, these n traces are generated by libCacheSim (Yang et al. 2020), from different Zipfian distributions." Used as the trace generator for its cache-replacement evaluation. | [arXiv:2510.03851](https://arxiv.org/abs/2510.03851) |
 | T3-LRU: Three-Tier Hotness-Aware Concurrent Cache Eviction Algorithm — Zhang Xin et al. | Research Square preprint, 2026 | A | Evaluated in a fork of libCacheSim, archived as software: "rim99/libCacheSim: T3LRU Simulation … a high performance library for building cache simulators & T3-LRU simulation added". The preprint links both the fork and upstream libCacheSim. | [preprint](https://doi.org/10.21203/rs.3.rs-10049449/v1), [Zenodo](https://doi.org/10.5281/zenodo.20713182), [rim99/libCacheSim](https://github.com/rim99/libCacheSim/tree/0.1.0) |
 | Vulcan: Instance-specialized, Verifiable Systems Heuristics Through LLM-driven Search — Dwivedula, Saxena, Yadalam, Campbell, Kim, Akella | arXiv, Dec 2025 | B | "The scaffolding, implemented on top of `libCacheSim`, is responsible for instantiating the queues that are a part of the topology"; libCacheSim measures object hit rate for candidate heuristics. | [arXiv:2512.25065](https://arxiv.org/abs/2512.25065) |
-| DynamicAdaptiveClimb: Adaptive Cache Replacement with Dynamic Resizing — Berend, Dolev, Kumari, Mishra, Kogan-Sadetsky, Somani | arXiv, Nov 2025 | C | "Simulator: We conduct all evaluations using libCacheSim [46], an open-source, high-performance, and extensible cache simulator widely adopted in recent caching research." Its related-work table also attributes SIEVE, 3L, ILRU, and both of its own policies to libCacheSim as the evaluation platform. | [arXiv:2511.21235](https://arxiv.org/abs/2511.21235) |
-| SCION: Size-aware Policy Orchestration for Nonstationary Object Caches — Qizhi Wang (PingCAP) | arXiv, 2026 | B | "We implement a trace-driven benchmark in C++ on top of libCacheSim [25]." The artifact contribution is stated as "We integrate DynamicAdaptiveClimb into libCacheSim, build a trace-conversion and evaluation pipeline for HR-Cache". | [arXiv:2605.01055](https://arxiv.org/abs/2605.01055) |
+| DynamicAdaptiveClimb: Adaptive Cache Replacement with Dynamic Resizing — Berend, Dolev, Kumari, Mishra, Kogan-Sadetsky, Somani | arXiv, Nov 2025 | C + A | "Simulator: We conduct all evaluations using libCacheSim [46], an open-source, high-performance, and extensible cache simulator widely adopted in recent caching research." Its related-work table also attributes SIEVE, 3L, ILRU, and both of its own policies to libCacheSim as the evaluation platform. The authors also publish a repository that vendors the simulator: "Integrated into the libCacheSim simulation framework", with `AdaptiveClimb.c` and `DynamicAdaptiveClimb.c` added under `libCacheSim/libCacheSim/cache/eviction/`. | [arXiv:2511.21235](https://arxiv.org/abs/2511.21235), [Dhruv27Mishra/Adaptive-Climb](https://github.com/Dhruv27Mishra/Adaptive-Climb) |
+| SCION: Size-aware Policy Orchestration for Nonstationary Object Caches — Qizhi Wang (PingCAP) | arXiv, 2026 | B + A | "We implement a trace-driven benchmark in C++ on top of libCacheSim [25]." The artifact contribution is stated as "We integrate DynamicAdaptiveClimb into libCacheSim, build a trace-conversion and evaluation pipeline for HR-Cache". Its prototype vendors the simulator at a pinned upstream commit and patches it: "# libCacheSim (pinned to cacheMon/libCacheSim @ f7c85f8a538e62129e55e90c0ce4c0f605bd78ba)", with `patches/libcachesim-scion.patch` applied by `scripts/prepare_libcachesim.sh`. | [arXiv:2605.01055](https://arxiv.org/abs/2605.01055), [Icemap/SCION](https://github.com/Icemap/SCION) |
 
 ### 2.3 Independent cross-validation
 
@@ -83,7 +83,7 @@ re-verified for this edition, so they are not tabulated above.
 This is the clearest instance of libCacheSim being used *adversarially* by a third party
 — an outside maintainer reproducing the project's own numbers — which makes it worth
 recording separately from citation-style use. Caffeine's simulator also ships dedicated
-libCacheSim trace readers; see [trace-format interoperability](#trace-format-interoperability).
+libCacheSim trace readers; see [derived implementations and trace-format interoperability](#derived-implementations-and-trace-format-interoperability).
 
 ### 2.4 Practitioner and community use
 
@@ -125,6 +125,13 @@ exposes, 258 of them in the trailing 30 days. npm `libcachesim-node`: 173 downlo
 the trailing year
 ([npm downloads API](https://api.npmjs.org/downloads/point/last-year/libcachesim-node)).
 
+**No third-party redistribution exists.** Every package of libCacheSim is published by
+the project itself. Checked and found nothing: AUR, conda-forge/anaconda.org, vcpkg,
+conan-center-index, Debian, Homebrew, Nix, and crates.io carry no libCacheSim port, and
+Docker Hub returns one image, the project's own. deps.dev and GitHub's dependency graph
+report zero reverse dependencies for the PyPI package. Whatever reach the library has, it
+is not through downstream packaging.
+
 The two figures are not filtered alike, so do not add them or compare them directly. The
 PyPI figure excludes the mirrors pypistats recognizes; the npm endpoint applies no mirror
 filter at all. Neither excludes CI, container builds, or other automated installs, which
@@ -138,6 +145,7 @@ trend-tracking across editions, never as a user count.
 | Project | Class | Evidence | Source |
 |---|---|---|---|
 | **CacheBench** — benchmarking suite evaluating 18 eviction algorithms across thousands of traces, developed by Haocheng Xia (UIUC, visiting Harvard) under the UCSC OSPO Summer of Reproducibility | B | Report describes libCacheSim as a core component and the project as "a Python package that allows users to easily download traces and run simulation analyses using libCacheSim" | [UCSC OSPO report](https://ucsc-ospo.github.io/report/osre25/harvard/cachebench/2025-08-06-haochengxia/) |
+| **system-intelligence-benchmark** (`sys-intelligence` org) — benchmark suite scoring LLM-designed systems heuristics, whose `cache_algo_bench` task scores candidate eviction policies against libCacheSim's algorithm set | C | Shells out to the built binary: `command = f"""{LIBCACHSIM_PATH}/_build/bin/cachesim {cache_trace} oracleGeneral {cache_alg} {cache_cap} --ignore-obj-size 1 …"""`, and its README calls libCacheSim a "high-performance caceh simulator" [sic] | [sys-intelligence/system-intelligence-benchmark](https://github.com/sys-intelligence/system-intelligence-benchmark) |
 | **cache_dataset** — open collection of production cache traces (Meta, Twitter, CloudPhysics, Microsoft, Wikimedia, Alibaba, Tencent) | C | Ships three tutorial notebooks that run libCacheSim — "Using libCacheSim to read the dataset", "…to analyze and plot the trace", "…to run cache simulation". The dataset itself is *format-compatible* rather than built on the library: "We provide both plain text format … and `oracleGeneral` format that is suitable for using with [libCacheSim] platform." | [cacheMon/cache_dataset](https://github.com/cacheMon/cache_dataset) |
 
 Note the class distinction between these two rows: CacheBench is implemented on top of
@@ -145,29 +153,31 @@ libCacheSim (B), whereas cache_dataset publishes traces in a libCacheSim-readabl
 and drives the tool from tutorials (C). Shipping a compatible format alone would not
 qualify for either class.
 
-Both rows are **project-affiliated, not third-party**: cache_dataset is published under
-the same cacheMon organization that maintains the Python bindings, and CacheBench was
-built by a libCacheSim collaborator under project mentorship. They are counted as
-adoption entries — the software is genuinely used — but not toward the third-party
-subtotal in the [changelog](#changelog).
+Affiliation differs by row. cache_dataset is published under the same cacheMon
+organization that maintains the Python bindings, and CacheBench was built by a
+libCacheSim collaborator under project mentorship, so both are **project-affiliated** and
+excluded from the third-party subtotal in the [changelog](#changelog).
+system-intelligence-benchmark is an unaffiliated third-party suite and counts as such.
+All three are adoption entries — the software is genuinely used.
 
-### Trace-format interoperability
+### Derived implementations and trace-format interoperability
 
-Three independent third-party cache projects implement readers for libCacheSim's trace
-formats. By the same rule that keeps cache_dataset out of class B, reimplementing a
-format is **not** adoption of the software, and none of these rows count toward any total
-above. They are recorded because together they show `oracleGeneral` functioning as a
-de-facto interchange format for cache traces, which is a distinct kind of reach.
+Work that takes something *from* libCacheSim — its algorithm code or its trace format —
+without running, bundling, or building on the software. None of it satisfies classes A–D,
+so **none of these rows count toward any total above**. They are recorded because they
+show a second kind of reach: the implementations and the `oracleGeneral` format
+travelling on their own.
 
-| Project | Evidence | Source |
-|---|---|---|
-| **Pelikan** `cachesim` (Rust) | "A cache trace simulator … with a trace format inspired by [libCacheSim]"; "cachesim can import libCacheSim's binary trace formats"; "The first four columns correspond directly to libCacheSim's **oracleGeneral** binary format"; "The `op` column uses the same integer encoding as libCacheSim's `req_op_e`" | [pelikan-io/cachesim](https://github.com/pelikan-io/cachesim) |
-| **Otter** (Go cache library) | Its benchmark simulator carries a `libcachesim` parser package and offers the formats as inputs: `OracleGeneralFormat = "oracleGeneral"`, `LibcachesimCSVFormat = "libcachesimCSV"` | [maypok86/otter](https://github.com/maypok86/otter) |
-| **Caffeine** (Java cache library) | Its simulator registers three libCacheSim readers — `LCS_TRACE`, `LCS_ORACLE_GENERAL`, `LCS_TWITTER` — backed by a `parser/libcachesim/{csv,oracle,twitter}` package tree | [ben-manes/caffeine](https://github.com/ben-manes/caffeine) |
+| Project | What it takes | Evidence | Source |
+|---|---|---|---|
+| **Cache is King: Smart Page Eviction with eBPF** — Zussman, Zarkadas, Carin, Cheng, Franke, Pfefferle, Cidon (Columbia; IBM Research) | The LHD implementation, ported to eBPF | "We implement LHD using cachebpf, based on the implementation in libcachesim [69, 70, 72]." The paper mentions libCacheSim once and shows no run of it, so this is derivation from the source rather than use of the tool. | [arXiv:2502.02750](https://arxiv.org/abs/2502.02750) |
+| **Pelikan** `cachesim` (Rust) | The binary trace formats | "A cache trace simulator … with a trace format inspired by [libCacheSim]"; "cachesim can import libCacheSim's binary trace formats"; "The first four columns correspond directly to libCacheSim's **oracleGeneral** binary format"; "The `op` column uses the same integer encoding as libCacheSim's `req_op_e`" | [pelikan-io/cachesim](https://github.com/pelikan-io/cachesim) |
+| **Otter** (Go cache library) | The trace formats | Its benchmark simulator carries a `libcachesim` parser package and offers the formats as inputs: `OracleGeneralFormat = "oracleGeneral"`, `LibcachesimCSVFormat = "libcachesimCSV"` | [maypok86/otter](https://github.com/maypok86/otter) |
+| **Caffeine** (Java cache library) | The trace formats | Its simulator registers three libCacheSim readers — `LCS_TRACE`, `LCS_ORACLE_GENERAL`, `LCS_TWITTER` — backed by a `parser/libcachesim/{csv,oracle,twitter}` package tree | [ben-manes/caffeine](https://github.com/ben-manes/caffeine) |
 
 Otter and Caffeine also implement SIEVE or S3-FIFO, which is
 [algorithm adoption](#6-downstream-algorithm-adoption-not-libcachesim-adoption) and
-counted nowhere here; the rows above are strictly about the trace format.
+counted nowhere here either; their rows above are strictly about the trace format.
 
 ---
 
@@ -192,9 +202,12 @@ issues there, so the field is the sum of the two rows above. Reading it as "open
 would overstate the backlog and corrupt trend comparisons between editions. The 8 open
 pull requests include the one that added this document.
 
-Forks were enumerated and are *not* treated as adoption: nearly all are dormant
-snapshots with no divergent description or activity. Known research forks that do carry
-independent work are listed by name in [§2.2](#22-third-party) instead.
+Forks were enumerated and their READMEs fetched; they are *not* treated as adoption.
+Almost all are dormant snapshots of upstream text, including several with distinctive
+names that turn out to carry no divergent work. The forks that do carry independent work
+are listed by name in [§2.2](#22-third-party) and
+[§2.4](#24-practitioner-and-community-use) instead — a fork click is not adoption, a fork
+with a new eviction algorithm in it is.
 
 ---
 
@@ -272,4 +285,4 @@ To cite libCacheSim itself, use the BibTeX entries in [`references.md`](/referen
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0.0 | 2026-08-13 | First edition. **19 adoption entries** — 12 research (3 first-party artifacts, 8 third-party works, 1 independent cross-validation), 5 practitioner and community entries, and 2 project-affiliated ecosystem projects — of which **14 are third-party**. Plus 3 first-party distribution channels, which are reach rather than adoption, for **22 sourced rows** total. By evidence class: 8×A, 8×B, 6×C, 3×D (25 assignments over 22 rows; three rows carry two classes). Trace-format interoperability, repository signals, and downstream algorithm adoption are recorded separately and excluded from every count above. |
+| 1.0.0 | 2026-08-13 | First edition. **22 adoption entries** — 6 first-party artifacts, 7 third-party works, 1 independent cross-validation, 5 practitioner and community entries, and 3 ecosystem projects — of which **14 are third-party**. Plus 3 first-party distribution channels, which are reach rather than adoption, for **25 sourced rows** total. By evidence class: 12×A, 8×B, 7×C, 3×D (30 assignments over 25 rows; five rows carry two classes). Derived implementations and trace-format interoperability, repository signals, and downstream algorithm adoption are recorded separately and excluded from every count above. |
