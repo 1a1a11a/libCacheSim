@@ -21,6 +21,23 @@
  * rounds to this value and warns under -Wimplicit-const-int-float-conversion */
 static constexpr double kHashSpaceSize = 18446744073709551616.0;
 
+/* whether a reader of this type fills in req->next_access_vtime, which the
+ * Belady policies need. These are the formats whose readers set it; every other
+ * reader leaves it at -2. */
+static bool trace_type_has_next_access_vtime(trace_type_e trace_type) {
+  switch (trace_type) {
+    case ORACLE_GENERAL_TRACE:
+    case LCS_TRACE:
+    case ORACLE_SIM_TWR_TRACE:
+    case ORACLE_SYS_TWR_TRACE:
+    case ORACLE_SIM_TWRNS_TRACE:
+    case ORACLE_SYS_TWRNS_TRACE:
+      return true;
+    default:
+      return false;
+  }
+}
+
 mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
     mrc_profiler_e type, reader_t *reader, std::string output_path,
     const mrc_profiler_params_t &params) {
@@ -318,12 +335,12 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
    * the cache; do the same here. */
   if (strcasecmp(params_.cache_algorithm_str, "belady") == 0 ||
       strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
-    if (reader_->trace_type != ORACLE_GENERAL_TRACE &&
-        reader_->trace_type != LCS_TRACE) {
+    if (!trace_type_has_next_access_vtime(reader_->trace_type)) {
       ERROR(
-          "%s needs future information, so it only works on oracleGeneral and "
-          "lcs traces; convert with ./bin/traceConv\n",
-          params_.cache_algorithm_str);
+          "%s needs future information, which %s traces do not carry; use an "
+          "oracle format such as oracleGeneral or lcs, or convert with "
+          "./bin/traceConv\n",
+          params_.cache_algorithm_str, g_trace_type_name[reader_->trace_type]);
     }
   }
 
