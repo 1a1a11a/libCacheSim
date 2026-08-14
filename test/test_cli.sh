@@ -187,7 +187,8 @@ OPTIONAL_ALGOS=" 3LCache GLCache gl-cache lrb "
 
 ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
-	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob nop
+	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob mq
+	multiqueue nop
 	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifod s3fifov0
 	sieve size slru slruv0 tinyLFU twoq wtinyLFU
 	hyperbolic belady beladySize"
