@@ -89,7 +89,11 @@ cache_t *LP_SFIFO_init(const common_cache_params_t ccache_params,
   }
 
   common_cache_params_t ccache_params_local = ccache_params;
-  ccache_params_local.hashpower = MAX(4, ccache_params_local.hashpower - 2);
+  /* see Cacheus_init: a non-positive hash power is the "use the default"
+   * sentinel and must survive untouched. */
+  if (ccache_params_local.hashpower > 0) {
+    ccache_params_local.hashpower = MAX(4, ccache_params_local.hashpower - 2);
+  }
   params->fifos = malloc(sizeof(cache_t *) * params->n_seg);
 
   for (int i = 0; i < params->n_seg; i++) {

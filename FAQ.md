@@ -30,7 +30,7 @@ oracleGeneral traces are usually stored zstd-compressed, and libCacheSim reads t
 
 In the sample [cloudPhysicsIO.csv](/data/cloudPhysicsIO.csv), time is in seconds and object size is in bytes.
 
-`next_access_vtime` is a *logical* time: the number of requests between the current request and the next request to the same object, or `-1` when the object is never accessed again. Algorithms that need future information, such as [Belady](/libCacheSim/cache/eviction/Belady.c) and BeladySize, rely on it, which is why they only work on oracle traces.
+`next_access_vtime` is a *logical* time: the 1-based request index at which this object is next requested — an absolute position in the trace, not the distance to it — or `-1` when the object is never accessed again. Algorithms subtract the current request count themselves, so encoding a distance here silently changes eviction order. In `cloudPhysicsIO.oracleGeneral.bin`, for instance, request 7 stores `19` and that object is next seen at request 19. Algorithms that need future information, such as [Belady](/libCacheSim/cache/eviction/Belady.c) and BeladySize, rely on it, which is why they only work on oracle traces.
 
 Object ids are hashed unless the reader is told they are already numeric. Pass `obj-id-is-num=true` in `--trace-type-params` when the id column holds numbers — `cachesim` stops with an error if you leave it out on such a trace.
 

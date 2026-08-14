@@ -400,7 +400,12 @@ if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
 		--size=100MB,500MB,3 2>/dev/null | grep '^104857600B' | awk '{printf "%.4f", $2}')
 	_cachesim_exact=$("${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral lru 100mb \
 		2>/dev/null | tail -1 | grep -oE 'miss ratio [0-9.]+' | head -1 | awk '{printf "%.4f", $3}')
-	if [[ "${_minisim_unsampled}" == "${_cachesim_exact}" ]]; then
+	# both sides must actually have been extracted: if the output formats change
+	# and neither grep matches, "" == "" would record this assertion as passed
+	# without either miss ratio having been observed.
+	if [[ -z "${_minisim_unsampled}" || -z "${_cachesim_exact}" ]]; then
+		_report 1 "could not read a miss ratio to compare (minisim='${_minisim_unsampled}' cachesim='${_cachesim_exact}')"
+	elif [[ "${_minisim_unsampled}" == "${_cachesim_exact}" ]]; then
 		_report 0 ""
 	else
 		_report 1 "unsampled MINISIM (${_minisim_unsampled}) should match cachesim (${_cachesim_exact})"
