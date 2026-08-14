@@ -1,24 +1,37 @@
-# 1a1a11a
+# Build output
+build
+*_build*
+example/cacheSimulatorC/cmake-build-debug
+*.out
+*.whl
+
+# Editors and IDEs
+.idea
+sftp-config.json
+# the checked-in .vscode/*.json files are shared editor config; ignore the rest
+.vscode/*
+!.vscode/c_cpp_properties.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# Caches and generated files
+doc/_build/
 __pycache__
-*deprecated*
+*.cache/
+.lint-logs/
+*.log
 *.DS_Store*
+
+# Scratch and local data
+*deprecated*
 *.bak
 *.clean
 *.nogit*
-*_build*
-*.out
-build
-.idea
-example/cacheSimulatorC/cmake-build-debug
-.vscode/*
-*.log
 fig/
 result/
 data_large/
-# Chaos
-sftp-config.json
-# Clangd cache
-*.cache/
-.lint-logs/
-# Python wheels
-*.whl
+
+# Traces produced by traceConv/traceFilter when run against data/
+data/*.oracleGeneral
+data/*.lcs.*

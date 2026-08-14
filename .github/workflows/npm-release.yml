@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Synchronize Node.js binding version
         run: |
@@ -57,29 +59,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # actions/create-release was archived by GitHub in 2021; the gh CLI is
+      # preinstalled on the runners and is already used by the step above.
       - name: Create GitHub Release
         id: release
         if: steps.check_release.outputs.exists == 'false'
-        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.package.outputs.version }}
-          release_name: Release v${{ steps.package.outputs.version }}
-          body: |
-            Release v${{ steps.package.outputs.version }}
+          VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          gh release create "v${VERSION}" \
+            --title "Release v${VERSION}" \
+            --notes "Release v${VERSION}
 
-            ## Installation
-            ```bash
-            npm install libcachesim-node
-            ```
+          ## Installation
+          \`\`\`bash
+          npm install libcachesim-node
+          \`\`\`
 
-            ## Supported Platforms
-            - Linux x64
+          ## Supported Platforms
+          - Linux x64
 
-            Pre-compiled binaries are automatically downloaded during installation.
-          draft: false
-          prerelease: false
+          Pre-compiled binaries are automatically downloaded during installation."
+          echo "release_created=true" >> "$GITHUB_OUTPUT"
 
   build-and-publish:
     if: github.event_name == 'release'
@@ -92,6 +94,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Synchronize Node.js binding version
@@ -157,6 +160,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Synchronize Node.js binding version
         run: |
