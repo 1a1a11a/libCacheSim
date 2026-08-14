@@ -59,11 +59,16 @@ cache_t *create_cache_external(const char *const cache_alg_name,
 cache_t *create_cache_internal(const char *const cache_alg_name,
                                common_cache_params_t cc_params,
                                void *cache_specific_params) {
-  cache_t *(*cache_init)(common_cache_params_t, void *) = NULL;
+  cache_init_func_ptr cache_init = get_builtin_cache_init(cache_alg_name);
+  if (cache_init != NULL) {
+    INFO("internal cache %s loaded\n", cache_alg_name);
+    return cache_init(cc_params, (const char *)cache_specific_params);
+  }
+
   char *err = NULL;
 
   char cache_init_func_name[256];
-  void *handle = dlopen(NULL, RTLD_GLOBAL);
+  void *handle = dlopen(NULL, RTLD_LAZY | RTLD_GLOBAL);
   /* should not check err here, otherwise ubuntu will report err even though
    * everything is OK */
 
@@ -72,9 +77,10 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
   // ISO C compliant way to convert void* to function pointer
   union {
     void *obj_ptr;
-    cache_t *(*func_ptr)(common_cache_params_t, void *);
+    cache_init_func_ptr func_ptr;
   } dlsym_ptr;
 
+  dlerror();
   dlsym_ptr.obj_ptr = dlsym(handle, cache_init_func_name);
   cache_init = dlsym_ptr.func_ptr;
 
@@ -82,11 +88,11 @@ cache_t *create_cache_internal(const char *const cache_alg_name,
 
   if (cache_init == NULL) {
     WARN("cannot load internal cache %s: error %s\n", cache_alg_name, err);
-    abort();
+    return NULL;
   }
 
   INFO("internal cache %s loaded\n", cache_alg_name);
-  cache_t *cache = cache_init(cc_params, cache_specific_params);
+  cache_t *cache = cache_init(cc_params, (const char *)cache_specific_params);
   return cache;
 }
 

@@ -28,6 +28,7 @@ python3 plot_mrc_time.py \
 ## Profile miss ratio curves
 
 `mrcProfiler` enables fast profiling of miss ratio curves. With a proper parameter setting (such as `sampling_rate`, see [here](../doc/quickstart_mrcProfiler.md) for details) `mrcProfiler` can profile miss ratio curves in a fast way with acceptable accuracy.
+When using the MINISIM profiler with built-in eviction algorithms, algorithm names are case-insensitive, so `lru,fifo` and `LRU,FIFO` both work.
 
 ```bash
 # plot profiled miss ratio over sizes

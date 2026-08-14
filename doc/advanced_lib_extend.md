@@ -35,8 +35,8 @@ Specifically, you can following the steps:
 2. If your cache eviction algorithm needs extra metadata, add a new object metadata struct in 
    [include/libCacheSim/cacheObj.h](/libCacheSim/include/libCacheSim/cacheObj.h).
 3. Add `myCache_init()` function to [include/libCacheSim/evictionAlgo.h](/libCacheSim/include/libCacheSim/evictionAlgo.h).
-4. Add mycache.c to [CMakeLists.txt](/libCacheSim/cache/eviction/CMakeLists.txt) so that it can be compiled.
-5. Add command line option in [bin/cachesim/cache_init.h](/libCacheSim/bin/cachesim/cache_init.h) so that you can use `cachesim` binary. You may also want to take a look at [bin/cachesim/cli_parser.c](/libCacheSim/bin/cachesim/cli_parser.c). 
+4. Add `mycache.c` to [cache/CMakeLists.txt](/libCacheSim/cache/CMakeLists.txt) so that it can be compiled.
+5. Add the algorithm name and init function to [cache/evictionAlgoRegister.c](/libCacheSim/cache/evictionAlgoRegister.c). This registry is used by built-in cache lookup paths such as `cachesim` and `mrcProfiler` MINISIM.
 6. Remember to add a test in [test/test_evictionAlgo.c](/test/test_evictionAlgo.c) and add the algorithm to this [README](README.md). 
 
 > [!TIP]
@@ -83,5 +83,4 @@ Here are the steps to add a new trace reader:
 2. add a new reader file, e.g., `myReader.h` in [traceReader/customizedReader/](/libCacheSim/traceReader/customizedReader/) and implement the two functions.
 3. add `myReader_setup()` to `setup_reader()`and `myReader_read_one_req()` to `read_one_req()` in [traceReader/reader.c](/libCacheSim/traceReader/reader.c). 
 4. add `MYREADER_TRACE` to `trace_type_str_to_enum()` in [bin/cli_reader_utils.c](/libCacheSim/bin/cli_reader_utils.c)
-
 

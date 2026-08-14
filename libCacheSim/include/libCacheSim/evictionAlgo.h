@@ -38,6 +38,8 @@ typedef struct {
   int64_t n_byte_rewritten;
 } Clock_params_t;
 
+cache_init_func_ptr get_builtin_cache_init(const char *const cache_alg_name);
+
 cache_t *ARC_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
