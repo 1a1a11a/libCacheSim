@@ -17,7 +17,7 @@
 - Use a standard out-of-source CMake build for release-style work: `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release` then `cmake --build build`.
 - CMake tests are enabled by default. Run `ctest --test-dir _build_dbg --output-on-failure` after the debug build, or the equivalent `build/` test directory if you used a separate build tree.
 - If you change installation, packaging, or the public library surface, also review `test/test_lib.sh`.
-- Use sample traces in `data/` for quick validation unless the task specifically requires the large traces in `2024_google/`.
+- Use sample traces in `data/` for quick validation. They are deliberately tiny, so never use them to compare miss ratios between algorithms; larger traces are listed at https://github.com/cacheMon/cache_dataset.
 
 ## Project-Specific Conventions
 - When adding a new eviction algorithm, reader, or plugin, follow `doc/advanced_lib_extend.md` instead of inventing a new integration path. These changes usually require updates to implementation files, registration headers, CMake lists, CLI/parser wiring, and tests.

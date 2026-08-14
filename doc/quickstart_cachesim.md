@@ -11,16 +11,18 @@ Meanwhile, cachesim has high-performance with low resource usages.
 ---
 
 ## Installation
-First, [build libCacheSim](/doc/install.md). After building libCacheSim, `cachesim` should be in the build directory.
+First, [build libCacheSim](/doc/install.md). After building libCacheSim, `cachesim` is in the `bin/` subdirectory of your build directory.
+
+All commands on this page are run from the build directory (`_build/` if you followed the [README](/README.md)), so the sample traces in [data/](/data/) are at `../data/`.
 
 ---
 
 ## Basic Usage
 ```
-./cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
+./bin/cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
 ```
 
-use `./cachesim --help` to get more information.
+use `./bin/cachesim --help` to get more information.
 
 ### Run a single cache simulation
 
@@ -29,28 +31,28 @@ Note that vscsi is a trace format, we also support csv traces.
 
 ```bash
 # Note that no space between the cache size and the unit, unit is not case sensitive
-./cachesim ../data/trace.vscsi vscsi lru 1gb
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb
 ```
 
 ### Run multiple cache simulations
 ```bash
 # Note that there is no space between the cache sizes
-./cachesim ../data/trace.vscsi vscsi lru 1mb,16mb,256mb,8gb
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1mb,16mb,256mb,8gb
 
 # Or you can quote the cache sizes
-./cachesim ../data/trace.vscsi vscsi lru "1mb, 16mb, 256mb, 8gb"
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru "1mb, 16mb, 256mb, 8gb"
 
 # besides absolute cache size, you can also use fraction of working set size
-./cachesim ../data/trace.vscsi vscsi lru 0.001,0.01,0.1,0.2
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 0.001,0.01,0.1,0.2
 
 # besides using byte as the unit, you can also treat all objects having the same size, and the size is the number of objects
-./cachesim ../data/trace.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
 
 # new feature: you can run a few algorithms in parallel by concatenating the algorithms
-./cachesim ../data/trace.vscsi vscsi fifo,lru,arc,qdlp 0.01 --ignore-obj-size 1
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi fifo,lru,arc,qdlp 0.01 --ignore-obj-size 1
 
 # run 4*4 simulations in parallel (no more than n_thread at the same time)
-./cachesim ../data/trace.vscsi vscsi fifo,lru,arc,qdlp 0.01,0.05,0.1,0.2 --ignore-obj-size 1
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi fifo,lru,arc,qdlp 0.01,0.05,0.1,0.2 --ignore-obj-size 1
 ```
 
 
@@ -59,7 +61,7 @@ cachesim can detect the working set of the trace and automatically generate cach
 You can enable this feature by setting cache size to 0 or auto.
 
 ```bash
-./cachesim ../data/trace.vscsi vscsi lru auto
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru auto
 ```
 
 ### Use different eviction algorithms
@@ -70,27 +72,30 @@ cachesim supports the following algorithms:
 * [LFU](/libCacheSim/cache/eviction/LFU.c)
 * [ARC](/libCacheSim/cache/eviction/ARC.c)
 * [SLRU](/libCacheSim/cache/eviction/SLRU.c)
-* [GDSF](/libCacheSim/cache/eviction/GDSF.c)
+* [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp)
 * [WTinyLFU](/libCacheSim/cache/eviction/WTinyLFU.c)
 * [LeCaR](/libCacheSim/cache/eviction/LeCaR.c)
 * [Cacheus](/libCacheSim/cache/eviction/Cacheus.c)
 * [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c)
-* [LHD](/libCacheSim/cache/eviction/LHD/LHDInterface.cpp)
-* [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c)
+* [LHD](/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp)
 * [Belady](/libCacheSim/cache/eviction/Belady.c)
 * [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
+* [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c), [Sieve](/libCacheSim/cache/eviction/Sieve.c)
+* [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c) — build with `-DENABLE_GLCACHE=ON`
+
+See the [README](/README.md#supported-algorithms) for the full list, including the algorithms that are behind an optional build flag (GLCache, LRB, 3LCache). Asking for one that was not compiled in fails with `do not support algorithm <name>`.
 
 You can just use the algorithm name as the eviction algorithm parameter, for example
 
 ```bash
-./cachesim ../data/trace.vscsi vscsi lecar auto
-./cachesim ../data/trace.vscsi vscsi hyperbolic auto
-./cachesim ../data/trace.vscsi vscsi lhd auto
-./cachesim ../data/trace.vscsi vscsi glcache auto
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lecar auto
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi hyperbolic auto
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lhd auto
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi s3fifo auto
 
 # belady and beladySize require oracle trace
-./cachesim ../data/trace.oracleGeneral oracleGeneral beladySize auto
+./bin/cachesim ../data/cloudPhysicsIO.oracleGeneral.bin oracleGeneral beladySize auto
 ```
 
 
@@ -103,28 +108,29 @@ Besides the column information, a csv reader also requires the delimiter and whe
 cachesim builds in a simple delimiter and header detector, if the detected result is not correct, you can provide the correct information using `delimiter=,`, `has-header=true`.
 
 
+Object ids are hashed unless you tell the reader they are already numeric, so add `obj-id-is-num=true` when the id column holds numbers — `cachesim` stops with an error if you leave it out on such a trace. The sample `cloudPhysicsIO.csv` has a numeric id column, so every example below sets it.
+
 ```bash
 # note that the parameters are separated by comma and quoted
-./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4"
+./bin/cachesim ../data/cloudPhysicsIO.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true"
 
-# if object id is numeric, then we can pass obj-id-is-num=true to speed up
-./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true"
-
+# omitting obj-id-is-num on a numeric id column fails with
+#   [ERROR] csv.c: detect obj_id is numeric, please specify -t 'obj-id-is-num=1'
 
 # note that csv trace does not support UTF-8 encoding, only ASCII encoding is supported
-./cachesim ../data/trace.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, delimiter=,, has-header=true"
+./bin/cachesim ../data/cloudPhysicsIO.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true, delimiter=,, has-header=true"
 ```
 
 Besides csv trace, we also support txt trace and binary trace.
 ```bash
 # txt trace is a simple format that stores obj-id in each line
-./cachesim ../data/trace.txt txt lru 1gb
+./bin/cachesim ../data/cloudPhysicsIO.txt txt lru 1gb
 
 # binary trace, format is specified using format string similar to Python struct
-./cachesim ../data/trace.vscsi binary lru 1gb -t "format=<IIIHHQQ,obj-id-col=6,obj-size-col=2"
+./bin/cachesim ../data/cloudPhysicsIO.vscsi binary lru 1gb -t "format=<IIIHHQQ,obj-id-col=6,obj-size-col=2"
 
 # oracleGeneral is a binary format that stores time, obj-id, size, next-access-time (in reference count)
-./cachesim ../data/trace.oracleGeneral.bin oracleGeneral lru 1gb
+./bin/cachesim ../data/cloudPhysicsIO.oracleGeneral.bin oracleGeneral lru 1gb
 ```
 **We recommend using binary trace because it can be a few times faster than csv trace and uses less DRAM resources.**
 
@@ -132,17 +138,17 @@ Besides csv trace, we also support txt trace and binary trace.
 
 ## Advanced usage
 
-cachesim supports many advanced features, you can use `./cachesim --help` to get more information.
+cachesim supports many advanced features, you can use `./bin/cachesim --help` to get more information.
 Here we give some examples.
 
 ### Setting parameters for eviction algorithms
 Some eviction algorithms have parameters, you can set the parameters by using `-e "k1=v1,k2=v2"` or `--eviction-params "k1=v1,k2=v2"` format.
 ```bash
 # run SLRU with 4 segments
-./cachesim ../data/trace.vscsi vscsi slru 1gb -e n-seg=4
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi slru 1gb -e n-seg=4
 
 # print the default parameters for SLRU
-./cachesim ../data/trace.vscsi vscsi slru 1gb -e print
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi slru 1gb -e print
 ```
 
 
@@ -151,7 +157,7 @@ cachesim supports the following admission algorithms: size, probabilistic, bloom
 You can use `-a` or `--admission` to set the admission algorithm.
 ```bash
 # add a bloom filter to filter out objects on first access
-./cachesim ../data/trace.vscsi vscsi lru 1gb -a bloomFilter
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb -a bloomFilter
 ```
 
 ### Prefetching algorithm
@@ -159,32 +165,40 @@ cachesim supports the following prefetching algorithms: OBL, Mithril, PG (and AM
 You can use `-p` or `--prefetch` to set the prefetching algorithm.
 ```bash
 # add a mithril to record object association information and fetch objects that are likely to be accessed in the future
-./cachesim ../data/trace.vscsi vscsi lru 1gb -p Mithril
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb -p Mithril
 ```
 
 ### Advanced features
 ```bash
 # change number of threads
-./cachesim ../data/trace.vscsi vscsi lru 1gb --num-thread=4
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --num-thread=4
 
 # cap the number of requests read from the trace
-./cachesim ../data/trace.vscsi vscsi lru 1gb --num-req=1000000
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --num-req=1000000
 
 # change output
-./cachesim ../data/trace.vscsi vscsi lru 1gb -o my-output
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb -o my-output
 
 # ignore object size, each object has size one
-./cachesim ../data/trace.vscsi vscsi lru 1gb --ignore-obj-size=true
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --ignore-obj-size=true
 
 # ignore object metadata size, different algorithms have different metadata size, this option will ignore the metadata size
-./cachesim ../data/trace.vscsi vscsi lru 1gb --consider-obj-metadata=false
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --consider-obj-metadata=false
 
 # use part of the trace to warm up the cache
-./cachesim ../data/trace.vscsi vscsi lru 1gb --warmup-sec=86400
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --warmup-sec=86400
 
 # Use TTL
-./cachesim ../data/trace.vscsi vscsi lru 1gb --use-ttl=true
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --use-ttl=true
 
 # Disable the print of the first few requests
-./cachesim ../data/trace.vscsi vscsi lru 1gb --print-head-req=false
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --print-head-req=false
+
+# size the hash table: --hashpower is log2 of the number of entries, default 24
+# (16M). Lowering it cuts memory substantially on small traces — replaying the
+# sample trace drops from about 106 MB to 8 MB at --hashpower=16
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --hashpower=16
 ```
+
+> [!NOTE]
+> Sampling-based algorithms such as `RandomLRU` and `hyperbolic` draw eviction candidates from the hash table, so their miss ratios shift slightly with `--hashpower`. Keep it fixed when comparing results.

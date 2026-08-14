@@ -1,17 +1,17 @@
 
-## Trace analysis tool
+# Trace analysis tool
 libCacheSim provides a set of tools to help you analyze traces. After building the project, you can find a binary called `traceAnalyzer`.
 This doc shows how to use the tool.
 If you are interested, the source code is located in the [bin/traceAnalyzer/](/libCacheSim/bin/traceAnalyzer) and [traceAnalyzer](/libCacheSim/traceAnalyzer) directory.
 
-### Obtain trace statistics
-#### Usage: 
+## Obtain trace statistics
+### Usage: 
 ```
 # ./bin/traceAnalyzer --help for a list of tasks and options
 ./bin/traceAnalyzer PATH_TO_TRACE traceType [--task1] [--task2]
 ```
 
-#### A list of tasks:
+### A list of tasks:
 * `--common`: run all common tasks, including `--stat`, `--traceStat`, `--reqRate`, `--size`, `--reuse`, `--popularity`
 * `--all`: run all tasks
 * `--accessPattern`: generate access pattern data for plotting using [scripts/traceAnalysis/access_pattern.py](/scripts/traceAnalysis/access_pattern.py)
@@ -21,7 +21,7 @@ If you are interested, the source code is located in the [bin/traceAnalyzer/](/l
 * `--popularity`: generate popularity data for plotting using [scripts/traceAnalysis/popularity.py](/scripts/traceAnalysis/popularity.py)
 * `--popularityDecay`: generate popularity data for plotting using [scripts/traceAnalysis/popularity_decay.py](/scripts/traceAnalysis/popularity_decay.py)
 
-#### Example: 
+### Example: 
 ```bash
 # run all common tasks
 ./bin/traceAnalyzer PATH_TO_TRACE traceType --common
@@ -69,11 +69,11 @@ The trace analyzer will generate statistics of the trace and save them to `stat`
 
 ----
 
-### Plot trace statistics and visualize the trace
+## Plot trace statistics and visualize the trace
 We provide plot scripts in [scripts/traceAnalysis/](/scripts/traceAnalysis/) to help you plot the trace statistics.
 After generating plot data, we can plot access pattern, request rate, size, reuse, and popularity using the following commands:
 
-#### Access pattern
+### Access pattern
 ```bash
 # plot the access pattern using wall clock (real) time
 python3 scripts/traceAnalysis/access_pattern.py ${dataname}.accessRtime
@@ -105,7 +105,7 @@ The first 10m requests of the Twitter cluster52 trace, this is a Zipf workload.
 
 
 
-#### Request rate
+### Request rate
 ```bash
 # this is only supported for traces that have (wall clock) time field
 python3 scripts/traceAnalysis/req_rate.py ${dataname}.reqRate_w300
@@ -124,7 +124,7 @@ The block workload has a daily request spike, while the Twitter workload is too 
 <br>
 
 
-#### Size distribution
+### Size distribution
 ```bash
 # this is only supported for traces that have object size
 python3 scripts/traceAnalysis/size.py ${dataname}.size
@@ -144,7 +144,7 @@ The Request curve is weighted by request count, and the Object curve is weighted
 <br>
 
 
-#### Reuse distribution
+### Reuse distribution
 This is the time since the last access of the object.
 
 ```bash
@@ -173,7 +173,7 @@ The first 10m requests of the Twitter cluster52 trace. The left column shows wal
 </div>
 <br>
 
-#### Popularity
+### Popularity
 ```bash
 # the popularity skewness ($\alpha$) is in the output of traceAnalyzer
 # this plots the request count/freq over object rank
@@ -195,7 +195,7 @@ The first 10m requests of the Twitter cluster52 trace. <br>
 
 
 
-#### Size distribution heatmap
+### Size distribution heatmap
 This and the following plots are more expensive plots that require more CPU cycles and DRAM usage to generate. 
 This plot requires wall clock time and object size in the trace. 
 This is a heatmap of the size distribution of the trace. The x-axis is the clock time, and the y-axis is the size. The color represents the number of requests having a certain size range at that time. The darker the color, the more requests of the certain size at that time. 
@@ -217,7 +217,7 @@ Left: a block cache workload (w92), right: the first 10m requests of the Twitter
 <br>
 
 
-#### Reuse distribution heatmap
+### Reuse distribution heatmap
 This is a heatmap of the reuse distribution of the trace. The x-axis is the wall clock time, and the y-axis is the reuse time (in seconds) or reuse distance (the number of requests since last access of the object). The color represents the number of requests having the reuse time or reuse distance. 
 The heatmap is generated using the following command:
 
@@ -237,7 +237,7 @@ Left: a block cache workload (w92), right: the first 10m requests of the Twitter
 <br>
 
 
-#### popularity decay
+### popularity decay
 There are two versions of the plots, one is line plot, and the other is a heatmap.
 
 ```bash
@@ -246,25 +246,24 @@ There are two versions of the plots, one is line plot, and the other is a heatma
 python3 scripts/traceAnalysis/popularity_decay.py ${dataname}.popularityDecay_w300_obj
 ```
 
-<!-- Some example plots are shown below:
+An example plot is shown below:
 <div style="display: flex; justify-content: center; align-items: center;">
-<img src="/doc/plot/twitter_cluster52_10m_popularityDecayLineLog.svg" alt="popularity twitter" width="40%">
+<img src="/doc/plot/w92_popularityDecayLineLog.svg" alt="popularity decay w92" width="40%">
 </div>
 <div style="text-align: center; color: grey;">
-Left: a block cache workload (w92), right: the first 10m requests of the Twitter cluster52 trace. <br>
-The block workload has most objects being 4 KiB and 64 KiB, while the Twitter workload has most objects around 64 B. <br>
-The Request curve is weighted by request count, and the Object curve is weighted by object count. 
+A block cache workload (w92): the mean probability that an object is requested, plotted against its age. <br>
+Both axes are log scale, with age ticked from 5 minutes to 4 days. The downward slope is the decay — the older an object is, the less likely it is to be requested again. <br>
 </div>
-<br> -->
+<br>
 
-### Advanced features 
+## Advanced features 
 ```bash
 # cap the number of requests read from the trace
-./traceAnalyzer --num-req=1000000 ../data/trace.vscsi vscsi
+./bin/traceAnalyzer --num-req=1000000 ../data/cloudPhysicsIO.vscsi vscsi
 
 # change output 
-./traceAnalyzer -o my-output ../data/trace.vscsi vscsi
+./bin/traceAnalyzer -o my-output ../data/cloudPhysicsIO.vscsi vscsi
 
 # use part of the trace to warm up the cache
-./traceAnalyzer --warmup-sec=86400 ../data/trace.vscsi vscsi
+./bin/traceAnalyzer --warmup-sec=86400 ../data/cloudPhysicsIO.vscsi vscsi
 ```
