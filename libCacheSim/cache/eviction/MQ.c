@@ -21,6 +21,12 @@
 //  buffer Qout; if an object is re-admitted while still in Qout, its previous
 //  frequency is restored.
 //
+//  Note: the operation order differs slightly from Figure 5 of the paper.
+//  There, a miss evicts from the lowest queue and records the victim in Qout
+//  before checking whether the requested object is in Qout. Here the Qout
+//  check happens in MQ_find, which cache_get_base calls before eviction, to
+//  fit libCacheSim's find/evict/insert structure.
+//
 
 #include "dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/evictionAlgo.h"
