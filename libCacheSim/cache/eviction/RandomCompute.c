@@ -145,6 +145,16 @@ static cache_obj_t *RandomCompute_insert(cache_t *cache, const request_t *req) {
 }
 
 /**
+ * @brief compute the cost function for RandomCompute eviction
+ * cost = object_cost * freq / max(1, time_since_last_access)
+ */
+static inline double _rc_cost(cache_t *cache, cache_obj_t *obj) {
+  int64_t time_since_last_access = cache->n_req - obj->Random.last_access_vtime;
+  int64_t recency = time_since_last_access > 1 ? time_since_last_access : 1;
+  return (double)obj->cost * (obj->misc.freq + 1) / recency;
+}
+
+/**
  * @brief find the object to be evicted
  * this function does not actually evict the object or update metadata
  * not all eviction algorithms support this function
@@ -154,11 +164,6 @@ static cache_obj_t *RandomCompute_insert(cache_t *cache, const request_t *req) {
  * @param cache the cache
  * @return the object to be evicted
  */
-static inline double _rc_cost(cache_t *cache, cache_obj_t *obj) {
-  return (double)obj->cost * (obj->misc.freq + 1) /
-         (cache->n_req - obj->Random.last_access_vtime + 1);
-}
-
 static cache_obj_t *RandomCompute_to_evict(cache_t *cache,
                                            const request_t *req) {
   cache_obj_t *obj_to_evict = NULL;
