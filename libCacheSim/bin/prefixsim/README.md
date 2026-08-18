@@ -137,7 +137,7 @@ here -- what matters is `n-sample`, where 128 buys ~0.9 points of hit ratio over
 eviction, so the simulator installs a do-nothing prefetcher that just records
 victim ids. The tempting alternative — peek with `cache->to_evict()` before
 calling `cache->evict()` — is **wrong**: `RandomCompute`,
-`RandomQuickDemotion`, `BeladyCompute` and the other samplers re-sample inside
+`RandomComputeSmallQueue`, `BeladyCompute` and the other samplers re-sample inside
 `evict()` instead of reusing `to_evict_candidate`, so the peek names a different
 object than the one actually removed.
 
@@ -264,7 +264,8 @@ The phase-1 probe reads `cache->hashtable` directly, so an algorithm is usable
 only if its entire resident set lives there. `--list-algos` prints the
 allowlist: `lru`, `fifo`, `clock`, `sieve`, `lfu`, `lfuda`, `mru`, `size`,
 `random`, `hyperbolic`, `gdsf`, `gdsf_compute`, `belady`, `belady_compute`,
-`random_compute`, `random_quick_demotion`, `partial_node_random_compute`.
+`random_compute`, `random_compute_small_queue`, `partial_node_random_compute`,
+`partial_node_random_freq`, `partial_node_random_compute_small_queue`.
 
 The two partial-node algorithms sample prefix-tree *nodes* rather than blocks and
 evict out of the winning node, leaving the rest of that node cached:

@@ -163,6 +163,12 @@ void PrefixRadixTree::prune_if_empty_leaf(Node *node) {
   }
 }
 
+bool PrefixRadixTree::is_resident(obj_id_t id) const {
+  auto it = index_.find(id);
+  if (it == index_.end()) return orphans_.count(id) != 0;
+  return it->second.first->resident[static_cast<size_t>(it->second.second)] != 0;
+}
+
 PrefixRadixTree::Node *PrefixRadixTree::sample_node(uint64_t rand_value) const {
   if (sampleable_.empty()) return nullptr;
   return sampleable_[rand_value % sampleable_.size()];

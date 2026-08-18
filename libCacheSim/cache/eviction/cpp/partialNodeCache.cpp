@@ -8,6 +8,7 @@
 
 extern "C" {
 #include "dataStructure/hashtable/hashtable.h"
+#include "libCacheSim/evictionAlgo.h"
 #include "libCacheSim/macro.h"
 #include "utils/include/mymath.h"
 }
@@ -29,6 +30,50 @@ cache_obj_t *node_candidate(cache_t *cache, PartialNodeCache *impl,
                                node->blocks[static_cast<size_t>(pos)]);
 }
 
+/// Evict one object from the small queue, S3FIFO style: walk the FIFO from the
+/// oldest, promoting anything that earned it, until one block is actually
+/// dropped. Deliberately no sampling and no scoring -- the small queue exists
+/// to discard one-hit wonders cheaply.
+///
+/// Returns true if a block was dropped (the caller made progress).
+bool evict_small(cache_t *cache, PartialNodeCache *impl) {
+  while (impl->small_head != nullptr) {
+    cache_obj_t *victim = impl->small_head;
+    const obj_id_t id = victim->obj_id;
+    const int64_t size = victim->obj_size;
+
+    if (static_cast<int>(victim->misc.freq) >= impl->move_to_main_threshold) {
+      // Promote: unlink from the FIFO and tell the tree it is resident. The
+      // object itself does not move -- there is only one hash table.
+      remove_obj_from_list(&impl->small_head, &impl->small_tail, victim);
+      impl->small_bytes -= size;
+      victim->Random.last_access_vtime = cache->n_req;
+      impl->tree.mark_resident(id);
+      continue;
+    }
+
+    // Drop it, remembering the id so a quick re-reference skips the queue.
+    remove_obj_from_list(&impl->small_head, &impl->small_tail, victim);
+    impl->small_bytes -= size;
+    if (impl->ghost != nullptr) {
+      request_t ghost_req;
+      memset(&ghost_req, 0, sizeof(ghost_req));
+      ghost_req.obj_id = id;
+      ghost_req.obj_size = 1;
+      ghost_req.valid = true;
+      impl->ghost->get(impl->ghost, &ghost_req);
+    }
+    cache_evict_base(cache, victim, true);
+    return true;
+  }
+  return false;
+}
+
+/// Bytes held by the main set, i.e. everything that is not in the small queue.
+inline int64_t main_occupied(const cache_t *cache, const PartialNodeCache *impl) {
+  return cache->occupied_byte - impl->small_bytes;
+}
+
 /// Defined below, next to the eviction path it shares its scoring with.
 cache_obj_t *pick_victim(cache_t *cache);
 
@@ -37,7 +82,9 @@ cache_obj_t *pick_victim(cache_t *cache);
 // ---------------------------------------------------------------------------
 
 void pn_free(cache_t *cache) {
-  delete impl_of(cache);
+  PartialNodeCache *impl = impl_of(cache);
+  if (impl->ghost != nullptr) impl->ghost->cache_free(impl->ghost);
+  delete impl;
   cache->eviction_params = nullptr;
   cache_struct_free(cache);
 }
@@ -47,17 +94,47 @@ bool pn_get(cache_t *cache, const request_t *req) {
 }
 
 cache_obj_t *pn_find(cache_t *cache, const request_t *req, bool update_cache) {
+  PartialNodeCache *impl = impl_of(cache);
+  if (update_cache && impl->small_enabled()) impl->hit_on_ghost = false;
+
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
-  if (obj != nullptr && update_cache) {
-    obj->Random.last_access_vtime = cache->n_req;
+  if (obj != nullptr) {
+    if (update_cache) obj->Random.last_access_vtime = cache->n_req;
+    return obj;
   }
-  return obj;
+
+  // A miss that the ghost recognises means this block was in the small queue
+  // recently and came back: admit it straight to main next time.
+  if (update_cache && impl->small_enabled() && impl->ghost != nullptr &&
+      impl->ghost->remove(impl->ghost, req->obj_id)) {
+    impl->hit_on_ghost = true;
+  }
+  return nullptr;
 }
 
 cache_obj_t *pn_insert(cache_t *cache, const request_t *req) {
+  PartialNodeCache *impl = impl_of(cache);
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->Random.last_access_vtime = cache->n_req;
-  impl_of(cache)->tree.mark_resident(obj->obj_id);
+
+  if (!impl->small_enabled()) {
+    impl->tree.mark_resident(obj->obj_id);
+    return obj;
+  }
+
+  // Straight to main if the ghost vouched for it, or if the cache is still
+  // filling and the small queue is already full.
+  const bool to_main =
+      impl->hit_on_ghost ||
+      (!impl->has_evicted && impl->small_bytes >= impl->small_capacity);
+  impl->hit_on_ghost = false;
+
+  if (to_main) {
+    impl->tree.mark_resident(obj->obj_id);
+  } else {
+    append_obj_to_tail(&impl->small_head, &impl->small_tail, obj);
+    impl->small_bytes += obj->obj_size;
+  }
   return obj;
 }
 
@@ -164,7 +241,17 @@ int64_t take_from_node(cache_t *cache, PartialNodeCache *impl,
 int64_t pn_evict_n(cache_t *cache, const request_t * /*req*/, int64_t n) {
   if (n <= 0) return 0;
   PartialNodeCache *impl = impl_of(cache);
+  impl->has_evicted = true;
   int64_t evicted = evict_orphans(cache, impl, n);
+
+  // With a small queue, drain it first whenever the main set is within its
+  // share. Only what survives promotion out of the queue is ever subject to
+  // partial-node eviction below.
+  while (impl->small_enabled() && evicted < n && impl->small_bytes > 0 &&
+         main_occupied(cache, impl) <= cache->cache_size - impl->small_capacity) {
+    if (!evict_small(cache, impl)) break;
+    ++evicted;
+  }
 
   std::vector<obj_id_t> scratch;
   while (evicted < n) {
@@ -181,7 +268,16 @@ int64_t pn_evict_n(cache_t *cache, const request_t * /*req*/, int64_t n) {
     // evaluations than a full scan. So scan exhaustively once the pool fits,
     // and sample only when it genuinely does not.
     const int64_t pool = impl->tree.n_sampleable();
-    if (pool == 0) break;
+    if (pool == 0) {
+      // Nothing in the main set to sample. If the small queue still holds
+      // something, fall back to it rather than reporting no progress.
+      if (impl->small_enabled() && impl->small_bytes > 0 &&
+          evict_small(cache, impl)) {
+        ++evicted;
+        continue;
+      }
+      break;
+    }
     const bool exhaustive = pool <= impl->n_sample;
     const int64_t draws = exhaustive ? pool : impl->n_sample;
 
@@ -257,9 +353,14 @@ void pn_evict(cache_t *cache, const request_t *req) {
 }
 
 bool pn_remove(cache_t *cache, obj_id_t obj_id) {
+  PartialNodeCache *impl = impl_of(cache);
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == nullptr) return false;
-  impl_of(cache)->tree.mark_evicted(obj_id);
+  if (impl->small_enabled() && !impl->tree.is_resident(obj_id)) {
+    remove_obj_from_list(&impl->small_head, &impl->small_tail, obj);
+    impl->small_bytes -= obj->obj_size;
+  }
+  impl->tree.mark_evicted(obj_id);
   cache_remove_obj_base(cache, obj, true);
   return true;
 }
@@ -308,6 +409,12 @@ void pn_parse_params(cache_t *cache, const char *cache_specific_params) {
         ERROR("%s: eviction-mode must be drain or micro, got %s\n",
               cache->cache_name, value);
       }
+    } else if (strcasecmp(key, "small-size-ratio") == 0) {
+      impl->small_size_ratio = strtod(value, nullptr);
+    } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
+      impl->ghost_size_ratio = strtod(value, nullptr);
+    } else if (strcasecmp(key, "move-to-main-threshold") == 0) {
+      impl->move_to_main_threshold = static_cast<int>(strtol(value, nullptr, 0));
     } else if (strcasecmp(key, "micro-batch") == 0) {
       impl->micro_batch = strtoll(value, nullptr, 0);
     } else if (strcasecmp(key, "print") == 0) {
@@ -318,7 +425,8 @@ void pn_parse_params(cache_t *cache, const char *cache_specific_params) {
       exit(0);
     } else {
       ERROR("%s does not have parameter %s, support n-sample, evict-from, "
-            "eviction-mode, micro-batch\n",
+            "eviction-mode, micro-batch, small-size-ratio, "
+            "ghost-size-ratio, move-to-main-threshold\n",
             cache->cache_name, key);
     }
   }
@@ -347,6 +455,21 @@ cache_t *partial_node_cache_init(const char *cache_name,
 
   if (cache_specific_params != nullptr) {
     pn_parse_params(cache, cache_specific_params);
+  }
+
+  if (impl->small_size_ratio > 0.0) {
+    impl->small_capacity =
+        static_cast<int64_t>(ccache_params.cache_size * impl->small_size_ratio);
+    if (impl->small_capacity < 1) impl->small_capacity = 1;
+
+    const int64_t ghost_capacity =
+        static_cast<int64_t>(ccache_params.cache_size * impl->ghost_size_ratio);
+    if (ghost_capacity > 0) {
+      common_cache_params_t ghost_params = ccache_params;
+      ghost_params.cache_size = ghost_capacity;
+      impl->ghost = FIFO_init(ghost_params, nullptr);
+      snprintf(impl->ghost->cache_name, CACHE_NAME_ARRAY_LEN, "FIFO-ghost");
+    }
   }
   return cache;
 }

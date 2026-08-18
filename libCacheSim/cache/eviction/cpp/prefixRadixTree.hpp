@@ -69,6 +69,11 @@ class PrefixRadixTree {
   /// dangling. Callers that keep node pointers across an eviction MUST check.
   bool mark_evicted(obj_id_t id);
 
+  /// Is this block currently marked resident in the tree? With a small
+  /// admission queue in play this doubles as the tier test: a block in the
+  /// cache that the tree does not have resident is still in the small queue.
+  bool is_resident(obj_id_t id) const;
+
   /// Uniformly pick a node holding at least one resident block, or nullptr.
   Node *sample_node(uint64_t rand_value) const;
 

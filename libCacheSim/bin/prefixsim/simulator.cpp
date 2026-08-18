@@ -25,7 +25,7 @@ namespace {
 // the victim's id to a vector. This is the only hook in the core that reports
 // the actual victim: peeking with cache->to_evict() before cache->evict() does
 // NOT work, because the sampling algorithms (RandomCompute,
-// RandomQuickDemotion, BeladyCompute, ...) re-sample inside evict() instead of
+// RandomComputeSmallQueue, BeladyCompute, ...) re-sample inside evict() instead of
 // reusing to_evict_candidate, so the peek names a different object.
 // ---------------------------------------------------------------------------
 
@@ -75,9 +75,11 @@ const AlgoEntry kAlgos[] = {
     {"belady", Belady_init},
     {"belady_compute", BeladyCompute_init},
     {"random_compute", RandomCompute_init},
-    {"random_quick_demotion", RandomQuickDemotion_init},
+    {"random_compute_small_queue", RandomComputeSmallQueue_init},
     {"partial_node_random_compute", PartialNodeRandomCompute_init},
     {"partial_node_random_freq", PartialNodeRandomFreq_init},
+    {"partial_node_random_compute_small_queue",
+     PartialNodeRandomComputeSmallQueue_init},
 };
 
 }  // namespace

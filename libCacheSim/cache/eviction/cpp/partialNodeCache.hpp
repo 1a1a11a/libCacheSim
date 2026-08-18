@@ -73,6 +73,46 @@ class PartialNodeCache {
 
   /// Nodes drawn per eviction round. vLLM calls this ASSOCIATIVITY.
   int n_sample = 32;
+
+  // -------------------------------------------------------------------------
+  // Optional S3FIFO-style admission queue.
+  //
+  // Off when small_size_ratio is 0, which is the default: the cache is then
+  // one tier and everything above applies to all of it.
+  //
+  // When on, the cache is split in two and the two tiers are evicted by
+  // completely different rules. The small queue is a plain FIFO -- no
+  // sampling, no scoring, no tree involvement -- because its whole job is to
+  // discard one-hit wonders cheaply before they ever reach the main set.
+  // Partial-node eviction applies only to the main set.
+  //
+  // There is no second hash table: an object in the cache that the tree has
+  // NOT marked resident is by definition still in the small queue. Promotion
+  // is then just tree.mark_resident() plus unlinking from the FIFO -- the
+  // object never moves, and every eviction still goes through
+  // cache_evict_base, so eviction-observing hooks keep working.
+  // -------------------------------------------------------------------------
+
+  /// Fraction of the cache given to the small queue. 0 disables it.
+  double small_size_ratio = 0.0;
+  /// Ghost capacity as a fraction of the cache. Ghost holds ids only.
+  double ghost_size_ratio = 0.90;
+  /// Accesses a block must collect in the small queue to earn promotion.
+  int move_to_main_threshold = 2;
+
+  // ---- small-queue state, owned by the shared vtable ----
+  cache_obj_t *small_head = nullptr;  ///< FIFO order, oldest at head
+  cache_obj_t *small_tail = nullptr;
+  int64_t small_bytes = 0;
+  int64_t small_capacity = 0;
+  /// Ghost of recently evicted small-queue ids; a hit here skips the queue.
+  cache_t *ghost = nullptr;
+  /// Until the cache first evicts, the small queue overflowing means the cache
+  /// is simply still filling, so admit straight to main.
+  bool has_evicted = false;
+  /// Set by find() when the request hit the ghost, consumed by insert().
+  bool hit_on_ghost = false;
+  bool small_enabled() const { return small_capacity > 0; }
   /// Which end of a node to evict from.
   ///
   /// Head (shallowest resident block) is the default, matching vLLM's

@@ -1,22 +1,37 @@
 //
-//  RandomQuickDemotion.c
+//  RandomComputeSmallQueue.c
 //  libCacheSim
 //
-//  Random sampling eviction with quick demotion of one-hit-wonder objects.
-//  Ported from vllm/v1/core/free_block_manager.py:
-//    RandomQuickDemotionFreeBlockManager (multiplier mode).
+//  Random-sampling eviction that demotes one-hit wonders.
 //
-//  Score = (freq + 1) / (n_req - last_access_vtime + 1) * cost
-//  One-hit-wonder penalty: if freq == 0, score *= ONE_HIT_PENALTY (default 0.1)
+//  Score = cost / max(1, n_req - last_access_vtime)
+//  One-hit-wonder demotion: if freq == 0, score *= one-hit-penalty (default 0.1)
 //  Lower score = evict first.
+//
+//  The score is the same as RandomCompute and PartialNodeRandomCompute: cost
+//  over recency, with no frequency factor -- frequency carries little signal on
+//  these traces once the cache is large enough to hold the working set, and
+//  where it does help it is better spent as an admission decision than as a
+//  multiplier.
+//
+//  Frequency survives only as the gate on the demotion: a block that has never
+//  been reused since it was inserted is worth an order of magnitude less than
+//  its cost/recency suggests, so it goes first. That is a small queue expressed
+//  as a score penalty rather than as a physical queue -- no separate FIFO, no
+//  ghost, no promotion step, and no second data structure to keep in sync.
+//
+//  NOTE: despite the name, this is not a port of vLLM's
+//  RandomSmallQueueFreeBlockManager, which keeps a real FIFO queue and a ghost
+//  list. The physical-queue form lives in PartialNodeRandomComputeSmallQueue.
+//  This one is the cheap approximation of the same idea, ported from vLLM's
+//  RandomQuickDemotion.
 //
 //  Notes on the port:
 //  - libCacheSim has no radix tree, so the original "is_leaf" gate from
 //    vllm has no analogue. We drop it and only check the access-count
 //    condition.
-//  - In libCacheSim, freq is 0 on insert and increments on hit. In vllm
-//    access_count starts at 1. So vllm's `access_count <= 1`
-//    (one-hit-wonder, never reused) maps to `freq == 0` here.
+//  - In libCacheSim, freq is 0 on insert and increments on hit, so freq == 0
+//    means "never reused since admission".
 //
 
 #include <float.h>
@@ -35,7 +50,7 @@ static const char *DEFAULT_PARAMS = "n-sample=128,one-hit-penalty=0.1";
 typedef struct {
   int n_sample;
   double one_hit_penalty;
-} RandomQuickDemotion_params_t;
+} RandomComputeSmallQueue_params_t;
 
 // ***********************************************************************
 // ****                                                               ****
@@ -43,19 +58,19 @@ typedef struct {
 // ****                                                               ****
 // ***********************************************************************
 
-static void RandomQuickDemotion_parse_params(
+static void RandomComputeSmallQueue_parse_params(
     cache_t *cache, const char *cache_specific_params);
-static void RandomQuickDemotion_free(cache_t *cache);
-static bool RandomQuickDemotion_get(cache_t *cache, const request_t *req);
-static cache_obj_t *RandomQuickDemotion_find(cache_t *cache,
+static void RandomComputeSmallQueue_free(cache_t *cache);
+static bool RandomComputeSmallQueue_get(cache_t *cache, const request_t *req);
+static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
                                              const request_t *req,
                                              const bool update_cache);
-static cache_obj_t *RandomQuickDemotion_insert(cache_t *cache,
+static cache_obj_t *RandomComputeSmallQueue_insert(cache_t *cache,
                                                const request_t *req);
-static cache_obj_t *RandomQuickDemotion_to_evict(cache_t *cache,
+static cache_obj_t *RandomComputeSmallQueue_to_evict(cache_t *cache,
                                                  const request_t *req);
-static void RandomQuickDemotion_evict(cache_t *cache, const request_t *req);
-static bool RandomQuickDemotion_remove(cache_t *cache, const obj_id_t obj_id);
+static void RandomComputeSmallQueue_evict(cache_t *cache, const request_t *req);
+static bool RandomComputeSmallQueue_remove(cache_t *cache, const obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -63,42 +78,42 @@ static bool RandomQuickDemotion_remove(cache_t *cache, const obj_id_t obj_id);
 // ****                                                               ****
 // ***********************************************************************
 
-cache_t *RandomQuickDemotion_init(const common_cache_params_t ccache_params,
+cache_t *RandomComputeSmallQueue_init(const common_cache_params_t ccache_params,
                                   const char *cache_specific_params) {
   common_cache_params_t ccache_params_copy = ccache_params;
   ccache_params_copy.hashpower = MAX(12, ccache_params_copy.hashpower - 8);
 
-  cache_t *cache = cache_struct_init("RandomQuickDemotion", ccache_params_copy,
+  cache_t *cache = cache_struct_init("RandomComputeSmallQueue", ccache_params_copy,
                                      cache_specific_params);
 
-  cache->cache_init = RandomQuickDemotion_init;
-  cache->cache_free = RandomQuickDemotion_free;
-  cache->get = RandomQuickDemotion_get;
-  cache->find = RandomQuickDemotion_find;
-  cache->insert = RandomQuickDemotion_insert;
-  cache->evict = RandomQuickDemotion_evict;
-  cache->remove = RandomQuickDemotion_remove;
-  cache->to_evict = RandomQuickDemotion_to_evict;
+  cache->cache_init = RandomComputeSmallQueue_init;
+  cache->cache_free = RandomComputeSmallQueue_free;
+  cache->get = RandomComputeSmallQueue_get;
+  cache->find = RandomComputeSmallQueue_find;
+  cache->insert = RandomComputeSmallQueue_insert;
+  cache->evict = RandomComputeSmallQueue_evict;
+  cache->remove = RandomComputeSmallQueue_remove;
+  cache->to_evict = RandomComputeSmallQueue_to_evict;
 
-  RandomQuickDemotion_params_t *params =
-      (RandomQuickDemotion_params_t *)malloc(
-          sizeof(RandomQuickDemotion_params_t));
+  RandomComputeSmallQueue_params_t *params =
+      (RandomComputeSmallQueue_params_t *)malloc(
+          sizeof(RandomComputeSmallQueue_params_t));
   cache->eviction_params = params;
 
-  RandomQuickDemotion_parse_params(cache, DEFAULT_PARAMS);
+  RandomComputeSmallQueue_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
-    RandomQuickDemotion_parse_params(cache, cache_specific_params);
+    RandomComputeSmallQueue_parse_params(cache, cache_specific_params);
   }
 
   return cache;
 }
 
-static void RandomQuickDemotion_free(cache_t *cache) {
+static void RandomComputeSmallQueue_free(cache_t *cache) {
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
 
-static bool RandomQuickDemotion_get(cache_t *cache, const request_t *req) {
+static bool RandomComputeSmallQueue_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
@@ -108,7 +123,7 @@ static bool RandomQuickDemotion_get(cache_t *cache, const request_t *req) {
 // ****                                                               ****
 // ***********************************************************************
 
-static cache_obj_t *RandomQuickDemotion_find(cache_t *cache,
+static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
                                              const request_t *req,
                                              const bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
@@ -118,36 +133,38 @@ static cache_obj_t *RandomQuickDemotion_find(cache_t *cache,
   return obj;
 }
 
-static cache_obj_t *RandomQuickDemotion_insert(cache_t *cache,
+static cache_obj_t *RandomComputeSmallQueue_insert(cache_t *cache,
                                                const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->Random.last_access_vtime = cache->n_req;
   return obj;
 }
 
-static inline double _rqd_score(cache_t *cache, cache_obj_t *obj,
+static inline double _rcsq_score(cache_t *cache, cache_obj_t *obj,
                                 double one_hit_penalty) {
-  double recency =
-      (double)(cache->n_req - obj->Random.last_access_vtime + 1);
-  double score =
-      (double)obj->cost * (double)(obj->misc.freq + 1) / recency;
+  /* cost / recency, byte-for-byte the same as _rc_cost() in RandomCompute.c:
+   * no frequency factor, and the same max(1, age) floor rather than age + 1,
+   * so the two differ only in the demotion below. */
+  int64_t age = cache->n_req - obj->Random.last_access_vtime;
+  int64_t recency = age > 1 ? age : 1;
+  double score = (double)obj->cost / (double)recency;
   if (obj->misc.freq == 0) {
     score *= one_hit_penalty;
   }
   return score;
 }
 
-static cache_obj_t *RandomQuickDemotion_to_evict(cache_t *cache,
+static cache_obj_t *RandomComputeSmallQueue_to_evict(cache_t *cache,
                                                  const request_t *req) {
-  RandomQuickDemotion_params_t *params =
-      (RandomQuickDemotion_params_t *)cache->eviction_params;
+  RandomComputeSmallQueue_params_t *params =
+      (RandomComputeSmallQueue_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = NULL;
   double min_score = DBL_MAX;
 
   for (int i = 0; i < params->n_sample; i++) {
     cache_obj_t *obj = hashtable_rand_obj(cache->hashtable);
     if (obj == NULL) continue;
-    double score = _rqd_score(cache, obj, params->one_hit_penalty);
+    double score = _rcsq_score(cache, obj, params->one_hit_penalty);
     if (score < min_score) {
       min_score = score;
       obj_to_evict = obj;
@@ -156,7 +173,7 @@ static cache_obj_t *RandomQuickDemotion_to_evict(cache_t *cache,
 
   if (obj_to_evict == NULL) {
     WARN(
-        "RandomQuickDemotion_to_evict: obj_to_evict is NULL, "
+        "RandomComputeSmallQueue_to_evict: obj_to_evict is NULL, "
         "maybe cache size is too small or hash power too large, "
         "current hash table size %llu, n_obj %llu, cache size %lld, request "
         "size %lld, and %d samples\n",
@@ -164,18 +181,18 @@ static cache_obj_t *RandomQuickDemotion_to_evict(cache_t *cache,
         (unsigned long long)cache->get_n_obj(cache),
         (long long)cache->cache_size, (long long)req->obj_size,
         params->n_sample);
-    return RandomQuickDemotion_to_evict(cache, req);
+    return RandomComputeSmallQueue_to_evict(cache, req);
   }
 
   return obj_to_evict;
 }
 
-static void RandomQuickDemotion_evict(cache_t *cache, const request_t *req) {
-  cache_obj_t *obj_to_evict = RandomQuickDemotion_to_evict(cache, req);
+static void RandomComputeSmallQueue_evict(cache_t *cache, const request_t *req) {
+  cache_obj_t *obj_to_evict = RandomComputeSmallQueue_to_evict(cache, req);
   cache_evict_base(cache, obj_to_evict, true);
 }
 
-static bool RandomQuickDemotion_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool RandomComputeSmallQueue_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;
@@ -190,18 +207,18 @@ static bool RandomQuickDemotion_remove(cache_t *cache, const obj_id_t obj_id) {
 // ****                                                               ****
 // ***********************************************************************
 
-static const char *RandomQuickDemotion_current_params(
-    RandomQuickDemotion_params_t *params) {
+static const char *RandomComputeSmallQueue_current_params(
+    RandomComputeSmallQueue_params_t *params) {
   static __thread char params_str[128];
   snprintf(params_str, 128, "n-sample=%d,one-hit-penalty=%.4f\n",
            params->n_sample, params->one_hit_penalty);
   return params_str;
 }
 
-static void RandomQuickDemotion_parse_params(
+static void RandomComputeSmallQueue_parse_params(
     cache_t *cache, const char *cache_specific_params) {
-  RandomQuickDemotion_params_t *params =
-      (RandomQuickDemotion_params_t *)cache->eviction_params;
+  RandomComputeSmallQueue_params_t *params =
+      (RandomComputeSmallQueue_params_t *)cache->eviction_params;
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
   char *end;
@@ -229,11 +246,11 @@ static void RandomQuickDemotion_parse_params(
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n",
-             RandomQuickDemotion_current_params(params));
+             RandomComputeSmallQueue_current_params(params));
       exit(0);
     } else {
       ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
-            key, RandomQuickDemotion_current_params(params));
+            key, RandomComputeSmallQueue_current_params(params));
       exit(1);
     }
   }
