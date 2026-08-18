@@ -44,6 +44,10 @@ add_test_executable(testPrefetchAlgo test_prefetchAlgo.c)
 add_test_executable(testDataStructure test_dataStructure.c)
 add_test_executable(testUtils test_utils.c)
 
+# Create C++ test executable (prefixsim test)
+add_test_executable(testPrefixsim test_prefixsim.cpp)
+target_link_libraries(testPrefixsim prefixsim_lib)
+
 # Create C++ test executable (mrcProfiler test)
 # add_test_executable(testMrcProfiler test_mrcProfiler.cpp)
 # target_link_libraries(testMrcProfiler mrcProfiler_lib)
@@ -60,6 +64,7 @@ add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
 add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
+add_test(NAME testPrefixsim COMMAND testPrefixsim WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
 
 # Exercises the command-line tools themselves: argument handling, `-e print`

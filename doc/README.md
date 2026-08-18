@@ -7,6 +7,7 @@
 - [MRC Profiler](quickstart_mrcProfiler.md)
 - [Plugin System](quickstart_plugin.md)
 - ⭐ [Python Binding (easy API access)](https://github.com/1a1a11a/libCacheSim-python)
+- [prefixsim: LLM prefix-cache simulator](../libCacheSim/bin/prefixsim/README.md)
 
 ## Advanced Usage
 - [Library Usage Guide](advanced_lib.md)
