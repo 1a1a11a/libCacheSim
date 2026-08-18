@@ -238,7 +238,7 @@ signal the qwen trace carries.
 |---|---|---|
 | `uniform` (default) | `1` | Compute saving ratio equals block hit ratio. |
 | `position` | `pos + 1` | Blocks that must be prefilled from the root to reconstruct this one. Matches the `compute` field written into `.lcsllm` traces. |
-| `affine` | `863 + 2*(pos+1)` | Reproduces `compute_intensity_transform()` in the `evaluate/` harness. For comparison only — the large constant compresses the range so far (position 1 vs 100 is 865 vs 1063) that cost-aware policies rank nearly like cost-blind ones. |
+| `qwen3coder30b_blksz_16` | `865 + 2*pos` | Measured per-block prefill cost of Qwen3-Coder-30B at 16-token blocks: a fixed part (projections, MLP) plus a part growing with the context attended to. Matches the vLLM logs (`idx=0→865, idx=100→1065`) and `compute_intensity_transform()` in `evaluate/`. Narrow range — position 1 vs 100 is 865 vs 1065 — so cost-aware policies rank close to cost-blind ones under it. |
 
 ## Block identity (`--block-id`)
 

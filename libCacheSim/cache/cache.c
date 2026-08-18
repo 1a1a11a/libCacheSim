@@ -31,6 +31,19 @@ void print_eviction_debug_message(const char *msg) {
 }
 #endif /* RECORD_EVICTION_PROCESS */
 
+/**
+ * A request's compute cost, with 0 read as 1.
+ *
+ * Most trace formats carry no cost -- lcs and lcsllm never set it, so req->cost
+ * is 0 throughout. Taken literally that makes every compute-aware score 0 and
+ * the algorithm silently degenerates into picking whichever candidate it
+ * sampled first. Reading 0 as 1 makes a cost-free trace mean "uniform cost",
+ * which is the honest default: compute savings then equal the hit ratio.
+ */
+static inline int32_t req_cost_or_one(const request_t *req) {
+  return req->cost > 0 ? req->cost : 1;
+}
+
 /** this file contains both base function, which should be called by all
  *eviction algorithms, and the queue related functions, which should be called
  *by algorithm that uses only one queue and needs to update the queue such as
@@ -241,10 +254,10 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
     if (update_cache) {
       cache_obj->next_access_vtime = req->next_access_vtime;
       cache_obj->freq += 1;
-      if (req->cost != cache_obj->cost) {
+      if (req_cost_or_one(req) != cache_obj->cost) {
         ERROR("req %ld, obj %lu, cost updated from %d to %d\n",
               (long)cache->n_req, (unsigned long)req->obj_id, cache_obj->cost,
-              req->cost);
+              req_cost_or_one(req));
       }
     }
   }
@@ -335,7 +348,7 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 
   cache_obj->next_access_vtime = req->next_access_vtime;
   cache_obj->freq = 0;
-  cache_obj->cost = req->cost;
+  cache_obj->cost = req_cost_or_one(req);
 
   return cache_obj;
 }

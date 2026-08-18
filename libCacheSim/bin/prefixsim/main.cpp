@@ -47,7 +47,8 @@ void print_usage(const char *program) {
   printf("  --algo-params <s>       Algorithm-specific params, e.g. "
          "\"n-sample=64,evict-from=tail\".\n");
   printf("  --trace-format <fmt>    Input format (default: qwen-jsonl).\n");
-  printf("  --cost-model <m>        uniform | position | affine (default: uniform).\n");
+  printf("  --cost-model <m>        uniform | position |\n");
+  printf("                          qwen3coder30b_blksz_16 (default: uniform).\n");
   printf("  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
   printf("  --no-verify             Skip the post-request residency check.\n");
   printf("  --output <path>         Also append the RESULT lines to this file.\n");
