@@ -3,6 +3,7 @@
 ## Quickstart Guides
 - [CacheSim: Command-line cache simulator](quickstart_cachesim.md)
 - [Trace Utilities](quickstart_traceUtils.md)
+- [The lcsllm LLM trace format](lcsllm_format.md)
 - [Trace Analyzer](quickstart_traceAnalyzer.md)
 - [MRC Profiler](quickstart_mrcProfiler.md)
 - [Plugin System](quickstart_plugin.md)

@@ -60,3 +60,24 @@ set_target_properties(traceFilter
         )
 
 install(TARGETS traceFilter RUNTIME DESTINATION bin)
+
+# ==============================================================================
+# traceConvLLM -- qwen-style JSONL -> lcsllm binary
+# ==============================================================================
+# Links prefixsim_lib to reuse its JSONL parser, prefix-hash folding and
+# next-access annotation, so the converter and the simulator cannot disagree
+# about what a trace means.
+add_executable(traceConvLLM traceConvLLM.cpp)
+target_compile_options(traceConvLLM PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:${LIBCACHESIM_CXX_FLAGS}>
+)
+target_include_directories(traceConvLLM PRIVATE ${libCacheSim_include_dir} ${GLib_INCLUDE_DIRS})
+target_link_libraries(traceConvLLM prefixsim_lib)
+set_target_properties(traceConvLLM
+        PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+        )
+
+install(TARGETS traceConvLLM RUNTIME DESTINATION bin)
