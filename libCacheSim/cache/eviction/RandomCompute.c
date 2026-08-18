@@ -146,12 +146,18 @@ static cache_obj_t *RandomCompute_insert(cache_t *cache, const request_t *req) {
 
 /**
  * @brief compute the cost function for RandomCompute eviction
- * cost = object_cost * freq / max(1, time_since_last_access)
+ * cost = object_cost / max(1, time_since_last_access)
+ *
+ * Frequency used to be a factor here (cost * (freq + 1) / recency), but it
+ * did not carry signal on the LLM traces: block reuse is driven by whether a
+ * prefix is still live, which recency already captures, so the freq term only
+ * added noise. Dropping it also makes the score independent of misc.freq,
+ * which the core maintains for other purposes.
  */
 static inline double _rc_cost(cache_t *cache, cache_obj_t *obj) {
   int64_t time_since_last_access = cache->n_req - obj->Random.last_access_vtime;
   int64_t recency = time_since_last_access > 1 ? time_since_last_access : 1;
-  return (double)obj->cost * (obj->misc.freq + 1) / recency;
+  return (double)obj->cost / (double)recency;
 }
 
 /**
