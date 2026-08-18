@@ -76,6 +76,8 @@ const AlgoEntry kAlgos[] = {
     {"belady_compute", BeladyCompute_init},
     {"random_compute", RandomCompute_init},
     {"random_quick_demotion", RandomQuickDemotion_init},
+    {"partial_node_random_compute", PartialNodeRandomCompute_init},
+    {"partial_node_random_freq", PartialNodeRandomFreq_init},
 };
 
 }  // namespace
@@ -172,6 +174,17 @@ bool Simulator::serve(const Request &request, std::string &error) {
   const int64_t needed = static_cast<int64_t>(missing.size()) - free_slots;
   if (needed > 0 && !allocate(request, needed, error)) return false;
 
+  // ------- hand the request's block path to the algorithm -------
+  // Between making room and replaying: the algorithm must know the path before
+  // it can be asked to evict against it, but the blocks are not in the cache
+  // yet, so the tree records them as not-yet-resident and phase 3's inserts
+  // promote them. Algorithms that do not need request structure leave this
+  // hook NULL.
+  if (cache_->record_request != nullptr) {
+    cache_->record_request(cache_, request.blocks.data(),
+                           static_cast<int64_t>(n_pos));
+  }
+
   // ---------------- phase 3: access ----------------
   access(request);
 
@@ -212,7 +225,16 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
   // subsequent victim is unwanted and progress advances.
   while (progress < needed) {
     const size_t before = victims_.size();
-    cache_->evict(cache_, req_buf_);
+
+    // Ask for the whole remaining deficit at once when the algorithm can do it.
+    // `needed - progress` is a hard cap: this request has room for exactly that
+    // many more blocks. Self-evictions do not count towards progress, so the
+    // loop may still go round again -- that is correct, not a shortfall.
+    if (cache_->evict_n != nullptr) {
+      cache_->evict_n(cache_, req_buf_, needed - progress);
+    } else {
+      cache_->evict(cache_, req_buf_);
+    }
 
     if (victims_.size() == before) {
       error = "eviction made no progress while serving request " +
@@ -253,7 +275,8 @@ void Simulator::access(const Request &request) {
 
 // ---------------------------------------------------------------------------
 
-cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_blocks) {
+cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_blocks,
+                              const char *cache_specific_params) {
   common_cache_params_t params = default_common_cache_params();
   params.cache_size = cache_size_blocks;
   params.consider_obj_metadata = false;
@@ -261,7 +284,7 @@ cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_b
 
   for (const AlgoEntry &entry : kAlgos) {
     if (strcasecmp(algorithm.c_str(), entry.name) == 0) {
-      return entry.init(params, nullptr);
+      return entry.init(params, cache_specific_params);
     }
   }
   return nullptr;

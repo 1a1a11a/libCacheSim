@@ -43,7 +43,8 @@ step, and by measuring *before* allocating.
 
 ## How a request is served
 
-Three phases, in this order. Call the arriving request **Alpha**.
+Three phases, in this order, with one hand-off in between. Call the arriving
+request **Alpha**.
 
 ### Phase 1 — match (read-only, produces every statistic)
 
@@ -105,6 +106,32 @@ set — there can be at most `H` of them before every subsequent victim counts.
 The loop also hard-fails if a call to `evict()` removes nothing at all, rather
 than spinning.
 
+**Batched eviction.** The deficit is known up front, so when the algorithm
+offers `cache->evict_n()` the loop asks for the whole remaining `needed -
+progress` at once instead of one block per call. Sampling algorithms pay their
+sampling cost per call, so this is the difference between drawing the sample once
+per round and once per evicted block: on `qwen_coder` at 8k with 128 samples,
+`partial_node_random_freq` runs 6x faster batched and lands on the same hit ratio
+to four decimals. It also makes runtime nearly independent of the sample size, so
+a large sample stops being expensive.
+
+`needed - progress` is a hard cap. Self-evictions still do not count as progress,
+so the loop may go round again -- that is correct, not a shortfall.
+
+The partial-node algorithms take that batch in one of two modes, set with
+`eviction-mode`:
+
+| mode | chunk taken from the winning node |
+|---|---|
+| `drain` (default) | the whole remaining deficit |
+| `micro` | at most `micro-batch` blocks (default 64), then re-sample and re-score |
+
+On `qwen_coder` they land within 0.002 of each other at every cache size, so the
+cheaper mode is the better default: `drain` runs in 3.8s against `micro`'s 4.3s
+at batch 64, 8.3s at batch 8, and 37s at batch 1. Chunk size is close to free
+here -- what matters is `n-sample`, where 128 buys ~0.9 points of hit ratio over
+32 and saturates by 512.
+
 **Knowing the victim.** The loop needs the identity of each evicted object.
 `cache_evict_base()` already calls `prefetcher->handle_evict` on every genuine
 eviction, so the simulator installs a do-nothing prefetcher that just records
@@ -113,6 +140,33 @@ calling `cache->evict()` — is **wrong**: `RandomCompute`,
 `RandomQuickDemotion`, `BeladyCompute` and the other samplers re-sample inside
 `evict()` instead of reusing `to_evict_candidate`, so the peek names a different
 object than the one actually removed.
+
+### Between allocate and access — `record_request`
+
+Algorithms that evict at prefix-tree-node granularity cannot reconstruct a
+request's path from individual accesses, so the simulator hands it to them
+directly:
+
+```c
+if (cache_->record_request != nullptr) {
+  cache_->record_request(cache_, request.blocks.data(), n_blocks);
+}
+```
+
+`record_request` is an optional slot on `cache_t`, `NULL` for every algorithm
+that does not need it (`cache_struct_init` zeroes the struct), so the check is
+required. It is the C analogue of `FreeBlockManager.record_request_blocks()` in
+the vLLM prototype, and it is deliberately called **here** rather than at init or
+during replay:
+
+- *After* allocate, because the algorithm must already know the path when it is
+  asked to evict against it on the following request.
+- *Before* access, because the blocks are not in the cache yet. The tree records
+  them as not-yet-resident and phase 3's inserts promote them, so the tree's
+  residency and the cache's contents never disagree.
+
+Only the simulator can supply this — it is the only component that knows where
+one request ends and the next begins.
 
 ### Phase 3 — access
 
@@ -136,6 +190,15 @@ block with the most reuse. Replaying in reverse leaves the root at the MRU end
 and the deep, private blocks near the tail, so eviction eats the prefix from the
 far end inward, which is both what a real engine wants and what keeps the
 resident set prefix-contiguous.
+
+Measured against replaying in prefix order, this is worth 0.001-0.004 of hit
+ratio to the recency-ordered policies (LRU at 4k: 0.1625 reverse vs 0.1589
+forward) and essentially nothing to the partial-node ones, which agree to five
+decimals either way. That is mechanical: reverse replay works by arranging
+per-block recency so the root ends up most-recently-used, and a node-granularity
+policy does not use per-block recency to pick which block inside a node to drop
+-- `evict-from` controls that instead. Worth knowing before assuming the trick
+carries over to a new partial-node variant.
 
 ## Next-access annotation
 
@@ -201,7 +264,24 @@ The phase-1 probe reads `cache->hashtable` directly, so an algorithm is usable
 only if its entire resident set lives there. `--list-algos` prints the
 allowlist: `lru`, `fifo`, `clock`, `sieve`, `lfu`, `lfuda`, `mru`, `size`,
 `random`, `hyperbolic`, `gdsf`, `gdsf_compute`, `belady`, `belady_compute`,
-`random_compute`, `random_quick_demotion`.
+`random_compute`, `random_quick_demotion`, `partial_node_random_compute`.
+
+The two partial-node algorithms sample prefix-tree *nodes* rather than blocks and
+evict out of the winning node, leaving the rest of that node cached:
+
+| algorithm | score |
+|---|---|
+| `partial_node_random_compute` | `cost / recency` — same as `random_compute` |
+| `partial_node_random_freq` | `(freq+1) * cost / recency` — reproduces `RandomFreeBlockManager` ("Random") in the vLLM prototype |
+
+Both are kept because the frequency term is regime-dependent: dropping it costs
+4-6 points of hit ratio on `qwen_coder` at 4k-20k blocks, but is neutral-to-
+positive once the cache is large enough that the hit ratio clears ~0.7. Measure
+before choosing.
+
+Tune with `--algo-params "n-sample=128,evict-from=tail"`; see
+`eviction::PartialNodeCache` for how to add a variant — a new one needs only a
+`score()` override.
 
 Composite algorithms are excluded on purpose. The S3FIFO family, `TwoQ`,
 `WTinyLFU`, `ARC` and `LIRS` keep objects in sub-caches with their own hash

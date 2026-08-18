@@ -25,6 +25,7 @@ namespace {
 struct Options {
   std::string trace_path;
   std::string output_path;
+  std::string algo_params;
   std::vector<std::string> algorithms{"lru"};
   int64_t cache_size = 0;
   prefixsim::TraceFormat format = prefixsim::TraceFormat::kQwenJsonl;
@@ -43,6 +44,8 @@ void print_usage(const char *program) {
   printf("  --cache-size <n>        Cache capacity in BLOCKS (suffixes k/m/g = x1024).\n\n");
   printf("Options:\n");
   printf("  --algo <a,b,c>          Eviction algorithms, comma separated (default: lru).\n");
+  printf("  --algo-params <s>       Algorithm-specific params, e.g. "
+         "\"n-sample=64,evict-from=tail\".\n");
   printf("  --trace-format <fmt>    Input format (default: qwen-jsonl).\n");
   printf("  --cost-model <m>        uniform | position | affine (default: uniform).\n");
   printf("  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
@@ -140,6 +143,8 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
 
     if (strcmp(arg, "--trace") == 0 || strcmp(arg, "--trace-file") == 0) {
       opts.trace_path = value;
+    } else if (strcmp(arg, "--algo-params") == 0) {
+      opts.algo_params = value;
     } else if (strcmp(arg, "--output") == 0) {
       opts.output_path = value;
     } else if (strcmp(arg, "--algo") == 0) {
@@ -259,7 +264,9 @@ int main(int argc, char **argv) {
 
   int exit_code = 0;
   for (const std::string &algorithm : opts.algorithms) {
-    cache_t *cache = prefixsim::create_cache_by_name(algorithm, opts.cache_size);
+    cache_t *cache = prefixsim::create_cache_by_name(
+        algorithm, opts.cache_size,
+        opts.algo_params.empty() ? nullptr : opts.algo_params.c_str());
     if (cache == nullptr) {
       fprintf(stderr, "error: unsupported algorithm '%s' (try --list-algos)\n",
               algorithm.c_str());

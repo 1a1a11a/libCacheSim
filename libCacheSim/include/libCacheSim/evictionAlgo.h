@@ -150,8 +150,19 @@ cache_t *QDLP_init(const common_cache_params_t ccache_params,
 cache_t *RandomLRU_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params);
 
+cache_t *RandomTwo_init(const common_cache_params_t ccache_params,
+                        const char *cache_specific_params);
+
 cache_t *RandomCompute_init(const common_cache_params_t ccache_params,
                             const char *cache_specific_params);
+
+cache_t *PartialNodeRandomCompute_init(
+    const common_cache_params_t ccache_params,
+    const char *cache_specific_params);
+
+cache_t *PartialNodeRandomFreq_init(
+    const common_cache_params_t ccache_params,
+    const char *cache_specific_params);
 
 cache_t *RandomQuickDemotion_init(const common_cache_params_t ccache_params,
                                   const char *cache_specific_params);

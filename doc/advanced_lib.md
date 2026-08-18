@@ -102,6 +102,62 @@ Sometimes you need to know what the cache will evict, but you don't want to evic
 cache->to_evict(cache, req);
 ```
 
+#### Cache record request
+Optional. Hands an algorithm the full object sequence of one logical request, in
+request order, before those objects are accessed.
+
+```c
+if (cache->record_request != NULL) {
+  cache->record_request(cache, obj_ids, n_obj_ids);
+}
+```
+
+Every other API above sees one object at a time, which is enough for almost all
+algorithms. It is not enough when the objects of a request have structure the
+policy needs and that no sequence of individual accesses can recover. The
+motivating case is an LLM prefix cache: a request's KV blocks form a path in a
+prefix tree, shared with every other request that starts with the same prompt,
+and an algorithm that evicts at prefix-tree-node granularity has to be told the
+path.
+
+The hook is `NULL` for every algorithm that does not need it -- `cache_struct_init`
+zeroes the struct -- so **callers must check before calling**. Algorithms that do
+need it install it in their `_init`; see `PartialNodeRandomCompute` and
+`eviction::PartialNodeCache` in `cache/eviction/cpp/`.
+
+Call it once per request, after making room for the request and before replaying
+its accesses. At that point the new objects are not in the cache yet, which is
+intentional: the algorithm learns the structure before it is asked to evict
+against it, and the subsequent inserts mark the objects resident. `prefixsim`
+does exactly this between its allocate and access phases.
+
+
+#### Cache evict n
+Optional. Evict up to `n` objects in one call, returning how many actually went.
+
+```c
+if (cache->evict_n != NULL) {
+  cache->evict_n(cache, req, n);
+} else {
+  while (still_short()) cache->evict(cache, req);
+}
+```
+
+`n` is a **hard cap**, not a hint: a caller that asked for `n` has room for
+exactly `n`, and evicting more silently discards objects nothing asked to free.
+
+Two reasons an algorithm implements it. Sampling algorithms pay their sampling
+cost per call, so evicting `n` objects one at a time samples `n` times over --
+batching draws the sample once and amortises it across the batch. And an
+algorithm may want to evict several *related* objects together, which a
+one-object-at-a-time contract cannot express; a prefix-cache policy draining
+part of one tree node is the motivating case.
+
+`NULL` unless the algorithm implements it, so callers must check and fall back to
+looping `cache->evict()`. Measured on `qwen_coder` at 8k blocks with 128 samples,
+`PartialNodeRandomFreq` runs 6x faster through `evict_n` than through the loop,
+for the same hit ratio to four decimals.
+
 
 ### TraceReader APIs
 There are mostly three APIs related to readers, `open_trace`, `close_trace`, `read_one_req`, let's take a look how

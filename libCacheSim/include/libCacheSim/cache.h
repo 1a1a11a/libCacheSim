@@ -77,6 +77,38 @@ typedef int64_t (*cache_get_n_obj_func_ptr)(const cache_t *);
 
 typedef void (*cache_print_cache_func_ptr)(const cache_t *);
 
+/**
+ * Optional: hand an eviction algorithm the full block sequence of one request,
+ * in request order, before those blocks are accessed.
+ *
+ * Most algorithms only ever see one object at a time and cannot recover the
+ * structure a request implies. Prefix-cache algorithms need it: the sequence is
+ * a path in the prefix tree, and there is no way to rebuild that path from
+ * individual accesses. A simulator that knows request boundaries calls this
+ * between making room for the request and replaying it.
+ *
+ * NULL for every algorithm that does not care; callers must check.
+ * Mirrors FreeBlockManager.record_request_blocks() in the vLLM prototype.
+ */
+typedef void (*cache_record_request_func_ptr)(cache_t *, const obj_id_t *,
+                                              int64_t);
+
+/**
+ * Optional: evict up to `n` objects in one call, returning how many actually
+ * went. `n` is a HARD CAP -- a caller that asked for n has room for exactly n,
+ * and evicting more silently throws away objects nothing asked to free.
+ *
+ * Exists because sampling algorithms pay their sampling cost per call: evicting
+ * n objects one at a time samples n times over. It also lets an algorithm evict
+ * several related objects together -- a prefix-cache policy draining part of one
+ * tree node, say -- which a one-object-at-a-time contract cannot express.
+ *
+ * NULL for every algorithm that does not implement it; callers must check and
+ * fall back to looping cache->evict().
+ */
+typedef int64_t (*cache_evict_n_func_ptr)(cache_t *, const request_t *,
+                                          int64_t n);
+
 // #define EVICTION_AGE_ARRAY_SZE 40
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
@@ -125,6 +157,12 @@ struct cache {
   admissioner_t *admissioner;
 
   struct prefetcher *prefetcher;
+
+  /* optional, NULL unless the algorithm needs whole-request structure */
+  cache_record_request_func_ptr record_request;
+
+  /* optional bulk eviction, NULL means "loop evict() instead" */
+  cache_evict_n_func_ptr evict_n;
 
   void *eviction_params;
 

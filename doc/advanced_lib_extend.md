@@ -62,6 +62,46 @@ There are two steps you can follow,
 
 ---
 
+## Add a partial-node (prefix-tree) eviction algorithm
+
+Prefix-cache algorithms evict at the granularity of a *prefix-tree node* -- a
+maximal non-branching run of blocks -- rather than a single independent object.
+`eviction::PartialNodeCache` in
+[cache/eviction/cpp/partialNodeCache.hpp](/libCacheSim/cache/eviction/cpp/partialNodeCache.hpp)
+already owns everything that is common to that family: the prefix tree, uniform
+node sampling, candidate selection, and the whole `cache_t` vtable including
+`record_request` and the batched `evict_n`.
+
+A new sample-based variant only supplies a score:
+
+```cpp
+class MyPolicy : public eviction::PartialNodeCache {
+ public:
+  double score(const cache_t *cache, const cache_obj_t *obj) const override {
+    return ...;  // lower is evicted first
+  }
+};
+
+cache_t *MyPolicy_init(const common_cache_params_t ccache_params,
+                       const char *cache_specific_params) {
+  return eviction::partial_node_cache_init("MyPolicy", ccache_params,
+                                           cache_specific_params,
+                                           new eviction::MyPolicy());
+}
+```
+
+Override `on_record_request()` as well if the policy needs per-request state
+beyond the tree. See
+[PartialNodeRandomCompute.cpp](/libCacheSim/cache/eviction/cpp/PartialNodeRandomCompute.cpp)
+for a complete example; then register it exactly as in the section above.
+
+These algorithms only work under a driver that calls `cache->record_request()`
+-- `prefixsim` does, `cachesim` does not, because a flat trace has no request
+boundaries to report. They also require block ids to be prefix-unique, so that a
+block occupies exactly one node; the tree counts violations and warns.
+
+---
+
 ## Add new trace readers 
 libCacheSim supports [txt](/libCacheSim/traceReader/generalReader/txt.c), [csv](/libCacheSim/traceReader/generalReader/csv.c), and binary traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
 For binary traces, libCacheSim also supports zstd compressed traces without decompression.
