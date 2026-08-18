@@ -278,7 +278,10 @@ static void GDSF_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = p.obj;
 
   gdsf->pri_last_evict = p.priority;
-  cache_remove_obj_base(cache, obj, true);
+  // cache_evict_base, not cache_remove_obj_base: eviction must go through the
+  // eviction path so eviction-age tracking and the prefetcher's handle_evict
+  // hook observe it. cache_evict_base calls cache_remove_obj_base itself.
+  cache_evict_base(cache, obj, true);
 }
 
 static void GDSF_remove_obj(cache_t *cache, cache_obj_t *obj) {
