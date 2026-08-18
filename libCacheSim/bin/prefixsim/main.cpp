@@ -26,6 +26,7 @@ struct Options {
   std::string trace_path;
   std::string output_path;
   std::string algo_params;
+  std::string dump_holes_dir;
   std::vector<std::string> algorithms{"lru"};
   int64_t cache_size = 0;
   prefixsim::TraceFormat format = prefixsim::TraceFormat::kQwenJsonl;
@@ -51,6 +52,8 @@ void print_usage(const char *program) {
   printf("                          qwen3coder30b_blksz_16 (default: uniform).\n");
   printf("  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
   printf("  --no-verify             Skip the post-request residency check.\n");
+  printf("  --dump-holes <dir>      Per algorithm, write one line per request listing\n");
+  printf("                          its recompute holes, for evaluate/analyze_holes.py.\n");
   printf("  --output <path>         Also append the RESULT lines to this file.\n");
   printf("  --list-algos            Print supported algorithms and exit.\n");
   printf("  --help                  Print this message.\n\n");
@@ -146,6 +149,8 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
       opts.trace_path = value;
     } else if (strcmp(arg, "--algo-params") == 0) {
       opts.algo_params = value;
+    } else if (strcmp(arg, "--dump-holes") == 0) {
+      opts.dump_holes_dir = value;
     } else if (strcmp(arg, "--output") == 0) {
       opts.output_path = value;
     } else if (strcmp(arg, "--algo") == 0) {
@@ -191,6 +196,39 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
   return true;
 }
 
+/// Where this algorithm's hole dump goes. analyze_holes.py recovers dataset,
+/// cache size and algorithm from the file name, so the shape is load-bearing:
+/// holes_<dataset>_cache<size>_<algo>.txt
+std::string holes_path_for(const Options &opts, const std::string &algorithm) {
+  if (opts.dump_holes_dir.empty()) return std::string();
+  std::string base = opts.trace_path;
+  const size_t slash = base.find_last_of('/');
+  if (slash != std::string::npos) base = base.substr(slash + 1);
+  const size_t dot = base.find_last_of('.');
+  if (dot != std::string::npos) base = base.substr(0, dot);
+  return opts.dump_holes_dir + "/holes_" + base + "_cache" +
+         std::to_string(opts.cache_size) + "_" + algorithm + ".txt";
+}
+
+/// Fail before the trace is read rather than after. Loading a multi-GB trace
+/// takes real time, and discovering a missing output directory on the far side
+/// of it wastes the whole run.
+bool check_holes_writable(const Options &opts) {
+  for (const std::string &algorithm : opts.algorithms) {
+    const std::string path = holes_path_for(opts, algorithm);
+    if (path.empty()) continue;
+    FILE *probe = fopen(path.c_str(), "w");
+    if (probe == nullptr) {
+      fprintf(stderr,
+              "error: cannot create hole dump '%s' (does the directory exist?)\n",
+              path.c_str());
+      return false;
+    }
+    fclose(probe);
+  }
+  return true;
+}
+
 void report(FILE *out, const std::string &algorithm, const Options &opts,
             const prefixsim::Stats &stats) {
   fprintf(out,
@@ -227,6 +265,8 @@ int main(int argc, char **argv) {
         "cache_find_base() aborts on a cost change. Use prefix-hash, or "
         "--cost-model uniform.\n");
   }
+
+  if (!check_holes_writable(opts)) return 1;
 
   std::string error;
   auto reader = prefixsim::open_trace(opts.trace_path, opts.format, opts.block_id, error);
@@ -275,10 +315,13 @@ int main(int argc, char **argv) {
       continue;
     }
 
+    const std::string holes_path = holes_path_for(opts, algorithm);
+
     prefixsim::SimulatorConfig config;
     config.cache_size_blocks = opts.cache_size;
     config.cost_model = opts.cost_model;
     config.verify = opts.verify;
+    config.dump_holes_path = holes_path;
 
     {
       prefixsim::Simulator sim(cache, config);

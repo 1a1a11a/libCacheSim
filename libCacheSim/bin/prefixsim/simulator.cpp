@@ -98,6 +98,17 @@ Simulator::Simulator(cache_t *cache, const SimulatorConfig &config)
   snprintf(recorder_->prefetcher_name, sizeof(recorder_->prefetcher_name),
            "prefixsim-evict-recorder");
   cache_->prefetcher = recorder_;
+
+  if (!config_.dump_holes_path.empty()) {
+    holes_file_ = fopen(config_.dump_holes_path.c_str(), "w");
+    if (holes_file_ == nullptr) {
+      // Fatal on purpose. Carrying on would mean waiting out the whole
+      // simulation only to find the dump you asked for was never written;
+      // a missing output directory should stop you now, not in ten minutes.
+      ERROR("cannot open %s for the hole dump (does the directory exist?)\n",
+            config_.dump_holes_path.c_str());
+    }
+  }
 }
 
 Simulator::~Simulator() {
@@ -108,6 +119,7 @@ Simulator::~Simulator() {
   }
   delete recorder_;
   if (req_buf_ != nullptr) free_request(req_buf_);
+  if (holes_file_ != nullptr) fclose(holes_file_);
 }
 
 bool Simulator::probe(obj_id_t id) const {
@@ -169,6 +181,8 @@ bool Simulator::serve(const Request &request, std::string &error) {
       missing.insert(request.blocks[i]);
     }
   }
+
+  if (holes_file_ != nullptr) dump_holes(request);
 
   // ---------------- phase 2: allocate ----------------
   const int64_t occupied = cache_->get_occupied_byte(cache_);
@@ -259,6 +273,41 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
     }
   }
   return true;
+}
+
+/**
+ * Write this request's holes: the contiguous runs of blocks that were missing
+ * when it arrived and therefore have to be recomputed.
+ *
+ * Read straight off resident_, which phase 1 has already filled, so this costs
+ * one pass over the request and never perturbs the simulation.
+ *
+ * The line format and the file naming are fixed by evaluate/analyze_holes.py,
+ * which parses `(idx: S, len: L)` pairs and derives dataset/size/algorithm from
+ * the file name. A line is written for every served request even when it has no
+ * holes -- that script counts holes per request, so the zeros matter.
+ * Skipped requests are omitted, as they are from every other statistic.
+ */
+void Simulator::dump_holes(const Request &request) {
+  fprintf(holes_file_, "Request %lld:", static_cast<long long>(request.index));
+
+  const int64_t n = static_cast<int64_t>(request.blocks.size());
+  int64_t start = -1;
+  for (int64_t i = 0; i < n; ++i) {
+    const bool missing = resident_[static_cast<size_t>(i)] == 0;
+    if (missing && start < 0) {
+      start = i;
+    } else if (!missing && start >= 0) {
+      fprintf(holes_file_, " (idx: %lld, len: %lld)",
+              static_cast<long long>(start), static_cast<long long>(i - start));
+      start = -1;
+    }
+  }
+  if (start >= 0) {
+    fprintf(holes_file_, " (idx: %lld, len: %lld)",
+            static_cast<long long>(start), static_cast<long long>(n - start));
+  }
+  fprintf(holes_file_, "\n");
 }
 
 void Simulator::access(const Request &request) {

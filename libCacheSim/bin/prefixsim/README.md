@@ -303,6 +303,72 @@ numbers.
 | `n_self_eviction` | …that the arriving request itself needed. High values mean the policy keeps throwing away what it is about to re-read; this is the cost the naive free-space-first approach pays invisibly. |
 | `n_unexpected_eviction` | Evictions during replay. **Must be 0.** Anything else means the allocation arithmetic and the algorithm disagree and the run is untrustworthy. |
 
+## Dumping holes (`--dump-holes`)
+
+A *hole* is a contiguous run of blocks a request had to recompute — a gap in
+what the cache could give it. Where the hit ratio says how much was reused, the
+hole distribution says how that reuse was *shaped*: one long tail to prefill is a
+very different workload for the engine than a prefix shot through with gaps, even
+at the same hit ratio.
+
+```bash
+prefixsim --trace qwen_coder_blksz_16_pos.jsonl --cache-size 8k \
+          --algo lru,partial_node_random_compute --dump-holes holes_logs/
+```
+
+One file per algorithm:
+
+```
+holes_logs/holes_qwen_coder_blksz_16_pos_cache8192_lru.txt
+```
+```
+Request 0: (idx: 0, len: 63)
+Request 1: (idx: 1, len: 273)
+Request 2: (idx: 1, len: 258)
+```
+
+`idx` is the 0-based block position within the request, `len` the run length.
+Both the line format and the file name are fixed by
+`evaluate/analyze_holes.py`, which recovers dataset, cache size and algorithm
+from the name (`holes_<dataset>_cache<size>_<algo>.txt`) and scrapes the pairs
+with a regex. Point it at the files and it works unmodified:
+
+```bash
+python analyze_holes.py holes_logs/*.txt
+```
+
+The dump is **off unless `--dump-holes` is given** — no flag, no file, and the
+only cost on a normal run is one null check per request. If the flag is given, every
+output path is probed **before the trace is read**, and an unwritable one
+(usually a missing directory) stops the run in milliseconds rather than after a
+multi-GB load. The directory is not created for you.
+
+Three properties to preserve if you ever touch the writer:
+
+- **Every served request gets a line, even with no holes.** `analyze_holes.py`
+  counts holes per request per line, so the zero-hole lines are what keep that
+  distribution honest. Dropping them biases it upward.
+- **Skipped requests are omitted**, consistent with every other statistic here.
+- **Holes are read from the phase-1 match**, not from the replay, so they are
+  exactly the misses the reported hit ratio is computed from and the dump cannot
+  perturb the simulation. Summing all hole lengths reproduces the miss ratio:
+  11,283,747 of 15,470,907 blocks on the run above, i.e. 0.7294 against a
+  reported hit ratio of 0.2706.
+
+What it is good for, on that same run:
+
+| | LRU | partial-node RandomCompute |
+|---|---|---|
+| avg holes / request | 1.00 | 1.02 |
+| max holes / request | 1 | 3 |
+| avg hole length | 262.9 | 253.0 |
+
+LRU produces almost exactly one hole per request, so its resident set stays
+prefix-contiguous — the deepest-first replay working as intended. The
+partial-node policy occasionally punches a gap mid-prefix instead. That is the
+contiguity difference that the removed `prefix_hit_ratio` metric used to
+summarise in one number, now visible in full rather than averaged away.
+
 ## Adding an input format
 
 Implement `TraceReader` in `trace.cpp` and add one line to

@@ -14,6 +14,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstdio>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -65,6 +66,10 @@ struct SimulatorConfig {
   /// the main hash table (the S3FIFO family, for instance), which would
   /// silently invalidate the phase-1 match.
   bool verify = true;
+  /// When set, append one line per served request describing that request's
+  /// holes -- the contiguous runs of blocks it had to recompute. Empty
+  /// disables it. See Simulator::dump_holes.
+  std::string dump_holes_path;
 };
 
 /// Runs one eviction algorithm over an in-memory trace.
@@ -99,12 +104,16 @@ class Simulator {
   /// Point req_buf_ at block `i` of `request`.
   void fill_request(const Request &request, size_t i);
 
+  /// Write this request's holes, in the format analyze_holes.py parses.
+  void dump_holes(const Request &request);
+
   cache_t *cache_ = nullptr;
   SimulatorConfig config_;
   Stats stats_;
 
   request_t *req_buf_ = nullptr;
   prefetcher_t *recorder_ = nullptr;
+  FILE *holes_file_ = nullptr;
 
   // Scratch reused across requests so the hot loop does not allocate.
   std::vector<char> resident_;
