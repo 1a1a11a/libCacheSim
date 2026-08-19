@@ -59,6 +59,8 @@ static cache_obj_t *hit_RD_HIRinQ(cache_t *cache, cache_obj_t *cache_obj_q);
 static void evictLIR(cache_t *cache);
 static bool evictHIR(cache_t *cache);
 static void limitStack(cache_t *cache);
+static bool LIRS_evict_once(cache_t *cache, const request_t *req);
+static bool LIRS_force_evict_one(cache_t *cache);
 
 /* debug functions*/
 static void LIRS_print_cache(cache_t *cache);
@@ -379,18 +381,24 @@ static cache_obj_t *LIRS_to_evict(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief evict an object from the cache
- * it needs to call cache_evict_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
+ * @brief one step of the LIRS eviction state machine, keyed on the status of
+ * `req` in stacks S and Q.
  *
- * @param cache
- * @param req not used
+ * A step does not necessarily shrink the cache: demoting the bottom LIR block
+ * of S into Q (evictLIR) keeps the block resident, so occupied_byte is
+ * unchanged and only the LIR/HIR split moves. That is by design -- the caller
+ * repeats the step until the HIR set overflows and a block is really dropped.
+ *
+ * @return true if a branch applied (the step did something), false if LIRS
+ * considers both block sets to have room and therefore evicts nothing.
  */
-static void LIRS_evict(cache_t *cache, const request_t *req) {
+static bool LIRS_evict_once(cache_t *cache, const request_t *req) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_s = params->LRU_s->find(params->LRU_s, req, false);
   cache_obj_t *obj_q = params->LRU_q->find(params->LRU_q, req, false);
+
+  bool acted = false;
 
   // Upon accessing an HIR non-resident in S
   if (obj_s != NULL && obj_s->LIRS.is_LIR == false &&
@@ -402,6 +410,7 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
 
     // move the LIR block in the bottom of S to Q and conduct stack pruning
     evictLIR(cache);
+    acted = true;
   }
 
   // Upon accessing an HIR non-resident in Q
@@ -409,6 +418,7 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
     // remove the HIR resident at the front of Q
     while (params->hirs_count >= params->hirs_limit) {
       evictHIR(cache);
+      acted = true;
     }
   }
 
@@ -420,8 +430,90 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
       // the circumstance is same as accessing an HIR non-resident not in S
       // remove the HIR resident at the front of Q
       evictHIR(cache);
+      acted = true;
     }
   }
+
+  return acted;
+}
+
+/**
+ * @brief unconditionally free one resident object.
+ *
+ * Used only when the state machine above declines to evict, which happens when
+ * a caller drives cache->evict() directly to reclaim space instead of going
+ * through cache_get_base (where LIRS_can_insert, not evict, is what makes
+ * room): with room left in the LIR set, none of the three branches applies and
+ * evict() would otherwise be a no-op.
+ *
+ * The victim choice follows LIRS: the LRU end of Q, or, if no HIR block is
+ * resident, the bottom of S demoted into Q first.
+ *
+ * @return false only if the cache holds no resident object at all.
+ */
+static bool LIRS_force_evict_one(cache_t *cache) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+
+  if (params->LRU_q->n_obj > 0) {
+    return evictHIR(cache);
+  }
+
+  // No resident HIR block: demote LIR blocks from the bottom of S until one of
+  // them lands in Q (then evict it) or is dropped outright for not fitting Q.
+  const int64_t occupied_before = cache->occupied_byte;
+  while (params->lirs_count > 0) {
+    evictLIR(cache);
+    if (cache->occupied_byte < occupied_before) {
+      return true;
+    }
+    if (params->LRU_q->n_obj > 0) {
+      return evictHIR(cache);
+    }
+  }
+
+  return false;
+}
+
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * Runs the LIRS state machine until the cache actually shrinks. Under
+ * cache_get_base this is behaviour-preserving: the caller's `while (occupied +
+ * obj_size > cache_size)` loop re-invokes evict() on exactly the steps that
+ * left occupancy unchanged, so the same sequence of internal operations runs,
+ * only grouped into fewer calls. When the state machine has nothing left to do,
+ * one object is freed unconditionally so that evict() never returns without
+ * making progress.
+ *
+ * @param cache
+ * @param req the request being served; its status in S/Q selects the branch
+ */
+static void LIRS_evict(cache_t *cache, const request_t *req) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+  const int64_t occupied_before = cache->occupied_byte;
+
+  while (true) {
+    const int64_t occupied_step = cache->occupied_byte;
+    const uint64_t lirs_step = params->lirs_count;
+    const uint64_t hirs_step = params->hirs_count;
+
+    const bool acted = LIRS_evict_once(cache, req);
+
+    if (cache->occupied_byte < occupied_before) {
+      return;
+    }
+    // Either no branch applied, or the branch left every counter untouched --
+    // repeating it would loop forever, so fall through to the forced eviction.
+    if (!acted ||
+        (cache->occupied_byte == occupied_step &&
+         params->lirs_count == lirs_step && params->hirs_count == hirs_step)) {
+      break;
+    }
+  }
+
+  LIRS_force_evict_one(cache);
 }
 
 /**

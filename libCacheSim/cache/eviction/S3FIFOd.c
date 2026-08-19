@@ -58,6 +58,7 @@ static cache_obj_t *S3FIFOd_find(cache_t *cache, const request_t *req,
 static cache_obj_t *S3FIFOd_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *S3FIFOd_to_evict(cache_t *cache, const request_t *req);
 static void S3FIFOd_evict(cache_t *cache, const request_t *req);
+static void S3FIFOd_evict_once(cache_t *cache, const request_t *req);
 static bool S3FIFOd_remove(cache_t *cache, obj_id_t obj_id);
 static inline int64_t S3FIFOd_get_occupied_byte(const cache_t *cache);
 static inline int64_t S3FIFOd_get_n_obj(const cache_t *cache);
@@ -412,6 +413,33 @@ static cache_obj_t *S3FIFOd_to_evict(cache_t *cache, const request_t *req) {
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
 static void S3FIFOd_evict(cache_t *cache, const request_t *req) {
+  /* An eviction must free something.
+   *
+   * The body below can instead PROMOTE a block out of the small queue into the
+   * main cache, which leaves total occupancy unchanged. cache_get_base() hides
+   * that by looping until it has room, so it never mattered there -- but a
+   * caller that asks for one eviction and gets none cannot distinguish "made
+   * no progress" from "nothing left to evict", and has to treat it as failure.
+   *
+   * So retry until the cache actually shrinks. This terminates: every iteration
+   * either frees an object or moves one out of the small queue, and once the
+   * small queue is empty the main branch always frees. The guard bounds it
+   * anyway rather than risking a hang if that ever stops holding.
+   */
+  const int64_t occupied_before = cache->get_occupied_byte(cache);
+  int64_t attempts = 0;
+  const int64_t limit = cache->get_n_obj(cache) + 16;
+  do {
+    S3FIFOd_evict_once(cache, req);
+    if (++attempts > limit) {
+      ERROR("S3FIFOd_evict: %lld attempts freed nothing (occupied %lld)\n",
+            (long long)attempts, (long long)cache->get_occupied_byte(cache));
+    }
+  } while (cache->get_occupied_byte(cache) >= occupied_before &&
+           cache->get_occupied_byte(cache) > 0);
+}
+
+static void S3FIFOd_evict_once(cache_t *cache, const request_t *req) {
   S3FIFOd_params_t *params = (S3FIFOd_params_t *)cache->eviction_params;
 
   cache_t *small_fifo = params->small_fifo;

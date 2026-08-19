@@ -260,12 +260,11 @@ signal the qwen trace carries.
 
 ## Which algorithms work
 
-31 algorithms, essentially everything `cachesim` offers. `--list-algos` prints
+36 algorithms -- everything `cachesim` offers except one. `--list-algos` prints
 them. The list is verified rather than assumed: an entry is there because it
 completes a whole trace with the post-request residency check on.
 
-Two things had to be true for that, and both were prefixsim's problem, not the
-algorithms':
+Getting there needed two changes here and several in the algorithms themselves:
 
 - **Residency is asked of the algorithm**, via `cache->find(req, update_cache =
   false)`, not read out of `cache->hashtable`. An algorithm's resident set is not
@@ -277,21 +276,46 @@ algorithms':
 - **Allocation does not require victim identity.** It uses it when available --
   the eviction hook makes the self-eviction split cheap -- but composite
   algorithms evict inside sub-caches whose prefetcher is not ours, so no victim
-  is reported. When that happens and occupancy dropped anyway, the remaining
-  deficit is recomputed by re-probing the request. Correctness is unaffected;
-  the only casualty is `n_self_eviction`, which undercounts for those
-  algorithms. `n_unobserved_eviction_round` says when that applies.
+  is reported. On that path one re-probe of the request recovers both the
+  remaining deficit and the exact self-eviction count, so nothing is lost but
+  speed. `n_unobserved_eviction_round` says when it was used.
+- **Several `evict()` implementations did not free anything.** `evict()` that
+  only promotes a block from a small queue to a main queue leaves occupancy
+  unchanged; `cache_get_base` hides this by looping until it has room. Fixed in
+  `S3FIFOd`, `QDLP`, `S3FIFOCompute`, `LIRS` and `CAR`, each verified to leave
+  its cachesim miss ratio unchanged.
 
-Six are still missing, and these are real defects rather than policy:
+### The one exclusion: admission control
 
-| algorithm | symptom |
-|---|---|
-| `car`, `clockpro` | crash outright |
-| `lirs`, `qdlp`, `s3fifod`, `s3fifo_compute` | `evict()` returns having freed nothing, so allocation cannot make progress |
+`clockpro` is excluded, and the reason is about prefix caches rather than about
+this simulator.
 
-The second group is the `GDSF` defect again: eviction that does not reduce
-occupancy, or does not go through `cache_evict_base`. `GDSF` was a one-line fix;
-these need looking at individually.
+In an ordinary object cache, declining to admit an object is harmless. The client
+already has its data -- it came from the backing store -- and the cache has
+merely chosen not to keep a copy. Admission control is a cheap and legitimate
+policy lever there, and ClockPro uses one: `can_insert` refuses once
+`mem_cold + size > mem_cold_max`.
+
+A prefix cache has no backing store to read from. The cached "data" is KV state,
+and the model can only attend over blocks that physically exist in GPU memory.
+Serving a request therefore *requires* materialising every one of its blocks: a
+missing block is prefilled and written into HBM, not fetched from anywhere. The
+block is resident during service whether the policy wanted it or not.
+
+So the only decision a prefix-cache policy actually gets to make is what to keep
+*after* the request completes. "Refuse to store this block" has no analogue at
+the moment of use; the nearest expressible thing is to evict it immediately
+afterwards, which is exactly what a small admission queue or a quick-demotion
+penalty does -- and both of those are supported.
+
+That is why the post-replay check requires every block of the request to be
+resident. It is not a strictness setting, it is the modelling invariant, and an
+algorithm that can refuse admission is describing a cache this simulator does not
+model. ClockPro's crashes and hangs under prefixsim *were* fixed -- an infinite
+loop, a stack overflow and a hash-table assertion, all with its cachesim miss
+ratio unchanged -- so what remains is only this semantic mismatch. Relaxing the
+check to tolerate a refused `can_insert` would admit it, at the cost of prefixsim
+no longer guaranteeing that a served request was fully resident.
 
 ## Diagnostics in the `RESULT` line
 

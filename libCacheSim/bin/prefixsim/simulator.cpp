@@ -80,12 +80,17 @@ const AlgoEntry kAlgos[] = {
     // multi-queue / adaptive
     {"arc", ARC_init},
     {"twoq", TwoQ_init},
+    {"lirs", LIRS_init},
     {"slru", SLRU_init},
     {"lecar", LeCaR_init},
     {"cacheus", Cacheus_init},
     {"wtinylfu", WTinyLFU_init},
     {"s3fifo", S3FIFO_init},
     {"lhd", LHD_init},
+    {"s3fifod", S3FIFOd_init},
+    {"qdlp", QDLP_init},
+    {"s3fifo_compute", S3FIFOCompute_init},
+    {"car", CAR_init},
     // cost-aware
     {"gdsf", GDSF_init},
     {"gdsf_compute", GDSF_compute_init},
@@ -264,6 +269,14 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
   victims_.clear();
   int64_t progress = 0;
 
+  // Which of Alpha's blocks are resident right now. Only consulted on the
+  // no-victim-reported path, so building it costs nothing for the algorithms
+  // that do report their victims.
+  alpha_resident_.clear();
+  for (size_t i = 0; i < request.blocks.size(); ++i) {
+    if (resident_[i] != 0) alpha_resident_.insert(request.blocks[i]);
+  }
+
   // Termination: the request needs at most `cache_size` distinct blocks (larger
   // ones were skipped), so the cache always holds at least `needed` blocks the
   // request does not want. Every eviction of a wanted block permanently removes
@@ -306,9 +319,15 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
       stats_.n_evictions += occupied_before - occupied_now;
       stats_.n_unobserved_eviction_rounds += 1;
 
+      // Re-probe gives both numbers we need. Anything of Alpha's that was
+      // resident and is not any more was a self-eviction -- so the diagnostic
+      // stays exact even when no victim was reported, which is what makes this
+      // path a real substitute for the hook rather than a degraded one.
       int64_t missing = 0;
       for (const obj_id_t id : alpha_) {
-        if (!probe(id)) ++missing;
+        if (probe(id)) continue;
+        ++missing;
+        if (alpha_resident_.erase(id) != 0) ++stats_.n_self_evictions;
       }
       const int64_t remaining =
           missing - (config_.cache_size_blocks - occupied_now);

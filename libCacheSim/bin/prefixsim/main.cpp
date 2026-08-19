@@ -68,9 +68,11 @@ void print_algos() {
     printf("  %s\n", name.c_str());
   }
   printf(
-      "\nOnly algorithms that keep their whole resident set in the main hash\n"
-      "table are listed: the phase-1 match probes that table directly. See\n"
-      "README.md \"Which algorithms work\".\n");
+      "\nEach of these completes a full trace with the residency check on.\n"
+      "Algorithms with admission control are absent: a prefix cache must\n"
+      "materialise every block of a request in memory to serve it, so\n"
+      "refusing to store one has no analogue. See README.md \"Which\n"
+      "algorithms work\".\n");
 }
 
 /// Parse "8", "8k", "2m". Suffixes are powers of 1024, matching cachesim.
@@ -235,7 +237,8 @@ void report(FILE *out, const std::string &algorithm, const Options &opts,
           "RESULT trace=%s algo=%s cache_size=%lld cost_model=%s block_id=%s "
           "n_req=%lld n_req_skipped=%lld n_blocks=%lld "
           "block_hit_ratio=%.6f compute_saving_ratio=%.6f "
-          "n_eviction=%lld n_self_eviction=%lld n_unexpected_eviction=%lld\n",
+          "n_eviction=%lld n_self_eviction=%lld n_unexpected_eviction=%lld "
+          "n_unobserved_eviction_round=%lld\n",
           opts.trace_path.c_str(), algorithm.c_str(),
           static_cast<long long>(opts.cache_size),
           prefixsim::cost_model_name(opts.cost_model),
@@ -246,7 +249,8 @@ void report(FILE *out, const std::string &algorithm, const Options &opts,
           stats.compute_saving_ratio(),
           static_cast<long long>(stats.n_evictions),
           static_cast<long long>(stats.n_self_evictions),
-          static_cast<long long>(stats.n_unexpected_evictions));
+          static_cast<long long>(stats.n_unexpected_evictions),
+          static_cast<long long>(stats.n_unobserved_eviction_rounds));
 }
 
 }  // namespace
