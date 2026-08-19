@@ -57,9 +57,12 @@ struct AlgoEntry {
   cache_t *(*init)(const common_cache_params_t, const char *);
 };
 
-// Only algorithms whose entire resident set lives in cache->hashtable belong
-// here; see README.md "Which algorithms work".
+// Everything cachesim offers that prefixsim can drive. The list is verified,
+// not assumed: an entry is here because it runs a whole trace with the
+// post-request residency check on. Six are absent because they genuinely do not
+// work yet, not because of policy -- see README "Which algorithms work".
 const AlgoEntry kAlgos[] = {
+    // single-queue
     {"lru", LRU_init},
     {"fifo", FIFO_init},
     {"clock", Clock_init},
@@ -69,13 +72,28 @@ const AlgoEntry kAlgos[] = {
     {"mru", MRU_init},
     {"size", Size_init},
     {"random", Random_init},
+    {"randomtwo", RandomTwo_init},
+    {"randomlru", RandomLRU_init},
+    {"lru-prob", LRU_Prob_init},
+    {"fifo-merge", FIFO_Merge_init},
     {"hyperbolic", Hyperbolic_init},
+    // multi-queue / adaptive
+    {"arc", ARC_init},
+    {"twoq", TwoQ_init},
+    {"slru", SLRU_init},
+    {"lecar", LeCaR_init},
+    {"cacheus", Cacheus_init},
+    {"wtinylfu", WTinyLFU_init},
+    {"s3fifo", S3FIFO_init},
+    {"lhd", LHD_init},
+    // cost-aware
     {"gdsf", GDSF_init},
     {"gdsf_compute", GDSF_compute_init},
     {"belady", Belady_init},
     {"belady_compute", BeladyCompute_init},
     {"random_compute", RandomCompute_init},
     {"random_compute_small_queue", RandomComputeSmallQueue_init},
+    // partial-node, prefix-tree aware
     {"partial_node_random_compute", PartialNodeRandomCompute_init},
     {"partial_node_random_freq", PartialNodeRandomFreq_init},
     {"partial_node_random_compute_small_queue",
@@ -123,10 +141,22 @@ Simulator::~Simulator() {
 }
 
 bool Simulator::probe(obj_id_t id) const {
-  // Read-only lookup straight into the hash table. Deliberately not
-  // cache_->find(): even with update_cache = false that is the algorithm's own
-  // code path, and phase 1 must be invisible to the algorithm.
-  return hashtable_find_obj_id(cache_->hashtable, id) != nullptr;
+  // The algorithm's own read-only lookup. cache_find_base gates every mutation
+  // on update_cache, so this records nothing -- freq, recency and queue order
+  // are all untouched, which is what phase 1 requires.
+  //
+  // Deliberately not a raw hashtable probe: an algorithm's resident set is not
+  // always its main hash table. The S3FIFO family keeps blocks in sub-caches
+  // with their own tables (a raw probe reports them missing), while ARC and
+  // LIRS keep ghost entries in the main table (a raw probe reports those as
+  // hits). Asking the algorithm is the only way to get residency right for
+  // both.
+  request_t probe_req;
+  memset(&probe_req, 0, sizeof(probe_req));
+  probe_req.obj_id = id;
+  probe_req.obj_size = 1;
+  probe_req.valid = true;
+  return cache_->find(cache_, &probe_req, false) != nullptr;
 }
 
 void Simulator::fill_request(const Request &request, size_t i) {
@@ -241,6 +271,7 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
   // subsequent victim is unwanted and progress advances.
   while (progress < needed) {
     const size_t before = victims_.size();
+    const int64_t occupied_before = cache_->get_occupied_byte(cache_);
 
     // Ask for the whole remaining deficit at once when the algorithm can do it.
     // `needed - progress` is a hard cap: this request has room for exactly that
@@ -253,12 +284,38 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
     }
 
     if (victims_.size() == before) {
-      error = "eviction made no progress while serving request " +
-              std::to_string(request.index) +
-              " (the algorithm evicted nothing); cache is " +
-              std::to_string(cache_->get_occupied_byte(cache_)) + "/" +
-              std::to_string(config_.cache_size_blocks) + " blocks";
-      return false;
+      // No victim was reported. Either nothing was evicted, or this algorithm
+      // evicts without going through cache_evict_base -- the composite ones
+      // (S3FIFO family, TwoQ, LIRS, WTinyLFU, ...) evict inside sub-caches
+      // whose prefetcher is not ours, so the hook never fires for them.
+      //
+      // Occupancy tells the two apart, and when the cache did shrink we do not
+      // need victim identity at all: re-probe the request and recompute the
+      // deficit from ground truth. Only the self-eviction diagnostic depends on
+      // knowing who went, so that is what we lose, not correctness.
+      const int64_t occupied_now = cache_->get_occupied_byte(cache_);
+      if (occupied_now >= occupied_before) {
+        error = "eviction made no progress while serving request " +
+                std::to_string(request.index) +
+                " (the algorithm evicted nothing); cache is " +
+                std::to_string(occupied_now) + "/" +
+                std::to_string(config_.cache_size_blocks) + " blocks";
+        return false;
+      }
+
+      stats_.n_evictions += occupied_before - occupied_now;
+      stats_.n_unobserved_eviction_rounds += 1;
+
+      int64_t missing = 0;
+      for (const obj_id_t id : alpha_) {
+        if (!probe(id)) ++missing;
+      }
+      const int64_t remaining =
+          missing - (config_.cache_size_blocks - occupied_now);
+      if (remaining <= 0) return true;
+      needed = remaining;
+      progress = 0;
+      continue;
     }
 
     for (size_t k = before; k < victims_.size(); ++k) {

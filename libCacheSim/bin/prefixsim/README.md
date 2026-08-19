@@ -260,39 +260,38 @@ signal the qwen trace carries.
 
 ## Which algorithms work
 
-The phase-1 probe reads `cache->hashtable` directly, so an algorithm is usable
-only if its entire resident set lives there. `--list-algos` prints the
-allowlist: `lru`, `fifo`, `clock`, `sieve`, `lfu`, `lfuda`, `mru`, `size`,
-`random`, `hyperbolic`, `gdsf`, `gdsf_compute`, `belady`, `belady_compute`,
-`random_compute`, `random_compute_small_queue`, `partial_node_random_compute`,
-`partial_node_random_freq`, `partial_node_random_compute_small_queue`.
+31 algorithms, essentially everything `cachesim` offers. `--list-algos` prints
+them. The list is verified rather than assumed: an entry is there because it
+completes a whole trace with the post-request residency check on.
 
-The two partial-node algorithms sample prefix-tree *nodes* rather than blocks and
-evict out of the winning node, leaving the rest of that node cached:
+Two things had to be true for that, and both were prefixsim's problem, not the
+algorithms':
 
-| algorithm | score |
+- **Residency is asked of the algorithm**, via `cache->find(req, update_cache =
+  false)`, not read out of `cache->hashtable`. An algorithm's resident set is not
+  always its main hash table: the S3FIFO family keeps blocks in sub-caches with
+  their own tables, so a raw probe reports them missing, while ARC and LIRS keep
+  ghost entries in the main table, so a raw probe reports those as hits. Because
+  `cache_find_base` gates every mutation on `update_cache`, asking the algorithm
+  still records nothing.
+- **Allocation does not require victim identity.** It uses it when available --
+  the eviction hook makes the self-eviction split cheap -- but composite
+  algorithms evict inside sub-caches whose prefetcher is not ours, so no victim
+  is reported. When that happens and occupancy dropped anyway, the remaining
+  deficit is recomputed by re-probing the request. Correctness is unaffected;
+  the only casualty is `n_self_eviction`, which undercounts for those
+  algorithms. `n_unobserved_eviction_round` says when that applies.
+
+Six are still missing, and these are real defects rather than policy:
+
+| algorithm | symptom |
 |---|---|
-| `partial_node_random_compute` | `cost / recency` — same as `random_compute` |
-| `partial_node_random_freq` | `(freq+1) * cost / recency` — reproduces `RandomFreeBlockManager` ("Random") in the vLLM prototype |
+| `car`, `clockpro` | crash outright |
+| `lirs`, `qdlp`, `s3fifod`, `s3fifo_compute` | `evict()` returns having freed nothing, so allocation cannot make progress |
 
-Both are kept because the frequency term is regime-dependent: dropping it costs
-4-6 points of hit ratio on `qwen_coder` at 4k-20k blocks, but is neutral-to-
-positive once the cache is large enough that the hit ratio clears ~0.7. Measure
-before choosing.
-
-Tune with `--algo-params "n-sample=128,evict-from=tail"`; see
-`eviction::PartialNodeCache` for how to add a variant — a new one needs only a
-`score()` override.
-
-Composite algorithms are excluded on purpose. The S3FIFO family, `TwoQ`,
-`WTinyLFU`, `ARC` and `LIRS` keep objects in sub-caches with their own hash
-tables, or keep ghost entries in the main one, so a direct probe would report
-the wrong residency in both directions.
-
-As a backstop, after every request the simulator re-probes each block and fails
-loudly if one is missing (disable with `--no-verify`). That check catches an
-unsupported algorithm immediately instead of letting it produce quietly wrong
-numbers.
+The second group is the `GDSF` defect again: eviction that does not reduce
+occupancy, or does not go through `cache_evict_base`. `GDSF` was a one-line fix;
+these need looking at individually.
 
 ## Diagnostics in the `RESULT` line
 

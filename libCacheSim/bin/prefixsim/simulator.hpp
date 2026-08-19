@@ -49,6 +49,11 @@ struct Stats {
   /// exactly enough room. Non-zero means the allocation arithmetic and the
   /// eviction algorithm disagree, and the run is not trustworthy.
   int64_t n_unexpected_evictions = 0;
+  /// Allocation rounds where the algorithm evicted without reporting a victim,
+  /// so the deficit had to be recomputed by re-probing. Non-zero means
+  /// n_self_evictions is an undercount for this algorithm -- correctness is
+  /// unaffected, only that diagnostic.
+  int64_t n_unobserved_eviction_rounds = 0;
 
   double block_hit_ratio() const {
     return n_blocks ? static_cast<double>(n_block_hits) / static_cast<double>(n_blocks) : 0.0;
