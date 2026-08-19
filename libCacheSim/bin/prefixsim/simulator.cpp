@@ -268,6 +268,10 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
 
   victims_.clear();
   int64_t progress = 0;
+  // Occupancy freed on the no-victim-reported path since the last re-probe.
+  // Lets us re-probe once per deficit-worth of evictions instead of once per
+  // freed block -- see the long comment on that path below.
+  int64_t unobserved_freed = 0;
 
   // Which of Alpha's blocks are resident right now. Only consulted on the
   // no-victim-reported path, so building it costs nothing for the algorithms
@@ -319,10 +323,24 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
       stats_.n_evictions += occupied_before - occupied_now;
       stats_.n_unobserved_eviction_rounds += 1;
 
-      // Re-probe gives both numbers we need. Anything of Alpha's that was
-      // resident and is not any more was a self-eviction -- so the diagnostic
-      // stays exact even when no victim was reported, which is what makes this
-      // path a real substitute for the hook rather than a degraded one.
+      // The re-probe below recovers the deficit and the self-eviction count from
+      // ground truth, but it is O(|request|). Doing it after every single freed
+      // block -- which is what these algorithms give us, one eviction per
+      // evict() call -- makes allocation O(|request| * deficit) and dominates
+      // runtime on large requests at small caches (measured ~300x slower than
+      // LRU for S3FIFO/TwoQ/LIRS/WTinyLFU on the freeinference trace).
+      //
+      // Every eviction drops occupancy by one whether the victim was wanted or
+      // not, so accumulate the drop and only re-probe once we have freed a whole
+      // deficit's worth. If some of those were self-evictions the request is
+      // still short, which the re-probe sees as a positive `remaining` and turns
+      // into another batch. Re-probes are then bounded by the number of
+      // self-eviction correction rounds (typically one or two), not by the
+      // deficit. The self-eviction diagnostic stays exact: alpha_resident_.erase
+      // fires at most once per block regardless of how often we re-probe.
+      unobserved_freed += occupied_before - occupied_now;
+      if (unobserved_freed < needed) continue;
+
       int64_t missing = 0;
       for (const obj_id_t id : alpha_) {
         if (probe(id)) continue;
@@ -334,6 +352,7 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
       if (remaining <= 0) return true;
       needed = remaining;
       progress = 0;
+      unobserved_freed = 0;
       continue;
     }
 
