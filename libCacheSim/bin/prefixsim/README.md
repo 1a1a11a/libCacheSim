@@ -288,6 +288,19 @@ signal the qwen trace carries.
   cost model trips the `cache_find_base()` cost-change `abort()`; the tool warns
   about that combination.
 
+The option exists because this reader takes *raw JSONL*, where the convention is
+a property of the file and cannot be assumed. `.lcsllm` is the opposite: it
+guarantees positional encoding, a reader rejects a file claiming otherwise, and
+there is nothing for a consumer to choose — see
+[the format spec](/doc/lcsllm_format.md#positional-encoding-of-block-ids).
+
+`raw` is worth keeping for one specific job: reproducing the vLLM prototype,
+which keys on `hash_ids` directly. That is why the freeinference comparison above
+uses it. On a trace whose ids already *are* prefix-unique the two modes agree
+exactly — LRU at 120k blocks on `prod_trace_w4_multiturn_concurrency_1024` gives
+0.178042 / 0.090094 under both — so `prefix-hash` is never the riskier choice;
+`raw` is only ever the one that can be wrong.
+
 ---
 
 ## Which algorithms work

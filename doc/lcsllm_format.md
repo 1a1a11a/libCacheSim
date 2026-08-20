@@ -45,19 +45,49 @@ at the wrong trace type fails loudly instead of misparsing.
 | `max_blocks_per_request` | i64 | lets a reader size its buffer once |
 | `start_time_us`, `end_time_us` | i64 | first and last request timestamp |
 | `block_size_tokens` | i32 | tokens per KV block, e.g. 16 |
-| `block_id_kind` | u8 | `0` = raw, `1` = prefix hash — see below |
+| `block_id_kind` | u8 | always `1` = positional encoding — see below |
 | `has_next_access` | u8 | whether `next_access_vtime` was computed |
 | `n_types` | u8 | entries used in `type_names` |
 | `type_names` | char[8][16] | request-type strings, indexed by `type_id` |
 | `unused` | … | reserved, zeroed |
 | `end_magic` | u64 | same value as `start_magic` |
 
-`block_id_kind` is the field that earns its place. Block ids in a source trace
-may be *raw* per-block hashes or *prefix hashes* folded over the whole path from
-the root. The distinction matters: raw ids in the qwen traces are **not**
-prefix-unique — 16,686 of them appear under more than one predecessor — so the
-same id can mean two different cache objects. Recording the convention in the
-file means no consumer has to guess.
+## Positional encoding of block ids
+
+**Block ids in an lcsllm file are always positionally encoded**, meaning:
+
+> two blocks carry the same id only when the block *and its entire prefix* are
+> identical.
+
+The id is a hash folded over the whole path from the root up to and including
+that block. This is a guarantee of the format, not a property a consumer has to
+discover — `block_id_kind` is always `1`, a reader must refuse anything else, and
+`traceConvLLM` has no flag to turn it off.
+
+It is not a stylistic choice. A prefix cache is keyed on exactly this identity: a
+KV block is reusable only if every block before it in the prompt matches, because
+its contents were computed by attending over that whole prefix. Raw per-block
+hashes cannot express it — in the qwen traces 16,686 raw ids appear under more
+than one predecessor, so a simulator keyed on raw ids merges unrelated prefixes
+into one cache object, inflating the hit ratio. Under a position-dependent cost
+model it is worse than inflation: the same object arrives with two different
+costs, which trips the cost-change check in `cache_find_base()`.
+
+The repair has to happen at conversion time. Once ids are written, the
+predecessor of each block is gone, so no consumer can recover which path an id
+came from — this is why the format enforces the property instead of describing it.
+
+Encoding a trace whose ids are *already* prefix-unique is safe: folding is then a
+bijective relabeling, and it leaves cache behaviour untouched. Measured on
+`prod_trace_w4_multiturn_concurrency_1024` (50k requests, LRU at 120k blocks),
+raw and folded ids both give a block hit ratio of 0.178042 and compute savings of
+0.090094 — identical to six digits.
+
+`traceConvLLM` verifies the property on the way out rather than trusting it. The
+encoding is deterministic, so the only way to violate it is a 64-bit collision
+between two distinct paths; the converter checks that every id has a single
+predecessor (which proves full path uniqueness inductively) and refuses to write
+the file otherwise.
 
 ## Request header — 48 bytes
 
@@ -140,7 +170,7 @@ transparently, so on-disk size is recoverable when it matters.
 ```bash
 ./bin/traceConvLLM --input qwen_coder_blksz_16_pos.jsonl \
                    --output qwen_coder.lcsllm \
-                   --block-id prefix-hash --block-size-tokens 16
+                   --block-size-tokens 16
 ```
 
 See [Trace Utilities](quickstart_traceUtils.md) for the other converters.

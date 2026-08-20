@@ -34,8 +34,15 @@ extern "C" {
 
 /** how block ids in the file were derived */
 typedef enum {
-  LCSLLM_BLOCK_ID_RAW = 0,       /**< the source trace's per-block hash */
-  LCSLLM_BLOCK_ID_PREFIX = 1,    /**< hash folded over the whole path to the root */
+  /** The source trace's per-block hash, carried through unchanged. NO LONGER
+   *  WRITTEN and rejected on read: such ids are not positionally encoded, so
+   *  one id can denote two different cache objects. Kept as a named value so an
+   *  older file is diagnosed rather than silently misread. */
+  LCSLLM_BLOCK_ID_RAW = 0,
+  /** Positional encoding: the id is a hash folded over the whole path from the
+   *  root up to and including this block, so two blocks share an id only when
+   *  the block *and its entire prefix* are identical. The only legal value. */
+  LCSLLM_BLOCK_ID_PREFIX = 1,
 } lcsllm_block_id_kind_e;
 
 /******************************************************************************/
@@ -120,6 +127,22 @@ static inline int lcsllmReader_setup(reader_t *reader) {
   if (header->version != LCSLLM_CURR_VERSION) {
     ERROR("unsupported lcsllm version %llu, this build reads %d\n",
           (unsigned long long)header->version, LCSLLM_CURR_VERSION);
+    return 1;
+  }
+  /* Positional encoding is a guarantee of the format, not a property to be
+   * discovered by the consumer. A prefix cache keys on "this block reached
+   * through this exact prefix": if two distinct paths share an id, they collapse
+   * into one cache object, inflating the hit ratio and -- under a
+   * position-dependent cost model -- giving one object two different costs. A
+   * consumer cannot repair that after the fact, because the predecessor
+   * information is gone by then. So it is refused here. */
+  if (header->block_id_kind != LCSLLM_BLOCK_ID_PREFIX) {
+    ERROR(
+        "lcsllm trace has block_id_kind=%u, but the format requires %d "
+        "(positional encoding: an id is a hash over the whole path from the "
+        "root, so two blocks share an id only when the block and its prefix "
+        "are identical). Regenerate it with traceConvLLM.\n",
+        (unsigned)header->block_id_kind, LCSLLM_BLOCK_ID_PREFIX);
     return 1;
   }
 
