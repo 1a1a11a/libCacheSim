@@ -99,7 +99,8 @@ arithmetic works out exactly — with `H` hits, `M` misses, `S` self-evictions a
 self-evictions entirely rather than compensating for them.
 
 **Termination.** A request with more distinct blocks than the whole cache can
-never be resident, so it is skipped up front (counted as `n_req_skipped`). For
+never be resident, so it is skipped up front (counted as `n_req_skipped`, and
+warned about once — see below). For
 every other request the cache holds at least `needed` blocks Alpha does not
 want, and each self-eviction permanently removes a block from the resident Alpha
 set — there can be at most `H` of them before every subsequent victim counts.
@@ -303,6 +304,39 @@ exactly — LRU at 120k blocks on `prod_trace_w4_multiturn_concurrency_1024` giv
 
 ---
 
+## Requests larger than the cache
+
+Such a request cannot be served the way this simulator defines serving — every
+block resident at once — so it is skipped: it contributes nothing to either
+ratio, and it does not touch the cache, so it cannot evict anything on its way
+past. `n_req_skipped` reports how many.
+
+That is worth a warning, because it silently narrows what the reported ratios
+average over: at a cache size below the largest prompt in the trace, the hardest
+requests are exactly the ones dropped, which flatters every policy equally. The
+warning names the first offender and its block count, so the cache size can be
+compared against it:
+
+```
+[WARN] request 1 needs 4 distinct blocks, more than the whole cache (3);
+       skipping it and excluding it from every ratio. Further oversized
+       requests are skipped silently -- see n_req_skipped.
+```
+
+It fires **once per run**, via libCacheSim's `WARN_ONCE`. Once, because being
+oversized is a property of the cache size rather than of the individual request:
+choose a small enough cache and a whole class of requests qualifies, which at
+trace scale would bury every other line of output. The exact count is in the
+`RESULT` line either way. It is also once across all algorithms in a
+comma-separated `--algo` list, which is correct — the skipped set depends only on
+the trace and the cache size, so it is identical for every policy.
+
+If `n_req_skipped` is more than a rounding error, the run is answering a
+different question than intended; raise `--cache-size` or accept that the
+comparison excludes the largest prompts.
+
+---
+
 ## Which algorithms work
 
 39 algorithms -- everything `cachesim` offers except one. `--list-algos` prints
@@ -401,7 +435,7 @@ no longer guaranteeing that a served request was fully resident.
 
 | Field | Meaning |
 |---|---|
-| `n_req_skipped` | Requests with more distinct blocks than the cache; excluded from all ratios. |
+| `n_req_skipped` | Requests with more distinct blocks than the cache; excluded from all ratios, and left untouched (a skip evicts nothing). Warned about once per run. |
 | `n_eviction` | Objects evicted during allocation. |
 | `n_self_eviction` | …that the arriving request itself needed. High values mean the policy keeps throwing away what it is about to re-read; this is the cost the naive free-space-first approach pays invisibly. |
 | `n_unexpected_eviction` | Evictions during replay. **Must be 0.** Anything else means the allocation arithmetic and the algorithm disagree and the run is untrustworthy. |

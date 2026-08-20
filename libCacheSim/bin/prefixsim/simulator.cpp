@@ -7,6 +7,7 @@
 extern "C" {
 #include "dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/evictionAlgo.h"
+#include "libCacheSim/logging.h"
 #include "libCacheSim/macro.h"
 }
 
@@ -194,7 +195,21 @@ bool Simulator::serve(const Request &request, std::string &error) {
   // A request with more distinct blocks than the whole cache can never be
   // fully resident. Serving it would thrash the cache for nothing, so skip it
   // and keep it out of the ratios.
+  //
+  // Warned once rather than per request, because this is a property of the
+  // cache size and not of the individual request: pick a size below the largest
+  // prompt in the trace and it fires for a whole class of requests, which at
+  // trace scale would bury every other line of output. The exact count is
+  // reported as n_req_skipped in the RESULT line, so nothing is lost by staying
+  // quiet after the first -- but a silent skip is worth warning about at all,
+  // because it silently narrows what the reported ratios are averaged over.
   if (static_cast<int64_t>(alpha_.size()) > config_.cache_size_blocks) {
+    WARN_ONCE(
+        "request %ld needs %ld distinct blocks, more than the whole cache "
+        "(%ld); skipping it and excluding it from every ratio. Further "
+        "oversized requests are skipped silently -- see n_req_skipped.\n",
+        (long)request.index, (long)alpha_.size(),
+        (long)config_.cache_size_blocks);
     ++stats_.n_requests_skipped;
     return true;
   }

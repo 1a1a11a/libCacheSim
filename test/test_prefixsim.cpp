@@ -28,6 +28,9 @@ struct TestCase {
   int64_t expected_hits;
   int64_t expected_blocks;
   int64_t expected_self_evictions;
+  /// Requests too large to ever be fully resident. Defaulted, so the cases that
+  /// predate this check need no edit.
+  int64_t expected_skipped = 0;
 };
 
 std::vector<prefixsim::Request> build(const std::vector<std::vector<obj_id_t>> &raw) {
@@ -96,6 +99,12 @@ bool run_case(const TestCase &tc) {
                static_cast<long long>(tc.expected_self_evictions));
         ok = false;
       }
+      if (st.n_requests_skipped != tc.expected_skipped) {
+        printf("  [%s] FAIL: skipped %lld requests, expected %lld\n", tc.name,
+               static_cast<long long>(st.n_requests_skipped),
+               static_cast<long long>(tc.expected_skipped));
+        ok = false;
+      }
       // Phase 2 must reserve exactly enough room, always.
       if (st.n_unexpected_evictions != 0) {
         printf("  [%s] FAIL: %lld evictions during replay, expected 0\n", tc.name,
@@ -144,6 +153,15 @@ int main(void) {
       //     the unwanted block 5 one eviction sooner than in (c): 3 self-
       //     evictions instead of 4.
       {"d", 5, {{1, 2, 3, 4}, {5}, {1}, {1, 2, 3, 4, 6}}, 5, 11, 3},
+
+      // (e) Req2 wants 4 distinct blocks but the cache holds 3, so it can never
+      //     be fully resident and is skipped with a warning. Two things must
+      //     hold, and the third request is what proves the second: the skipped
+      //     request contributes nothing to the ratios (6 blocks counted, not
+      //     10), and it does not disturb the cache -- Req3 finds all of 1,2,3
+      //     still resident and hits 3 times. A skip that evicted on the way out
+      //     would show up here as a lower hit count.
+      {"e", 3, {{1, 2, 3}, {1, 2, 3, 4}, {1, 2, 3}}, 3, 6, 0, 1},
   };
 
   printf("prefixsim LRU sanity checks\n");
