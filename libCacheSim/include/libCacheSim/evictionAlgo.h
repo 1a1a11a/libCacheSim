@@ -171,6 +171,20 @@ cache_t *PartialNodeRandomComputeSmallQueue_init(
 cache_t *RandomComputeSmallQueue_init(const common_cache_params_t ccache_params,
                                   const char *cache_specific_params);
 
+/* Workload-Aware eviction, arXiv:2506.02634 (KVCache Cache in the Wild). */
+cache_t *WorkloadAware_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+
+/* AsymCache / MSA computational-aware evictor, arXiv:2606.02964. The two
+ * variants differ only in what their clock counts: block accesses, or the
+ * request's wall-clock timestamp. See AsymCache.cpp -- the choice decides
+ * whether the lifespan term does anything. */
+cache_t *AsymCache_init(const common_cache_params_t ccache_params,
+                        const char *cache_specific_params);
+
+cache_t *AsymCacheTime_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+
 cache_t *Random_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 

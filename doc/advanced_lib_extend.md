@@ -102,6 +102,48 @@ block occupies exactly one node; the tree counts violations and warns.
 
 ---
 
+## Add an algorithm that needs per-request metadata
+
+Some policies score a block by a property of the *request* it arrived with rather
+than by anything the block itself carries -- the wall-clock time of the arrival,
+or which class of traffic it belongs to. Two optional `cache_t` slots deliver
+that, and which one you want depends entirely on when you need the value:
+
+| slot | delivers | called |
+|---|---|---|
+| `set_request_ctx` | `cache_request_ctx_t` -- `timestamp`, `category`, `n_blocks` | *before* the caller makes room |
+| `record_request` | the object id sequence, in request order | *after* it makes room |
+
+Install `set_request_ctx` when eviction itself must consult the value, because
+`record_request` runs too late: during the eviction that makes room for request
+*N*, the last `record_request` was request *N-1*. Install `record_request` when
+you need position within the request, or the path structure. Many policies want
+both — see
+[WorkloadAware.cpp](/libCacheSim/cache/eviction/cpp/WorkloadAware.cpp), which
+takes the workload class from one and the prefix offset from the other.
+
+Two rules that are easy to get wrong:
+
+1. **Stay correct when neither hook fires.** Only a driver that knows request
+   boundaries calls them; `cachesim` cannot, and neither can the test suite. If
+   your only clock advances inside `record_request`, then under those drivers it
+   never advances, every score ties, and the policy silently decays to insertion
+   order. Give it a per-access fallback and flip a flag the first time a hook
+   fires, so the fallback stops as soon as the real thing arrives.
+2. **`record_request` names objects that are not resident yet.** It runs before
+   the inserts, so an id it reports may have no cache object behind it. Keep the
+   "known" set and the "resident" set distinct and only ever choose victims from
+   the latter; otherwise eviction eventually hands the caller an id the hash table
+   has never seen.
+
+One more, if your score can tie: resolve ties in a deterministic order that does
+not depend on a hash table's layout. Exponential scores reach *exactly* zero in
+double precision surprisingly often (`exp(-x)` underflows at x > ~745), so ties
+are not the rare event they look like -- `WorkloadAware` keeps an explicit
+first-seen list of workload classes for this reason.
+
+---
+
 ## Add new trace readers 
 libCacheSim supports [txt](/libCacheSim/traceReader/generalReader/txt.c), [csv](/libCacheSim/traceReader/generalReader/csv.c), and binary traces. We prefer binary traces because it allows libCacheSim to run faster, and the traces are more compact. 
 For binary traces, libCacheSim also supports zstd compressed traces without decompression.

@@ -94,6 +94,41 @@ typedef void (*cache_record_request_func_ptr)(cache_t *, const obj_id_t *,
                                               int64_t);
 
 /**
+ * Metadata of the request a simulator is about to serve, handed to the eviction
+ * algorithm *before* any space is made for it.
+ *
+ * Separate from cache_record_request_func_ptr on purpose, because the two carry
+ * different information at different times. record_request delivers the block
+ * path and runs *after* allocation, so an algorithm reading it during eviction
+ * would see the previous request's path. This struct delivers the properties an
+ * algorithm must know while it is choosing victims for *this* request:
+ *
+ *   - `timestamp`: wall-clock arrival time in seconds. An algorithm whose decay
+ *     function is defined on real time (AsymCacheTime) needs the current value
+ *     of "now" at eviction time; taking it from record_request would lag it by
+ *     one request. Kept as a double because request_t::clock_time truncates to
+ *     whole seconds, and a KV-block lifespan is O(100 s), so whole seconds
+ *     would collapse every block arriving in the same second into a tie.
+ *   - `category`: an opaque id for the request's workload class, which is what
+ *     a policy that fits a separate reuse-time distribution per class keys on
+ *     (WorkloadAware). Opaque because what makes two requests the same class is
+ *     a property of the trace, not of the cache: the simulator folds whatever
+ *     fields the trace carries into one id, and the algorithm only ever tests
+ *     ids for equality. 0 means "the trace said nothing".
+ *
+ * NULL for every algorithm that does not care; callers must check.
+ * Mirrors FreeBlockManager.set_request_context() in the vLLM prototype.
+ */
+typedef struct {
+  double timestamp;
+  uint64_t category;
+  int64_t n_blocks;
+} cache_request_ctx_t;
+
+typedef void (*cache_set_request_ctx_func_ptr)(cache_t *,
+                                               const cache_request_ctx_t *);
+
+/**
  * Optional: evict up to `n` objects in one call, returning how many actually
  * went. `n` is a HARD CAP -- a caller that asked for n has room for exactly n,
  * and evicting more silently throws away objects nothing asked to free.
@@ -163,6 +198,9 @@ struct cache {
 
   /* optional bulk eviction, NULL means "loop evict() instead" */
   cache_evict_n_func_ptr evict_n;
+
+  /* optional per-request metadata, NULL unless the algorithm needs it */
+  cache_set_request_ctx_func_ptr set_request_ctx;
 
   void *eviction_params;
 

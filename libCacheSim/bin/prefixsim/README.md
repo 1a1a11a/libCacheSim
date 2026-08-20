@@ -168,6 +168,38 @@ during replay:
 Only the simulator can supply this — it is the only component that knows where
 one request ends and the next begins.
 
+### The other hook — `set_request_ctx`
+
+`record_request` says *which blocks*; `set_request_ctx` says *what kind of
+request*, and it fires at the top of `serve()`, before phase 1:
+
+```c
+if (cache_->set_request_ctx != nullptr) {
+  cache_request_ctx_t ctx{request.timestamp, request.category, n_blocks};
+  cache_->set_request_ctx(cache_, &ctx);
+}
+```
+
+Two hooks rather than one, because the useful moment differs. `record_request`
+has to run after allocate (above); but a policy that decays by wall-clock time
+needs the *current* "now" while it is choosing victims, and a policy that fits a
+separate reuse-time distribution per workload class needs to know which class the
+arriving request belongs to. Delivering either through `record_request` would lag
+it by exactly one request. So the properties of the request travel ahead of it,
+and its block path follows behind — matching `set_request_context()` in the vLLM
+prototype's harness, which is placed the same way for the same reason.
+
+`ctx.timestamp` is a `double` in seconds. `request_t::clock_time` would do the job
+except that it truncates to whole seconds, and with a KV-block lifespan of order
+100 s that would collapse every block arriving within the same second into a tie.
+
+`ctx.category` is an opaque id, folded here from the trace's `type` and `turn`
+fields — the (request type, turn number) pair that arXiv:2506.02634 calls a
+request category. Opaque on purpose: what makes two requests the same class is a
+property of the trace, so the schema knowledge stays in the trace reader and the
+algorithm only ever tests ids for equality. `0` means the trace carried neither
+field, which a consumer must read as "one undifferentiated class".
+
 ### Phase 3 — access
 
 Replay Alpha through the eviction algorithm with ordinary `cache->get()` calls,
@@ -260,7 +292,7 @@ signal the qwen trace carries.
 
 ## Which algorithms work
 
-36 algorithms -- everything `cachesim` offers except one. `--list-algos` prints
+39 algorithms -- everything `cachesim` offers except one. `--list-algos` prints
 them. The list is verified rather than assumed: an entry is there because it
 completes a whole trace with the post-request residency check on.
 
@@ -284,6 +316,41 @@ Getting there needed two changes here and several in the algorithms themselves:
   unchanged; `cache_get_base` hides this by looping until it has room. Fixed in
   `S3FIFOd`, `QDLP`, `S3FIFOCompute`, `LIRS` and `CAR`, each verified to leave
   its cachesim miss ratio unchanged.
+
+### Published prefix-cache policies
+
+Three entries reimplement policies from the literature, so that a new idea can be
+measured against what has already been proposed rather than only against generic
+cache algorithms.
+
+| `--algo` | Paper | Signal |
+|---|---|---|
+| `workload_aware` | arXiv:2506.02634, *KVCache Cache in the Wild* (ATC'25) §4.2 | per-workload-class reuse probability, then prefix offset |
+| `asym_cache` | arXiv:2606.02964, *Multi-Segment Attention* §4.2-4.5 (the paper's MSA) | expected recompute cost, block-count clock |
+| `asym_cache_time` | same, with the paper's wall-clock lifespan | expected recompute cost, seconds clock |
+
+Both files carry the derivation in their header comment; two things are worth
+knowing before reading a number off them.
+
+**`asym_cache` needs a position-dependent cost model.** Its `dT_B` is the paper's
+Eq. 7, linear in the block's prefix position, which is exactly what
+`--cost-model qwen3coder30b_blksz_16` computes. Under `--cost-model uniform`,
+`dT_B` is constant and the policy reduces to LRU — the paper says so itself
+("if the recovery cost of all cache blocks is a uniform constant, our algorithm
+degrades to the conventional LRU strategy"), so that combination measures nothing.
+
+**The clock is the whole story for `asym_cache` vs `asym_cache_time`.** They differ
+in one line and separate by 8 points of compute savings at 500k blocks. The paper
+defines the reuse-time distribution on seconds and sets the lifespan `L` to its
+P99; fit `L` on a *block* clock instead and it lands tens of millions of blocks
+out, beyond any cache, so `tau/alpha ~ 0` for everything resident, `f_B` goes flat
+and the policy collapses to cost-weighted LRU. `asym_cache` is kept precisely
+because that collapse is worth being able to show.
+
+Both need per-request metadata, so they install `set_request_ctx` as well as
+`record_request`. Under a driver that calls neither — plain `cachesim`, the test
+suite — they fall back to a per-access clock and a single workload class, which is
+enough to keep them correct but throws away what makes them interesting.
 
 ### The one exclusion: admission control
 

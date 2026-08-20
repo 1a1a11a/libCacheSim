@@ -98,6 +98,10 @@ const AlgoEntry kAlgos[] = {
     {"belady_compute", BeladyCompute_init},
     {"random_compute", RandomCompute_init},
     {"random_compute_small_queue", RandomComputeSmallQueue_init},
+    // published prefix-cache policies
+    {"workload_aware", WorkloadAware_init},
+    {"asym_cache", AsymCache_init},
+    {"asym_cache_time", AsymCacheTime_init},
     // partial-node, prefix-tree aware
     {"partial_node_random_compute", PartialNodeRandomCompute_init},
     {"partial_node_random_freq", PartialNodeRandomFreq_init},
@@ -195,6 +199,20 @@ bool Simulator::serve(const Request &request, std::string &error) {
     return true;
   }
   ++stats_.n_requests;
+
+  // ------- hand the request's own properties to the algorithm -------
+  // Before phase 2, because this is what an algorithm needs while it is picking
+  // victims *for this request*: a time-decay policy's "now" and the workload
+  // class a newly admitted block belongs to. record_request (below) runs after
+  // allocation and would lag both by one request. Placement matches
+  // set_request_context() in the vLLM prototype's harness.
+  if (cache_->set_request_ctx != nullptr) {
+    cache_request_ctx_t ctx;
+    ctx.timestamp = request.timestamp;
+    ctx.category = request.category;
+    ctx.n_blocks = static_cast<int64_t>(n_pos);
+    cache_->set_request_ctx(cache_, &ctx);
+  }
 
   // ---------------- phase 1: match ----------------
   // Every statistic this simulator reports is computed here, against the cache

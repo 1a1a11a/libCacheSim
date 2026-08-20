@@ -38,6 +38,40 @@ const char *find_field(const char *line, const char *quoted_key) {
   return p;
 }
 
+/// Fold the trace's request-category fields into one opaque id.
+///
+/// arXiv:2506.02634's category is the (request type, turn number) pair, and the
+/// freeinference/qwen traces carry both as `type` (a short string) and `turn`
+/// (an integer). A policy only ever tests categories for equality, so the pair
+/// is hashed rather than kept: that keeps the trace-specific parsing here and
+/// the algorithm free of any trace schema.
+///
+/// Returns 0 when neither field is present, which every consumer reads as "this
+/// trace has one undifferentiated class".
+uint64_t request_category(const char *line) {
+  uint64_t h = 0;
+  bool any = false;
+
+  const char *type = find_field(line, "\"type\"");
+  if (type != nullptr && *type == '"') {
+    ++type;  // step over the opening quote
+    for (; *type != '\0' && *type != '"'; ++type) {
+      h = hash_combine_u64(h, static_cast<uint64_t>(*type));
+    }
+    any = true;
+  }
+
+  const char *turn = find_field(line, "\"turn\"");
+  if (turn != nullptr && (*turn == '-' || (*turn >= '0' && *turn <= '9'))) {
+    h = hash_combine_u64(h, static_cast<uint64_t>(strtoll(turn, nullptr, 10)));
+    any = true;
+  }
+
+  // 0 is reserved for "no category", so never return it for a real pair.
+  if (!any) return 0;
+  return h == 0 ? 1 : h;
+}
+
 /// JSONL with one request per line and a `hash_ids` array of block ids.
 class QwenJsonlReader : public TraceReader {
  public:
@@ -58,6 +92,8 @@ class QwenJsonlReader : public TraceReader {
 
       const char *ts = find_field(line_.c_str(), "\"timestamp\"");
       if (ts != nullptr) out.timestamp = strtod(ts, nullptr);
+
+      out.category = request_category(line_.c_str());
 
       uint64_t rolling = 0;
       bool first = true;

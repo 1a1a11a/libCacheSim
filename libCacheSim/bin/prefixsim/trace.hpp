@@ -29,6 +29,13 @@ struct Request {
   double timestamp = 0.0;        ///< Arrival time in seconds as recorded in the trace.
   std::vector<obj_id_t> blocks;  ///< Block identities in prefix order (root first).
 
+  /// Opaque id of the request's workload class, for policies that fit a
+  /// separate reuse-time distribution per class. Folded from the trace's
+  /// `type` and `turn` fields -- the (request type, turn number) pair that
+  /// arXiv:2506.02634 calls a request category. 0 when the trace carries
+  /// neither field, which every such policy must treat as "one class".
+  uint64_t category = 0;
+
   /// Logical next-access virtual time of each block, filled by
   /// annotate_next_access(). Indexed in lockstep with `blocks`.
   /// See README.md "Next-access annotation" for why this uses forward order

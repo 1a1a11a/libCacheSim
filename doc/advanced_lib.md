@@ -132,6 +132,49 @@ against it, and the subsequent inserts mark the objects resident. `prefixsim`
 does exactly this between its allocate and access phases.
 
 
+#### Cache set request context
+Optional. Hands an algorithm the *properties* of the request it is about to
+serve, before any space is made for it.
+
+```c
+if (cache->set_request_ctx != NULL) {
+  cache_request_ctx_t ctx = {.timestamp = ts, .category = cat, .n_blocks = n};
+  cache->set_request_ctx(cache, &ctx);
+}
+```
+
+This is the companion to `record_request`, and the two differ in *when* they run,
+which is the whole reason both exist. `record_request` delivers the object
+sequence and runs **after** allocation, so a policy reading it during eviction
+would see the previous request's data. `set_request_ctx` runs **before**
+allocation, so it delivers what a policy needs while it is choosing victims for
+*this* request:
+
+* `timestamp` -- arrival time in seconds. A policy whose decay function is defined
+  on real time needs the current "now" at eviction time; taking it from
+  `record_request` lags it by one request. It is a `double` because
+  `request_t::clock_time` truncates to whole seconds, and a KV-block lifespan is
+  of order 100 s, so whole seconds would tie every block arriving in the same
+  second. `AsymCacheTime` is the motivating case.
+* `category` -- an opaque id for the request's workload class, which is what a
+  policy that fits a separate reuse-time distribution per class keys on. Opaque
+  because what makes two requests the same class is a property of the *trace*,
+  not of the cache: the caller folds whatever fields the trace carries into one
+  id, and the algorithm only ever tests ids for equality. `0` means "the trace
+  said nothing". `WorkloadAware` is the motivating case.
+* `n_blocks` -- how many objects the request will touch.
+
+`NULL` unless the algorithm needs it, so **callers must check**. `prefixsim`
+calls it at the top of each request, before its match and allocate phases, which
+mirrors `set_request_context()` in the vLLM prototype's harness.
+
+An algorithm that installs this hook should still work without it, because a
+caller driving the cache one object at a time (plain `cachesim`, the test suite)
+never calls it. Both `WorkloadAware` and `AsymCache` fall back to a single
+undifferentiated class and their own internal clock in that case -- degraded, but
+not broken.
+
+
 #### Cache evict n
 Optional. Evict up to `n` objects in one call, returning how many actually went.
 
