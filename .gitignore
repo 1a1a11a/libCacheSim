@@ -22,3 +22,8 @@ sftp-config.json
 .lint-logs/
 # Python wheels
 *.whl
+# Python virtual environments
+venv/
+.venv/
+# Doxygen build directories
+docs/xml

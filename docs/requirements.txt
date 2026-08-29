@@ -1,0 +1,4 @@
+Sphinx==8.2.3
+sphinx-rtd-theme==3.0.2
+sphinx-autobuild==2024.10.3
+breathe==4.36.0
