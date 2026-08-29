@@ -103,6 +103,12 @@ const AlgoEntry kAlgos[] = {
     {"workload_aware", WorkloadAware_init},
     {"asym_cache", AsymCache_init},
     {"asym_cache_time", AsymCacheTime_init},
+    // session-level: the victim is a conversation, not a block
+    {"session_lru", SessionLRU_init},
+    {"session_belady", SessionBelady_init},
+    {"session_arc", SessionARC_init},
+    {"session_s3fifo", SessionS3FIFO_init},
+    {"session_random_compute", SessionRandomCompute_init},
     // partial-node, prefix-tree aware
     {"partial_node_random_compute", PartialNodeRandomCompute_init},
     {"partial_node_random_freq", PartialNodeRandomFreq_init},
@@ -226,6 +232,8 @@ bool Simulator::serve(const Request &request, std::string &error) {
     ctx.timestamp = request.timestamp;
     ctx.category = request.category;
     ctx.n_blocks = static_cast<int64_t>(n_pos);
+    ctx.session = request.session;
+    ctx.session_next_access = request.session_next_access;
     cache_->set_request_ctx(cache_, &ctx);
   }
 

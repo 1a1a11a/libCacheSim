@@ -123,6 +123,13 @@ typedef struct {
   double timestamp;
   uint64_t category;
   int64_t n_blocks;
+  /** Opaque id of the conversation this request belongs to; 0 if unknown. A
+   *  session-level eviction policy groups objects by this, so it needs it
+   *  before it is asked to make room. */
+  uint64_t session;
+  /** Index of the next request from the same session, INT64_MAX if none. The
+   *  session-granular analogue of request_t::next_access_vtime, for an oracle. */
+  int64_t session_next_access;
 } cache_request_ctx_t;
 
 typedef void (*cache_set_request_ctx_func_ptr)(cache_t *,

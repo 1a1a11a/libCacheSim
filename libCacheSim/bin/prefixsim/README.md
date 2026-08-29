@@ -339,8 +339,8 @@ comparison excludes the largest prompts.
 
 ## Which algorithms work
 
-39 algorithms -- everything `cachesim` offers except one. `--list-algos` prints
-them. The list is verified rather than assumed: an entry is there because it
+44 algorithms -- everything `cachesim` offers except one, plus five
+prefixsim-only session-level policies. `--list-algos` prints them. The list is verified rather than assumed: an entry is there because it
 completes a whole trace with the post-request residency check on.
 
 Getting there needed two changes here and several in the algorithms themselves:
@@ -363,6 +363,16 @@ Getting there needed two changes here and several in the algorithms themselves:
   unchanged; `cache_get_base` hides this by looping until it has room. Fixed in
   `S3FIFOd`, `QDLP`, `S3FIFOCompute`, `LIRS` and `CAR`, each verified to leave
   its cachesim miss ratio unchanged.
+
+**`lirs` in-flight protection (added 2026-08).** LIRS's 1%-of-cache resident-HIR
+cap can evict a block of the request being served (its deepest block enters as the
+oldest HIR under the deepest-first replay), failing the residency check — a real
+engine never evicts an in-flight block. `LIRS.c` now pins the current request's
+blocks against its own eviction: `record_request` marks them before replay and
+`set_request_ctx` clears them at the next serve, so `evictHIR` skips a block only
+while it is in-flight. It is a no-op everywhere LIRS already passed (verified
+bit-identical) and under `cachesim` (hooks never called), and it recovers the two
+freeinference caches (24932, 26739) that previously aborted.
 
 ### Published prefix-cache policies
 
@@ -398,6 +408,41 @@ Both need per-request metadata, so they install `set_request_ctx` as well as
 `record_request`. Under a driver that calls neither — plain `cachesim`, the test
 suite — they fall back to a per-access clock and a single workload class, which is
 enough to keep them correct but throws away what makes them interesting.
+
+### Session-level eviction
+
+Five policies evict a **conversation** rather than a block: `session_lru`,
+`session_s3fifo`, `session_arc`, `session_belady`, `session_random_compute`. They
+share all the machinery in `cache/eviction/cpp/sessionCache.cpp` and differ only
+in which session they pick.
+
+A block is not owned by one session — on the July trace 25% of unique blocks
+appear in more than one, covering 34% of accesses — so "evict a session, free its
+blocks" would tear blocks out from under live conversations. Instead each session
+*claims* the blocks of its current turn, a block is resident while at least one
+claim stands, and evicting a session frees only the blocks whose claim count
+reaches zero. A session's evictable size is therefore its private set, which
+moves as other sessions fork off it and leave.
+
+The claim diff also does something a block-level policy cannot. A turn re-claims
+its whole new path and then releases the old one, in that order, so a block held
+by both goes +1 then −1 and is never freed and re-admitted. When the 256k-token
+context slides — rare, but at the 99.9th percentile it drops 6,891 blocks in one
+turn — every block left behind is released at once and becomes evictable
+immediately, instead of waiting to age out.
+
+Blocks stay in the ordinary hash table, so `cache->find(block_id, false)` still
+answers residency and the phase-1 probe, verify pass and `--dump-holes` are
+untouched. Only victim *selection* is session-granular.
+
+These need `set_request_ctx` to supply a session id, so they are registered for
+prefixsim only. Under `cachesim` every request would become its own session; the
+policies warn once and carry on rather than pretending otherwise.
+
+`session_belady` is an oracle at session granularity: it evicts the session whose
+next turn is furthest away, using `session_next_access` from the trace. It is not
+the same as block-level `belady` and will not match it — the two optimise
+different things.
 
 ### The one exclusion: admission control
 
@@ -528,6 +573,7 @@ request that must be resident together".
   them so they cannot be evicted mid-service. Here they can be, which is what
   `n_self_eviction` counts; the statistics are unaffected because they are taken
   in phase 1, but the extra churn is real. Pinning would be the natural next
-  refinement.
+  refinement — done only for `lirs`, where it was load-bearing (see the `lirs`
+  in-flight protection note under *Which algorithms work*).
 - **The whole trace is held in memory** (block ids plus next-access times, 16
   bytes per block access) so next-access annotation can be a single pass.

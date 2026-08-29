@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <climits>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -28,6 +29,16 @@ struct Request {
   int64_t index = 0;             ///< 0-based ordinal of this request in the trace.
   double timestamp = 0.0;        ///< Arrival time in seconds as recorded in the trace.
   std::vector<obj_id_t> blocks;  ///< Block identities in prefix order (root first).
+
+  /// Opaque id of the conversation this request belongs to, hashed from the
+  /// trace's `session_id`. 0 when the trace has no session field. Session-level
+  /// eviction policies group blocks by this.
+  uint64_t session = 0;
+
+  /// Index of the next request from the SAME session, or INT64_MAX if this is
+  /// the session's last. The session-level analogue of next_access_vtime, and
+  /// the only thing a session-granular Belady oracle needs.
+  int64_t session_next_access = INT64_MAX;
 
   /// Opaque id of the request's workload class, for policies that fit a
   /// separate reuse-time distribution per class. Folded from the trace's
@@ -83,5 +94,8 @@ bool load_trace(TraceReader &reader, std::vector<Request> &out, std::string &err
 /// and so on. A block whose id never recurs gets MAX_REUSE_DISTANCE, matching
 /// what libCacheSim's own trace readers use for "no next access".
 void annotate_next_access(std::vector<Request> &requests);
+
+/// Fill session_next_access for every request, in one reverse pass.
+void annotate_session_next_access(std::vector<Request> &requests);
 
 }  // namespace prefixsim

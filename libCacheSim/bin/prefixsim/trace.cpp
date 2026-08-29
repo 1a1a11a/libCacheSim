@@ -38,6 +38,24 @@ const char *find_field(const char *line, const char *quoted_key) {
   return p;
 }
 
+/// Hash the trace's `session_id` string into an opaque conversation id.
+///
+/// Hashed rather than interned because a policy only ever tests session ids for
+/// equality, and the traces carry ~18k distinct ids per 50k requests -- keeping
+/// the strings would cost more than the ids are worth. 0 is reserved for "the
+/// trace has no session_id", which a session-level policy must treat as "every
+/// request is its own session".
+uint64_t request_session(const char *line) {
+  const char *p = find_field(line, "\"session_id\"");
+  if (p == nullptr || *p != '"') return 0;
+  ++p;  // step over the opening quote
+  uint64_t h = 0;
+  for (; *p != '\0' && *p != '"'; ++p) {
+    h = hash_combine_u64(h, static_cast<uint64_t>(*p));
+  }
+  return h == 0 ? 1 : h;
+}
+
 /// Fold the trace's request-category fields into one opaque id.
 ///
 /// arXiv:2506.02634's category is the (request type, turn number) pair, and the
@@ -94,6 +112,7 @@ class QwenJsonlReader : public TraceReader {
       if (ts != nullptr) out.timestamp = strtod(ts, nullptr);
 
       out.category = request_category(line_.c_str());
+      out.session = request_session(line_.c_str());
 
       uint64_t rolling = 0;
       bool first = true;
@@ -174,6 +193,7 @@ bool load_trace(TraceReader &reader, std::vector<Request> &out, std::string &err
     return false;
   }
   annotate_next_access(out);
+  annotate_session_next_access(out);
   return true;
 }
 
@@ -201,6 +221,19 @@ void annotate_next_access(std::vector<Request> &requests) {
       next_seen[id] = vtime;
       --vtime;
     }
+  }
+}
+
+void annotate_session_next_access(std::vector<Request> &requests) {
+  // One reverse pass, same trick as annotate_next_access but keyed on the
+  // session rather than the block: walking backwards, the most recent index at
+  // which a session was seen is that session's *next* use.
+  std::unordered_map<uint64_t, int64_t> next_seen;
+  for (int64_t i = static_cast<int64_t>(requests.size()) - 1; i >= 0; --i) {
+    Request &r = requests[static_cast<size_t>(i)];
+    auto it = next_seen.find(r.session);
+    r.session_next_access = it == next_seen.end() ? INT64_MAX : it->second;
+    next_seen[r.session] = i;
   }
 }
 

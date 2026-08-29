@@ -185,6 +185,20 @@ cache_t *AsymCache_init(const common_cache_params_t ccache_params,
 cache_t *AsymCacheTime_init(const common_cache_params_t ccache_params,
                             const char *cache_specific_params);
 
+/* Session-level eviction: the victim is a conversation, not a block. These need
+ * per-request session metadata, so they only do anything under a driver that
+ * knows request boundaries -- prefixsim registers them, cachesim does not. */
+cache_t *SessionLRU_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+cache_t *SessionBelady_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+cache_t *SessionARC_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+cache_t *SessionS3FIFO_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+cache_t *SessionRandomCompute_init(const common_cache_params_t ccache_params,
+                                   const char *cache_specific_params);
+
 cache_t *Random_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
