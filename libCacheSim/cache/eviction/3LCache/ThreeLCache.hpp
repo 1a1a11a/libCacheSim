@@ -391,7 +391,14 @@ class ThreeLCacheCache : public webcachesim::Cache {
   void setSize(const uint64_t &cs) override { _cacheSize = cs; }
 
   bool exist(const int64_t &key) override {
-    return key_map.find(key) != key_map.end();
+    // Residency check must be in-cache only: key_map also holds out-of-cache
+    // (ghost) metadata, so plain membership over-reports hits. list_idx==0 is the
+    // in-cache list (matches the n_hit++ test in ThreeLCache.cpp), nonzero is a
+    // ghost. Without this, prefixsim's phase-1 probe counts ghosts as hits and
+    // the reported hit ratio exceeds Belady (impossible). exist() has no other
+    // caller, so this only affects the residency probe.
+    auto it = key_map.find(key);
+    return it != key_map.end() && it->second.list_idx == 0;
   }
 
   pair<uint64_t, int32_t> evict_predobj();

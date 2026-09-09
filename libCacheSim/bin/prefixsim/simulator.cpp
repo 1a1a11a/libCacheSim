@@ -92,6 +92,13 @@ const AlgoEntry kAlgos[] = {
     {"qdlp", QDLP_init},
     {"s3fifo_compute", S3FIFOCompute_init},
     {"car", CAR_init},
+    // learned (LightGBM; built only when ENABLE_LRB / ENABLE_3L_CACHE are set)
+#ifdef ENABLE_LRB
+    {"lrb", LRB_init},
+#endif
+#ifdef ENABLE_3L_CACHE
+    {"3lcache", ThreeLCache_init},
+#endif
     // cost-aware
     {"gdsf", GDSF_init},
     {"gdsf_compute", GDSF_compute_init},

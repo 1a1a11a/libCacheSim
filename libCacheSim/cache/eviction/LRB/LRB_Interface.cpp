@@ -186,7 +186,10 @@ static cache_obj_t *LRB_find(cache_t *cache, const request_t *req,
   auto *lrb = static_cast<lrb::LRBCache *>(params->LRB_cache);
 
   if (!update_cache) {
-    bool is_hit = lrb->exist(static_cast<int64_t>(req->obj_id));
+    // Read-only residency probe (prefixsim). LRBCache does not override the base
+    // exist() (it throws); has() is its real in-cache lookup -- it checks key_map
+    // and returns true only for a resident (list_idx==0) object.
+    bool is_hit = lrb->has(static_cast<uint64_t>(req->obj_id));
     return is_hit ? reinterpret_cast<cache_obj_t *>(0x1) : NULL;
   }
 
