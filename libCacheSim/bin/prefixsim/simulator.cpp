@@ -56,6 +56,13 @@ uint16_t hashpower_for(int64_t cache_size_blocks) {
 struct AlgoEntry {
   const char *name;
   cache_t *(*init)(const common_cache_params_t, const char *);
+  /// Whether this algorithm may be run with phase-2 pinning (see
+  /// SimulatorConfig::pin_request_blocks). Pinning makes an eviction skip the
+  /// victim it would normally take, which is only sound for an algorithm that
+  /// asks its queues *which* object went instead of assuming it was the tail.
+  /// Set from running the trace with pinning on, never assumed; the two
+  /// algorithms that fail say why at their entry below.
+  bool pin_safe;
 };
 
 // Everything cachesim offers that prefixsim can drive. The list is verified,
@@ -64,64 +71,78 @@ struct AlgoEntry {
 // work yet, not because of policy -- see README "Which algorithms work".
 const AlgoEntry kAlgos[] = {
     // single-queue
-    {"lru", LRU_init},
-    {"fifo", FIFO_init},
-    {"clock", Clock_init},
-    {"sieve", Sieve_init},
-    {"lfu", LFU_init},
-    {"lfuda", LFUDA_init},
-    {"mru", MRU_init},
-    {"size", Size_init},
-    {"random", Random_init},
-    {"randomtwo", RandomTwo_init},
-    {"randomlru", RandomLRU_init},
-    {"lru-prob", LRU_Prob_init},
-    {"fifo-merge", FIFO_Merge_init},
-    {"hyperbolic", Hyperbolic_init},
+    {"lru", LRU_init, true},
+    {"fifo", FIFO_init, true},
+    {"clock", Clock_init, true},
+    {"sieve", Sieve_init, true},
+    {"lfu", LFU_init, true},
+    {"lfuda", LFUDA_init, true},
+    {"mru", MRU_init, true},
+    {"size", Size_init, true},
+    {"random", Random_init, true},
+    {"randomtwo", RandomTwo_init, true},
+    {"randomlru", RandomLRU_init, true},
+    {"lru-prob", LRU_Prob_init, true},
+    {"fifo-merge", FIFO_Merge_init, true},
+    {"hyperbolic", Hyperbolic_init, true},
     // multi-queue / adaptive
-    {"arc", ARC_init},
-    {"twoq", TwoQ_init},
-    {"lirs", LIRS_init},
-    {"slru", SLRU_init},
-    {"lecar", LeCaR_init},
-    {"cacheus", Cacheus_init},
-    {"wtinylfu", WTinyLFU_init},
-    {"s3fifo", S3FIFO_init},
-    {"lhd", LHD_init},
-    {"s3fifod", S3FIFOd_init},
-    {"qdlp", QDLP_init},
-    {"s3fifo_compute", S3FIFOCompute_init},
-    {"car", CAR_init},
+    {"arc", ARC_init, true},
+    {"twoq", TwoQ_init, true},
+    // Unsafe: LIRS_prune() reads its stack's tail directly and then calls
+    // evict() expecting exactly that object to go, so a skipped victim
+    // desynchronises the two (segfault at 16k on fi-new). It has its own
+    // in-flight protection (lirs_is_inflight) and does not need this one.
+    {"lirs", LIRS_init, false},
+    {"slru", SLRU_init, true},
+    {"lecar", LeCaR_init, true},
+    // Unsafe: Cacheus caches a victim from to_evict() and evicts through a
+    // different path, so a skipped victim leaves its resident set inconsistent
+    // (the phase-3 residency check fails at 16k on fi-new).
+    {"cacheus", Cacheus_init, false},
+    {"wtinylfu", WTinyLFU_init, true},
+    {"s3fifo", S3FIFO_init, true},
+    {"lhd", LHD_init, true},
+    {"s3fifod", S3FIFOd_init, true},
+    {"qdlp", QDLP_init, true},
+    {"s3fifo_compute", S3FIFOCompute_init, true},
+    {"car", CAR_init, true},
     // learned (LightGBM; built only when ENABLE_LRB / ENABLE_3L_CACHE are set)
 #ifdef ENABLE_LRB
-    {"lrb", LRB_init},
+    {"lrb", LRB_init, true},
 #endif
 #ifdef ENABLE_3L_CACHE
-    {"3lcache", ThreeLCache_init},
+    {"3lcache", ThreeLCache_init, true},
 #endif
     // cost-aware
-    {"gdsf", GDSF_init},
-    {"gdsf_compute", GDSF_compute_init},
-    {"belady", Belady_init},
-    {"belady_compute", BeladyCompute_init},
-    {"random_compute", RandomCompute_init},
-    {"random_compute_small_queue", RandomComputeSmallQueue_init},
+    {"gdsf", GDSF_init, true},
+    {"gdsf_compute", GDSF_compute_init, true},
+    {"belady", Belady_init, true},
+    {"belady_compute", BeladyCompute_init, true},
+    {"random_compute", RandomCompute_init, true},
+    {"random_compute_small_queue", RandomComputeSmallQueue_init, true},
     // published prefix-cache policies
-    {"workload_aware", WorkloadAware_init},
-    {"asym_cache", AsymCache_init},
-    {"asym_cache_time", AsymCacheTime_init},
+    {"workload_aware", WorkloadAware_init, true},
+    {"asym_cache", AsymCache_init, true},
+    {"asym_cache_time", AsymCacheTime_init, true},
     // session-level: the victim is a conversation, not a block
-    {"session_lru", SessionLRU_init},
-    {"session_belady", SessionBelady_init},
-    {"session_arc", SessionARC_init},
-    {"session_s3fifo", SessionS3FIFO_init},
-    {"session_random_compute", SessionRandomCompute_init},
+    {"session_lru", SessionLRU_init, true},
+    {"session_belady", SessionBelady_init, true},
+    {"session_arc", SessionARC_init, true},
+    {"session_s3fifo", SessionS3FIFO_init, true},
+    {"session_random_compute", SessionRandomCompute_init, true},
     // partial-node, prefix-tree aware
-    {"partial_node_random_compute", PartialNodeRandomCompute_init},
-    {"partial_node_random_freq", PartialNodeRandomFreq_init},
+    {"partial_node_random_compute", PartialNodeRandomCompute_init, true},
+    {"partial_node_random_freq", PartialNodeRandomFreq_init, true},
     {"partial_node_random_compute_small_queue",
-     PartialNodeRandomComputeSmallQueue_init},
+     PartialNodeRandomComputeSmallQueue_init, true},
 };
+
+/// Pin predicate handed to libCacheSim for the duration of phase 2. `ctx` is
+/// the arriving request's block set (Simulator::alpha_). extern "C" because it
+/// is stored in a C function pointer declared inside libCacheSim's extern "C".
+extern "C" bool alpha_is_pinned(void *ctx, obj_id_t id) {
+  return static_cast<const std::unordered_set<obj_id_t> *>(ctx)->count(id) != 0;
+}
 
 }  // namespace
 
@@ -271,7 +292,18 @@ bool Simulator::serve(const Request &request, std::string &error) {
   const int64_t occupied = cache_->get_occupied_byte(cache_);
   const int64_t free_slots = config_.cache_size_blocks - occupied;
   const int64_t needed = static_cast<int64_t>(missing.size()) - free_slots;
-  if (needed > 0 && !allocate(request, needed, error)) return false;
+  if (needed > 0) {
+    // Pins cover phase 2 only. Phase 3 must not evict at all (phase 2 reserved
+    // exactly enough room, and n_unexpected_evictions asserts it), so leaving
+    // them installed there would hide a real accounting bug rather than
+    // prevent one.
+    if (config_.pin_request_blocks) {
+      cache_set_pin_predicate(alpha_is_pinned, &alpha_);
+    }
+    const bool ok = allocate(request, needed, error);
+    cache_set_pin_predicate(nullptr, nullptr);
+    if (!ok) return false;
+  }
 
   // ------- hand the request's block path to the algorithm -------
   // Between making room and replaying: the algorithm must know the path before
@@ -482,6 +514,13 @@ cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_b
     }
   }
   return nullptr;
+}
+
+bool algorithm_supports_pinning(const std::string &algorithm) {
+  for (const AlgoEntry &entry : kAlgos) {
+    if (strcasecmp(algorithm.c_str(), entry.name) == 0) return entry.pin_safe;
+  }
+  return false;
 }
 
 const std::vector<std::string> &supported_algorithms() {

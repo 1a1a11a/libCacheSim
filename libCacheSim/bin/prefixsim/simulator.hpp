@@ -71,11 +71,25 @@ struct SimulatorConfig {
   /// the main hash table (the S3FIFO family, for instance), which would
   /// silently invalidate the phase-1 match.
   bool verify = true;
+  /// Make the arriving request's own blocks unevictable while phase 2 frees
+  /// space for it, the way a real engine ref-counts the blocks of a running
+  /// request. Without it the algorithm may evict a block this request already
+  /// holds; the block still counts as a hit (phase 1 matched it before any
+  /// eviction), but it re-enters through insert() and so loses its place in
+  /// the policy's structure -- an S3FIFO main-queue block, for instance, comes
+  /// back in the small queue because a main-queue eviction writes no ghost
+  /// entry. Off reproduces the pre-2026-09 numbers.
+  bool pin_request_blocks = true;
   /// When set, append one line per served request describing that request's
   /// holes -- the contiguous runs of blocks it had to recompute. Empty
   /// disables it. See Simulator::dump_holes.
   std::string dump_holes_path;
 };
+
+/// Whether phase-2 pinning (SimulatorConfig::pin_request_blocks) is sound for
+/// this algorithm. False for an unknown name, and for the algorithms that
+/// assume an eviction removes the exact object they last looked at.
+bool algorithm_supports_pinning(const std::string &algorithm);
 
 /// Runs one eviction algorithm over an in-memory trace.
 class Simulator {

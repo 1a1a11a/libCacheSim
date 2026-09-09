@@ -472,6 +472,68 @@ static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
   return head;
 }
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                      eviction pinning                         ****
+// ****                                                               ****
+// ***********************************************************************
+/**
+ * A whole-library switch that makes a set of objects temporarily
+ * unevictable. It exists for prefixsim, which serves a *multi-block* request:
+ * a real LLM engine ref-counts the blocks of the request it is running, so
+ * they cannot be chosen as victims while room is being made for that same
+ * request's missing blocks.
+ *
+ * Without it, an algorithm freely evicts a block the arriving request already
+ * holds ("self-eviction"). prefixsim's own accounting is unaffected -- the
+ * block was matched read-only before allocation, so it still counts as a hit
+ * -- but the *algorithm's* state is corrupted: the block leaves and comes back
+ * through insert(), which for a multi-queue policy means it re-enters at the
+ * probationary end. S3FIFO is the clearest case: a main-queue eviction writes
+ * no ghost entry, so the block is re-admitted into the small queue and loses
+ * the promotion it had earned.
+ *
+ * Nothing sets a predicate unless prefixsim asks for one, so cachesim and
+ * every library user keep the unpinned behaviour exactly.
+ */
+typedef bool (*cache_pin_pred_f)(void *ctx, obj_id_t obj_id);
+
+/** Install (pred=NULL to remove) the predicate consulted by victim selection. */
+void cache_set_pin_predicate(cache_pin_pred_f pred, void *ctx);
+
+/* Definitions live in cache.c; declared here so the check can inline. */
+extern cache_pin_pred_f g_cache_pin_pred;
+extern void *g_cache_pin_ctx;
+
+/** Whether any pinning is in force. Lets callers keep a pin-free fast path. */
+static inline bool cache_pinning_active(void) { return g_cache_pin_pred != NULL; }
+
+static inline bool cache_obj_is_pinned(const cache_obj_t *obj) {
+  return g_cache_pin_pred != NULL && g_cache_pin_pred(g_cache_pin_ctx, obj->obj_id);
+}
+
+/**
+ * The first object at or before `candidate` -- walking towards the head, i.e.
+ * from the best victim to the next-best -- that is not pinned.
+ *
+ * Pinning is deliberately *best-effort*: if every object in the list is pinned
+ * this returns `candidate` unchanged rather than NULL, so an eviction always
+ * frees something. That keeps the change to a single expression per algorithm
+ * -- no caller has to learn a new "this queue has nothing to give" case, and
+ * more importantly nothing can deadlock. The ghost queues of the composite
+ * policies (S3FIFO's ghost_fifo, TwoQ's Aout, ARC's B1/B2, LIRS's LRU_nh, ...)
+ * are themselves FIFO/LRU instances, so they see the same pin set; a ghost that
+ * refused to evict would hang cache_get_base()'s "evict until there is room"
+ * loop. A pinned block evicted because its whole queue was pinned still shows
+ * up in prefixsim's n_self_eviction, so the residue stays measurable.
+ */
+static inline cache_obj_t *cache_skip_pinned(cache_obj_t *candidate) {
+  if (likely(g_cache_pin_pred == NULL)) return candidate;
+  cache_obj_t *obj = candidate;
+  while (obj != NULL && cache_obj_is_pinned(obj)) obj = obj->queue.prev;
+  return obj != NULL ? obj : candidate;
+}
+
 static inline void free_cache_obj(cache_obj_t *cache_obj) {
   my_free(sizeof(cache_obj_t), cache_obj);
 }

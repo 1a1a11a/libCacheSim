@@ -33,6 +33,7 @@ struct Options {
   prefixsim::CostModel cost_model = prefixsim::CostModel::kUniform;
   prefixsim::BlockIdMode block_id = prefixsim::BlockIdMode::kPrefixHash;
   bool verify = true;
+  bool pin_request_blocks = true;
 };
 
 void print_usage(const char *program) {
@@ -52,6 +53,11 @@ void print_usage(const char *program) {
   printf("                          qwen3coder30b_blksz_16 (default: uniform).\n");
   printf("  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
   printf("  --no-verify             Skip the post-request residency check.\n");
+  printf("  --no-pin                Let phase 2 evict blocks the arriving request\n");
+  printf("                          already holds (see n_self_eviction). Reproduces\n");
+  printf("                          the pre-pinning numbers; not the real-engine\n");
+  printf("                          behaviour, where a running request's blocks are\n");
+  printf("                          ref-counted and cannot be evicted.\n");
   printf("  --dump-holes <dir>      Per algorithm, write one line per request listing\n");
   printf("                          its recompute holes, for evaluate/analyze_holes.py.\n");
   printf("  --output <path>         Also append the RESULT lines to this file.\n");
@@ -138,6 +144,10 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
     }
     if (strcmp(arg, "--no-verify") == 0) {
       opts.verify = false;
+      continue;
+    }
+    if (strcmp(arg, "--no-pin") == 0) {
+      opts.pin_request_blocks = false;
       continue;
     }
 
@@ -325,6 +335,13 @@ int main(int argc, char **argv) {
     config.cache_size_blocks = opts.cache_size;
     config.cost_model = opts.cost_model;
     config.verify = opts.verify;
+    config.pin_request_blocks =
+        opts.pin_request_blocks && prefixsim::algorithm_supports_pinning(algorithm);
+    if (opts.pin_request_blocks && !config.pin_request_blocks) {
+      WARN("%s does not support pinning the arriving request's blocks; it runs "
+           "with self-eviction as before (see n_self_eviction).\n",
+           algorithm.c_str());
+    }
     config.dump_holes_path = holes_path;
 
     {

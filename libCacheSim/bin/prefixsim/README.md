@@ -98,6 +98,49 @@ arithmetic works out exactly — with `H` hits, `M` misses, `S` self-evictions a
 `P = M - (cache_size - occupied)`. This is why the loop can ignore
 self-evictions entirely rather than compensating for them.
 
+**Pinning (`--no-pin` to disable).** Counting a self-eviction as "no progress"
+keeps the *arithmetic* right, but the eviction still happened, and the algorithm
+is left holding a corrupted picture of its own cache. The block was matched in
+phase 1, so prefixsim still scores it as a hit; phase 3 then re-inserts it
+through `insert()`, and a multi-queue policy re-admits it at the probationary
+end. S3FIFO is the sharpest case: a main-queue eviction writes **no** ghost
+entry, so a block that had earned its way into the main queue comes back in the
+small queue and is a candidate for eviction again almost immediately. TwoQ loses
+`Am` membership the same way; FIFO and Clock get the opposite distortion, a block
+near the tail is rejuvenated to the head, which *inflates* their hit ratio.
+
+A real engine does not have this problem: the blocks of a running request are
+ref-counted and simply cannot be chosen as victims. prefixsim now does the same.
+For the duration of phase 2 it installs a pin predicate
+(`cache_set_pin_predicate`, `cacheObj.h`) naming Alpha, and victim selection
+steps over a pinned object to the next-best candidate. The pins are removed
+before phase 3 — phase 3 must not evict at all, and leaving them on would mask
+that rather than enforce it.
+
+Pinning is deliberately **best-effort**: if every object in a queue is pinned,
+the original candidate is taken anyway. The alternative — refusing to evict —
+would deadlock, because the ghost queues of the composite policies (S3FIFO's
+`ghost_fifo`, TwoQ's `Aout`, ARC's `B1`/`B2`) are themselves FIFO/LRU instances
+and see the same pin set, and `cache_get_base()` loops until it has room. What
+gets through is still visible: **`n_self_eviction` is the metric**. It is 0 for
+an algorithm whose victim selection is fully pin-aware, and its residue measures
+exactly how much corruption is left.
+
+Pin-awareness lives in the shared building blocks — `LRU`, `FIFO`, `Clock`,
+`Sieve`, `SLRU` — so the composites built out of them (S3FIFO and its variants,
+TwoQ, W-TinyLFU, QDLP) inherit it without changes of their own. Algorithms with
+their own victim selection (LFU, GDSF, LHD, ARC, LeCaR, the `partial_node_*` and
+`session_*` families) are not pin-aware yet and run exactly as before; their
+`n_self_eviction` says what that costs. Per-algorithm opt-in is the `pin_safe`
+column of `kAlgos` in `simulator.cpp`, and it is **verified by running the trace,
+not assumed**: LIRS is marked unsafe because `LIRS_prune()` reads its stack's
+tail directly and then calls `evict()` expecting that exact object to go, so a
+skipped victim desynchronises the two and segfaults. (LIRS already carries its
+own in-flight protection, `lirs_is_inflight`, so it does not need this one.)
+
+Nothing outside prefixsim installs a predicate, so `cachesim` and every other
+libCacheSim user keep the original victim selection bit-for-bit.
+
 **Termination.** A request with more distinct blocks than the whole cache can
 never be resident, so it is skipped up front (counted as `n_req_skipped`, and
 warned about once — see below). For
