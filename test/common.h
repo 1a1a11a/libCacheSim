@@ -319,8 +319,6 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = WorkloadAware_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "AsymCache") == 0) {
     cache = AsymCache_init(cc_params, NULL);
-  } else if (strcasecmp(alg_name, "AsymCacheTime") == 0) {
-    cache = AsymCacheTime_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "AdaptSize") == 0) {
     cache = LRU_init(cc_params, NULL);
     cache->admissioner = create_adaptsize_admissioner(NULL);

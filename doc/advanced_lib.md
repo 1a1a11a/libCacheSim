@@ -155,7 +155,7 @@ allocation, so it delivers what a policy needs while it is choosing victims for
   `record_request` lags it by one request. It is a `double` because
   `request_t::clock_time` truncates to whole seconds, and a KV-block lifespan is
   of order 100 s, so whole seconds would tie every block arriving in the same
-  second. `AsymCacheTime` is the motivating case.
+  second. `AsymCache` is the motivating case.
 * `category` -- an opaque id for the request's workload class, which is what a
   policy that fits a separate reuse-time distribution per class keys on. Opaque
   because what makes two requests the same class is a property of the *trace*,

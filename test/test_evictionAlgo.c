@@ -246,16 +246,6 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_cnt_true = {92232, 88910, 87122, 82559, 77385, 74014, 69331, 63357},
      .miss_byte_true = {4131499520, 3940749824, 3856896000, 3568462336,
                         3297068544, 3091883520, 2834808832, 2520712704}},
-    /* Identical to AsymCache above, and necessarily so: this driver calls
-     * neither hook, so the wall clock has no source and both variants fall back
-     * to the same per-access block clock. prefixsim is where they diverge. */
-    {.cache_name = "AsymCacheTime",
-     .hashpower = 20,
-     .req_cnt_true = 113872,
-     .req_byte_true = 4368040448,
-     .miss_cnt_true = {92232, 88910, 87122, 82559, 77385, 74014, 69331, 63357},
-     .miss_byte_true = {4131499520, 3940749824, 3856896000, 3568462336,
-                        3297068544, 3091883520, 2834808832, 2520712704}},
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
     {.cache_name = "3LCache",
      .hashpower = 20,
@@ -525,10 +515,6 @@ static void test_AsymCache(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[26]);
 }
 
-static void test_AsymCacheTime(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[27]);
-}
-
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
   srand(0);           // for reproducibility
@@ -593,8 +579,6 @@ int main(int argc, char *argv[]) {
                        test_WorkloadAware);
   g_test_add_data_func("/libCacheSim/cacheAlgo_AsymCache", reader,
                        test_AsymCache);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_AsymCacheTime", reader,
-                       test_AsymCacheTime);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
                        test_BeladySize);

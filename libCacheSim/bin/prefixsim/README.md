@@ -426,8 +426,7 @@ cache algorithms.
 | `--algo` | Paper | Signal |
 |---|---|---|
 | `workload_aware` | arXiv:2506.02634, *KVCache Cache in the Wild* (ATC'25) §4.2 | per-workload-class reuse probability, then prefix offset |
-| `asym_cache` | arXiv:2606.02964, *Multi-Segment Attention* §4.2-4.5 (the paper's MSA) | expected recompute cost, block-count clock |
-| `asym_cache_time` | same, with the paper's wall-clock lifespan | expected recompute cost, seconds clock |
+| `asym_cache` | arXiv:2606.02964, *Multi-Segment Attention* §4.2-4.5 (the paper's MSA) | expected recompute cost, wall-clock lifespan |
 
 Both files carry the derivation in their header comment; two things are worth
 knowing before reading a number off them.
@@ -439,13 +438,16 @@ Eq. 7, linear in the block's prefix position, which is exactly what
 ("if the recovery cost of all cache blocks is a uniform constant, our algorithm
 degrades to the conventional LRU strategy"), so that combination measures nothing.
 
-**The clock is the whole story for `asym_cache` vs `asym_cache_time`.** They differ
-in one line and separate by 8 points of compute savings at 500k blocks. The paper
+**`asym_cache` runs on a wall clock, and that is the whole story.** The paper
 defines the reuse-time distribution on seconds and sets the lifespan `L` to its
-P99; fit `L` on a *block* clock instead and it lands tens of millions of blocks
-out, beyond any cache, so `tau/alpha ~ 0` for everything resident, `f_B` goes flat
-and the policy collapses to cost-weighted LRU. `asym_cache` is kept precisely
-because that collapse is worth being able to show.
+P99. There used to be a second registration, `asym_cache_time`, because this
+policy originally counted block accesses; that variant was **removed on
+2026-09-10** and `asym_cache` *is* the wall-clock one now. Fit `L` on a block
+clock instead and it lands tens of millions of blocks out, beyond any cache, so
+`tau/alpha ~ 0` for everything resident, `f_B` goes flat and the policy collapses
+to cost-weighted LRU -- it stops being MSA at all, which is why only the seconds
+clock is kept. A driver that supplies no request context (cachesim) has no time
+source and still falls back to one tick per access.
 
 Both need per-request metadata, so they install `set_request_ctx` as well as
 `record_request`. Under a driver that calls neither — plain `cachesim`, the test

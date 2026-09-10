@@ -65,18 +65,26 @@
  * hundreds of millions of pushes; instead each entry carries the last-access it
  * was built from, and a mismatch surfacing at the top is re-keyed then.
  *
- * Two clocks
- * ----------
- * AsymCache advances its clock once per block access; AsymCacheTime advances it
- * with the request's wall-clock timestamp. This is not a cosmetic choice -- it
- * decides whether the policy does anything at all. The paper defines tau and L on
- * real time (Fig. 7's axis is "Time to Last Access (s)", L is the P99 of that
- * CDF, r = 40 in their evaluation). On a block clock, L is fitted to the P99
- * *block* reuse gap, which on a large multi-turn trace is tens of millions of
- * blocks -- far beyond any cache. Then tau/alpha ~ 0 for every resident block, f
- * is flat, and E = f * dT_B collapses to cost-weighted LRU. The wall-clock
- * variant fits L in seconds (~180 s on the freeinference traces), so the lifespan
- * actually bites and blocks idle past it are steeply demoted.
+ * The clock is wall-clock
+ * -----------------------
+ * tau and L are measured in *seconds*, taken from the request timestamp, which
+ * is what the paper defines: Fig. 7's axis is "Time to Last Access (s)", L is
+ * the P99 of that CDF, and r = 40 in their evaluation.
+ *
+ * There used to be a second registration, `asym_cache_time`, because this class
+ * originally counted block accesses instead and the time-based one was added
+ * beside it. The block clock is not a variant worth keeping: L then fits the
+ * P99 *block* reuse gap, which on a large multi-turn trace is tens of millions
+ * of blocks -- far beyond any cache. tau/alpha ~ 0 for every resident block, f
+ * goes flat, and E = f * dT_B collapses to cost-weighted LRU, i.e. the lifespan
+ * term stops doing anything. On a seconds clock L fits at ~180 s on the
+ * freeinference traces, so it actually bites and idle blocks are steeply
+ * demoted. Only the wall clock is kept, and it is the default and only mode.
+ *
+ * A driver that supplies no request context at all (cachesim, which calls
+ * neither set_request_ctx nor record_request) has no time source. There the
+ * class falls back to one tick per access -- see AsymCache_find -- so it still
+ * runs, but the lifespan is in access units rather than seconds.
  *
  * Deviations from the paper, both because a simulator has no offline profiler:
  *   - The online lambda rescaler of §5.1 (Algorithm 1 line 8) is not implemented;
@@ -137,17 +145,16 @@ class AsymCache {
   /// Turning-point reuse probability p. The paper recommends 0.3-0.7.
   double reuse_prob = 0.5;
   /// Slope-change ratio r at the turning point.
-  double slope_ratio = 10.0;
+  double slope_ratio = 40.0;
   /// Lifespan to fall back on when no reuse gap was observed before the first
-  /// eviction, in this clock's units.
-  double default_lifespan = 2.0e5;
-  /// True for the wall-clock variant, which takes `now` from the request
-  /// timestamp instead of counting block accesses.
-  bool wall_clock = false;
-  /// Set once record_request fires. Until then nothing advances the block clock
-  /// and set_request_ctx never supplies a wall clock, so tau would be 0 for every
-  /// block and the policy would decay to insertion order. A caller that drives
-  /// the cache one object at a time gets a per-access clock instead.
+  /// eviction. Seconds, like the rest of the clock -- the paper's Fig. 7 P99.
+  /// Only reached on a trace that shows no reuse at all before the first
+  /// eviction; otherwise L is the measured P99.
+  double default_lifespan = 180.0;
+  /// Set once record_request fires, i.e. the driver supplies request structure
+  /// and timestamps. Until then there is no time source, so tau would be 0 for
+  /// every block and the policy would decay to insertion order; a caller that
+  /// drives the cache one object at a time gets a per-access clock instead.
   bool hooked = false;
 
   double now = 0.0;
@@ -346,8 +353,6 @@ extern "C" {
 
 cache_t *AsymCache_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params);
-cache_t *AsymCacheTime_init(const common_cache_params_t ccache_params,
-                            const char *cache_specific_params);
 static void AsymCache_free(cache_t *cache);
 static bool AsymCache_get(cache_t *cache, const request_t *req);
 static cache_obj_t *AsymCache_find(cache_t *cache, const request_t *req,
@@ -416,7 +421,7 @@ static void AsymCache_parse_params(cache_t *cache,
 
 static cache_t *asym_cache_init_common(const common_cache_params_t ccache_params,
                                        const char *cache_specific_params,
-                                       const char *name, bool wall_clock) {
+                                       const char *name) {
   cache_t *cache = cache_struct_init(name, ccache_params, cache_specific_params);
   AsymCache *p = new AsymCache;
   cache->eviction_params = reinterpret_cast<void *>(p);
@@ -431,14 +436,6 @@ static cache_t *asym_cache_init_common(const common_cache_params_t ccache_params
   cache->set_request_ctx = AsymCache_set_request_ctx;
   cache->record_request = AsymCache_record_request;
 
-  p->wall_clock = wall_clock;
-  if (wall_clock) {
-    // The paper's evaluation values, which only make sense on a clock measured
-    // in seconds: r = 40, and a fallback lifespan of the order of Fig. 7's P99.
-    p->slope_ratio = 40.0;
-    p->default_lifespan = 180.0;
-  }
-
   if (cache_specific_params != nullptr) {
     AsymCache_parse_params(cache, cache_specific_params);
   }
@@ -448,17 +445,9 @@ static cache_t *asym_cache_init_common(const common_cache_params_t ccache_params
 
 cache_t *AsymCache_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params) {
-  cache_t *cache = asym_cache_init_common(ccache_params, cache_specific_params,
-                                          "AsymCache", false);
+  cache_t *cache =
+      asym_cache_init_common(ccache_params, cache_specific_params, "AsymCache");
   cache->cache_init = AsymCache_init;
-  return cache;
-}
-
-cache_t *AsymCacheTime_init(const common_cache_params_t ccache_params,
-                            const char *cache_specific_params) {
-  cache_t *cache = asym_cache_init_common(ccache_params, cache_specific_params,
-                                          "AsymCacheTime", true);
-  cache->cache_init = AsymCacheTime_init;
   return cache;
 }
 
@@ -480,9 +469,9 @@ static cache_obj_t *AsymCache_find(cache_t *cache, const request_t *req,
 
   AsymCache *p = ac_of(cache);
   if (!p->hooked && update_cache) {
-    // No request structure available: this access *is* the clock tick. The wall
-    // clock has no source here either, so both variants fall back to counting
-    // accesses and therefore behave alike.
+    // No request structure available (cachesim), so there is no wall clock to
+    // read: this access *is* the clock tick, and the lifespan is fitted in
+    // access units rather than seconds.
     if (obj != nullptr) {
       auto it = p->meta.find(req->obj_id);
       if (it != p->meta.end()) {
@@ -573,12 +562,9 @@ static bool AsymCache_remove(cache_t *cache, const obj_id_t obj_id) {
 
 static void AsymCache_set_request_ctx(cache_t *cache,
                                       const cache_request_ctx_t *ctx) {
-  AsymCache *p = ac_of(cache);
-  // Only the wall-clock variant has a "now" that the request itself defines; the
-  // block-counting variant advances solely in record_request. Setting it here
-  // rather than in record_request is what keeps eviction from lagging a request
-  // behind the arrival it is making room for.
-  if (p->wall_clock) p->now = ctx->timestamp;
+  // Setting `now` here rather than in record_request is what keeps eviction
+  // from lagging a request behind the arrival it is making room for.
+  ac_of(cache)->now = ctx->timestamp;
 }
 
 static void AsymCache_record_request(cache_t *cache, const obj_id_t *ids,
@@ -600,10 +586,6 @@ static void AsymCache_record_request(cache_t *cache, const obj_id_t *ids,
       m.last_access = p->now;
       p->meta.emplace(id, m);
     }
-
-    // The block clock ticks per access; the wall clock is set once per request,
-    // in set_request_ctx, so every block of a request shares its timestamp.
-    if (!p->wall_clock) p->now += 1.0;
   }
 }
 

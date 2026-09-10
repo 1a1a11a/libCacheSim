@@ -123,7 +123,6 @@ const AlgoEntry kAlgos[] = {
     // published prefix-cache policies
     {"workload_aware", WorkloadAware_init, true},
     {"asym_cache", AsymCache_init, true},
-    {"asym_cache_time", AsymCacheTime_init, true},
     // session-level: the victim is a conversation, not a block
     {"session_lru", SessionLRU_init, true},
     {"session_belady", SessionBelady_init, true},

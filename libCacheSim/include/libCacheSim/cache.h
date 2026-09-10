@@ -104,7 +104,7 @@ typedef void (*cache_record_request_func_ptr)(cache_t *, const obj_id_t *,
  * algorithm must know while it is choosing victims for *this* request:
  *
  *   - `timestamp`: wall-clock arrival time in seconds. An algorithm whose decay
- *     function is defined on real time (AsymCacheTime) needs the current value
+ *     function is defined on real time (AsymCache) needs the current value
  *     of "now" at eviction time; taking it from record_request would lag it by
  *     one request. Kept as a double because request_t::clock_time truncates to
  *     whole seconds, and a KV-block lifespan is O(100 s), so whole seconds

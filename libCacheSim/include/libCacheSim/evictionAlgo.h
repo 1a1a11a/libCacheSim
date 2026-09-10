@@ -182,8 +182,6 @@ cache_t *WorkloadAware_init(const common_cache_params_t ccache_params,
 cache_t *AsymCache_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params);
 
-cache_t *AsymCacheTime_init(const common_cache_params_t ccache_params,
-                            const char *cache_specific_params);
 
 /* Session-level eviction: the victim is a conversation, not a block. These need
  * per-request session metadata, so they only do anything under a driver that
