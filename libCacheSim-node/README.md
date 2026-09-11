@@ -202,12 +202,12 @@ Contributions are welcome! Please see the main [libCacheSim repository](https://
 
 ## License
 
-MIT License - see the LICENSE file for details.
+Apache-2.0 - see the [LICENSE](https://github.com/1a1a11a/libCacheSim/blob/develop/LICENSE) file for details. This addon links libCacheSim statically, so the same terms apply to it.
 
 ## Related Projects
 
 - [libCacheSim](https://github.com/1a1a11a/libCacheSim) - The core C library
-- [libCacheSim Python bindings](https://github.com/1a1a11a/libCacheSim/tree/develop/libCacheSim/pyBindings) - Python interface
+- [libCacheSim Python bindings](https://github.com/cacheMon/libCacheSim-python) - Python interface
 
 ## Citation
 

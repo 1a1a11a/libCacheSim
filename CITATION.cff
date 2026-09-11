@@ -1,0 +1,121 @@
+cff-version: 1.2.0
+title: libCacheSim
+message: >-
+  If you use libCacheSim in your research, please cite the
+  software and the relevant papers below.
+type: software
+authors:
+  - family-names: Yang
+    given-names: Juncheng
+    affiliation: Harvard University
+repository-code: 'https://github.com/1a1a11a/libCacheSim'
+abstract: >-
+  A high-performance library and set of tools for building
+  and running cache simulations, analyzing cache traces, and
+  profiling miss ratio curves.
+keywords:
+  - cache
+  - caching
+  - cache simulation
+  - eviction algorithm
+  - miss ratio curve
+  - trace analysis
+license: Apache-2.0
+preferred-citation:
+  type: conference-paper
+  title: FIFO Queues Are All You Need for Cache Eviction
+  authors:
+    - family-names: Yang
+      given-names: Juncheng
+    - family-names: Zhang
+      given-names: Yazhuo
+    - family-names: Qiu
+      given-names: Ziyue
+    - family-names: Yue
+      given-names: Yao
+    - family-names: Rashmi
+      given-names: K. V.
+  collection-title: >-
+    Proceedings of the 29th Symposium on Operating Systems
+    Principles (SOSP '23)
+  publisher:
+    name: Association for Computing Machinery
+  year: 2023
+  start: 130
+  end: 149
+  isbn: '9798400702297'
+  doi: 10.1145/3600006.3613147
+references:
+  - type: conference-paper
+    title: >-
+      A large-scale analysis of hundreds of in-memory cache
+      clusters at Twitter
+    authors:
+      - family-names: Yang
+        given-names: Juncheng
+      - family-names: Yue
+        given-names: Yao
+      - family-names: Rashmi
+        given-names: K. V.
+    collection-title: >-
+      14th USENIX Symposium on Operating Systems Design and
+      Implementation (OSDI 20)
+    publisher:
+      name: USENIX Association
+    year: 2020
+    month: 11
+    start: 191
+    end: 208
+    isbn: '978-1-939133-19-9'
+    url: 'https://www.usenix.org/conference/osdi20/presentation/yang'
+  - type: conference-paper
+    title: >-
+      FIFO Can Be Better than LRU: The Power of Lazy
+      Promotion and Quick Demotion
+    authors:
+      - family-names: Yang
+        given-names: Juncheng
+      - family-names: Qiu
+        given-names: Ziyue
+      - family-names: Zhang
+        given-names: Yazhuo
+      - family-names: Yue
+        given-names: Yao
+      - family-names: Rashmi
+        given-names: K. V.
+    collection-title: >-
+      Proceedings of the 19th Workshop on Hot Topics in
+      Operating Systems (HotOS '23)
+    publisher:
+      name: Association for Computing Machinery
+    year: 2023
+    start: 70
+    end: 79
+    isbn: '9798400701955'
+    doi: 10.1145/3593856.3595887
+  - type: conference-paper
+    title: >-
+      SIEVE is Simpler than LRU: an Efficient Turn-Key
+      Eviction Algorithm for Web Caches
+    authors:
+      - family-names: Zhang
+        given-names: Yazhuo
+      - family-names: Yang
+        given-names: Juncheng
+      - family-names: Yue
+        given-names: Yao
+      - family-names: Vigfusson
+        given-names: Ymir
+      - family-names: Rashmi
+        given-names: K. V.
+    collection-title: >-
+      21st USENIX Symposium on Networked Systems Design and
+      Implementation (NSDI 24)
+    publisher:
+      name: USENIX Association
+    year: 2024
+    month: 4
+    start: 1229
+    end: 1246
+    isbn: '978-1-939133-39-7'
+    url: 'https://www.usenix.org/conference/nsdi24/presentation/zhang-yazhuo'

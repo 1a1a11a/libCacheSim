@@ -10,9 +10,10 @@ jobs:
     name: Code Quality Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for proper git diff
+          persist-credentials: false
 
       - name: Install dependencies
         run: |
