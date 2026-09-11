@@ -34,6 +34,11 @@ exclude_patterns = [
     # html_extra_path below so the <img> tags in the guides resolve.
     "plot",
     "assets",
+    # Maintained for reading on GitHub, where its source links and pinned
+    # commit URLs belong. Sphinx is not asked to render it, which also keeps
+    # the BibTeX block's % comment -- valid BibTeX that Pygments' lexer
+    # rejects -- from failing the warning-free build.
+    "adoption.md",
 ]
 
 # quickstart_traceAnalyzer.md embeds the plots with raw <img> tags, so the

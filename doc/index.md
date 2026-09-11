@@ -42,13 +42,6 @@ memory_usage_profiling
 debug
 ```
 
-```{toctree}
-:maxdepth: 1
-:caption: About
-
-adoption
-```
-
 ## Other resources
 
 * [Python binding](https://github.com/cacheMon/libCacheSim-python) — easier API access, `pip install libcachesim`
