@@ -21,6 +21,43 @@
  * rounds to this value and warns under -Wimplicit-const-int-float-conversion */
 static constexpr double kHashSpaceSize = 18446744073709551616.0;
 
+/* log2 of the hash table size for the miniature caches MINISIM simulates. The
+ * caches are small, so a smaller table than cachesim's is appropriate. */
+static constexpr int kMiniSimHashPower = 20;
+
+/* what cachesim uses, mirroring DEFAULT_HASHPOWER in bin/cachesim/cache_init.h.
+ * Above sample rate 0.5 MINISIM replays the whole trace, and that run is meant
+ * to be exact rather than approximate, so it has to size the table the way
+ * cachesim would: Random, RandomTwo, RandomLRU and Hyperbolic draw eviction
+ * candidates through the hash mask, so a different table gives a different
+ * curve. */
+static constexpr int kCacheSimHashPower = 24;
+
+/* whether a reader fills in req->next_access_vtime, which the Belady policies
+ * need; every other reader leaves it at -2.
+ *
+ * Most oracle formats carry it unconditionally, so the trace type alone
+ * answers for them. The generic binary reader is the exception: it populates
+ * the field only when the caller points next_access_vtime_field at the right
+ * column, so a BIN_TRACE has to be asked rather than assumed. That is a
+ * library-only configuration today — no CLI exposes the field — but the
+ * profiler is part of the library, so a caller can set it up. */
+static bool reader_has_next_access_vtime(const reader_t *reader) {
+  switch (reader->trace_type) {
+    case ORACLE_GENERAL_TRACE:
+    case LCS_TRACE:
+    case ORACLE_SIM_TWR_TRACE:
+    case ORACLE_SYS_TWR_TRACE:
+    case ORACLE_SIM_TWRNS_TRACE:
+    case ORACLE_SYS_TWRNS_TRACE:
+      return true;
+    case BIN_TRACE:
+      return reader->init_params.next_access_vtime_field > 0;
+    default:
+      return false;
+  }
+}
+
 mrcProfiler::MRCProfilerBase *mrcProfiler::create_mrc_profiler(
     mrc_profiler_e type, reader_t *reader, std::string output_path,
     const mrc_profiler_params_t &params) {
@@ -283,10 +320,29 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
   sampler_t *sampler = nullptr;
   if (sample_rate > 0.5) {
     INFO("sample_rate is too large, do not sample\n");
+    /* the whole trace is replayed, so the miniature caches have to be
+     * full-sized; leaving the requested rate in place would scale them down
+     * while every request still reached them, reporting the miss ratios of
+     * smaller caches than were asked for */
+    sample_rate = 1.0;
   } else {
     sampler = create_spatial_sampler(sample_rate);
     set_spatial_sampler_salt(sampler,
                              10000019);  // TODO: salt can be changed by params
+
+    /* the sampler keeps one object in sampling_ratio_inv, an integer, so it can
+     * only represent rates of the form 1/n: create_spatial_sampler truncates
+     * 1/0.3 to 3 and then keeps a third. Sizing the caches by the rate that was
+     * asked for rather than the one in force makes them too small by that
+     * ratio -- 10% at 0.3 -- and the curve is reported against the size that
+     * was asked for, so the error is invisible in the output. Take the rate the
+     * sampler actually applies. */
+    double effective_rate = 1.0 / sampler->sampling_ratio_inv;
+    if (effective_rate != sample_rate) {
+      INFO("sample rate %.6f is not of the form 1/n, using %.6f\n", sample_rate,
+           effective_rate);
+      sample_rate = effective_rate;
+    }
   }
 
   // 1. obtain the n_req_, sum_obj_size_req, sampled_cnt and sampled_size
@@ -307,13 +363,65 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
   reader_->init_params.sampler = sampler;
   reader_->sampler = sampler;
 
+  /* Belady and BeladySize read next_access_vtime, which ordinary readers leave
+   * at -2, so on any other trace they would produce a plausible-looking but
+   * meaningless curve rather than failing. cachesim checks this before building
+   * the cache; do the same here. */
+  if (strcasecmp(params_.cache_algorithm_str, "belady") == 0 ||
+      strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
+    if (!reader_has_next_access_vtime(reader_)) {
+      ERROR(
+          "%s needs future information, which %s traces do not carry; use an "
+          "oracle format such as oracleGeneral or lcs, or convert with "
+          "./bin/traceConv\n",
+          params_.cache_algorithm_str, g_trace_type_name[reader_->trace_type]);
+    }
+  }
+
+  /* BeladySize picks its victim by drawing samples from the hash table, so an
+   * oversized table costs memory and leaves the sampler probing empty buckets.
+   * cachesim shrinks it by 8 before constructing the cache; do the same here,
+   * since the miniature caches are built straight from the registry and would
+   * otherwise get a 1M-slot table each. Hyperbolic gets it for a different
+   * reason: Hyperbolic_init shrinks its own table as well, so cachesim ends up
+   * two reductions down, and matching that is what makes an unsampled run
+   * reproduce cachesim rather than land 0.0001 away. */
+  int minisim_hashpower =
+      (sampler == nullptr) ? kCacheSimHashPower : kMiniSimHashPower;
+  if (strcasecmp(params_.cache_algorithm_str, "hyperbolic") == 0) {
+    minisim_hashpower = MAX(minisim_hashpower - 8, 16);
+  }
+  if (strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
+    minisim_hashpower = MAX(minisim_hashpower - 8, 16);
+
+    /* BeladySize scores a candidate with next_access_vtime - cache->n_req.
+     * next_access_vtime counts requests in the full trace, but once the
+     * sampler drops requests, n_req counts only the ones that survived, so the
+     * two are in different units and the reuse distance comes out inflated.
+     * Belady is unaffected because it uses next_access_vtime as an ordering
+     * and never takes a difference. Measured on cloudPhysicsIO at a 100MB
+     * cache: at sample rate 0.5 BeladySize is off by 0.0126 against the
+     * unsampled miss ratio, where Belady is off by 0.0003 and LRU by 0.0023.
+     * Warn rather than refuse -- the curve is still in the right region, and
+     * remapping future times into sampled virtual time is a change to the
+     * sampler that belongs to the maintainers, not a silent correction here. */
+    if (sampler != nullptr) {
+      WARN(
+          "beladySize scores candidates by reuse distance, which spatial "
+          "sampling distorts because next_access_vtime stays in full-trace "
+          "request numbers; the curve is approximate beyond the usual sampling "
+          "error. Use --profiler-params=FIX_RATE,1,<threads> for an exact "
+          "run, or belady, which is not affected.\n");
+    }
+  }
+
   // 3. run the simulate_with_multi_caches
   cache_t *caches[MAX_MRC_PROFILE_POINTS];
   for (size_t i = 0; i < params_.profile_size.size(); i++) {
     size_t _cache_size = mrc_size_vec[i] * sample_rate;
     common_cache_params_t cc_params = {.cache_size = _cache_size,
                                        .default_ttl = 0,
-                                       .hashpower = 20,
+                                       .hashpower = minisim_hashpower,
                                        .consider_obj_metadata = false};
     caches[i] = create_cache_using_plugin(params_.cache_algorithm_str,
                                           cc_params, nullptr);
