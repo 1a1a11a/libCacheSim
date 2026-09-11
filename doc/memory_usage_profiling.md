@@ -36,7 +36,7 @@ ms_print ./massif.out > massif.result
 The generated report primarily includes a bar chart of memory usage (with instructions executed as the x-axis) and several heap profile snapshots. Some snapshots display detailed function call relationships showing how memory was allocated. Below is an example of such a report:
 
 
-```sh
+```text
     MB
 519.4^                                        :
      |#:::::::::::::@::::::::::::::::@::@@::::::::::::::::::::::::@::@::@::@::

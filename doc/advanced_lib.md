@@ -107,22 +107,36 @@ cache->to_evict(cache, req);
 There are mostly three APIs related to readers, `open_trace`, `close_trace`, `read_one_req`, let's take a look how
  they work.
 
-##### Setup a txt reader (trace can only contain request id)
+#### Setup a txt reader (trace can only contain request id)
 ```c
 open_trace(data_path, PLAIN_TXT_TRACE, NULL);
 ```
 
-##### Setup a csv reader
+#### Setup a csv reader
+The fields are 1-indexed and must match the trace. The sample `data/cloudPhysicsIO.csv` has the header `version,time,op,size,lbn`, so time is field 2, size is field 4, and the object id is field 5.
+
+`obj_id_is_num` says whether the id column holds numbers. Note that `default_reader_init_params()` sets it to **true**, unlike `cachesim`, so a trace with string ids needs it set to `false` explicitly — otherwise the reader parses them with `strtoull()` and every id becomes `0` rather than being hashed.
+
+Start from `default_reader_init_params()` rather than a bare designated initializer: the defaults for `cap_at_n_req`, `block_size` and `ignore_size_zero_req` are not zero, and a struct literal would silently set them to zero. `has_header` and `obj_id_is_num` are each paired with a `_set` flag; the reader auto-detects unless you raise the flag, so assigning the value alone has no effect.
+
 ```c
-reader_init_param_t init_params_csv =
-    {.delimiter=',', .time_field=2, .obj_id_field=6, .obj_size_field=4, .has_header=FALSE};
-reader_t *reader_csv_c = open_trace("data/trace.csv", CSV_TRACE, &init_params_csv);
+reader_init_param_t init_params_csv = default_reader_init_params();
+init_params_csv.delimiter = ',';
+init_params_csv.time_field = 2;
+init_params_csv.obj_size_field = 4;
+init_params_csv.obj_id_field = 5;
+init_params_csv.obj_id_is_num = true;
+init_params_csv.obj_id_is_num_set = true;
+init_params_csv.has_header = true;
+init_params_csv.has_header_set = true;
+reader_t *reader_csv = open_trace("data/cloudPhysicsIO.csv", CSV_TRACE, &init_params_csv);
 ```
 
-##### Setup a binary reader
+#### Setup a binary reader
 ```c
-reader_init_param_t init_params_bin = {.binary_fmt="<3I2H2Q", .obj_size_field=2, .obj_id_field=6, };
-reader_t *reader_bin_l = setup_reader("data/trace.vscsi", BIN_TRACE, &init_params_bin);
+reader_init_param_t init_params_bin = {
+    .binary_fmt_str = "<IIIHHQQ", .obj_size_field = 2, .obj_id_field = 6};
+reader_t *reader_bin = open_trace("data/cloudPhysicsIO.vscsi", BIN_TRACE, &init_params_bin);
 ```
 The format of a binary trace is the same as
 [Python struct format specifier](https://docs.python.org/3/library/struct.html).
@@ -136,25 +150,28 @@ The different simulations can have different cache sizes or different cache evic
 
 ```c
 // simulate multiple cache sizes specified using cache_sizes
-// warmup_reader and warmup_perc is optional, if you do not need to warmup your cache, just pass `NULL` and 0.
-sim_res_t *
-simulate_at_multi_sizes(reader_t reader*,
-                        cache_t *cache,
-                        int num_of_sizes,
-                        uint64_t *cache_sizes,
-                        reader_t *warmup_reader,
-                        double warmup_perc,
-                        int num_of_threads);
+// warming up is optional: pass NULL for warmup_reader and 0 for warmup_frac
+// and warmup_sec to skip it
+cache_stat_t *simulate_at_multi_sizes(reader_t *reader,
+                                      const cache_t *cache,
+                                      int num_of_sizes,
+                                      const uint64_t *cache_sizes,
+                                      reader_t *warmup_reader,
+                                      double warmup_frac,
+                                      int warmup_sec,
+                                      int num_of_threads,
+                                      bool use_random_seed);
 
 // simulate multiple cache sizes from step_size to cache->cache_size
 // it runs cache->cache_size/step_size simulations
-sim_res_t *
-simulate_at_multi_sizes_with_step_size(reader_t *reader,
-                                       cache_t *cache,
-                                       uint64_t step_size,
-                                       reader_t *warmup_reader,
-                                       double warmup_perc,
-                                       int num_of_threads);
+cache_stat_t *simulate_at_multi_sizes_with_step_size(reader_t *reader_in,
+                                                     const cache_t *cache_in,
+                                                     uint64_t step_size,
+                                                     reader_t *warmup_reader,
+                                                     double warmup_frac,
+                                                     int warmup_sec,
+                                                     int num_of_threads,
+                                                     bool use_random_seed);
 
 // simulate with multiple caches, which can have different eviction algorithms or sizes
 cache_stat_t *simulate_with_multi_caches(reader_t *reader,
@@ -163,7 +180,9 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader,
                                          reader_t *warmup_reader,
                                          double warmup_frac,
                                          int warmup_sec,
-                                         int num_of_threads)
+                                         int num_of_threads,
+                                         bool free_cache_when_finish,
+                                         bool use_random_seed);
 ```
 
 `simulate_at_multi_sizes` allows you to pass in an array of `cache_sizes` to simulate;
@@ -171,18 +190,25 @@ cache_stat_t *simulate_with_multi_caches(reader_t *reader,
 cache sizes `step_size, step_size*2, step_size*3 .. cache->cache_size`.
 `simulate_with_multi_caches` allows you to pass in an array of `cache_t` to simulate, which can have different eviction algorithms or sizes.
 
-The return result is an array of simulation results, the users are responsible for free the array.
+The return result is an array of simulation results, one per simulation, and the caller is responsible for freeing the array.
 ```c
 typedef struct {
-  uint64_t req_cnt;
-  uint64_t req_bytes;
-  uint64_t miss_cnt;
-  uint64_t miss_bytes;
-  uint64_t cache_size;
-  cache_stat_t cache_state;
-  void *other_data;   /* not used */
-} sim_res_t;
+  int64_t n_warmup_req;
+  int64_t n_req;
+  int64_t n_req_byte;
+  double n_req_cost;
+  int64_t n_miss;
+  int64_t n_miss_byte;
+  double n_miss_cost;
+
+  int64_t n_obj;
+  int64_t occupied_byte;
+  int64_t cache_size;
+  float sampler_ratio;
+  /* ... see libCacheSim/include/libCacheSim/simulator.h */
+} cache_stat_t;
 ```
+Object miss ratio is `n_miss / n_req` and byte miss ratio is `n_miss_byte / n_req_byte`.
 
 
 ### Trace utils
@@ -206,10 +232,10 @@ int32_t *get_access_dist(reader_t *reader,
 ```
 
 ## Examples
-#### C example
+### C example
 
 
-#### C++ example
+### C++ example
 
 
 ### Build a cache hierarchy with multiple layers
@@ -219,16 +245,12 @@ int32_t *get_access_dist(reader_t *reader,
 
 
 ## FAQ
-#### Linking with libCacheSim
+### Linking with libCacheSim
 linking can be done in cmake or use pkg-config
 Such as in the `_build` directory:
 ```
 export PKG_CONFIG_PATH=$PWD
 ```
 
-#### Possible problems
+### Possible problems
 * if you get `error while loading shared libraries`, run `sudo ldconfig`
-
-
-
----

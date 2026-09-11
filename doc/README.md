@@ -18,6 +18,12 @@
 ## Developer Documentation
 - [Debugging Guide](debug.md)
 - [Install & Build](install.md)
+- [Contributing](/CONTRIBUTING.md)
 
 ## Project
 - [Adoption Census (who outside the project uses libCacheSim, with sources)](adoption.md)
+
+## Help
+- [FAQ](/FAQ.md)
+- [Issue tracker](https://github.com/1a1a11a/libCacheSim/issues)
+- [Discussions](https://github.com/1a1a11a/libCacheSim/discussions)
