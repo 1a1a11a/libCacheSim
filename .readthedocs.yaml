@@ -11,13 +11,14 @@ build:
   tools:
     python: "3.11"
 
-# Build documentation in the docs/ directory with Sphinx
+# The documentation sources are the Markdown files in doc/, rendered with MyST.
 sphinx:
-  configuration: docs/conf.py
+  configuration: doc/conf.py
+  # The build is warning-free; keep it that way, since a broken cross-reference
+  # is otherwise easy to miss.
+  fail_on_warning: true
 
-# We recommend specifying your dependencies to enable reproducible builds:
-# https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+# Docs-only dependencies; the root requirements.txt is for the analysis scripts.
 python:
   install:
-  - requirements: requirements.txt
-
+    - requirements: doc/requirements.txt

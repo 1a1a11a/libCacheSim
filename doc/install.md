@@ -1,19 +1,19 @@
-## Install dependency
+# Install dependency
 
 libCacheSim uses [cmake](https://cmake.org/) build system with [Ninja](https://ninja-build.org/) generator and has a few dependencies:
 [glib](https://developer.gnome.org/glib/)
 [tcmalloc](https://github.com/google/tcmalloc),
 [zstd](https://github.com/facebook/zstd).
 
-### Install dependency on Ubuntu
+## Install dependency on Ubuntu
 
-#### Install glib, tcmalloc, cmake and ninja
+### Install glib, tcmalloc, cmake and ninja
 
 ```bash
 sudo apt install libglib2.0-dev libgoogle-perftools-dev cmake ninja-build
 ```
 
-#### Install zstd
+### Install zstd
 
 zstd must be installed from source
 
@@ -27,7 +27,7 @@ sudo ninja install
 popd
 ```
 
-#### Install XGBoost [Optional]
+### Install XGBoost [Optional]
 
 ```bash
 git clone --recursive https://github.com/dmlc/xgboost
@@ -38,7 +38,7 @@ sudo ninja install
 popd
 ```
 
-#### Install LightGBM [Optional]
+### Install LightGBM [Optional]
 
 ```bash
 git clone --recursive https://github.com/microsoft/LightGBM
@@ -49,7 +49,7 @@ sudo ninja install
 popd
 ```
 
-### Install dependency on Mac
+## Install dependency on Mac
 
 using [homebrew](https://brew.sh/) as an example. While the first line is necessary, the following two lines needs to be run if you encounter errors including:
 
@@ -62,7 +62,7 @@ brew install argp-standalone
 brew install pkg-config
 ```
 
-#### Install zstd
+### Install zstd
 Use the below command to install
 ```bash
 brew install zstd
