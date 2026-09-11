@@ -478,8 +478,12 @@ static inline bool S3FIFOv0_can_insert(cache_t *cache, const request_t *req) {
 // ***********************************************************************
 static const char *S3FIFOv0_current_params(S3FIFOv0_params_t *params) {
   static __thread char params_str[128];
+  /* main_fifo is only built after the parameters are parsed, so it is still
+   * NULL when the user asks for the parameters with `-e print`; it is always a
+   * plain FIFO in this variant */
   snprintf(params_str, 128, "small-size-ratio=%.4lf,main-cache=%s\n",
-           params->small_size_ratio, params->main_fifo->cache_name);
+           params->small_size_ratio,
+           params->main_fifo == NULL ? "FIFO" : params->main_fifo->cache_name);
   return params_str;
 }
 
@@ -510,6 +514,7 @@ static void S3FIFOv0_parse_params(cache_t *cache,
       params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "print") == 0) {
       printf("parameters: %s\n", S3FIFOv0_current_params(params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

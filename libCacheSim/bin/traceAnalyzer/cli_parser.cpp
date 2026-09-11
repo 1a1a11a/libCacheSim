@@ -110,7 +110,7 @@ static struct argp_option options[] = {
 
     {NULL, 0, NULL, 0, "common parameters:", 0},
 
-    {"output", OPTION_OUTPUT_PATH, "", OPTION_ARG_OPTIONAL, "Output path", 8},
+    {"output", OPTION_OUTPUT_PATH, "PATH", 0, "Output path", 8},
     {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
      "Produce verbose output", 8},
     {NULL, 0, NULL, 0, NULL, 0}};
@@ -219,7 +219,8 @@ static char args_doc[] = "trace_path trace_type [--task1] [--task2] ...";
 
 /* Program documentation. */
 static char doc[] =
-    "example: ./bin/traceAnalyzer ../data/trace.vscsi vscsi --common\n\n"
+    "example: ./bin/traceAnalyzer ../data/cloudPhysicsIO.vscsi vscsi "
+    "--common\n\n"
     "trace_type: txt/csv/twr/vscsi/oracleGeneralBin and more\n"
     "if using csv trace, considering specifying -t obj-id-is-num=true\n\n"
     "task: "

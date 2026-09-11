@@ -152,7 +152,11 @@ cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
   }
 
   ccache_params_local.cache_size = ccache_params.cache_size / 10;
-  ccache_params_local.hashpower -= 4;
+  /* see Cacheus_init: a non-positive hash power is the "use the default"
+   * sentinel and must survive untouched. */
+  if (ccache_params_local.hashpower > 0) {
+    ccache_params_local.hashpower = MAX(4, ccache_params_local.hashpower - 4);
+  }
   params->small_eviction = FIFO_init(ccache_params_local, NULL);
   params->main_eviction = FIFO_init(ccache_params_local, NULL);
   snprintf(params->small_eviction->cache_name, CACHE_NAME_ARRAY_LEN,
@@ -185,6 +189,9 @@ static void S3FIFOd_free(cache_t *cache) {
   params->small_fifo->cache_free(params->small_fifo);
   params->ghost_fifo->cache_free(params->ghost_fifo);
   params->main_fifo->cache_free(params->main_fifo);
+  /* init also builds these two to track evicted objects */
+  params->small_eviction->cache_free(params->small_eviction);
+  params->main_eviction->cache_free(params->main_eviction);
   free(cache->eviction_params);
   cache_struct_free(cache);
 }
@@ -530,8 +537,12 @@ static inline bool S3FIFOd_can_insert(cache_t *cache, const request_t *req) {
 // ***********************************************************************
 static const char *S3FIFOd_current_params(S3FIFOd_params_t *params) {
   static __thread char params_str[128];
+  /* main_fifo is only built after the parameters are parsed, so report the
+   * configured type, which is what `-e print` runs against */
   snprintf(params_str, 128, "fifo-size-ratio=%.4lf,main-cache=%s\n",
-           params->small_fifo_size_ratio, params->main_fifo->cache_name);
+           params->small_fifo_size_ratio,
+           params->main_fifo == NULL ? params->main_fifo_type
+                                     : params->main_fifo->cache_name);
   return params_str;
 }
 
@@ -563,6 +574,7 @@ static void S3FIFOd_parse_params(cache_t *cache,
       params->move_to_main_threshold = atoi(value);
     } else if (strcasecmp(key, "print") == 0) {
       printf("parameters: %s\n", S3FIFOd_current_params(params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

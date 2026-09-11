@@ -58,6 +58,12 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
 }
 
 bool is_true(const char *arg) {
+  /* options declared OPTION_ARG_OPTIONAL are passed a NULL arg when the bare
+   * flag is used, e.g. `--verbose`; treat the flag's presence as true */
+  if (arg == NULL) {
+    return true;
+  }
+
   if (strcasecmp(arg, "true") == 0 || strcasecmp(arg, "1") == 0 ||
       strcasecmp(arg, "yes") == 0 || strcasecmp(arg, "y") == 0) {
     return true;

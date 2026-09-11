@@ -101,7 +101,11 @@ cache_t *SFIFOv0_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size /= params->n_queues;
-  ccache_params_local.hashpower /= MIN(16, ccache_params_local.hashpower - 4);
+  /* the divisor reaches zero once hashpower is 4 or less; guarded rather than
+   * rewritten, since dividing here (unlike the assignment SLRUv0 does) looks
+   * deliberate enough not to change behind the author's back */
+  ccache_params_local.hashpower /=
+      MAX(1, MIN(16, ccache_params_local.hashpower - 4));
   for (int i = 0; i < params->n_queues; i++) {
     params->FIFOs[i] = FIFO_init(ccache_params_local, NULL);
   }
@@ -402,6 +406,7 @@ static void SFIFOv0_parse_params(cache_t *cache,
 
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SFIFOv0_current_params(params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
