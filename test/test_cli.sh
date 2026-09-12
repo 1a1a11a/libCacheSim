@@ -228,7 +228,15 @@ for algo in ${ALL_ALGOS}; do
 	# report. The INFO banner echoes back "eviction-params: print", so a looser
 	# search matches every run -- including the ones that never print -- and the
 	# assertion passes without the print path having run at all.
-	_printed=$(sed 's/\x1b\[[0-9;]*m//g' <<<"${out}" | grep -v '^\[')
+	#
+	# The escape is a literal one through ANSI-C quoting rather than \x1b, which
+	# only GNU sed understands: BSD sed on the macOS job reads \x as a plain x,
+	# matches nothing, and strips no colour at all. Nothing writes to stderr on
+	# this path today -- the printing algorithms exit inside create_cache(),
+	# before print_parsed_args() logs anything -- so this guard is dormant on
+	# every platform. Keep it correct anyway, so it still works the day an
+	# algorithm warns while initialising.
+	_printed=$(sed $'s/\033\\[[0-9;]*m//g' <<<"${out}" | grep -v '^\[')
 	if grep -qE '^([A-Za-z0-9_.-]+ )?(current |default )?param(eter)?s?: ' <<<"${_printed}"; then
 		_report 0 ""
 	else
