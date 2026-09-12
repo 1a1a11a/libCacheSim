@@ -120,7 +120,25 @@ cache_t *ClockPro_init(const common_cache_params_t ccache_params,
   params->mem_hot = 0;
   params->mem_cold_max =
       cache->cache_size;  // default to the cache size (fallback)
-  params->ht_test = create_hashtable(HASH_POWER_DEFAULT);
+  /* ht_test tracks objects in their test period. It is private to ClockPro,
+   * so cache_struct_init never sizes it, and hard-coding HASH_POWER_DEFAULT
+   * meant cachesim's --hashpower reached only the main table: at a 1GB cache
+   * size, --hashpower=12 still left the run at 77.7MiB peak RSS against lru's
+   * 14.0MiB, the difference being this table's 2^23 pointer slots.
+   *
+   * Cap rather than mirror. Mirroring the main table would raise the default
+   * from 205.4MiB to 269.4MiB here, because cachesim's default hashpower is 24
+   * while HASH_POWER_DEFAULT is 23 -- a request to use less memory must not
+   * turn into more for everyone who makes no request. The main table has
+   * already applied the "0 means HASH_POWER_DEFAULT" sentinel and the upper
+   * bound, so reading it back is enough. ClockPro's miss ratio does not depend
+   * on this table's size -- measured identical at hashpower 12, 18 and 24 --
+   * so a smaller one costs rehashing and nothing else. */
+  int test_hashpower = HASH_POWER_DEFAULT;
+  if (cache->hashtable->hashpower < test_hashpower) {
+    test_hashpower = cache->hashtable->hashpower;
+  }
+  params->ht_test = create_hashtable(test_hashpower);
 
   ClockPro_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
