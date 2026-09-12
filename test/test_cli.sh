@@ -382,6 +382,16 @@ if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
 		--algo=nosuchalgo --profiler=MINISIM --profiler-params=FIX_RATE,0.01,4 \
 		--size=0.1,0.5,10
 
+	# MINISIM needs a thread count. Omitting it used to leave thread_num at 0
+	# and skip the validation that only runs when the field is present, so the
+	# run aborted inside the thread pool with "cannot push data into
+	# thread_pool" -- no mention of the parameter that was missing, and no
+	# error message for a caller to act on.
+	expect_clean_error "mrcProfiler MINISIM without a thread count" \
+		"${BIN_DIR}/mrcProfiler" "${TRACE}" vscsi \
+		--algo=LRU --profiler=MINISIM --profiler-params=FIX_RATE,0.01 \
+		--size=0.1,0.5,10
+
 	# Above 0.5 MINISIM stops sampling and replays the whole trace, so the
 	# miniature caches have to be full-sized. Scaling them by the requested rate
 	# reported the miss ratios of smaller caches than were asked for.
