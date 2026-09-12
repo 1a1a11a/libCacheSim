@@ -400,8 +400,8 @@ static void pluginCache_parse_params(cache_t *cache,
     char *key = strsep((char **)&params_str, "=");
     char *value = strsep((char **)&params_str, ",");
 
-    // Check if value is NULL
-    if (value == NULL) {
+    // Check if value is NULL; "print" is a bare flag, not a key=value pair
+    if (value == NULL && (key == NULL || strcasecmp(key, "print") != 0)) {
       ERROR("Parameter '%s' is missing a value in cache '%s'\n", key,
             cache->cache_name);
       exit(1);
@@ -426,6 +426,7 @@ static void pluginCache_parse_params(cache_t *cache,
       params->cache_name = strdup(value);
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: plugin_path=%s\n", params->plugin_path);
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

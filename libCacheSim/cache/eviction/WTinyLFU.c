@@ -96,13 +96,11 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
   cache->eviction_params =
       (WTinyLFU_params_t *)malloc(sizeof(WTinyLFU_params_t));
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
+  memset(params, 0, sizeof(WTinyLFU_params_t));
 
-  if (ccache_params.consider_obj_metadata) {
-    cache->obj_md_size = params->main_cache->obj_md_size;
-    // TODO: not sure whether it works
-  } else {
-    cache->obj_md_size = 0;
-  }
+  /* obj_md_size is set once main_cache exists; it is read from main_cache,
+   * which is only built further down */
+  cache->obj_md_size = 0;
 
   WTinyLFU_parse_params(cache, DEFAULT_PARAMS);
   if (cache_specific_params != NULL) {
@@ -142,6 +140,24 @@ cache_t *WTinyLFU_init(const common_cache_params_t ccache_params,
     params->main_cache = Sieve_init(ccache_params_local, NULL);
   } else {
     ERROR("WTinyLFU does not support %s \n", params->main_cache_type);
+  }
+
+  if (ccache_params.consider_obj_metadata) {
+    /* The window and the main cache can charge different per-object overheads
+     * (LRU and SLRU reserve 16 bytes, FIFO none), so neither value alone
+     * describes the pair. This one is what the parent-level size check in
+     * cache_can_insert_default() uses, so take the larger of the two: an object
+     * that does not fit under the heavier policy does not fit in this cache.
+     * WTinyLFU_can_insert() checks each sub-cache against its own overhead. */
+    /* Every incoming object is inserted into the window, and this field is
+     * what cache_get_base()'s capacity loop charges an incoming object, so it
+     * is the window's overhead rather than the pair's maximum. The other two
+     * sites each charge the cache the object is actually entering:
+     * WTinyLFU_can_insert() the window, WTinyLFU_evict() the main cache on
+     * promotion. Using the maximum here made the loop reserve up to 40 bytes
+     * for a 16-byte window insertion with an ARC, LeCaR or Cacheus main
+     * cache. */
+    cache->obj_md_size = params->LRU->obj_md_size;
   }
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "WTinyLFU-w%.2lf-%s",
@@ -192,6 +208,7 @@ static void WTinyLFU_free(cache_t *cache) {
   minimalIncrementCBF_free(params->CBF);
   free(params->CBF);
   free_request(params->req_local);
+  free(params);
 
   cache_struct_free(cache);
 }
@@ -275,8 +292,13 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
       /** only when main_cache is full, evict an obj from the main_cache **/
 
       // if main_cache has enough space, insert the obj into main_cache
+      /* charge the main cache its own per-object overhead, not the composite's.
+       * cache->obj_md_size is the larger of the two sub-caches, so that a
+       * caller asking the composite what it reserves is not told less than it
+       * really does; using it here would bill a FIFO or Clock main cache for
+       * the window's 16 bytes and call it full early. */
       if (main_cache->get_occupied_byte(main_cache) +
-              params->req_local->obj_size + cache->obj_md_size <=
+              params->req_local->obj_size + main_cache->obj_md_size <=
           main_cache->cache_size) {
         main_cache->insert(main_cache, params->req_local);
 
@@ -346,6 +368,17 @@ static bool WTinyLFU_remove(cache_t *cache, obj_id_t obj_id) {
   return false;
 }
 
+/* main_cache is only built after the parameters are parsed, so report the
+ * configured type, which is what `-e print` runs against */
+static const char *WTinyLFU_current_params(WTinyLFU_params_t *params) {
+  static __thread char params_str[128];
+  snprintf(params_str, 128, "main-cache=%s,window-size=%.4lf",
+           params->main_cache == NULL ? params->main_cache_type
+                                      : params->main_cache->cache_name,
+           params->window_size);
+  return params_str;
+}
+
 static void WTinyLFU_parse_params(cache_t *cache,
                                   const char *cache_specific_params) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
@@ -353,6 +386,7 @@ static void WTinyLFU_parse_params(cache_t *cache,
   // params->max_request_num = 32 * cache->cache_size; // 32 * cache_size
 
   char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
      * key and value are separated by = */
@@ -372,12 +406,17 @@ static void WTinyLFU_parse_params(cache_t *cache,
         ERROR("window_size must be in [0, 1)\n");
         exit(1);
       }
+    } else if (strcasecmp(key, "print") == 0) {
+      printf("current parameters: %s\n", WTinyLFU_current_params(params));
+      free(old_params_str);
+      exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      free(old_params_str);
       exit(1);
     }
   }
-  return;
+  free(old_params_str);
 }
 
 /* WTinyLFU cannot an object larger than segment size */
@@ -385,8 +424,12 @@ bool WTinyLFU_can_insert(cache_t *cache, const request_t *req) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)cache->eviction_params;
   bool can_insert = cache_can_insert_default(cache, req);
 
+  /* An object enters through the window, so the window's own per-object
+   * overhead decides whether it fits there — not the main cache's, which can
+   * differ. The main cache checks itself with its own overhead. */
   return can_insert &&
-         (req->obj_size + cache->obj_md_size <= params->LRU->cache_size) &&
+         (req->obj_size + params->LRU->obj_md_size <=
+          params->LRU->cache_size) &&
          (params->main_cache->can_insert(params->main_cache, req));
 }
 

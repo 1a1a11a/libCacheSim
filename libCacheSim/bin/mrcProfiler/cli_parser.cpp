@@ -73,24 +73,24 @@ static struct argp_option options[] = {
      1},
 
     {NULL, 0, NULL, 0, "mrc profiler options:", 0},
-    {"algo", OPTION_CACHE_ALGORITHM, "LRU", OPTION_ARG_OPTIONAL,
+    {"algo", OPTION_CACHE_ALGORITHM, "ALGO", 0,
      "Which algorithm to profile. Only Support LRU for SHARDS.", 2},
-    {"size", OPTION_MRC_SIZE, "0.01,1,100", OPTION_ARG_OPTIONAL,
+    {"size", OPTION_MRC_SIZE, "SIZES", 0,
      "MRC profile size. Support two formats "
      "[start_size,end_size,#test_points|size1,size2,size3,...,size_n]. For "
      "size settings, both explicit sizes (e.g., 1GiB) and WSS-based sizes (a "
      "floating-point number between 0 and 1) are supported.",
      2},
-    {"profiler", OPTION_PROFILER, "SHARDS", OPTION_ARG_OPTIONAL,
+    {"profiler", OPTION_PROFILER, "PROFILER", 0,
      "Which profiler to use. Support SHARDS|MINISIM", 2},
-    {"profiler-params", OPTION_PROFILER_PARAMS, "", OPTION_ARG_OPTIONAL,
+    {"profiler-params", OPTION_PROFILER_PARAMS, "PARAMS", 0,
      "Profiler parameters. ", 2},
     {"ignore-obj-size", OPTION_IGNORE_OBJ_SIZE, NULL, OPTION_ARG_OPTIONAL,
      "Ignore object size", 2},
 
     {NULL, 0, NULL, 0, "common parameters:", 0},
 
-    {"output", OPTION_OUTPUT_PATH, "", OPTION_ARG_OPTIONAL, "Output path", 3},
+    {"output", OPTION_OUTPUT_PATH, "PATH", 0, "Output path", 3},
     {"verbose", OPTION_VERBOSE, NULL, OPTION_ARG_OPTIONAL,
      "Produce verbose output", 3},
     {NULL, 0, NULL, 0, NULL, 0}};
