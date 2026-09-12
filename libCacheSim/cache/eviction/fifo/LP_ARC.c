@@ -120,6 +120,15 @@ cache_t *LP_ARC_init(const common_cache_params_t ccache_params,
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "LP-ARC-Clock");
 
+  /* LP_ARC has no tunable parameters, but it does define a parser, and not
+   * calling it meant `-e print` was dropped on the floor and a mistyped
+   * parameter was accepted in silence -- `-e nonsense=42` ran a full
+   * simulation and exited 0. Parse it like every other algorithm that has a
+   * parser, so print reports and unknown keys are rejected. */
+  if (cache_specific_params != NULL) {
+    LP_ARC_parse_params(cache, cache_specific_params);
+  }
+
   return cache;
 }
 
