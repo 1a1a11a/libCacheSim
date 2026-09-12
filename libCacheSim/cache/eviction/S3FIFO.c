@@ -93,6 +93,20 @@ static inline int s3fifo_hashpower_for_size(int64_t size_bytes) {
   return hp;
 }
 
+/* As above, but never above what the caller asked for. cachesim's --hashpower
+ * is documented as a way to cut memory, and without this cap the sub-caches
+ * ignore it entirely: at a 1GB cache size, --hashpower=12 still left S3FIFO at
+ * 207MiB peak RSS against LRU's 14MiB, because each sub-cache sized its own
+ * table from its byte size and only the parent table shrank. A hashpower of 0
+ * is the "use HASH_POWER_DEFAULT" sentinel rather than a request, so it caps
+ * nothing. The tables grow on demand, and S3FIFO's miss ratio does not depend
+ * on their size -- measured identical at hashpower 12, 18 and 24 -- so this
+ * trades only rehashing for memory. */
+static inline int s3fifo_child_hashpower(int requested, int64_t size_bytes) {
+  int hp = s3fifo_hashpower_for_size(size_bytes);
+  return (requested > 0 && requested < hp) ? requested : hp;
+}
+
 cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
   cache_t *cache =
@@ -138,13 +152,15 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = small_fifo_size;
-  ccache_params_local.hashpower = s3fifo_hashpower_for_size(small_fifo_size);
+  ccache_params_local.hashpower =
+      s3fifo_child_hashpower(ccache_params.hashpower, small_fifo_size);
   params->small_fifo = FIFO_init(ccache_params_local, NULL);
   params->has_evicted = false;
 
   if (ghost_fifo_size > 0) {
     ccache_params_local.cache_size = ghost_fifo_size;
-    ccache_params_local.hashpower = s3fifo_hashpower_for_size(ghost_fifo_size);
+    ccache_params_local.hashpower =
+        s3fifo_child_hashpower(ccache_params.hashpower, ghost_fifo_size);
     params->ghost_fifo = FIFO_init(ccache_params_local, NULL);
     snprintf(params->ghost_fifo->cache_name, CACHE_NAME_ARRAY_LEN,
              "FIFO-ghost");
@@ -153,7 +169,8 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
   }
 
   ccache_params_local.cache_size = main_fifo_size;
-  ccache_params_local.hashpower = s3fifo_hashpower_for_size(main_fifo_size);
+  ccache_params_local.hashpower =
+      s3fifo_child_hashpower(ccache_params.hashpower, main_fifo_size);
   params->main_fifo = FIFO_init(ccache_params_local, NULL);
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S3FIFO-%.4lf-%d",
