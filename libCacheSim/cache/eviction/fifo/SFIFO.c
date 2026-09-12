@@ -393,6 +393,7 @@ static void SFIFO_parse_params(cache_t *cache,
 
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SFIFO_current_params(params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

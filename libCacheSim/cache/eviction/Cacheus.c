@@ -72,7 +72,12 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params) {
   common_cache_params_t updated_cc_params = ccache_params;
   /* reduce the hash table size */
-  updated_cc_params.hashpower -= 2;
+  /* only shrink an explicitly requested hash power: cache_struct_init reads
+   * a non-positive value as "use the default", and clamping would turn that
+   * sentinel into a 16-bucket table. */
+  if (updated_cc_params.hashpower > 0) {
+    updated_cc_params.hashpower = MAX(4, updated_cc_params.hashpower - 2);
+  }
 
   cache_t *cache =
       cache_struct_init("Cacheus", updated_cc_params, cache_specific_params);

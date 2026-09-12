@@ -59,6 +59,21 @@ add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
+
+# Exercises the command-line tools themselves: argument handling, `-e print`
+# parameter reporting, and eviction parameter validation. Runs from the build
+# directory so it can find bin/ and ../data/; skips itself if either is absent.
+add_test(NAME testCLI
+         COMMAND ${CMAKE_COMMAND} -E env bash ${CMAKE_CURRENT_SOURCE_DIR}/test_cli.sh
+         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+# The script prints SKIP: and exits 0 when the binaries or sample traces are
+# absent. Without this, ctest reports that as a pass, so a run that tested
+# nothing looks the same as a run that tested everything. The property arrived
+# in CMake 3.16 and this project supports 3.12, where the run still passes
+# rather than skipping -- no worse than before, just not as clear.
+if(NOT CMAKE_VERSION VERSION_LESS "3.16")
+  set_tests_properties(testCLI PROPERTIES SKIP_REGULAR_EXPRESSION "^SKIP:")
+endif()
 # add_test(NAME testMrcProfiler COMMAND testMrcProfiler WORKING_DIRECTORY .)
 
 # if (ENABLE_GLCACHE)

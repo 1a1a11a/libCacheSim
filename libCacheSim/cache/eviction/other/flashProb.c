@@ -359,10 +359,13 @@ static inline int64_t flashProb_get_n_obj(const cache_t *cache) {
 // ***********************************************************************
 static const char *flashProb_current_params(flashProb_params_t *params) {
   static __thread char params_str[128];
-  snprintf(params_str, 128,
-           "ram-size-ratio=%.4lf,disk-admit-prob=%.4lf,ram-cache=%s\n",
-           params->ram_size_ratio, params->disk_admit_prob,
-           params->ram->cache_name);
+  /* ram is only built after the parameters are parsed, so report the
+   * configured type, which is what `-e print` runs against */
+  snprintf(
+      params_str, 128,
+      "ram-size-ratio=%.4lf,disk-admit-prob=%.4lf,ram-cache=%s\n",
+      params->ram_size_ratio, params->disk_admit_prob,
+      params->ram == NULL ? params->ram_cache_type : params->ram->cache_name);
   return params_str;
 }
 
@@ -395,6 +398,7 @@ static void flashProb_parse_params(cache_t *cache,
       strncpy(params->disk_cache_type, value, 15);
     } else if (strcasecmp(key, "print") == 0) {
       printf("parameters: %s\n", flashProb_current_params(params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

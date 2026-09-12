@@ -18,12 +18,12 @@ First, [build libCacheSim](/doc/install.md). After building libCacheSim, `mrcPro
 ## Basic Usage
 
 ```
-./mrcProfiler trace_path trace_type --algo=[LRU] --profiler=[SHARDS|MINISIM]
+./bin/mrcProfiler trace_path trace_type --algo=[LRU] --profiler=[SHARDS|MINISIM]
             --profiler-params=[FIX_RATE,0.01,hash_salt|FIX_SIZE,8192,hash_salt|FIX_RATE,0.01,thread_num(for MINISIM)]
             --size=[0.01,1,100|1MiB,100MiB,100|0.001,0.002,0.004,0.008,0.016|1MiB,10MiB,10MiB,1GiB]
 ```
 
-Use ./mrcProfiler --help for more details.
+Use ./bin/mrcProfiler --help for more details.
 
 Plot scripts are provided in `scripts/profile_mrc.py`. See [here](/scripts/README.md) for more details.
 
@@ -35,13 +35,13 @@ SHARDS is configured in `fixed sampling rate` mode with a sampling rate of `0.01
 The cache sizes for MRC generation are specified in `fixed-size mode`, spanning `10` evenly spaced points from `100MB` to `1GB`:
 
 ```bash
-./mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=100MB,1GB,10
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=100MB,1GB,10
 ```
 
 SHARDS can also operate in `fixed sample size` mode, limiting memory usage by sampling a fixed number of unique objects. The example below samples `2048` objects:
 
 ```bash
-./mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_SIZE,2048,42 --size=100MB,1GB,10
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_SIZE,2048,42 --size=100MB,1GB,10
 ```
 
 ### Profiling MRC with WSS-Based Sizes
@@ -49,7 +49,7 @@ SHARDS can also operate in `fixed sample size` mode, limiting memory usage by sa
 Generate an MRC based on WSS percentages. The example below creates `10` evenly spaced points from `10%` to `50%` of the WSS:
 
 ```bash
-./mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=0.1,0.5,10
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=0.1,0.5,10
 ```
 
 ### Profiling MRC with Specific Sizes
@@ -60,13 +60,13 @@ mrcProfiler supports both `WSS-based` and `fixed-size` MRC generation for specif
 **WSS-based sizes:**
 
 ```bash
-./mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=0.01,0.02,0.04,0.08,0.16
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=0.01,0.02,0.04,0.08,0.16
 ```
 
 **Fixed cache sizes:**
 
 ```bash
-./mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=10MB,20MB,40MB,80MB,160MB
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=10MB,20MB,40MB,80MB,160MB
 ```
 
 
@@ -76,15 +76,21 @@ mrcProfiler supports both `WSS-based` and `fixed-size` MRC generation for specif
 In the example below, `FIX_RATE,0.01,10` sets a `1%` sampling rate and `10` threads. Note: Sampling rates above 0.5 disable sampling (full trace replay).
 
 ```bash
-./mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=FIFO --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=0.1,0.5,10
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=FIFO --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=0.1,0.5,10
 ```
+
+`--algo` accepts the same names as `cachesim`, so any built-in algorithm works — ARC, S3FIFO, sieve, twoq, and the rest. See the [README](/README.md#supported-algorithms) for the full list.
+
+`belady` and `beladySize` need a trace that carries future access times, so they only run on an oracle format such as `oracleGeneral` or `lcs`; the profiler says so and stops otherwise.
+
+`beladySize` is additionally approximate under sampling, beyond the usual sampling error, and warns when you ask for it. It ranks candidates by reuse distance, computed as `next_access_vtime - n_req`, but `next_access_vtime` counts requests in the full trace while `n_req` counts only the requests the sampler kept, so the distance comes out inflated. On `cloudPhysicsIO` at a 100 MB cache, sample rate 0.5 puts it 0.0126 away from the unsampled miss ratio, against 0.0003 for `belady` and 0.0023 for LRU. Use `FIX_RATE,1,<threads>` for an exact run, or `belady`, which compares future times directly and is unaffected.
 
 ### Ignoring Object Sizes
 
 To ignore object sizes (treat all objects as 1-byte):
 
 ```bash
-./mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=0.1,0.5,10 --ignore-obj-size
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,42 --size=0.1,0.5,10 --ignore-obj-size
 ```
 
 ### Supporting Different Trace Formats
@@ -105,13 +111,13 @@ Commands:
 
 ```bash
 # cachesim
-time ./cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral LRU 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
+time ./bin/cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral LRU 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
 
 # mrcProfiler with SHARDS with 0.01 sample rate
-time ./mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
+time ./bin/mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=LRU --profiler=SHARDS --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
 
 # mrcProfiler with SHARDS with 8192 sample size
-time ./mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=LRU --profiler=SHARDS --profiler-params=FIX_SIZE,32768,10 --size=10MB,100MB,10
+time ./bin/mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=LRU --profiler=SHARDS --profiler-params=FIX_SIZE,32768,10 --size=10MB,100MB,10
 ```
 
 resluts:
@@ -128,22 +134,22 @@ Commands:
 
 ```bash
 # cachesim for FIFO
-time ./cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral FIFO 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
+time ./bin/cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral FIFO 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
 
 # cachesim for ARC
-time ./cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral ARC 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
+time ./bin/cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral ARC 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
 
 # cachesim for S3FIFO
-time ./cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral S3FIFO 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
+time ./bin/cachesim /path_to/cluster52.oracleGeneral.sample10 oracleGeneral S3FIFO 10MB,20MB,30MB,40MB,50MB,60MB,70MB,80MB,90MB,100MB --verbose=0
 
 # mrcProfiler for FIFO eviction algorithm with MINISIM with 0.01 sample rate
-time ./mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=FIFO --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
+time ./bin/mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=FIFO --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
 
 # mrcProfiler for ARC eviction algorithm with MINISIM with 0.01 sample rate
-time ./mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=ARC --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
+time ./bin/mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=ARC --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
 
 # mrcProfiler for S3FIFO eviction algorithm with MINISIM with 0.01 sample rate
-time ./mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=S3FIFO --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
+time ./bin/mrcProfiler /path_to/cluster52.oracleGeneral.sample10 oracleGeneral --algo=S3FIFO --profiler=MINISIM --profiler-params=FIX_RATE,0.01,10 --size=10MB,100MB,10
 ```
 
 resluts:
