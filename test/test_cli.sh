@@ -199,15 +199,12 @@ ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 # to ALL_ALGOS lands in the strict branch by default and fails loudly rather
 # than passing without the print path having been exercised.
 #
-# arc and arcv0 are here for a different reason, and deliberately: ARC.c and
-# ARCv0.c both define a *_parse_params with a working `print` branch that
-# ARC_init and ARCv0_init never call, so the flag is dropped on the floor. Their
-# *_current_params helpers return an empty string, which reads as a feature left
-# unfinished rather than one that broke, so wiring it up is the maintainers'
-# call. This list records the behavior as it actually is; moving them out is the
-# one-line change once those inits parse their params.
-NO_PRINT_ALGOS=" arc arcv0 belady cacheus fifo gdsf lecarv0 lfu lfucpp lfuda"
-NO_PRINT_ALGOS="${NO_PRINT_ALGOS} lhd lirs lru nop random randomTwo sieve size "
+# arc and arcv0 used to be here: they define a *_parse_params with a working
+# `print` branch that their inits never called. Those inits parse their
+# parameters now, so both report like everything else and belong in the strict
+# branch.
+NO_PRINT_ALGOS=" belady cacheus fifo gdsf lecarv0 lfu lfucpp lfuda lhd lirs"
+NO_PRINT_ALGOS="${NO_PRINT_ALGOS} lru nop random randomTwo sieve size "
 
 n_skipped=0
 for algo in ${ALL_ALGOS}; do
