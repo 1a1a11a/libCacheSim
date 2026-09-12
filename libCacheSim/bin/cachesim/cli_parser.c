@@ -557,6 +557,14 @@ void print_parsed_args(struct arguments *args) {
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
                   ", eviction-params: %s", args->eviction_params);
 
+  /* Only when it differs from the default, matching how the other optional
+   * settings below are reported. A non-default hashpower changes the miss
+   * ratio of the policies that draw eviction candidates through the hash
+   * mask, so a run that used one is not comparable to a run that did not. */
+  if (args->hashpower != DEFAULT_HASHPOWER)
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", hashpower %d",
+                  args->hashpower);
+
   if (args->use_ttl)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", use ttl");
 
