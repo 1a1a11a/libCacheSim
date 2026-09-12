@@ -46,6 +46,7 @@ enum argp_option_short {
   OPTION_PREFETCH_ALGO = 'p',
   OPTION_PREFETCH_PARAMS = 0x109,
   OPTION_PRINT_HEAD_REQ = 0x10a,
+  OPTION_HASHPOWER = 0x10b,
 };
 
 /*
@@ -94,6 +95,11 @@ static struct argp_option options[] = {
     {"verbose", OPTION_VERBOSE, "1", 0, "Produce verbose output", 10},
     {"print-head-req", OPTION_PRINT_HEAD_REQ, "false", 0,
      "Print the first few requests", 10},
+    {"hashpower", OPTION_HASHPOWER, "24", 0,
+     "Log2 of the hash table size, default 24 (16M entries). Lower it to save "
+     "memory on small traces. Note that sampling-based algorithms draw "
+     "candidates from the hash table, so their miss ratios depend on this",
+     10},
 
     {0, 0, 0, 0, 0, 0}};
 
@@ -163,6 +169,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     case OPTION_CONSIDER_OBJ_METADATA:
       arguments->consider_obj_metadata = is_true(arg) ? true : false;
       break;
+    case OPTION_HASHPOWER:
+      arguments->hashpower = atoi(arg);
+      if (arguments->hashpower <= 0 || arguments->hashpower >= 40) {
+        ERROR("hashpower must be between 1 and 39, got %d\n",
+              arguments->hashpower);
+      }
+      break;
     case OPTION_WARMUP_SEC:
       arguments->warmup_sec = atoi(arg);
       break;
@@ -226,6 +239,7 @@ static void init_arg(struct arguments *args) {
   args->use_ttl = false;
   args->ignore_obj_size = false;
   args->consider_obj_metadata = false;
+  args->hashpower = DEFAULT_HASHPOWER;
   args->report_interval = 3600 * 24;
   args->n_thread = n_cores();
   args->warmup_sec = -1;
@@ -347,7 +361,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
       int idx = i * args->n_cache_size + j;
       args->caches[idx] = create_cache(
           args->trace_path, args->eviction_algo[i], args->cache_sizes[j],
-          args->eviction_params, args->consider_obj_metadata);
+          args->eviction_params, args->consider_obj_metadata, args->hashpower);
 
       if (args->admission_algo != NULL) {
         args->caches[idx]->admissioner =
@@ -542,6 +556,14 @@ void print_parsed_args(struct arguments *args) {
   if (args->eviction_params != NULL)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
                   ", eviction-params: %s", args->eviction_params);
+
+  /* Only when it differs from the default, matching how the other optional
+   * settings below are reported. A non-default hashpower changes the miss
+   * ratio of the policies that draw eviction candidates through the hash
+   * mask, so a run that used one is not comparable to a run that did not. */
+  if (args->hashpower != DEFAULT_HASHPOWER)
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", hashpower %d",
+                  args->hashpower);
 
   if (args->use_ttl)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", use ttl");

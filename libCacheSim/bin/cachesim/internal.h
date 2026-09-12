@@ -47,6 +47,7 @@ struct arguments {
   bool consider_obj_metadata;
   bool use_ttl;
   bool print_head_req;
+  int hashpower;
 
   /* arguments generated */
   reader_t *reader;
@@ -59,7 +60,7 @@ void free_arg(struct arguments *args);
 
 void simulate(reader_t *reader, cache_t *cache, int report_interval,
               int warmup_sec, char *ofilepath, bool ignore_obj_size,
-              bool print_head_req);
+              bool print_head_req, int hashpower);
 
 void print_parsed_args(struct arguments *args);
 

@@ -263,6 +263,14 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
   if (params->next_access_vtime_field_idx > 0) {
     req->next_access_vtime = read_data(start + params->next_access_vtime_offset,
                                        params->next_access_vtime_format);
+    /* traces spell "no next access" as either -1 or INT64_MAX. The eviction
+     * algorithms expect MAX_REUSE_DISTANCE (which is INT64_MAX, so that form
+     * already arrives correct) and Belady rejects a raw -1 outright, so
+     * normalize it the way the oracle readers do and a binary trace behaves
+     * like an oracle one. */
+    if (req->next_access_vtime == -1) {
+      req->next_access_vtime = MAX_REUSE_DISTANCE;
+    }
   }
 
   (reader->mmap_offset) += reader->item_size;

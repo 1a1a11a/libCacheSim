@@ -178,6 +178,17 @@ typedef struct profiler_params {
           start = end + 1;
         }
       }
+
+      /* thread_num is only assigned when a third field is present, so
+       * --profiler-params=FIX_RATE,1 leaves it at 0 and skips the check just
+       * above. simulate_with_multi_caches then fails to queue any work and
+       * aborts with "cannot push data into thread_pool in get_miss_ratio",
+       * which says nothing about the parameter that was actually missing. */
+      if (current_param_idx < 3) {
+        ERROR("minisim params need FIX_RATE,<sample_rate>,<thread_num>: %s\n",
+              str);
+        exit(1);
+      }
     }
   } minisim_params;
 
