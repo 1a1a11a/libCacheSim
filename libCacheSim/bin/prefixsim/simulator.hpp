@@ -80,6 +80,12 @@ struct SimulatorConfig {
   /// back in the small queue because a main-queue eviction writes no ghost
   /// entry. Off reproduces the pre-2026-09 numbers.
   bool pin_request_blocks = true;
+  /// Phase 3 replay order. True (the default) touches the deepest block
+  /// first, so recency-ordered algorithms leave the prefix root at the MRU end
+  /// and eviction eats the prefix from the deep end inward (see README.md
+  /// "Reverse-order replay"). False replays in prefix order, which leaves the
+  /// root nearest the LRU end, so eviction starts from the beginning.
+  bool replay_deepest_first = true;
   /// When set, append one line per served request describing that request's
   /// holes -- the contiguous runs of blocks it had to recompute. Empty
   /// disables it. See Simulator::dump_holes.

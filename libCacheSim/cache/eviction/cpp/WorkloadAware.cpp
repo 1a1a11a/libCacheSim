@@ -53,13 +53,26 @@
  *     periodically; an EWMA is the streaming form of the same estimate.
  *   - life, the global expected lifespan, from an EWMA of all observed gaps.
  *
- * The clock is a *block counter*, incremented once per recorded block access,
- * not wall-clock seconds (the paper's Fig. 24 reads `time.time()`). This matches
- * the vLLM prototype that these numbers are compared against. It matters less
- * here than it does for AsymCache, because what separates this policy from LRU
- * is the per-class partitioning and the offset tiebreak rather than the shape of
- * the decay -- but see the note in AsymCache.cpp for what a block-count clock
- * does to an exponential whose lifespan is calibrated in seconds.
+ * The clock is wall-clock seconds, taken from the request timestamp, which is
+ * what the paper uses: Algorithm 24 line 1 is `CurT = time.time()`, `t` is
+ * `CurT - b.cached_t`, and both parameters of the exponential are calibrated on
+ * that axis -- Fig. 15 fits the reuse-time CDF "by counting reuse event
+ * frequencies at each second", and the lifespans of Fig. 19-20 are in seconds
+ * (P99 of 97 s for to-B, 612 s on Trace A, 0.3 s on Trace B).
+ *
+ * This used to be a block counter, one tick per recorded block access, for
+ * parity with the vLLM prototype. That was a real deviation, and not a harmless
+ * one: lambda_w and `life` are both fitted online, so the exponential stays
+ * self-consistent in whatever unit the clock uses and does not go flat -- but
+ * only if the clock is a *uniform* rescaling of wall time, and a block counter
+ * is not. It advances once per block access, so it runs faster during large
+ * requests, and request size varies by workload class. The per-class lambda_w
+ * ratios were therefore not the quantity the paper fits, and the per-class
+ * partitioning is exactly what separates this policy from LRU. Changed to the
+ * wall clock on 2026-09-10.
+ *
+ * A driver that supplies no request context (cachesim, which calls neither
+ * hook) has no time source and still falls back to one tick per access.
  */
 
 #include <cmath>
@@ -85,7 +98,8 @@ constexpr double kDefaultMeanGap = 1.0e6;
 
 struct BlockMeta {
   uint64_t category = 0;
-  int64_t last_access = 0;
+  /// Wall-clock seconds of the last access, from the request timestamp.
+  double last_access = 0.0;
   int64_t offset = 0;
   /// False between record_request (which learns a block's class and offset) and
   /// the insert that actually admits it. Only resident blocks live in a class's
@@ -125,17 +139,19 @@ struct HeadEntry {
 
 class WorkloadAware {
  public:
-  /// Logical clock: one tick per recorded block access.
-  int64_t now = 0;
+  /// Wall clock in seconds, set from each request's timestamp by
+  /// set_request_ctx. Falls back to one tick per access for a driver that
+  /// supplies no request context; see `hooked`.
+  double now = 0.0;
   /// Global expected lifespan of a KV block, EWMA of every observed reuse gap.
   double life = kDefaultMeanGap;
   /// The class of the request currently being served, from set_request_ctx.
   uint64_t cur_category = 0;
-  /// Set once record_request fires. Until then nothing advances the clock, so
-  /// every reuse probability would be equal and the policy would decay to
-  /// insertion order. A caller that drives the cache one object at a time gets a
-  /// per-access clock instead, which is the same thing record_request would have
-  /// produced for single-block requests.
+  /// Set once record_request fires, i.e. the driver supplies request structure
+  /// and timestamps. Until then there is no time source, so every reuse
+  /// probability would be equal and the policy would decay to insertion order;
+  /// a caller that drives the cache one object at a time gets a per-access
+  /// clock instead, and its gaps are then in access units rather than seconds.
   bool hooked = false;
 
   std::unordered_map<obj_id_t, BlockMeta> meta;
@@ -154,8 +170,9 @@ class WorkloadAware {
   std::vector<uint64_t> category_order;
 
   std::priority_queue<HeadEntry> head_heap;
-  /// Clock value head_heap was built for; -1 forces a rebuild.
-  int64_t heap_clock = -1;
+  /// Clock value head_heap was built for; a negative value forces a rebuild
+  /// (the clock is a timestamp, so it is never negative itself).
+  double heap_clock = -1.0;
   uint64_t seq = 0;
 
   /// The class's queue, creating it on first use. Every creation goes through
@@ -179,7 +196,7 @@ class WorkloadAware {
     if (it == meta.end()) return 0.0;
     const double mean_gap = mean_gap_of(it->second.category);
     const double lambda = mean_gap > 0.0 ? 1.0 / mean_gap : 0.0;
-    const double t = static_cast<double>(now - it->second.last_access);
+    const double t = now - it->second.last_access;
     return std::exp(-lambda * t) * (1.0 - std::exp(-lambda * life));
   }
 
@@ -346,24 +363,26 @@ static cache_obj_t *WorkloadAware_find(cache_t *cache, const request_t *req,
 
   WorkloadAware *wa = wa_of(cache);
   if (!wa->hooked && update_cache) {
-    // No request structure available: this access *is* the clock tick.
+    // No request structure available (cachesim), so there is no wall clock to
+    // read: this access *is* the clock tick, and the gaps are fitted in access
+    // units rather than seconds.
     if (obj != nullptr) {
       auto it = wa->meta.find(req->obj_id);
       if (it != wa->meta.end()) {
-        const int64_t gap = wa->now - it->second.last_access;
+        const double gap = wa->now - it->second.last_access;
         eviction::CategoryQueue &q = wa->queue_for(it->second.category);
-        if (gap > 0) {
+        if (gap > 0.0) {
           q.mean_gap = (1.0 - eviction::kEwmaAlpha) * q.mean_gap +
-                       eviction::kEwmaAlpha * static_cast<double>(gap);
+                       eviction::kEwmaAlpha * gap;
           wa->life = (1.0 - eviction::kEwmaAlpha) * wa->life +
-                     eviction::kEwmaAlpha * static_cast<double>(gap);
+                     eviction::kEwmaAlpha * gap;
         }
         it->second.last_access = wa->now;
         if (it->second.resident) q.lru.splice(q.lru.end(), q.lru, it->second.slot);
       }
     }
-    ++wa->now;
-    wa->heap_clock = -1;
+    wa->now += 1.0;
+    wa->heap_clock = -1.0;
   }
 
   return obj;
@@ -447,7 +466,14 @@ static bool WorkloadAware_remove(cache_t *cache, const obj_id_t obj_id) {
 
 static void WorkloadAware_set_request_ctx(cache_t *cache,
                                           const cache_request_ctx_t *ctx) {
-  wa_of(cache)->cur_category = ctx->category;
+  WorkloadAware *wa = wa_of(cache);
+  wa->cur_category = ctx->category;
+  // Taking `now` here rather than in record_request is what keeps eviction from
+  // lagging a request behind the arrival it is making room for: the allocator
+  // runs between the two, and ReuseProb is evaluated at `now`.
+  wa->now = ctx->timestamp;
+  // The clock moved, so every cached reuse probability is stale.
+  wa->heap_clock = -1.0;
 }
 
 static void WorkloadAware_record_request(cache_t *cache, const obj_id_t *ids,
@@ -464,13 +490,13 @@ static void WorkloadAware_record_request(cache_t *cache, const obj_id_t *ids,
       // lifespan, then move the block to its class's MRU end. Only a resident
       // block has a slot in that list; one recorded a moment ago and not yet
       // admitted is reordered by the insert instead.
-      const int64_t gap = wa->now - it->second.last_access;
-      if (gap > 0) {
+      const double gap = wa->now - it->second.last_access;
+      if (gap > 0.0) {
         eviction::CategoryQueue &q = wa->queue_for(it->second.category);
         q.mean_gap = (1.0 - eviction::kEwmaAlpha) * q.mean_gap +
-                     eviction::kEwmaAlpha * static_cast<double>(gap);
+                     eviction::kEwmaAlpha * gap;
         wa->life = (1.0 - eviction::kEwmaAlpha) * wa->life +
-                   eviction::kEwmaAlpha * static_cast<double>(gap);
+                   eviction::kEwmaAlpha * gap;
         if (it->second.resident) {
           q.lru.splice(q.lru.end(), q.lru, it->second.slot);
         }
@@ -486,12 +512,11 @@ static void WorkloadAware_record_request(cache_t *cache, const obj_id_t *ids,
       m.offset = i;
       wa->meta.emplace(id, m);
     }
-
-    ++wa->now;
   }
 
-  // The clock moved, so every cached reuse probability is stale.
-  wa->heap_clock = -1;
+  // The resident set and the recency order moved, so the cached heads are
+  // stale even though the clock itself did not advance here.
+  wa->heap_clock = -1.0;
 }
 
 #ifdef __cplusplus

@@ -252,29 +252,79 @@ reserved exactly the right number of slots, no eviction should occur here; any
 that does is counted as `n_unexpected_eviction` and reported as a warning,
 because it means the accounting and the algorithm disagree.
 
+The order of those calls is deepest block first by default and is the one thing
+about this phase worth tuning — see [Replay order](#replay-order---replay-order).
+
 ---
 
-## Reverse-order replay
+## Replay order (`--replay-order`)
 
-Blocks are replayed **deepest first**, from index `B-1` down to index `0`.
+The order phase 3 touches a request's blocks in. This is what sets their
+*relative recency*, so it decides which end of a shared prefix a recency-ordered
+policy evicts first.
 
-The prefix root is the most valuable block in the cache: it is shared by every
-request that starts with the same prompt. The deepest block is the most private.
-If a request were replayed in forward order, the root would be touched first and
-end up nearest the LRU tail — recency-ordered policies would evict exactly the
-block with the most reuse. Replaying in reverse leaves the root at the MRU end
-and the deep, private blocks near the tail, so eviction eats the prefix from the
-far end inward, which is both what a real engine wants and what keeps the
-resident set prefix-contiguous.
+| `--replay-order` | alias | order | index sequence |
+|---|---|---|---|
+| `deepest-first` | `reverse` | **default** — deepest (most private) block first, prefix root last | `B-1` → `0` |
+| `prefix-order` | `forward` | root first, deepest block last | `0` → `B-1` |
 
-Measured against replaying in prefix order, this is worth 0.001-0.004 of hit
-ratio to the recency-ordered policies (LRU at 4k: 0.1625 reverse vs 0.1589
-forward) and essentially nothing to the partial-node ones, which agree to five
-decimals either way. That is mechanical: reverse replay works by arranging
-per-block recency so the root ends up most-recently-used, and a node-granularity
-policy does not use per-block recency to pick which block inside a node to drop
--- `evict-from` controls that instead. Worth knowing before assuming the trick
-carries over to a new partial-node variant.
+```bash
+# the default, stated explicitly
+prefixsim --trace t.jsonl --cache-size 8k --algo lru --replay-order deepest-first
+
+# the ablation
+prefixsim --trace t.jsonl --cache-size 8k --algo lru --replay-order prefix-order
+```
+
+**Why deepest-first is the default.** The prefix root is the most valuable block
+in the cache: it is shared by every request that starts with the same prompt. The
+deepest block is the most private. Replayed in forward order the root is touched
+first and ends up nearest the LRU tail — recency-ordered policies would evict
+exactly the block with the most reuse. Replaying deepest-first leaves the root at
+the MRU end and the deep, private blocks near the tail, so eviction eats the
+prefix from the far end inward, which is both what a real engine wants and what
+keeps the resident set prefix-contiguous.
+
+**What it is worth.** Deepest-first minus prefix-order, hit ratio, on fi-new
+`_max256k_pos` (first 2,000 requests, 16k blocks, uniform cost, pinning on):
+
+| algo | deepest-first | prefix-order | delta |
+|---|---|---|---|
+| `lru` | 0.867195 | 0.865824 | **+0.001371** |
+| `twoq` | 0.851890 | 0.850847 | **+0.001043** |
+| `partial_node_random_compute` | 0.866163 | 0.865932 | +0.000231 |
+| `slru` | 0.841286 | 0.841422 | -0.000136 |
+| `partial_node_random_freq` | 0.859393 | 0.860619 | **-0.001226** |
+| `belady_compute` | 0.886879 | 0.886880 | -0.000001 |
+| `belady` | 0.887015 | 0.887015 | **0.000000** |
+
+An older measurement on `qwen_coder` at 4k put LRU at 0.1625 reverse vs 0.1589
+forward — the same direction and a larger margin at that much smaller cache.
+
+**Read that table before assuming the default wins.** It is the right default for
+the reason above, and it is worth ~0.0014 to LRU and TwoQ. But the effect is
+around 1e-3 at most, it is **not uniformly positive**, and two policies here come
+out slightly ahead in prefix order. Treat it as a setting to hold fixed and
+report, not as a free win.
+
+**`belady` is the one policy provably unaffected**, and it is a useful control:
+`next_access_vtime` is computed on the forward flattened trace regardless of
+replay order (see below), and phase 2 does all the evicting, so the flag cannot
+reach its decisions. A non-zero delta for `belady` would mean something else
+moved.
+
+**The partial-node family is not exempt.** The mechanism is per-block recency, and
+a node-granularity policy does not use per-block recency to choose which block
+*inside* a node to drop — `evict-from=head|tail` in `--algo-params` does. That
+argument holds for `partial_node_random_compute` (2e-4) but **not** for
+`partial_node_random_freq`, which moves 1.2e-3: its score is
+`(freq+1)*cost/recency`, so it reads recency after all, just at node granularity.
+An earlier revision of this file claimed the whole family agreed to five decimals;
+that is not true on this trace. Check, do not assume, when adding a variant.
+
+Changing this flag changes results for the recency-ordered policies, so a number
+is only comparable against another number taken at the same setting. The
+`RESULT` line does not record it — note it yourself alongside the run.
 
 ## Next-access annotation
 

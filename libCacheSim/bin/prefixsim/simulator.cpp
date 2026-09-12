@@ -489,9 +489,17 @@ void Simulator::access(const Request &request) {
   // prefix root last, so recency-ordered algorithms leave the root at the MRU
   // end and evict from the deep end first. See README.md "Reverse-order replay".
   victims_.clear();
-  for (int64_t i = static_cast<int64_t>(request.blocks.size()) - 1; i >= 0; --i) {
-    fill_request(request, static_cast<size_t>(i));
-    cache_->get(cache_, req_buf_);
+  const int64_t n_blk = static_cast<int64_t>(request.blocks.size());
+  if (config_.replay_deepest_first) {
+    for (int64_t i = n_blk - 1; i >= 0; --i) {
+      fill_request(request, static_cast<size_t>(i));
+      cache_->get(cache_, req_buf_);
+    }
+  } else {
+    for (int64_t i = 0; i < n_blk; ++i) {
+      fill_request(request, static_cast<size_t>(i));
+      cache_->get(cache_, req_buf_);
+    }
   }
   // Phase 2 reserved exactly enough room, so nothing should have been evicted
   // here. If something was, the accounting is wrong -- surface it.

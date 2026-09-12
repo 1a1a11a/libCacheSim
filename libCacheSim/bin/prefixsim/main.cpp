@@ -34,6 +34,7 @@ struct Options {
   prefixsim::BlockIdMode block_id = prefixsim::BlockIdMode::kPrefixHash;
   bool verify = true;
   bool pin_request_blocks = true;
+  bool replay_deepest_first = true;
 };
 
 void print_usage(const char *program) {
@@ -53,6 +54,9 @@ void print_usage(const char *program) {
   printf("                          qwen3coder30b_blksz_16 (default: uniform).\n");
   printf("  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
   printf("  --no-verify             Skip the post-request residency check.\n");
+  printf("  --replay-order <o>      deepest-first | prefix-order\n"
+         "                          (default: deepest-first; prefix-order makes\n"
+         "                          recency policies evict from the prefix root).\n");
   printf("  --no-pin                Let phase 2 evict blocks the arriving request\n");
   printf("                          already holds (see n_self_eviction). Reproduces\n");
   printf("                          the pre-pinning numbers; not the real-engine\n");
@@ -177,6 +181,15 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
         fprintf(stderr, "error: unknown --trace-format '%s'\n", value);
         return false;
       }
+    } else if (strcmp(arg, "--replay-order") == 0) {
+      if (strcmp(value, "deepest-first") == 0 || strcmp(value, "reverse") == 0) {
+        opts.replay_deepest_first = true;
+      } else if (strcmp(value, "prefix-order") == 0 || strcmp(value, "forward") == 0) {
+        opts.replay_deepest_first = false;
+      } else {
+        fprintf(stderr, "error: unknown --replay-order '%s'\n", value);
+        return false;
+      }
     } else if (strcmp(arg, "--cost-model") == 0) {
       if (!prefixsim::parse_cost_model(value, opts.cost_model)) {
         fprintf(stderr, "error: unknown --cost-model '%s'\n", value);
@@ -248,7 +261,7 @@ void report(FILE *out, const std::string &algorithm, const Options &opts,
           "n_req=%lld n_req_skipped=%lld n_blocks=%lld "
           "block_hit_ratio=%.6f compute_saving_ratio=%.6f "
           "n_eviction=%lld n_self_eviction=%lld n_unexpected_eviction=%lld "
-          "n_unobserved_eviction_round=%lld\n",
+          "n_unobserved_eviction_round=%lld",
           opts.trace_path.c_str(), algorithm.c_str(),
           static_cast<long long>(opts.cache_size),
           prefixsim::cost_model_name(opts.cost_model),
@@ -261,6 +274,8 @@ void report(FILE *out, const std::string &algorithm, const Options &opts,
           static_cast<long long>(stats.n_self_evictions),
           static_cast<long long>(stats.n_unexpected_evictions),
           static_cast<long long>(stats.n_unobserved_eviction_rounds));
+  if (!opts.replay_deepest_first) fprintf(out, " replay=prefix-order");
+  fprintf(out, "\n");
 }
 
 }  // namespace
@@ -342,6 +357,7 @@ int main(int argc, char **argv) {
            "with self-eviction as before (see n_self_eviction).\n",
            algorithm.c_str());
     }
+    config.replay_deepest_first = opts.replay_deepest_first;
     config.dump_holes_path = holes_path;
 
     {
