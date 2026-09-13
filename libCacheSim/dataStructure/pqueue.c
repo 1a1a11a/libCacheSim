@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../include/libCacheSim/logging.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -132,8 +134,40 @@ int pqueue_insert(pqueue_t *q, void *d) {
 
   /* allocate more memory if necessary */
   if (q->size >= q->avail) {
-    newsize = q->size + q->step;
-    if (!(tmp = realloc(q->d, sizeof(void *) * newsize))) return 1;
+    /* Double, rather than adding the fixed q->step the queue was built with.
+     * The step is the initial capacity, so a queue that starts small paid
+     * O(N/step) reallocs and O(N^2/step) copied pointers to reach N entries:
+     * from a 1024-entry start, 7803 reallocs and about 250GB of memcpy to
+     * reach 8M. Doubling makes the same growth 13 reallocs and 67MB, which is
+     * what lets Size and Belady stop reserving 64MB apiece up front.
+     *
+     * This does not cost memory in the steady state: the old policy reserved
+     * the full step whether or not it was needed, while doubling lands just
+     * above what the queue actually holds -- 67MB for a queue that ends at 8M
+     * entries against the 64MB that was reserved unconditionally, and far less
+     * for every queue that stays smaller than its initial guess.
+     *
+     * q->step is left as the record of the initial capacity, which
+     * pqueue_duplicate still copies. */
+    newsize = q->avail * 2;
+    tmp = realloc(q->d, sizeof(void *) * newsize);
+    if (tmp == NULL) {
+      /* Fatal, like the hash table's allocation failure, rather than the
+       * documented "return non-zero". Every caller in the tree ignores the
+       * return, and they cannot use it safely even if they checked: Size and
+       * Belady have already put the object in the cache and gone on to attach
+       * the node to it, so a queue that refused the insert leaves an object
+       * whose pq_node->pos was never set by bubble_up. pqueue_remove then
+       * writes to q->d at that uninitialised index. Dying here with a legible
+       * message beats corrupting the heap and reporting a miss ratio.
+       *
+       * Growing is how the queue reaches its working size now, so this is a
+       * real path under the virtual-memory limits this sizing is meant to fit
+       * inside, not only at true exhaustion. */
+      ERROR("cannot grow priority queue to %zu entries (%zu bytes)\n", newsize,
+            sizeof(void *) * newsize);
+      exit(1);
+    }
     q->d = tmp;
     q->avail = newsize;
   }
