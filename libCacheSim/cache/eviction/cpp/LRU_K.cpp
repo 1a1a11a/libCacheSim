@@ -117,6 +117,7 @@ static void LRU_K_parse_params(cache_t *cache,
       lruk->k = static_cast<int>(k_val);
     } else if (strcasecmp(key, "print") == 0) {
       printf("LRU_K parameters: k=%d\n", lruk->k);
+      free(to_free);
       exit(0);
     } else {
       ERROR("LRU_K does not have parameter %s\n", key);

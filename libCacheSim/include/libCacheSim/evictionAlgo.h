@@ -200,6 +200,37 @@ cache_t *GLCache_init(const common_cache_params_t ccache_params,
 
 #endif
 
+// ***********************************************************************
+// ****                                                               ****
+// ****                    lookup by algorithm name                   ****
+// ****                                                               ****
+// ***********************************************************************
+
+/**
+ * @brief look up the constructor for a built-in eviction algorithm
+ *
+ * The name is matched case-insensitively and accepts the same aliases as the
+ * command-line tools, e.g. "s3fifo", "s3-fifo".
+ *
+ * @param cache_algo_name algorithm name, may be NULL
+ * @return the constructor, or NULL if the name is not a built-in algorithm or
+ *         was not compiled in (GLCache, LRB and 3LCache are behind build flags)
+ */
+cache_init_func_ptr find_cache_init_func(const char *cache_algo_name);
+
+/**
+ * @brief construct a built-in eviction algorithm by name
+ *
+ * Note that belady and beladySize need future information, so they only work on
+ * oracle traces; callers that know the trace type should check first.
+ *
+ * @return the new cache, or NULL if the name is not a built-in algorithm. The
+ *         caller owns the result and frees it with cache->cache_free().
+ */
+cache_t *create_cache_by_name(const char *cache_algo_name,
+                              const common_cache_params_t cc_params,
+                              const char *cache_specific_params);
+
 #ifdef __cplusplus
 }
 #endif

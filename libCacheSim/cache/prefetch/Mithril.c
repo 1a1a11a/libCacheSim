@@ -76,6 +76,7 @@ static void set_Mithril_default_init_params(
 static void Mithril_parse_init_params(const char *cache_specific_params,
                                       Mithril_init_params_t *init_params) {
   char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
 
   while (params_str != NULL && params_str[0] != '\0') {
     char *key = strsep((char **)&params_str, "=");
@@ -122,13 +123,16 @@ static void Mithril_parse_init_params(const char *cache_specific_params,
     } else if (strcasecmp(key, "print") == 0 ||
                strcasecmp(key, "default") == 0) {
       printf("default params: %s\n", Mithril_default_params());
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("Mithril does not have parameter %s\n", key);
       printf("default params: %s\n", Mithril_default_params());
+      free(old_params_str);
       exit(1);
     }
   }
+  free(old_params_str);
 }
 
 static void set_Mithril_params(Mithril_params_t *Mithril_params,

@@ -82,6 +82,7 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
 
   cache->eviction_params = (SLRUv0_params_t *)malloc(sizeof(SLRUv0_params_t));
   SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
+  memset(params, 0, sizeof(SLRUv0_params_t));
 
   SLRUv0_parse_params(cache, DEFAULT_CACHE_PARAMS);
   if (cache_specific_params != NULL) {
@@ -92,7 +93,12 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size /= params->n_seg;
-  ccache_params_local.hashpower = MIN(16, ccache_params_local.hashpower - 4);
+  /* see Cacheus_init: a non-positive hash power is the "use the default"
+   * sentinel and must survive untouched. */
+  if (ccache_params_local.hashpower > 0) {
+    ccache_params_local.hashpower =
+        MAX(4, MIN(16, ccache_params_local.hashpower - 4));
+  }
   params->LRUs[0] = LRU_init(ccache_params_local, NULL);
   for (int i = 1; i < params->n_seg; i++) {
     params->LRUs[i] = LRU_init(ccache_params_local, NULL);
@@ -113,6 +119,7 @@ static void SLRUv0_free(cache_t *cache) {
   for (int i = 0; i < params->n_seg; i++)
     params->LRUs[i]->cache_free(params->LRUs[i]);
   free(params->LRUs);
+  free(params);
   cache_struct_free(cache);
 }
 
@@ -373,6 +380,7 @@ static void SLRUv0_parse_params(cache_t *cache,
 
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SLRUv0_current_params(params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
@@ -396,13 +404,15 @@ static void SLRUv0_parse_params(cache_t *cache,
  */
 static void SLRUv0_cool(cache_t *cache, const request_t *req, int i) {
   SLRUv0_params_t *params = (SLRUv0_params_t *)(cache->eviction_params);
-  request_t *saved_req = new_request();
   cache_t *lru = params->LRUs[i];
   // the last LRU is evict-only, do not move to a lower lru
   if (i == 0) {
     lru->evict(lru, NULL);
     return;
   };
+
+  // only needed once we know the object is moving to a lower lru
+  request_t *saved_req = new_request();
 
   // the evicted object move to lower lru
   cache_obj_t *obj_evicted = lru->to_evict(lru, req);

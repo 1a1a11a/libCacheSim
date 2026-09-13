@@ -7,6 +7,7 @@
 #include <libgen.h>
 #include <math.h>
 
+#include "cache_init.h"
 #include "internal.h"
 #include "libCacheSim/cache.h"
 #include "libCacheSim/reader.h"
@@ -22,7 +23,8 @@ int main(int argc, char **argv) {
   }
   if (args.n_cache_size * args.n_eviction_algo == 1) {
     simulate(args.reader, args.caches[0], args.report_interval, args.warmup_sec,
-             args.ofilepath, args.ignore_obj_size, args.print_head_req);
+             args.ofilepath, args.ignore_obj_size, args.print_head_req,
+             args.hashpower);
 
     free_arg(&args);
     return 0;
@@ -90,6 +92,14 @@ int main(int argc, char **argv) {
     if (show_cost)
       n += snprintf(output_str + n, sizeof(output_str) - n,
                     ", cost saving ratio %.4lf", cost_saving_ratio);
+    /* cachesim appends to the same result file across runs, so two rows with
+     * the same trace, algorithm and cache size would otherwise be
+     * indistinguishable even though a non-default hashpower can move the miss
+     * ratio of the sampling policies. Recorded only when it is not the
+     * default, so ordinary runs keep the format they have always had. */
+    if (args.hashpower != DEFAULT_HASHPOWER)
+      n += snprintf(output_str + n, sizeof(output_str) - n, ", hashpower %d",
+                    args.hashpower);
     snprintf(output_str + n, sizeof(output_str) - n, "\n");
 
     printf("%s", output_str);

@@ -56,6 +56,7 @@ static void set_PG_default_init_params(PG_init_params_t *init_params) {
 static void PG_parse_init_params(const char *cache_specific_params,
                                  PG_init_params_t *init_params) {
   char *params_str = strdup(cache_specific_params);
+  char *old_params_str = params_str;
 
   while (params_str != NULL && params_str[0] != '\0') {
     char *key = strsep((char **)&params_str, "=");
@@ -74,13 +75,16 @@ static void PG_parse_init_params(const char *cache_specific_params,
     } else if (strcasecmp(key, "print") == 0 ||
                strcasecmp(key, "default") == 0) {
       printf("default params: %s\n", PG_default_params());
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("pg does not have parameter %s\n", key);
       printf("default params: %s\n", PG_default_params());
+      free(old_params_str);
       exit(1);
     }
   }
+  free(old_params_str);
 }
 
 static void set_PG_params(PG_params_t *PG_params, PG_init_params_t *init_params,

@@ -48,8 +48,7 @@ class Popularity {
     else
       os << std::setprecision(4)
          << "popularity: Zipf alpha=" << popularity.slope_
-         << ", R2=" << popularity.r2_
-         << "\n";
+         << ", R2=" << popularity.r2_ << "\n";
 
     return os;
   }

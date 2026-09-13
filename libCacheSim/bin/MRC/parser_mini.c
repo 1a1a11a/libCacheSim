@@ -332,9 +332,10 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
   for (int i = 0; i < args->n_eviction_algo; i++) {
     for (int j = 0; j < args->n_cache_size; j++) {
       int idx = i * args->n_cache_size + j;
-      args->caches[idx] = create_cache(
-          args->trace_path, args->eviction_algo[i], args->cache_sizes[j],
-          args->eviction_params, args->consider_obj_metadata);
+      args->caches[idx] =
+          create_cache(args->trace_path, args->eviction_algo[i],
+                       args->cache_sizes[j], args->eviction_params,
+                       args->consider_obj_metadata, DEFAULT_HASHPOWER);
 
       if (args->admission_algo != NULL) {
         args->caches[idx]->admissioner =

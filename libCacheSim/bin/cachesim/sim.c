@@ -1,3 +1,4 @@
+#include "cache_init.h"
 #include "libCacheSim/cache.h"
 #include "libCacheSim/reader.h"
 #include "utils/include/mymath.h"
@@ -16,7 +17,7 @@ void print_head_requests(request_t *req, uint64_t req_cnt) {
 
 void simulate(reader_t *reader, cache_t *cache, int report_interval,
               int warmup_sec, char *ofilepath, bool ignore_obj_size,
-              bool print_head_req) {
+              bool print_head_req, int hashpower) {
   /* random seed */
   srand(time(NULL));
   set_rand_seed(rand());
@@ -103,6 +104,17 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
   if (show_cost)
     n += snprintf(output_str + n, sizeof(output_str) - n,
                   ", cost saving ratio %.4lf", cost_saving_ratio);
+  /* cachesim appends to the same result file across runs, so without this two
+   * rows with the same trace, algorithm and cache size are indistinguishable
+   * even though a non-default hashpower moves the miss ratio of the policies
+   * that draw eviction candidates through the hash mask. Recorded only when it
+   * is not the default, so ordinary runs keep the format they have always had,
+   * and it is the requested value rather than cache->hashtable->hashpower so
+   * that this row and the multi-cache rows in main.c report the same number --
+   * several algorithms shrink their own table below what was asked for. */
+  if (hashpower != DEFAULT_HASHPOWER)
+    n += snprintf(output_str + n, sizeof(output_str) - n, ", hashpower %d",
+                  hashpower);
   snprintf(output_str + n, sizeof(output_str) - n, ", throughput %.2lf MQPS\n",
            (double)req_cnt / 1000000.0 / runtime);
   printf("%s", output_str);

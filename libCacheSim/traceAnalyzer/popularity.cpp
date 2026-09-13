@@ -66,7 +66,8 @@ void Popularity::run(obj_info_map_type &obj_map) {
     WARN("%s\n", fit_fail_reason_.c_str());
   }
 
-  /* calculate Zipf alpha using linear regression: log(freq) = -alpha*log(rank) + c */
+  /* calculate Zipf alpha using linear regression: log(freq) = -alpha*log(rank)
+   * + c */
   const size_t n = freq_vec_.size();
   vector<double> log_freq(n);
   vector<double> log_rank(n);
@@ -78,7 +79,7 @@ void Popularity::run(obj_info_map_type &obj_map) {
 
   double reg_slope, reg_intercept, r;
   int err = linreg(static_cast<int>(n), log_rank.data(), log_freq.data(),
-                  &reg_slope, &reg_intercept, &r);
+                   &reg_slope, &reg_intercept, &r);
   if (err != 0) {
     fit_fail_reason_ = "popularity: singular regression matrix (e.g. uniform)";
     WARN("%s\n", fit_fail_reason_.c_str());

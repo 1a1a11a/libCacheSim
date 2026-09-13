@@ -403,14 +403,28 @@ static bool SLRU_remove(cache_t *cache, obj_id_t obj_id) {
 // ****                  parameter set up functions                   ****
 // ****                                                               ****
 // ***********************************************************************
+/* share of the cache given to one segment, in percent. lru_max_n_bytes is only
+ * allocated after the parameters are parsed, so it is still NULL when the user
+ * asks for the parameters with `-e print`; until seg-size says otherwise the
+ * segments are evenly sized */
+static int SLRU_seg_pct(const cache_t *cache, const SLRU_params_t *params,
+                        const int seg) {
+  if (params->lru_max_n_bytes == NULL) {
+    return 100 / params->n_seg;
+  }
+  return (int)(params->lru_max_n_bytes[seg] * 100 / cache->cache_size);
+}
+
 static const char *SLRU_current_params(cache_t *cache, SLRU_params_t *params) {
   static __thread char params_str[128];
-  int n = snprintf(params_str, 128, "n-seg=%d,seg-size=%d", params->n_seg,
-                   (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
 
-  for (int i = 1; i < params->n_seg; i++) {
-    n += snprintf(params_str + n, 128 - n, ":%d",
-                  (int)(params->lru_max_n_bytes[i] * 100 / cache->cache_size));
+  int n = snprintf(params_str, sizeof(params_str), "n-seg=%d,seg-size=%d",
+                   params->n_seg, SLRU_seg_pct(cache, params, 0));
+
+  for (int i = 1; i < params->n_seg && n > 0 && n < (int)sizeof(params_str);
+       i++) {
+    n += snprintf(params_str + n, sizeof(params_str) - n, ":%d",
+                  SLRU_seg_pct(cache, params, i));
   }
 
   return params_str;
@@ -439,15 +453,26 @@ static void SLRU_parse_params(cache_t *cache,
       if (strlen(end) > 2) {
         ERROR("param parsing error, find string \"%s\" after number\n", end);
       }
+      /* n_seg divides the cache size and the reported percentages */
+      if (params->n_seg < 1 || params->n_seg > SLRU_MAX_N_SEG) {
+        ERROR("n-seg must be between 1 and %d, got %d\n", SLRU_MAX_N_SEG,
+              params->n_seg);
+      }
     } else if (strcasecmp(key, "seg-size") == 0) {
       int n_seg = 0;
       int64_t seg_size_sum = 0;
       int64_t seg_size_array[SLRU_MAX_N_SEG];
       char *v = strsep((char **)&value, ":");
       while (v != NULL) {
+        if (n_seg >= SLRU_MAX_N_SEG) {
+          ERROR("seg-size accepts at most %d segments\n", SLRU_MAX_N_SEG);
+        }
         seg_size_array[n_seg++] = (int64_t)strtol(v, &end, 0);
         seg_size_sum += seg_size_array[n_seg - 1];
         v = strsep((char **)&value, ":");
+      }
+      if (n_seg < 1 || seg_size_sum <= 0) {
+        ERROR("seg-size needs at least one segment with a positive size\n");
       }
       params->n_seg = n_seg;
       params->lru_max_n_bytes = calloc(params->n_seg, sizeof(int64_t));
@@ -462,6 +487,7 @@ static void SLRU_parse_params(cache_t *cache,
       }
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SLRU_current_params(cache, params));
+      free(old_params_str);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);

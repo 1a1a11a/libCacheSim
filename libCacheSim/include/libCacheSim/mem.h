@@ -7,7 +7,7 @@
 
 #include "../config.h"
 
-#if HEAP_ALLOCTOR == HEAP_ALLOCATOR_G_NEW
+#if HEAP_ALLOCATOR == HEAP_ALLOCATOR_G_NEW
 #include "glib.h"
 #define my_malloc(type) g_new(type, 1)
 #define my_malloc_n(type, n) g_new(type, n)

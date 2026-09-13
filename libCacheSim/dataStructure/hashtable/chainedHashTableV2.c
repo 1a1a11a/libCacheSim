@@ -93,7 +93,12 @@ hashtable_t *create_chained_hashtable_v2(const uint16_t hashpower) {
   hashtable_t *hashtable = my_malloc(hashtable_t);
   memset(hashtable, 0, sizeof(hashtable_t));
 
-  size_t size = sizeof(cache_obj_t *) * hashsize(hashtable->hashpower);
+  /* hashtable->hashpower is still 0 from the memset above -- the caller's
+   * hashpower is the parameter, and it is not stored until the end of this
+   * function. Reading the field here made size 8 bytes instead of the table's
+   * real size, so the memset below cleared one slot and the madvise() advised
+   * one slot. */
+  size_t size = sizeof(cache_obj_t *) * hashsize(hashpower);
   hashtable->ptr_table = my_malloc_n(cache_obj_t *, hashsize(hashpower));
   if (hashtable->ptr_table == NULL) {
     ERROR("allocate hash table %zu entry * %lu B = %ld MiB failed\n",
