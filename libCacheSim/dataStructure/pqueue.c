@@ -132,7 +132,22 @@ int pqueue_insert(pqueue_t *q, void *d) {
 
   /* allocate more memory if necessary */
   if (q->size >= q->avail) {
-    newsize = q->size + q->step;
+    /* Double, rather than adding the fixed q->step the queue was built with.
+     * The step is the initial capacity, so a queue that starts small paid
+     * O(N/step) reallocs and O(N^2/step) copied pointers to reach N entries:
+     * from a 1024-entry start, 7803 reallocs and about 250GB of memcpy to
+     * reach 8M. Doubling makes the same growth 13 reallocs and 67MB, which is
+     * what lets Size and Belady stop reserving 64MB apiece up front.
+     *
+     * This does not cost memory in the steady state: the old policy reserved
+     * the full step whether or not it was needed, while doubling lands just
+     * above what the queue actually holds -- 67MB for a queue that ends at 8M
+     * entries against the 64MB that was reserved unconditionally, and far less
+     * for every queue that stays smaller than its initial guess.
+     *
+     * q->step is left as the record of the initial capacity, which
+     * pqueue_duplicate still copies. */
+    newsize = q->avail * 2;
     if (!(tmp = realloc(q->d, sizeof(void *) * newsize))) return 1;
     q->d = tmp;
     q->avail = newsize;

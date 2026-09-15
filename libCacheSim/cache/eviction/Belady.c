@@ -53,6 +53,16 @@ static void Belady_remove_obj(cache_t *cache, cache_obj_t *obj);
  * @param ccache_params some common cache parameters
  * @param cache_specific_params Belady specific parameters, should be NULL
  */
+/* 512KB of pointers. The queue grows geometrically, so the initial reservation
+ * only has to cover the common case rather than the worst one. Reserving 8e6
+ * entries -- 64MB -- up front was paid by every cache: MINISIM builds one per
+ * profile point and holds them all at once, so the default --size=0.01,1,100
+ * reserved about 6.1GB of address space beyond what the same curve costs for
+ * lru. That never showed up in RSS, because the reservation is malloc'd and
+ * never touched, but it is not free: under `ulimit -v 2g` the run aborts where
+ * lru completes. */
+static const unsigned long kInitialPQCapacity = (512UL << 10) / sizeof(void *);
+
 cache_t *Belady_init(const common_cache_params_t ccache_params,
 
                      const char *cache_specific_params) {
@@ -70,7 +80,7 @@ cache_t *Belady_init(const common_cache_params_t ccache_params,
   Belady_params_t *params = my_malloc(Belady_params_t);
   cache->eviction_params = params;
 
-  params->pq = pqueue_init((unsigned long)8e6);
+  params->pq = pqueue_init(kInitialPQCapacity);
   return cache;
 }
 
