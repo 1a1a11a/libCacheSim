@@ -140,6 +140,14 @@ typedef struct {
 } S3FIFO_obj_metadata_t;
 
 typedef struct {
+  int64_t insert_seq;  // insert sequence number (of whichever sub-FIFO the
+                       // object currently lives in), at insertion time
+  int32_t freq;
+  int32_t insert_bucket;  // ghost FIFO only: histogram bucket at insertion,
+                          // used by the optional learned control plane
+} S4FIFO_obj_metadata_t;
+
+typedef struct {
   // int32_t freq;
   int lru_id;
   bool reference;
@@ -199,6 +207,7 @@ typedef struct cache_obj {
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
+    S4FIFO_obj_metadata_t S4FIFO;
     Sieve_obj_params_t sieve;
     CAR_obj_metadata_t CAR;
     Clock2QPlus_obj_metadata_t Clock2QPlus;

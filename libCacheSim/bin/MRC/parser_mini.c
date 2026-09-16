@@ -329,13 +329,18 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
    * the working set size **/
   conv_cache_sizes(args->args[4], args->args[5], args);
 
+  /* lets an eviction parameter be given as a fraction of the trace rather
+   * than an absolute request count - see the same call in cachesim. */
+  int64_t n_total_req = get_num_of_req(args->reader);
+  reset_reader(args->reader);
+
   for (int i = 0; i < args->n_eviction_algo; i++) {
     for (int j = 0; j < args->n_cache_size; j++) {
       int idx = i * args->n_cache_size + j;
-      args->caches[idx] =
-          create_cache(args->trace_path, args->eviction_algo[i],
-                       args->cache_sizes[j], args->eviction_params,
-                       args->consider_obj_metadata, DEFAULT_HASHPOWER);
+      args->caches[idx] = create_cache(
+          args->trace_path, args->eviction_algo[i], args->cache_sizes[j],
+          args->eviction_params, args->consider_obj_metadata, DEFAULT_HASHPOWER,
+          n_total_req);
 
       if (args->admission_algo != NULL) {
         args->caches[idx]->admissioner =

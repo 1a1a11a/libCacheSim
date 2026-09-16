@@ -435,7 +435,8 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
     common_cache_params_t cc_params = {.cache_size = _cache_size,
                                        .default_ttl = 0,
                                        .hashpower = minisim_hashpower,
-                                       .consider_obj_metadata = false};
+                                       .consider_obj_metadata = false,
+                                       .n_total_req = 0};
     caches[i] = create_cache_using_plugin(params_.cache_algorithm_str,
                                           cc_params, nullptr);
   }

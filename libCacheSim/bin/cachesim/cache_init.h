@@ -32,12 +32,14 @@ static inline cache_t *create_cache(const char *trace_path,
                                     const uint64_t cache_size,
                                     const char *eviction_params,
                                     const bool consider_obj_metadata,
-                                    const int hashpower) {
+                                    const int hashpower,
+                                    const int64_t n_total_req) {
   common_cache_params_t cc_params = {
       .cache_size = cache_size,
       .default_ttl = 86400 * 300,
       .hashpower = hashpower,
       .consider_obj_metadata = consider_obj_metadata,
+      .n_total_req = n_total_req,
   };
   cache_t *cache;
 

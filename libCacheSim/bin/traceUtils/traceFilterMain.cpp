@@ -78,7 +78,8 @@ int main(int argc, char *argv[]) {
       .cache_size = static_cast<uint64_t>(args.cache_size),
       .default_ttl = 86400 * 300,
       .hashpower = 24,
-      .consider_obj_metadata = false};
+      .consider_obj_metadata = false,
+      .n_total_req = 0};
 
   if (strcasecmp(args.cache_name, "LRU") == 0) {
     args.cache = LRU_init(cc_params, NULL);
