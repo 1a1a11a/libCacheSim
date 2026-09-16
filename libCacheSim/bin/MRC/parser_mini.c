@@ -330,9 +330,16 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
   conv_cache_sizes(args->args[4], args->args[5], args);
 
   /* lets an eviction parameter be given as a fraction of the trace rather
-   * than an absolute request count - see the same call in cachesim. */
-  int64_t n_total_req = get_num_of_req(args->reader);
-  reset_reader(args->reader);
+   * than an absolute request count - see the same call in cachesim, which
+   * also explains why only the algorithms that read it pay for the scan. */
+  int64_t n_total_req = 0;
+  for (int i = 0; i < args->n_eviction_algo; i++) {
+    if (cache_needs_n_total_req(args->eviction_algo[i])) {
+      n_total_req = get_num_of_req(args->reader);
+      reset_reader(args->reader);
+      break;
+    }
+  }
 
   for (int i = 0; i < args->n_eviction_algo; i++) {
     for (int j = 0; j < args->n_cache_size; j++) {

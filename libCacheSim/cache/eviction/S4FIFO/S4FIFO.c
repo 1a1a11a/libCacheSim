@@ -136,6 +136,22 @@ static inline bool S4FIFO_is_collecting(const S4FIFO_params_t *params);
 // ****                                                               ****
 // ***********************************************************************
 
+/* Compute initial hashpower for a sub-cache of the given byte size, never
+ * above what the caller asked for. Without this each sub-FIFO inherits the
+ * parent's hashpower and allocates a full-size table, so a single S4FIFO
+ * costs three of them. The tables grow on demand (so a sub-FIFO that the
+ * predictor later grows is still fine) and the miss ratio does not depend
+ * on their initial size, so this trades only rehashing for memory. Mirrors
+ * S3FIFO's s3fifo_child_hashpower. A requested hashpower of 0 is the "use
+ * HASH_POWER_DEFAULT" sentinel rather than a request, so it caps nothing. */
+static inline int s4fifo_child_hashpower(int requested, int64_t size_bytes) {
+  if (size_bytes <= 0) return 1;
+  int hp = 1;
+  int64_t slots = size_bytes / 8;
+  while ((1LL << hp) < slots && hp < HASH_POWER_DEFAULT) hp++;
+  return (requested > 0 && requested < hp) ? requested : hp;
+}
+
 cache_t *S4FIFO_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
   cache_t *cache =
@@ -184,11 +200,15 @@ cache_t *S4FIFO_init(const common_cache_params_t ccache_params,
 
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = small_fifo_size;
+  ccache_params_local.hashpower =
+      s4fifo_child_hashpower(ccache_params.hashpower, small_fifo_size);
   params->small_fifo = FIFO_init(ccache_params_local, NULL);
   params->has_evicted = false;
 
   if (ghost_fifo_size > 0) {
     ccache_params_local.cache_size = ghost_fifo_size;
+    ccache_params_local.hashpower =
+        s4fifo_child_hashpower(ccache_params.hashpower, ghost_fifo_size);
     params->ghost_fifo = FIFO_init(ccache_params_local, NULL);
     snprintf(params->ghost_fifo->cache_name, CACHE_NAME_ARRAY_LEN,
              "FIFO-ghost");
@@ -197,6 +217,8 @@ cache_t *S4FIFO_init(const common_cache_params_t ccache_params,
   }
 
   ccache_params_local.cache_size = main_fifo_size;
+  ccache_params_local.hashpower =
+      s4fifo_child_hashpower(ccache_params.hashpower, main_fifo_size);
   params->main_fifo = FIFO_init(ccache_params_local, NULL);
 
   snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S4FIFO-%.4lf-%d-%d-%.2lf",
@@ -521,9 +543,9 @@ static void S4FIFO_evict_small(cache_t *cache, const request_t *req) {
       S4FIFO_track_main_insert(params, main_obj);
     } else {
       if (ghost_fifo != NULL) {
+        // also records the one-hit-wonder for feature collection
         S4FIFO_track_ghost_insert(params, ghost_fifo, params->req_local);
-      }
-      if (S4FIFO_is_collecting(params)) {
+      } else if (S4FIFO_is_collecting(params)) {
         S4FIFO_feature_collector_record_one_hit(params->feature_collector);
       }
       has_evicted = true;
@@ -551,6 +573,10 @@ static void S4FIFO_evict_main(cache_t *cache, const request_t *req) {
       obj_to_evict = NULL;
 
       cache_obj_t *new_obj = main_fifo->insert(main_fifo, params->req_local);
+      // a reinsertion is a fresh position at the tail of main, so stamp it
+      // like any other main insert - otherwise it keeps a stale (or unset)
+      // insert_seq and skews the hit-position histogram
+      S4FIFO_track_main_insert(params, new_obj);
       // clock with 2-bit counter
       new_obj->S4FIFO.freq = MIN(freq, 3) - 1;
 
@@ -649,7 +675,11 @@ static void S4FIFO_update_phase(cache_t *cache, S4FIFO_params_t *params) {
   int64_t n_req = cache->n_req;
 
   if (params->phase == S4FIFO_PHASE_WARMUP) {
-    if (cache->get_occupied_byte(cache) >= cache->cache_size) {
+    /* the cache is warm once it has had to evict for capacity. Testing
+     * occupancy against cache_size instead would almost never fire with
+     * variable-sized objects: eviction runs before occupancy can exceed
+     * the limit, so it would need the trace to fill the cache exactly. */
+    if (params->has_evicted) {
       params->phase = S4FIFO_PHASE_FEATURE_COLLECT;
       params->phase_start_n_req = n_req;
     }
@@ -692,8 +722,8 @@ static void S4FIFO_update_phase(cache_t *cache, S4FIFO_params_t *params) {
  * fields are updated to their new targets and the existing over-budget
  * eviction logic in S4FIFO_evict_small/_main drains (or grows into) each
  * one over subsequent requests, with no pause and no object migration.
- * Each sub-FIFO's hashtable was already sized for the parent's full
- * capacity at creation, so growing one is safe.
+ * A sub-FIFO's hashtable is sized for its initial capacity but grows on
+ * demand, so growing the sub-FIFO past that is safe.
  */
 static void S4FIFO_apply_predicted_config(cache_t *cache,
                                           S4FIFO_params_t *params) {

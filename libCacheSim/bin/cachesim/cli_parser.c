@@ -360,9 +360,17 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
    * (e.g. s4fifo's feature-collect-reqs) rather than an absolute request
    * count. Cheap for binary traces (derived from the file size); for txt
    * and zstd traces it counts on a cloned reader, leaving this one
-   * untouched - reset anyway so nothing downstream depends on that. */
-  int64_t n_total_req = get_num_of_req(args->reader);
-  reset_reader(args->reader);
+   * untouched - reset anyway so nothing downstream depends on that. Only
+   * the algorithms that read it pay for the scan; for everything else it
+   * would be a wasted pass over the whole trace. */
+  int64_t n_total_req = 0;
+  for (int i = 0; i < args->n_eviction_algo; i++) {
+    if (cache_needs_n_total_req(args->eviction_algo[i])) {
+      n_total_req = get_num_of_req(args->reader);
+      reset_reader(args->reader);
+      break;
+    }
+  }
 
   for (int i = 0; i < args->n_eviction_algo; i++) {
     for (int j = 0; j < args->n_cache_size; j++) {
