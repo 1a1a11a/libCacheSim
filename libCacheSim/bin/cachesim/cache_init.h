@@ -18,6 +18,20 @@ extern "C" {
 #define DEFAULT_HASHPOWER 24
 
 /**
+ * @brief does this algorithm read common_cache_params_t.n_total_req?
+ *
+ * Supplying it means counting the trace's requests before the simulation
+ * starts, which on a txt or zstd trace is a full extra pass — as expensive as
+ * the simulation itself. Only the algorithms listed here accept a parameter
+ * expressed as a fraction of the trace (s4fifo's feature-collect-reqs, whose
+ * default is fractional), so everything else should not pay for the pre-scan.
+ */
+static inline bool cache_needs_n_total_req(const char *eviction_algo) {
+  return strcasecmp(eviction_algo, "s4fifo") == 0 ||
+         strcasecmp(eviction_algo, "s4-fifo") == 0;
+}
+
+/**
  * @brief create a cache for the CLI, given the algorithm name
  *
  * @param hashpower log2 of the hash table size. This used to be adjusted by
@@ -32,12 +46,14 @@ static inline cache_t *create_cache(const char *trace_path,
                                     const uint64_t cache_size,
                                     const char *eviction_params,
                                     const bool consider_obj_metadata,
-                                    const int hashpower) {
+                                    const int hashpower,
+                                    const int64_t n_total_req) {
   common_cache_params_t cc_params = {
       .cache_size = cache_size,
       .default_ttl = 86400 * 300,
       .hashpower = hashpower,
       .consider_obj_metadata = consider_obj_metadata,
+      .n_total_req = n_total_req,
   };
   cache_t *cache;
 

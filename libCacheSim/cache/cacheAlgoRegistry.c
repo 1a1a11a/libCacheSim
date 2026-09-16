@@ -66,6 +66,10 @@ static const cache_algo_entry_t g_cache_algos[] = {
     {"s3-fifov0", S3FIFOv0_init},
     {"s3fifo", S3FIFO_init},
     {"s3fifov0", S3FIFOv0_init},
+#ifdef ENABLE_S4FIFO
+    {"s4-fifo", S4FIFO_init},
+    {"s4fifo", S4FIFO_init},
+#endif
     {"sieve", Sieve_init},
     {"size", Size_init},
     {"slru", SLRU_init},
