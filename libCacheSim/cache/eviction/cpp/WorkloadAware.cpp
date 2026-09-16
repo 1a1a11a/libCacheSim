@@ -92,9 +92,23 @@ namespace {
 
 /// EWMA responsiveness for the reuse-gap fits.
 constexpr double kEwmaAlpha = 0.05;
-/// Prior mean gap for a class no reuse has been observed in yet. Large, so an
-/// unseen class starts out near-LRU rather than being thrown away immediately.
-constexpr double kDefaultMeanGap = 1.0e6;
+/// Prior mean reuse gap, in **seconds**, for a class no reuse has been observed
+/// in yet -- and the prior for the global `life`. Only ever read before the
+/// first observed gap; the EWMA takes over from there.
+///
+/// Scale matters and must match the clock. The paper measures reuse time and
+/// lifespan in seconds: Fig. 12 puts most reuse "within less than 10 minutes"
+/// on Trace A, and Fig. 19 reports its blocks "not reused after 612 seconds"
+/// (to-B's P99 lifespan is 97 s, Trace B's 0.3 s). 600 s is therefore the top
+/// of the paper's measured range -- large enough to keep an unseen class
+/// near-LRU rather than discarding it immediately, which is what this prior is
+/// for, without being off-scale.
+///
+/// This was 1.0e6 when the clock counted block accesses, where it was a
+/// plausible "large". Carried over unchanged when the clock became wall-clock
+/// seconds it meant 11.6 days, far outside anything the paper measures, and
+/// left the warm-up mis-scaled for ~180 reuse events (alpha = 0.05).
+constexpr double kDefaultMeanGap = 600.0;
 
 struct BlockMeta {
   uint64_t category = 0;
