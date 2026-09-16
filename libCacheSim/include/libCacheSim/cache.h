@@ -146,6 +146,9 @@ struct cache {
   int64_t cache_size;
   int64_t default_ttl;
   int32_t obj_md_size;
+  /* retained from common_cache_params_t so that clone_cache and
+   * create_cache_with_new_size can pass it on to the new cache */
+  int64_t n_total_req;
 
   /* cache stat is not updated automatically, it is popped up only in
    * some situations */

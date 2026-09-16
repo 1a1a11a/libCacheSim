@@ -363,8 +363,17 @@ static inline void S4FIFO_track_ghost_insert(S4FIFO_params_t *params,
                                              cache_t *ghost_fifo,
                                              request_t *req_local) {
   ghost_fifo->get(ghost_fifo, req_local);
-  if (!S4FIFO_is_collecting(params)) return;
+  // no collector at all (auto-tune=0): nothing reads the stamps, so skip
+  // the extra lookup entirely
+  if (params->feature_collector == NULL) return;
 
+  // Stamp on every insert, not only inside a collection window, the way the
+  // small and main helpers do. An object inserted during warmup or between
+  // windows can still be hit once the next window opens, and both the stamp
+  // and the counter it is later measured against have to come from the same
+  // continuously advancing sequence - gating this left those objects with a
+  // zero insert_seq and froze ghost_insert_seq, so their hit positions came
+  // out meaningless.
   cache_obj_t *ghost_obj = ghost_fifo->find(ghost_fifo, req_local, false);
   if (ghost_obj != NULL) {
     ghost_obj->S4FIFO.insert_seq = params->ghost_insert_seq;
@@ -373,7 +382,10 @@ static inline void S4FIFO_track_ghost_insert(S4FIFO_params_t *params,
                                                      params->ghost_insert_seq);
     params->ghost_insert_seq++;
   }
-  S4FIFO_feature_collector_record_one_hit(params->feature_collector);
+  // the one-hit-wonder count is a per-window statistic, so it stays gated
+  if (S4FIFO_is_collecting(params)) {
+    S4FIFO_feature_collector_record_one_hit(params->feature_collector);
+  }
 }
 
 /**
@@ -436,10 +448,16 @@ static cache_obj_t *S4FIFO_find(cache_t *cache, const request_t *req,
       S4FIFO_feature_collector_record_hit_ghost(
           params->feature_collector, ghost_obj->S4FIFO.insert_seq,
           ghost_obj->S4FIFO.insert_bucket, params->ghost_insert_seq);
-      S4FIFO_feature_collector_record_ghost_removal(params->feature_collector);
     }
     if (params->ghost_to_main_threshold <= 0) {
       params->ghost_fifo->remove(params->ghost_fifo, req->obj_id);
+      // the tracker subtracts recorded removals as holes from later hit
+      // positions, so only record one where the entry really leaves the
+      // queue - with a positive threshold it stays in and there is no hole
+      if (S4FIFO_is_collecting(params)) {
+        S4FIFO_feature_collector_record_ghost_removal(
+            params->feature_collector);
+      }
       params->hit_on_ghost = true;
     } else {
       params->seen_in_ghost_not_promoted = true;

@@ -432,11 +432,17 @@ void mrcProfiler::MRCProfilerMINISIM::run() {
   cache_t *caches[MAX_MRC_PROFILE_POINTS];
   for (size_t i = 0; i < params_.profile_size.size(); i++) {
     size_t _cache_size = mrc_size_vec[i] * sample_rate;
-    common_cache_params_t cc_params = {.cache_size = _cache_size,
-                                       .default_ttl = 0,
-                                       .hashpower = minisim_hashpower,
-                                       .consider_obj_metadata = false,
-                                       .n_total_req = 0};
+    /* step 1 above already counted the trace, so hand the count on rather
+     * than leaving an algorithm with a fraction-of-the-trace parameter to
+     * fall back to a fixed default. It is sampled_cnt and not n_req_
+     * because spatial sampling drops requests before they reach the cache,
+     * so sampled_cnt is what cache->n_req will actually climb to. */
+    common_cache_params_t cc_params = {
+        .cache_size = _cache_size,
+        .default_ttl = 0,
+        .hashpower = minisim_hashpower,
+        .consider_obj_metadata = false,
+        .n_total_req = static_cast<int64_t>(sampled_cnt)};
     caches[i] = create_cache_using_plugin(params_.cache_algorithm_str,
                                           cc_params, nullptr);
   }
