@@ -17,6 +17,21 @@ extern "C" {
  *LRU and FIFO
  **/
 
+/* The two functions below rebuild a common_cache_params_t field by field, so
+ * a field added to that struct is silently dropped unless they are updated
+ * too. This is the tripwire for that: it breaks the build when the struct
+ * grows, pointing at the initializer that needs the new field.
+ *
+ * It used to be `assert(sizeof(cc_params) == 24)`, which caught nothing in a
+ * release build (NDEBUG) and aborted every simulate_at_multi_sizes() run in a
+ * debug one. A static assertion fires for everybody, at compile time, which is
+ * what a tripwire like this is for. Update the expected size together with the
+ * initializers. */
+#define CHECK_COMMON_CACHE_PARAMS_COPIED_ABOVE()                     \
+  _Static_assert(sizeof(common_cache_params_t) == 32,                \
+                 "common_cache_params_t changed size: copy the new " \
+                 "field in the initializer above, then update this size")
+
 /**
  * @brief this function is called by all eviction algorithms to initialize the
  * cache
@@ -37,6 +52,7 @@ cache_t *cache_struct_init(const char *const cache_name,
     cache->init_params[CACHE_INIT_PARAMS_LEN - 1] = '\0';
   }
   cache->cache_size = params.cache_size;
+  cache->n_total_req = params.n_total_req;
   cache->eviction_params = NULL;
   cache->admissioner = NULL;
   cache->prefetcher = NULL;
@@ -95,8 +111,9 @@ cache_t *clone_cache(const cache_t *old_cache) {
       .hashpower = old_cache->hashtable->hashpower,
       .default_ttl = old_cache->default_ttl,
       .consider_obj_metadata = old_cache->obj_md_size == 0 ? false : true,
+      .n_total_req = old_cache->n_total_req,
   };
-  assert(sizeof(cc_params) == 24);
+  CHECK_COMMON_CACHE_PARAMS_COPIED_ABOVE();
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   if (old_cache->admissioner != NULL) {
     cache->admissioner = old_cache->admissioner->clone(old_cache->admissioner);
@@ -121,8 +138,9 @@ cache_t *create_cache_with_new_size(const cache_t *old_cache,
       .hashpower = old_cache->hashtable->hashpower,
       .default_ttl = old_cache->default_ttl,
       .consider_obj_metadata = old_cache->obj_md_size == 0 ? false : true,
+      .n_total_req = old_cache->n_total_req,
   };
-  assert(sizeof(cc_params) == 24);
+  CHECK_COMMON_CACHE_PARAMS_COPIED_ABOVE();
   cache_t *cache = old_cache->cache_init(cc_params, old_cache->init_params);
   if (old_cache->admissioner != NULL) {
     cache->admissioner = old_cache->admissioner->clone(old_cache->admissioner);
