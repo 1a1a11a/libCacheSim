@@ -81,7 +81,7 @@ cachesim supports the following algorithms:
 * [Belady](/libCacheSim/cache/eviction/Belady.c)
 * [BeladySize](/libCacheSim/cache/eviction/BeladySize.c)
 * [QD-LP](/libCacheSim/cache/eviction/QDLP.c)
-* [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c), [Sieve](/libCacheSim/cache/eviction/Sieve.c)
+* [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c), [S4-FIFO](/libCacheSim/cache/eviction/S4FIFO.c), [Sieve](/libCacheSim/cache/eviction/Sieve.c)
 * [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c) — build with `-DENABLE_GLCACHE=ON`
 
 See the [README](/README.md#supported-algorithms) for the full list, including the algorithms that are behind an optional build flag (GLCache, LRB, 3LCache). Asking for one that was not compiled in fails with `do not support algorithm <name>`.

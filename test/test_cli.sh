@@ -171,8 +171,8 @@ expect_output "slru -e print with auto sizing" "n-seg=" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru auto -e print
 expect_output "qdlp -e print" "fifo-size-ratio=" \
 	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral qdlp 1gb -e print
-expect_output "s3fifod -e print" "fifo-size-ratio=" \
-	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral s3fifod 1gb -e print
+expect_output "s4fifo -e print" "skip-ratio=" \
+	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral s4fifo 1gb -e print
 
 # Sweep every algorithm the CLI registers rather than a hand-picked list: the
 # crashes this covers were found in variants that a shorter list missed
@@ -189,7 +189,8 @@ ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
 	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob mq
 	multiqueue nop
-	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifod s3fifov0
+	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifov0
+	s4-fifo s4fifo
 	sieve size slru slruv0 tinyLFU twoq wtinyLFU
 	hyperbolic belady beladySize"
 
@@ -313,7 +314,7 @@ done
 # floor the result reached zero, which cache_struct_init reads as "unset" and
 # replaces with the full-size default — so asking for a small table allocated
 # several large ones instead. slruv0 at hashpower 4 took 18 MB against 6 MB at 5.
-for algo in slruv0 s3fifod cacheus lru; do
+for algo in slruv0 s4fifo cacheus lru; do
 	for hp in 4 5 6 8; do
 		expect_ok "${algo} at --hashpower=${hp}" \
 			"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 10mb \
@@ -342,6 +343,52 @@ expect_clean_error "slru too many segments" \
 	-e "seg-size=1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1"
 expect_clean_error "slru unknown parameter" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru 1gb -e "no-such-param=1"
+
+echo "running S4-FIFO parameter validation tests"
+
+# The skip ratio is a fraction of the small queue, so the range is half-open:
+# at 1.0 no hit in the small queue would ever count and nothing could reach the
+# main queue.
+for kappa in -0.1 1 1.5; do
+	expect_clean_error "s4fifo skip-ratio=${kappa}" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi s4fifo 1gb -e "skip-ratio=${kappa}"
+done
+expect_clean_error "s4fifo negative ghost-to-main-threshold" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi s4fifo 1gb \
+	-e "ghost-to-main-threshold=-1"
+expect_clean_error "s4fifo unknown parameter" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi s4fifo 1gb -e "no-such-param=1"
+
+# S4-FIFO is S3-FIFO with five knobs, and its defaults are S3-FIFO's values, so
+# the two must replay a trace identically -- otherwise the added machinery is
+# changing behaviour it was not asked to change. Compare both ratios at three
+# sizes rather than one number, so a difference cannot hide in the rounding.
+_s4fifo_ratios() {
+	local algo=$1
+	shift
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi "${algo}" 0.001,0.01,0.1 "$@" 2>&1 |
+		grep -oE "miss ratio [0-9.]+, byte miss ratio [0-9.]+" | tr '\n' ' '
+}
+_s3_out=$(_s4fifo_ratios s3fifo)
+_s4_out=$(_s4fifo_ratios s4fifo)
+if [[ -n ${_s3_out} && ${_s3_out} == "${_s4_out}" ]]; then
+	_report 0 ""
+else
+	_report 1 "s4fifo at its defaults does not replay like s3fifo"
+	echo "        s3fifo: ${_s3_out}"
+	echo "        s4fifo: ${_s4_out}"
+fi
+
+# ...and every knob has to move the result, or it is not wired up at all.
+for knob in skip-ratio=0.25 ghost-to-main-threshold=1 small-size-ratio=0.50 \
+	ghost-size-ratio=3.0 move-to-main-threshold=1; do
+	_tuned=$(_s4fifo_ratios s4fifo -e "${knob}")
+	if [[ -n ${_tuned} && ${_tuned} != "${_s4_out}" ]]; then
+		_report 0 ""
+	else
+		_report 1 "s4fifo -e ${knob} did not change the result"
+	fi
+done
 
 echo "running option parsing tests"
 

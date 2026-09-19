@@ -140,6 +140,16 @@ typedef struct {
 } S3FIFO_obj_metadata_t;
 
 typedef struct {
+  /* value of the small queue's insert-byte counter just after this object was
+   * inserted, so that (counter now - this) is the bytes inserted after it */
+  int64_t small_insert_byte;
+  int64_t freq;
+  /* hits this object has taken in the ghost queue, carried across the queues
+   * so that the ghost-to-main threshold can count over several lifetimes */
+  int32_t ghost_hits;
+} S4FIFO_obj_metadata_t;
+
+typedef struct {
   // int32_t freq;
   int lru_id;
   bool reference;
@@ -199,6 +209,7 @@ typedef struct cache_obj {
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
+    S4FIFO_obj_metadata_t S4FIFO;
     Sieve_obj_params_t sieve;
     CAR_obj_metadata_t CAR;
     Clock2QPlus_obj_metadata_t Clock2QPlus;
