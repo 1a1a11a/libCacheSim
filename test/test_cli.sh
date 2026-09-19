@@ -171,8 +171,8 @@ expect_output "slru -e print with auto sizing" "n-seg=" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru auto -e print
 expect_output "qdlp -e print" "fifo-size-ratio=" \
 	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral qdlp 1gb -e print
-expect_output "s3fifod -e print" "fifo-size-ratio=" \
-	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral s3fifod 1gb -e print
+expect_output "s3fifo -e print" "small-size-ratio=" \
+	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral s3fifo 1gb -e print
 
 # Sweep every algorithm the CLI registers rather than a hand-picked list: the
 # crashes this covers were found in variants that a shorter list missed
@@ -189,7 +189,7 @@ ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
 	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob mq
 	multiqueue nop
-	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifod s3fifov0
+	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifov0
 	sieve size slru slruv0 tinyLFU twoq wtinyLFU
 	hyperbolic belady beladySize"
 
@@ -313,7 +313,7 @@ done
 # floor the result reached zero, which cache_struct_init reads as "unset" and
 # replaces with the full-size default — so asking for a small table allocated
 # several large ones instead. slruv0 at hashpower 4 took 18 MB against 6 MB at 5.
-for algo in slruv0 s3fifod cacheus lru; do
+for algo in slruv0 s3fifo cacheus lru; do
 	for hp in 4 5 6 8; do
 		expect_ok "${algo} at --hashpower=${hp}" \
 			"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 10mb \
