@@ -46,6 +46,18 @@ static const admission_test_data_t test_data_truth[] = {
      .miss_byte_true = {4214365696, 4030683648, 3781775872, 3671897088,
                         3151684096, 3133195264, 3123936256, 3078763520}}};
 
+// avoid the issue of index shifting by looking up the truth table by name
+static const admission_test_data_t *find_truth(const char *cache_name) {
+  for (size_t i = 0; i < sizeof(test_data_truth) / sizeof(test_data_truth[0]);
+       i++) {
+    if (strcmp(test_data_truth[i].cache_name, cache_name) == 0) {
+      return &test_data_truth[i];
+    }
+  }
+  g_assert_not_reached();
+  return NULL;
+}
+
 static void _verify_profiler_results(const cache_stat_t *res,
                                      uint64_t num_of_sizes,
                                      uint64_t req_cnt_true,
@@ -109,19 +121,19 @@ static void test_admission_algorithm(gconstpointer user_data,
 
 // Individual test functions (ordered alphabetically)
 static void test_AdaptSize(gconstpointer user_data) {
-  test_admission_algorithm(user_data, &test_data_truth[0]);
+  test_admission_algorithm(user_data, find_truth("AdaptSize"));
 }
 
 static void test_BloomFilter(gconstpointer user_data) {
-  test_admission_algorithm(user_data, &test_data_truth[1]);
+  test_admission_algorithm(user_data, find_truth("BloomFilter"));
 }
 
 static void test_Size(gconstpointer user_data) {
-  test_admission_algorithm(user_data, &test_data_truth[2]);
+  test_admission_algorithm(user_data, find_truth("Size"));
 }
 
 static void test_SizeProb(gconstpointer user_data) {
-  test_admission_algorithm(user_data, &test_data_truth[3]);
+  test_admission_algorithm(user_data, find_truth("SizeProb"));
 }
 
 static void empty_test(gconstpointer user_data) { ; }

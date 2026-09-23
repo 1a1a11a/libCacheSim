@@ -104,6 +104,21 @@ void simulate(reader_t *reader, cache_t *cache, int report_interval,
   if (show_cost)
     n += snprintf(output_str + n, sizeof(output_str) - n,
                   ", cost saving ratio %.4lf", cost_saving_ratio);
+#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
+  if (cache->n_byte_written > 0) {
+    n += snprintf(
+        output_str + n, sizeof(output_str) - n,
+        ", flash bytes written %lld, write amp %.4lf",
+        (long long)cache->n_byte_written,
+        cache->n_byte_admitted > 0
+            ? (double)cache->n_byte_written / (double)cache->n_byte_admitted
+            : 0.0);
+    if (miss_byte > 0 && cache->n_byte_admitted < miss_byte)
+      n += snprintf(output_str + n, sizeof(output_str) - n,
+                    ", admit ratio %.4lf",
+                    (double)cache->n_byte_admitted / (double)miss_byte);
+  }
+#endif /* ENABLE_COLOSSUS */
   /* cachesim appends to the same result file across runs, so without this two
    * rows with the same trace, algorithm and cache size are indistinguishable
    * even though a non-default hashpower moves the miss ratio of the policies
