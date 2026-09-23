@@ -84,7 +84,7 @@ set(eviction_sources_cpp
 
 # LRB
 if (ENABLE_LRB)
-    set (eviction_sources_cpp ${eviction_sources_cpp} 
+    set (eviction_sources_cpp ${eviction_sources_cpp}
         eviction/LRB/lrb.cpp
         eviction/LRB/LRB_Interface.cpp
         )
@@ -92,7 +92,7 @@ endif()
 
 # 3L Cache
 if (ENABLE_3L_CACHE)
-    set (eviction_sources_cpp ${eviction_sources_cpp} 
+    set (eviction_sources_cpp ${eviction_sources_cpp}
         eviction/3LCache/ThreeLCache_Interface.cpp
         eviction/3LCache/ThreeLCache.cpp
         )
@@ -100,8 +100,8 @@ endif()
 
 # GLCache
 if (ENABLE_GLCACHE)
-    set(eviction_sources_c 
-        ${eviction_sources_c} 
+    set(eviction_sources_c
+        ${eviction_sources_c}
         eviction/GLCache/bucket.c
         eviction/GLCache/dataPrep.c
         eviction/GLCache/eviction.c
@@ -111,6 +111,16 @@ if (ENABLE_GLCACHE)
         eviction/GLCache/segment.c
         eviction/GLCache/segSel.c
         eviction/GLCache/train.c
+        )
+endif()
+
+# Colossus (Google Colossus Flash Cache)
+if (ENABLE_COLOSSUS)
+    set(eviction_sources_c
+        ${eviction_sources_c}
+        eviction/colossus/FIFO_Merge.c
+        eviction/colossus/FIFO_MergeDSR.c
+        eviction/colossus/FIFO_Reinsertion.c
         )
 endif()
 

@@ -132,6 +132,11 @@ static void _simulate(gpointer data, gpointer user_data) {
   result[idx].curr_rtime = req->clock_time;
   result[idx].n_obj = local_cache->n_obj;
   result[idx].occupied_byte = local_cache->occupied_byte;
+#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
+  result[idx].n_byte_written = local_cache->n_byte_written;
+  result[idx].n_obj_written = local_cache->n_obj_written;
+  result[idx].n_byte_admitted = local_cache->n_byte_admitted;
+#endif /* ENABLE_COLOSSUS */
 
   // report progress
   g_mutex_lock(&(params->mtx));

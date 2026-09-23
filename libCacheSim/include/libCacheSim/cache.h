@@ -81,6 +81,11 @@ typedef struct {
   int64_t n_obj;
   int64_t occupied_byte;
   int64_t cache_size;
+#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
+  int64_t n_byte_written;
+  int64_t n_obj_written;
+  int64_t n_byte_admitted;
+#endif /* ENABLE_COLOSSUS */
   float sampler_ratio;
   /* current trace time, used to determine obj expiration */
   int64_t curr_rtime;
@@ -117,6 +122,12 @@ struct cache {
 
   // other name: logical_time, virtual_time, reference_count
   int64_t n_req; /* number of requests (used by some eviction algo) */
+
+#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
+  int64_t n_byte_written;
+  int64_t n_obj_written;
+  int64_t n_byte_admitted;
+#endif /* ENABLE_COLOSSUS */
 
   /**************** private fields *****************/
   // use cache->get_n_obj to obtain the number of objects in the cache
