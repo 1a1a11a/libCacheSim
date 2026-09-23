@@ -70,7 +70,8 @@ cache_t *Colossus_FIFO_MergeDSR_init(const common_cache_params_t ccache_params,
                                      const char *cache_specific_params);
 
 cache_t *Colossus_FIFO_Reinsertion_init(
-    const common_cache_params_t ccache_params, const char *cache_specific_params);
+    const common_cache_params_t ccache_params,
+    const char *cache_specific_params);
 #endif /* ENABLE_COLOSSUS */
 
 cache_t *ClockPro_init(const common_cache_params_t ccache_params,
