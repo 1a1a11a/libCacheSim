@@ -88,6 +88,15 @@ static const cache_algo_entry_t g_cache_algos[] = {
 #ifdef ENABLE_LRB
     {"lrb", LRB_init},
 #endif
+#ifdef ENABLE_COLOSSUS
+    {"colossus-fifo-merge", Colossus_FIFO_Merge_init},
+    {"colossus-fifo_merge", Colossus_FIFO_Merge_init},
+    {"colossus-fifo-merge-dsr", Colossus_FIFO_MergeDSR_init},
+    {"colossus-fifo_merge_dsr", Colossus_FIFO_MergeDSR_init},
+    {"colossus-fifo-mergedsr", Colossus_FIFO_MergeDSR_init},
+    {"colossus-fifo-reinsertion", Colossus_FIFO_Reinsertion_init},
+    {"colossus-fifo_reinsertion", Colossus_FIFO_Reinsertion_init},
+#endif /* ENABLE_COLOSSUS */
 };
 
 cache_init_func_ptr find_cache_init_func(const char *cache_algo_name) {

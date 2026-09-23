@@ -251,8 +251,6 @@ static const cache_test_data_t test_data_truth[] = {
 #endif /* ENABLE_3L_CACHE */
 };
 
-#if (defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1) || \
-    (defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1)
 // avoid the issue of index shifting by looking up the truth table by name
 static const cache_test_data_t *find_truth(const char *cache_name) {
   for (size_t i = 0; i < sizeof(test_data_truth) / sizeof(test_data_truth[0]);
@@ -264,7 +262,6 @@ static const cache_test_data_t *find_truth(const char *cache_name) {
   g_assert_not_reached();
   return NULL;
 }
-#endif
 
 static void _verify_profiler_results(const cache_stat_t *res,
                                      uint64_t num_of_sizes,
@@ -455,16 +452,13 @@ static void test_Colossus_FIFO_Reinsertion(gconstpointer user_data) {
 }
 #endif /* ENABLE_COLOSSUS */
 
-#if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
-static void test_3LCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, find_truth("3LCache"));
 static void test_MQ(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[27]);
+  test_cache_algorithm(user_data, find_truth("MQ"));
 }
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
 static void test_3LCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[28]);
+  test_cache_algorithm(user_data, find_truth("3LCache"));
 }
 #endif /* ENABLE_3L_CACHE */
 
