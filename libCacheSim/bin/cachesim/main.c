@@ -92,22 +92,6 @@ int main(int argc, char **argv) {
     if (show_cost)
       n += snprintf(output_str + n, sizeof(output_str) - n,
                     ", cost saving ratio %.4lf", cost_saving_ratio);
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-    if (result[i].n_byte_written > 0) {
-      n += snprintf(output_str + n, sizeof(output_str) - n,
-                    ", flash bytes written %lld, write amp %.4lf",
-                    (long long)result[i].n_byte_written,
-                    result[i].n_byte_admitted > 0
-                        ? (double)result[i].n_byte_written /
-                              (double)result[i].n_byte_admitted
-                        : 0.0);
-      if (result[i].n_miss_byte > 0 &&
-          result[i].n_byte_admitted < result[i].n_miss_byte)
-        n += snprintf(
-            output_str + n, sizeof(output_str) - n, ", admit ratio %.4lf",
-            (double)result[i].n_byte_admitted / (double)result[i].n_miss_byte);
-    }
-#endif /* ENABLE_COLOSSUS */
     /* cachesim appends to the same result file across runs, so two rows with
      * the same trace, algorithm and cache size would otherwise be
      * indistinguishable even though a non-default hashpower can move the miss
