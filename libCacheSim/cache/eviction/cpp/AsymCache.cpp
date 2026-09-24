@@ -498,7 +498,7 @@ static cache_obj_t *AsymCache_insert(cache_t *cache, const request_t *req) {
     // last-access is now, and dT_B is whatever the request declared.
     eviction::BlockMeta m;
     m.last_access = p->now;
-    m.cost = static_cast<double>(req->cost);
+    m.cost = static_cast<double>(req->obj_cost);
     m.resident = true;
     p->meta.emplace(req->obj_id, m);
     ++p->n_resident;
@@ -509,7 +509,7 @@ static cache_obj_t *AsymCache_insert(cache_t *cache, const request_t *req) {
   // dT_B is a property of the block's position in the prefix, which the harness
   // encodes in the request's cost. record_request cannot see it, so it is
   // captured here, at the one point where the block and its cost meet.
-  it->second.cost = static_cast<double>(req->cost);
+  it->second.cost = static_cast<double>(req->obj_cost);
   if (!it->second.resident) {
     it->second.resident = true;
     ++p->n_resident;

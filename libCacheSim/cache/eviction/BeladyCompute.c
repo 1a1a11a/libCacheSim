@@ -3,7 +3,7 @@
 //  libCacheSim
 //
 //  sample object and compare reuse_distance / compute_intensity, then evict the
-//  greatest one compute_intensity is taken from req->cost
+//  greatest one compute_intensity is taken from req->obj_cost
 //
 //
 
@@ -139,7 +139,7 @@ static cache_obj_t *BeladyCompute_find(cache_t *cache, const request_t *req,
   if (obj != NULL && likely(update_cache)) {
     // store the compute intensity in the cache object for eviction decisions
     if (req->n_features > 0) {
-      obj->cost = req->cost;
+      obj->cost = (int32_t)req->obj_cost;
     }
 
     if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
@@ -166,7 +166,7 @@ static cache_obj_t *BeladyCompute_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
 
   // store the compute intensity for eviction decisions
-  obj->cost = req->cost;
+  obj->cost = req->obj_cost;
 
   if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
     obj->Belady.next_access_vtime = -1;

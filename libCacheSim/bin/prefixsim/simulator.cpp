@@ -211,7 +211,7 @@ bool Simulator::probe(obj_id_t id) const {
 void Simulator::fill_request(const Request &request, size_t i) {
   req_buf_->obj_id = request.blocks[i];
   req_buf_->obj_size = 1;
-  req_buf_->cost = static_cast<int32_t>(
+  req_buf_->obj_cost = static_cast<int64_t>(
       llround(block_cost(config_.cost_model, static_cast<int64_t>(i))));
   req_buf_->next_access_vtime = request.next_access_vtime[i];
   req_buf_->clock_time = static_cast<int64_t>(request.timestamp);
@@ -343,7 +343,7 @@ bool Simulator::serve(const Request &request, std::string &error) {
 
 bool Simulator::allocate(const Request &request, int64_t needed, std::string &error) {
   // Point the eviction request at the first missing block. Most algorithms
-  // ignore the request argument in evict(); the cost-aware ones read req->cost.
+  // ignore the request argument in evict(); the cost-aware ones read req->obj_cost.
   for (size_t i = 0; i < request.blocks.size(); ++i) {
     if (resident_[i] == 0) {
       fill_request(request, i);

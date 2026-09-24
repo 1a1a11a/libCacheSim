@@ -545,7 +545,7 @@ static cache_obj_t *SessionCache_find(cache_t *cache, const request_t *req,
 
 static cache_obj_t *SessionCache_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
-  if (obj != nullptr) sc_of(cache)->note_insert(req->obj_id, req->cost);
+  if (obj != nullptr) sc_of(cache)->note_insert(req->obj_id, req->obj_cost);
   return obj;
 }
 
