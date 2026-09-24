@@ -182,6 +182,15 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_cnt_true = {89307, 82387, 77041, 76791, 71300, 70343, 70455, 70355},
      .miss_byte_true = {4040718336, 3703628800, 3353047552, 3282235904,
                         3038256128, 2980646912, 2984458752, 2979649536}},
+    {.cache_name = "S4-FIFO",
+     .hashpower = 20,
+     .req_cnt_true = 113872,
+     .req_byte_true = 4368040448,
+     // with default params S4-FIFO reduces exactly to S3-FIFO, hence
+     // identical truth values to the "S3-FIFO" entry above
+     .miss_cnt_true = {90117, 80915, 75060, 72191, 69815, 65542, 60799, 56045},
+     .miss_byte_true = {4058576896, 3573827584, 3244417024, 3061737984,
+                        2898109952, 2628363776, 2425027072, 2327934464}},
     {.cache_name = "Sieve",
      .hashpower = 20,
      .req_cnt_true = 113872,
@@ -387,29 +396,35 @@ static void test_S3FIFOv0(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[22]);
 }
 
-static void test_Sieve(gconstpointer user_data) {
+#if defined(ENABLE_S4FIFO) && ENABLE_S4FIFO == 1
+static void test_S4FIFO(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[23]);
 }
+#endif
 
-static void test_SLRU(gconstpointer user_data) {
+static void test_Sieve(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[24]);
 }
 
-static void test_SR_LRU(gconstpointer user_data) {
+static void test_SLRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[25]);
 }
 
-static void test_Clock2QPlus(gconstpointer user_data) {
+static void test_SR_LRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[26]);
 }
 
-static void test_MQ(gconstpointer user_data) {
+static void test_Clock2QPlus(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[27]);
+}
+
+static void test_MQ(gconstpointer user_data) {
+  test_cache_algorithm(user_data, &test_data_truth[28]);
 }
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
 static void test_3LCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[28]);
+  test_cache_algorithm(user_data, &test_data_truth[29]);
 }
 #endif /* ENABLE_3L_CACHE */
 
@@ -461,6 +476,9 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFOv0", reader,
                        test_S3FIFOv0);
+#if defined(ENABLE_S4FIFO) && ENABLE_S4FIFO == 1
+  g_test_add_data_func("/libCacheSim/cacheAlgo_S4FIFO", reader, test_S4FIFO);
+#endif
   g_test_add_data_func("/libCacheSim/cacheAlgo_Sieve", reader, test_Sieve);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SLRU", reader, test_SLRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);

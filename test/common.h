@@ -289,6 +289,11 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = S3FIFOv0_init(cc_params, "move-to-main-threshold=2");
   } else if (strcasecmp(alg_name, "S3-FIFO") == 0) {
     cache = S3FIFO_init(cc_params, "move-to-main-threshold=2");
+#if defined(ENABLE_S4FIFO) && ENABLE_S4FIFO == 1
+  } else if (strcasecmp(alg_name, "S4-FIFO") == 0) {
+    // truth values are S3-FIFO's, so compare against the static heuristic
+    cache = S4FIFO_init(cc_params, "auto-tune=0");
+#endif
   } else if (strcasecmp(alg_name, "Clock2QPlus") == 0) {
     cache = Clock2QPlus_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Sieve") == 0) {

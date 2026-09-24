@@ -92,9 +92,19 @@ endif()
 
 # 3L Cache
 if (ENABLE_3L_CACHE)
-    set (eviction_sources_cpp ${eviction_sources_cpp} 
+    set (eviction_sources_cpp ${eviction_sources_cpp}
         eviction/3LCache/ThreeLCache_Interface.cpp
         eviction/3LCache/ThreeLCache.cpp
+        )
+endif()
+
+# S4FIFO: plain C throughout, including its model, so no ML runtime
+# dependency and no eviction_sources_cpp entry.
+if (ENABLE_S4FIFO)
+    set(eviction_sources_c ${eviction_sources_c}
+        eviction/S4FIFO/S4FIFO.c
+        eviction/S4FIFO/S4FIFO_predictor.c
+        eviction/S4FIFO/S4FIFO_model_real.c
         )
 endif()
 

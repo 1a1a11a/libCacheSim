@@ -33,6 +33,12 @@ typedef struct {
   uint64_t default_ttl;
   int32_t hashpower;
   bool consider_obj_metadata;
+  /* number of requests in the trace, for algorithms that accept a
+   * parameter expressed as a fraction of the trace rather than an absolute
+   * request count. 0 means "unknown" - callers that don't have a reader
+   * can leave it unset, and such parameters then have to be given as
+   * absolute counts. */
+  int64_t n_total_req;
 } common_cache_params_t;
 
 typedef cache_t *(*cache_init_func_ptr)(const common_cache_params_t,
@@ -140,6 +146,9 @@ struct cache {
   int64_t cache_size;
   int64_t default_ttl;
   int32_t obj_md_size;
+  /* retained from common_cache_params_t so that clone_cache and
+   * create_cache_with_new_size can pass it on to the new cache */
+  int64_t n_total_req;
 
   /* cache stat is not updated automatically, it is popped up only in
    * some situations */
@@ -168,6 +177,7 @@ static inline common_cache_params_t default_common_cache_params(void) {
   params.default_ttl = (uint64_t)(364 * 86400);
   params.hashpower = 20;
   params.consider_obj_metadata = false;
+  params.n_total_req = 0;
   return params;
 }
 

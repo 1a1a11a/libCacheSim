@@ -26,6 +26,7 @@ option(SUPPORT_TTL "whether support TTL" OFF)
 option(OPT_SUPPORT_ZSTD_TRACE "whether support zstd trace" ON)
 option(ENABLE_LRB "enable LRB" OFF)
 option(ENABLE_3L_CACHE "enable 3LCache" OFF)
+option(ENABLE_S4FIFO "enable S4FIFO" OFF)
 option(BUILD_SHARED_LIBS "build shared library" ON)
 set(LOG_LEVEL "default" CACHE STRING "change the logging level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS ERROR WARN INFO DEBUG VERBOSE DEFAULT)
@@ -192,6 +193,11 @@ foreach(FEATURE ENABLE_LRB ENABLE_3L_CACHE)
         add_compile_definitions(${FEATURE}=1)
     endif()
 endforeach()
+
+if(ENABLE_S4FIFO)
+    add_compile_definitions(ENABLE_S4FIFO=1)
+endif()
+
 # Put binary in bin directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
@@ -202,6 +208,7 @@ message(STATUS "CMAKE_CXX_FLAGS_RELEASE ${CMAKE_CXX_FLAGS_RELEASE}")
 message(STATUS "SUPPORT TTL ${SUPPORT_TTL}, USE_HUGEPAGE ${USE_HUGEPAGE}")
 message(STATUS "LOGLEVEL ${LOG_LEVEL}, ENABLE_GLCACHE ${ENABLE_GLCACHE}")
 message(STATUS "ENABLE_LRB ${ENABLE_LRB}, ENABLE_3L_CACHE ${ENABLE_3L_CACHE}")
+message(STATUS "ENABLE_S4FIFO ${ENABLE_S4FIFO}")
 message(STATUS "OPT_SUPPORT_ZSTD_TRACE ${OPT_SUPPORT_ZSTD_TRACE}")
 
 message(STATUS "<<++=====------------------\\/------------------=====++>>")
