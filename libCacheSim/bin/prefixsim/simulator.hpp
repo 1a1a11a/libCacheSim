@@ -150,7 +150,8 @@ class Simulator {
 /// Create a cache by algorithm name (case-insensitive). Returns nullptr for
 /// unknown names. `cache_size_blocks` is in blocks: every object has size 1.
 cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_blocks,
-                              const char *cache_specific_params = nullptr);
+                              const char *cache_specific_params = nullptr,
+                              int64_t n_total_req = 0);
 
 /// Algorithms whose entire resident set lives in the main hash table, i.e. the
 /// ones the phase-1 probe is valid for.

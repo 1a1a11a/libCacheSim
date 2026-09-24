@@ -106,6 +106,12 @@ const AlgoEntry kAlgos[] = {
     {"qdlp", QDLP_init, true},
     {"s3fifo_compute", S3FIFOCompute_init, true},
     {"car", CAR_init, true},
+#ifdef ENABLE_S4FIFO
+    // Its small/main/ghost queues are FIFO_init, so pin-awareness is inherited
+    // from FIFO exactly as S3FIFO's is, and evict-by-id tolerates a skipped
+    // victim. Verified by running the trace with pinning on.
+    {"s4fifo", S4FIFO_init, true},
+#endif
     // learned (LightGBM; built only when ENABLE_LRB / ENABLE_3L_CACHE are set)
 #ifdef ENABLE_LRB
     {"lrb", LRB_init, true},
@@ -509,11 +515,17 @@ void Simulator::access(const Request &request) {
 // ---------------------------------------------------------------------------
 
 cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_blocks,
-                              const char *cache_specific_params) {
+                              const char *cache_specific_params,
+                              int64_t n_total_req) {
   common_cache_params_t params = default_common_cache_params();
   params.cache_size = cache_size_blocks;
   params.consider_obj_metadata = false;
   params.hashpower = hashpower_for(cache_size_blocks);
+  // Algorithms that express a warmup parameter as a fraction of the trace read
+  // this (S4FIFO's feature-collect-reqs). prefixsim already holds the whole
+  // trace in memory, so unlike cachesim it costs no extra pass. 0 leaves such a
+  // parameter on its absolute default.
+  params.n_total_req = n_total_req;
 
   for (const AlgoEntry &entry : kAlgos) {
     if (strcasecmp(algorithm.c_str(), entry.name) == 0) {

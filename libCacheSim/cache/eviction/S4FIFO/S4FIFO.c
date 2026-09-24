@@ -115,6 +115,7 @@ static cache_obj_t *S4FIFO_find(cache_t *cache, const request_t *req,
 static cache_obj_t *S4FIFO_insert(cache_t *cache, const request_t *req);
 static cache_obj_t *S4FIFO_to_evict(cache_t *cache, const request_t *req);
 static void S4FIFO_evict(cache_t *cache, const request_t *req);
+static void S4FIFO_evict_once(cache_t *cache, const request_t *req);
 static bool S4FIFO_remove(cache_t *cache, obj_id_t obj_id);
 static inline int64_t S4FIFO_get_occupied_byte(const cache_t *cache);
 static inline int64_t S4FIFO_get_n_obj(const cache_t *cache);
@@ -616,7 +617,7 @@ static void S4FIFO_evict_main(cache_t *cache, const request_t *req) {
  * @param req not used
  * @param evicted_obj if not NULL, return the evicted object to caller
  */
-static void S4FIFO_evict(cache_t *cache, const request_t *req) {
+static void S4FIFO_evict_once(cache_t *cache, const request_t *req) {
   S4FIFO_params_t *params = (S4FIFO_params_t *)cache->eviction_params;
   params->has_evicted = true;
 
@@ -629,6 +630,52 @@ static void S4FIFO_evict(cache_t *cache, const request_t *req) {
   } else {
     S4FIFO_evict_small(cache, req);
   }
+}
+
+static void S4FIFO_evict(cache_t *cache, const request_t *req) {
+  S4FIFO_params_t *params = (S4FIFO_params_t *)cache->eviction_params;
+  /* An eviction must free something.
+   *
+   * S4FIFO_evict_once above can instead PROMOTE a block out of the small queue
+   * into the main queue, which leaves total occupancy unchanged.
+   * cache_get_base() hides that by looping until it has room, so it never
+   * matters there -- but a caller that asks for one eviction and gets none
+   * (prefixsim's allocate loop) cannot tell "made no progress" from "nothing
+   * left to evict", and has to treat it as failure. Without this, s4fifo aborts
+   * on the freeinference trace at request 44.
+   *
+   * So retry until the cache actually shrinks. This terminates: every iteration
+   * either frees an object or moves one out of the small queue, and once the
+   * small queue is empty the main branch always frees. The guard bounds it
+   * anyway rather than risking a hang if that ever stops holding.
+   *
+   * This is the same fix S3FIFO_evict / S3FIFOd / QDLP / S3FIFOCompute / LIRS /
+   * CAR already carry in this fork; S4FIFO inherited the original shape from
+   * S3FIFO, so it inherited the problem too. Upstream does not need it because
+   * cachesim only ever drives eviction through cache_get_base().
+   */
+  const int64_t occupied_before = cache->get_occupied_byte(cache);
+  int64_t attempts = 0;
+  const int64_t limit = cache->get_n_obj(cache) + 16;
+  do {
+    const int64_t occupied_before_once = cache->get_occupied_byte(cache);
+    /* Sampled *before* the call on purpose. A round that frees nothing because
+     * it drained the small queue into main is progress -- main frees on the
+     * next pass -- so the give-up test is "nothing moved and there was nothing
+     * to promote in the first place", i.e. everything evictable is pinned. */
+    const int64_t small_before_once =
+        params->small_fifo->get_occupied_byte(params->small_fifo);
+    S4FIFO_evict_once(cache, req);
+    if (cache->get_occupied_byte(cache) == occupied_before_once &&
+        small_before_once == 0) {
+      break;
+    }
+    if (++attempts > limit) {
+      ERROR("S4FIFO_evict: %lld attempts freed nothing (occupied %lld)\n",
+            (long long)attempts, (long long)cache->get_occupied_byte(cache));
+    }
+  } while (cache->get_occupied_byte(cache) >= occupied_before &&
+           cache->get_occupied_byte(cache) > 0);
 }
 
 /**

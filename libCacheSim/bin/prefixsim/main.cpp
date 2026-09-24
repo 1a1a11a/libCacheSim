@@ -336,7 +336,12 @@ int main(int argc, char **argv) {
   for (const std::string &algorithm : opts.algorithms) {
     cache_t *cache = prefixsim::create_cache_by_name(
         algorithm, opts.cache_size,
-        opts.algo_params.empty() ? nullptr : opts.algo_params.c_str());
+        opts.algo_params.empty() ? nullptr : opts.algo_params.c_str(),
+        // Block accesses, not trace requests: prefixsim drives the cache one
+        // block at a time, so cache->n_req climbs to this. An algorithm sizing
+        // a warmup as a fraction of "the trace" (S4FIFO's feature-collect-reqs)
+        // must be given the same unit its own counter uses.
+        n_blocks_total);
     if (cache == nullptr) {
       fprintf(stderr, "error: unsupported algorithm '%s' (try --list-algos)\n",
               algorithm.c_str());
