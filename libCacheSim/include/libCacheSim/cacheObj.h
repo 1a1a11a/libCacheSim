@@ -155,13 +155,6 @@ typedef struct {
   int32_t freq;
 } __attribute__((packed)) Sieve_obj_params_t;
 
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-typedef struct {
-  void *segment;
-  int64_t last_access_req;
-} Colossus_obj_metadata_t;
-#endif /* ENABLE_COLOSSUS */
-
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {
@@ -209,9 +202,6 @@ typedef struct cache_obj {
     Sieve_obj_params_t sieve;
     CAR_obj_metadata_t CAR;
     Clock2QPlus_obj_metadata_t Clock2QPlus;
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-    Colossus_obj_metadata_t Colossus;
-#endif /* ENABLE_COLOSSUS */
 
 #if defined(ENABLE_GLCACHE) && ENABLE_GLCACHE == 1
     GLCache_obj_metadata_t GLCache;

@@ -210,29 +210,6 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_cnt_true = {90600, 81357, 75287, 72430, 70057, 65671, 60864, 55864},
      .miss_byte_true = {4061047808, 3577076736, 3242227712, 3061383680,
                         2898187264, 2624986112, 2422187008, 2322797568}},
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-    {.cache_name = "Colossus-FIFO_Merge",
-     .hashpower = 20,
-     .req_cnt_true = 113872,
-     .req_byte_true = 4368040448,
-     .miss_cnt_true = {92032, 88321, 85709, 81125, 72565, 69830, 67307, 65897},
-     .miss_byte_true = {4161779712, 3962612736, 3808745984, 3594343936,
-                        3151666176, 2999583232, 2913372672, 2785552384}},
-    {.cache_name = "Colossus-FIFO_MergeDSR",
-     .hashpower = 20,
-     .req_cnt_true = 113872,
-     .req_byte_true = 4368040448,
-     .miss_cnt_true = {92631, 89057, 87502, 86852, 83393, 68356, 68414, 67047},
-     .miss_byte_true = {4187044352, 3977701376, 3898012160, 3856417280,
-                        3694398464, 3000764928, 2938221056, 2769747968}},
-    {.cache_name = "Colossus-FIFO_Reinsertion",
-     .hashpower = 20,
-     .req_cnt_true = 113872,
-     .req_byte_true = 4368040448,
-     .miss_cnt_true = {93363, 89934, 84226, 79943, 75504, 73155, 71501, 66793},
-     .miss_byte_true = {4215540736, 4058748416, 3792316416, 3563691008,
-                        3290796544, 3142048256, 3048732672, 2831585792}},
-#endif /* ENABLE_COLOSSUS */
     {.cache_name = "MQ",
      .hashpower = 20,
      .req_cnt_true = 113872,
@@ -250,18 +227,6 @@ static const cache_test_data_t test_data_truth[] = {
                         3100927488, 3078128640, 3075403776, 3061662720}},
 #endif /* ENABLE_3L_CACHE */
 };
-
-// avoid the issue of index shifting by looking up the truth table by name
-static const cache_test_data_t *find_truth(const char *cache_name) {
-  for (size_t i = 0; i < sizeof(test_data_truth) / sizeof(test_data_truth[0]);
-       i++) {
-    if (strcmp(test_data_truth[i].cache_name, cache_name) == 0) {
-      return &test_data_truth[i];
-    }
-  }
-  g_assert_not_reached();
-  return NULL;
-}
 
 static void _verify_profiler_results(const cache_stat_t *res,
                                      uint64_t num_of_sizes,
@@ -438,27 +403,13 @@ static void test_Clock2QPlus(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[26]);
 }
 
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-static void test_Colossus_FIFO_Merge(gconstpointer user_data) {
-  test_cache_algorithm(user_data, find_truth("Colossus-FIFO_Merge"));
-}
-
-static void test_Colossus_FIFO_MergeDSR(gconstpointer user_data) {
-  test_cache_algorithm(user_data, find_truth("Colossus-FIFO_MergeDSR"));
-}
-
-static void test_Colossus_FIFO_Reinsertion(gconstpointer user_data) {
-  test_cache_algorithm(user_data, find_truth("Colossus-FIFO_Reinsertion"));
-}
-#endif /* ENABLE_COLOSSUS */
-
 static void test_MQ(gconstpointer user_data) {
-  test_cache_algorithm(user_data, find_truth("MQ"));
+  test_cache_algorithm(user_data, &test_data_truth[27]);
 }
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
 static void test_3LCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, find_truth("3LCache"));
+  test_cache_algorithm(user_data, &test_data_truth[28]);
 }
 #endif /* ENABLE_3L_CACHE */
 
@@ -516,14 +467,6 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Clock2QPlus", reader,
                        test_Clock2QPlus);
 
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-  g_test_add_data_func("/libCacheSim/cacheAlgo_ColossusFIFOMerge", reader,
-                       test_Colossus_FIFO_Merge);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_ColossusFIFOMergeDSR", reader,
-                       test_Colossus_FIFO_MergeDSR);
-  g_test_add_data_func("/libCacheSim/cacheAlgo_ColossusFIFOReinsertion", reader,
-                       test_Colossus_FIFO_Reinsertion);
-#endif /* ENABLE_COLOSSUS */
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
   g_test_add_data_func("/libCacheSim/cacheAlgo_3LCache", reader, test_3LCache);
 #endif /* ENABLE_3L_CACHE */

@@ -279,12 +279,6 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
       (int64_t)cache_obj->obj_size + (int64_t)cache->obj_md_size;
   cache->n_obj += 1;
 
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-  cache->n_byte_written += (int64_t)cache_obj->obj_size;
-  cache->n_obj_written += 1;
-  cache->n_byte_admitted += (int64_t)cache_obj->obj_size;
-#endif /* ENABLE_COLOSSUS */
-
 #ifdef SUPPORT_TTL
   if (cache->default_ttl != 0 && req->ttl == 0) {
     cache_obj->exp_time = (int32_t)cache->default_ttl + req->clock_time;

@@ -307,14 +307,6 @@ static cache_t *create_test_cache(const char *alg_name,
     cache->prefetcher = create_prefetcher("PG", NULL, cc_params.cache_size);
   } else if (strcasecmp(alg_name, "CAR") == 0) {
     cache = CAR_init(cc_params, NULL);
-#if defined(ENABLE_COLOSSUS) && ENABLE_COLOSSUS == 1
-  } else if (strcasecmp(alg_name, "Colossus-FIFO_Merge") == 0) {
-    cache = Colossus_FIFO_Merge_init(cc_params, params);
-  } else if (strcasecmp(alg_name, "Colossus-FIFO_MergeDSR") == 0) {
-    cache = Colossus_FIFO_MergeDSR_init(cc_params, params);
-  } else if (strcasecmp(alg_name, "Colossus-FIFO_Reinsertion") == 0) {
-    cache = Colossus_FIFO_Reinsertion_init(cc_params, params);
-#endif /* ENABLE_COLOSSUS */
   } else if (strcasecmp(alg_name, "AdaptSize") == 0) {
     cache = LRU_init(cc_params, NULL);
     cache->admissioner = create_adaptsize_admissioner(NULL);
