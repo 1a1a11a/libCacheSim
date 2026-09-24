@@ -21,7 +21,7 @@ class PartialNodeRandomFreq : public PartialNodeCache {
   double score(const cache_t *cache, const cache_obj_t *obj) const override {
     const int64_t age = cache->n_req - obj->Random.last_access_vtime;
     const int64_t recency = age > 1 ? age : 1;
-    return static_cast<double>(obj->misc.freq + 1) *
+    return static_cast<double>(obj->freq + 1) *
            static_cast<double>(obj->cost) / static_cast<double>(recency);
   }
 };

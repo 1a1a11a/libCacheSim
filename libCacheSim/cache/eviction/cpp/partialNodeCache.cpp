@@ -42,7 +42,7 @@ bool evict_small(cache_t *cache, PartialNodeCache *impl) {
     const obj_id_t id = victim->obj_id;
     const int64_t size = victim->obj_size;
 
-    if (static_cast<int>(victim->misc.freq) >= impl->move_to_main_threshold) {
+    if (static_cast<int>(victim->freq) >= impl->move_to_main_threshold) {
       // Promote: unlink from the FIFO and tell the tree it is resident. The
       // object itself does not move -- there is only one hash table.
       remove_obj_from_list(&impl->small_head, &impl->small_tail, victim);

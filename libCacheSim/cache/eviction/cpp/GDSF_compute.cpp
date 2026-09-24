@@ -154,7 +154,7 @@ static cache_obj_t *GDSF_compute_find(cache_t *cache, const request_t *req,
     auto node = gdsf->pq_map[obj];
     gdsf->pq.erase(node);
 
-    double pri = gdsf->pri_last_evict + (double(obj->misc.freq) * obj->cost);
+    double pri = gdsf->pri_last_evict + (double(obj->freq) * obj->cost);
     eviction::pq_node_type new_node = {obj, pri, cache->n_req};
     gdsf->pq.insert(new_node);
     gdsf->pq_map[obj] = new_node;
@@ -176,7 +176,7 @@ static bool GDSF_compute_can_insert(cache_t *cache, const request_t *req) {
 
   int64_t to_evict_size =
       req->obj_size - (cache->cache_size - cache->get_occupied_byte(cache));
-  double pri = gdsf->pri_last_evict + req->cost;
+  double pri = gdsf->pri_last_evict + req->obj_cost;
   bool can_insert = true;
   auto iter = gdsf->pq.begin();
 
@@ -236,10 +236,10 @@ static cache_obj_t *GDSF_compute_insert(cache_t *cache, const request_t *req) {
 
   cache_obj_t *obj = cache_insert_base(cache, req);
   DEBUG_ASSERT(obj != nullptr);
-  obj->misc.freq = 1;
-  obj->cost = req->cost;
+  obj->freq = 1;
+  obj->cost = static_cast<int32_t>(req->obj_cost);
 
-  double pri = gdsf->pri_last_evict + req->cost;
+  double pri = gdsf->pri_last_evict + req->obj_cost;
   eviction::pq_node_type new_node = {obj, pri, cache->n_req};
   auto r = gdsf->pq.insert(new_node);
   DEBUG_ASSERT(r.second);
@@ -286,7 +286,7 @@ static void GDSF_compute_evict(cache_t *cache, const request_t *req) {
   //     "GDSF_compute_evict: evicting obj_id %lu with priority %f, freq %d,
   //     cost "
   //     "%d\n",
-  //     (unsigned long)obj->obj_id, p.priority, obj->misc.freq, obj->cost);
+  //     (unsigned long)obj->obj_id, p.priority, obj->freq, obj->cost);
   gdsf->pri_last_evict = p.priority;
   // cache_evict_base, not cache_remove_obj_base: eviction must go through the
   // eviction path so eviction-age tracking and the prefetcher's handle_evict

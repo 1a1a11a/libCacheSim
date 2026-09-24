@@ -148,7 +148,7 @@ static inline double _rcsq_score(cache_t *cache, cache_obj_t *obj,
   int64_t age = cache->n_req - obj->Random.last_access_vtime;
   int64_t recency = age > 1 ? age : 1;
   double score = (double)obj->cost / (double)recency;
-  if (obj->misc.freq == 0) {
+  if (obj->freq == 0) {
     score *= one_hit_penalty;
   }
   return score;
