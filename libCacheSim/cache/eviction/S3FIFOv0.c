@@ -374,7 +374,7 @@ static void S3FIFOv0_evict_main(cache_t *cache, const request_t *req) {
   while (!has_evicted && main_fifo->get_occupied_byte(main_fifo) > 0) {
     cache_obj_t *obj_to_evict = main_fifo->to_evict(main_fifo, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
-    int freq = obj_to_evict->S3FIFO.freq;
+    int64_t freq = obj_to_evict->S3FIFO.freq;
 #if defined(TRACK_EVICTION_V_AGE)
     int64_t create_time = obj_to_evict->create_time;
 #endif

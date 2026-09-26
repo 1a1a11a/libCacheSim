@@ -367,7 +367,7 @@ static void Clock2QPlus_evict_main(cache_t *cache, const request_t *req) {
   while (!has_evicted && main->get_occupied_byte(main) > 0) {
     cache_obj_t *obj_to_evict = main->to_evict(main, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
-    int freq = obj_to_evict->Clock2QPlus.freq;
+    int64_t freq = obj_to_evict->Clock2QPlus.freq;
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
     if (freq >= 1) {
       // we need to evict first because the object to insert has the same obj_id

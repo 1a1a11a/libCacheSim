@@ -392,6 +392,47 @@ static void test_S3FIFO(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[21]);
 }
 
+// An object read more than INT32_MAX times since the main FIFO last passed it
+// is the hottest object in the cache. Its 64-bit counter must survive the
+// eviction loop's local copy, or the loop sees a negative count and evicts it.
+static void test_S3FIFO_main_freq_beyond_int32(void) {
+  common_cache_params_t cc_params = {.cache_size = 100, .hashpower = 8};
+  cache_t *cache = S3FIFO_init(cc_params, NULL);
+  request_t *req = new_request();
+  req->obj_size = 1;
+
+  // Objects 1 to 10 fill the small FIFO and 11 to 100 go straight to main,
+  // since nothing has been evicted yet. Two reads each promote 1 to 10.
+  for (obj_id_t id = 1; id <= 100; id++) {
+    req->obj_id = id;
+    cache->get(cache, req);
+  }
+  for (int round = 0; round < 2; round++) {
+    for (obj_id_t id = 1; id <= 10; id++) {
+      req->obj_id = id;
+      cache->get(cache, req);
+    }
+  }
+
+  // Object 11 is the oldest in main. Give it 2^31 reads.
+  req->obj_id = 11;
+  cache_obj_t *hot = cache->find(cache, req, false);
+  g_assert_nonnull(hot);
+  hot->S3FIFO.freq = (int64_t)INT32_MAX + 1;
+
+  // The next miss promotes 1 to 10, overfilling main, so main evicts from its
+  // head. Object 11 must be reinserted, and object 12 evicted in its place.
+  req->obj_id = 101;
+  cache->get(cache, req);
+  req->obj_id = 11;
+  g_assert_nonnull(cache->find(cache, req, false));
+  req->obj_id = 12;
+  g_assert_null(cache->find(cache, req, false));
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
 static void test_S3FIFOv0(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[22]);
 }
@@ -474,6 +515,8 @@ int main(int argc, char *argv[]) {
                        test_QDLP_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
   g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
+  g_test_add_func("/libCacheSim/cacheAlgo_S3FIFO_main_freq_beyond_int32",
+                  test_S3FIFO_main_freq_beyond_int32);
   g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFOv0", reader,
                        test_S3FIFOv0);
 #if defined(ENABLE_S4FIFO) && ENABLE_S4FIFO == 1
