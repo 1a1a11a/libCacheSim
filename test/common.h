@@ -225,6 +225,9 @@ static cache_t *create_test_cache(const char *alg_name,
     cache = LRUv0_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "Random") == 0) {
     cache = Random_init(cc_params, NULL);
+  } else if (strcasecmp(alg_name, "Merlin") == 0) {
+    // Bound sketch memory in the multi-size correctness test.
+    cache = merlin_init(cc_params, "sketch-scale=0.001");
   } else if (strcasecmp(alg_name, "MRU") == 0) {
     cache = MRU_init(cc_params, NULL);
   } else if (strcasecmp(alg_name, "LRU_K") == 0) {

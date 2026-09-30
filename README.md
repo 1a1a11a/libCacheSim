@@ -67,6 +67,7 @@ The name in `code` is what you pass to `cachesim` on the command line (names are
 * [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c) `s3fifo`
 * [S4-FIFO](/libCacheSim/cache/eviction/S4FIFO/S4FIFO.c) `s4fifo` — build with `-DENABLE_S4FIFO=ON`
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c) `sieve`
+* [Merlin](/libCacheSim/cache/eviction/cpp/merlin.cpp) `merlin`
 
 ### Admission algorithms
 * [Adaptsize](/libCacheSim/cache/admission/adaptsize/)

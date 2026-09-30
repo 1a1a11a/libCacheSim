@@ -139,6 +139,12 @@ typedef struct {
   int32_t main_insert_freq;
 } S3FIFO_obj_metadata_t;
 
+// Merlin's bounded frequency and ghost/staging overlap marker.
+typedef struct {
+  uint8_t freq;
+  bool inghost;
+} MERLIN_obj_metadata_t;
+
 typedef struct {
   int64_t insert_seq;  // insert sequence number (of whichever sub-FIFO the
                        // object currently lives in), at insertion time
@@ -207,6 +213,7 @@ typedef struct cache_obj {
     QDLP_obj_metadata_t QDLP;
     LIRS_obj_metadata_t LIRS;
     S3FIFO_obj_metadata_t S3FIFO;
+    MERLIN_obj_metadata_t MERLIN;
     S4FIFO_obj_metadata_t S4FIFO;
     Sieve_obj_params_t sieve;
     CAR_obj_metadata_t CAR;

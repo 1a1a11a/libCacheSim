@@ -75,6 +75,7 @@ set(eviction_sources_c
 
 # C++ eviction algorithms
 set(eviction_sources_cpp
+        eviction/cpp/merlin.cpp
         eviction/cpp/LFU.cpp
         eviction/cpp/GDSF.cpp
         eviction/cpp/LRU_K.cpp
