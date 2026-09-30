@@ -92,15 +92,18 @@ cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
   params->LRUs = (cache_t **)malloc(sizeof(cache_t *) * params->n_seg);
 
   common_cache_params_t ccache_params_local = ccache_params;
-  ccache_params_local.cache_size /= params->n_seg;
   /* see Cacheus_init: a non-positive hash power is the "use the default"
    * sentinel and must survive untouched. */
   if (ccache_params_local.hashpower > 0) {
     ccache_params_local.hashpower =
         MAX(4, MIN(16, ccache_params_local.hashpower - 4));
   }
-  params->LRUs[0] = LRU_init(ccache_params_local, NULL);
-  for (int i = 1; i < params->n_seg; i++) {
+  const int remainder = (int)(ccache_params.cache_size % params->n_seg);
+  for (int i = 0; i < params->n_seg; i++) {
+    // Match SLRU: retain the remainder in the upper segments, which must
+    // be at least as large as the admission segment for safe promotion.
+    ccache_params_local.cache_size = ccache_params.cache_size / params->n_seg +
+                                     (i >= params->n_seg - remainder);
     params->LRUs[i] = LRU_init(ccache_params_local, NULL);
   }
   params->req_local = new_request();

@@ -133,9 +133,13 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   if (params->lru_max_n_bytes == NULL) {
     // if the user does not specify segment size
     params->lru_max_n_bytes = calloc(params->n_seg, sizeof(int64_t));
+    const int remainder = (int)(ccache_params.cache_size % params->n_seg);
     for (int i = 0; i < params->n_seg; i++) {
+      // Keep the full budget and make upper segments at least as large as
+      // lower ones, so an admitted object also fits after promotion.
       params->lru_max_n_bytes[i] =
-          (int64_t)(ccache_params.cache_size / params->n_seg);
+          (int64_t)(ccache_params.cache_size / params->n_seg) +
+          (i >= params->n_seg - remainder);
     }
   }
 
