@@ -53,7 +53,7 @@ Then wire it in. Using `myCache` as the example name:
 2. **Add per-object metadata, if you need it.** Add a struct for it to the union in [include/libCacheSim/cacheObj.h](/libCacheSim/include/libCacheSim/cacheObj.h).
 3. **Declare the constructor.** Add `myCache_init()` to [include/libCacheSim/evictionAlgo.h](/libCacheSim/include/libCacheSim/evictionAlgo.h).
 4. **Compile it.** Add `eviction/myCache.c` to [cache/CMakeLists.txt](/libCacheSim/cache/CMakeLists.txt).
-5. **Give it a name.** Add `{"mycache", myCache_init}` to the table in [cache/cacheAlgoRegistry.c](/libCacheSim/cache/cacheAlgoRegistry.c). The table is alphabetical. This one entry makes the algorithm available to `cachesim`, to the MINISIM mode of `mrcProfiler`, and to `create_cache_by_name()`.
+5. **Give it a name.** Add `{"mycache", myCache_init}` to the table in [cache/cacheAlgoRegistry.c](/libCacheSim/cache/cacheAlgoRegistry.c). The table is alphabetical. This one entry makes the algorithm available to `cachesim`, to the MINISIM mode of `mrcProfiler`, and to `create_cache_by_name()`. Names are matched case-insensitively, so users can type `mycache` or `myCache`. Only an algorithm that needs more than a lookup, such as a smaller hash table or a check that the trace carries future access times, also needs a branch in [bin/cachesim/cache_init.h](/libCacheSim/bin/cachesim/cache_init.h).
 6. **Test and document it.** Add a test to [test/test_evictionAlgo.c](/test/test_evictionAlgo.c), and list the algorithm in the [README](/README.md#supported-algorithms) with the name users type. If it takes `-e` parameters, add a case to the `testCLI` target too, as described in [CONTRIBUTING.md](/CONTRIBUTING.md#testing).
 
 Then rebuild and try it:

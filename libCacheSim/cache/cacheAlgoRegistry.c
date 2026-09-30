@@ -53,8 +53,10 @@ static const cache_algo_entry_t g_cache_algos[] = {
     {"lru", LRU_init},
     {"lru-k", LRU_K_init},
     {"lru-prob", LRU_Prob_init},
+    {"lruv0", LRUv0_init},
     {"merlin", merlin_init},
     {"mq", MQ_init},
+    {"mru", MRU_init},
     {"multiqueue", MQ_init},
     {"nop", nop_init},
     /* plugin cache that allows user to implement custom cache */

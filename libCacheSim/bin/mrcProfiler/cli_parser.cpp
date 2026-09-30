@@ -1,6 +1,7 @@
 #include <argp.h>
 #include <stdbool.h>
 #include <string.h>
+#include <strings.h>
 
 #include <string>
 #include <vector>
@@ -370,10 +371,10 @@ void mrc_profiler_params_parse(const char *cache_algorithm_str,
                                mrcProfiler::mrc_profiler_e &profiler_type,
                                mrcProfiler::mrc_profiler_params_t &params) {
   // initial the params of mrc profiler
-  if (strcmp(profiler_str, "SHARDS") == 0 ||
-      strcmp(profiler_str, "shards") == 0) {
+  // names are case-insensitive, the same as cachesim and the MINISIM registry
+  if (strcasecmp(profiler_str, "SHARDS") == 0) {
     profiler_type = mrcProfiler::SHARDS_PROFILER;
-    if (strcmp(cache_algorithm_str, "LRU")) {
+    if (strcasecmp(cache_algorithm_str, "LRU") != 0) {
       ERROR("cache algorithm must be LRU for SHARDS\n")
       exit(1);
     }
@@ -382,8 +383,7 @@ void mrc_profiler_params_parse(const char *cache_algorithm_str,
 
     // init shards params
     params.shards_params.parse_params(params_str);
-  } else if (strcmp(profiler_str, "MINISIM") == 0 ||
-             strcmp(profiler_str, "minisim") == 0) {
+  } else if (strcasecmp(profiler_str, "MINISIM") == 0) {
     profiler_type = mrcProfiler::MINISIM_PROFILER;
 
     params.cache_algorithm_str = (char *)cache_algorithm_str;

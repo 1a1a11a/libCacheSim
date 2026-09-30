@@ -28,6 +28,7 @@ python3 plot_mrc_time.py \
 ## Profile miss ratio curves
 
 `mrcProfiler` enables fast profiling of miss ratio curves. With a proper parameter setting (such as `sampling_rate`, see [here](../doc/quickstart_mrcProfiler.md) for details) `mrcProfiler` can profile miss ratio curves in a fast way with acceptable accuracy.
+Names passed to `--algos` are case-insensitive, so `LRU,FIFO` and `lru,fifo` both work.
 
 ```bash
 # plot profiled miss ratio over sizes
