@@ -235,6 +235,13 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_byte_true = {4214303232, 4061242368, 3778040320, 3660569600,
                         3100927488, 3078128640, 3075403776, 3061662720}},
 #endif /* ENABLE_3L_CACHE */
+    {.cache_name = "Merlin",
+     .hashpower = 20,
+     .req_cnt_true = 113872,
+     .req_byte_true = 4368040448,
+     .miss_cnt_true = {89842, 79364, 74651, 71671, 69144, 64850, 60371, 56257},
+     .miss_byte_true = {4047980032, 3523418112, 3219840512, 3037955072,
+                        2874276864, 2597470208, 2426512896, 2333233664}},
 };
 
 static void _verify_profiler_results(const cache_stat_t *res,
@@ -376,6 +383,11 @@ static void test_LRU_K(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[17]);
 }
 
+static void test_Merlin(gconstpointer user_data) {
+  test_cache_algorithm(user_data,
+                       &test_data_truth[G_N_ELEMENTS(test_data_truth) - 1]);
+}
+
 static void test_MRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[18]);
 }
@@ -509,6 +521,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU_K", reader, test_LRU_K);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_Merlin", reader, test_Merlin);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MQ", reader, test_MQ);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,

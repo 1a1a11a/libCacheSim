@@ -187,7 +187,7 @@ OPTIONAL_ALGOS=" 3LCache GLCache gl-cache lrb "
 
 ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	clockpro fifo fifo-merge fifo-reinsertion fifomerge flashProb gdsf gl-cache
-	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob mq
+	lecar lecarv0 lfu lfucpp lfuda lhd lirs lrb lru lru-k lru-prob merlin mq
 	multiqueue nop
 	pluginCache qdlp random randomTwo s3-fifo s3-fifov0 s3fifo s3fifov0
 	sieve size slru slruv0 tinyLFU twoq wtinyLFU
@@ -279,7 +279,7 @@ echo "  (${n_skipped} algorithms not compiled in, skipped)"
 
 # Object metadata accounting reads from the sub-cache, which some algorithms
 # only build partway through init.
-for algo in wtinyLFU qdlp s3fifo slru lru; do
+for algo in wtinyLFU qdlp s3fifo slru lru merlin; do
 	expect_ok "${algo} replay with --consider-obj-metadata=true" \
 		"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 10mb \
 		--num-req=20000 --consider-obj-metadata=true
@@ -342,6 +342,27 @@ expect_clean_error "slru too many segments" \
 	-e "seg-size=1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1:1"
 expect_clean_error "slru unknown parameter" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru 1gb -e "no-such-param=1"
+
+echo "running Merlin parameter validation tests"
+expect_output "merlin -e print" "epoch-update=32,sketch-scale=1" \
+  "${BIN_DIR}/cachesim" "${TRACE}" vscsi merlin 1gb -e print
+expect_output "merlin custom parameters" "epoch-update=4,sketch-scale=0.01" \
+  "${BIN_DIR}/cachesim" "${TRACE}" vscsi merlin 1gb -e "epoch-update=4,sketch-scale=0.01,print"
+for params in "filter-size-ratio=0" "filter-size-ratio=nan" \
+    "staging-size-ratio=-1" "filter-size-ratio=0.8,staging-size-ratio=0.3" \
+    "ghost-size-ratio=-1" "epoch-update=0" "epoch-update=1.5" \
+    "epoch-update=2147483648" "sketch-scale=inf" "sketch-scale=0" \
+    "sketch-scale=" "epoch-update" "no-such-param=1" "epoch-update=3x"; do
+  expect_clean_error "merlin rejects ${params}" \
+    "${BIN_DIR}/cachesim" "${TRACE}" vscsi merlin 1mb -e "${params}"
+done
+expect_output "merlin replay with custom parameters" "miss ratio" \
+  "${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral merlin 1mb \
+  --num-req=20000 --hashpower=12 -e "epoch-update=4,sketch-scale=0.001"
+
+expect_clean_error "merlin rejects unsupported prefetching" \
+  "${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral merlin 1mb \
+  --num-req=10 --hashpower=4 -e "sketch-scale=0.001" --prefetch=OBL
 
 echo "running option parsing tests"
 
