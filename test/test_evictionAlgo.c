@@ -485,6 +485,33 @@ static void test_WTinyLFU(gconstpointer user_data) {
   // TODO: to be implemented
 }
 
+/* The MINISIM profiler only knows an algorithm by its name and reaches it
+ * through create_cache_using_plugin(). That used to go straight to dlsym(),
+ * which cannot see a built-in constructor in a statically linked build — the
+ * archive member holding it is never pulled in — so every built-in name failed
+ * with "undefined symbol: lru_init" (issue #304). The registry lookup that
+ * replaced it matches names case-insensitively, the same way cachesim does. */
+static void test_create_cache_by_name(gconstpointer user_data) {
+  common_cache_params_t cc_params = {
+      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+
+  static const struct {
+    const char *requested;
+    const char *expected_name;
+  } names[] = {
+      {"lru", "LRU"},   {"LRU", "LRU"},   {"Lru", "LRU"},
+      {"fifo", "FIFO"}, {"FIFO", "FIFO"}, {"fIfO", "FIFO"},
+  };
+
+  for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+    cache_t *cache =
+        create_cache_using_plugin(names[i].requested, cc_params, NULL);
+    g_assert_nonnull(cache);
+    g_assert_cmpstr(cache->cache_name, ==, names[i].expected_name);
+    cache->cache_free(cache);
+  }
+}
+
 static void empty_test(gconstpointer user_data) { ; }
 
 int main(int argc, char *argv[]) {
@@ -550,6 +577,9 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
                        test_BeladySize);
+
+  g_test_add_data_func("/libCacheSim/create_cache_by_name", reader,
+                       test_create_cache_by_name);
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);

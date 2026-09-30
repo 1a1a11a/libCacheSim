@@ -36,7 +36,7 @@ Specifically, you can following the steps:
    [include/libCacheSim/cacheObj.h](/libCacheSim/include/libCacheSim/cacheObj.h).
 3. Add `myCache_init()` function to [include/libCacheSim/evictionAlgo.h](/libCacheSim/include/libCacheSim/evictionAlgo.h).
 4. Add mycache.c to [CMakeLists.txt](/libCacheSim/cache/CMakeLists.txt) so that it can be compiled.
-5. Add command line option in [bin/cachesim/cache_init.h](/libCacheSim/bin/cachesim/cache_init.h) so that you can use `cachesim` binary. You may also want to take a look at [bin/cachesim/cli_parser.c](/libCacheSim/bin/cachesim/cli_parser.c). 
+5. Add the name and `myCache_init()` to the registry in [cache/cacheAlgoRegistry.c](/libCacheSim/cache/cacheAlgoRegistry.c). This one table is what `cachesim` and the `mrcProfiler` MINISIM profiler both look the algorithm up in, and names are matched case-insensitively. Only algorithms that need more than a lookup — a different hash table size, or a check that the trace carries future information — also need a branch in [bin/cachesim/cache_init.h](/libCacheSim/bin/cachesim/cache_init.h). You may also want to take a look at [bin/cachesim/cli_parser.c](/libCacheSim/bin/cachesim/cli_parser.c). 
 6. Remember to add a test in [test/test_evictionAlgo.c](/test/test_evictionAlgo.c) and add the algorithm to the [README](/README.md#supported-algorithms). 
 
 > [!TIP]
