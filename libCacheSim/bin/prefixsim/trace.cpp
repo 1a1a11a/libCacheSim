@@ -93,7 +93,8 @@ uint64_t request_category(const char *line) {
 /// JSONL with one request per line and a `hash_ids` array of block ids.
 class QwenJsonlReader : public TraceReader {
  public:
-  QwenJsonlReader(std::ifstream in, BlockIdMode mode) : in_(std::move(in)), mode_(mode) {}
+  QwenJsonlReader(std::ifstream in, BlockIdMode mode)
+      : in_(std::move(in)), mode_(mode) {}
 
   bool next(Request &out) override {
     while (std::getline(in_, line_)) {
@@ -168,8 +169,9 @@ const char *trace_format_name(TraceFormat format) {
   return "?";
 }
 
-std::unique_ptr<TraceReader> open_trace(const std::string &path, TraceFormat format,
-                                        BlockIdMode mode, std::string &error) {
+std::unique_ptr<TraceReader> open_trace(const std::string &path,
+                                        TraceFormat format, BlockIdMode mode,
+                                        std::string &error) {
   std::ifstream in(path);
   if (!in.is_open()) {
     error = "cannot open trace file: " + path;
@@ -177,13 +179,15 @@ std::unique_ptr<TraceReader> open_trace(const std::string &path, TraceFormat for
   }
   switch (format) {
     case TraceFormat::kQwenJsonl:
-      return std::unique_ptr<TraceReader>(new QwenJsonlReader(std::move(in), mode));
+      return std::unique_ptr<TraceReader>(
+          new QwenJsonlReader(std::move(in), mode));
   }
   error = "unhandled trace format";
   return nullptr;
 }
 
-bool load_trace(TraceReader &reader, std::vector<Request> &out, std::string &error) {
+bool load_trace(TraceReader &reader, std::vector<Request> &out,
+                std::string &error) {
   Request req;
   while (reader.next(req)) {
     out.push_back(req);

@@ -5,22 +5,23 @@
  * is structural rather than aesthetic, and rests on two properties of the
  * freeinference traces:
  *
- *   - A session is a monotonically growing prefix. Between consecutive turns the
- *     median common prefix is 100% of the previous turn's blocks, and the median
- *     number of blocks dropped is exactly 1 (the partial boundary block, rehashed
- *     as tokens are appended). So a session is a well-defined object that grows.
- *   - Context sliding is rare but violent. At the 99.9th percentile a turn drops
- *     6,891 blocks at once, and at the maximum 12,921 -- the whole front of the
- *     context falling out of a 256k-token window. Those blocks are dead the
+ *   - A session is a monotonically growing prefix. Between consecutive turns
+ * the median common prefix is 100% of the previous turn's blocks, and the
+ * median number of blocks dropped is exactly 1 (the partial boundary block,
+ * rehashed as tokens are appended). So a session is a well-defined object that
+ * grows.
+ *   - Context sliding is rare but violent. At the 99.9th percentile a turn
+ * drops 6,891 blocks at once, and at the maximum 12,921 -- the whole front of
+ * the context falling out of a 256k-token window. Those blocks are dead the
  *     instant the turn arrives. A block-level policy can only discover that by
  *     waiting for them to age out; a session-level one is told.
  *
  * ------------------------------------------------------------------ ownership
  * A block is NOT owned by one session: 25% of unique blocks in the July trace
- * appear in more than one session, covering 34% of all accesses, concentrated at
- * the prefix head (91% of accesses at offset < 64) but still 27% past offset 16k.
- * So "evict a session, free its blocks" would tear blocks out from under other
- * live conversations.
+ * appear in more than one session, covering 34% of all accesses, concentrated
+ * at the prefix head (91% of accesses at offset < 64) but still 27% past offset
+ * 16k. So "evict a session, free its blocks" would tear blocks out from under
+ * other live conversations.
  *
  * The fix is a claim count. Each session claims the blocks of its current turn;
  * a block is resident exactly while at least one session claims it. Evicting a
@@ -38,8 +39,8 @@
  * cache_evict_base, so `cache->find(block_id, false)` still answers "is this
  * block resident" and prefixsim's phase-1 probe, verify pass and hole dump work
  * unchanged. Only victim *selection* is session-granular. This is deliberate:
- * making the hash table session-keyed would leave nothing able to answer the one
- * question the simulator asks most.
+ * making the hash table session-keyed would leave nothing able to answer the
+ * one question the simulator asks most.
  *
  * ------------------------------------------------------------------- prefixsim
  * These policies need to know which conversation a request belongs to, which
@@ -102,13 +103,15 @@ class SessionCache {
   int64_t now = 0;
   uint64_t cur_session = 0;
   int64_t cur_next_access = INT64_MAX;
-  /// Synthesised ids for traces without session_id, so each request stands alone.
+  /// Synthesised ids for traces without session_id, so each request stands
+  /// alone.
   uint64_t synthetic_next = 1;
 
   // ---- policy hooks ----
   /// Choose the session to evict. Return false when none is available.
   virtual bool select_victim(uint64_t &out) = 0;
-  /// A session has just served a turn. `is_new` distinguishes admission from reuse.
+  /// A session has just served a turn. `is_new` distinguishes admission from
+  /// reuse.
   virtual void on_touch(uint64_t /*session*/, bool /*is_new*/) {}
   /// A session has been evicted and erased.
   virtual void on_removed(uint64_t /*session*/) {}
@@ -134,11 +137,12 @@ class SessionCache {
 
     // Re-claim the whole new path, then drop the whole old one. Claiming first
     // is what makes this safe: a block held by both turns goes +1 then -1 and
-    // never touches zero, so it is never freed and re-admitted. Doing it in this
-    // order also avoids computing a set difference -- at 656M block accesses,
-    // building two hash sets per request costs more than the eviction does.
-    // A context slide falls out correctly: nothing in the new path is released,
-    // and the thousands of blocks left behind are dropped in the second loop.
+    // never touches zero, so it is never freed and re-admitted. Doing it in
+    // this order also avoids computing a set difference -- at 656M block
+    // accesses, building two hash sets per request costs more than the eviction
+    // does. A context slide falls out correctly: nothing in the new path is
+    // released, and the thousands of blocks left behind are dropped in the
+    // second loop.
     for (int64_t i = 0; i < n; ++i) claim(ids[i], m);
     for (const obj_id_t id : m.path) release(id, m);
     m.path.assign(ids, ids + n);
@@ -245,8 +249,9 @@ class SessionLRU : public SessionCache {
 // ------------------------------------------------------------- session Belady
 
 /// Evict the session whose next turn is furthest away -- the session-granular
-/// oracle. Lazily invalidated max-heap: an entry is stale if the session is gone
-/// or has been re-recorded since, which is detected on pop rather than prevented.
+/// oracle. Lazily invalidated max-heap: an entry is stale if the session is
+/// gone or has been re-recorded since, which is detected on pop rather than
+/// prevented.
 class SessionBelady : public SessionCache {
  public:
   struct Entry {
@@ -337,11 +342,11 @@ class SessionRandomCompute : public SessionCache {
 
 // ------------------------------------------------------------ session S3FIFO
 
-/// A small FIFO of newcomers, a main FIFO of sessions that proved themselves, and
-/// a ghost of what the small queue threw away. A session seen again while in the
-/// ghost is admitted straight to main. Sizes are counted in SESSIONS, not blocks:
-/// the queues order conversations, and how many blocks each holds is the outer
-/// layer's concern.
+/// A small FIFO of newcomers, a main FIFO of sessions that proved themselves,
+/// and a ghost of what the small queue threw away. A session seen again while
+/// in the ghost is admitted straight to main. Sizes are counted in SESSIONS,
+/// not blocks: the queues order conversations, and how many blocks each holds
+/// is the outer layer's concern.
 class SessionS3FIFO : public SessionCache {
  public:
   double small_ratio = 0.1;
@@ -349,7 +354,8 @@ class SessionS3FIFO : public SessionCache {
   size_t ghost_cap = 0;  // 0 = size it like the resident set
 
   std::list<uint64_t> small, main;
-  std::unordered_map<uint64_t, std::pair<int, std::list<uint64_t>::iterator>> where;
+  std::unordered_map<uint64_t, std::pair<int, std::list<uint64_t>::iterator>>
+      where;
   std::list<uint64_t> ghost;
   std::unordered_set<uint64_t> ghost_set;
 
@@ -357,7 +363,8 @@ class SessionS3FIFO : public SessionCache {
 
   void push_ghost(uint64_t s) {
     if (ghost_set.insert(s).second) ghost.push_back(s);
-    const size_t cap = ghost_cap != 0 ? ghost_cap : (small.size() + main.size() + 1);
+    const size_t cap =
+        ghost_cap != 0 ? ghost_cap : (small.size() + main.size() + 1);
     while (ghost.size() > cap) {
       ghost_set.erase(ghost.front());
       ghost.pop_front();
@@ -411,8 +418,14 @@ class SessionS3FIFO : public SessionCache {
       out = s;
       return true;
     }
-    if (!small.empty()) { out = small.front(); return true; }
-    if (!main.empty()) { out = main.front(); return true; }
+    if (!small.empty()) {
+      out = small.front();
+      return true;
+    }
+    if (!main.empty()) {
+      out = main.front();
+      return true;
+    }
     return false;
   }
 
@@ -436,14 +449,16 @@ class SessionS3FIFO : public SessionCache {
 
 // ---------------------------------------------------------------- session ARC
 
-/// ARC over sessions: T1 holds conversations seen once, T2 those seen again, and
-/// the ghosts B1/B2 steer `p`, the share of the resident set given to recency.
-/// The target size is counted in sessions and tracks the resident set, because
-/// how many conversations fit is decided by the outer block budget, not here.
+/// ARC over sessions: T1 holds conversations seen once, T2 those seen again,
+/// and the ghosts B1/B2 steer `p`, the share of the resident set given to
+/// recency. The target size is counted in sessions and tracks the resident set,
+/// because how many conversations fit is decided by the outer block budget, not
+/// here.
 class SessionARC : public SessionCache {
  public:
   std::list<uint64_t> t1, t2, b1, b2;
-  std::unordered_map<uint64_t, std::pair<int, std::list<uint64_t>::iterator>> where;
+  std::unordered_map<uint64_t, std::pair<int, std::list<uint64_t>::iterator>>
+      where;
   double p = 0.0;
 
   std::list<uint64_t> &listof(int k) {
@@ -467,9 +482,14 @@ class SessionARC : public SessionCache {
   void trim_ghosts() {
     const size_t c = t1.size() + t2.size() + 1;
     while (b1.size() + b2.size() > c) {
-      if (!b1.empty()) { where.erase(b1.front()); b1.pop_front(); }
-      else if (!b2.empty()) { where.erase(b2.front()); b2.pop_front(); }
-      else break;
+      if (!b1.empty()) {
+        where.erase(b1.front());
+        b1.pop_front();
+      } else if (!b2.empty()) {
+        where.erase(b2.front());
+        b2.pop_front();
+      } else
+        break;
     }
   }
 
@@ -487,18 +507,18 @@ class SessionARC : public SessionCache {
     const double n2 = static_cast<double>(b2.size());
     const double c = static_cast<double>(t1.size() + t2.size() + 1);
 
-    if (k == 0 || k == 1) {          // resident: promote to T2 MRU
+    if (k == 0 || k == 1) {  // resident: promote to T2 MRU
       unlink(s);
       place(s, 1);
-    } else if (k == 2) {             // ghost hit in B1: favour recency
+    } else if (k == 2) {  // ghost hit in B1: favour recency
       p = std::min(c, p + std::max(1.0, n2 / std::max(1.0, n1)));
       unlink(s);
       place(s, 1);
-    } else if (k == 3) {             // ghost hit in B2: favour frequency
+    } else if (k == 3) {  // ghost hit in B2: favour frequency
       p = std::max(0.0, p - std::max(1.0, n1 / std::max(1.0, n2)));
       unlink(s);
       place(s, 1);
-    } else {                         // brand new
+    } else {  // brand new
       place(s, 0);
     }
     trim_ghosts();
@@ -507,8 +527,10 @@ class SessionARC : public SessionCache {
   void on_removed(uint64_t s) override {
     const int k = locate(s);
     unlink(s);
-    if (k == 0) place(s, 2);        // T1 -> B1
-    else if (k == 1) place(s, 3);   // T2 -> B2
+    if (k == 0)
+      place(s, 2);  // T1 -> B1
+    else if (k == 1)
+      place(s, 3);  // T2 -> B2
     trim_ghosts();
   }
 };
@@ -549,7 +571,8 @@ static cache_obj_t *SessionCache_insert(cache_t *cache, const request_t *req) {
   return obj;
 }
 
-static cache_obj_t *SessionCache_to_evict(cache_t *cache, const request_t *req) {
+static cache_obj_t *SessionCache_to_evict(cache_t *cache,
+                                          const request_t *req) {
   (void)req;
   SessionCache *sc = sc_of(cache);
   uint64_t victim = 0;
@@ -585,8 +608,9 @@ static int64_t SessionCache_evict_n(cache_t *cache, const request_t *req,
 static bool SessionCache_remove(cache_t *cache, const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == nullptr) return false;
-  // Drop every claim on this block; the sessions holding it keep the stale id in
-  // their path, which drop_session tolerates (the block is simply already gone).
+  // Drop every claim on this block; the sessions holding it keep the stale id
+  // in their path, which drop_session tolerates (the block is simply already
+  // gone).
   sc_of(cache)->blocks.erase(obj_id);
   cache_remove_obj_base(cache, obj, true);
   return true;
@@ -606,7 +630,8 @@ static cache_t *session_cache_init(const common_cache_params_t ccache_params,
                                    const char *cache_specific_params,
                                    const char *name, SessionCache *impl,
                                    cache_init_func_ptr self) {
-  cache_t *cache = cache_struct_init(name, ccache_params, cache_specific_params);
+  cache_t *cache =
+      cache_struct_init(name, ccache_params, cache_specific_params);
   cache->eviction_params = reinterpret_cast<void *>(impl);
   impl->cache = cache;
 
@@ -653,10 +678,9 @@ cache_t *SessionS3FIFO_init(const common_cache_params_t ccache_params,
 
 cache_t *SessionRandomCompute_init(const common_cache_params_t ccache_params,
                                    const char *cache_specific_params) {
-  return session_cache_init(ccache_params, cache_specific_params,
-                            "SessionRandomCompute",
-                            new eviction::SessionRandomCompute,
-                            SessionRandomCompute_init);
+  return session_cache_init(
+      ccache_params, cache_specific_params, "SessionRandomCompute",
+      new eviction::SessionRandomCompute, SessionRandomCompute_init);
 }
 
 #ifdef __cplusplus

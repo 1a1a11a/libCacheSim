@@ -59,9 +59,9 @@ typedef struct __attribute__((packed)) lcsllm_header {
   int64_t start_time_us;
   int64_t end_time_us;
 
-  int32_t block_size_tokens;  /**< tokens per KV block, e.g. 16 */
-  uint8_t block_id_kind;      /**< lcsllm_block_id_kind_e */
-  uint8_t has_next_access;    /**< 0 if next_access_vtime is -1 throughout */
+  int32_t block_size_tokens; /**< tokens per KV block, e.g. 16 */
+  uint8_t block_id_kind;     /**< lcsllm_block_id_kind_e */
+  uint8_t has_next_access;   /**< 0 if next_access_vtime is -1 throughout */
   uint8_t n_types;
   uint8_t unused_pad;
   char type_names[LCSLLM_N_TYPE][LCSLLM_TYPE_LEN];
@@ -77,13 +77,13 @@ typedef char static_assert_lcsllm_header_size
 /******************************************************************************/
 typedef struct __attribute__((packed)) lcsllm_req_header {
   uint64_t chat_id;
-  int64_t parent_chat_id;  /**< -1 if the conversation has no parent */
-  int64_t timestamp_us;    /**< arrival time, microseconds */
+  int64_t parent_chat_id; /**< -1 if the conversation has no parent */
+  int64_t timestamp_us;   /**< arrival time, microseconds */
   uint32_t n_blocks;
-  uint32_t input_length;   /**< prompt tokens */
-  uint32_t output_length;  /**< generated tokens */
+  uint32_t input_length;  /**< prompt tokens */
+  uint32_t output_length; /**< generated tokens */
   uint32_t turn;
-  uint8_t type_id;         /**< index into header.type_names */
+  uint8_t type_id; /**< index into header.type_names */
   uint8_t reserved[7];
 } lcsllm_req_header_t;
 typedef char static_assert_lcsllm_req_header_size
@@ -98,8 +98,9 @@ typedef struct __attribute__((packed)) lcsllm_block {
   /** 1-based index of the next access in the forward-flattened trace, or -1 */
   int64_t next_access_vtime;
 } lcsllm_block_t;
-typedef char static_assert_lcsllm_block_size
-    [(sizeof(struct lcsllm_block) == 16) ? 1 : -1];
+typedef char static_assert_lcsllm_block_size[(sizeof(struct lcsllm_block) == 16)
+                                                 ? 1
+                                                 : -1];
 
 /******************************************************************************/
 /**                              flat reader                                 **/
@@ -131,8 +132,8 @@ static inline int lcsllmReader_setup(reader_t *reader) {
   }
   /* Positional encoding is a guarantee of the format, not a property to be
    * discovered by the consumer. A prefix cache keys on "this block reached
-   * through this exact prefix": if two distinct paths share an id, they collapse
-   * into one cache object, inflating the hit ratio and -- under a
+   * through this exact prefix": if two distinct paths share an id, they
+   * collapse into one cache object, inflating the hit ratio and -- under a
    * position-dependent cost model -- giving one object two different costs. A
    * consumer cannot repair that after the fact, because the predecessor
    * information is gone by then. So it is refused here. */

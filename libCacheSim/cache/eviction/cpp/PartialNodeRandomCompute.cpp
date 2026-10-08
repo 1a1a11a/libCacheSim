@@ -29,11 +29,12 @@ class PartialNodeRandomCompute : public PartialNodeCache {
 extern "C" {
 #endif
 
-cache_t *PartialNodeRandomCompute_init(const common_cache_params_t ccache_params,
-                                       const char *cache_specific_params) {
-  return eviction::partial_node_cache_init("PartialNodeRandomCompute",
-                                           ccache_params, cache_specific_params,
-                                           new eviction::PartialNodeRandomCompute());
+cache_t *PartialNodeRandomCompute_init(
+    const common_cache_params_t ccache_params,
+    const char *cache_specific_params) {
+  return eviction::partial_node_cache_init(
+      "PartialNodeRandomCompute", ccache_params, cache_specific_params,
+      new eviction::PartialNodeRandomCompute());
 }
 
 #ifdef __cplusplus

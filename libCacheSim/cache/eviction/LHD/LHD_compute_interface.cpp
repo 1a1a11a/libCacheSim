@@ -100,7 +100,7 @@ cache_t *LHD_compute_init(const common_cache_params_t ccache_params,
     params->associativity = 32;
   }
 
-  params->LHD_compute_cache = static_cast<void *>( 
+  params->LHD_compute_cache = static_cast<void *>(
       new LHDCompute(params->associativity, params->admission, cache));
 
   return cache;

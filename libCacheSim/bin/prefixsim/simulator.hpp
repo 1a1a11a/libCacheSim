@@ -37,14 +37,16 @@ struct Stats {
   int64_t n_requests_skipped = 0;
 
   // ---- block level: the headline numbers ----
-  int64_t n_blocks = 0;      ///< Block accesses across all served requests.
-  int64_t n_block_hits = 0;  ///< Blocks already resident when the request arrived.
-  double total_cost = 0.0;   ///< Sum of block_cost() over all blocks.
-  double saved_cost = 0.0;   ///< Sum of block_cost() over hit blocks.
+  int64_t n_blocks = 0;  ///< Block accesses across all served requests.
+  int64_t n_block_hits =
+      0;  ///< Blocks already resident when the request arrived.
+  double total_cost = 0.0;  ///< Sum of block_cost() over all blocks.
+  double saved_cost = 0.0;  ///< Sum of block_cost() over hit blocks.
 
   // ---- diagnostics ----
-  int64_t n_evictions = 0;       ///< Objects evicted during phase 2.
-  int64_t n_self_evictions = 0;  ///< ...that the arriving request itself needed.
+  int64_t n_evictions = 0;  ///< Objects evicted during phase 2.
+  int64_t n_self_evictions =
+      0;  ///< ...that the arriving request itself needed.
   /// Evictions triggered from inside phase 3. Must stay 0: phase 2 reserves
   /// exactly enough room. Non-zero means the allocation arithmetic and the
   /// eviction algorithm disagree, and the run is not trustworthy.
@@ -56,7 +58,9 @@ struct Stats {
   int64_t n_unobserved_eviction_rounds = 0;
 
   double block_hit_ratio() const {
-    return n_blocks ? static_cast<double>(n_block_hits) / static_cast<double>(n_blocks) : 0.0;
+    return n_blocks ? static_cast<double>(n_block_hits) /
+                          static_cast<double>(n_blocks)
+                    : 0.0;
   }
   double compute_saving_ratio() const {
     return total_cost > 0.0 ? saved_cost / total_cost : 0.0;
@@ -149,7 +153,8 @@ class Simulator {
 
 /// Create a cache by algorithm name (case-insensitive). Returns nullptr for
 /// unknown names. `cache_size_blocks` is in blocks: every object has size 1.
-cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_blocks,
+cache_t *create_cache_by_name(const std::string &algorithm,
+                              int64_t cache_size_blocks,
                               const char *cache_specific_params = nullptr,
                               int64_t n_total_req = 0);
 

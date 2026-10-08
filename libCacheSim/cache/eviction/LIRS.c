@@ -828,16 +828,17 @@ static bool evictHIR(cache_t *cache) {
   cache_obj_t *obj_to_evict = params->LRU_q->to_evict(params->LRU_q, NULL);
 
   // In-flight protection: never evict a block of the request being replayed. Q
-  // is LRU-ordered and a request's own blocks are the most-recently inserted, so
-  // the older, evictable HIR blocks sit at the LRU end this picks -- if that end
-  // is itself in-flight, every resident HIR is in-flight and none may be
+  // is LRU-ordered and a request's own blocks are the most-recently inserted,
+  // so the older, evictable HIR blocks sit at the LRU end this picks -- if that
+  // end is itself in-flight, every resident HIR is in-flight and none may be
   // dropped. Report "evicted nothing" and let the caller stop; the block is
   // still inserted (its subclass is temporarily over its cap, which the next
-  // request's eviction restores once these blocks are no longer in-flight). This
-  // is the only case where the guard changes behaviour: whenever a run keeps its
-  // whole request resident (every case that already passed) the LRU-end HIR is
-  // not in-flight and this is a no-op. The set is empty unless a driver calls
-  // record_request (cachesim does not), so it is a no-op there too.
+  // request's eviction restores once these blocks are no longer in-flight).
+  // This is the only case where the guard changes behaviour: whenever a run
+  // keeps its whole request resident (every case that already passed) the
+  // LRU-end HIR is not in-flight and this is a no-op. The set is empty unless a
+  // driver calls record_request (cachesim does not), so it is a no-op there
+  // too.
   if (obj_to_evict != NULL && lirs_is_inflight(cache, obj_to_evict->obj_id)) {
     return false;
   }

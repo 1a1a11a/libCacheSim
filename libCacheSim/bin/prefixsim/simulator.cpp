@@ -26,12 +26,13 @@ namespace {
 // the victim's id to a vector. This is the only hook in the core that reports
 // the actual victim: peeking with cache->to_evict() before cache->evict() does
 // NOT work, because the sampling algorithms (RandomCompute,
-// RandomComputeSmallQueue, BeladyCompute, ...) re-sample inside evict() instead of
-// reusing to_evict_candidate, so the peek names a different object.
+// RandomComputeSmallQueue, BeladyCompute, ...) re-sample inside evict() instead
+// of reusing to_evict_candidate, so the peek names a different object.
 // ---------------------------------------------------------------------------
 
 void recorder_handle_evict(cache_t *cache, const request_t *req) {
-  auto *victims = static_cast<std::vector<obj_id_t> *>(cache->prefetcher->params);
+  auto *victims =
+      static_cast<std::vector<obj_id_t> *>(cache->prefetcher->params);
   victims->push_back(req->obj_id);
 }
 
@@ -112,7 +113,7 @@ const AlgoEntry kAlgos[] = {
     // victim. Verified by running the trace with pinning on.
     {"s4fifo", S4FIFO_init, true},
 #endif
-    // learned (LightGBM; built only when ENABLE_LRB / ENABLE_3L_CACHE are set)
+// learned (LightGBM; built only when ENABLE_LRB / ENABLE_3L_CACHE are set)
 #ifdef ENABLE_LRB
     {"lrb", LRB_init, true},
 #endif
@@ -341,9 +342,11 @@ bool Simulator::serve(const Request &request, std::string &error) {
   return true;
 }
 
-bool Simulator::allocate(const Request &request, int64_t needed, std::string &error) {
+bool Simulator::allocate(const Request &request, int64_t needed,
+                         std::string &error) {
   // Point the eviction request at the first missing block. Most algorithms
-  // ignore the request argument in evict(); the cost-aware ones read req->obj_cost.
+  // ignore the request argument in evict(); the cost-aware ones read
+  // req->obj_cost.
   for (size_t i = 0; i < request.blocks.size(); ++i) {
     if (resident_[i] == 0) {
       fill_request(request, i);
@@ -408,21 +411,22 @@ bool Simulator::allocate(const Request &request, int64_t needed, std::string &er
       stats_.n_evictions += occupied_before - occupied_now;
       stats_.n_unobserved_eviction_rounds += 1;
 
-      // The re-probe below recovers the deficit and the self-eviction count from
-      // ground truth, but it is O(|request|). Doing it after every single freed
-      // block -- which is what these algorithms give us, one eviction per
+      // The re-probe below recovers the deficit and the self-eviction count
+      // from ground truth, but it is O(|request|). Doing it after every single
+      // freed block -- which is what these algorithms give us, one eviction per
       // evict() call -- makes allocation O(|request| * deficit) and dominates
       // runtime on large requests at small caches (measured ~300x slower than
       // LRU for S3FIFO/TwoQ/LIRS/WTinyLFU on the freeinference trace).
       //
       // Every eviction drops occupancy by one whether the victim was wanted or
-      // not, so accumulate the drop and only re-probe once we have freed a whole
-      // deficit's worth. If some of those were self-evictions the request is
-      // still short, which the re-probe sees as a positive `remaining` and turns
-      // into another batch. Re-probes are then bounded by the number of
+      // not, so accumulate the drop and only re-probe once we have freed a
+      // whole deficit's worth. If some of those were self-evictions the request
+      // is still short, which the re-probe sees as a positive `remaining` and
+      // turns into another batch. Re-probes are then bounded by the number of
       // self-eviction correction rounds (typically one or two), not by the
-      // deficit. The self-eviction diagnostic stays exact: alpha_resident_.erase
-      // fires at most once per block regardless of how often we re-probe.
+      // deficit. The self-eviction diagnostic stays exact:
+      // alpha_resident_.erase fires at most once per block regardless of how
+      // often we re-probe.
       unobserved_freed += occupied_before - occupied_now;
       if (unobserved_freed < needed) continue;
 
@@ -493,7 +497,8 @@ void Simulator::dump_holes(const Request &request) {
 void Simulator::access(const Request &request) {
   // Reverse order: the deepest (most private) block is touched first and the
   // prefix root last, so recency-ordered algorithms leave the root at the MRU
-  // end and evict from the deep end first. See README.md "Reverse-order replay".
+  // end and evict from the deep end first. See README.md "Reverse-order
+  // replay".
   victims_.clear();
   const int64_t n_blk = static_cast<int64_t>(request.blocks.size());
   if (config_.replay_deepest_first) {
@@ -514,7 +519,8 @@ void Simulator::access(const Request &request) {
 
 // ---------------------------------------------------------------------------
 
-cache_t *create_cache_by_name(const std::string &algorithm, int64_t cache_size_blocks,
+cache_t *create_cache_by_name(const std::string &algorithm,
+                              int64_t cache_size_blocks,
                               const char *cache_specific_params,
                               int64_t n_total_req) {
   common_cache_params_t params = default_common_cache_params();

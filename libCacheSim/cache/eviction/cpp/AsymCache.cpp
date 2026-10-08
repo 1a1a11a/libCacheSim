@@ -1,6 +1,6 @@
 /* AsymCache: the "computational-aware block evictor" of Multi-Segment Attention
- * (arXiv:2606.02964), §4.2-4.5, Algorithm 1. The paper names the concrete policy
- * MSA; AsymCache is the system it lives in, and both names resolve here.
+ * (arXiv:2606.02964), §4.2-4.5, Algorithm 1. The paper names the concrete
+ * policy MSA; AsymCache is the system it lives in, and both names resolve here.
  *
  * Evicts the block with the least *expected recomputation cost* (Eq. 3):
  *
@@ -14,25 +14,25 @@
  *
  *     dT_B = 2*k5*(l1+q1) + (k2 - k3 + k5)
  *
- * This implementation reads dT_B straight off the object's `cost`, which is what
- * the harness already computes per block position. Under prefixsim's
- * qwen3coder30b_blksz_16 model that is 865 + 2*position -- the same linear shape,
- * with 2*k5 measured as 2. So the cost model *is* Eq. 7, and taking dT_B from it
- * rather than refitting keeps the policy honest about which hardware it was
- * calibrated on.
+ * This implementation reads dT_B straight off the object's `cost`, which is
+ * what the harness already computes per block position. Under prefixsim's
+ * qwen3coder30b_blksz_16 model that is 865 + 2*position -- the same linear
+ * shape, with 2*k5 measured as 2. So the cost model *is* Eq. 7, and taking dT_B
+ * from it rather than refitting keeps the policy honest about which hardware it
+ * was calibrated on.
  *
  * A consequence worth stating because it is a property of the policy, not a
  * defect: under a uniform cost model dT_B is constant and, in the paper's own
- * words, "our algorithm degrades to the conventional LRU strategy". Running this
- * with --cost-model uniform measures LRU with extra steps.
+ * words, "our algorithm degrades to the conventional LRU strategy". Running
+ * this with --cost-model uniform measures LRU with extra steps.
  *
  * f_B(t) -- the frequency value (Eq. 9)
  * -------------------------------------
  * Deliberately *not* an access-frequency count. §4.4 rejects that form (it is
  * what Pensieve does) on two grounds: it mispredicts, and it violates the
- * order-preserving rule of Eq. 8, which is what buys the log-time eviction. What
- * the paper uses instead is a recency term -- a piecewise exponential of the time
- * since last access, tau:
+ * order-preserving rule of Eq. 8, which is what buys the log-time eviction.
+ * What the paper uses instead is a recency term -- a piecewise exponential of
+ * the time since last access, tau:
  *
  *     f_B(tau) = min( exp(-tau/alpha) , exp(-(tau - tau0)/beta) )
  *
@@ -47,11 +47,12 @@
  *
  * Why two heaps
  * -------------
- * §4.4's order-preserving rule (Eq. 8) says an exponential f keeps the *relative*
- * order of any two blocks' weights invariant over time, so a tree can hold them.
- * The piecewise function as a whole breaks the rule -- but each branch satisfies
- * it, so the paper keeps one tree per branch (Algorithm 1). Within a branch the
- * shared exp(-now/.) factor cancels, leaving a time-invariant log-weight:
+ * §4.4's order-preserving rule (Eq. 8) says an exponential f keeps the
+ * *relative* order of any two blocks' weights invariant over time, so a tree
+ * can hold them. The piecewise function as a whole breaks the rule -- but each
+ * branch satisfies it, so the paper keeps one tree per branch (Algorithm 1).
+ * Within a branch the shared exp(-now/.) factor cancels, leaving a
+ * time-invariant log-weight:
  *
  *     branch 1 (tau <  L):  k(B) = ln(dT_B) + t_last(B)/alpha
  *     branch 2 (tau >= L):  k(B) = ln(dT_B) + (t_last(B) + tau0)/beta
@@ -87,13 +88,13 @@
  * runs, but the lifespan is in access units rather than seconds.
  *
  * Deviations from the paper, both because a simulator has no offline profiler:
- *   - The online lambda rescaler of §5.1 (Algorithm 1 line 8) is not implemented;
- *     lambda stays at its initial 1, which the paper says makes the criterion
- *     identical to the plain frequency-value definition.
+ *   - The online lambda rescaler of §5.1 (Algorithm 1 line 8) is not
+ * implemented; lambda stays at its initial 1, which the paper says makes the
+ * criterion identical to the plain frequency-value definition.
  *   - L is estimated from the reuse gaps observed before the first eviction
- *     instead of being pre-profiled. It is then frozen: the paper treats lifespan
- *     as fixed and adapts only via lambda, and refitting L would reorder both
- *     trees underneath the invariant the whole structure rests on.
+ *     instead of being pre-profiled. It is then frozen: the paper treats
+ * lifespan as fixed and adapts only via lambda, and refitting L would reorder
+ * both trees underneath the invariant the whole structure rests on.
  */
 
 #include <algorithm>
@@ -168,8 +169,8 @@ class AsymCache {
   std::vector<double> gaps;
 
   std::unordered_map<obj_id_t, BlockMeta> meta;
-  /// Resident blocks, so freezing and the last-resort fallback can enumerate the
-  /// cache without walking every block ever seen.
+  /// Resident blocks, so freezing and the last-resort fallback can enumerate
+  /// the cache without walking every block ever seen.
   int64_t n_resident = 0;
 
   std::priority_queue<HeapEntry> h1;
@@ -212,9 +213,9 @@ class AsymCache {
     } else {
       h2.push(e);
     }
-    // Stale entries accumulate because accesses do not delete them. Rebuild once
-    // they outnumber the resident set several times over, which bounds memory
-    // without paying a rebuild often.
+    // Stale entries accumulate because accesses do not delete them. Rebuild
+    // once they outnumber the resident set several times over, which bounds
+    // memory without paying a rebuild often.
     const size_t total = h1.size() + h2.size();
     if (total > 3 * static_cast<size_t>(n_resident) + 2048) compact();
   }
@@ -225,7 +226,8 @@ class AsymCache {
     for (const auto &kv : meta) {
       if (!kv.second.resident) continue;
       const int seg = seg_of(kv.second);
-      HeapEntry e{key_of(kv.second, seg), seq++, kv.first, kv.second.last_access};
+      HeapEntry e{key_of(kv.second, seg), seq++, kv.first,
+                  kv.second.last_access};
       if (seg == 1) {
         h1.push(e);
       } else {
@@ -235,8 +237,9 @@ class AsymCache {
   }
 
   /// Pin (alpha, beta, tau0) from the lifespan observed so far, then seed both
-  /// heaps from the resident set. Called at the first eviction: everything before
-  /// it is the fill phase, which is exactly the window the paper would profile.
+  /// heaps from the resident set. Called at the first eviction: everything
+  /// before it is the fill phase, which is exactly the window the paper would
+  /// profile.
   void freeze() {
     double lifespan = default_lifespan;
     if (!gaps.empty()) {
@@ -255,10 +258,11 @@ class AsymCache {
     compact();
   }
 
-  /// Top valid entry of one branch, or false when the branch holds nothing live.
-  /// Drops entries for gone blocks, re-keys ones accessed since, and re-files
-  /// ones that have aged across the turning point.
-  bool peek_valid(std::priority_queue<HeapEntry> &heap, int seg, obj_id_t &out) {
+  /// Top valid entry of one branch, or false when the branch holds nothing
+  /// live. Drops entries for gone blocks, re-keys ones accessed since, and
+  /// re-files ones that have aged across the turning point.
+  bool peek_valid(std::priority_queue<HeapEntry> &heap, int seg,
+                  obj_id_t &out) {
     while (!heap.empty()) {
       const HeapEntry top = heap.top();
       auto it = meta.find(top.id);
@@ -307,8 +311,8 @@ class AsymCache {
     }
 
     // Both branches drained while blocks remain: some entry was lost. Rebuild
-    // from the resident set and retry once, rather than telling the caller there
-    // is nothing to evict (which it treats as fatal).
+    // from the resident set and retry once, rather than telling the caller
+    // there is nothing to evict (which it treats as fatal).
     compact();
     if (peek_valid(h1, 1, c1)) {
       out = c1;
@@ -334,8 +338,8 @@ class AsymCache {
     meta.erase(it);
   }
 
-  /// Learn a reuse gap during the fill phase. After freezing, L is fixed, so the
-  /// samples are no longer collected.
+  /// Learn a reuse gap during the fill phase. After freezing, L is fixed, so
+  /// the samples are no longer collected.
   void observe_gap(double gap) {
     if (frozen || gap <= 0.0 || gaps.size() >= kGapSampleCap) return;
     gaps.push_back(gap);
@@ -375,8 +379,8 @@ static inline AsymCache *ac_of(const cache_t *cache) {
 static const char *AsymCache_current_params(const AsymCache *p) {
   static char buf[256];
   snprintf(buf, sizeof(buf),
-           "reuse-prob=%.4lf,slope-ratio=%.4lf,default-lifespan=%.4lf", p->reuse_prob,
-           p->slope_ratio, p->default_lifespan);
+           "reuse-prob=%.4lf,slope-ratio=%.4lf,default-lifespan=%.4lf",
+           p->reuse_prob, p->slope_ratio, p->default_lifespan);
   return buf;
 }
 
@@ -411,18 +415,19 @@ static void AsymCache_parse_params(cache_t *cache,
       printf("current parameters: %s\n", AsymCache_current_params(p));
       exit(0);
     } else {
-      ERROR("%s does not have parameter %s, support %s\n", cache->cache_name, key,
-            AsymCache_current_params(p));
+      ERROR("%s does not have parameter %s, support %s\n", cache->cache_name,
+            key, AsymCache_current_params(p));
     }
   }
 
   free(old_params_str);
 }
 
-static cache_t *asym_cache_init_common(const common_cache_params_t ccache_params,
-                                       const char *cache_specific_params,
-                                       const char *name) {
-  cache_t *cache = cache_struct_init(name, ccache_params, cache_specific_params);
+static cache_t *asym_cache_init_common(
+    const common_cache_params_t ccache_params,
+    const char *cache_specific_params, const char *name) {
+  cache_t *cache =
+      cache_struct_init(name, ccache_params, cache_specific_params);
   AsymCache *p = new AsymCache;
   cache->eviction_params = reinterpret_cast<void *>(p);
 

@@ -5,8 +5,8 @@
 //  Random-sampling eviction that demotes one-hit wonders.
 //
 //  Score = cost / max(1, n_req - last_access_vtime)
-//  One-hit-wonder demotion: if freq == 0, score *= one-hit-penalty (default 0.1)
-//  Lower score = evict first.
+//  One-hit-wonder demotion: if freq == 0, score *= one-hit-penalty (default
+//  0.1) Lower score = evict first.
 //
 //  The score is the same as RandomCompute and PartialNodeRandomCompute: cost
 //  over recency, with no frequency factor -- frequency carries little signal on
@@ -63,14 +63,15 @@ static void RandomComputeSmallQueue_parse_params(
 static void RandomComputeSmallQueue_free(cache_t *cache);
 static bool RandomComputeSmallQueue_get(cache_t *cache, const request_t *req);
 static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
-                                             const request_t *req,
-                                             const bool update_cache);
+                                                 const request_t *req,
+                                                 const bool update_cache);
 static cache_obj_t *RandomComputeSmallQueue_insert(cache_t *cache,
-                                               const request_t *req);
+                                                   const request_t *req);
 static cache_obj_t *RandomComputeSmallQueue_to_evict(cache_t *cache,
-                                                 const request_t *req);
+                                                     const request_t *req);
 static void RandomComputeSmallQueue_evict(cache_t *cache, const request_t *req);
-static bool RandomComputeSmallQueue_remove(cache_t *cache, const obj_id_t obj_id);
+static bool RandomComputeSmallQueue_remove(cache_t *cache,
+                                           const obj_id_t obj_id);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -79,12 +80,12 @@ static bool RandomComputeSmallQueue_remove(cache_t *cache, const obj_id_t obj_id
 // ***********************************************************************
 
 cache_t *RandomComputeSmallQueue_init(const common_cache_params_t ccache_params,
-                                  const char *cache_specific_params) {
+                                      const char *cache_specific_params) {
   common_cache_params_t ccache_params_copy = ccache_params;
   ccache_params_copy.hashpower = MAX(12, ccache_params_copy.hashpower - 8);
 
-  cache_t *cache = cache_struct_init("RandomComputeSmallQueue", ccache_params_copy,
-                                     cache_specific_params);
+  cache_t *cache = cache_struct_init("RandomComputeSmallQueue",
+                                     ccache_params_copy, cache_specific_params);
 
   cache->cache_init = RandomComputeSmallQueue_init;
   cache->cache_free = RandomComputeSmallQueue_free;
@@ -124,8 +125,8 @@ static bool RandomComputeSmallQueue_get(cache_t *cache, const request_t *req) {
 // ***********************************************************************
 
 static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
-                                             const request_t *req,
-                                             const bool update_cache) {
+                                                 const request_t *req,
+                                                 const bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && likely(update_cache)) {
     obj->Random.last_access_vtime = cache->n_req;
@@ -134,14 +135,14 @@ static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
 }
 
 static cache_obj_t *RandomComputeSmallQueue_insert(cache_t *cache,
-                                               const request_t *req) {
+                                                   const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
   obj->Random.last_access_vtime = cache->n_req;
   return obj;
 }
 
 static inline double _rcsq_score(cache_t *cache, cache_obj_t *obj,
-                                double one_hit_penalty) {
+                                 double one_hit_penalty) {
   /* cost / recency, byte-for-byte the same as _rc_cost() in RandomCompute.c:
    * no frequency factor, and the same max(1, age) floor rather than age + 1,
    * so the two differ only in the demotion below. */
@@ -155,7 +156,7 @@ static inline double _rcsq_score(cache_t *cache, cache_obj_t *obj,
 }
 
 static cache_obj_t *RandomComputeSmallQueue_to_evict(cache_t *cache,
-                                                 const request_t *req) {
+                                                     const request_t *req) {
   RandomComputeSmallQueue_params_t *params =
       (RandomComputeSmallQueue_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = NULL;
@@ -187,12 +188,14 @@ static cache_obj_t *RandomComputeSmallQueue_to_evict(cache_t *cache,
   return obj_to_evict;
 }
 
-static void RandomComputeSmallQueue_evict(cache_t *cache, const request_t *req) {
+static void RandomComputeSmallQueue_evict(cache_t *cache,
+                                          const request_t *req) {
   cache_obj_t *obj_to_evict = RandomComputeSmallQueue_to_evict(cache, req);
   cache_evict_base(cache, obj_to_evict, true);
 }
 
-static bool RandomComputeSmallQueue_remove(cache_t *cache, const obj_id_t obj_id) {
+static bool RandomComputeSmallQueue_remove(cache_t *cache,
+                                           const obj_id_t obj_id) {
   cache_obj_t *obj = hashtable_find_obj_id(cache->hashtable, obj_id);
   if (obj == NULL) {
     return false;

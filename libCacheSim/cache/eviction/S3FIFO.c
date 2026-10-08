@@ -411,11 +411,11 @@ static void S3FIFO_evict(cache_t *cache, const request_t *req) {
   /* An eviction must free something.
    *
    * S3FIFO_evict_once below can instead PROMOTE a block out of the small queue
-   * into the main queue, which leaves total occupancy unchanged. cache_get_base()
-   * hides that by looping until it has room, so it never mattered there -- but a
-   * caller that asks for one eviction and gets none (e.g. prefixsim's allocate
-   * loop) cannot distinguish "made no progress" from "nothing left to evict", and
-   * has to treat it as failure.
+   * into the main queue, which leaves total occupancy unchanged.
+   * cache_get_base() hides that by looping until it has room, so it never
+   * mattered there -- but a caller that asks for one eviction and gets none
+   * (e.g. prefixsim's allocate loop) cannot distinguish "made no progress" from
+   * "nothing left to evict", and has to treat it as failure.
    *
    * So retry until the cache actually shrinks. This terminates: every iteration
    * either frees an object or moves one out of the small queue, and once the

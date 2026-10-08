@@ -210,9 +210,9 @@ reader_t *setup_reader(const char *const trace_path,
   }
 
   /* n_total_req != 0 means the setup function already knows the count, which is
-   * the only workable answer for a format whose records vary in length (lcsllm).
-   * Deriving it from file_size / item_size would be wrong there, and so would
-   * the modulus warning. */
+   * the only workable answer for a format whose records vary in length
+   * (lcsllm). Deriving it from file_size / item_size would be wrong there, and
+   * so would the modulus warning. */
   if (reader->trace_format == BINARY_TRACE_FORMAT && !reader->is_zstd_file &&
       reader->n_total_req == 0) {
     ssize_t data_region_size = reader->file_size - reader->trace_start_offset;

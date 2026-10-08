@@ -51,7 +51,8 @@ void report_violation(int64_t &n_violations, obj_id_t id, int64_t request,
 }
 
 void print_usage(const char *program) {
-  printf("Usage: %s --input <trace> --output <trace.lcsllm> [options]\n\n", program);
+  printf("Usage: %s --input <trace> --output <trace.lcsllm> [options]\n\n",
+         program);
   printf("Convert an LLM request trace to the lcsllm binary format.\n\n");
   printf("Required:\n");
   printf("  --input <path>            Source trace.\n");
@@ -60,7 +61,8 @@ void print_usage(const char *program) {
   printf("  --input-format <fmt>      Source format (default: qwen-jsonl).\n");
   printf("  --block-size-tokens <n>   Tokens per KV block, recorded in the\n");
   printf("                            header (default: 16).\n");
-  printf("  --type <name>             Request-type name for the header table\n");
+  printf(
+      "  --type <name>             Request-type name for the header table\n");
   printf("                            (default: unknown).\n");
   printf("  --help                    Print this message.\n");
 }
@@ -94,7 +96,8 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
       // Was an option; now a guarantee. Fail loudly rather than accept a flag
       // that no longer does anything -- a script passing --block-id raw was
       // asking for output this format can no longer represent, and silently
-      // giving it positionally encoded ids instead would be worse than an error.
+      // giving it positionally encoded ids instead would be worse than an
+      // error.
       fprintf(stderr,
               "error: --block-id was removed. lcsllm block ids are always "
               "positionally encoded (an id is a hash over the whole path from "
@@ -125,8 +128,8 @@ int main(int argc, char **argv) {
   if (should_exit) return 0;
 
   std::string error;
-  auto reader = prefixsim::open_trace(opts.input, opts.format,
-                                     prefixsim::BlockIdMode::kPrefixHash, error);
+  auto reader = prefixsim::open_trace(
+      opts.input, opts.format, prefixsim::BlockIdMode::kPrefixHash, error);
   if (reader == nullptr) {
     fprintf(stderr, "error: %s\n", error.c_str());
     return 1;
@@ -143,17 +146,17 @@ int main(int argc, char **argv) {
   // ---- enforce the positional encoding, rather than assume it ----
   //
   // The encoding is deterministic, so the only way it can be violated is a
-  // 64-bit hash collision between two distinct paths. That failure is silent and
-  // corrupting -- two unrelated prefixes would share one cache object -- so it is
-  // checked here, where the predecessor of every block is still known. A
+  // 64-bit hash collision between two distinct paths. That failure is silent
+  // and corrupting -- two unrelated prefixes would share one cache object -- so
+  // it is checked here, where the predecessor of every block is still known. A
   // consumer of the file cannot perform this check at all.
   //
   // Checking "each id has one predecessor" is enough to prove full path
   // uniqueness, by induction: if two paths reach the same id and agree on the
   // previous id, then they agree one step earlier too, and that id passed the
-  // same test. Position-0 blocks have no predecessor and are tracked separately,
-  // so a folded id deep in one request cannot quietly equal a root id of
-  // another.
+  // same test. Position-0 blocks have no predecessor and are tracked
+  // separately, so a folded id deep in one request cannot quietly equal a root
+  // id of another.
   int64_t n_blocks = 0, max_blocks = 0;
   std::unordered_map<obj_id_t, obj_id_t> predecessor;
   std::unordered_set<obj_id_t> roots;
@@ -171,8 +174,9 @@ int main(int argc, char **argv) {
         // A root has no predecessor, so any id already recorded with one is a
         // collision between an empty prefix and a non-empty one.
         if (predecessor.count(id) != 0) {
-          report_violation(n_violations, id, r.index, i,
-                           "appears both as a prefix root and deeper in a path");
+          report_violation(
+              n_violations, id, r.index, i,
+              "appears both as a prefix root and deeper in a path");
         }
         roots.insert(id);
         continue;
@@ -182,8 +186,9 @@ int main(int argc, char **argv) {
       const auto it = predecessor.find(id);
       if (it == predecessor.end()) {
         if (roots.count(id) != 0) {
-          report_violation(n_violations, id, r.index, i,
-                           "appears both deeper in a path and as a prefix root");
+          report_violation(
+              n_violations, id, r.index, i,
+              "appears both deeper in a path and as a prefix root");
         }
         predecessor.emplace(id, pred);
       } else if (it->second != pred) {
@@ -206,11 +211,13 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  const int64_t n_unique = static_cast<int64_t>(predecessor.size() + roots.size());
+  const int64_t n_unique =
+      static_cast<int64_t>(predecessor.size() + roots.size());
 
   FILE *out = fopen(opts.output.c_str(), "wb");
   if (out == nullptr) {
-    fprintf(stderr, "error: cannot open '%s' for writing\n", opts.output.c_str());
+    fprintf(stderr, "error: cannot open '%s' for writing\n",
+            opts.output.c_str());
     return 1;
   }
 
@@ -263,9 +270,8 @@ int main(int argc, char **argv) {
     }
 
     if (fwrite(&rh, sizeof(rh), 1, out) != 1 ||
-        (!blocks.empty() &&
-         fwrite(blocks.data(), sizeof(lcsllm_block_t), blocks.size(), out) !=
-             blocks.size())) {
+        (!blocks.empty() && fwrite(blocks.data(), sizeof(lcsllm_block_t),
+                                   blocks.size(), out) != blocks.size())) {
       fprintf(stderr, "error: writing request %" PRId64 " failed\n", r.index);
       fclose(out);
       return 1;

@@ -166,7 +166,8 @@ void PrefixRadixTree::prune_if_empty_leaf(Node *node) {
 bool PrefixRadixTree::is_resident(obj_id_t id) const {
   auto it = index_.find(id);
   if (it == index_.end()) return orphans_.count(id) != 0;
-  return it->second.first->resident[static_cast<size_t>(it->second.second)] != 0;
+  return it->second.first->resident[static_cast<size_t>(it->second.second)] !=
+         0;
 }
 
 PrefixRadixTree::Node *PrefixRadixTree::sample_node(uint64_t rand_value) const {
@@ -175,7 +176,8 @@ PrefixRadixTree::Node *PrefixRadixTree::sample_node(uint64_t rand_value) const {
 }
 
 int64_t PrefixRadixTree::tail_resident(const Node *node) const {
-  for (int64_t i = static_cast<int64_t>(node->resident.size()) - 1; i >= 0; --i) {
+  for (int64_t i = static_cast<int64_t>(node->resident.size()) - 1; i >= 0;
+       --i) {
     if (node->resident[static_cast<size_t>(i)] != 0) return i;
   }
   return -1;
@@ -189,7 +191,7 @@ int64_t PrefixRadixTree::head_resident(const Node *node) const {
 }
 
 int64_t PrefixRadixTree::first_resident_rank(const Node *node,
-                                            bool from_tail) const {
+                                             bool from_tail) const {
   const int64_t total = static_cast<int64_t>(node->resident.size());
   for (int64_t k = 0; k < total; ++k) {
     const int64_t i = from_tail ? (total - 1 - k) : k;

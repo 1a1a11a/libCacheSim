@@ -70,7 +70,8 @@ bool evict_small(cache_t *cache, PartialNodeCache *impl) {
 }
 
 /// Bytes held by the main set, i.e. everything that is not in the small queue.
-inline int64_t main_occupied(const cache_t *cache, const PartialNodeCache *impl) {
+inline int64_t main_occupied(const cache_t *cache,
+                             const PartialNodeCache *impl) {
   return cache->occupied_byte - impl->small_bytes;
 }
 
@@ -164,8 +165,9 @@ int64_t evict_orphans(cache_t *cache, PartialNodeCache *impl, int64_t n) {
  *
  * Scoring a whole node by one block is what makes node sampling affordable, and
  * the representative has to sit inside the chunk about to be evicted, or the
- * score describes blocks that are not going anywhere. The rule is taken from the
- * vLLM prototype verbatim so the two implementations rank nodes identically:
+ * score describes blocks that are not going anywhere. The rule is taken from
+ * the vLLM prototype verbatim so the two implementations rank nodes
+ * identically:
  *
  *   drain: start at rank min(chunk, node_size) / 2 and scan outwards over the
  *          whole node   (_get_canonical_block_for_radix_tree_node)
@@ -196,8 +198,8 @@ bool node_chunk_score(cache_t *cache, PartialNodeCache *impl,
                                           first, rep);
   } else {
     const int64_t start = std::min(chunk, total) / 2;
-    found = impl->tree.canonical_resident(node, impl->evict_from_tail, start,
-                                          0, rep);
+    found = impl->tree.canonical_resident(node, impl->evict_from_tail, start, 0,
+                                          rep);
   }
   if (!found) return false;
 
@@ -248,7 +250,8 @@ int64_t pn_evict_n(cache_t *cache, const request_t * /*req*/, int64_t n) {
   // share. Only what survives promotion out of the queue is ever subject to
   // partial-node eviction below.
   while (impl->small_enabled() && evicted < n && impl->small_bytes > 0 &&
-         main_occupied(cache, impl) <= cache->cache_size - impl->small_capacity) {
+         main_occupied(cache, impl) <=
+             cache->cache_size - impl->small_capacity) {
     if (!evict_small(cache, impl)) break;
     ++evicted;
   }
@@ -285,7 +288,8 @@ int64_t pn_evict_n(cache_t *cache, const request_t * /*req*/, int64_t n) {
     double best = DBL_MAX;
     for (int64_t i = 0; i < draws; ++i) {
       const PrefixRadixTree::Node *node =
-          exhaustive ? impl->tree.node_at(i) : impl->tree.sample_node(next_rand());
+          exhaustive ? impl->tree.node_at(i)
+                     : impl->tree.sample_node(next_rand());
       if (node == nullptr) break;
       double score = 0.0;
       if (!node_chunk_score(cache, impl, node, chunk, score)) continue;
@@ -297,7 +301,8 @@ int64_t pn_evict_n(cache_t *cache, const request_t * /*req*/, int64_t n) {
     if (victim == nullptr) break;
 
     const int64_t took = take_from_node(cache, impl, victim, chunk, scratch);
-    if (took == 0) break;  // a whole round achieved nothing; stop rather than spin
+    if (took == 0)
+      break;  // a whole round achieved nothing; stop rather than spin
     evicted += took;
   }
 
@@ -331,7 +336,8 @@ cache_obj_t *pick_victim(cache_t *cache) {
   double best = DBL_MAX;
   for (int64_t i = 0; i < draws; ++i) {
     const PrefixRadixTree::Node *node =
-        exhaustive ? impl->tree.node_at(i) : impl->tree.sample_node(next_rand());
+        exhaustive ? impl->tree.node_at(i)
+                   : impl->tree.sample_node(next_rand());
     if (node == nullptr) break;
     double score = 0.0;
     if (!node_chunk_score(cache, impl, node, 1, score)) continue;
@@ -414,7 +420,8 @@ void pn_parse_params(cache_t *cache, const char *cache_specific_params) {
     } else if (strcasecmp(key, "ghost-size-ratio") == 0) {
       impl->ghost_size_ratio = strtod(value, nullptr);
     } else if (strcasecmp(key, "move-to-main-threshold") == 0) {
-      impl->move_to_main_threshold = static_cast<int>(strtol(value, nullptr, 0));
+      impl->move_to_main_threshold =
+          static_cast<int>(strtol(value, nullptr, 0));
     } else if (strcasecmp(key, "micro-batch") == 0) {
       impl->micro_batch = strtoll(value, nullptr, 0);
     } else if (strcasecmp(key, "print") == 0) {
@@ -424,10 +431,11 @@ void pn_parse_params(cache_t *cache, const char *cache_specific_params) {
              static_cast<long long>(impl->micro_batch));
       exit(0);
     } else {
-      ERROR("%s does not have parameter %s, support n-sample, evict-from, "
-            "eviction-mode, micro-batch, small-size-ratio, "
-            "ghost-size-ratio, move-to-main-threshold\n",
-            cache->cache_name, key);
+      ERROR(
+          "%s does not have parameter %s, support n-sample, evict-from, "
+          "eviction-mode, micro-batch, small-size-ratio, "
+          "ghost-size-ratio, move-to-main-threshold\n",
+          cache->cache_name, key);
     }
   }
   free(old_params_str);

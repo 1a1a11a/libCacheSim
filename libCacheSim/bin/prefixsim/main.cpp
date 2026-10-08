@@ -38,38 +38,64 @@ struct Options {
 };
 
 void print_usage(const char *program) {
-  printf("Usage: %s --trace <path> --cache-size <n_blocks> [options]\n\n", program);
+  printf("Usage: %s --trace <path> --cache-size <n_blocks> [options]\n\n",
+         program);
   printf("Simulate an LLM prefix cache: report block hit ratio and compute\n");
-  printf("saving ratio, honouring the constraint that a request needs all of\n");
+  printf(
+      "saving ratio, honouring the constraint that a request needs all of\n");
   printf("its blocks resident at once.\n\n");
   printf("Required:\n");
   printf("  --trace <path>          Trace file.\n");
-  printf("  --cache-size <n>        Cache capacity in BLOCKS (suffixes k/m/g = x1024).\n\n");
+  printf(
+      "  --cache-size <n>        Cache capacity in BLOCKS (suffixes k/m/g = "
+      "x1024).\n\n");
   printf("Options:\n");
-  printf("  --algo <a,b,c>          Eviction algorithms, comma separated (default: lru).\n");
-  printf("  --algo-params <s>       Algorithm-specific params, e.g. "
-         "\"n-sample=64,evict-from=tail\".\n");
+  printf(
+      "  --algo <a,b,c>          Eviction algorithms, comma separated "
+      "(default: lru).\n");
+  printf(
+      "  --algo-params <s>       Algorithm-specific params, e.g. "
+      "\"n-sample=64,evict-from=tail\".\n");
   printf("  --trace-format <fmt>    Input format (default: qwen-jsonl).\n");
   printf("  --cost-model <m>        uniform | position |\n");
-  printf("                          qwen3coder30b_blksz_16 (default: uniform).\n");
-  printf("  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
+  printf(
+      "                          qwen3coder30b_blksz_16 (default: uniform).\n");
+  printf(
+      "  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
   printf("  --no-verify             Skip the post-request residency check.\n");
-  printf("  --replay-order <o>      deepest-first | prefix-order\n"
-         "                          (default: deepest-first; prefix-order makes\n"
-         "                          recency policies evict from the prefix root).\n");
-  printf("  --no-pin                Let phase 2 evict blocks the arriving request\n");
-  printf("                          already holds (see n_self_eviction). Reproduces\n");
-  printf("                          the pre-pinning numbers; not the real-engine\n");
-  printf("                          behaviour, where a running request's blocks are\n");
+  printf(
+      "  --replay-order <o>      deepest-first | prefix-order\n"
+      "                          (default: deepest-first; prefix-order makes\n"
+      "                          recency policies evict from the prefix "
+      "root).\n");
+  printf(
+      "  --no-pin                Let phase 2 evict blocks the arriving "
+      "request\n");
+  printf(
+      "                          already holds (see n_self_eviction). "
+      "Reproduces\n");
+  printf(
+      "                          the pre-pinning numbers; not the "
+      "real-engine\n");
+  printf(
+      "                          behaviour, where a running request's blocks "
+      "are\n");
   printf("                          ref-counted and cannot be evicted.\n");
-  printf("  --dump-holes <dir>      Per algorithm, write one line per request listing\n");
-  printf("                          its recompute holes, for evaluate/analyze_holes.py.\n");
-  printf("  --output <path>         Also append the RESULT lines to this file.\n");
+  printf(
+      "  --dump-holes <dir>      Per algorithm, write one line per request "
+      "listing\n");
+  printf(
+      "                          its recompute holes, for "
+      "evaluate/analyze_holes.py.\n");
+  printf(
+      "  --output <path>         Also append the RESULT lines to this file.\n");
   printf("  --list-algos            Print supported algorithms and exit.\n");
   printf("  --help                  Print this message.\n\n");
   printf("Example:\n");
-  printf("  %s --trace qwen_traceA_blksz_16.jsonl --cache-size 8k \\\n", program);
-  printf("      --algo lru,random_compute,belady_compute --cost-model position\n");
+  printf("  %s --trace qwen_traceA_blksz_16.jsonl --cache-size 8k \\\n",
+         program);
+  printf(
+      "      --algo lru,random_compute,belady_compute --cost-model position\n");
 }
 
 void print_algos() {
@@ -182,9 +208,11 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
         return false;
       }
     } else if (strcmp(arg, "--replay-order") == 0) {
-      if (strcmp(value, "deepest-first") == 0 || strcmp(value, "reverse") == 0) {
+      if (strcmp(value, "deepest-first") == 0 ||
+          strcmp(value, "reverse") == 0) {
         opts.replay_deepest_first = true;
-      } else if (strcmp(value, "prefix-order") == 0 || strcmp(value, "forward") == 0) {
+      } else if (strcmp(value, "prefix-order") == 0 ||
+                 strcmp(value, "forward") == 0) {
         opts.replay_deepest_first = false;
       } else {
         fprintf(stderr, "error: unknown --replay-order '%s'\n", value);
@@ -244,9 +272,10 @@ bool check_holes_writable(const Options &opts) {
     if (path.empty()) continue;
     FILE *probe = fopen(path.c_str(), "w");
     if (probe == nullptr) {
-      fprintf(stderr,
-              "error: cannot create hole dump '%s' (does the directory exist?)\n",
-              path.c_str());
+      fprintf(
+          stderr,
+          "error: cannot create hole dump '%s' (does the directory exist?)\n",
+          path.c_str());
       return false;
     }
     fclose(probe);
@@ -265,7 +294,8 @@ void report(FILE *out, const std::string &algorithm, const Options &opts,
           opts.trace_path.c_str(), algorithm.c_str(),
           static_cast<long long>(opts.cache_size),
           prefixsim::cost_model_name(opts.cost_model),
-          opts.block_id == prefixsim::BlockIdMode::kPrefixHash ? "prefix-hash" : "raw",
+          opts.block_id == prefixsim::BlockIdMode::kPrefixHash ? "prefix-hash"
+                                                               : "raw",
           static_cast<long long>(stats.n_requests),
           static_cast<long long>(stats.n_requests_skipped),
           static_cast<long long>(stats.n_blocks), stats.block_hit_ratio(),
@@ -298,7 +328,8 @@ int main(int argc, char **argv) {
   if (!check_holes_writable(opts)) return 1;
 
   std::string error;
-  auto reader = prefixsim::open_trace(opts.trace_path, opts.format, opts.block_id, error);
+  auto reader =
+      prefixsim::open_trace(opts.trace_path, opts.format, opts.block_id, error);
   if (reader == nullptr) {
     fprintf(stderr, "error: %s\n", error.c_str());
     return 1;
@@ -314,11 +345,13 @@ int main(int argc, char **argv) {
   for (const prefixsim::Request &r : requests) {
     n_blocks_total += static_cast<int64_t>(r.blocks.size());
   }
-  printf("trace %s: %lld requests, %lld block accesses, format %s, block-id %s\n",
-         opts.trace_path.c_str(), static_cast<long long>(requests.size()),
-         static_cast<long long>(n_blocks_total),
-         prefixsim::trace_format_name(opts.format),
-         opts.block_id == prefixsim::BlockIdMode::kPrefixHash ? "prefix-hash" : "raw");
+  printf(
+      "trace %s: %lld requests, %lld block accesses, format %s, block-id %s\n",
+      opts.trace_path.c_str(), static_cast<long long>(requests.size()),
+      static_cast<long long>(n_blocks_total),
+      prefixsim::trace_format_name(opts.format),
+      opts.block_id == prefixsim::BlockIdMode::kPrefixHash ? "prefix-hash"
+                                                           : "raw");
   printf("cache size %lld blocks, cost model %s\n\n",
          static_cast<long long>(opts.cache_size),
          prefixsim::cost_model_name(opts.cost_model));
@@ -327,7 +360,8 @@ int main(int argc, char **argv) {
   if (!opts.output_path.empty()) {
     out_file = fopen(opts.output_path.c_str(), "a");
     if (out_file == nullptr) {
-      fprintf(stderr, "error: cannot open --output '%s'\n", opts.output_path.c_str());
+      fprintf(stderr, "error: cannot open --output '%s'\n",
+              opts.output_path.c_str());
       return 1;
     }
   }
@@ -356,11 +390,13 @@ int main(int argc, char **argv) {
     config.cost_model = opts.cost_model;
     config.verify = opts.verify;
     config.pin_request_blocks =
-        opts.pin_request_blocks && prefixsim::algorithm_supports_pinning(algorithm);
+        opts.pin_request_blocks &&
+        prefixsim::algorithm_supports_pinning(algorithm);
     if (opts.pin_request_blocks && !config.pin_request_blocks) {
-      WARN("%s does not support pinning the arriving request's blocks; it runs "
-           "with self-eviction as before (see n_self_eviction).\n",
-           algorithm.c_str());
+      WARN(
+          "%s does not support pinning the arriving request's blocks; it runs "
+          "with self-eviction as before (see n_self_eviction).\n",
+          algorithm.c_str());
     }
     config.replay_deepest_first = opts.replay_deepest_first;
     config.dump_holes_path = holes_path;
@@ -372,8 +408,9 @@ int main(int argc, char **argv) {
         exit_code = 1;
       } else {
         const prefixsim::Stats &stats = sim.stats();
-        printf("%-24s block hit ratio %.4f   compute saving %.4f\n", algorithm.c_str(),
-               stats.block_hit_ratio(), stats.compute_saving_ratio());
+        printf("%-24s block hit ratio %.4f   compute saving %.4f\n",
+               algorithm.c_str(), stats.block_hit_ratio(),
+               stats.compute_saving_ratio());
         if (stats.n_unexpected_evictions != 0) {
           fprintf(stderr,
                   "warning [%s]: %lld evictions happened during replay; the "

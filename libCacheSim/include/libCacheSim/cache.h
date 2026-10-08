@@ -128,7 +128,8 @@ typedef struct {
    *  before it is asked to make room. */
   uint64_t session;
   /** Index of the next request from the same session, INT64_MAX if none. The
-   *  session-granular analogue of request_t::next_access_vtime, for an oracle. */
+   *  session-granular analogue of request_t::next_access_vtime, for an oracle.
+   */
   int64_t session_next_access;
 } cache_request_ctx_t;
 
@@ -142,8 +143,8 @@ typedef void (*cache_set_request_ctx_func_ptr)(cache_t *,
  *
  * Exists because sampling algorithms pay their sampling cost per call: evicting
  * n objects one at a time samples n times over. It also lets an algorithm evict
- * several related objects together -- a prefix-cache policy draining part of one
- * tree node, say -- which a one-object-at-a-time contract cannot express.
+ * several related objects together -- a prefix-cache policy draining part of
+ * one tree node, say -- which a one-object-at-a-time contract cannot express.
  *
  * NULL for every algorithm that does not implement it; callers must check and
  * fall back to looping cache->evict().

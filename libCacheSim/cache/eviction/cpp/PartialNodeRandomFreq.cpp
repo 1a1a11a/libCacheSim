@@ -21,8 +21,8 @@ class PartialNodeRandomFreq : public PartialNodeCache {
   double score(const cache_t *cache, const cache_obj_t *obj) const override {
     const int64_t age = cache->n_req - obj->Random.last_access_vtime;
     const int64_t recency = age > 1 ? age : 1;
-    return static_cast<double>(obj->freq + 1) *
-           static_cast<double>(obj->cost) / static_cast<double>(recency);
+    return static_cast<double>(obj->freq + 1) * static_cast<double>(obj->cost) /
+           static_cast<double>(recency);
   }
 };
 
@@ -34,9 +34,9 @@ extern "C" {
 
 cache_t *PartialNodeRandomFreq_init(const common_cache_params_t ccache_params,
                                     const char *cache_specific_params) {
-  return eviction::partial_node_cache_init("PartialNodeRandomFreq", ccache_params,
-                                           cache_specific_params,
-                                           new eviction::PartialNodeRandomFreq());
+  return eviction::partial_node_cache_init(
+      "PartialNodeRandomFreq", ccache_params, cache_specific_params,
+      new eviction::PartialNodeRandomFreq());
 }
 
 #ifdef __cplusplus

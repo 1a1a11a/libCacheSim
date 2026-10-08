@@ -7,28 +7,29 @@
  *
  * where
  *
- *   - ReuseProb_w(t, life) = F_w(t + life) - F_w(t) is the probability the block
- *     is reused within the next `life` given it has already been idle for `t`,
- *     read off the fitted reuse-time CDF of the block's workload class w. The
+ *   - ReuseProb_w(t, life) = F_w(t + life) - F_w(t) is the probability the
+ * block is reused within the next `life` given it has already been idle for
+ * `t`, read off the fitted reuse-time CDF of the block's workload class w. The
  *     paper fits an exponential, F_w(x) = 1 - exp(-lambda_w x), so
  *
  *         ReuseProb_w(t, life) = exp(-lambda_w t) * (1 - exp(-lambda_w life))
  *
  *     The second factor is the paper's key device: it *regulates* the reuse
- *     probability by the lifespan, so a class with a long reuse tail is not held
- *     at high priority indefinitely -- which would contradict how short a KV
- *     block's life actually is. Without it the two classes could not be compared
- *     at all, since the factor is the only thing that is class-specific once t
- *     is fixed.
+ *     probability by the lifespan, so a class with a long reuse tail is not
+ * held at high priority indefinitely -- which would contradict how short a KV
+ *     block's life actually is. Without it the two classes could not be
+ * compared at all, since the factor is the only thing that is class-specific
+ * once t is fixed.
  *
  *   - Offset is the block's position in the prefix. Because the tuple is
  *     compared lexicographically and the second element is negated, ties in
  *     reuse probability evict the *deeper* block, retaining shared prefix heads
- *     (the spatial locality of §3.4). Fig. 24 line 7 spells out the same rule as
- *     "b.offset > ChosenBlock.offset".
+ *     (the spatial locality of §3.4). Fig. 24 line 7 spells out the same rule
+ * as "b.offset > ChosenBlock.offset".
  *
- * Frequency is deliberately absent (§4.2): KV blocks are ephemeral, so how often
- * a block was used in the past says little about whether it will be used again.
+ * Frequency is deliberately absent (§4.2): KV blocks are ephemeral, so how
+ * often a block was used in the past says little about whether it will be used
+ * again.
  *
  * ------------------------------------------------------------------ complexity
  * The naive form scores every resident block per eviction. The paper's
@@ -45,8 +46,8 @@
  * maintained incrementally as heads are consumed.
  *
  * -------------------------------------------------------------------- fidelity
- * Two things the paper profiles offline are fit online here, because a simulator
- * has no background sampler:
+ * Two things the paper profiles offline are fit online here, because a
+ * simulator has no background sampler:
  *
  *   - lambda_w = 1/mean_gap_w, from an EWMA of the reuse gaps observed in class
  *     w. The paper samples an hour of traffic in the background and refits
@@ -117,8 +118,9 @@ struct BlockMeta {
   int64_t offset = 0;
   /// False between record_request (which learns a block's class and offset) and
   /// the insert that actually admits it. Only resident blocks live in a class's
-  /// LRU list, so only they can be chosen as victims -- evicting a block that is
-  /// merely *known* would hand the caller an id the hash table has never seen.
+  /// LRU list, so only they can be chosen as victims -- evicting a block that
+  /// is merely *known* would hand the caller an id the hash table has never
+  /// seen.
   bool resident = false;
   /// Position in the class's LRU list. Valid only while `resident`.
   std::list<obj_id_t>::iterator slot;
@@ -190,8 +192,8 @@ class WorkloadAware {
   uint64_t seq = 0;
 
   /// The class's queue, creating it on first use. Every creation goes through
-  /// here so `category_order` can never fall out of step with `queues`, which is
-  /// what keeps heap rebuilds deterministic.
+  /// here so `category_order` can never fall out of step with `queues`, which
+  /// is what keeps heap rebuilds deterministic.
   CategoryQueue &queue_for(uint64_t category) {
     const size_t before = queues.size();
     CategoryQueue &q = queues[category];
@@ -318,7 +320,8 @@ static bool WorkloadAware_get(cache_t *cache, const request_t *req);
 static cache_obj_t *WorkloadAware_find(cache_t *cache, const request_t *req,
                                        bool update_cache);
 static cache_obj_t *WorkloadAware_insert(cache_t *cache, const request_t *req);
-static cache_obj_t *WorkloadAware_to_evict(cache_t *cache, const request_t *req);
+static cache_obj_t *WorkloadAware_to_evict(cache_t *cache,
+                                           const request_t *req);
 static void WorkloadAware_evict(cache_t *cache, const request_t *req);
 static bool WorkloadAware_remove(cache_t *cache, obj_id_t obj_id);
 static void WorkloadAware_set_request_ctx(cache_t *cache,
@@ -392,7 +395,8 @@ static cache_obj_t *WorkloadAware_find(cache_t *cache, const request_t *req,
                      eviction::kEwmaAlpha * gap;
         }
         it->second.last_access = wa->now;
-        if (it->second.resident) q.lru.splice(q.lru.end(), q.lru, it->second.slot);
+        if (it->second.resident)
+          q.lru.splice(q.lru.end(), q.lru, it->second.slot);
       }
     }
     wa->now += 1.0;
@@ -410,17 +414,17 @@ static cache_obj_t *WorkloadAware_insert(cache_t *cache, const request_t *req) {
   auto it = wa->meta.find(req->obj_id);
 
   if (it != wa->meta.end()) {
-    // record_request already learned this block's class, offset and last-access;
-    // admitting it only has to file it into the class's LRU list.
+    // record_request already learned this block's class, offset and
+    // last-access; admitting it only has to file it into the class's LRU list.
     if (!it->second.resident) wa->make_resident(req->obj_id, it->second);
     return obj;
   }
 
   // No record_request ran, which is the case when the caller drives the cache
   // one object at a time (plain cachesim, the test suite). Fall back to the
-  // current request's class and an unknown offset, so the policy still functions
-  // without the hook -- degraded to "one class, all offsets tie" rather than
-  // broken.
+  // current request's class and an unknown offset, so the policy still
+  // functions without the hook -- degraded to "one class, all offsets tie"
+  // rather than broken.
   eviction::BlockMeta m;
   m.category = wa->cur_category;
   m.last_access = wa->now;
@@ -431,7 +435,8 @@ static cache_obj_t *WorkloadAware_insert(cache_t *cache, const request_t *req) {
   return obj;
 }
 
-static cache_obj_t *WorkloadAware_to_evict(cache_t *cache, const request_t *req) {
+static cache_obj_t *WorkloadAware_to_evict(cache_t *cache,
+                                           const request_t *req) {
   (void)req;
   obj_id_t victim = 0;
   if (!wa_of(cache)->choose_victim(victim)) return nullptr;

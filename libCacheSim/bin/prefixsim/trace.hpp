@@ -26,9 +26,11 @@ namespace prefixsim {
 
 /// One LLM request (one prompt / one turn) expanded into its KV blocks.
 struct Request {
-  int64_t index = 0;             ///< 0-based ordinal of this request in the trace.
-  double timestamp = 0.0;        ///< Arrival time in seconds as recorded in the trace.
-  std::vector<obj_id_t> blocks;  ///< Block identities in prefix order (root first).
+  int64_t index = 0;  ///< 0-based ordinal of this request in the trace.
+  double timestamp =
+      0.0;  ///< Arrival time in seconds as recorded in the trace.
+  std::vector<obj_id_t>
+      blocks;  ///< Block identities in prefix order (root first).
 
   /// Opaque id of the conversation this request belongs to, hashed from the
   /// trace's `session_id`. 0 when the trace has no session field. Session-level
@@ -81,11 +83,13 @@ bool parse_trace_format(const std::string &name, TraceFormat &out);
 const char *trace_format_name(TraceFormat format);
 
 /// Open `path` as `format`. Returns nullptr and sets `error` on failure.
-std::unique_ptr<TraceReader> open_trace(const std::string &path, TraceFormat format,
-                                        BlockIdMode mode, std::string &error);
+std::unique_ptr<TraceReader> open_trace(const std::string &path,
+                                        TraceFormat format, BlockIdMode mode,
+                                        std::string &error);
 
 /// Read a whole trace into memory and annotate next-access times.
-bool load_trace(TraceReader &reader, std::vector<Request> &out, std::string &error);
+bool load_trace(TraceReader &reader, std::vector<Request> &out,
+                std::string &error);
 
 /// Fill next_access_vtime for every block of every request.
 ///

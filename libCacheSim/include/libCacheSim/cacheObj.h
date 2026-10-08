@@ -498,7 +498,8 @@ static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
  */
 typedef bool (*cache_pin_pred_f)(void *ctx, obj_id_t obj_id);
 
-/** Install (pred=NULL to remove) the predicate consulted by victim selection. */
+/** Install (pred=NULL to remove) the predicate consulted by victim selection.
+ */
 void cache_set_pin_predicate(cache_pin_pred_f pred, void *ctx);
 
 /* Definitions live in cache.c; declared here so the check can inline. */
@@ -506,10 +507,13 @@ extern cache_pin_pred_f g_cache_pin_pred;
 extern void *g_cache_pin_ctx;
 
 /** Whether any pinning is in force. Lets callers keep a pin-free fast path. */
-static inline bool cache_pinning_active(void) { return g_cache_pin_pred != NULL; }
+static inline bool cache_pinning_active(void) {
+  return g_cache_pin_pred != NULL;
+}
 
 static inline bool cache_obj_is_pinned(const cache_obj_t *obj) {
-  return g_cache_pin_pred != NULL && g_cache_pin_pred(g_cache_pin_ctx, obj->obj_id);
+  return g_cache_pin_pred != NULL &&
+         g_cache_pin_pred(g_cache_pin_ctx, obj->obj_id);
 }
 
 /**

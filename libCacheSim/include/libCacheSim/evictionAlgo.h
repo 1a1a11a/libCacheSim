@@ -111,7 +111,7 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
 cache_t *LHD_compute_init(const common_cache_params_t ccache_params,
-                         const char *cache_specific_params);
+                          const char *cache_specific_params);
 
 cache_t *LIRS_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
@@ -160,16 +160,15 @@ cache_t *PartialNodeRandomCompute_init(
     const common_cache_params_t ccache_params,
     const char *cache_specific_params);
 
-cache_t *PartialNodeRandomFreq_init(
-    const common_cache_params_t ccache_params,
-    const char *cache_specific_params);
+cache_t *PartialNodeRandomFreq_init(const common_cache_params_t ccache_params,
+                                    const char *cache_specific_params);
 
 cache_t *PartialNodeRandomComputeSmallQueue_init(
     const common_cache_params_t ccache_params,
     const char *cache_specific_params);
 
 cache_t *RandomComputeSmallQueue_init(const common_cache_params_t ccache_params,
-                                  const char *cache_specific_params);
+                                      const char *cache_specific_params);
 
 /* Workload-Aware eviction, arXiv:2506.02634 (KVCache Cache in the Wild). */
 cache_t *WorkloadAware_init(const common_cache_params_t ccache_params,
@@ -181,7 +180,6 @@ cache_t *WorkloadAware_init(const common_cache_params_t ccache_params,
  * whether the lifespan term does anything. */
 cache_t *AsymCache_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params);
-
 
 /* Session-level eviction: the victim is a conversation, not a block. These need
  * per-request session metadata, so they only do anything under a driver that
@@ -204,7 +202,7 @@ cache_t *S3FIFO_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
 cache_t *S3FIFOCompute_init(const common_cache_params_t ccache_params,
-                       const char *cache_specific_params);
+                            const char *cache_specific_params);
 
 cache_t *S3FIFOd_init(const common_cache_params_t ccache_params,
                       const char *cache_specific_params);

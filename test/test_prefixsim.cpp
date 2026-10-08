@@ -40,7 +40,8 @@ struct TestCase {
   int64_t expected_skipped = 0;
 };
 
-std::vector<prefixsim::Request> build(const std::vector<std::vector<obj_id_t>> &raw) {
+std::vector<prefixsim::Request> build(
+    const std::vector<std::vector<obj_id_t>> &raw) {
   std::vector<prefixsim::Request> requests;
   requests.reserve(raw.size());
   for (size_t i = 0; i < raw.size(); ++i) {
@@ -57,7 +58,8 @@ std::vector<prefixsim::Request> build(const std::vector<std::vector<obj_id_t>> &
 bool run_case(const TestCase &tc, bool pin) {
   const std::vector<prefixsim::Request> requests = build(tc.requests);
   const int64_t expected_self_evictions =
-      pin ? tc.expected_self_evictions_pinned : tc.expected_self_evictions_unpinned;
+      pin ? tc.expected_self_evictions_pinned
+          : tc.expected_self_evictions_unpinned;
   const char *mode = pin ? "pin" : "no-pin";
 
   cache_t *cache = prefixsim::create_cache_by_name("lru", tc.cache_size);
@@ -82,19 +84,21 @@ bool run_case(const TestCase &tc, bool pin) {
     } else {
       const prefixsim::Stats &st = sim.stats();
 
-      printf("  [%s/%-6s] hits %lld/%lld = %.4f (expected %lld/%lld = %.4f), "
-             "self-evict %lld, unexpected-evict %lld\n",
-             tc.name, mode, static_cast<long long>(st.n_block_hits),
-             static_cast<long long>(st.n_blocks), st.block_hit_ratio(),
-             static_cast<long long>(tc.expected_hits),
-             static_cast<long long>(tc.expected_blocks),
-             static_cast<double>(tc.expected_hits) / static_cast<double>(tc.expected_blocks),
-             static_cast<long long>(st.n_self_evictions),
-             static_cast<long long>(st.n_unexpected_evictions));
+      printf(
+          "  [%s/%-6s] hits %lld/%lld = %.4f (expected %lld/%lld = %.4f), "
+          "self-evict %lld, unexpected-evict %lld\n",
+          tc.name, mode, static_cast<long long>(st.n_block_hits),
+          static_cast<long long>(st.n_blocks), st.block_hit_ratio(),
+          static_cast<long long>(tc.expected_hits),
+          static_cast<long long>(tc.expected_blocks),
+          static_cast<double>(tc.expected_hits) /
+              static_cast<double>(tc.expected_blocks),
+          static_cast<long long>(st.n_self_evictions),
+          static_cast<long long>(st.n_unexpected_evictions));
 
       if (st.n_blocks != tc.expected_blocks) {
-        printf("  [%s/%s] FAIL: block count %lld, expected %lld\n", tc.name, mode,
-               static_cast<long long>(st.n_blocks),
+        printf("  [%s/%s] FAIL: block count %lld, expected %lld\n", tc.name,
+               mode, static_cast<long long>(st.n_blocks),
                static_cast<long long>(tc.expected_blocks));
         ok = false;
       }
@@ -105,27 +109,30 @@ bool run_case(const TestCase &tc, bool pin) {
         ok = false;
       }
       if (st.n_self_evictions != expected_self_evictions) {
-        printf("  [%s/%s] FAIL: self-eviction count %lld, expected %lld\n", tc.name, mode,
-               static_cast<long long>(st.n_self_evictions),
+        printf("  [%s/%s] FAIL: self-eviction count %lld, expected %lld\n",
+               tc.name, mode, static_cast<long long>(st.n_self_evictions),
                static_cast<long long>(expected_self_evictions));
         ok = false;
       }
       if (st.n_requests_skipped != tc.expected_skipped) {
-        printf("  [%s/%s] FAIL: skipped %lld requests, expected %lld\n", tc.name, mode,
-               static_cast<long long>(st.n_requests_skipped),
+        printf("  [%s/%s] FAIL: skipped %lld requests, expected %lld\n",
+               tc.name, mode, static_cast<long long>(st.n_requests_skipped),
                static_cast<long long>(tc.expected_skipped));
         ok = false;
       }
       // Phase 2 must reserve exactly enough room, always.
       if (st.n_unexpected_evictions != 0) {
-        printf("  [%s/%s] FAIL: %lld evictions during replay, expected 0\n", tc.name, mode,
+        printf("  [%s/%s] FAIL: %lld evictions during replay, expected 0\n",
+               tc.name, mode,
                static_cast<long long>(st.n_unexpected_evictions));
         ok = false;
       }
       // With the uniform cost model the two headline metrics must coincide.
       if (st.compute_saving_ratio() != st.block_hit_ratio()) {
-        printf("  [%s/%s] FAIL: uniform cost but compute saving %.6f != hit ratio %.6f\n",
-               tc.name, mode, st.compute_saving_ratio(), st.block_hit_ratio());
+        printf(
+            "  [%s/%s] FAIL: uniform cost but compute saving %.6f != hit ratio "
+            "%.6f\n",
+            tc.name, mode, st.compute_saving_ratio(), st.block_hit_ratio());
         ok = false;
       }
     }

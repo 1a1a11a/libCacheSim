@@ -260,9 +260,8 @@ static cache_obj_t *BeladyCompute_to_evict(cache_t *cache,
 
       if (time_diff <= 0) {
         // ERROR(
-        //     "BeladyCompute_to_evict: time_diff is %ld for obj_id %lu, this may "
-        //     "cause "
-        //     "negative or zero score, default to 1\n",
+        //     "BeladyCompute_to_evict: time_diff is %ld for obj_id %lu, this
+        //     may " "cause " "negative or zero score, default to 1\n",
         //     (long)time_diff, (unsigned long)sampled_obj->obj_id);
         sampled_obj_score = -DBL_MAX / 2;
       } else {

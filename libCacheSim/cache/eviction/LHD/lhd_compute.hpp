@@ -184,7 +184,7 @@ class LHDCompute {
     }
   }
 
-  inline rank_t getHitDensity(const Tag& tag) {
+  inline rank_t getHitDensity(const Tag &tag) {
     return getClass(tag).hitDensities[getAge(tag)] * tag.compute_intensity;
   }
 

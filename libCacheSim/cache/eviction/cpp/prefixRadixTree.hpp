@@ -89,9 +89,9 @@ class PrefixRadixTree {
   ///
   /// This is vLLM's canonical-block rule
   /// (_get_canonical_block_for_radix_tree_node / _get_chunk_canonical_block),
-  /// expressed over take-order ranks rather than raw positions so it still holds
-  /// when eviction runs tail-first. For the default head-first order rank equals
-  /// position and the two are identical.
+  /// expressed over take-order ranks rather than raw positions so it still
+  /// holds when eviction runs tail-first. For the default head-first order rank
+  /// equals position and the two are identical.
   bool canonical_resident(const Node *node, bool from_tail, int64_t start,
                           int64_t lo, obj_id_t &out) const;
 
@@ -101,7 +101,9 @@ class PrefixRadixTree {
   void collect_resident(const Node *node, bool from_tail, int64_t max_take,
                         std::vector<obj_id_t> &out) const;
 
-  int64_t n_sampleable() const { return static_cast<int64_t>(sampleable_.size()); }
+  int64_t n_sampleable() const {
+    return static_cast<int64_t>(sampleable_.size());
+  }
   /// Direct access to the candidate pool, for scanning it exhaustively when it
   /// is smaller than the sample size. Valid indices are [0, n_sampleable).
   Node *node_at(int64_t i) const { return sampleable_[static_cast<size_t>(i)]; }

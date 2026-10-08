@@ -2,7 +2,8 @@
 //
 // The compute saving ratio is cost-weighted, so the cost model is what decides
 // what "saving" means. Every model here is a function of the block's 0-based
-// position within its request, which is the only compute signal a trace carries.
+// position within its request, which is the only compute signal a trace
+// carries.
 //
 // Cost is deliberately absent from the trace: the constants below belong to one
 // model on one class of hardware, so naming a model after its profile is the
