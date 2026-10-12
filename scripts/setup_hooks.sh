@@ -35,9 +35,13 @@ cd "$GIT_ROOT"
 
 # Get a list of staged files
 STAGED_CPP_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.([ch](pp)?|cc)$' || true)
-# Convert Python files to array for proper handling of filenames with spaces
-readarray -t STAGED_PY_FILES_ARRAY < <(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
-STAGED_PY_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true)
+# Read NUL-delimited paths with Bash 3.2 (the default on macOS).
+STAGED_PY_FILES_ARRAY=()
+while IFS= read -r -d '' FILE; do
+    case "$FILE" in
+        *.py) STAGED_PY_FILES_ARRAY+=("$FILE") ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACM -z)
 
 if [ -z "$STAGED_CPP_FILES" ] && [ ${#STAGED_PY_FILES_ARRAY[@]} -eq 0 ]; then
     echo -e "${GREEN}No C/C++ or Python files to check.${NC}"
