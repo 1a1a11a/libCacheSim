@@ -1,7 +1,12 @@
 #define _GNU_SOURCE
 #include <argp.h>
+#include <errno.h>
 #include <glib.h>
+#include <limits.h>
+#include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "cache_init.h"
@@ -107,12 +112,29 @@ static struct argp_option options[] = {
    PARSER. Field 2 in ARGP.
    Order of parameters: KEY, ARG, STATE.
 */
+static int64_t parse_integer_arg(const char *arg, struct argp_state *state,
+                                 const char *option, int64_t minimum,
+                                 int64_t maximum) {
+  char *end;
+  errno = 0;
+  long long value = strtoll(arg, &end, 10);
+  if (end == arg || *end != '\0' || errno == ERANGE || value < minimum ||
+      value > maximum) {
+    argp_error(
+        state,
+        "error: invalid --%s value '%s': expected an integer in [%lld, %lld]",
+        option, arg, (long long)minimum, (long long)maximum);
+  }
+  return (int64_t)value;
+}
+
 static error_t parse_opt(int key, char *arg, struct argp_state *state) {
   struct arguments *arguments = state->input;
 
   switch (key) {
     case OPTION_NUM_THREAD:
-      arguments->n_thread = atoi(arg);
+      arguments->n_thread =
+          (int)parse_integer_arg(arg, state, "num-thread", -1, INT_MAX);
       if (arguments->n_thread == 0 || arguments->n_thread == -1) {
         arguments->n_thread = n_cores();
       }
@@ -146,7 +168,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->ofilepath[OFILEPATH_LEN - 1] = '\0';
       break;
     case OPTION_NUM_REQ:
-      arguments->n_req = atoi(arg);
+      arguments->n_req =
+          parse_integer_arg(arg, state, "num-req", -1, INT64_MAX);
       break;
     case OPTION_VERBOSE:
       arguments->verbose = is_true(arg) ? true : false;
@@ -155,14 +178,24 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->use_ttl = is_true(arg) ? true : false;
       break;
     case OPTION_REPORT_INTERVAL:
-      arguments->report_interval = atol(arg);
+      arguments->report_interval =
+          (int)parse_integer_arg(arg, state, "report-interval", 0, INT_MAX);
       break;
-    case OPTION_SAMPLE_RATIO:
-      arguments->sample_ratio = atof(arg);
-      if (arguments->sample_ratio < 0 || arguments->sample_ratio > 1) {
-        ERROR("sample ratio should be in (0, 1]\n");
+    case OPTION_SAMPLE_RATIO: {
+      char *end;
+      errno = 0;
+      arguments->sample_ratio = strtod(arg, &end);
+      if (end == arg || *end != '\0' || errno == ERANGE ||
+          !isfinite(arguments->sample_ratio) || arguments->sample_ratio < 0 ||
+          arguments->sample_ratio > 1) {
+        argp_error(
+            state,
+            "error: invalid --sample-ratio value '%s': expected a finite "
+            "number in [0, 1]",
+            arg);
       }
       break;
+    }
     case OPTION_IGNORE_OBJ_SIZE:
       arguments->ignore_obj_size = is_true(arg) ? true : false;
       break;
@@ -170,14 +203,12 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       arguments->consider_obj_metadata = is_true(arg) ? true : false;
       break;
     case OPTION_HASHPOWER:
-      arguments->hashpower = atoi(arg);
-      if (arguments->hashpower <= 0 || arguments->hashpower >= 40) {
-        ERROR("hashpower must be between 1 and 39, got %d\n",
-              arguments->hashpower);
-      }
+      arguments->hashpower =
+          (int)parse_integer_arg(arg, state, "hashpower", 1, 39);
       break;
     case OPTION_WARMUP_SEC:
-      arguments->warmup_sec = atoi(arg);
+      arguments->warmup_sec =
+          (int)parse_integer_arg(arg, state, "warmup-sec", 0, INT_MAX);
       break;
     case OPTION_PRINT_HEAD_REQ:
       arguments->print_head_req = is_true(arg) ? true : false;
