@@ -307,7 +307,11 @@ void free_arg(struct arguments *args) {
   //     args->caches[i]->cache_free(args->caches[i]);
   // }
 
+  /* setup_reader clones the sampler; keep the original alive for reader
+   * clones, then release the CLI-owned instance when simulation is done. */
+  sampler_t *sampler = args->reader->init_params.sampler;
   close_reader(args->reader);
+  if (sampler != NULL) sampler->free(sampler);
 }
 
 /**

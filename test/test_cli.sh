@@ -182,6 +182,9 @@ for value in 0 0.5 5e-1 1; do
 		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
 		--num-req=10 --hashpower=8 "--sample-ratio=${value}"
 done
+expect_ok "cachesim keeps sampling state alive for parallel readers" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb,2mb \
+	--num-req=100 --hashpower=8 --sample-ratio=0.5 --num-thread=2
 for value in -1 0 1; do
 	expect_ok "cachesim accepts --num-thread=${value}" \
 		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
