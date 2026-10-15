@@ -5,10 +5,12 @@
 set(traceReader_sources_c
     generalReader/binary.c 
     generalReader/csv.c 
+    generalReader/synthetic.c
     generalReader/txt.c 
     generalReader/libcsv.c
     customizedReader/lcs.c
     reader.c
+    readerRequest.c
     sampling/spatial.c
     sampling/temporal.c
     )

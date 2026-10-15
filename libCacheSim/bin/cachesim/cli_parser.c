@@ -215,7 +215,7 @@ static char doc[] =
     "example: ./cachesim /trace/path csv LRU 100MB\n\n"
     "trace can be zstd compressed\n"
     "cache_size is in byte, but also support KB/MB/GB\n"
-    "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin\n"
+    "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin/syn\n"
     "supported eviction_algo: LRU/LFU/FIFO/ARC/LeCaR/Cacheus/Merlin\n"
     "print-head-req: Print the first few requests when simulating start\n";
 
@@ -276,7 +276,11 @@ void free_arg(struct arguments *args) {
   //     args->caches[i]->cache_free(args->caches[i]);
   // }
 
+  /* setup_reader clones the sampler; keep the original alive for reader
+   * clones, then release the CLI-owned instance when simulation is done. */
+  sampler_t *sampler = args->reader->init_params.sampler;
   close_reader(args->reader);
+  if (sampler != NULL) sampler->free(sampler);
 }
 
 /**

@@ -33,6 +33,7 @@ endfunction()
 
 # Create C test executables
 add_test_executable(testReader test_traceReader.c)
+add_test_executable(testSyntheticReader test_syntheticReader.c)
 add_test_executable(testDistUtils test_dist.c)
 add_test_executable(testProfilerLRU test_profilerLRU.c)
 add_test_executable(testSimulator test_simulator.c)
@@ -51,6 +52,7 @@ add_test_executable(testUtils test_utils.c)
 
 
 add_test(NAME testReader COMMAND testReader WORKING_DIRECTORY .)
+add_test(NAME testSyntheticReader COMMAND testSyntheticReader WORKING_DIRECTORY .)
 add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
 add_test(NAME testSimulator COMMAND testSimulator WORKING_DIRECTORY .)
