@@ -29,6 +29,8 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
           trace_path);
     }
     return trace_type;
+  } else if (strcasecmp(trace_type_str, "syn") == 0) {
+    return SYNTHETIC_TRACE;
   } else if (strcasecmp(trace_type_str, "txt") == 0) {
     return PLAIN_TXT_TRACE;
   } else if (strcasecmp(trace_type_str, "csv") == 0) {

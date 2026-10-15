@@ -19,7 +19,8 @@ typedef enum {
   BINARY_TRACE_FORMAT,
   TXT_TRACE_FORMAT,
 
-  INVALID_TRACE_FORMAT
+  INVALID_TRACE_FORMAT,
+  SYNTHETIC_TRACE_FORMAT
 } trace_format_e;
 
 // trace type
@@ -43,6 +44,7 @@ typedef enum {
   VALPIN_TRACE,
 
   UNKNOWN_TRACE,
+  SYNTHETIC_TRACE,
 } __attribute__((__packed__)) trace_type_e;
 
 static const char* const g_trace_type_name[UNKNOWN_TRACE + 2] = {
@@ -63,6 +65,7 @@ static const char* const g_trace_type_name[UNKNOWN_TRACE + 2] = {
 
     "VALPIN_TRACE",
     "UNKNOWN_TRACE",
+    "SYNTHETIC_TRACE",
 };
 
 typedef enum {

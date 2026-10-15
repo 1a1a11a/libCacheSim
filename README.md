@@ -307,6 +307,13 @@ If you need to add a new trace type or a new algorithm, please see [here](/doc/a
 We encourage users to check [deepWiki](https://deepwiki.com/1a1a11a/libCacheSim) for more detailed documentation.
 
 ---
+
+### Synthetic traces
+
+Generate native uniform or Zipf workloads without a trace file using the `syn`
+trace type. See [synthetic traces](doc/synthetic_traces.md) for syntax, seeds,
+reader behavior and limitations.
+
 ## Python package
 
 If you are not extremely sensitive to performance, our Python binding offers an easier way to access the core features of libCacheSim.

@@ -157,6 +157,44 @@ expect_output "cachesim hashes string object ids" "miss ratio 0\.6667" \
 	"${BIN_DIR}/cachesim" str-ids.csv csv lru 1mb \
 	-t "time-col=1,obj-id-col=2,obj-size-col=3,has-header=true"
 
+echo "running synthetic reader tests"
+for spec in Uniform_1000_10 Zipf_1000_10_0 Zipf_1000_10_1 \
+	Zipf_1000_10_1.2_42 Zipf_1000_10_.5 Zipf_1000_10_1e-310; do
+	expect_output "synthetic ${spec}" '1000 req, miss ratio 0\.0100' \
+		"${BIN_DIR}/cachesim" "${spec}" syn lru 10 --hashpower=8 --num-thread=1
+done
+expect_output "synthetic cap of one" '1 req, miss ratio 1\.0000' \
+	"${BIN_DIR}/cachesim" Uniform_100_10 syn lru 10 --num-req=1 --hashpower=8
+expect_output "synthetic large source count with cap" '10 req' \
+	"${BIN_DIR}/cachesim" Uniform_4294967306_10 syn lru 10 --num-req=10 --hashpower=8
+expect_output "synthetic observed working set" 'working set size: 1 object 1 byte' \
+	"${BIN_DIR}/cachesim" Uniform_1_1000 syn lru 0.5 --hashpower=8
+expect_ok "synthetic parallel caches" \
+	"${BIN_DIR}/cachesim" Zipf_1000_100_0.9_42 syn lru,fifo 10,50 --num-thread=2 --hashpower=8
+expect_ok "synthetic spatial sampling" \
+	"${BIN_DIR}/cachesim" Zipf_1000_100_0.9 syn lru 10 --sample-ratio=0.5 --hashpower=8
+for spec in '' x Uniform Uniform_0_10 Uniform_10_0 Uniform_-1_10 \
+	Uniform_1x_10 Uniform_1_10x Uniform_1_2147483648 \
+	Uniform_9223372036854775808_1 Uniform_1_1_18446744073709551616 \
+	Uniform_1_1_-1 Uniform_1_1_ Uniform_1_1_2_extra \
+	Zipf_10_10 Zipf_10_10_ Zipf_10_10_-1 Zipf_10_10_nan \
+	Zipf_10_10_inf Zipf_10_10_1junk Zipf_10_10_0x1p0 \
+	Zipf_10_10_1e999 Zipf_10_10_1e-999 Zipf_10_10_1_2_extra; do
+	# Require exit 1 explicitly: ERROR()/abort must not count as validation.
+	out=$("${BIN_DIR}/cachesim" "${spec}" syn lru 10 --hashpower=8 2>&1)
+	rc=$?
+	if [[ ${rc} -eq 1 ]] && grep -q 'error: invalid synthetic trace' <<<"${out}" &&
+		! grep -qE 'Sanitizer|runtime error:' <<<"${out}"; then
+		_report 0 ""
+	else
+		_report 1 "synthetic rejects '${spec}' cleanly (exit ${rc})"
+	fi
+done
+for param in time-col=1 obj-size-col=1 has-header=true obj-id-is-num=false; do
+	expect_clean_error "synthetic rejects ${param}" \
+		"${BIN_DIR}/cachesim" Uniform_100_10 syn lru 10 -t "${param}" --hashpower=8
+done
+
 echo "running -e print tests"
 
 # `-e print` runs before the cache is fully built, so the reporting path must
