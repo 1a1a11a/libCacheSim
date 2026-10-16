@@ -43,7 +43,7 @@ typedef enum {
 
   VALPIN_TRACE,
 
-  LCSLLM_TRACE,  // LLM trace: clock_time, obj_id, cost, next_access_vtime
+  LCP_TRACE,  // LLM prefix-cache trace, see doc/lcp_format.md
 
   UNKNOWN_TRACE,
   SYNTHETIC_TRACE,
@@ -66,7 +66,7 @@ static const char* const g_trace_type_name[UNKNOWN_TRACE + 2] = {
     "ORACLE_SYS_TWRNS_TRACE",
 
     "VALPIN_TRACE",
-    "LCSLLM_TRACE",
+    "LCP_TRACE",
     "UNKNOWN_TRACE",
     "SYNTHETIC_TRACE",
 };

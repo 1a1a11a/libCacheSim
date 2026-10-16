@@ -62,9 +62,9 @@ set_target_properties(traceFilter
 install(TARGETS traceFilter RUNTIME DESTINATION bin)
 
 # ==============================================================================
-# traceConvLLM -- qwen-style JSONL -> lcsllm binary
+# traceConvLLM -- qwen-style JSONL -> lcp binary
 # ==============================================================================
-# Links prefixsim_lib to reuse its JSONL parser, prefix-hash folding and
+# Links prefixsim_lib to reuse its JSONL parser, positional encoding and
 # next-access annotation, so the converter and the simulator cannot disagree
 # about what a trace means.
 add_executable(traceConvLLM traceConvLLM.cpp)

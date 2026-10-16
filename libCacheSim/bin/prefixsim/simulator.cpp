@@ -226,6 +226,20 @@ bool Simulator::run(const std::vector<Request> &requests, std::string &error) {
   return true;
 }
 
+bool Simulator::run(TraceReader &reader, std::string &error) {
+  if (!reader.annotated()) {
+    error = std::string(reader.format_name()) +
+            " carries no next-access times, so it cannot be simulated as it "
+            "streams; load it with load_trace() first";
+    return false;
+  }
+  Request request;
+  while (reader.next(request)) {
+    if (!serve(request, error)) return false;
+  }
+  return true;
+}
+
 bool Simulator::serve(const Request &request, std::string &error) {
   const size_t n_pos = request.blocks.size();
 

@@ -34,11 +34,12 @@ void print_eviction_debug_message(const char *msg) {
 /**
  * A request's compute cost, with 0 read as 1.
  *
- * Most trace formats carry no cost -- lcs and lcsllm never set it, so obj_cost
- * is 0 throughout. Taken literally that makes every compute-aware score 0 and
- * the algorithm silently degenerates into picking whichever candidate it
- * sampled first. Reading 0 as 1 makes a cost-free trace mean "uniform cost",
- * which is the honest default: compute savings then equal the hit ratio.
+ * Most trace formats carry no cost -- lcs, for one, never sets it, so obj_cost
+ * is 0 throughout (lcp derives it from a cost model instead). Taken
+ * literally that makes every compute-aware score 0 and the algorithm silently
+ * degenerates into picking whichever candidate it sampled first. Reading 0 as 1
+ * makes a cost-free trace mean "uniform cost", which is the honest default:
+ * compute savings then equal the hit ratio.
  */
 static inline int32_t req_cost_or_one(const request_t *req) {
   return req->obj_cost > 0 ? (int32_t)req->obj_cost : 1;

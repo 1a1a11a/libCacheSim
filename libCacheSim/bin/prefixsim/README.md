@@ -14,6 +14,18 @@ libCacheSim's request-at-a-time model cannot express on its own.
 `--cache-size` is in **blocks**, not bytes: every block is one object of size 1,
 so a cache of 8k is 8192 blocks.
 
+Two input formats (`--trace-format`, guessed from the file name when omitted):
+
+- `lcp` ([spec](/doc/lcp_format.md)), plain or `.zst`. Stores next
+  access for blocks and sessions, so it is **streamed**: each algorithm reads it
+  once, front to back, holding one request at a time.
+- `qwen-jsonl`, the source traces. Carry no next access, so the whole trace is
+  **loaded** (16 bytes per block access, about 6 GB for 200k fi-new requests)
+  and annotated in reverse passes before any algorithm runs.
+
+Both give identical results on the same trace; `traceConvLLM` converts one to
+the other.
+
 ---
 
 ## The problem this solves
@@ -328,7 +340,9 @@ is only comparable against another number taken at the same setting. The
 
 ## Next-access annotation
 
-Belady-style oracles read `req->next_access_vtime`. Those virtual times are
+Belady-style oracles read `req->next_access_vtime`, and `session_belady` reads
+the session-level analogue, the index of the session's next request. For JSONL
+both are computed after loading; `lcp` stores them. The virtual times are
 computed on the **forward** flattened trace (request 0 block 0 is vtime 1, block
 1 is vtime 2, …), *not* on the reverse replay order.
 
@@ -363,16 +377,21 @@ signal the qwen trace carries.
 | Model | Cost | Notes |
 |---|---|---|
 | `uniform` (default) | `1` | Compute saving ratio equals block hit ratio. |
-| `position` | `pos + 1` | Blocks that must be prefilled from the root to reconstruct this one. Matches the `compute` field written into `.lcsllm` traces. |
+| `position` | `pos + 1` | Blocks that must be prefilled from the root to reconstruct this one. |
 | `qwen3coder30b_blksz_16` | `865 + 2*pos` | Measured per-block prefill cost of Qwen3-Coder-30B at 16-token blocks: a fixed part (projections, MLP) plus a part growing with the context attended to. Matches the vLLM logs (`idx=0→865, idx=100→1065`) and `compute_intensity_transform()` in `evaluate/`. Narrow range — position 1 vs 100 is 865 vs 1065 — so cost-aware policies rank close to cost-blind ones under it. |
 
 ## Block identity (`--block-id`)
 
-- `prefix-hash` (default) — fold the whole prefix into a rolling
-  `boost::hash_combine`, so a block's identity is *the path from the root up to
-  and including it*. This is what a real prefix cache does. The hash is
-  byte-identical to `llm_qwen.py`, so a trace converted to `.lcsllm` and the same
-  trace read natively here produce the same identities.
+- `prefix` (default; `prefix-hash` is accepted as an alias) — a block's
+  identity is *the path from the root up to and including it*, which is what a
+  real prefix cache keys on. Assigned by exact interning: each
+  `(parent id, raw id)` pair gets the next integer, so ids are 1, 2, 3, ... in
+  order of first appearance and two blocks share one only when their whole
+  paths match. These are exactly the ids `traceConvLLM` writes to `.lcp`.
+  Session and category ids are interned the same way. (This replaced a rolling
+  `boost::hash_combine` fold, which collided on the qwen, freeinference and
+  chutes traces — 2 to 46 merged prefixes per trace — because it barely mixes
+  sequential integers.)
 - `raw` — use the trace's `hash_ids` verbatim. Only correct if the trace's ids
   are already prefix-unique. **The qwen traces are not**: on
   `qwen_traceA_blksz_16.jsonl`, 16,686 ids appear under more than one predecessor
@@ -382,17 +401,17 @@ signal the qwen trace carries.
   cost model trips the `cache_find_base()` cost-change `abort()`; the tool warns
   about that combination.
 
-The option exists because this reader takes *raw JSONL*, where the convention is
-a property of the file and cannot be assumed. `.lcsllm` is the opposite: it
-guarantees positional encoding, a reader rejects a file claiming otherwise, and
-there is nothing for a consumer to choose — see
-[the format spec](/doc/lcsllm_format.md#positional-encoding-of-block-ids).
+The option exists because the JSONL reader takes *raw* ids, where the convention
+is a property of the file and cannot be assumed. `.lcp` is the opposite: its
+converter writes positionally encoded ids and nothing else, so there is nothing
+for a consumer to choose, and `--block-id raw` is an error on it — see
+[the format spec](/doc/lcp_format.md#identifiers).
 
 `raw` is worth keeping for one specific job: reproducing the vLLM prototype,
 which keys on `hash_ids` directly. That is why the freeinference comparison above
 uses it. On a trace whose ids already *are* prefix-unique the two modes agree
 exactly — LRU at 120k blocks on `prod_trace_w4_multiturn_concurrency_1024` gives
-0.178042 / 0.090094 under both — so `prefix-hash` is never the riskier choice;
+0.178042 / 0.090094 under both — so `prefix` is never the riskier choice;
 `raw` is only ever the one that can be wrong.
 
 ---
@@ -650,7 +669,9 @@ summarise in one number, now visible in full rather than averaged away.
 
 Implement `TraceReader` in `trace.cpp` and add one line to
 `parse_trace_format()` and `open_trace()`. The simulator only ever sees
-`Request`, so nothing else changes.
+`Request`, so nothing else changes. A reader that fills `next_access_vtime` and
+`session_next_access` itself returns true from `annotated()` and is streamed;
+any other is loaded whole and annotated.
 
 This does not reuse libCacheSim's `reader_t` because a `reader_t` emits one
 `request_t` (one object) at a time and cannot express "these N objects form one
@@ -670,5 +691,6 @@ request that must be resident together".
   in phase 1, but the extra churn is real. Pinning would be the natural next
   refinement — done only for `lirs`, where it was load-bearing (see the `lirs`
   in-flight protection note under *Which algorithms work*).
-- **The whole trace is held in memory** (block ids plus next-access times, 16
-  bytes per block access) so next-access annotation can be a single pass.
+- **A JSONL trace is held in memory whole** (block ids plus next-access times,
+  16 bytes per block access), because next access is computed in a reverse
+  pass. Convert it to `lcp` to stream it instead.

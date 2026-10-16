@@ -103,9 +103,11 @@ class SessionCache {
   int64_t now = 0;
   uint64_t cur_session = 0;
   int64_t cur_next_access = INT64_MAX;
-  /// Synthesised ids for traces without session_id, so each request stands
-  /// alone.
-  uint64_t synthetic_next = 1;
+  /// Synthesised ids for requests without a session_id, so each stands alone.
+  /// Real session ids are interned from 1 upward, so these start at 2^63 to
+  /// keep a trace that mixes the two from merging a synthetic session into a
+  /// real one.
+  uint64_t synthetic_next = UINT64_C(1) << 63;
 
   // ---- policy hooks ----
   /// Choose the session to evict. Return false when none is available.

@@ -74,6 +74,10 @@ typedef struct {
   // binary reader
   char *binary_fmt_str;
 
+  // lcp reader: how obj_cost is derived from a block's position in its
+  // request, an llm_cost_model_e (see llmCostModel.h). 0 = uniform.
+  int32_t llm_cost_model;
+
   // sample some requests in the trace
   sampler_t *sampler;
 } reader_init_param_t;
@@ -144,11 +148,6 @@ typedef struct reader {
 
   // lcs trace version, used only lcs reader
   int64_t lcs_ver;
-
-  /* blocks left in the current request, used only by the lcsllm reader.
-   * n_req_left cannot serve this: read_one_req() short-circuits on it to
-   * replay one object several times, which is not what a new block is. */
-  int64_t lcsllm_blocks_left;
 
   /* used for trace sampling */
   sampler_t *sampler;

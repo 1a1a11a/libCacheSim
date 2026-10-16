@@ -101,7 +101,7 @@ struct SimulatorConfig {
 /// assume an eviction removes the exact object they last looked at.
 bool algorithm_supports_pinning(const std::string &algorithm);
 
-/// Runs one eviction algorithm over an in-memory trace.
+/// Runs one eviction algorithm over a trace.
 class Simulator {
  public:
   Simulator(cache_t *cache, const SimulatorConfig &config);
@@ -113,6 +113,10 @@ class Simulator {
   /// Serve every request in order. Returns false and fills `error` if an
   /// invariant broke.
   bool run(const std::vector<Request> &requests, std::string &error);
+
+  /// Serve a trace as it streams, one request in memory at a time. The reader
+  /// must be annotated(): next access cannot be known in a forward pass.
+  bool run(TraceReader &reader, std::string &error);
 
   const Stats &stats() const { return stats_; }
 

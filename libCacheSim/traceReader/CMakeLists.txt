@@ -9,6 +9,7 @@ set(traceReader_sources_c
     generalReader/txt.c 
     generalReader/libcsv.c
     customizedReader/lcs.c
+    customizedReader/lcp.c
     reader.c
     readerRequest.c
     sampling/spatial.c

@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "libCacheSim/llmCostModel.h"
 #include "libCacheSim/reader.h"
 #include "utils/include/mystr.h"
 
@@ -53,8 +54,8 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return ORACLE_SYS_TWRNS_TRACE;
   } else if (strcasecmp(trace_type_str, "valpinTrace") == 0) {
     return VALPIN_TRACE;
-  } else if (strcasecmp(trace_type_str, "lcsllm") == 0) {
-    return LCSLLM_TRACE;
+  } else if (strcasecmp(trace_type_str, "lcp") == 0) {
+    return LCP_TRACE;
   } else {
     ERROR("unsupported trace type: %s\n", trace_type_str);
   }
@@ -166,6 +167,17 @@ void parse_reader_params(const char *reader_params_str,
       params->has_header_set = true;
     } else if (strcasecmp(key, "format") == 0) {
       params->binary_fmt_str = strdup(value);
+    } else if (strcasecmp(key, "cost-model") == 0) {
+      /* lcp: derive obj_cost from block position under this model */
+      llm_cost_model_e model;
+      if (!llm_cost_model_parse(value, &model)) {
+        ERROR(
+            "unknown cost-model '%s': uniform | position | "
+            "qwen3coder30b_blksz_16\n",
+            value);
+        exit(1);
+      }
+      params->llm_cost_model = (int32_t)model;
     } else if (strcasecmp(key, "delimiter") == 0) {
       /* user input: k1=v1, delimiter=;, k2=v2 */
       params->delimiter = value[0];
@@ -210,6 +222,8 @@ trace_type_e detect_trace_type(const char *trace_path) {
 
   if (strcasestr(trace_path, ".oracleGeneral") != NULL) {
     trace_type = ORACLE_GENERAL_TRACE;
+  } else if (strcasestr(trace_path, ".lcp") != NULL) {
+    trace_type = LCP_TRACE;
   } else if (strcasestr(trace_path, ".lcs") != NULL) {
     trace_type = LCS_TRACE;
   } else if (strcasestr(trace_path, ".vscsi") != NULL) {
@@ -218,8 +232,6 @@ trace_type_e detect_trace_type(const char *trace_path) {
     trace_type = TWR_TRACE;
   } else if (strcasestr(trace_path, ".twrNS.") != NULL) {
     trace_type = TWRNS_TRACE;
-  } else if (strcasestr(trace_path, ".lcsllm.") != NULL) {
-    trace_type = LCSLLM_TRACE;
   } else if (strcasestr(trace_path, "oracleSysTwrNS") != NULL) {
     trace_type = ORACLE_SYS_TWRNS_TRACE;
   } else {

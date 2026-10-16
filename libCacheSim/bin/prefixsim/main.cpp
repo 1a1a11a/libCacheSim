@@ -30,8 +30,9 @@ struct Options {
   std::vector<std::string> algorithms{"lru"};
   int64_t cache_size = 0;
   prefixsim::TraceFormat format = prefixsim::TraceFormat::kQwenJsonl;
+  bool format_given = false;  ///< else guessed from the file name
   prefixsim::CostModel cost_model = prefixsim::CostModel::kUniform;
-  prefixsim::BlockIdMode block_id = prefixsim::BlockIdMode::kPrefixHash;
+  prefixsim::BlockIdMode block_id = prefixsim::BlockIdMode::kPrefix;
   bool verify = true;
   bool pin_request_blocks = true;
   bool replay_deepest_first = true;
@@ -56,12 +57,16 @@ void print_usage(const char *program) {
   printf(
       "  --algo-params <s>       Algorithm-specific params, e.g. "
       "\"n-sample=64,evict-from=tail\".\n");
-  printf("  --trace-format <fmt>    Input format (default: qwen-jsonl).\n");
+  printf(
+      "  --trace-format <fmt>    qwen-jsonl | lcp (default: lcp if the\n"
+      "                          file name contains .lcp, else "
+      "qwen-jsonl).\n"
+      "                          lcp is streamed in one pass; JSONL is\n"
+      "                          loaded whole to compute next access.\n");
   printf("  --cost-model <m>        uniform | position |\n");
   printf(
       "                          qwen3coder30b_blksz_16 (default: uniform).\n");
-  printf(
-      "  --block-id <mode>       prefix-hash | raw (default: prefix-hash).\n");
+  printf("  --block-id <mode>       prefix | raw (default: prefix).\n");
   printf("  --no-verify             Skip the post-request residency check.\n");
   printf(
       "  --replay-order <o>      deepest-first | prefix-order\n"
@@ -207,6 +212,7 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
         fprintf(stderr, "error: unknown --trace-format '%s'\n", value);
         return false;
       }
+      opts.format_given = true;
     } else if (strcmp(arg, "--replay-order") == 0) {
       if (strcmp(value, "deepest-first") == 0 ||
           strcmp(value, "reverse") == 0) {
@@ -224,8 +230,9 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
         return false;
       }
     } else if (strcmp(arg, "--block-id") == 0) {
-      if (strcmp(value, "prefix-hash") == 0) {
-        opts.block_id = prefixsim::BlockIdMode::kPrefixHash;
+      // prefix-hash: the name from when the encoding was a hash fold
+      if (strcmp(value, "prefix") == 0 || strcmp(value, "prefix-hash") == 0) {
+        opts.block_id = prefixsim::BlockIdMode::kPrefix;
       } else if (strcmp(value, "raw") == 0) {
         opts.block_id = prefixsim::BlockIdMode::kRaw;
       } else {
@@ -245,6 +252,9 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
   if (opts.cache_size <= 0) {
     fprintf(stderr, "error: --cache-size is required\n");
     return false;
+  }
+  if (!opts.format_given) {
+    opts.format = prefixsim::guess_trace_format(opts.trace_path);
   }
   return true;
 }
@@ -294,8 +304,7 @@ void report(FILE *out, const std::string &algorithm, const Options &opts,
           opts.trace_path.c_str(), algorithm.c_str(),
           static_cast<long long>(opts.cache_size),
           prefixsim::cost_model_name(opts.cost_model),
-          opts.block_id == prefixsim::BlockIdMode::kPrefixHash ? "prefix-hash"
-                                                               : "raw",
+          opts.block_id == prefixsim::BlockIdMode::kPrefix ? "prefix" : "raw",
           static_cast<long long>(stats.n_requests),
           static_cast<long long>(stats.n_requests_skipped),
           static_cast<long long>(stats.n_blocks), stats.block_hit_ratio(),
@@ -321,7 +330,7 @@ int main(int argc, char **argv) {
     WARN(
         "--block-id raw with a position-dependent cost model: a raw block id "
         "reached through two different prefixes gets two different costs, and "
-        "cache_find_base() aborts on a cost change. Use prefix-hash, or "
+        "cache_find_base() aborts on a cost change. Use prefix, or "
         "--cost-model uniform.\n");
   }
 
@@ -335,23 +344,33 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  // A trace that stores next access is streamed: each algorithm reads it once,
+  // front to back, holding one request at a time. Any other is loaded whole,
+  // once, so next access can be computed, and shared by every algorithm.
+  const bool streaming = reader->annotated();
   std::vector<prefixsim::Request> requests;
-  if (!prefixsim::load_trace(*reader, requests, error)) {
-    fprintf(stderr, "error: %s\n", error.c_str());
-    return 1;
+  int64_t n_requests_total = 0, n_blocks_total = 0;
+  if (streaming) {
+    n_requests_total = reader->n_requests_total();
+    n_blocks_total = reader->n_blocks_total();
+  } else {
+    if (!prefixsim::load_trace(*reader, requests, error)) {
+      fprintf(stderr, "error: %s\n", error.c_str());
+      return 1;
+    }
+    reader.reset();
+    n_requests_total = static_cast<int64_t>(requests.size());
+    for (const prefixsim::Request &r : requests) {
+      n_blocks_total += static_cast<int64_t>(r.blocks.size());
+    }
   }
 
-  int64_t n_blocks_total = 0;
-  for (const prefixsim::Request &r : requests) {
-    n_blocks_total += static_cast<int64_t>(r.blocks.size());
-  }
   printf(
       "trace %s: %lld requests, %lld block accesses, format %s, block-id %s\n",
-      opts.trace_path.c_str(), static_cast<long long>(requests.size()),
+      opts.trace_path.c_str(), static_cast<long long>(n_requests_total),
       static_cast<long long>(n_blocks_total),
       prefixsim::trace_format_name(opts.format),
-      opts.block_id == prefixsim::BlockIdMode::kPrefixHash ? "prefix-hash"
-                                                           : "raw");
+      opts.block_id == prefixsim::BlockIdMode::kPrefix ? "prefix" : "raw");
   printf("cache size %lld blocks, cost model %s\n\n",
          static_cast<long long>(opts.cache_size),
          prefixsim::cost_model_name(opts.cost_model));
@@ -401,9 +420,24 @@ int main(int argc, char **argv) {
     config.replay_deepest_first = opts.replay_deepest_first;
     config.dump_holes_path = holes_path;
 
+    // A stream is consumed by one algorithm; the next one reopens the file.
+    if (streaming && reader == nullptr) {
+      reader = prefixsim::open_trace(opts.trace_path, opts.format,
+                                     opts.block_id, error);
+      if (reader == nullptr) {
+        fprintf(stderr, "error: %s\n", error.c_str());
+        cache->cache_free(cache);
+        exit_code = 1;
+        break;
+      }
+    }
+
     {
       prefixsim::Simulator sim(cache, config);
-      if (!sim.run(requests, error)) {
+      const bool ok =
+          streaming ? sim.run(*reader, error) : sim.run(requests, error);
+      reader.reset();
+      if (!ok) {
         fprintf(stderr, "error [%s]: %s\n", algorithm.c_str(), error.c_str());
         exit_code = 1;
       } else {

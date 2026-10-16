@@ -8,19 +8,71 @@
 
 extern "C" {
 #include "libCacheSim/const.h"
+#include "libCacheSim/reader.h"
+#include "traceReader/customizedReader/lcp.h"
 }
 
 namespace prefixsim {
 namespace {
 
-constexpr uint64_t kGoldenRatio = 0x9E3779B9ULL;
-
-/// boost::hash_combine, 64-bit. Byte-for-byte the same as hash_combine_u64() in
-/// llm_cachesim/scripts/trace_processing/llm_qwen.py, so a trace converted to
-/// .lcsllm and the same trace read natively here produce the same identities.
-inline uint64_t hash_combine_u64(uint64_t seed, uint64_t value) {
-  return seed ^ (value + kGoldenRatio + (seed << 6) + (seed >> 2));
+/// splitmix64's finaliser. Only spreads keys across hash-table buckets; no id
+/// is ever derived from it, so its collisions cost speed, never correctness.
+inline uint64_t mix64(uint64_t z) {
+  z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ULL;
+  z = (z ^ (z >> 27)) * 0x94D049BB133111EBULL;
+  return z ^ (z >> 31);
 }
+
+/// A block reached through a given prefix: the interned id of its parent (0
+/// for a prefix root) and its raw id in the trace.
+struct PathKey {
+  uint64_t parent;
+  uint64_t raw;
+  bool operator==(const PathKey &o) const {
+    return parent == o.parent && raw == o.raw;
+  }
+};
+
+struct PathKeyHash {
+  size_t operator()(const PathKey &k) const noexcept {
+    return static_cast<size_t>(mix64(k.parent * 0x9E3779B97F4A7C15ULL ^ k.raw));
+  }
+};
+
+/// Map each distinct key to 1, 2, 3, ... in order of first appearance. Exact
+/// where a hash would only be probable: two keys share an id only when equal.
+template <typename Key, typename Hash = std::hash<Key>>
+class Interner {
+ public:
+  uint64_t intern(const Key &key) {
+    auto it = ids_.emplace(key, ids_.size() + 1).first;
+    return it->second;
+  }
+  void release() { std::unordered_map<Key, uint64_t, Hash>().swap(ids_); }
+
+ private:
+  std::unordered_map<Key, uint64_t, Hash> ids_;
+};
+
+/// arXiv:2506.02634's request category: the (request type, turn number) pair,
+/// interned to 1, 2, 3, ... in order of first appearance. 0 is reserved for
+/// "neither field", which policies read as one class. Every reader goes
+/// through this, so a trace has the same categories in every format.
+class CategoryInterner {
+ public:
+  /// An empty `type` means the trace has none; a negative `turn` likewise.
+  uint64_t intern(const std::string &type, int32_t turn) {
+    if (type.empty() && turn < 0) return 0;
+    std::string key = type.empty() ? "-" : "t" + type;
+    key += '\x1f';
+    key += turn >= 0 ? std::to_string(turn) : "-";
+    return ids_.intern(key);
+  }
+  void release() { ids_.release(); }
+
+ private:
+  Interner<std::string> ids_;
+};
 
 /// Locate the value of `"key":` in one JSON line and return a pointer just past
 /// the colon, or nullptr when the key is absent. This is a field scanner, not a
@@ -38,56 +90,23 @@ const char *find_field(const char *line, const char *quoted_key) {
   return p;
 }
 
-/// Hash the trace's `session_id` string into an opaque conversation id.
-///
-/// Hashed rather than interned because a policy only ever tests session ids for
-/// equality, and the traces carry ~18k distinct ids per 50k requests -- keeping
-/// the strings would cost more than the ids are worth. 0 is reserved for "the
-/// trace has no session_id", which a session-level policy must treat as "every
-/// request is its own session".
-uint64_t request_session(const char *line) {
-  const char *p = find_field(line, "\"session_id\"");
-  if (p == nullptr || *p != '"') return 0;
-  ++p;  // step over the opening quote
-  uint64_t h = 0;
-  for (; *p != '\0' && *p != '"'; ++p) {
-    h = hash_combine_u64(h, static_cast<uint64_t>(*p));
-  }
-  return h == 0 ? 1 : h;
+/// Integer value of `"key":`, or `absent` when the key is missing, null, or
+/// not a number.
+int64_t int_field(const char *line, const char *quoted_key, int64_t absent) {
+  const char *p = find_field(line, quoted_key);
+  if (p == nullptr || !(*p == '-' || (*p >= '0' && *p <= '9'))) return absent;
+  return strtoll(p, nullptr, 10);
 }
 
-/// Fold the trace's request-category fields into one opaque id.
-///
-/// arXiv:2506.02634's category is the (request type, turn number) pair, and the
-/// freeinference/qwen traces carry both as `type` (a short string) and `turn`
-/// (an integer). A policy only ever tests categories for equality, so the pair
-/// is hashed rather than kept: that keeps the trace-specific parsing here and
-/// the algorithm free of any trace schema.
-///
-/// Returns 0 when neither field is present, which every consumer reads as "this
-/// trace has one undifferentiated class".
-uint64_t request_category(const char *line) {
-  uint64_t h = 0;
-  bool any = false;
-
-  const char *type = find_field(line, "\"type\"");
-  if (type != nullptr && *type == '"') {
-    ++type;  // step over the opening quote
-    for (; *type != '\0' && *type != '"'; ++type) {
-      h = hash_combine_u64(h, static_cast<uint64_t>(*type));
-    }
-    any = true;
-  }
-
-  const char *turn = find_field(line, "\"turn\"");
-  if (turn != nullptr && (*turn == '-' || (*turn >= '0' && *turn <= '9'))) {
-    h = hash_combine_u64(h, static_cast<uint64_t>(strtoll(turn, nullptr, 10)));
-    any = true;
-  }
-
-  // 0 is reserved for "no category", so never return it for a real pair.
-  if (!any) return 0;
-  return h == 0 ? 1 : h;
+/// String value of `"key":` into `out`; false when missing or not a string.
+bool string_field(const char *line, const char *quoted_key, std::string &out) {
+  const char *p = find_field(line, quoted_key);
+  if (p == nullptr || *p != '"') return false;
+  ++p;  // step over the opening quote
+  const char *end = strchr(p, '"');
+  if (end == nullptr) return false;
+  out.assign(p, static_cast<size_t>(end - p));
+  return true;
 }
 
 /// JSONL with one request per line and a `hash_ids` array of block ids.
@@ -99,8 +118,9 @@ class QwenJsonlReader : public TraceReader {
   bool next(Request &out) override {
     while (std::getline(in_, line_)) {
       if (line_.empty()) continue;
+      const char *line = line_.c_str();
 
-      const char *ids = find_field(line_.c_str(), "\"hash_ids\"");
+      const char *ids = find_field(line, "\"hash_ids\"");
       if (ids == nullptr || *ids != '[') continue;
       ++ids;  // step over '['
 
@@ -109,14 +129,7 @@ class QwenJsonlReader : public TraceReader {
       out.index = n_emitted_;
       out.timestamp = 0.0;
 
-      const char *ts = find_field(line_.c_str(), "\"timestamp\"");
-      if (ts != nullptr) out.timestamp = strtod(ts, nullptr);
-
-      out.category = request_category(line_.c_str());
-      out.session = request_session(line_.c_str());
-
-      uint64_t rolling = 0;
-      bool first = true;
+      uint64_t parent = 0;  // 0 = prefix root; interned ids start at 1
       while (*ids != '\0' && *ids != ']') {
         while (*ids == ' ' || *ids == ',') ++ids;
         if (*ids == ']' || *ids == '\0') break;
@@ -129,16 +142,42 @@ class QwenJsonlReader : public TraceReader {
         if (mode_ == BlockIdMode::kRaw) {
           out.blocks.push_back(static_cast<obj_id_t>(raw));
         } else {
-          rolling = first ? raw : hash_combine_u64(rolling, raw);
-          out.blocks.push_back(static_cast<obj_id_t>(rolling));
+          parent = blocks_.intern(PathKey{parent, raw});
+          out.blocks.push_back(static_cast<obj_id_t>(parent));
         }
-        first = false;
       }
 
       if (out.blocks.empty()) continue;
+
+      // Only now, so a skipped line cannot claim a session or category id and
+      // leave a gap in the 1, 2, 3, ... numbering.
+      const char *ts = find_field(line, "\"timestamp\"");
+      if (ts != nullptr) out.timestamp = strtod(ts, nullptr);
+
+      out.chat_id = int_field(line, "\"chat_id\"", -1);
+      out.parent_chat_id = int_field(line, "\"parent_chat_id\"", -1);
+      out.input_length =
+          static_cast<int32_t>(int_field(line, "\"input_length\"", -1));
+      out.output_length =
+          static_cast<int32_t>(int_field(line, "\"output_length\"", -1));
+      out.turn = static_cast<int32_t>(int_field(line, "\"turn\"", -1));
+      // "type": "" counts as no type, as it does in lcp
+      if (!string_field(line, "\"type\"", out.type)) out.type.clear();
+      out.category = categories_.intern(out.type, out.turn);
+
+      std::string session;
+      out.session = string_field(line, "\"session_id\"", session)
+                        ? sessions_.intern(session)
+                        : 0;
+
       ++n_emitted_;
       return true;
     }
+    // End of trace: the interning tables are not needed any more and can be
+    // as large as the next-access table built after loading.
+    blocks_.release();
+    sessions_.release();
+    categories_.release();
     return false;
   }
 
@@ -149,6 +188,71 @@ class QwenJsonlReader : public TraceReader {
   BlockIdMode mode_;
   std::string line_;
   int64_t n_emitted_ = 0;
+  Interner<PathKey, PathKeyHash> blocks_;
+  Interner<std::string> sessions_;
+  CategoryInterner categories_;
+};
+
+/// lcp, read a request at a time through libCacheSim's own reader, which
+/// brings zstd and the header and integrity checks with it. The file stores
+/// next access for blocks and sessions, so requests come out annotated and
+/// the trace never has to be held in memory.
+class LcpReader : public TraceReader {
+ public:
+  explicit LcpReader(reader_t *reader)
+      : reader_(reader), stat_(*lcp_get_stat(reader)) {
+    entries_.resize(static_cast<size_t>(stat_.max_blocks_per_req));
+  }
+  ~LcpReader() override { close_reader(reader_); }
+
+  bool next(Request &out) override {
+    lcp_req_v1_t rec;
+    if (lcp_read_trace_req(reader_, &rec, entries_.data()) != 0) {
+      return false;
+    }
+    const size_t n = rec.n_blocks;
+    out.blocks.resize(n);
+    out.next_access_vtime.resize(n);
+    for (size_t i = 0; i < n; ++i) {
+      out.blocks[i] = static_cast<obj_id_t>(entries_[i].block_id);
+      out.next_access_vtime[i] = entries_[i].next_access_vtime < 0
+                                     ? MAX_REUSE_DISTANCE
+                                     : entries_[i].next_access_vtime;
+    }
+    out.index = n_emitted_++;
+    // Exact for timestamps of up to 6 decimals: the integer divides to the
+    // double nearest the decimal, which is what strtod gives the JSONL.
+    out.timestamp = static_cast<double>(rec.timestamp_us) / 1e6;
+    out.session = rec.session_id;
+    // the file is 1-based with -1 for none; Request uses 0-based indices
+    out.session_next_access =
+        rec.session_next_req < 0 ? INT64_MAX : rec.session_next_req - 1;
+    out.chat_id = rec.chat_id;
+    out.parent_chat_id = rec.parent_chat_id;
+    out.input_length = rec.input_length;
+    out.output_length = rec.output_length;
+    out.turn = rec.turn;
+    if (rec.type_id >= 0) {
+      const char *name = stat_.type_names[rec.type_id];
+      out.type.assign(name, strnlen(name, LCP_TYPE_NAME_LEN));
+    } else {
+      out.type.clear();
+    }
+    out.category = categories_.intern(out.type, out.turn);
+    return true;
+  }
+
+  const char *format_name() const override { return "lcp"; }
+  bool annotated() const override { return true; }
+  int64_t n_requests_total() const override { return stat_.n_req; }
+  int64_t n_blocks_total() const override { return stat_.n_block; }
+
+ private:
+  reader_t *reader_;
+  lcp_trace_stat_t stat_;
+  std::vector<lcp_block_t> entries_;
+  int64_t n_emitted_ = 0;
+  CategoryInterner categories_;
 };
 
 }  // namespace
@@ -158,13 +262,24 @@ bool parse_trace_format(const std::string &name, TraceFormat &out) {
     out = TraceFormat::kQwenJsonl;
     return true;
   }
+  if (name == "lcp") {
+    out = TraceFormat::kLcp;
+    return true;
+  }
   return false;
+}
+
+TraceFormat guess_trace_format(const std::string &path) {
+  return path.find(".lcp") != std::string::npos ? TraceFormat::kLcp
+                                                : TraceFormat::kQwenJsonl;
 }
 
 const char *trace_format_name(TraceFormat format) {
   switch (format) {
     case TraceFormat::kQwenJsonl:
       return "qwen-jsonl";
+    case TraceFormat::kLcp:
+      return "lcp";
   }
   return "?";
 }
@@ -181,6 +296,20 @@ std::unique_ptr<TraceReader> open_trace(const std::string &path,
     case TraceFormat::kQwenJsonl:
       return std::unique_ptr<TraceReader>(
           new QwenJsonlReader(std::move(in), mode));
+    case TraceFormat::kLcp: {
+      if (mode == BlockIdMode::kRaw) {
+        error =
+            "--block-id raw does not apply to lcp: its ids are already "
+            "positionally encoded";
+        return nullptr;
+      }
+      in.close();
+      reader_init_param_t params;
+      set_default_reader_init_params(&params);
+      // exits with an ERROR on a file that is not a valid lcp trace
+      reader_t *reader = setup_reader(path.c_str(), LCP_TRACE, &params);
+      return std::unique_ptr<TraceReader>(new LcpReader(reader));
+    }
   }
   error = "unhandled trace format";
   return nullptr;
@@ -196,8 +325,10 @@ bool load_trace(TraceReader &reader, std::vector<Request> &out,
     error = "trace contained no usable requests";
     return false;
   }
-  annotate_next_access(out);
-  annotate_session_next_access(out);
+  if (!reader.annotated()) {
+    annotate_next_access(out);
+    annotate_session_next_access(out);
+  }
   return true;
 }
 
