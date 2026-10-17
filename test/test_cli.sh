@@ -176,6 +176,11 @@ expect_output "cachesim limits requests to 10" "10 req" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
 	--hashpower=8 --num-req=10
 
+# Explicit no-warmup must preserve requests at relative timestamp zero.
+expect_output "cachesim accepts --warmup-sec=-1 without dropping requests" "10 req" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+	--num-req=10 --hashpower=8 --warmup-sec=-1
+
 # Zero has historically disabled sampling; keep it alongside valid fractions.
 for value in 0 0.5 5e-1 1; do
 	expect_ok "cachesim accepts --sample-ratio=${value}" \

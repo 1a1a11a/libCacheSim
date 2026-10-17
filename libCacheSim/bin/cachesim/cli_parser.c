@@ -208,7 +208,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case OPTION_WARMUP_SEC:
       arguments->warmup_sec =
-          (int)parse_integer_arg(arg, state, "warmup-sec", 0, INT_MAX);
+          (int)parse_integer_arg(arg, state, "warmup-sec", -1, INT_MAX);
       break;
     case OPTION_PRINT_HEAD_REQ:
       arguments->print_head_req = is_true(arg) ? true : false;
