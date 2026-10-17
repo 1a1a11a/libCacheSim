@@ -194,6 +194,13 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
             "number in [0, 1]",
             arg);
       }
+      if (arguments->sample_ratio > 0 &&
+          arguments->sample_ratio < 1.0 / INT_MAX) {
+        argp_error(state,
+                   "error: invalid --sample-ratio value '%s': positive ratio "
+                   "must be at least %.17g",
+                   arg, 1.0 / INT_MAX);
+      }
       break;
     }
     case OPTION_IGNORE_OBJ_SIZE:

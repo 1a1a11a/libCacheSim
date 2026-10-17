@@ -160,7 +160,9 @@ for option in num-thread num-req report-interval warmup-sec; do
 		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
 		--num-req=10 --hashpower=8 "--${option}=-2"
 done
-for value in "" abc 0.5junk nan NaN inf -inf -0.1 1.1 1e999 1e-999; do
+# The sampler stores the inverse ratio in an int; include its lower boundary.
+for value in "" abc 0.5junk nan NaN inf -inf -0.1 1.1 1e999 1e-999 \
+	1e-20 1e-308 4.656612875245796e-10; do
 	expect_clean_error "cachesim rejects --sample-ratio=${value}" \
 		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
 		--num-req=10 --hashpower=8 "--sample-ratio=${value}"
@@ -182,7 +184,7 @@ expect_output "cachesim accepts --warmup-sec=-1 without dropping requests" "10 r
 	--num-req=10 --hashpower=8 --warmup-sec=-1
 
 # Zero has historically disabled sampling; keep it alongside valid fractions.
-for value in 0 0.5 5e-1 1; do
+for value in 0 0.5 5e-1 1 4.656612875245797e-10 4.656612875245798e-10; do
 	expect_ok "cachesim accepts --sample-ratio=${value}" \
 		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
 		--num-req=10 --hashpower=8 "--sample-ratio=${value}"
