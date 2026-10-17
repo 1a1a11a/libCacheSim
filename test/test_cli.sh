@@ -140,6 +140,67 @@ expect_clean_error "cachesim csv without obj-id-is-num" \
 	"${BIN_DIR}/cachesim" "${TRACE_CSV}" csv lru 1gb \
 	-t "time-col=2, obj-id-col=5, obj-size-col=4"
 
+echo "running numeric option tests"
+
+# Numeric arguments must be consumed in full and fit their destination type.
+for option in num-thread num-req report-interval warmup-sec hashpower; do
+	for value in "" abc 8junk 1.5 999999999999999999999999999999; do
+		expect_clean_error "cachesim rejects --${option}=${value}" \
+			"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+			--num-req=10 --hashpower=8 "--${option}=${value}"
+	done
+done
+for option in num-thread report-interval warmup-sec hashpower; do
+	expect_clean_error "cachesim rejects --${option}=2147483648" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+		--num-req=10 --hashpower=8 "--${option}=2147483648"
+done
+for option in num-thread num-req report-interval warmup-sec; do
+	expect_clean_error "cachesim rejects --${option}=-2" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+		--num-req=10 --hashpower=8 "--${option}=-2"
+done
+# The sampler stores the inverse ratio in an int; include its lower boundary.
+for value in "" abc 0.5junk nan NaN inf -inf -0.1 1.1 1e999 1e-999 \
+	1e-20 1e-308 4.656612875245796e-10; do
+	expect_clean_error "cachesim rejects --sample-ratio=${value}" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+		--num-req=10 --hashpower=8 "--sample-ratio=${value}"
+done
+
+# Preserve the full 64-bit request limit and the documented all-requests value.
+for value in -1 4294967306 9223372036854775807; do
+	expect_output "cachesim preserves --num-req=${value}" "113872 req" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+		--hashpower=8 "--num-req=${value}"
+done
+expect_output "cachesim limits requests to 10" "10 req" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+	--hashpower=8 --num-req=10
+
+# Explicit no-warmup must preserve requests at relative timestamp zero.
+expect_output "cachesim accepts --warmup-sec=-1 without dropping requests" "10 req" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+	--num-req=10 --hashpower=8 --warmup-sec=-1
+
+# Zero has historically disabled sampling; keep it alongside valid fractions.
+for value in 0 0.5 5e-1 1 4.656612875245797e-10 4.656612875245798e-10; do
+	expect_ok "cachesim accepts --sample-ratio=${value}" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+		--num-req=10 --hashpower=8 "--sample-ratio=${value}"
+done
+expect_ok "cachesim keeps sampling state alive for parallel readers" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb,2mb \
+	--num-req=100 --hashpower=8 --sample-ratio=0.5 --num-thread=2
+for value in -1 0 1; do
+	expect_ok "cachesim accepts --num-thread=${value}" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+		--num-req=10 --hashpower=8 "--num-thread=${value}"
+done
+expect_ok "cachesim accepts zero warmup and report interval" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb \
+	--num-req=10 --hashpower=8 --warmup-sec=0 --report-interval=0
+
 # String ids must be hashed, not run through strtoull. Getting this wrong
 # collapses every object onto id 0, which shows up as an implausibly low miss
 # ratio rather than an error. Four distinct objects in six requests, so a cache
