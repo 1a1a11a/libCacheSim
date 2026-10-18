@@ -379,6 +379,29 @@ static void test_LRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[16]);
 }
 
+#ifdef SUPPORT_TTL
+// A hit on an expired object removes it from the cache. The lookup must then
+// report a miss instead of touching the object it just freed.
+static void test_LRU_expired_object(void) {
+  common_cache_params_t cc_params = {.cache_size = 100, .hashpower = 8};
+  cache_t *cache = LRU_init(cc_params, NULL);
+  request_t *req = new_request();
+  req->obj_id = 1;
+  req->obj_size = 1;
+  req->ttl = 10;
+
+  req->clock_time = 0;
+  g_assert_false(cache->get(cache, req));
+
+  req->clock_time = 20;
+  g_assert_false(cache->get(cache, req));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 1);
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+#endif
+
 static void test_LRU_K(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[17]);
 }
@@ -521,6 +544,10 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU_K", reader, test_LRU_K);
+#ifdef SUPPORT_TTL
+  g_test_add_func("/libCacheSim/cacheAlgo_LRU_expired_object",
+                  test_LRU_expired_object);
+#endif
   g_test_add_data_func("/libCacheSim/cacheAlgo_Merlin", reader, test_Merlin);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MQ", reader, test_MQ);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);

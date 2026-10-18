@@ -214,7 +214,7 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
         cache->remove(cache, cache_obj->obj_id);
       }
 
-      cache_obj = NULL;
+      return NULL;
     }
 #endif
 
