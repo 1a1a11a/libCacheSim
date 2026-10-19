@@ -28,7 +28,15 @@ jobs:
         run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --parallel
 
   ubuntu:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - ttl: "OFF"
+            name: ubuntu
+          - ttl: "ON"
+            name: ubuntu / TTL ON
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,6 +47,7 @@ jobs:
         run: |
           cmake -G Ninja -B ${{github.workspace}}/build \
                 -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+                -DSUPPORT_TTL=${{ matrix.ttl }} \
                 -DCMAKE_C_FLAGS="-fsanitize=leak" \
                 -DCMAKE_CXX_FLAGS="-fsanitize=leak"
       - name: Build
