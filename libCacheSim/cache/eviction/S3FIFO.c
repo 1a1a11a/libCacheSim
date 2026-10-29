@@ -354,7 +354,14 @@ static void S3FIFO_evict_small(cache_t *cache, const request_t *req) {
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
     if (obj_to_evict->S3FIFO.freq >= params->move_to_main_threshold) {
+#ifdef SUPPORT_TTL
+      cache_obj_t *new_obj = main_fifo->insert(main_fifo, params->req_local);
+      // req_local carries no TTL, so insert() gave the object a default
+      // expiry; keep its own expiry across the move
+      new_obj->exp_time = obj_to_evict->exp_time;
+#else
       main_fifo->insert(main_fifo, params->req_local);
+#endif
     } else {
       // insert to ghost
       if (ghost_fifo != NULL) {
@@ -378,6 +385,9 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
     cache_obj_t *obj_to_evict = main_fifo->to_evict(main_fifo, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
     int64_t freq = obj_to_evict->S3FIFO.freq;
+#ifdef SUPPORT_TTL
+    uint32_t exp_time = obj_to_evict->exp_time;
+#endif
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
     if (freq >= 1) {
       // we need to evict first because the object to insert has the same obj_id
@@ -387,6 +397,9 @@ static void S3FIFO_evict_main(cache_t *cache, const request_t *req) {
       cache_obj_t *new_obj = main_fifo->insert(main_fifo, params->req_local);
       // clock with 2-bit counter
       new_obj->S3FIFO.freq = MIN(freq, 3) - 1;
+#ifdef SUPPORT_TTL
+      new_obj->exp_time = exp_time;  // see S3FIFO_evict_small
+#endif
 
     } else {
       bool removed = main_fifo->remove(main_fifo, obj_to_evict->obj_id);

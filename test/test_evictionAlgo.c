@@ -445,6 +445,54 @@ static void test_S3FIFO_main_freq_beyond_int32(void) {
   cache->cache_free(cache);
 }
 
+#ifdef SUPPORT_TTL
+// S3FIFO moves an object between its queues by re-inserting it through a
+// local request that carries no TTL. Both moves, promotion from the small FIFO
+// and reinsertion at the main tail, must keep the object's own expiry.
+static void test_S3FIFO_keeps_expiry_across_moves(void) {
+  common_cache_params_t cc_params = {.cache_size = 100, .hashpower = 8};
+  cache_t *cache = S3FIFO_init(cc_params, NULL);
+  request_t *req = new_request();
+  req->obj_size = 1;
+  req->clock_time = 0;
+
+  // As in test_S3FIFO_main_freq_beyond_int32: objects 1 to 10 fill the small
+  // FIFO and 11 to 100 go straight to main. Objects 1 and 11 expire at 1000.
+  for (obj_id_t id = 1; id <= 100; id++) {
+    req->obj_id = id;
+    req->ttl = (id == 1 || id == 11) ? 1000 : 0;
+    cache->get(cache, req);
+  }
+  req->ttl = 0;
+  // Two reads each will promote 1 to 10; one read lets 11, the oldest object
+  // in main, survive the main tail once.
+  for (int round = 0; round < 2; round++) {
+    for (obj_id_t id = 1; id <= 10; id++) {
+      req->obj_id = id;
+      cache->get(cache, req);
+    }
+  }
+  req->obj_id = 11;
+  cache->get(cache, req);
+
+  // The next miss promotes 1 to 10 and makes main reinsert 11.
+  req->obj_id = 101;
+  cache->get(cache, req);
+
+  req->obj_id = 1;
+  cache_obj_t *obj = cache->find(cache, req, false);
+  g_assert_nonnull(obj);
+  g_assert_cmpuint(obj->exp_time, ==, 1000);
+  req->obj_id = 11;
+  obj = cache->find(cache, req, false);
+  g_assert_nonnull(obj);
+  g_assert_cmpuint(obj->exp_time, ==, 1000);
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+#endif
+
 static void test_S3FIFOv0(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[22]);
 }
@@ -530,6 +578,10 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFO", reader, test_S3FIFO);
   g_test_add_func("/libCacheSim/cacheAlgo_S3FIFO_main_freq_beyond_int32",
                   test_S3FIFO_main_freq_beyond_int32);
+#ifdef SUPPORT_TTL
+  g_test_add_func("/libCacheSim/cacheAlgo_S3FIFO_keeps_expiry_across_moves",
+                  test_S3FIFO_keeps_expiry_across_moves);
+#endif
   g_test_add_data_func("/libCacheSim/cacheAlgo_S3FIFOv0", reader,
                        test_S3FIFOv0);
 #if defined(ENABLE_S4FIFO) && ENABLE_S4FIFO == 1
