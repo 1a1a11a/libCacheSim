@@ -256,6 +256,39 @@ for param in time-col=1 obj-size-col=1 has-header=true obj-id-is-num=false; do
 		"${BIN_DIR}/cachesim" Uniform_100_10 syn lru 10 -t "${param}" --hashpower=8
 done
 
+echo "running WTinyLFU parameter tests"
+for params in main-cache main-cache= main-cache,print \
+	window-size window-size= window-size,print window-size=,print \
+	window-size=abc,print window-size=0.1junk,print window-size=nan \
+	window-size=nan,print window-size=inf,print window-size=-inf,print \
+	window-size=-0.1,print window-size=1,print window-size=1e999,print \
+	window-size=1e-999,print unknown=1; do
+	out=$("${BIN_DIR}/cachesim" "${TRACE}" vscsi wtinyLFU 1mb \
+		--num-req=10 --hashpower=8 -e "${params}" 2>&1)
+	rc=$?
+	# An abort or sanitizer diagnostic must not count as a clean rejection.
+	if [[ ${rc} -eq 1 ]] && grep -q 'error: WTinyLFU' <<<"${out}" &&
+		! grep -qE 'Sanitizer|runtime error:' <<<"${out}"; then
+		_report 0 ""
+	else
+		_report 1 "WTinyLFU rejects '${params}' cleanly (exit ${rc})"
+	fi
+done
+for params in '' window-size=0.01 window-size=1e-2 window-size=0.01, \
+	'main-cache=LRU,window-size=0.01' 'main-cache=FIFO, window-size=0.01'; do
+	expect_output "WTinyLFU accepts '${params}'" '10 req' \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi tinyLFU 1mb \
+		--num-req=10 --hashpower=8 -e "${params}"
+done
+for spec in 0:0.0000 0.01:0.0100 1e-2:0.0100 +0.01:0.0100 \
+	0.9999999999999999:1.0000 1e-310:0.0000; do
+	value=${spec%%:*}
+	expected=${spec#*:}
+	expect_output "WTinyLFU reports window-size=${value}" "window-size=${expected}" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi wtinyLFU 1mb \
+		--hashpower=8 -e "window-size=${value},print"
+done
+
 echo "running -e print tests"
 
 # `-e print` runs before the cache is fully built, so the reporting path must

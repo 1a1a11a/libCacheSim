@@ -14,6 +14,9 @@
 //  Created by Ziyue on 14/1/2023.
 //
 
+#include <errno.h>
+#include <math.h>
+
 #include "dataStructure/hashtable/hashtable.h"
 #include "dataStructure/minimalIncrementCBF.h"
 #include "libCacheSim/evictionAlgo.h"
@@ -390,30 +393,41 @@ static void WTinyLFU_parse_params(cache_t *cache,
   while (params_str != NULL && params_str[0] != '\0') {
     /* different parameters are separated by comma,
      * key and value are separated by = */
-    char *key = strsep((char **)&params_str, "=");
-    char *value = strsep((char **)&params_str, ",");
+    char *value = strsep(&params_str, ",");
+    char *key = strsep(&value, "=");
 
     // skip the white space
     while (params_str != NULL && *params_str == ' ') {
       params_str++;
     }
 
-    if (strcasecmp(key, "main-cache") == 0) {
-      strncpy(params->main_cache_type, value, 30);
-    } else if (strcasecmp(key, "window-size") == 0) {
-      params->window_size = strtod(value, NULL);  // cover default value
-      if (params->window_size < 0 || params->window_size >= 1) {
-        ERROR("window_size must be in [0, 1)\n");
-        exit(1);
-      }
-    } else if (strcasecmp(key, "print") == 0) {
+    const char *error = NULL;
+    if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", WTinyLFU_current_params(params));
       free(old_params_str);
       exit(0);
+    } else if (value == NULL || *value == '\0') {
+      error = "expected a nonempty value";
+    } else if (strcasecmp(key, "main-cache") == 0) {
+      strncpy(params->main_cache_type, value, 30);
+    } else if (strcasecmp(key, "window-size") == 0) {
+      char *end;
+      errno = 0;
+      double window_size = strtod(value, &end);
+      if (end == value || *end != '\0' ||
+          (errno == ERANGE && window_size == 0) || !isfinite(window_size) ||
+          window_size < 0 || window_size >= 1) {
+        error = "expected a finite window-size in [0, 1)";
+      } else {
+        params->window_size = window_size;
+      }
     } else {
-      ERROR("%s does not have parameter %s\n", cache->cache_name, key);
+      error = "unknown parameter";
+    }
+    if (error != NULL) {
+      fprintf(stderr, "error: WTinyLFU parameter '%s': %s\n", key, error);
       free(old_params_str);
-      exit(1);
+      exit(EXIT_FAILURE);
     }
   }
   free(old_params_str);
