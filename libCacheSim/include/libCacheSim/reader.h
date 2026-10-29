@@ -180,7 +180,8 @@ static inline reader_init_param_t default_reader_init_params(void) {
 
 /**
  * setup a reader for reading trace
- * @param trace_path path to the trace
+ * @param trace_path path to the trace, or Uniform_n_m[_seed] /
+ * Zipf_n_m_alpha[_seed] for SYNTHETIC_TRACE (see doc/synthetic_traces.md)
  * @param trace_type CSV_TRACE, PLAIN_TXT_TRACE, BIN_TRACE, VSCSI_TRACE,
  *  TWR_BIN_TRACE, see libCacheSim/enum.h for more
  * @param reader_init_param some initialization parameters used by csv and

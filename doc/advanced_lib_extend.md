@@ -81,7 +81,7 @@ int myReader_read_one_req(reader_t *reader, request_t *req);
 Here are the steps to add a new trace reader:
 1. add a new new trace type, e.g., `MYREADER_TRACE` in `trace_type_e` in [include/libCacheSim/enum.h](/libCacheSim/include/libCacheSim/enum.h). 
 2. add a new reader file, e.g., `myReader.h` in [traceReader/customizedReader/](/libCacheSim/traceReader/customizedReader/) and implement the two functions.
-3. add `myReader_setup()` to `setup_reader()`and `myReader_read_one_req()` to `read_one_req()` in [traceReader/reader.c](/libCacheSim/traceReader/reader.c). 
+3. add `myReader_setup()` to `setup_reader()` in [traceReader/reader.c](/libCacheSim/traceReader/reader.c), and `myReader_read_one_req()` to `read_one_req()` in [traceReader/readerRequest.c](/libCacheSim/traceReader/readerRequest.c).
 4. add `MYREADER_TRACE` to `trace_type_str_to_enum()` in [bin/cli_reader_utils.c](/libCacheSim/bin/cli_reader_utils.c)
 
 
