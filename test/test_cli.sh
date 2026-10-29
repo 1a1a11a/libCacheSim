@@ -218,6 +218,29 @@ expect_output "cachesim hashes string object ids" "miss ratio 0\.6667" \
 	"${BIN_DIR}/cachesim" str-ids.csv csv lru 1mb \
 	-t "time-col=1,obj-id-col=2,obj-size-col=3,has-header=true"
 
+# --use-ttl. Object 1 has a TTL of 5 and is read again at t=10. Without TTLs
+# that read hits (two misses in three requests); with TTLs it misses.
+cat >ttl.csv <<'CSV'
+time,id,size,ttl
+1,1,100,5
+2,2,100,0
+10,1,100,0
+CSV
+TTL_FMT="time-col=1,obj-id-col=2,obj-size-col=3,ttl-col=4,has-header=true"
+# A build without SUPPORT_TTL rejects --use-ttl=true; probe it on a trace
+# without TTLs, since an expired read crashes TTL builds until #349 is fixed.
+if "${BIN_DIR}/cachesim" str-ids.csv csv lru 1mb --use-ttl=true \
+	-t "time-col=1,obj-id-col=2,obj-size-col=3,has-header=true" 2>&1 |
+	grep -q "SUPPORT_TTL"; then
+	expect_clean_error "cachesim --use-ttl=true without SUPPORT_TTL" \
+		"${BIN_DIR}/cachesim" ttl.csv csv lru 1mb -t "${TTL_FMT}" --use-ttl=true
+	expect_output "cachesim ignores TTLs without SUPPORT_TTL" "miss ratio 0\.6667" \
+		"${BIN_DIR}/cachesim" ttl.csv csv lru 1mb -t "${TTL_FMT}"
+else
+	expect_output "cachesim --use-ttl=false drops the trace TTL" "miss ratio 0\.6667" \
+		"${BIN_DIR}/cachesim" ttl.csv csv lru 1mb -t "${TTL_FMT}" --use-ttl=false
+fi
+
 echo "running synthetic reader tests"
 for spec in Uniform_1000_10 Zipf_1000_10_0 Zipf_1000_10_1 \
 	Zipf_1000_10_1.2_42 Zipf_1000_10_.5 Zipf_1000_10_1e-310; do
