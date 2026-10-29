@@ -83,6 +83,10 @@ typedef struct {
   /* Reject oracle filtering that invalidates future-access metadata.
    * Offline-policy callers should enable this before reading or cloning. */
   bool require_valid_next_access;
+
+  // if true, drop the TTL of every request (req->ttl = 0), so a build with
+  // SUPPORT_TTL replays the trace as if it carried no TTL
+  bool ignore_ttl;
 } reader_init_param_t;
 
 enum read_direction {

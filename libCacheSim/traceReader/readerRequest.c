@@ -136,6 +136,10 @@ int read_one_req(reader_t *const reader, request_t *const req) {
     req->obj_size = 1;
   }
 
+  if (reader->init_params.ignore_ttl) {
+    req->ttl = 0;
+  }
+
   /* lcp derives cost from block position rather than from a column */
   if (reader->init_params.obj_cost_field <= 0 &&
       reader->trace_type != LCP_TRACE) {
