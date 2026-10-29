@@ -188,8 +188,10 @@ You can use `-p` or `--prefetch` to set the prefetching algorithm.
 # use part of the trace to warm up the cache
 ./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --warmup-sec=86400
 
-# Use TTL
-./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --use-ttl=true
+# TTL: a build with -DSUPPORT_TTL=ON uses the TTL in the trace by default;
+# --use-ttl=false replays the trace as if it carried no TTL. A build without
+# SUPPORT_TTL ignores TTLs and rejects --use-ttl=true
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --use-ttl=false
 
 # Disable the print of the first few requests
 ./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --print-head-req=false

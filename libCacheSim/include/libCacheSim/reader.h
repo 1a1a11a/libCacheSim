@@ -76,6 +76,10 @@ typedef struct {
 
   // sample some requests in the trace
   sampler_t *sampler;
+
+  // if true, drop the TTL of every request (req->ttl = 0), so a build with
+  // SUPPORT_TTL replays the trace as if it carried no TTL
+  bool ignore_ttl;
 } reader_init_param_t;
 
 enum read_direction {
