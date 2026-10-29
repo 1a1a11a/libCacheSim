@@ -379,6 +379,78 @@ static void test_LRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[16]);
 }
 
+#ifdef SUPPORT_TTL
+typedef struct {
+  const char *test_path;
+  cache_init_func_ptr init;
+  int warmup_objects;
+} expired_object_test_t;
+
+static const expired_object_test_t expired_object_tests[] = {
+    {"/libCacheSim/cacheAlgo_FIFO_expired_object", FIFO_init, 0},
+    {"/libCacheSim/cacheAlgo_LRU_expired_object", LRU_init, 0},
+    {"/libCacheSim/cacheAlgo_Sieve_expired_object", Sieve_init, 0},
+    {"/libCacheSim/cacheAlgo_S3FIFO_expired_object", S3FIFO_init, 0},
+    {"/libCacheSim/cacheAlgo_S3FIFO_main_expired_object", S3FIFO_init, 10},
+};
+
+// Expired non-updating lookups leave the object resident. Updating lookups
+// remove it and report a miss without touching the object they just freed.
+static void test_expired_object(gconstpointer user_data) {
+  const expired_object_test_t *test = user_data;
+  common_cache_params_t cc_params = {.cache_size = 100, .hashpower = 8};
+  cache_t *cache = test->init(cc_params, NULL);
+  request_t *req = new_request();
+  req->obj_size = 1;
+
+  // Filling S3FIFO's ten-byte small queue puts the next object in main.
+  for (int i = 0; i < test->warmup_objects; i++) {
+    req->obj_id = i + 1;
+    g_assert_false(cache->get(cache, req));
+  }
+  req->obj_id = test->warmup_objects + 1;
+  req->ttl = 10;
+  req->next_access_vtime = 42;
+  g_assert_false(cache->get(cache, req));
+  cache_obj_t *obj = cache->find(cache, req, false);
+  g_assert_nonnull(obj);
+  const int64_t n_obj = cache->get_n_obj(cache);
+  const int64_t occupied_byte = cache->get_occupied_byte(cache);
+  const int32_t freq = obj->freq;
+
+  req->clock_time = 20;
+  req->next_access_vtime = 84;
+  g_assert_null(cache->find(cache, req, false));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, n_obj);
+  g_assert_cmpint(cache->get_occupied_byte(cache), ==, occupied_byte);
+
+  // Observe at the expiry boundary without updating: the same object and
+  // metadata remain, and expiry is strictly earlier than the request time.
+  req->clock_time = 10;
+  g_assert_true(cache->find(cache, req, false) == obj);
+  g_assert_cmpint(obj->freq, ==, freq);
+  g_assert_cmpint(obj->next_access_vtime, ==, 42);
+
+  req->clock_time = 20;
+  g_assert_null(cache->find(cache, req, true));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, n_obj - 1);
+  g_assert_cmpint(cache->get_occupied_byte(cache), ==, occupied_byte - 1);
+  g_assert_false(cache->get(cache, req));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, n_obj);
+  g_assert_cmpint(cache->get_occupied_byte(cache), ==, occupied_byte);
+  g_assert_true(cache->get(cache, req));
+
+  // Exercise expiration through get(), which removes and reinserts the item.
+  req->clock_time = 40;
+  g_assert_false(cache->get(cache, req));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, n_obj);
+  g_assert_cmpint(cache->get_occupied_byte(cache), ==, occupied_byte);
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+#endif
+
 static void test_LRU_K(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[17]);
 }
@@ -521,6 +593,12 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU_K", reader, test_LRU_K);
+#ifdef SUPPORT_TTL
+  for (gsize i = 0; i < G_N_ELEMENTS(expired_object_tests); i++) {
+    g_test_add_data_func(expired_object_tests[i].test_path,
+                         &expired_object_tests[i], test_expired_object);
+  }
+#endif
   g_test_add_data_func("/libCacheSim/cacheAlgo_Merlin", reader, test_Merlin);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MQ", reader, test_MQ);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
