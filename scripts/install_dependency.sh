@@ -102,7 +102,7 @@ fi
 setup_ubuntu() {
 	log_info "Setting up Ubuntu dependencies..."
 	sudo apt update
-	sudo apt install -yqq build-essential google-perftools xxhash ninja-build
+	sudo apt install -yqq build-essential xxhash ninja-build
 	sudo apt install -yqq libglib2.0-dev libunwind-dev
 	sudo apt install -yqq libgoogle-perftools-dev
 }
@@ -124,7 +124,7 @@ setup_macOS() {
 		log_error "Homebrew is not installed. Please install Homebrew first."
 		exit 1
 	fi
-	# tcmalloc is packaged as gperftools on Homebrew; google-perftools is the apt name
+	# tcmalloc is packaged as gperftools on Homebrew; libgoogle-perftools-dev is the apt package
 	brew install glib gperftools argp-standalone xxhash llvm wget cmake ninja zstd xgboost lightgbm pkgconf
 }
 
