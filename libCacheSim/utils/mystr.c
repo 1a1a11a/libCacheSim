@@ -57,7 +57,7 @@ char *replace_char(char *str, char find, char replace) {
 }
 
 const char *mybasename(char const *path) {
-  char *s = strrchr(path, '/');
+  const char *s = strrchr(path, '/');
   if (!s)
     return path;
   else
