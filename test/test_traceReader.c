@@ -148,8 +148,50 @@ void test_twr(gconstpointer user_data) {
          (unsigned long long)n_obj);
 }
 
+static void test_binary_ttl(void) {
+  const unsigned char records[] = {
+      7, 0, 0, 0, 60, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0,
+  };
+  char *path = NULL;
+  int fd = g_file_open_tmp("libcachesim-binary-ttl-XXXXXX", &path, NULL);
+  g_assert_cmpint(fd, >=, 0);
+  FILE *file = fdopen(fd, "wb");
+  g_assert_nonnull(file);
+  g_assert_cmpuint(fwrite(records, 1, sizeof(records), file), ==,
+                   sizeof(records));
+  g_assert_cmpint(fclose(file), ==, 0);
+
+  request_t *req = new_request();
+  for (int ttl_column = 0; ttl_column <= 2; ttl_column += 2) {
+    reader_init_param_t init = default_reader_init_params();
+    init.binary_fmt_str = (char *)"<II";
+    init.obj_id_field = 1;
+    init.ttl_field = ttl_column;
+    reader_t *reader = setup_reader(path, BIN_TRACE, &init);
+    for (int pass = 0; pass < 2; pass++) {
+      for (int i = 0; i < 2; i++) {
+        req->ttl = 999;
+        g_assert_cmpint(read_one_req(reader, req), ==, 0);
+        g_assert_cmpuint(req->obj_id, ==, 7 + i);
+        int expected_ttl = 0;
+#ifdef SUPPORT_TTL
+        if (ttl_column == 2 && i == 0) expected_ttl = 60;
+#endif
+        g_assert_cmpint(req->ttl, ==, expected_ttl);
+      }
+      g_assert_cmpint(read_one_req(reader, req), ==, 1);
+      reset_reader(reader);
+    }
+    close_reader(reader);
+  }
+  free_request(req);
+  g_assert_cmpint(unlink(path), ==, 0);
+  g_free(path);
+}
+
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
+  g_test_add_func("/libCacheSim/reader_binary_ttl", test_binary_ttl);
   reader_t *reader;
 
   reader = setup_plaintxt_reader_num();
