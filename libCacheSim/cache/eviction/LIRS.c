@@ -37,7 +37,7 @@ typedef struct LIRS_params {
   // post-replay residency check. Empty for every driver that does not call the
   // hooks (e.g. cachesim), so this is a no-op there and for every request whose
   // in-flight blocks the cap never targets. See LIRS.c evictHIR and the `lirs`
-  // caveat in bin/prefixsim/README.md.
+  // caveat in doc/prefixsim.md.
   GHashTable *inflight;
 } LIRS_params_t;
 

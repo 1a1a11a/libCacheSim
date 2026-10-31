@@ -69,7 +69,8 @@ struct AlgoEntry {
 // Everything cachesim offers that prefixsim can drive. The list is verified,
 // not assumed: an entry is here because it runs a whole trace with the
 // post-request residency check on. Six are absent because they genuinely do not
-// work yet, not because of policy -- see README "Which algorithms work".
+// work yet, not because of policy -- see doc/prefixsim.md "Which algorithms
+// work".
 const AlgoEntry kAlgos[] = {
     // single-queue
     {"lru", LRU_init, true},
@@ -511,8 +512,8 @@ void Simulator::dump_holes(const Request &request) {
 void Simulator::access(const Request &request) {
   // Reverse order: the deepest (most private) block is touched first and the
   // prefix root last, so recency-ordered algorithms leave the root at the MRU
-  // end and evict from the deep end first. See README.md "Reverse-order
-  // replay".
+  // end and evict from the deep end first. See doc/prefixsim.md "Replay
+  // order".
   victims_.clear();
   const int64_t n_blk = static_cast<int64_t>(request.blocks.size());
   if (config_.replay_deepest_first) {

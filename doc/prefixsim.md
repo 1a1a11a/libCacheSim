@@ -1,30 +1,59 @@
 # prefixsim — LLM prefix-cache simulator
 
-`prefixsim` evaluates KV-block eviction policies on LLM serving traces. It
-reports **block hit ratio** and **compute saving ratio** under the constraint
-that a request needs *all* of its blocks resident at the same time — the thing
-that makes a prefix cache different from an ordinary object cache, and the thing
-libCacheSim's request-at-a-time model cannot express on its own.
+## Overview
+
+LLM serving engines (vLLM, SGLang) keep the KV cache of finished requests, so a
+new request that shares a prefix with an earlier one reuses those KV blocks
+instead of recomputing them. When the cache is full, an eviction policy decides
+which blocks to drop. `prefixsim` replays a trace of real LLM requests through
+such a cache and reports, per eviction policy:
+
+- **block hit ratio**: the fraction of block accesses found in the cache;
+- **compute saving ratio**: the fraction of prefill compute avoided, with each
+  block weighted by a cost model (`--cost-model`).
+
+A request is an ordered list of KV blocks (16 tokens each in the bundled
+traces), and the engine needs *all* of them resident at once to serve it. That
+constraint is what makes a prefix cache different from an ordinary object
+cache, and it is what libCacheSim's request-at-a-time model cannot express on
+its own. `prefixsim` serves each request as a unit — match, allocate, replay
+(see [How a request is served](#how-a-request-is-served)) — so a policy never
+evicts a block the arriving request is about to reuse.
+
+It runs 46 of libCacheSim's eviction algorithms, including Belady-style
+oracles, published prefix-cache policies and session-level policies (see
+[Which algorithms work](#which-algorithms-work)). The source is in
+[`libCacheSim/bin/prefixsim/`](/libCacheSim/bin/prefixsim/). To get started,
+see the [quickstart](quickstart_prefixsim.md).
+
+> [!WARNING]
+> **JSONL input is much slower and heavier than `lcp`.** On the full fi-new
+> trace, one LRU run takes 169 s and 12.9 GiB of memory from JSONL, against
+> 103 s and 80 MiB from `.lcp` (105 s and 146 MiB from `.lcp.zst`); on chutes,
+> 238 s and 15.4 GiB against 66 s and 78 MiB. A JSONL trace is parsed and held
+> whole by every process, so a sweep that runs one policy per process needs
+> that memory for each. Convert a trace once with `traceConvLLM` and run on
+> the `.lcp.zst` file.
 
 ```bash
-./bin/prefixsim --trace qwen_traceA_blksz_16.jsonl --cache-size 8k \
-    --algo lru,random_compute,belady_compute --cost-model position
+./bin/prefixsim --trace fi.lcp.zst --cache-size 64k \
+    --algo lru,random_compute,belady_compute --cost-model qwen3coder30b_blksz_16
 ```
 
 `--cache-size` is in **blocks**, not bytes: every block is one object of size 1,
-so a cache of 8k is 8192 blocks.
+so a cache of 64k is 65,536 blocks.
 
 Two input formats (`--trace-format`, guessed from the file name when omitted):
 
-- `lcp` ([spec](/doc/lcp_format.md)), plain or `.zst`. Stores next
-  access for blocks and sessions, so it is **streamed**: each algorithm reads it
-  once, front to back, holding one request at a time.
-- `qwen-jsonl`, the source traces. Carry no next access, so the whole trace is
-  **loaded** (16 bytes per block access, about 6 GB for 200k fi-new requests)
+- `lcp` ([spec](/doc/lcp_format.md)), zstd-compressed (`.lcp.zst`, what
+  `traceConvLLM` writes) or plain. It stores next access for blocks and
+  sessions, so it is **streamed**: each algorithm reads it once, front to back,
+  holding one request at a time.
+- `qwen-jsonl`, the source traces. They carry no next access, so the whole
+  trace is **loaded** (about 21 bytes per block access: 12.9 GiB for fi-new)
   and annotated in reverse passes before any algorithm runs.
 
-Both give identical results on the same trace; `traceConvLLM` converts one to
-the other.
+Both give identical results on the same trace.
 
 ---
 
@@ -144,8 +173,8 @@ TwoQ, W-TinyLFU, QDLP) inherit it without changes of their own. Algorithms with
 their own victim selection (LFU, GDSF, LHD, ARC, LeCaR, the `partial_node_*` and
 `session_*` families) are not pin-aware yet and run exactly as before; their
 `n_self_eviction` says what that costs. Per-algorithm opt-in is the `pin_safe`
-column of `kAlgos` in `simulator.cpp`, and it is **verified by running the trace,
-not assumed**: LIRS is marked unsafe because `LIRS_prune()` reads its stack's
+column of `kAlgos` in `libCacheSim/bin/prefixsim/simulator.cpp`, and it is
+**verified by running the trace, not assumed**: LIRS is marked unsafe because `LIRS_prune()` reads its stack's
 tail directly and then calls `evict()` expecting that exact object to go, so a
 skipped victim desynchronises the two and segfaults. (LIRS already carries its
 own in-flight protection, `lirs_is_inflight`, so it does not need this one.)
@@ -527,8 +556,8 @@ enough to keep them correct but throws away what makes them interesting.
 
 Five policies evict a **conversation** rather than a block: `session_lru`,
 `session_s3fifo`, `session_arc`, `session_belady`, `session_random_compute`. They
-share all the machinery in `cache/eviction/cpp/sessionCache.cpp` and differ only
-in which session they pick.
+share all the machinery in `libCacheSim/cache/eviction/cpp/sessionCache.cpp`
+and differ only in which session they pick.
 
 A block is not owned by one session — on the July trace 25% of unique blocks
 appear in more than one, covering 34% of accesses — so "evict a session, free its
@@ -667,8 +696,8 @@ summarise in one number, now visible in full rather than averaged away.
 
 ## Adding an input format
 
-Implement `TraceReader` in `trace.cpp` and add one line to
-`parse_trace_format()` and `open_trace()`. The simulator only ever sees
+Implement `TraceReader` in `libCacheSim/bin/prefixsim/trace.cpp` and add one
+line to `parse_trace_format()` and `open_trace()`. The simulator only ever sees
 `Request`, so nothing else changes. A reader that fills `next_access_vtime` and
 `session_next_access` itself returns true from `annotated()` and is streamed;
 any other is loaded whole and annotated.
@@ -691,6 +720,6 @@ request that must be resident together".
   in phase 1, but the extra churn is real. Pinning would be the natural next
   refinement — done only for `lirs`, where it was load-bearing (see the `lirs`
   in-flight protection note under *Which algorithms work*).
-- **A JSONL trace is held in memory whole** (block ids plus next-access times,
-  16 bytes per block access), because next access is computed in a reverse
-  pass. Convert it to `lcp` to stream it instead.
+- **A JSONL trace is held in memory whole** (about 21 bytes per block access,
+  12.9 GiB for fi-new), because next access is computed in a reverse pass.
+  Convert it to `lcp` to stream it instead.

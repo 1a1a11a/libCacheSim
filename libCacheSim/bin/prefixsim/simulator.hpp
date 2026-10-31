@@ -1,6 +1,6 @@
 // The three-phase prefix-cache simulator.
 //
-// See README.md for the full rationale. Each request is served as:
+// See doc/prefixsim.md for the full rationale. Each request is served as:
 //   1. match     -- read-only probe of every block; produces all statistics
 //   2. allocate  -- evict until there is room for the *missing* blocks, without
 //                   counting victims that this same request is about to reuse
@@ -86,9 +86,10 @@ struct SimulatorConfig {
   bool pin_request_blocks = true;
   /// Phase 3 replay order. True (the default) touches the deepest block
   /// first, so recency-ordered algorithms leave the prefix root at the MRU end
-  /// and eviction eats the prefix from the deep end inward (see README.md
-  /// "Reverse-order replay"). False replays in prefix order, which leaves the
-  /// root nearest the LRU end, so eviction starts from the beginning.
+  /// and eviction eats the prefix from the deep end inward (see
+  /// doc/prefixsim.md "Replay order"). False replays in prefix order, which
+  /// leaves the root nearest the LRU end, so eviction starts from the
+  /// beginning.
   bool replay_deepest_first = true;
   /// When set, append one line per served request describing that request's
   /// holes -- the contiguous runs of blocks it had to recompute. Empty

@@ -4,7 +4,8 @@
 // algorithms over an LLM request trace, modelling the constraint that a request
 // needs all of its KV blocks resident at the same time.
 //
-// See README.md in this directory for the design.
+// See doc/prefixsim.md for the design and doc/quickstart_prefixsim.md for
+// usage.
 
 #include <cstdio>
 #include <cstdlib>
@@ -112,7 +113,7 @@ void print_algos() {
       "\nEach of these completes a full trace with the residency check on.\n"
       "Algorithms with admission control are absent: a prefix cache must\n"
       "materialise every block of a request in memory to serve it, so\n"
-      "refusing to store one has no analogue. See README.md \"Which\n"
+      "refusing to store one has no analogue. See doc/prefixsim.md \"Which\n"
       "algorithms work\".\n");
 }
 

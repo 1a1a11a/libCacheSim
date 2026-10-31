@@ -76,8 +76,8 @@ struct Request {
 
   /// Logical next-access virtual time of each block, filled by
   /// annotate_next_access(). Indexed in lockstep with `blocks`.
-  /// See README.md "Next-access annotation" for why this uses forward order
-  /// even though blocks are replayed in reverse.
+  /// See doc/prefixsim.md "Next-access annotation" for why this uses forward
+  /// order even though blocks are replayed in reverse.
   std::vector<int64_t> next_access_vtime;
 };
 
@@ -91,7 +91,7 @@ enum class BlockIdMode {
   /// the ids an lcp trace stores.
   kPrefix,
   /// Use the trace's raw hash id verbatim. Only correct when the trace's ids
-  /// are already prefix-unique; the qwen traces are not. See README.md.
+  /// are already prefix-unique; the qwen traces are not. See doc/prefixsim.md.
   kRaw,
 };
 

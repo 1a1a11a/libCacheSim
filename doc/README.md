@@ -2,13 +2,12 @@
 
 ## Quickstart Guides
 - [CacheSim: Command-line cache simulator](quickstart_cachesim.md)
+- [prefixsim: LLM prefix-cache simulator](quickstart_prefixsim.md) ([design](prefixsim.md), [lcp trace format](lcp_format.md))
 - [Trace Utilities](quickstart_traceUtils.md)
-- [The lcp LLM trace format](lcp_format.md)
 - [Trace Analyzer](quickstart_traceAnalyzer.md)
 - [MRC Profiler](quickstart_mrcProfiler.md)
 - [Plugin System](quickstart_plugin.md)
 - ⭐ [Python Binding (easy API access)](https://github.com/1a1a11a/libCacheSim-python)
-- [prefixsim: LLM prefix-cache simulator](../libCacheSim/bin/prefixsim/README.md)
 
 ## Advanced Usage
 - [Library Usage Guide](advanced_lib.md)
