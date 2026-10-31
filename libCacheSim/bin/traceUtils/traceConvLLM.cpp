@@ -23,19 +23,29 @@ struct Options {
   std::string output;
   prefixsim::TraceFormat format = prefixsim::TraceFormat::kQwenJsonl;
   int32_t block_size_tokens = 16;
+  bool compress = true;
 };
 
+bool ends_with(const std::string &s, const char *suffix) {
+  const size_t n = strlen(suffix);
+  return s.size() >= n && s.compare(s.size() - n, n, suffix) == 0;
+}
+
 void print_usage(const char *program) {
-  printf("Usage: %s --input <trace> --output <trace.lcp> [options]\n\n",
+  printf("Usage: %s --input <trace> --output <trace.lcp.zst> [options]\n\n",
          program);
   printf("Convert an LLM request trace to the lcp binary format.\n\n");
   printf("Required:\n");
   printf("  --input <path>            Source trace.\n");
-  printf("  --output <path>           Destination .lcp file.\n\n");
+  printf("  --output <path>           Destination. zstd-compressed (as\n");
+  printf("                            zstd -8 --long); .zst is appended if\n");
+  printf("                            missing, since readers detect zstd by\n");
+  printf("                            it.\n\n");
   printf("Options:\n");
   printf("  --input-format <fmt>      Source format (default: qwen-jsonl).\n");
   printf("  --block-size-tokens <n>   Tokens per KV block, recorded in the\n");
   printf("                            header (default: 16).\n");
+  printf("  --no-zstd                 Write a plain, uncompressed file.\n");
   printf("  --help                    Print this message.\n");
 }
 
@@ -46,6 +56,10 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
       print_usage(argv[0]);
       should_exit = true;
       return true;
+    }
+    if (strcmp(arg, "--no-zstd") == 0) {
+      opts.compress = false;
+      continue;
     }
     if (i + 1 >= argc) {
       fprintf(stderr, "error: %s requires a value\n", arg);
@@ -78,6 +92,14 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
     fprintf(stderr, "error: --block-size-tokens must be positive\n");
     return false;
   }
+  if (opts.compress && !ends_with(opts.output, ".zst")) {
+    opts.output += ".zst";
+  } else if (!opts.compress && ends_with(opts.output, ".zst")) {
+    fprintf(stderr,
+            "error: --no-zstd with an output ending in .zst; readers would "
+            "take the plain file for zstd\n");
+    return false;
+  }
   return true;
 }
 
@@ -107,8 +129,8 @@ int main(int argc, char **argv) {
   }
 
   lcp_trace_stat_t st;
-  if (!prefixsim::write_lcp(requests, opts.block_size_tokens, opts.output, st,
-                            error)) {
+  if (!prefixsim::write_lcp(requests, opts.block_size_tokens, opts.output,
+                            opts.compress, st, error)) {
     fprintf(stderr, "error: %s\n", error.c_str());
     return 1;
   }

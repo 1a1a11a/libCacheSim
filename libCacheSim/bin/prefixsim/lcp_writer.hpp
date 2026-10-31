@@ -18,12 +18,14 @@ extern "C" {
 
 namespace prefixsim {
 
-/// Write `requests`, as load_trace() returns them with prefix ids, to `path`.
-/// Fills `stat` with the header's stat block. Returns false with `error` set
-/// when the trace cannot be represented (time going backwards, too many
-/// request types, ...) or the write fails.
+/// Write `requests`, as load_trace() returns them with prefix ids, to `path`:
+/// zstd-compressed like `zstd -8 --long` when `compress`, else plain. The
+/// caller names the file; readers recognise zstd by a `.zst` suffix. Fills
+/// `stat` with the header's stat block. Returns false with `error` set when the
+/// trace cannot be represented (time going backwards, too many request types,
+/// ...) or the write fails.
 bool write_lcp(const std::vector<Request> &requests, int32_t block_size_tokens,
-               const std::string &path, lcp_trace_stat_t &stat,
+               const std::string &path, bool compress, lcp_trace_stat_t &stat,
                std::string &error);
 
 }  // namespace prefixsim

@@ -6,12 +6,96 @@
 #include <cstring>
 #include <unordered_map>
 
+#ifdef SUPPORT_ZSTD_TRACE
+#include <zstd.h>
+#endif
+
 namespace prefixsim {
 namespace {
 
 int64_t to_us(double seconds) {
   return static_cast<int64_t>(std::llround(seconds * 1e6));
 }
+
+/// Where the bytes go: the file as is, or through a zstd stream that matches
+/// `zstd -8 --long` (level 8, long-distance matching, 128 MiB window, frame
+/// checksum). The window is within what a default zstd decoder accepts, so the
+/// output reads back with no special flags.
+class Sink {
+ public:
+  ~Sink() {
+#ifdef SUPPORT_ZSTD_TRACE
+    if (cctx_ != nullptr) ZSTD_freeCCtx(cctx_);
+#endif
+    if (file_ != nullptr) fclose(file_);
+  }
+
+  bool open(const std::string &path, bool compress, std::string &error) {
+    file_ = fopen(path.c_str(), "wb");
+    if (file_ == nullptr) {
+      error = "cannot open '" + path + "' for writing";
+      return false;
+    }
+    if (!compress) return true;
+#ifdef SUPPORT_ZSTD_TRACE
+    cctx_ = ZSTD_createCCtx();
+    if (cctx_ == nullptr ||
+        ZSTD_isError(
+            ZSTD_CCtx_setParameter(cctx_, ZSTD_c_compressionLevel, 8)) ||
+        ZSTD_isError(ZSTD_CCtx_setParameter(
+            cctx_, ZSTD_c_enableLongDistanceMatching, 1)) ||
+        ZSTD_isError(ZSTD_CCtx_setParameter(cctx_, ZSTD_c_checksumFlag, 1))) {
+      error = "cannot set up the zstd compressor";
+      return false;
+    }
+    buf_.resize(ZSTD_CStreamOutSize());
+    return true;
+#else
+    error = "this build has no zstd support; write a plain file instead";
+    return false;
+#endif
+  }
+
+  bool write(const void *data, size_t size) {
+#ifdef SUPPORT_ZSTD_TRACE
+    if (cctx_ != nullptr) return compress(data, size, ZSTD_e_continue);
+#endif
+    return fwrite(data, 1, size, file_) == size;
+  }
+
+  /// Finish the zstd frame, if any, and close the file.
+  bool close() {
+    bool ok = true;
+#ifdef SUPPORT_ZSTD_TRACE
+    if (cctx_ != nullptr) {
+      ok = compress(nullptr, 0, ZSTD_e_end);
+      ZSTD_freeCCtx(cctx_);
+      cctx_ = nullptr;
+    }
+#endif
+    if (fclose(file_) != 0) ok = false;
+    file_ = nullptr;
+    return ok;
+  }
+
+ private:
+#ifdef SUPPORT_ZSTD_TRACE
+  bool compress(const void *data, size_t size, ZSTD_EndDirective mode) {
+    ZSTD_inBuffer in = {data, size, 0};
+    for (;;) {
+      ZSTD_outBuffer out = {buf_.data(), buf_.size(), 0};
+      const size_t left = ZSTD_compressStream2(cctx_, &out, &in, mode);
+      if (ZSTD_isError(left)) return false;
+      if (fwrite(buf_.data(), 1, out.pos, file_) != out.pos) return false;
+      if (mode == ZSTD_e_end ? left == 0 : in.pos == in.size) return true;
+    }
+  }
+
+  ZSTD_CCtx *cctx_ = nullptr;
+  std::vector<char> buf_;
+#endif
+  FILE *file_ = nullptr;
+};
 
 /// Check what the format promises about request order and time, and build the
 /// stat block and the type table. Returns false with `error` set if the trace
@@ -129,7 +213,7 @@ bool build_stat(const std::vector<Request> &requests, int32_t block_size_tokens,
 }  // namespace
 
 bool write_lcp(const std::vector<Request> &requests, int32_t block_size_tokens,
-               const std::string &path, lcp_trace_stat_t &stat,
+               const std::string &path, bool compress, lcp_trace_stat_t &stat,
                std::string &error) {
   if (requests.empty()) {
     error = "no requests to write";
@@ -147,12 +231,9 @@ bool write_lcp(const std::vector<Request> &requests, int32_t block_size_tokens,
   }
   stat = header.stat;
 
-  FILE *out = fopen(path.c_str(), "wb");
-  if (out == nullptr) {
-    error = "cannot open '" + path + "' for writing";
-    return false;
-  }
-  bool ok = fwrite(&header, sizeof(header), 1, out) == 1;
+  Sink out;
+  if (!out.open(path, compress, error)) return false;
+  bool ok = out.write(&header, sizeof(header));
 
   std::vector<lcp_block_t> blocks;
   for (size_t i = 0; ok && i < requests.size(); ++i) {
@@ -173,7 +254,7 @@ bool write_lcp(const std::vector<Request> &requests, int32_t block_size_tokens,
     rec.output_length = r.output_length;
     rec.turn = r.turn;
     rec.type_id = type_ids[i];
-    ok = fwrite(&rec, sizeof(rec), 1, out) == 1;
+    ok = out.write(&rec, sizeof(rec));
 
     const size_t n = r.blocks.size();
     blocks.resize(n);
@@ -184,10 +265,10 @@ bool write_lcp(const std::vector<Request> &requests, int32_t block_size_tokens,
                                         ? -1
                                         : r.next_access_vtime[j];
     }
-    ok = ok && fwrite(blocks.data(), sizeof(lcp_block_t), n, out) == n;
+    ok = ok && out.write(blocks.data(), n * sizeof(lcp_block_t));
   }
 
-  if (fclose(out) != 0) ok = false;
+  if (!out.close()) ok = false;
   if (!ok) {
     error = "writing '" + path + "' failed";
     return false;

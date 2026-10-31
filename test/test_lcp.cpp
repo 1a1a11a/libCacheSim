@@ -338,14 +338,15 @@ void check_same_simulation(const std::vector<prefixsim::Request> &requests,
   CHECK_EQ(streamed.n_evictions, loaded.n_evictions);
 }
 
-void test_round_trip() {
-  printf("round trip: JSONL -> lcp -> prefixsim\n");
-  const char *path = "test_lcp_tmp_rt.lcp";
+void test_round_trip(bool compress) {
+  printf("round trip: JSONL -> lcp%s -> prefixsim\n", compress ? ".zst" : "");
+  const char *path =
+      compress ? "test_lcp_tmp_rt.lcp.zst" : "test_lcp_tmp_rt.lcp";
   const auto jsonl = load_jsonl(kJsonl, prefixsim::BlockIdMode::kPrefix);
 
   lcp_trace_stat_t stat;
   std::string error;
-  if (!prefixsim::write_lcp(jsonl, 16, path, stat, error)) {
+  if (!prefixsim::write_lcp(jsonl, 16, path, compress, stat, error)) {
     printf("  FAIL: write: %s\n", error.c_str());
     ++n_failed;
     return;
@@ -392,7 +393,10 @@ int main(void) {
   test_jsonl_ids();
   test_flat_reader();
   test_prefixsim_reader();
-  test_round_trip();
+  test_round_trip(false);
+#ifdef SUPPORT_ZSTD_TRACE
+  test_round_trip(true);
+#endif
   if (n_failed != 0) {
     printf("%d check(s) FAILED\n", n_failed);
     return 1;
