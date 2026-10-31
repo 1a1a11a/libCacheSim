@@ -112,8 +112,13 @@ typedef char
 /******************************************************************************/
 typedef struct __attribute__((packed)) lcp_block {
   uint64_t block_id;
-  /** 1-based index of the next access in the flattened trace, -1 = never */
-  int64_t next_access_vtime;
+  /** The block's next access, as the difference from the previous entry's in
+   *  the same request; the first entry's is the value itself. The value is
+   *  the 1-based index of the next access in the flattened trace, -1 = never.
+   *  Consecutive blocks are mostly reused together, so the differences are
+   *  mostly 1, which compresses far better than the values. The readers below
+   *  return the values. */
+  int64_t next_access_delta;
 } lcp_block_t;
 typedef char
     static_assert_lcp_block_size[(sizeof(struct lcp_block) == 16) ? 1 : -1];
@@ -130,13 +135,14 @@ int lcpReader_setup(reader_t *reader);
 int lcp_read_one_req(reader_t *reader, request_t *req);
 
 /** Request-level reading, for prefixsim: the next request's record (the v1
- *  prefix of any version) into *rec and its block entries, stored values
- *  unchanged, into blocks[0 .. rec->n_blocks). `blocks` must hold
+ *  prefix of any version) into *rec, and its blocks' ids and next accesses
+ *  (decoded: the 1-based index, -1 = never) into block_ids and
+ *  next_access_vtime [0 .. rec->n_blocks). Each array must hold
  *  stat.max_blocks_per_req entries. Returns 0, or 1 at end of trace; exits on
  *  a truncated or malformed file. Do not mix with lcp_read_one_req on one
  *  reader. */
-int lcp_read_trace_req(reader_t *reader, lcp_req_v1_t *rec,
-                       lcp_block_t *blocks);
+int lcp_read_trace_req(reader_t *reader, lcp_req_v1_t *rec, uint64_t *block_ids,
+                       int64_t *next_access_vtime);
 
 /** The stat block from the trace's header. */
 const lcp_trace_stat_t *lcp_get_stat(const reader_t *reader);

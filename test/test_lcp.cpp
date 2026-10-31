@@ -147,8 +147,10 @@ void write_trace(const char *path) {
   h.stat.block_size_tokens = 16;
 
   const uint64_t ids[2][3] = {{1, 2, 3}, {1, 2, 4}};
-  // forward vtimes 1..6: id 1 recurs at 4, id 2 at 5, nothing else recurs
-  const int64_t next[2][3] = {{4, 5, -1}, {-1, -1, -1}};
+  // forward vtimes 1..6: id 1 recurs at 4, id 2 at 5, nothing else recurs,
+  // so the next accesses are {4, 5, -1} and {-1, -1, -1}. The file stores
+  // each as the difference from the previous block's in its request.
+  const int64_t next_delta[2][3] = {{4, 1, -6}, {-1, 0, 0}};
   const int64_t ts_us[2] = {1500000, 2700000};
   const int64_t session_next[2] = {2, -1};  // 1-based
 
@@ -167,7 +169,7 @@ void write_trace(const char *path) {
     rec.input_length = rec.output_length = rec.turn = rec.type_id = -1;
     fwrite(&rec, sizeof(rec), 1, f);
     for (int i = 0; i < 3; ++i) {
-      const lcp_block_t b = {ids[r][i], next[r][i]};
+      const lcp_block_t b = {ids[r][i], next_delta[r][i]};
       fwrite(&b, sizeof(b), 1, f);
     }
   }
@@ -298,6 +300,28 @@ bool same_request(const prefixsim::Request &a, const prefixsim::Request &b) {
          a.type == b.type && a.next_access_vtime == b.next_access_vtime;
 }
 
+/// The next-access differences a plain lcp file stores, in file order, read
+/// with nothing but the spec's structs.
+std::vector<int64_t> stored_deltas(const char *path) {
+  std::vector<int64_t> out;
+  FILE *f = fopen(path, "rb");
+  if (f == nullptr) return out;
+  lcp_trace_header_t h;
+  if (fread(&h, sizeof(h), 1, f) == 1) {
+    for (int64_t r = 0; r < h.stat.n_req; ++r) {
+      lcp_req_v1_t rec;
+      if (fread(&rec, sizeof(rec), 1, f) != 1) break;
+      for (uint32_t i = 0; i < rec.n_blocks; ++i) {
+        lcp_block_t b;
+        if (fread(&b, sizeof(b), 1, f) != 1) break;
+        out.push_back(b.next_access_delta);
+      }
+    }
+  }
+  fclose(f);
+  return out;
+}
+
 /// Run `algorithm` once over the JSONL loaded whole, once over the lcp
 /// stream, and compare.
 void check_same_simulation(const std::vector<prefixsim::Request> &requests,
@@ -357,6 +381,13 @@ void test_round_trip(bool compress) {
   CHECK_EQ(stat.n_session, 3);
   CHECK_EQ(stat.n_user, 3);
   CHECK_EQ(stat.n_type, 1);
+  if (!compress) {
+    // vtimes 1-3, 4-6, 7-8, 9-11; ids 1 and 2 recur at 4, 9 and 5, 10, id 3
+    // at 11, so the next accesses are {4, 5, 11} {9, 10, -1} {-1, -1}
+    // {-1, -1, -1}
+    const std::vector<int64_t> want = {4, 1, 6, 9, 1, -11, -1, 0, -1, 0, 0};
+    CHECK_EQ(stored_deltas(path) == want, true);
+  }
 
   std::vector<prefixsim::Request> back;
   auto reader = prefixsim::open_trace(path, prefixsim::TraceFormat::kLcp,

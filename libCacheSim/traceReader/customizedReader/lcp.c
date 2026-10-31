@@ -25,6 +25,8 @@ typedef struct {
   int64_t blocks_left; /* in the current request, flat reading only */
   int64_t block_pos;   /* 0-based position of the next block in its request */
   int64_t clock_time;  /* current request's completion time, seconds */
+  int64_t next_access; /* decoded next access of the previous block in the
+                          current request; 0 before its first block */
   int64_t n_req_read;
   int64_t n_block_read;
   uint64_t max_block_id; /* for the density check */
@@ -127,6 +129,7 @@ void lcp_reset_reader(reader_t *reader) {
   params->blocks_left = 0;
   params->block_pos = 0;
   params->clock_time = 0;
+  params->next_access = 0;
   params->n_req_read = 0;
   params->n_block_read = 0;
   params->max_block_id = 0;
@@ -182,33 +185,57 @@ static bool _read_record(reader_t *reader, lcp_params_t *params,
     exit(1);
   }
   params->n_req_read += 1;
+  params->next_access = 0;
   _release_consumed(reader, params);
   return true;
 }
 
-static void _read_block(reader_t *reader, lcp_params_t *params,
-                        lcp_block_t *b) {
+/* Read the next block entry: its id, and its next access decoded from the
+ * stored difference (-1 = never). */
+static void _read_block(reader_t *reader, lcp_params_t *params, uint64_t *id,
+                        int64_t *next_access) {
   char *data = read_bytes(reader, sizeof(lcp_block_t));
   if (data == NULL) {
     ERROR("lcp trace %s ends inside request %lld: truncated\n",
           reader->trace_path, (long long)params->n_req_read);
     exit(1);
   }
-  memcpy(b, data, sizeof(*b));
+  lcp_block_t b;
+  memcpy(&b, data, sizeof(b));
 
   /* Ids are dense in first-appearance order, so a new id is exactly one past
    * the largest seen. Checking costs one compare and catches a file whose ids
    * were not produced by the positional encoding. */
-  if (b->block_id == 0 || b->block_id > params->max_block_id + 1) {
+  if (b.block_id == 0 || b.block_id > params->max_block_id + 1) {
     ERROR(
         "lcp trace %s: block id %llu follows largest id %llu, but ids "
         "must be assigned 1, 2, 3, ... in order of first appearance\n",
-        reader->trace_path, (unsigned long long)b->block_id,
+        reader->trace_path, (unsigned long long)b.block_id,
         (unsigned long long)params->max_block_id);
     exit(1);
   }
-  if (b->block_id > params->max_block_id) params->max_block_id = b->block_id;
+  if (b.block_id > params->max_block_id) params->max_block_id = b.block_id;
   params->n_block_read += 1;
+
+  /* A next access lies after the block's own position and inside the trace.
+   * A wrong difference throws every later value in its request off, so a file
+   * that stores values rather than differences soon fails this. Unsigned, so
+   * a corrupt difference wraps instead of overflowing. */
+  params->next_access =
+      (int64_t)((uint64_t)params->next_access + (uint64_t)b.next_access_delta);
+  if (params->next_access != -1 &&
+      (params->next_access <= params->n_block_read ||
+       params->next_access > params->stat.n_block)) {
+    ERROR(
+        "lcp trace %s: block %lld's next access decodes to %lld, but must be "
+        "-1 or in (%lld, %lld]\n",
+        reader->trace_path, (long long)params->n_block_read,
+        (long long)params->next_access, (long long)params->n_block_read,
+        (long long)params->stat.n_block);
+    exit(1);
+  }
+  *id = b.block_id;
+  *next_access = params->next_access;
 }
 
 /**
@@ -235,27 +262,27 @@ int lcp_read_one_req(reader_t *reader, request_t *req) {
     params->clock_time = rec.complete_time_us / 1000000;
   }
 
-  lcp_block_t b;
-  _read_block(reader, params, &b);
+  uint64_t id;
+  int64_t next_access;
+  _read_block(reader, params, &id, &next_access);
 
   req->clock_time = params->clock_time;
-  req->obj_id = b.block_id;
+  req->obj_id = id;
   req->obj_size = 1;
   req->obj_cost = llm_block_cost(params->cost_model, params->block_pos);
-  req->next_access_vtime =
-      b.next_access_vtime < 0 ? MAX_REUSE_DISTANCE : b.next_access_vtime;
+  req->next_access_vtime = next_access < 0 ? MAX_REUSE_DISTANCE : next_access;
 
   params->blocks_left -= 1;
   params->block_pos += 1;
   return 0;
 }
 
-int lcp_read_trace_req(reader_t *reader, lcp_req_v1_t *rec,
-                       lcp_block_t *blocks) {
+int lcp_read_trace_req(reader_t *reader, lcp_req_v1_t *rec, uint64_t *block_ids,
+                       int64_t *next_access_vtime) {
   lcp_params_t *params = (lcp_params_t *)reader->reader_params;
   if (!_read_record(reader, params, rec)) return 1;
   for (uint32_t i = 0; i < rec->n_blocks; i++) {
-    _read_block(reader, params, &blocks[i]);
+    _read_block(reader, params, &block_ids[i], &next_access_vtime[i]);
   }
   return 0;
 }

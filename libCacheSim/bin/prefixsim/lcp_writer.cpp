@@ -258,12 +258,15 @@ bool write_lcp(const std::vector<Request> &requests, int32_t block_size_tokens,
 
     const size_t n = r.blocks.size();
     blocks.resize(n);
+    int64_t prev = 0;  // the first block's difference is from 0
     for (size_t j = 0; j < n; ++j) {
       blocks[j].block_id = r.blocks[j];
       // load_trace uses MAX_REUSE_DISTANCE for "never"; the format uses -1.
-      blocks[j].next_access_vtime = r.next_access_vtime[j] >= MAX_REUSE_DISTANCE
-                                        ? -1
-                                        : r.next_access_vtime[j];
+      const int64_t next = r.next_access_vtime[j] >= MAX_REUSE_DISTANCE
+                               ? -1
+                               : r.next_access_vtime[j];
+      blocks[j].next_access_delta = next - prev;
+      prev = next;
     }
     ok = ok && out.write(blocks.data(), n * sizeof(lcp_block_t));
   }

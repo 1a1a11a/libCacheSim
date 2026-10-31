@@ -214,23 +214,21 @@ class LcpReader : public TraceReader {
  public:
   explicit LcpReader(reader_t *reader)
       : reader_(reader), stat_(*lcp_get_stat(reader)) {
-    entries_.resize(static_cast<size_t>(stat_.max_blocks_per_req));
+    ids_.resize(static_cast<size_t>(stat_.max_blocks_per_req));
+    next_.resize(ids_.size());
   }
   ~LcpReader() override { close_reader(reader_); }
 
   bool next(Request &out) override {
     lcp_req_v1_t rec;
-    if (lcp_read_trace_req(reader_, &rec, entries_.data()) != 0) {
+    if (lcp_read_trace_req(reader_, &rec, ids_.data(), next_.data()) != 0) {
       return false;
     }
     const size_t n = rec.n_blocks;
-    out.blocks.resize(n);
+    out.blocks.assign(ids_.begin(), ids_.begin() + n);
     out.next_access_vtime.resize(n);
     for (size_t i = 0; i < n; ++i) {
-      out.blocks[i] = static_cast<obj_id_t>(entries_[i].block_id);
-      out.next_access_vtime[i] = entries_[i].next_access_vtime < 0
-                                     ? MAX_REUSE_DISTANCE
-                                     : entries_[i].next_access_vtime;
+      out.next_access_vtime[i] = next_[i] < 0 ? MAX_REUSE_DISTANCE : next_[i];
     }
     out.index = n_emitted_++;
     // Exact for timestamps of up to 6 decimals: the integer divides to the
@@ -265,7 +263,8 @@ class LcpReader : public TraceReader {
  private:
   reader_t *reader_;
   lcp_trace_stat_t stat_;
-  std::vector<lcp_block_t> entries_;
+  std::vector<uint64_t> ids_;
+  std::vector<int64_t> next_;  ///< decoded next accesses, -1 = never
   int64_t n_emitted_ = 0;
   CategoryInterner categories_;
 };
