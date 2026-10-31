@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include "../customizedReader/binaryUtils.h"
 #include "../readerInternal.h"
@@ -26,7 +28,25 @@ typedef struct {
   int64_t n_req_read;
   int64_t n_block_read;
   uint64_t max_block_id; /* for the density check */
+  size_t released;       /* bytes of a plain file's mapping handed back */
 } lcp_params_t;
+
+/* A plain file is mmap'd whole, and every page read would stay resident until
+ * the reader closes, so memory would grow to the file's size. Pages behind the
+ * read position are never needed again in a forward pass, so hand them back
+ * every LCP_RELEASE_STEP bytes: reading then holds a bounded window. A rewind
+ * simply faults them in again. zstd input streams through its own buffer. */
+#define LCP_RELEASE_STEP ((size_t)64 << 20)
+
+static void _release_consumed(reader_t *reader, lcp_params_t *params) {
+  if (reader->is_zstd_file || reader->mapped_file == NULL) return;
+  const size_t page = (size_t)sysconf(_SC_PAGESIZE);
+  const size_t done = reader->mmap_offset / page * page;
+  if (done < params->released + LCP_RELEASE_STEP) return;
+  madvise(reader->mapped_file + params->released, done - params->released,
+          MADV_DONTNEED);
+  params->released = done;
+}
 
 static bool _verify_lcp_header(const lcp_trace_header_t *header) {
   if (header->start_magic != LCP_TRACE_MAGIC ||
@@ -110,6 +130,7 @@ void lcp_reset_reader(reader_t *reader) {
   params->n_req_read = 0;
   params->n_block_read = 0;
   params->max_block_id = 0;
+  params->released = 0;
 }
 
 const lcp_trace_stat_t *lcp_get_stat(const reader_t *reader) {
@@ -161,6 +182,7 @@ static bool _read_record(reader_t *reader, lcp_params_t *params,
     exit(1);
   }
   params->n_req_read += 1;
+  _release_consumed(reader, params);
   return true;
 }
 
