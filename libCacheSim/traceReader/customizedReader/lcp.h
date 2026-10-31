@@ -47,15 +47,16 @@ typedef struct __attribute__((packed)) lcp_trace_stat {
   int64_t n_block;        /**< block accesses, summed over requests */
   int64_t n_unique_block; /**< block ids are exactly 1..n_unique_block */
   int64_t n_session;      /**< session ids are exactly 1..n_session; 0 = none */
+  int64_t n_user;         /**< user ids are exactly 1..n_user; 0 = none */
   int64_t max_blocks_per_req;
-  int64_t start_timestamp_us;
-  int64_t end_timestamp_us;
-  int64_t block_size_tokens; /**< tokens per KV block */
-  int64_t n_type;            /**< entries used in type_names */
+  int64_t first_complete_time_us; /**< complete_time_us of the first request */
+  int64_t last_complete_time_us;  /**< complete_time_us of the last request */
+  int64_t block_size_tokens;      /**< tokens per KV block */
+  int64_t n_type;                 /**< entries used in type_names */
   /** request-type strings, indexed by a request's type_id */
   char type_names[LCP_MAX_TYPE][LCP_TYPE_NAME_LEN];
 
-  int64_t unused[862];
+  int64_t unused[861];
 } lcp_trace_stat_t;
 typedef char static_assert_lcp_stat_size
     [(sizeof(struct lcp_trace_stat) == 1000 * 8) ? 1 : -1];
@@ -76,17 +77,23 @@ typedef char static_assert_lcp_header_size
     [(sizeof(struct lcp_trace_header) == 1024 * 8) ? 1 : -1];
 
 /******************************************************************************/
-/**                     v1 request record (56 bytes)                         **/
+/**                     v1 request record (68 bytes)                         **/
 /**   -1 marks a field the source trace did not carry                        **/
 /******************************************************************************/
 typedef struct __attribute__((packed)) lcp_req_v1 {
-  int64_t timestamp_us;   /**< completion time, microseconds */
+  /** arrival, microseconds; never after complete_time_us, and equal to it
+   *  when the source does not record arrival */
+  int64_t start_time_us;
+  /** completion, microseconds: when the request's blocks are registered in
+   *  the cache. Requests are stored in this order. */
+  int64_t complete_time_us;
   int64_t chat_id;        /**< source trace's chat_id */
   int64_t parent_chat_id; /**< chat_id this request follows up; -1 none */
   /** 1-based index (in file order) of the next request with the same
    *  session_id, -1 = none. The session-level next_access_vtime. */
   int64_t session_next_req;
   uint32_t session_id;   /**< 1..n_session, first-appearance order; 0 none */
+  uint32_t user_id;      /**< 1..n_user, first-appearance order; 0 none */
   uint32_t n_blocks;     /**< block entries that follow */
   int32_t input_length;  /**< prompt tokens */
   int32_t output_length; /**< generated tokens */
@@ -94,7 +101,7 @@ typedef struct __attribute__((packed)) lcp_req_v1 {
   int32_t type_id;       /**< index into stat.type_names */
 } lcp_req_v1_t;
 typedef char
-    static_assert_lcp_req_v1_size[(sizeof(struct lcp_req_v1) == 56) ? 1 : -1];
+    static_assert_lcp_req_v1_size[(sizeof(struct lcp_req_v1) == 68) ? 1 : -1];
 
 /******************************************************************************/
 /**                        block entry (16 bytes)                            **/

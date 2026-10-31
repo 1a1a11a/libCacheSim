@@ -23,12 +23,12 @@ bool build_stat(const std::vector<Request> &requests, int32_t block_size_tokens,
   stat.version = LCP_CURR_STAT_VERSION;
   stat.n_req = static_cast<int64_t>(requests.size());
   stat.block_size_tokens = block_size_tokens;
-  stat.start_timestamp_us = to_us(requests.front().timestamp);
-  stat.end_timestamp_us = to_us(requests.back().timestamp);
+  stat.first_complete_time_us = to_us(requests.front().timestamp);
+  stat.last_complete_time_us = to_us(requests.back().timestamp);
 
   std::unordered_map<std::string, int32_t> type_index;
   type_ids.reserve(requests.size());
-  uint64_t max_block = 0, max_session = 0;
+  uint64_t max_block = 0, max_session = 0, max_user = 0;
   bool any_nonzero_time = false;
   char buf[256];
 
@@ -45,6 +45,15 @@ bool build_stat(const std::vector<Request> &requests, int32_t block_size_tokens,
       return false;
     }
     if (r.timestamp != 0.0) any_nonzero_time = true;
+    if (r.start_timestamp < 0 || r.start_timestamp > r.timestamp) {
+      snprintf(buf, sizeof(buf),
+               "request %zu arrives at %.6f and completes at %.6f; lcp needs "
+               "times from a non-negative origin and arrival no later than "
+               "completion",
+               i, r.start_timestamp, r.timestamp);
+      error = buf;
+      return false;
+    }
 
     if (r.blocks.size() > UINT32_MAX) {
       snprintf(buf, sizeof(buf), "request %zu has %zu blocks, over 2^32", i,
@@ -73,6 +82,7 @@ bool build_stat(const std::vector<Request> &requests, int32_t block_size_tokens,
       if (id > max_block) max_block = id;
     }
     if (r.session > max_session) max_session = r.session;
+    if (r.user > max_user) max_user = r.user;
 
     int32_t type_id = -1;
     if (!r.type.empty()) {
@@ -104,13 +114,14 @@ bool build_stat(const std::vector<Request> &requests, int32_t block_size_tokens,
         "the reader cannot parse (it expects seconds as a number)";
     return false;
   }
-  if (max_session > UINT32_MAX) {
-    error = "more than 2^32 sessions";
+  if (max_session > UINT32_MAX || max_user > UINT32_MAX) {
+    error = "more than 2^32 sessions or users";
     return false;
   }
 
   stat.n_unique_block = static_cast<int64_t>(max_block);
   stat.n_session = static_cast<int64_t>(max_session);
+  stat.n_user = static_cast<int64_t>(max_user);
   stat.n_type = static_cast<int64_t>(type_index.size());
   return true;
 }
@@ -148,13 +159,15 @@ bool write_lcp(const std::vector<Request> &requests, int32_t block_size_tokens,
     const Request &r = requests[i];
     lcp_req_v1_t rec;
     memset(&rec, 0, sizeof(rec));
-    rec.timestamp_us = to_us(r.timestamp);
+    rec.start_time_us = to_us(r.start_timestamp);
+    rec.complete_time_us = to_us(r.timestamp);
     rec.chat_id = r.chat_id;
     rec.parent_chat_id = r.parent_chat_id;
     // Request holds a 0-based index; the file a 1-based one, as for blocks
     rec.session_next_req =
         r.session_next_access == INT64_MAX ? -1 : r.session_next_access + 1;
     rec.session_id = static_cast<uint32_t>(r.session);
+    rec.user_id = static_cast<uint32_t>(r.user);
     rec.n_blocks = static_cast<uint32_t>(r.blocks.size());
     rec.input_length = r.input_length;
     rec.output_length = r.output_length;

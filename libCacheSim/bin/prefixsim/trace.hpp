@@ -36,6 +36,10 @@ struct Request {
   /// chutes (when the request's blocks are registered in the cache), arrival
   /// time in the Qwen traces. Requests are ordered by it.
   double timestamp = 0.0;
+  /// The trace's `timestamp_arrival`, in seconds: when the request arrived.
+  /// Equal to `timestamp` when the trace does not record it (the Qwen
+  /// traces, whose `timestamp` is the arrival).
+  double start_timestamp = 0.0;
   std::vector<obj_id_t>
       blocks;  ///< Block identities in prefix order (root first).
 
@@ -44,6 +48,9 @@ struct Request {
   /// has no session field. Session-level eviction policies group blocks by
   /// this.
   uint64_t session = 0;
+
+  /// The trace's `user_id` string, interned the same way; 0 when absent.
+  uint64_t user = 0;
 
   /// Index of the next request from the SAME session, or INT64_MAX if this is
   /// the session's last. The session-level analogue of next_access_vtime, and

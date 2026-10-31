@@ -114,9 +114,9 @@ int main(int argc, char **argv) {
   }
 
   printf("wrote %s: %" PRId64 " requests, %" PRId64 " blocks, %" PRId64
-         " unique, %" PRId64 " sessions, %" PRId64 " types, max %" PRId64
-         " blocks/request\n",
+         " unique, %" PRId64 " sessions, %" PRId64 " users, %" PRId64
+         " types, max %" PRId64 " blocks/request\n",
          opts.output.c_str(), st.n_req, st.n_block, st.n_unique_block,
-         st.n_session, st.n_type, st.max_blocks_per_req);
+         st.n_session, st.n_user, st.n_type, st.max_blocks_per_req);
   return 0;
 }

@@ -11,6 +11,7 @@
 //     comes back as the JSONL reader produced it, and simulating the stream in
 //     one pass matches simulating the JSONL loaded whole
 
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -62,20 +63,25 @@ std::vector<prefixsim::Request> load_jsonl(const std::string &body,
 const std::string kJsonl =
     // raw 20 under raw 10; raw 30 deepest
     "{\"chat_id\":5,\"parent_chat_id\":-1,\"timestamp\":1.5,"
+    "\"timestamp_arrival\":1.25,\"user_id\":\"u1\","
     "\"input_length\":48,\"output_length\":null,\"type\":\"text\","
     "\"turn\":1,\"session_id\":\"a\",\"hash_ids\":[10,20,30]}\n"
     // shares the prefix 10,20, then diverges
     "{\"chat_id\":6,\"parent_chat_id\":5,\"timestamp\":2.0,"
+    "\"timestamp_arrival\":1.75,\"user_id\":\"u2\","
     "\"type\":\"text\",\"turn\":2,\"session_id\":\"b\","
     "\"hash_ids\":[10,20,31]}\n"
-    // no blocks: skipped, so it must not claim session id 3
-    "{\"timestamp\":2.5,\"session_id\":\"skipped\",\"hash_ids\":[]}\n"
+    // no blocks: skipped, so it must not claim session id 3 or user id 3
+    "{\"timestamp\":2.5,\"session_id\":\"skipped\",\"user_id\":\"skipped\","
+    "\"hash_ids\":[]}\n"
     // raw 20 again, but under a different prefix: a different block. No
-    // type or turn: category 0
-    "{\"timestamp\":3.0,\"session_id\":\"c\",\"hash_ids\":[99,20]}\n"
-    // the first request's path again, same session
+    // type or turn: category 0. No user. The arrival time carries the float
+    // noise of `completion - latency`, which the file rounds to the us
+    "{\"timestamp\":3.0,\"timestamp_arrival\":2.999999999,"
+    "\"session_id\":\"c\",\"hash_ids\":[99,20]}\n"
+    // the first request's path again, same session. No arrival time
     "{\"timestamp\":1752192000.123456,\"type\":\"text\",\"turn\":1,"
-    "\"session_id\":\"a\","
+    "\"session_id\":\"a\",\"user_id\":\"u3\","
     "\"hash_ids\":[10,20,30]}\n";
 
 void test_jsonl_ids() {
@@ -95,6 +101,13 @@ void test_jsonl_ids() {
   CHECK_EQ(r[1].session, 2);
   CHECK_EQ(r[2].session, 3);  // "skipped" took no id
   CHECK_EQ(r[3].session, 1);
+  CHECK_EQ(r[0].user, 1);
+  CHECK_EQ(r[1].user, 2);
+  CHECK_EQ(r[2].user, 0);  // absent
+  CHECK_EQ(r[3].user, 3);  // "skipped" took no id
+  CHECK_EQ(r[0].start_timestamp == 1.25, true);
+  // absent, so taken to be the completion, as in the Qwen traces
+  CHECK_EQ(r[3].start_timestamp == r[3].timestamp, true);
   CHECK_EQ(r[0].category, 1);  // (text, 1)
   CHECK_EQ(r[1].category, 2);  // (text, 2)
   CHECK_EQ(r[2].category, 0);  // neither field
@@ -116,8 +129,9 @@ void test_jsonl_ids() {
   }
 }
 
-/// Two requests of one session, {1,2,3} at 1.5 s and {1,2,4} at 2.7 s,
-/// written straight from the spec's structs.
+/// Two requests of one session and user, {1,2,3} completing at 1.5 s and
+/// {1,2,4} at 2.7 s, each having arrived 0.5 s earlier, written straight from
+/// the spec's structs.
 void write_trace(const char *path) {
   lcp_trace_header_t h;
   memset(&h, 0, sizeof(h));
@@ -128,6 +142,7 @@ void write_trace(const char *path) {
   h.stat.n_block = 6;
   h.stat.n_unique_block = 4;
   h.stat.n_session = 1;
+  h.stat.n_user = 1;
   h.stat.max_blocks_per_req = 3;
   h.stat.block_size_tokens = 16;
 
@@ -142,10 +157,12 @@ void write_trace(const char *path) {
   for (int r = 0; r < 2; ++r) {
     lcp_req_v1_t rec;
     memset(&rec, 0, sizeof(rec));
-    rec.timestamp_us = ts_us[r];
+    rec.start_time_us = ts_us[r] - 500000;
+    rec.complete_time_us = ts_us[r];
     rec.chat_id = rec.parent_chat_id = -1;
     rec.session_next_req = session_next[r];
     rec.session_id = 1;
+    rec.user_id = 1;
     rec.n_blocks = 3;
     rec.input_length = rec.output_length = rec.turn = rec.type_id = -1;
     fwrite(&rec, sizeof(rec), 1, f);
@@ -242,6 +259,9 @@ void test_prefixsim_reader() {
       rs.size() == 2) {
     CHECK_EQ(rs[0].timestamp == 1.5, true);
     CHECK_EQ(rs[1].timestamp == 2.7, true);
+    CHECK_EQ(rs[0].start_timestamp == 1.0, true);
+    CHECK_EQ(rs[1].start_timestamp == 2.2, true);
+    CHECK_EQ(rs[1].user, 1);
     CHECK_EQ(rs[0].session_next_access, 1);  // 0-based in Request
     CHECK_EQ(rs[1].session_next_access, INT64_MAX);
     CHECK_EQ(rs[0].chat_id, -1);
@@ -259,8 +279,16 @@ void test_prefixsim_reader() {
   remove(path);
 }
 
+/// The file keeps times to the microsecond. Completion times in the fixture
+/// have at most 6 decimals and must survive exactly; arrival times are
+/// compared at the precision the file promises.
+bool same_us(double a, double b) {
+  return std::llround(a * 1e6) == std::llround(b * 1e6);
+}
+
 bool same_request(const prefixsim::Request &a, const prefixsim::Request &b) {
   return a.index == b.index && a.timestamp == b.timestamp &&
+         same_us(a.start_timestamp, b.start_timestamp) && a.user == b.user &&
          a.blocks == b.blocks && a.session == b.session &&
          a.session_next_access == b.session_next_access &&
          a.category == b.category && a.chat_id == b.chat_id &&
@@ -326,6 +354,7 @@ void test_round_trip() {
   CHECK_EQ(stat.n_block, 11);
   CHECK_EQ(stat.n_unique_block, 6);
   CHECK_EQ(stat.n_session, 3);
+  CHECK_EQ(stat.n_user, 3);
   CHECK_EQ(stat.n_type, 1);
 
   std::vector<prefixsim::Request> back;
@@ -343,6 +372,11 @@ void test_round_trip() {
       printf("  FAIL: request %zu differs after the round trip\n", i);
       ++n_failed;
     }
+  }
+  if (back.size() == 4) {
+    // the float noise in 2.999999999 is rounded away
+    CHECK_EQ(back[2].start_timestamp == 3.0, true);
+    CHECK_EQ(back[3].start_timestamp == back[3].timestamp, true);
   }
 
   // every source of future knowledge a policy can use, and a plain baseline

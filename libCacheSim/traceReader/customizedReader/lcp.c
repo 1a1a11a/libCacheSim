@@ -44,14 +44,15 @@ static bool _verify_lcp_header(const lcp_trace_header_t *header) {
   }
   const lcp_trace_stat_t *stat = &header->stat;
   if (stat->n_req < 0 || stat->n_block < 0 || stat->n_unique_block < 0 ||
-      stat->n_session < 0 || stat->max_blocks_per_req < 0 || stat->n_type < 0 ||
-      stat->n_type > LCP_MAX_TYPE) {
+      stat->n_session < 0 || stat->n_user < 0 || stat->max_blocks_per_req < 0 ||
+      stat->n_type < 0 || stat->n_type > LCP_MAX_TYPE) {
     ERROR(
         "invalid lcp stat: n_req %lld, n_block %lld, n_unique_block %lld, "
-        "n_session %lld, max_blocks_per_req %lld, n_type %lld\n",
+        "n_session %lld, n_user %lld, max_blocks_per_req %lld, n_type %lld\n",
         (long long)stat->n_req, (long long)stat->n_block,
         (long long)stat->n_unique_block, (long long)stat->n_session,
-        (long long)stat->max_blocks_per_req, (long long)stat->n_type);
+        (long long)stat->n_user, (long long)stat->max_blocks_per_req,
+        (long long)stat->n_type);
     return false;
   }
   return true;
@@ -138,15 +139,25 @@ static bool _read_record(reader_t *reader, lcp_params_t *params,
   /* every version starts with the v1 record */
   memcpy(rec, data, sizeof(*rec));
   if ((int64_t)rec->n_blocks > params->stat.max_blocks_per_req ||
-      (int64_t)rec->session_id > params->stat.n_session || rec->type_id < -1 ||
+      (int64_t)rec->session_id > params->stat.n_session ||
+      (int64_t)rec->user_id > params->stat.n_user || rec->type_id < -1 ||
       rec->type_id >= params->stat.n_type) {
     ERROR(
-        "lcp trace %s: request %lld has %u blocks, session %u, type %d, "
-        "but the header allows at most %lld, %lld and %lld\n",
+        "lcp trace %s: request %lld has %u blocks, session %u, user %u, type "
+        "%d, but the header allows at most %lld, %lld, %lld and %lld\n",
         reader->trace_path, (long long)params->n_req_read + 1, rec->n_blocks,
-        rec->session_id, rec->type_id,
+        rec->session_id, rec->user_id, rec->type_id,
         (long long)params->stat.max_blocks_per_req,
-        (long long)params->stat.n_session, (long long)params->stat.n_type - 1);
+        (long long)params->stat.n_session, (long long)params->stat.n_user,
+        (long long)params->stat.n_type - 1);
+    exit(1);
+  }
+  if (rec->start_time_us < 0 || rec->start_time_us > rec->complete_time_us) {
+    ERROR(
+        "lcp trace %s: request %lld starts at %lld us and completes at %lld "
+        "us, but must start at or after 0 and no later than it completes\n",
+        reader->trace_path, (long long)params->n_req_read + 1,
+        (long long)rec->start_time_us, (long long)rec->complete_time_us);
     exit(1);
   }
   params->n_req_read += 1;
@@ -199,7 +210,7 @@ int lcp_read_one_req(reader_t *reader, request_t *req) {
     }
     params->blocks_left = (int64_t)rec.n_blocks;
     params->block_pos = 0;
-    params->clock_time = rec.timestamp_us / 1000000;
+    params->clock_time = rec.complete_time_us / 1000000;
   }
 
   lcp_block_t b;
@@ -231,19 +242,23 @@ void lcp_print_trace_stat(reader_t *reader) {
   const lcp_params_t *params = (const lcp_params_t *)reader->reader_params;
   const lcp_trace_stat_t *stat = &params->stat;
   const double duration_s =
-      (double)(stat->end_timestamp_us - stat->start_timestamp_us) / 1e6;
+      (double)(stat->last_complete_time_us - stat->first_complete_time_us) /
+      1e6;
 
   printf(
       "trace stat: n_req %lld, n_block %lld, n_unique_block %lld, "
-      "n_session %lld, max %lld blocks/request, %lld tokens/block\n",
+      "n_session %lld, n_user %lld, max %lld blocks/request, %lld "
+      "tokens/block\n",
       (long long)stat->n_req, (long long)stat->n_block,
       (long long)stat->n_unique_block, (long long)stat->n_session,
-      (long long)stat->max_blocks_per_req, (long long)stat->block_size_tokens);
+      (long long)stat->n_user, (long long)stat->max_blocks_per_req,
+      (long long)stat->block_size_tokens);
   printf(
-      "start time %lld us, end time %lld us, duration %.0lf seconds "
+      "completion times %lld us to %lld us, duration %.0lf seconds "
       "%.2lf days\n",
-      (long long)stat->start_timestamp_us, (long long)stat->end_timestamp_us,
-      duration_s, duration_s / (24 * 3600.0));
+      (long long)stat->first_complete_time_us,
+      (long long)stat->last_complete_time_us, duration_s,
+      duration_s / (24 * 3600.0));
   printf("request types:");
   for (int64_t i = 0; i < stat->n_type; i++) {
     printf(" %.*s", LCP_TYPE_NAME_LEN, stat->type_names[i]);

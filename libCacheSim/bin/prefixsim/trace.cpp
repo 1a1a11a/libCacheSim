@@ -98,6 +98,16 @@ int64_t int_field(const char *line, const char *quoted_key, int64_t absent) {
   return strtoll(p, nullptr, 10);
 }
 
+/// Numeric value of `"key":`, or `absent` when the key is missing, null, or
+/// not a number.
+double double_field(const char *line, const char *quoted_key, double absent) {
+  const char *p = find_field(line, quoted_key);
+  if (p == nullptr) return absent;
+  char *end = nullptr;
+  const double value = strtod(p, &end);
+  return end == p ? absent : value;
+}
+
 /// String value of `"key":` into `out`; false when missing or not a string.
 bool string_field(const char *line, const char *quoted_key, std::string &out) {
   const char *p = find_field(line, quoted_key);
@@ -151,8 +161,9 @@ class QwenJsonlReader : public TraceReader {
 
       // Only now, so a skipped line cannot claim a session or category id and
       // leave a gap in the 1, 2, 3, ... numbering.
-      const char *ts = find_field(line, "\"timestamp\"");
-      if (ts != nullptr) out.timestamp = strtod(ts, nullptr);
+      out.timestamp = double_field(line, "\"timestamp\"", 0.0);
+      out.start_timestamp =
+          double_field(line, "\"timestamp_arrival\"", out.timestamp);
 
       out.chat_id = int_field(line, "\"chat_id\"", -1);
       out.parent_chat_id = int_field(line, "\"parent_chat_id\"", -1);
@@ -165,10 +176,10 @@ class QwenJsonlReader : public TraceReader {
       if (!string_field(line, "\"type\"", out.type)) out.type.clear();
       out.category = categories_.intern(out.type, out.turn);
 
-      std::string session;
-      out.session = string_field(line, "\"session_id\"", session)
-                        ? sessions_.intern(session)
-                        : 0;
+      std::string id;
+      out.session =
+          string_field(line, "\"session_id\"", id) ? sessions_.intern(id) : 0;
+      out.user = string_field(line, "\"user_id\"", id) ? users_.intern(id) : 0;
 
       ++n_emitted_;
       return true;
@@ -177,6 +188,7 @@ class QwenJsonlReader : public TraceReader {
     // as large as the next-access table built after loading.
     blocks_.release();
     sessions_.release();
+    users_.release();
     categories_.release();
     return false;
   }
@@ -190,6 +202,7 @@ class QwenJsonlReader : public TraceReader {
   int64_t n_emitted_ = 0;
   Interner<PathKey, PathKeyHash> blocks_;
   Interner<std::string> sessions_;
+  Interner<std::string> users_;
   CategoryInterner categories_;
 };
 
@@ -222,8 +235,10 @@ class LcpReader : public TraceReader {
     out.index = n_emitted_++;
     // Exact for timestamps of up to 6 decimals: the integer divides to the
     // double nearest the decimal, which is what strtod gives the JSONL.
-    out.timestamp = static_cast<double>(rec.timestamp_us) / 1e6;
+    out.timestamp = static_cast<double>(rec.complete_time_us) / 1e6;
+    out.start_timestamp = static_cast<double>(rec.start_time_us) / 1e6;
     out.session = rec.session_id;
+    out.user = rec.user_id;
     // the file is 1-based with -1 for none; Request uses 0-based indices
     out.session_next_access =
         rec.session_next_req < 0 ? INT64_MAX : rec.session_next_req - 1;
