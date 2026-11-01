@@ -106,7 +106,6 @@ const AlgoEntry kAlgos[] = {
     {"lhd", LHD_init, true},
     {"s3fifod", S3FIFOd_init, true},
     {"qdlp", QDLP_init, true},
-    {"s3fifo_compute", S3FIFOCompute_init, true},
     {"car", CAR_init, true},
 #ifdef ENABLE_S4FIFO
     // Its small/main/ghost queues are FIFO_init, so pin-awareness is inherited

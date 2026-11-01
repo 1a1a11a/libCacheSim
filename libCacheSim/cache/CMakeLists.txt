@@ -63,7 +63,6 @@ set(eviction_sources_c
         eviction/RandomTwo.c
         eviction/RandomCompute.c
         eviction/RandomComputeSmallQueue.c
-        eviction/S3FIFOCompute.c
 
         # these are sub-algorithms used by other algorithms
         eviction/CR_LFU.c
