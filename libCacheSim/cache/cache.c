@@ -333,10 +333,11 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
   return cache_obj;
 }
 
-/* Eviction pinning -- see cacheObj.h. Unset by default, so every library user
- * other than prefixsim keeps the original victim selection. */
-cache_pin_pred_f g_cache_pin_pred = NULL;
-void *g_cache_pin_ctx = NULL;
+/* Eviction pinning -- see cacheObj.h. Per thread, and unset by default, so
+ * every library user other than prefixsim keeps the original victim selection.
+ */
+__thread cache_pin_pred_f g_cache_pin_pred = NULL;
+__thread void *g_cache_pin_ctx = NULL;
 
 void cache_set_pin_predicate(cache_pin_pred_f pred, void *ctx) {
   g_cache_pin_pred = pred;

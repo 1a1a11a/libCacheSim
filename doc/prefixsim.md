@@ -180,7 +180,8 @@ skipped victim desynchronises the two and segfaults. (LIRS already carries its
 own in-flight protection, `lirs_is_inflight`, so it does not need this one.)
 
 Nothing outside prefixsim installs a predicate, so `cachesim` and every other
-libCacheSim user keep the original victim selection bit-for-bit.
+libCacheSim user keep the original victim selection bit-for-bit. The predicate
+is per thread, so caches simulated on other threads never see it.
 
 **Termination.** A request with more distinct blocks than the whole cache can
 never be resident, so it is skipped up front (counted as `n_req_skipped`, and

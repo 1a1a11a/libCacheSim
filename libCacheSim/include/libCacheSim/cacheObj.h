@@ -474,11 +474,10 @@ static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
 // ****                                                               ****
 // ***********************************************************************
 /**
- * A whole-library switch that makes a set of objects temporarily
- * unevictable. It exists for prefixsim, which serves a *multi-block* request:
- * a real LLM engine ref-counts the blocks of the request it is running, so
- * they cannot be chosen as victims while room is being made for that same
- * request's missing blocks.
+ * A per-thread switch that makes a set of objects temporarily unevictable. It
+ * exists for prefixsim, which serves a *multi-block* request: a real LLM engine
+ * ref-counts the blocks of the request it is running, so they cannot be chosen
+ * as victims while room is being made for that same request's missing blocks.
  *
  * Without it, an algorithm freely evicts a block the arriving request already
  * holds ("self-eviction"). prefixsim's own accounting is unaffected -- the
@@ -491,16 +490,22 @@ static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
  *
  * Nothing sets a predicate unless prefixsim asks for one, so cachesim and
  * every library user keep the unpinned behaviour exactly.
+ *
+ * The predicate is thread-local: it applies to every cache the calling thread
+ * drives, including a composite's sub-caches, and to none on other threads, so
+ * caches simulated in parallel (as cachesim runs its cache sizes) cannot see
+ * each other's pins. Two caches driven from one thread share it, so set it
+ * only around the eviction it is meant for, as prefixsim does.
  */
 typedef bool (*cache_pin_pred_f)(void *ctx, obj_id_t obj_id);
 
-/** Install (pred=NULL to remove) the predicate consulted by victim selection.
+/** Install (pred=NULL to remove) the calling thread's pin predicate.
  */
 void cache_set_pin_predicate(cache_pin_pred_f pred, void *ctx);
 
 /* Definitions live in cache.c; declared here so the check can inline. */
-extern cache_pin_pred_f g_cache_pin_pred;
-extern void *g_cache_pin_ctx;
+extern __thread cache_pin_pred_f g_cache_pin_pred;
+extern __thread void *g_cache_pin_ctx;
 
 /** Whether any pinning is in force. Lets callers keep a pin-free fast path. */
 static inline bool cache_pinning_active(void) {
