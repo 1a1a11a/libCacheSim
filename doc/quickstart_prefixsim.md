@@ -40,6 +40,10 @@ wrote qwen_traceA.lcp.zst: 43058 requests, 6293976 blocks, 2656400 unique, 0 ses
   `input_length`, `output_length`, `turn` and `type` when present.
 - The converter holds the whole JSONL trace in memory: 12.8 GiB and about
   2 minutes for fi-new (327,548 requests, 656M block accesses).
+- Given an `lcp` file, the converter writes JSONL instead
+  (`--input qwen_traceA.lcp.zst --output qwen_traceA.jsonl`). To take a slice
+  of an `lcp` trace, filter that JSONL and convert it again; ids and next
+  access are recomputed.
 
 Check what the file holds:
 

@@ -109,6 +109,8 @@ class TraceReader {
   /// them up front; -1 otherwise.
   virtual int64_t n_requests_total() const { return -1; }
   virtual int64_t n_blocks_total() const { return -1; }
+  /// Tokens per KV block, when the format records it; 0 otherwise.
+  virtual int32_t block_size_tokens() const { return 0; }
 };
 
 enum class TraceFormat {

@@ -13,16 +13,19 @@
 //   - cost models: the named ones, linear:A,B and table:FILE, what each gives
 //     every position, the specs refused, and the flat reader applying one
 //   - a cached object whose cost changes between accesses keeps the latest
+//   - lcp -> JSONL -> lcp reproduces the file byte for byte
 
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
 #include "cost_model.hpp"
+#include "jsonl_writer.hpp"
 #include "lcp_writer.hpp"
 #include "simulator.hpp"
 #include "trace.hpp"
@@ -511,6 +514,56 @@ void test_cost_models() {
   remove(table);
 }
 
+std::string read_file(const char *path) {
+  std::ifstream in(path, std::ios::binary);
+  return std::string(std::istreambuf_iterator<char>(in),
+                     std::istreambuf_iterator<char>());
+}
+
+void test_jsonl_round_trip() {
+  printf("round trip: lcp -> JSONL -> lcp\n");
+  const char *lcp1 = "test_lcp_tmp_a.lcp";
+  const char *jsonl = "test_lcp_tmp_back.jsonl";
+  const char *lcp2 = "test_lcp_tmp_b.lcp";
+  lcp_trace_stat_t stat;
+  std::string error;
+  if (!prefixsim::write_lcp(load_jsonl(kJsonl, prefixsim::BlockIdMode::kPrefix),
+                            16, lcp1, false, stat, error)) {
+    printf("  FAIL: write: %s\n", error.c_str());
+    ++n_failed;
+    return;
+  }
+
+  int64_t n = 0;
+  auto reader = prefixsim::open_trace(lcp1, prefixsim::TraceFormat::kLcp,
+                                      prefixsim::BlockIdMode::kPrefix, error);
+  CHECK_EQ(
+      reader != nullptr && prefixsim::write_jsonl(*reader, jsonl, n, error),
+      true);
+  reader.reset();
+  CHECK_EQ(n, 4);
+
+  // the first request, every field as the source had it; ids are the lcp's
+  const std::string text = read_file(jsonl);
+  const std::string first = text.substr(0, text.find('\n'));
+  CHECK_EQ(first ==
+               "{\"chat_id\":5,\"parent_chat_id\":-1,\"timestamp\":1.500000,"
+               "\"timestamp_arrival\":1.250000,\"input_length\":48,"
+               "\"output_length\":null,\"type\":\"text\",\"turn\":1,"
+               "\"session_id\":\"1\",\"user_id\":\"1\",\"hash_ids\":[1,2,3]}",
+           true);
+
+  CHECK_EQ(
+      prefixsim::write_lcp(load_jsonl(text, prefixsim::BlockIdMode::kPrefix),
+                           16, lcp2, false, stat, error),
+      true);
+  const std::string a = read_file(lcp1), b = read_file(lcp2);
+  CHECK_EQ(!a.empty() && a == b, true);
+  remove(lcp1);
+  remove(jsonl);
+  remove(lcp2);
+}
+
 /// An object reached with a new cost takes it on rather than aborting: a cost
 /// column may vary over time, as may a raw LLM block id reached at a new
 /// position.
@@ -540,6 +593,7 @@ int main(void) {
 #ifdef SUPPORT_ZSTD_TRACE
   test_round_trip(true);
 #endif
+  test_jsonl_round_trip();
   test_cost_models();
   test_cost_change();
   if (n_failed != 0) {

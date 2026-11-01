@@ -1,11 +1,12 @@
 // traceConvLLM -- convert a qwen-style JSONL LLM trace to the lcp binary
-// format. See doc/lcp_format.md.
+// format, or an lcp trace back to JSONL. See doc/lcp_format.md.
 //
 // Parsing, positional encoding, next-access annotation and writing are
 // prefixsim's own (bin/prefixsim), so the converter and the simulator cannot
 // disagree about what a trace means: the block, session and category ids
 // written here are exactly the ones prefixsim assigns when it reads the same
 // JSONL, and prefixsim reading the output gives the same requests back.
+// Converting lcp -> JSONL -> lcp reproduces the file.
 
 #include <cinttypes>
 #include <cstdio>
@@ -13,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "../prefixsim/jsonl_writer.hpp"
 #include "../prefixsim/lcp_writer.hpp"
 #include "../prefixsim/trace.hpp"
 
@@ -22,6 +24,7 @@ struct Options {
   std::string input;
   std::string output;
   prefixsim::TraceFormat format = prefixsim::TraceFormat::kQwenJsonl;
+  bool format_given = false;
   int32_t block_size_tokens = 16;
   bool compress = true;
 };
@@ -32,20 +35,23 @@ bool ends_with(const std::string &s, const char *suffix) {
 }
 
 void print_usage(const char *program) {
-  printf("Usage: %s --input <trace> --output <trace.lcp.zst> [options]\n\n",
-         program);
-  printf("Convert an LLM request trace to the lcp binary format.\n\n");
+  printf("Usage: %s --input <trace> --output <path> [options]\n\n", program);
+  printf("Convert a JSONL LLM request trace to the lcp binary format, or an\n");
+  printf("lcp trace back to JSONL. The input's format sets the direction.\n\n");
   printf("Required:\n");
   printf("  --input <path>            Source trace.\n");
-  printf("  --output <path>           Destination. zstd-compressed (as\n");
-  printf("                            zstd -8 --long); .zst is appended if\n");
-  printf("                            missing, since readers detect zstd by\n");
-  printf("                            it.\n\n");
+  printf("  --output <path>           Destination. lcp is written\n");
+  printf("                            zstd-compressed (as zstd -8 --long);\n");
+  printf("                            .zst is appended if missing, since\n");
+  printf("                            readers detect zstd by it. JSONL is\n");
+  printf("                            written plain.\n\n");
   printf("Options:\n");
-  printf("  --input-format <fmt>      Source format (default: qwen-jsonl).\n");
+  printf("  --input-format <fmt>      qwen-jsonl | lcp (default: lcp if the\n");
+  printf("                            file name contains .lcp, else\n");
+  printf("                            qwen-jsonl).\n");
   printf("  --block-size-tokens <n>   Tokens per KV block, recorded in the\n");
-  printf("                            header (default: 16).\n");
-  printf("  --no-zstd                 Write a plain, uncompressed file.\n");
+  printf("                            lcp header (default: 16).\n");
+  printf("  --no-zstd                 Write a plain, uncompressed lcp file.\n");
   printf("  --help                    Print this message.\n");
 }
 
@@ -76,6 +82,7 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
         fprintf(stderr, "error: unknown --input-format '%s'\n", value);
         return false;
       }
+      opts.format_given = true;
     } else if (strcmp(arg, "--block-size-tokens") == 0) {
       opts.block_size_tokens = static_cast<int32_t>(strtol(value, nullptr, 10));
     } else {
@@ -92,7 +99,17 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
     fprintf(stderr, "error: --block-size-tokens must be positive\n");
     return false;
   }
-  if (opts.compress && !ends_with(opts.output, ".zst")) {
+  if (!opts.format_given) {
+    opts.format = prefixsim::guess_trace_format(opts.input);
+  }
+  if (opts.format == prefixsim::TraceFormat::kLcp) {
+    if (ends_with(opts.output, ".zst")) {
+      fprintf(stderr,
+              "error: JSONL is written plain, since the JSONL readers take "
+              "only plain files; drop the .zst\n");
+      return false;
+    }
+  } else if (opts.compress && !ends_with(opts.output, ".zst")) {
     opts.output += ".zst";
   } else if (!opts.compress && ends_with(opts.output, ".zst")) {
     fprintf(stderr,
@@ -103,27 +120,32 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
   return true;
 }
 
-}  // namespace
-
-int main(int argc, char **argv) {
-  Options opts;
-  bool should_exit = false;
-  if (!parse_args(argc, argv, opts, should_exit)) return 1;
-  if (should_exit) return 0;
-
+/// lcp -> JSONL, streamed one request at a time.
+int to_jsonl(prefixsim::TraceReader &reader, const Options &opts) {
   std::string error;
-  auto reader = prefixsim::open_trace(opts.input, opts.format,
-                                      prefixsim::BlockIdMode::kPrefix, error);
-  if (reader == nullptr) {
+  int64_t n = 0;
+  if (!prefixsim::write_jsonl(reader, opts.output, n, error)) {
     fprintf(stderr, "error: %s\n", error.c_str());
     return 1;
   }
+  printf("wrote %s: %" PRId64 " requests\n", opts.output.c_str(), n);
+  if (reader.block_size_tokens() != 16) {
+    printf(
+        "the blocks are %d tokens: pass --block-size-tokens %d when "
+        "converting back\n",
+        reader.block_size_tokens(), reader.block_size_tokens());
+  }
+  return 0;
+}
 
+/// JSONL -> lcp. The whole trace is held, to compute next access.
+int to_lcp(prefixsim::TraceReader &reader, const Options &opts) {
   // load_trace also fills next_access_vtime and session_next_access, in
   // reverse passes over the whole trace: the future the format stores so that
   // its readers need only one forward pass.
+  std::string error;
   std::vector<prefixsim::Request> requests;
-  if (!prefixsim::load_trace(*reader, requests, error)) {
+  if (!prefixsim::load_trace(reader, requests, error)) {
     fprintf(stderr, "error: %s\n", error.c_str());
     return 1;
   }
@@ -141,4 +163,23 @@ int main(int argc, char **argv) {
          opts.output.c_str(), st.n_req, st.n_block, st.n_unique_block,
          st.n_session, st.n_user, st.n_type, st.max_blocks_per_req);
   return 0;
+}
+
+}  // namespace
+
+int main(int argc, char **argv) {
+  Options opts;
+  bool should_exit = false;
+  if (!parse_args(argc, argv, opts, should_exit)) return 1;
+  if (should_exit) return 0;
+
+  std::string error;
+  auto reader = prefixsim::open_trace(opts.input, opts.format,
+                                      prefixsim::BlockIdMode::kPrefix, error);
+  if (reader == nullptr) {
+    fprintf(stderr, "error: %s\n", error.c_str());
+    return 1;
+  }
+  return opts.format == prefixsim::TraceFormat::kLcp ? to_jsonl(*reader, opts)
+                                                     : to_lcp(*reader, opts);
 }

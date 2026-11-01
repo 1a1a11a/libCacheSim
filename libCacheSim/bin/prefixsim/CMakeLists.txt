@@ -8,6 +8,7 @@ add_library(prefixsim_lib STATIC
     simulator.cpp
     trace.cpp
     lcp_writer.cpp
+    jsonl_writer.cpp
 )
 
 target_compile_options(prefixsim_lib PRIVATE

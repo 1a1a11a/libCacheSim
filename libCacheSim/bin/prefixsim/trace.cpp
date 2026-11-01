@@ -259,6 +259,9 @@ class LcpReader : public TraceReader {
   bool annotated() const override { return true; }
   int64_t n_requests_total() const override { return stat_.n_req; }
   int64_t n_blocks_total() const override { return stat_.n_block; }
+  int32_t block_size_tokens() const override {
+    return static_cast<int32_t>(stat_.block_size_tokens);
+  }
 
  private:
   reader_t *reader_;

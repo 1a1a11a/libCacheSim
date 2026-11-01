@@ -348,4 +348,22 @@ one with more than 32 request types. It holds the whole
 trace in memory: 12.8 GiB and about 2 minutes for fi-new, 15.4 GiB and about
 3 minutes for chutes.
 
+## Converting back to JSONL
+
+```bash
+./bin/traceConvLLM --input fi.lcp.zst --output fi.jsonl
+# wrote fi.jsonl: 327548 requests
+```
+
+An `lcp` input is written back as JSONL, one request per line, streaming: 13
+seconds and 137 MiB for fi-new, most of it zstd's window. The
+lines carry the fields the converter reads, so filtering them (a time window,
+some sessions) and converting the result gives a valid `lcp` file with its ids
+and next accesses recomputed; converting the whole output gives the original
+file back, byte for byte. `hash_ids` holds the file's block ids, not the source
+trace's hashes, which `lcp` does not keep. `session_id` and `user_id` are the
+interned ids as strings, absent for 0; `-1` fields are `null`. The output is
+plain, as the JSONL readers take only plain files, and does not record the
+block size: pass `--block-size-tokens` when converting back if it is not 16.
+
 See [Trace Utilities](quickstart_traceUtils.md) for the other converters.
