@@ -227,11 +227,11 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_byte_true = {4149330432, 3836459008, 3791890432, 3677849600,
                         3265613824, 3044815360, 2898076160, 2863112704}},
     /* Published prefix-cache policies. Both consult per-request metadata that
-     * only prefixsim supplies, so under this driver they run in their
-     * documented single-class, internal-clock fallback: what these numbers pin
-     * is the core eviction machinery (the per-class LRU queues and head heap;
-     * the two piecewise-exponential segment heaps), not the prefix-cache
-     * behaviour, which prefixsim covers. */
+     * only prefixsim supplies. Under this driver they get none, and this trace
+     * carries no cost, so every object costs 1: WorkloadAware then has a single
+     * workload class and AsymCache a constant recompute cost, and both reduce
+     * to LRU. These rows are LRU's numbers and pin that reduction; the
+     * prefix-cache behaviour itself is not tested here. */
     {.cache_name = "WorkloadAware",
      .hashpower = 20,
      .req_cnt_true = 113872,
@@ -243,9 +243,9 @@ static const cache_test_data_t test_data_truth[] = {
      .hashpower = 20,
      .req_cnt_true = 113872,
      .req_byte_true = 4368040448,
-     .miss_cnt_true = {92232, 88910, 87122, 82559, 77385, 74014, 69331, 63357},
-     .miss_byte_true = {4131499520, 3940749824, 3856896000, 3568462336,
-                        3297068544, 3091883520, 2834808832, 2520712704}},
+     .miss_cnt_true = {93374, 89783, 83572, 81722, 72494, 72104, 71972, 71704},
+     .miss_byte_true = {4214303232, 4061242368, 3778040320, 3660569600,
+                        3100927488, 3078128640, 3075403776, 3061662720}},
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
     {.cache_name = "3LCache",
      .hashpower = 20,
@@ -499,8 +499,7 @@ static void test_MQ(gconstpointer user_data) {
 static void test_3LCache(gconstpointer user_data) {
   // Index must name the 3LCache row: test_cache_algorithm() builds the cache
   // from test_data_truth[i].cache_name, so a wrong index silently tests a
-  // different algorithm rather than failing. This read 25 (WorkloadAware) until
-  // 2026-09-12, so 3LCache was never actually covered.
+  // different algorithm rather than failing.
   test_cache_algorithm(user_data, &test_data_truth[31]);
 }
 #endif /* ENABLE_3L_CACHE */
@@ -512,11 +511,11 @@ static void test_WTinyLFU(gconstpointer user_data) {
 static void empty_test(gconstpointer user_data) { ; }
 
 static void test_WorkloadAware(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[25]);
+  test_cache_algorithm(user_data, &test_data_truth[29]);
 }
 
 static void test_AsymCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[26]);
+  test_cache_algorithm(user_data, &test_data_truth[30]);
 }
 
 int main(int argc, char *argv[]) {
