@@ -111,7 +111,9 @@ void LHDCompute::update(candidate_t id, const request_t* req) {
   tag->timestamp = timestamp;
   tag->app = DEFAULT_APP_ID % APP_CLASSES;
   tag->size = 1;
-  tag->compute_intensity = req->obj_cost;
+  // 0 (a trace without costs) is read as 1, as cache.c does, or every rank
+  // would be 0
+  tag->compute_intensity = req->obj_cost > 0 ? req->obj_cost : 1;
 
   // with some probability, some candidates will never be evicted
   // ... but limit how many resources we spend on doing this

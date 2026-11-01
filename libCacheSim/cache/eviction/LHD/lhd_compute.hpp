@@ -184,8 +184,18 @@ class LHDCompute {
     }
   }
 
+  // LHD's hit density (lhd.hpp), weighted by the compute a hit saves. Under a
+  // uniform cost this ranks exactly as LHD does.
   inline rank_t getHitDensity(const Tag &tag) {
-    return getClass(tag).hitDensities[getAge(tag)] * tag.compute_intensity;
+    auto age = getAge(tag);
+    if (age == MAX_AGE - 1) {
+      return std::numeric_limits<rank_t>::lowest();
+    }
+    rank_t density = getClass(tag).hitDensities[age];
+    if (tag.explorer) {
+      density += 1.;
+    }
+    return density * tag.compute_intensity;
   }
 
   void reconfigure();
