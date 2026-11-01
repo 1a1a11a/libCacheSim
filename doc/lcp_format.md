@@ -259,8 +259,9 @@ Two entry points in `lcp.c`, sharing one parser:
 - **Per block**, `lcp_read_one_req()`: one `request_t` per block, ignoring
   request boundaries, so `cachesim`, `traceAnalyzer` and `mrcProfiler` read
   `lcp` unchanged. Per block it sets `obj_id`, `obj_size = 1`, `obj_cost`
-  from the cost model chosen with `-t cost-model=<m>` (`llmCostModel.h`),
-  `clock_time` in seconds (libCacheSim's convention), and `next_access_vtime`.
+  from the block's position under the cost model chosen with
+  `-t cost-model=<m>` (see [Cost](#cost)), `clock_time` in seconds
+  (libCacheSim's convention), and `next_access_vtime`.
 - **Per request**, `lcp_read_trace_req()`: a record, its block ids, and their
   next accesses. `prefixsim` streams with it (`--trace-format lcp`, or any file
   name containing `.lcp`), one pass per algorithm, one request in memory.
@@ -285,6 +286,30 @@ the stat block.
 `prefixsim` on an `lcp` file gives the same results as on its source JSONL,
 which it loads whole and annotates in memory: both readers intern ids and
 categories with the same code.
+
+### Cost
+
+A file stores no cost, because what a block costs to recompute depends on the
+model and the hardware, not on the trace. Readers derive it from the block's
+0-based position `p` in its request, under a cost model given as a string
+(`llmCostModel.h`), the same in `cachesim -t cost-model=<m>` and
+`prefixsim --cost-model <m>`:
+
+| model | cost |
+|---|---|
+| `linear:A,B` | `A + B*p`, for integers `A >= 1` and `B >= 0` |
+| `table:FILE` | line `p+1` of `FILE`, one integer per line, `#` comments and blank lines skipped; positions past the last line cost what it does |
+| `uniform` (default) | `linear:1,0`: the compute saving ratio equals the hit ratio |
+| `position` | `linear:1,1`: the blocks prefilled from the root to rebuild this one |
+| `qwen3coder30b_blksz_16` | `linear:865,2`, measured on Qwen3-Coder-30B at 16-token blocks |
+
+A transformer's prefill FLOPs for one block are linear in `p`: the projections
+and MLP cost the same for every block, and attention grows with the context
+before it. So `linear` fits any model, with `B/A` the attention share; use a
+table for measured costs that are not linear. Costs are integers up to
+2^31 - 1, the range of `cache_obj_t`'s cost: scale coefficients up instead of
+using fractions. The reader refuses a model that would exceed that within the
+file's longest request.
 
 ## Size
 

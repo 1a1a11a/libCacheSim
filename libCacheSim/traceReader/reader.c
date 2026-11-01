@@ -91,6 +91,8 @@ reader_t *setup_reader(const char *const trace_path,
     memcpy(&reader->init_params, init_params, sizeof(reader_init_param_t));
     if (init_params->binary_fmt_str != NULL)
       reader->init_params.binary_fmt_str = strdup(init_params->binary_fmt_str);
+    if (init_params->llm_cost_model != NULL)
+      reader->init_params.llm_cost_model = strdup(init_params->llm_cost_model);
 
     reader->ignore_obj_size = init_params->ignore_obj_size;
     reader->ignore_size_zero_req = init_params->ignore_size_zero_req;
@@ -513,7 +515,10 @@ int close_reader(reader_t *const reader) {
     if (reader->init_params.binary_fmt_str != NULL) {
       free(reader->init_params.binary_fmt_str);
     }
+  } else if (reader->trace_type == LCP_TRACE) {
+    lcp_free_params(reader);
   }
+  free(reader->init_params.llm_cost_model);
 
 #ifdef SUPPORT_ZSTD_TRACE
   if (reader->is_zstd_file) {

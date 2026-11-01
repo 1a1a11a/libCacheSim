@@ -69,7 +69,7 @@ struct Stats {
 
 struct SimulatorConfig {
   int64_t cache_size_blocks = 0;
-  CostModel cost_model = CostModel::kUniform;
+  CostModel cost_model;  ///< uniform unless set
   /// After phase 3, re-probe every block of the request and fail if any is
   /// missing. Catches eviction algorithms whose resident set is not visible in
   /// the main hash table (the S3FIFO family, for instance), which would

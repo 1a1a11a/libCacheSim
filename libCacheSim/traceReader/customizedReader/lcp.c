@@ -19,7 +19,7 @@ extern "C" {
 typedef struct {
   lcp_trace_stat_t stat;
   size_t req_size;
-  llm_cost_model_e cost_model;
+  llm_cost_model_t cost_model;
 
   /* streaming state, cleared by lcp_reset_reader() */
   int64_t blocks_left; /* in the current request, flat reading only */
@@ -94,8 +94,25 @@ int lcpReader_setup(reader_t *reader) {
   lcp_params_t *params = calloc(1, sizeof(lcp_params_t));
   memcpy(&params->stat, &header->stat, sizeof(lcp_trace_stat_t));
   params->req_size = lcp_req_size(header->version);
-  params->cost_model = (llm_cost_model_e)reader->init_params.llm_cost_model;
   reader->reader_params = params;
+
+  char err[1024];
+  if (!llm_cost_model_parse(reader->init_params.llm_cost_model,
+                            &params->cost_model, err, sizeof(err))) {
+    ERROR("lcp trace %s: cost-model: %s\n", reader->trace_path, err);
+    exit(1);
+  }
+  /* cache_obj_t keeps cost as int32_t; a larger one would wrap silently */
+  const int64_t max_cost =
+      llm_cost_model_max(&params->cost_model, params->stat.max_blocks_per_req);
+  if (max_cost > INT32_MAX) {
+    ERROR(
+        "lcp trace %s: the cost model reaches %lld at position %lld, over "
+        "%d; scale its coefficients down\n",
+        reader->trace_path, (long long)max_cost,
+        (long long)params->stat.max_blocks_per_req - 1, INT32_MAX);
+    exit(1);
+  }
 
   reader->trace_type = LCP_TRACE;
   reader->trace_format = BINARY_TRACE_FORMAT;
@@ -122,6 +139,11 @@ int lcpReader_setup(reader_t *reader) {
     }
   }
   return 0;
+}
+
+void lcp_free_params(reader_t *reader) {
+  lcp_params_t *params = (lcp_params_t *)reader->reader_params;
+  if (params != NULL) llm_cost_model_free(&params->cost_model);
 }
 
 void lcp_reset_reader(reader_t *reader) {
@@ -269,7 +291,7 @@ int lcp_read_one_req(reader_t *reader, request_t *req) {
   req->clock_time = params->clock_time;
   req->obj_id = id;
   req->obj_size = 1;
-  req->obj_cost = llm_block_cost(params->cost_model, params->block_pos);
+  req->obj_cost = llm_block_cost(&params->cost_model, params->block_pos);
   req->next_access_vtime = next_access < 0 ? MAX_REUSE_DISTANCE : next_access;
 
   params->blocks_left -= 1;

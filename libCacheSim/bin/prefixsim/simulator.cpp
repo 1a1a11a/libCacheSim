@@ -213,8 +213,7 @@ bool Simulator::probe(obj_id_t id) const {
 void Simulator::fill_request(const Request &request, size_t i) {
   req_buf_->obj_id = request.blocks[i];
   req_buf_->obj_size = 1;
-  req_buf_->obj_cost = static_cast<int64_t>(
-      llround(block_cost(config_.cost_model, static_cast<int64_t>(i))));
+  req_buf_->obj_cost = config_.cost_model.cost(static_cast<int64_t>(i));
   req_buf_->next_access_vtime = request.next_access_vtime[i];
   req_buf_->clock_time = static_cast<int64_t>(request.timestamp);
   req_buf_->valid = true;
@@ -293,7 +292,15 @@ bool Simulator::serve(const Request &request, std::string &error) {
   std::unordered_set<obj_id_t> missing;
 
   for (size_t i = 0; i < n_pos; ++i) {
-    const double cost = block_cost(config_.cost_model, static_cast<int64_t>(i));
+    const int64_t cost = config_.cost_model.cost(static_cast<int64_t>(i));
+    // cache_obj_t keeps cost as int32_t; a larger one would wrap silently
+    if (cost > INT32_MAX) {
+      ERROR(
+          "cost model %s gives position %zu a cost of %lld, over %d; scale "
+          "its coefficients down\n",
+          config_.cost_model.name().c_str(), i, static_cast<long long>(cost),
+          INT32_MAX);
+    }
     const bool hit = probe(request.blocks[i]);
     resident_[i] = hit ? 1 : 0;
 

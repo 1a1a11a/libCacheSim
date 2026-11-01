@@ -75,8 +75,8 @@ typedef struct {
   char *binary_fmt_str;
 
   // lcp reader: how obj_cost is derived from a block's position in its
-  // request, an llm_cost_model_e (see llmCostModel.h). 0 = uniform.
-  int32_t llm_cost_model;
+  // request, a model string (see llmCostModel.h). NULL = uniform.
+  char *llm_cost_model;
 
   // sample some requests in the trace
   sampler_t *sampler;

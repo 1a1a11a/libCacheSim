@@ -149,6 +149,10 @@ const lcp_trace_stat_t *lcp_get_stat(const reader_t *reader);
 
 void lcp_reset_reader(reader_t *reader);
 
+/** Release what the reader holds besides reader_params itself, which
+ *  close_reader frees. */
+void lcp_free_params(reader_t *reader);
+
 void lcp_print_trace_stat(reader_t *reader);
 
 #ifdef __cplusplus

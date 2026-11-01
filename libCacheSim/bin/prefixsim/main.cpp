@@ -31,8 +31,8 @@ struct Options {
   std::vector<std::string> algorithms{"lru"};
   int64_t cache_size = 0;
   prefixsim::TraceFormat format = prefixsim::TraceFormat::kQwenJsonl;
-  bool format_given = false;  ///< else guessed from the file name
-  prefixsim::CostModel cost_model = prefixsim::CostModel::kUniform;
+  bool format_given = false;        ///< else guessed from the file name
+  prefixsim::CostModel cost_model;  // uniform
   prefixsim::BlockIdMode block_id = prefixsim::BlockIdMode::kPrefix;
   bool verify = true;
   bool pin_request_blocks = true;
@@ -64,9 +64,15 @@ void print_usage(const char *program) {
       "qwen-jsonl).\n"
       "                          lcp is streamed in one pass; JSONL is\n"
       "                          loaded whole to compute next access.\n");
-  printf("  --cost-model <m>        uniform | position |\n");
   printf(
-      "                          qwen3coder30b_blksz_16 (default: uniform).\n");
+      "  --cost-model <m>        A block's compute cost by its position p in\n"
+      "                          its request (default: uniform):\n"
+      "                            linear:A,B   A + B*p\n"
+      "                            table:FILE   line p+1 of FILE; positions\n"
+      "                                         past the end use the last\n"
+      "                            uniform      linear:1,0\n"
+      "                            position     linear:1,1\n"
+      "                            qwen3coder30b_blksz_16  linear:865,2\n");
   printf("  --block-id <mode>       prefix | raw (default: prefix).\n");
   printf("  --no-verify             Skip the post-request residency check.\n");
   printf(
@@ -226,8 +232,9 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
         return false;
       }
     } else if (strcmp(arg, "--cost-model") == 0) {
-      if (!prefixsim::parse_cost_model(value, opts.cost_model)) {
-        fprintf(stderr, "error: unknown --cost-model '%s'\n", value);
+      std::string error;
+      if (!prefixsim::CostModel::parse(value, opts.cost_model, error)) {
+        fprintf(stderr, "error: --cost-model: %s\n", error.c_str());
         return false;
       }
     } else if (strcmp(arg, "--block-id") == 0) {
@@ -296,24 +303,23 @@ bool check_holes_writable(const Options &opts) {
 
 void report(FILE *out, const std::string &algorithm, const Options &opts,
             const prefixsim::Stats &stats) {
-  fprintf(out,
-          "RESULT trace=%s algo=%s cache_size=%lld cost_model=%s block_id=%s "
-          "n_req=%lld n_req_skipped=%lld n_blocks=%lld "
-          "block_hit_ratio=%.6f compute_saving_ratio=%.6f "
-          "n_eviction=%lld n_self_eviction=%lld n_unexpected_eviction=%lld "
-          "n_unobserved_eviction_round=%lld",
-          opts.trace_path.c_str(), algorithm.c_str(),
-          static_cast<long long>(opts.cache_size),
-          prefixsim::cost_model_name(opts.cost_model),
-          opts.block_id == prefixsim::BlockIdMode::kPrefix ? "prefix" : "raw",
-          static_cast<long long>(stats.n_requests),
-          static_cast<long long>(stats.n_requests_skipped),
-          static_cast<long long>(stats.n_blocks), stats.block_hit_ratio(),
-          stats.compute_saving_ratio(),
-          static_cast<long long>(stats.n_evictions),
-          static_cast<long long>(stats.n_self_evictions),
-          static_cast<long long>(stats.n_unexpected_evictions),
-          static_cast<long long>(stats.n_unobserved_eviction_rounds));
+  fprintf(
+      out,
+      "RESULT trace=%s algo=%s cache_size=%lld cost_model=%s block_id=%s "
+      "n_req=%lld n_req_skipped=%lld n_blocks=%lld "
+      "block_hit_ratio=%.6f compute_saving_ratio=%.6f "
+      "n_eviction=%lld n_self_eviction=%lld n_unexpected_eviction=%lld "
+      "n_unobserved_eviction_round=%lld",
+      opts.trace_path.c_str(), algorithm.c_str(),
+      static_cast<long long>(opts.cache_size), opts.cost_model.name().c_str(),
+      opts.block_id == prefixsim::BlockIdMode::kPrefix ? "prefix" : "raw",
+      static_cast<long long>(stats.n_requests),
+      static_cast<long long>(stats.n_requests_skipped),
+      static_cast<long long>(stats.n_blocks), stats.block_hit_ratio(),
+      stats.compute_saving_ratio(), static_cast<long long>(stats.n_evictions),
+      static_cast<long long>(stats.n_self_evictions),
+      static_cast<long long>(stats.n_unexpected_evictions),
+      static_cast<long long>(stats.n_unobserved_eviction_rounds));
   if (!opts.replay_deepest_first) fprintf(out, " replay=prefix-order");
   fprintf(out, "\n");
 }
@@ -327,7 +333,7 @@ int main(int argc, char **argv) {
   if (should_exit) return 0;
 
   if (opts.block_id == prefixsim::BlockIdMode::kRaw &&
-      prefixsim::cost_is_position_dependent(opts.cost_model)) {
+      opts.cost_model.position_dependent()) {
     WARN(
         "--block-id raw with a position-dependent cost model: a raw block id "
         "reached through two different prefixes gets two different costs, and "
@@ -374,7 +380,7 @@ int main(int argc, char **argv) {
       opts.block_id == prefixsim::BlockIdMode::kPrefix ? "prefix" : "raw");
   printf("cache size %lld blocks, cost model %s\n\n",
          static_cast<long long>(opts.cache_size),
-         prefixsim::cost_model_name(opts.cost_model));
+         opts.cost_model.name().c_str());
 
   FILE *out_file = nullptr;
   if (!opts.output_path.empty()) {

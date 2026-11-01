@@ -70,7 +70,7 @@ bool run_case(const TestCase &tc, bool pin) {
 
   prefixsim::SimulatorConfig config;
   config.cache_size_blocks = tc.cache_size;
-  config.cost_model = prefixsim::CostModel::kUniform;
+  config.cost_model = prefixsim::CostModel();  // uniform
   config.verify = true;
   config.pin_request_blocks = pin;
 

@@ -384,6 +384,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   args->reader =
       setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+  free(reader_init_params.llm_cost_model); /* the reader keeps its own copy */
 
   if (args->consider_obj_metadata &&
       should_disable_obj_metadata(args->reader)) {

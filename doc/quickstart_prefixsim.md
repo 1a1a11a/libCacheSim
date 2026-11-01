@@ -96,13 +96,18 @@ is 1.5 GiB.
 `--algo-params "n-sample=64"`.
 
 **Cost models** (`--cost-model`) set what a block costs to recompute, from its
-0-based position in its request:
+0-based position `p` in its request:
 
 | model | cost |
 |---|---|
+| `linear:A,B` | A + B · p, for any model: fixed per-block work plus attention over the context |
+| `table:FILE` | line p+1 of FILE, for measured costs; positions past the end use the last line |
 | `uniform` (default) | 1, so compute saving equals hit ratio |
-| `position` | position + 1 |
-| `qwen3coder30b_blksz_16` | 865 + 2 · position, measured on Qwen3-Coder-30B |
+| `position` | p + 1 |
+| `qwen3coder30b_blksz_16` | 865 + 2 · p, measured on Qwen3-Coder-30B |
+
+Costs are integers. The same strings work in `cachesim -t cost-model=<m>` on an
+`lcp` trace.
 
 ---
 

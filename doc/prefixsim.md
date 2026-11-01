@@ -400,14 +400,21 @@ it and are unaffected by the churn of serving that request.
 
 ## Cost models (`--cost-model`)
 
-Cost is a function of the block's 0-based position in its request — the only
-signal the qwen trace carries.
+Cost is a function of the block's 0-based position `p` in its request, the only
+compute signal a trace carries. The model is a string, shared with the `lcp`
+reader so `cachesim -t cost-model=<m>` gives the same costs:
 
 | Model | Cost | Notes |
 |---|---|---|
-| `uniform` (default) | `1` | Compute saving ratio equals block hit ratio. |
-| `position` | `pos + 1` | Blocks that must be prefilled from the root to reconstruct this one. |
-| `qwen3coder30b_blksz_16` | `865 + 2*pos` | Measured per-block prefill cost of Qwen3-Coder-30B at 16-token blocks: a fixed part (projections, MLP) plus a part growing with the context attended to. Matches the vLLM logs (`idx=0→865, idx=100→1065`) and `compute_intensity_transform()` in `evaluate/`. Narrow range — position 1 vs 100 is 865 vs 1065 — so cost-aware policies rank close to cost-blind ones under it. |
+| `linear:A,B` | `A + B*p` | Any transformer: its per-block prefill FLOPs are a fixed part (projections, MLP) plus attention, which grows with the context before the block. Integers, `A >= 1`, `B >= 0`. |
+| `table:FILE` | line `p+1` of `FILE` | Measured costs, one integer per line; `#` comments and blank lines are skipped, and positions past the last line cost what it does. |
+| `uniform` (default) | `linear:1,0` | Compute saving ratio equals block hit ratio. |
+| `position` | `linear:1,1` | Blocks that must be prefilled from the root to reconstruct this one. |
+| `qwen3coder30b_blksz_16` | `linear:865,2` | Measured per-block prefill cost of Qwen3-Coder-30B at 16-token blocks (`p = 0` costs 865, `p = 100` costs 1065). The range is narrow, so cost-aware policies rank close to cost-blind ones under it. |
+
+Costs are integers up to 2^31 - 1, the range of `cache_obj_t`'s cost, so scale
+coefficients up rather than using fractions; a model that exceeds it on a
+request stops the run. The `RESULT` line reports the model string as given.
 
 ## Block identity (`--block-id`)
 
