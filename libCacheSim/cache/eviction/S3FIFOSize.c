@@ -315,7 +315,8 @@ static cache_obj_t *S3FIFOSize_insert(cache_t *cache, const request_t *req) {
     // we need to compare with the small queue, because the object has not had
     // chance to accumulate enough hits in the main queue
     double ratio = (double)req->obj_size / mean_obj_size_in_small;
-    // TODO: Why >= not larger than???????????????????
+    // >=, as S3FIFO promotes from the small queue: reaching the threshold
+    // (here in size-weighted accesses) is enough
     if ((ghost_obj->S3FIFO.freq) / ratio >= params->move_to_main_threshold) {
       // insert to main
       params->n_byte_admit_to_main += req->obj_size;
