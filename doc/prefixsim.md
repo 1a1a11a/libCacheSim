@@ -507,11 +507,15 @@ Getting there needed two changes here and several in the algorithms themselves:
   is reported. On that path one re-probe of the request recovers both the
   remaining deficit and the exact self-eviction count, so nothing is lost but
   speed. `n_unobserved_eviction_round` says when it was used.
-- **Several `evict()` implementations did not free anything.** `evict()` that
-  only promotes a block from a small queue to a main queue leaves occupancy
-  unchanged; `cache_get_base` hides this by looping until it has room. Fixed in
-  `S3FIFOd`, `QDLP`, `S3FIFOCompute`, `LIRS` and `CAR`, each verified to leave
-  its cachesim miss ratio unchanged.
+- **An `evict()` call need not free anything.** One that only promotes a
+  block from a small queue to a main queue (the S3FIFO family) leaves
+  occupancy unchanged; `cache_get_base` calls it again until it has room, and
+  so does allocation, which reports "no progress" only for an algorithm that
+  frees nothing in `n_obj + 16` calls. Two algorithms could genuinely stall and
+  are fixed in place, each verified to leave its cachesim miss ratio
+  unchanged: `CAR` only evicted when the cache was full, which allocation's
+  freeing ahead of a request breaks, and `LIRS` can reach a state where its
+  state machine has nothing to do, where it now frees one object outright.
 
 **`lirs` in-flight protection (added 2026-08).** LIRS's 1%-of-cache resident-HIR
 cap can evict a block of the request being served (its deepest block enters as the

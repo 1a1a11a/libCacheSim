@@ -408,7 +408,18 @@ bool Simulator::allocate(const Request &request, int64_t needed,
     if (cache_->evict_n != nullptr) {
       cache_->evict_n(cache_, req_buf_, needed - progress);
     } else {
-      cache_->evict(cache_, req_buf_);
+      // One evict() call may only move an object between internal queues --
+      // the S3FIFO family promoting from its small queue -- and free nothing.
+      // cache_get_base() calls it again until there is room, so do the same
+      // until something is reported or freed, and keep "no progress" below for
+      // an algorithm that is truly stuck.
+      const int64_t limit = cache_->get_n_obj(cache_) + 16;
+      int64_t attempts = 0;
+      do {
+        cache_->evict(cache_, req_buf_);
+      } while (victims_.size() == before &&
+               cache_->get_occupied_byte(cache_) >= occupied_before &&
+               cache_->get_occupied_byte(cache_) > 0 && ++attempts < limit);
     }
 
     if (victims_.size() == before) {
