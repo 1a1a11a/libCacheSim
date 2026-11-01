@@ -2,8 +2,9 @@
 //  RandomCompute.c
 //  libCacheSim
 //
-//  Picks two objects at random and evicts the one that is the least recently
-//  used RandomCompute eviction
+//  Samples 128 objects at random and evicts the one with the lowest
+//  cost / recency, so a block that is cheap to recompute and long unused goes
+//  first.
 //
 //  Created by Juncheng on 8/2/16.
 //  Copyright © 2016 Juncheng. All rights reserved.
