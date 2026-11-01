@@ -25,13 +25,6 @@
 extern "C" {
 #endif
 
-// #define RECORD_EVICTION_PROCESS 1
-
-#ifdef RECORD_EVICTION_PROCESS
-void set_new_record_eviction_process_file(const char *ofilepath);
-void print_eviction_debug_message(const char *msg);
-#endif /* RECORD_EVICTION_PROCESS */
-
 struct cache;
 typedef struct cache cache_t;
 

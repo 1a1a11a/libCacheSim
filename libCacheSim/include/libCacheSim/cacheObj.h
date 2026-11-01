@@ -169,10 +169,6 @@ typedef struct {
   int32_t freq;
 } __attribute__((packed)) Sieve_obj_params_t;
 
-typedef struct {
-  int32_t compute_intensity;
-} GDSF_compute_obj_metadata_t;
-
 // ############################## cache obj ###################################
 struct cache_obj;
 typedef struct cache_obj {
