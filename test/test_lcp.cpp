@@ -10,6 +10,7 @@
 //   - the round trip JSONL -> lcp -> prefixsim: every field of every request
 //     comes back as the JSONL reader produced it, and simulating the stream in
 //     one pass matches simulating the JSONL loaded whole
+//   - a cached object whose cost changes between accesses keeps the latest
 
 #include <cmath>
 #include <cstdint>
@@ -24,6 +25,7 @@
 #include "trace.hpp"
 
 extern "C" {
+#include "libCacheSim/cache.h"
 #include "libCacheSim/llmCostModel.h"
 #include "libCacheSim/reader.h"
 #include "traceReader/customizedReader/lcp.h"
@@ -418,6 +420,25 @@ void test_round_trip(bool compress) {
   remove(path);
 }
 
+/// An object reached with a new cost takes it on rather than aborting: a cost
+/// column may vary over time, as may a raw LLM block id reached at a new
+/// position.
+void test_cost_change() {
+  printf("cost change on a hit\n");
+  cache_t *cache = prefixsim::create_cache_by_name("lru", 4);
+  request_t *req = new_request();
+  req->obj_id = 42;
+  req->obj_size = 1;
+  req->obj_cost = 5;
+  cache->get(cache, req);
+  req->obj_cost = 7;
+  CHECK_EQ(cache->get(cache, req), true);
+  const cache_obj_t *obj = cache->find(cache, req, false);
+  CHECK_EQ(obj != nullptr ? obj->cost : -1, 7);
+  free_request(req);
+  cache->cache_free(cache);
+}
+
 }  // namespace
 
 int main(void) {
@@ -428,6 +449,7 @@ int main(void) {
 #ifdef SUPPORT_ZSTD_TRACE
   test_round_trip(true);
 #endif
+  test_cost_change();
   if (n_failed != 0) {
     printf("%d check(s) FAILED\n", n_failed);
     return 1;

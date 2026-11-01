@@ -426,9 +426,9 @@ signal the qwen trace carries.
   `qwen_traceA_blksz_16.jsonl`, 16,686 ids appear under more than one predecessor
   and 52,168 appear at more than one position, so `raw` merges distinct prefix
   paths into a single object and over-counts reuse (0.1450 vs 0.1404 for LRU at
-  8k). It also makes a block's cost ambiguous, which with a position-dependent
-  cost model trips the `cache_find_base()` cost-change `abort()`; the tool warns
-  about that combination.
+  8k). It also makes a block's cost ambiguous: with a position-dependent cost
+  model, a block reached at a new position takes that position's cost, so the
+  tool warns about the combination.
 
 The option exists because the JSONL reader takes *raw* ids, where the convention
 is a property of the file and cannot be assumed. `.lcp` is the opposite: its

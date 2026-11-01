@@ -331,8 +331,8 @@ int main(int argc, char **argv) {
     WARN(
         "--block-id raw with a position-dependent cost model: a raw block id "
         "reached through two different prefixes gets two different costs, and "
-        "cache_find_base() aborts on a cost change. Use prefix, or "
-        "--cost-model uniform.\n");
+        "the cached block keeps whichever it was last accessed with. Use "
+        "prefix, or --cost-model uniform.\n");
   }
 
   if (!check_holes_writable(opts)) return 1;
