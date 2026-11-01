@@ -20,7 +20,7 @@ its own. `prefixsim` serves each request as a unit — match, allocate, replay
 (see [How a request is served](#how-a-request-is-served)) — so a policy never
 evicts a block the arriving request is about to reuse.
 
-It runs 46 of libCacheSim's eviction algorithms, including Belady-style
+It runs 47 of libCacheSim's eviction algorithms, including Belady-style
 oracles, published prefix-cache policies and session-level policies (see
 [Which algorithms work](#which-algorithms-work)). The source is in
 [`libCacheSim/bin/prefixsim/`](/libCacheSim/bin/prefixsim/). To get started,
@@ -487,8 +487,8 @@ comparison excludes the largest prompts.
 
 ## Which algorithms work
 
-44 algorithms -- everything `cachesim` offers except one, plus five
-prefixsim-only session-level policies. `--list-algos` prints them. The list is verified rather than assumed: an entry is there because it
+47 algorithms in a build with LRB, 3LCache and S4-FIFO enabled, 44 without.
+`--list-algos` prints them. The list is verified rather than assumed: an entry is there because it
 completes a whole trace with the post-request residency check on.
 
 Getting there needed two changes here and several in the algorithms themselves:

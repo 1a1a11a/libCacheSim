@@ -1,4 +1,5 @@
-// Sanity checks for the prefixsim three-phase serve loop, on LRU.
+// Sanity checks for the prefixsim three-phase serve loop, on LRU, and a check
+// that lhd_compute reduces to lhd under the uniform cost model.
 //
 // Each case is a hand-traceable trace where the correct number of block hits
 // can be derived on paper. Requests are built directly from block ids rather
@@ -18,6 +19,7 @@
 #include "cost_model.hpp"
 #include "simulator.hpp"
 #include "trace.hpp"
+#include "utils/include/mymath.h"
 
 namespace {
 
@@ -142,6 +144,69 @@ bool run_case(const TestCase &tc, bool pin) {
   return ok;
 }
 
+/// lhd_compute weights LHD's hit density by each block's cost, so under the
+/// uniform cost model it must serve exactly as lhd does. Both sample from
+/// libCacheSim's RNG, which is reseeded before each run. The trace is random
+/// but fixed: 40 conversations behind a shared system prompt, re-read at random
+/// lengths, through a cache of about a tenth of them.
+bool lhd_compute_matches_lhd() {
+  std::vector<std::vector<obj_id_t>> raw;
+  uint64_t state = 1;
+  auto next = [&state]() {
+    state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+    return state >> 33;
+  };
+  for (int i = 0; i < 4000; ++i) {
+    const obj_id_t conversation = next() % 40;
+    const uint64_t length = 1 + next() % 30;
+    std::vector<obj_id_t> blocks = {1, 2, 3};  // the system prompt
+    for (uint64_t k = 0; k < length; ++k) {
+      blocks.push_back(1000 * (conversation + 1) + k);
+    }
+    raw.push_back(blocks);
+  }
+  const std::vector<prefixsim::Request> requests = build(raw);
+  const int64_t cache_size = 128;
+
+  const char *algos[] = {"lhd", "lhd_compute"};
+  prefixsim::Stats stats[2];
+  for (int a = 0; a < 2; ++a) {
+    set_rand_seed(42);
+    cache_t *cache = prefixsim::create_cache_by_name(algos[a], cache_size);
+    if (cache == nullptr) {
+      printf("  [%s] FAIL: could not create the cache\n", algos[a]);
+      return false;
+    }
+    prefixsim::SimulatorConfig config;
+    config.cache_size_blocks = cache_size;
+    config.verify = true;
+    std::string error;
+    bool ok = true;
+    {
+      prefixsim::Simulator sim(cache, config);
+      ok = sim.run(requests, error);
+      stats[a] = sim.stats();
+    }
+    cache->cache_free(cache);
+    if (!ok) {
+      printf("  [%s] FAIL: %s\n", algos[a], error.c_str());
+      return false;
+    }
+    printf("  [%s] hits %lld/%lld, evictions %lld, self-evict %lld\n", algos[a],
+           static_cast<long long>(stats[a].n_block_hits),
+           static_cast<long long>(stats[a].n_blocks),
+           static_cast<long long>(stats[a].n_evictions),
+           static_cast<long long>(stats[a].n_self_evictions));
+  }
+  if (stats[0].n_block_hits != stats[1].n_block_hits ||
+      stats[0].n_evictions != stats[1].n_evictions ||
+      stats[0].n_self_evictions != stats[1].n_self_evictions) {
+    printf("  FAIL: lhd_compute under the uniform cost differs from lhd\n");
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 int main(void) {
@@ -194,6 +259,10 @@ int main(void) {
       if (!run_case(tc, pin)) ++n_failed;
     }
   }
+
+  printf("lhd_compute under the uniform cost\n");
+  ++n_run;
+  if (!lhd_compute_matches_lhd()) ++n_failed;
 
   if (n_failed != 0) {
     printf("%d/%zu case(s) FAILED\n", n_failed, n_run);

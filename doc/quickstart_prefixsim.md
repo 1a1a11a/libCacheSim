@@ -94,8 +94,9 @@ pairs for scripts; `--output <file>` also appends the `RESULT` lines to a file.
 is 1.5 GiB.
 
 **Algorithms**: `--algo` takes a comma-separated list, run one after another;
-`--list-algos` prints all 46. The oracles (`belady`, `belady_compute`,
-`session_belady`) use the next-access times stored in the trace.
+`--list-algos` prints all 44, or 47 in a build with LRB, 3LCache and S4-FIFO
+enabled. The oracles (`belady`, `belady_compute`, `session_belady`) use the
+next-access times stored in the trace.
 `--algo-params` passes algorithm-specific parameters, e.g.
 `--algo-params "n-sample=64"`.
 

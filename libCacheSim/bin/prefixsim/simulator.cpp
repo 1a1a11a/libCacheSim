@@ -124,6 +124,7 @@ const AlgoEntry kAlgos[] = {
     // cost-aware
     {"gdsf", GDSF_init, true},
     {"gdsf_compute", GDSF_compute_init, true},
+    {"lhd_compute", LHD_compute_init, true},
     {"belady", Belady_init, true},
     {"belady_compute", BeladyCompute_init, true},
     {"random_compute", RandomCompute_init, true},
