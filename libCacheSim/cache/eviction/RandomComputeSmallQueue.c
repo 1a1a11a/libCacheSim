@@ -20,18 +20,12 @@
 //  as a score penalty rather than as a physical queue -- no separate FIFO, no
 //  ghost, no promotion step, and no second data structure to keep in sync.
 //
-//  NOTE: despite the name, this is not a port of vLLM's
-//  RandomSmallQueueFreeBlockManager, which keeps a real FIFO queue and a ghost
-//  list. The physical-queue form lives in PartialNodeRandomComputeSmallQueue.
-//  This one is the cheap approximation of the same idea, ported from vLLM's
-//  RandomQuickDemotion.
-//
-//  Notes on the port:
-//  - libCacheSim has no radix tree, so the original "is_leaf" gate from
-//    vllm has no analogue. We drop it and only check the access-count
-//    condition.
-//  - In libCacheSim, freq is 0 on insert and increments on hit, so freq == 0
-//    means "never reused since admission".
+//  NOTE: despite the name, this keeps no real FIFO queue or ghost list; the
+//  physical-queue form is PartialNodeRandomComputeSmallQueue. This one is the
+//  cheap approximation of the same idea. Without a prefix tree it cannot tell
+//  whether a block is a leaf, so the demotion checks reuse alone: freq is 0 on
+//  insert and increments on hit, so freq == 0 means "never reused since
+//  admission".
 //
 
 #include <float.h>

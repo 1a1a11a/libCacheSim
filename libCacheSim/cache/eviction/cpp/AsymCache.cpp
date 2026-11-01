@@ -72,15 +72,13 @@
  * is what the paper defines: Fig. 7's axis is "Time to Last Access (s)", L is
  * the P99 of that CDF, and r = 40 in their evaluation.
  *
- * There used to be a second registration, `asym_cache_time`, because this class
- * originally counted block accesses instead and the time-based one was added
- * beside it. The block clock is not a variant worth keeping: L then fits the
- * P99 *block* reuse gap, which on a large multi-turn trace is tens of millions
- * of blocks -- far beyond any cache. tau/alpha ~ 0 for every resident block, f
- * goes flat, and E = f * dT_B collapses to cost-weighted LRU, i.e. the lifespan
- * term stops doing anything. On a seconds clock L fits at ~180 s on the
- * freeinference traces, so it actually bites and idle blocks are steeply
- * demoted. Only the wall clock is kept, and it is the default and only mode.
+ * A block clock, counting block accesses instead, is not a variant worth
+ * keeping: L then fits the P99 *block* reuse gap, which on a large multi-turn
+ * trace is tens of millions of blocks -- far beyond any cache. tau/alpha ~ 0
+ * for every resident block, f goes flat, and E = f * dT_B collapses to
+ * cost-weighted LRU, i.e. the lifespan term stops doing anything. On a seconds
+ * clock L fits at ~180 s on production LLM traces, so it actually bites and
+ * idle blocks are steeply demoted. The wall clock is the only mode.
  *
  * A driver that supplies no request context at all (cachesim, which calls
  * neither set_request_ctx nor record_request) has no time source. There the

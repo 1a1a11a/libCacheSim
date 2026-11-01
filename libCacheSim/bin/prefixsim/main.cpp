@@ -97,8 +97,8 @@ void print_usage(const char *program) {
       "  --dump-holes <dir>      Per algorithm, write one line per request "
       "listing\n");
   printf(
-      "                          its recompute holes, for "
-      "evaluate/analyze_holes.py.\n");
+      "                          its recompute holes (runs of missed "
+      "blocks).\n");
   printf(
       "  --output <path>         Also append the RESULT lines to this file.\n");
   printf("  --list-algos            Print supported algorithms and exit.\n");
@@ -267,8 +267,8 @@ bool parse_args(int argc, char **argv, Options &opts, bool &should_exit) {
   return true;
 }
 
-/// Where this algorithm's hole dump goes. analyze_holes.py recovers dataset,
-/// cache size and algorithm from the file name, so the shape is load-bearing:
+/// Where this algorithm's hole dump goes. The name carries the dataset, cache
+/// size and algorithm, so a directory of dumps can be told apart:
 /// holes_<dataset>_cache<size>_<algo>.txt
 std::string holes_path_for(const Options &opts, const std::string &algorithm) {
   if (opts.dump_holes_dir.empty()) return std::string();

@@ -274,8 +274,7 @@ bool Simulator::serve(const Request &request, std::string &error) {
   // Before phase 2, because this is what an algorithm needs while it is picking
   // victims *for this request*: a time-decay policy's "now" and the workload
   // class a newly admitted block belongs to. record_request (below) runs after
-  // allocation and would lag both by one request. Placement matches
-  // set_request_context() in the vLLM prototype's harness.
+  // allocation and would lag both by one request.
   if (cache_->set_request_ctx != nullptr) {
     cache_request_ctx_t ctx;
     ctx.timestamp = request.timestamp;
@@ -450,7 +449,7 @@ bool Simulator::allocate(const Request &request, int64_t needed,
       // freed block -- which is what these algorithms give us, one eviction per
       // evict() call -- makes allocation O(|request| * deficit) and dominates
       // runtime on large requests at small caches (measured ~300x slower than
-      // LRU for S3FIFO/TwoQ/LIRS/WTinyLFU on the freeinference trace).
+      // LRU for S3FIFO/TwoQ/LIRS/WTinyLFU on a production LLM trace).
       //
       // Every eviction drops occupancy by one whether the victim was wanted or
       // not, so accumulate the drop and only re-probe once we have freed a
@@ -500,11 +499,11 @@ bool Simulator::allocate(const Request &request, int64_t needed,
  * Read straight off resident_, which phase 1 has already filled, so this costs
  * one pass over the request and never perturbs the simulation.
  *
- * The line format and the file naming are fixed by evaluate/analyze_holes.py,
- * which parses `(idx: S, len: L)` pairs and derives dataset/size/algorithm from
- * the file name. A line is written for every served request even when it has no
- * holes -- that script counts holes per request, so the zeros matter.
- * Skipped requests are omitted, as they are from every other statistic.
+ * Each line is `Request <index>:` followed by one `(idx: S, len: L)` pair per
+ * hole, S being the hole's first position and L its length. A line is written
+ * for every served request even when it has no holes, so that counting holes
+ * per request sees the zeros. Skipped requests are omitted, as they are from
+ * every other statistic.
  */
 void Simulator::dump_holes(const Request &request) {
   fprintf(holes_file_, "Request %lld:", static_cast<long long>(request.index));

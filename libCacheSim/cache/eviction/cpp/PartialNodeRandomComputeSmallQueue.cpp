@@ -13,10 +13,8 @@
 // ever displacing anything in the main set -- and doing that cheaply is the
 // whole point.
 //
-// Counterpart of RandomSmallQueueFreeBlockManager in the vLLM prototype, whose
-// admission rules (10% small, 90% ghost, promote at 2 accesses) these defaults
-// follow. Everything except the score and those defaults lives in
-// PartialNodeCache.
+// Defaults: a 10% small queue, a 90% ghost, promotion at 2 accesses.
+// Everything except the score and those defaults lives in PartialNodeCache.
 
 #include "partialNodeCache.hpp"
 

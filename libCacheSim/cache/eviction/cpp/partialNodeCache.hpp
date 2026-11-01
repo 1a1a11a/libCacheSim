@@ -1,8 +1,8 @@
 // Base class for sample-based partial-node eviction algorithms.
 //
-// The shape mirrors RadixTreeFreeBlockManager in the vLLM prototype: the base
-// owns the prefix tree, the sampling, the candidate selection and all of the
-// cache_t bookkeeping; a derived algorithm supplies only a per-block score.
+// The base owns the prefix tree, the sampling, the candidate selection and all
+// of the cache_t bookkeeping; a derived algorithm supplies only a per-block
+// score.
 //
 // One eviction round:
 //   1. sample n_sample NODES uniformly (not blocks -- that is the difference
@@ -54,7 +54,7 @@ class PartialNodeCache {
   /// How many blocks one eviction round takes out of the winning node.
   ///
   /// Both modes sample n_sample nodes, score each by its canonical block (see
-  /// node_chunk_score, which follows vLLM's rule), and take the chunk from the
+  /// node_chunk_score), and take the chunk from the
   /// best-scoring node. They differ in the cap, and in which canonical rule
   /// applies:
   ///   kDrain  -- uncapped: the winning node gives up the entire remaining
@@ -62,16 +62,15 @@ class PartialNodeCache {
   ///              commits to a single node for a potentially large batch.
   ///   kMicro  -- capped at micro_batch blocks, then re-sample and re-score.
   ///              More selective for the same reason drain is cheaper.
-  /// Named after EVICTION_MODE in the vLLM prototype.
   enum class Mode { kDrain, kMicro };
 
   PrefixRadixTree tree;
 
   Mode mode = Mode::kDrain;
-  /// Blocks per round in kMicro. vLLM's MICRO_BATCH_SIZE.
+  /// Blocks per round in kMicro.
   int64_t micro_batch = 64;
 
-  /// Nodes drawn per eviction round. vLLM calls this ASSOCIATIVITY.
+  /// Nodes drawn per eviction round.
   int n_sample = 32;
 
   // -------------------------------------------------------------------------
@@ -115,8 +114,8 @@ class PartialNodeCache {
   bool small_enabled() const { return small_capacity > 0; }
   /// Which end of a node to evict from.
   ///
-  /// Head (shallowest resident block) is the default, matching vLLM's
-  /// leftmost-evictable choice. Tail looks more natural for a prefix cache --
+  /// Head (shallowest resident block) is the default: the leftmost evictable
+  /// block. Tail looks more natural for a prefix cache --
   /// drop the private end, keep the shared root -- but it interacts badly with
   /// a position-based cost model: the deepest block of a node is also the most
   /// expensive one, so restricting candidates to tails forces the policy to

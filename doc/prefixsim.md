@@ -65,8 +65,7 @@ the engine needs every block materialised at once: the resident ones are reused,
 the missing ones are prefilled into freshly allocated slots.
 
 A normal cache simulator has no notion of "these N objects must coexist", so the
-obvious workaround — the one `evaluate/evaluate.cpp` uses — is to free space for
-the whole request before touching it:
+obvious workaround is to free space for the whole request before touching it:
 
 ```c
 while (free_space < request_size) cache->evict(cache, req);
@@ -241,9 +240,8 @@ if (cache_->record_request != nullptr) {
 
 `record_request` is an optional slot on `cache_t`, `NULL` for every algorithm
 that does not need it (`cache_struct_init` zeroes the struct), so the check is
-required. It is the C analogue of `FreeBlockManager.record_request_blocks()` in
-the vLLM prototype, and it is deliberately called **here** rather than at init or
-during replay:
+required. It is deliberately called **here** rather than at init or during
+replay:
 
 - *After* allocate, because the algorithm must already know the path when it is
   asked to evict against it on the following request.
@@ -272,8 +270,7 @@ needs the *current* "now" while it is choosing victims, and a policy that fits a
 separate reuse-time distribution per workload class needs to know which class the
 arriving request belongs to. Delivering either through `record_request` would lag
 it by exactly one request. So the properties of the request travel ahead of it,
-and its block path follows behind — matching `set_request_context()` in the vLLM
-prototype's harness, which is placed the same way for the same reason.
+and its block path follows behind.
 
 `ctx.timestamp` is a `double` in seconds. `request_t::clock_time` would do the job
 except that it truncates to whole seconds, and with a KV-block lifespan of order
@@ -426,8 +423,8 @@ request stops the run. The `RESULT` line reports the model string as given.
   order of first appearance and two blocks share one only when their whole
   paths match. These are exactly the ids `traceConvLLM` writes to `.lcp`.
   Session and category ids are interned the same way. (This replaced a rolling
-  `boost::hash_combine` fold, which collided on the qwen, freeinference and
-  chutes traces — 2 to 46 merged prefixes per trace — because it barely mixes
+  `boost::hash_combine` fold, which collided on four of the five LLM traces
+  checked — 2 to 46 merged prefixes per trace — because it barely mixes
   sequential integers.)
 - `raw` — use the trace's `hash_ids` verbatim. Only correct if the trace's ids
   are already prefix-unique. **The qwen traces are not**: on
@@ -444,12 +441,11 @@ converter writes positionally encoded ids and nothing else, so there is nothing
 for a consumer to choose, and `--block-id raw` is an error on it — see
 [the format spec](/doc/lcp_format.md#identifiers).
 
-`raw` is worth keeping for one specific job: reproducing the vLLM prototype,
-which keys on `hash_ids` directly. That is why the freeinference comparison above
-uses it. On a trace whose ids already *are* prefix-unique the two modes agree
-exactly — LRU at 120k blocks on `prod_trace_w4_multiturn_concurrency_1024` gives
-0.178042 / 0.090094 under both — so `prefix` is never the riskier choice;
-`raw` is only ever the one that can be wrong.
+`raw` is worth keeping for one specific job: reproducing a system that keys on
+`hash_ids` directly. On a trace whose ids already *are* prefix-unique the two
+modes agree exactly — LRU at 120k blocks on a production multi-turn trace gives
+0.178042 / 0.090094 under both — so `prefix` is never the riskier choice; `raw`
+is only ever the one that can be wrong.
 
 ---
 
@@ -517,15 +513,15 @@ Getting there needed two changes here and several in the algorithms themselves:
   freeing ahead of a request breaks, and `LIRS` can reach a state where its
   state machine has nothing to do, where it now frees one object outright.
 
-**`lirs` in-flight protection (added 2026-08).** LIRS's 1%-of-cache resident-HIR
+**`lirs` in-flight protection.** LIRS's 1%-of-cache resident-HIR
 cap can evict a block of the request being served (its deepest block enters as the
 oldest HIR under the deepest-first replay), failing the residency check — a real
 engine never evicts an in-flight block. `LIRS.c` now pins the current request's
 blocks against its own eviction: `record_request` marks them before replay and
 `set_request_ctx` clears them at the next serve, so `evictHIR` skips a block only
 while it is in-flight. It is a no-op everywhere LIRS already passed (verified
-bit-identical) and under `cachesim` (hooks never called), and it recovers the two
-freeinference caches (24932, 26739) that previously aborted.
+bit-identical) and under `cachesim` (hooks never called), and it fixes the runs
+at two cache sizes that previously aborted.
 
 ### Published prefix-cache policies
 
@@ -550,10 +546,7 @@ degrades to the conventional LRU strategy"), so that combination measures nothin
 
 **`asym_cache` runs on a wall clock, and that is the whole story.** The paper
 defines the reuse-time distribution on seconds and sets the lifespan `L` to its
-P99. There used to be a second registration, `asym_cache_time`, because this
-policy originally counted block accesses; that variant was **removed on
-2026-09-10** and `asym_cache` *is* the wall-clock one now. Fit `L` on a block
-clock instead and it lands tens of millions of blocks out, beyond any cache, so
+P99, and `asym_cache` does the same. Fit `L` on a block clock instead and it lands tens of millions of blocks out, beyond any cache, so
 `tau/alpha ~ 0` for everything resident, `f_B` goes flat and the policy collapses
 to cost-weighted LRU -- it stops being MSA at all, which is why only the seconds
 clock is kept. A driver that supplies no request context (cachesim) has no time
@@ -571,7 +564,7 @@ Five policies evict a **conversation** rather than a block: `session_lru`,
 share all the machinery in `libCacheSim/cache/eviction/cpp/sessionCache.cpp`
 and differ only in which session they pick.
 
-A block is not owned by one session — on the July trace 25% of unique blocks
+A block is not owned by one session — on fi-new 25% of unique blocks
 appear in more than one, covering 34% of accesses — so "evict a session, free its
 blocks" would tear blocks out from under live conversations. Instead each session
 *claims* the blocks of its current turn, a block is resident while at least one
@@ -665,14 +658,8 @@ Request 2: (idx: 1, len: 258)
 ```
 
 `idx` is the 0-based block position within the request, `len` the run length.
-Both the line format and the file name are fixed by
-`evaluate/analyze_holes.py`, which recovers dataset, cache size and algorithm
-from the name (`holes_<dataset>_cache<size>_<algo>.txt`) and scrapes the pairs
-with a regex. Point it at the files and it works unmodified:
-
-```bash
-python analyze_holes.py holes_logs/*.txt
-```
+The file name, `holes_<dataset>_cache<size>_<algo>.txt`, tells apart the dumps of
+a sweep that share one directory.
 
 The dump is **off unless `--dump-holes` is given** — no flag, no file, and the
 only cost on a normal run is one null check per request. If the flag is given, every
@@ -682,8 +669,8 @@ multi-GB load. The directory is not created for you.
 
 Three properties to preserve if you ever touch the writer:
 
-- **Every served request gets a line, even with no holes.** `analyze_holes.py`
-  counts holes per request per line, so the zero-hole lines are what keep that
+- **Every served request gets a line, even with no holes.** Counting holes per
+  request reads one line per request, so the zero-hole lines are what keep that
   distribution honest. Dropping them biases it upward.
 - **Skipped requests are omitted**, consistent with every other statistic here.
 - **Holes are read from the phase-1 match**, not from the replay, so they are

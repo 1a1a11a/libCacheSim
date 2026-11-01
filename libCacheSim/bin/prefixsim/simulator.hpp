@@ -82,7 +82,7 @@ struct SimulatorConfig {
   /// eviction), but it re-enters through insert() and so loses its place in
   /// the policy's structure -- an S3FIFO main-queue block, for instance, comes
   /// back in the small queue because a main-queue eviction writes no ghost
-  /// entry. Off reproduces the pre-2026-09 numbers.
+  /// entry. Off reproduces the numbers from before pinning existed.
   bool pin_request_blocks = true;
   /// Phase 3 replay order. True (the default) touches the deepest block
   /// first, so recency-ordered algorithms leave the prefix root at the MRU end
@@ -138,7 +138,7 @@ class Simulator {
   /// Point req_buf_ at block `i` of `request`.
   void fill_request(const Request &request, size_t i);
 
-  /// Write this request's holes, in the format analyze_holes.py parses.
+  /// Write this request's holes, one line per request (see dump_holes()).
   void dump_holes(const Request &request);
 
   cache_t *cache_ = nullptr;

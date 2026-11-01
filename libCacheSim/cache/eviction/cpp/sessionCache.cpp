@@ -3,7 +3,7 @@
  * Every other policy in this tree picks one block to evict. These pick a
  * *session* and free the blocks only that session still wants. The motivation
  * is structural rather than aesthetic, and rests on two properties of the
- * freeinference traces:
+ * fi-new trace:
  *
  *   - A session is a monotonically growing prefix. Between consecutive turns
  * the median common prefix is 100% of the previous turn's blocks, and the
@@ -17,11 +17,11 @@
  *     waiting for them to age out; a session-level one is told.
  *
  * ------------------------------------------------------------------ ownership
- * A block is NOT owned by one session: 25% of unique blocks in the July trace
- * appear in more than one session, covering 34% of all accesses, concentrated
- * at the prefix head (91% of accesses at offset < 64) but still 27% past offset
- * 16k. So "evict a session, free its blocks" would tear blocks out from under
- * other live conversations.
+ * A block is NOT owned by one session: 25% of unique blocks in fi-new appear in
+ * more than one session, covering 34% of all accesses, concentrated at the
+ * prefix head (91% of accesses at offset < 64) but still 27% past offset 16k.
+ * So "evict a session, free its blocks" would tear blocks out from under other
+ * live conversations.
  *
  * The fix is a claim count. Each session claims the blocks of its current turn;
  * a block is resident exactly while at least one session claims it. Evicting a

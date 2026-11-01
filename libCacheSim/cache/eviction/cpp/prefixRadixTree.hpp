@@ -6,8 +6,7 @@
 //
 // A *node* is a maximal non-branching run of blocks. Eviction algorithms that
 // work at node granularity sample nodes and then evict part of one -- hence
-// "partial-node" eviction. This mirrors the RadixTree behind
-// RadixTreeFreeBlockManager in the vLLM prototype.
+// "partial-node" eviction.
 //
 // Residency is tracked explicitly rather than by probing the cache: the tree is
 // told about every insert and every eviction, so it always knows which of a
@@ -87,10 +86,9 @@ class PrefixRadixTree {
   /// The resident block nearest rank `start` in eviction take order, scanning
   /// outwards and never below rank `lo`; ties go to the lower rank.
   ///
-  /// This is vLLM's canonical-block rule
-  /// (_get_canonical_block_for_radix_tree_node / _get_chunk_canonical_block),
-  /// expressed over take-order ranks rather than raw positions so it still
-  /// holds when eviction runs tail-first. For the default head-first order rank
+  /// This is the canonical-block rule (see node_chunk_score), expressed over
+  /// take-order ranks rather than raw positions so it still holds when
+  /// eviction runs tail-first. For the default head-first order rank
   /// equals position and the two are identical.
   bool canonical_resident(const Node *node, bool from_tail, int64_t start,
                           int64_t lo, obj_id_t &out) const;

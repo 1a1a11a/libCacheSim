@@ -161,23 +161,21 @@ int64_t evict_orphans(cache_t *cache, PartialNodeCache *impl, int64_t n) {
 }
 
 /**
- * Score a node by one representative block -- vLLM's "canonical block".
+ * Score a node by one representative block, its "canonical block".
  *
  * Scoring a whole node by one block is what makes node sampling affordable, and
  * the representative has to sit inside the chunk about to be evicted, or the
- * score describes blocks that are not going anywhere. The rule is taken from
- * the vLLM prototype verbatim so the two implementations rank nodes
- * identically:
+ * score describes blocks that are not going anywhere. The rule:
  *
  *   drain: start at rank min(chunk, node_size) / 2 and scan outwards over the
- *          whole node   (_get_canonical_block_for_radix_tree_node)
+ *          whole node
  *   micro: start at rank first_resident + chunk/2, clamped to the last rank,
  *          and scan outwards but never before first_resident
- *          (_get_chunk_canonical_block)
  *
  * Note both walk *ranks*, resident or not, so a sparsely-resident node can be
- * represented by a block some way from the chunk's centre. That is vLLM's
- * behaviour, not an accident of this port.
+ * represented by a block some way from the chunk's centre. That is deliberate:
+ * it keeps the rule identical to the engine-side implementation it was
+ * validated against.
  *
  * Returns false when the node has nothing to give.
  */
@@ -236,9 +234,6 @@ int64_t take_from_node(cache_t *cache, PartialNodeCache *impl,
  * the chunk from the best-scoring one. kDrain lets that chunk be the whole
  * remaining deficit; kMicro caps it at micro_batch and re-samples. Either way
  * the sampling cost is paid once per round rather than once per evicted block.
- *
- * Counterpart of _sample_and_evict_drain / _sample_and_evict_micro in the vLLM
- * prototype.
  */
 int64_t pn_evict_n(cache_t *cache, const request_t * /*req*/, int64_t n) {
   if (n <= 0) return 0;

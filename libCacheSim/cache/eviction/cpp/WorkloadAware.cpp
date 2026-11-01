@@ -61,16 +61,15 @@
  * frequencies at each second", and the lifespans of Fig. 19-20 are in seconds
  * (P99 of 97 s for to-B, 612 s on Trace A, 0.3 s on Trace B).
  *
- * This used to be a block counter, one tick per recorded block access, for
- * parity with the vLLM prototype. That was a real deviation, and not a harmless
- * one: lambda_w and `life` are both fitted online, so the exponential stays
- * self-consistent in whatever unit the clock uses and does not go flat -- but
- * only if the clock is a *uniform* rescaling of wall time, and a block counter
- * is not. It advances once per block access, so it runs faster during large
- * requests, and request size varies by workload class. The per-class lambda_w
- * ratios were therefore not the quantity the paper fits, and the per-class
- * partitioning is exactly what separates this policy from LRU. Changed to the
- * wall clock on 2026-09-10.
+ * A block counter, one tick per recorded block access, would be a real
+ * deviation, and not a harmless one: lambda_w and `life` are both fitted
+ * online, so the exponential stays self-consistent in whatever unit the clock
+ * uses and does not go flat -- but only if the clock is a *uniform* rescaling
+ * of wall time, and a block counter is not. It advances once per block access,
+ * so it runs faster during large requests, and request size varies by workload
+ * class. The per-class lambda_w ratios would then not be the quantity the
+ * paper fits, and the per-class partitioning is exactly what separates this
+ * policy from LRU.
  *
  * A driver that supplies no request context (cachesim, which calls neither
  * hook) has no time source and still falls back to one tick per access.
@@ -181,8 +180,7 @@ class WorkloadAware {
   /// insertion sequence -- i.e. to whatever order the categories were visited
   /// in. Iterating `queues` directly would make that order a function of the
   /// hash table's layout, so the same trace could yield different results after
-  /// an unrelated change. This keeps it first-seen, which is also the order the
-  /// vLLM prototype gets for free from Python's insertion-ordered dict.
+  /// an unrelated change. This keeps it first-seen.
   std::vector<uint64_t> category_order;
 
   std::priority_queue<HeadEntry> head_heap;

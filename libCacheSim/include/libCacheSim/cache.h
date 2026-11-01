@@ -81,7 +81,6 @@ typedef void (*cache_print_cache_func_ptr)(const cache_t *);
  * between making room for the request and replaying it.
  *
  * NULL for every algorithm that does not care; callers must check.
- * Mirrors FreeBlockManager.record_request_blocks() in the vLLM prototype.
  */
 typedef void (*cache_record_request_func_ptr)(cache_t *, const obj_id_t *,
                                               int64_t);
@@ -110,7 +109,6 @@ typedef void (*cache_record_request_func_ptr)(cache_t *, const obj_id_t *,
  *     ids for equality. 0 means "the trace said nothing".
  *
  * NULL for every algorithm that does not care; callers must check.
- * Mirrors FreeBlockManager.set_request_context() in the vLLM prototype.
  */
 typedef struct {
   double timestamp;

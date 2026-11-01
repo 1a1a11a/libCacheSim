@@ -165,8 +165,7 @@ allocation, so it delivers what a policy needs while it is choosing victims for
 * `n_blocks` -- how many objects the request will touch.
 
 `NULL` unless the algorithm needs it, so **callers must check**. `prefixsim`
-calls it at the top of each request, before its match and allocate phases, which
-mirrors `set_request_context()` in the vLLM prototype's harness.
+calls it at the top of each request, before its match and allocate phases.
 
 An algorithm that installs this hook should still work without it, because a
 caller driving the cache one object at a time (plain `cachesim`, the test suite)

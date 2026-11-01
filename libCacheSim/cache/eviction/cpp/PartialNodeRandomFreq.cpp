@@ -1,16 +1,15 @@
 // Partial-node RandomCompute with the frequency term kept.
 //
-// Exists to reproduce RandomFreeBlockManager ("Random") from the vLLM
-// prototype, whose score is access_count / recency * compute_intensity. The
-// production variant, PartialNodeRandomCompute, drops the frequency factor;
-// this one is the controlled comparison that isolates what that factor is
-// worth. Keep them side by side rather than making frequency a parameter, so
-// each name means exactly one algorithm.
+// Its score is access_count / recency * cost. The production variant,
+// PartialNodeRandomCompute, drops the frequency factor; this one is the
+// controlled comparison that isolates what that factor is worth. Keep them side
+// by side rather than making frequency a parameter, so each name means exactly
+// one algorithm.
 //
 // misc.freq counts accesses after the insert (cache_insert_base zeroes it,
-// cache_find_base increments it), so misc.freq + 1 is vLLM's access_count,
-// which starts at 1 on first access. cache->n_req ticks once per block access,
-// matching vLLM's current_time.
+// cache_find_base increments it), so misc.freq + 1 is the access count, which
+// starts at 1 on first access. Recency is measured in cache->n_req, which ticks
+// once per block access.
 
 #include "partialNodeCache.hpp"
 
