@@ -252,7 +252,7 @@ int binary_read_one_req(reader_t *reader, request_t *req) {
     req->op = read_data(start + params->op_offset, params->op_format);
   }
 
-#ifdef ENABLE_TTL
+#ifdef SUPPORT_TTL
   /* read ttl */
   if (params->ttl_field_idx > 0) {
     req->ttl = read_data(start + params->ttl_offset, params->ttl_format);
