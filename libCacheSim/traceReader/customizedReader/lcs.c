@@ -6,6 +6,7 @@
 
 #include "../customizedReader/binaryUtils.h"
 #include "../readerInternal.h"
+#include "oracle/oracleUtils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -210,6 +211,7 @@ int lcs_read_one_req(reader_t *reader, request_t *req) {
 
   if (req->obj_size == 0 && reader->ignore_size_zero_req &&
       reader->read_direction == READ_FORWARD) {
+    oracle_warn_zero_size(reader);
     return lcs_read_one_req(reader, req);
   }
   return 0;

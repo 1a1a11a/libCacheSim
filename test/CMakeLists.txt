@@ -62,6 +62,19 @@ add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
 
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+  set(oracle_trace_test_options "")
+  if(OPT_SUPPORT_ZSTD_TRACE)
+    list(APPEND oracle_trace_test_options --with-zstd)
+  endif()
+  add_test(NAME testOracleTrace
+           COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_oracle_trace.py
+                   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} ${oracle_trace_test_options})
+else()
+  message(WARNING "Python3 unavailable: oracle-trace regression tests disabled")
+endif()
+
 # Exercises the command-line tools themselves: argument handling, `-e print`
 # parameter reporting, and eviction parameter validation. Runs from the build
 # directory so it can find bin/ and ../data/; skips itself if either is absent.

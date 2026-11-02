@@ -370,6 +370,13 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   parse_reader_params(args->trace_type_params, &reader_init_params);
 
+  for (int i = 0; i < args->n_eviction_algo; i++) {
+    if (strcasecmp(args->eviction_algo[i], "belady") == 0 ||
+        strcasecmp(args->eviction_algo[i], "beladySize") == 0) {
+      reader_init_params.require_valid_next_access = true;
+    }
+  }
+
   if (args->sample_ratio > 0 && args->sample_ratio < 1 - 1e-6) {
     sampler_t *sampler = create_spatial_sampler(args->sample_ratio);
     reader_init_params.sampler = sampler;

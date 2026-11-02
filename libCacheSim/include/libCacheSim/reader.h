@@ -76,6 +76,9 @@ typedef struct {
 
   // sample some requests in the trace
   sampler_t *sampler;
+  /* Reject oracle filtering that invalidates future-access metadata.
+   * Offline-policy callers should enable this before reading or cloning. */
+  bool require_valid_next_access;
 } reader_init_param_t;
 
 enum read_direction {
@@ -148,6 +151,7 @@ typedef struct reader {
   /* used for trace sampling */
   sampler_t *sampler;
   enum read_direction read_direction;
+  bool warned_oracle_zero_size;
 } reader_t;
 
 static inline void set_default_reader_init_params(reader_init_param_t *params) {

@@ -10,6 +10,11 @@ Print requests from a trace.
 ```
 
 ## traceConv
+
+For existing oracle traces containing zero-size records, see
+[oracle correctness and repair](oracle_traces.md). Conversion filters these
+records before recomputing future access times. Decompress `.zst` input before
+conversion, which requires reverse access.
 Convert a trace to oracleGeneral format so you can run it faster (10x speedup) using less memory. Meanwhile, the generated trace has a smaller size, contains next request time.
 ```bash
 # the first parameter is the input trace, the second parameter is trace type, the output is in the same directory with suffic oracleGeneral
