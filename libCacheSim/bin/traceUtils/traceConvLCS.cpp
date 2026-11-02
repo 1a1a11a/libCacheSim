@@ -300,8 +300,8 @@ static void _analyze_trace(
   }
 
   /* calculate Zipf alpha using linear regression */
-  double *log_freq = new double[stat.n_obj];
-  double *log_rank = new double[stat.n_obj];
+  std::vector<double> log_freq(stat.n_obj);
+  std::vector<double> log_rank(stat.n_obj);
   int64_t n = 0;
   for (size_t i = 0; i < freq_cnt_vec.size(); i++) {
     for (int j = 0; j < freq_cnt_vec[i].second; j++) {
@@ -313,7 +313,7 @@ static void _analyze_trace(
   assert(n == stat.n_obj);
 
   double slope, intercept;
-  linear_regression(log_rank, log_freq, n, &slope, &intercept);
+  linear_regression(log_rank.data(), log_freq.data(), n, &slope, &intercept);
 
   stat.skewness = -slope;
 
