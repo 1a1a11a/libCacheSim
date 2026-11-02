@@ -117,7 +117,9 @@ void parse_reader_params(const char *reader_params_str,
 
     key = replace_char(key, '_', '-');
 
-    if (strcasecmp(key, "time-col") == 0) {
+    if (strcasecmp(key, "ignore-size-zero-req") == 0) {
+      params->ignore_size_zero_req = is_true(value);
+    } else if (strcasecmp(key, "time-col") == 0) {
       params->time_field = (int)strtol(value, &end, 0);
       _check_parsed_result(end, params->time_field);
     } else if (strcasecmp(key, "obj-id-col") == 0) {

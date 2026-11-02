@@ -27,6 +27,7 @@
 
 #include "../binaryUtils.h"
 #include "libCacheSim/reader.h"
+#include "oracleUtils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,8 +62,10 @@ static int oracleSimTwrNSBin_read_one_req(reader_t *reader, request_t *req) {
 
   if (req->kv.val_size == 0 && reader->ignore_size_zero_req &&
       (req->op == OP_GET || req->op == OP_GETS) &&
-      reader->read_direction == READ_FORWARD)
+      reader->read_direction == READ_FORWARD) {
+    oracle_warn_zero_size(reader);
     return oracleSimTwrNSBin_read_one_req(reader, req);
+  }
 
   return 0;
 }

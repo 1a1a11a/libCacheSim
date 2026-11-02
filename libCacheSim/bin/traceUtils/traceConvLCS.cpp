@@ -61,6 +61,7 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
   memset(&stat, 0, sizeof(stat));
   stat.version = CURR_STAT_VERSION;
   int64_t n_req_total = get_num_of_req(reader);
+  int64_t n_filtered = 0;
   obj_map.reserve(n_req_total / 100 + 1e4);
 
   INFO("%s: %.2f M requests in total\n", reader->trace_path,
@@ -69,7 +70,10 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
   reader->read_direction = READ_BACKWARD;
   reader_set_read_pos(reader, 1.0);
   go_back_one_req(reader);
-  read_one_req(reader, req);
+  if (read_conversion_req(reader, req, &n_filtered, true) != 0) {
+    LOGGING(ERROR_LEVEL, "traceConv: no requests remain after filtering\n");
+    exit(EXIT_FAILURE);
+  }
 
   // because we read backwards, the first request is the last request in the
   // trace
@@ -158,6 +162,7 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
 
     stat.n_req_byte += req->obj_size;
     stat.n_req += 1;
+    stat.start_timestamp = req->clock_time;
 
     if (stat.n_req % 100000000 == 0) {
       INFO(
@@ -174,16 +179,21 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
             (long long)n_req_total);
     }
 
-    if (read_one_req_above(reader, req) != 0) {
+    if (read_conversion_req(reader, req, &n_filtered) != 0) {
       break;
     }
   }
 
-  stat.start_timestamp = req->clock_time;
-
   if (reader->sampler == nullptr) {
-    assert(stat.n_req == get_num_of_req(reader));
+    /* Binary counts are physical rows; text counts use the filtered reader. */
+    assert(stat.n_req +
+               (reader->trace_format == BINARY_TRACE_FORMAT ? n_filtered : 0) ==
+           n_req_total);
   }
+  INFO(
+      "traceConv: filtered %lld zero-size records before recomputing "
+      "next_access_vtime\n",
+      (long long)n_filtered);
 
   free_request(req);
   ofile_temp.close();

@@ -306,6 +306,11 @@ void mrcProfiler::MRCProfilerSHARDS::fixed_sample_size_run() {
 void mrcProfiler::MRCProfilerMINISIM::run() {
   has_run_ = true;
 
+  if (strcasecmp(params_.cache_algorithm_str, "belady") == 0 ||
+      strcasecmp(params_.cache_algorithm_str, "beladySize") == 0) {
+    reader_->init_params.require_valid_next_access = true;
+  }
+
   request_t *req = new_request();
   double sample_rate = params_.minisim_params.sample_rate;
   double sampled_cnt = 0, sampled_size = 0;

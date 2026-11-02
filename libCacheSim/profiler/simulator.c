@@ -53,12 +53,16 @@ static void _simulate(gpointer data, gpointer user_data) {
   reader_t *cloned_reader = clone_reader(source_reader);
   request_t *req = new_request();
   cache_t *local_cache = params->caches[idx];
+  bool needs_future = local_cache->cache_init == Belady_init ||
+                      local_cache->cache_init == BeladySize_init;
+  cloned_reader->init_params.require_valid_next_access |= needs_future;
   strncpy(result[idx].cache_name, local_cache->cache_name,
           CACHE_NAME_ARRAY_LEN);
 
   /* warm up using warmup_reader */
   if (params->warmup_reader) {
     reader_t *warmup_cloned_reader = clone_reader(params->warmup_reader);
+    warmup_cloned_reader->init_params.require_valid_next_access |= needs_future;
     read_one_req(warmup_cloned_reader, req);
     while (req->valid) {
       local_cache->get(local_cache, req);

@@ -98,6 +98,10 @@ You can just use the algorithm name as the eviction algorithm parameter, for exa
 ./bin/cachesim ../data/cloudPhysicsIO.oracleGeneral.bin oracleGeneral beladySize auto
 ```
 
+Belady/BeladySize require oracle metadata for the stream actually simulated.
+If zero-size records are filtered from an oracle trace, repair it first; see
+[oracle correctness and benchmark revalidation](oracle_traces.md).
+
 
 ### Use different trace types
 We have demonstrated the use of cachesim with vscsi trace. We also support csv traces.

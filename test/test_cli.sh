@@ -131,6 +131,11 @@ expect_output "cachesim txt" "miss ratio" \
 	"${BIN_DIR}/cachesim" "${TRACE_TXT}" txt lru 1gb
 expect_output "cachesim oracleGeneral" "miss ratio" \
 	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral lru 1gb
+for ignore_zero in true false; do
+	expect_output "cachesim parses ignore-size-zero-req=${ignore_zero}" "113872 req" \
+		"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral lru 1gb \
+		-t "ignore-size-zero-req=${ignore_zero}"
+done
 expect_output "cachesim csv" "miss ratio" \
 	"${BIN_DIR}/cachesim" "${TRACE_CSV}" csv lru 1gb \
 	-t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true"

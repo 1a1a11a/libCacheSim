@@ -55,6 +55,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   std::unordered_map<uint64_t, int64_t> last_access_map;
 
   int64_t n_req_curr = 0, n_req_total = get_num_of_req(reader);
+  int64_t n_filtered = 0;
   last_access_map.reserve(n_req_total / 100 + 1e4);
 
   int64_t unique_bytes = 0, total_bytes = 0, n_obj = 0;
@@ -64,7 +65,10 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   reader->read_direction = READ_BACKWARD;
   reader_set_read_pos(reader, 1.0);
   go_back_one_req(reader);
-  read_one_req(reader, req);
+  if (read_conversion_req(reader, req, &n_filtered, true) != 0) {
+    LOGGING(ERROR_LEVEL, "traceConv: no requests remain after filtering\n");
+    exit(EXIT_FAILURE);
+  }
 
   int64_t start_ts = req->clock_time;
 
@@ -104,21 +108,28 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
             (long long)n_req_total);
     }
 
-    if (read_one_req_above(reader, req) != 0) {
+    if (read_conversion_req(reader, req, &n_filtered) != 0) {
       break;
     }
     og_req.init(req);
   }
 
   if (reader->sampler == nullptr) {
-    assert(n_req_curr == get_num_of_req(reader));
+    /* Binary counts are physical rows; text counts use the filtered reader. */
+    assert(n_req_curr +
+               (reader->trace_format == BINARY_TRACE_FORMAT ? n_filtered : 0) ==
+           n_req_total);
   }
+  INFO(
+      "traceConv: filtered %lld zero-size records before recomputing "
+      "next_access_vtime\n",
+      (long long)n_filtered);
 
   INFO(
       "%s: %ld M requests (%.2lf GB), trace time %ld, working set %lld "
       "object, %lld B (%.2lf GB), reversing output...\n",
       reader->trace_path, (long)(n_req_curr / 1e6), (double)total_bytes / GiB,
-      (long)(start_ts - req->clock_time), (long long)n_obj,
+      (long)(start_ts - og_req.clock_time), (long long)n_obj,
       (long long)unique_bytes, (double)unique_bytes / GiB);
 
   free_request(req);

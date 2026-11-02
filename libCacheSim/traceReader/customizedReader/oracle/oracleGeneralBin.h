@@ -17,6 +17,7 @@ extern "C" {
 
 #include "../binaryUtils.h"
 #include "libCacheSim/reader.h"
+#include "oracleUtils.h"
 
 static inline int oracleGeneralBin_setup(reader_t *reader) {
   reader->trace_type = ORACLE_GENERAL_TRACE;
@@ -29,26 +30,30 @@ static inline int oracleGeneralBin_setup(reader_t *reader) {
 
 static inline int oracleGeneralBin_read_one_req(reader_t *reader,
                                                 request_t *req) {
-  char *record = read_bytes(reader, reader->item_size);
+  /* Use a loop: published traces can contain long runs of zero-size records. */
+  while (true) {
+    char *record = read_bytes(reader, reader->item_size);
 
-  if (record == NULL) {
-    req->valid = FALSE;
-    return 1;
-  }
+    if (record == NULL) {
+      req->valid = FALSE;
+      return 1;
+    }
 
-  req->clock_time = *(uint32_t *)record;
-  req->obj_id = *(uint64_t *)(record + 4);
-  req->obj_size = *(uint32_t *)(record + 12);
-  req->next_access_vtime = *(int64_t *)(record + 16);
-  if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
-    req->next_access_vtime = MAX_REUSE_DISTANCE;
-  }
+    req->clock_time = *(uint32_t *)record;
+    req->obj_id = *(uint64_t *)(record + 4);
+    req->obj_size = *(uint32_t *)(record + 12);
+    req->next_access_vtime = *(int64_t *)(record + 16);
+    if (req->next_access_vtime == -1 || req->next_access_vtime == INT64_MAX) {
+      req->next_access_vtime = MAX_REUSE_DISTANCE;
+    }
 
-  if (req->obj_size == 0 && reader->ignore_size_zero_req &&
-      reader->read_direction == READ_FORWARD) {
-    return oracleGeneralBin_read_one_req(reader, req);
+    if (req->obj_size == 0 && reader->ignore_size_zero_req &&
+        reader->read_direction == READ_FORWARD) {
+      oracle_warn_zero_size(reader);
+      continue;
+    }
+    return 0;
   }
-  return 0;
 }
 
 #ifdef __cplusplus

@@ -58,6 +58,7 @@ typedef struct {
   char *binary_fmt_str;
 
   sampler_t *sampler;
+  bool require_valid_next_access; // reject unsafe zero-size oracle filtering
 } reader_init_param_t;
 
 static inline reader_init_param_t default_reader_init_params(void);

@@ -119,6 +119,11 @@ The fields are 1-indexed and must match the trace. The sample `data/cloudPhysics
 
 Start from `default_reader_init_params()` rather than a bare designated initializer: the defaults for `cap_at_n_req`, `block_size` and `ignore_size_zero_req` are not zero, and a struct literal would silently set them to zero. `has_header` and `obj_id_is_num` are each paired with a `_set` flag; the reader auto-detects unless you raise the flag, so assigning the value alone has no effect.
 
+For a custom replay loop using Belady/BeladySize, set
+`params.require_valid_next_access = true` before opening the reader. This rejects
+zero-size oracle filtering that would invalidate its future-access metadata;
+see [oracle trace repair](oracle_traces.md).
+
 ```c
 reader_init_param_t init_params_csv = default_reader_init_params();
 init_params_csv.delimiter = ',';

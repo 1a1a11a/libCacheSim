@@ -80,6 +80,26 @@ static void free_arg(struct arguments *args) { close_reader(args->reader); }
 
 namespace traceConv {
 
+/* Reverse readers intentionally expose raw records. Filter before assigning
+ * virtual times, and only then apply object-count mode. */
+static inline int read_conversion_req(reader_t *reader, request_t *req,
+                                      int64_t *n_filtered, bool first = false) {
+  bool ignore_obj_size = reader->ignore_obj_size;
+  bool filter_zero = reader->ignore_size_zero_req;
+  reader->ignore_obj_size = false;
+  reader->ignore_size_zero_req = false;
+  int status =
+      first ? read_one_req(reader, req) : read_one_req_above(reader, req);
+  while (status == 0 && filter_zero && req->obj_size == 0) {
+    ++*n_filtered;
+    status = read_one_req_above(reader, req);
+  }
+  reader->ignore_obj_size = ignore_obj_size;
+  reader->ignore_size_zero_req = filter_zero;
+  if (status == 0 && ignore_obj_size) req->obj_size = 1;
+  return status;
+}
+
 /**
  * @brief convert the trace to oracleGeneral format
  *

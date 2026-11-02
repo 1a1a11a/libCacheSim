@@ -27,6 +27,12 @@ int main(int argc, char *argv[]) {
   struct arguments args;
 
   cli::parse_cmd(argc, argv, &args);
+  if (args.reader->is_zstd_file) {
+    LOGGING(ERROR_LEVEL,
+            "traceConv requires reverse access: decompress the .zst input "
+            "before conversion\n");
+    exit(EXIT_FAILURE);
+  }
   if (strlen(args.ofilepath) == 0) {
     snprintf(args.ofilepath, OFILEPATH_LEN, "%s.%s", args.trace_path,
              args.output_format);
@@ -66,4 +72,5 @@ int main(int argc, char *argv[]) {
     ERROR("unknown output format %s\n", args.output_format);
     exit(1);
   }
+  cli::free_arg(&args);
 }
