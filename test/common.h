@@ -82,6 +82,13 @@ static reader_t *setup_oracleGeneralBin_reader(void) {
   return reader_oracle;
 }
 
+static reader_t *setup_lcs_reader(void) {
+  char data_path[1024];
+  _detect_data_path(data_path, "cloudPhysicsIO.vscsi.lcs");
+  reader_t *reader_lcs = setup_reader(data_path, LCS_TRACE, NULL);
+  return reader_lcs;
+}
+
 static reader_t *setup_GLCacheTestData_reader(void) {
   const char *url =
       "https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/"
