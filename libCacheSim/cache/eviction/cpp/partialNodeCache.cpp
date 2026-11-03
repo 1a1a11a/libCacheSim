@@ -94,13 +94,22 @@ bool pn_get(cache_t *cache, const request_t *req) {
   return cache_get_base(cache, req);
 }
 
+/// The last-access time for a block accessed now: the end of the request
+/// being replayed, so all of its blocks share one time, as in RandomCompute.c
+/// (see _rc_now there for why). cache->n_req outside a replay.
+static inline int64_t pn_now(const cache_t *cache,
+                             const PartialNodeCache *impl) {
+  return impl->request_end_vtime > cache->n_req ? impl->request_end_vtime
+                                                : cache->n_req;
+}
+
 cache_obj_t *pn_find(cache_t *cache, const request_t *req, bool update_cache) {
   PartialNodeCache *impl = impl_of(cache);
   if (update_cache && impl->small_enabled()) impl->hit_on_ghost = false;
 
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != nullptr) {
-    if (update_cache) obj->Random.last_access_vtime = cache->n_req;
+    if (update_cache) obj->Random.last_access_vtime = pn_now(cache, impl);
     return obj;
   }
 
@@ -116,7 +125,7 @@ cache_obj_t *pn_find(cache_t *cache, const request_t *req, bool update_cache) {
 cache_obj_t *pn_insert(cache_t *cache, const request_t *req) {
   PartialNodeCache *impl = impl_of(cache);
   cache_obj_t *obj = cache_insert_base(cache, req);
-  obj->Random.last_access_vtime = cache->n_req;
+  obj->Random.last_access_vtime = pn_now(cache, impl);
 
   if (!impl->small_enabled()) {
     impl->tree.mark_resident(obj->obj_id);
@@ -369,6 +378,8 @@ bool pn_remove(cache_t *cache, obj_id_t obj_id) {
 void pn_record_request(cache_t *cache, const obj_id_t *ids, int64_t n) {
   if (ids == nullptr || n <= 0) return;
   PartialNodeCache *impl = impl_of(cache);
+  // the replay that follows makes one access per block
+  impl->request_end_vtime = cache->n_req + n;
   impl->tree.add_sequence(ids, n);
   impl->on_record_request(ids, n);
   if (impl->tree.n_ambiguous_blocks() > 0) {

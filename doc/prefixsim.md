@@ -379,6 +379,31 @@ Changing this flag changes results for the recency-ordered policies, so a number
 is only comparable against another number taken at the same setting. The
 `RESULT` line does not record it — note it yourself alongside the run.
 
+### Recency is per request
+
+`random_compute`, `random_compute_small_queue`, `partial_node_random_compute`,
+`partial_node_random_freq` and `partial_node_random_compute_small_queue` score a
+block by its cost over its age, `n_req - last_access`. Unlike LRU, which only
+compares positions in a list, they read the age as a number, and phase 3 ticks
+`n_req` once per block. Stamped per block, deepest-first, block `p` of a request
+ends its replay `p` accesses old, though the request used every block at once.
+Prefill cost grows with position as well (`865 + 2p` under
+`qwen3coder30b_blksz_16`), so on a long request `(865 + 2p) / (age + p)` tends
+to 2. The cost term cancels on exactly the deep, expensive blocks it is meant
+to protect.
+
+So each of them sets `request_end_vtime = n_req + n` in `record_request` and
+stamps every access with `max(request_end_vtime, n_req)`: one time per
+request, the clock at the end of its replay. Outside prefixsim the hook is never
+called and each access is stamped with `n_req`, as before.
+
+It matters most where one request can fill much of the cache. On fi-new at 16k
+blocks, per-block stamps give `random_compute` 0.6071 under the qwen cost and
+0.6198 under `position`; per-request stamps give 0.6378 and 0.6458, the numbers
+in the paper. At 32k blocks the five policies move by at most 0.3 points, at 64k
+by at most 0.03, and on chutes by at most 0.4 (`random_compute_small_queue` at
+16k). `test_prefixsim` checks the stamps directly.
+
 ## Next-access annotation
 
 Belady-style oracles read `req->next_access_vtime`, and `session_belady` reads

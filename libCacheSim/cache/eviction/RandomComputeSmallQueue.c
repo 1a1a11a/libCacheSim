@@ -44,6 +44,9 @@ static const char *DEFAULT_PARAMS = "n-sample=128,one-hit-penalty=0.1";
 typedef struct {
   int n_sample;
   double one_hit_penalty;
+  /// cache->n_req once the request being replayed is done, or -1 when no
+  /// simulator has said where requests end; see _rc_now() in RandomCompute.c
+  int64_t request_end_vtime;
 } RandomComputeSmallQueue_params_t;
 
 // ***********************************************************************
@@ -55,6 +58,9 @@ typedef struct {
 static void RandomComputeSmallQueue_parse_params(
     cache_t *cache, const char *cache_specific_params);
 static void RandomComputeSmallQueue_free(cache_t *cache);
+static void RandomComputeSmallQueue_record_request(cache_t *cache,
+                                                   const obj_id_t *ids,
+                                                   int64_t n);
 static bool RandomComputeSmallQueue_get(cache_t *cache, const request_t *req);
 static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
                                                  const request_t *req,
@@ -89,10 +95,12 @@ cache_t *RandomComputeSmallQueue_init(const common_cache_params_t ccache_params,
   cache->evict = RandomComputeSmallQueue_evict;
   cache->remove = RandomComputeSmallQueue_remove;
   cache->to_evict = RandomComputeSmallQueue_to_evict;
+  cache->record_request = RandomComputeSmallQueue_record_request;
 
   RandomComputeSmallQueue_params_t *params =
       (RandomComputeSmallQueue_params_t *)malloc(
           sizeof(RandomComputeSmallQueue_params_t));
+  params->request_end_vtime = -1;
   cache->eviction_params = params;
 
   RandomComputeSmallQueue_parse_params(cache, DEFAULT_PARAMS);
@@ -118,12 +126,21 @@ static bool RandomComputeSmallQueue_get(cache_t *cache, const request_t *req) {
 // ****                                                               ****
 // ***********************************************************************
 
+/** the last-access time for a block accessed now, as _rc_now() in
+ * RandomCompute.c */
+static inline int64_t _rcsq_now(const cache_t *cache) {
+  const RandomComputeSmallQueue_params_t *params =
+      (const RandomComputeSmallQueue_params_t *)cache->eviction_params;
+  return params->request_end_vtime > cache->n_req ? params->request_end_vtime
+                                                  : cache->n_req;
+}
+
 static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
                                                  const request_t *req,
                                                  const bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
   if (obj != NULL && likely(update_cache)) {
-    obj->Random.last_access_vtime = cache->n_req;
+    obj->Random.last_access_vtime = _rcsq_now(cache);
   }
   return obj;
 }
@@ -131,8 +148,18 @@ static cache_obj_t *RandomComputeSmallQueue_find(cache_t *cache,
 static cache_obj_t *RandomComputeSmallQueue_insert(cache_t *cache,
                                                    const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
-  obj->Random.last_access_vtime = cache->n_req;
+  obj->Random.last_access_vtime = _rcsq_now(cache);
   return obj;
+}
+
+/** a simulator is about to replay a request of n blocks, one access each */
+static void RandomComputeSmallQueue_record_request(cache_t *cache,
+                                                   const obj_id_t *ids,
+                                                   int64_t n) {
+  (void)ids;
+  RandomComputeSmallQueue_params_t *params =
+      (RandomComputeSmallQueue_params_t *)cache->eviction_params;
+  params->request_end_vtime = cache->n_req + n;
 }
 
 static inline double _rcsq_score(cache_t *cache, cache_obj_t *obj,

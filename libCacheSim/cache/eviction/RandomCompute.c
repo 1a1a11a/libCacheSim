@@ -22,6 +22,12 @@ extern "C" {
 
 #define RANDOM_COMPUTE_N_SAMPLE 128
 
+typedef struct {
+  /// cache->n_req once the request being served has been replayed, or -1 if no
+  /// simulator has reported a request (see RandomCompute_record_request)
+  int64_t request_end_vtime;
+} RandomCompute_params_t;
+
 // ***********************************************************************
 // ****                                                               ****
 // ****                   function declarations                       ****
@@ -37,6 +43,8 @@ static cache_obj_t *RandomCompute_to_evict(cache_t *cache,
                                            const request_t *req);
 static void RandomCompute_evict(cache_t *cache, const request_t *req);
 static bool RandomCompute_remove(cache_t *cache, obj_id_t obj_id);
+static void RandomCompute_record_request(cache_t *cache, const obj_id_t *ids,
+                                         int64_t n);
 
 // ***********************************************************************
 // ****                                                               ****
@@ -66,6 +74,12 @@ cache_t *RandomCompute_init(const common_cache_params_t ccache_params,
   cache->to_evict = RandomCompute_to_evict;
   cache->evict = RandomCompute_evict;
   cache->remove = RandomCompute_remove;
+  cache->record_request = RandomCompute_record_request;
+
+  RandomCompute_params_t *params =
+      (RandomCompute_params_t *)malloc(sizeof(RandomCompute_params_t));
+  params->request_end_vtime = -1;
+  cache->eviction_params = params;
 
   return cache;
 }
@@ -75,7 +89,30 @@ cache_t *RandomCompute_init(const common_cache_params_t ccache_params,
  *
  * @param cache
  */
-static void RandomCompute_free(cache_t *cache) { cache_struct_free(cache); }
+static void RandomCompute_free(cache_t *cache) {
+  free(cache->eviction_params);
+  cache_struct_free(cache);
+}
+
+/**
+ * @brief the time a block accessed now is stamped with
+ *
+ * Normally cache->n_req. While a simulator replays a multi-block request (see
+ * RandomCompute_record_request), it is the time the replay ends instead, so
+ * every block of the request gets the same last-access time. The request uses
+ * them all at once; the order the simulator happens to replay them in is not
+ * an age. Stamping each with its own n_req would make a block p positions
+ * from the end of the replay look p accesses old. With a cost that grows with
+ * position, as prefill cost does, that cancels the cost term for the deep
+ * blocks of a long request: cost / recency tends to a constant there, and the
+ * expensive blocks lose the protection the score is meant to give them.
+ */
+static inline int64_t _rc_now(const cache_t *cache) {
+  const RandomCompute_params_t *params =
+      (const RandomCompute_params_t *)cache->eviction_params;
+  return params->request_end_vtime > cache->n_req ? params->request_end_vtime
+                                                  : cache->n_req;
+}
 
 /**
  * @brief this function is the user facing API
@@ -121,7 +158,7 @@ static cache_obj_t *RandomCompute_find(cache_t *cache, const request_t *req,
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
   if (obj != NULL) {
-    obj->Random.last_access_vtime = cache->n_req;
+    obj->Random.last_access_vtime = _rc_now(cache);
   }
 
   return obj;
@@ -140,7 +177,7 @@ static cache_obj_t *RandomCompute_find(cache_t *cache, const request_t *req,
 static cache_obj_t *RandomCompute_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = cache_insert_base(cache, req);
 
-  obj->Random.last_access_vtime = cache->n_req;
+  obj->Random.last_access_vtime = _rc_now(cache);
 
   return obj;
 }
@@ -237,6 +274,20 @@ static bool RandomCompute_remove(cache_t *cache, obj_id_t obj_id) {
   cache_remove_obj_base(cache, obj, true);
 
   return true;
+}
+
+/**
+ * @brief a simulator is about to replay a request of n blocks, one access each
+ *
+ * Called between making room for the request and replaying it, when the clock
+ * still reads the request's start; the replay advances it by n. See _rc_now.
+ */
+static void RandomCompute_record_request(cache_t *cache, const obj_id_t *ids,
+                                         int64_t n) {
+  (void)ids;
+  RandomCompute_params_t *params =
+      (RandomCompute_params_t *)cache->eviction_params;
+  params->request_end_vtime = cache->n_req + n;
 }
 
 #ifdef __cplusplus

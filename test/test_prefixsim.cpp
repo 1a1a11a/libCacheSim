@@ -1,7 +1,8 @@
 // Sanity checks for the prefixsim three-phase serve loop, on LRU; a check that
 // lhd_compute reduces to lhd under the uniform cost model; that a skipped
-// request does not mislead the oracles; and that the partial-node prefix tree
-// takes a promoted orphan back into its path.
+// request does not mislead the oracles; that the cost / recency policies stamp
+// a request's blocks with one last-access time; and that the partial-node
+// prefix tree takes a promoted orphan back into its path.
 //
 // Each case is a hand-traceable trace where the correct number of block hits
 // can be derived on paper. Requests are built directly from block ids rather
@@ -277,6 +278,66 @@ bool skipped_requests_do_not_mislead_oracles() {
   return ok;
 }
 
+/// The cost / recency policies stamp every block of a request with one
+/// last-access time, the clock at the end of its replay (see _rc_now in
+/// RandomCompute.c). Phase 3 touches the blocks one at a time, but the request
+/// uses them all at once, so the replay order must not read as an age.
+///
+/// [1 2 3 4 5] then [1 2 3 6 7], with room for both: the replays end at clock
+/// 5 and 10, so blocks 4 and 5 read 5 and the other five read 10. Per-block
+/// stamps would give 5 4 3 2 1 for the first request's blocks.
+///
+/// random_compute is not checked yet: its find() still stamps a block even
+/// when update_cache is false, so reading the stamp would change it.
+bool request_blocks_share_one_stamp() {
+  const std::vector<prefixsim::Request> requests =
+      build({{1, 2, 3, 4, 5}, {1, 2, 3, 6, 7}});
+  const std::vector<std::pair<obj_id_t, int64_t>> expected = {
+      {1, 10}, {2, 10}, {3, 10}, {4, 5}, {5, 5}, {6, 10}, {7, 10}};
+  const int64_t cache_size = 64;
+
+  bool ok = true;
+  for (const char *algo :
+       {"random_compute_small_queue", "partial_node_random_compute",
+        "partial_node_random_freq",
+        "partial_node_random_compute_small_queue"}) {
+    cache_t *cache = prefixsim::create_cache_by_name(algo, cache_size);
+    prefixsim::SimulatorConfig config;
+    config.cache_size_blocks = cache_size;
+    std::string error;
+    bool run_ok = true;
+    {
+      prefixsim::Simulator sim(cache, config);
+      run_ok = sim.run(requests, error);
+    }
+    if (!run_ok) {
+      printf("  [%s] FAIL: %s\n", algo, error.c_str());
+      ok = false;
+    } else {
+      request_t req;
+      memset(&req, 0, sizeof(req));
+      req.obj_size = 1;
+      req.valid = true;
+      for (const auto &[id, stamp] : expected) {
+        req.obj_id = id;
+        const cache_obj_t *obj = cache->find(cache, &req, false);
+        if (obj == nullptr || obj->Random.last_access_vtime != stamp) {
+          printf(
+              "  [%s] FAIL: block %lld last accessed at %lld, expected %lld\n",
+              algo, static_cast<long long>(id),
+              obj == nullptr
+                  ? -1LL
+                  : static_cast<long long>(obj->Random.last_access_vtime),
+              static_cast<long long>(stamp));
+          ok = false;
+        }
+      }
+    }
+    cache->cache_free(cache);
+  }
+  return ok;
+}
+
 /// The partial-node prefix tree must not keep a block both in a node and among
 /// its orphans. This is how partial_node_random_compute_small_queue got one: a
 /// block waiting in the small queue is not resident in the tree, so its leaf
@@ -373,6 +434,10 @@ int main(void) {
   printf("a skipped request and the oracles\n");
   ++n_run;
   if (!skipped_requests_do_not_mislead_oracles()) ++n_failed;
+
+  printf("one last-access time per request\n");
+  ++n_run;
+  if (!request_blocks_share_one_stamp()) ++n_failed;
 
   printf("a promoted orphan rejoins its path\n");
   ++n_run;

@@ -73,6 +73,10 @@ class PartialNodeCache {
   /// Nodes drawn per eviction round.
   int n_sample = 32;
 
+  /// cache->n_req once the request being replayed is done, or -1 before any
+  /// request: every block of a request is stamped with it. See pn_now().
+  int64_t request_end_vtime = -1;
+
   // -------------------------------------------------------------------------
   // Optional S3FIFO-style admission queue.
   //
