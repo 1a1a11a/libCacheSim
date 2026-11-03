@@ -72,6 +72,7 @@ void convert_to_lcs(reader_t *reader, std::string ofilepath, bool output_txt,
   go_back_one_req(reader);
   if (read_conversion_req(reader, req, &n_filtered, true) != 0) {
     LOGGING(ERROR_LEVEL, "traceConv: no requests remain after filtering\n");
+    free_request(req);
     exit(EXIT_FAILURE);
   }
 

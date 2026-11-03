@@ -67,6 +67,7 @@ void convert_to_oracleGeneral(reader_t *reader, std::string ofilepath,
   go_back_one_req(reader);
   if (read_conversion_req(reader, req, &n_filtered, true) != 0) {
     LOGGING(ERROR_LEVEL, "traceConv: no requests remain after filtering\n");
+    free_request(req);
     exit(EXIT_FAILURE);
   }
 
