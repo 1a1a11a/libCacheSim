@@ -125,7 +125,7 @@ Costs are integers. The same strings work in `cachesim -t cost-model=<m>` on an
 | `compute_saving_ratio` | the same, weighted by block cost |
 | `n_req_skipped` | requests with more distinct blocks than the cache; skipped and left out of both ratios |
 | `n_eviction` | blocks evicted to make room |
-| `n_self_eviction` | of those, blocks the arriving request itself needed |
+| `n_self_eviction` | of those, blocks the arriving request itself needed; with pinning on, large only for a policy that ignores the pins |
 | `n_unexpected_eviction` | evictions while replaying a request; **must be 0**, or the run is not trustworthy |
 
 The other diagnostics are described in

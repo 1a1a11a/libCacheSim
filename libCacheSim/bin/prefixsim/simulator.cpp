@@ -57,12 +57,17 @@ uint16_t hashpower_for(int64_t cache_size_blocks) {
 struct AlgoEntry {
   const char *name;
   cache_t *(*init)(const common_cache_params_t, const char *);
-  /// Whether this algorithm may be run with phase-2 pinning (see
-  /// SimulatorConfig::pin_request_blocks). Pinning makes an eviction skip the
-  /// victim it would normally take, which is only sound for an algorithm that
-  /// asks its queues *which* object went instead of assuming it was the tail.
-  /// Set from running the trace with pinning on, never assumed; the two
-  /// algorithms that fail say why at their entry below.
+  /// Whether the phase-2 pin predicate may be installed for this algorithm
+  /// (see SimulatorConfig::pin_request_blocks). Where the predicate is honoured
+  /// it makes an eviction skip the victim it would normally take, which is only
+  /// sound for an algorithm that asks its queues *which* object went instead of
+  /// assuming it was the tail. Set from running the trace with pinning on,
+  /// never assumed; the two algorithms that fail say why at their entry below.
+  ///
+  /// True does NOT mean the algorithm honours the pins. Only RandomCompute and
+  /// victim selection built on LRU, FIFO, Clock, Sieve and SLRU step over a
+  /// pinned object; the rest ignore the predicate, and n_self_eviction counts
+  /// what they evict.
   bool pin_safe;
 };
 

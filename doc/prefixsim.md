@@ -21,8 +21,9 @@ traces), and the engine needs *all* of them resident at once to serve it. That
 constraint is what makes a prefix cache different from an ordinary object
 cache, and it is what libCacheSim's request-at-a-time model cannot express on
 its own. `prefixsim` serves each request as a unit — match, allocate, replay
-(see [How a request is served](#how-a-request-is-served)) — so a policy never
-evicts a block the arriving request is about to reuse.
+(see [How a request is served](#how-a-request-is-served)) — so making room for
+a request never counts evicting its own blocks as progress, and pins them where
+the policy supports it.
 
 It runs 46 of libCacheSim's eviction algorithms, including Belady-style
 oracles, published prefix-cache policies and session-level policies (see
@@ -176,12 +177,17 @@ exactly how much corruption is left.
 
 Pin-awareness lives in the shared building blocks — `LRU`, `FIFO`, `Clock`,
 `Sieve`, `SLRU` — so the composites built out of them (S3FIFO and its variants,
-TwoQ, W-TinyLFU, QDLP) inherit it without changes of their own. Algorithms with
-their own victim selection (LFU, GDSF, LHD, ARC, LeCaR, the `partial_node_*` and
-`session_*` families) are not pin-aware yet and run exactly as before; their
-`n_self_eviction` says what that costs. Per-algorithm opt-in is the `pin_safe`
-column of `kAlgos` in `libCacheSim/bin/prefixsim/simulator.cpp`, and it is
-**verified by running the trace, not assumed**: LIRS is marked unsafe because `LIRS_prune()` reads its stack's
+TwoQ, W-TinyLFU, QDLP, S4-FIFO) inherit it without changes of their own;
+`random_compute` skips pinned samples itself. Every other algorithm has its own
+victim selection (LFU, GDSF, LHD, ARC, MRU, the `partial_node_*` and `session_*`
+families, among others) and ignores the pins: it runs exactly as before, its
+`n_self_eviction` says what that costs, and prefixsim warns after the run when
+that count is not zero. `belady` and `belady_compute` ignore them as well, but
+seldom need to: the arriving request's blocks are the ones used soonest.
+Ignoring the pins is not unsafe, it only leaves the self-evictions in. What can be unsafe is installing the
+predicate at all, which the `pin_safe` column of `kAlgos` in
+`libCacheSim/bin/prefixsim/simulator.cpp` records. It is **verified by running
+the trace, not assumed**: LIRS is marked unsafe because `LIRS_prune()` reads its stack's
 tail directly and then calls `evict()` expecting that exact object to go, so a
 skipped victim desynchronises the two and segfaults. (LIRS already carries its
 own in-flight protection, `lirs_is_inflight`, so it does not need this one.)
@@ -678,7 +684,7 @@ no longer guaranteeing that a served request was fully resident.
 |---|---|
 | `n_req_skipped` | Requests with more distinct blocks than the cache; excluded from all ratios, and left untouched (a skip evicts nothing). Warned about once per run. |
 | `n_eviction` | Objects evicted during allocation. |
-| `n_self_eviction` | …that the arriving request itself needed. High values mean the policy keeps throwing away what it is about to re-read; this is the cost the naive free-space-first approach pays invisibly. |
+| `n_self_eviction` | …that the arriving request itself needed. High values mean the policy keeps throwing away what it is about to re-read; this is the cost the naive free-space-first approach pays invisibly. With pinning on it is near 0 for a policy that honours the pins (the residue of best-effort pinning) and can be large for one that ignores them (see *Pinning*); prefixsim warns whenever it is not 0. |
 | `n_unexpected_eviction` | Evictions during replay. **Must be 0.** Anything else means the allocation arithmetic and the algorithm disagree and the run is untrustworthy. |
 
 ## Dumping holes (`--dump-holes`)
@@ -763,12 +769,12 @@ request that must be resident together".
   never keeps a child without its parent. prefixsim does not impose that order.
 - **No time model.** `timestamp` is carried into `req->clock_time` but replay is
   request-ordered; there is no batching, scheduling, or concurrency.
-- **Blocks of an in-flight request are not pinned.** A real engine refcounts
-  them so they cannot be evicted mid-service. Here they can be, which is what
-  `n_self_eviction` counts; the statistics are unaffected because they are taken
-  in phase 1, but the extra churn is real. Pinning would be the natural next
-  refinement — done only for `lirs`, where it was load-bearing (see the `lirs`
-  in-flight protection note under *Which algorithms work*).
+- **Not every policy honours the pins.** A real engine refcounts an in-flight
+  request's blocks so they cannot be evicted mid-service. prefixsim pins them
+  during phase 2, but only the policies listed under *Pinning* honour that; the
+  rest can still evict them, which `n_self_eviction` counts. The statistics are
+  unaffected because they are taken in phase 1, but the policy's later
+  decisions are not: a self-evicted block re-enters through `insert()`.
 - **A JSONL trace is held in memory whole** (about 21 bytes per block access,
   12.9 GiB for fi-new), because next access is computed in a reverse pass.
   Convert it to `lcp` to stream it instead.

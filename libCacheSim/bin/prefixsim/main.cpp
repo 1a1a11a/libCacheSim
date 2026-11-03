@@ -94,6 +94,14 @@ void print_usage(const char *program) {
       "are\n");
   printf("                          ref-counted and cannot be evicted.\n");
   printf(
+      "                          Pins are honoured only by random_compute\n");
+  printf(
+      "                          and algorithms built on lru, fifo, clock,\n");
+  printf("                          sieve and slru; the others evict such\n");
+  printf(
+      "                          blocks anyway, and n_self_eviction counts\n");
+  printf("                          them.\n");
+  printf(
       "  --dump-holes <dir>      Per algorithm, write one line per request "
       "listing\n");
   printf(

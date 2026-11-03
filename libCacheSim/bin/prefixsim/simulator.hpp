@@ -83,6 +83,10 @@ struct SimulatorConfig {
   /// the policy's structure -- an S3FIFO main-queue block, for instance, comes
   /// back in the small queue because a main-queue eviction writes no ghost
   /// entry. Off reproduces the numbers from before pinning existed.
+  ///
+  /// Only RandomCompute and algorithms whose victim selection is built on LRU,
+  /// FIFO, Clock, Sieve or SLRU honour the pins; the others still evict such
+  /// blocks, and n_self_evictions counts them.
   bool pin_request_blocks = true;
   /// Phase 3 replay order. True (the default) touches the deepest block
   /// first, so recency-ordered algorithms leave the prefix root at the MRU end
@@ -97,9 +101,10 @@ struct SimulatorConfig {
   std::string dump_holes_path;
 };
 
-/// Whether phase-2 pinning (SimulatorConfig::pin_request_blocks) is sound for
-/// this algorithm. False for an unknown name, and for the algorithms that
-/// assume an eviction removes the exact object they last looked at.
+/// Whether the phase-2 pin predicate (SimulatorConfig::pin_request_blocks) may
+/// be installed for this algorithm. False for an unknown name, and for the
+/// algorithms that assume an eviction removes the exact object they last looked
+/// at. True does not mean the algorithm honours it; see pin_request_blocks.
 bool algorithm_supports_pinning(const std::string &algorithm);
 
 /// Runs one eviction algorithm over a trace.
