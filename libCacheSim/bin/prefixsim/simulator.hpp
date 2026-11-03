@@ -100,8 +100,8 @@ struct SimulatorConfig {
   std::string dump_holes_path;
 };
 
-/// Whether the phase-2 pin predicate (SimulatorConfig::pin_request_blocks) may
-/// be installed for this algorithm. False for an unknown name, and for the
+/// Whether the phase-2 pin predicate (SimulatorConfig::pin_request_blocks) is
+/// implemented for this algorithm. False for an unknown name, and for the
 /// algorithms that assume an eviction removes the exact object they last looked
 /// at. True does not mean the algorithm honours it; see pin_request_blocks.
 bool algorithm_supports_pinning(const std::string &algorithm);

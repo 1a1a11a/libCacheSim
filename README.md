@@ -17,6 +17,7 @@ A high-performance library for building and running cache simulations
 
 
 ## News
+* **Nov 2026**: **[prefixsim](/doc/quickstart_prefixsim.md)** brings libCacheSim to LLM serving! Replay real LLM request traces through a KV-block prefix cache and compare 40+ eviction policies by the prefill compute they save, streamed in one pass from the new **[lcp](/doc/lcp_format.md)** trace format. Two production traces in lcp are [available on Hugging Face](https://huggingface.co/datasets/harvardMadsys/2026_prefixcache).
 * **Aug 2025**: We compiled a list of open-source [cache datasets](https://github.com/cacheMon/cache_dataset).
 * **Oct 2024**: **S3-FIFO** gets an upgrade! Please try out the new version (the old one is now named S3-FIFOv0).
 * **Oct 2023**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **[SIEVE](https://sievecache.com)** are available! These are very simple algorithms that are very effective at reducing cache misses. Try them out in libCacheSim and in your production!
