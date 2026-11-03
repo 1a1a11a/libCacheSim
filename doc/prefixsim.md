@@ -354,10 +354,13 @@ keeps the resident set prefix-contiguous.
 |---|---|---|---|
 | `lru` | 0.867195 | 0.865824 | **+0.001371** |
 | `twoq` | 0.851890 | 0.850847 | **+0.001043** |
-| `partial_node_random_compute` | 0.866163 | 0.865932 | +0.000231 |
+| `partial_node_random_compute_small_queue` | 0.863892 | 0.863486 | +0.000406 |
+| `partial_node_random_freq` | 0.861970 | 0.861748 | +0.000222 |
+| `partial_node_random_compute` | 0.866099 | 0.865968 | +0.000131 |
+| `random_compute` | 0.866550 | 0.866548 | +0.000002 |
+| `random_compute_small_queue` | 0.865339 | 0.865357 | -0.000018 |
 | `slru` | 0.841286 | 0.841422 | -0.000136 |
-| `partial_node_random_freq` | 0.859393 | 0.860619 | **-0.001226** |
-| `belady_compute` | 0.886879 | 0.886880 | -0.000001 |
+| `belady_compute` | 0.886878 | 0.886879 | -0.000001 |
 | `belady` | 0.887015 | 0.887015 | **0.000000** |
 
 An older measurement on `qwen_coder` at 4k put LRU at 0.1625 reverse vs 0.1589
@@ -375,14 +378,15 @@ replay order (see below), and phase 2 does all the evicting, so the flag cannot
 reach its decisions. A non-zero delta for `belady` would mean something else
 moved.
 
-**The partial-node family is not exempt.** The mechanism is per-block recency, and
-a node-granularity policy does not use per-block recency to choose which block
-*inside* a node to drop — `evict-from=head|tail` in `--algo-params` does. That
-argument holds for `partial_node_random_compute` (2e-4) but **not** for
-`partial_node_random_freq`, which moves 1.2e-3: its score is
-`(freq+1)*cost/recency`, so it reads recency after all, just at node granularity.
-An earlier revision of this file claimed the whole family agreed to five decimals;
-that is not true on this trace. Check, do not assume, when adding a variant.
+**The cost / recency policies get no recency from it.** They stamp every block of
+a request with the same time (see [Recency is per request](#recency-is-per-request)),
+so neither order makes one block of a request look older than another. What
+moves them is the order blocks are *inserted*, which their sampling sees:
+`random_compute` draws from hash-table chains, the partial-node policies draw
+from an array of nodes that each node joins when its first block arrives, and
+the small queue of `partial_node_random_compute_small_queue` is a FIFO. That
+leaves at most 4.1e-4. Stamped per block instead, under the same `micro` mode,
+`partial_node_random_freq` moves by -8.0e-4 here.
 
 Changing this flag changes results for the recency-ordered policies, so a number
 is only comparable against another number taken at the same setting. The
@@ -779,9 +783,9 @@ What it is good for, on that same run:
 
 | | LRU | partial-node RandomCompute |
 |---|---|---|
-| avg holes / request | 1.00 | 1.02 |
-| max holes / request | 1 | 3 |
-| avg hole length | 262.9 | 253.0 |
+| avg holes / request | 1.00 | 1.01 |
+| max holes / request | 1 | 7 |
+| avg hole length | 262.9 | 259.2 |
 
 LRU produces almost exactly one hole per request, so its resident set stays
 prefix-contiguous — the deepest-first replay working as intended. The
