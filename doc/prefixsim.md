@@ -573,9 +573,17 @@ Getting there needed two changes here and several in the algorithms themselves:
   false)`, not read out of `cache->hashtable`. An algorithm's resident set is not
   always its main hash table: the S3FIFO family keeps blocks in sub-caches with
   their own tables, so a raw probe reports them missing, while ARC and LIRS keep
-  ghost entries in the main table, so a raw probe reports those as hits. Because
-  `cache_find_base` gates every mutation on `update_cache`, asking the algorithm
-  still records nothing.
+  ghost entries in the main table, so a raw probe reports those as hits.
+  `cache_find_base` gates every mutation on `update_cache`, so asking the
+  algorithm records nothing as long as its own `find` does the same. Two did
+  not, and are fixed: GDSF (and `gdsf_compute`) ticked their clock on every
+  lookup, and RandomCompute stamped a block's last access on every lookup.
+  That had two effects, neither of them visible as a lookup: phase 1 shielded
+  the matched blocks from phase 2 like a pin, and the residency check restamped
+  every block of the request with the clock at its end. RandomCompute now
+  honours the pins instead, and gives a request's blocks one stamp on purpose
+  (see [Recency is per request](#recency-is-per-request)); without that second
+  part, fixing the lookup cost it 3 points at 16k blocks on fi-new.
 - **Allocation does not require victim identity.** It uses it when available --
   the eviction hook makes the self-eviction split cheap -- but composite
   algorithms evict inside sub-caches whose prefetcher is not ours, so no victim

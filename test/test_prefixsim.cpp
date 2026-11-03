@@ -1,8 +1,9 @@
 // Sanity checks for the prefixsim three-phase serve loop, on LRU; a check that
 // lhd_compute reduces to lhd under the uniform cost model; that a skipped
-// request does not mislead the oracles; that the cost / recency policies stamp
-// a request's blocks with one last-access time; and that the partial-node
-// prefix tree takes a promoted orphan back into its path.
+// request does not mislead the oracles; that every algorithm's read-only lookup
+// really is read-only; that the cost / recency policies stamp a request's
+// blocks with one last-access time; and that the partial-node prefix tree takes
+// a promoted orphan back into its path.
 //
 // Each case is a hand-traceable trace where the correct number of block hits
 // can be derived on paper. Requests are built directly from block ids rather
@@ -278,6 +279,102 @@ bool skipped_requests_do_not_mislead_oracles() {
   return ok;
 }
 
+/// Phase 1 and the residency check ask each algorithm's find() with
+/// update_cache false, which must change nothing. For every algorithm: running
+/// with the check on (twice as many lookups) must give the same result as
+/// running with it off, and lookups on the finished cache must leave its clock
+/// and occupancy where they were.
+bool probes_are_read_only() {
+  std::vector<prefixsim::Request> requests;
+  uint64_t state = 7;
+  auto next = [&state]() {
+    state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+    return state >> 33;
+  };
+  // Kept short: LFUDA's eviction scans every integer between its minimum and
+  // maximum frequency, and on a prefix this hot that range grows so fast that
+  // 2000 requests take it seconds.
+  for (int i = 0; i < 1000; ++i) {
+    const uint64_t conversation = next() % 40;
+    const uint64_t length = 1 + next() % 30;
+    prefixsim::Request request;
+    request.index = i;
+    request.timestamp = static_cast<double>(i);
+    request.session = conversation + 1;
+    request.blocks = {1, 2, 3};  // the system prompt
+    for (uint64_t k = 0; k < length; ++k) {
+      request.blocks.push_back(1000 * (conversation + 1) + k);
+    }
+    requests.push_back(request);
+  }
+  prefixsim::annotate_next_access(requests);
+  prefixsim::annotate_session_next_access(requests);
+  const int64_t cache_size = 128;
+  prefixsim::CostModel position;
+  std::string error;
+  prefixsim::CostModel::parse("position", position, error);
+
+  bool ok = true;
+  for (const std::string &algo : prefixsim::supported_algorithms()) {
+    prefixsim::Stats stats[2];
+    bool algo_ok = true;
+    for (int verify = 0; verify < 2; ++verify) {
+      set_rand_seed(42);
+      cache_t *cache = prefixsim::create_cache_by_name(
+          algo, cache_size, nullptr,
+          static_cast<int64_t>(requests.size()) * 18);
+      prefixsim::SimulatorConfig config;
+      config.cache_size_blocks = cache_size;
+      config.cost_model = position;
+      config.verify = verify != 0;
+      config.pin_request_blocks = prefixsim::algorithm_supports_pinning(algo);
+      bool run_ok = true;
+      {
+        prefixsim::Simulator sim(cache, config);
+        run_ok = sim.run(requests, error);
+        stats[verify] = sim.stats();
+      }
+      if (!run_ok) {
+        printf("  [%s] FAIL: %s\n", algo.c_str(), error.c_str());
+        algo_ok = false;
+      } else if (verify != 0) {
+        const int64_t n_req = cache->n_req;
+        const int64_t occupied = cache->get_occupied_byte(cache);
+        const int64_t n_obj = cache->get_n_obj(cache);
+        request_t req;
+        memset(&req, 0, sizeof(req));
+        req.obj_size = 1;
+        req.valid = true;
+        for (obj_id_t id = 1; id <= 41000; ++id) {
+          req.obj_id = id;
+          cache->find(cache, &req, false);
+        }
+        if (cache->n_req != n_req ||
+            cache->get_occupied_byte(cache) != occupied ||
+            cache->get_n_obj(cache) != n_obj) {
+          printf("  [%s] FAIL: find(false) moved the clock %lld -> %lld\n",
+                 algo.c_str(), static_cast<long long>(n_req),
+                 static_cast<long long>(cache->n_req));
+          algo_ok = false;
+        }
+      }
+      cache->cache_free(cache);
+    }
+    if (algo_ok && (stats[0].n_block_hits != stats[1].n_block_hits ||
+                    stats[0].saved_cost != stats[1].saved_cost ||
+                    stats[0].n_evictions != stats[1].n_evictions ||
+                    stats[0].n_self_evictions != stats[1].n_self_evictions)) {
+      printf("  [%s] FAIL: the residency check changed the result\n",
+             algo.c_str());
+      algo_ok = false;
+    }
+    if (!algo_ok) ok = false;
+  }
+  printf("  %zu algorithms checked\n",
+         prefixsim::supported_algorithms().size());
+  return ok;
+}
+
 /// The cost / recency policies stamp every block of a request with one
 /// last-access time, the clock at the end of its replay (see _rc_now in
 /// RandomCompute.c). Phase 3 touches the blocks one at a time, but the request
@@ -286,9 +383,6 @@ bool skipped_requests_do_not_mislead_oracles() {
 /// [1 2 3 4 5] then [1 2 3 6 7], with room for both: the replays end at clock
 /// 5 and 10, so blocks 4 and 5 read 5 and the other five read 10. Per-block
 /// stamps would give 5 4 3 2 1 for the first request's blocks.
-///
-/// random_compute is not checked yet: its find() still stamps a block even
-/// when update_cache is false, so reading the stamp would change it.
 bool request_blocks_share_one_stamp() {
   const std::vector<prefixsim::Request> requests =
       build({{1, 2, 3, 4, 5}, {1, 2, 3, 6, 7}});
@@ -298,8 +392,8 @@ bool request_blocks_share_one_stamp() {
 
   bool ok = true;
   for (const char *algo :
-       {"random_compute_small_queue", "partial_node_random_compute",
-        "partial_node_random_freq",
+       {"random_compute", "random_compute_small_queue",
+        "partial_node_random_compute", "partial_node_random_freq",
         "partial_node_random_compute_small_queue"}) {
     cache_t *cache = prefixsim::create_cache_by_name(algo, cache_size);
     prefixsim::SimulatorConfig config;
@@ -434,6 +528,10 @@ int main(void) {
   printf("a skipped request and the oracles\n");
   ++n_run;
   if (!skipped_requests_do_not_mislead_oracles()) ++n_failed;
+
+  printf("read-only lookups\n");
+  ++n_run;
+  if (!probes_are_read_only()) ++n_failed;
 
   printf("one last-access time per request\n");
   ++n_run;

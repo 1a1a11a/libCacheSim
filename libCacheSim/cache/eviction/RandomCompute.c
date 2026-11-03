@@ -157,7 +157,7 @@ static cache_obj_t *RandomCompute_find(cache_t *cache, const request_t *req,
                                        bool update_cache) {
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
-  if (obj != NULL) {
+  if (obj != NULL && update_cache) {
     obj->Random.last_access_vtime = _rc_now(cache);
   }
 
