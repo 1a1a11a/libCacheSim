@@ -142,7 +142,9 @@ static bool GDSF_compute_get(cache_t *cache, const request_t *req) {
  */
 static cache_obj_t *GDSF_compute_find(cache_t *cache, const request_t *req,
                                       const bool update_cache) {
-  cache->n_req += 1;
+  // A lookup that does not update the cache is not an access, so it must
+  // not tick the clock either.
+  if (update_cache) cache->n_req += 1;
 
   auto *gdsf =
       reinterpret_cast<eviction::GDSF_compute *>(cache->eviction_params);
