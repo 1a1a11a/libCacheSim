@@ -66,7 +66,13 @@ class PartialNodeCache {
 
   PrefixRadixTree tree;
 
-  Mode mode = Mode::kDrain;
+  /// kMicro is the partial-node eviction the paper evaluates: it drops a chunk
+  /// of at most micro_batch blocks, sized to the engine's batching budget,
+  /// then looks again. It is worth it where one request can fill much of the
+  /// cache: on fi-new at 16k blocks under the qwen3coder30b cost it gives
+  /// PartialNodeRandomCompute 0.47 points more compute saving than kDrain,
+  /// and the two are within 0.03 points at 64k.
+  Mode mode = Mode::kMicro;
   /// Blocks per round in kMicro.
   int64_t micro_batch = 64;
 

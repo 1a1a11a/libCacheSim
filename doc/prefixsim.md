@@ -225,14 +225,20 @@ The partial-node algorithms take that batch in one of two modes, set with
 
 | mode | chunk taken from the winning node |
 |---|---|
-| `drain` (default) | the whole remaining deficit |
-| `micro` | at most `micro-batch` blocks (default 64), then re-sample and re-score |
+| `micro` (default) | at most `micro-batch` blocks (default 64), then re-sample and re-score |
+| `drain` | the whole remaining deficit |
 
-On `qwen_coder` they land within 0.002 of each other at every cache size, so the
-cheaper mode is the better default: `drain` runs in 3.8s against `micro`'s 4.3s
-at batch 64, 8.3s at batch 8, and 37s at batch 1. Chunk size is close to free
-here -- what matters is `n-sample`, where 128 buys ~0.9 points of hit ratio over
-32 and saturates by 512.
+`micro` is the partial-node eviction of the paper: a chunk sized to the engine's
+batching budget, then a fresh look. It matters where one request can fill much
+of the cache. On fi-new at 16k blocks, `partial_node_random_compute` saves
+0.6380 under the qwen cost with `micro` against 0.6333 with `drain`, and 0.6461
+against 0.6400 under `position`; at 64k the two are within 0.03 points, and on
+`qwen_coder` within 0.002 at every size. It costs a fifth more time (117 s
+against 98 s for the 16k run). The small-queue variant goes the other way:
+`micro` costs it 0.3 points at 16k, 0.5-0.6 at 32k and 0.2 at 64k on fi-new, and
+0.06-0.26 on chutes, so pass `eviction-mode=drain` to compare it at its best.
+Past the mode, what matters is `n-sample`, where 128 buys ~0.9 points of hit
+ratio over 32 on `qwen_coder` and saturates by 512.
 
 **Knowing the victim.** The loop needs the identity of each evicted object.
 `cache_evict_base()` already calls `prefetcher->handle_evict` on every genuine
