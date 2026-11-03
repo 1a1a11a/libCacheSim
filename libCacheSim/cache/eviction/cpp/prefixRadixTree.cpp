@@ -30,7 +30,16 @@ PrefixRadixTree::Node *PrefixRadixTree::new_node(Node *parent,
       continue;
     }
     index_[ids[i]] = {node, static_cast<int32_t>(i)};
+    // A resident block the tree had lost track of: its node was pruned while
+    // the block sat in a small queue, which the tree does not count, and it
+    // was promoted afterwards. Now that its path is known again it belongs
+    // here, not among the orphans.
+    if (orphans_.erase(ids[i]) != 0) {
+      node->resident[static_cast<size_t>(i)] = 1;
+      ++node->n_resident;
+    }
   }
+  refresh_sampleable(node);
   return node;
 }
 
@@ -130,11 +139,11 @@ void PrefixRadixTree::mark_resident(obj_id_t id) {
 }
 
 bool PrefixRadixTree::mark_evicted(obj_id_t id) {
+  // Whether or not the tree also has a node for it: evict_orphans() drains the
+  // orphans by calling this, and one left behind would be drawn forever.
+  orphans_.erase(id);
   auto it = index_.find(id);
-  if (it == index_.end()) {
-    orphans_.erase(id);
-    return false;
-  }
+  if (it == index_.end()) return false;
   Node *node = it->second.first;
   const size_t pos = static_cast<size_t>(it->second.second);
   if (node->resident[pos] == 0) return true;
