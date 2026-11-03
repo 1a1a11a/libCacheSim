@@ -162,6 +162,34 @@ static inline double _rc_cost(cache_t *cache, cache_obj_t *obj) {
 }
 
 /**
+ * @brief the lowest-scoring of RANDOM_COMPUTE_N_SAMPLE random objects
+ *
+ * A pinned sample is passed over (see cache_set_pin_predicate), unless every
+ * sample is pinned: pinning is best-effort, so an eviction always frees
+ * something. Without pins this is the plain sampling loop.
+ */
+static cache_obj_t *_rc_sample_victim(cache_t *cache) {
+  cache_obj_t *victim = NULL, *pinned_victim = NULL;
+  double min_cost = DBL_MAX, min_pinned_cost = DBL_MAX;
+
+  for (int i = 0; i < RANDOM_COMPUTE_N_SAMPLE; i++) {
+    cache_obj_t *obj = hashtable_rand_obj(cache->hashtable);
+    double cost = _rc_cost(cache, obj);
+    if (cache_obj_is_pinned(obj)) {
+      if (cost < min_pinned_cost) {
+        min_pinned_cost = cost;
+        pinned_victim = obj;
+      }
+    } else if (cost < min_cost) {
+      min_cost = cost;
+      victim = obj;
+    }
+  }
+
+  return victim != NULL ? victim : pinned_victim;
+}
+
+/**
  * @brief find the object to be evicted
  * this function does not actually evict the object or update metadata
  * not all eviction algorithms support this function
@@ -173,19 +201,7 @@ static inline double _rc_cost(cache_t *cache, cache_obj_t *obj) {
  */
 static cache_obj_t *RandomCompute_to_evict(cache_t *cache,
                                            const request_t *req) {
-  cache_obj_t *obj_to_evict = NULL;
-  double min_cost = DBL_MAX;
-
-  for (int i = 0; i < RANDOM_COMPUTE_N_SAMPLE; i++) {
-    cache_obj_t *obj = hashtable_rand_obj(cache->hashtable);
-    double cost = _rc_cost(cache, obj);
-    if (cost < min_cost) {
-      min_cost = cost;
-      obj_to_evict = obj;
-    }
-  }
-
-  return obj_to_evict;
+  return _rc_sample_victim(cache);
 }
 
 /**
@@ -197,19 +213,7 @@ static cache_obj_t *RandomCompute_to_evict(cache_t *cache,
  * @param req not used
  */
 static void RandomCompute_evict(cache_t *cache, const request_t *req) {
-  cache_obj_t *obj_to_evict = NULL;
-  double min_cost = DBL_MAX;
-
-  for (int i = 0; i < RANDOM_COMPUTE_N_SAMPLE; i++) {
-    cache_obj_t *obj = hashtable_rand_obj(cache->hashtable);
-    double cost = _rc_cost(cache, obj);
-    if (cost < min_cost) {
-      min_cost = cost;
-      obj_to_evict = obj;
-    }
-  }
-
-  cache_evict_base(cache, obj_to_evict, true);
+  cache_evict_base(cache, _rc_sample_victim(cache), true);
 }
 
 /**
