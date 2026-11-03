@@ -472,6 +472,14 @@ int main(int argc, char **argv) {
                   algorithm.c_str(),
                   static_cast<long long>(stats.n_unexpected_evictions));
         }
+        if (opts.pin_request_blocks && stats.n_self_evictions != 0) {
+          fprintf(stderr,
+                  "warning [%s]: %lld evictions took a block the arriving "
+                  "request had matched, which an engine that pins a running "
+                  "request's blocks never does (see n_self_eviction)\n",
+                  algorithm.c_str(),
+                  static_cast<long long>(stats.n_self_evictions));
+        }
         report(stdout, algorithm, opts, stats);
         if (out_file != nullptr) report(out_file, algorithm, opts, stats);
       }
