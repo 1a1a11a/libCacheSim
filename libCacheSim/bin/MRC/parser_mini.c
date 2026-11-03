@@ -85,7 +85,9 @@ static struct argp_option options[] = {
     {"report-interval", OPTION_REPORT_INTERVAL, "3600", 0,
      "how often to report stat when running one cache", 10},
     {"warmup-sec", OPTION_WARMUP_SEC, "0", 0, "warm up time in seconds", 10},
-    {"use-ttl", OPTION_USE_TTL, "false", 0, "specify to use ttl from the trace",
+    {"use-ttl", OPTION_USE_TTL, "true|false", 0,
+     "use the TTL in the trace (default: true in builds with SUPPORT_TTL, "
+     "which true requires)",
      10},
     {"consider-obj-metadata", OPTION_CONSIDER_OBJ_METADATA, "false", 0,
      "Whether consider per object metadata size in the simulated cache", 10},
@@ -145,6 +147,11 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
       break;
     case OPTION_USE_TTL:
       arguments->use_ttl = is_true(arg) ? true : false;
+#ifndef SUPPORT_TTL
+      if (arguments->use_ttl)
+        argp_error(state,
+                   "error: --use-ttl true needs a build with -DSUPPORT_TTL=ON");
+#endif
       break;
     case OPTION_REPORT_INTERVAL:
       arguments->report_interval = atol(arg);
@@ -218,7 +225,11 @@ static void init_mini_arg(struct MINI_arguments *args) {
   args->trace_type_str = NULL;
   args->trace_type_params = NULL;
   args->verbose = true;
+#ifdef SUPPORT_TTL
+  args->use_ttl = true;
+#else
   args->use_ttl = false;
+#endif
   args->ignore_obj_size = false;
   args->consider_obj_metadata = false;
   args->report_interval = 3600 * 24;
@@ -303,6 +314,7 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
   reader_init_params.obj_id_is_num = true;
   reader_init_params.cap_at_n_req = args->n_req;
   reader_init_params.sampler = NULL;
+  reader_init_params.ignore_ttl = !args->use_ttl;
 
   parse_reader_params(args->trace_type_params, &reader_init_params);
 
@@ -542,8 +554,10 @@ void print_parsed_args(struct MINI_arguments *args) {
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
                   ", eviction-params: %s", args->eviction_params);
 
-  if (args->use_ttl)
-    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", use ttl");
+#ifdef SUPPORT_TTL
+  if (!args->use_ttl)
+    n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1, ", ignore ttl");
+#endif
 
   if (args->ignore_obj_size)
     n += snprintf(output_str + n, OUTPUT_STR_LEN - n - 1,
