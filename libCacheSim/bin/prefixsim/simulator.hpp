@@ -116,7 +116,10 @@ class Simulator {
   bool run(const std::vector<Request> &requests, std::string &error);
 
   /// Serve a trace as it streams, one request in memory at a time. The reader
-  /// must be annotated(): next access cannot be known in a forward pass.
+  /// must be annotated(): next access cannot be known in a forward pass. Its
+  /// requests must also all fit in the cache, since the stored next-access
+  /// times count every request; load_trace() handles a trace where some do
+  /// not.
   bool run(TraceReader &reader, std::string &error);
 
   const Stats &stats() const { return stats_; }

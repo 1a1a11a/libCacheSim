@@ -96,7 +96,8 @@ is 1.5 GiB.
 **Algorithms**: `--algo` takes a comma-separated list, run one after another;
 `--list-algos` prints all 43, or 46 in a build with LRB, 3LCache and S4-FIFO
 enabled. The oracles (`belady`, `belady_compute`, `session_belady`) use the
-next-access times stored in the trace.
+next-access times stored in the trace; when the cache is smaller than the
+trace's largest request, those are recomputed without the requests it skips.
 `--algo-params` passes algorithm-specific parameters, e.g.
 `--algo-params "n-sample=64"`.
 

@@ -1,5 +1,6 @@
-// Sanity checks for the prefixsim three-phase serve loop, on LRU, and a check
-// that lhd_compute reduces to lhd under the uniform cost model.
+// Sanity checks for the prefixsim three-phase serve loop, on LRU; a check that
+// lhd_compute reduces to lhd under the uniform cost model; and that a skipped
+// request does not mislead the oracles.
 //
 // Each case is a hand-traceable trace where the correct number of block hits
 // can be derived on paper. Requests are built directly from block ids rather
@@ -207,6 +208,73 @@ bool lhd_compute_matches_lhd() {
   return true;
 }
 
+/// A request larger than the cache is skipped, so annotation must leave it out:
+/// an oracle that sees it plans for a reuse that never happens. Each oracle
+/// must score a trace holding such a request exactly as it scores the trace
+/// with that request deleted.
+///
+/// [1] [2] [1,3,4] [5] [2] at capacity 2, sessions 1 2 1 3 2; [1,3,4] cannot
+/// fit. Counting it, block 1 and session 1 look reused, so at [5] Belady keeps
+/// them and evicts block 2 (session 2), and the last request misses. Without
+/// it, nothing of block 1 or session 1 is reused, so they go and [2] hits.
+bool skipped_requests_do_not_mislead_oracles() {
+  const int64_t cache_size = 2;
+  const std::vector<std::vector<obj_id_t>> blocks = {
+      {1}, {2}, {1, 3, 4}, {5}, {2}};
+  const std::vector<uint64_t> sessions = {1, 2, 1, 3, 2};
+
+  auto make = [&](bool keep_oversized) {
+    std::vector<prefixsim::Request> requests;
+    for (size_t i = 0; i < blocks.size(); ++i) {
+      if (!keep_oversized && i == 2) continue;
+      prefixsim::Request request;
+      request.index = static_cast<int64_t>(i);
+      request.timestamp = static_cast<double>(i);
+      request.blocks = blocks[i];
+      request.session = sessions[i];
+      requests.push_back(request);
+    }
+    prefixsim::annotate_next_access(requests, cache_size);
+    prefixsim::annotate_session_next_access(requests, cache_size);
+    return requests;
+  };
+  const std::vector<prefixsim::Request> with_skip = make(true);
+  const std::vector<prefixsim::Request> prefiltered = make(false);
+
+  bool ok = true;
+  for (const char *algo : {"belady", "belady_compute", "session_belady"}) {
+    prefixsim::Stats stats[2];
+    for (int k = 0; k < 2; ++k) {
+      cache_t *cache = prefixsim::create_cache_by_name(algo, cache_size);
+      prefixsim::SimulatorConfig config;
+      config.cache_size_blocks = cache_size;
+      std::string error;
+      bool run_ok = true;
+      {
+        prefixsim::Simulator sim(cache, config);
+        run_ok = sim.run(k == 0 ? with_skip : prefiltered, error);
+        stats[k] = sim.stats();
+      }
+      cache->cache_free(cache);
+      if (!run_ok) {
+        printf("  [%s] FAIL: %s\n", algo, error.c_str());
+        return false;
+      }
+    }
+    printf("  [%s] hits %lld with the skipped request, %lld without it\n", algo,
+           static_cast<long long>(stats[0].n_block_hits),
+           static_cast<long long>(stats[1].n_block_hits));
+    if (stats[0].n_requests_skipped != 1 || stats[1].n_block_hits != 1 ||
+        stats[0].n_block_hits != stats[1].n_block_hits ||
+        stats[0].n_evictions != stats[1].n_evictions) {
+      printf("  [%s] FAIL: expected 1 skipped request and 1 hit in both\n",
+             algo);
+      ok = false;
+    }
+  }
+  return ok;
+}
+
 }  // namespace
 
 int main(void) {
@@ -263,6 +331,10 @@ int main(void) {
   printf("lhd_compute under the uniform cost\n");
   ++n_run;
   if (!lhd_compute_matches_lhd()) ++n_failed;
+
+  printf("a skipped request and the oracles\n");
+  ++n_run;
+  if (!skipped_requests_do_not_mislead_oracles()) ++n_failed;
 
   if (n_failed != 0) {
     printf("%d/%zu case(s) FAILED\n", n_failed, n_run);

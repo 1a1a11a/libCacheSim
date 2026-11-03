@@ -111,6 +111,9 @@ class TraceReader {
   virtual int64_t n_blocks_total() const { return -1; }
   /// Tokens per KV block, when the format records it; 0 otherwise.
   virtual int32_t block_size_tokens() const { return 0; }
+  /// Blocks in the trace's longest request, when the format records it up
+  /// front; -1 otherwise.
+  virtual int64_t max_blocks_per_request() const { return -1; }
 };
 
 enum class TraceFormat {
@@ -128,10 +131,17 @@ std::unique_ptr<TraceReader> open_trace(const std::string &path,
                                         TraceFormat format, BlockIdMode mode,
                                         std::string &error);
 
-/// Read a whole trace into memory and annotate next-access times, unless the
-/// reader already did.
+/// Whether `request` has more distinct blocks than a cache of
+/// `cache_size_blocks` can hold. The simulator skips such a request, so it is
+/// left out of next-access annotation as well.
+bool exceeds_cache(const Request &request, int64_t cache_size_blocks);
+
+/// Read a whole trace into memory and annotate next-access times for a cache of
+/// `cache_size_blocks`. A reader's stored times are kept only when no request
+/// exceeds that cache: they count every request, including the ones the
+/// simulator will skip.
 bool load_trace(TraceReader &reader, std::vector<Request> &out,
-                std::string &error);
+                std::string &error, int64_t cache_size_blocks = INT64_MAX);
 
 /// Fill next_access_vtime for every block of every request.
 ///
@@ -139,9 +149,17 @@ bool load_trace(TraceReader &reader, std::vector<Request> &out,
 /// flattened trace: request 0 block 0 is vtime 1, request 0 block 1 is vtime 2,
 /// and so on. A block whose id never recurs gets MAX_REUSE_DISTANCE, matching
 /// what libCacheSim's own trace readers use for "no next access".
-void annotate_next_access(std::vector<Request> &requests);
+///
+/// Requests that exceed a cache of `cache_size_blocks` are left out, because
+/// the simulator skips them: they take no vtime and are no block's next access.
+/// Otherwise an oracle would keep a block for a reuse that never happens, and
+/// vtime would run ahead of the cache's own clock.
+void annotate_next_access(std::vector<Request> &requests,
+                          int64_t cache_size_blocks = INT64_MAX);
 
-/// Fill session_next_access for every request, in one reverse pass.
-void annotate_session_next_access(std::vector<Request> &requests);
+/// Fill session_next_access for every request, in one reverse pass. Requests
+/// that exceed a cache of `cache_size_blocks` are left out, as above.
+void annotate_session_next_access(std::vector<Request> &requests,
+                                  int64_t cache_size_blocks = INT64_MAX);
 
 }  // namespace prefixsim

@@ -354,14 +354,27 @@ int main(int argc, char **argv) {
   // A trace that stores next access is streamed: each algorithm reads it once,
   // front to back, holding one request at a time. Any other is loaded whole,
   // once, so next access can be computed, and shared by every algorithm.
-  const bool streaming = reader->annotated();
+  //
+  // The stored times count every request, though, and a request larger than
+  // the cache is skipped. An oracle reading them would plan for reuses that
+  // never happen, so such a trace is loaded and re-annotated instead.
+  bool streaming = reader->annotated();
+  if (streaming && reader->max_blocks_per_request() > opts.cache_size) {
+    WARN(
+        "the trace's largest request has %lld blocks, more than the cache "
+        "(%lld), so it is loaded into memory to recompute next access "
+        "without the requests that will be skipped\n",
+        static_cast<long long>(reader->max_blocks_per_request()),
+        static_cast<long long>(opts.cache_size));
+    streaming = false;
+  }
   std::vector<prefixsim::Request> requests;
   int64_t n_requests_total = 0, n_blocks_total = 0;
   if (streaming) {
     n_requests_total = reader->n_requests_total();
     n_blocks_total = reader->n_blocks_total();
   } else {
-    if (!prefixsim::load_trace(*reader, requests, error)) {
+    if (!prefixsim::load_trace(*reader, requests, error, opts.cache_size)) {
       fprintf(stderr, "error: %s\n", error.c_str());
       return 1;
     }

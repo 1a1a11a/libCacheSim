@@ -5,6 +5,7 @@
 #include <cstring>
 #include <fstream>
 #include <unordered_map>
+#include <unordered_set>
 
 extern "C" {
 #include "libCacheSim/const.h"
@@ -262,6 +263,9 @@ class LcpReader : public TraceReader {
   int32_t block_size_tokens() const override {
     return static_cast<int32_t>(stat_.block_size_tokens);
   }
+  int64_t max_blocks_per_request() const override {
+    return stat_.max_blocks_per_req;
+  }
 
  private:
   reader_t *reader_;
@@ -332,28 +336,42 @@ std::unique_ptr<TraceReader> open_trace(const std::string &path,
   return nullptr;
 }
 
+bool exceeds_cache(const Request &request, int64_t cache_size_blocks) {
+  if (static_cast<int64_t>(request.blocks.size()) <= cache_size_blocks) {
+    return false;
+  }
+  const std::unordered_set<obj_id_t> distinct(request.blocks.begin(),
+                                              request.blocks.end());
+  return static_cast<int64_t>(distinct.size()) > cache_size_blocks;
+}
+
 bool load_trace(TraceReader &reader, std::vector<Request> &out,
-                std::string &error) {
+                std::string &error, int64_t cache_size_blocks) {
   Request req;
+  bool any_exceeds = false;
   while (reader.next(req)) {
+    any_exceeds = any_exceeds || exceeds_cache(req, cache_size_blocks);
     out.push_back(req);
   }
   if (out.empty()) {
     error = "trace contained no usable requests";
     return false;
   }
-  if (!reader.annotated()) {
-    annotate_next_access(out);
-    annotate_session_next_access(out);
+  if (!reader.annotated() || any_exceeds) {
+    annotate_next_access(out, cache_size_blocks);
+    annotate_session_next_access(out, cache_size_blocks);
   }
   return true;
 }
 
-void annotate_next_access(std::vector<Request> &requests) {
+void annotate_next_access(std::vector<Request> &requests,
+                          int64_t cache_size_blocks) {
   int64_t total = 0;
   for (Request &r : requests) {
     r.next_access_vtime.assign(r.blocks.size(), MAX_REUSE_DISTANCE);
-    total += static_cast<int64_t>(r.blocks.size());
+    if (!exceeds_cache(r, cache_size_blocks)) {
+      total += static_cast<int64_t>(r.blocks.size());
+    }
   }
 
   // One reverse pass. Walking backwards, "the most recent vtime at which I saw
@@ -363,6 +381,7 @@ void annotate_next_access(std::vector<Request> &requests) {
 
   int64_t vtime = total;  // 1-based vtime of the last block in forward order
   for (auto ri = requests.rbegin(); ri != requests.rend(); ++ri) {
+    if (exceeds_cache(*ri, cache_size_blocks)) continue;
     for (int64_t i = static_cast<int64_t>(ri->blocks.size()) - 1; i >= 0; --i) {
       const size_t idx = static_cast<size_t>(i);
       const obj_id_t id = ri->blocks[idx];
@@ -376,13 +395,18 @@ void annotate_next_access(std::vector<Request> &requests) {
   }
 }
 
-void annotate_session_next_access(std::vector<Request> &requests) {
+void annotate_session_next_access(std::vector<Request> &requests,
+                                  int64_t cache_size_blocks) {
   // One reverse pass, same trick as annotate_next_access but keyed on the
   // session rather than the block: walking backwards, the most recent index at
   // which a session was seen is that session's *next* use.
   std::unordered_map<uint64_t, int64_t> next_seen;
   for (int64_t i = static_cast<int64_t>(requests.size()) - 1; i >= 0; --i) {
     Request &r = requests[static_cast<size_t>(i)];
+    if (exceeds_cache(r, cache_size_blocks)) {
+      r.session_next_access = INT64_MAX;
+      continue;
+    }
     auto it = next_seen.find(r.session);
     r.session_next_access = it == next_seen.end() ? INT64_MAX : it->second;
     next_seen[r.session] = i;

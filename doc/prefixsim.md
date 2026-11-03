@@ -52,7 +52,9 @@ Two input formats (`--trace-format`, guessed from the file name when omitted):
 - `lcp` ([spec](/doc/lcp_format.md)), zstd-compressed (`.lcp.zst`, what
   `traceConvLLM` writes) or plain. It stores next access for blocks and
   sessions, so it is **streamed**: each algorithm reads it once, front to back,
-  holding one request at a time.
+  holding one request at a time. The exception is a cache smaller than the
+  trace's largest request, where it is loaded like JSONL (see
+  [Requests larger than the cache](#requests-larger-than-the-cache)).
 - `qwen-jsonl`, the source traces. They carry no next access, so the whole
   trace is **loaded** (about 21 bytes per block access: 12.9 GiB for fi-new)
   and annotated in reverse passes before any algorithm runs.
@@ -390,6 +392,12 @@ order while the annotation is in *logical* (forward) order. The two agree at
 every request boundary and differ by at most `B` inside a request. That
 in-request skew is the intended signal, not an error.
 
+A request larger than the cache is skipped (see
+[Requests larger than the cache](#requests-larger-than-the-cache)), so the
+annotation leaves it out: it takes no virtual time and is no block's or
+session's next access. Counting it would make an oracle keep a block for a reuse
+that never happens, and let virtual time run ahead of `cache->n_req`.
+
 ---
 
 ## Metrics
@@ -508,7 +516,17 @@ the trace and the cache size, so it is identical for every policy.
 
 If `n_req_skipped` is more than a rounding error, the run is answering a
 different question than intended; raise `--cache-size` or accept that the
-comparison excludes the largest prompts.
+comparison excludes the largest prompts. The excluded set also grows as the
+cache shrinks, so points on one curve below the largest prompt average over
+different requests.
+
+A skipped request is also left out of next-access annotation (see
+[Next-access annotation](#next-access-annotation)), so the oracles plan only for
+the requests that are served: each scores a trace holding such requests exactly
+as it scores the trace with them deleted. An `lcp` file stores next access
+computed over every request, so when the cache is smaller than its largest
+request (`max_blocks_per_req` in its header), prefixsim warns, loads it whole
+and recomputes next access instead of streaming it.
 
 ---
 

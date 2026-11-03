@@ -233,6 +233,15 @@ bool Simulator::run(TraceReader &reader, std::string &error) {
             "streams; load it with load_trace() first";
     return false;
   }
+  // The stored times count every request, including the ones this cache is
+  // too small for and serve() skips, so they would be wrong here.
+  if (reader.max_blocks_per_request() > config_.cache_size_blocks) {
+    error = std::string(reader.format_name()) +
+            " trace has requests larger than the cache, whose stored "
+            "next-access times count the requests this run skips; load it "
+            "with load_trace() and the cache size, which re-annotates it";
+    return false;
+  }
   Request request;
   while (reader.next(request)) {
     if (!serve(request, error)) return false;
@@ -248,7 +257,8 @@ bool Simulator::serve(const Request &request, std::string &error) {
 
   // A request with more distinct blocks than the whole cache can never be
   // fully resident. Serving it would thrash the cache for nothing, so skip it
-  // and keep it out of the ratios.
+  // and keep it out of the ratios. This is exceeds_cache(), which next-access
+  // annotation also applies, so an oracle never plans for a skipped request.
   //
   // Warned once rather than per request, because this is a property of the
   // cache size and not of the individual request: pick a size below the largest
