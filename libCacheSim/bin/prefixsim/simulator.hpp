@@ -71,9 +71,8 @@ struct SimulatorConfig {
   int64_t cache_size_blocks = 0;
   CostModel cost_model;  ///< uniform unless set
   /// After phase 3, re-probe every block of the request and fail if any is
-  /// missing. Catches eviction algorithms whose resident set is not visible in
-  /// the main hash table (the S3FIFO family, for instance), which would
-  /// silently invalidate the phase-1 match.
+  /// missing. Catches an eviction algorithm whose find() does not report what
+  /// it holds, which would silently invalidate the phase-1 match.
   bool verify = true;
   /// Make the arriving request's own blocks unevictable while phase 2 frees
   /// space for it, the way a real engine ref-counts the blocks of a running
@@ -132,8 +131,8 @@ class Simulator {
  private:
   bool serve(const Request &request, std::string &error);
 
-  /// Phase 1: is this block resident right now? Probes the hash table directly
-  /// so the eviction algorithm never registers the probe as an access.
+  /// Phase 1: is this block resident right now? Asks the algorithm's own
+  /// find() with update_cache false, which must leave the cache unchanged.
   bool probe(obj_id_t id) const;
 
   /// Phase 2: evict until `needed` blocks that this request does *not* want
@@ -171,8 +170,8 @@ cache_t *create_cache_by_name(const std::string &algorithm,
                               const char *cache_specific_params = nullptr,
                               int64_t n_total_req = 0);
 
-/// Algorithms whose entire resident set lives in the main hash table, i.e. the
-/// ones the phase-1 probe is valid for.
+/// The algorithms prefixsim can drive: each completes a whole trace with the
+/// post-request residency check on.
 const std::vector<std::string> &supported_algorithms();
 
 }  // namespace prefixsim

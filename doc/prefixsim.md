@@ -104,12 +104,15 @@ for i in 0 .. B-1:
 
 Three properties matter:
 
-- **The probe is invisible to the eviction algorithm.** It calls
-  `hashtable_find_obj_id(cache->hashtable, id)` directly, never
-  `cache->find()`. Even `cache->find(..., update_cache=false)` is the
-  algorithm's own code path, and phase 1 must not look like an access —
-  otherwise a matched-but-not-yet-served block would get its recency or
-  frequency bumped twice.
+- **The probe is invisible to the eviction algorithm.** It calls the
+  algorithm's own `cache->find(..., update_cache=false)`, which must change
+  nothing: phase 1 must not look like an access, or a matched-but-not-yet-served
+  block would get its recency or frequency bumped twice. (Why it asks the
+  algorithm rather than its hash table is under
+  [Which algorithms work](#which-algorithms-work).) `testPrefixsim` holds every
+  algorithm to this: a run with the residency check on, which doubles the
+  lookups, must equal a run with it off, and lookups must not move the cache's
+  clock.
 - **Every block is checked, not just the leading run.** A block at a higher
   index can be resident even when an earlier one is missing, and this simulator
   counts it as reusable — matching does not stop at the first miss. That is

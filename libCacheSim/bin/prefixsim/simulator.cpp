@@ -367,10 +367,10 @@ bool Simulator::serve(const Request &request, std::string &error) {
         error =
             "after replaying request " + std::to_string(request.index) +
             ", block " + std::to_string(i) + " of " + std::to_string(n_pos) +
-            " is not resident. The eviction algorithm's resident set is not "
-            "fully visible in the main hash table, so the phase-1 match cannot "
-            "be trusted for it. Use one of the supported algorithms, or pass "
-            "--no-verify if you know what you are doing.";
+            " is not resident. The eviction algorithm's find() does not report "
+            "what it holds, so the phase-1 match cannot be trusted for it. Use "
+            "one of the supported algorithms, or pass --no-verify if you know "
+            "what you are doing.";
         return false;
       }
     }
