@@ -2,6 +2,7 @@
 
 ## Quickstart Guides
 - [CacheSim: Command-line cache simulator](quickstart_cachesim.md)
+- [prefixsim: LLM prefix-cache simulator](quickstart_prefixsim.md) ([design](prefixsim.md), [lcp trace format](lcp_format.md))
 - [Trace Utilities](quickstart_traceUtils.md)
 - [Trace Analyzer](quickstart_traceAnalyzer.md)
 - [MRC Profiler](quickstart_mrcProfiler.md)

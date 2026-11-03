@@ -102,6 +102,104 @@ Sometimes you need to know what the cache will evict, but you don't want to evic
 cache->to_evict(cache, req);
 ```
 
+#### Cache record request
+Optional. Hands an algorithm the full object sequence of one logical request, in
+request order, before those objects are accessed.
+
+```c
+if (cache->record_request != NULL) {
+  cache->record_request(cache, obj_ids, n_obj_ids);
+}
+```
+
+Every other API above sees one object at a time, which is enough for almost all
+algorithms. It is not enough when the objects of a request have structure the
+policy needs and that no sequence of individual accesses can recover. The
+motivating case is an LLM prefix cache: a request's KV blocks form a path in a
+prefix tree, shared with every other request that starts with the same prompt,
+and an algorithm that evicts at prefix-tree-node granularity has to be told the
+path.
+
+The hook is `NULL` for every algorithm that does not need it -- `cache_struct_init`
+zeroes the struct -- so **callers must check before calling**. Algorithms that do
+need it install it in their `_init`; see `PartialNodeRandomCompute` and
+`eviction::PartialNodeCache` in `cache/eviction/cpp/`.
+
+Call it once per request, after making room for the request and before replaying
+its accesses. At that point the new objects are not in the cache yet, which is
+intentional: the algorithm learns the structure before it is asked to evict
+against it, and the subsequent inserts mark the objects resident. `prefixsim`
+does exactly this between its allocate and access phases.
+
+
+#### Cache set request context
+Optional. Hands an algorithm the *properties* of the request it is about to
+serve, before any space is made for it.
+
+```c
+if (cache->set_request_ctx != NULL) {
+  cache_request_ctx_t ctx = {.timestamp = ts, .category = cat, .n_blocks = n};
+  cache->set_request_ctx(cache, &ctx);
+}
+```
+
+This is the companion to `record_request`, and the two differ in *when* they run,
+which is the whole reason both exist. `record_request` delivers the object
+sequence and runs **after** allocation, so a policy reading it during eviction
+would see the previous request's data. `set_request_ctx` runs **before**
+allocation, so it delivers what a policy needs while it is choosing victims for
+*this* request:
+
+* `timestamp` -- arrival time in seconds. A policy whose decay function is defined
+  on real time needs the current "now" at eviction time; taking it from
+  `record_request` lags it by one request. It is a `double` because
+  `request_t::clock_time` truncates to whole seconds, and a KV-block lifespan is
+  of order 100 s, so whole seconds would tie every block arriving in the same
+  second. `AsymCache` is the motivating case.
+* `category` -- an opaque id for the request's workload class, which is what a
+  policy that fits a separate reuse-time distribution per class keys on. Opaque
+  because what makes two requests the same class is a property of the *trace*,
+  not of the cache: the caller folds whatever fields the trace carries into one
+  id, and the algorithm only ever tests ids for equality. `0` means "the trace
+  said nothing". `WorkloadAware` is the motivating case.
+* `n_blocks` -- how many objects the request will touch.
+
+`NULL` unless the algorithm needs it, so **callers must check**. `prefixsim`
+calls it at the top of each request, before its match and allocate phases.
+
+An algorithm that installs this hook should still work without it, because a
+caller driving the cache one object at a time (plain `cachesim`, the test suite)
+never calls it. Both `WorkloadAware` and `AsymCache` fall back to a single
+undifferentiated class and their own internal clock in that case -- degraded, but
+not broken.
+
+
+#### Cache evict n
+Optional. Evict up to `n` objects in one call, returning how many actually went.
+
+```c
+if (cache->evict_n != NULL) {
+  cache->evict_n(cache, req, n);
+} else {
+  while (still_short()) cache->evict(cache, req);
+}
+```
+
+`n` is a **hard cap**, not a hint: a caller that asked for `n` has room for
+exactly `n`, and evicting more silently discards objects nothing asked to free.
+
+Two reasons an algorithm implements it. Sampling algorithms pay their sampling
+cost per call, so evicting `n` objects one at a time samples `n` times over --
+batching draws the sample once and amortises it across the batch. And an
+algorithm may want to evict several *related* objects together, which a
+one-object-at-a-time contract cannot express; a prefix-cache policy draining
+part of one tree node is the motivating case.
+
+`NULL` unless the algorithm implements it, so callers must check and fall back to
+looping `cache->evict()`. Measured on `qwen_coder` at 8k blocks with 128 samples,
+`PartialNodeRandomFreq` runs 6x faster through `evict_n` than through the loop,
+for the same hit ratio to four decimals.
+
 
 ### TraceReader APIs
 There are mostly three APIs related to readers, `open_trace`, `close_trace`, `read_one_req`, let's take a look how

@@ -228,8 +228,35 @@ static cache_obj_t *ClockPro_insert(cache_t *cache, const request_t *req) {
   // request to insert a test object
   cache_obj_t *test_obj = hashtable_find_obj_id(params->ht_test, req->obj_id);
   if (test_obj != NULL) {
-    ClockPro_promote(cache, test_obj);
-    return test_obj;
+    // A page in the test period is being re-referenced, so it becomes hot.
+    // Promoting the test entry in place is not enough: it lives in ht_test, not
+    // in cache->hashtable, and cache_insert_base() was never called for it. The
+    // page therefore counted as hot in mem_hot while staying invisible to
+    // cache->find() and absent from occupied_byte/n_obj -- and when the cold
+    // hand later evicted it, cache_evict_base() tripped the
+    // "delete an object that is not in the table" assertion in the hash table.
+    // Hand its clock slot over to a real resident object instead.
+    cache_obj_t *next = test_obj->queue.next;
+    cache_obj_t *prev = test_obj->queue.prev;
+    cache_obj_t *obj = cache_insert_base(cache, req);
+    obj->clockpro.referenced = test_obj->clockpro.referenced;
+    obj->clockpro.status = CLOCKPRO_TEST;  // so promote() debits mem_test
+    if (next == test_obj) {  // the test entry was alone on the clock
+      obj->queue.next = obj;
+      obj->queue.prev = obj;
+    } else {
+      obj->queue.next = next;
+      obj->queue.prev = prev;
+      next->queue.prev = obj;
+      prev->queue.next = obj;
+    }
+    if (params->hand_hot == test_obj) params->hand_hot = obj;
+    if (params->hand_cold == test_obj) params->hand_cold = obj;
+    if (params->hand_test == test_obj) params->hand_test = obj;
+    hashtable_delete(params->ht_test, test_obj);
+
+    ClockPro_promote(cache, obj);
+    return obj;
   }
 
   cache_obj_t *obj = cache_insert_base(cache, req);
@@ -264,7 +291,54 @@ static cache_obj_t *ClockPro_insert(cache_t *cache, const request_t *req) {
  * @param req not used
  */
 static void ClockPro_evict(cache_t *cache, const request_t *req) {
-  ClockPro_run_cold(cache);
+  ClockPro_params_t *params = (ClockPro_params_t *)cache->eviction_params;
+
+  if (params->hand_cold == NULL) {
+    return;  // nothing has ever been inserted; there is no clock to turn
+  }
+
+  // One ClockPro_run_cold() is one tick of the cold hand, and a tick frees a
+  // page only when it lands on an unreferenced cold one -- otherwise it just
+  // advances the hand (or promotes). cache_get_base() hides that behind its own
+  // `while (occupied + size > cache_size) evict()` retry loop, but a caller
+  // that frees space up front and expects evict() to free a page sees a no-op
+  // and gives up. Tick until a page actually goes, which is exactly the
+  // sequence cache_get_base() would have driven, so its result is unchanged.
+  // (A run that terminated before never needed the lap guards below -- for it,
+  // cache_get_base() would have spun on evict() forever.)
+  const int64_t occupied_before = cache->occupied_byte;
+  while (cache->occupied_byte == occupied_before) {
+    // A lap of the cold hand. None of its non-freeing paths removes an object,
+    // so `start` stays valid and the hand advances one page per tick; coming
+    // back round to `start` means no page on the clock is evictable right now.
+    const cache_obj_t *start = params->hand_cold;
+    bool lapped = false;
+    while (cache->occupied_byte == occupied_before && !lapped) {
+      ClockPro_run_cold(cache);
+      lapped = (params->hand_cold == start);
+    }
+    if (cache->occupied_byte != occupied_before) break;
+
+    // The lap found nothing: the resident set is all hot, so the cold hand has
+    // nothing it is allowed to evict. Turn the hot hand to demote one page to
+    // cold and try again -- ClockPro's own way of refilling the cold list.
+    // cache_get_base() cannot reach this: it only evicts while the cache is
+    // full, and promote() caps mem_hot at cache_size - mem_cold_max, so a full
+    // cache always leaves mem_cold >= mem_cold_max pages on the cold hand.
+    if (params->mem_hot <= 0) break;
+    const cache_obj_t *hot_start = params->hand_hot;
+    const int64_t hot_before = params->mem_hot;
+    bool hot_lapped = false;
+    while (params->mem_hot == hot_before &&
+           cache->occupied_byte == occupied_before && !hot_lapped) {
+      ClockPro_run_hot(cache);
+      hot_lapped = (params->hand_hot == hot_start);
+    }
+    if (params->mem_hot == hot_before &&
+        cache->occupied_byte == occupied_before) {
+      break;  // nothing could be demoted either; give up rather than spin
+    }
+  }
 }
 
 /**
@@ -466,16 +540,35 @@ static void ClockPro_promote(cache_t *cache, cache_obj_t *obj) {
     }
   }
 
-  while ((params->mem_hot + obj->obj_size) >
-         (cache->cache_size - params->mem_cold_max)) {
-    ClockPro_run_hot(cache);
-  }
-
+  // Step the cold and test hands off `obj` before making room, not after.
+  // ClockPro_run_hot() below can re-enter ClockPro_run_cold(), which reads
+  // hand_cold; while the hand still pointed at `obj` -- a referenced cold page
+  // -- that re-entry called ClockPro_promote(obj) again, and the same three
+  // frames recursed until the stack ran out. Moving the two hands first makes
+  // the re-entry look at the next page instead. Any run that terminated before
+  // is unaffected: it either never re-entered run_cold() from here, or it did
+  // and then overflowed the stack.
   if (params->hand_cold == obj) {
     params->hand_cold = obj->queue.next;
   }
   if (params->hand_test == obj) {
     params->hand_test = obj->queue.next;
+  }
+
+  // Make room in the hot list. `mem_hot > 0` is a termination guard, not a
+  // policy change: when nothing is hot, every ClockPro_run_hot() call takes the
+  // "hand_hot is not pointing at a hot object" branch, which only advances the
+  // hand and cannot lower mem_hot any further -- so once mem_hot reaches 0 with
+  // the size condition still unsatisfied, the loop can never exit on its own.
+  // That state is reachable whenever the hot budget (cache_size - mem_cold_max)
+  // is smaller than obj_size, in particular right after startup, where
+  // mem_cold_max == cache_size makes the budget 0 and the condition
+  // unsatisfiable for any object. Any execution that terminated before still
+  // takes exactly the same path, because it never reached mem_hot == 0 here.
+  while ((params->mem_hot + obj->obj_size) >
+             (cache->cache_size - params->mem_cold_max) &&
+         params->mem_hot > 0) {
+    ClockPro_run_hot(cache);
   }
 
   clockpro_status_e old_status = obj->clockpro.status;

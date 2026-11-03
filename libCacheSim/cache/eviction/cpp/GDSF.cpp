@@ -140,7 +140,9 @@ static bool GDSF_get(cache_t *cache, const request_t *req) {
  */
 static cache_obj_t *GDSF_find(cache_t *cache, const request_t *req,
                               bool update_cache) {
-  cache->n_req += 1;
+  // A lookup that does not update the cache is not an access, so it must
+  // not tick the clock either.
+  if (update_cache) cache->n_req += 1;
 
   auto *gdsf = reinterpret_cast<eviction::GDSF *>(cache->eviction_params);
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
@@ -278,7 +280,10 @@ static void GDSF_evict(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = p.obj;
 
   gdsf->pri_last_evict = p.priority;
-  cache_remove_obj_base(cache, obj, true);
+  // cache_evict_base, not cache_remove_obj_base: eviction must go through the
+  // eviction path so eviction-age tracking and the prefetcher's handle_evict
+  // hook observe it. cache_evict_base calls cache_remove_obj_base itself.
+  cache_evict_base(cache, obj, true);
 }
 
 static void GDSF_remove_obj(cache_t *cache, cache_obj_t *obj) {

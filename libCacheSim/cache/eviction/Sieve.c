@@ -221,8 +221,20 @@ static void Sieve_evict(cache_t *cache, const request_t *req) {
   /* if we have run one full around or first eviction */
   cache_obj_t *obj = params->pointer == NULL ? params->q_tail : params->pointer;
 
-  while (obj->sieve.freq > 0) {
-    obj->sieve.freq -= 1;
+  // The hand steps over a pinned object without touching its freq -- being
+  // unevictable is not the same as having been accessed. `budget` bounds the
+  // walk so an entirely pinned queue still yields a victim instead of spinning
+  // (pinning is best-effort; see cache_skip_pinned). Without pins
+  // cache_obj_is_pinned() is a NULL test, so this is the original loop.
+  int64_t budget = cache->n_obj + 1;
+  while (true) {
+    if (cache_obj_is_pinned(obj)) {
+      if (--budget <= 0) break;
+    } else if (obj->sieve.freq > 0) {
+      obj->sieve.freq -= 1;
+    } else {
+      break;
+    }
     obj = obj->queue.prev == NULL ? params->q_tail : obj->queue.prev;
   }
 

@@ -11,6 +11,20 @@
 extern "C" {
 #endif
 
+/**
+ * A request's compute cost, with 0 read as 1.
+ *
+ * Most trace formats carry no cost -- lcs, for one, never sets it, so obj_cost
+ * is 0 throughout (lcp derives it from a cost model instead). Taken
+ * literally that makes every compute-aware score 0 and the algorithm silently
+ * degenerates into picking whichever candidate it sampled first. Reading 0 as 1
+ * makes a cost-free trace mean "uniform cost", which is the honest default:
+ * compute savings then equal the hit ratio.
+ */
+static inline int32_t req_cost_or_one(const request_t *req) {
+  return req->obj_cost > 0 ? (int32_t)req->obj_cost : 1;
+}
+
 /** this file contains both base function, which should be called by all
  *eviction algorithms, and the queue related functions, which should be called
  *by algorithm that uses only one queue and needs to update the queue such as
@@ -221,6 +235,10 @@ cache_obj_t *cache_find_base(cache_t *cache, const request_t *req,
     if (update_cache) {
       cache_obj->next_access_vtime = req->next_access_vtime;
       cache_obj->freq += 1;
+      /* A trace may give one object different costs over time (a cost
+       * column, or an LLM block reached at a new position); the object then
+       * carries its latest. */
+      cache_obj->cost = req_cost_or_one(req);
     }
   }
 
@@ -310,8 +328,20 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 
   cache_obj->next_access_vtime = req->next_access_vtime;
   cache_obj->freq = 0;
+  cache_obj->cost = req_cost_or_one(req);
 
   return cache_obj;
+}
+
+/* Eviction pinning -- see cacheObj.h. Per thread, and unset by default, so
+ * every library user other than prefixsim keeps the original victim selection.
+ */
+__thread cache_pin_pred_f g_cache_pin_pred = NULL;
+__thread void *g_cache_pin_ctx = NULL;
+
+void cache_set_pin_predicate(cache_pin_pred_f pred, void *ctx) {
+  g_cache_pin_pred = pred;
+  g_cache_pin_ctx = ctx;
 }
 
 /**

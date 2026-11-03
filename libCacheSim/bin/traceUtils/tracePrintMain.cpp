@@ -7,6 +7,7 @@
 
 #include "internal.hpp"
 #include "libCacheSim/reader.h"
+#include "traceReader/customizedReader/lcp.h"
 #include "traceReader/customizedReader/lcs.h"
 
 int main(int argc, char *argv[]) {
@@ -15,7 +16,11 @@ int main(int argc, char *argv[]) {
   cli::parse_cmd(argc, argv, &args);
 
   if (args.print_stat) {
-    lcs_print_trace_stat(args.reader);
+    if (args.reader->trace_type == LCP_TRACE) {
+      lcp_print_trace_stat(args.reader);
+    } else {
+      lcs_print_trace_stat(args.reader);
+    }
     return 0;
   }
 

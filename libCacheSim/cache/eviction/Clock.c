@@ -224,13 +224,16 @@ static cache_obj_t *Clock_to_evict(cache_t *cache, const request_t *req) {
 static void Clock_evict(cache_t *cache, const request_t *req) {
   Clock_params_t *params = (Clock_params_t *)cache->eviction_params;
 
-  cache_obj_t *obj_to_evict = params->q_tail;
+  // cache_skip_pinned steps the hand past pinned objects without giving them a
+  // second chance (their freq is left alone). It returns the tail unchanged
+  // when nothing is pinned, and also when everything is.
+  cache_obj_t *obj_to_evict = cache_skip_pinned(params->q_tail);
   while (obj_to_evict->clock.freq >= 1) {
     obj_to_evict->clock.freq -= 1;
     params->n_obj_rewritten += 1;
     params->n_byte_rewritten += obj_to_evict->obj_size;
     move_obj_to_head(&params->q_head, &params->q_tail, obj_to_evict);
-    obj_to_evict = params->q_tail;
+    obj_to_evict = cache_skip_pinned(params->q_tail);
   }
 
   remove_obj_from_list(&params->q_head, &params->q_tail, obj_to_evict);

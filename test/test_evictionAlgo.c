@@ -226,6 +226,26 @@ static const cache_test_data_t test_data_truth[] = {
      .miss_cnt_true = {92034, 86146, 84751, 82240, 75185, 71503, 68987, 67640},
      .miss_byte_true = {4149330432, 3836459008, 3791890432, 3677849600,
                         3265613824, 3044815360, 2898076160, 2863112704}},
+    /* Published prefix-cache policies. Both consult per-request metadata that
+     * only prefixsim supplies. Under this driver they get none, and this trace
+     * carries no cost, so every object costs 1: WorkloadAware then has a single
+     * workload class and AsymCache a constant recompute cost, and both reduce
+     * to LRU. These rows are LRU's numbers and pin that reduction; the
+     * prefix-cache behaviour itself is not tested here. */
+    {.cache_name = "WorkloadAware",
+     .hashpower = 20,
+     .req_cnt_true = 113872,
+     .req_byte_true = 4368040448,
+     .miss_cnt_true = {93374, 89783, 83572, 81722, 72494, 72104, 71972, 71704},
+     .miss_byte_true = {4214303232, 4061242368, 3778040320, 3660569600,
+                        3100927488, 3078128640, 3075403776, 3061662720}},
+    {.cache_name = "AsymCache",
+     .hashpower = 20,
+     .req_cnt_true = 113872,
+     .req_byte_true = 4368040448,
+     .miss_cnt_true = {93374, 89783, 83572, 81722, 72494, 72104, 71972, 71704},
+     .miss_byte_true = {4214303232, 4061242368, 3778040320, 3660569600,
+                        3100927488, 3078128640, 3075403776, 3061662720}},
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
     {.cache_name = "3LCache",
      .hashpower = 20,
@@ -525,7 +545,10 @@ static void test_MQ(gconstpointer user_data) {
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
 static void test_3LCache(gconstpointer user_data) {
-  test_cache_algorithm(user_data, &test_data_truth[29]);
+  // Index must name the 3LCache row: test_cache_algorithm() builds the cache
+  // from test_data_truth[i].cache_name, so a wrong index silently tests a
+  // different algorithm rather than failing.
+  test_cache_algorithm(user_data, &test_data_truth[31]);
 }
 #endif /* ENABLE_3L_CACHE */
 
@@ -534,6 +557,14 @@ static void test_WTinyLFU(gconstpointer user_data) {
 }
 
 static void empty_test(gconstpointer user_data) { ; }
+
+static void test_WorkloadAware(gconstpointer user_data) {
+  test_cache_algorithm(user_data, &test_data_truth[29]);
+}
+
+static void test_AsymCache(gconstpointer user_data) {
+  test_cache_algorithm(user_data, &test_data_truth[30]);
+}
 
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
@@ -599,6 +630,10 @@ int main(int argc, char *argv[]) {
 
   // Belady algorithms require reader that has next access information
   // and can only use oracleGeneral trace (which we're using)
+  g_test_add_data_func("/libCacheSim/cacheAlgo_WorkloadAware", reader,
+                       test_WorkloadAware);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_AsymCache", reader,
+                       test_AsymCache);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
                        test_BeladySize);

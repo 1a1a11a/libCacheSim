@@ -25,6 +25,7 @@ A high-performance library for building and running cache simulations
 
 ## What is libCacheSim
 * **cachesim**, a high-performance cache simulator for running cache simulations.
+* **prefixsim**, a prefix-cache simulator for LLM serving: replays LLM request traces through a KV-block cache to compare eviction policies.
 * **traceAnalyzer**, a high-performance and versatile analyzer for cache traces.
 * **libCacheSim**, a high-performance library for building your own cache simulators.
 
@@ -39,6 +40,7 @@ A high-performance library for building and running cache simulations
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc.; see [here](/doc/API.md).
 * **Extensible** - easy to support new trace types or eviction algorithms; see [here](/doc/advanced_lib_extend.md).
 * **Efficient Miss Ratio Curve profiler** - quickly build highly accurate miss ratio curves on large-scale workloads; see [here](/doc/quickstart_mrcProfiler.md).
+* **LLM prefix-cache simulation** - evaluate KV-block eviction policies on real LLM serving traces, streamed in one pass; see [here](/doc/quickstart_prefixsim.md).
 
 The full documentation index lives in [doc/README.md](/doc/README.md).
 
@@ -68,6 +70,15 @@ The name in `code` is what you pass to `cachesim` on the command line (names are
 * [S4-FIFO](/libCacheSim/cache/eviction/S4FIFO/S4FIFO.c) `s4fifo` — build with `-DENABLE_S4FIFO=ON`
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c) `sieve`
 * [Merlin](/libCacheSim/cache/eviction/cpp/merlin.cpp) `merlin`
+
+### LLM prefix-cache eviction algorithms
+These run in [`prefixsim`](#prefixsim-an-llm-prefix-cache-simulator), and the name in `code` is what you pass to `prefixsim --algo`. `cachesim` also has one of them, as `beladyCompute`.
+* Compute-aware, weighting each block by the prefill compute a hit on it saves (`--cost-model`): [BeladyCompute](/libCacheSim/cache/eviction/BeladyCompute.c) `belady_compute` (needs future information), [GDSF-Compute](/libCacheSim/cache/eviction/cpp/GDSF_compute.cpp) `gdsf_compute`, [LHD-Compute](/libCacheSim/cache/eviction/LHD/LHD_compute_interface.cpp) `lhd_compute`, [RandomCompute](/libCacheSim/cache/eviction/RandomCompute.c) `random_compute`, [RandomComputeSmallQueue](/libCacheSim/cache/eviction/RandomComputeSmallQueue.c) `random_compute_small_queue`
+* Published prefix-cache policies: [Workload-Aware](/libCacheSim/cache/eviction/cpp/WorkloadAware.cpp) `workload_aware` ([ATC'25](https://arxiv.org/abs/2506.02634)), [AsymCache](/libCacheSim/cache/eviction/cpp/AsymCache.cpp) `asym_cache` ([arXiv:2606.02964](https://arxiv.org/abs/2606.02964))
+* Session-level, evicting a whole conversation rather than a block: [session policies](/libCacheSim/cache/eviction/cpp/sessionCache.cpp) `session_lru`, `session_arc`, `session_s3fifo`, `session_random_compute`, `session_belady` (needs future information)
+* Partial-node, sampling prefix-tree nodes and evicting a node's deepest block: [PartialNodeRandomCompute](/libCacheSim/cache/eviction/cpp/PartialNodeRandomCompute.cpp) `partial_node_random_compute`, [PartialNodeRandomFreq](/libCacheSim/cache/eviction/cpp/PartialNodeRandomFreq.cpp) `partial_node_random_freq`, [PartialNodeRandomComputeSmallQueue](/libCacheSim/cache/eviction/cpp/PartialNodeRandomComputeSmallQueue.cpp) `partial_node_random_compute_small_queue`
+
+`prefixsim` also runs most of the `cachesim` algorithms listed above; `prefixsim --list-algos` prints everything it runs.
 
 ### Admission algorithms
 * [Adaptsize](/libCacheSim/cache/admission/adaptsize/)
@@ -215,6 +226,31 @@ python3 plot_appr_mrc.py SHARDS ../data/cloudPhysicsIO.vscsi vscsi 0.01
 # plot miss ratio over size using Miniature Simulations
 python3 plot_appr_mrc.py MINI ../data/cloudPhysicsIO.vscsi vscsi s3fifo "0.01,0.05,0.1,0.2" 0.1 --extra_args "--ignore-obj-size 1"
 ```
+
+---
+
+### prefixsim (an LLM prefix-cache simulator)
+LLM serving engines such as vLLM and SGLang keep the KV cache of finished requests, so a new request that shares a prefix with an earlier one skips recomputing it. `prefixsim` replays an LLM request trace through such a cache and reports each eviction policy's **block hit ratio** and **compute saving ratio** (prefill compute avoided). Every block of a request must be resident at once, as in a real engine. A cached block counts even after a request's first miss, since its KV depends only on the tokens before it: only the missing blocks are recomputed ([why](/doc/prefixsim.md#a-block-after-a-miss-still-counts)).
+
+```bash
+# convert a JSONL trace once; the output is zstd-compressed by default
+./bin/traceConvLLM --input fi.jsonl --output fi.lcp
+# simulate a cache of 64k KV blocks with three policies
+./bin/prefixsim --trace fi.lcp.zst --cache-size 64k \
+    --algo lru,s3fifo,belady_compute --cost-model qwen3coder30b_blksz_16
+```
+
+Traces in the [lcp format](/doc/lcp_format.md) carry next-access times for blocks and sessions, so `prefixsim` streams them in one pass, holding one request at a time. A JSONL trace has to be loaded whole and annotated first. On the full fi-new trace (327,548 requests, 656M block accesses), one LRU run with a 64k-block cache, single-threaded on an AMD Threadripper PRO 7975WX:
+
+| input | file size | time | peak memory |
+|---|---|---|---|
+| JSONL | 6.79 GiB | 169 s | 12.9 GiB |
+| `.lcp` | 9.80 GiB | 103 s | 80 MiB |
+| `.lcp.zst` | 72.5 MiB | 105 s | 146 MiB |
+
+On chutes (515,817 requests, 604M block accesses) the same run takes 238 s and 15.4 GiB from JSONL, 66 s and 78 MiB from `.lcp`, and 69 s and 146 MiB from `.lcp.zst`. The results are identical across formats. The `.lcp` and `.lcp.zst` times are medians of three runs, which differed by up to 15%. Most of the `.lcp.zst` memory is zstd's 128 MiB decompression window, which does not grow with the trace. With three policies in one run (`lru,s3fifo,belady_compute`), simulation dominates and the times draw closer (949 s JSONL, 870 s `.lcp`, 872 s `.lcp.zst`), but memory does not: JSONL holds the whole trace, lcp streams it.
+
+See the [quickstart](/doc/quickstart_prefixsim.md) and the [design notes](/doc/prefixsim.md).
 
 ---
 

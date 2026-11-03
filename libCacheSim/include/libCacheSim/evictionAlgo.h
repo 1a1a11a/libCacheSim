@@ -50,6 +50,9 @@ cache_t *Belady_init(const common_cache_params_t ccache_params,
 cache_t *BeladySize_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params);
 
+cache_t *BeladyCompute_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+
 cache_t *CAR_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
 
@@ -83,6 +86,9 @@ cache_t *flashProb_init(const common_cache_params_t ccache_params,
 cache_t *GDSF_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 
+cache_t *GDSF_compute_init(const common_cache_params_t ccache_params,
+                           const char *cache_specific_params);
+
 cache_t *Hyperbolic_init(const common_cache_params_t ccache_params,
                          const char *cache_specific_params);
 
@@ -103,6 +109,9 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
 
 cache_t *LHD_init(const common_cache_params_t ccache_params,
                   const char *cache_specific_params);
+
+cache_t *LHD_compute_init(const common_cache_params_t ccache_params,
+                          const char *cache_specific_params);
 
 cache_t *LIRS_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
@@ -143,6 +152,48 @@ cache_t *RandomLRU_init(const common_cache_params_t ccache_params,
 
 cache_t *RandomTwo_init(const common_cache_params_t ccache_params,
                         const char *cache_specific_params);
+
+cache_t *RandomCompute_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+
+cache_t *PartialNodeRandomCompute_init(
+    const common_cache_params_t ccache_params,
+    const char *cache_specific_params);
+
+cache_t *PartialNodeRandomFreq_init(const common_cache_params_t ccache_params,
+                                    const char *cache_specific_params);
+
+cache_t *PartialNodeRandomComputeSmallQueue_init(
+    const common_cache_params_t ccache_params,
+    const char *cache_specific_params);
+
+cache_t *RandomComputeSmallQueue_init(const common_cache_params_t ccache_params,
+                                      const char *cache_specific_params);
+
+/* Workload-Aware eviction, arXiv:2506.02634 (KVCache Cache in the Wild). */
+cache_t *WorkloadAware_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+
+/* AsymCache / MSA computational-aware evictor, arXiv:2606.02964. The two
+ * variants differ only in what their clock counts: block accesses, or the
+ * request's wall-clock timestamp. See AsymCache.cpp -- the choice decides
+ * whether the lifespan term does anything. */
+cache_t *AsymCache_init(const common_cache_params_t ccache_params,
+                        const char *cache_specific_params);
+
+/* Session-level eviction: the victim is a conversation, not a block. These need
+ * per-request session metadata, so they only do anything under a driver that
+ * knows request boundaries -- prefixsim registers them, cachesim does not. */
+cache_t *SessionLRU_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+cache_t *SessionBelady_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+cache_t *SessionARC_init(const common_cache_params_t ccache_params,
+                         const char *cache_specific_params);
+cache_t *SessionS3FIFO_init(const common_cache_params_t ccache_params,
+                            const char *cache_specific_params);
+cache_t *SessionRandomCompute_init(const common_cache_params_t ccache_params,
+                                   const char *cache_specific_params);
 
 cache_t *Random_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);

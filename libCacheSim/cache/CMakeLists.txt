@@ -51,7 +51,6 @@ set(eviction_sources_c
         eviction/QDLP.c
         eviction/Random.c
         eviction/RandomLRU.c
-        eviction/RandomTwo.c
         eviction/S3FIFO.c
         eviction/Sieve.c
         eviction/Size.c
@@ -59,6 +58,11 @@ set(eviction_sources_c
         eviction/SLRUv0.c        # an inefficient version but easier to understand
         eviction/TwoQ.c
         eviction/WTinyLFU.c
+
+        eviction/BeladyCompute.c
+        eviction/RandomTwo.c
+        eviction/RandomCompute.c
+        eviction/RandomComputeSmallQueue.c
 
         # these are sub-algorithms used by other algorithms
         eviction/CR_LFU.c
@@ -79,13 +83,24 @@ set(eviction_sources_cpp
         eviction/cpp/LFU.cpp
         eviction/cpp/GDSF.cpp
         eviction/cpp/LRU_K.cpp
+        eviction/cpp/prefixRadixTree.cpp
+        eviction/cpp/partialNodeCache.cpp
+        eviction/cpp/PartialNodeRandomCompute.cpp
+        eviction/cpp/PartialNodeRandomFreq.cpp
+        eviction/cpp/PartialNodeRandomComputeSmallQueue.cpp
+        eviction/cpp/GDSF_compute.cpp
+        eviction/cpp/WorkloadAware.cpp
+        eviction/cpp/AsymCache.cpp
+        eviction/cpp/sessionCache.cpp
         eviction/LHD/lhd.cpp
         eviction/LHD/LHD_Interface.cpp
+        eviction/LHD/lhd_compute.cpp
+        eviction/LHD/LHD_compute_interface.cpp
         )
 
 # LRB
 if (ENABLE_LRB)
-    set (eviction_sources_cpp ${eviction_sources_cpp} 
+    set (eviction_sources_cpp ${eviction_sources_cpp}
         eviction/LRB/lrb.cpp
         eviction/LRB/LRB_Interface.cpp
         )
@@ -111,8 +126,8 @@ endif()
 
 # GLCache
 if (ENABLE_GLCACHE)
-    set(eviction_sources_c 
-        ${eviction_sources_c} 
+    set(eviction_sources_c
+        ${eviction_sources_c}
         eviction/GLCache/bucket.c
         eviction/GLCache/dataPrep.c
         eviction/GLCache/eviction.c

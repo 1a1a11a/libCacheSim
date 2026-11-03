@@ -6,6 +6,8 @@
 //
 //
 
+#include <glib.h>
+
 #include "dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/evictionAlgo.h"
 
@@ -25,6 +27,18 @@ typedef struct LIRS_params {
   uint64_t hirs_count;
   uint64_t lirs_count;
   uint64_t nonresident;
+  // In-flight protection (prefixsim). The set of block ids belonging to the
+  // request currently being served, populated by record_request (after space
+  // is made, before replay) and cleared by set_request_ctx (top of the next
+  // serve). Non-empty only during a request's own replay. A real engine
+  // refcounts an in-flight request's blocks so they cannot be evicted
+  // mid-service; LIRS's per-subclass resident-HIR cap otherwise can, which at a
+  // couple of cache sizes drops the request's own deepest block and fails the
+  // post-replay residency check. Empty for every driver that does not call the
+  // hooks (e.g. cachesim), so this is a no-op there and for every request whose
+  // in-flight blocks the cap never targets. See LIRS.c evictHIR and the `lirs`
+  // caveat in doc/prefixsim.md.
+  GHashTable *inflight;
 } LIRS_params_t;
 
 /**
@@ -49,8 +63,14 @@ static cache_obj_t *LIRS_to_evict(cache_t *cache, const request_t *req);
 static void LIRS_evict(cache_t *cache, const request_t *req);
 static bool LIRS_remove(cache_t *cache, obj_id_t obj_id);
 
+static void LIRS_record_request(cache_t *cache, const obj_id_t *ids, int64_t n);
+static void LIRS_set_request_ctx(cache_t *cache,
+                                 const cache_request_ctx_t *ctx);
+
 /* internal functions */
 bool LIRS_can_insert(cache_t *cache, const request_t *req);
+/* true if `id` belongs to the request currently being served (in-flight). */
+static inline bool lirs_is_inflight(cache_t *cache, obj_id_t id);
 static void LIRS_prune(cache_t *cache);
 static cache_obj_t *hit_RD_HIRinS(cache_t *cache, cache_obj_t *cache_obj_s,
                                   cache_obj_t *cache_obj_q);
@@ -59,6 +79,8 @@ static cache_obj_t *hit_RD_HIRinQ(cache_t *cache, cache_obj_t *cache_obj_q);
 static void evictLIR(cache_t *cache);
 static bool evictHIR(cache_t *cache);
 static void limitStack(cache_t *cache);
+static bool LIRS_evict_once(cache_t *cache, const request_t *req);
+static bool LIRS_force_evict_one(cache_t *cache);
 
 /* debug functions*/
 static void LIRS_print_cache(cache_t *cache);
@@ -90,6 +112,8 @@ cache_t *LIRS_init(const common_cache_params_t ccache_params,
   cache->evict = LIRS_evict;
   cache->remove = LIRS_remove;
   cache->to_evict = LIRS_to_evict;
+  cache->record_request = LIRS_record_request;
+  cache->set_request_ctx = LIRS_set_request_ctx;
 
   if (ccache_params.consider_obj_metadata) {
     cache->obj_md_size = 8 * 2;
@@ -107,6 +131,9 @@ cache_t *LIRS_init(const common_cache_params_t ccache_params,
   params->hirs_count = 0;
   params->lirs_count = 0;
   params->nonresident = 0;
+  // Keys are obj_ids stored directly in the pointer (GSIZE_TO_POINTER); no
+  // key/value destructors, the set only ever holds the current request's ids.
+  params->inflight = g_hash_table_new(g_direct_hash, g_direct_equal);
 
   // initialize LRU for stack S and stack Q
   common_cache_params_t ccache_params_s = ccache_params;
@@ -132,6 +159,10 @@ static void LIRS_free(cache_t *cache) {
   params->LRU_s->cache_free(params->LRU_s);
   params->LRU_q->cache_free(params->LRU_q);
   params->LRU_nh->cache_free(params->LRU_nh);
+  if (params->inflight != NULL) {
+    g_hash_table_destroy(params->inflight);
+    params->inflight = NULL;
+  }
 
   if (req_local_hit_RD_HIRinQ != NULL) {
     free_request(req_local_hit_RD_HIRinQ);
@@ -201,6 +232,52 @@ static bool LIRS_get(cache_t *cache, const request_t *req) {
 #endif
 
   return res;
+}
+
+// ***********************************************************************
+// ****                                                               ****
+// ****            in-flight protection (prefixsim hooks)             ****
+// ****                                                               ****
+// ***********************************************************************
+
+static inline bool lirs_is_inflight(cache_t *cache, obj_id_t id) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+  if (params->inflight == NULL || g_hash_table_size(params->inflight) == 0) {
+    return false;  // fast path: no request recorded (e.g. cachesim)
+  }
+  return g_hash_table_contains(params->inflight, GSIZE_TO_POINTER(id));
+}
+
+/**
+ * @brief record the block path of the request about to be replayed.
+ *
+ * Called by the simulator after space has been made and before the request is
+ * replayed, so its blocks are protected from LIRS's own eviction for the
+ * duration of that replay (see evictHIR). Replaces any previous path.
+ */
+static void LIRS_record_request(cache_t *cache, const obj_id_t *ids,
+                                int64_t n) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+  if (params->inflight == NULL) return;
+  g_hash_table_remove_all(params->inflight);
+  for (int64_t i = 0; i < n; i++) {
+    g_hash_table_add(params->inflight, GSIZE_TO_POINTER(ids[i]));
+  }
+}
+
+/**
+ * @brief clear the in-flight set at the top of each serve.
+ *
+ * Fires before phase 1/2, so the previous request's path never protects blocks
+ * while the next request is choosing victims to make room. The ctx fields are
+ * unused; LIRS needs only the timing of this call. This keeps the in-flight set
+ * non-empty strictly during a request's own replay.
+ */
+static void LIRS_set_request_ctx(cache_t *cache,
+                                 const cache_request_ctx_t *ctx) {
+  (void)ctx;
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+  if (params->inflight != NULL) g_hash_table_remove_all(params->inflight);
 }
 
 // ***********************************************************************
@@ -379,36 +456,44 @@ static cache_obj_t *LIRS_to_evict(cache_t *cache, const request_t *req) {
 }
 
 /**
- * @brief evict an object from the cache
- * it needs to call cache_evict_base before returning
- * which updates some metadata such as n_obj, occupied size, and hash table
+ * @brief one step of the LIRS eviction state machine, keyed on the status of
+ * `req` in stacks S and Q.
  *
- * @param cache
- * @param req not used
+ * A step does not necessarily shrink the cache: demoting the bottom LIR block
+ * of S into Q (evictLIR) keeps the block resident, so occupied_byte is
+ * unchanged and only the LIR/HIR split moves. That is by design -- the caller
+ * repeats the step until the HIR set overflows and a block is really dropped.
+ *
+ * @return true if a branch applied (the step did something), false if LIRS
+ * considers both block sets to have room and therefore evicts nothing.
  */
-static void LIRS_evict(cache_t *cache, const request_t *req) {
+static bool LIRS_evict_once(cache_t *cache, const request_t *req) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_s = params->LRU_s->find(params->LRU_s, req, false);
   cache_obj_t *obj_q = params->LRU_q->find(params->LRU_q, req, false);
+
+  bool acted = false;
 
   // Upon accessing an HIR non-resident in S
   if (obj_s != NULL && obj_s->LIRS.is_LIR == false &&
       obj_s->LIRS.in_cache == false) {
     // remove the HIR resident at the front of Q
     while (params->hirs_count >= params->hirs_limit) {
-      evictHIR(cache);
+      if (!evictHIR(cache)) break;  // all resident HIR are in-flight
     }
 
     // move the LIR block in the bottom of S to Q and conduct stack pruning
     evictLIR(cache);
+    acted = true;
   }
 
   // Upon accessing an HIR non-resident in Q
   if (obj_s == NULL && obj_q != NULL && obj_q->LIRS.in_cache == false) {
     // remove the HIR resident at the front of Q
     while (params->hirs_count >= params->hirs_limit) {
-      evictHIR(cache);
+      if (!evictHIR(cache)) break;  // all resident HIR are in-flight
+      acted = true;
     }
   }
 
@@ -419,9 +504,90 @@ static void LIRS_evict(cache_t *cache, const request_t *req) {
       // when both LIR and HIR block sets are full,
       // the circumstance is same as accessing an HIR non-resident not in S
       // remove the HIR resident at the front of Q
-      evictHIR(cache);
+      if (evictHIR(cache)) acted = true;  // no-op if in-flight
     }
   }
+
+  return acted;
+}
+
+/**
+ * @brief unconditionally free one resident object.
+ *
+ * Used only when the state machine above declines to evict, which happens when
+ * a caller drives cache->evict() directly to reclaim space instead of going
+ * through cache_get_base (where LIRS_can_insert, not evict, is what makes
+ * room): with room left in the LIR set, none of the three branches applies and
+ * evict() would otherwise be a no-op.
+ *
+ * The victim choice follows LIRS: the LRU end of Q, or, if no HIR block is
+ * resident, the bottom of S demoted into Q first.
+ *
+ * @return false only if the cache holds no resident object at all.
+ */
+static bool LIRS_force_evict_one(cache_t *cache) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+
+  if (params->LRU_q->n_obj > 0) {
+    return evictHIR(cache);
+  }
+
+  // No resident HIR block: demote LIR blocks from the bottom of S until one of
+  // them lands in Q (then evict it) or is dropped outright for not fitting Q.
+  const int64_t occupied_before = cache->occupied_byte;
+  while (params->lirs_count > 0) {
+    evictLIR(cache);
+    if (cache->occupied_byte < occupied_before) {
+      return true;
+    }
+    if (params->LRU_q->n_obj > 0) {
+      return evictHIR(cache);
+    }
+  }
+
+  return false;
+}
+
+/**
+ * @brief evict an object from the cache
+ * it needs to call cache_evict_base before returning
+ * which updates some metadata such as n_obj, occupied size, and hash table
+ *
+ * Runs the LIRS state machine until the cache actually shrinks. Under
+ * cache_get_base this is behaviour-preserving: the caller's `while (occupied +
+ * obj_size > cache_size)` loop re-invokes evict() on exactly the steps that
+ * left occupancy unchanged, so the same sequence of internal operations runs,
+ * only grouped into fewer calls. When the state machine has nothing left to do,
+ * one object is freed unconditionally so that evict() never returns without
+ * making progress.
+ *
+ * @param cache
+ * @param req the request being served; its status in S/Q selects the branch
+ */
+static void LIRS_evict(cache_t *cache, const request_t *req) {
+  LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
+  const int64_t occupied_before = cache->occupied_byte;
+
+  while (true) {
+    const int64_t occupied_step = cache->occupied_byte;
+    const uint64_t lirs_step = params->lirs_count;
+    const uint64_t hirs_step = params->hirs_count;
+
+    const bool acted = LIRS_evict_once(cache, req);
+
+    if (cache->occupied_byte < occupied_before) {
+      return;
+    }
+    // Either no branch applied, or the branch left every counter untouched --
+    // repeating it would loop forever, so fall through to the forced eviction.
+    if (!acted ||
+        (cache->occupied_byte == occupied_step &&
+         params->lirs_count == lirs_step && params->hirs_count == hirs_step)) {
+      break;
+    }
+  }
+
+  LIRS_force_evict_one(cache);
 }
 
 /**
@@ -532,7 +698,7 @@ bool LIRS_can_insert(cache_t *cache, const request_t *req) {
       // when both LIR and HIR block sets are full,
       // the circumstance is same as accessing an HIR non-resident not in S
       while (params->hirs_count + req->obj_size > params->hirs_limit) {
-        evictHIR(cache);
+        if (!evictHIR(cache)) break;  // all resident HIR are in-flight
       }
       return true;
     }
@@ -639,7 +805,7 @@ static void evictLIR(cache_t *cache) {
   if ((uint64_t)req_local_evictLIR->obj_size <= params->hirs_limit) {
     while ((uint64_t)params->hirs_count + req_local_evictLIR->obj_size >
            params->hirs_limit) {
-      evictHIR(cache);
+      if (!evictHIR(cache)) break;  // all resident HIR are in-flight
     }
     params->LRU_q->insert(params->LRU_q, req_local_evictLIR);
 
@@ -660,6 +826,22 @@ static bool evictHIR(cache_t *cache) {
   LIRS_params_t *params = (LIRS_params_t *)(cache->eviction_params);
 
   cache_obj_t *obj_to_evict = params->LRU_q->to_evict(params->LRU_q, NULL);
+
+  // In-flight protection: never evict a block of the request being replayed. Q
+  // is LRU-ordered and a request's own blocks are the most-recently inserted,
+  // so the older, evictable HIR blocks sit at the LRU end this picks -- if that
+  // end is itself in-flight, every resident HIR is in-flight and none may be
+  // dropped. Report "evicted nothing" and let the caller stop; the block is
+  // still inserted (its subclass is temporarily over its cap, which the next
+  // request's eviction restores once these blocks are no longer in-flight).
+  // This is the only case where the guard changes behaviour: whenever a run
+  // keeps its whole request resident (every case that already passed) the
+  // LRU-end HIR is not in-flight and this is a no-op. The set is empty unless a
+  // driver calls record_request (cachesim does not), so it is a no-op there
+  // too.
+  if (obj_to_evict != NULL && lirs_is_inflight(cache, obj_to_evict->obj_id)) {
+    return false;
+  }
 
   // update the corresponding block in S to be non-resident
   if (req_local_evictHIR == NULL) {

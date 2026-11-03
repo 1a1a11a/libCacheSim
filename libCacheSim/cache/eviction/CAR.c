@@ -123,7 +123,13 @@ static cache_obj_t *CAR_find(cache_t *cache, const request_t *req,
   cache_obj_t *obj = cache_find_base(cache, req, update_cache);
 
   if (!update_cache) {
-    return obj->CAR.ghost ? NULL : obj;
+    // A read-only probe. cache_find_base returns NULL on a miss, and CAR keeps
+    // its ghost (B1/B2) entries in the same hash table as the resident ones, so
+    // both cases have to be filtered out before dereferencing.
+    if (obj == NULL || obj->CAR.ghost) {
+      return NULL;
+    }
+    return obj;
   }
 
   if (obj == NULL) {
@@ -273,20 +279,36 @@ static cache_obj_t *CAR_to_evict(cache_t *cache, const request_t *req) {
 static void CAR_evict(cache_t *cache, const request_t *req) {
   CAR_params_t *params = (CAR_params_t *)(cache->eviction_params);
   int64_t incoming_size = req->obj_size + cache->obj_md_size;
-  if ((params->L1_data_size + params->L2_data_size + incoming_size >=
-       cache->cache_size)) {
-    _CAR_replace(cache, req);
-    if ((!params->curr_obj_in_L1_ghost || !params->curr_obj_in_L2_ghost)) {
-      if ((params->L1_data_size + params->L1_ghost_size >= cache->cache_size)) {
-        _CAR_discard_LRU_L1_ghost(cache, req);
-      } else if ((params->L1_data_size + params->L1_ghost_size >
-                  cache->cache_size) &&
-                 (params->L1_data_size + params->L2_data_size +
-                      params->L1_ghost_size + params->L2_ghost_size +
-                      incoming_size >=
-                  cache->cache_size * 2)) {
-        _CAR_discard_LRU_L2_ghost(cache, req);
-      }
+
+  // Nothing resident to evict. Only reachable when a caller drives evict()
+  // directly; cache_get_base() never does. Bail out instead of walking into
+  // _CAR_replace(), which dereferences the T1/T2 heads unconditionally.
+  if (params->L1_data_size + params->L2_data_size == 0) {
+    return;
+  }
+
+  // evict() means "free one page now". There used to be a
+  //   if (L1_data_size + L2_data_size + incoming_size >= cache_size)
+  // wrapper around the whole body, which is dead weight under
+  // cache_get_base(): that loop only calls evict() while
+  // occupied_byte + incoming_size > cache_size, and occupied_byte is exactly
+  // L1_data_size + L2_data_size, so the test was always true there. It is not
+  // always true for a caller that frees space up front (prefixsim asks for a
+  // whole request's worth of room at once, so occupancy is below cache_size
+  // from the second eviction on), where it silently turned evict() into a
+  // no-op and stalled the caller. Dropping it changes nothing for
+  // cache_get_base() and makes evict() honour its contract for everyone else.
+  _CAR_replace(cache, req);
+  if ((!params->curr_obj_in_L1_ghost || !params->curr_obj_in_L2_ghost)) {
+    if ((params->L1_data_size + params->L1_ghost_size >= cache->cache_size)) {
+      _CAR_discard_LRU_L1_ghost(cache, req);
+    } else if ((params->L1_data_size + params->L1_ghost_size >
+                cache->cache_size) &&
+               (params->L1_data_size + params->L2_data_size +
+                    params->L1_ghost_size + params->L2_ghost_size +
+                    incoming_size >=
+                cache->cache_size * 2)) {
+      _CAR_discard_LRU_L2_ghost(cache, req);
     }
   }
 }
@@ -345,7 +367,21 @@ static void _CAR_replace(cache_t *cache, const request_t *req) {
   // _CAR_sanity_check(cache, req);
   bool found = false;
   while (!found) {
-    if (params->L1_data_size >= MAX(1, params->p)) {
+    // Which list to take the victim from. The size test is CAR's rule; the two
+    // emptiness overrides only matter when the caller drives evict() outside
+    // cache_get_base(). Under cache_get_base() the cache is full whenever
+    // evict() runs, so the list the size test picks is always non-empty:
+    // taking T1 implies L1_data_size >= MAX(1, p) >= 1, and taking T2 implies
+    // L1_data_size < MAX(1, p) <= cache_size == L1_data_size + L2_data_size,
+    // hence L2_data_size > 0. The overrides are therefore unreachable there.
+    bool use_L1 = params->L1_data_size >= MAX(1, params->p);
+    if (params->L1_data_head == NULL) {
+      use_L1 = false;
+    } else if (params->L2_data_head == NULL) {
+      use_L1 = true;
+    }
+
+    if (use_L1) {
       if (!params->L1_data_head->CAR.reference) {
         found = true;
         _CAR_L1_demote_to_MRU_data(cache, req);

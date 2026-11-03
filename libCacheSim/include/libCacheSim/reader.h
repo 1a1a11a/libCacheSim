@@ -74,6 +74,10 @@ typedef struct {
   // binary reader
   char *binary_fmt_str;
 
+  // lcp reader: how obj_cost is derived from a block's position in its
+  // request, a model string (see llmCostModel.h). NULL = uniform.
+  char *llm_cost_model;
+
   // sample some requests in the trace
   sampler_t *sampler;
   /* Reject oracle filtering that invalidates future-access metadata.

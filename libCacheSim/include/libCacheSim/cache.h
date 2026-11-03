@@ -70,6 +70,79 @@ typedef int64_t (*cache_get_n_obj_func_ptr)(const cache_t *);
 
 typedef void (*cache_print_cache_func_ptr)(const cache_t *);
 
+/**
+ * Optional: hand an eviction algorithm the full block sequence of one request,
+ * in request order, before those blocks are accessed.
+ *
+ * Most algorithms only ever see one object at a time and cannot recover the
+ * structure a request implies. Prefix-cache algorithms need it: the sequence is
+ * a path in the prefix tree, and there is no way to rebuild that path from
+ * individual accesses. A simulator that knows request boundaries calls this
+ * between making room for the request and replaying it.
+ *
+ * NULL for every algorithm that does not care; callers must check.
+ */
+typedef void (*cache_record_request_func_ptr)(cache_t *, const obj_id_t *,
+                                              int64_t);
+
+/**
+ * Metadata of the request a simulator is about to serve, handed to the eviction
+ * algorithm *before* any space is made for it.
+ *
+ * Separate from cache_record_request_func_ptr on purpose, because the two carry
+ * different information at different times. record_request delivers the block
+ * path and runs *after* allocation, so an algorithm reading it during eviction
+ * would see the previous request's path. This struct delivers the properties an
+ * algorithm must know while it is choosing victims for *this* request:
+ *
+ *   - `timestamp`: wall-clock arrival time in seconds. An algorithm whose decay
+ *     function is defined on real time (AsymCache) needs the current value
+ *     of "now" at eviction time; taking it from record_request would lag it by
+ *     one request. Kept as a double because request_t::clock_time truncates to
+ *     whole seconds, and a KV-block lifespan is O(100 s), so whole seconds
+ *     would collapse every block arriving in the same second into a tie.
+ *   - `category`: an opaque id for the request's workload class, which is what
+ *     a policy that fits a separate reuse-time distribution per class keys on
+ *     (WorkloadAware). Opaque because what makes two requests the same class is
+ *     a property of the trace, not of the cache: the simulator folds whatever
+ *     fields the trace carries into one id, and the algorithm only ever tests
+ *     ids for equality. 0 means "the trace said nothing".
+ *
+ * NULL for every algorithm that does not care; callers must check.
+ */
+typedef struct {
+  double timestamp;
+  uint64_t category;
+  int64_t n_blocks;
+  /** Opaque id of the conversation this request belongs to; 0 if unknown. A
+   *  session-level eviction policy groups objects by this, so it needs it
+   *  before it is asked to make room. */
+  uint64_t session;
+  /** Index of the next request from the same session, INT64_MAX if none. The
+   *  session-granular analogue of request_t::next_access_vtime, for an oracle.
+   */
+  int64_t session_next_access;
+} cache_request_ctx_t;
+
+typedef void (*cache_set_request_ctx_func_ptr)(cache_t *,
+                                               const cache_request_ctx_t *);
+
+/**
+ * Optional: evict up to `n` objects in one call, returning how many actually
+ * went. `n` is a HARD CAP -- a caller that asked for n has room for exactly n,
+ * and evicting more silently throws away objects nothing asked to free.
+ *
+ * Exists because sampling algorithms pay their sampling cost per call: evicting
+ * n objects one at a time samples n times over. It also lets an algorithm evict
+ * several related objects together -- a prefix-cache policy draining part of
+ * one tree node, say -- which a one-object-at-a-time contract cannot express.
+ *
+ * NULL for every algorithm that does not implement it; callers must check and
+ * fall back to looping cache->evict().
+ */
+typedef int64_t (*cache_evict_n_func_ptr)(cache_t *, const request_t *,
+                                          int64_t n);
+
 // #define EVICTION_AGE_ARRAY_SZE 40
 #define EVICTION_AGE_ARRAY_SZE 320
 #define EVICTION_AGE_LOG_BASE 1.08
@@ -118,6 +191,15 @@ struct cache {
   admissioner_t *admissioner;
 
   struct prefetcher *prefetcher;
+
+  /* optional, NULL unless the algorithm needs whole-request structure */
+  cache_record_request_func_ptr record_request;
+
+  /* optional bulk eviction, NULL means "loop evict() instead" */
+  cache_evict_n_func_ptr evict_n;
+
+  /* optional per-request metadata, NULL unless the algorithm needs it */
+  cache_set_request_ctx_func_ptr set_request_ctx;
 
   void *eviction_params;
 

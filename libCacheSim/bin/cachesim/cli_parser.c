@@ -253,7 +253,7 @@ static char doc[] =
     "example: ./cachesim /trace/path csv LRU 100MB\n\n"
     "trace can be zstd compressed\n"
     "cache_size is in byte, but also support KB/MB/GB\n"
-    "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin/syn\n"
+    "supported trace_type: txt/csv/twr/vscsi/oracleGeneralBin/syn/lcs/lcp\n"
     "supported eviction_algo: LRU/LFU/FIFO/ARC/LeCaR/Cacheus/Merlin\n"
     "print-head-req: Print the first few requests when simulating start\n";
 
@@ -391,6 +391,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args) {
 
   args->reader =
       setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+  free(reader_init_params.llm_cost_model); /* the reader keeps its own copy */
 
   if (args->consider_obj_metadata &&
       should_disable_obj_metadata(args->reader)) {

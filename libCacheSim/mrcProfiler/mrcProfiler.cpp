@@ -42,6 +42,7 @@ static bool reader_has_next_access_vtime(const reader_t *reader) {
     case ORACLE_SYS_TWR_TRACE:
     case ORACLE_SIM_TWRNS_TRACE:
     case ORACLE_SYS_TWRNS_TRACE:
+    case LCP_TRACE:
       return true;
     case BIN_TRACE:
       return reader->init_params.next_access_vtime_field > 0;

@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "libCacheSim/llmCostModel.h"
 #include "libCacheSim/reader.h"
 #include "utils/include/mystr.h"
 
@@ -53,6 +54,8 @@ trace_type_e trace_type_str_to_enum(const char *trace_type_str,
     return ORACLE_SYS_TWRNS_TRACE;
   } else if (strcasecmp(trace_type_str, "valpinTrace") == 0) {
     return VALPIN_TRACE;
+  } else if (strcasecmp(trace_type_str, "lcp") == 0) {
+    return LCP_TRACE;
   } else {
     ERROR("unsupported trace type: %s\n", trace_type_str);
   }
@@ -166,6 +169,30 @@ void parse_reader_params(const char *reader_params_str,
       params->has_header_set = true;
     } else if (strcasecmp(key, "format") == 0) {
       params->binary_fmt_str = strdup(value);
+    } else if (strcasecmp(key, "cost-model") == 0) {
+      /* lcp: derive obj_cost from block position under this model.
+       * linear:A,B has a comma of its own, which the split above took for
+       * the end of the value, so B is the next field: take it back. */
+      char spec[1024];
+      snprintf(spec, sizeof(spec), "%s", value);
+      if (strncasecmp(value, "linear:", 7) == 0 && strchr(value, ',') == NULL &&
+          params_str != NULL) {
+        char *b = strsep((char **)&params_str, ",");
+        snprintf(spec, sizeof(spec), "%s,%s", value, b);
+        while (params_str != NULL &&
+               (*params_str == ' ' || *params_str == ',')) {
+          params_str++;
+        }
+      }
+      /* parse now so a bad model fails here, not when the trace opens */
+      llm_cost_model_t model;
+      char err[1024];
+      if (!llm_cost_model_parse(spec, &model, err, sizeof(err))) {
+        ERROR("cost-model: %s\n", err);
+        exit(1);
+      }
+      llm_cost_model_free(&model);
+      params->llm_cost_model = strdup(spec);
     } else if (strcasecmp(key, "delimiter") == 0) {
       /* user input: k1=v1, delimiter=;, k2=v2 */
       params->delimiter = value[0];
@@ -210,6 +237,8 @@ trace_type_e detect_trace_type(const char *trace_path) {
 
   if (strcasestr(trace_path, ".oracleGeneral") != NULL) {
     trace_type = ORACLE_GENERAL_TRACE;
+  } else if (strcasestr(trace_path, ".lcp") != NULL) {
+    trace_type = LCP_TRACE;
   } else if (strcasestr(trace_path, ".lcs") != NULL) {
     trace_type = LCS_TRACE;
   } else if (strcasestr(trace_path, ".vscsi") != NULL) {
@@ -341,6 +370,7 @@ reader_t *create_reader(const char *trace_type_str, const char *trace_path,
   }
 
   reader_t *reader = setup_reader(trace_path, trace_type, &reader_init_params);
+  free(reader_init_params.llm_cost_model); /* the reader keeps its own copy */
 
   return reader;
 }

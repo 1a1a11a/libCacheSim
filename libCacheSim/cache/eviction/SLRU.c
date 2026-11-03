@@ -340,11 +340,19 @@ static cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
 static cache_obj_t *SLRU_to_evict(cache_t *cache, const request_t *req) {
   SLRU_params_t *params = (SLRU_params_t *)(cache->eviction_params);
   DEBUG_PRINT_CACHE_STATE(cache, params, req);
+  // Segments are searched lowest-first as always; within a segment the tail may
+  // be pinned, in which case the next-least-recent unpinned object of that
+  // segment is taken (SLRU_evict reads obj->SLRU.lru_id, so an object from any
+  // segment is accounted correctly). If every segment is entirely pinned we
+  // fall back to the lowest segment's tail -- pinning is best-effort.
+  cache_obj_t *fallback = NULL;
   for (int i = 0; i < params->n_seg; i++) {
-    if (params->lru_n_bytes[i] > 0) {
-      return params->lru_tails[i];
-    }
+    if (params->lru_n_bytes[i] <= 0) continue;
+    if (fallback == NULL) fallback = params->lru_tails[i];
+    cache_obj_t *candidate = cache_skip_pinned(params->lru_tails[i]);
+    if (candidate != NULL && !cache_obj_is_pinned(candidate)) return candidate;
   }
+  if (fallback != NULL) return fallback;
 // No object to evict
 #ifdef DEBUG_MODE
   printf("No object to evict, please check whether this is unexpected\n");

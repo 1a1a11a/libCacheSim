@@ -181,7 +181,7 @@ static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req) {
   DEBUG_ASSERT(params->q_tail != NULL || cache->occupied_byte == 0);
 
   cache->to_evict_candidate_gen_vtime = cache->n_req;
-  return params->q_tail;
+  return cache_skip_pinned(params->q_tail);
 }
 
 /**
@@ -194,8 +194,19 @@ static cache_obj_t *LRU_to_evict(cache_t *cache, const request_t *req) {
  */
 static void LRU_evict(cache_t *cache, const request_t *req) {
   LRU_params_t *params = (LRU_params_t *)cache->eviction_params;
-  cache_obj_t *obj_to_evict = params->q_tail;
   DEBUG_ASSERT(params->q_tail != NULL);
+
+  if (unlikely(cache_pinning_active())) {
+    // Pinned tail: evict the next-least-recent object that is not pinned
+    // instead. It is not the tail, so the hand-rolled unlink below does not
+    // apply.
+    cache_obj_t *victim = cache_skip_pinned(params->q_tail);
+    remove_obj_from_list(&params->q_head, &params->q_tail, victim);
+    cache_evict_base(cache, victim, true);
+    return;
+  }
+
+  cache_obj_t *obj_to_evict = params->q_tail;
 
   // we can simply call remove_obj_from_list here, but for the best performance,
   // we chose to do it manually

@@ -340,7 +340,17 @@ static void ThreeLCache_parse_params(cache_t *cache,
     char *key = strsep((char **)&params_str, "=");
     char *value = strsep((char **)&params_str, ",");
 
-    if (key == NULL || value == NULL) {
+    if (key == NULL) {
+      ERROR("invalid parameter format in %s: %s\n", cache->cache_name,
+            cache_specific_params);
+      free(original_params_str);
+      exit(1);
+    }
+    /* `print` is the one key that takes no value -- `-e print` is how the CLI
+     * asks an algorithm to report its parameters, and test_cli.sh exercises it
+     * for every registered algorithm. Rejecting a NULL value before the key is
+     * dispatched made that branch unreachable and aborted the run. */
+    if (value == NULL && strcasecmp(key, "print") != 0) {
       ERROR("invalid parameter format in %s: %s\n", cache->cache_name,
             cache_specific_params);
       free(original_params_str);
