@@ -12,6 +12,10 @@ such a cache and reports, per eviction policy:
 - **compute saving ratio**: the fraction of prefill compute avoided, with each
   block weighted by a cost model (`--cost-model`).
 
+Both count every resident block of a request, including those after its first
+miss: only the missing blocks need recomputing (see
+[A block after a miss still counts](#a-block-after-a-miss-still-counts)).
+
 A request is an ordered list of KV blocks (16 tokens each in the bundled
 traces), and the engine needs *all* of them resident at once to serve it. That
 constraint is what makes a prefix cache different from an ordinary object
@@ -105,7 +109,9 @@ Three properties matter:
   frequency bumped twice.
 - **Every block is checked, not just the leading run.** A block at a higher
   index can be resident even when an earlier one is missing, and this simulator
-  counts it as reusable — matching does not stop at the first miss.
+  counts it as reusable — matching does not stop at the first miss. That is
+  correct; see
+  [A block after a miss still counts](#a-block-after-a-miss-still-counts).
 - **All statistics are computed here**, against the cache exactly as Alpha found
   it. Phases 2 and 3 cannot change the reported numbers. That is what makes the
   measurement independent of how much churn serving the request causes.
@@ -395,6 +401,30 @@ in-request skew is the intended signal, not an error.
 
 Both are measured in phase 1, so they describe the cache as each request found
 it and are unaffected by the churn of serving that request.
+
+### A block after a miss still counts
+
+Matching does not stop at a request's first miss. Take a request with blocks
+`A B C D E` that arrives when every block except `C` is cached:
+
+```
+request:  A    B    C     D    E
+cache:    hit  hit  miss  hit  hit
+```
+
+prefixsim counts four hits. Only `C` is recomputed; `D` and `E` are reused.
+
+This is correct, not an approximation. A block's KV depends only on the tokens
+up to and including it, and under the default `--block-id prefix` a block's id
+names that whole path (see [Block identity](#block-identity---block-id)). So
+the cached `D` is exactly the KV this request needs, whether `C` is cached or
+not. The engine prefills `C` against the cached `A` and `B`, then takes `D`
+and `E` from the cache.
+
+vLLM and SGLang today stop matching at the first miss and would recompute `C`,
+`D` and `E`. That is a limitation of how they match, not of prefix caching. An
+engine that matches past a gap saves what prefixsim reports; vLLM or SGLang
+running the same policy would save less wherever the policy leaves a gap.
 
 ## Cost models (`--cost-model`)
 
@@ -707,10 +737,12 @@ request that must be resident together".
 
 ## Known limitations
 
-- **No eviction dependency between blocks.** Blocks are independent objects; a
-  real radix cache cannot keep a child whose parent has been evicted. Nothing
-  here enforces that, which is why a block at a higher index counts as a hit
-  even when an earlier one is missing.
+- **No eviction dependency between blocks.** Blocks are independent objects, so
+  a policy may evict a block and keep the ones after it, which still count as
+  hits (correctly; see
+  [A block after a miss still counts](#a-block-after-a-miss-still-counts)).
+  A cache built on a radix tree, as SGLang's is, evicts only leaves and so
+  never keeps a child without its parent. prefixsim does not impose that order.
 - **No time model.** `timestamp` is carried into `req->clock_time` but replay is
   request-ordered; there is no batching, scheduling, or concurrency.
 - **Blocks of an in-flight request are not pinned.** A real engine refcounts

@@ -120,7 +120,7 @@ Costs are integers. The same strings work in `cachesim -t cost-model=<m>` on an
 
 | field | meaning |
 |---|---|
-| `block_hit_ratio` | fraction of block accesses already cached |
+| `block_hit_ratio` | fraction of block accesses already cached, including blocks after a request's first miss ([why](prefixsim.md#a-block-after-a-miss-still-counts)) |
 | `compute_saving_ratio` | the same, weighted by block cost |
 | `n_req_skipped` | requests with more distinct blocks than the cache; skipped and left out of both ratios |
 | `n_eviction` | blocks evicted to make room |

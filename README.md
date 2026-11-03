@@ -230,7 +230,7 @@ python3 plot_appr_mrc.py MINI ../data/cloudPhysicsIO.vscsi vscsi s3fifo "0.01,0.
 ---
 
 ### prefixsim (an LLM prefix-cache simulator)
-LLM serving engines such as vLLM and SGLang keep the KV cache of finished requests, so a new request that shares a prefix with an earlier one skips recomputing it. `prefixsim` replays an LLM request trace through such a cache and reports each eviction policy's **block hit ratio** and **compute saving ratio** (prefill compute avoided). Every block of a request must be resident at once, as in a real engine, so a policy can never evict a block the arriving request is about to reuse.
+LLM serving engines such as vLLM and SGLang keep the KV cache of finished requests, so a new request that shares a prefix with an earlier one skips recomputing it. `prefixsim` replays an LLM request trace through such a cache and reports each eviction policy's **block hit ratio** and **compute saving ratio** (prefill compute avoided). Every block of a request must be resident at once, as in a real engine. A cached block counts even after a request's first miss, since its KV depends only on the tokens before it: only the missing blocks are recomputed ([why](/doc/prefixsim.md#a-block-after-a-miss-still-counts)).
 
 ```bash
 # convert a JSONL trace once; the output is zstd-compressed by default
