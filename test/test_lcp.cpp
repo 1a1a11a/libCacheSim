@@ -1,19 +1,18 @@
-// Checks for the lcp trace format, on traces small enough to derive by hand:
+// Checks for prefixsim's side of the lcp trace format, on traces small enough
+// to derive by hand:
 //   - prefixsim's JSONL reader, which assigns the ids the converter writes:
 //     positional encoding, dense first-appearance numbering, and the request
 //     metadata the format carries
-//   - libCacheSim's flat lcp reader, on a file built here directly from the
-//     spec's structs: block ids, derived cost, next access, timestamp in
-//     seconds, and rewinding mid-request
-//   - prefixsim's lcp reader on the same file: whole requests, with block
-//     and session next access as stored
+//   - prefixsim's lcp reader, on a file built here directly from the spec's
+//     structs: whole requests, with block and session next access as stored
 //   - the round trip JSONL -> lcp -> prefixsim: every field of every request
 //     comes back as the JSONL reader produced it, and simulating the stream in
 //     one pass matches simulating the JSONL loaded whole
-//   - cost models: the named ones, linear:A,B and table:FILE, what each gives
-//     every position, the specs refused, and the flat reader applying one
-//   - a cached object whose cost changes between accesses keeps the latest
+//   - prefixsim's cost model reports the spec it was given
 //   - lcp -> JSONL -> lcp reproduces the file byte for byte
+//
+// libCacheSim's flat lcp reader and the cost models themselves are tested in
+// libCacheSim, by test/test_lcpReader.cpp.
 
 #include <cmath>
 #include <cstdint>
@@ -32,7 +31,6 @@
 
 extern "C" {
 #include "libCacheSim/cache.h"
-#include "libCacheSim/llmCostModel.h"
 #include "libCacheSim/reader.h"
 #include "traceReader/customizedReader/lcp.h"
 }
@@ -191,44 +189,6 @@ const int64_t kWantNext[6] = {4,
                               MAX_REUSE_DISTANCE,
                               MAX_REUSE_DISTANCE,
                               MAX_REUSE_DISTANCE};
-
-void test_flat_reader() {
-  printf("flat reader\n");
-  const char *path = "test_lcp_tmp.lcp";
-  write_trace(path);
-
-  reader_init_param_t params;
-  set_default_reader_init_params(&params);
-  params.llm_cost_model = const_cast<char *>("position");
-  reader_t *reader = setup_reader(path, LCP_TRACE, &params);
-  CHECK_EQ(reader->n_total_req, 6);
-
-  const int64_t want_cost[6] = {1, 2, 3, 1, 2, 3};
-  const int64_t want_time[6] = {1, 1, 1, 2, 2, 2};
-  request_t *req = new_request();
-
-  // Rewind from inside the first request: the reader must not then take the
-  // first request record for a block.
-  read_one_req(reader, req);
-  read_one_req(reader, req);
-  reset_reader(reader);
-
-  int n = 0;
-  while (read_one_req(reader, req) == 0) {
-    if (n < 6) {
-      CHECK_EQ(req->obj_id, kWantId[n]);
-      CHECK_EQ(req->obj_cost, want_cost[n]);
-      CHECK_EQ(req->clock_time, want_time[n]);
-      CHECK_EQ(req->next_access_vtime, kWantNext[n]);
-    }
-    ++n;
-  }
-  CHECK_EQ(n, 6);
-
-  free_request(req);
-  close_reader(reader);
-  remove(path);
-}
 
 void test_prefixsim_reader() {
   printf("prefixsim lcp reader\n");
@@ -429,63 +389,9 @@ void test_round_trip(bool compress) {
   remove(path);
 }
 
-/// Costs a model gives positions 0 .. n - 1, or {-1} if it does not parse.
-std::vector<int64_t> costs(const char *spec, int64_t n) {
-  llm_cost_model_t model;
-  char err[1024];
-  if (!llm_cost_model_parse(spec, &model, err, sizeof(err))) return {-1};
-  std::vector<int64_t> out;
-  for (int64_t p = 0; p < n; ++p) out.push_back(llm_block_cost(&model, p));
-  llm_cost_model_free(&model);
-  return out;
-}
-
-void test_cost_models() {
-  printf("cost models\n");
-  using V = std::vector<int64_t>;
-  CHECK_EQ(costs(nullptr, 3) == V({1, 1, 1}), true);
-  CHECK_EQ(costs("uniform", 3) == V({1, 1, 1}), true);
-  CHECK_EQ(costs("position", 3) == V({1, 2, 3}), true);
-  CHECK_EQ(costs("qwen3coder30b_blksz_16", 3) == V({865, 867, 869}), true);
-  CHECK_EQ(costs("linear:865,2", 3) == V({865, 867, 869}), true);
-  CHECK_EQ(costs("linear: 10 , 0", 2) == V({10, 10}), true);
-
-  // positions past the table's end cost what its last line does
-  const char *table = "test_lcp_tmp_cost.txt";
-  std::ofstream(table) << "# measured\n5\n\n  7\n9\n";
-  const std::string spec = std::string("table:") + table;
-  CHECK_EQ(costs(spec.c_str(), 5) == V({5, 7, 9, 9, 9}), true);
-
-  // every block must cost at least 1, in integers that fit cache_obj_t
-  for (const char *bad :
-       {"linear:0,1", "linear:1,-1", "linear:1.5,2", "linear:1", "linear:,2",
-        "linear:1,2,3", "linear:2147483648,0", "table:/nonexistent/costs.txt",
-        "cubic", ""}) {
-    if (costs(bad, 1) != V({-1})) {
-      printf("  FAIL: cost model '%s' parsed\n", bad);
-      ++n_failed;
-    }
-  }
-  std::ofstream("test_lcp_tmp_bad.txt") << "4\n0\n";
-  CHECK_EQ(costs("table:test_lcp_tmp_bad.txt", 1) == V({-1}), true);
-  std::ofstream("test_lcp_tmp_bad.txt") << "# nothing\n\n";
-  CHECK_EQ(costs("table:test_lcp_tmp_bad.txt", 1) == V({-1}), true);
-  remove("test_lcp_tmp_bad.txt");
-
-  llm_cost_model_t m;
-  char err[1024];
-  CHECK_EQ(llm_cost_model_parse("linear:3,0", &m, err, sizeof(err)), true);
-  CHECK_EQ(llm_cost_model_is_uniform(&m), true);
-  CHECK_EQ(llm_cost_model_max(&m, 4), 3);
-  CHECK_EQ(llm_cost_model_parse("linear:3,2", &m, err, sizeof(err)), true);
-  CHECK_EQ(llm_cost_model_is_uniform(&m), false);
-  CHECK_EQ(llm_cost_model_max(&m, 4), 9);
-  CHECK_EQ(llm_cost_model_parse(spec.c_str(), &m, err, sizeof(err)), true);
-  CHECK_EQ(llm_cost_model_is_uniform(&m), false);
-  CHECK_EQ(llm_cost_model_max(&m, 2), 7);
-  llm_cost_model_free(&m);
-
-  // prefixsim's face of it reports the spec it was given
+void test_cost_model() {
+  printf("cost model\n");
+  // prefixsim's face of the cost model reports the spec it was given
   prefixsim::CostModel model;
   std::string error;
   CHECK_EQ(model.position_dependent(), false);
@@ -496,22 +402,6 @@ void test_cost_models() {
   CHECK_EQ(model.name() == "linear:865,2", true);
   CHECK_EQ(prefixsim::CostModel::parse("linear:0,2", model, error), false);
   CHECK_EQ(error.empty(), false);
-
-  // the flat reader derives obj_cost from the model it is given
-  const char *path = "test_lcp_tmp.lcp";
-  write_trace(path);
-  reader_init_param_t params;
-  set_default_reader_init_params(&params);
-  params.llm_cost_model = const_cast<char *>(spec.c_str());
-  reader_t *reader = setup_reader(path, LCP_TRACE, &params);
-  request_t *req = new_request();
-  std::vector<int64_t> got;
-  while (read_one_req(reader, req) == 0) got.push_back(req->obj_cost);
-  CHECK_EQ(got == V({5, 7, 9, 5, 7, 9}), true);
-  free_request(req);
-  close_reader(reader);
-  remove(path);
-  remove(table);
 }
 
 std::string read_file(const char *path) {
@@ -564,38 +454,17 @@ void test_jsonl_round_trip() {
   remove(lcp2);
 }
 
-/// An object reached with a new cost takes it on rather than aborting: a cost
-/// column may vary over time, as may a raw LLM block id reached at a new
-/// position.
-void test_cost_change() {
-  printf("cost change on a hit\n");
-  cache_t *cache = prefixsim::create_cache_by_name("lru", 4);
-  request_t *req = new_request();
-  req->obj_id = 42;
-  req->obj_size = 1;
-  req->obj_cost = 5;
-  cache->get(cache, req);
-  req->obj_cost = 7;
-  CHECK_EQ(cache->get(cache, req), true);
-  const cache_obj_t *obj = cache->find(cache, req, false);
-  CHECK_EQ(obj != nullptr ? obj->cost : -1, 7);
-  free_request(req);
-  cache->cache_free(cache);
-}
-
 }  // namespace
 
 int main(void) {
   test_jsonl_ids();
-  test_flat_reader();
   test_prefixsim_reader();
   test_round_trip(false);
 #ifdef SUPPORT_ZSTD_TRACE
   test_round_trip(true);
 #endif
   test_jsonl_round_trip();
-  test_cost_models();
-  test_cost_change();
+  test_cost_model();
   if (n_failed != 0) {
     printf("%d check(s) FAILED\n", n_failed);
     return 1;

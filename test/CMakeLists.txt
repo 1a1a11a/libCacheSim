@@ -48,9 +48,15 @@ add_test_executable(testUtils test_utils.c)
 add_test_executable(testPrefixsim test_prefixsim.cpp)
 target_link_libraries(testPrefixsim prefixsim_lib)
 
-# lcp trace format: the ids prefixsim assigns, both readers, the round trip
+# lcp trace format: the ids prefixsim assigns, its reader, the round trip
 add_test_executable(testLcp test_lcp.cpp)
 target_link_libraries(testLcp prefixsim_lib)
+
+# lcp trace format: the flat reader and the cost models
+add_test_executable(testLcpReader test_lcpReader.cpp)
+
+# the prefix tree behind the partial-node policies
+add_test_executable(testPrefixRadixTree test_prefixRadixTree.cpp)
 
 # Create C++ test executable (mrcProfiler test)
 # add_test_executable(testMrcProfiler test_mrcProfiler.cpp)
@@ -70,6 +76,8 @@ add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testPrefixsim COMMAND testPrefixsim WORKING_DIRECTORY .)
 add_test(NAME testLcp COMMAND testLcp WORKING_DIRECTORY .)
+add_test(NAME testLcpReader COMMAND testLcpReader WORKING_DIRECTORY .)
+add_test(NAME testPrefixRadixTree COMMAND testPrefixRadixTree WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
 
 find_package(Python3 COMPONENTS Interpreter)
