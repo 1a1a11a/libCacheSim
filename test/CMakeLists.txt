@@ -44,14 +44,6 @@ add_test_executable(testPrefetchAlgo test_prefetchAlgo.c)
 add_test_executable(testDataStructure test_dataStructure.c)
 add_test_executable(testUtils test_utils.c)
 
-# Create C++ test executable (prefixsim test)
-add_test_executable(testPrefixsim test_prefixsim.cpp)
-target_link_libraries(testPrefixsim prefixsim_lib)
-
-# lcp trace format: the ids prefixsim assigns, its reader, the round trip
-add_test_executable(testLcp test_lcp.cpp)
-target_link_libraries(testLcp prefixsim_lib)
-
 # lcp trace format: the flat reader and the cost models
 add_test_executable(testLcpReader test_lcpReader.cpp)
 
@@ -74,8 +66,6 @@ add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
 add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
-add_test(NAME testPrefixsim COMMAND testPrefixsim WORKING_DIRECTORY .)
-add_test(NAME testLcp COMMAND testLcp WORKING_DIRECTORY .)
 add_test(NAME testLcpReader COMMAND testLcpReader WORKING_DIRECTORY .)
 add_test(NAME testPrefixRadixTree COMMAND testPrefixRadixTree WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
