@@ -26,7 +26,6 @@ A high-performance library for building and running cache simulations
 
 ## What is libCacheSim
 * **cachesim**, a high-performance cache simulator for running cache simulations.
-* **[PrefixSim](https://github.com/cacheMon/PrefixSim)**, a prefix-cache simulator for LLM serving built on libCacheSim, in its own repository: replays LLM request traces through a KV-block cache to compare eviction policies.
 * **traceAnalyzer**, a high-performance and versatile analyzer for cache traces.
 * **libCacheSim**, a high-performance library for building your own cache simulators.
 
@@ -41,7 +40,7 @@ A high-performance library for building and running cache simulations
 * **Simple API** - easy to build cache clusters, multi-layer caching, etc.; see [here](/doc/API.md).
 * **Extensible** - easy to support new trace types or eviction algorithms; see [here](/doc/advanced_lib_extend.md).
 * **Efficient Miss Ratio Curve profiler** - quickly build highly accurate miss ratio curves on large-scale workloads; see [here](/doc/quickstart_mrcProfiler.md).
-* **LLM prefix-cache simulation** - evaluate KV-block eviction policies on real LLM serving traces, streamed in one pass; see [PrefixSim](https://github.com/cacheMon/PrefixSim).
+* **LLM prefix-cache eviction** - eviction policies for the KV-block prefix cache of LLM serving, run by [PrefixSim](https://github.com/cacheMon/PrefixSim).
 
 The full documentation index lives in [doc/README.md](/doc/README.md).
 
@@ -56,7 +55,7 @@ The name in `code` is what you pass to `cachesim` on the command line (names are
 * [ARC](/libCacheSim/cache/eviction/ARC.c) `arc`, [TwoQ](/libCacheSim/cache/eviction/TwoQ.c) `2q`, [MQ](/libCacheSim/cache/eviction/MQ.c) `mq`, [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c) `clockpro`, [CAR](/libCacheSim/cache/eviction/CAR.c) `car`, [LIRS](/libCacheSim/cache/eviction/LIRS.c) `lirs`, [Clock2QPlus](/libCacheSim/cache/eviction/Clock2QPlus.c) `clock2qplus`
 * [LRU-K](/libCacheSim/cache/eviction/cpp/LRU_K.cpp) `lru-k`, [LRU-Prob](/libCacheSim/cache/eviction/LRUProb.c) `lru-prob`, [Size](/libCacheSim/cache/eviction/Size.c) `size`
 * [FIFO-Merge](/libCacheSim/cache/eviction/FIFO_Merge.c) `fifo-merge`
-* [Belady](/libCacheSim/cache/eviction/Belady.c) `belady`, [BeladySize](/libCacheSim/cache/eviction/BeladySize.c) `beladysize` — these need future information, so they only work on oracle traces such as `oracleGeneral`
+* [Belady](/libCacheSim/cache/eviction/Belady.c) `belady`, [BeladySize](/libCacheSim/cache/eviction/BeladySize.c) `beladysize`, [BeladyCompute](/libCacheSim/cache/eviction/BeladyCompute.c) `beladyCompute` — these need future information, so they only work on oracle traces such as `oracleGeneral`
 * [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp) `gdsf`
 * [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c) `hyperbolic`
 * [LeCaR](/libCacheSim/cache/eviction/LeCaR.c) `lecar`
@@ -72,14 +71,7 @@ The name in `code` is what you pass to `cachesim` on the command line (names are
 * [Sieve](/libCacheSim/cache/eviction/Sieve.c) `sieve`
 * [Merlin](/libCacheSim/cache/eviction/cpp/merlin.cpp) `merlin`
 
-### LLM prefix-cache eviction algorithms
-These run in [PrefixSim](https://github.com/cacheMon/PrefixSim), and the name in `code` is what you pass to `prefixsim --algo`. `cachesim` also has one of them, as `beladyCompute`.
-* Compute-aware, weighting each block by the prefill compute a hit on it saves (`--cost-model`): [BeladyCompute](/libCacheSim/cache/eviction/BeladyCompute.c) `belady_compute` (needs future information), [GDSF-Compute](/libCacheSim/cache/eviction/cpp/GDSF_compute.cpp) `gdsf_compute`, [LHD-Compute](/libCacheSim/cache/eviction/LHD/LHD_compute_interface.cpp) `lhd_compute`, [RandomCompute](/libCacheSim/cache/eviction/RandomCompute.c) `random_compute`, [RandomComputeSmallQueue](/libCacheSim/cache/eviction/RandomComputeSmallQueue.c) `random_compute_small_queue`
-* Published prefix-cache policies: [Workload-Aware](/libCacheSim/cache/eviction/cpp/WorkloadAware.cpp) `workload_aware` ([ATC'25](https://arxiv.org/abs/2506.02634)), [AsymCache](/libCacheSim/cache/eviction/cpp/AsymCache.cpp) `asym_cache` ([arXiv:2606.02964](https://arxiv.org/abs/2606.02964))
-* Session-level, evicting a whole conversation rather than a block: [session policies](/libCacheSim/cache/eviction/cpp/sessionCache.cpp) `session_lru`, `session_arc`, `session_s3fifo`, `session_random_compute`, `session_belady` (needs future information)
-* Partial-node, sampling prefix-tree nodes and evicting a node's deepest block: [PartialNodeRandomCompute](/libCacheSim/cache/eviction/cpp/PartialNodeRandomCompute.cpp) `partial_node_random_compute`, [PartialNodeRandomFreq](/libCacheSim/cache/eviction/cpp/PartialNodeRandomFreq.cpp) `partial_node_random_freq`, [PartialNodeRandomComputeSmallQueue](/libCacheSim/cache/eviction/cpp/PartialNodeRandomComputeSmallQueue.cpp) `partial_node_random_compute_small_queue`
-
-`prefixsim` also runs most of the `cachesim` algorithms listed above; `prefixsim --list-algos` prints everything it runs.
+The eviction policies for LLM prefix caches are listed in [PrefixSim](https://github.com/cacheMon/PrefixSim#eviction-policies), which runs them.
 
 ### Admission algorithms
 * [Adaptsize](/libCacheSim/cache/admission/adaptsize/)
@@ -168,6 +160,8 @@ The `cachesim` commands in this section are run from `_build/`, so the sample tr
 
 use `./bin/cachesim --help` to get more information.
 
+`cachesim` also reads LLM prefix-cache traces in the [lcp](https://github.com/cacheMon/PrefixSim/blob/main/doc/lcp_format.md) format, as trace type `lcp`: each block access is one request.
+
 #### Run a single cache simulation
 Run the example traces using the LRU eviction algorithm and a 1 GB cache size.
 
@@ -227,11 +221,6 @@ python3 plot_appr_mrc.py SHARDS ../data/cloudPhysicsIO.vscsi vscsi 0.01
 # plot miss ratio over size using Miniature Simulations
 python3 plot_appr_mrc.py MINI ../data/cloudPhysicsIO.vscsi vscsi s3fifo "0.01,0.05,0.1,0.2" 0.1 --extra_args "--ignore-obj-size 1"
 ```
-
----
-
-### prefixsim (an LLM prefix-cache simulator)
-`prefixsim` lives in its own repository, [PrefixSim](https://github.com/cacheMon/PrefixSim), which builds on libCacheSim as a submodule. It replays an LLM request trace through a KV-block prefix cache and reports each eviction policy's **block hit ratio** and **compute saving ratio** (prefill compute avoided), running the LLM prefix-cache algorithms above and most of the `cachesim` ones. Its [lcp](https://github.com/cacheMon/PrefixSim/blob/main/doc/lcp_format.md) traces can also be read by `cachesim` as trace type `lcp`.
 
 ---
 
