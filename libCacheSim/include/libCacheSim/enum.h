@@ -43,7 +43,7 @@ typedef enum {
 
   VALPIN_TRACE,
 
-  LCP_TRACE,  // LLM prefix-cache trace, see doc/lcp_format.md
+  LCP_TRACE,  // LLM prefix-cache trace, see PrefixSim's doc/lcp_format.md
 
   UNKNOWN_TRACE,
   SYNTHETIC_TRACE,

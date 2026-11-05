@@ -1,7 +1,7 @@
 //
 // The lcp ("libCacheSim prefix") trace format: libCacheSim's binary,
-// request-oriented trace for LLM prefix-cache simulation. See doc/lcp_format.md
-// for the spec.
+// request-oriented trace for LLM prefix-cache simulation. The spec is
+// doc/lcp_format.md in PrefixSim (https://github.com/cacheMon/PrefixSim).
 //
 //   [header 8192 B]
 //   [request record][block entry] x n_blocks

@@ -2,12 +2,13 @@
 
 A high-performance library for building and running cache simulations.
 
-libCacheSim ships four things:
+libCacheSim ships three things:
 
 * **cachesim**, a high-performance cache simulator for running cache simulations.
-* **prefixsim**, a prefix-cache simulator for LLM serving traces.
 * **traceAnalyzer**, a high-performance and versatile analyzer for cache traces.
 * **libCacheSim**, a library for building your own cache simulators.
+
+For LLM prefix caching, [PrefixSim](https://github.com/cacheMon/PrefixSim) builds a prefix-cache simulator on libCacheSim.
 
 New here? Start with [Install & Build](install.md), then [the cachesim guide](quickstart_cachesim.md).
 
@@ -23,15 +24,6 @@ quickstart_traceAnalyzer
 quickstart_traceUtils
 quickstart_mrcProfiler
 quickstart_plugin
-```
-
-```{toctree}
-:maxdepth: 2
-:caption: LLM prefix caching
-
-quickstart_prefixsim
-prefixsim
-lcp_format
 ```
 
 ```{toctree}
