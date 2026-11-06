@@ -597,6 +597,24 @@ if [[ -x "${BIN_DIR}/traceAnalyzer" ]]; then
 		"${BIN_DIR}/traceAnalyzer" --common -o out-common "${TRACE}" vscsi
 	expect_ok "traceAnalyzer --num-req" \
 		"${BIN_DIR}/traceAnalyzer" --num-req=10000 -o out-nreq "${TRACE}" vscsi
+
+	# The option was registered as --popularityDacay, so the documented
+	# --popularityDecay was rejected as unrecognized. The correct spelling must
+	# run the analysis and write its data file. It writes into its own
+	# directory so the output file check cannot be satisfied by another run.
+	_trace_name=$(basename "${TRACE}")
+	mkdir -p pd-out
+	expect_ok "traceAnalyzer --popularityDecay" \
+		"${BIN_DIR}/traceAnalyzer" "${TRACE}" vscsi --popularityDecay \
+		-o "pd-out/${_trace_name}"
+	if [[ -s "pd-out/${_trace_name}.popularityDecay_w300_obj" ]]; then
+		_report 0 ""
+	else
+		_report 1 "traceAnalyzer --popularityDecay did not write ${_trace_name}.popularityDecay_w300_obj"
+	fi
+	# [-] keeps grep from reading a pattern that starts with -- as an option
+	expect_output "traceAnalyzer --help lists --popularityDecay" \
+		"[-]-popularityDecay" "${BIN_DIR}/traceAnalyzer" --help
 fi
 
 if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then

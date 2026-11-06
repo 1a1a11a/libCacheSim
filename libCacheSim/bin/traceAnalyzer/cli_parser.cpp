@@ -74,7 +74,7 @@ static struct argp_option options[] = {
      "enable popularity analysis, output freq:cnt in dataname.popularity file, "
      "and prints the skewness to stdout and stat file",
      3},
-    {"popularityDacay", OPTION_ENABLE_POPULARITY_DECAY, NULL,
+    {"popularityDecay", OPTION_ENABLE_POPULARITY_DECAY, NULL,
      OPTION_ARG_OPTIONAL,
      "enable popularity decay analysis, this calculates popularity fade as a "
      "heatmap. It is an expensive analysis, enable only when needed.",
