@@ -17,8 +17,6 @@
 extern "C" {
 #endif
 
-static void set_cache_size(struct MINI_arguments *args, reader_t *reader);
-
 static int conv_cache_sizes(char *cache_size_str, char *rate_size_str,
                             struct MINI_arguments *args);
 

@@ -8,7 +8,7 @@
 #include "libCacheSim/reader.h"
 #include "libCacheSim/sampling.h"
 #include "mrc_internal.h"
-#include "profiler/dist.c"  // for get_stack_dist_add_req, etc.
+#include "profiler/profilerInternal.h"
 #include "utils/include/mymath.h"
 #include "utils/include/mystr.h"
 #include "utils/include/mysys.h"
@@ -119,7 +119,7 @@ void generate_shards_mrc(struct PARAM *params, char *path) {
   params->lookup_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 
   // Start the simulation.
-  uint64_t read_req = simulate_shards_mrc(params);
+  simulate_shards_mrc(params);
 
   // In fixed-size mode, perform additional post-processing.
   if (params->ver == true) {

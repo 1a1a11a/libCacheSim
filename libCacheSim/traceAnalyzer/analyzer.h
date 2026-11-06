@@ -68,7 +68,7 @@ typedef struct analysis_param {
   int access_pattern_sample_ratio_inv;
 } analysis_param_t;
 
-static analysis_param_t default_param() {
+static inline analysis_param_t default_param() {
   analysis_param_t param;
   param.track_n_popular = 8;
   param.track_n_hit = 8;
@@ -78,9 +78,9 @@ static analysis_param_t default_param() {
   param.access_pattern_sample_ratio_inv = 101;
 
   return param;
-};
+}
 
-static struct analysis_option default_option() {
+static inline struct analysis_option default_option() {
   struct analysis_option option = {.req_rate = false,
                                    .access_pattern = false,
                                    .size = false,
@@ -94,7 +94,7 @@ static struct analysis_option default_option() {
                                    .size_change = false};
 
   return option;
-};
+}
 
 #define DEFAULT_PREALLOC_N_OBJ 1e8
 

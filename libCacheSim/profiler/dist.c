@@ -15,6 +15,7 @@ extern "C" {
 
 #include "../dataStructure/splay.h"
 #include "libCacheSim/macro.h"
+#include "profilerInternal.h"
 
 /***********************************************************
  * this function is called by _get_dist,

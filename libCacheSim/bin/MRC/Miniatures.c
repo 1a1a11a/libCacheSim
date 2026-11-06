@@ -5,7 +5,7 @@
 #include "libCacheSim/plugin.h"
 #include "libCacheSim/simulator.h"
 #include "mrc_internal.h"
-#include "profiler/simulator.c"
+#include "profiler/profilerInternal.h"
 #include "utils/include/myprint.h"
 #include "utils/include/mystr.h"
 
