@@ -299,13 +299,14 @@ static void flashProb_evict(cache_t *cache, const request_t *req) {
   // need to copy the object before it is evicted
   copy_cache_obj_to_request(params->req_local, obj);
 
-  // remove from RAM, but do not update stat
+  // remove from RAM, but do not update stat; this frees obj, so only the copy
+  // in req_local may be used below
   ram->remove(ram, params->req_local->obj_id);
 
   // freq is updated in cache_find_base
   if (next_rand() % params->inv_prob == 0) {
     params->n_obj_admit_to_disk += 1;
-    params->n_byte_admit_to_disk += obj->obj_size;
+    params->n_byte_admit_to_disk += params->req_local->obj_size;
     // get will insert to and evict from disk cache
     params->disk->get(params->disk, params->req_local);
   }
