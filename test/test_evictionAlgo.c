@@ -406,6 +406,32 @@ static void test_LRUv0(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data);
 }
 
+// LRUv0_get used to insert every miss itself, skipping cache_get_base and with
+// it the admission check, so -a was silently ignored for lruv0.
+static void test_LRUv0_honors_admission(void) {
+  common_cache_params_t cc_params = {.cache_size = 1000, .hashpower = 8};
+  cache_t *cache = LRUv0_init(cc_params, NULL);
+  cache->admissioner = create_admissioner("size", "size=100");
+  request_t *req = new_request();
+
+  // too large for the admission policy, though it fits in the cache
+  req->obj_id = 1;
+  req->obj_size = 200;
+  g_assert_false(cache->get(cache, req));
+  g_assert_false(cache->get(cache, req));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 0);
+
+  // small enough to be admitted
+  req->obj_id = 2;
+  req->obj_size = 50;
+  g_assert_false(cache->get(cache, req));
+  g_assert_true(cache->get(cache, req));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 1);
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
 static void test_LRU_K(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[17]);
 }
@@ -657,6 +683,8 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRUv0", reader, test_LRUv0);
+  g_test_add_func("/libCacheSim/cacheAlgo_LRUv0_honors_admission",
+                  test_LRUv0_honors_admission);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU_K", reader, test_LRU_K);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Merlin", reader, test_Merlin);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MQ", reader, test_MQ);

@@ -113,21 +113,16 @@ static void LRUv0_free(cache_t *cache) {
  *    return false
  * ```
  *
+ * cache_get_base does this through the find, insert and evict hooks set in
+ * LRUv0_init. It also asks can_insert before inserting, so an admission policy
+ * given with -a is honored, and it runs the prefetcher and counts requests.
+ *
  * @param cache
  * @param req
  * @return true if cache hit, false if cache miss
  */
 static bool LRUv0_get(cache_t *cache, const request_t *req) {
-  bool cache_hit = LRUv0_find(cache, req, true);
-  if (req->obj_size <= cache->cache_size) {
-    if (!cache_hit) LRUv0_insert(cache, req);
-
-    while (cache->occupied_byte > cache->cache_size) LRUv0_evict(cache, req);
-  } else {
-    WARN("req %lld: obj size %ld larger than cache size %ld\n",
-         (long long)req->obj_id, (long)req->obj_size, (long)cache->cache_size);
-  }
-  return cache_hit;
+  return cache_get_base(cache, req);
 }
 
 // ***********************************************************************
