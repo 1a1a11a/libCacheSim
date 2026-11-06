@@ -229,9 +229,15 @@ static inline void csv_cb1(void *s, size_t len, void *data) {
       req->obj_id = (uint64_t)get_hash_value_str((char *)s, len);
     }
   } else if (csv_params->curr_field_idx == csv_params->time_field_idx) {
-    // int64_t ts = (int64_t)atof((char *)s);
-    int64_t ts = (int64_t)strtod((char *)s, NULL);
-    req->clock_time = ts;
+    /* strtod accepts the "1.5e9" form some traces use, but converting NaN or
+     * a double outside the int64_t range is undefined, so check the range
+     * first; 2^63 is exact in a double */
+    double ts = strtod((char *)s, NULL);
+    if (!(ts >= -9223372036854775808.0 && ts < 9223372036854775808.0)) {
+      WARN("csvReader time is out of range: \"%s\"\n", (char *)s);
+      ts = 0;
+    }
+    req->clock_time = (int64_t)ts;
   } else if (csv_params->curr_field_idx == csv_params->obj_size_field_idx) {
     req->obj_size = (int64_t)strtoll((char *)s, &end, 0);
     if (req->obj_size == 0 && end == s) {

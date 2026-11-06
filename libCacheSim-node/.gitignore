@@ -8,9 +8,6 @@ yarn-error.log*
 build/
 *.node
 
-# Package locks (optional for libraries)
-package-lock.json
-
 # OS files
 .DS_Store
 Thumbs.db

@@ -1,0 +1,32 @@
+# Dependabot keeps the pinned dependencies current: the GitHub Actions (pinned
+# by commit SHA), the Docker base image (pinned by digest) and the Node.js
+# binding's npm packages. Each ecosystem gets at most one grouped PR a month,
+# and a release must be a week old before it is proposed.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: npm
+    directory: /libCacheSim-node
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns: ["*"]
