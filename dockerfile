@@ -1,6 +1,6 @@
 
 # pinned by digest so the build is reproducible; Dependabot keeps it current
-FROM ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11 as base
+FROM ubuntu:26.04@sha256:6a06111c3b0a8600feadb270aec771dc239bf407b25625f93f44ab00e11f4d3c as base
 MAINTAINER Juncheng
 LABEL version="0.0.2"
 
