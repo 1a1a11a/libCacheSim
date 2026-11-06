@@ -44,6 +44,14 @@ add_test_executable(testPrefetchAlgo test_prefetchAlgo.c)
 add_test_executable(testDataStructure test_dataStructure.c)
 add_test_executable(testUtils test_utils.c)
 
+# testMRC runs the MRC binary end to end: build MRC first, and tell the test
+# where MRC and the sample traces are so it works from any build directory.
+add_dependencies(testMRC MRC)
+target_compile_definitions(testMRC PRIVATE
+    MRC_BINARY="$<TARGET_FILE:MRC>"
+    MRC_TEST_DATA_DIR="${PROJECT_SOURCE_DIR}/data"
+)
+
 # lcp trace format: the flat reader and the cost models
 add_test_executable(testLcpReader test_lcpReader.cpp)
 
@@ -63,6 +71,7 @@ add_test(NAME testDistUtils COMMAND testDistUtils WORKING_DIRECTORY .)
 add_test(NAME testProfilerLRU COMMAND testProfilerLRU WORKING_DIRECTORY .)
 add_test(NAME testSimulator COMMAND testSimulator WORKING_DIRECTORY .)
 add_test(NAME testEvictionAlgo COMMAND testEvictionAlgo WORKING_DIRECTORY .)
+add_test(NAME testMRC COMMAND testMRC WORKING_DIRECTORY .)
 add_test(NAME testAdmissionAlgo COMMAND testAdmissionAlgo WORKING_DIRECTORY .)
 add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
