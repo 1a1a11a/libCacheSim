@@ -53,7 +53,10 @@ static const cache_algo_entry_t g_cache_algos[] = {
     {"lru", LRU_init},
     {"lru-k", LRU_K_init},
     {"lru-prob", LRU_Prob_init},
-    {"lruv0", LRUv0_init},
+    /* lruv0 is deliberately absent. LRUv0 is the older GLib-based LRU and keeps
+     * its own hash table, so it bypasses the shared find, insert and evict
+     * paths that implement TTL expiry, admission and the prefetcher callbacks.
+     * Naming it here would let the CLI silently ignore those options. */
     {"merlin", merlin_init},
     {"mq", MQ_init},
     {"mru", MRU_init},
