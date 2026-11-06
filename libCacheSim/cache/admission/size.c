@@ -4,6 +4,7 @@
 
 #include "libCacheSim/admissionAlgo.h"
 #include "utils/include/mymath.h"
+#include "utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,7 @@ bool size_admit(admissioner_t *admissioner, const request_t *req) {
 
 static void size_admissioner_parse_params(const char *init_params,
                                           size_admission_params_t *pa) {
+  check_key_value_params("size", init_params);
   if (init_params == NULL) {
     pa->size_threshold = INT64_MAX;
     INFO("use default size admission: %ld\n", (long)pa->size_threshold);

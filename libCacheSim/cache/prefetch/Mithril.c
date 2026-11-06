@@ -19,6 +19,7 @@
 #include <sys/types.h>
 
 #include "libCacheSim/prefetchAlgo.h"
+#include "utils/include/mystr.h"
 
 #define TRACK_BLOCK 192618l
 #define SANITY_CHECK 1
@@ -75,6 +76,7 @@ static void set_Mithril_default_init_params(
 
 static void Mithril_parse_init_params(const char *cache_specific_params,
                                       Mithril_init_params_t *init_params) {
+  check_key_value_params("Mithril", cache_specific_params);
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
 

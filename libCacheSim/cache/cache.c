@@ -5,6 +5,7 @@
 #include "libCacheSim/cache.h"
 
 #include "../dataStructure/hashtable/hashtable.h"
+#include "../utils/include/mystr.h"
 #include "libCacheSim/prefetchAlgo.h"
 
 #ifdef __cplusplus
@@ -57,6 +58,9 @@ static inline int32_t req_cost_or_one(const request_t *req) {
 cache_t *cache_struct_init(const char *const cache_name,
                            const common_cache_params_t params,
                            const void *const init_params) {
+  // every eviction algorithm comes through here before parsing its params
+  check_key_value_params(cache_name, (const char *)init_params);
+
   cache_t *cache = my_malloc(cache_t);
   memset(cache, 0, sizeof(cache_t));
   strncpy(cache->cache_name, cache_name, CACHE_NAME_ARRAY_LEN - 1);

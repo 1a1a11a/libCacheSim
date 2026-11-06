@@ -5,6 +5,7 @@
 
 #include "adaptsize.h"
 #include "libCacheSim/admissionAlgo.h"
+#include "utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,6 +69,7 @@ bool adaptsize_admit(admissioner_t *admissioner, const request_t *req) {
  */
 static void adaptsize_admissioner_parse_params(
     const char *init_params, adaptsize_admission_params_t *pa) {
+  check_key_value_params("adaptsize", init_params);
   if (init_params != NULL) {
     char *params_str = strdup(init_params);
     char *old_params_str = params_str;

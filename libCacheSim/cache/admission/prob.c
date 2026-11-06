@@ -4,6 +4,7 @@
 
 #include "libCacheSim/admissionAlgo.h"
 #include "utils/include/mymath.h"
+#include "utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,7 @@ bool prob_admit(admissioner_t *admissioner, const request_t *req) {
 
 static void prob_admissioner_parse_params(const char *init_params,
                                           prob_admission_params_t *pa) {
+  check_key_value_params("prob", init_params);
   if (init_params == NULL) {
     pa->admission_probability = 0.5;
     INFO("use default admission probability: %f\n", pa->admission_probability);
