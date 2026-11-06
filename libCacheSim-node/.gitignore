@@ -19,3 +19,8 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.log 
+
+# Release inputs and outputs (see .github/workflows/npm-release.yml)
+vendor/
+prebuilds/
+*.tgz
