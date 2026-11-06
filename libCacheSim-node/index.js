@@ -1,5 +1,7 @@
 // libCacheSim Node.js Bindings
-const cachesimAddon = require('./build/Release/cachesim-addon');
+// Loads build/Release/cachesim-addon.node when the addon was compiled locally,
+// otherwise the prebuilt binary under prebuilds/<platform>-<arch>/.
+const cachesimAddon = require('node-gyp-build')(__dirname);
 
 /**
  * Run a cache simulation
