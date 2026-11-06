@@ -1,46 +1,58 @@
 # Performance tuning
 
-libCacheSim is built for high-throughput trace replay. This page collects the knobs that matter and how to measure their effect on your own workload — the numbers depend heavily on the trace, the algorithm, and the machine, so measure rather than assume.
+libCacheSim is built to replay traces fast. This page lists the settings that make the biggest difference and shows how to measure them. Results depend a lot on the trace, the algorithm and the machine, so measure on your own workload instead of trusting a single number.
 
-## Measuring throughput
+The short version: use a release build with tcmalloc, convert your trace to a binary format, and let `cachesim` run your simulations in parallel.
 
-`cachesim` reports throughput (in millions of requests per second) on every run:
+## Measure first
+
+`cachesim` prints its throughput at the end of every single-cache run, in MQPS (millions of requests per second):
 
 ```bash
 cd _build
 ./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb
+# ... miss ratio 0.6297, byte miss ratio 0.7274, throughput 4.62 MQPS
 ```
 
-For a systematic comparison across algorithms and working set sizes, [`scripts/benchmark_throughput.py`](/scripts/benchmark_throughput.py) generates Zipfian traces and sweeps them:
+Don't benchmark with the sample traces in [`data/`](/data/). They are tiny, so startup cost dominates. Use a trace with at least a few million requests.
+
+To compare algorithms and working set sizes systematically, [`scripts/benchmark_throughput.py`](/scripts/benchmark_throughput.py) generates Zipf traces and sweeps over them:
 
 ```bash
 cd scripts
 python3 benchmark_throughput.py --help
 ```
 
-The sample traces in [`data/`](/data/) are far too small to benchmark with — they fit in cache and are dominated by startup cost. Use a trace of at least a few million requests.
+## Build for speed
 
-## Build configuration
-
-Build in release mode. A debug build is several times slower, and [`scripts/debug.sh`](/scripts/debug.sh) additionally skips tcmalloc to stay debugger-friendly:
+**Use a release build.** Release is the default when you don't set `CMAKE_BUILD_TYPE`, so a plain build is already fine. To be explicit:
 
 ```bash
 cmake -G Ninja -B _build -DCMAKE_BUILD_TYPE=Release
+ninja -C _build
 ```
 
-**tcmalloc** is linked automatically when CMake finds it, and matters because the hot path allocates per-object metadata. `cmake` prints `!!! cannot find tcmalloc` when it is missing; install it (`libgoogle-perftools-dev` on Debian/Ubuntu, `gperftools` via Homebrew) and reconfigure.
+A debug build is several times slower. The one [`scripts/debug.sh`](/scripts/debug.sh) makes also leaves out tcmalloc, so never measure with it.
 
-**Transparent hugepages** are enabled at compile time by default (`USE_HUGEPAGE=ON`), which reduces TLB misses on the hash table. They also need to be enabled on the host:
+**Make sure tcmalloc is linked.** The hot path allocates metadata for every cached object, and tcmalloc makes those allocations much cheaper. CMake links it automatically when it finds it. If it can't, the configure step prints:
+
+```text
+!!! cannot find tcmalloc
+```
+
+In that case, install it (`libgoogle-perftools-dev` on Debian/Ubuntu, `gperftools` on Homebrew) and run `cmake` again.
+
+**Transparent hugepages** cut TLB misses on the large hash table. They are enabled at compile time by default (`USE_HUGEPAGE=ON`), but the host has to allow them too:
 
 ```bash
 echo madvise | sudo tee /sys/kernel/mm/transparent_hugepage/enabled
 ```
 
-Turn the compile-time option off with `-DUSE_HUGEPAGE=OFF` if your environment does not support them.
+If your environment doesn't support hugepages, build with `-DUSE_HUGEPAGE=OFF`.
 
-## Trace format
+## Use a binary trace
 
-Binary formats are several times faster than csv, because csv parsing dominates replay for fast algorithms. Convert once with `traceConv` and reuse:
+Parsing csv is often the slowest part of a run, especially with fast algorithms like FIFO or LRU. Binary formats are several times faster and use less memory. Convert once with `traceConv` and reuse the result:
 
 ```bash
 ./bin/traceConv ../data/cloudPhysicsIO.csv csv \
@@ -48,19 +60,22 @@ Binary formats are several times faster than csv, because csv parsing dominates 
     --output-format=oracleGeneral
 ```
 
-See [quickstart_traceUtils.md](quickstart_traceUtils.md). zstd-compressed binary traces are read without decompressing first, so compression costs little replay time while saving substantial disk.
+libCacheSim reads zstd-compressed binary traces directly, so you can compress them to save disk space at little cost to replay speed. See [quickstart_traceUtils.md](quickstart_traceUtils.md) for more on conversion.
 
-When the id column holds numbers, pass `obj-id-is-num=true` so the reader skips hashing.
+If you do stay with csv and the object id column holds numbers, pass `obj-id-is-num=true` so the reader doesn't have to hash every id.
 
 ## Runtime options
 
-* `--num-thread=N` — simulations across algorithms and cache sizes are run in parallel, so a sweep costs little more than its slowest single run.
-* `--ignore-obj-size 1` — treats every object as size one. Faster, and the right choice when you want object miss ratio rather than byte miss ratio.
-* `--consider-obj-metadata=false` — skips accounting for per-algorithm metadata overhead in the cache size.
-* `--num-req=N` — caps how much of the trace is read, useful when iterating.
+| Option | Why it helps |
+| --- | --- |
+| `--num-thread=N` | Simulations for different algorithms and cache sizes run in parallel, so a whole sweep takes about as long as its slowest run. |
+| `--ignore-obj-size 1` | Treats every object as size one. This is faster, and it's the right choice when you care about object miss ratio rather than byte miss ratio. |
+| `--consider-obj-metadata=false` | Skips counting each algorithm's per-object metadata against the cache size. |
+| `--num-req=N` | Reads only the first N requests. Handy while you are iterating. |
+| `--hashpower=N` | Sets the hash table size to 2^N entries (default 24). A smaller table uses less memory on small traces. Sampling-based algorithms pick eviction candidates from the hash table, so keep this fixed when you compare their results. |
 
 ## Memory
 
-Memory is dominated by the hash table and per-object metadata, so it scales with the number of *objects* rather than the number of requests. `--ignore-obj-size 1` with a small cache size keeps the object count down.
+Memory use is mostly the hash table plus per-object metadata. It grows with the number of distinct *objects*, not the number of requests. A smaller cache, `--ignore-obj-size 1` or a lower `--hashpower` all keep it down.
 
-To profile actual usage, see [memory_usage_profiling.md](memory_usage_profiling.md).
+To see where memory actually goes, see [memory_usage_profiling.md](memory_usage_profiling.md).
