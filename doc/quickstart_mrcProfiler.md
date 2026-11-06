@@ -49,7 +49,7 @@ Each row is one cache size. When you give sizes as fractions, the first column i
 
 | Option | Meaning |
 | --- | --- |
-| `--algo` | Eviction algorithm. SHARDS only supports `LRU`. MINISIM accepts any name `cachesim` accepts. |
+| `--algo` | Eviction algorithm, case-insensitive (`fifo` and `FIFO` are the same). SHARDS only supports `LRU`. MINISIM accepts any name `cachesim` accepts. |
 | `--profiler` | `SHARDS` or `MINISIM` |
 | `--profiler-params` | See [Profiler parameters](#profiler-parameters) |
 | `--size` | See [Choose the cache sizes](#choose-the-cache-sizes) |

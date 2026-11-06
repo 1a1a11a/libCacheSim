@@ -419,6 +419,28 @@ static void test_MRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[18]);
 }
 
+// Evicting the only object empties the queue. MRU_evict used to write through
+// the new, NULL, head and leave the tail pointing at the freed object, so the
+// second miss in a one-object cache segfaulted.
+static void test_MRU_evict_only_object(void) {
+  common_cache_params_t cc_params = {.cache_size = 1, .hashpower = 8};
+  cache_t *cache = MRU_init(cc_params, NULL);
+  request_t *req = new_request();
+  req->obj_size = 1;
+
+  for (obj_id_t id = 1; id <= 4; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+    g_assert_cmpint(cache->get_n_obj(cache), ==, 1);
+    g_assert_nonnull(cache->find(cache, req, false));
+    req->obj_id = id - 1;
+    g_assert_null(cache->find(cache, req, false));
+  }
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
 static void test_QDLP_FIFO(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[19]);
 }
@@ -601,6 +623,36 @@ static void test_WTinyLFU_counts_window_hits(void) {
   cache->cache_free(cache);
 }
 
+/* The MINISIM profiler only knows an algorithm by its name and reaches it
+ * through create_cache_using_plugin(). That used to go straight to dlsym(),
+ * which cannot see a built-in constructor in a statically linked build — the
+ * archive member holding it is never pulled in — so every built-in name failed
+ * with "undefined symbol: lru_init" (issue #304). The registry lookup that
+ * replaced it matches names case-insensitively, the same way cachesim does. */
+static void test_create_cache_by_name(gconstpointer user_data) {
+  common_cache_params_t cc_params = {
+      .cache_size = CACHE_SIZE, .hashpower = 20, .default_ttl = DEFAULT_TTL};
+
+  static const struct {
+    const char *requested;
+    const char *expected_name;
+  } names[] = {
+      {"lru", "LRU"},   {"LRU", "LRU"},   {"Lru", "LRU"}, {"fifo", "FIFO"},
+      {"FIFO", "FIFO"}, {"fIfO", "FIFO"}, {"mru", "MRU"}, {"MRU", "MRU"},
+  };
+
+  for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
+    cache_t *cache =
+        create_cache_using_plugin(names[i].requested, cc_params, NULL);
+    g_assert_nonnull(cache);
+    g_assert_cmpstr(cache->cache_name, ==, names[i].expected_name);
+    cache->cache_free(cache);
+  }
+
+  // left out of the registry on purpose, see cacheAlgoRegistry.c
+  g_assert_null(create_cache_by_name("lruv0", cc_params, NULL));
+}
+
 static void empty_test(gconstpointer user_data) { ; }
 
 static void test_WorkloadAware(gconstpointer user_data) {
@@ -649,6 +701,8 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Merlin", reader, test_Merlin);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MQ", reader, test_MQ);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
+  g_test_add_func("/libCacheSim/cacheAlgo_MRU_evict_only_object",
+                  test_MRU_evict_only_object);
   g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,
                        test_QDLP_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
@@ -685,6 +739,9 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Belady", reader, test_Belady);
   g_test_add_data_func("/libCacheSim/cacheAlgo_BeladySize", reader,
                        test_BeladySize);
+
+  g_test_add_data_func("/libCacheSim/create_cache_by_name", reader,
+                       test_create_cache_by_name);
 
   g_test_add_data_func_full("/libCacheSim/empty", reader, empty_test,
                             test_teardown);
