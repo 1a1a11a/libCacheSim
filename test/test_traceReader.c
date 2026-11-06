@@ -3,6 +3,7 @@
 //
 
 #include "common.h"
+#include "traceReader/customizedReader/lcs.h"
 
 // defined in reader.c file, not in public interface
 int go_back_two_req(reader_t *const reader);
@@ -189,9 +190,64 @@ static void test_binary_ttl(void) {
   g_free(path);
 }
 
+/* Write header + n_full records of rec_size bytes + part of one more record,
+ * then check the reader returns exactly the n_full complete records. A trace
+ * whose size is not a multiple of the record size (a truncated download, say)
+ * used to have its last partial record read past the end of the file. */
+static void check_truncated_trace(trace_type_e type, const char *fmt,
+                                  const void *header, size_t header_len,
+                                  size_t rec_size) {
+  enum { n_full = 2 };
+  const size_t body_len = n_full * rec_size + rec_size / 2;
+  unsigned char *body = g_malloc0(body_len);
+  for (size_t i = 0; i < body_len; i++) body[i] = (unsigned char)(i + 1);
+
+  char *path = NULL;
+  int fd = g_file_open_tmp("libcachesim-truncated-XXXXXX", &path, NULL);
+  g_assert_cmpint(fd, >=, 0);
+  FILE *file = fdopen(fd, "wb");
+  g_assert_nonnull(file);
+  if (header_len > 0)
+    g_assert_cmpuint(fwrite(header, 1, header_len, file), ==, header_len);
+  g_assert_cmpuint(fwrite(body, 1, body_len, file), ==, body_len);
+  g_assert_cmpint(fclose(file), ==, 0);
+
+  reader_init_param_t init = default_reader_init_params();
+  init.binary_fmt_str = (char *)fmt;
+  init.obj_id_field = 1;
+  init.ignore_size_zero_req = false;
+  reader_t *reader = setup_reader(path, type, &init);
+  request_t *req = new_request();
+  int n_read = 0;
+  while (n_read <= n_full && read_one_req(reader, req) == 0) n_read++;
+  g_assert_cmpint(n_read, ==, n_full);
+
+  free_request(req);
+  close_reader(reader);
+  g_assert_cmpint(unlink(path), ==, 0);
+  g_free(path);
+  g_free(body);
+}
+
+static void test_truncated_record(void) {
+  check_truncated_trace(ORACLE_GENERAL_TRACE, NULL, NULL, 0, 24);
+  check_truncated_trace(BIN_TRACE, "<IQ", NULL, 0, 12);
+
+  lcs_trace_header_t header;
+  memset(&header, 0, sizeof(header));
+  header.start_magic = LCS_TRACE_START_MAGIC;
+  header.end_magic = LCS_TRACE_END_MAGIC;
+  header.version = 1;
+  header.stat.n_req = 2;
+  check_truncated_trace(LCS_TRACE, NULL, &header, sizeof(header),
+                        sizeof(lcs_req_v1_t));
+}
+
 int main(int argc, char *argv[]) {
   g_test_init(&argc, &argv, NULL);
   g_test_add_func("/libCacheSim/reader_binary_ttl", test_binary_ttl);
+  g_test_add_func("/libCacheSim/reader_truncated_record",
+                  test_truncated_record);
   reader_t *reader;
 
   reader = setup_plaintxt_reader_num();
