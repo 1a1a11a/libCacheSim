@@ -241,11 +241,13 @@ static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
     return obj;
   }
 
-  if (obj_main != NULL) {
-    // frequency update
+  // a hit counts whether it lands in the window or in the main cache
+  if (obj != NULL) {
     minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id,
                             sizeof(obj_id_t));
+  }
 
+  if (obj_main != NULL) {
     params->request_counter++;
     if (params->request_counter >= params->max_request_num) {
       params->request_counter = 0;

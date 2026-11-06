@@ -552,8 +552,46 @@ static void test_3LCache(gconstpointer user_data) {
 }
 #endif /* ENABLE_3L_CACHE */
 
-static void test_WTinyLFU(gconstpointer user_data) {
-  // TODO: to be implemented
+// W-TinyLFU counts every access, so a hit in the window must raise an object's
+// frequency just as a hit in the main cache does. Object 102 is read six times
+// while it sits in the window; when it reaches the window's tail it must beat
+// the main cache's victim, counted twice, and be admitted.
+static void test_WTinyLFU_counts_window_hits(void) {
+  // 1000-byte objects: 100 fit, half in the window and half in the main cache.
+  // The sketch is sized from the main cache's bytes, so with this few objects
+  // its counts are exact.
+  common_cache_params_t cc_params = {.cache_size = 100 * 1000, .hashpower = 8};
+  cache_t *cache = WTinyLFU_init(cc_params, "main-cache=LRU,window-size=0.5");
+  request_t *req = new_request();
+  req->obj_size = 1000;
+
+  // The window holds everything until the cache is full. Object 101 triggers
+  // the first eviction, which moves 1 to 50 into the main cache; from then on
+  // each new object pushes the window's oldest out, and it is dropped unless
+  // its count beats that of object 1, the main cache's LRU victim.
+  for (obj_id_t id = 1; id <= 102; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+  req->obj_id = 102;
+  for (int i = 0; i < 5; i++) {
+    g_assert_true(cache->get(cache, req));
+  }
+
+  // 49 new objects bring 102 to the window's tail, and the 50th evicts it.
+  for (obj_id_t id = 103; id <= 152; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+
+  // 102 won: it is in the main cache, and object 1 was evicted for it.
+  req->obj_id = 102;
+  g_assert_nonnull(cache->find(cache, req, false));
+  req->obj_id = 1;
+  g_assert_null(cache->find(cache, req, false));
+
+  free_request(req);
+  cache->cache_free(cache);
 }
 
 static void empty_test(gconstpointer user_data) { ; }
@@ -623,6 +661,8 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_SR_LRU", reader, test_SR_LRU);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Clock2QPlus", reader,
                        test_Clock2QPlus);
+  g_test_add_func("/libCacheSim/cacheAlgo_WTinyLFU_counts_window_hits",
+                  test_WTinyLFU_counts_window_hits);
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
   g_test_add_data_func("/libCacheSim/cacheAlgo_3LCache", reader, test_3LCache);
