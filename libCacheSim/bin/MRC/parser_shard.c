@@ -4,8 +4,8 @@
 #include <string.h>
 
 #include "../cli_reader_utils.h"
+#include "libCacheSim/sampling.h"
 #include "mrc_internal.h"
-#include "traceReader/sampling/SHARD.c"
 
 enum argp_option_short {
   // Removed explicit ver, rate, and trace-type options

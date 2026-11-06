@@ -13,6 +13,7 @@ set(traceReader_sources_c
     customizedReader/llmCostModel.c
     reader.c
     readerRequest.c
+    sampling/SHARD.c
     sampling/spatial.c
     sampling/temporal.c
     )

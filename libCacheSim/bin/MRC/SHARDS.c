@@ -8,7 +8,7 @@
 #include "libCacheSim/reader.h"
 #include "libCacheSim/sampling.h"
 #include "mrc_internal.h"
-#include "profiler/dist.c"  // for get_stack_dist_add_req, etc.
+#include "profiler/profilerInternal.h"
 #include "utils/include/mymath.h"
 #include "utils/include/mystr.h"
 #include "utils/include/mysys.h"

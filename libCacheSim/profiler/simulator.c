@@ -19,6 +19,7 @@ extern "C" {
 #include "../utils/include/mystr.h"
 #include "libCacheSim/evictionAlgo.h"
 #include "libCacheSim/plugin.h"
+#include "profilerInternal.h"
 
 typedef struct simulator_multithreading_params {
   reader_t *reader;
