@@ -254,12 +254,15 @@ static void init_mini_arg(struct MINI_arguments *args) {
   args->n_cache_size = 0;
 }
 
-void free_arg(struct MINI_arguments *args) {
+void free_mini_arg(struct MINI_arguments *args) {
   if (args->eviction_params) {
     free(args->eviction_params);
   }
   if (args->admission_params) {
     free(args->admission_params);
+  }
+  if (args->prefetch_params) {
+    free(args->prefetch_params);
   }
 
   for (int i = 0; i < args->n_eviction_algo; i++) {
@@ -327,6 +330,9 @@ void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args) {
 
   args->reader =
       setup_reader(args->trace_path, args->trace_type, &reader_init_params);
+  /* the reader keeps its own copies of these */
+  free(reader_init_params.binary_fmt_str);
+  free(reader_init_params.llm_cost_model);
 
   if (args->consider_obj_metadata &&
       should_disable_obj_metadata(args->reader)) {

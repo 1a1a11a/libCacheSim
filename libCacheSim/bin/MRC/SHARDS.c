@@ -62,6 +62,7 @@ int64_t compute_distance_fixed_size(struct PARAM *params, request_t *req,
       last_max = max->Tmax;
       // Remove the key from prio_tree and update lookup and distance_tree.
       params->prio_tree = splay_delete_t(max, params->prio_tree);
+      free(max);  // splay_delete_t frees the node, not the key
       gpointer hash_value_inner =
           g_hash_table_lookup(params->lookup_hash, GSIZE_TO_POINTER((gsize)id));
       g_hash_table_remove(params->lookup_hash, GSIZE_TO_POINTER((gsize)id));
@@ -100,6 +101,26 @@ uint64_t simulate_shards_mrc(struct PARAM *params) {
   return n_req;
 }
 
+// Free the priority tree together with the keys compute_distance_fixed_size
+// allocated for it; free_sTree_t frees only the nodes. Rotating each left
+// child up flattens the tree as it goes, so this needs no recursion however
+// deep the tree is.
+static void free_prio_tree(sTree_tuple *t) {
+  while (t != NULL) {
+    if (t->left != NULL) {
+      sTree_tuple *l = t->left;
+      t->left = l->right;
+      l->right = t;
+      t = l;
+    } else {
+      sTree_tuple *r = t->right;
+      free(t->key);
+      free_node_t(t);
+      t = r;
+    }
+  }
+}
+
 void generate_shards_mrc(struct PARAM *params, char *path) {
   srand(time(NULL));
   set_rand_seed(rand());
@@ -130,10 +151,16 @@ void generate_shards_mrc(struct PARAM *params, char *path) {
   adjust_histogram(params->data, n_req, params->rate);
 
   export_histogram_to_csv(params->data, params->rate, path);
+  free_histogram(params->data);
   g_hash_table_destroy(params->lookup_hash);
-  free_sTree_t(params->prio_tree);
+  free_prio_tree(params->prio_tree);
   free_sTree(params->distance_tree);
+
+  // The reader samples through its own clone of the sampler parse_mrc_cmd
+  // created; the original stays ours to free once the reader is closed.
+  sampler_t *sampler = params->reader->init_params.sampler;
   close_reader(params->reader);
+  sampler->free(sampler);
 }
 
 #ifdef __cplusplus

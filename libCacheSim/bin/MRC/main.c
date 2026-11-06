@@ -35,27 +35,31 @@ int main(int argc, char **argv) {
     struct MINI_arguments arguments;
     parse_mini_cmd(argc, argv, &arguments);
     cache_stat_t *return_value = generate_mini_mrc(&arguments);
+    int n_results = arguments.n_cache_size * arguments.n_eviction_algo;
+    int ret = 0;
 
     FILE *output_file = fopen(path, "w");
     if (output_file == NULL) {
       perror("Error opening file");
-      return 1;
+      ret = 1;
+    } else {
+      fprintf(output_file, "Cache Size,Miss Ratio, Miss Ratio Byte\n");
+      for (int i = 0; i < n_results; i++) {
+        uint64_t cache_size = (uint64_t)((float)return_value[i].cache_size /
+                                         return_value[i].sampler_ratio);
+        double miss_ratio =
+            (double)return_value[i].n_miss / (double)return_value[i].n_req;
+        double miss_ratio_byte = (double)return_value[i].n_miss_byte /
+                                 (double)return_value[i].n_req_byte;
+        fprintf(output_file, "%llu,%f, %f\n", (unsigned long long)cache_size,
+                miss_ratio, miss_ratio_byte);
+      }
+      fclose(output_file);
     }
 
-    fprintf(output_file, "Cache Size,Miss Ratio, Miss Ratio Byte\n");
-    for (int i = 0; i < arguments.n_cache_size * arguments.n_eviction_algo;
-         i++) {
-      uint64_t cache_size = (uint64_t)((float)return_value[i].cache_size /
-                                       return_value[i].sampler_ratio);
-      double miss_ratio =
-          (double)return_value[i].n_miss / (double)return_value[i].n_req;
-      double miss_ratio_byte = (double)return_value[i].n_miss_byte /
-                               (double)return_value[i].n_req_byte;
-      fprintf(output_file, "%llu,%f, %f\n", (unsigned long long)cache_size,
-              miss_ratio, miss_ratio_byte);
-    }
-
-    fclose(output_file);
+    my_free(sizeof(cache_stat_t) * n_results, return_value);
+    free_mini_arg(&arguments);
+    return ret;
   } else if (strcmp(algorithm_type, "SHARDS") == 0) {
     struct PARAM params;
     char *path = argv[2];

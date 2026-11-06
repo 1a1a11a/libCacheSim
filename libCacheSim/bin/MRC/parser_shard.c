@@ -159,4 +159,7 @@ void parse_mrc_cmd(int argc, char **argv, struct PARAM *args) {
 
   args->reader = setup_reader(arguments.trace_file, arguments.trace_type,
                               &reader_init_params);
+  /* the reader keeps its own copies of these */
+  free(reader_init_params.binary_fmt_str);
+  free(reader_init_params.llm_cost_model);
 }
