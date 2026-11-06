@@ -225,6 +225,20 @@ static bool WTinyLFU_get(cache_t *cache, const request_t *req) {
   return ck;
 }
 
+/* Record one access in the frequency sketch, and halve every counter after
+ * max_request_num accesses. As in the W-TinyLFU paper and Caffeine, every
+ * access counts once: a hit in either the window or the main cache, or the
+ * insertion that follows a miss. */
+static void WTinyLFU_record_access(WTinyLFU_params_t *params, obj_id_t obj_id) {
+  minimalIncrementCBF_add(params->CBF, (void *)&obj_id, sizeof(obj_id_t));
+
+  params->request_counter++;
+  if (params->request_counter >= params->max_request_num) {
+    params->request_counter = 0;
+    minimalIncrementCBF_decay(params->CBF);
+  }
+}
+
 static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
                                   bool update_cache) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
@@ -241,18 +255,10 @@ static cache_obj_t *WTinyLFU_find(cache_t *cache, const request_t *req,
     return obj;
   }
 
-  // a hit counts whether it lands in the window or in the main cache
+  // a hit counts whether it lands in the window or in the main cache; a miss
+  // is counted when WTinyLFU_insert admits the object to the window
   if (obj != NULL) {
-    minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id,
-                            sizeof(obj_id_t));
-  }
-
-  if (obj_main != NULL) {
-    params->request_counter++;
-    if (params->request_counter >= params->max_request_num) {
-      params->request_counter = 0;
-      minimalIncrementCBF_decay(params->CBF);
-    }
+    WTinyLFU_record_access(params, req->obj_id);
   }
 
   return obj;
@@ -264,7 +270,7 @@ cache_obj_t *WTinyLFU_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *obj = NULL;
   obj = params->LRU->insert(params->LRU, req);
 
-  minimalIncrementCBF_add(params->CBF, (void *)&req->obj_id, sizeof(obj_id_t));
+  WTinyLFU_record_access(params, req->obj_id);
 
 #if defined(TRACK_DEMOTION)
   obj->create_time = cache->n_req;
