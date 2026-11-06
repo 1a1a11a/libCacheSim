@@ -54,10 +54,7 @@ The basic form is:
 | `--reuse` | Reuse time and reuse distance distribution, overall and over time | [reuse.py](/scripts/traceAnalysis/reuse.py), [reuse_heatmap.py](/scripts/traceAnalysis/reuse_heatmap.py) |
 | `--popularity` | Request count of each object, by rank | [popularity.py](/scripts/traceAnalysis/popularity.py) |
 | `--accessPattern` | A sample of which objects are accessed when | [access_pattern.py](/scripts/traceAnalysis/access_pattern.py) |
-| `--popularityDacay` | How an object's popularity fades with age | [popularity_decay.py](/scripts/traceAnalysis/popularity_decay.py) |
-
-> [!NOTE]
-> The popularity decay flag really is spelled `--popularityDacay`. That is a typo in the code. `--popularityDecay` is rejected as an unrecognized option.
+| `--popularityDecay` | How an object's popularity fades with age | [popularity_decay.py](/scripts/traceAnalysis/popularity_decay.py) |
 
 Run `./bin/traceAnalyzer --help` for the full list of tasks and options.
 
@@ -250,7 +247,7 @@ Pass these two scripts the base name, without the `_req`/`_obj` or `_rt`/`_vt` s
 This shows how likely an object is to be requested again as it gets older. You need a long trace, around a week, for a useful plot. Most block workloads do not have enough requests.
 
 ```bash
-./bin/traceAnalyzer <trace_path> <trace_type> --popularityDacay
+./bin/traceAnalyzer <trace_path> <trace_type> --popularityDecay
 python3 ../scripts/traceAnalysis/popularity_decay.py ${dataname}.popularityDecay_w300_obj
 ```
 

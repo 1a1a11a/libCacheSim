@@ -542,6 +542,32 @@ if [[ -x "${BIN_DIR}/traceAnalyzer" ]]; then
 		"${BIN_DIR}/traceAnalyzer" --common -o out-common "${TRACE}" vscsi
 	expect_ok "traceAnalyzer --num-req" \
 		"${BIN_DIR}/traceAnalyzer" --num-req=10000 -o out-nreq "${TRACE}" vscsi
+
+	# The option was registered as --popularityDacay, so the documented
+	# --popularityDecay was rejected as unrecognized. The correct spelling must
+	# run the analysis and write its data file; the old spelling stays as a
+	# hidden alias for existing scripts. Each writes into its own directory so
+	# the output file check cannot be satisfied by the other run.
+	_trace_name=$(basename "${TRACE}")
+	for _spelling in popularityDecay popularityDacay; do
+		mkdir -p "pd-${_spelling}"
+		expect_ok "traceAnalyzer --${_spelling}" \
+			"${BIN_DIR}/traceAnalyzer" "${TRACE}" vscsi "--${_spelling}" \
+			-o "pd-${_spelling}/${_trace_name}"
+		if [[ -s "pd-${_spelling}/${_trace_name}.popularityDecay_w300_obj" ]]; then
+			_report 0 ""
+		else
+			_report 1 "traceAnalyzer --${_spelling} did not write ${_trace_name}.popularityDecay_w300_obj"
+		fi
+	done
+	# [-] keeps grep from reading a pattern that starts with -- as an option
+	expect_output "traceAnalyzer --help lists --popularityDecay" \
+		"[-]-popularityDecay" "${BIN_DIR}/traceAnalyzer" --help
+	if "${BIN_DIR}/traceAnalyzer" --help 2>&1 | grep -q "popularityDacay"; then
+		_report 1 "traceAnalyzer --help shows the hidden --popularityDacay alias"
+	else
+		_report 0 ""
+	fi
 fi
 
 if [[ -x "${BIN_DIR}/mrcProfiler" ]]; then
