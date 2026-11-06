@@ -1,7 +1,7 @@
 # libCacheSim Node.js Bindings
 
 [![NPM Release](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml/badge.svg)](https://github.com/1a1a11a/libCacheSim/actions/workflows/npm-release.yml)
-[![NPM Version](https://nodei.co/npm/@realtmxi/libcachesim-node.svg?style=shields)](https://nodei.co/npm/@realtmxi/libcachesim-node/)
+[![npm](https://img.shields.io/npm/v/libcachesim-node)](https://www.npmjs.com/package/libcachesim-node)
 
 Node.js bindings for libCacheSim - A high-performance cache simulator and analysis library supporting LRU, FIFO, S3-FIFO, Sieve and other caching algorithms.
 
@@ -10,8 +10,7 @@ Node.js bindings for libCacheSim - A high-performance cache simulator and analys
 - **High Performance**: Built on the optimized libCacheSim C library
 - **Multiple Algorithms**: Support for LRU, FIFO, LFU, ARC, Clock, S3-FIFO, Sieve, and more
 - **Various Trace Types**: Support for vscsi, csv, txt, binary, and oracle trace formats
-- **Pre-compiled Binaries**: Fast installation with no build tools required
-- **Cross-platform**: Support for Linux (x64) and macOS (x64, ARM64)
+- **Pre-compiled Binary**: Installs on Linux x64 without a compiler
 
 ## Installation
 
@@ -19,14 +18,9 @@ Node.js bindings for libCacheSim - A high-performance cache simulator and analys
 npm install libcachesim-node
 ```
 
-The package includes pre-compiled binaries for supported platforms. No additional build tools or dependencies are required for end users.
+The package ships a pre-compiled N-API binary for Linux x64 (glibc 2.35 or newer, e.g. Ubuntu 22.04+, Debian 12+), which works with every supported Node.js version. It links glib and zstd dynamically, so those shared libraries must be installed (`libglib2.0-0` and `libzstd1` on Debian/Ubuntu); they usually are.
 
-### Supported Platforms
-
-- **Linux**: x64 (Ubuntu 18.04+, other distributions with compatible glibc)
-- **macOS**: x64 (Intel) and ARM64 (Apple Silicon)
-
-If pre-compiled binaries are not available for your platform, please check the releases page for updates or submit an issue.
+If the binary does not load on your system, `npm install` compiles the addon from source instead, which needs a C/C++ toolchain, Python, `pkg-config`, and the glib and zstd development packages (`build-essential libglib2.0-dev libzstd-dev` on Debian/Ubuntu). Only Linux x64 is supported: the libCacheSim static library bundled in the package is built for it.
 
 ## Quick Start
 
@@ -118,31 +112,33 @@ cachesim-js --version
 
 ### Building from Source
 
-If you need to build from source or contribute to development:
+The addon links the libCacheSim static library from `vendor/`, so build libCacheSim first and copy it in:
 
 ```bash
-# Clone the repository
 git clone https://github.com/1a1a11a/libCacheSim.git
-cd libCacheSim/libCacheSim-node
+cd libCacheSim
 
-# Install dependencies
+# Build the static library
+cmake -G Ninja -B _build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+ninja -C _build libCacheSim
+
+# Vendor it with its headers
+mkdir -p libCacheSim-node/vendor/include
+cp _build/liblibCacheSim.a libCacheSim-node/vendor/
+cp -r libCacheSim/include/* libCacheSim-node/vendor/include/
+
+# Install dependencies (this compiles the addon) and run the tests
+cd libCacheSim-node
 npm install
-
-# Build from source (requires cmake, build tools)
-npm run build-from-source
-
-# Run tests
 npm test
 ```
 
 ### Requirements for Building from Source
 
-- Node.js 14+
-- CMake 3.10+
-- C/C++ compiler (GCC, Clang, or MSVC)
-- System dependencies:
-  - Linux: `build-essential cmake libglib2.0-dev libzstd-dev`
-  - macOS: `cmake glib zstd` (via Homebrew)
+- Node.js 18+
+- CMake 3.12+ and Ninja
+- A C/C++ compiler, Python 3 and `pkg-config` (for node-gyp)
+- `libglib2.0-dev` and `libzstd-dev` (Debian/Ubuntu)
 
 ### Version Synchronization
 
@@ -154,13 +150,16 @@ python3 scripts/sync_node_version.py
 
 This ensures that the Node.js binding version in `package.json` matches the version in the main project's `version.txt` file.
 
-## Architecture
+## Release Process
 
-This package uses `prebuild-install` for binary distribution:
+The [NPM Release](https://github.com/1a1a11a/libCacheSim/blob/develop/.github/workflows/npm-release.yml) workflow builds the package on every change to this directory and publishes it when a GitHub release is published:
 
-1. **Pre-compiled Binaries**: Automatically downloaded from GitHub releases during installation
-2. **Automated Building**: GitHub Actions automatically builds binaries for all supported platforms
-3. **Standard Tooling**: Uses industry-standard `prebuild` and `prebuild-install` packages
+1. It builds libCacheSim, vendors the static library, and compiles the addon from source.
+2. `npm run prebuildify` builds the N-API binary into `prebuilds/linux-x64/`, which is included in the npm package. At load time [`node-gyp-build`](https://github.com/prebuild/node-gyp-build) uses a local `build/Release` addon if there is one and this prebuilt binary otherwise; on install it compiles from source only if the prebuilt binary fails to load.
+3. It runs the tests against the prebuilt binary, packs the package, and installs the tarball into an empty project to check that the prebuilt binary is used.
+4. The publish job uploads that tarball to npm through [trusted publishing](https://docs.npmjs.com/trusted-publishers), with provenance. The release tag must match `version.txt`.
+
+To publish without cutting a release, run the workflow by hand from the Actions tab with "publish" checked.
 
 ## Troubleshooting
 
@@ -183,18 +182,16 @@ npm install libcachesim-node --build-from-source
 
 If you see binary loading errors:
 
-1. Ensure your platform is supported
-2. Check that the `prebuilds` directory exists and contains your platform's binary
-3. Try reinstalling the package
-4. Check Node.js version compatibility (requires Node.js 14+)
+1. Ensure your platform is Linux x64
+2. Check that the glib and zstd shared libraries are installed
+3. Reinstall with `--build-from-source` to compile the addon for your system
 
 ### Build from Source Issues
 
 If source compilation fails:
 
-1. Install required system dependencies (including ninja-build)
-2. Ensure CMake 3.10+ is available
-3. Check that libCacheSim builds successfully: `cd .. && mkdir _build && cd _build && cmake -G Ninja .. && ninja`
+1. Install the requirements listed under [Requirements for Building from Source](#requirements-for-building-from-source)
+2. If you are building from a clone, check that `vendor/liblibCacheSim.a` exists and was built from the same checkout
 
 ## Contributing
 
