@@ -12,7 +12,10 @@ extern "C" {
 
 /* read decompressed data file */
 static inline char *_read_bytes(reader_t *reader, size_t size) {
-  if (reader->mmap_offset >= reader->file_size) {
+  /* the whole read must fit: a trace cut off inside its last record (or
+   * header) ends before it rather than being read past the mapping */
+  if (reader->mmap_offset >= reader->file_size ||
+      size > reader->file_size - reader->mmap_offset) {
     return NULL;
   }
 

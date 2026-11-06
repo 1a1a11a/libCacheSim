@@ -224,6 +224,13 @@ static inline int64_t read_data(char *src, char format) {
 int binary_read_one_req(reader_t *reader, request_t *req) {
   binary_params_t *params = (binary_params_t *)reader->reader_params;
 
+  /* a trace cut off inside its last record ends before that record */
+  if (reader->mmap_offset >= reader->file_size ||
+      reader->item_size > reader->file_size - reader->mmap_offset) {
+    req->valid = false;
+    return 1;
+  }
+
   char *start = (reader->mapped_file + reader->mmap_offset);
 
   /* read object id */

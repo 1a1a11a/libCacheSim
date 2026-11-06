@@ -59,6 +59,8 @@ Changes to the command-line tools need their own coverage, and the library tests
 cd _build && bash ../test/test_cli.sh
 ```
 
+CI also fuzzes the trace readers for two minutes on every push and pull request (`.github/workflows/fuzz.yml`). If you change a reader, run the fuzzer locally first. The build and run commands are at the top of [`test/fuzz/fuzz_traceReader.c`](test/fuzz/fuzz_traceReader.c).
+
 ## Code style
 
 * The project follows **Google style**: 2-space indent, 80-column limit, configured in [`.clang-format`](.clang-format) and [`.clang-tidy`](.clang-tidy). Run `clang-format -i <file>` before committing.

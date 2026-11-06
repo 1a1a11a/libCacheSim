@@ -28,6 +28,7 @@ option(ENABLE_LRB "enable LRB" OFF)
 option(ENABLE_3L_CACHE "enable 3LCache" OFF)
 option(ENABLE_S4FIFO "enable S4FIFO" OFF)
 option(BUILD_SHARED_LIBS "build shared library" ON)
+option(ENABLE_FUZZING "build the libFuzzer targets in test/fuzz (needs clang)" OFF)
 set(LOG_LEVEL "default" CACHE STRING "change the logging level")
 set_property(CACHE LOG_LEVEL PROPERTY STRINGS ERROR WARN INFO DEBUG VERBOSE DEFAULT)
 
@@ -52,6 +53,19 @@ endif()
 
 if(USE_HUGEPAGE)
     add_compile_definitions(USE_HUGEPAGE=1)
+endif()
+
+# Fuzzing instruments the whole build -- the library is the code under test --
+# with libFuzzer coverage and ASan/UBSan. Set here, before any target exists.
+# The alignment check is off, as it is on OSS-Fuzz: the binary readers load
+# fields of packed on-disk records in place, which x86 and arm64 allow.
+if(ENABLE_FUZZING)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang" OR NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "ENABLE_FUZZING needs clang: pass -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++")
+    endif()
+    set(FUZZ_SANITIZER_FLAGS "-fsanitize=fuzzer-no-link,address,undefined -fno-sanitize=alignment -fno-sanitize-recover=undefined -fno-omit-frame-pointer -g")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FUZZ_SANITIZER_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FUZZ_SANITIZER_FLAGS}")
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -154,7 +168,8 @@ endif()
 # Note: tcmalloc causes trouble with valgrind
 # https://github.com/gperftools/gperftools/issues/792
 # When using valgrind, we should not compile with tcmalloc
-if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+# ASan replaces malloc too, so a fuzzing build leaves tcmalloc out
+if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug" AND NOT ENABLE_FUZZING)
     find_package(Tcmalloc)
 
     if("${Tcmalloc_LIBRARY}" STREQUAL "")
@@ -260,6 +275,11 @@ if(ENABLE_TESTS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test)
 else()
     message(STATUS "Building without test")
+endif()
+
+if(ENABLE_FUZZING)
+    message(STATUS "Building fuzz targets")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test/fuzz)
 endif()
 
 # libCacheSim unified library compilation and installation

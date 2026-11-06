@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
 
@@ -53,7 +53,7 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
 
@@ -73,11 +73,12 @@ jobs:
           cp _build/liblibCacheSim.a libCacheSim-node/vendor/
           cp -r libCacheSim/include/* libCacheSim-node/vendor/include/
 
-      # npm install compiles the addon from source (there are no prebuilds yet),
-      # which checks the source-build path users fall back to.
+      # npm ci installs the locked dependencies and compiles the addon from
+      # source (there are no prebuilds yet), which checks the source-build path
+      # users fall back to.
       - name: Install dependencies and build the addon from source
         working-directory: libCacheSim-node
-        run: npm install
+        run: npm ci
 
       - name: Build the prebuilt N-API binary
         working-directory: libCacheSim-node
@@ -117,7 +118,7 @@ jobs:
           "
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: npm-package
           path: libCacheSim-node/libcachesim-node-${{ steps.package.outputs.version }}.tgz
@@ -145,13 +146,13 @@ jobs:
 
       # Trusted publishing needs npm 11.5.1 or later, which Node.js 24 ships.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Download package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: npm-package
 

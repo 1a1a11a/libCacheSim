@@ -1,0 +1,58 @@
+name: Fuzz
+
+# Runs the libFuzzer targets in test/fuzz: two minutes on every push and pull
+# request, and a longer run once a week.
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '37 5 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: fuzz trace readers
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      FUZZ_SECONDS: ${{ github.event_name == 'schedule' && 1200 || 120 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang libclang-rt-dev cmake ninja-build libglib2.0-dev libzstd-dev
+
+      - name: Build fuzz targets
+        run: |
+          cmake -G Ninja -B _build_fuzz \
+                -DENABLE_FUZZING=ON -DENABLE_TESTS=OFF \
+                -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+                -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLOG_LEVEL=error
+          ninja -C _build_fuzz fuzz_traceReader
+
+      - name: Fuzz trace readers
+        run: |
+          bash test/fuzz/make_seed_corpus.sh corpus
+          mkdir -p crashes
+          _build_fuzz/bin/fuzz_traceReader corpus \
+              -max_total_time="${FUZZ_SECONDS}" -rss_limit_mb=4096 \
+              -artifact_prefix=crashes/ -print_final_stats=1
+
+      - name: Upload crashing inputs
+        if: failure()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: fuzz-crashes
+          path: crashes/
+          retention-days: 30

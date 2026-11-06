@@ -107,6 +107,10 @@ static void _lcs_print_trace_stat(lcs_trace_stat_t *stat) {
 
 int lcsReader_setup(reader_t *reader) {
   char *data = read_bytes(reader, sizeof(lcs_trace_header_t));
+  if (data == NULL) {
+    ERROR("lcs trace %s is shorter than its header\n", reader->trace_path);
+    exit(1);
+  }
   lcs_trace_header_t *header = (lcs_trace_header_t *)data;
 
   if (!_verify_lcs_header(header)) {
@@ -228,6 +232,10 @@ void lcs_print_trace_stat(reader_t *reader) {
 #endif
 
   char *data = read_bytes(cloned_reader, sizeof(lcs_trace_header_t));
+  if (data == NULL) {
+    ERROR("lcs trace %s is shorter than its header\n", reader->trace_path);
+    exit(1);
+  }
   lcs_trace_header_t *header = (lcs_trace_header_t *)data;
 
   _verify_lcs_header(header);
