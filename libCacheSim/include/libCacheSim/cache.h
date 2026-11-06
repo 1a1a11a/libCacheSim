@@ -279,6 +279,18 @@ cache_t *cache_struct_init(const char *cache_name, common_cache_params_t params,
 void cache_struct_free(cache_t *cache);
 
 /**
+ * @brief for an eviction algorithm that takes no parameters, call from its
+ * cache_init after cache_struct_init. "print" reports that the algorithm has
+ * no parameters and exits, as it does for algorithms that have some; any other
+ * parameter string is ignored with a warning instead of silently. cachesim
+ * passes one -e string to every algorithm in a run, so this cannot be an error.
+ * @param cache
+ * @param cache_specific_params the parameter string passed to cache_init
+ */
+void cache_check_no_params(const cache_t *cache,
+                           const char *cache_specific_params);
+
+/**
  * @brief create a new cache with the same size and parameters
  *
  * @param old_cache

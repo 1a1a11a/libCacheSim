@@ -60,6 +60,7 @@ cache_t *LFUDA_init(const common_cache_params_t ccache_params,
                     const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("LFUDA", ccache_params, cache_specific_params);
+  cache_check_no_params(cache, cache_specific_params);
   cache->cache_init = LFUDA_init;
   cache->cache_free = LFUDA_free;
   cache->get = LFUDA_get;

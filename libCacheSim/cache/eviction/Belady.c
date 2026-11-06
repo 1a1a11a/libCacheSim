@@ -68,6 +68,7 @@ cache_t *Belady_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("Belady", ccache_params, cache_specific_params);
+  cache_check_no_params(cache, cache_specific_params);
   cache->cache_init = Belady_init;
   cache->cache_free = Belady_free;
   cache->get = Belady_get;

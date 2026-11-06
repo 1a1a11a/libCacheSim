@@ -81,6 +81,7 @@ cache_t *Cacheus_init(const common_cache_params_t ccache_params,
 
   cache_t *cache =
       cache_struct_init("Cacheus", updated_cc_params, cache_specific_params);
+  cache_check_no_params(cache, cache_specific_params);
   cache->cache_init = Cacheus_init;
   cache->cache_free = Cacheus_free;
   cache->get = Cacheus_get;
