@@ -103,6 +103,8 @@ void parse_mrc_cmd(int argc, char **argv, struct PARAM *args);
 
 void parse_mini_cmd(int argc, char *argv[], struct MINI_arguments *args);
 
+void free_mini_arg(struct MINI_arguments *args);
+
 #ifdef __cplusplus
 }
 #endif

@@ -318,7 +318,7 @@ See the [libCacheSim-python README](https://github.com/cacheMon/libCacheSim-pyth
 
 ## Node.js
 
-Node.js bindings are available too. Releases ship a pre-compiled binary for Linux x64; elsewhere, `npm install` builds from source, which needs the [build dependencies](/doc/install.md).
+Node.js bindings are available for Linux x64. The package ships a pre-compiled binary. If it doesn't load, `npm install` compiles the addon from source, which needs the [build dependencies](/doc/install.md).
 
 ```shell
 npm install libcachesim-node

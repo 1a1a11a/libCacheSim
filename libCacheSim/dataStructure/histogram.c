@@ -8,7 +8,9 @@
 
 ReuseHistogram* init_histogram(void) {
   ReuseHistogram* hist = (ReuseHistogram*)malloc(sizeof(ReuseHistogram));
-  hist->bins = g_hash_table_new(g_int64_hash, g_int64_equal);
+  /* the table owns both the g_memdup2'd distance keys and the BinEntry
+   * values that update_histogram inserts */
+  hist->bins = g_hash_table_new_full(g_int64_hash, g_int64_equal, g_free, free);
   hist->cold_miss_bin = 0;
   hist->cold_miss_threshold = 0.0;
   return hist;
@@ -111,14 +113,6 @@ uint64_t get_min_distance(ReuseHistogram* hist) {
 }
 
 void free_histogram(ReuseHistogram* hist) {
-  GHashTableIter iter;
-  gpointer key, value;
-  g_hash_table_iter_init(&iter, hist->bins);
-
-  while (g_hash_table_iter_next(&iter, &key, &value)) {
-    free(value);
-  }
-
   g_hash_table_destroy(hist->bins);
   free(hist);
 }

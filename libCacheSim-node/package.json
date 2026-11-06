@@ -1,14 +1,14 @@
 {
   "name": "libcachesim-node",
-  "version": "1.0.1",
+  "version": "0.3.5",
   "main": "index.js",
   "bin": {
     "cachesim-js": "./cli.js"
   },
   "scripts": {
     "test": "node test.js",
-    "install": "prebuild-install || node-gyp rebuild",
-    "prebuild": "prebuild --all --strip --verbose"
+    "install": "node-gyp-build",
+    "prebuildify": "prebuildify --napi --strip --tag-libc"
   },
   "keywords": [
     "cache",
@@ -36,11 +36,11 @@
   },
   "dependencies": {
     "node-addon-api": "^8.3.1",
-    "prebuild-install": "^7.1.2"
+    "node-gyp-build": "^4.8.4"
   },
   "devDependencies": {
     "node-gyp": "^10.0.0",
-    "prebuild": "^13.0.1"
+    "prebuildify": "^6.0.1"
   },
   "files": [
     "LICENSE",
@@ -49,14 +49,9 @@
     "binding.cc",
     "binding.gyp",
     "README.md",
+    "prebuilds",
     "vendor"
   ],
-  "binary": {
-    "module_name": "cachesim-addon",
-    "module_path": "./build/Release/",
-    "remote_path": "https://github.com/1a1a11a/libCacheSim/releases/download/",
-    "package_name": "{module_name}-v{version}-{node_abi}-{platform}-{arch}.tar.gz"
-  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   }
