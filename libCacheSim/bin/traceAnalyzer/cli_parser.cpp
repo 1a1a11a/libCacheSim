@@ -79,10 +79,6 @@ static struct argp_option options[] = {
      "enable popularity decay analysis, this calculates popularity fade as a "
      "heatmap. It is an expensive analysis, enable only when needed.",
      3},
-    /* misspelled name this option was originally registered under, kept so
-     * existing scripts do not break; hidden from --help */
-    {"popularityDacay", OPTION_ENABLE_POPULARITY_DECAY, NULL,
-     OPTION_ALIAS | OPTION_HIDDEN, NULL, 0},
     {"reuse", OPTION_ENABLE_REUSE, NULL, OPTION_ARG_OPTIONAL,
      "reuse analysis, output a reuse distribution (both real time and virtual "
      "time) in dataname.reuse file",
