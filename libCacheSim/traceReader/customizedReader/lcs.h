@@ -212,7 +212,7 @@ typedef struct __attribute__((packed)) lcs_req_v8 {
 typedef char
     static_assert_lcs_v8_size[(sizeof(struct lcs_req_v8) == 100) ? 1 : -1];
 
-static int LCS_VER_TO_N_FEATURES[10] = {0, 0, 0, 0, 1, 2, 4, 8, 16, 0};
+static const int LCS_VER_TO_N_FEATURES[10] = {0, 0, 0, 0, 1, 2, 4, 8, 16, 0};
 
 int lcsReader_setup(reader_t *reader);
 

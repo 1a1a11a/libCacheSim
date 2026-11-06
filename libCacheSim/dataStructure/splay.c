@@ -52,8 +52,6 @@ extern "C" {
 
 #include "splay.h"
 
-static sTree* sedgewickized_splay(int i, sTree* t);
-
 sTree* splay(key_type i, sTree* t) {
   /* Simple top down splay, not requiring i to be in the sTree t.  */
   /* What it does is described above.                             */
@@ -118,47 +116,6 @@ sTree* splay(key_type i, sTree* t) {
   }
 
   l->right = t->left; /* assemble */
-  r->left = t->right;
-  t->left = N.right;
-  t->right = N.left;
-  return t;
-}
-
-/* Here is how sedgewick would have written this.                    */
-/* It does the same thing.                                           */
-static sTree* sedgewickized_splay(int i, sTree* t) {
-  sTree N, *l, *r, *y;
-  if (t == NULL) return t;
-  N.left = N.right = NULL;
-  l = r = &N;
-
-  for (;;) {
-    if (i < t->key) {
-      if (t->left != NULL && i < t->left->key) {
-        y = t->left;
-        t->left = y->right;
-        y->right = t;
-        t = y;
-      }
-      if (t->left == NULL) break;
-      r->left = t;
-      r = t;
-      t = t->left;
-    } else if (i > t->key) {
-      if (t->right != NULL && i > t->right->key) {
-        y = t->right;
-        t->right = y->left;
-        y->left = t;
-        t = y;
-      }
-      if (t->right == NULL) break;
-      l->right = t;
-      l = t;
-      t = t->right;
-    } else
-      break;
-  }
-  l->right = t->left;
   r->left = t->right;
   t->left = N.right;
   t->right = N.left;

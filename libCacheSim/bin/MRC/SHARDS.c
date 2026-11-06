@@ -119,7 +119,7 @@ void generate_shards_mrc(struct PARAM *params, char *path) {
   params->lookup_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 
   // Start the simulation.
-  uint64_t read_req = simulate_shards_mrc(params);
+  simulate_shards_mrc(params);
 
   // In fixed-size mode, perform additional post-processing.
   if (params->ver == true) {

@@ -54,7 +54,7 @@ void parse_cmd(int argc, char *argv[], struct arguments *args);
  *
  * @param args
  */
-static void init_arg(struct arguments *args) {
+static inline void init_arg(struct arguments *args) {
   memset(args, 0, sizeof(struct arguments));
 
   args->n_req = -1;
@@ -75,7 +75,9 @@ static void init_arg(struct arguments *args) {
   args->print_obj_id_32bit = false;
 }
 
-static void free_arg(struct arguments *args) { close_reader(args->reader); }
+static inline void free_arg(struct arguments *args) {
+  close_reader(args->reader);
+}
 }  // namespace cli
 
 namespace traceConv {
