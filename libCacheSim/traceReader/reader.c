@@ -588,8 +588,10 @@ void reader_set_read_pos(reader_t *const reader, double pos) {
       }
     }
   } else {
-    reader->mmap_offset = offset;
-    reader->mmap_offset -= reader->mmap_offset % reader->item_size;
+    size_t start = (size_t)reader->trace_start_offset;
+    if (offset < start) offset = start;
+    reader->mmap_offset =
+        start + (offset - start) / reader->item_size * reader->item_size;
   }
 }
 

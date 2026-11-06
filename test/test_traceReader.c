@@ -306,6 +306,14 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func_full("/libCacheSim/reader_more2_oracleGeneral", reader,
                             test_reader_more2, test_teardown);
 
+  reader = setup_lcs_reader();
+  g_test_add_data_func("/libCacheSim/reader_basic_lcs", reader,
+                       test_reader_basic);
+  g_test_add_data_func("/libCacheSim/reader_more1_lcs", reader,
+                       test_reader_more1);
+  g_test_add_data_func_full("/libCacheSim/reader_more2_lcs", reader,
+                            test_reader_more2, test_teardown);
+
   // g_test_add_data_func("/libCacheSim/test_twr", NULL, test_twr);
   return g_test_run();
 }
