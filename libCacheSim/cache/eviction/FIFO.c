@@ -22,8 +22,6 @@ extern "C" {
 // ****                                                               ****
 // ***********************************************************************
 
-static void FIFO_parse_params(cache_t *cache,
-                              const char *cache_specific_params);
 static void FIFO_free(cache_t *cache);
 static bool FIFO_get(cache_t *cache, const request_t *req);
 static cache_obj_t *FIFO_find(cache_t *cache, const request_t *req,
@@ -50,6 +48,7 @@ cache_t *FIFO_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("FIFO", ccache_params, cache_specific_params);
+  cache_check_no_params(cache, cache_specific_params);
   cache->cache_init = FIFO_init;
   cache->cache_free = FIFO_free;
   cache->get = FIFO_get;
@@ -223,14 +222,6 @@ static bool FIFO_remove(cache_t *cache, obj_id_t obj_id) {
   cache_remove_obj_base(cache, obj, true);
 
   return true;
-}
-
-static void FIFO_parse_params(cache_t *cache,
-                              const char *cache_specific_params) {
-  if (cache_specific_params != NULL) {
-    ERROR("FIFO does not support any cache specific parameters\n");
-    exit(1);
-  }
 }
 
 #ifdef __cplusplus

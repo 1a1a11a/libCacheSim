@@ -334,6 +334,18 @@ expect_output "qdlp -e print" "fifo-size-ratio=" \
 expect_output "s3fifo -e print" "small-size-ratio=" \
 	"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral s3fifo 1gb -e print
 
+# An algorithm without parameters says so instead of silently ignoring -e. It
+# warns rather than fails: one -e string goes to every algorithm in a run, so
+# `lru,slru -e n-seg=8` must still run both.
+expect_output "lru -e print" "LRU parameters: none" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1gb -e print
+expect_output "lru warns about an ignored parameter" \
+	'LRU takes no parameters, ignoring "typo=1"' \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb --num-req=10 -e typo=1
+expect_output "lru,slru share one -e" "S8LRU.*10 req" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru,slru 1mb --num-req=10 \
+	-e n-seg=8
+
 # Sweep every algorithm the CLI registers rather than a hand-picked list: the
 # crashes this covers were found in variants that a shorter list missed
 # (s3fifov0, flashProb).
@@ -353,19 +365,10 @@ ALL_ALGOS="2q 3LCache CAR GLCache RandomLRU arc arcv0 cacheus clock clock2qplus
 	sieve size slru slruv0 tinyLFU twoq wtinyLFU
 	hyperbolic belady beladySize"
 
-# Algorithms with no tunable parameters at all: `-e print` is accepted, silently
-# ignored, and the run replays the whole trace instead of reporting anything.
-# Everything else has to produce a parameter report, so an algorithm newly added
-# to ALL_ALGOS lands in the strict branch by default and fails loudly rather
-# than passing without the print path having been exercised.
-#
-# arc and arcv0 used to be here: they define a *_parse_params with a working
-# `print` branch that their inits never called. Those inits parse their
-# parameters now, so both report like everything else and belong in the strict
-# branch.
-NO_PRINT_ALGOS=" belady cacheus fifo gdsf lecarv0 lfu lfucpp lfuda lhd lirs"
-NO_PRINT_ALGOS="${NO_PRINT_ALGOS} lru nop random randomTwo sieve size "
-
+# Every algorithm must produce a parameter report, so one newly added to
+# ALL_ALGOS fails loudly unless its print path works. Algorithms with no
+# parameters report "parameters: none" through cache_check_no_params(); they
+# used to ignore `-e print` and replay the whole trace instead.
 n_skipped=0
 for algo in ${ALL_ALGOS}; do
 	out=$("${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 1gb -e print 2>&1)
@@ -378,10 +381,6 @@ for algo in ${ALL_ALGOS}; do
 	if [[ ${rc} -ne 0 ]]; then
 		_report 1 "${algo} -e print (exit ${rc})"
 		echo "${out}" | tail -3 | sed 's/^/        /'
-		continue
-	fi
-	if [[ ${NO_PRINT_ALGOS} == *" ${algo} "* ]]; then
-		_report 0 ""
 		continue
 	fi
 	# Drop the colour codes and the logger's own lines before looking for the

@@ -71,6 +71,7 @@ cache_t *LHD_init(const common_cache_params_t ccache_params,
 
   cache_t *cache =
       cache_struct_init("LHD", ccache_params, cache_specific_params);
+  cache_check_no_params(cache, cache_specific_params);
   cache->cache_init = LHD_init;
   cache->cache_free = LHD_free;
   cache->get = LHD_get;

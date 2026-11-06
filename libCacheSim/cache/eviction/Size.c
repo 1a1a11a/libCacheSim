@@ -66,6 +66,7 @@ cache_t *Size_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params) {
   cache_t *cache =
       cache_struct_init("Size", ccache_params, cache_specific_params);
+  cache_check_no_params(cache, cache_specific_params);
   cache->cache_init = Size_init;
   cache->cache_free = Size_free;
   cache->get = Size_get;

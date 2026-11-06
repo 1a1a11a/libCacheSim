@@ -50,6 +50,7 @@ cache_t *Random_init(const common_cache_params_t ccache_params,
 
   cache_t *cache =
       cache_struct_init("Random", ccache_params_copy, cache_specific_params);
+  cache_check_no_params(cache, cache_specific_params);
   cache->cache_init = Random_init;
   cache->cache_free = Random_free;
   cache->get = Random_get;

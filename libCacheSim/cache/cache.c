@@ -4,6 +4,8 @@
 
 #include "libCacheSim/cache.h"
 
+#include <strings.h>
+
 #include "../dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/prefetchAlgo.h"
 
@@ -110,6 +112,34 @@ void cache_struct_free(cache_t *cache) {
   if (cache->admissioner != NULL) cache->admissioner->free(cache->admissioner);
   if (cache->prefetcher != NULL) cache->prefetcher->free(cache->prefetcher);
   my_free(sizeof(cache_t), cache);
+}
+
+void cache_check_no_params(const cache_t *cache,
+                           const char *cache_specific_params) {
+  if (cache_specific_params == NULL || cache_specific_params[0] == '\0') {
+    return;
+  }
+
+  char *params_str = strdup(cache_specific_params);
+  char *rest = params_str;
+  char *token;
+  while ((token = strsep(&rest, ",")) != NULL) {
+    while (*token == ' ') token++;
+    if (strcasecmp(token, "print") == 0) {
+      printf("%s parameters: none\n", cache->cache_name);
+      free(params_str);
+      exit(0);
+    }
+  }
+  free(params_str);
+
+  // a run makes one cache per algorithm and cache size, so say it once
+  static bool warned = false;
+  if (!warned) {
+    warned = true;
+    WARN("%s takes no parameters, ignoring \"%s\"\n", cache->cache_name,
+         cache_specific_params);
+  }
 }
 
 /**
