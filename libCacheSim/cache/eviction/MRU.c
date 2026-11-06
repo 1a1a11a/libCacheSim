@@ -177,8 +177,14 @@ static cache_obj_t *MRU_to_evict(cache_t *cache, const request_t *req) {
 static void MRU_evict(cache_t *cache, const request_t *req) {
   MRU_params_t *params = (MRU_params_t *)cache->eviction_params;
   cache_obj_t *obj_to_evict = MRU_to_evict(cache, req);
-  params->q_head = params->q_head->queue.next;
-  params->q_head->queue.prev = NULL;
+  DEBUG_ASSERT(obj_to_evict != NULL);
+  params->q_head = obj_to_evict->queue.next;
+  if (likely(params->q_head != NULL)) {
+    params->q_head->queue.prev = NULL;
+  } else {
+    /* that was the only object, so the queue is now empty */
+    params->q_tail = NULL;
+  }
   cache_evict_base(cache, obj_to_evict, true);
 }
 

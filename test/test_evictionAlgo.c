@@ -419,6 +419,28 @@ static void test_MRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[18]);
 }
 
+// Evicting the only object empties the queue. MRU_evict used to write through
+// the new, NULL, head and leave the tail pointing at the freed object, so the
+// second miss in a one-object cache segfaulted.
+static void test_MRU_evict_only_object(void) {
+  common_cache_params_t cc_params = {.cache_size = 1, .hashpower = 8};
+  cache_t *cache = MRU_init(cc_params, NULL);
+  request_t *req = new_request();
+  req->obj_size = 1;
+
+  for (obj_id_t id = 1; id <= 4; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+    g_assert_cmpint(cache->get_n_obj(cache), ==, 1);
+    g_assert_nonnull(cache->find(cache, req, false));
+    req->obj_id = id - 1;
+    g_assert_null(cache->find(cache, req, false));
+  }
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
 static void test_QDLP_FIFO(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[19]);
 }
@@ -639,6 +661,8 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_Merlin", reader, test_Merlin);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MQ", reader, test_MQ);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MRU", reader, test_MRU);
+  g_test_add_func("/libCacheSim/cacheAlgo_MRU_evict_only_object",
+                  test_MRU_evict_only_object);
   g_test_add_data_func("/libCacheSim/cacheAlgo_QDLP_FIFO", reader,
                        test_QDLP_FIFO);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Random", reader, test_Random);
