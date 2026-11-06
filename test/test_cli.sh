@@ -122,6 +122,23 @@ expect_clean_error() {
 	fi
 }
 
+# Stricter than expect_clean_error: the command must exit with status 1 and a
+# message matching the pattern, so an abort from ERROR() (exit 134) fails.
+expect_rejected() {
+	local desc=$1 pattern=$2
+	shift 2
+	local out
+	out=$("$@" 2>&1)
+	local rc=$?
+	if [[ ${rc} -eq 1 ]] && grep -qE "${pattern}" <<<"${out}" &&
+		! grep -qE 'Sanitizer|runtime error:' <<<"${out}"; then
+		_report 0 ""
+	else
+		_report 1 "${desc} is rejected with /${pattern}/ (exit ${rc})"
+		echo "${out}" | tail -3 | sed 's/^/        /'
+	fi
+}
+
 echo "running cachesim tests"
 
 # Each supported sample trace format replays.
@@ -317,6 +334,31 @@ for spec in 0:0.0000 0.01:0.0100 1e-2:0.0100 +0.01:0.0100 \
 		--hashpower=8 -e "window-size=${value},print"
 done
 
+echo "running admission and prefetch missing-value tests"
+
+# The eviction algorithms are covered by the sweep over every algorithm below.
+for spec in "-a prob --admission-params=prob" \
+	"-a size --admission-params=size" \
+	"-a sizeProbabilistic --admission-params=exponent" \
+	"-a adaptsize --admission-params=max-iteration" \
+	"-p OBL --prefetch-params=block-size" \
+	"-p PG --prefetch-params=lookahead-range" \
+	"-p Mithril --prefetch-params=confidence"; do
+	# shellcheck disable=SC2086 # spec holds an option and its argument
+	expect_rejected "lru ${spec}" "expected key=value" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb --num-req=10 ${spec}
+	# shellcheck disable=SC2086
+	expect_rejected "lru ${spec}=" "expected a nonempty value" \
+		"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb --num-req=10 ${spec}=
+done
+# print and default are the flags that take no value
+expect_output "PG accepts the bare default flag" "default params" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb --num-req=10 \
+	-p PG --prefetch-params=default
+expect_output "prob admission accepts prob=0.5" "10 req" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi lru 1mb --num-req=10 \
+	-a prob --admission-params=prob=0.5
+
 echo "running -e print tests"
 
 # `-e print` runs before the cache is fully built, so the reporting path must
@@ -402,6 +444,20 @@ for algo in ${ALL_ALGOS}; do
 	else
 		_report 1 "${algo} -e print exited 0 without reporting parameters"
 		echo "${out}" | tail -3 | sed 's/^/        /'
+		continue
+	fi
+	# The parameter parsers hand the value straight to strtod, atoi or
+	# strcasecmp, so a parameter without one used to crash most of them. Check
+	# every algorithm with the first parameter it reports.
+	_key=$(grep -oE '[A-Za-z][A-Za-z0-9_-]*=' <<<"${_printed}" | head -n 1)
+	if [[ -n ${_key} ]]; then
+		expect_rejected "${algo} -e ${_key%=}" "expected key=value" \
+			"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 1gb \
+			-e "${_key%=}"
+		# merlin validates before the shared check and says "empty value"
+		expect_rejected "${algo} -e ${_key}" "empty value" \
+			"${BIN_DIR}/cachesim" "${TRACE_ORACLE}" oracleGeneral "${algo}" 1gb \
+			-e "${_key}"
 	fi
 done
 echo "  (${n_skipped} algorithms not compiled in, skipped)"

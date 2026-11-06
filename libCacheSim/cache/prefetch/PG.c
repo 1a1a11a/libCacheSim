@@ -25,6 +25,7 @@
 // #define DEBUG
 
 #include "libCacheSim/prefetchAlgo/PG.h"
+#include "utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +56,7 @@ static void set_PG_default_init_params(PG_init_params_t *init_params) {
 
 static void PG_parse_init_params(const char *cache_specific_params,
                                  PG_init_params_t *init_params) {
+  check_key_value_params("PG", cache_specific_params);
   char *params_str = strdup(cache_specific_params);
   char *old_params_str = params_str;
 

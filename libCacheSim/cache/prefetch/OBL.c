@@ -20,6 +20,7 @@
 #include <sys/types.h>
 
 #include "libCacheSim/prefetchAlgo.h"
+#include "utils/include/mystr.h"
 // #define DEBUG
 
 #ifdef __cplusplus
@@ -43,6 +44,7 @@ static void set_OBL_default_init_params(OBL_init_params_t *init_params) {
 
 static void OBL_parse_init_params(const char *cache_specific_params,
                                   OBL_init_params_t *init_params) {
+  check_key_value_params("OBL", cache_specific_params);
   char *params_str = strdup(cache_specific_params);
 
   while (params_str != NULL && params_str[0] != '\0') {

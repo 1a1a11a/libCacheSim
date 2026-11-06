@@ -11,6 +11,7 @@
 
 #include "libCacheSim/admissionAlgo.h"
 #include "utils/include/mymath.h"
+#include "utils/include/mystr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,7 @@ bool size_probabilistic_admit(admissioner_t *admissioner,
 
 static void size_probabilistic_admissioner_parse_params(
     const char *init_params, size_probabilistic_admission_params_t *pa) {
+  check_key_value_params("sizeProbabilistic", init_params);
   if (init_params == NULL) {
     pa->exponent = 1e-6;
     INFO("use default admission exponent: %f\n", pa->exponent);

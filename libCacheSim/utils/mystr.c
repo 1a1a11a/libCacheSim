@@ -8,6 +8,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "libCacheSim/const.h"
 
@@ -62,6 +63,45 @@ const char *mybasename(char const *path) {
     return path;
   else
     return s + 1;
+}
+
+void check_key_value_params(const char *owner, const char *params) {
+  if (params == NULL) return;
+
+  const char *token = params;
+  while (*token != '\0') {
+    // the parsers skip spaces after a comma, and ignore empty entries
+    while (*token == ' ') token++;
+    const char *comma = strchr(token, ',');
+    size_t len = comma != NULL ? (size_t)(comma - token) : strlen(token);
+
+    if (len > 0) {
+      const char *eq = memchr(token, '=', len);
+      const char *error = NULL;
+      if (eq == NULL) {
+        bool is_flag =
+            (len == strlen("print") && strncasecmp(token, "print", len) == 0) ||
+            (len == strlen("default") &&
+             strncasecmp(token, "default", len) == 0);
+        if (!is_flag) error = "expected key=value";
+      } else if (eq == token) {
+        error = "expected key=value";
+      } else if (eq + 1 == token + len) {
+        error = "expected a nonempty value";
+      }
+
+      if (error != NULL) {
+        // name the key when there is one, otherwise the whole entry
+        int name_len =
+            (eq != NULL && eq != token) ? (int)(eq - token) : (int)len;
+        fprintf(stderr, "error: %s parameter '%.*s': %s\n", owner, name_len,
+                token, error);
+        exit(EXIT_FAILURE);
+      }
+    }
+
+    token = comma != NULL ? comma + 1 : token + len;
+  }
 }
 
 #ifdef __cplusplus
