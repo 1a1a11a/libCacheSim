@@ -1,98 +1,108 @@
 # Oracle traces and zero-size requests
 
-`next_access_vtime` is the **1-based record position of the next request to the
-same object in the stream used to compute it**, or -1 / INT64_MAX if there is no
-next request. The oracle must describe the stream actually simulated. See
-[issue #361](https://github.com/1a1a11a/libCacheSim/issues/361).
+An *oracle trace*, such as `oracleGeneral` or `lcs`, stores one extra field per request: `next_access_vtime`. It records when the same object will be requested next, and offline algorithms such as Belady and BeladySize rely on it to look into the future.
 
-## Why filtering matters
+This page covers one way that field can go wrong: zero-size requests. If you run Belady or BeladySize on an oracle trace that contains zero-size records, and especially on one converted with an older libCacheSim, read on. Everyone else can skip this page. Background is in [issue #361](https://github.com/1a1a11a/libCacheSim/issues/361).
 
-The default reader omits zero-size requests, including with
-`--ignore-obj-size=1`: filtering happens before object sizes are changed to one.
-In older oracle traces, a retained request can point to an omitted zero-size
-request. Belady then keeps a stale priority, potentially pinning that object
-indefinitely. BeladySize is affected too: its score uses
-`size * (next_access_vtime - current_request_count)`, so simply repairing links
-without rebasing all positions is insufficient.
+## The short version
 
-Readers warn once per reader when they filter an oracle trace. `cachesim` and
-MINISIM reject this input for Belady/BeladySize, including compressed input and
-zero-size records at EOF. The library's multi-cache simulator also enables this
-guard for these policies. Applications with their own replay loop should set
-`reader_init_param_t.require_valid_next_access = true` before opening the reader.
-The guard detects unsafe zero-size filtering; it is not a general validator of
-arbitrarily malformed or previously filtered oracle metadata.
+* libCacheSim's readers drop zero-size requests by default.
+* In oracle traces made by older versions, a kept request can say "my next access is request N" when request N was one of those dropped zero-size records. Belady then makes decisions on wrong information.
+* Current libCacheSim detects this and refuses to run Belady or BeladySize on such input.
+* To fix a trace, convert it again with the current `traceConv`. That gives you a new file with correct next-access positions.
+* If you published or compared Belady or BeladySize results on affected traces, rerun them.
 
-## Repair an existing published trace
+FIFO, LRU and other algorithms that don't look at future information are not affected.
 
-Preserve the original trace. Create a separately named derivative using the
-current `traceConv`, which filters zero-size requests **before** computing next
-accesses and assigns positions in the retained stream. This preserves the
-default FIFO/LRU workload, request denominator, timestamps, IDs, and positive
-sizes. It also handles a key that reappears after one or more zero-size records.
+## What `next_access_vtime` means
 
-```sh
-# Conversion needs reverse access, so decompress first. Ordinary simulation
-# still supports .zst files directly.
+`next_access_vtime` is the 1-based position of the next request to the same object, counted in the stream the field was computed from. If there is no next request, it is -1 or `INT64_MAX`.
+
+The key point: it must be computed from **the stream you actually simulate**. If requests are removed after the positions were computed, the positions no longer line up.
+
+## Why dropping zero-size requests breaks Belady
+
+The default reader drops zero-size requests. It does this even with `--ignore-obj-size=1`, because the filtering happens before sizes are changed to one.
+
+In an older oracle trace, the positions were computed with the zero-size records still in place. After the reader drops them:
+
+* **Belady** can see a request whose next access points at a dropped record. That object keeps a stale priority and may stay pinned in the cache indefinitely.
+* **BeladySize** is affected too. Its score is `size * (next_access_vtime - current_request_count)`, so every position after a dropped record is off. Patching the broken links is not enough; all positions have to be recomputed.
+
+## What libCacheSim does about it now
+
+* Readers print a warning, once per reader, when they filter records out of an oracle trace.
+* `cachesim` and the MINISIM profiler in `mrcProfiler` refuse to run Belady or BeladySize on such input. This includes compressed traces and zero-size records at the very end of the trace.
+* The library's multi-cache simulator turns on the same check for these algorithms.
+* If you write your own replay loop in C, set `reader_init_param_t.require_valid_next_access = true` before opening the reader to get the same check.
+
+The check catches unsafe zero-size filtering. It does not validate oracle metadata in general, so it will not catch a trace that was malformed or already filtered in some other way.
+
+## Repair a trace
+
+Keep the original file. Create a new, separately named file with the current `traceConv`. It drops zero-size requests **first**, then computes next-access positions over the requests that remain.
+
+```bash
+# traceConv reads the input backwards, so decompress first.
+# (Simulation itself still reads .zst files directly.)
 zstd -d input.oracleGeneral.bin.zst -o original.oracleGeneral.bin
+
 ./bin/traceConv original.oracleGeneral.bin oracleGeneral \
     --output-format=oracleGeneral -o repaired.oracleGeneral.bin
+
+# check the result: in object-count mode, Belady should not miss more than FIFO or LRU
 ./bin/cachesim repaired.oracleGeneral.bin oracleGeneral belady,fifo,lru \
     16982 --ignore-obj-size=1 --num-thread=3
 ```
 
-Conversion also applies this ordering when producing LCS. Its existing reverse
-pass uses a map proportional to the number of distinct retained objects and a
-temporary reverse file. Allow disk space for the decompressed input, output,
-and temporary file. Conversion reports how many zero-size records it filtered;
-an input with no retained requests is rejected. Record input/output checksums,
-the libCacheSim commit, conversion options, and retained request count alongside
-benchmark results. If republishing, use versioned paths and a manifest rather
-than replacing published files silently.
+`traceConv` prints how many zero-size records it removed. On the clean sample trace, that looks like:
 
-Reconversion must start from a stream containing the intended requests. If a
-file was already filtered but still carries old timestamps, the missing records
-cannot be detected by the reader guard; reconversion recomputes the remaining
-stream's oracle without trusting the old pointers.
+```text
+traceConv: filtered 0 zero-size records before recomputing next_access_vtime
+```
 
-## Retaining zero-size records is a separate workload choice
+The repaired file keeps the workload that FIFO and LRU already saw by default. The request count, timestamps, object ids and positive sizes are unchanged. It also handles an object that reappears after one or more zero-size records. Converting to `lcs` follows the same order.
 
-The shared reader parameter `-t ignore-size-zero-req=false` explicitly retains
-these records, for simulation or conversion. In object-count mode they become
-ordinary size-one accesses and contribute to request and miss counts. This
-keeps the original oracle positions consistent but changes the workload.
+### Practical notes
 
-Do not interpret every zero-size record as a deletion. The
-[dataset description](https://github.com/cacheMon/cache_dataset#meta-key-value-cache-traces)
-states that zero size can indicate a cache miss; some source formats also carry
-DELETE operations. `oracleGeneral` has no operation field, so deletion semantics
-cannot be recovered from size alone. Retaining a zero-size record does not
-implement invalidation, either. A study of deletion semantics must use the
-operation-bearing source and define its simulation model separately.
+* **Disk space.** You need room for the decompressed input, the output, and a temporary file used by the reverse pass. The reverse pass also keeps a map whose size grows with the number of distinct objects kept.
+* **Empty results are rejected.** An input with no requests left after filtering is an error.
+* **Keep records.** Alongside benchmark results, save the input and output checksums, the libCacheSim commit, the conversion options, and the number of requests kept.
+* **Republishing.** Use versioned file names and a manifest instead of silently replacing published files.
+* **Start from the full stream.** Reconversion must start from a trace that still holds the requests you intend to simulate. If a file was already filtered but still carries the old positions, the reader's check cannot tell that records are missing. Reconverting still fixes it, because `traceConv` recomputes every position from scratch and ignores the old ones.
 
-## Benchmark revalidation
+## Keeping zero-size requests instead
 
-Revalidate Belady and BeladySize results whenever an oracle stream contained
-zero-size requests that the reader skipped. A ranking that still looks sensible
-does not establish correctness. Prioritize the Meta KV traces named in #361,
-then audit the complete streams for every other dataset used; a zero-free prefix
-does not establish that an entire trace is unaffected.
+You can tell the reader to keep zero-size records with the reader option `-t ignore-size-zero-req=false`. This works for simulation and for conversion. In object-count mode (`--ignore-obj-size=1`), each one becomes an ordinary size-one request that counts toward requests and misses.
 
-The independently reproduced 22-record example, at capacity two in object-count
-mode, has these results:
+This keeps the original oracle positions valid, but it **changes the workload**, so treat it as a deliberate choice of what to study.
+
+Also, don't assume a zero-size record is a delete. The [dataset description](https://github.com/cacheMon/cache_dataset#meta-key-value-cache-traces) says a zero size can mean a cache miss, and some source formats record DELETE operations separately. `oracleGeneral` has no operation field, so the size alone cannot tell you it was a delete. Keeping a zero-size record does not model invalidation either. If you want to study deletes, start from a source format that records operations and define the simulation model yourself.
+
+## Should you rerun your benchmarks?
+
+Rerun Belady and BeladySize results whenever the oracle stream contained zero-size requests that the reader skipped. A ranking that still looks reasonable does not prove the numbers are right.
+
+* Start with the Meta key-value traces named in #361.
+* Then check the *complete* stream of every other dataset you used. A zero-free beginning does not mean the whole trace is clean.
+* FIFO and LRU results on the default (filtered) stream do not need rerunning just because the oracle fields changed. Any comparison or claim made *against* an affected Belady or BeladySize baseline does.
+* Traces that were never filtered and have valid oracle metadata are not affected.
+
+### A small worked example
+
+Here is an independently reproduced 22-record trace, simulated at capacity two in object-count mode:
 
 | Stream | Requests | Belady misses | FIFO/LRU misses |
 | --- | ---: | ---: | ---: |
-| Old reader: filter zero, keep original oracle | 21 | 21 (1.0000) | 3 (0.1429) |
-| Retain zero as a size-one access | 22 | 3 (0.1364) | 3 (0.1364) |
-| Filter zero, recompute and rebase oracle | 21 | 3 (0.1429) | 3 (0.1429) |
+| Old reader: drop zero-size, keep original oracle | 21 | 21 (1.0000) | 3 (0.1429) |
+| Keep zero-size records as size-one requests | 22 | 3 (0.1364) | 3 (0.1364) |
+| Drop zero-size, recompute and rebase oracle | 21 | 3 (0.1429) | 3 (0.1429) |
 
-Full production-trace miss ratios reported in #361 have not been independently
-reproduced by this change. Existing FIFO/LRU results for the default filtered
-stream do not require revalidation solely because the oracle fields changed.
-Comparisons and claims relative to the affected offline baselines do.
+With the broken oracle, Belady, which should be the best possible policy, misses on every request.
 
-Traces with no filtering and valid oracle metadata are unaffected by this bug.
-Belady's paging optimality assumes equal-size objects; BeladySize remains a
-sampled heuristic for variable-size objects. Its separate
-[sampling-coordinate limitation](quickstart_mrcProfiler.md) remains in effect.
+The full production-trace miss ratios reported in #361 have not been independently reproduced by this fix.
+
+## Related limits
+
+* Belady is only optimal when all objects are the same size. For variable-size objects, BeladySize is a heuristic that samples candidates.
+* BeladySize has a separate accuracy limit under spatial sampling, described in the [mrcProfiler guide](quickstart_mrcProfiler.md#belady-and-beladysize).

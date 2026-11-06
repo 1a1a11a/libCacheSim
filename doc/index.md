@@ -1,18 +1,18 @@
 # libCacheSim
 
-A high-performance library for building and running cache simulations.
+libCacheSim helps you answer questions about caches with real data: how big should my cache be, which eviction algorithm works best for my workload, and what does my workload look like?
 
-libCacheSim ships three things:
+It comes in three parts:
 
-* **cachesim**, a high-performance cache simulator for running cache simulations.
-* **traceAnalyzer**, a high-performance and versatile analyzer for cache traces.
-* **libCacheSim**, a library for building your own cache simulators.
+* **cachesim**, a command-line cache simulator. No code needed.
+* **traceAnalyzer**, a command-line tool that describes a trace.
+* **libCacheSim**, the C library underneath, for building your own simulators.
 
 For LLM prefix caching, [PrefixSim](https://github.com/cacheMon/PrefixSim) builds a prefix-cache simulator on libCacheSim.
 
-New here? Start with [Install & Build](install.md), then [the cachesim guide](quickstart_cachesim.md).
+**New here?** Start with [Install and build](install.md), then [the cachesim guide](quickstart_cachesim.md).
 
-Commands that invoke a built binary — `./bin/cachesim`, `./bin/traceAnalyzer`, `./bin/mrcProfiler` — are run from the build directory (`_build/` if you followed the [README](https://github.com/1a1a11a/libCacheSim#build-and-install-libcachesim)), which is why the sample traces in `data/` appear as `../data/`. The helper scripts under `scripts/`, such as the plotting scripts and `debug.sh`, are run from the repository root instead, and those pages write the paths accordingly.
+**A note on paths.** Commands that run a built tool, like `./bin/cachesim` or `./bin/traceAnalyzer`, are run from the build directory (`_build/` if you followed the [install guide](install.md)). That's why the sample traces in `data/` appear as `../data/`. Each page says so if it uses a different directory.
 
 ```{toctree}
 :maxdepth: 2
@@ -24,6 +24,14 @@ quickstart_traceAnalyzer
 quickstart_traceUtils
 quickstart_mrcProfiler
 quickstart_plugin
+```
+
+```{toctree}
+:maxdepth: 2
+:caption: Traces
+
+synthetic_traces
+oracle_traces
 ```
 
 ```{toctree}
@@ -46,7 +54,7 @@ debug
 
 ## Other resources
 
-* [Python binding](https://github.com/cacheMon/libCacheSim-python) — easier API access, `pip install libcachesim`
+* [Python binding](https://github.com/cacheMon/libCacheSim-python): `pip install libcachesim` for the easiest way to script simulations
 * [FAQ](https://github.com/1a1a11a/libCacheSim/blob/develop/FAQ.md)
 * [Contributing](https://github.com/1a1a11a/libCacheSim/blob/develop/CONTRIBUTING.md)
 * [Open-source cache datasets](https://github.com/cacheMon/cache_dataset)

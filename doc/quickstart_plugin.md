@@ -1,79 +1,175 @@
-# libCacheSim Plugin System – Quick-Start Guide
+# Writing an eviction algorithm as a plugin
 
-> **Audience**: Developers who want to add custom cache–replacement policies to *libCacheSim* without modifying the core library.
->
-> **Goal**: Build a shared-library plugin (C/C++) or implement a Python plugin that implements a few well-defined hook functions, then load it at runtime.
+A plugin lets you try a new eviction algorithm without touching or rebuilding libCacheSim. You write a handful of small functions ("hooks") in Python, C, or C++. libCacheSim calls them on every hit, miss, and eviction.
+
+* **Python plugins** need no compiling at all. They are the fastest way to prototype or teach.
+* **C/C++ plugins** are built into a shared library (`.so` or `.dylib`) that `cachesim` loads at run time. They are much faster than Python and can be shipped separately from libCacheSim.
+
+When an algorithm is ready to become part of libCacheSim, see [Adding algorithms and trace readers](advanced_lib_extend.md).
 
 ---
 
-## 1. How the Plugin System Works
+## How plugins work
 
-A series of hook functions defines the behavior of the custom cache during cache hits and misses. In essence, `libCacheSim` maintains a basic cache that tracks whether an object is a hit or miss, whether the cache is full, and provides hooks accordingly. The actual cache management logic—such as deciding which object(s) to evict on a miss—is entirely delegated to the plugin via these hooks.
+libCacheSim keeps its own record of which objects are in the cache and how much space they use. Your plugin decides only **which object to evict**, and keeps whatever state it needs to make that choice.
+
+For every request, libCacheSim checks whether the object is cached and then calls your hooks:
 
 ```mermaid
 graph LR
-    C[Cache Request] --> D{Object in<br/>libCacheSim Cache?}
-    D -->|Yes| E["cache_hit_hook()<br/>Update plugin cache stats"]
-    D -->|No| F{libCacheSim Cache Full?}
-    F -->|Yes| G["cache_eviction_hook()<br/>plugin cache determines the object(s) to evict"]
-    F -->|No| H["cache_miss_hook()<br/>Update plugin cache stats"]
-    G --> F
+    R[Request] --> D{Object in cache?}
+    D -->|Yes| H["cache_hit_hook()"]
+    D -->|No| F{Enough free space?}
+    F -->|No| E["cache_eviction_hook()<br/>return the id to evict"]
+    E --> F
+    F -->|Yes| M["cache_miss_hook()<br/>(after the object is inserted)"]
 
-    style E fill:#bfb,stroke:#333,stroke-width:2px
-    style G fill:#fbb,stroke:#333,stroke-width:2px
-    style H fill:#bbf,stroke:#333,stroke-width:2px
+    style H fill:#bfb,stroke:#333,stroke-width:2px
+    style E fill:#fbb,stroke:#333,stroke-width:2px
+    style M fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
-libCacheSim supports two types of plugins:
+Note the order on a miss. libCacheSim first calls `cache_eviction_hook()` as many times as it needs to free space. Then it inserts the new object, and only *then* calls `cache_miss_hook()`. So while your eviction hook is choosing a victim, the new object is not yet in your plugin's data structure.
 
-### 1.1 C/C++ Plugins
+The hooks are the same in every language:
 
-`plugin_cache.c` ships with *libCacheSim* and delegates **all policy-specific logic** to a user-supplied shared library (``.so`` / ``.dylib``).  At run-time the library is
+| Hook | Called when | What to do |
+| --- | --- | --- |
+| `cache_init_hook(params)` | once, when the cache is created | create your state and return it. libCacheSim passes it back to every other hook as `data`. |
+| `cache_hit_hook(data, req)` | the requested object is in the cache | update your state, e.g. move the object to the front of a list |
+| `cache_miss_hook(data, req)` | the object was not cached and has just been inserted | start tracking the object |
+| `cache_eviction_hook(data, req)` | the cache needs space | return the id of an object **that is in the cache**; libCacheSim evicts it |
+| `cache_remove_hook(data, obj_id)` | an object is removed explicitly, not by eviction | stop tracking it |
+| `cache_free_hook(data)` | the cache is destroyed | release your state (optional, but recommended) |
 
-1. loaded with `dlopen()`;
-2. each required *hook* is resolved with `dlsym()`; and
-3. the hooks are invoked on cache hits, misses, evictions, and removals.
+`req` gives you the request's `obj_id`, `obj_size`, and other fields.
 
-### 1.2 Python Plugins
-
-The Python binding provides `PythonHookCachePolicy` which allows you to implement custom cache replacement algorithms using pure Python functions - **no C/C++ compilation required**. This is perfect for:
-- Prototyping new cache algorithms
-- Educational purposes and learning
-- Research and experimentation
-- Custom business logic implementation
-
-Because plugins are completely decoupled from core code you can:
-* experiment with new algorithms quickly,
-* write plugins in **C, C++, or Python**, and
-* distribute them independently from *libCacheSim*.
+One thing to watch: objects larger than the whole cache are never inserted, but `cache_miss_hook()` is still called for them. Check `req->obj_size <= cache_size` before you add an object to your own structure, or your eviction hook may later return an object libCacheSim never stored.
 
 ---
 
-## 2. C/C++ Plugin Development
+## Python plugins
+
+### 1. Install the Python binding
+
+```bash
+pip3 install libcachesim
+```
+
+### 2. Write the hooks
+
+Here is FIFO as a plugin. Save it as `plugins/plugin_fifo.py`, in a new `plugins/` folder at the root of your libCacheSim checkout:
+
+```python
+from collections import deque
+from libcachesim import CommonCacheParams, Request
+
+
+class FifoCache:
+    def __init__(self, cache_size: int):
+        self.queue = deque()
+        self.cache_size = cache_size
+
+    def on_hit(self, req: Request):
+        pass  # FIFO doesn't reorder on a hit
+
+    def on_miss(self, req: Request):
+        if req.obj_size <= self.cache_size:
+            self.queue.append(req.obj_id)
+
+    def evict(self, req: Request):
+        if not self.queue:
+            return 0
+        return self.queue.popleft()
+
+    def on_remove(self, obj_id: int):
+        try:
+            self.queue.remove(obj_id)
+        except ValueError:
+            pass  # not tracked
+
+
+def cache_init_hook(common_cache_params: CommonCacheParams):
+    return FifoCache(common_cache_params.cache_size)
+
+
+def cache_hit_hook(data: FifoCache, req: Request):
+    data.on_hit(req)
+
+
+def cache_miss_hook(data: FifoCache, req: Request):
+    data.on_miss(req)
+
+
+def cache_eviction_hook(data: FifoCache, req: Request):
+    return data.evict(req)
+
+
+def cache_remove_hook(data: FifoCache, obj_id: int):
+    data.on_remove(obj_id)
+
+
+def cache_free_hook(data: FifoCache):
+    data.queue.clear()
+```
+
+Your state can be any Python object: a class like this, a `dict`, an `OrderedDict`, and so on.
+
+### 3. Run it
+
+There is no build step. Hand the hooks to `PluginCache` and replay a trace. Add this to the bottom of the same file:
+
+```python
+if __name__ == "__main__":
+    from pathlib import Path
+    from libcachesim import PluginCache, TraceReader, TraceType
+
+    cache = PluginCache(
+        cache_size=1024 * 1024,  # 1 MiB
+        cache_init_hook=cache_init_hook,
+        cache_hit_hook=cache_hit_hook,
+        cache_miss_hook=cache_miss_hook,
+        cache_eviction_hook=cache_eviction_hook,
+        cache_remove_hook=cache_remove_hook,
+        cache_free_hook=cache_free_hook,
+        cache_name="fifo",
+    )
+
+    trace = Path(__file__).parent.parent / "data" / "cloudPhysicsIO.vscsi"
+    reader = TraceReader(trace=str(trace), trace_type=TraceType.VSCSI_TRACE)
+
+    req_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
+    print(f"Request miss ratio: {req_miss_ratio:.4f}")
+    print(f"Byte miss ratio: {byte_miss_ratio:.4f}")
+```
+
+```bash
+python3 plugins/plugin_fifo.py
+```
+
+The request miss ratio should be `0.8766`, the same as the built-in FIFO at 1 MiB. Comparing against the built-in version of an algorithm is a quick way to check a plugin.
+
+---
+
+## C/C++ plugins
 
 > [!IMPORTANT]
-> Before we start, make sure you have followed [Build and Install libCacheSim](../README.md#build-and-install-libcachesim) to build the core *libCacheSim* library.
+> Build libCacheSim first, following [Build and install libCacheSim](/README.md#build-and-install-libcachesim). The commands below assume the build directory is `_build/` at the root of your checkout.
 
-### 2.1 Required Hook Functions
+### 1. Write the hooks
 
-Your library **must** export the following C-symbols:
+In C or C++, the hooks are plain C functions with these exact names. libCacheSim looks them up by name with `dlsym()`:
 
-| Hook | Prototype | Called When |
-|------|-----------|-------------|
-| `cache_init_hook` | `void *cache_init_hook(const common_cache_params_t ccache_params);` | Once at cache creation. Return an opaque pointer to plugin state. |
-| `cache_hit_hook` | `void cache_hit_hook(void *data, const request_t *req);` | A requested object is found in the cache. |
-| `cache_miss_hook` | `void cache_miss_hook(void *data, const request_t *req);` | A requested object is **not** in the cache *after* insertion. |
-| `cache_eviction_hook` | `obj_id_t cache_eviction_hook(void *data, const request_t *req);` | Cache is full – must return the object-ID to evict. |
-| `cache_remove_hook` | `void cache_remove_hook(void *data, obj_id_t obj_id);` | An object is explicitly removed (not necessarily due to eviction). |
-| `cache_free_hook` | `void cache_free_hook(void *data);` | Plugin resources can be freed. |
+```c
+void *cache_init_hook(const common_cache_params_t ccache_params);
+void cache_hit_hook(void *data, const request_t *req);
+void cache_miss_hook(void *data, const request_t *req);
+obj_id_t cache_eviction_hook(void *data, const request_t *req);
+void cache_remove_hook(void *data, obj_id_t obj_id);
+void cache_free_hook(void *data);  /* optional */
+```
 
-**Notes**
-1. The opaque pointer returned by `cache_init_hook` is passed back to every other hook via the `data` parameter, letting your plugin maintain arbitrary state (linked lists, hash maps, statistics, etc).
-2. The `cache_free_hook` is optional but recommended for memory safety.
-
-### 2.2 Minimal Plugin Skeleton (C++)
-
-Below is a minimal FIFO plugin implementation in C++. You can follow this guide as a starting point for your own policy. Create a new file at `plugins/plugin_fifo.cpp` (you need to create the parent directory as well) and paste the following code:
+Here is FIFO in C++. Create a `plugins/` folder at the root of your checkout and save this as `plugins/plugin_fifo.cpp`:
 
 ```cpp
 #include <libCacheSim.h>
@@ -143,14 +239,11 @@ void cache_free_hook(void *data) {
 }  // extern "C"
 ```
 
-**Notes**
-1. The plugin can allocate dynamic memory; it will live until the cache is destroyed.
-2. Thread safety is up to you - core *libCacheSim* is single-threaded today.
-3. Remember to check if objects can fit in the cache before adding them to your data structure in `cache_miss_hook`. Objects larger than the cache size are never inserted into the internal cache, but the hook is still called.
+The `extern "C"` block matters. Without it, C++ mangles the function names and libCacheSim can't find them. Your plugin can allocate whatever it likes; the memory lives until `cache_free_hook()` runs. Keep all state in the object you return from `cache_init_hook()` rather than in global variables. `cachesim` gives each cache its own state, but it may simulate several caches in parallel threads.
 
-### 2.3 Building the Plugin
+### 2. Build it
 
-We will use CMake to build the plugin (though any build system that can produce a shared library with the required symbols will work). Create a `CMakeLists.txt` in the `plugins/` directory with the following content:
+Any build system that produces a shared library will do. With CMake, save this as `plugins/CMakeLists.txt`:
 
 ```cmake
 cmake_minimum_required(VERSION 3.12)
@@ -173,192 +266,59 @@ foreach(plugin IN LISTS PLUGINS)
 endforeach()
 ```
 
-Make sure you are currently in the `plugins/` directory. To build your plugin(s), run the following commands:
+Then, from the `plugins/` folder:
 
 ```bash
 mkdir -p build && cd build/
 cmake -G Ninja .. && ninja
 ```
 
-This will produce `libplugin_fifo_hooks.so` in the `plugins/build/` directory (or `libplugin_fifo_hooks.dylib` on macOS).
+This produces `libplugin_fifo_hooks.so` in `plugins/build/` (`libplugin_fifo_hooks.dylib` on macOS).
 
-### 2.4 Using the C/C++ Plugin with `cachesim`
+### 3. Run it with `cachesim`
 
-If you are in the `plugins/build/` directory, you can run `cachesim` with your plugin like this:
+Use the algorithm name `pluginCache` and pass the library's path with `-e`. From `plugins/build/`:
 
 ```bash
 ../../_build/bin/cachesim ../../data/cloudPhysicsIO.vscsi vscsi pluginCache 1MB \
-  -e "plugin_path=libplugin_fifo_hooks.so"
+  -e "plugin_path=./libplugin_fifo_hooks.so"
 ```
 
-If you are in other directories, adjust the paths accordingly.
+Keep the `./`, or use an absolute path. A bare file name like `libplugin_fifo_hooks.so` makes `dlopen()` search the system library path instead of the current folder, and loading fails with `cannot open shared object file`.
 
-Keys after `-e` are comma-separated. The supported keys today are:
-* `plugin_path` (required) – absolute or relative path to the `.so` / `.dylib`.
-* `cache_name` (optional) – override the cache's display name. If not provided, the runtime will default to `pluginCache-<fileName>` for easier identification in logs.
-* `print` – debug helper: print current parameters and exit.
+You should get a miss ratio of `0.8766`, the same as `cachesim ... fifo 1MB`.
 
-For more information, check `-?/--help` of `libcachesim`:
+The `-e` string takes comma-separated keys:
 
-```bash
-../../_build/bin/cachesim --help
-```
+| Key | Meaning |
+| --- | --- |
+| `plugin_path` | **Required.** Path to the `.so` or `.dylib`. |
+| `cache_name` | Display name in the output. Defaults to `pluginCache-<file name>`. |
+| `print` | Print the current parameters and exit. |
+
+For example, `-e "plugin_path=./libplugin_fifo_hooks.so,cache_name=myFIFO"` labels the results `myFIFO`.
 
 ---
 
-## 3. Python Plugin Development
+## More examples
 
-> [!IMPORTANT]
-> Before we start, make sure you have installed the Python binding:
-> ```bash
-> pip3 install libcachesim
-> ```
-
-### 3.1 Required Hook Functions
-
-Your Python plugin **must** implement the following callback functions:
-
-| Hook | Prototype | Called When |
-|------|-----------|-------------|
-| `cache_init_hook` | `cache_init_hook(common_cache_params: CommonCacheParams) -> Any` | Once at cache creation. Return an opaque object to maintain plugin state. |
-| `cache_hit_hook` | `cache_hit_hook(data: Any, req: Request) -> None` | A requested object is found in the cache. |
-| `cache_miss_hook` | `cache_miss_hook(data: Any, req: Request) -> None` | A requested object is **not** in the cache *after* insertion. |
-| `cache_eviction_hook` | `cache_eviction_hook(data: Any, req: Request) -> int` | Cache is full – must return the object-ID to evict. |
-| `cache_remove_hook` | `cache_remove_hook(data: Any, obj_id: int) -> None` | An object is explicitly removed (not necessarily due to eviction). |
-| `cache_free_hook` | `cache_free_hook(data: Any) -> None` | Plugin resources can be freed. |
-
-**Notes**
-1. The opaque object returned by `cache_init_hook` is passed back to every other hook via the `data` parameter, letting your plugin maintain arbitrary state (lists, dicts, custom classes, etc). You can replace `Any` with the actual type of your state to get better type hints.
-2. The `cache_free_hook` is optionally but recommended.
-
-### 3.2 Minimal Plugin Skeleton (Python)
-
-Below is a minimal FIFO plugin implementation in Python. You can follow this guide as a starting point for your own policy. Create a new file `plugins/plugin_fifo.py` and paste the following code:
-
-```python
-from collections import deque
-from libcachesim import CommonCacheParams, Request
-
-
-class FifoCache:
-    def __init__(self, cache_size: int):
-        self.queue = deque()
-        self.cache_size = cache_size
-
-    def on_hit(self, req: Request):
-        pass  # FIFO doesn't reorder on hit
-
-    def on_miss(self, req: Request):
-        if req.obj_size <= self.cache_size:
-            self.queue.append(req.obj_id)
-
-    def evict(self, req: Request):
-        if not self.queue:
-            return 0
-        return self.queue.popleft()
-
-    def on_remove(self, obj_id: int):
-        try:
-            self.queue.remove(obj_id)
-        except ValueError:
-            pass  # Object not in queue
-
-
-def cache_init_hook(common_cache_params: CommonCacheParams):
-    return FifoCache(common_cache_params.cache_size)
-
-
-def cache_hit_hook(data: FifoCache, req: Request):
-    data.on_hit(req)
-
-
-def cache_miss_hook(data: FifoCache, req: Request):
-    data.on_miss(req)
-
-
-def cache_eviction_hook(data: FifoCache, req: Request):
-    return data.evict(req)
-
-
-def cache_remove_hook(data: FifoCache, obj_id: int):
-    data.on_remove(obj_id)
-
-
-def cache_free_hook(data: FifoCache):
-    data.queue.clear()
-```
-
-### 3.3 Using the Python Plugin
-
-There is no build step required for Python plugins. You can use your plugin directly in the same Python script. For instance, you can add the following content after the plugin we just created:
-
-```python
-if __name__ == "__main__":
-    from pathlib import Path
-    from libcachesim import PluginCache, TraceReader, TraceType
-
-    plugin_fifo_cache = PluginCache(
-        cache_size=1024 * 1024,  # 1 MB
-        cache_init_hook=cache_init_hook,
-        cache_hit_hook=cache_hit_hook,
-        cache_miss_hook=cache_miss_hook,
-        cache_eviction_hook=cache_eviction_hook,
-        cache_remove_hook=cache_remove_hook,
-        cache_free_hook=cache_free_hook,
-        cache_name="fifo",
-    )
-
-    trace = Path(__file__).parent.parent / "data" / "cloudPhysicsIO.vscsi"
-    reader = TraceReader(trace=str(trace), trace_type=TraceType.VSCSI_TRACE)
-
-    req_miss_ratio, byte_miss_ratio = plugin_fifo_cache.process_trace(reader)
-    print(f"Request miss ratio: {req_miss_ratio:.4f}")
-    print(f"Byte miss ratio: {byte_miss_ratio:.4f}")
-```
-
-Then simply run this script with `python3`.
+* C/C++: [example/plugin_v2/](/example/plugin_v2/) has an LRU plugin and a test program that loads it.
+* Python: the [libCacheSim-python examples](https://github.com/cacheMon/libCacheSim-python/tree/main/examples).
 
 ---
 
-## 4. More Examples
+## Troubleshooting
 
-- C/C++: See [example/plugin_v2/](../example/plugin_v2/) for a more comprehensive example.
-- Python: See the [libCacheSim-python](https://github.com/cacheMon/libCacheSim-python/tree/main/examples) repository for more examples.
+**`Failed to load plugin ...: cannot open shared object file`**: the path is wrong, or it is a bare file name. Use `./libplugin_..._hooks.so` or an absolute path.
 
----
+**The plugin loads but crashes right away**: a hook is missing or misspelled. Every hook except `cache_free_hook` is required. The names must match the table above exactly, and in C++ they must be inside `extern "C"`.
 
-## 5. Troubleshooting
+**`pluginCache: object ... to be evicted not found in cache`**: your eviction hook returned an id libCacheSim isn't storing. The usual causes are tracking an object that was too large to insert, returning `0` from an empty structure, or forgetting to stop tracking an object in `cache_remove_hook`.
 
-### C/C++ Plugin Issues
+**Link errors**: build the plugin with the same architecture flags (such as `-m64`) as libCacheSim.
 
-* **Plugin not found?** Verify the path passed via `plugin_path=` is correct, you may want to use absolute path.
-* **Missing symbols?** Make sure the function names exactly match the prototypes above and are declared `extern "C"` when compiling as C++.
-* **Link-time errors?** Pass the same architecture flags (`-m64`, etc.) that *libCacheSim* was built with.
-* **Runtime crash inside plugin?** Use `gdb -ex r --args cachesim ...` and place breakpoints in your hook functions.
+**Crash inside a hook**: run under gdb and set breakpoints on your hooks, e.g. `gdb -ex r --args ../../_build/bin/cachesim ...`. See the [debugging guide](debug.md).
 
-### Python Plugin Issues
+**A Python plugin is slow**: use `process_trace()` instead of calling `get()` per request in Python. Expect it to be far slower than a C/C++ plugin either way.
 
-* **Performance Issues**: Use `process_trace()` for large workloads instead of individual `get()` calls for better performance.
-* **Memory Usage**: Monitor cache statistics (`cache.get_occupied_byte()`) and ensure proper cache size limits for your system.
-* **Custom Cache Issues**: Validate your custom implementation against built-in algorithms using test functions.
-* **Implementation Issues**: When re-implementing an eviction algorithm in libCacheSim using the plugin system, note that the core hook functions are simplified. This may introduce some challenges. The central function for cache simulation is `get` and its common internal logic is:
-
-  ```mermaid
-  graph LR
-      C["find() (Cache state is updated automatically, since update_cache = true by default)"] --> D{Found in cache?}
-      D -->|Yes| E["cache_hit_hook()"]
-      D -->|No| F{"Cache full?"}
-      F -->|"Yes (no space for new object)"| G["cache_eviction_hook()"]
-      F -->|No| H["cache_miss_hook()"]
-      G --> F
-
-      style E fill:#bfb,stroke:#333,stroke-width:2px
-      style G fill:#fbb,stroke:#333,stroke-width:2px
-      style H fill:#bbf,stroke:#333,stroke-width:2px
-  ```
-
-  Because find is not exposed to plugins, any state-update logic that normally happens inside find must instead be implemented inside the relevant hook functions (`cache_hit_hook`, `cache_eviction_hook`, or `cache_miss_hook`) according to your algorithm's needs.
-
----
-
-Happy caching!
+**A re-implemented algorithm doesn't match the built-in one**: plugins see a simpler interface than built-in algorithms. In particular, there is no `find` hook, so work that a built-in algorithm does during lookup has to happen in your hit, miss, or eviction hook instead. Compare against the built-in version on a sample trace to find where they diverge.

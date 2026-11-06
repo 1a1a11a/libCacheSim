@@ -22,331 +22,250 @@ A high-performance library for building and running cache simulations
 * **Oct 2024**: **S3-FIFO** gets an upgrade! Please try out the new version (the old one is now named S3-FIFOv0).
 * **Oct 2023**: **[S3-FIFO](https://dl.acm.org/doi/10.1145/3600006.3613147)** and **[SIEVE](https://sievecache.com)** are available! These are very simple algorithms that are very effective at reducing cache misses. Try them out in libCacheSim and in your production!
 * **Jun 2023**: **QDLP** is available now, see [our paper](https://dl.acm.org/doi/10.1145/3593856.3595887) for details.
----
-
-## What is libCacheSim
-* **cachesim**, a high-performance cache simulator for running cache simulations.
-* **traceAnalyzer**, a high-performance and versatile analyzer for cache traces.
-* **libCacheSim**, a high-performance library for building your own cache simulators.
 
 ---
 
-## libCacheSim features
-* **High performance** - over 20M requests/sec for a realistic trace replay.
-* **High memory efficiency** - predictable and small memory footprint.
-* **State-of-the-art algorithms** - eviction algorithms, admission algorithms, prefetching algorithms, sampling techniques, approximate miss ratio computation, see [here](/doc/quickstart_cachesim.md).
-* **Parallelism out-of-the-box** - uses the many CPU cores to speed up trace analysis and cache simulations.
-* **The ONLY feature-rich trace analyzer** - all types of trace analysis you need, see [here](/doc/quickstart_traceAnalyzer.md).
-* **Simple API** - easy to build cache clusters, multi-layer caching, etc.; see [here](/doc/API.md).
-* **Extensible** - easy to support new trace types or eviction algorithms; see [here](/doc/advanced_lib_extend.md).
-* **Efficient Miss Ratio Curve profiler** - quickly build highly accurate miss ratio curves on large-scale workloads; see [here](/doc/quickstart_mrcProfiler.md).
-* **LLM prefix-cache eviction** - eviction policies for the KV-block prefix cache of LLM serving, run by [PrefixSim](https://github.com/cacheMon/PrefixSim).
+## What is libCacheSim?
 
-The full documentation index lives in [doc/README.md](/doc/README.md).
+libCacheSim helps you answer questions about caches with real data: how big should my cache be, which eviction algorithm works best for my workload, and what does my workload even look like?
+
+You give it a **trace**, a recorded list of requests from a real system. It replays the trace through simulated caches and reports how often each cache missed. It is fast: it replays more than 20 million requests per second on a realistic trace.
+
+It comes in three parts:
+
+* **`cachesim`**, a command-line cache simulator. No code needed.
+* **`traceAnalyzer`**, a command-line tool that describes a trace: request rate, object sizes, popularity, reuse, and more.
+* **libCacheSim**, the C library underneath, for building your own simulators such as cache hierarchies or clusters.
+
+There are also [Python](#python) and [Node.js](#nodejs) bindings, and [PrefixSim](https://github.com/cacheMon/PrefixSim) for LLM prefix caches.
+
+### Highlights
+
+* **Fast and lean**: high replay throughput with a small, predictable memory footprint.
+* **Lots of algorithms**: dozens of eviction algorithms, plus admission and prefetching policies. See the [full list](#supported-algorithms).
+* **Parallel out of the box**: sweep many cache sizes and algorithms at once on all your cores.
+* **A real trace analyzer**: every analysis you're likely to need, with plotting scripts.
+* **Miss ratio curves at scale**: sampling-based profilers (SHARDS, miniature simulation) build accurate curves for billion-request traces in seconds.
+* **Easy to extend**: add an algorithm or a trace format in C/C++, or prototype one in Python with no compilation.
 
 ---
 
-## Supported algorithms
-The name in `code` is what you pass to `cachesim` on the command line (names are case-insensitive).
+## Build and install libCacheSim
 
-### Eviction algorithms
-* [FIFO](/libCacheSim/cache/eviction/FIFO.c) `fifo`, [LRU](/libCacheSim/cache/eviction/LRU.c) `lru`, [Clock](/libCacheSim/cache/eviction/Clock.c) `clock`, [SLRU](/libCacheSim/cache/eviction/SLRU.c) `slru`, [Random](/libCacheSim/cache/eviction/Random.c) `random`, [RandomTwo](/libCacheSim/cache/eviction/RandomTwo.c) `randomtwo`
-* [LFU](/libCacheSim/cache/eviction/LFU.c) `lfu`, [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c) `lfuda`
-* [ARC](/libCacheSim/cache/eviction/ARC.c) `arc`, [TwoQ](/libCacheSim/cache/eviction/TwoQ.c) `2q`, [MQ](/libCacheSim/cache/eviction/MQ.c) `mq`, [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c) `clockpro`, [CAR](/libCacheSim/cache/eviction/CAR.c) `car`, [LIRS](/libCacheSim/cache/eviction/LIRS.c) `lirs`, [Clock2QPlus](/libCacheSim/cache/eviction/Clock2QPlus.c) `clock2qplus`
-* [LRU-K](/libCacheSim/cache/eviction/cpp/LRU_K.cpp) `lru-k`, [LRU-Prob](/libCacheSim/cache/eviction/LRUProb.c) `lru-prob`, [Size](/libCacheSim/cache/eviction/Size.c) `size`
-* [FIFO-Merge](/libCacheSim/cache/eviction/FIFO_Merge.c) `fifo-merge`
-* [Belady](/libCacheSim/cache/eviction/Belady.c) `belady`, [BeladySize](/libCacheSim/cache/eviction/BeladySize.c) `beladysize`, [BeladyCompute](/libCacheSim/cache/eviction/BeladyCompute.c) `beladyCompute` — these need future information, so they only work on oracle traces such as `oracleGeneral`
-* [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp) `gdsf`
-* [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c) `hyperbolic`
-* [LeCaR](/libCacheSim/cache/eviction/LeCaR.c) `lecar`
-* [Cacheus](/libCacheSim/cache/eviction/Cacheus.c) `cacheus`
-* [LHD](/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp) `lhd`
-* [LRB](/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp) `lrb` — build with `-DENABLE_LRB=ON`
-* [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c) `glcache` — build with `-DENABLE_GLCACHE=ON`
-* [3LCache](/libCacheSim/cache/eviction/3LCache/) `3lcache` — build with `-DENABLE_3L_CACHE=ON`
-* [WTinyLFU](/libCacheSim/cache/eviction/WTinyLFU.c) `wtinylfu`
-* [QD-LP](/libCacheSim/cache/eviction/QDLP.c) `qdlp`
-* [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c) `s3fifo`
-* [S4-FIFO](/libCacheSim/cache/eviction/S4FIFO/S4FIFO.c) `s4fifo` — build with `-DENABLE_S4FIFO=ON`
-* [Sieve](/libCacheSim/cache/eviction/Sieve.c) `sieve`
-* [Merlin](/libCacheSim/cache/eviction/cpp/merlin.cpp) `merlin`
+On Ubuntu/Debian, install the dependencies, then build:
 
-The eviction policies for LLM prefix caches are listed in [PrefixSim](https://github.com/cacheMon/PrefixSim#eviction-policies), which runs them.
-
-### Admission algorithms
-* [Adaptsize](/libCacheSim/cache/admission/adaptsize/)
-* [Bloomfilter](/libCacheSim/cache/admission/bloomfilter.c)
-* [Prob](/libCacheSim/cache/admission/prob.c)
-* [Size](/libCacheSim/cache/admission/size.c)
-* [SizeProbabilistic](/libCacheSim/cache/admission/sizeProbabilistic.c)
-
-### Prefetching algorithms
-* [OBL](/libCacheSim/cache/prefetch/OBL.c)
-* [Mithril](/libCacheSim/cache/prefetch/Mithril.c)
-* [PG](/libCacheSim/cache/prefetch/PG.c)
----
-
-
-## Build and Install libCacheSim
-### One-line install
-We provide some scripts for quick installation of libCacheSim.
 ```bash
-cd scripts && bash ./install_dependency.sh && source ~/.bashrc && bash ./install_libcachesim.sh
-# Replace ~/.bashrc with ~/.zshrc if you are using zsh on macos
-```
-If this does not work, please
-1. let us know what system you are using and what error you get
-2. read the following sections for self-installation.
-
-<details>
-<summary>Step-by-step installation guide </summary>
-
-### Install dependency
-libCacheSim uses the [cmake](https://cmake.org/) build system and has a few dependencies: [glib](https://developer.gnome.org/glib/), [tcmalloc](https://github.com/google/tcmalloc), [zstd](https://github.com/facebook/zstd).
-Please see [install.md](/doc/install.md) for instructions on how to install the dependencies.
-
-
-### Build libCacheSim
-cmake recommends **out-of-source build**, so we do it in a new directory:
-```bash
-# Prerequisites: Install Ninja build system
-# Ubuntu/Debian: sudo apt install ninja-build
-# macOS: brew install ninja
-# CentOS/RHEL: sudo yum install ninja-build
+sudo apt install build-essential cmake ninja-build libglib2.0-dev libgoogle-perftools-dev libzstd-dev
 
 git clone https://github.com/1a1a11a/libCacheSim
-pushd libCacheSim
-mkdir _build && cd _build
-cmake -G Ninja .. && ninja
-[sudo] ninja install
-popd
+cd libCacheSim
+cmake -G Ninja -B _build
+ninja -C _build
 ```
-</details>
 
+That's it. The tools are now in `_build/bin/`. For macOS, other Linux distributions, the one-line install script, and optional algorithms, see the [install guide](/doc/install.md).
 
-<details>
-<summary> Developer setup </summary>
-
-### Developer Setup
-If you contribute to libCacheSim, we provide tools to ensure code quality and consistent formatting:
-
-#### Pre-commit Hooks
-We provide a git pre-commit hook that runs linting checks before each commit, helping catch issues early:
+Run your first simulation from the build directory:
 
 ```bash
-# Install the pre-commit hook
-bash scripts/setup_hooks.sh
-```
-
-The pre-commit hook:
-- Checks formatting with clang-format (if available)
-- Runs clang-tidy static analysis in parallel
-- Compiles modified files with strict compiler warnings enabled
-- Prevents committing code with formatting, static analysis, or compiler issues
-- Logs are preserved for debugging in `.lint-logs/` directory
-
-</details>
-
----
-
-## Usage
-### cachesim (a high-performance cache simulator)
-After building and installing libCacheSim, `cachesim` should be in the `_build/bin/` directory.
-The `cachesim` commands in this section are run from `_build/`, so the sample traces in [data/](/data/) are at `../data/`. The debug and plotting scripts further below are run from the repository root instead.
-#### basic usage
-```
-./bin/cachesim trace_path trace_type eviction_algo cache_size [OPTION...]
-```
-
-use `./bin/cachesim --help` to get more information.
-
-`cachesim` also reads LLM prefix-cache traces in the [lcp](https://github.com/cacheMon/PrefixSim/blob/main/doc/lcp_format.md) format, as trace type `lcp`: each block access is one request.
-
-#### Run a single cache simulation
-Run the example traces using the LRU eviction algorithm and a 1 GB cache size.
-
-```bash
-# Note that there is no space between the cache size and the unit, and the unit is not case-sensitive
+cd _build
 ./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb
 ```
 
-#### Run multiple cache simulations with different cache sizes
-```bash
-# Note that there is no space between the cache sizes
-./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1mb,16mb,256mb,8gb
-
-# Besides absolute cache size, you can also use a fraction of the working set size
-./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 0.001,0.01,0.1,0.2
-
-# besides using byte as the unit, you can also treat all objects as having the same size, and the size is the number of objects
-./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
-
-# use a csv trace, note the quotation marks when you have multiple options
-./bin/cachesim ../data/cloudPhysicsIO.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true"
-
-# use a csv trace with more options
-./bin/cachesim ../data/cloudPhysicsIO.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true, delimiter=,, has-header=true"
+```
+../data/cloudPhysicsIO.vscsi LRU cache size     1GiB,           113872 req, miss ratio 0.6297, byte miss ratio 0.7274, throughput 4.62 MQPS
 ```
 
-Object ids are hashed unless you tell the reader they are already numeric, so add `obj-id-is-num=true` when the id column holds numbers — `cachesim` stops with an error if you leave it out on such a trace.
+A 1 GiB LRU cache misses on 63% of requests for this trace. Now try `s3fifo` instead of `lru`.
 
-See [quick start cachesim](/doc/quickstart_cachesim.md) for more usages.
-
-#### Debug cachesim
-We provide a debug script to help you debug cachesim with GDB. For detailed usage instructions, see [debug guide](/doc/debug.md). Run it from the repository root:
-
-```bash
-# Basic usage
-./scripts/debug.sh
-
-# Debug with program arguments
-./scripts/debug.sh -- data/cloudPhysicsIO.vscsi vscsi lru,s3fifo 100mb,1gb
-```
-
-#### Plot miss ratio curve
-You can plot miss ratios of different algorithms and sizes, and plot the miss ratios over time.
-These scripts need the Python dependencies in [requirements.txt](/requirements.txt) (`pip install -r requirements.txt`), and are run from `scripts/` in the repository root.
-
-```bash
-# plot miss ratio over size
-cd scripts
-python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,obj-id-is-num=1" --algos=fifo,lru,lecar,s3fifo --sizes=0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4
-
-# plot miss ratio over time
-python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-format csv --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,obj-id-is-num=1" --algos=fifo,lru,lecar,s3fifo --report-interval=30 --miss-ratio-type="accu"
-
-# plot miss ratio over size using SHARDS
-python3 plot_appr_mrc.py SHARDS ../data/cloudPhysicsIO.vscsi vscsi 0.01
-
-# plot miss ratio over size using Miniature Simulations
-python3 plot_appr_mrc.py MINI ../data/cloudPhysicsIO.vscsi vscsi s3fifo "0.01,0.05,0.1,0.2" 0.1 --extra_args "--ignore-obj-size 1"
-```
+> [!NOTE]
+> Throughout the docs, commands that start with `./bin/` are run from `_build/`, which is why the sample traces in [data/](/data/) appear as `../data/`.
 
 ---
 
-### Trace analysis
-libCacheSim also has a trace analyzer that provides a lot of useful information about the trace.
-It is very fast and designed to work with billions of requests, and it comes with a set of scripts to help you analyze the results.
+## What do you want to do?
+
+| I want to... | Use | Guide |
+| --- | --- | --- |
+| Simulate a cache on a trace and compare algorithms | `cachesim` | [cachesim guide](/doc/quickstart_cachesim.md) |
+| Understand what a trace looks like | `traceAnalyzer` | [trace analysis](/doc/quickstart_traceAnalyzer.md) |
+| Get a miss ratio curve for a huge trace, fast | `mrcProfiler` | [MRC profiling](/doc/quickstart_mrcProfiler.md) |
+| Print, convert, sample, or filter a trace | `tracePrint`, `traceConv`, `traceFilter` | [trace utilities](/doc/quickstart_traceUtils.md) |
+| Test with a generated uniform or Zipf workload | `cachesim ... syn` | [synthetic traces](/doc/synthetic_traces.md) |
+| Try my own eviction algorithm without touching libCacheSim | plugins (C/C++ or Python) | [plugin guide](/doc/quickstart_plugin.md) |
+| Build my own simulator in C/C++ | the library | [library guide](/doc/advanced_lib.md), [API reference](/doc/API.md) |
+| Add an algorithm or trace format to libCacheSim | the library | [extending libCacheSim](/doc/advanced_lib_extend.md) |
+| Simulate an LLM prefix (KV) cache | PrefixSim | [PrefixSim](https://github.com/cacheMon/PrefixSim) |
+
+The [documentation index](/doc/README.md) lists every page, and [DeepWiki](https://deepwiki.com/1a1a11a/libCacheSim) has a generated tour of the code.
+
+---
+
+## A tour of the tools
+
+### cachesim: simulate caches
+
+The arguments are always: trace path, trace type, algorithm(s), cache size(s).
+
+```bash
+# several sizes at once (no spaces between them)
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1mb,16mb,256mb,8gb
+
+# sizes as a fraction of the working set (the total size of all distinct objects)
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 0.001,0.01,0.1,0.2
+
+# several algorithms x several sizes, all in parallel
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi fifo,lru,s3fifo,sieve 0.01,0.1
+
+# count objects instead of bytes: every object has size 1
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1000,16000 --ignore-obj-size 1
+
+# a csv trace: say which column (from 1) holds the time, id, and size
+./bin/cachesim ../data/cloudPhysicsIO.csv csv lru 1gb -t "time-col=2, obj-id-col=5, obj-size-col=4, obj-id-is-num=true"
+```
+
+For csv traces with numeric ids, add `obj-id-is-num=true`. cachesim stops with an error if you leave it out. The [cachesim guide](/doc/quickstart_cachesim.md) covers trace formats, algorithm parameters, admission and prefetching, and every other option.
+
+### Plot miss ratio curves
+
+The scripts in [scripts/](/scripts/) run `cachesim` for you and plot the results. They expect the build in `_build/`, need the Python packages in [requirements.txt](/requirements.txt) (`pip install -r requirements.txt`), and are run from `scripts/`:
+
+```bash
+cd scripts
+
+# miss ratio vs. cache size
+python3 plot_mrc_size.py --tracepath ../data/twitter_cluster52.csv --trace-format csv \
+    --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,obj-id-is-num=1" \
+    --algos=fifo,lru,lecar,s3fifo --sizes=0.001,0.002,0.005,0.01,0.02,0.05,0.1,0.2,0.3,0.4
+
+# miss ratio over time
+python3 plot_mrc_time.py --tracepath ../data/twitter_cluster52.csv --trace-format csv \
+    --trace-format-params="time-col=1,obj-id-col=2,obj-size-col=3,obj-id-is-num=1" \
+    --algos=fifo,lru,lecar,s3fifo --report-interval=30 --miss-ratio-type="accu"
+
+# approximate curves with SHARDS or miniature simulation
+python3 plot_appr_mrc.py SHARDS ../data/cloudPhysicsIO.vscsi vscsi 0.01
+python3 plot_appr_mrc.py MINI ../data/cloudPhysicsIO.vscsi vscsi s3fifo "0.01,0.05,0.1,0.2" 0.1 --extra_args "--ignore-obj-size 1"
+```
+
+### traceAnalyzer: understand a trace
 
 ```bash
 ./bin/traceAnalyzer ../data/cloudPhysicsIO.vscsi vscsi --common
 ```
 
-See [trace analysis](/doc/quickstart_traceAnalyzer.md) for more details.
+This prints a summary (request and object counts, compulsory miss ratio, popularity skew, one-hit wonders, and so on) and writes data files you can plot with the scripts in [scripts/traceAnalysis/](/scripts/traceAnalysis/). It is built for traces with billions of requests. See [trace analysis](/doc/quickstart_traceAnalyzer.md).
+
+### mrcProfiler: miss ratio curves for huge traces
+
+Building a fine-grained miss ratio curve by simulating every size is slow on a large trace. `mrcProfiler` samples the trace instead. On a 1.3-billion-request trace, it built an LRU curve 20x faster than simulating every size, with an error under 0.1%:
+
+```bash
+./bin/mrcProfiler ../data/cloudPhysicsIO.vscsi vscsi --algo=LRU --profiler=SHARDS \
+    --profiler-params=FIX_RATE,0.01,42 --size=100MB,1GB,10
+```
+
+See [MRC profiling](/doc/quickstart_mrcProfiler.md).
+
+### Debugging
+
+[scripts/debug.sh](/scripts/debug.sh) builds a debug version and starts `cachesim` under GDB. Run it from the repository root:
+
+```bash
+./scripts/debug.sh -- data/cloudPhysicsIO.vscsi vscsi lru,s3fifo 100mb,1gb
+```
+
+See the [debugging guide](/doc/debug.md).
 
 ---
 
-### Miss ratio curves profiling
+## Using libCacheSim as a library
 
-Constructing fine-grained miss ratio curves for large-scale workloads is very demanding on CPU and memory resources. libCacheSim provides advanced miss ratio curve profiling tools to help you quickly build miss ratio curves for large-scale workloads. See [mrcProfiler](/doc/quickstart_mrcProfiler.md) for more details.
-
----
-
-### Using libCacheSim as a library
-libCacheSim can be used as a library for building cache simulators.
-For example, you can build a cache cluster with consistent hashing or a multi-layer cache simulator.
+The library gives you the same building blocks the tools use: trace readers, caches, and a parallel simulator. Use it to build things the command line can't express, such as a multi-layer cache hierarchy or a cache cluster with consistent hashing.
 
 <details>
-<summary> See a code example </summary>
+<summary>A complete program in 30 lines</summary>
 
-Here is a simplified example showing the basic APIs.
 ```c
 #include <libCacheSim.h>
 #include <stdio.h>
 
-int main(int argc, char *argv[]) {
-    /* open trace, see quickstart_lib.md for opening csv and binary trace */
-    reader_t *reader = open_trace("../data/cloudPhysicsIO.vscsi", VSCSI_TRACE, NULL);
+int main(void) {
+  /* open a trace; see doc/advanced_lib.md for csv and binary traces */
+  reader_t *reader = open_trace("../data/cloudPhysicsIO.vscsi", VSCSI_TRACE, NULL);
 
-    /* create a container for reading from trace */
-    request_t *req = new_request();
+  /* a reusable container that each read fills in */
+  request_t *req = new_request();
 
-    /* create an LRU cache */
-    common_cache_params_t cc_params = default_common_cache_params();
-    cc_params.cache_size = 1 * MiB;
-    cache_t *cache = LRU_init(cc_params, NULL);
+  /* a 1 MiB LRU cache */
+  common_cache_params_t cc_params = default_common_cache_params();
+  cc_params.cache_size = 1 * MiB;
+  cache_t *cache = LRU_init(cc_params, NULL);
 
-    /* counters */
-    uint64_t n_req = 0, n_miss = 0;
-
-    /* loop through the trace */
-    while (read_one_req(reader, req) == 0) {
-        if (!cache->get(cache, req)) {
-            n_miss++;
-        }
-        n_req++;
+  /* replay the trace; get() returns true on a hit */
+  uint64_t n_req = 0, n_miss = 0;
+  while (read_one_req(reader, req) == 0) {
+    if (!cache->get(cache, req)) {
+      n_miss++;
     }
+    n_req++;
+  }
 
-    printf("miss ratio: %.4lf\n", (double)n_miss / n_req);
+  printf("miss ratio: %.4lf\n", (double)n_miss / n_req);
 
-    /* cleaning */
-    close_trace(reader);
-    free_request(req);
-    cache->cache_free(cache);
-
-    return 0;
+  close_trace(reader);
+  free_request(req);
+  cache->cache_free(cache);
+  return 0;
 }
 ```
 
-Save this to `test.c` and compile it with the command below. For `libCacheSim.h` to work correctly, we need the following libs to be installed first: [glib](https://developer.gnome.org/glib/) and [zstd](https://github.com/facebook/zstd). Please refer to the previous section, [Installation](#install-dependency).
+Install the library first (`sudo ninja -C _build install`, see the [install guide](/doc/install.md#3-install-the-library-optional)), save this as `test.c`, and compile:
+
 ```bash
 gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out -lm -lzstd
 ```
-To run the executable (the trace path above is relative, so run it from a directory next to `data/`, e.g. `_build/`),
+
+The trace path is relative, so run it from a directory next to `data/`, such as `_build/`:
+
 ```bash
 ./test.out
 ```
+
+It prints `miss ratio: 0.8646`.
+
 </details>
 
-See [here](/doc/advanced_lib.md) for more details, and see the [example folder](/example) for examples of how to use libCacheSim, such as building a cache cluster with consistent hashing or multi-layer cache simulators.
+Next, read the [library guide](/doc/advanced_lib.md) and browse the [examples](/example/): a basic simulator, a parallel simulator, a cache hierarchy, and a cache cluster.
+
+To add a new eviction algorithm or trace format to libCacheSim itself, see [extending libCacheSim](/doc/advanced_lib_extend.md).
 
 ---
 
+## Python
 
-### Extending libCacheSim (new algorithms and trace types)
-libCacheSim supports *txt*, *csv*, and *binary* traces. We prefer binary traces because they allow libCacheSim to run faster, and the traces are more compact.
-
-We also support zstd compressed binary traces without decompression. This allows you to store the traces with less space.
-
-If you need to add a new trace type or a new algorithm, please see [here](/doc/advanced_lib_extend.md) for details.
-
-We encourage users to check [deepWiki](https://deepwiki.com/1a1a11a/libCacheSim) for more detailed documentation.
-
----
-
-### Synthetic traces
-
-Generate native uniform or Zipf workloads without a trace file using the `syn`
-trace type. See [synthetic traces](doc/synthetic_traces.md) for syntax, seeds,
-reader behavior and limitations.
-
-## Python package
-
-If you are not extremely sensitive to performance, our Python binding offers an easier way to access the core features of libCacheSim.
+If you don't need every last bit of speed, the Python binding is the easiest way in:
 
 ```shell
 pip install libcachesim
 ```
 
-
-
-### Simulation with python
-
 ```python
 from libcachesim import SyntheticReader, TraceReader, FIFO
 
-reader = SyntheticReader(num_objects=1000, num_of_req=10000, alpha=1.0, dist="zipf") # synthetic trace
-# reader = TraceReader("./data/cloudPhysicsIO.oracleGeneral.bin") # real trace
+reader = SyntheticReader(num_objects=1000, num_of_req=10000, alpha=1.0, dist="zipf")  # synthetic trace
+# reader = TraceReader("./data/cloudPhysicsIO.oracleGeneral.bin")                    # real trace
 cache = FIFO(cache_size=1024*1024)
 obj_miss_ratio, byte_miss_ratio = cache.process_trace(reader)
 print(f"Obj miss ratio: {obj_miss_ratio:.4f}, byte miss ratio: {byte_miss_ratio:.4f}")
 ```
 
-### Extending new algorithm
+You can also write a new eviction algorithm in pure Python, with **no C/C++ compilation**.
 
-With the Python package, you can implement a new eviction algorithm and test your own design **without any C/C++ compilation**.
 <details>
-<summary> See an example below </summary>
+<summary>An LRU written in Python</summary>
+
+You supply a handful of hooks. libCacheSim calls them on hits, misses, and evictions, and does the bookkeeping.
 
 ```python
 from collections import OrderedDict
@@ -391,14 +310,15 @@ print(f"plugin req miss ratio {req_miss_ratio}, ref req miss ratio {ref_req_miss
 print(f"plugin byte miss ratio {byte_miss_ratio}, ref byte miss ratio {ref_byte_miss_ratio}")
 ```
 
+The two miss ratios should match.
+
 </details>
 
-See more information in the [README.md](https://github.com/cacheMon/libCacheSim-python) of the Python binding.
+See the [libCacheSim-python README](https://github.com/cacheMon/libCacheSim-python) for more, and the [plugin guide](/doc/quickstart_plugin.md) for writing plugins in C/C++.
 
----
-## Node.js package
+## Node.js
 
-Node.js bindings are also available. Releases ship a pre-compiled binary for Linux x64; on other platforms `npm install` falls back to building from source, which needs the build dependencies above.
+Node.js bindings are available too. Releases ship a pre-compiled binary for Linux x64; elsewhere, `npm install` builds from source, which needs the [build dependencies](/doc/install.md).
 
 ```shell
 npm install libcachesim-node
@@ -413,10 +333,58 @@ const result = runSimulation('/path/to/trace.vscsi', 'vscsi', 's3fifo', '1mb');
 See [libCacheSim-node](/libCacheSim-node/) for the full API and the bundled `cachesim-js` CLI.
 
 ---
-## Open source cache traces
-In the [repo](/data/), there are sample traces in different formats (`csv`, `txt`, `vscsi`, `lcs`, and `oracleGeneral`). Note that the sample traces are **very small** and __should not be used for evaluating different algorithms' miss ratios__. The full traces can be found either with the original release or in the processed `oracleGeneral` format.
 
-Note that the oracleGeneral traces are compressed with [zstd](https://github.com/facebook/zstd) and have the following format:
+## Supported algorithms
+
+The name in `code` is what you pass to `cachesim` (names are case-insensitive).
+
+### Eviction algorithms
+* [FIFO](/libCacheSim/cache/eviction/FIFO.c) `fifo`, [LRU](/libCacheSim/cache/eviction/LRU.c) `lru`, [Clock](/libCacheSim/cache/eviction/Clock.c) `clock`, [SLRU](/libCacheSim/cache/eviction/SLRU.c) `slru`, [Random](/libCacheSim/cache/eviction/Random.c) `random`, [RandomTwo](/libCacheSim/cache/eviction/RandomTwo.c) `randomtwo`
+* [LFU](/libCacheSim/cache/eviction/LFU.c) `lfu`, [LFU with dynamic aging](/libCacheSim/cache/eviction/LFUDA.c) `lfuda`
+* [ARC](/libCacheSim/cache/eviction/ARC.c) `arc`, [TwoQ](/libCacheSim/cache/eviction/TwoQ.c) `2q`, [MQ](/libCacheSim/cache/eviction/MQ.c) `mq`, [CLOCK-PRO](/libCacheSim/cache/eviction/ClockPro.c) `clockpro`, [CAR](/libCacheSim/cache/eviction/CAR.c) `car`, [LIRS](/libCacheSim/cache/eviction/LIRS.c) `lirs`, [Clock2QPlus](/libCacheSim/cache/eviction/Clock2QPlus.c) `clock2qplus`
+* [LRU-K](/libCacheSim/cache/eviction/cpp/LRU_K.cpp) `lru-k`, [LRU-Prob](/libCacheSim/cache/eviction/LRUProb.c) `lru-prob`, [Size](/libCacheSim/cache/eviction/Size.c) `size`
+* [FIFO-Merge](/libCacheSim/cache/eviction/FIFO_Merge.c) `fifo-merge`
+* [Belady](/libCacheSim/cache/eviction/Belady.c) `belady`, [BeladySize](/libCacheSim/cache/eviction/BeladySize.c) `beladysize`, [BeladyCompute](/libCacheSim/cache/eviction/BeladyCompute.c) `beladyCompute` — these need future information, so they only work on oracle traces such as `oracleGeneral`
+* [GDSF](/libCacheSim/cache/eviction/cpp/GDSF.cpp) `gdsf`
+* [Hyperbolic](/libCacheSim/cache/eviction/Hyperbolic.c) `hyperbolic`
+* [LeCaR](/libCacheSim/cache/eviction/LeCaR.c) `lecar`
+* [Cacheus](/libCacheSim/cache/eviction/Cacheus.c) `cacheus`
+* [LHD](/libCacheSim/cache/eviction/LHD/LHD_Interface.cpp) `lhd`
+* [LRB](/libCacheSim/cache/eviction/LRB/LRB_Interface.cpp) `lrb` — build with `-DENABLE_LRB=ON`
+* [GLCache](/libCacheSim/cache/eviction/GLCache/GLCache.c) `glcache` — build with `-DENABLE_GLCACHE=ON`
+* [3LCache](/libCacheSim/cache/eviction/3LCache/) `3lcache` — build with `-DENABLE_3L_CACHE=ON`
+* [WTinyLFU](/libCacheSim/cache/eviction/WTinyLFU.c) `wtinylfu`
+* [QD-LP](/libCacheSim/cache/eviction/QDLP.c) `qdlp`
+* [S3-FIFO](/libCacheSim/cache/eviction/S3FIFO.c) `s3fifo`
+* [S4-FIFO](/libCacheSim/cache/eviction/S4FIFO/S4FIFO.c) `s4fifo` — build with `-DENABLE_S4FIFO=ON`
+* [Sieve](/libCacheSim/cache/eviction/Sieve.c) `sieve`
+* [Merlin](/libCacheSim/cache/eviction/cpp/merlin.cpp) `merlin`
+
+The eviction policies for LLM prefix caches are listed in [PrefixSim](https://github.com/cacheMon/PrefixSim#eviction-policies), which runs them.
+
+### Admission algorithms
+Pass with `-a`, e.g. `-a bloomFilter`.
+* [AdaptSize](/libCacheSim/cache/admission/adaptsize/) `adaptSize`
+* [Bloom filter](/libCacheSim/cache/admission/bloomfilter.c) `bloomFilter`
+* [Probabilistic](/libCacheSim/cache/admission/prob.c) `prob`
+* [Size](/libCacheSim/cache/admission/size.c) `size`
+* [SizeProbabilistic](/libCacheSim/cache/admission/sizeProbabilistic.c) `sizeProbabilistic`
+
+### Prefetching algorithms
+Pass with `-p`, e.g. `-p Mithril`.
+* [OBL](/libCacheSim/cache/prefetch/OBL.c) `OBL`
+* [Mithril](/libCacheSim/cache/prefetch/Mithril.c) `Mithril`
+* [PG](/libCacheSim/cache/prefetch/PG.c) `PG`
+
+---
+
+## Traces
+
+libCacheSim reads csv, txt, and binary traces, plus several specific formats (`vscsi`, `twr`, `oracleGeneral`, `lcs`, `lcp`). Binary traces are faster to replay and smaller on disk, and zstd-compressed traces are read directly, without decompressing first. Use [traceConv](/doc/quickstart_traceUtils.md) to convert a trace to a binary format.
+
+The [data/](/data/) directory has small sample traces in several formats (`csv`, `txt`, `vscsi`, `lcs`, and `oracleGeneral`). They are **very small** and **should not be used to compare algorithms' miss ratios**.
+
+For real experiments, we maintain a list of open-source cache datasets at [cacheMon/cache_dataset](https://github.com/cacheMon/cache_dataset). Many are available in the `oracleGeneral` format: zstd-compressed records of
 
 ```c
 struct {
@@ -426,26 +394,29 @@ struct {
     int64_t next_access_vtime;  // -1 if no next access
 }
 ```
-The compressed traces can be used with libCacheSim without decompression. And libCacheSim provides a `tracePrint` tool to print the trace in a human-readable format.
 
-We provide more comprehensive cache datasets at [https://github.com/cacheMon/cache_dataset](https://github.com/cacheMon/cache_dataset).
-
-
+To look inside one, use `./bin/tracePrint <trace> oracleGeneral`.
 
 ---
-## Contributions
-We gladly welcome pull requests. See [CONTRIBUTING.md](/CONTRIBUTING.md) for how to build, test, and submit changes, and [doc/advanced_lib_extend.md](/doc/advanced_lib_extend.md) for adding a new algorithm or trace reader.
 
-Before making any large changes, we recommend opening an issue and discussing your proposed changes.
-If the changes are minor, then feel free to make them without discussion.
-This project adheres to Google's coding style, and participants are expected to follow our [Code of Conduct](/CODE_OF_CONDUCT.md).
+## Contributing
 
-Found a security issue? Please report it privately — see [SECURITY.md](/SECURITY.md).
+We gladly welcome pull requests. [CONTRIBUTING.md](/CONTRIBUTING.md) covers building, testing, and submitting changes, and [extending libCacheSim](/doc/advanced_lib_extend.md) covers adding a new algorithm or trace reader.
+
+For large changes, please open an issue first so we can discuss the approach. Small fixes can go straight to a pull request. The project follows Google's coding style, and participants are expected to follow our [Code of Conduct](/CODE_OF_CONDUCT.md).
+
+Found a security issue? Please report it privately, see [SECURITY.md](/SECURITY.md).
+
+Questions? Check the [FAQ](/FAQ.md) or ask in [Discussions](https://github.com/1a1a11a/libCacheSim/discussions).
 
 ---
-## Reference
+
+## Citing libCacheSim
+
+If you use libCacheSim in your research, please cite these papers.
+
 <details>
-<summary> Please cite the following papers if you use libCacheSim. </summary>
+<summary>BibTeX</summary>
 
 ```
 @inproceedings{yang2020-workload,
@@ -482,20 +453,17 @@ Found a security issue? Please report it privately — see [SECURITY.md](/SECURI
   numpages = {10},
 }
 ```
-If you used libCacheSim in your research, please cite the above papers.
 
 </details>
 
-GitHub's **Cite this repository** button uses [CITATION.cff](/CITATION.cff); [references.md](/references.md) has the same entries as BibTeX, including the SIEVE paper.
+GitHub's **Cite this repository** button uses [CITATION.cff](/CITATION.cff). [references.md](/references.md) has the same entries as BibTeX, plus the SIEVE paper.
 
-**Who uses libCacheSim**: a source-linked inventory of the third-party papers, forks, and projects built on libCacheSim is maintained in [doc/adoption.md](/doc/adoption.md).
+**Who uses libCacheSim?** [doc/adoption.md](/doc/adoption.md) keeps a source-linked list of third-party papers, forks, and projects built on it.
 
 ---
-
 
 ## License
 libCacheSim is licensed under the [Apache License 2.0](LICENSE).
 
 ## Related
-* [PyMimircache](https://github.com/1a1a11a/PyMimircache): a python based cache trace analysis platform, now deprecated
----
+* [PyMimircache](https://github.com/1a1a11a/PyMimircache): a Python-based cache trace analysis platform, now deprecated.

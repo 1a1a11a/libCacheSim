@@ -1,40 +1,35 @@
-# Profiling Memory Usage in CacheSim with Massif
+# Profiling memory usage
 
-## 1. Introduction
-This guide explains how to analyze memory usage in the `cachesim` project using Valgrind's **massif** tool and identifies critical memory overhead areas as potential optimization targets. The workflow consists of the following steps:
+This page shows how to find out where `cachesim` spends its memory, using Valgrind's **massif** heap profiler. Use it when a simulation needs more RAM than you expected, or when you want to make an algorithm leaner.
 
-- Heap memory profiling
-- Identifying memory hotspots
-- Optimization opportunities
+The quick answer for most runs: memory goes almost entirely to the object hash table. Algorithms built from several internal caches have several hash tables, and they use several times more memory.
 
-## 2. Profiling Workflow
+## Profile a run
 
-### 2.1 Heap memory profiling
+**1. Build a debug binary.** Debug builds keep the symbols massif needs to name functions. They also leave out tcmalloc, which doesn't work well under Valgrind. The debug script builds one in `_build_dbg/`:
 
-1. Compile with debug symbols:
-```sh
-# Compile with debug symbols
-mkdir _build && cd _build
-cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug
-ninja
+```bash
+./scripts/debug.sh
 ```
 
-2. Run `massif` for a specific algorithm (e.g., S3-FIFO):
+**2. Run `cachesim` under massif.** For example, S3-FIFO with a 1 GB cache:
 
-```sh
+```bash
 valgrind --tool=massif --massif-out-file=massif.out \
-./bin/cachesim /path/to/wiki_2019t.oracleGeneral oracleGeneral s3fifo 1gb
+    ./_build_dbg/bin/cachesim /path/to/wiki_2019t.oracleGeneral oracleGeneral s3fifo 1gb
 ```
 
-3. Generate a human-readable report:
-```sh
-ms_print ./massif.out > massif.result
+Valgrind slows the program down a lot. Try a smaller trace or `--num-req` first.
+
+**3. Turn the output into a readable report.**
+
+```bash
+ms_print massif.out > massif.result
 ```
 
-### 2.2 Analysis report
+## Read the report
 
-The generated report primarily includes a bar chart of memory usage (with instructions executed as the x-axis) and several heap profile snapshots. Some snapshots display detailed function call relationships showing how memory was allocated. Below is an example of such a report:
-
+The report starts with a chart of heap size over time, where time is measured in executed instructions. Below the chart are snapshots, and some of them show the call tree that made each allocation. Here is a shortened report for S3-FIFO:
 
 ```text
     MB
@@ -42,95 +37,71 @@ The generated report primarily includes a bar chart of memory usage (with instru
      |#:::::::::::::@::::::::::::::::@::@@::::::::::::::::::::::::@::@::@::@::
      |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
      |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
-     |#::: :: :: :::@: ::::: : ::: ::@::@ ::: :: : : ::::::: :::::@::@::@::@::
    0 +----------------------------------------------------------------------->Gi
      0                                                                   652.3
-
-
 
 --------------------------------------------------------------------------------
   n        time(i)         total(B)   useful-heap(B) extra-heap(B)    stacks(B)
 --------------------------------------------------------------------------------
-  0              0                0                0             0            0
   1    174,738,746      542,473,864      541,412,480     1,061,384            0
 99.80% (541,412,480B) (heap allocation functions) malloc/new/new[], --alloc-fns, etc.
 ->98.97% (536,870,912B) 0x483659: create_chained_hashtable_v2 (chainedHashTableV2.c:93)
 | ->98.97% (536,870,912B) 0x48CCD6: cache_struct_init (cache.c:60)
 |   ->74.23% (402,653,184B) 0x40FEB3: FIFO_init (FIFO.c:51)
 |   | ->24.74% (134,217,728B) 0x423884: S3FIFO_init (S3FIFO.c:113)
-|   | | ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
-|   | |   ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
-|   | |     ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
-|   | |
 |   | ->24.74% (134,217,728B) 0x4238C0: S3FIFO_init (S3FIFO.c:118)
-|   | | ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
-|   | |   ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
-|   | |     ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
-|   | |
 |   | ->24.74% (134,217,728B) 0x423921: S3FIFO_init (S3FIFO.c:125)
-|   |   ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
-|   |     ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
-|   |       ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
 |   |
 |   ->24.74% (134,217,728B) 0x4236BB: S3FIFO_init (S3FIFO.c:81)
-|     ->24.74% (134,217,728B) 0x40880A: create_cache (cache_init.h:132)
-|       ->24.74% (134,217,728B) 0x40970B: parse_cmd (cli_parser.c:343)
-|         ->24.74% (134,217,728B) 0x406FFD: main (main.c:18)
 |
 ->00.84% (4,541,568B) in 1+ places, all below ms_print's threshold (01.00%)
 ```
 
-The above report indicates that the memory usage of S3-FIFO remains nearly constant throughout instruction execution. The peak memory usage is `519.4MB`. `98.97%` of memory is used for `create_chained_hashtable_v2 (chainedHashTableV2.c:93)`. In the function `S3FIFO_init()`, there is one `cache_struct_init()` call and three `FIFO_init()` calls, each of which incurs another `cache_struct_init()`. In total, there are four `cache_struct_init()` calls, which create four hash tables. Each hash table occupies `24.74%` of the allocated memory.
+Here's how to read it:
 
-**Optimization opportunities:** S3-FIFO can be implemented with a single hash table, which can reduce the memory usage.
+* The flat chart means memory stays almost constant for the whole run. It peaks at 519.4 MB.
+* 98.97% of the heap comes from `create_chained_hashtable_v2`, the hash table that maps object ids to cached objects.
+* `S3FIFO_init` calls `cache_struct_init` once for itself, and it calls `FIFO_init` three times for its small, main and ghost queues. Each `FIFO_init` calls `cache_struct_init` again. That makes four hash tables of about 128 MiB each, roughly a quarter of the heap apiece.
 
+That points straight at an optimization: S3-FIFO could share one hash table across its queues and use about a quarter of the memory.
 
-## 3. Some Profiling Results and Observations
+## Shrinking the hash table
 
+`cachesim` sizes each hash table to 2^`hashpower` entries. The default is 24, or about 16M entries, no matter how small the trace is. On a small trace, lowering it cuts memory a lot. Replaying the sample trace with LRU drops from about 106 MB to about 8 MB at `--hashpower=16`:
 
-### 3.1. Memory Usage of Various Algorithms
+```bash
+./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb --hashpower=16
+```
 
-We conducted tests using the `wiki_2019t` workload (available at [CMU's dataset repository](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/wiki/)) to evaluate the memory usage of various algorithms with a cache size of 1GB.
+The table still grows when it fills up, so a small value is safe. It just costs some resizing on large traces. Sampling-based algorithms draw eviction candidates from the hash table, so their miss ratios shift slightly with `--hashpower`. Keep it fixed when you compare results.
 
+## Measured memory usage by algorithm
 
-| Algorithm   | Peak Memory Usage (MB) | Observations                                                                 |
-| :---------- | :---------------- | :--------------------------------------------------------------------------- |
-| FIFO        | 132.1             | Memory usage remains constant. Major memory consumption from `create_chained_hashtable_v2()`. |
-| LRU         | 132.2             | Memory usage remains constant. Major memory consumption from `create_chained_hashtable_v2()`. |
-| Clock       | 132.0             | Memory usage remains constant. Major memory consumption from `create_chained_hashtable_v2()`. |
-| SLRU        | 132.6             | Memory usage remains constant. Major memory consumption from `create_chained_hashtable_v2()`. |
-| LFU         | 131.4             | Memory usage remains constant. Major memory consumption from `create_chained_hashtable_v2()`. |
-| ARC         | 813.1             | Memory usage increases steadily, peaking at the end. Major consumption from `create_chained_hashtable_v2()` and `create_cache_obj_from_request()`. |
-| TwoQ        | 517.8             | Memory usage remains constant. Major consumption from `create_chained_hashtable_v2()`. Involves four calls (two FIFO, one for LRU, one for TwoQ itself). |
-| GDSF        | 141.8             | Memory usage remains constant. Major consumption from `create_chained_hashtable_v2()`. |
-| Hyperbolic  | 4.480             | Extremely low memory usage.  |
-| LeCaR       | 192.3             | Memory usage increases steadily, peaking at the end. Major consumption from `create_chained_hashtable_v2()` and `insert_obj_info_freq_node()`. |
-| Cacheus     | 805.2             | Memory usage remains constant. Major consumption from `create_chained_hashtable_v2()`. Involves multiple cache constructions like SR_LRU, CRLFU, and ghost cache. |
-| LHD         | 206.0             | Memory usage remains constant. Major consumption from `create_chained_hashtable_v2()` and vector maintenance for HitDensity in LHD. |
-| WTinyLFU    | 8580              | Memory usage remains constant. Major consumption from `minimalIncrementCBF_init()`, constructing a Counting Bloom Filter. |
-| S3-FIFO     | 519.8             | Memory usage remains constant. Major consumption from `create_chained_hashtable_v2()`. Involves multiple cache constructions like Small FIFO, Main FIFO, Ghost FIFO. |
-| Sieve       | 131.7             | Memory usage remains constant. Major consumption from `minimalIncrementCBF_init()`. |
+These numbers come from the `wiki_2019t` workload (available from [CMU's dataset repository](https://ftp.pdl.cmu.edu/pub/datasets/twemcacheWorkload/cacheDatasets/wiki/)) with a 1 GB cache.
 
-### 3.2. Observations
+| Algorithm | Peak memory (MB) | Where the memory goes |
+| :--- | ---: | :--- |
+| FIFO | 132.1 | Constant. Mostly one hash table (`create_chained_hashtable_v2()`). |
+| LRU | 132.2 | Constant. Mostly one hash table. |
+| Clock | 132.0 | Constant. Mostly one hash table. |
+| SLRU | 132.6 | Constant. Mostly one hash table. |
+| LFU | 131.4 | Constant. Mostly one hash table. |
+| GDSF | 141.8 | Constant. Mostly one hash table. |
+| Sieve | 131.7 | Constant. Mostly one hash table. |
+| Hyperbolic | 4.48 | Very low, because it starts with a small hashpower. |
+| LeCaR | 192.3 | Grows steadily. Hash table plus frequency metadata (`insert_obj_info_freq_node()`). |
+| LHD | 206.0 | Constant. Hash table plus the vectors LHD keeps for hit density. |
+| TwoQ | 517.8 | Constant. Four hash tables: two FIFOs, one LRU and TwoQ itself. |
+| S3-FIFO | 519.8 | Constant. Four hash tables: small, main and ghost FIFOs plus S3-FIFO itself. |
+| Cacheus | 805.2 | Constant. Several internal caches (SR-LRU, CR-LFU, ghost caches), each with its own hash table. |
+| ARC | 813.1 | Grows steadily, peaking at the end. Hash tables plus per-object allocations (`create_cache_obj_from_request()`). |
+| WTinyLFU | 8580 | Constant. Dominated by its counting Bloom filter (`minimalIncrementCBF_init()`). |
 
-1. **FIFO**, **LRU**, **Clock**, **SLRU**, **LFU**, **GDSF**, **Sieve** all use only one hashtable, thus their memory usage is low.
-2. **TwoQ**, **Cacheus**, and **S3-FIFO** use multiple cache instances, resulting in multiple hashtables internally, which leads to higher memory usage.
-3. **Hyperbolic** uses a smaller hashpower during initialization, thus its memory usage is low.
-4. **LeCaR** and **LHD** use hashtables while also maintaining additional metadata, which increases memory usage.
-5. **WTinyLFU** uses a significant amount of memory to store Bloom Filters, thus its memory usage is high.
-6. **ARC** has high memory usage, the reason for which is unclear.
+## What the numbers tell you
+
+1. **One hash table means low memory.** FIFO, LRU, Clock, SLRU, LFU, GDSF and Sieve each use a single hash table, and they all sit around 130 MB.
+2. **Composite algorithms pay per sub-cache.** TwoQ, S3-FIFO and Cacheus are built from several internal caches, and each one has its own hash table. That is where their roughly 4x to 6x overhead comes from, and it's the most promising place to save memory.
+3. **Hyperbolic** is tiny because it starts with a smaller hashpower.
+4. **LeCaR and LHD** add their own metadata on top of the hash table.
+5. **WTinyLFU** spends most of its memory on its counting Bloom filter.
+6. **ARC's** high usage is not yet explained. If you look into it, we'd love to hear what you find.
