@@ -77,8 +77,10 @@ cache_t *LRUv0_init(const common_cache_params_t ccache_params,
 
   cache->eviction_params = g_new0(LRUv0_params_t, 1);
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
+  // keys are object ids stored in the pointer itself (GSIZE_TO_POINTER), so
+  // they need the direct hash: g_int64_hash would dereference them
   LRUv0_params->hashtable =
-      g_hash_table_new_full(g_int64_hash, g_direct_equal, NULL, NULL);
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
   LRUv0_params->list = g_queue_new();
   return cache;
 }
@@ -92,6 +94,7 @@ static void LRUv0_free(cache_t *cache) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
   g_hash_table_destroy(LRUv0_params->hashtable);
   g_queue_free_full(LRUv0_params->list, (GDestroyNotify)free_cache_obj);
+  g_free(LRUv0_params);
   cache_struct_free(cache);
 }
 
@@ -182,6 +185,7 @@ static cache_obj_t *LRUv0_insert(cache_t *cache, const request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
 
   cache->occupied_byte += req->obj_size + cache->obj_md_size;
+  cache->n_obj += 1;
   cache_obj_t *cache_obj = create_cache_obj_from_request(req);
   // TODO: use SList should be more memory efficient than queue which uses
   // doubly-linkedlist under the hood
@@ -228,9 +232,12 @@ static cache_obj_t *LRUv0_to_evict(cache_t *cache, const request_t *req) {
  */
 static void LRUv0_evict(cache_t *cache, const request_t *req) {
   LRUv0_params_t *LRUv0_params = (LRUv0_params_t *)(cache->eviction_params);
-  cache_obj_t *cache_obj = LRUv0_to_evict(cache, req);
+  // pop rather than peek, so the list node leaves the queue with the object
+  cache_obj_t *cache_obj = g_queue_pop_head(LRUv0_params->list);
+  assert(cache_obj != NULL);
   assert(cache->occupied_byte >= cache_obj->obj_size);
   cache->occupied_byte -= (cache_obj->obj_size + cache->obj_md_size);
+  cache->n_obj -= 1;
   g_hash_table_remove(LRUv0_params->hashtable,
                       (gconstpointer)cache_obj->obj_id);
   free_cache_obj(cache_obj);
