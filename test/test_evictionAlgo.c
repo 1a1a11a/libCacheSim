@@ -399,6 +399,13 @@ static void test_LRU(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[16]);
 }
 
+static void test_LRUv0(gconstpointer user_data) {
+  // LRUv0 is the older GLib-based LRU, so it must match LRU exactly
+  cache_test_data_t test_data = test_data_truth[16];
+  test_data.cache_name = "LRUv0";
+  test_cache_algorithm(user_data, &test_data);
+}
+
 static void test_LRU_K(gconstpointer user_data) {
   test_cache_algorithm(user_data, &test_data_truth[17]);
 }
@@ -599,6 +606,7 @@ int main(int argc, char *argv[]) {
   g_test_add_data_func("/libCacheSim/cacheAlgo_LHD", reader, test_LHD);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LIRS", reader, test_LIRS);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU", reader, test_LRU);
+  g_test_add_data_func("/libCacheSim/cacheAlgo_LRUv0", reader, test_LRUv0);
   g_test_add_data_func("/libCacheSim/cacheAlgo_LRU_K", reader, test_LRU_K);
   g_test_add_data_func("/libCacheSim/cacheAlgo_Merlin", reader, test_Merlin);
   g_test_add_data_func("/libCacheSim/cacheAlgo_MQ", reader, test_MQ);
