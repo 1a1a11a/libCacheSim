@@ -220,7 +220,7 @@ int main(void) {
 }
 ```
 
-Install the library first (`sudo ninja -C _build install`, see the [install guide](/doc/install.md#3-install-the-library-optional)), save this as `test.c`, and compile:
+Install the library first (`sudo ninja -C _build install` from the repository root, see the [install guide](/doc/install.md#3-install-the-library-optional)), save this as `test.c`, and compile:
 
 ```bash
 gcc test.c $(pkg-config --cflags --libs libCacheSim glib-2.0) -o test.out -lm -lzstd

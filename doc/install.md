@@ -83,9 +83,12 @@ Check that it works:
 ```bash
 cd _build
 ./bin/cachesim ../data/cloudPhysicsIO.vscsi vscsi lru 1gb
+cd ..
 ```
 
 You should see a line ending in something like `miss ratio 0.6297, byte miss ratio 0.7274, throughput 4.62 MQPS`.
+
+The rest of this page runs from the repository root, which is why the last line goes back up.
 
 If CMake prints `!!! cannot find tcmalloc`, the build still works but runs slower. Install gperftools and re-run `cmake`.
 
