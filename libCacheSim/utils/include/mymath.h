@@ -33,6 +33,12 @@ static inline uint64_t next_rand(void) {
   return g_lehmer64_state >> 64;
 }
 
+static inline double next_rand_double(void) {
+  g_lehmer64_state *= 0xda942042e4dd58b5;
+  uint64_t r = g_lehmer64_state >> 64;
+  return (double)r / UINT64_MAX;
+}
+
 static inline long long next_power_of_2(long long N) {
   // if N is a power of two simply return it
   if (!(N & (N - 1))) return N;

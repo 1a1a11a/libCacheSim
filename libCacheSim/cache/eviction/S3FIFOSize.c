@@ -20,6 +20,8 @@ extern "C" {
 // #define PROB_ADMISSION1
 // #define PROB_ADMISSION2
 // #define USE_FILTER
+static double shift = 0.00;
+static double shift2 = 0.00;
 
 typedef struct {
   cache_t *fifo;
@@ -36,7 +38,6 @@ typedef struct {
   int move_to_main_threshold;
   double fifo_size_ratio;
   double ghost_size_ratio;
-  char main_cache_type[32];
 
   bool has_evicted;
   request_t *req_local;
@@ -173,13 +174,13 @@ static bool S3FIFOSize_get(cache_t *cache, const request_t *req) {
 
   if (!cache_hit) {
     if (!cache->can_insert(cache, req)) {
-      // obj = params->fifo_ghost->find(params->fifo_ghost, req, false);
-      // if (obj == NULL) {
-      //   obj = params->fifo_ghost->insert(params->fifo_ghost, req);
-      //   obj->S3FIFO.freq = 1;
-      // } else {
-      //   obj->S3FIFO.freq += 1;
-      // }
+      obj = params->fifo_ghost->find(params->fifo_ghost, req, false);
+      if (obj == NULL) {
+        obj = params->fifo_ghost->insert(params->fifo_ghost, req);
+        obj->S3FIFO.freq = 1;
+      } else {
+        obj->S3FIFO.freq += 1;
+      }
 
     } else {
       while (cache->get_occupied_byte(cache) + req->obj_size + cache->obj_md_size > cache->cache_size) {
@@ -271,17 +272,19 @@ static cache_obj_t *S3FIFOSize_insert(cache_t *cache, const request_t *req) {
   double cache_n_obj = MAX(cache->get_n_obj(cache), 1e-8);
   double cache_byte = cache->get_occupied_byte(cache);
 
+  double mean_obj_size_in_small = small_q_byte / small_q_n_obj;
+  double mean_obj_size_in_main = main_q_byte / main_q_n_obj;
+  double mean_obj_size = cache_byte / cache_n_obj;
+
   cache_obj_t *ghost_obj = ghost_q->find(ghost_q, req, false);
+  assert(ghost_obj->S3FIFO.freq > 0);
 
   if (ghost_obj != NULL) {
-    double mean_obj_size_in_small = small_q_byte / small_q_n_obj;
-    double mean_obj_size_in_main = main_q_byte / main_q_n_obj;
-    double mean_obj_size = cache_byte / cache_n_obj;
     // we need to compare with the small queue, because the object has not had chance to accumulate enough hits in the
     // main queue
     double ratio = (double)req->obj_size / mean_obj_size_in_small;
 
-    if ((ghost_obj->S3FIFO.freq + 1) / ratio >= params->move_to_main_threshold + 1) {
+    if ((ghost_obj->S3FIFO.freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
       // insert to main
       params->n_obj_admit_to_main += 1;
       params->n_byte_admit_to_main += req->obj_size;
@@ -294,6 +297,7 @@ static cache_obj_t *S3FIFOSize_insert(cache_t *cache, const request_t *req) {
       obj = small_q->insert(small_q, req);
       obj->S3FIFO.insertion_time = params->n_byte_admit_to_fifo;
       // only keep the frequency when inserting into the small queue
+      // the ghost frequency has not been updated
       obj->S3FIFO.freq = ghost_obj->S3FIFO.freq + 1;
     }
     ghost_q->remove(ghost_q, req->obj_id);
@@ -353,19 +357,22 @@ static void S3FIFOSize_evict_fifo(cache_t *cache, const request_t *req) {
     double cache_n_obj = MAX(cache->get_n_obj(cache), 1e-8);
     double cache_byte = cache->get_occupied_byte(cache);
 
-    int64_t obj_size = obj_to_evict->obj_size;
     double mean_obj_size_in_small = small_q_byte / small_q_n_obj;
     double mean_obj_size_in_main = main_q_byte / main_q_n_obj;
     double mean_obj_size = cache_byte / cache_n_obj;
+
+    int64_t obj_size = obj_to_evict->obj_size;
     double ratio = (double)obj_size / mean_obj_size;
 
-    if ((obj_to_evict->S3FIFO.freq + 1) / ratio >= params->move_to_main_threshold + 1) {
+    assert(obj_to_evict->S3FIFO.freq > 0);
+
+    if ((obj_to_evict->S3FIFO.freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
       // freq is updated in cache_find_base
       params->n_obj_move_to_main += 1;
       params->n_byte_move_to_main += obj_to_evict->obj_size;
 
       cache_obj_t *new_obj = main_q->insert(main_q, params->req_local);
-      new_obj->misc.freq = obj_to_evict->misc.freq;
+      // new_obj->S3FIFO.freq = 1;
     } else {
       // insert to ghost
       if (ghost_q != NULL) {
@@ -388,16 +395,16 @@ static void S3FIFOSize_evict_main(cache_t *cache, const request_t *req) {
   cache_t *main_q = params->main_cache;
   cache_t *ghost_q = params->fifo_ghost;
 
-  double small_q_n_obj = MAX(small_q->get_n_obj(small_q), 1e-8);
-  double small_q_byte = small_q->get_occupied_byte(small_q);
-  double main_q_n_obj = MAX(main_q->get_n_obj(main_q), 1e-8);
-  double main_q_byte = main_q->get_occupied_byte(main_q);
-  double cache_n_obj = MAX(cache->get_n_obj(cache), 1e-8);
-  double cache_byte = cache->get_occupied_byte(cache);
-
   // evict from main cache
   bool has_evicted = false;
-  while (!has_evicted && main_q_byte > 0) {
+  while (!has_evicted && main_q->get_occupied_byte(main_q) > 0) {
+    double small_q_n_obj = MAX(small_q->get_n_obj(small_q), 1e-8);
+    double small_q_byte = small_q->get_occupied_byte(small_q);
+    double main_q_n_obj = MAX(main_q->get_n_obj(main_q), 1e-8);
+    double main_q_byte = main_q->get_occupied_byte(main_q);
+    double cache_n_obj = MAX(cache->get_n_obj(cache), 1e-8);
+    double cache_byte = cache->get_occupied_byte(cache);
+
     cache_obj_t *obj_to_evict = main_q->to_evict(main_q, req);
     DEBUG_ASSERT(obj_to_evict != NULL);
     int freq = obj_to_evict->S3FIFO.freq;
@@ -407,16 +414,15 @@ static void S3FIFOSize_evict_main(cache_t *cache, const request_t *req) {
     double mean_obj_size = cache_byte / cache_n_obj;
 
     double ratio = (double)obj_to_evict->obj_size / mean_obj_size;
-    if ((double)freq / ratio >= 1) {
+    // if ((double)freq / ratio >= 1) {
+    if ((double)(freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
       // we need to evict first because the object to insert has the same obj_id
-      // main->evict(main, req);
       main_q->remove(main_q, obj_to_evict->obj_id);
       obj_to_evict = NULL;
 
       cache_obj_t *new_obj = main_q->insert(main_q, params->req_local);
-      // clock with 2-bit counter
-      new_obj->S3FIFO.freq = MIN(freq, 3) - 1;
-      new_obj->misc.freq = freq;
+      // clock with 2-bit counter, 4 is better than 3
+      new_obj->S3FIFO.freq = MIN(freq, 4) - 1;
     } else {
       bool removed = main_q->remove(main_q, obj_to_evict->obj_id);
       if (!removed) {
@@ -519,17 +525,15 @@ static bool S3FIFOSize_can_insert(cache_t *cache, const request_t *req) {
   double cache_n_obj = MAX(cache->get_n_obj(cache), 1e-8);
   double cache_byte = cache->get_occupied_byte(cache);
 
-  // bool will_insert_to_small = false;
+  double mean_obj_size_in_small = small_q_byte / small_q_n_obj;
+  double mean_obj_size_in_main = main_q_byte / main_q_n_obj;
+  double mean_obj_size = cache_byte / cache_n_obj;
+  double ratio = (double)req->obj_size / mean_obj_size_in_small;
 
   cache_obj_t *ghost_obj = ghost_q->find(ghost_q, req, false);
 
   if (ghost_obj != NULL) {
-    double mean_obj_size_in_small = small_q_byte / small_q_n_obj;
-    double mean_obj_size_in_main = main_q_byte / main_q_n_obj;
-    double mean_obj_size = cache_byte / cache_n_obj;
-    double ratio = (double)req->obj_size / mean_obj_size_in_small;
-
-    if ((ghost_obj->S3FIFO.freq + 1) / ratio >= params->move_to_main_threshold + 1) {
+    if ((ghost_obj->S3FIFO.freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
       if (req->obj_size >= params->main_cache->cache_size) {
         return false;
       }
