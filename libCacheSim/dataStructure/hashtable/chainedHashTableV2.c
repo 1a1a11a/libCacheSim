@@ -25,6 +25,9 @@ extern "C" {
 
 #include "chainedHashTableV2.h"
 
+
+// #define HASHTABLE_DEBUG
+
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>

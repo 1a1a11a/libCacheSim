@@ -16,12 +16,8 @@
 extern "C" {
 #endif
 
-// PROB_ADMISSION1 does not work well
-// #define PROB_ADMISSION1
-// #define PROB_ADMISSION2
+// #define PROB_ADMISSION
 // #define USE_FILTER
-static double shift = 0.00;
-static double shift2 = 0.00;
 
 typedef struct {
   cache_t *fifo;
@@ -43,7 +39,7 @@ typedef struct {
   request_t *req_local;
 } S3FIFOSize_params_t;
 
-static const char *DEFAULT_CACHE_PARAMS = "fifo-size-ratio=0.20,ghost-size-ratio=0.80,move-to-main-threshold=1";
+static const char *DEFAULT_CACHE_PARAMS = "fifo-size-ratio=0.10,ghost-size-ratio=0.90,move-to-main-threshold=1";
 
 // ***********************************************************************
 // ****                                                               ****
@@ -106,6 +102,7 @@ cache_t *S3FIFOSize_init(const common_cache_params_t ccache_params, const char *
   common_cache_params_t ccache_params_local = ccache_params;
   ccache_params_local.cache_size = fifo_cache_size;
   params->fifo = FIFO_init(ccache_params_local, NULL);
+  // params->fifo = GDSF_init(ccache_params_local, NULL);
   params->has_evicted = false;
 
   if (fifo_ghost_cache_size > 0) {
@@ -283,8 +280,8 @@ static cache_obj_t *S3FIFOSize_insert(cache_t *cache, const request_t *req) {
     // we need to compare with the small queue, because the object has not had chance to accumulate enough hits in the
     // main queue
     double ratio = (double)req->obj_size / mean_obj_size_in_small;
-
-    if ((ghost_obj->S3FIFO.freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
+    // TODO: Why >= not larger than???????????????????
+    if ((ghost_obj->S3FIFO.freq) / ratio >= params->move_to_main_threshold) {
       // insert to main
       params->n_obj_admit_to_main += 1;
       params->n_byte_admit_to_main += req->obj_size;
@@ -350,15 +347,9 @@ static void S3FIFOSize_evict_fifo(cache_t *cache, const request_t *req) {
     // need to copy the object before it is evicted
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
 
-    double small_q_n_obj = MAX(small_q->get_n_obj(small_q), 1e-8);
-    double small_q_byte = small_q->get_occupied_byte(small_q);
-    double main_q_n_obj = MAX(main_q->get_n_obj(main_q), 1e-8);
-    double main_q_byte = main_q->get_occupied_byte(main_q);
     double cache_n_obj = MAX(cache->get_n_obj(cache), 1e-8);
     double cache_byte = cache->get_occupied_byte(cache);
 
-    double mean_obj_size_in_small = small_q_byte / small_q_n_obj;
-    double mean_obj_size_in_main = main_q_byte / main_q_n_obj;
     double mean_obj_size = cache_byte / cache_n_obj;
 
     int64_t obj_size = obj_to_evict->obj_size;
@@ -366,13 +357,12 @@ static void S3FIFOSize_evict_fifo(cache_t *cache, const request_t *req) {
 
     assert(obj_to_evict->S3FIFO.freq > 0);
 
-    if ((obj_to_evict->S3FIFO.freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
-      // freq is updated in cache_find_base
+    if ((obj_to_evict->S3FIFO.freq) / ratio >= params->move_to_main_threshold) {
       params->n_obj_move_to_main += 1;
       params->n_byte_move_to_main += obj_to_evict->obj_size;
 
       cache_obj_t *new_obj = main_q->insert(main_q, params->req_local);
-      // new_obj->S3FIFO.freq = 1;
+      new_obj->S3FIFO.freq = 1;
     } else {
       // insert to ghost
       if (ghost_q != NULL) {
@@ -383,9 +373,7 @@ static void S3FIFOSize_evict_fifo(cache_t *cache, const request_t *req) {
       has_evicted = true;
     }
 
-    // remove from fifo, but do not update stat
-    bool removed = small_q->remove(small_q, params->req_local->obj_id);
-    assert(removed);
+    small_q->evict(small_q, params->req_local);
   }
 }
 
@@ -398,10 +386,6 @@ static void S3FIFOSize_evict_main(cache_t *cache, const request_t *req) {
   // evict from main cache
   bool has_evicted = false;
   while (!has_evicted && main_q->get_occupied_byte(main_q) > 0) {
-    double small_q_n_obj = MAX(small_q->get_n_obj(small_q), 1e-8);
-    double small_q_byte = small_q->get_occupied_byte(small_q);
-    double main_q_n_obj = MAX(main_q->get_n_obj(main_q), 1e-8);
-    double main_q_byte = main_q->get_occupied_byte(main_q);
     double cache_n_obj = MAX(cache->get_n_obj(cache), 1e-8);
     double cache_byte = cache->get_occupied_byte(cache);
 
@@ -409,13 +393,10 @@ static void S3FIFOSize_evict_main(cache_t *cache, const request_t *req) {
     DEBUG_ASSERT(obj_to_evict != NULL);
     int freq = obj_to_evict->S3FIFO.freq;
     copy_cache_obj_to_request(params->req_local, obj_to_evict);
-    double mean_obj_size_in_small = small_q_byte / small_q_n_obj;
-    double mean_obj_size_in_main = main_q_byte / main_q_n_obj;
     double mean_obj_size = cache_byte / cache_n_obj;
 
     double ratio = (double)obj_to_evict->obj_size / mean_obj_size;
-    // if ((double)freq / ratio >= 1) {
-    if ((double)(freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
+    if ((double)(freq) / ratio >= params->move_to_main_threshold) {
       // we need to evict first because the object to insert has the same obj_id
       main_q->remove(main_q, obj_to_evict->obj_id);
       obj_to_evict = NULL;
@@ -493,12 +474,7 @@ static inline int64_t S3FIFOSize_get_n_obj(const cache_t *cache) {
 static bool can_insert_to_small(const cache_t *cache, const request_t *req) {
   S3FIFOSize_params_t *params = (S3FIFOSize_params_t *)cache->eviction_params;
 
-#ifdef PROB_ADMISSION1
-  double r = (double)(params->fifo->cache_size) / (req->obj_size);
-  if (next_rand_double() < exp(-r)) {
-    return false;
-  }
-#elif defined(PROB_ADMISSION2)
+#ifdef PROB_ADMISSION
   double r = (double)(req->obj_size) / params->fifo->cache_size;
   if (next_rand_double() < r) {
     return false;
@@ -533,7 +509,7 @@ static bool S3FIFOSize_can_insert(cache_t *cache, const request_t *req) {
   cache_obj_t *ghost_obj = ghost_q->find(ghost_q, req, false);
 
   if (ghost_obj != NULL) {
-    if ((ghost_obj->S3FIFO.freq + shift) / ratio >= params->move_to_main_threshold + shift2) {
+    if ((ghost_obj->S3FIFO.freq) / ratio >= params->move_to_main_threshold) {
       if (req->obj_size >= params->main_cache->cache_size) {
         return false;
       }

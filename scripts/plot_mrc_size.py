@@ -258,7 +258,7 @@ if __name__ == "__main__":
         "--algos=fifo,lru,lecar,s3fifo "
         "--sizes=0.001,0.005,0.01,0.02,0.05,0.10,0.20,0.40"
     )
-    p.add_argument("--tracepath", type=str, required=False)
+    p.add_argument("--tracepath", type=str, required=True)
     p.add_argument(
         "--algos",
         type=str,
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     p.add_argument("--ignore-obj-size", action="store_true", default=False)
     # p.add_argument("--byte-miss-ratio", action="store_true", default=False)
     p.add_argument("--num-thread", type=int, default=-1)
-    p.add_argument("--trace-format", type=str, default="oracleGeneral")
+    p.add_argument("--trace-format", type=str, default="oracleGeneral", required=True)
     p.add_argument("--name", type=str, default="")
     p.add_argument("--verbose", action="store_true", default=False)
     p.add_argument("--test", action="store_true", default=False)
