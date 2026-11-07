@@ -277,7 +277,7 @@ static cache_obj_t *S3FIFOSize_insert(cache_t *cache, const request_t *req) {
   double mean_obj_size = cache_byte / cache_n_obj;
 
   cache_obj_t *ghost_obj = ghost_q->find(ghost_q, req, false);
-  assert(ghost_obj->S3FIFO.freq > 0);
+  assert(ghost_obj == NULL || ghost_obj->S3FIFO.freq > 0);
 
   if (ghost_obj != NULL) {
     // we need to compare with the small queue, because the object has not had chance to accumulate enough hits in the
