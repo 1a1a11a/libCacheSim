@@ -264,9 +264,10 @@ static cache_obj_t *SLRU_find(cache_t *cache, const request_t *req,
 #endif
 
   int id = obj->SLRU.lru_id;
-  if (id == params->n_seg - 1 ||
-      obj->obj_size + cache->obj_md_size > params->lru_max_n_bytes[id + 1]) {
-    // an object larger than the next segment (after SLRU_resize) stays here
+  int64_t sz = obj->obj_size + cache->obj_md_size;
+  if (id == params->n_seg - 1 || (sz > params->lru_max_n_bytes[id] &&
+                                  sz > params->lru_max_n_bytes[id + 1])) {
+    // an object that fits neither segment (after SLRU_resize) stays here
     move_obj_to_head(&params->lru_heads[id], &params->lru_tails[id], obj);
   } else {
     SLRU_promote_to_next_seg(cache, req, obj);

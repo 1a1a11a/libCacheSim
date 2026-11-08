@@ -9,7 +9,9 @@
 //  requests, move the window by 5% (1% to 80%), and turn around if the hit
 //  ratio dropped. Different from the paper, the window does not go to 0%
 //  (every request would miss), a tie does not turn around (as in Caffeine),
-//  and the period is in bytes (the same for unit-size objects)
+//  and the period is in bytes (the same for unit-size objects). When the
+//  window grows, the main cache evicts down to its new size instead of moving
+//  objects into the window as Caffeine does
 //
 //  NOTE: it is NOT thread-safe
 //
@@ -58,7 +60,8 @@ typedef struct WTinyLFU_params {
   double prev_hit_ratio;
 } WTinyLFU_params_t;
 
-static const char *DEFAULT_PARAMS = "main-cache=SLRU,window-size=0.01";
+static const char *DEFAULT_PARAMS =
+    "main-cache=SLRU,window-size=0.01,hill-climb=0";
 
 #define MAX_WINDOW_STEP 16
 static double WTinyLFU_window_ratio(int step) {
