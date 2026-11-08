@@ -1063,7 +1063,7 @@ typedef union {
 static xxh_u32 XXH_read32(const void* ptr) {
   typedef union {
     xxh_u32 u32;
-  } __attribute__((packed)) xxh_unalign;
+  } __attribute__((packed, __may_alias__)) xxh_unalign;
   return ((const xxh_unalign*)ptr)->u32;
 }
 
@@ -1682,7 +1682,7 @@ static xxh_u64 XXH_read64(const void* ptr) {
   typedef union {
     xxh_u32 u32;
     xxh_u64 u64;
-  } __attribute__((packed)) xxh_unalign64;
+  } __attribute__((packed, __may_alias__)) xxh_unalign64;
   return ((const xxh_unalign64*)ptr)->u64;
 }
 
