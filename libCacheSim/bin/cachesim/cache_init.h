@@ -1,8 +1,8 @@
 
-#include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "libCacheSim/cache.h"
 #include "libCacheSim/evictionAlgo.h"
