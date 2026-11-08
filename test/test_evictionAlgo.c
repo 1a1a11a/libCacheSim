@@ -623,6 +623,106 @@ static void test_WTinyLFU_counts_window_hits(void) {
   cache->cache_free(cache);
 }
 
+// The first hill climbing decision, after 10 x cache size requests, grows the
+// window from 1% to 5%, and the main cache evicts down to its new size.
+static void test_WTinyLFU_hill_climb_grows_window(void) {
+  common_cache_params_t cc_params = {.cache_size = 100, .hashpower = 8};
+  cache_t *cache = WTinyLFU_init(cc_params, "main-cache=LRU,hill-climb=1");
+  request_t *req = new_request();
+  req->obj_size = 1;
+
+  // 101 moves 1 to 99 into the main cache
+  for (obj_id_t id = 1; id <= 101; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 100);
+
+  // hits on the main cache until the 1000th request
+  for (int i = 0; i < 899; i++) {
+    req->obj_id = 2 + i % 98;
+    g_assert_true(cache->get(cache, req));
+  }
+
+  // the main cache is now 95 objects instead of 99
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 96);
+
+  // the window grows into the free space
+  for (obj_id_t id = 102; id <= 105; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 100);
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
+// A period without hits must not trap the climber: 30-byte objects fit neither
+// the 1% nor the 5% window of a 400-byte cache, so it must grow it to 10%.
+static void test_WTinyLFU_hill_climb_no_hits(void) {
+  common_cache_params_t cc_params = {.cache_size = 400, .hashpower = 8};
+  cache_t *cache = WTinyLFU_init(cc_params, "main-cache=LRU,hill-climb=1");
+  request_t *req = new_request();
+  req->obj_size = 30;
+
+  int64_t n_hit = 0;
+  for (int i = 0; i < 1000; i++) {
+    req->obj_id = 1 + i % 5;
+    bool hit = cache->get(cache, req);
+    // a period is 134 requests; the window holds an object from the third on
+    if (i < 268) g_assert_false(hit);
+    n_hit += hit;
+  }
+  g_assert_cmpint(n_hit, >, 0);
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
+// SLRU_resize keeps the 1:4 shares: the first segment, which caps the object
+// size, is 14 at size 71, 6 at size 30, and 14 again back at size 71.
+static void test_SLRU_resize(void) {
+  common_cache_params_t cc_params = {.cache_size = 71, .hashpower = 8};
+  cache_t *cache = SLRU_init(cc_params, "seg-size=1:4");
+  request_t *req = new_request();
+  req->obj_id = 1;
+
+  SLRU_resize(cache, 30);
+  g_assert_cmpint(cache->cache_size, ==, 30);
+  req->obj_size = 6;
+  g_assert_true(cache->can_insert(cache, req));
+  req->obj_size = 7;
+  g_assert_false(cache->can_insert(cache, req));
+
+  SLRU_resize(cache, 71);
+  req->obj_size = 14;
+  g_assert_true(cache->can_insert(cache, req));
+  req->obj_size = 15;
+  g_assert_false(cache->can_insert(cache, req));
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
+// After SLRU_resize an object can be larger than the next segment. A hit must
+// keep it, not promote it, cool it back down and evict it.
+static void test_SLRU_resize_keeps_large_object(void) {
+  common_cache_params_t cc_params = {.cache_size = 100, .hashpower = 8};
+  cache_t *cache = SLRU_init(cc_params, "seg-size=1:4");
+  request_t *req = new_request();
+  req->obj_id = 1;
+  req->obj_size = 20;
+
+  g_assert_false(cache->get(cache, req));
+  SLRU_resize(cache, 20);  // segments of 4 and 16 bytes
+  g_assert_true(cache->get(cache, req));
+  g_assert_nonnull(cache->find(cache, req, false));
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
 /* The MINISIM profiler only knows an algorithm by its name and reaches it
  * through create_cache_using_plugin(). That used to go straight to dlsym(),
  * which cannot see a built-in constructor in a statically linked build — the
@@ -725,6 +825,13 @@ int main(int argc, char *argv[]) {
                        test_Clock2QPlus);
   g_test_add_func("/libCacheSim/cacheAlgo_WTinyLFU_counts_window_hits",
                   test_WTinyLFU_counts_window_hits);
+  g_test_add_func("/libCacheSim/cacheAlgo_WTinyLFU_hill_climb_grows_window",
+                  test_WTinyLFU_hill_climb_grows_window);
+  g_test_add_func("/libCacheSim/cacheAlgo_WTinyLFU_hill_climb_no_hits",
+                  test_WTinyLFU_hill_climb_no_hits);
+  g_test_add_func("/libCacheSim/cacheAlgo_SLRU_resize", test_SLRU_resize);
+  g_test_add_func("/libCacheSim/cacheAlgo_SLRU_resize_keeps_large_object",
+                  test_SLRU_resize_keeps_large_object);
 
 #if defined(ENABLE_3L_CACHE) && ENABLE_3L_CACHE == 1
   g_test_add_data_func("/libCacheSim/cacheAlgo_3LCache", reader, test_3LCache);
