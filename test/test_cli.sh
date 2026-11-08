@@ -307,7 +307,8 @@ for params in main-cache main-cache= main-cache,print \
 	window-size=abc,print window-size=0.1junk,print window-size=nan \
 	window-size=nan,print window-size=inf,print window-size=-inf,print \
 	window-size=-0.1,print window-size=1,print window-size=1e999,print \
-	window-size=1e-999,print unknown=1; do
+	window-size=1e-999,print hill-climb hill-climb= hill-climb=2,print \
+	hill-climb=yes,print unknown=1; do
 	out=$("${BIN_DIR}/cachesim" "${TRACE}" vscsi wtinyLFU 1mb \
 		--num-req=10 --hashpower=8 -e "${params}" 2>&1)
 	rc=$?
@@ -320,7 +321,8 @@ for params in main-cache main-cache= main-cache,print \
 	fi
 done
 for params in '' window-size=0.01 window-size=1e-2 window-size=0.01, \
-	'main-cache=LRU,window-size=0.01' 'main-cache=FIFO, window-size=0.01'; do
+	'main-cache=LRU,window-size=0.01' 'main-cache=FIFO, window-size=0.01' \
+	hill-climb=0 hill-climb=1 'main-cache=LRU,hill-climb=1'; do
 	expect_output "WTinyLFU accepts '${params}'" '10 req' \
 		"${BIN_DIR}/cachesim" "${TRACE}" vscsi tinyLFU 1mb \
 		--num-req=10 --hashpower=8 -e "${params}"
@@ -333,6 +335,12 @@ for spec in 0:0.0000 0.01:0.0100 1e-2:0.0100 +0.01:0.0100 \
 		"${BIN_DIR}/cachesim" "${TRACE}" vscsi wtinyLFU 1mb \
 		--hashpower=8 -e "window-size=${value},print"
 done
+expect_output "WTinyLFU reports hill-climb=1" "hill-climb=1" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi wtinyLFU 1mb \
+	--hashpower=8 -e "hill-climb=1,print"
+expect_clean_error "WTinyLFU hill-climb rejects a FIFO main cache" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi wtinyLFU 1mb \
+	--num-req=10 --hashpower=8 -e "main-cache=FIFO,hill-climb=1"
 
 echo "running admission and prefetch missing-value tests"
 

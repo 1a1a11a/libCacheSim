@@ -224,6 +224,8 @@ cache_t *Size_init(const common_cache_params_t ccache_params,
 cache_t *SLRU_init(const common_cache_params_t ccache_params,
                    const char *cache_specific_params);
 
+void SLRU_resize(cache_t *cache, int64_t new_size);
+
 cache_t *SLRUv0_init(const common_cache_params_t ccache_params,
                      const char *cache_specific_params);
 
