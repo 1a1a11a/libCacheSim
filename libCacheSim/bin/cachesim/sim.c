@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include "cache_init.h"
 #include "libCacheSim/cache.h"
 #include "libCacheSim/reader.h"

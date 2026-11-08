@@ -1,4 +1,4 @@
-
+#define _GNU_SOURCE
 
 #ifdef __linux__
 #include <sys/sysinfo.h>
