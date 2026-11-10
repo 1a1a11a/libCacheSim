@@ -273,6 +273,18 @@ static inline cache_obj_t *create_cache_obj_from_request(const request_t *req) {
   return cache_obj;
 }
 
+/* Eviction pinning is described below ("eviction pinning"). These are declared
+ * here so that the list helpers can tell cache_skip_pinned when an object it
+ * remembers leaves its place in a list. */
+typedef bool (*cache_pin_pred_f)(void *ctx, obj_id_t obj_id);
+extern __thread cache_pin_pred_f g_cache_pin_pred;
+void cache_pin_scan_forget(const cache_obj_t *obj);
+
+/** Call before unlinking, moving or freeing an object. */
+static inline void cache_pin_scan_obj_leaves(const cache_obj_t *obj) {
+  if (unlikely(g_cache_pin_pred != NULL)) cache_pin_scan_forget(obj);
+}
+
 /** remove the object from the built-in doubly linked list
  *
  * @param head
@@ -281,6 +293,7 @@ static inline cache_obj_t *create_cache_obj_from_request(const request_t *req) {
  */
 static inline void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail,
                                         cache_obj_t *cache_obj) {
+  cache_pin_scan_obj_leaves(cache_obj);
   if (head != NULL && cache_obj == *head) {
     *head = cache_obj->queue.next;
     if (cache_obj->queue.next != NULL) cache_obj->queue.next->queue.prev = NULL;
@@ -308,6 +321,7 @@ static inline void remove_obj_from_list(cache_obj_t **head, cache_obj_t **tail,
  */
 static inline void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
                                     cache_obj_t *cache_obj) {
+  cache_pin_scan_obj_leaves(cache_obj);
   if (*head == *tail) {
     // the list only has one element
     DEBUG_ASSERT(cache_obj == *head);
@@ -355,6 +369,7 @@ static inline void move_obj_to_tail(cache_obj_t **head, cache_obj_t **tail,
 static inline void move_obj_to_head(cache_obj_t **head, cache_obj_t **tail,
                                     cache_obj_t *cache_obj) {
   DEBUG_ASSERT(head != NULL);
+  cache_pin_scan_obj_leaves(cache_obj);
 
   if (tail != NULL && *head == *tail) {
     // the list only has one element
@@ -497,14 +512,14 @@ static inline cache_obj_t *prev_obj_in_slist(cache_obj_t *head,
  * each other's pins. Two caches driven from one thread share it, so set it
  * only around the eviction it is meant for, as prefixsim does.
  */
-typedef bool (*cache_pin_pred_f)(void *ctx, obj_id_t obj_id);
-
-/** Install (pred=NULL to remove) the calling thread's pin predicate.
+/** Install (pred=NULL to remove) the calling thread's pin predicate. The
+ * predicate must not change its answer for any object while it is installed;
+ * install it again (with the same arguments, if need be) after it does.
  */
 void cache_set_pin_predicate(cache_pin_pred_f pred, void *ctx);
 
-/* Definitions live in cache.c; declared here so the check can inline. */
-extern __thread cache_pin_pred_f g_cache_pin_pred;
+/* Definitions live in cache.c; declared here so the check can inline.
+ * g_cache_pin_pred and cache_pin_pred_f are declared above the list helpers. */
 extern __thread void *g_cache_pin_ctx;
 
 /** Whether any pinning is in force. Lets callers keep a pin-free fast path. */
@@ -531,12 +546,18 @@ static inline bool cache_obj_is_pinned(const cache_obj_t *obj) {
  * refused to evict would hang cache_get_base()'s "evict until there is room"
  * loop. A pinned block evicted because its whole queue was pinned still shows
  * up in prefixsim's n_self_eviction, so the residue stays measurable.
+ *
+ * The scan resumes where the last one from the same `candidate` stopped. A
+ * queue's victim end does not move while its pinned objects stay put, so the
+ * evictions that make room for one request would otherwise each walk the same
+ * pinned objects again, which is quadratic in the request's size. See
+ * cache_skip_pinned_scan in cache.c for when a remembered position is dropped.
  */
+cache_obj_t *cache_skip_pinned_scan(cache_obj_t *candidate);
+
 static inline cache_obj_t *cache_skip_pinned(cache_obj_t *candidate) {
   if (likely(g_cache_pin_pred == NULL)) return candidate;
-  cache_obj_t *obj = candidate;
-  while (obj != NULL && cache_obj_is_pinned(obj)) obj = obj->queue.prev;
-  return obj != NULL ? obj : candidate;
+  return cache_skip_pinned_scan(candidate);
 }
 
 static inline void free_cache_obj(cache_obj_t *cache_obj) {
