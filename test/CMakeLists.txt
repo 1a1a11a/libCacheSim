@@ -58,6 +58,9 @@ add_test_executable(testLcpReader test_lcpReader.cpp)
 # the prefix tree behind the partial-node policies
 add_test_executable(testPrefixRadixTree test_prefixRadixTree.cpp)
 
+# cache_skip_pinned's resumed scans against scans from scratch
+add_test_executable(testPinScan test_pinScan.c)
+
 # Create C++ test executable (mrcProfiler test)
 # add_test_executable(testMrcProfiler test_mrcProfiler.cpp)
 # target_link_libraries(testMrcProfiler mrcProfiler_lib)
@@ -77,6 +80,7 @@ add_test(NAME testPrefetchAlgo COMMAND testPrefetchAlgo WORKING_DIRECTORY .)
 add_test(NAME testDataStructure COMMAND testDataStructure WORKING_DIRECTORY .)
 add_test(NAME testLcpReader COMMAND testLcpReader WORKING_DIRECTORY .)
 add_test(NAME testPrefixRadixTree COMMAND testPrefixRadixTree WORKING_DIRECTORY .)
+add_test(NAME testPinScan COMMAND testPinScan WORKING_DIRECTORY .)
 add_test(NAME testUtils COMMAND testUtils WORKING_DIRECTORY .)
 
 find_package(Python3 COMPONENTS Interpreter)
