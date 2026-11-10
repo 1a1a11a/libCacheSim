@@ -373,9 +373,71 @@ cache_obj_t *cache_insert_base(cache_t *cache, const request_t *req) {
 __thread cache_pin_pred_f g_cache_pin_pred = NULL;
 __thread void *g_cache_pin_ctx = NULL;
 
+/* Where cache_skip_pinned_scan stopped, per starting object: `from` and every
+ * object from it to `last` (walking towards the head) are pinned. A few
+ * entries, because a composite policy scans several queues (S3FIFO's small,
+ * main and ghost queues, SLRU's segments) in turn, each from its own tail.
+ *
+ * An entry stays correct while that run of pinned objects stays in place:
+ * objects are only inserted at a queue's ends, never inside the run, and the
+ * pin set does not change while a predicate is installed. What takes `from` or
+ * `last` out of its place drops the entry through cache_pin_scan_forget: the
+ * list helpers that unlink or move an object (remove_obj_from_list,
+ * move_obj_to_head, move_obj_to_tail) and cache_remove_obj_base, which every
+ * eviction and removal that frees an object goes through. An object strictly
+ * between them may leave freely, since the rest of the run stays linked. The
+ * policies that unlink or free objects by hand (ARC, CAR, ClockPro, LeCaR,
+ * MRU, CR_LFU) keep their own lists and never call cache_skip_pinned. */
+#define PIN_SCAN_MEMO_SIZE 8
+static __thread struct {
+  cache_obj_t *from;
+  cache_obj_t *last;
+} pin_scan_memo[PIN_SCAN_MEMO_SIZE];
+static __thread int pin_scan_memo_next = 0;
+
 void cache_set_pin_predicate(cache_pin_pred_f pred, void *ctx) {
   g_cache_pin_pred = pred;
   g_cache_pin_ctx = ctx;
+  memset(pin_scan_memo, 0, sizeof(pin_scan_memo));
+  pin_scan_memo_next = 0;
+}
+
+void cache_pin_scan_forget(const cache_obj_t *obj) {
+  for (int i = 0; i < PIN_SCAN_MEMO_SIZE; i++) {
+    if (pin_scan_memo[i].from == obj || pin_scan_memo[i].last == obj) {
+      pin_scan_memo[i].from = NULL;
+      pin_scan_memo[i].last = NULL;
+    }
+  }
+}
+
+cache_obj_t *cache_skip_pinned_scan(cache_obj_t *candidate) {
+  if (candidate == NULL || !cache_obj_is_pinned(candidate)) return candidate;
+
+  int slot = -1;
+  for (int i = 0; i < PIN_SCAN_MEMO_SIZE; i++) {
+    if (pin_scan_memo[i].from == candidate) {
+      slot = i;
+      break;
+    }
+  }
+  cache_obj_t *last = slot >= 0 ? pin_scan_memo[slot].last : candidate;
+  cache_obj_t *obj = last->queue.prev;
+  while (obj != NULL && cache_obj_is_pinned(obj)) {
+    last = obj;
+    obj = obj->queue.prev;
+  }
+
+  if (slot < 0) {
+    slot = pin_scan_memo_next;
+    pin_scan_memo_next = (pin_scan_memo_next + 1) % PIN_SCAN_MEMO_SIZE;
+  }
+  pin_scan_memo[slot].from = candidate;
+  pin_scan_memo[slot].last = last;
+  // Everything up to the head is pinned. The entry is kept: a caller that
+  // falls back to another queue (SLRU) finds this one full again in O(1), and
+  // one that evicts or moves `candidate` drops the entry while doing so.
+  return obj != NULL ? obj : candidate;
 }
 
 /**
@@ -419,6 +481,7 @@ void cache_evict_base(cache_t *cache, cache_obj_t *obj,
 void cache_remove_obj_base(cache_t *cache, cache_obj_t *obj,
                            bool remove_from_hashtable) {
   DEBUG_ASSERT(cache->occupied_byte >= obj->obj_size + cache->obj_md_size);
+  cache_pin_scan_obj_leaves(obj);
   cache->occupied_byte -= (obj->obj_size + cache->obj_md_size);
   cache->n_obj -= 1;
   if (remove_from_hashtable) {
