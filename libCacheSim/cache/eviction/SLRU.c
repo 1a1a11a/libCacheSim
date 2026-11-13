@@ -502,6 +502,8 @@ static void SLRU_parse_params(cache_t *cache,
                 (long long)params->lru_max_n_bytes[i]);
         }
       }
+      // give the rounding remainder to the last segment
+      SLRU_resize(cache, cache->cache_size);
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SLRU_current_params(cache, params));
       free(old_params_str);
