@@ -174,7 +174,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   if (same_size) {
     n = snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S%dLRU(%d",
                  params->n_seg, (int)(100 / params->n_seg));
-    for (int i = 1; i < params->n_seg; i++) {
+    for (int i = 1; i < params->n_seg && n < CACHE_NAME_ARRAY_LEN; i++) {
       n += snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ":%d",
                     (int)(100 / params->n_seg));
     }
@@ -182,12 +182,14 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
     n = snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S%dLRU(%d",
                  params->n_seg, SLRU_seg_pct(params, 0));
 
-    for (int i = 1; i < params->n_seg; i++) {
+    for (int i = 1; i < params->n_seg && n < CACHE_NAME_ARRAY_LEN; i++) {
       n += snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ":%d",
                     SLRU_seg_pct(params, i));
     }
   }
-  snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ")");
+  if (n < CACHE_NAME_ARRAY_LEN) {
+    snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ")");
+  }
 
 #ifdef USE_BELADY
   char *tmp = strdup(cache->cache_name);
@@ -505,6 +507,7 @@ static void SLRU_parse_params(cache_t *cache,
     } else if (strcasecmp(key, "print") == 0) {
       printf("current parameters: %s\n", SLRU_current_params(params));
       free(old_params_str);
+      SLRU_free(cache);
       exit(0);
     } else {
       ERROR("%s does not have parameter %s\n", cache->cache_name, key);
