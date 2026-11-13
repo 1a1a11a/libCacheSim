@@ -50,6 +50,7 @@ typedef struct WTinyLFU_params {
   char main_cache_type[32];
 
   request_t *req_local;
+  bool main_full;  // once full, every admission is compared
 
   bool hill_climb;
   int window_step;
@@ -257,6 +258,9 @@ static void WTinyLFU_resize_window(cache_t *cache, const request_t *req) {
   double window_ratio = WTinyLFU_window_ratio(params->window_step);
   params->LRU->cache_size = (int64_t)(cache->cache_size * window_ratio);
   int64_t main_size = cache->cache_size - params->LRU->cache_size;
+  if (main_size > main_cache->cache_size) {
+    params->main_full = false;
+  }
   if (strcasecmp(params->main_cache_type, "SLRU") == 0) {
     SLRU_resize(main_cache, main_size);
   } else {
@@ -361,6 +365,12 @@ static cache_obj_t *WTinyLFU_to_evict(cache_t *cache, const request_t *req) {
   return NULL;
 }
 
+static bool WTinyLFU_main_fits(cache_t *main_cache, const request_t *req) {
+  return main_cache->get_occupied_byte(main_cache) + req->obj_size +
+             main_cache->obj_md_size <=
+         main_cache->cache_size;
+}
+
 static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
   WTinyLFU_params_t *params = (WTinyLFU_params_t *)(cache->eviction_params);
 
@@ -384,9 +394,8 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
        * caller asking the composite what it reserves is not told less than it
        * really does; using it here would bill a FIFO or Clock main cache for
        * the window's 16 bytes and call it full early. */
-      if (main_cache->get_occupied_byte(main_cache) +
-              params->req_local->obj_size + main_cache->obj_md_size <=
-          main_cache->cache_size) {
+      if (!params->main_full &&
+          WTinyLFU_main_fits(main_cache, params->req_local)) {
         main_cache->insert(main_cache, params->req_local);
 
 #if defined(TRACK_DEMOTION)
@@ -399,6 +408,7 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
 
       } else {
         // compare the frequency of window_victim and main_cache_victim
+        params->main_full = true;
         cache_obj_t *main_cache_victim = main_cache->to_evict(main_cache, req);
         DEBUG_ASSERT(main_cache_victim != NULL);
         // if window_victim is more frequent, insert it into main_cache
@@ -413,7 +423,9 @@ static void WTinyLFU_evict(cache_t *cache, const request_t *req) {
                  window_victim->next_access_vtime);
 #endif
 
-          main_cache->evict(main_cache, req);
+          do {
+            main_cache->evict(main_cache, req);
+          } while (!WTinyLFU_main_fits(main_cache, params->req_local));
 
           bool ret = window->remove(window, window_victim->obj_id);
           DEBUG_ASSERT(ret);
