@@ -7,6 +7,8 @@
 //
 //
 
+#include <math.h>
+
 #include "dataStructure/hashtable/hashtable.h"
 #include "libCacheSim/evictionAlgo.h"
 
@@ -49,6 +51,7 @@ static void SLRU_promote_to_next_seg(cache_t *cache, const request_t *req,
                                      cache_obj_t *obj);
 static void SLRU_cool(cache_t *cache, const request_t *req, const int id);
 bool SLRU_can_insert(cache_t *cache, const request_t *req);
+static int SLRU_seg_pct(const SLRU_params_t *params, const int seg);
 static void SLRU_parse_params(cache_t *cache,
                               const char *cache_specific_params);
 
@@ -162,7 +165,7 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
   // update slru cache name
   bool same_size = true;
   for (int i = 1; i < params->n_seg; i++) {
-    if (params->lru_max_n_bytes[i] != params->lru_max_n_bytes[i - 1]) {
+    if (params->seg_ratio[i] != params->seg_ratio[i - 1]) {
       same_size = false;
       break;
     }
@@ -177,13 +180,11 @@ cache_t *SLRU_init(const common_cache_params_t ccache_params,
     }
   } else {
     n = snprintf(cache->cache_name, CACHE_NAME_ARRAY_LEN, "S%dLRU(%d",
-                 params->n_seg,
-                 (int)(params->lru_max_n_bytes[0] * 100 / cache->cache_size));
+                 params->n_seg, SLRU_seg_pct(params, 0));
 
     for (int i = 1; i < params->n_seg; i++) {
-      n +=
-          snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ":%d",
-                   (int)(params->lru_max_n_bytes[i] * 100 / cache->cache_size));
+      n += snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ":%d",
+                    SLRU_seg_pct(params, i));
     }
   }
   snprintf(cache->cache_name + n, CACHE_NAME_ARRAY_LEN - n, ")");
@@ -310,8 +311,9 @@ static cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
 
   if (nth_seg == -1) {
     // No space for insertion
-    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
-           cache->cache_size) {
+    int64_t sz = req->obj_size + cache->obj_md_size;
+    while (params->lru_n_bytes[0] + sz > params->lru_max_n_bytes[0] ||
+           cache->occupied_byte + sz > cache->cache_size) {
       cache->evict(cache, req);
     }
     nth_seg = 0;
@@ -420,28 +422,24 @@ static bool SLRU_remove(cache_t *cache, obj_id_t obj_id) {
 // ****                  parameter set up functions                   ****
 // ****                                                               ****
 // ***********************************************************************
-/* share of the cache given to one segment, in percent. lru_max_n_bytes is only
- * allocated after the parameters are parsed, so it is still NULL when the user
- * asks for the parameters with `-e print`; until seg-size says otherwise the
- * segments are evenly sized */
-static int SLRU_seg_pct(const cache_t *cache, const SLRU_params_t *params,
-                        const int seg) {
-  if (params->lru_max_n_bytes == NULL) {
+/* share of one segment in percent; even until seg_ratio is set */
+static int SLRU_seg_pct(const SLRU_params_t *params, const int seg) {
+  if (params->seg_ratio[seg] == 0) {
     return 100 / params->n_seg;
   }
-  return (int)(params->lru_max_n_bytes[seg] * 100 / cache->cache_size);
+  return (int)lround(params->seg_ratio[seg] * 100);
 }
 
-static const char *SLRU_current_params(cache_t *cache, SLRU_params_t *params) {
+static const char *SLRU_current_params(SLRU_params_t *params) {
   static __thread char params_str[128];
 
   int n = snprintf(params_str, sizeof(params_str), "n-seg=%d,seg-size=%d",
-                   params->n_seg, SLRU_seg_pct(cache, params, 0));
+                   params->n_seg, SLRU_seg_pct(params, 0));
 
   for (int i = 1; i < params->n_seg && n > 0 && n < (int)sizeof(params_str);
        i++) {
     n += snprintf(params_str + n, sizeof(params_str) - n, ":%d",
-                  SLRU_seg_pct(cache, params, i));
+                  SLRU_seg_pct(params, i));
   }
 
   return params_str;
@@ -505,7 +503,7 @@ static void SLRU_parse_params(cache_t *cache,
       // give the rounding remainder to the last segment
       SLRU_resize(cache, cache->cache_size);
     } else if (strcasecmp(key, "print") == 0) {
-      printf("current parameters: %s\n", SLRU_current_params(cache, params));
+      printf("current parameters: %s\n", SLRU_current_params(params));
       free(old_params_str);
       exit(0);
     } else {
@@ -564,8 +562,8 @@ static void SLRU_cool(cache_t *cache, const request_t *req, const int id) {
   prepend_obj_to_head(&params->lru_heads[id - 1], &params->lru_tails[id - 1],
                       obj);
   obj->SLRU.lru_id = id - 1;
-  params->lru_n_bytes[id] -= obj->obj_size;
-  params->lru_n_bytes[id - 1] += obj->obj_size;
+  params->lru_n_bytes[id] -= obj->obj_size + cache->obj_md_size;
+  params->lru_n_bytes[id - 1] += obj->obj_size + cache->obj_md_size;
   params->lru_n_objs[id]--;
   params->lru_n_objs[id - 1]++;
 
@@ -605,7 +603,7 @@ static void _SLRU_verify_lru_size(cache_t *cache) {
     cache_obj_t *obj = params->lru_heads[i];
     while (obj != NULL) {
       n_objs += 1;
-      n_bytes += obj->obj_size;
+      n_bytes += obj->obj_size + cache->obj_md_size;
       obj = obj->queue.next;
     }
     assert(n_objs == params->lru_n_objs[i]);

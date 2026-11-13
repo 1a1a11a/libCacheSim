@@ -375,8 +375,11 @@ expect_output "slru -e print" "n-seg=4,seg-size=25:25:25:25" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru 1gb -e print
 expect_output "slru -e n-seg=8,print" "n-seg=8" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru 1gb -e "n-seg=8,print"
-expect_output "slru -e seg-size=1:2:3:4,print" "seg-size=9:19:29:40" \
+expect_output "slru -e seg-size=1:2:3:4,print" "seg-size=10:20:30:40" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru 1gb -e "seg-size=1:2:3:4,print"
+expect_output "slru seg-size=1:1 name on an odd size" "S2LRU\\(50:50\\)" \
+	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru 101 --ignore-obj-size=1 \
+	-e "seg-size=1:1"
 expect_output "slru -e print with auto sizing" "n-seg=" \
 	"${BIN_DIR}/cachesim" "${TRACE}" vscsi slru auto -e print
 expect_output "qdlp -e print" "fifo-size-ratio=" \
