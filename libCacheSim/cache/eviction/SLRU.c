@@ -313,9 +313,8 @@ static cache_obj_t *SLRU_insert(cache_t *cache, const request_t *req) {
 
   if (nth_seg == -1) {
     // No space for insertion
-    int64_t sz = req->obj_size + cache->obj_md_size;
-    while (params->lru_n_bytes[0] + sz > params->lru_max_n_bytes[0] ||
-           cache->occupied_byte + sz > cache->cache_size) {
+    while (cache->occupied_byte + req->obj_size + cache->obj_md_size >
+           cache->cache_size) {
       cache->evict(cache, req);
     }
     nth_seg = 0;
@@ -412,6 +411,8 @@ static bool SLRU_remove(cache_t *cache, obj_id_t obj_id) {
     return false;
   }
 
+  params->lru_n_bytes[obj->SLRU.lru_id] -= obj->obj_size + cache->obj_md_size;
+  params->lru_n_objs[obj->SLRU.lru_id]--;
   remove_obj_from_list(&(params->lru_heads[obj->SLRU.lru_id]),
                        &(params->lru_tails[obj->SLRU.lru_id]), obj);
   cache_remove_obj_base(cache, obj, true);
