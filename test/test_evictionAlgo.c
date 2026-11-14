@@ -202,9 +202,9 @@ static const cache_test_data_t test_data_truth[] = {
      .hashpower = 20,
      .req_cnt_true = 113872,
      .req_byte_true = 4368040448,
-     .miss_cnt_true = {89624, 86725, 82781, 80203, 75388, 65645, 59035, 56063},
-     .miss_byte_true = {4123085312, 3915534848, 3690704896, 3493027840,
-                        3174708736, 2661464064, 2507604992, 2439981056}},
+     .miss_cnt_true = {89862, 86685, 83365, 80309, 75447, 66000, 59092, 56111},
+     .miss_byte_true = {4125897728, 3909879808, 3697543168, 3489533952,
+                        3159642624, 2695841792, 2506203648, 2440419840}},
     {.cache_name = "SR_LRU",
      .hashpower = 20,
      .req_cnt_true = 113872,
@@ -723,6 +723,82 @@ static void test_SLRU_resize_keeps_large_object(void) {
   cache->cache_free(cache);
 }
 
+// seg-size=1:4 on 6 objects must give segments of 1 and 5, not 1 and 4
+static void test_SLRU_seg_size_fills_cache(void) {
+  common_cache_params_t cc_params = {.cache_size = 6, .hashpower = 8};
+  cache_t *cache = SLRU_init(cc_params, "seg-size=1:4");
+  request_t *req = new_request();
+  req->obj_size = 1;
+
+  for (obj_id_t id = 1; id <= 6; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 6);
+
+  req->obj_id = 1;
+  g_assert_true(cache->get(cache, req));
+  g_assert_cmpint(cache->get_n_obj(cache), ==, 6);
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
+// a cold window victim must not take a free slot in a full main cache
+static void test_WTinyLFU_full_main_checks_admission(void) {
+  common_cache_params_t cc_params = {.cache_size = 13, .hashpower = 8};
+  cache_t *cache = WTinyLFU_init(cc_params, "window-size=0.2");
+  request_t *req = new_request();
+  req->obj_size = 1;
+
+  for (obj_id_t id = 1; id <= 14; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+
+  // promoting 1 used to leave a free slot (segments of 2 and 8)
+  req->obj_id = 1;
+  g_assert_true(cache->get(cache, req));
+
+  for (obj_id_t id = 15; id <= 16; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+  req->obj_id = 13;
+  g_assert_null(cache->find(cache, req, false));
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
+// the same in byte mode, with a small object
+static void test_WTinyLFU_full_main_checks_small_object(void) {
+  common_cache_params_t cc_params = {.cache_size = 1300, .hashpower = 8};
+  cache_t *cache = WTinyLFU_init(cc_params, "main-cache=LRU,window-size=0.2");
+  request_t *req = new_request();
+
+  req->obj_size = 100;
+  for (obj_id_t id = 1; id <= 14; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+
+  // main holds 1000 of 1040 bytes, so 15 fits
+  req->obj_id = 15;
+  req->obj_size = 30;
+  g_assert_false(cache->get(cache, req));
+  req->obj_size = 100;
+  for (obj_id_t id = 16; id <= 18; id++) {
+    req->obj_id = id;
+    g_assert_false(cache->get(cache, req));
+  }
+  req->obj_id = 15;
+  g_assert_null(cache->find(cache, req, false));
+
+  free_request(req);
+  cache->cache_free(cache);
+}
+
 /* The MINISIM profiler only knows an algorithm by its name and reaches it
  * through create_cache_using_plugin(). That used to go straight to dlsym(),
  * which cannot see a built-in constructor in a statically linked build — the
@@ -830,6 +906,13 @@ int main(int argc, char *argv[]) {
   g_test_add_func("/libCacheSim/cacheAlgo_WTinyLFU_hill_climb_no_hits",
                   test_WTinyLFU_hill_climb_no_hits);
   g_test_add_func("/libCacheSim/cacheAlgo_SLRU_resize", test_SLRU_resize);
+  g_test_add_func("/libCacheSim/cacheAlgo_SLRU_seg_size_fills_cache",
+                  test_SLRU_seg_size_fills_cache);
+  g_test_add_func("/libCacheSim/cacheAlgo_WTinyLFU_full_main_checks_admission",
+                  test_WTinyLFU_full_main_checks_admission);
+  g_test_add_func(
+      "/libCacheSim/cacheAlgo_WTinyLFU_full_main_checks_small_object",
+      test_WTinyLFU_full_main_checks_small_object);
   g_test_add_func("/libCacheSim/cacheAlgo_SLRU_resize_keeps_large_object",
                   test_SLRU_resize_keeps_large_object);
 
